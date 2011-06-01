@@ -181,7 +181,7 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
 
   // read snow precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com, 
-    "    reading ice-equivalent surface mass balance (accumulation/ablation) rate 'acab'\n"
+    "    reading ice-equivalent surface mass balance rate 'acab'\n"
     "    and ice surface temperature  'artm' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
@@ -709,7 +709,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = ftt_modified_acab.create(grid, "ftt_modified_acab", false); CHKERRQ(ierr);
   ierr = ftt_modified_acab.set_attrs(
      "diagnostic",
-     "modified ice-equivalent surface mass balance (accumulation/ablation) rate;"
+     "modified ice-equivalent surface mass balance rate;"
        " result from force-to-thickness mechanism (which is a PSModifier)",
      "m s-1", 
      ""); CHKERRQ(ierr); // no standard name

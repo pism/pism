@@ -69,7 +69,7 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, grid.com,
-    "    reading ice-equivalent surface mass balance (accumulation/ablation) rate 'acab' from %s ... \n",
+    "    reading ice-equivalent surface mass balance rate 'acab' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr);
   if (regrid) {
     ierr = acab.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!

@@ -592,15 +592,15 @@ PetscErrorCode IceGrid::report_parameters() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(2,com, "computational domain and grid:\n"); CHKERRQ(ierr);
+
+  // report on grid
+  ierr = verbPrintf(2,com, 
+           "                grid size   %d x %d x %d\n",
+           Mx,My,Mz); CHKERRQ(ierr);
   // report on computational box
   ierr = verbPrintf(2,com, 
-           "           spatial domain   %.2f km x %.2f km",
-           2*Lx/1000.0,2*Ly/1000.0); CHKERRQ(ierr);
-  ierr = verbPrintf(2,com," x %.2f m\n",Lz); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, com,
-           "            time interval   [ %.2f a, %.2f a ]; run length = %.4f a\n",
-		    start_year, end_year, end_year - start_year);
+           "           spatial domain   %.2f km x %.2f km x %.2f m\n",
+           2*Lx/1000.0,2*Ly/1000.0,Lz); CHKERRQ(ierr);
   
   // report on grid cell dims
   ierr = verbPrintf(2,com, 
@@ -615,16 +615,19 @@ PetscErrorCode IceGrid::report_parameters() {
            "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
 		    Mz, dzMIN, dzMAX); CHKERRQ(ierr);
   }
-
   ierr = verbPrintf(3,com, 
                     "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m\n",
                     Mz_fine, dz_fine); CHKERRQ(ierr);
-
   if (Mz_fine > 1000) {
     ierr = verbPrintf(2,com,
       "\n\nWARNING: Using more than 1000 ice vertical levels internally in energy/age computation!\n\n");
       CHKERRQ(ierr);
   }
+
+  // report on time axis
+  ierr = verbPrintf(2, com,
+           "   time interval (length)   [ %.2f a, %.2f a]  (%.4f a)\n",
+		    start_year, end_year, end_year - start_year); CHKERRQ(ierr);
 
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   ierr = printInfo(3); CHKERRQ(ierr);

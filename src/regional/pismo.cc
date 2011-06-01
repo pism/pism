@@ -151,9 +151,13 @@ protected:
 
 PetscErrorCode PISMRegionalDefaultYieldStress::init(PISMVars &vars) {
   PetscErrorCode ierr;
+  PetscInt v = getVerbosityLevel(); // turn off second, redundant init message
+  ierr = setVerbosityLevel(1); CHKERRQ(ierr);
   ierr = PISMDefaultYieldStress::init(vars); CHKERRQ(ierr);
+  ierr = setVerbosityLevel(v); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-    "  using the regional version of the PISMDefaultYieldStress object ...\n"); CHKERRQ(ierr);
+    "  using the regional version with strong till in no_model_mask==1 area ...\n");
+    CHKERRQ(ierr);
   no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
   return 0;
@@ -248,9 +252,9 @@ PetscErrorCode IceRegionalModel::createVecs() {
   ierr = no_model_mask.set(NMMASK_NORMAL); CHKERRQ(ierr);
   ierr = variables.add(no_model_mask); CHKERRQ(ierr);
 
-
   return 0;
 }
+
 
 PetscErrorCode IceRegionalModel::init_physics() {
   PetscErrorCode ierr;
@@ -335,24 +339,27 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   bool nmm_realset;
   ierr = PISMOptionsReal("-no_model_strip", 
                          "width in km of strip near boundary in which modeling is turned off",
-			 stripkm, nmm_realset);
+			 stripkm, nmm_realset); CHKERRQ(ierr);
   if (nmm_realset) {
     ierr = verbPrintf(2, grid.com,
-      "    option -no_model_strip read ... setting boundary strip width to %.2f km\n",
+      "  option -no_model_strip read ...\n"
+      "  (re)setting boundary strip width to %.2f km ...\n",
       stripkm); CHKERRQ(ierr);
     ierr = set_no_model_strip(1000.0*stripkm); CHKERRQ(ierr);
   } else {
     if (nmm_exists) { // the o.k. case; we just need to warn if option is given without number
       bool no_model_strip_set;
       ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
-      ierr = verbPrintf(2, grid.com,
-        "\nPISMO WARNING: option '-no_model_strip' seen with no real value.  Value X ignored\n"
-        "  because no_model_mask variable was read from input file.  Proceeding ...\n\n");
-        CHKERRQ(ierr);
+      if (no_model_strip_set) {
+        ierr = verbPrintf(2, grid.com,
+          "\nPISMO WARNING: option '-no_model_strip' seen with no real value.  Value X ignored\n"
+          "  because no_model_mask variable was read from input file.  Proceeding ...\n\n");
+          CHKERRQ(ierr);
+      }
     } else { // bad case: we still don't have a no_model_mask and we have to fail
       ierr = verbPrintf(1, grid.com,
-        "\nPISMO ERROR: option '-no_model_strip' not seen and no no_model_mask variable\n"
-        "  was read from input file.  ENDING ...\n\n");
+        "\nPISMO ERROR: option '-no_model_strip' not seen.  No no_model_mask variable\n"
+        "  found in input file.  ENDING ...\n\n");
         CHKERRQ(ierr);
       PISMEnd();
     }

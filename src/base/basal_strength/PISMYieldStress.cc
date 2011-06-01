@@ -154,7 +154,7 @@ PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
   } else if (topg_to_phi_set) {
 
     ierr = verbPrintf(2, grid.com,
-                      "option -topg_to_phi seen; creating till friction angle map from bed elevation...\n");
+                      "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
     CHKERRQ(ierr);
 
     // note option -topg_to_phi will be read again to get comma separated array of parameters
