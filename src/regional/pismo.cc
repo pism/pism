@@ -144,7 +144,7 @@ protected:
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode initFromFile(const char *filename);
   virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode allocate_stressbalance();
 private:
   IceModelVec2Int   no_model_mask;    
 };
@@ -177,25 +177,11 @@ PetscErrorCode IceRegionalModel::createVecs() {
   return 0;
 }
 
-PetscErrorCode IceRegionalModel::init_physics() {
+PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   PetscErrorCode ierr;
-
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
-
-  delete stress_balance; // because we delete the old one, at run time we expect
-                         //   a second initialization message, from code below 
-
-  // Re-create the stress balance object:
+  
   bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
     do_sia = config.get_flag("do_sia");
-  
-  // We always have SIA "on", but SSA is "on" only if use_ssa_velocity is set.
-  // In that case SIA and SSA velocities are always added up (there is no
-  // switch saying "do the hybrid").
-  ierr = verbPrintf(2,grid.com,
-    "  old stress balance and modifier deleted;\n"
-    "    replacing with versions following no_model_mask semantics ...\n");
-    CHKERRQ(ierr);
 
   ShallowStressBalance *my_stress_balance;
   SSB_Modifier *modifier;
@@ -227,7 +213,6 @@ PetscErrorCode IceRegionalModel::init_physics() {
 
   return 0;
 }
-
 
 PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;

@@ -81,7 +81,9 @@ public:
   virtual PetscErrorCode set_grid_defaults();
   virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode allocate_flowlaw();
+  virtual PetscErrorCode allocate_basal_resistance_law();
+  virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_time_from_options();
   virtual PetscErrorCode initFromFile(const char *);

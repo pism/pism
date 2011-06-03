@@ -164,7 +164,7 @@ PetscErrorCode IceCompModel::setFromOptions() {
     CHKERRQ(ierr);
   }
 
-  // These ifs are here (and not in the constructor or init_physics()) because
+  // These ifs are here (and not in the constructor or later) because
   // testname actually comes from a command-line *and* because command-line
   // options should be able to override parameter values set here.
 
@@ -227,23 +227,60 @@ PetscErrorCode IceCompModel::setFromOptions() {
   return 0;
 }
 
-PetscErrorCode IceCompModel::init_physics() {
+PetscErrorCode IceCompModel::allocate_enthalpy_converter() {
+
+  if (EC != NULL)
+    return 0;
+
+  // allocate the "special" enthalpy converter;
+  EC = new ICMEnthalpyConverter(config);
+  
+  return 0;
+}
+
+PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
   PetscErrorCode ierr;
 
-  // allocate the "special" enthalpy converter; IceModel::init_physics() will see
-  // that EC != NULL and will not override this. (Also, the stress balance code
-  // will see the correct EC.)
-  delete EC;
-  EC = new ICMEnthalpyConverter(config);
-  // The call above *has* to happen before IceModel::init_physics().
+  if (btu != NULL)
+    return 0;
 
-  if (btu == NULL)
-    btu = new BTU_Verification(grid, config, testname, bedrock_is_ice_forK);
+  // this switch changes Test K to make material properties for bedrock the same as for ice
+  bool biiSet;
+  ierr = PISMOptionsIsSet("-bedrock_is_ice", biiSet); CHKERRQ(ierr);
+  if (biiSet == PETSC_TRUE) {
+    if (testname == 'K') {
+      ierr = verbPrintf(1,grid.com,
+                        "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
+      config.set("bedrock_thermal_density", ice->rho);
+      config.set("bedrock_thermal_conductivity", ice->k);
+      config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
+      bedrock_is_ice_forK = PETSC_TRUE;
+    } else {
+      ierr = verbPrintf(1,grid.com,
+                        "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
+      CHKERRQ(ierr);
+    }
+  }
 
-  // Let the base class version read the options (possibly overriding the
-  // default set above) and create the IceFlowLaw object.
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+  if (testname != 'K' && testname != 'V') {
+    // now make bedrock have same material properties as ice
+    // (note Mbz=1 also, by default, but want ice/rock interface to see
+    // pure ice from the point of view of applying geothermal boundary
+    // condition, especially in tests F and G)
+    config.set("bedrock_thermal_density", ice->rho);
+    config.set("bedrock_thermal_conductivity", ice->k);
+    config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
+  }
 
+  btu = new BTU_Verification(grid, config, testname, bedrock_is_ice_forK);
+  
+  return 0;
+}
+
+PetscErrorCode IceCompModel::allocate_flowlaw() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
 
   if (testname != 'V') {
     // check on whether the options (already checked) chose the right IceFlowLaw for verification;
@@ -264,28 +301,35 @@ PetscErrorCode IceCompModel::init_physics() {
 
     ice_custom->setHardness(1.9e8);
   }
+  
+  return 0;
+}
+
+PetscErrorCode IceCompModel::allocate_stressbalance() {
+  PetscErrorCode ierr;
+
+  if (stress_balance != NULL)
+    return 0;
 
   if (testname == 'E') {
-    // undo the stress balance choice made by IceModel:
-    delete stress_balance;
     ShallowStressBalance *ssb = new SIA_Sliding(grid, *basal, *ice, *EC, config);
     SIAFD *sia = new SIAFD(grid, *ice, *EC, config);
 
     stress_balance = new PISMStressBalance(grid, ssb, sia, NULL, config);
     ierr = stress_balance->init(variables); CHKERRQ(ierr);
+  } else {
+    ierr = IceModel::allocate_stressbalance(); CHKERRQ(ierr);
   }
+  
+  return 0;
+}
+
+PetscErrorCode IceCompModel::allocate_bed_deformation() {
+  PetscErrorCode ierr;
+  
+  ierr = IceModel::allocate_bed_deformation(); CHKERRQ(ierr);
 
   f = ice->rho / config.get("lithosphere_density");  // for simple isostasy
-
-  if (testname != 'K' && testname != 'V') {
-    // now make bedrock have same material properties as ice
-    // (note Mbz=1 also, by default, but want ice/rock interface to see
-    // pure ice from the point of view of applying geothermal boundary
-    // condition, especially in tests F and G)
-    config.set("bedrock_thermal_density", tgaIce->rho);
-    config.set("bedrock_thermal_conductivity", tgaIce->k);
-    config.set("bedrock_thermal_specific_heat_capacity", tgaIce->c_p);
-  }
 
   string bed_def_model = config.get_string("bed_deformation_model");
 
@@ -294,28 +338,9 @@ PetscErrorCode IceCompModel::init_physics() {
                       "IceCompModel WARNING: Test H should be run with option\n"
                       "  '-bed_def iso'  for the reported errors to be correct.\n"); CHKERRQ(ierr);
   }
-
-  // this switch changes Test K to make material properties for bedrock the same as for ice
-  bool biiSet;
-  ierr = PISMOptionsIsSet("-bedrock_is_ice", biiSet); CHKERRQ(ierr);
-  if (biiSet == PETSC_TRUE) {
-    if (testname == 'K') {
-      ierr = verbPrintf(1,grid.com,
-                        "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
-      config.set("bedrock_thermal_density", tgaIce->rho);
-      config.set("bedrock_thermal_conductivity", tgaIce->k);
-      config.set("bedrock_thermal_specific_heat_capacity", tgaIce->c_p);
-      bedrock_is_ice_forK = PETSC_TRUE;
-    } else {
-      ierr = verbPrintf(1,grid.com,
-                        "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
-      CHKERRQ(ierr);
-    }
-  }
-
+  
   return 0;
 }
-
 
 PetscErrorCode IceCompModel::set_vars_from_options() {
   PetscErrorCode ierr;

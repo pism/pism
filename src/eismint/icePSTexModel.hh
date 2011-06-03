@@ -41,7 +41,8 @@ public:
   IcePSTexModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides);
   virtual ~IcePSTexModel();
   virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode allocate_basal_yield_stress();
+  virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode initFromFile(const char *fname);
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode additionalAtEndTimestep();

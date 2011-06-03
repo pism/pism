@@ -55,12 +55,12 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVaria
   IceModel(g, conf, conf_overrides) {
 
   // following flag must be here in constructor because IceModel::createVecs()
-  // uses it; can't wait till init_physics()
+  // uses it
 
   // non-polythermal methods; can be overridden by the command-line option -no_cold:
   config.set_flag("do_cold_ice_methods", true);
 
-  iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice density, hardness, etc.
+  config.set("default_till_phi", 0); 
 
   // some are the defaults, while some are merely in a valid range;
   //   see IceMISMIPModel::setFromOptions() for decent values
@@ -325,9 +325,12 @@ PetscErrorCode IceMISMIPModel::set_time_from_options() {
   return 0;
 }
 
-
-PetscErrorCode IceMISMIPModel::init_physics() {
+PetscErrorCode IceMISMIPModel::allocate_flowlaw() {
   PetscErrorCode ierr;
+
+  iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice density, hardness, etc.
+
+  ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
 
   // from Table 4
   const PetscScalar Aexper1or2[10] = {0.0, // zero position not used
@@ -350,16 +353,6 @@ PetscErrorCode IceMISMIPModel::init_physics() {
                         4.0e-25, 2.0e-25, 4.0e-25,
                         6.0e-25, 8.0e-25, 1.0e-24,
                         1.2e-24, 1.4e-24, 1.6e-24};   //  15th VALUE LABELED AS 16 IN Table 6 !?
-
-  // IceModel::init_physics() will check if (basal == NULL) and will *not*
-  // override this.
-  delete basal;
-  basal = new MISMIPBasalResistanceLaw(m_MISMIP, C_MISMIP, regularize_MISMIP);
-
-  config.set("default_till_phi", 0); 
-
-  // let the base class create the ice and process its options:
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
   CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
   if (cgi) {
@@ -395,9 +388,27 @@ PetscErrorCode IceMISMIPModel::init_physics() {
                       "         Details on your chosen ice follow\n"); CHKERRQ(ierr);
     // ierr = ice->printInfo(2);CHKERRQ(ierr);
   }
+  
+  return 0;
+}
 
-  ShallowStressBalance *sb = stress_balance->get_stressbalance();
-  SSA *ssa = dynamic_cast<SSA*>(sb);
+PetscErrorCode IceMISMIPModel::allocate_basal_resistance_law() {
+  PetscErrorCode ierr;
+
+  if (basal != NULL)
+    return 0;
+
+  basal = new MISMIPBasalResistanceLaw(m_MISMIP, C_MISMIP, regularize_MISMIP);
+  
+  return 0;
+}
+
+PetscErrorCode IceMISMIPModel::allocate_stressbalance() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::allocate_stressbalance(); CHKERRQ(ierr);
+
+  SSA *ssa = dynamic_cast<SSA*>(stress_balance->get_stressbalance());
   if (ssa == NULL) { SETERRQ(1, "ssa == NULL"); }
 
   const PetscReal
@@ -410,7 +421,7 @@ PetscErrorCode IceMISMIPModel::init_physics() {
   //          30 MPa yr for \bar\nu
   ssa->strength_extension->set_min_thickness(MIN_THICKNESS); // m
   ssa->strength_extension->set_notional_strength(DEFAULT_nuH);
-
+  
   return 0;
 }
 

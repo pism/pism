@@ -26,10 +26,14 @@ IceEISModel::IceEISModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &c
   : IceModel(g, conf, conf_overrides) {
   expername = 'A';
 
-  // following flag must be here in constructor because IceModel::createVecs()
-  //   uses it; can't wait till init_physics()
+  // the following flag must be here in constructor because IceModel::createVecs()
+  // uses it
   // non-polythermal methods; can be overridden by the command-line option -no_cold:
   config.set_flag("do_cold_ice_methods", true);
+
+  // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1
+  config.set_flag("is_dry_simulation", true);
+  config.set_flag("use_ssa_velocity", false);
 }
 
 PetscErrorCode IceEISModel::createVecs() {
@@ -167,54 +171,34 @@ PetscErrorCode IceEISModel::setFromOptions() {
   return 0;
 }
 
-
-PetscErrorCode IceEISModel::init_physics() {
+//! \brief Decide which flow law to use.
+PetscErrorCode  IceEISModel::allocate_flowlaw() {
   PetscErrorCode ierr;
 
   iceFactory.setType(ICE_PB);  // Paterson-Budd; can be overridden by options
 
-  if (ice == NULL) {
-    // Initialize the IceFlowLaw object:
-    if (config.get_flag("do_cold_ice_methods") == false) {
-      ierr = verbPrintf(2, grid.com,
-                        "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
-      ierr = verbPrintf(3, grid.com,
-                        "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
+  ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
 
-      // new flowlaw which has dependence on enthalpy, not temperature
-      ice = new GPBLDIce(grid.com, "", config);
+  // Make bedrock thermal material properties into ice properties.  Note that
+  // zero thickness bedrock layer is the default, but we want the ice/rock
+  // interface segment to have geothermal flux applied directly to ice without
+  // jump in material properties at base.
+  config.set("bedrock_thermal_density", ice->rho);
+  config.set("bedrock_thermal_conductivity", ice->k);
+  config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
+  
+  return 0;
+}
 
-    } else {
-      ierr = verbPrintf(2, grid.com,
-                        "  doing cold ice methods ...\n"); CHKERRQ(ierr);
+//! \brief Decide which stress balance model to use.
+PetscErrorCode IceEISModel::allocate_stressbalance() {
+  PetscErrorCode ierr;
 
-      ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
-      ierr = iceFactory.create(&ice); CHKERRQ(ierr);
-    }
-
-    // set options specific to this particular ice type:
-    ierr = ice->setFromOptions(); CHKERRQ(ierr);
-  }
-
-  // Create the stress balance object:
   PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
     pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
     plastic_regularization = config.get("plastic_regularization") / secpera;
 
   bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till");
-  
-  if (basal == NULL)
-    basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
-                                             pseudo_plastic_q, pseudo_plastic_uthreshold);
-
-  if (EC == NULL) {
-    EC = new EnthalpyConverter(config);
-    if (getVerbosityLevel() > 3) {
-      PetscViewer viewer;
-      ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
-      ierr = EC->viewConstants(viewer); CHKERRQ(ierr);
-    }
-  }
 
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added
   // up (there is no switch saying "do the hybrid").
@@ -243,26 +227,9 @@ PetscErrorCode IceEISModel::init_physics() {
       ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
     }
   }
-
-  // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1
-  config.set_flag("is_dry_simulation", true);
-  config.set_flag("use_ssa_velocity", false);
-
-  // Make bedrock thermal material properties into ice properties.  Note that
-  // zero thickness bedrock layer is the default, but we want the ice/rock
-  // interface segment to have geothermal flux applied directly to ice without
-  // jump in material properties at base.
-  // (These must follow call to IceModel::init_physics(), where ice is allocated
-  // as a pointer.)
-  config.set("bedrock_thermal_density", ice->rho);
-  config.set("bedrock_thermal_conductivity", ice->k);
-  config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
-
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
-
+  
   return 0;
 }
-
 
 PetscErrorCode IceEISModel::init_couplers() {
   PetscErrorCode      ierr;

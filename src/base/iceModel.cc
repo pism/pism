@@ -833,8 +833,8 @@ PetscErrorCode IceModel::init() {
   //! 3) Memory allocation:
   ierr = createVecs(); CHKERRQ(ierr);
 
-  //! 4) Initialize the IceFlowLaw and (possibly) other physics.
-  ierr = init_physics(); CHKERRQ(ierr);
+  //! 4) Allocate PISM components modeling some physical processes.
+  ierr = allocate_submodels(); CHKERRQ(ierr);
 
   //! 5) Initialize atmosphere and ocean couplers:
   ierr = init_couplers(); CHKERRQ(ierr);
