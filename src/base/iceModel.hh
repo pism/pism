@@ -87,7 +87,16 @@ public:
 
   // see iMinit.cc
   virtual PetscErrorCode grid_setup();
-  virtual PetscErrorCode init_physics();
+
+  virtual PetscErrorCode allocate_submodels();
+  virtual PetscErrorCode allocate_flowlaw();
+  virtual PetscErrorCode allocate_enthalpy_converter();
+  virtual PetscErrorCode allocate_basal_resistance_law();
+  virtual PetscErrorCode allocate_stressbalance();
+  virtual PetscErrorCode allocate_bed_deformation();
+  virtual PetscErrorCode allocate_bedrock_thermal_unit();
+  virtual PetscErrorCode allocate_basal_yield_stress();
+
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode set_grid_defaults();
@@ -258,7 +267,6 @@ protected:
 
   // see iMbeddef.cc
   PetscScalar last_bed_def_update;
-  virtual PetscErrorCode bed_def_setup();
   virtual PetscErrorCode bed_def_step(bool &bed_changed);
 
   // see iMcalving.cc

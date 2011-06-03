@@ -194,7 +194,8 @@ protected:
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode initFromFile(const char *filename);
   virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode allocate_stressbalance();
+  virtual PetscErrorCode allocate_basal_yield_stress();
   virtual PetscErrorCode model_state_setup();
 private:
   IceModelVec2Int no_model_mask;    
@@ -255,26 +256,11 @@ PetscErrorCode IceRegionalModel::createVecs() {
   return 0;
 }
 
-
-PetscErrorCode IceRegionalModel::init_physics() {
+PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   PetscErrorCode ierr;
-
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
-
-  delete stress_balance; // because we delete the old one, at run time we expect
-                         //   a second initialization message, from code below 
-
-  // Re-create the stress balance object:
+  
   bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
     do_sia = config.get_flag("do_sia");
-  
-  // We always have SIA "on", but SSA is "on" only if use_ssa_velocity is set.
-  // In that case SIA and SSA velocities are always added up (there is no
-  // switch saying "do the hybrid").
-  ierr = verbPrintf(2,grid.com,
-    "  old stress balance and modifier deleted;\n"
-    "    replacing with versions following no_model_mask semantics ...\n");
-    CHKERRQ(ierr);
 
   ShallowStressBalance *my_stress_balance;
   SSB_Modifier *modifier;
@@ -306,6 +292,30 @@ PetscErrorCode IceRegionalModel::init_physics() {
 
   return 0;
 }
+
+PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
+  PetscErrorCode ierr;
+
+  if (basal_yield_stress != NULL)
+    return 0;
+
+  bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
+    do_blatter = config.get_flag("do_blatter");
+
+  if (use_ssa_velocity || do_blatter) {
+    bool hold_tauc;
+    ierr = PISMOptionsIsSet("-hold_tauc", hold_tauc); CHKERRQ(ierr);
+    
+    if (hold_tauc) {
+      basal_yield_stress = new PISMConstantYieldStress(grid, config);
+    } else {
+      basal_yield_stress = new PISMRegionalDefaultYieldStress(grid, config);
+    }
+  }
+  
+  return 0;
+}
+
 
 
 PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
@@ -403,15 +413,6 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
 PetscErrorCode IceRegionalModel::model_state_setup() {
   PetscErrorCode ierr;
   ierr = IceModel::model_state_setup();
-  if (basal_yield_stress) {
-    // delete the old one and re-init the new one that puts high yield stress
-    //   in strip around outside
-    delete basal_yield_stress;
-    PISMRegionalDefaultYieldStress *prdys;
-    prdys = new PISMRegionalDefaultYieldStress(grid, config);
-    ierr = prdys->init(variables); CHKERRQ(ierr);
-    basal_yield_stress = dynamic_cast<PISMYieldStress*>(prdys);
-  }
   return 0;
 }
 

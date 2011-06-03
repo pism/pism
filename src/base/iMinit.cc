@@ -464,6 +464,21 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
   }
 
+  // a report on whether PISM-PIK modifications of IceModel are in use
+  const bool pg   = config.get_flag("part_grid"),
+    pr   = config.get_flag("part_redist"),
+    ki   = config.get_flag("kill_icebergs");
+  if (pg || pr || ki) {
+    ierr = verbPrintf(2, grid.com,
+                      "  PISM-PIK mass/geometry methods are in use:  "); CHKERRQ(ierr);
+
+    if (pg)   { ierr = verbPrintf(2, grid.com, "part_grid,"); CHKERRQ(ierr); }
+    if (pr)   { ierr = verbPrintf(2, grid.com, "part_redist,"); CHKERRQ(ierr); }
+    if (ki)   { ierr = verbPrintf(2, grid.com, "kill_icebergs"); CHKERRQ(ierr); }
+
+    ierr = verbPrintf(2, grid.com, "\n"); CHKERRQ(ierr);
+  }
+
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
 
   return 0;
@@ -497,103 +512,69 @@ PetscErrorCode IceModel::set_vars_from_options() {
   return 0;
 }
 
-//! Initialize some physical parameters.
-/*!
-  This is the place for all non-trivial initialization of physical parameters.
-  ("Non-trivial" means that the initialization requires more than just setting
-  a value of a parameter.  Such trivial changes can go here too, or earlier.)
-  Also, this is the good place to set those parameters that a user should not be
-  able to override using a command-line option.
-
-  This method is called after memory allocation but before filling any of
-  IceModelVecs because all the physical parameters should be initialized before
-  setting up the coupling or filling model-state variables.
- */
-PetscErrorCode IceModel::init_physics() {
+//! \brief Decide which ice flow law to use.
+PetscErrorCode IceModel::allocate_flowlaw() {
   PetscErrorCode ierr;
 
-  if (ice == NULL) {
-    // Initialize the IceFlowLaw object:
-    if (!config.get_flag("do_cold_ice_methods")) {
-      ierr = verbPrintf(2, grid.com,
-                        "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
-      ierr = verbPrintf(3, grid.com,
-                        "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
+  if (ice != NULL)
+    return 0;
 
-      // new flowlaw which has dependence on enthalpy, not temperature
-      ice = new GPBLDIce(grid.com, "", config);
-    } else {
-      ierr = verbPrintf(2, grid.com,
-                        "  doing cold ice methods ...\n"); CHKERRQ(ierr);
-
-      ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
-
-      // FIXME:  the semantics of IceFlowLaw should be cleared up; lots of PISM
-      //   (e.g. verification and EISMINT II and EISMINT-Greenland) are cold,
-      //   but the really important cases (e.g. SeaRISE-Greenland) are polythermal
-      // in cold case we may have various IceFlowLaw s, e.g. set by derived classes
-      if (ice == PETSC_NULL) {
-        ierr = iceFactory.create(&ice); CHKERRQ(ierr);
-      }
-    }
-
-    // set options specific to this particular ice type:
-    ierr = ice->setFromOptions(); CHKERRQ(ierr);
-  }
-
-  // a report on whether PISM-PIK modifications of IceModel are in use
-  const bool pg   = config.get_flag("part_grid"),
-    pr   = config.get_flag("part_redist"),
-    ki   = config.get_flag("kill_icebergs");
-  if (pg || pr || ki) {
+  // Initialize the IceFlowLaw object:
+  if (!config.get_flag("do_cold_ice_methods")) {
     ierr = verbPrintf(2, grid.com,
-                      "  PISM-PIK mass/geometry methods are in use:  "); CHKERRQ(ierr);
+                      "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(3, grid.com,
+                      "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
+
+    // new flowlaw which has dependence on enthalpy, not temperature
+    ice = new GPBLDIce(grid.com, "", config);
+  } else {
+    ierr = verbPrintf(2, grid.com,
+                      "  doing cold ice methods ...\n"); CHKERRQ(ierr);
+
+
+    // FIXME:  the semantics of IceFlowLaw should be cleared up; lots of PISM
+    //   (e.g. verification and EISMINT II and EISMINT-Greenland) are cold,
+    //   but the really important cases (e.g. SeaRISE-Greenland) are polythermal
+    // in cold case we may have various IceFlowLaw s, e.g. set by derived classes
+    ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
+    ierr = iceFactory.create(&ice); CHKERRQ(ierr);
   }
-  if (pg)   { ierr = verbPrintf(2, grid.com, "part_grid,"); CHKERRQ(ierr); }
-  if (pr)   { ierr = verbPrintf(2, grid.com, "part_redist,"); CHKERRQ(ierr); }
-  if (ki)   { ierr = verbPrintf(2, grid.com, "kill_icebergs"); CHKERRQ(ierr); }
-  if (pg || pr || ki)   { ierr = verbPrintf(2, grid.com, "\n"); CHKERRQ(ierr); }
 
-  // Create the stress balance object:
-  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
-    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
-    plastic_regularization = config.get("plastic_regularization") / secpera;
+  // set options specific to this particular ice type:
+  ierr = ice->setFromOptions(); CHKERRQ(ierr);
 
-  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
+  return 0;
+}
+
+//! \brief Decide which enthalpy converter to use.
+PetscErrorCode IceModel::allocate_enthalpy_converter() {
+  PetscErrorCode ierr;
+
+  if (EC != NULL)
+    return 0;
+
+  EC = new EnthalpyConverter(config);
+  if (getVerbosityLevel() > 3) {
+    PetscViewer viewer;
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
+    ierr = EC->viewConstants(viewer); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+//! \brief Decide which stress balance model to use.
+PetscErrorCode IceModel::allocate_stressbalance() {
+  PetscErrorCode ierr;
+
+  if (stress_balance != NULL)
+    return 0;
+
+  bool
     use_ssa_velocity = config.get_flag("use_ssa_velocity"),
     do_blatter = config.get_flag("do_blatter"),
     do_sia = config.get_flag("do_sia");
-
-  if ((use_ssa_velocity) || (do_blatter)) {
-    // decide which basal yield stress model to use:
-    if (basal_yield_stress == NULL) {
-      bool hold_tauc;
-      ierr = PISMOptionsIsSet("-hold_tauc", hold_tauc); CHKERRQ(ierr);
-    
-      if (hold_tauc) {
-        basal_yield_stress = new PISMConstantYieldStress(grid, config);
-      } else {
-        basal_yield_stress = new PISMDefaultYieldStress(grid, config);
-      }
-    }
-  }
-
-  if (basal == NULL)
-    basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
-                                             pseudo_plastic_q, pseudo_plastic_uthreshold);
-
-  if (EC == NULL) {
-    EC = new EnthalpyConverter(config);
-    if (getVerbosityLevel() > 3) {
-      PetscViewer viewer;
-      ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
-      ierr = EC->viewConstants(viewer); CHKERRQ(ierr);
-    }
-  }
-
-  if (btu == NULL) {
-    btu = new PISMBedThermalUnit(grid, config);
-  }
 
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added
   // up (there is no switch saying "do the hybrid").
@@ -636,7 +617,87 @@ PetscErrorCode IceModel::init_physics() {
     }
   }
 
-  ierr = bed_def_setup(); CHKERRQ(ierr);
+  return 0;
+}
+
+//! \brief Decide which bedrock thermal unit to use.
+PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
+
+  if (btu != NULL)
+    return 0;
+
+  btu = new PISMBedThermalUnit(grid, config);
+
+  return 0;
+}
+
+//! \brief Decide which basal yield stress model to use.
+PetscErrorCode IceModel::allocate_basal_yield_stress() {
+  PetscErrorCode ierr;
+
+  if (basal_yield_stress != NULL)
+    return 0;
+
+  bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
+    do_blatter = config.get_flag("do_blatter");
+
+  if (use_ssa_velocity || do_blatter) {
+    bool hold_tauc;
+    ierr = PISMOptionsIsSet("-hold_tauc", hold_tauc); CHKERRQ(ierr);
+    
+    if (hold_tauc) {
+      basal_yield_stress = new PISMConstantYieldStress(grid, config);
+    } else {
+      basal_yield_stress = new PISMDefaultYieldStress(grid, config);
+    }
+  }
+
+  return 0;
+}
+
+//! \brief Decide which basal resistance law to use.
+PetscErrorCode IceModel::allocate_basal_resistance_law() {
+
+  if (basal != NULL)
+    return 0;
+
+  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till");
+
+  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
+    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
+    plastic_regularization = config.get("plastic_regularization") / secpera;
+
+  basal = new IceBasalResistancePlasticLaw(plastic_regularization,
+                                           do_pseudo_plastic_till, 
+                                           pseudo_plastic_q,
+                                           pseudo_plastic_uthreshold);
+
+  return 0;
+}
+
+//! Allocate PISM's sub-models implementing some physical processes.
+/*!
+  This method is called after memory allocation but before filling any of
+  IceModelVecs because all the physical parameters should be initialized before
+  setting up the coupling or filling model-state variables.
+ */
+PetscErrorCode IceModel::allocate_submodels() {
+  PetscErrorCode ierr;
+
+  // these two have to go first
+  ierr = allocate_flowlaw(); CHKERRQ(ierr);
+  ierr = allocate_enthalpy_converter(); CHKERRQ(ierr);
+
+  // this has to happen before allocate_stressbalance() is called
+  ierr = allocate_basal_resistance_law(); CHKERRQ(ierr);
+
+  ierr = allocate_stressbalance(); CHKERRQ(ierr);
+
+  ierr = allocate_basal_yield_stress(); CHKERRQ(ierr);
+
+  ierr = allocate_bedrock_thermal_unit(); CHKERRQ(ierr);
+
+  ierr = allocate_bed_deformation(); CHKERRQ(ierr);
 
   return 0;
 }

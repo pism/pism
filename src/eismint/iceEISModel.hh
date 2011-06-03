@@ -32,22 +32,23 @@ paradigm.  See \ref EISMINT00 and Appendix B of \ref BBssasliding.
  */
 class IceEISModel : public IceModel {
 public:
-    IceEISModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
-    virtual PetscErrorCode setFromOptions();
-    virtual PetscErrorCode createVecs();
-    virtual PetscErrorCode set_grid_defaults();
-    virtual PetscErrorCode set_vars_from_options();
-    virtual PetscErrorCode init_physics();
-    virtual PetscErrorCode init_couplers();
+  IceEISModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
+  virtual PetscErrorCode setFromOptions();
+  virtual PetscErrorCode createVecs();
+  virtual PetscErrorCode set_grid_defaults();
+  virtual PetscErrorCode set_vars_from_options();
+  virtual PetscErrorCode allocate_flowlaw();
+  virtual PetscErrorCode allocate_stressbalance();
+  virtual PetscErrorCode init_couplers();
     
 protected:
-    char        expername;
-    virtual PetscErrorCode set_expername_from_options();
+  char        expername;
+  virtual PetscErrorCode set_expername_from_options();
 
-    PetscScalar M_max, R_el, T_min, T_max, S_b, S_T;
+  PetscScalar M_max, R_el, T_min, T_max, S_b, S_T;
 
-    virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
-    virtual PetscErrorCode generateMoundTopography();   // for experiments K,L
+  virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
+  virtual PetscErrorCode generateMoundTopography();   // for experiments K,L
 };
 
 #endif /* __iceEISModel_hh */

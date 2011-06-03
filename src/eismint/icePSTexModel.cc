@@ -299,13 +299,6 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     ierr = prepare_series(); CHKERRQ(ierr);
   }
 
-  return 0;
-}
-
-
-PetscErrorCode IcePSTexModel::init_physics() {
-  PetscErrorCode ierr;
-
   updateHmelt = PETSC_TRUE;
   config.set("default_till_phi", DEFAULT_PHI_STRONG); 
   config.set_flag("include_bmr_in_continuity", true);
@@ -320,10 +313,23 @@ PetscErrorCode IcePSTexModel::init_physics() {
     config.set_flag("use_ssa_when_grounded", true);
   }  
 
-  delete basal_yield_stress;
-  basal_yield_stress = new PSTYieldStress(grid, config, exper_chosen, exper_chosen_name);
+  return 0;
+}
 
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+PetscErrorCode IcePSTexModel::allocate_basal_yield_stress() {
+
+  if (basal_yield_stress != NULL)
+    return 0;
+
+  basal_yield_stress = new PSTYieldStress(grid, config, exper_chosen, exper_chosen_name);
+  
+  return 0;
+}
+
+PetscErrorCode IcePSTexModel::allocate_stressbalance() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::allocate_stressbalance(); CHKERRQ(ierr);
 
   // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
   const PetscScalar TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);
@@ -336,11 +342,9 @@ PetscErrorCode IcePSTexModel::init_physics() {
   SSA *ssa = dynamic_cast<SSA*>(stress_balance->get_stressbalance());
   if (ssa != NULL)
     ssa->strength_extension->set_notional_strength(PSTconstantNuHForSSA);
-
-
+  
   return 0;
 }
-
 
 PetscErrorCode IcePSTexModel::initFromFile(const char *fname) {
   PetscErrorCode      ierr;

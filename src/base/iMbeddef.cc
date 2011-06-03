@@ -18,7 +18,7 @@
 
 #include "iceModel.hh"
 
-PetscErrorCode IceModel::bed_def_setup() {
+PetscErrorCode IceModel::allocate_bed_deformation() {
   PetscErrorCode ierr;
   string model = config.get_string("bed_deformation_model");
   set<string> choices;
