@@ -119,11 +119,13 @@ $ ncview ts_g20km_m20ka.nc ts_g20km_0.nc
 \begin{figure}[ht]
 \centering
 \includegraphics[width=5.6in,keepaspectratio=true]{ivol}
-\caption{Time series of modeled ice sheet volume on 20km grid.}
+\caption{Time series of modeled ice sheet volume on 20km and 10km grids.}
 \label{fig:sr-spindone-ivolboth}
 \end{figure}
 
-The total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sect:dynamics}) uses about 60 processor-hours.  If done without membrane stresses (SIA only) this computational time is reduced.  The polythermal (vs ``cold'') physics choice has no significant performance disadvantage.
+On an 8 core workstation the total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sect:dynamics}) is about 5 wall clock hours or 40 processor-hours.  For the same machine, the complete 10\,km spin-up used about 660 processor-hours, thus several wall-clock days.
+
+If done without membrane stresses (i.e.~non-sliding SIA only) these computational times are significantly reduced, but the polythermal (vs ``cold'') energy-conservation choice has no performance disadvantage.
 
 
 \subsection{Going forward}  \label{subsect:forecastcaution}  In the same \verb|examples/searise-greenland| directory is a script \verb|forecast.sh|.  (If your spun-up state is called \texttt{g20km_0.nc}, then run  \verb|./forecast.sh 8 g20km_0.nc|, assuming you have 8 cores.  It does two runs for 100 years into the future, initializing from the modeled present-day state. The first run is a ``control''  run assuming steady climate for the entire 100 year period. The second runs uses AR4 climate forcing. Please run it, play with it, and modify it, but remember that it is merely a demonstration.
