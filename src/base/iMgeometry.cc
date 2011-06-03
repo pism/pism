@@ -432,13 +432,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
 
-  // Check if the ice thickness exceeded the height of the computational box
-  // and extend the grid if necessary:
-  ierr = check_maximum_thickness(); CHKERRQ(ierr);
+  // the following calls are new routines adopted from PISM-PIK. The place and
+  // order is not clear yet!
 
-  // the remaining calls are new routines adopted from PISM - PIK. The place and order is not clear yet!
-
-  // There is no reporting of single ice fluxes yet in comparison to total ice thickness change.
+  // There is no reporting of single ice fluxes yet in comparison to total ice
+  // thickness change.
 
   // distribute residual ice mass if desired
   if (do_redist) {
@@ -450,6 +448,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
     ierr = eigenCalving(); CHKERRQ(ierr);
   }
+
   if (config.get_flag("do_thickness_calving")) {
     if (config.get_flag("part_grid") == true) {
       ierr = calvingAtThickness(); CHKERRQ(ierr);
@@ -460,6 +459,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
                         "              ice shelf front!\n"); CHKERRQ(ierr);
     }
   }
+
+  // Check if the ice thickness exceeded the height of the computational box
+  // and extend the grid if necessary:
+  ierr = check_maximum_thickness(); CHKERRQ(ierr);
 
   return 0;
 }
