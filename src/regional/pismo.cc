@@ -32,6 +32,25 @@ static char help[] =
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 
+//! \file pismo.cc A regional (outlet glacier) model form of PISM.
+/*! \file pismo.cc 
+The classes in this file modify the basic PISM whole ice sheet modeling
+assumption.  Namely, that the ice sheet occupies a
+continent which is surrounded by ocean, or that the edge of the computational
+domain is in a region with strong ablation that the ice will not cross.
+
+Various simplifications and boundary conditions are enforced in a strip around
+the edge of the computational domain (variable \c no_model_mask and option
+\c -no_model_strip):
+* the surface gradient computation is made trivial
+* the driving stress changes in the same way
+* the base is made strong so no sliding occurs.
+
+Also options \c -force_to_thk and variable \c ftt_mask play a role in isolating
+the modeled outlet glacier.  See the PSForceThickness surface model modifier 
+class.
+ */
+
 //! \brief A version of the SIA stress balance with tweaks for outlet glacier
 //! simulations.
 class SIAFD_Regional : public SIAFD
@@ -186,6 +205,7 @@ PetscErrorCode PISMRegionalDefaultYieldStress::basal_material_yield_stress(IceMo
 }
 
 
+//!  \brief A version of the PISM core class (IceModel) which knows about the no_model_mask and its semantics.
 class IceRegionalModel : public IceModel {
 public:
   IceRegionalModel(IceGrid &g, NCConfigVariable &c, NCConfigVariable &o)
@@ -196,7 +216,6 @@ protected:
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_basal_yield_stress();
-  virtual PetscErrorCode model_state_setup();
 private:
   IceModelVec2Int no_model_mask;    
   PetscErrorCode  set_no_model_strip(PetscReal stripwidth);
@@ -293,6 +312,7 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   return 0;
 }
 
+
 PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
   PetscErrorCode ierr;
 
@@ -362,13 +382,13 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
       ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
       if (no_model_strip_set) {
         ierr = verbPrintf(2, grid.com,
-          "\nPISMO WARNING: option '-no_model_strip' seen with no real value.  Value X ignored\n"
+          "\nPISMO WARNING: option '-no_model_strip' seen with no real value.  Option ignored\n"
           "  because no_model_mask variable was read from input file.  Proceeding ...\n\n");
           CHKERRQ(ierr);
       }
     } else { // bad case: we still don't have a no_model_mask and we have to fail
       ierr = verbPrintf(1, grid.com,
-        "\nPISMO ERROR: option '-no_model_strip' not seen.  No no_model_mask variable\n"
+        "\nPISMO ERROR: option '-no_model_strip X' not seen.  No no_model_mask variable\n"
         "  found in input file.  ENDING ...\n\n");
         CHKERRQ(ierr);
       PISMEnd();
@@ -410,13 +430,6 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
 }
 
 
-PetscErrorCode IceRegionalModel::model_state_setup() {
-  PetscErrorCode ierr;
-  ierr = IceModel::model_state_setup();
-  return 0;
-}
-
-
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
@@ -441,11 +454,13 @@ int main(int argc, char *argv[]) {
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
     string usage =
-      "  pismo {-i IN.nc|-boot_file IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
+      "  pismo {-i IN.nc|-boot_file IN.nc} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
       "  -boot_file  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
       "              heuristics will build initial model state\n"
+      "  -no_model_strip X (re-)set width of no-model strip along edge of\n"
+      "              computational domain to X km\n"
       "notes:\n"
       "  * one of -i or -boot_file is required\n"
       "  * if -boot_file is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
@@ -492,6 +507,7 @@ int main(int argc, char *argv[]) {
     ierr = m.run(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
+
     // provide a default output file name if no -o option is given.
     ierr = m.writeFiles("unnamed_regional.nc"); CHKERRQ(ierr);
   }
