@@ -91,7 +91,7 @@ We sometimes call this early stage ``pre-spin-up'', a stage which follows on ``b
 \label{fig:sr-spinstart}
 \end{figure}
 
-The resulting model state in \texttt{g20km_steady.nc} is our model for the state of the Greenland ice sheet at the beginning of the paleo-climate record provided in the SeaRISE data set, namely 125,000 B.P.  There is, obviously, great uncertainty in this model for the distant past of the Greenland ice sheet.  Two views of the 20\,km model grid version of this state are in Figure \ref{fig:sr-spinstart}.
+The resulting model state in \texttt{g20km_steady.nc} is our model for the state of the Greenland ice sheet at the beginning of the paleo-climate record provided in the SeaRISE data set, namely 125,000 B.P.  There is, obviously, great uncertainty in this model for the distant past of the Greenland ice sheet.  Two views of the 10\,km model grid version of this state are in Figure \ref{fig:sr-spinstart}.
 
 \begin{figure}[ht]
 \centering
@@ -108,11 +108,11 @@ The actual paleo-climate-driven spin-up starts from model state \texttt{g20km_st
 
 The run now goes from the SeaRISE-Greenland-chosen start time of -125,000 years to -10,000 years.  In this period, diagnostic outputs are written into \texttt{ex_g20km_m10ka.nc} at every 500 model years, and scalar time series including total ice volume are written into \texttt{ts_g20km_m10ka.nc} at every model year.  At the end of this period we get the model state file \texttt{g20km_m10ka.nc}. Unless you run \texttt{./spinup N 2}, the following run continues on the same grid from -10,000 years to present day, producing \texttt{g20km_0.nc}.
 
-The spun-up state \texttt{g20km_0.nc} is intended to be a model for the Greenland ice sheet at the present day, and thus a basis on which to explore future ice sheet behavior.  Figure \ref{fig:sr-spindone-map} shows some fields from the 20\,km model grid version of this present-day state.  The ice sheet thickness and surface velocity should be compared to present-day observations \cite{BKAJS}, and parameter dependences in the spin-up process should be explored.
+The spun-up state \texttt{g20km_0.nc} is intended to be a model for the Greenland ice sheet at the present day, and thus a basis on which to explore future ice sheet behavior.  Figure \ref{fig:sr-spindone-map} shows some fields from the 10\,km model grid version of this present-day state.  The ice sheet thickness and surface velocity should be compared to present-day observations \cite{BKAJS}, and parameter dependences in the spin-up process should be explored.
 
 Over the course of the spin-up we have saved the modeled ice volume in ``time-series'' NetCDF files.  This important model output can be viewed by
 \begin{verbatim}
-$ ncview ts_g20km_m20ka.nc ts_g20km_0.nc
+$ ncview ts_g20km_m10ka.nc ts_g20km_0.nc
 \end{verbatim}
 \noindent Figure \ref{fig:sr-spindone-ivolboth} shows this ice volume time series for the whole spin-up.  We see the modeled volatility of ice volume in the late ``Eemian'' period, between -120,000 and -115,000 BPE in the SeaRISE version of the GRIP temperature data.
 
