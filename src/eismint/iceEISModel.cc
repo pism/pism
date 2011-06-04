@@ -194,12 +194,6 @@ PetscErrorCode  IceEISModel::allocate_flowlaw() {
 PetscErrorCode IceEISModel::allocate_stressbalance() {
   PetscErrorCode ierr;
 
-  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
-    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
-    plastic_regularization = config.get("plastic_regularization") / secpera;
-
-  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till");
-
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added
   // up (there is no switch saying "do the hybrid").
   if (stress_balance == NULL) {

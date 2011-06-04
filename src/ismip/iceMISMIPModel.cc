@@ -392,16 +392,13 @@ PetscErrorCode IceMISMIPModel::allocate_flowlaw() {
   return 0;
 }
 
+
 PetscErrorCode IceMISMIPModel::allocate_basal_resistance_law() {
-  PetscErrorCode ierr;
-
-  if (basal != NULL)
-    return 0;
-
+  if (basal != NULL) return 0;
   basal = new MISMIPBasalResistanceLaw(m_MISMIP, C_MISMIP, regularize_MISMIP);
-  
   return 0;
 }
+
 
 PetscErrorCode IceMISMIPModel::allocate_stressbalance() {
   PetscErrorCode ierr;
