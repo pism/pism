@@ -1,5 +1,8 @@
-pism (0.4-1) unstable; urgency=low
+pism (0.4-2) unstable; urgency=low
+
+  * Updated to revision 1779. Includes several (minor) documentation
+    updates and bugfixes. See 'svn log' for details.
 
   * Initial release.
 
- -- Constantine Khroulev <ckhroulev@alaska.edu>  Wed, 25 May 2011 15:06:23 -0900
+ -- Constantine Khroulev <ckhroulev@alaska.edu>  Tue, 7 Jun 2011 16:57:50 -0900
