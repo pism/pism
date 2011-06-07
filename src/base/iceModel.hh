@@ -243,7 +243,7 @@ protected:
 
   // flags
   PetscTruth  updateHmelt, shelvesDragToo, allowAboveMelting;
-  PetscTruth  repeatRedist;
+  PetscTruth  repeatRedist, putOnTop;
   char        adaptReasonFlag;
 
   string      stdout_flags, stdout_ssa;

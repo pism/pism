@@ -163,12 +163,12 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
   PetscReal sea_level = 0.0; //FIXME
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
-  PetscScalar minHRedist = 0.0; // to avoid the propagation of thin ice shelf tongues
+  PetscScalar minHRedist = 50.0; // to avoid the propagation of thin ice shelf tongues
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
       // first step: distributing residual ice masses
-      if (vHresidual(i, j) > 0.0) {
+      if (vHresidual(i, j) > 0.0 && putOnTop==PETSC_FALSE) {
         
         planeStar<PetscScalar> thk = vH.star(i, j),
           bed = vbed.star(i, j);
@@ -183,7 +183,8 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
         if (thk.n == 0.0 && bed.n < sea_level) {N++; neighbors.n = true;}
         if (thk.s == 0.0 && bed.s < sea_level) {N++; neighbors.s = true;}
 
-        if (N > 0 && vH(i, j) > minHRedist)  {
+        //if (N > 0 && vH(i, j) > minHRedist)  {
+		if (N > 0)  {
           //remainder ice mass will be redistributed equally to all adjacent
           //imfrac boxes (is there a more physical way?)
           if (neighbors.e) vHref(i + 1, j) += vHresidual(i, j) / N;
@@ -236,17 +237,17 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
           if (coverageRatio > 1.0) { // partially filled grid cell is considered to be full
             vHresidualnew(i, j) = vHref(i, j) - H_average;
             Hcut += vHresidualnew(i, j); // summed up to decide, if methods needs to be run once more
-            vHnew(i, j) += H_average;
+            vHnew(i, j) += H_average; //SMB?
             vHref(i, j) = 0.0;
           }
         } else { // no full floating ice neighbor
           vHnew(i, j) += vHref(i, j); // mass conservation, but thick ice at one grid cell possible
           vHref(i, j) = 0.0;
           vHresidualnew(i, j) = 0.0;
-          ierr = verbPrintf(4, grid.com, 
-                            "!!! PISM_WARNING: No floating ice neighbors to calculate H_average, "
-                            " set ice thickness to vHnew = %.2e at %d,%d \n", 
-                            vHnew(i, j), i, j); CHKERRQ(ierr);
+	      ierr = verbPrintf(4, grid.com, 
+                            "!!! PISM WARNING: Hresidual=%.2f with %d partially filled neighbors, "
+                            " set ice thickness to vHnew = %.2f at %d, %d \n", 
+                            vHresidual(i, j), N , vHnew(i, j), i, j ); CHKERRQ(ierr);
         }
       }
     }
@@ -254,8 +255,10 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
 
   PetscScalar gHcut; //check, if redistribution should be run once more
   ierr = PetscGlobalSum(&Hcut, &gHcut, grid.com); CHKERRQ(ierr);
-  if (gHcut > 0.0) { repeatRedist = PETSC_TRUE;}
-  else { repeatRedist = PETSC_FALSE;}
+  putOnTop = PETSC_FALSE;
+  if (gHcut > 0.0) { repeatRedist = PETSC_TRUE;
+	if (gHcut < minHRedist) { putOnTop = PETSC_TRUE; }//to avoid a couple of repetition for the redistribution of very thin vHresiduals
+  } else { repeatRedist = PETSC_FALSE;}
   //ierr = verbPrintf(3, grid.com, "!!! Hcut = %f \n", gHcut); CHKERRQ(ierr);
 
   ierr = vH.end_access(); CHKERRQ(ierr);

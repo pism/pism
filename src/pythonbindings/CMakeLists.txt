@@ -96,6 +96,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       PATTERN ".svn" EXCLUDE
     )
 
-  install(CODE "MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   PYTHONPATH=${PISM_INSTALL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")")
+  install(CODE "MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   export PYTHONPATH=${PISM_INSTALL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")")
     
 endif(Pism_BUILD_PYTHON_BINDINGS)

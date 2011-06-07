@@ -302,18 +302,20 @@ PetscErrorCode IceModel::massContExplicitStep() {
         //   X = vHref_old + (M - S) * dt * X / H_average.
         // where M = acab and S = shelfbaseflux for floating ice.  Solving for X we get
         //   X = vHref_old / (1.0 - (M - S) * dt * H_average))
+		/*
         if ((acab(i, j) - S) * dt < H_average) {
 			vHref(i, j) = vHref(i, j) / (1.0 - (acab(i, j) - S) * dt / H_average);
 		} else {
 			ierr = verbPrintf(4, grid.com,"!!! PISM_WARNING: H_average is smaller than surface mass balance at i=%d, j=%d.\n",i,j); CHKERRQ(ierr);
 		}
-
+		*/
 
         const PetscScalar coverageRatio = vHref(i, j) / H_average;
 
         if (coverageRatio > 1.0) { // partially filled grid cell is considered to be full
           if (do_redist) {  vHresidual(i, j) = vHref(i, j) - H_average;  } //residual ice thickness
           vHnew(i, j) = H_average; // gets a "real" ice thickness
+	   	  vHnew(i, j)+= (acab(i, j) - S) * dt; // no implicit SMB in partially filled cells any more
           vHref(i, j) = 0.0;
         } else {
           vHnew(i, j) = 0.0; // no change from vH value, actually
