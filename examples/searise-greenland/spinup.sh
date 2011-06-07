@@ -2,7 +2,7 @@
 
 # Copyright (C) 2009-2011 The PISM Authors
 
-# PISM SeaRISE Greenland
+# PISM SeaRISE Greenland spinup using modeled paleoclimate
 #
 # before using this script, run preprocess.sh to download and adjust metadata
 # on SeaRISE "Present Day Greenland" master dataset
@@ -26,7 +26,7 @@ echo
 set -e  # exit on error
 
 NN=2  # default number of processors
-if [ $# -gt 0 ] ; then  # if user says "psearise.sh 8" then NN = 8
+if [ $# -gt 0 ] ; then  # if user says "spinup.sh 8" then NN = 8
   NN="$1"
 fi
 
@@ -98,7 +98,6 @@ for INPUT in $PISM_DATANAME $PISM_TEMPSERIES $PISM_SLSERIES; do
 done
 
 INNAME=$PISM_DATANAME
-OUTFINALNAME=g5km_0.nc
 
 # run lengths and starting time for paleo
 SMOOTHRUNLENGTH=100
@@ -107,9 +106,10 @@ PALEOSTARTYEAR=-125000
 
 # grids
 VDIMS="-Lz 4000 -Lbz 2000"
-COARSEVGRID="${VDIMS} -Mz 51 -Mbz 21"
-FINEVGRID="${VDIMS} -Mz 101 -Mbz 41"
-FINESTVGRID="${VDIMS} -Mz 201 -Mbz 51"
+COARSEVGRID="${VDIMS} -Mz 101 -Mbz 21 -z_spacing equal"
+FINEVGRID="${VDIMS} -Mz 201 -Mbz 41 -z_spacing equal"
+FINESTVGRID="${VDIMS} -Mz 401 -Mbz 81 -z_spacing equal"
+
 TWENTYKMGRID="-Mx 76 -My 141 ${COARSEVGRID}"
 TENKMGRID="-Mx 151 -My 281 ${FINEVGRID}"
 FIVEKMGRID="-Mx 301 -My 561 ${FINESTVGRID}"
@@ -146,7 +146,7 @@ if [ $# -gt 1 ] ; then
     echo "$SCRIPTNAME       WARNING: VERY LARGE COMPUTATIONAL TIME"
     COARSEGRID=$TENKMGRID
     FINEGRID=$FIVEKMGRID
-    COARSESKIP=$SKIPFIVEKM
+    COARSESKIP=$SKIPTENKM
     FINESKIP=$SKIPFIVEKM
     CS=10 # km
     FS=5  # km
@@ -156,16 +156,16 @@ else
 fi
 echo ""
 
-echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km)"
-echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
+echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km), with -skip = $COARSESKIP)"
+echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km), with -skip = $FINESKIP)"
 
 # cat prefix and exec together
 PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -e 3"
 
 # coupler settings for pre-spinup
-COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"
+COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_FORCING="-atmosphere searise_greenland,dTforcing -surface pdd -pdd_fausto -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES"
+COUPLER_FORCING="-atmosphere searise_greenland,dTforcing -surface pdd -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
@@ -214,7 +214,7 @@ $PISM_DO $cmd
 PRE1NAME=g${CS}km_steady.nc
 EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:500:${NOMASSSIARUNLENGTH}
-EXVARS="diffusivity,temppabase,bmelt,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
@@ -229,7 +229,7 @@ ENDTIME=$COARSEENDTIME
 OUTNAME=g${CS}km_m10ka.nc
 TSNAME=ts_g${CS}km_m10ka.nc
 EXNAME=ex_g${CS}km_m10ka.nc
-EXVARS="diffusivity,temppabase,bmelt,csurf,hardav,mask,dHdt,cbase,tauc"
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
