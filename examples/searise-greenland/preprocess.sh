@@ -60,8 +60,26 @@ echo "  PISM-readable paleo-sea-level file $SLSERIES created from $DATANAME"
 echo "    (for option -dSLforcing)"
 echo
 
+# generate config file
+echo "  Generating config file..."
+CONFIG=searise_config
+ncgen -o ${CONFIG}.nc ${CONFIG}.cdl
+echo "  Done generating config file."
 echo
-echo "fetching anomaly files"
+
+echo
+echo "fetching anomaly files and creating scaled anomaly files"
 URL=http://www.pism-docs.org/download
-wget -nc ${URL}/ar4_precip_anomaly.nc
-wget -nc ${URL}/ar4_temp_anomaly.nc
+PRECIP=ar4_precip_anomaly.nc
+TEMP=ar4_temp_anomaly.nc
+wget -nc ${URL}/$PRECIP
+wget -nc ${URL}/$TEMP
+
+ncks -O $PRECIP ar4_precip_anomaly_scalefactor_1.0.nc
+ncks -O $TEMP ar4_temp_anomaly_scalefactor_1.0.nc
+
+ncap2 -O -s "precip_anomaly = 1.5 * precip_anomaly" ar4_precip_anomaly.nc ar4_precip_anomaly_scalefactor_1.5.nc
+ncap2 -O -s "precip_anomaly = 2.0 * precip_anomaly" ar4_precip_anomaly.nc ar4_precip_anomaly_scalefactor_2.0.nc
+
+ncap2 -O -s "temp_anomaly = 1.5 * temp_anomaly" ar4_temp_anomaly.nc ar4_precip_anomaly_scalefactor_1.5.nc
+ncap2 -O -s "temp_anomaly = 2.0 * temp_anomaly" ar4_temp_anomaly.nc ar4_precip_anomaly_scalefactor_2.0.nc

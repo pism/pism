@@ -85,7 +85,9 @@ else
   PISM_SLSERIES=pism_dSL.nc
 fi
 
-for INPUT in $PISM_DATANAME $PISM_TEMPSERIES $PISM_SLSERIES; do
+PISM_CONFIG=searise_config.nc
+
+for INPUT in $PISM_DATANAME $PISM_TEMPSERIES $PISM_SLSERIES $PISM_CONFIG; do
   if [ -e "$INPUT" ] ; then  # check if file exist
     echo "$SCRIPTNAME           input   $INPUT (found)"
   else
@@ -159,8 +161,10 @@ echo ""
 echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km), with -skip = $COARSESKIP)"
 echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km), with -skip = $FINESKIP)"
 
+TITLE="SeaRISE Greenland Spinup"
+
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -e 3"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -config_override $PISM_CONFIG -title \"$TITLE\" "
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd"
@@ -170,10 +174,7 @@ COUPLER_FORCING="-atmosphere searise_greenland,dTforcing -surface pdd -paleo_pre
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 
-# use "control run" parameters from Bueler et al. submitted
-PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.98"
-
-FULLPHYS="-ssa_sliding -thk_eff ${PARAMS} ${TILLPHI}"
+FULLPHYS="-ssa_sliding -thk_eff ${TILLPHI}"
 
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
@@ -225,18 +226,26 @@ $PISM_DO $cmd
 
 # pre-spinup done; ready to use paleoclimate forcing for real spinup ...
 
+EXSTEP=500
+TSSTEP=1
+
+STARTTIME=$PALEOSTARTYEAR
+
 ENDTIME=$COARSEENDTIME
-OUTNAME=g${CS}km_m10ka.nc
-TSNAME=ts_g${CS}km_m10ka.nc
-EXNAME=ex_g${CS}km_m10ka.nc
+ET=$(($ENDTIME/-1))
+OUTNAME=g${CS}km_m${ET}a.nc
+TSNAME=ts_$OUTNAME
+TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
+EXNAME=ex_$OUTNAME
+EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
 EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
 cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE1NAME $FULLPHYS -bed_def lc $COUPLER_FORCING \
-     -ts_file $TSNAME -ts_times $PALEOSTARTYEAR:1:$ENDTIME \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times -124500:500:$ENDTIME \
-     -ys $PALEOSTARTYEAR -ye $ENDTIME -o $OUTNAME"
+     -ts_file $TSNAME -ts_times $TSTIMES \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
 # exit    # uncomment to stop here
@@ -245,8 +254,10 @@ STARTTIME=$ENDTIME
 ENDTIME=0 # BP
 STARTNAME=$OUTNAME
 OUTNAME=g${FS}km_0.nc
-TSNAME=ts_g${FS}km_0.nc
-EXNAME=ex_g${FS}km_0.nc
+TSNAME=ts_$OUTNAME
+TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
+EXNAME=ex_$OUTNAME
+EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
 echo
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation and modified surface mass balance,"
@@ -254,8 +265,8 @@ echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
      -bed_def lc $COUPLER_FORCING \
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat -regrid_bed_special  \
-     -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times -19500:500:$ENDTIME \
+     -ts_file $TSNAME -ts_times $TSTIMES \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
