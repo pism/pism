@@ -660,8 +660,18 @@ PetscErrorCode SSAFD::solve() {
       if (reason < 0) {
         ierr = verbPrintf(1,grid.com,
             "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
-                  "  see PETSc man page for KSPGetConvergedReason();   ENDING ...\n\n",
+                  "  see PETSc man page for KSPGetConvergedReason() ...\n\n",
             reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
+        char filename[PETSC_MAX_PATH_LEN];
+        snprintf(filename, PETSC_MAX_PATH_LEN, "SSAFD_ksperror_y%.0f.petsc", grid.year);
+        ierr = verbPrintf(1,grid.com,
+            "  writing linear system to PETSc binary file %s ...\n",filename); CHKERRQ(ierr);
+        PetscViewer    viewer;
+        ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
+        ierr = MatView(A,viewer); CHKERRQ(ierr);
+        ierr = VecView(SSARHS,viewer); CHKERRQ(ierr);
+        ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+        ierr = verbPrintf(1,grid.com,"  writing done ... ENDING! ...\n"); CHKERRQ(ierr);
         PISMEnd();
       }
       ierr = KSPGetIterationNumber(SSAKSP, &ksp_iterations); CHKERRQ(ierr);
