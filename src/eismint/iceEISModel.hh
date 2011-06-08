@@ -20,7 +20,6 @@
 #define __iceEISModel_hh
 
 #include <petscda.h>
-#include "grid.hh"
 #include "iceModel.hh"
 
 

@@ -385,7 +385,7 @@ typedef int NormType; // YUCK.
 // (which is good!) so we need to list every file containing a class
 // we want to wrap, including base classes if we want access to base class
 // methods
-%include "grid.hh"
+%include "IceGrid.hh"
 %include "NCVariable.hh"
 %include "pism_const.hh"
 %include "Timeseries.hh"

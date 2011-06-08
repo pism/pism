@@ -19,7 +19,7 @@
 #ifndef __lic_hh
 #define __lic_hh
 
-#include "grid.hh"
+#include "IceGrid.hh"
 
 //! \brief Contains parameters of an input file grid.
 class grid_info {

@@ -21,7 +21,7 @@
 
 #include <petsc.h>
 #include "NCVariable.hh"
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iceModelVec.hh"
 
 //! PISM bed smoother, plus bed roughness parameterization, based on Schoof (2003).

@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iceModel.hh"
 #include "iceEISModel.hh"
 #include "SIAFD.hh"

@@ -20,7 +20,6 @@
 #define __icePSTexModel_hh
 
 #include <petsc.h>
-#include "grid.hh"
 #include "basal_resistance.hh"
 #include "iceEISModel.hh"
 

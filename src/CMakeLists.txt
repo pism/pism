@@ -20,7 +20,7 @@ add_library (pismutil
   base/util/PISMProf.cc
   base/util/PISMVars.cc
   base/util/Timeseries.cc
-  base/util/grid.cc
+  base/util/IceGrid.cc
   base/util/iceModelVec.cc
   base/util/iceModelVec2.cc
   base/util/iceModelVec2V.cc

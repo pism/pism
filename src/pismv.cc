@@ -26,7 +26,7 @@ static char help[] =
 #include <string>
 #include <algorithm>		// std::transform()
 #include <petscda.h>
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "verif/iceCompModel.hh"
 
 #include "coupler/PISMSurface.hh"

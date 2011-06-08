@@ -28,7 +28,7 @@ static char help[] =
 #include <petscvec.h>
 #include <petscda.h>
 #include "pism_const.hh"
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
 #include "PISMBedSmoother.hh"

@@ -34,7 +34,6 @@ static char help[] =
   "Driver for PISM runs of EISMINT-Greenland intercomparison.\n";
 
 #include <petsc.h>
-#include "grid.hh"
 #include "iceModel.hh"
 #include "pgrn_atmosphere.hh"
 

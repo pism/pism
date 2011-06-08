@@ -21,7 +21,7 @@ static char help[] =
   "from data.\n";
 
 #include <petsc.h>
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iceModel.hh"
 
 #include "PCFactory.hh"

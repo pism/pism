@@ -37,7 +37,8 @@ class PISMEvent {
 public:
   PISMEvent();
   string name,			//!< NetCDF variable name
-    description;		//!< NetCDF variable long_name attribute
+    description,		//!< NetCDF variable long_name attribute
+    units;                      //!< NetCDF variable units
   int parent;			//!< index of the parent event
   PetscLogDouble start_time;	//!< event start time
   double total_time;		//!< total time spent in an event; includes
@@ -75,6 +76,7 @@ public:
   void end(int index);
   PetscErrorCode barrier();
   PetscErrorCode save_report(string filename);
+  void set_grid_size(int n);
   int Nx, Ny;
 protected:
   vector<PISMEvent> events;

@@ -22,7 +22,7 @@ static char help[] =
 
 #include <cstring>
 #include <petsc.h>
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iceModel.hh"
 #include "eismint/iceEISModel.hh"
 #include "eismint/icePSTexModel.hh"

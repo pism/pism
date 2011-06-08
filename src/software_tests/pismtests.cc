@@ -19,7 +19,7 @@
 static char help[] = "Driver for PISM software unit tests.\n";
 
 #include <petsc.h>
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iMtests.hh"
 
 #include "PISMSurface.hh"

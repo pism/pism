@@ -22,6 +22,7 @@
 /// PISMEvent
 PISMEvent::PISMEvent() {
   name = "unknown";
+  units = "seconds";
   start_time = -1;
   total_time = 0;
   parent = -1;
@@ -36,7 +37,25 @@ PISMProf::PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s) {
   Nx = s;
   Ny = 1;
   current_event = -1;
+
+  PISMEvent tmp;
+  tmp.name = "processor_rank";
+  tmp.description = "processor rank";
+  tmp.total_time = r;
+  tmp.units = "count";
+  events.push_back(tmp);
 }
+
+void PISMProf::set_grid_size(int n) {
+
+  PISMEvent tmp;
+  tmp.name = "processor_grid_size";
+  tmp.description = "number of map-plane grid points in a processor's subdomain";
+  tmp.total_time = n;
+  tmp.units = "count";
+  events.push_back(tmp);
+}
+
 
 #if PETSC_VERSION_MAJOR >= 3
 # define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
@@ -134,6 +153,14 @@ PetscErrorCode PISMProf::save_report(string filename) {
     if (name == "unknown")
       continue;
 
+    double time = events[j].total_time;
+
+    PetscGlobalMax(&time, &time, com);
+
+    // ignore events that took less than 0.001 seconds
+    if (time < 1e-3)
+      continue;
+
     ierr = find_variables(nc, name, varid); CHKERRQ(ierr);
 
     ierr = save_report(j, nc, varid); CHKERRQ(ierr);
@@ -146,7 +173,7 @@ PetscErrorCode PISMProf::save_report(string filename) {
       parent = events[parent_index].name;
     string descr = events[j].description;
 
-    ierr = put_att_text(nc, varid, "units", "seconds"); CHKERRQ(ierr); 
+    ierr = put_att_text(nc, varid, "units", events[j].units); CHKERRQ(ierr); 
     ierr = put_att_text(nc, varid, "parent", parent); CHKERRQ(ierr); 
     ierr = put_att_text(nc, varid, "long_name", descr); CHKERRQ(ierr);
   }

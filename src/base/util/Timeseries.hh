@@ -20,7 +20,7 @@
 #define __Timeseries_hh
 
 #include "NCVariable.hh"
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "NCTool.hh"
 #include <deque>
 

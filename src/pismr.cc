@@ -21,7 +21,7 @@ static char help[] =
   "The basic PISM executable for evolution runs.\n";
 
 #include <petsc.h>
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iceModel.hh"
 
 #include "coupler/PCFactory.hh"

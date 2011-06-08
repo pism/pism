@@ -1,6 +1,6 @@
 To build the PISM python bindings, you need to have both SWIG and petsc4py installed.
 
-To build the bindings, you willneed to first set the cmake flag Pism_BUILD_PYTHON_BINDINGS.  In addition,
+To build the bindings, you will need to first set the cmake flag Pism_BUILD_PYTHON_BINDINGS.  In addition,
 the build process requires paths to various pieces of python as well to petsc4py.
 We try to detect these pieces automatically, but this may fail and you may need to set the
 following advanced cmake variables explicitly (with examples in parentheses).

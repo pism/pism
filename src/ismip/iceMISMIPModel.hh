@@ -20,7 +20,6 @@
 #define __iceMISMIPModel_hh
 
 #include <petscvec.h>
-#include "grid.hh"
 #include "basal_resistance.hh"
 #include "iceModel.hh"
 

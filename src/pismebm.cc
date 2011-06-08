@@ -21,7 +21,7 @@ static char help[] =
   "Uses external serial code providing top-surface boundary conditions..\n";
 
 #include <petsc.h>
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iceModel.hh"
 
 #include "coupler/PCFactory.hh"

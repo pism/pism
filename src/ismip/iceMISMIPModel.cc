@@ -19,7 +19,6 @@
 #include <cstring>
 #include <petscda.h>
 #include "pism_const.hh"
-#include "grid.hh"
 #include "iceModel.hh"
 #include "iceMISMIPModel.hh"
 #include "SSA.hh"

@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petscfix.h>
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "pism_const.hh"
 
 IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
@@ -367,6 +367,7 @@ PetscErrorCode IceGrid::createDA() {
 
   profiler->Nx = Nx;
   profiler->Ny = Ny;
+  profiler->set_grid_size(xm*ym);
 
   return 0;
 }

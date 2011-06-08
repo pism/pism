@@ -43,7 +43,7 @@ file containing a complete model state, versus bootstrapping).
 #include "PISMYieldStress.hh"
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
 #include "PISMBedSmoother.hh"

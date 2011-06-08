@@ -20,7 +20,7 @@
 #ifndef _SNESPROBLEM_H_
 #define _SNESPROBLEM_H_
 
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "iceModelVec.hh"
 
 template<int DOF, class U> class SNESProblem{

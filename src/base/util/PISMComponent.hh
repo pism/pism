@@ -23,7 +23,7 @@
 #include <gsl/gsl_math.h>
 #include "NCVariable.hh"
 #include "PISMVars.hh"
-#include "grid.hh"
+#include "IceGrid.hh"
 #include "PISMDiagnostic.hh"
 
 //! \brief A class defining a common interface for most PISM sub-models.
