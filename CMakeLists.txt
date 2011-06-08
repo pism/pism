@@ -176,7 +176,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
     CACHE PATH "Python extension module installation directory." FORCE)
-  
 endif ()
 
 include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_INCLUDE_PATH})
@@ -224,3 +223,6 @@ endif()
 # PISM regression testing
 ENABLE_TESTING()
 add_subdirectory (test/regression)
+if (Pism_BUILD_PYTHON_BINDINGS)
+  add_subdirectory (examples/python)
+endif()
