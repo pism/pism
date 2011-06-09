@@ -117,15 +117,18 @@ TSTIMES=0:1:${ENDTIME}
 
 INNAME=${SPINUPRESULT}
 
+# #######################################
+# Control Run
+# #######################################
+
 CLIMATE=1
 SRGEXPERCATEGORY=E0
-
 PISM_SRPREFIX2=${INITIALS}_G_D3_C${CLIMATE}_${SRGEXPERCATEGORY}
 OUTNAME=out_y${ENDTIME}_${PISM_SRPREFIX2}.nc
 EXNAME=${PISM_SRPREFIX2}_raw_y${ENDTIME}.nc
 TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX2}.nc
 echo
-echo "$SCRIPTNAME  5km grid: $SRGNAME run with constant climate from $STARTTIME to $ENDTIME years w save every 5 years:"
+echo "$SCRIPTNAME control run with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
 echo
 cmd="$PISM_MPIDO $NN $PISM -skip SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -extra_file $EXNAME -extra_times $TIMES $expackage \
@@ -135,38 +138,12 @@ echo
 echo "$SCRIPTNAME  $SRGNAME run with constant climate done; runs ...$PISM_SRPREFIX2... will need post-processing"
 echo
 
-SLIDING=1
-
-for sliding_scale_factor in 2 2.5 3; do
-
-
-  SRGEXPERCATEGORY="S$SLIDING"
-
-  PISM_SRPREFIX1=${INITIALS}_G_D3_C${CLIMATE}_${SRGEXPERCATEGORY}
-  OUTNAME=out_y${ENDTIME}_${PISM_SRPREFIX1}.nc
-  EXNAME=${PISM_SRPREFIX1}_raw_y${ENDTIME}.nc
-  TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX1}.nc
-  echo
-  echo "$SCRIPTNAME  5km grid: $SRGNAME run with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
-  echo
-  cmd="$PISM_MPIDO $NN $PISM -skip SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
-  -sliding_scale $sliding_scale_factor \
-  -extra_file $EXNAME -extra_times $TIMES $expackage \
-  -ts_file $TSNAME -ts_times $TSTIMES $tspackage "
-  $PISM_DO $cmd
-  echo
-  echo "$SCRIPTNAME  $SRGNAME run with steady climate done; results ...$PISM_SRPREFIX1... will need post-processing"
-  echo
-
-  SLIDING=$(($SLIDING + 1))
-
-done
-
+# #######################################
+# Climate Experiments C
+# #######################################
 
 CLIMATE=2
-
 SRGEXPERCATEGORY=E0
-
 for climate_scale_factor in 1.0 1.5 2.0; do
 
 
@@ -189,7 +166,7 @@ for climate_scale_factor in 1.0 1.5 2.0; do
     EXNAME=${PISM_SRPREFIX2}_raw_y${ENDTIME}.nc
     TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX2}.nc
     echo
-    echo "$SCRIPTNAME  5km grid: $SRGNAME run with AR4 climate from $STARTTIME to $ENDTIME years w save every 5 years:"
+    echo "$SCRIPTNAME run with AR4 climate from $STARTTIME to $ENDTIME years w save every 5 years:"
     echo
     cmd="$PISM_MPIDO $NN $PISM -skip SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
        -anomaly_temp $AR4TEMP -anomaly_precip $AR4PRECIP \
@@ -204,4 +181,63 @@ for climate_scale_factor in 1.0 1.5 2.0; do
 
 done
 
+# #######################################
+# Sliding Experiments S
+# #######################################
 
+SLIDING=1
+for sliding_scale_factor in 2 2.5 3; do
+
+
+  SRGEXPERCATEGORY="S$SLIDING"
+
+  PISM_SRPREFIX1=${INITIALS}_G_D3_C${CLIMATE}_${SRGEXPERCATEGORY}
+  OUTNAME=out_y${ENDTIME}_${PISM_SRPREFIX1}.nc
+  EXNAME=${PISM_SRPREFIX1}_raw_y${ENDTIME}.nc
+  TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX1}.nc
+  echo
+  echo "$SCRIPTNAME run with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
+  echo
+  cmd="$PISM_MPIDO $NN $PISM -skip SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+  -sliding_scale $sliding_scale_factor \
+  -extra_file $EXNAME -extra_times $TIMES $expackage \
+  -ts_file $TSNAME -ts_times $TSTIMES $tspackage "
+  $PISM_DO $cmd
+  echo
+  echo "$SCRIPTNAME  $SRGNAME run with steady climate done; results ...$PISM_SRPREFIX1... will need post-processing"
+  echo
+
+  SLIDING=$(($SLIDING + 1))
+
+done
+
+# #######################################
+# Melt Rate Experiments M
+# #######################################
+
+CLIMATE=1
+MELTRATE=1
+for melt_rate in 2 20 200; do
+
+
+  SRGEXPERCATEGORY="M$MELTRATE"
+
+  PISM_SRPREFIX1=${INITIALS}_G_D3_C${CLIMATE}_${SRGEXPERCATEGORY}
+  OUTNAME=out_y${ENDTIME}_${PISM_SRPREFIX1}.nc
+  EXNAME=${PISM_SRPREFIX1}_raw_y${ENDTIME}.nc
+  TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX1}.nc
+  echo
+  echo "$SCRIPTNAME run with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
+  echo
+  cmd="$PISM_MPIDO $NN $PISM -skip SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+  -shelf_base_melt_rate $melt_rate \
+  -extra_file $EXNAME -extra_times $TIMES $expackage \
+  -ts_file $TSNAME -ts_times $TSTIMES $tspackage "
+  $PISM_DO $cmd
+  echo
+  echo "$SCRIPTNAME  $SRGNAME run with steady climate done; results ...$PISM_SRPREFIX1... will need post-processing"
+  echo
+
+  MELTRATE=$(($MELTRATE + 1))
+
+done

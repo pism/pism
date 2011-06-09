@@ -243,7 +243,7 @@ In this case \texttt{foo.nc} contains fields \texttt{acab} and \texttt{artm}, as
 \label{sec:pism-ocean-models}
 \optsection{Climate (boundary) models!\texttt{-ocean} [constant, forcing]}
 
-PISM includes one simple ocean model: \texttt{constant}, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \texttt{ocean_sub_shelf_heat_flux_into_ice} configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
+PISM includes one simple ocean model: \texttt{constant}, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \texttt{ocean_sub_shelf_heat_flux_into_ice} configuration parameter and the assumption that the mass flux is proportional to heat flux into ice. Alternatively, the sub shelf basal melt rate in meters ice-equivalent per year can be set at the command-line with \intextoption{shelf_base_melt_rate}.
 
   The ocean \texttt{dSLforcing} modifier implements sea level forcing. The command-line option \fileopt{dSLforcing} is used to specify the file containing sea level offsets:
 \begin{verbatim}
