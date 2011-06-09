@@ -923,7 +923,7 @@ In PISM the product \f$\nu H\f$ can be
 
 The flow law in ice stream and ice shelf regions must, for now, be a
 (temperature-dependent) Glen law.  This is the only flow law we know how to
-convert to ``viscosity form''.  More general forms like Goldsby-Kohlstedt are
+invert to ``viscosity form''.  More general forms like Goldsby-Kohlstedt are
 not yet inverted.
 
 The viscosity form of a Glen law is

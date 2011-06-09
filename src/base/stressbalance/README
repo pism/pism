@@ -1,4 +1,4 @@
-The classes here abstract both the SIA and SSA stress balances.
+The classes here abstract or implement the SIA, SSA, and Blatter stress balances.
 Here are some intended benefits:
 
 1. make this part of PISM more "library-like", and reduce the Jed-named
@@ -13,7 +13,4 @@ Here are some intended benefits:
 
 5. make it easier to implement the Pollard-deConto (task #6946) and Goldberg
    hybrids
-
-6. make it easier to build a Blatter stress balance solver
-
 
