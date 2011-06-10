@@ -171,6 +171,7 @@ PetscErrorCode POConstantPIK::write_variables(set<string> vars, string filename)
     }
 
     ierr = tmp.set_metadata(shelfbmassflux, 0); CHKERRQ(ierr);
+    tmp.write_in_glaciological_units = true;
     ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }

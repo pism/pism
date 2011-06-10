@@ -63,6 +63,8 @@ public:
 protected:
   IceModelVec2S *ice_thickness;	// is not owned by this class
   NCSpatialVariable shelfbmassflux, shelfbtemp;
+  bool meltrate_set;
+  PetscReal mymeltrate;
 };
 
 //! A class defining the interface of a PISM ocean model modifier.

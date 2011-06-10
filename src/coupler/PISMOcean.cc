@@ -45,6 +45,18 @@ PetscErrorCode POConstant::init(PISMVars &vars) {
     ierr = verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n"); CHKERRQ(ierr);
   }
 
+  ierr = PetscOptionsBegin(grid.com, "", "Ocean model", ""); CHKERRQ(ierr);
+
+  ierr = PISMOptionsReal("-shelf_base_melt_rate",
+                          "Specifies a sub shelf ice-equivalent melt rate in meters/year",
+			  mymeltrate,meltrate_set); CHKERRQ(ierr);
+
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if (meltrate_set) {
+    ierr = verbPrintf(2, grid.com,"    - option '-shelf_base_melt_rate' seen, setting basal sub shelf basal melt rate to %.2f m/year ... \n",mymeltrate); CHKERRQ(ierr);
+  }
+
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) { SETERRQ(1, "ERROR: ice thickness is not available"); }
 
@@ -85,8 +97,18 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscReal L = config.get("water_latent_heat_fusion"),
     rho = config.get("ice_density"),
+    meltrate;
+
+  if (meltrate_set) {
+
+    meltrate = convert(mymeltrate,"m year-1","m s-1");
+
+  } else {
+
     // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
     meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * rho); // m s-1
+
+  }
 
   ierr = result.set(meltrate); CHKERRQ(ierr);
 
@@ -136,6 +158,7 @@ PetscErrorCode POConstant::write_variables(set<string> vars, string filename) {
     }
 
     ierr = tmp.set_metadata(shelfbmassflux, 0); CHKERRQ(ierr);
+    tmp.write_in_glaciological_units = true;
     ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
