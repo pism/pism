@@ -11,21 +11,23 @@
 
 set -e  # exit on error
 
-echo
 echo "# =================================================================================="
 echo "# PISM SeaRISE Greenland: preprocessing"
 echo "# =================================================================================="
 echo
-
 
 # get file; see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 DATAVERSION=1.1
 DATAURL=http://websrv.cs.umt.edu/isis/images/a/a5/
 DATANAME=Greenland_5km_v$DATAVERSION.nc
 
+echo "fetching master file ... "
 wget -nc ${DATAURL}${DATANAME}
+echo "  ... done."
+echo
 
 PISMVERSION=pism_$DATANAME
+echo -n "creating bootstrapable $PISMVERSION from $DATANAME ..."
 ncks -O $DATANAME $PISMVERSION  # just copies over, but preserves history and global attrs
 
 # adjust metadata; uses NCO (http://nco.sourceforge.net/)
@@ -37,44 +39,47 @@ ncatted -O -a long_name,precip,a,c,"ice-equivalent mean annual precipitation rat
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION
 ncks -O -v lat,lon,bheatflx,topg,thk,precip,mapping \
   $PISMVERSION $PISMVERSION
-echo "  PISM-readable file $PISMVERSION created from $DATANAME"
-echo "    (contains only fields used in bootstrapping ...)"
+echo "done."
+echo
 
 # extract time series into files suitable for -dTforcing and -dSLforcing;
 # compare resulting files to grip_dT.nc and specmap_dSL.nc in pism0.2/examples/eisgreen/
 TEMPSERIES=pism_dT.nc
 SLSERIES=pism_dSL.nc
+echo -n "creating paleo-temperature file $TEMPSERIES from $DATANAME for option -dTforcing ... "
 ncks -O -v oisotopestimes,temp_time_series $DATANAME $TEMPSERIES
 ncrename -O -d oisotopestimes,t -v oisotopestimes,t -v temp_time_series,delta_T $TEMPSERIES
 ncpdq -O --rdr=-t $TEMPSERIES $TEMPSERIES  # reverse time dimension
 ncap -O -s "t=-t" $TEMPSERIES $TEMPSERIES  # make times follow same convention as PISM
 ncatted -O -a units,t,a,c,"years since 1-1-1" $TEMPSERIES
-echo "  PISM-readable paleo-temperature file $TEMPSERIES created from $DATANAME"
-echo "    (for option -dTforcing)"
+echo "done."
+echo
+echo -n "creating paleo-sea-level file $SLSERIES from $DATANAME for option -dSLforcing ... "
 ncks -O -v sealeveltimes,sealevel_time_series $DATANAME $SLSERIES
 ncrename -O -d sealeveltimes,t -v sealeveltimes,t -v sealevel_time_series,delta_sea_level $SLSERIES
 ncpdq -O --rdr=-t $SLSERIES $SLSERIES  # reverse time dimension
 ncap -O -s "t=-t" $SLSERIES $SLSERIES  # make times follow same convention as PISM
 ncatted -O -a units,t,a,c,"years since 1-1-1" $SLSERIES
-echo "  PISM-readable paleo-sea-level file $SLSERIES created from $DATANAME"
-echo "    (for option -dSLforcing)"
+echo "done."
 echo
 
 # generate config file
-echo "  Generating config file..."
 CONFIG=searise_config
+echo -n "generating config file $CONFIG.nc from ascii file $CONFIG.cdl ... "
 ncgen -o ${CONFIG}.nc ${CONFIG}.cdl
-echo "  Done generating config file."
+echo "done."
 echo
 
-echo
-echo "fetching anomaly files and creating scaled anomaly files"
+echo "fetching anomaly files ... "
 URL=http://www.pism-docs.org/download
 PRECIP=ar4_precip_anomaly.nc
 TEMP=ar4_temp_anomaly.nc
 wget -nc ${URL}/$PRECIP
 wget -nc ${URL}/$TEMP
+echo "  ... done."
+echo
 
+echo -n "creating scaled anomaly files ... "
 ncks -O $PRECIP ar4_precip_anomaly_scalefactor_1.0.nc
 ncks -O $TEMP ar4_temp_anomaly_scalefactor_1.0.nc
 
@@ -83,3 +88,6 @@ ncap2 -O -s "precip_anomaly = 2.0 * precip_anomaly" ar4_precip_anomaly.nc ar4_pr
 
 ncap2 -O -s "temp_anomaly = 1.5 * temp_anomaly" ar4_temp_anomaly.nc ar4_temp_anomaly_scalefactor_1.5.nc
 ncap2 -O -s "temp_anomaly = 2.0 * temp_anomaly" ar4_temp_anomaly.nc ar4_temp_anomaly_scalefactor_2.0.nc
+echo "done."
+echo
+

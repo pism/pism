@@ -177,7 +177,6 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         continue;
       }
 
-
       if (use_cfbc) {
         PetscScalar H_ij = (*thickness)(i,j);
         PetscInt M_ij = mask->as_int(i,j),
@@ -282,6 +281,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
   return 0;
 }
+
 
 //! \brief Assemble the left-hand side matrix for the KSP-based, Picard iteration,
 //! and finite difference implementation of the SSA equations.
@@ -599,7 +599,7 @@ roughly twice as slow.  The outputs of PETSc options <tt>-ksp_monitor_singular_v
 <tt>-ksp_compute_eigenvalues</tt> and <tt>-ksp_plot_eigenvalues -draw_pause N</tt>
 (the last holds plots for N seconds) may be useful to diagnose.
 
-The outer loop terminates when the effective viscosity is no longer changing
+The outer loop terminates when the effective viscosity times thickness is no longer changing
 much, according to the tolerance set by the option <tt>-ssa_rtol</tt>.  The
 outer loop also terminates when a maximum number of iterations is exceeded.
 We save the velocity from the last time step in order to have a better estimate
@@ -607,7 +607,15 @@ of the effective viscosity than the u=v=0 result.
 
 In truth there is an "outer outer" loop (over index \c l).  This attempts to
 over-regularize the effective viscosity if the nonlinear iteration (the "outer"
-loop over \c k) is not converging with the default regularization.
+loop over \c k) is not converging with the default regularization.  The same 
+over-regularization is attempted if the KSP object reports that it has not
+converged.
+
+(An alternative for recovery in the KSP diverged case, suggested by Jed, is to
+revert to a direct linear solve, either for the whole domain (not scalable) or
+on the subdomains.  This recovery alternative requires a more nontrivial choice
+but it may be worthwhile.  Note the user can already do <tt>-pc_type asm
+-sub_pc_type lu</tt> at the command line, forcing subdomain direct solves.)
  */
 PetscErrorCode SSAFD::solve() {
   PetscErrorCode ierr;
@@ -618,11 +626,11 @@ PetscErrorCode SSAFD::solve() {
 
   stdout_ssa = "";
 
-  bool write_ssa_system_to_matlab = config.get_flag("write_ssa_system_to_matlab");
   PetscReal ssaRelativeTolerance = config.get("ssafd_relative_convergence"),
             epsilon              = config.get("epsilon_ssafd");
-
   PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssafd"));
+  // this has no units; epsilon goes up by this ratio when previous value failed
+  const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
 
   ierr = velocity.copy_to(velocity_old); CHKERRQ(ierr);
 
@@ -646,39 +654,55 @@ PetscErrorCode SSAFD::solve() {
       // in preparation of measuring change of effective viscosity:
       ierr = nuH.copy_to(nuH_old); CHKERRQ(ierr);
 
-      // assemble (or re-assemble) matrix, which depends on updated viscosity
-      ierr = assemble_matrix(true, A); CHKERRQ(ierr);
-      if (getVerbosityLevel() > 2)
-        stdout_ssa += "A:";
+      do {
+        // assemble (or re-assemble) matrix, which depends on updated viscosity
+        ierr = assemble_matrix(true, A); CHKERRQ(ierr);
+        if (getVerbosityLevel() > 2)
+          stdout_ssa += "A:";
 
-      // call PETSc to solve linear system by iterative method; "inner linear iteration"
-      ierr = KSPSetOperators(SSAKSP, A, A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-      ierr = KSPSolve(SSAKSP, SSARHS, SSAX); CHKERRQ(ierr); // SOLVE
+        // call PETSc to solve linear system by iterative method; "inner linear iteration"
+        ierr = KSPSetOperators(SSAKSP, A, A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+        ierr = KSPSolve(SSAKSP, SSARHS, SSAX); CHKERRQ(ierr); // SOLVE
 
-      // report to standard out about iteration
-      ierr = KSPGetConvergedReason(SSAKSP, &reason); CHKERRQ(ierr);
-      if (reason < 0) {
-        ierr = verbPrintf(1,grid.com,
-            "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
-                  "  see PETSc man page for KSPGetConvergedReason() ...\n\n",
-            reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
-        char filename[PETSC_MAX_PATH_LEN];
-        snprintf(filename, PETSC_MAX_PATH_LEN, "SSAFD_ksperror_y%.0f.petsc", grid.year);
-        ierr = verbPrintf(1,grid.com,
-            "  writing linear system to PETSc binary file %s ...\n",filename); CHKERRQ(ierr);
-        PetscViewer    viewer;
-        ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
-        ierr = MatView(A,viewer); CHKERRQ(ierr);
-        ierr = VecView(SSARHS,viewer); CHKERRQ(ierr);
-        ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
-        ierr = verbPrintf(1,grid.com,"  writing done ... ENDING! ...\n"); CHKERRQ(ierr);
-        PISMEnd();
-      }
-      ierr = KSPGetIterationNumber(SSAKSP, &ksp_iterations); CHKERRQ(ierr);
-      if (getVerbosityLevel() > 2) {
-        char tempstr[50] = "";  snprintf(tempstr,50, "S:%d,%d: ", ksp_iterations, reason);
-        stdout_ssa += tempstr;
-      }
+        // check if diverged; report to standard out about iteration
+        ierr = KSPGetConvergedReason(SSAKSP, &reason); CHKERRQ(ierr);
+        if (reason < 0) {
+          // KSP diverged
+          ierr = verbPrintf(1,grid.com,
+              "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
+                    "  see PETSc man page for KSPGetConvergedReason() ...\n\n",
+              reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
+          // for now, always write a file with a fixed filename  (FIXME: may want other mechanism?)
+          char filename[PETSC_MAX_PATH_LEN] = "SSAFD_kspdivergederror.petsc";
+          ierr = verbPrintf(1,grid.com,
+              "  writing linear system to PETSc binary file %s ...\n",filename); CHKERRQ(ierr);
+          PetscViewer    viewer;
+          ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
+          ierr = MatView(A,viewer); CHKERRQ(ierr);
+          ierr = VecView(SSARHS,viewer); CHKERRQ(ierr);
+          ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+          // attempt recovery by same mechanism as for outer iteration
+          //   (FIXME: could force direct solve on subdomains?)
+          if (epsilon <= 0.0) {
+            ierr = verbPrintf(1,grid.com,"KSP diverged AND epsilon<=0.0.\n  ENDING ...\n"); CHKERRQ(ierr);
+            PISMEnd();
+          }
+          ierr = verbPrintf(1,grid.com,
+            "WARNING: KSP diverged with epsilon=%8.2e.  Retrying with epsilon multiplied by %8.2e.\n",
+            epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
+          epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
+          // recovery requires recompute on nuH  (FIXME: could be implemented by max(eps,nuH) here?)
+          ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
+        } else {
+          // report on KSP success; the "inner" iteration is done
+          ierr = KSPGetIterationNumber(SSAKSP, &ksp_iterations); CHKERRQ(ierr);
+          if (getVerbosityLevel() > 2) {
+            char tempstr[50] = "";  snprintf(tempstr,50, "S:%d,%d: ", ksp_iterations, reason);
+            stdout_ssa += tempstr;
+          }
+        }
+      
+      } while (reason < 0);  // keep trying till KSP converged
 
       // Communicate so that we have stencil width for evaluation of effective
       //   viscosity on next "outer" iteration (and geometry etc. if done):
@@ -710,21 +734,17 @@ PetscErrorCode SSAFD::solve() {
     } // end of the "outer loop" (index: k)
 
     if (epsilon > 0.0) {
-       // this has no units; epsilon goes up by this ratio when previous value failed
-       const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
        ierr = verbPrintf(1,grid.com,
-			 "WARNING: Effective viscosity not converged after %d iterations\n"
-			 "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
-			 ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
-       CHKERRQ(ierr);
-
+	 "WARNING: Effective viscosity not converged after %d outer iterations\n"
+	 "\twith epsilon=%8.2e. Retrying with epsilon multiplied by %8.2e.\n",
+	 ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
        ierr = velocity.copy_from(velocity_old); CHKERRQ(ierr);
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
-       SETERRQ1(1,
-         "Effective viscosity not converged after %d iterations; epsilon=0.0.\n"
-         "  Stopping.\n",
-         ssaMaxIterations);
+       ierr = verbPrintf(1,grid.com,
+         "Effective viscosity not converged after %d iterations AND epsilon<=0.0.\n"
+         "  ENDING ...\n", ssaMaxIterations); CHKERRQ(ierr);
+       PISMEnd();
     }
 
   } // end of the "outer outer loop" (index: l)
@@ -744,7 +764,7 @@ PetscErrorCode SSAFD::solve() {
   if (getVerbosityLevel() >= 2)
     stdout_ssa = "  SSA: " + stdout_ssa;
 
-  if (write_ssa_system_to_matlab) {
+  if (config.get_flag("write_ssa_system_to_matlab")) {
     ierr = writeSSAsystemMatlab(); CHKERRQ(ierr);
   }
 
@@ -948,10 +968,13 @@ where in the temperature-dependent case
    \f[ \bar B = \frac{1}{H}\,\int_b^h B(T^*)\,dz\f]
 This integral is approximately computed by the trapezoid rule.
 
-In fact the entire effective viscosity is regularized by adding a constant.
-The regularization constant \f$\epsilon\f$ is an argument to this procedure.
+The result of this procedure is \f$\nu H\f$, not just \f$\nu\f$, this it is
+a vertical integral, not average, of viscosity.
 
-In this implementation we set \f$\nu H = \f$ to a constant anywhere the ice is
+The resulting effective viscosity times thickness is regularized by ensuring that
+its minimum is at least \f$\epsilon\f$.  This regularization constant is an argument.
+
+In this implementation we set \f$\nu H\f$ to a constant anywhere the ice is
 thinner than a certain minimum.  See SSAStrengthExtension and compare how SSAFD_PIK
 handles this issue.
  */
@@ -1009,11 +1032,11 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
           CHKERRQ(ierr);
         }
 
-        // We ensure that nuH is bounded below by a positive constant.
-        result(i,j,o) += epsilon;
-
         // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
         result(i,j,o) /= ssa_enhancement_factor;
+
+        // We ensure that nuH is bounded below by a positive constant.
+        result(i,j,o) = PetscMax(epsilon,result(i,j,o));
 
       } // j
     } // i
