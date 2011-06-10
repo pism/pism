@@ -185,6 +185,7 @@ done
 # Sliding Experiments S
 # #######################################
 
+CLIMATE=1
 SLIDING=1
 for sliding_scale_factor in 2 2.5 3; do
 

@@ -26,7 +26,7 @@ fi
 
 
 # process files to remove fields, combine spatial and scalar series, and fix metadata
-for NAME in "UAF${E}_G_D3_C1_E0" "UAF${E}_G_D3_C2_E0" "UAF${E}_G_D3_C1_E1" "UAF${E}_G_D3_C2_E1"; do
+for NAME in "UAF${E}_G_D3_C1_E0" "UAF${E}_G_D3_C2_E0" "UAF${E}_G_D3_C3_E0" "UAF${E}_G_D3_C4_E0" "UAF1_G_D3_C1_S1" "UAF1_G_D3_C1_S2""UAF1_G_D3_C1_S3" "UAF1_G_D3_C1_M1" "UAF1_G_D3_C1_M2" "UAF1_G_D3_C1_M3"; do
   echo "(postprocess.sh)  working on deliverable $NAME.nc ..."
   echo "(postprocess.sh)    removing unreported fields and the vertical dimension ..."
   ncks -v artm,snowtemp,snowprecip,surftempoffset,sealevel,z,zb -x ${NAME}_raw_y*.nc \
@@ -49,7 +49,7 @@ for NAME in "UAF${E}_G_D3_C1_E0" "UAF${E}_G_D3_C2_E0" "UAF${E}_G_D3_C1_E1" "UAF$
 done
 
 # process the AR4 results to remove a bit more stuff
-for NAME in "UAF${E}_G_D3_C2_E0" "UAF${E}_G_D3_C2_E1"; do
+for NAME in "UAF${E}_G_D3_C2_E0" "UAF${E}_G_D3_C3_E0" "UAF${E}_G_D3_C3_E0"; do
   echo "(postprocess.sh)    removing extra variables from anomaly forcing ..."
   ncks -O -v delta_snowtemp,delta_snowprecip,snowprecip_inst -x ${NAME}.nc -o ${NAME}.nc
   echo "(postprocess.sh)    file $NAME.nc REALLY done"

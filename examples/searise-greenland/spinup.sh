@@ -170,6 +170,8 @@ PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -config_override $PISM_CONFIG -titl
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd"
 # coupler settings for spin-up (i.e. with forcing)
 COUPLER_FORCING="-atmosphere searise_greenland,dTforcing -surface pdd -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES"
+# coupler settings for spin-up (i.e. with forcing) and force-to-thickness
+COUPLER_FTT="-atmosphere searise_greenland,dTforcing -surface pdd,forcing -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
@@ -253,6 +255,9 @@ $PISM_DO $cmd
 STARTTIME=$ENDTIME
 ENDTIME=0 # BP
 STARTNAME=$OUTNAME
+
+# "regular" run
+
 OUTNAME=g${FS}km_0.nc
 TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
@@ -270,6 +275,25 @@ cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHY
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
+# "force-to-thickness" run
+
+OUTNAME=g${FS}km_0_ftt.nc
+TSNAME=ts_$OUTNAME
+TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
+EXNAME=ex_$OUTNAME
+EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
+echo
+echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
+echo "$SCRIPTNAME      including bed deformation and modified surface mass balance,"
+echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
+cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
+     -bed_def lc $COUPLER_FTT \
+     -force_to_thk $INNAME \
+     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat -regrid_bed_special  \
+     -ts_file $TSNAME -ts_times $TSTIMES \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
+$PISM_DO $cmd
 
 echo
 echo "$SCRIPTNAME  spinup done"
