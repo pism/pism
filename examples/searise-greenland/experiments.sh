@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 Andy Aschwanden and Ed Bueler
-# PISM SeaRISE Greenland worked example
+# Copyright (C) 2009-2011 The PISM Authors
 
-# Before using this script, run preprocess.sh and then spinup.sh
-# recommended way to run with N processors is "./forecast.sh N >& out.forecast &"
+# PISM SeaRISE Greenland experiments
+
+# Before using this script, run preprocess.sh and then initialization.sh
+# recommended way to run with N processors is "./experiments.sh N >& out.experiments &"
 
 
 INITIALS=UAF${2}  # output file names will be ...UAF1_G_D3_C1_E0..., etc.
@@ -12,7 +13,7 @@ SPINUPRESULT=$3  # spinup
 
 echo
 echo "# ============================================================================="
-echo "# PISM SeaRISE Greenland: forecast runs"
+echo "# PISM SeaRISE Greenland: experiment runs"
 echo "# ============================================================================="
 echo
 
@@ -22,7 +23,7 @@ if [ -n "${SCRIPTNAME:+1}" ] ; then
   echo "[SCRIPTNAME=$SCRIPTNAME (already set)]"
   echo ""
 else
-  SCRIPTNAME="#(forecast.sh)"
+  SCRIPTNAME="#(experiments.sh)"
 fi
 
 NN=2  # default number of processors
@@ -32,7 +33,7 @@ fi
 
 PISM_CONFIG=searise_config.nc
 
-for INPUT in $SPINUPRESULT $PISM_CONFIG; do
+for INPUT in $INITRESULT $PISM_CONFIG; do
   if [ -e "$INPUT" ] ; then  # check if file exist
     echo "$SCRIPTNAME INPUT   $INPUT FOUND"
   else
@@ -86,7 +87,7 @@ TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 
 FULLPHYS="-ssa_sliding -thk_eff $TILLPHI"
 
-TITLE="SeaRISE Greenland Forecast"
+TITLE="SeaRISE Greenland Experiment"
 
 # cat prefix and exec together
 PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -config_override $PISM_CONFIG -title \"$TITLE\" $FULLPHYS"
@@ -103,7 +104,7 @@ echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
 echo "$SCRIPTNAME control coupler = '$COUPLER_CTRL'"
 echo "$SCRIPTNAME     AR4 coupler = '$COUPLER_AR4'"
 
-expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,uvelsurf,vvelsurf,wvelsurf,uvelbase,vvelbase,wvelbase,tempsurf,tempbase,diffusivity"
+expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,uvelsurf,vvelsurf,wvelsurf,uvelbase,vvelbase,wvelbase,tempsurf,tempbase,diffusivity,acab"
 tspackage="-ts_vars ivol,iareag,iareaf"
 
 SKIP=200
@@ -115,7 +116,7 @@ ENDTIME=500
 TIMES=0:5:${ENDTIME}
 TSTIMES=0:1:${ENDTIME}
 
-INNAME=${SPINUPRESULT}
+INNAME=${INITRESULT}
 
 # #######################################
 # Control Run

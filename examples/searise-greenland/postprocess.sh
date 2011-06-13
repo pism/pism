@@ -1,14 +1,13 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2010 Andy Aschwanden and Ed Bueler
-# PISM SeaRISE Greenland worked example
-
+# Copyright (C) 2009-2011 The PISM Authors
+#
 # before using this script:
 #    1. run preprocess.sh to download SeaRISE "Present Day Greenland" master
 #       dataset and adjust metadata
-#    2. run spinup.sh to do spinup; creates g5km_0_rt.nc
-#    3. run forecast.sh which takes g5km_0_rt.nc as input and computes SeaRISE
-#       future runs into these files:
+#    2. run spinup.sh to do spinup;
+#    3. run experiments.sh to do
+#       experiment runs into these files:
 #           UAF!_G_D3_C?_E?_raw.nc
 #           ts_UAF!_G_D3_C?_E?.nc
 #    4. run this current script to produce
