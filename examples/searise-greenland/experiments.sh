@@ -113,10 +113,10 @@ SKIP=200
 STARTTIME=0
 ENDTIME=500
 
-TIMES=0:5:${ENDTIME}
-TSTIMES=0:1:${ENDTIME}
+TIMES=${STARTTIME}:5:${ENDTIME}
+TSTIMES=${STARTTIME}:1:${ENDTIME}
 
-INNAME=${INITRESULT}
+INNAME=${SPINUPRESULT}
 
 # #######################################
 # Control Run
@@ -131,7 +131,7 @@ TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX2}.nc
 echo
 echo "$SCRIPTNAME control run with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
 echo
-cmd="$PISM_MPIDO $NN $PISM -skip SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -extra_file $EXNAME -extra_times $TIMES $expackage \
   -ts_file $TSNAME -ts_times $TSTIMES $tspackage"
 $PISM_DO $cmd
@@ -169,7 +169,7 @@ for climate_scale_factor in 1.0 1.5 2.0; do
     echo
     echo "$SCRIPTNAME run with AR4 climate from $STARTTIME to $ENDTIME years w save every 5 years:"
     echo
-    cmd="$PISM_MPIDO $NN $PISM -skip SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+    cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
        -anomaly_temp $AR4TEMP -anomaly_precip $AR4PRECIP \
        -extra_file $EXNAME -extra_times $TIMES $expackage \
        -ts_file $TSNAME -ts_times $TSTIMES $tspackage"
@@ -200,7 +200,7 @@ for sliding_scale_factor in 2 2.5 3; do
   echo
   echo "$SCRIPTNAME run with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
   echo
-  cmd="$PISM_MPIDO $NN $PISM -skip SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+  cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -sliding_scale $sliding_scale_factor \
   -extra_file $EXNAME -extra_times $TIMES $expackage \
   -ts_file $TSNAME -ts_times $TSTIMES $tspackage "
@@ -231,7 +231,7 @@ for melt_rate in 2 20 200; do
   echo
   echo "$SCRIPTNAME run with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
   echo
-  cmd="$PISM_MPIDO $NN $PISM -skip SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+  cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -shelf_base_melt_rate $melt_rate \
   -extra_file $EXNAME -extra_times $TIMES $expackage \
   -ts_file $TSNAME -ts_times $TSTIMES $tspackage "
