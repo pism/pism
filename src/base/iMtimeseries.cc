@@ -309,6 +309,20 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(delta_t);
   }
 
+  if (find(ts_vars.begin(), ts_vars.end(), "gDmax") != ts_vars.end()) {
+    DiagnosticTimeseries *gDmax = new DiagnosticTimeseries(&grid, "gDmax", "t");
+
+    gDmax->set_units("m2 s-1", "");
+    gDmax->set_dimension_units(time_units, "");
+    gDmax->output_filename = ts_filename;
+
+    gDmax->set_attr("long_name", "maximum diffusivity");
+    gDmax->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(gDmax);
+  }
+
+
   // The following are in  config.get("ts_bad_set")  list.
 
   if (find(ts_vars.begin(), ts_vars.end(), "divoldt") != ts_vars.end()) {

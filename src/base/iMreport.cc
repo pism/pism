@@ -706,6 +706,14 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
     result = float_kill_flux;
   }
 
+  if (name == "gDmax") {
+    errcode = 0;
+    PetscScalar gDmax;
+    ierr = stress_balance->get_max_diffusivity(gDmax); CHKERRQ(ierr);
+    result = gDmax;
+  }
+
+
   return errcode;
 }
 
