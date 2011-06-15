@@ -299,7 +299,6 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     ierr = prepare_series(); CHKERRQ(ierr);
   }
 
-  updateHmelt = PETSC_TRUE;
   config.set("default_till_phi", DEFAULT_PHI_STRONG); 
   config.set_flag("include_bmr_in_continuity", true);
   config.set_flag("use_eta_transformation", true);

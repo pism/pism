@@ -54,8 +54,6 @@ PetscErrorCode IceModel::setDefaults() {
   // set maximum |u|,|v|,|w| in ice to an (obviously) invalid number
   gmaxu = gmaxv = gmaxw = -1.0;
 
-  updateHmelt = PETSC_TRUE;
-
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;
   jd = (grid.My - 1)/2;

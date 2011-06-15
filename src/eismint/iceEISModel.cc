@@ -160,12 +160,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  // these change default IceModel semantics to match EISMINT II choices:
-
-  bool flag;
-  ierr = PISMOptionsIsSet("-track_Hmelt", flag); CHKERRQ(ierr);
-  if (flag) updateHmelt = PETSC_TRUE;
-
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
 
   return 0;

@@ -242,7 +242,7 @@ protected:
   // SHOULD NOT be hard-wired.
 
   // flags
-  PetscTruth  updateHmelt, shelvesDragToo, allowAboveMelting;
+  PetscTruth  shelvesDragToo, allowAboveMelting;
   PetscTruth  repeatRedist, putOnTop;
   char        adaptReasonFlag;
 

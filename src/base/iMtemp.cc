@@ -38,18 +38,15 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
     SETERRQ(1,"IceModel::excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
   }
   if (*Texcess >= 0.0) {
-    if (updateHmelt == PETSC_TRUE) {
-      // T is at or above pressure-melting temp, so temp needs to be set to 
-      // pressure-melting; a fraction of excess energy is turned into melt water at base
-      // note massmelted is POSITIVE!
-      const PetscScalar FRACTION_TO_BASE
-                           = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
-      // note: ice-equiv thickness:
-      *Hmelt += (FRACTION_TO_BASE * massmelted) / (ice->rho * darea);  
-    }
+    // T is at or above pressure-melting temp, so temp needs to be set to 
+    // pressure-melting; a fraction of excess energy is turned into melt water at base
+    // note massmelted is POSITIVE!
+    const PetscScalar FRACTION_TO_BASE
+                         = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
+    // note: ice-equiv thickness:
+    *Hmelt += (FRACTION_TO_BASE * massmelted) / (ice->rho * darea);  
     *Texcess = 0.0;
-  } else if (updateHmelt == PETSC_TRUE) {  // neither Texcess nor Hmelt need to change 
-                                           // if Texcess < 0.0
+  } else {  // neither Texcess nor Hmelt needs to change if Texcess < 0.0
     // Texcess negative; only refreeze (i.e. reduce Hmelt) if at base and Hmelt > 0.0
     // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
     if (z > 0.00001) {
