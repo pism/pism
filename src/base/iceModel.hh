@@ -273,9 +273,6 @@ protected:
   virtual PetscErrorCode eigenCalving();
   virtual PetscErrorCode calvingAtThickness();
 
-  // see iMdefaults.cc
-  PetscErrorCode setDefaults();
-
   // see iMenergy.cc
   virtual PetscErrorCode energyStep();
   virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);

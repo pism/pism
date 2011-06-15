@@ -25,7 +25,6 @@
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : grid(g), config(conf), overrides(conf_overrides), iceFactory(grid.com,NULL, conf), ice(NULL) {
-  PetscErrorCode ierr;
 
   if (utIsInit() == 0) {
     if (utInit(NULL) != 0) {
@@ -54,11 +53,22 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   EC = NULL;
   btu = NULL;
 
-  ierr = setDefaults();  // lots of parameters and flags set here, including by reading from a config file
-  if (ierr != 0) {
-    verbPrintf(1,grid.com, "Error setting defaults.\n");
-    PISMEnd();
-  }
+  executable_short_name = "pism"; // drivers typically override this
+
+  shelvesDragToo = PETSC_FALSE;
+  
+  // set maximum |u|,|v|,|w| in ice to an (obviously) invalid number
+  gmaxu = gmaxv = gmaxw = -1.0;
+
+  // set default locations of soundings and slices
+  id = (grid.Mx - 1)/2;
+  jd = (grid.My - 1)/2;
+
+  // frequently used physical constants and parameters:
+  standard_gravity = config.get("standard_gravity");
+
+  global_attributes.set_string("Conventions", "CF-1.4");
+  global_attributes.set_string("source", string("PISM ") + PISM_Revision);
 
   // Do not save snapshots by default:
   save_snapshots = false;
