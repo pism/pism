@@ -33,10 +33,18 @@ echo "-----  Run riggs.py to create NetCDF version riggs.nc of RIGGS data"
 echo "-----    (requires python modules numpy and netCDF3 or netCDF4):"
 ./riggs.py -o riggs.nc
 
-echo "-----  Running 'pross' with $NN processes to compute velocity in"
+# use FD method normally, but allow user to do 'export METHOD=fem'
+if [ -n "${METHOD:+1}" ] ; then
+  echo "[METHOD = $METHOD  (already set)]"
+else
+  METHOD=fd
+  echo "[METHOD = fd  (default)]"
+fi
+
+echo "-----  Running 'pross' with $NN processes and -ssa_method $METHOD to compute velocity in"
 echo "-----    Ross ice shelf, including comparison to RIGGS data:"
 set -x
-mpiexec -n $NN pross -boot_file ross.nc -Mx $MMxx -My $MMyy \
+mpiexec -n $NN pross -boot_file ross.nc -Mx $MMxx -My $MMyy -ssa_method $METHOD \
         -riggs riggs.nc -o rossComputed.nc
 set +x
 
