@@ -708,9 +708,7 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
 
   if (name == "gDmax") {
     errcode = 0;
-    PetscScalar gDmax;
-    ierr = stress_balance->get_max_diffusivity(gDmax); CHKERRQ(ierr);
-    result = gDmax;
+    ierr = stress_balance->get_max_diffusivity(result); CHKERRQ(ierr);
   }
 
 
