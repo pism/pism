@@ -22,10 +22,10 @@ print "  (postprocess_mask.py) fixing mask in %s to conform to SeaRISE ..." % in
 ice_thickness_threshold = 10.0
 
 # PISM mask values:
-pism_grounded = 1
-pism_dragging = 2
+pism_ice_free_bedrock = 0
+pism_grounded = 2
 pism_floating = 3
-pism_ocean    = 7
+pism_ocean    = 4
 
 # SeaRISE mask values:
 searise_ocean = 0
@@ -36,8 +36,11 @@ searise_ice_free_land = 3
 nc = CDF(input, 'a')
 
 # number of records to process:
-N = len(nc.variables['t'][:])
-
+try:
+    N = len(nc.variables['t'][:])
+except:
+    N = len(nc.variables['time'][:])
+    
 thk = nc.variables['thk']
 mask = nc.variables['mask']
 
@@ -51,9 +54,9 @@ for j in range(N):
     tmp  = mask[j,:,:]
 
     # Combine PISM's grounded and dragging ice:
-    tmp[(Mask == pism_grounded) | (Mask == pism_dragging)] = searise_grounded_ice
+    tmp[(Mask == pism_grounded)] = searise_grounded_ice
     # Mark ice-free land:
-    tmp[(tmp == searise_grounded_ice) & (Thk < ice_thickness_threshold)] = searise_ice_free_land
+    tmp[(Mask == pism_ice_free_bedrock)] = searise_ice_free_land
 
     # Mark ocean:
     tmp[Mask == pism_ocean] = searise_ocean
