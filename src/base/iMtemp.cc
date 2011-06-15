@@ -27,7 +27,7 @@
 //! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
 PetscErrorCode IceModel::excessToFromBasalMeltLayer(
                 const PetscScalar rho_c, const PetscScalar z, const PetscScalar dz,
-                PetscScalar *Texcess, PetscScalar *Hmelt) {
+                PetscScalar *Texcess, PetscScalar *bwat) {
 
   const PetscScalar darea = grid.dx * grid.dy,
                     dvol = darea * dz,
@@ -44,26 +44,26 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
     const PetscScalar FRACTION_TO_BASE
                          = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
     // note: ice-equiv thickness:
-    *Hmelt += (FRACTION_TO_BASE * massmelted) / (ice->rho * darea);  
+    *bwat += (FRACTION_TO_BASE * massmelted) / (ice->rho * darea);  
     *Texcess = 0.0;
-  } else {  // neither Texcess nor Hmelt needs to change if Texcess < 0.0
-    // Texcess negative; only refreeze (i.e. reduce Hmelt) if at base and Hmelt > 0.0
+  } else {  // neither Texcess nor bwat needs to change if Texcess < 0.0
+    // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
     // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
     if (z > 0.00001) {
       SETERRQ(1, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
     }
-    if (*Hmelt > 0.0) {
+    if (*bwat > 0.0) {
       const PetscScalar thicknessToFreezeOn = - massmelted / (ice->rho * darea);
-      if (thicknessToFreezeOn <= *Hmelt) { // the water *is* available to freeze on
-        *Hmelt -= thicknessToFreezeOn;
+      if (thicknessToFreezeOn <= *bwat) { // the water *is* available to freeze on
+        *bwat -= thicknessToFreezeOn;
         *Texcess = 0.0;
-      } else { // only refreeze Hmelt thickness of water; update Texcess
-        *Hmelt = 0.0;
-        const PetscScalar dTemp = ice->latentHeat * ice->rho * (*Hmelt) / (rho_c * dz);
+      } else { // only refreeze bwat thickness of water; update Texcess
+        *bwat = 0.0;
+        const PetscScalar dTemp = ice->latentHeat * ice->rho * (*bwat) / (rho_c * dz);
         *Texcess += dTemp;
       }
     } 
-    // note: if *Hmelt == 0 and Texcess < 0.0 then Texcess unmolested; temp will go down
+    // note: if *bwat == 0 and Texcess < 0.0 then Texcess unmolested; temp will go down
   }
   return 0;
 }
@@ -105,11 +105,10 @@ This method should be kept because it is worth having alternative physics, and
 
     An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
-    In this procedure four scalar fields are modified: vHmelt, vbmr, and vWork3d.
+    In this procedure four scalar fields are modified: vbwat, vbmr, and vWork3d.
     But vbmr will never need to communicate ghosted values (horizontal stencil
     neighbors).  The ghosted values for T3 are updated from the values in vWork3d in the
-    communication done by energyStep().  There is a diffusion model for vHmelt in 
-    diffuseHmelt() which does communication for vHmelt.
+    communication done by energyStep().
 
   The (older) scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
   still an extreme and rare fjord situation which causes trouble.  For example, it
@@ -155,7 +154,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     //   or bedrock can be lower than surface temperature
     const PetscScalar bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice->c_p;
 
-    const PetscReal hmelt_decay_rate = config.get("hmelt_decay_rate");  // m s-1
+    const PetscReal bwat_decay_rate = config.get("bwat_decay_rate");  // m s-1
 
     PetscScalar *Tnew;
     // pointers to values in current column
@@ -173,7 +172,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = system.initAllColumns(); CHKERRQ(ierr);
 
     // now get map-plane fields, starting with coupler fields
-    PetscScalar  **Hmelt, **basalMeltRate;
+    PetscScalar  **bwat, **basalMeltRate;
   
     if (surface != PETSC_NULL) {
       ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
@@ -201,7 +200,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
     ierr = vH.begin_access(); CHKERRQ(ierr);
-    ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
+    ierr = vbwat.get_array(bwat); CHKERRQ(ierr);
     ierr = vbmr.get_array(basalMeltRate); CHKERRQ(ierr);
     ierr = vMask.begin_access(); CHKERRQ(ierr);
     ierr = G0.begin_access(); CHKERRQ(ierr);
@@ -227,7 +226,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     PetscInt maxLowTempCount = static_cast<PetscInt>(config.get("max_low_temp_count"));
     PetscReal globalMinAllowedTemp = config.get("global_min_allowed_temp");
 
-    PetscReal hmelt_max = config.get("hmelt_max");
+    PetscReal bwat_max = config.get("bwat_max");
 
     MaskQuery mask(vMask);
 
@@ -288,7 +287,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         }	// end of "if there are enough points in ice to bother ..."
 
         // prepare for melting/refreezing
-        PetscScalar Hmeltnew = Hmelt[i][j];
+        PetscScalar bwatnew = bwat[i][j];
       
         // insert solution for generic ice segments
         for (PetscInt k=1; k <= ks; k++) {
@@ -300,7 +299,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             if (x[k] > Tpmp) {
               Tnew[k] = Tpmp;
               PetscScalar Texcess = x[k] - Tpmp; // always positive
-              excessToFromBasalMeltLayer(rho_c_I, fzlev[k], fdz, &Texcess, &Hmeltnew);
+              excessToFromBasalMeltLayer(rho_c_I, fzlev[k], fdz, &Texcess, &bwatnew);
               // Texcess  will always come back zero here; ignore it
             } else {
               Tnew[k] = x[k];
@@ -327,9 +326,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             if (mask.ocean(i,j)) {
               // when floating, only half a segment has had its temperature raised
               // above Tpmp
-              excessToFromBasalMeltLayer(rho_c_I/2, 0.0, fdz, &Texcess, &Hmeltnew);
+              excessToFromBasalMeltLayer(rho_c_I/2, 0.0, fdz, &Texcess, &bwatnew);
             } else {
-              excessToFromBasalMeltLayer(rho_c_I, 0.0, fdz, &Texcess, &Hmeltnew);
+              excessToFromBasalMeltLayer(rho_c_I, 0.0, fdz, &Texcess, &bwatnew);
             }
             Tnew[0] = Tpmp + Texcess;
             if (Tnew[0] > (Tpmp + 0.00001)) {
@@ -346,7 +345,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           if (Tnew[0] < artm(i,j) - bulgeMax) {
             Tnew[0] = artm(i,j) - bulgeMax;   bulgeCount++;   }
         } else {
-          Hmeltnew = 0.0;
+          bwatnew = 0.0;
         }
 
         // set to air temp above ice
@@ -357,7 +356,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         // transfer column into vWork3d; communication later
         ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
-        // basalMeltRate[][] is rate of mass loss at bottom of ice; finalize it and Hmelt
+        // basalMeltRate[][] is rate of mass loss at bottom of ice; finalize it and bwat
         //   note massContExplicitStep() calls PISMOceanCoupler; FIXME: does there
         //   need to be a check that shelfbmassflux(i,j) is up to date?
         if (mask.ocean(i,j)) {
@@ -366,19 +365,19 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             basalMeltRate[i][j] = shelfbmassflux(i,j); // set by PISMOceanCoupler
             // if floating ice is present assume maximally saturated till to avoid "shock" if
             //   grounding line advances
-            Hmelt[i][j] = hmelt_max;
+            bwat[i][j] = bwat_max;
           } else {
             basalMeltRate[i][j] = 0.0;
-            Hmelt[i][j] = 0.0;
+            bwat[i][j] = 0.0;
           }
         } else {
-          // basalMeltRate is rate of change of Hmelt[][];  can be negative
+          // basalMeltRate is rate of change of bwat[][];  can be negative
           //   (subglacial water freezes-on); note this rate is calculated
-          //   *before* limiting Hmelt.
-          basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / (dt_years_TempAge * secpera);
+          //   *before* limiting bwat.
+          basalMeltRate[i][j] = (bwatnew - bwat[i][j]) / (dt_years_TempAge * secpera);
           // model loss to undetermined exterior:
-          Hmeltnew -= hmelt_decay_rate * (dt_years_TempAge * secpera);  
-          Hmelt[i][j] = PetscMin(hmelt_max, PetscMax(Hmeltnew, 0.0));
+          bwatnew -= bwat_decay_rate * (dt_years_TempAge * secpera);  
+          bwat[i][j] = PetscMin(bwat_max, PetscMax(bwatnew, 0.0));
         }
 
     } 
@@ -388,7 +387,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vHmelt.end_access(); CHKERRQ(ierr);
+  ierr = vbwat.end_access(); CHKERRQ(ierr);
   ierr = Rb->end_access(); CHKERRQ(ierr);
   ierr = G0.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);

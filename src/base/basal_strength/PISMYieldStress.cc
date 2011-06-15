@@ -32,8 +32,8 @@ Its initialization is nontrivial: either -topg_to_phi
 heuristic or inverse modeling (to be implemented ...). Currently \c tillphi does
 not evolve during the run.
 
-This submodel uses vHmelt = \c bwat as an input at each update.  Basal water pressure
-\c bwp is computed from vHmelt, then that pressure is combined with tillphi
+This submodel uses \c bwat as an input at each update.  Basal water pressure
+\c bwp is computed from \c bwat, then that pressure is combined with tillphi
 to compute an updated \c tauc by the Mohr-Coulomb criterion.
 
 This submodel is inactive in floating areas.
@@ -51,6 +51,7 @@ PetscErrorCode PISMDefaultYieldStress::allocate() {
 
   return 0;
 }
+
 
 //! Initialize the pseudo-plastic till mechanical model.
 /*! 
@@ -82,7 +83,6 @@ This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
 the current method leaves \c tillphi unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-
 PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
 {
   PetscErrorCode ierr;
@@ -272,14 +272,14 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
   bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
   // only makes sense when use_ssa_when_grounded == TRUE
   if (use_ssa_when_grounded == PETSC_FALSE) {
-    SETERRQ(1, "use_ssa_when_grounded == PETSC_FALSE but updateYieldStressFromHmelt() called");
+    SETERRQ(1, "use_ssa_when_grounded == PETSC_FALSE but\n"
+               "  PISMDefaultYieldStress::basal_material_yield_stress() was called");
   }
-
 
   const PetscScalar
     till_pw_fraction = config.get("till_pw_fraction"),
     till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
-    hmelt_max = config.get("hmelt_max"),
+    bwat_max = config.get("bwat_max"),
     ice_density = config.get("ice_density"),
     standard_gravity = config.get("standard_gravity");
 
@@ -306,7 +306,7 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
           p_w    = basal_water_pressure((*ice_thickness)(i, j),
                                         (*basal_water_thickness)(i, j),
                                         (*basal_melt_rate)(i, j),
-                                        till_pw_fraction, hmelt_max),
+                                        till_pw_fraction, bwat_max),
           N      = p_over - p_w;  // effective pressure on till
 
         result(i, j) = till_c_0 + N * tan((pi/180.0) * till_phi(i, j));
@@ -352,6 +352,7 @@ stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1
 
   return 0;
 }
+
 
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
 /*!
@@ -456,6 +457,7 @@ PetscErrorCode PISMDefaultYieldStress::topg_to_phi() {
   return 0;
 }
 
+
 //! \brief Compute modeled pressure in subglacial liquid water using thickness of subglacial water layer.
 /*!
 Inputs are \c bwat, the thickness of basal water, and \c bmr, the basal melt rate.
@@ -464,15 +466,15 @@ The output is \f$p_w\f$ the basal water pressure.
 The basic model is
 \f{align*}
   p_{over} = \rho g H, \\
-  p_w = \alpha\, \frac{w}{w_{\text{max}}}\, p_{over}
+  p_w = \alpha\, \frac{W}{W_{\text{max}}}\, p_{over}
 \f}
 where 
   - \f$\rho\f$ is the ice density (ice_density) and \f$g\f$ is gravity,
   - \f$H\f$ is the ice thickness (thk),
   - \f$p_{over}\f$ is the ice overburden pressure,
   - \f$\alpha\f$ is the till pore water fraction (till_pw_fraction),
-  - \f$w\f$ is the effective thickness of subglacial melt water (bwat), and
-  - \f$w_{\text{max}}\f$ is the maximum allowed value for \f$w\f$ (hmelt_max).
+  - \f$W\f$ is the effective thickness of subglacial melt water (bwat), and
+  - \f$W_{\text{max}}\f$ is the maximum allowed value for \f$W\f$ (bwat_max).
 
 If flags \c p.usebmr or \c p.usethkeff are set then this formula is modified;
 see the code below for details.
@@ -506,10 +508,10 @@ If the effective pressure on the subglacial layer is needed, then these lines ar
 recommended for this purpose:
 \verbatim
   p_over = ice->rho * standard_gravity * thk;  // overburden pressure
-  p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, hmelt_max);
+  p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, bwat_max);
 \endverbatim
 
-The inequality \c bwat \f$\le\f$ \c hmelt_max is required at input, and an
+The inequality \c bwat \f$\le\f$ \c bwat_max is required at input, and an
 error is thrown if not.
 
 Regarding the physics, compare the water pressure computed by formula (4) in
@@ -520,17 +522,17 @@ at an unknowable location.  (We are not doing a flow line model!)
  */
 PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscScalar thk, PetscScalar bwat,
                                                   PetscScalar bmr, PetscScalar frac,
-                                                  PetscScalar hmelt_max) {
-  if (bwat > hmelt_max + 1.0e-6) {
+                                                  PetscScalar bwat_max) {
+  if (bwat > bwat_max + 1.0e-6) {
     PetscPrintf(grid.com,
-                "PISM ERROR:  bwat = %12.8f exceeds hmelt_max = %12.8f\n"
-                "  in IceModel::getBasalWaterPressure()\n",bwat,hmelt_max);
+                "PISM ERROR:  bwat = %12.8f exceeds bwat_max = %12.8f\n"
+                "  in IceModel::getBasalWaterPressure()\n",bwat,bwat_max);
     PISMEnd();
   }
 
-  // the model; note 0 <= p_pw <= frac * p_overburden because  0 <= bwat <= hmelt_max
+  // the model; note 0 <= p_pw <= frac * p_overburden because  0 <= bwat <= bwat_max
   const PetscScalar p_overburden = p.ice_density * p.standard_gravity * thk; // FIXME task #7297
-  PetscScalar p_pw = frac * (bwat / hmelt_max) * p_overburden;
+  PetscScalar p_pw = frac * (bwat / bwat_max) * p_overburden;
 
   if (p.usebmr) {
     // add to pressure from instantaneous basal melt rate;
@@ -586,7 +588,7 @@ PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
 
   const PetscScalar
     alpha     = model->config.get("till_pw_fraction"),
-    wmax      = model->config.get("hmelt_max"),
+    wmax      = model->config.get("bwat_max"),
     fillval   = -0.01;
 
   ierr = model->ice_thickness->begin_access(); CHKERRQ(ierr);

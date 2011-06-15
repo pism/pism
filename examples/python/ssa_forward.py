@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -101,14 +101,14 @@ class ssa_from_boot_file(PISM.ssa.SSATestCase):
     grid = self.grid
     bmr   = PISM.util.standardBasalMeltRateVec(grid)
     tillphi = PISM.util.standardTillPhiVec(grid)
-    Hmelt = PISM.util.standardBasalWaterVec(grid)
-    for v in [bmr,tillphi,Hmelt]:
+    bwat = PISM.util.standardBasalWaterVec(grid)
+    for v in [bmr,tillphi,bwat]:
       v.regrid(self.boot_file,True)
 
     standard_gravity = self.config.get("standard_gravity")
     ice_rho = self.ice.rho
     basal_till = BasalTillStrength(self.grid,ice_rho,standard_gravity)
-    basal_till.updateYieldStress(mask, thickness, Hmelt, bmr, tillphi, 
+    basal_till.updateYieldStress(mask, thickness, bwat, bmr, tillphi, 
                                  solver.tauc)
 
 
@@ -124,7 +124,7 @@ class BasalTillStrength:
     
     self.till_pw_fraction = config.get("till_pw_fraction")
     self.till_c_0 = config.get("till_c_0") * 1e3 # convert from kPa to Pa
-    self.hmelt_max = config.get("hmelt_max");
+    self.bwat_max = config.get("bwat_max");
 
     self.usebmr        = config.get_flag("bmr_enhance_basal_water_pressure")
     self.usethkeff     = config.get_flag("thk_eff_basal_water_pressure")
@@ -138,12 +138,12 @@ class BasalTillStrength:
   def setFromOptions(self):
     for o in PISM.OptionsGroup(title="BasalTillStrength"):
       # // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
-      # // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
+      # // from the thickness of the basal melt water bwat
       # // Note: option is given in kPa.
       config.scalar_from_option("plastic_c0", "till_c_0");
 
       # // till_pw_fraction is a parameter in the computation of the till yield stress tau_c
-      # // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
+      # // from the thickness of the basal melt water bwat
       # // option a pure number (a fraction); no conversion
       config.scalar_from_option("plastic_pwfrac", "till_pw_fraction")
 
@@ -155,16 +155,16 @@ class BasalTillStrength:
 
 # The updateYieldStress and getBasalWaterPressure come from iMBasal.
 
-  def updateYieldStress(self,mask,thickness,Hmelt,bmr,tillphi,tauc):
+  def updateYieldStress(self,mask,thickness,bwat,bmr,tillphi,tauc):
     config = PISM.global_config()
     till_pw_fraction = self.till_pw_fraction#config.get("till_pw_fraction")
     till_c_0 = self.till_c_0#config.get("till_c_0") * 1e3 # convert from kPa to Pa
-    hmelt_max = self.hmelt_max#config.get("hmelt_max");
+    bwat_max = self.bwat_max#config.get("bwat_max");
 
     rho_g = self.rho_g
 
 
-    with PISM.util.Access(nocomm=[mask,tauc,thickness,Hmelt,bmr,tillphi]):
+    with PISM.util.Access(nocomm=[mask,tauc,thickness,bwat,bmr,tillphi]):
       mq = PISM.MaskQuery(mask)
       GHOSTS = self.grid.max_stencil_width;
       for (i,j) in self.grid.points_with_ghosts(nGhosts = GHOSTS):
@@ -178,22 +178,22 @@ class BasalTillStrength:
         else: # grounded and there is some ice
           p_over = rho_g * H_ij
           p_w    = self.getBasalWaterPressure( H_ij,
-                                         Hmelt[i,j],bmr[i,j],till_pw_fraction, 
-                                         hmelt_max)
+                                         bwat[i,j],bmr[i,j],till_pw_fraction, 
+                                         bwat_max)
           N = p_over - p_w #  effective pressure on till
           tauc[i,j] = till_c_0 + N * math.tan((math.pi/180.0) * tillphi[i,j])
 
-  def getBasalWaterPressure( self, thk, bwat, bmr, frac, hmelt_max ):  
-    if (bwat > hmelt_max + 1.0e-6):
+  def getBasalWaterPressure( self, thk, bwat, bmr, frac, bwat_max ):  
+    if (bwat > bwat_max + 1.0e-6):
       verbPrintf(1,grid.com,
-        "PISM ERROR:  bwat = %12.8f exceeds hmelt_max = %12.8f\n" +
-        "  in IceModel::getBasalWaterPressure()\n", bwat, hmelt_max );
+        "PISM ERROR:  bwat = %12.8f exceeds bwat_max = %12.8f\n" +
+        "  in IceModel::getBasalWaterPressure()\n", bwat, bwat_max );
       PISM.PISMEnd();
 
     # the model; note  0 <= p_pw <= frac * p_overburden
-    #   because  0 <= bwat <= hmelt_max
+    #   because  0 <= bwat <= bwat_max
     p_overburden = self.rho_g * thk; #// FIXME task #7297
-    p_pw = frac * (bwat / hmelt_max) * p_overburden;
+    p_pw = frac * (bwat / bwat_max) * p_overburden;
 
     if (self.usebmr):
       # add to pressure from instantaneous basal melt rate;

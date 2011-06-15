@@ -252,7 +252,7 @@ This method is documented by the page \ref bombproofenth and by [\ref
 AschwandenBuelerKhroulevBlatter].
 
 This method updates IceModelVec3 vWork3d = vEnthnew, IceModelVec2S vbmr, and 
-IceModelVec2S vHmelt.  No communication of ghosts is done for any of these fields.
+IceModelVec2S vbwat.  No communication of ghosts is done for any of these fields.
 
 We use an instance of enthSystemCtx.
 
@@ -282,8 +282,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     ice_K     = ice_k / ice_c, // enthalpy-conductivity for cold ice
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
     bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
-    hmelt_decay_rate = config.get("hmelt_decay_rate"),   // m s-1
-    hmelt_max = config.get("hmelt_max");                 // m
+    bwat_decay_rate = config.get("bwat_decay_rate"),   // m s-1
+    bwat_max = config.get("bwat_max");                 // m
 
   DrainageCalculator dc(config);
   
@@ -341,7 +341,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   // get other map-plane fields
   ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vHmelt.begin_access(); CHKERRQ(ierr);
+  ierr = vbwat.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.begin_access(); CHKERRQ(ierr);
   ierr = Rb->begin_access(); CHKERRQ(ierr);
   ierr = G0.begin_access(); CHKERRQ(ierr);
@@ -383,17 +383,17 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       PetscScalar Enth_ks;
       ierr = EC->getEnthPermissive(artm(i,j), liqfrac_surface(i,j), p_ks, Enth_ks); CHKERRQ(ierr);
 
-      // deal completely with columns with no ice; enthalpy, vHmelt, vbmr all need setting
+      // deal completely with columns with no ice; enthalpy, vbwat, vbmr all need setting
       if (ice_free_column) {
         ierr = vWork3d.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
         if (mask.floating_ice(i,j)) {
           // if floating then assume-maximally saturated till to avoid "shock"
           //   when grounding line advances
-          vHmelt(i,j) = hmelt_max;
+          vbwat(i,j) = bwat_max;
           vbmr(i,j) = shelfbmassflux(i,j);
         } else {
           // either truely no ice or grounded or both; either way zero-out subglacial fields
-          vHmelt(i,j) = 0.0;  // no stored water on ice free land
+          vbwat(i,j) = 0.0;  // no stored water on ice free land
           vbmr(i,j) = 0.0;    // no basal melt rate; melting is a surface process
                               //   on ice free land
         }
@@ -419,7 +419,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         // if there is subglacial water, don't allow ice base enthalpy to be below
         // pressure-melting; that is, assume subglacial water is at the pressure-
         // melting temperature and enforce continuity of temperature
-        if ((vHmelt(i,j) > 0.0) && (esys.Enth[0] < esys.Enth_s[0])) { 
+        if ((vbwat(i,j) > 0.0) && (esys.Enth[0] < esys.Enth_s[0])) { 
           esys.Enth[0] = esys.Enth_s[0];
         }
 
@@ -446,7 +446,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
             //   efgis paper; after we compute it we make sure there is no
             //   refreeze if there is no available basal water
             vbmr(i,j) = ( (*Rb)(i,j) + G0(i,j) - hf_up ) / (ice->rho * L);
-            if ((vHmelt(i,j) <= 0) && (vbmr(i,j) < 0))    vbmr(i,j) = 0.0;
+            if ((vbwat(i,j) <= 0) && (vbmr(i,j) < 0))    vbmr(i,j) = 0.0;
           }
         }
 
@@ -504,9 +504,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
 
         // thermodynamic basal melt rate causes water to be added to layer
-        PetscScalar Hmeltnew = vHmelt(i,j);
+        PetscScalar bwatnew = vbwat(i,j);
         if (mask.grounded(i,j)) {
-          Hmeltnew += vbmr(i,j) * dt_secs;
+          bwatnew += vbmr(i,j) * dt_secs;
         }
 
         // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
@@ -530,11 +530,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           }
         }
 
-        // in grounded case, add to both basal melt rate and Hmelt; if floating,
+        // in grounded case, add to both basal melt rate and bwat; if floating,
         // Hdrainedtotal is discarded because ocean determines basal melt rate
         if (mask.grounded(i,j)) {
           vbmr(i,j) += Hdrainedtotal / dt_secs;
-          Hmeltnew += Hdrainedtotal;
+          bwatnew += Hdrainedtotal;
         }
 
         // finalize Enthnew[]:  apply bulge limiter and transfer column
@@ -548,16 +548,16 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
         ierr = vWork3d.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
 
-        // finalize Hmelt value
-        Hmeltnew -= hmelt_decay_rate * dt_secs;
+        // finalize bwat value
+        bwatnew -= bwat_decay_rate * dt_secs;
         if (is_floating) {
           // if floating assume maximally saturated till to avoid "shock" if grounding line advances
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
-          vHmelt(i,j) = hmelt_max;
+          vbwat(i,j) = bwat_max;
         } else {
-          // limit Hmelt to be in [0.0, hmelt_max]
+          // limit bwat to be in [0.0, bwat_max]
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
-          vHmelt(i,j) = PetscMax(0.0, PetscMin(hmelt_max, Hmeltnew) );
+          vbwat(i,j) = PetscMax(0.0, PetscMin(bwat_max, bwatnew) );
         }
 
       } // end explicit scoping
@@ -574,7 +574,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vHmelt.end_access(); CHKERRQ(ierr);
+  ierr = vbwat.end_access(); CHKERRQ(ierr);
   ierr = Rb->end_access(); CHKERRQ(ierr);
   ierr = G0.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);

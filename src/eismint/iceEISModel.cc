@@ -326,7 +326,7 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
   ierr = vbed.endGhostComm(); CHKERRQ(ierr);
 
-  ierr = vHmelt.set(0.0); CHKERRQ(ierr);
+  ierr = vbwat.set(0.0); CHKERRQ(ierr);
   ierr = vbmr.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.042); CHKERRQ(ierr);  // EISMINT II value; J m-2 s-1
 

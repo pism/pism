@@ -121,8 +121,8 @@ netcdf pism_config {
     pism_config:bootstrapping_uplift_value_no_var = 0.0;
     pism_config:bootstrapping_uplift_value_no_var_doc = "m s-1; uplift value to use if dbdt variable is absent in bootstrapping file";
     
-    pism_config:bootstrapping_Hmelt_value_no_var = 0.0;
-    pism_config:bootstrapping_Hmelt_value_no_var_doc = "m; basal melt water effective thickness value to use if variable Hmelt is absent in bootstrapping file";
+    pism_config:bootstrapping_bwat_value_no_var = 0.0;
+    pism_config:bootstrapping_bwat_value_no_var_doc = "m; basal melt water effective thickness value to use if variable bwat is absent in bootstrapping file";
     
     pism_config:bootstrapping_bmelt_value_no_var = 0.0;
     pism_config:bootstrapping_bmelt_value_no_var_doc = "m s-1; basal melt rate value to use if variable bmelt is absent in bootstrapping file";
@@ -175,11 +175,11 @@ netcdf pism_config {
     pism_config:beta_ice_free_bedrock = 1.8e9;
     pism_config:beta_ice_free_bedrock_doc = "Pa s m-1; value is for ice stream E from [\ref HulbeMacAyeal]; thus sliding velocity, but we hope it doesn't matter much; at 100 m a-1 the linear sliding law gives 57040 Pa basal shear stress";
     
-    pism_config:hmelt_max = 2.0;
-    pism_config:hmelt_max_doc = "meters; maximum thickness of the basal melt water layer";
+    pism_config:bwat_max = 2.0;
+    pism_config:bwat_max_doc = "meters; maximum thickness of the basal melt water layer";
 
-    pism_config:hmelt_decay_rate = 3.16887646154128e-11;
-    pism_config:hmelt_decay_rate_doc = "m s-1; = 1 m per 1000 years; rate at which bwat is reduced to zero, in absence of other effects like basal melt rate";
+    pism_config:bwat_decay_rate = 3.16887646154128e-11;
+    pism_config:bwat_decay_rate_doc = "m s-1; = 1 m per 1000 years; rate at which bwat is reduced to zero, in absence of other effects like basal melt rate";
 
     pism_config:minimum_temperature_for_sliding = 273.0;
     pism_config:minimum_temperature_for_sliding_doc = "K; This is less than water_melting_point_temperature.  If ice base is above this value then decide to do SIA sliding, if that mechanism is active at all.";

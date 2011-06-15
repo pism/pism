@@ -464,7 +464,7 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   }
 
   // all of these relate to models which need to be turned off ...
-  ierr = vHmelt.set(0.0); CHKERRQ(ierr);
+  ierr = vbwat.set(0.0); CHKERRQ(ierr);
   // none use Goldsby-Kohlstedt or do age calc
 
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation

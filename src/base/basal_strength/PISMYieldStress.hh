@@ -106,7 +106,7 @@ protected:
   virtual PetscErrorCode regrid();
   virtual PetscScalar basal_water_pressure(PetscScalar thk, PetscScalar bwat,
                                            PetscScalar bmr, PetscScalar frac,
-                                           PetscScalar hmelt_max);
+                                           PetscScalar bwat_max);
 };
 
 class PISMConstantYieldStress : public PISMYieldStress

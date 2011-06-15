@@ -177,8 +177,8 @@ protected:
         vH,		//!< ice thickness; ghosted
         vdHdt,		//!< \f$ \frac{dH}{dt} \f$; ghosted to simplify the code computing it
         vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
-        vHmelt,		//!< thickness of the basal meltwater; ghosted (because of the diffusion)
-        vbmr,	    //!< rate of production of basal meltwater (ice-equivalent); no ghosts
+        vbwat,		//!< thickness of the basal meltwater; ghosted
+        vbmr,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
         vLongitude,	//!< Longitude; ghosted to compute cell areas
         vLatitude,	//!< Latitude; ghosted to compute cell areas
         vbed,		//!< bed topography; ghosted
@@ -236,10 +236,9 @@ protected:
   PetscInt    skipCountDown;
 
   // physical parameters used frequently enough to make looking up via
-  // config.get() a hassle:
+  // config.get() a hassle; initialized in the IceModel constructor from the
+  // configuration file; SHOULD NOT be hard-wired.
   PetscScalar standard_gravity;
-  // Initialized in the IceModel constructor from the configuration file;
-  // SHOULD NOT be hard-wired.
 
   // flags
   PetscTruth  shelvesDragToo, allowAboveMelting;
@@ -361,7 +360,7 @@ protected:
   // see iMtemp.cc
   virtual PetscErrorCode excessToFromBasalMeltLayer(
                       const PetscScalar rho_c, const PetscScalar z, const PetscScalar dz,
-                      PetscScalar *Texcess, PetscScalar *Hmelt);
+                      PetscScalar *Texcess, PetscScalar *bwat);
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
 
   // see iMutil.cc
