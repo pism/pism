@@ -313,6 +313,8 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     config.set_flag("use_ssa_when_grounded", true);
   }  
 
+  config.set_flag("do_diffuse_bwat", true);
+
   return 0;
 }
 

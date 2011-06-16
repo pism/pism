@@ -96,6 +96,7 @@ add_library (pismbase
   base/iMenergy.cc
   base/iMenthalpy.cc
   base/iMgeometry.cc
+  base/iMhydrology.cc
   base/iMicebergs.cc
   base/iMinit.cc
   base/iMIO.cc

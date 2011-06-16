@@ -96,6 +96,9 @@ netcdf pism_config {
 	pism_config:dirichlet_bc = "no";
 	pism_config:dirichlet_bc_doc = "apply Dirichlet boundary condition";
 
+    pism_config:do_diffuse_bwat = "no";
+    pism_config:do_diffuse_bwat_doc = "Do explicit time stepping of equation (11) in [\\ref BBssasliding] to diffuse the layer of stored basal water (bwat).  Normally bwat affects the basal values of the internal energy (enthalpy or temperature) field and it affects the strength of the subglacial layer (the basal stress).";
+
 
     // parameters:
 
@@ -177,6 +180,12 @@ netcdf pism_config {
 
     pism_config:hmelt_decay_rate = 3.16887646154128e-11;
     pism_config:hmelt_decay_rate_doc = "m s-1; = 1 m per 1000 years; rate at which bwat is reduced to zero, in absence of other effects like basal melt rate";
+
+    pism_config:bwat_diffusion_distance = 2e4;
+    pism_config:bwat_diffusion_distance_doc = "meters; diffusion distance for melt water thickness; see equation (11) in [\\ref BBssasliding]; only active if do_diffuse_bwat";
+
+    pism_config:bwat_diffusion_time = 1000.0;
+    pism_config:bwat_diffusion_time_doc = "years; diffusion time for melt water thickness; see equation (11) in [\\ref BBssasliding]; only active if do_diffuse_bwat";
 
     pism_config:minimum_temperature_for_sliding = 273.0;
     pism_config:minimum_temperature_for_sliding_doc = "K; This is less than water_melting_point_temperature.  If ice base is above this value then decide to do SIA sliding, if that mechanism is active at all.";
