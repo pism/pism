@@ -491,6 +491,7 @@ During the time-step we perform the following actions:
  */
 PetscErrorCode IceModel::step(bool do_mass_continuity,
 			      bool do_energy,
+			      bool do_diffuse_bwat,
 			      bool do_age,
 			      bool do_skip,
 			      bool use_ssa_when_grounded) {
@@ -631,6 +632,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   
   grid.profiler->end(event_energy);
 
+  //! \li diffuse the stored basal water if that is requested
+  if (do_diffuse_bwat) {
+    ierr = diffuse_bwat(); CHKERRQ(ierr);
+  }
+
   //! \li compute fluxes through ice boundaries; this method frequently updates
   //! the surface process models pre-emptively, so that massContExplicitStep()
   //! does not do that work again
@@ -700,6 +706,7 @@ PetscErrorCode IceModel::run() {
 
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
     do_energy = config.get_flag("do_energy"),
+    do_diffuse_bwat = config.get_flag("do_diffuse_bwat"),
     do_age = config.get_flag("do_age"),
     do_skip = config.get_flag("do_skip"),
     use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
@@ -731,7 +738,7 @@ PetscErrorCode IceModel::run() {
 				       // greater than start_year
 
   
-  ierr = step(do_mass_conserve, do_energy, do_age,
+  ierr = step(do_mass_conserve, do_energy, do_diffuse_bwat, do_age,
 	      do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
 
   // print verbose messages according to user-set verbosity
@@ -772,7 +779,7 @@ PetscErrorCode IceModel::run() {
     dt_force = -1.0;
     maxdt_temporary = -1.0;
 
-    ierr = step(do_mass_conserve, do_energy, do_age,
+    ierr = step(do_mass_conserve, do_energy, do_diffuse_bwat, do_age,
 		do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
     
     // report a summary for major steps or the last one

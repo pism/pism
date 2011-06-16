@@ -280,7 +280,7 @@ Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of g
  \label{tab:basal-strength}
 \end{table}
 
-Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=$\texttt{bwat}.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
+Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=$\texttt{bwat}; see the next subsection.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
 
 We find that an effective, though heuristic, way to determine \texttt{tillphi} is to make it a function of bed elevation \cite{BKAJS}.  This heuristic is motivated by hypothesis that basal material with a marine history should be weak \cite{HuybrechtsdeWolde}.
 
@@ -312,6 +312,16 @@ pisms -eisII I -ssa_sliding -Mx 91 -My 91 -Mz 51 \
 \end{verbatim}
 
 A final note on basal sliding is in order.  There can be sliding in the SIA stress balance model (paradigm) itself, where the velocity of sliding is a direct function of the driving stress.  Such a SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and many other SIA-based modeling efforts in the literature.  \emph{This kind of sliding is not recommended, as it does not make sense to regard the driving stress as the local generator of flow if the bed is not holding all of that stress.}  Within PISM there is an implementation of SIA-based sliding for the verification test E, see \texttt{SIA_Sliding.cc}.  PISM does \emph{not} support this sliding mode in other contexts.  
+
+
+\subsection{Subglacial hydrology}  \label{subsect:subhydro}
+\optsection{Subglacial hydrology}
+
+Currently, only the most minimal possible hydrology model is implemented in PISM.  By default, the energy conservation calculation generates basal melt and that water is stored locally in the ``till'' under the ice sheet.  The output variable \texttt{bwat} is the effective thickness of this layer of liquid water.  This layer of water relates to the basal boundary condition of the conservation of energy scheme, and it is involved in computing basal water pressure and thus the till yield stress; see the previous subsection.
+
+The minimal model which is on by default is that water is added by basal melt rate, subtracted by refreeze onto the base of the ice, and it decays away in the absence of other inputs according to the configuration parameter \texttt{bwat_decay_rate}.  The amount is bounded above by the configuration constant \texttt{bwat_max}, an effective thickness.  Water above that level is lost in an unmodeled manner.
+
+There is also the option of horizontal diffusion of stored basal water in the field \texttt{bwat}.  This mechanism is normally off, but it is turned on by the option \intextoption{diffuse_bwat}.  The configuration parameters \texttt{bwat_diffusion_distance} and \texttt{bwat_diffusion_time} control the diffusivity.  See equation (11) in \cite{BBssasliding}.
 
 % undocumented options/config. parameters
 % base/iMoptions.cc:  "thk_eff" : "thk_eff_basal_water_pressure"

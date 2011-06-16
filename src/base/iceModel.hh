@@ -112,6 +112,7 @@ public:
   virtual PetscErrorCode run();
   virtual PetscErrorCode step(bool do_mass_continuity, 
                               bool do_energy,
+                              bool do_diffuse_bwat,
 			      bool do_age,
 			      bool do_skip,
 			      bool use_ssa_when_grounded);
@@ -304,6 +305,9 @@ protected:
   virtual PetscErrorCode update_mask();
   virtual PetscErrorCode update_surface_elevation();
   virtual PetscErrorCode massContExplicitStep();
+
+  // see iMhydrology.cc
+  virtual PetscErrorCode diffuse_bwat();
 
   // see iMicebergs.cc
   virtual PetscErrorCode killIceBergs();           // call this one to do proper sequence
