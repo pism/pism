@@ -125,7 +125,7 @@ echo
 echo "$SCRIPTNAME control coupler = '$COUPLER_CTRL'"
 echo "$SCRIPTNAME     AR4 coupler = '$COUPLER_AR4'"
 
-expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,uvelsurf,vvelsurf,wvelsurf,uvelbase,vvelbase,wvelbase,tempsurf,tempbase,diffusivity,acab"
+expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab"
 tspackage="-ts_vars ivol,iareag,iareaf"
 
 

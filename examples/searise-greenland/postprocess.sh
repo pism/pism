@@ -25,7 +25,7 @@ fi
 
 
 # process files to remove fields, combine spatial and scalar series, and fix metadata
-for NAME in "UAF${E}_G_D3_C1_E0" "UAF${E}_G_D3_C2_E0" "UAF${E}_G_D3_C3_E0" "UAF${E}_G_D3_C4_E0" "UAF1_G_D3_C1_S1" "UAF1_G_D3_C1_S2""UAF1_G_D3_C1_S3" "UAF1_G_D3_C1_M1" "UAF1_G_D3_C1_M2" "UAF1_G_D3_C1_M3"; do
+for NAME in "UAF${E}_G_D3_C1_E0" "UAF${E}_G_D3_C2_E0" "UAF${E}_G_D3_C3_E0" "UAF${E}_G_D3_C4_E0" "UAF${E}_G_D3_C1_S1" "UAF${E}_G_D3_C1_S2" "UAF${E}_G_D3_C1_S3" "UAF${E}_G_D3_C1_M1" "UAF${E}_G_D3_C1_M2" "UAF${E}_G_D3_C1_M3"; do
   echo "(postprocess.sh)  working on deliverable $NAME.nc ..."
   echo "(postprocess.sh)    removing unreported fields and the vertical dimension ..."
   ncks -v artm,snowtemp,snowprecip,surftempoffset,sealevel,z,zb -x ${NAME}_raw_y*.nc \
@@ -40,6 +40,7 @@ for NAME in "UAF${E}_G_D3_C1_E0" "UAF${E}_G_D3_C2_E0" "UAF${E}_G_D3_C3_E0" "UAF$
   rm NEWTIME_ts_y*_${NAME}.nc
   echo "(postprocess.sh)    fixing metadata and names ..."
   ncrename -v bwat,bwa ${NAME}.nc                          # fix "bwa" name
+  #FIXME  note gline_flx; what to do?
   ncatted -a pism_ssa_velocities_are_valid,global,d,, ${NAME}.nc  # why does this make it into -extra_file?
   ncatted -a institution,global,c,c,"University of Alaska, Fairbanks" ${NAME}.nc 
   echo "(postprocess.sh)    fixing mask to conform to spec, using postprocess_mask.py ..."
