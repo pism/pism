@@ -52,7 +52,7 @@ def get_projection_from_file(nc):
     ## First, check if we have a global attribute 'projection'
     ## which contains a Proj4 string:
     try:
-        p = Proj(nc.projection)
+        p = Proj(str(nc.projection))
         print('Found projection information in global attribute, using it')
     except:
         try:
