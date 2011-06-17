@@ -263,7 +263,7 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{temppabase} & $^{\circ}$C & pressure-adjusted ice temperature at the base of ice\\
     \texttt{temp_pa} & $^{\circ}$C & pressure-adjusted ice temperature \\
     \texttt{tempicethk} & m & thickness of the temperate ice \\
-    \texttt{tempicethk_basal} & m & thickness of the basal layer of temperate ice \\
+    \scriptsize \texttt{tempicethk_basal}\normalsize & m & thickness of the basal layer of temperate ice \\
     \texttt{tempsurf} & K & ice temperature at the ice surface\\
     \texttt{thk} & m & ice thickness\\
     \texttt{thksmooth} & m & ice thickness relative to \texttt{topgsmooth} \\
@@ -272,12 +272,11 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{topgsmooth} & m & smoothed bed elevation in Schoof's
     \cite{Schoofbasaltopg2003} theory
     of bed roughness in SIA \\
-    \texttt{velbar} & m/year & vertical mean of horizontal ice velocity (both components) \\
-    \texttt{velbase} & m/year & basal ice velocity (both components)\\
+    \texttt{velbar} & m/year & vertical mean of horizontal ice velocity (components \texttt{ubar} and \texttt{vbar} appear in file) \\
+    \texttt{velbase} & m/year & horizontal ice velocity at the ice base (components \texttt{uvelbase} and \texttt{vvelbase} appear in file) \\
     \texttt{usurf} & m & ice upper surface elevation \\
     \texttt{uvel} & m/year & horizontal velocity of ice in the X direction \\
-   \texttt{velsurf} & m/year & horizontal ice velocity at the ice surface (both
-   components) \\
+   \texttt{velsurf} & m/year & horizontal ice velocity at the ice surface (components \texttt{uvelsurf} and \texttt{vvelsurf} appear in file) \\
    \texttt{vvel} & m/year & horizontal velocity of ice in the Y direction \\
     \texttt{wvel_rel} & m/year & vertical velocity of ice \\
     \texttt{wvelbase} & m/year &vertical velocity of ice at the ice base\\
