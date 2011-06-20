@@ -440,14 +440,16 @@ PetscErrorCode PISMBedSmoother::get_theta(
       if (H > maxtl(i,j)) { 
         // thickness exceeds maximum variation in patch of local topography,
         // so ice buries local topography; note maxtl >= 0 always
-        const PetscReal Hinv = 1.0 / H;
-        PetscReal omega;
-        omega = 1.0 + Hinv*Hinv * ( C2(i,j) + Hinv * ( C3(i,j) + Hinv*C4(i,j) ) );
+        const PetscReal Hinv = 1.0 / PetscMax(H, 1.0);
+        PetscReal omega = 1.0 + Hinv*Hinv * ( C2(i,j) + Hinv * ( C3(i,j) + Hinv*C4(i,j) ) );
         if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
           SETERRQ2(1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
                      "    in PISMBedSmoother.get_theta() ... ending\n",i,j);
         }
-        if (omega < 0.001)  omega = 0.001;
+
+        if (omega < 0.001)      // this check *should not* be necessary
+          omega = 0.001;
+
         mytheta[i][j] = pow(omega,-n);
         // now guarantee in [0,1]; this check *should not* be necessary, by convexity of p4
         if (mytheta[i][j] > 1.0)  mytheta[i][j] = 1.0;
