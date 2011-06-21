@@ -84,7 +84,7 @@ public:
   double operator()(double time);
   double operator[](unsigned int j) const;
   double average(double t, double dt, unsigned int N);
-  PetscErrorCode append(double time, double value);
+  PetscErrorCode append(double value, double a, double b);
   int length();
   PetscErrorCode set_attr(string name, double value);
   PetscErrorCode set_attr(string name, string value);
@@ -96,9 +96,11 @@ protected:
   MPI_Comm com;
   PetscMPIInt rank;
   NCTimeseries dimension, var;
+  NCTimeBounds bounds;
 
   vector<double> time;
   vector<double> values;
+  vector<double> time_bounds;
 };
 
 //! A class for storing and writing diagnostic time-series.
@@ -134,8 +136,8 @@ protected:
   Once this is set up, one can add calls like
 
   \code
-  offsets->append(t_years, TsOffset);
-  offsets->interp(time);
+  offsets->append(t_years - dt_years, t_years, TsOffset);
+  offsets->interp(time - dt_years, time);
   \endcode
 
   to the code. The first call will store the (t_years, TsOffset). The second
@@ -161,16 +163,18 @@ public:
   DiagnosticTimeseries(MPI_Comm com, PetscMPIInt rank, string name, string dimension_name);
   ~DiagnosticTimeseries();
 
-  PetscErrorCode append(double T, double V);
-  PetscErrorCode interp(double time);
+  PetscErrorCode append(double V, double a, double b);
+  PetscErrorCode interp(double a, double b);
   PetscErrorCode flush();
 
   size_t buffer_size;
   string output_filename;
+  bool rate_of_change;
 
 protected:
   size_t start;
   deque<double> t, v;
+  double v_previous;
 };
 
 #endif // __Timeseries_hh

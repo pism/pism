@@ -174,12 +174,45 @@ PetscErrorCode IceModel::update_surface_elevation() {
 
   The rate of thickness change \f$\partial H/\partial t\f$ is computed and saved,
   as is the rate of volume loss or gain.
+
+We also compute total ice fluxes in kg s-1 at 3 interfaces:
+
+  \li the ice-atmosphere interface: gets surface mass balance rate from
+      PISMSurfaceModel *surface,
+  \li the ice-ocean interface at the bottom of ice shelves: gets ocean-imposed
+      basal melt rate from PISMOceanModel *ocean, and
+  \li the ice-bedrock interface: gets basal melt rate from IceModelVec2S vbmr.
+
+A unit-conversion occurs for all three quantities, from ice-equivalent m s-1
+to kg s-1.  The sign convention about these fluxes is that positve flux means
+ice is being \e added to the ice fluid volume at that interface.
+
+These quantities should be understood as <i>instantaneous at the beginning of
+the time-step.</i>  Multiplying by dt will \b not necessarily give the
+corresponding change from the beginning to the end of the time-step.
+
+FIXME:  The calving rate can be computed by post-processing:
+divoldt = surface_ice_flux * iarea + basal_ice_flux * iareag + sub_shelf_ice_flux * iareaf + calving_flux_vol_rate
 */
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
-  PetscScalar my_nonneg_rule_flux = 0, my_ocean_kill_flux = 0, my_float_kill_flux = 0;
+  PetscScalar
+    // totals over the processor's domain:
+    my_basal_ice_flux = 0,
+    my_float_kill_flux = 0,
+    my_nonneg_rule_flux = 0,
+    my_ocean_kill_flux = 0,
+    my_sub_shelf_ice_flux = 0,
+    my_surface_ice_flux = 0,
+    // totals over all processors:
+    sub_shelf_ice_flux = 0,
+    basal_ice_flux = 0,
+    float_kill_flux = 0,
+    nonneg_rule_flux = 0,
+    ocean_kill_flux = 0,
+    surface_ice_flux = 0;
 
-  const PetscScalar   dx = grid.dx, dy = grid.dy;
+  const PetscScalar dx = grid.dx, dy = grid.dy;
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed"),
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
@@ -202,9 +235,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr);
   IceModelVec2V vel = *vel_advective; // just an alias
 
-  PetscScalar **bmr_gnded;
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vbmr.get_array(bmr_gnded); CHKERRQ(ierr);
+  ierr = vbmr.begin_access(); CHKERRQ(ierr);
   ierr = Qdiff->begin_access(); CHKERRQ(ierr);
   ierr = vel_advective->begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
@@ -278,20 +310,20 @@ PetscErrorCode IceModel::massContExplicitStep() {
         if (mask.ocean(i, j))
           S = shelfbmassflux(i,j);
         else
-          S = bmr_gnded[i][j];
+          S = vbmr(i, j);
       }
 
       // decide whether to apply Albrecht et al 2011 subgrid-scale parameterization (-part_grid)
 
       // case where we apply -part_grid
-	  //if (do_part_grid && mask.next_to_floating_ice(i, j) && !mask.next_to_grounded_ice(i, j)) {
+      //if (do_part_grid && mask.next_to_floating_ice(i, j) && !mask.next_to_grounded_ice(i, j)) {
       if (do_part_grid && mask.next_to_floating_ice(i, j)) {
         vHref(i, j) -= divQ * dt;
-		if (vHref(i, j) < 0.0) { 
-			my_nonneg_rule_flux += ( - vHref(i, j));
-			vHref(i, j) = 0.0;
-			ierr = verbPrintf(2, grid.com,"!!! PISM_WARNING: vHref is negative at i=%d, j=%d\n",i,j); CHKERRQ(ierr);
-		}
+        if (vHref(i, j) < 0.0) { 
+          my_nonneg_rule_flux += ( - vHref(i, j));
+          vHref(i, j) = 0.0;
+          ierr = verbPrintf(2, grid.com,"!!! PISM_WARNING: vHref is negative at i=%d, j=%d\n",i,j); CHKERRQ(ierr);
+        }
 
         PetscReal H_average = get_average_thickness(do_redist, M, vH.star(i, j));
 
@@ -302,20 +334,20 @@ PetscErrorCode IceModel::massContExplicitStep() {
         //   X = vHref_old + (M - S) * dt * X / H_average.
         // where M = acab and S = shelfbaseflux for floating ice.  Solving for X we get
         //   X = vHref_old / (1.0 - (M - S) * dt * H_average))
-		/*
-        if ((acab(i, j) - S) * dt < H_average) {
-			vHref(i, j) = vHref(i, j) / (1.0 - (acab(i, j) - S) * dt / H_average);
-		} else {
-			ierr = verbPrintf(4, grid.com,"!!! PISM_WARNING: H_average is smaller than surface mass balance at i=%d, j=%d.\n",i,j); CHKERRQ(ierr);
-		}
-		*/
+        /*
+          if ((acab(i, j) - S) * dt < H_average) {
+          vHref(i, j) = vHref(i, j) / (1.0 - (acab(i, j) - S) * dt / H_average);
+          } else {
+          ierr = verbPrintf(4, grid.com,"!!! PISM_WARNING: H_average is smaller than surface mass balance at i=%d, j=%d.\n",i,j); CHKERRQ(ierr);
+          }
+        */
 
         const PetscScalar coverageRatio = vHref(i, j) / H_average;
 
         if (coverageRatio > 1.0) { // partially filled grid cell is considered to be full
           if (do_redist) {  vHresidual(i, j) = vHref(i, j) - H_average;  } //residual ice thickness
           vHnew(i, j) = H_average; // gets a "real" ice thickness
-	   	  vHnew(i, j)+= (acab(i, j) - S) * dt; // no implicit SMB in partially filled cells any more
+          vHnew(i, j)+= (acab(i, j) - S) * dt; // no implicit SMB in partially filled cells any more
           vHref(i, j) = 0.0;
         } else {
           vHnew(i, j) = 0.0; // no change from vH value, actually
@@ -328,17 +360,43 @@ PetscErrorCode IceModel::massContExplicitStep() {
         // grounded/floating default case, and case of ice-free ocean adjacent to grounded
         vHnew(i, j) += (acab(i, j) - S - divQ) * dt;
       } else {
-        // last possibility: ice-free, not adjacent to a "full" cell at all
+        // last possibility: ice-free ocean not adjacent to a "full" cell at all
         vHnew(i, j) = 0.0;
       }
       
       if (dirichlet_bc && vBCMask.as_int(i,j) == 1) {
-        vHnew(i, j) = vH(i,j);
+        vHnew(i, j) = vH(i, j);
+      }
+
+      bool there_is_ice_due_to_flow = vH(i, j) - divQ * dt > 0;
+
+      // surface mass flux accounting: always count accumulation, count
+      // ablation only if there will be ice to ablate (due to flow)
+      if (acab(i, j) > 0 || there_is_ice_due_to_flow)
+        my_surface_ice_flux += acab(i, j);
+
+      if (include_bmr_in_continuity) {
+        if (mask.ocean(i, j)) {
+          // sub-shelf mass flux accounting: Always count freeze-one, only
+          // count melt if there was ice to melt.
+          if (shelfbmassflux(i, j) < 0 || there_is_ice_due_to_flow)
+            my_sub_shelf_ice_flux -= shelfbmassflux(i, j); // note the "-="
+
+        } else {
+          // basal mass flux accounting: always count freeze-on, count melt if
+          // there will be ice to melt (due to flow)
+          if (vbmr(i, j) < 0 || there_is_ice_due_to_flow)
+            my_basal_ice_flux -= vbmr(i, j); // note the "-="
+
+        }
       }
 
       // apply free boundary rule: negative thickness becomes zero
       if (vHnew(i, j) < 0) {
-        my_nonneg_rule_flux += ( - vHnew(i, j));
+        if (there_is_ice_due_to_flow) {
+          my_nonneg_rule_flux += ( - vHnew(i, j));
+        }
+
         vHnew(i, j) = 0.0;
       }
 
@@ -390,45 +448,26 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // flux accounting
   {
-    ierr = PetscGlobalSum(&my_nonneg_rule_flux, &nonneg_rule_flux, grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&my_ocean_kill_flux, &ocean_kill_flux, grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&my_float_kill_flux, &float_kill_flux, grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&my_basal_ice_flux,     &basal_ice_flux,     grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&my_float_kill_flux,    &float_kill_flux,    grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&my_nonneg_rule_flux,   &nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&my_ocean_kill_flux,    &ocean_kill_flux,    grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&my_sub_shelf_ice_flux, &sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&my_surface_ice_flux,   &surface_ice_flux,   grid.com); CHKERRQ(ierr);
 
     // FIXME: use corrected cell areas (when available)
-    PetscScalar ice_density = config.get("ice_density"),
-      factor = ice_density * (dx * dy) / dt;
-    nonneg_rule_flux *= factor;
-    ocean_kill_flux *= factor;
-    float_kill_flux *= factor;
+    PetscScalar factor = config.get("ice_density") * (dx * dy);
+
+    // these are computed using accumulation/ablation or melt rates, so we need
+    // to multiply by dt
+    cumulative_basal_ice_flux     += basal_ice_flux     * factor * dt;
+    cumulative_sub_shelf_ice_flux += sub_shelf_ice_flux * factor * dt;
+    cumulative_surface_ice_flux   += surface_ice_flux   * factor * dt;
+    // these are computed using ice thickness and are "cumulative" already
+    cumulative_float_kill_flux    += float_kill_flux    * factor;
+    cumulative_nonneg_rule_flux   += nonneg_rule_flux   * factor;
+    cumulative_ocean_kill_flux    += ocean_kill_flux    * factor;
   } //FIXME: flux reporting not yet adjusted to part_grid scheme
-
-  // compute dH/dt (thickening rate) for viewing and for saving at end; only diagnostic
-  ierr = vHnew.add(-1.0, vH, vdHdt); CHKERRQ(ierr); // vdHdt = vHnew - vH
-  ierr = vdHdt.scale(1.0 / dt); CHKERRQ(ierr);        // vdHdt = vdHdt / dt
-
-  // d(volume) / dt
-  {
-    PetscScalar dvol = 0.0;
-
-    ierr = vdHdt.begin_access(); CHKERRQ(ierr);
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
-        dvol += vdHdt(i, j) * cell_area(i, j);
-      }
-    }
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-    ierr = vdHdt.end_access(); CHKERRQ(ierr);
-
-    ierr = PetscGlobalSum(&dvol, &dvoldt, grid.com); CHKERRQ(ierr);
-  }
-
-  // average value of dH / dt;
-  PetscScalar ice_area;
-  ierr = compute_ice_area(ice_area); CHKERRQ(ierr);
-
-  ierr = vdHdt.sum(gdHdtav); CHKERRQ(ierr);
-  gdHdtav = gdHdtav / ice_area; // m/s
 
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);

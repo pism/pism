@@ -151,4 +151,18 @@ public:
   virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
 };
 
+class NCTimeBounds : public NCVariable
+{
+public:
+  void init(string dim_name, MPI_Comm c, PetscMPIInt r);
+  virtual PetscErrorCode read(string filename, vector<double> &data);
+  virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, nc_type nctype = NC_DOUBLE);
+  virtual PetscErrorCode write(string filename, size_t start, double a, double b, nc_type nctype = NC_DOUBLE);
+  virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
+
+  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
+protected:
+  string dimension_name, bounds_name;
+};
+
 #endif  // __NCVariable_hh

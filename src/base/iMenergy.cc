@@ -19,7 +19,8 @@
 #include "iceModel.hh"
 #include "Mask.hh"
 
-//! \file iMenergy.cc Methods of IceModel which address conservation of energy.  Common to enthalpy (polythermal) and temperature (cold-ice) methods.
+//! \file iMenergy.cc Methods of IceModel which address conservation of energy.
+//! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
 
 //! Manage the solution of the energy equation, and related parallel communication.
 /*!
@@ -114,7 +115,8 @@ PetscErrorCode IceModel::energyStep() {
 }
 
 
-//! Extract from enthalpy field (Enth3) the temperature which the top of the bedrock thermal layer will see.
+//! \brief Extract from enthalpy field (Enth3) the temperature which the top of
+//! the bedrock thermal layer will see.
 PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   PetscErrorCode  ierr;
 
@@ -169,7 +171,8 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 }
 
 
-//! \brief Is one of my neighbors below a critical thickness to apply advection in enthalpy or temperature equation?
+//! \brief Is one of my neighbors below a critical thickness to apply advection
+//! in enthalpy or temperature equation?
 bool IceModel::checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
                               PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE) {
   // FIXME: silly hard-wired critical level, but we want to avoid config.get() in loops.

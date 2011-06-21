@@ -21,6 +21,7 @@
 
 #include "iceModelVec.hh"
 #include "PISMVars.hh"
+#include "Timeseries.hh"
 
 //! \brief Class representing diagnostic computations in PISM.
 /*!
@@ -125,6 +126,54 @@ class PISMDiag : public PISMDiagnostic
 public:
   PISMDiag(Model *m, IceGrid &g, PISMVars &my_vars)
     : PISMDiagnostic(g, my_vars), model(m) {}
+protected:
+  Model *model;
+};
+
+//! \brief PISM's scalar time-series diagnostics.
+class PISMTSDiagnostic
+{
+public:
+  PISMTSDiagnostic(IceGrid &g, PISMVars &my_vars)
+    : variables(my_vars), grid(g), ts(NULL) {
+  }
+
+  virtual ~PISMTSDiagnostic() {
+    delete ts;
+  }
+
+  virtual PetscErrorCode update(PetscReal a, PetscReal b) = 0;
+
+  virtual PetscErrorCode save(PetscReal a, PetscReal b) {
+    if (ts)
+      return ts->interp(a, b);
+      
+    return 0;
+  }
+
+  virtual PetscErrorCode flush() {
+    if (ts)
+      return ts->flush();
+
+    return 0;
+  }
+
+  virtual void set_filename(string filename) {
+    if (ts)
+      ts->output_filename = filename;
+  }
+protected:
+  PISMVars &variables;          //!< dictionary of variables
+  IceGrid &grid;                //!< the grid
+  DiagnosticTimeseries *ts;
+};
+
+template <class Model>
+class PISMTSDiag : public PISMTSDiagnostic
+{
+public:
+  PISMTSDiag(Model *m, IceGrid &g, PISMVars &my_vars)
+    : PISMTSDiagnostic(g, my_vars), model(m) {}
 protected:
   Model *model;
 };

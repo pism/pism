@@ -1574,3 +1574,230 @@ void NCGlobalAttributes::prepend_history(string message) {
   strings["history"] = message + strings["history"];
 
 }
+
+
+/// NCTimeBounds
+
+void NCTimeBounds::init(string dim_name, MPI_Comm c, PetscMPIInt r) {
+  NCVariable::init(dim_name + "_bounds", c, r);
+  dimension_name = dim_name;
+  bounds_name = "nv";           // number of vertices
+}
+
+PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
+  PetscErrorCode ierr;
+  NCTool nc(com, rank);
+  int ncid, varid;
+  bool variable_exists;
+  string endpts_name;
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+
+  ncid = nc.get_ncid();
+
+  // Find the variable:
+  ierr = nc.find_variable(short_name, &varid, variable_exists); CHKERRQ(ierr);
+
+  if (!variable_exists) {
+    ierr = PetscPrintf(com,
+		      "PISM ERROR: Can't find '%s' in '%s'.\n",
+		       short_name.c_str(), filename.c_str());
+    CHKERRQ(ierr);
+    PISMEnd();
+  }
+
+  vector<int> dimids;
+  ierr = nc.inq_dimids(varid, dimids); CHKERRQ(ierr);
+
+  if (dimids.size() != 2) {
+    ierr = PetscPrintf(com,
+		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
+		       "            but a time-bounds variable can only depend on 2 dimension.\n",
+		       short_name.c_str(), filename.c_str(), dimids.size()); CHKERRQ(ierr);
+    PISMEnd();
+  }
+
+  ierr = nc.inq_dimname(dimids[0], dimension_name); CHKERRQ(ierr);
+  ierr = nc.inq_dimname(dimids[1], endpts_name); CHKERRQ(ierr);
+
+  unsigned int length;
+
+  // Check that we have 2 vertices (interval end-points) per time record.
+  ierr = nc.get_dim_length(endpts_name, &length); CHKERRQ(ierr);
+  if (length != 2) {
+    PetscPrintf(com,
+                "PISM ERROR: A time-bounds variable has to have exactly 2 bounds per time record.\n"
+                "            Please check that the dimension corresponding to 'number of vertices' goes\n"
+                "            last in the 'ncdump -h %s' output.\n",
+                filename.c_str());
+    PISMEnd();
+
+  }
+
+  // Get the number of time records.
+  ierr = nc.get_dim_length(dimension_name, &length); CHKERRQ(ierr);
+  if (length <= 0) {
+    ierr = PetscPrintf(com,
+		       "PISM ERROR: Dimension %s has zero (or negative) length!\n",
+		       dimension_name.c_str()); CHKERRQ(ierr);
+    PISMEnd();
+  }
+
+  // Allocate memory (2 numbers per time record).
+  data.resize(2*length);		// memory allocation happens here
+
+  ierr = nc.data_mode(); CHKERRQ(ierr);
+
+  if (rank == 0) {
+    ierr = nc_get_var_double(ncid, varid, &data[0]); 
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+  ierr = MPI_Bcast(&data[0], length, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
+
+  // Find the corresponding 'time' variable. (We get units from the 'time'
+  // variable, because according to CF-1.5 section 7.1 a "boundary variable"
+  // may not have metadata set.)
+  bool input_has_units;
+  utUnit input_units;
+  ierr = nc.find_variable(dimension_name, &varid, variable_exists); CHKERRQ(ierr);
+
+  if (! variable_exists) {
+    PetscPrintf(com, "PISM ERROR: Can't find '%s' in %s.\n",
+                dimension_name.c_str(), filename.c_str());
+    PISMEnd();
+  }
+
+  ierr = nc.get_units(varid, input_has_units, input_units); CHKERRQ(ierr);
+
+  if ( has("units") && (!input_has_units) ) {
+    string &units_string = strings["units"];
+    ierr = verbPrintf(2, com,
+		      "PISM WARNING: Variable '%s' does not have the units attribute.\n"
+		      "              Assuming that it is in '%s'.\n",
+		      short_name.c_str(),
+		      units_string.c_str()); CHKERRQ(ierr);
+    utCopy(&units, &input_units);
+  }
+
+  ierr = change_units(data, &input_units, &units); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode NCTimeBounds::write(string filename, size_t start, vector<double> &data, nc_type nctype) {
+  PetscErrorCode ierr;
+  NCTool nc(com, rank);
+  bool variable_exists = false;
+  int varid = -1;
+ 
+  ierr = nc.open_for_writing(filename); CHKERRQ(ierr);
+
+  ierr = nc.find_variable(short_name.c_str(), &varid, variable_exists); CHKERRQ(ierr);
+  if (!variable_exists) {
+    ierr = define(nc, varid, nctype, true); CHKERRQ(ierr);
+  }
+
+  // convert to glaciological units:
+  ierr = change_units(data, &units, &glaciological_units); CHKERRQ(ierr);
+
+  ierr = nc.data_mode(); CHKERRQ(ierr);
+
+  size_t nc_start[2] = {start, 0},
+    nc_count[2] = {static_cast<size_t>(data.size() / 2), 2};
+  if (rank == 0) {
+    ierr = nc_put_vara_double(nc.get_ncid(), varid, nc_start, nc_count, &data[0]);
+  }
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  // restore internal units:
+  ierr = change_units(data, &glaciological_units, &units); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode NCTimeBounds::write(string filename, size_t start, double a, double b, nc_type nctype) {
+  vector<double> tmp(2);
+  tmp[0] = a;
+  tmp[1] = b;
+  return write(filename, start, tmp, nctype);
+}
+
+PetscErrorCode NCTimeBounds::change_units(vector<double> &data, utUnit *from, utUnit *to) {
+  PetscErrorCode ierr;
+  double slope, intercept;
+  string from_name, to_name;
+  char *tmp;
+  bool use_slope, use_intercept;
+
+  // Get string representations of units:
+  utPrint(from, &tmp);
+  from_name = tmp;
+  utPrint(to, &tmp);
+  to_name = tmp;
+
+  // Get the slope and the intercept of the linear transformation.
+  ierr = utConvert(from, to, &slope, &intercept);
+
+  if (ierr != 0) { 		// can't convert
+    if (ierr == UT_ECONVERT) {	// because units are incompatible
+      ierr = PetscPrintf(com,
+			 "PISM ERROR: variable '%s': attempted to convert data from '%s' to '%s'.\n",
+			 short_name.c_str(), from_name.c_str(), to_name.c_str());
+      PISMEnd();
+    } else {			// some other error
+      return 2;
+    }
+  }
+
+  use_slope     = PetscAbsReal(slope - 1.0) > 1e-16;
+  use_intercept = PetscAbsReal(intercept)   > 1e-16;
+
+  vector<double>::iterator j;
+  if (use_slope) {
+    for (j = data.begin(); j < data.end(); ++j)
+      *j *= slope;
+  }
+
+  if (use_intercept)
+    for (j = data.begin(); j < data.end(); ++j)
+      *j += intercept;
+
+  return 0;
+}
+
+
+PetscErrorCode NCTimeBounds::define(const NCTool &nc, int &varid, nc_type nctype, bool) const {
+  PetscErrorCode ierr;
+  int dimids[2], ncid = nc.get_ncid();
+
+  bool exists;
+  ierr = nc.find_variable(short_name, &varid, exists); CHKERRQ(ierr); 
+  if (exists) return 0;
+
+  if (rank == 0) {
+    ierr = nc.define_mode(); CHKERRQ(ierr);
+
+    ierr = nc_inq_dimid(ncid, dimension_name.c_str(), &dimids[0]);
+    if (ierr != NC_NOERR) {
+      ierr = nc_def_dim(ncid, dimension_name.c_str(), NC_UNLIMITED, &dimids[0]);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
+
+    ierr = nc_inq_dimid(ncid, bounds_name.c_str(), &dimids[1]);
+    if (ierr != NC_NOERR) {
+      ierr = nc_def_dim(ncid, bounds_name.c_str(), 2, &dimids[1]);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
+
+    ierr = nc_def_var(ncid, short_name.c_str(), nctype, 2, dimids, &varid);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+  ierr = MPI_Bcast(&varid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
+
+  ierr = write_attributes(nc, varid, NC_FLOAT, true);
+
+  return 0;
+}
+

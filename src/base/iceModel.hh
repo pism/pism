@@ -65,6 +65,7 @@ using namespace std;
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
   // The following classes implement various diagnostic computations.
+  // 2D and 3D:
   friend class IceModel_hardav;
   friend class IceModel_bwp;
   friend class IceModel_cts;
@@ -80,6 +81,31 @@ class IceModel {
   friend class IceModel_tempicethk;
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
+  // scalar:
+  friend class IceModel_ivol;
+  friend class IceModel_divoldt;
+  friend class IceModel_iarea;
+  friend class IceModel_imass;
+  friend class IceModel_dimassdt;
+  friend class IceModel_ivoltemp;
+  friend class IceModel_ivoltempf;
+  friend class IceModel_ivolcold;
+  friend class IceModel_ivolcoldf;
+  friend class IceModel_iareatemp;
+  friend class IceModel_iareatempf;
+  friend class IceModel_iareacold;
+  friend class IceModel_iareacoldf;
+  friend class IceModel_ienthalpy;
+  friend class IceModel_iareag;
+  friend class IceModel_iareaf;
+  friend class IceModel_dt;
+  friend class IceModel_max_diffusivity;
+  friend class IceModel_surface_flux;
+  friend class IceModel_basal_flux;
+  friend class IceModel_sub_shelf_flux;
+  friend class IceModel_nonneg_flux;
+  friend class IceModel_ocean_kill_flux;
+  friend class IceModel_float_kill_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
@@ -176,7 +202,6 @@ protected:
   IceModelVec2S
         vh,		//!< ice surface elevation; ghosted
         vH,		//!< ice thickness; ghosted
-        vdHdt,		//!< \f$ \frac{dH}{dt} \f$; ghosted to simplify the code computing it
         vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
         vbwat,		//!< thickness of the basal meltwater; ghosted
         vbmr,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
@@ -226,14 +251,12 @@ protected:
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
-              gdHdtav,  //!< average value in map-plane (2D) of dH/dt, where there is ice; m s-1
-    total_sub_shelf_ice_flux,
-    total_basal_ice_flux,
-    total_surface_ice_flux,
-    nonneg_rule_flux,
-    ocean_kill_flux,
-    float_kill_flux,
-    dvoldt;  //!< d(total ice volume)/dt; m3 s-1
+    cumulative_basal_ice_flux,
+    cumulative_float_kill_flux,
+    cumulative_nonneg_rule_flux,
+    cumulative_ocean_kill_flux,
+    cumulative_sub_shelf_ice_flux,
+    cumulative_surface_ice_flux;
   PetscInt    skipCountDown;
 
   // physical parameters used frequently enough to make looking up via
@@ -333,9 +356,7 @@ protected:
 
   // see iMreport.cc
   virtual PetscErrorCode volumeArea(
-                       PetscScalar& gvolume,PetscScalar& garea,
-                       PetscScalar& gvolSIA, PetscScalar& gvolstream, 
-                       PetscScalar& gvolshelf);
+                       PetscScalar& gvolume,PetscScalar& garea);
   virtual PetscErrorCode energyStats(
                        PetscScalar iarea,
                        PetscScalar &gmeltfrac, PetscScalar &gtemp0);
@@ -349,7 +370,6 @@ protected:
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
-  virtual PetscErrorCode ice_mass_bookkeeping();
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
   virtual PetscErrorCode compute_ice_volume_temperate(PetscScalar &result);
   virtual PetscErrorCode compute_ice_volume_cold(PetscScalar &result);
@@ -359,7 +379,6 @@ protected:
   virtual PetscErrorCode compute_ice_area_grounded(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area_floating(PetscScalar &result);
   virtual PetscErrorCode compute_ice_enthalpy(PetscScalar &result);
-  virtual PetscErrorCode compute_by_name(string name, PetscScalar &result);
   
   // see iMtemp.cc
   virtual PetscErrorCode excessToFromBasalMeltLayer(
@@ -388,6 +407,7 @@ protected:
   PISMStressBalance *stress_balance;
 
   map<string,PISMDiagnostic*> diagnostics;
+  map<string,PISMTSDiagnostic*> ts_diagnostics;
 
   // Set of variables to put in the output file:
   set<string> output_vars;
@@ -407,9 +427,7 @@ protected:
   vector<double> ts_times;	//! times requested
   unsigned int current_ts;	//! index of the current time
   set<string> ts_vars;		//! variables requested
-  vector<DiagnosticTimeseries*> timeseries;
   PetscErrorCode init_timeseries();
-  PetscErrorCode create_timeseries();
   PetscErrorCode flush_timeseries();
   PetscErrorCode write_timeseries();
   PetscErrorCode ts_max_timestep(double t_years, double& dt_years);

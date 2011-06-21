@@ -275,8 +275,8 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     PetscReal current_sea_level;
     ierr = ocean->sea_level_elevation(current_sea_level); CHKERRQ(ierr);
 
-    sea_level.append(pccyear, current_sea_level);
-    sea_level.interp(pccyear);
+    sea_level.append(current_sea_level, pccyear - dt_years, pccyear);
+    sea_level.interp(pccyear - dt_years, pccyear);
 
     // ask ocean and surface models to write variables:
     ierr = surface->write_variables(vars_to_write, filename); CHKERRQ(ierr);

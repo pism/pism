@@ -26,6 +26,8 @@ Timeseries::Timeseries(IceGrid *g, string name, string dimension_name) {
 
   dimension.init(dimension_name, dimension_name, com, rank);
   var.init(name, dimension_name, com, rank);
+  bounds.init(dimension_name, com, rank);
+  dimension.set_string("bounds", dimension_name + "_bounds");
 
   short_name = name;
 }
@@ -35,6 +37,8 @@ Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_
   rank = r;
   dimension.init(dimension_name, dimension_name, com, rank);
   var.init(name, dimension_name, com, rank);
+  bounds.init(dimension_name, com, rank);
+  dimension.set_string("bounds", dimension_name + "_bounds");
 
   short_name = name;
 }
@@ -174,11 +178,14 @@ double Timeseries::average(double t, double dt, unsigned int N) {
 }
 
 //! Append a pair (t,v) to the timeseries.
-PetscErrorCode Timeseries::append(double t, double v) {
-  time.push_back(t);
+PetscErrorCode Timeseries::append(double v, double a, double b) {
+  time.push_back(b);
   values.push_back(v);
+  time_bounds.push_back(a);
+  time_bounds.push_back(b);
   return 0;
 }
+
 
 //! Set the internal units for the values of a time-series.
 PetscErrorCode Timeseries::set_units(string units, string glaciological_units) {
@@ -226,6 +233,7 @@ DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, string name, string dimen
 
   buffer_size = 10000;		// just a default
   start = 0;
+  rate_of_change = false;
 }
 
 DiagnosticTimeseries::DiagnosticTimeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name)
@@ -233,6 +241,7 @@ DiagnosticTimeseries::DiagnosticTimeseries(MPI_Comm c, PetscMPIInt r, string nam
 
   buffer_size = 10000;		// just a default
   start = 0;
+  rate_of_change = false;
 }
 
 //! Destructor; makes sure that everything is written to a file.
@@ -242,10 +251,18 @@ DiagnosticTimeseries::~DiagnosticTimeseries() {
 
 //! Adds the (t,v) pair to the interpolation buffer.
 /*! The interpolation buffer holds 2 values only (for linear interpolation).
+ *
+ * If this DiagnosticTimeseries object is reporting a "rate of change",
+ * append() has to be called with the "cumulative" quantity as the V argument.
  */
-PetscErrorCode DiagnosticTimeseries::append(double T, double V) {
-  // append to the interpolation buffer:
-  t.push_back(T);
+PetscErrorCode DiagnosticTimeseries::append(double V, double /*a*/, double b) {
+
+  if (rate_of_change && v.empty()) {
+    v_previous = V;
+  }
+
+  // append to the interpolation buffer
+  t.push_back(b);
   v.push_back(V);
 
   if (t.size() == 3) {
@@ -258,32 +275,46 @@ PetscErrorCode DiagnosticTimeseries::append(double T, double V) {
 
 //! \brief Use linear interpolation to find the value of a scalar diagnostic
 //! quantity at time \c T and store the obtained pair (T, value).
-PetscErrorCode DiagnosticTimeseries::interp(double T) {
+PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
   PetscErrorCode ierr;
 
   if (t.empty()) {
     SETERRQ(1, "DiagnosticTimeseries::interp(...): interpolation buffer is empty");
   }
 
-  // Special case: allow requests that match the (only) available time.
   if (t.size() == 1) {
-    if (PetscAbs(T - t[0]) < 1e-8) {
-      time.push_back(T);
-      values.push_back(v[0]);
-    }
+    time.push_back(b);
+    values.push_back(GSL_NAN);
     return 0;
   }
 
-  if ((T < t[0]) || (T > t[1])) {
+  if ((b < t[0]) || (b > t[1])) {
     SETERRQ1(1, "DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
-	     T);
+             b);
   }
 
-  // linear interpolation:
-  double tmp = v[0] + (T - t[0]) / (t[1] - t[0]) * (v[1] - v[0]);
+  double 
+    // compute the "cumulative" quantity using linear interpolation
+    v_current = v[0] + (b - t[0]) / (t[1] - t[0]) * (v[1] - v[0]),
+    // the value to report
+    value = v_current;
 
-  time.push_back(T);
-  values.push_back(tmp);
+  if (rate_of_change) {
+    // use backward-in-time finite difference to compute the rate of change:
+    value = (v_current - v_previous) / ((b - a) * secpera);
+
+    // remember the value of the "cumulative" quantity for differencing during
+    // the next call:
+    v_previous = v_current;
+  }
+
+  // use the right endpoint as the 'time' record (the midpoint is also an option)
+  time.push_back(b);
+  values.push_back(value);
+
+  // save the time bounds
+  time_bounds.push_back(a);
+  time_bounds.push_back(b);
 
   if (time.size() == buffer_size) {
     ierr = flush(); CHKERRQ(ierr);
@@ -303,12 +334,11 @@ PetscErrorCode DiagnosticTimeseries::flush() {
   if (output_filename.empty())
     return 0;
 
-  // Get the length of the time dimension; if other time-series object was
-  // written at this time-step already, len will be greater than start, so we
-  // don't need to write the dimensional variable.
+  if (time.empty())
+    return 0;
+
   ierr = nc.open_for_reading(output_filename.c_str()); CHKERRQ(ierr);
   ierr = nc.get_dim_length(dimension.short_name.c_str(), &len); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
   if (len > 0) {
     double last_time;
@@ -318,14 +348,19 @@ PetscErrorCode DiagnosticTimeseries::flush() {
     }
   }
 
+  ierr = nc.close(); CHKERRQ(ierr);
+
   if (len == (unsigned int)start) {
     ierr = dimension.write(output_filename.c_str(), start, time);   CHKERRQ(ierr);
+    ierr = bounds.write(output_filename.c_str(), start, time_bounds);   CHKERRQ(ierr);
   }
   ierr = var.write(output_filename.c_str(), start, values); CHKERRQ(ierr);
 
   start += time.size();
+
   time.clear();
   values.clear();
+  time_bounds.clear();
 
   return 0;
 }

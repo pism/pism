@@ -4,8 +4,11 @@ netcdf pism_config {
 
     // boolean flags:
 
-    pism_config:force_output_times = "yes";
-    pism_config:force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times and -ts_times.";
+    pism_config:extras_force_output_times = "yes";
+    pism_config:extras_force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times and -ts_times.";
+
+    pism_config:ts_force_output_times = "no";
+    pism_config:ts_force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -ts_times.";
 
     pism_config:interpret_precip_as_snow = "no";
     pism_config:interpret_precip_as_snow_doc = "Interpret precipitation as snow fall.";
@@ -60,9 +63,6 @@ netcdf pism_config {
     
     pism_config:do_thickness_calving = "false";
     pism_config:do_thickness_calving_doc = "ad hoc calving at certain threshold for terminal ice thickness";
-    
-    pism_config:thermal_bedrock = "yes";
-    pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";
 
     pism_config:bed_deformation_model = "none";
     pism_config:bed_deformation_model_doc = "Selects a bed deformation model to use; possible choices are 'none', 'iso' (point-wise isostasy), 'lc' (see [\\ref LingleClark], requires FFTW3).";
@@ -96,8 +96,8 @@ netcdf pism_config {
     pism_config:force_full_diagnostics = "no";
     pism_config:force_full_diagnostics_doc = "Force full diagnostic output (adds 3D velocity fields and velocity components at the surface";
 
-	pism_config:dirichlet_bc = "no";
-	pism_config:dirichlet_bc_doc = "apply Dirichlet boundary condition";
+    pism_config:dirichlet_bc = "no";
+    pism_config:dirichlet_bc_doc = "apply SSA velocity Dirichlet boundary condition";
 
     pism_config:do_diffuse_bwat = "no";
     pism_config:do_diffuse_bwat_doc = "Do explicit time stepping of equation (11) in [\\ref BBssasliding] to diffuse the layer of stored basal water (bwat).  Normally bwat affects the basal values of the internal energy (enthalpy or temperature) field and it affects the strength of the subglacial layer (the basal stress).";
@@ -105,12 +105,11 @@ netcdf pism_config {
 
     // parameters:
 
-	pism_config:bootstrapping_BCMask_value_no_var = 0.0;
-	pism_config:bootstrapping_BCMask_value_no_var_doc = "; mask for dirichlet boundary condition";
-     
-	pism_config:bootstrapping_BCvel_value_no_var = 100.0;
-	pism_config:bootstrapping_BCvel_value_no_var_doc = "; dirichlet boundary condition";
-
+    pism_config:bootstrapping_BCMask_value_no_var = 0.0;
+    pism_config:bootstrapping_BCMask_value_no_var_doc = "; mask for dirichlet boundary condition";
+    
+    pism_config:bootstrapping_BCvel_value_no_var = 100.0;
+    pism_config:bootstrapping_BCvel_value_no_var_doc = "; dirichlet boundary condition";
 
     pism_config:bootstrapping_H_value_no_var = 0.0;
     pism_config:bootstrapping_H_value_no_var_doc = "m; thickness value to use if thk (land_ice_thickness) variable is absent in bootstrapping file";
@@ -224,7 +223,7 @@ netcdf pism_config {
     pism_config:thk_eff_reduced_doc = "; factor by which basal water pressure is reduced by thickness effect";
 
     pism_config:mu_sliding = 0.0;
-    pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. <i>This kind of sliding is not recommended, which is why it is turned off by default.</i>  See Appendix B of \\ref BBssasliding for the dangers in this mechanism.";
+    pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. <i>This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.</i>  See Appendix B of \\ref BBssasliding for the dangers in this mechanism.";
 
     pism_config:bed_def_interval_years = 10.0;
     pism_config:bed_def_interval_years_doc = "years; Interval between bed deformation updates";
@@ -245,7 +244,7 @@ netcdf pism_config {
     pism_config:eigen_calving_doc = "Set proportionality constant to determine calving rate from strain rates";
 
     pism_config:calving_at_thickness = 50.0;
-    pism_config:calving_at_thickness_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
+    pism_config:calving_at_thickness_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
 
 
     // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
@@ -431,7 +430,7 @@ netcdf pism_config {
     pism_config:Paterson-Budd_critical_temperature_doc = "Kelvin; Paterson-Budd critical temperature, see [\\ref PatersonBudd]";
 
     pism_config:verification_mode = "no";
-    pism_config:verification_mode_doc = "; shows whether PISM is running in the verification mode";
+    pism_config:verification_mode_doc = "; shows whether PISM is running in the verification mode. Affects EnthalpyConverter.";
 
     pism_config:enthalpy_cold_bulge_max = 60270.0;
     pism_config:enthalpy_cold_bulge_max_doc = "J kg-1; = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
@@ -496,9 +495,6 @@ netcdf pism_config {
     pism_config:viewer_size = 320;
     pism_config:viewer_size_doc = "; default diagnostic viewer size";
 
-    pism_config:slice_level = 0.0;
-    pism_config:slice_level_doc = "meters; level (in meters above the base of ice) used in slice viewers";
-
 // Strings:
 
    pism_config:run_title = "";
@@ -518,9 +514,6 @@ netcdf pism_config {
 
    pism_config:grid_ice_vertical_spacing = "quadratic";
    pism_config:grid_ice_vertical_spacing_doc = "; Default vertical spacing in the ice. Possible values: 'quadratic' and 'equal'.";
-
-   pism_config:grid_bed_vertical_spacing = "quadratic";
-   pism_config:grid_bed_vertical_spacing_doc = "; Default vertical spacing in the bedrock thermal layer. Possible values: 'quadratic' and 'equal'.";
 
    pism_config:grid_Mx = 61;
    pism_config:grid_Mx_doc = "; Number of grid points in the x direction.";
@@ -567,13 +560,7 @@ netcdf pism_config {
    pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dbdt dHdt dhdt diffusivity enthalpy enthalpybase enthalpysurf hardav lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf new_mask";
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 
-   pism_config:ts_bad_set_warning = "WARNING: PISM will sample this quantity at user-specified times.  Fast (e.g. subannual) variability in any coupler-generated fluxes may make these sampled values unusable.";
-   pism_config:ts_bad_set_warning_doc = "warning added to metadata for time-derivative-type time series outputs";
-
-   pism_config:ts_bad_set_variables = "divoldt dimassdt surface_ice_flux basal_ice_flux sub_shelf_ice_flux nonneg_rule_flux ocean_kill_flux float_kill_flux";
-   pism_config:ts_bad_set_variables_doc = "Space-separated list of scalar diagnostic quantities which are generated by instantaneous time derivatives of PISM quantities.  ts_bad_set_warning is added to metadata for these.  They are not written by default.";
-
-   pism_config:ts_default_variables = "dt ivol ivolcoldf ivoltempf imass iarea iareacoldf iareatempf iareag iareaf ienthalpy gDmax";
+   pism_config:ts_default_variables = "dt ivol divoldt ivolcold ivolcoldf ivoltemp ivoltempf imass dimassdt iarea iareacoldf iareatempf iareag iareaf ienthalpy max_diffusivity surface_ice_flux basal_ice_flux sub_shelf_ice_flux nonneg_rule_flux ocean_kill_flux float_kill_flux";
    pism_config:ts_default_variables_doc = "Space-separated list of scalar diagnostic quantities to save, by default, if -ts_file and -ts_times are used, AND a -ts_vars list is not given.";
 
    pism_config:backup_interval = 1.0;

@@ -940,18 +940,19 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   else                        gavubarfloating = 0.0;  // degenerate case
   rstats.avubarF = gavubarfloating;
 
+  // FIXME: MISMIP needs dHdt
   PetscScalar     infnormdHdt = 0.0;
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vdHdt.begin_access(); CHKERRQ(ierr);
+  // ierr = vdHdt.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vH(i,j) > 0.0) {
-	infnormdHdt = PetscMax(infnormdHdt, vdHdt(i,j));
+	// infnormdHdt = PetscMax(infnormdHdt, vdHdt(i,j));
       }
     }
   }
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vdHdt.end_access(); CHKERRQ(ierr);
+  // ierr = vdHdt.end_access(); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
   return 0;
 }

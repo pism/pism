@@ -89,14 +89,16 @@ void IceModel::reset_counters() {
   CFLviolcount = 0;
   dt_years_TempAge = 0.0;
   dt_from_diffus = dt_from_cfl = 0.0;
-  dvoldt = gdHdtav = 0;
-  gDmax = dvoldt = gdHdtav = 0;
   gmaxu = gmaxv = gmaxw = -1;
   maxdt_temporary = dt = dt_force = 0.0;
   skipCountDown = 0;
-  total_basal_ice_flux = 0;
-  total_sub_shelf_ice_flux = 0;
-  total_surface_ice_flux = 0;
+
+  cumulative_basal_ice_flux = 0;
+  cumulative_float_kill_flux = 0;
+  cumulative_nonneg_rule_flux = 0;
+  cumulative_ocean_kill_flux = 0;
+  cumulative_sub_shelf_ice_flux = 0;
+  cumulative_surface_ice_flux = 0;
 }
 
 
@@ -104,13 +106,14 @@ IceModel::~IceModel() {
 
   deallocate_internal_objects();
 
-  // write (and deallocate) time-series
-  vector<DiagnosticTimeseries*>::iterator i = timeseries.begin();
-  while(i != timeseries.end()) delete (*i++);
+  // de-allocate time-series diagnostics
+  map<string,PISMTSDiagnostic*>::iterator i = ts_diagnostics.begin();
+  while (i != ts_diagnostics.end()) delete (i++)->second;
 
   // de-allocate diagnostics
   map<string,PISMDiagnostic*>::iterator j = diagnostics.begin();
   while (j != diagnostics.end()) delete (j++)->second;
+
 
   // de-allocate viewers
   map<string,PetscViewer>::iterator k = viewers.begin();
@@ -277,17 +280,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vbwat.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = vbwat.set_attr("valid_max", config.get("bwat_max")); CHKERRQ(ierr);
   ierr = variables.add(vbwat); CHKERRQ(ierr);
-
-  // rate of change of ice thickness
-  ierr = vdHdt.create(grid, "dHdt", true, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = vdHdt.set_attrs("diagnostic", "rate of change of ice thickness",
-			 "m s-1", "tendency_of_land_ice_thickness"); CHKERRQ(ierr);
-  ierr = vdHdt.set_glaciological_units("m year-1");
-  vdHdt.write_in_glaciological_units = true;
-  const PetscScalar  huge_dHdt = 1.0e6;      // million m a-1 is out-of-range
-  ierr = vdHdt.set_attr("valid_min", convert(-huge_dHdt, "m/year", "m/s")); CHKERRQ(ierr);
-  ierr = vdHdt.set_attr("valid_max", convert( huge_dHdt, "m/year", "m/s")); CHKERRQ(ierr);
-  ierr = variables.add(vdHdt); CHKERRQ(ierr);
 
   if (config.get_flag("use_ssa_velocity")) {
     // yield stress for basal till (plastic or pseudo-plastic model)
@@ -523,6 +515,16 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
       maxdt_temporary = opcc_dt;
   }
 
+  double ts_dt;
+  ierr = ts_max_timestep(grid.year, ts_dt); CHKERRQ(ierr);
+  ts_dt *= secpera;
+  if (ts_dt > 0.0) {
+    if (maxdt_temporary > 0)
+      maxdt_temporary = PetscMin(ts_dt, maxdt_temporary);
+    else
+      maxdt_temporary = ts_dt;
+  }
+
   //! \li apply the time-step restriction from the -extra_{times,file,vars}
   //! mechanism
   double extras_dt;
@@ -637,11 +639,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = diffuse_bwat(); CHKERRQ(ierr);
   }
 
-  //! \li compute fluxes through ice boundaries; this method frequently updates
-  //! the surface process models pre-emptively, so that massContExplicitStep()
-  //! does not do that work again
-  ierr = ice_mass_bookkeeping(); CHKERRQ(ierr);
-
   grid.profiler->begin(event_mass);
 
   //! \li update the thickness of the ice according to the mass conservation
@@ -667,9 +664,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     stdout_flags += "h";
   } else {
     stdout_flags += "$";
-    // if do_mass_continuity is false, then ice thickness does not change and
-    // dH/dt = 0:
-    ierr = vdHdt.set(0.0); CHKERRQ(ierr);
   }
   
   grid.profiler->end(event_mass);

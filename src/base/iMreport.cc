@@ -32,12 +32,10 @@ Communication done for global max and global sum.
 
 Returns area in units of m^2 and volume in m^3.
  */
-PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
-                                    PetscScalar& gvolSIA, PetscScalar& gvolstream, 
-                                    PetscScalar& gvolshelf) {
+PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea) {
 
   PetscErrorCode  ierr;
-  PetscScalar     volume=0.0, area=0.0, volSIA=0.0, volstream=0.0, volshelf=0.0;
+  PetscScalar     volume=0.0, area=0.0;
   
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -49,8 +47,6 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
         area += cell_area(i,j);
         const PetscScalar dv = cell_area(i,j) * vH(i,j);
         volume += dv;
-
-        if (mask.ocean(i,j))   volshelf += dv;
       }
     }
   }  
@@ -61,9 +57,6 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
 
   ierr = PetscGlobalSum(&volume, &gvolume, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&volSIA, &gvolSIA, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&volstream, &gvolstream, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&volshelf, &gvolshelf, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -169,11 +162,10 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
   PetscErrorCode  ierr;
   PetscScalar     divideH;
   PetscScalar     gdivideH, gdivideT, gvolume, garea;
-  PetscScalar     gvolSIA, gvolstream, gvolshelf;
   PetscScalar     meltfrac = 0.0, origfrac = 0.0;
 
   // get volumes in m^3 and areas in m^2
-  ierr = volumeArea(gvolume, garea, gvolSIA, gvolstream, gvolshelf); CHKERRQ(ierr);
+  ierr = volumeArea(gvolume, garea); CHKERRQ(ierr);
   
   // get thick0 = gdivideH
   ierr = vH.begin_access(); CHKERRQ(ierr);
@@ -571,233 +563,3 @@ PetscErrorCode IceModel::compute_ice_enthalpy(PetscScalar &result) {
   ierr = PetscGlobalSum(&enthalpysum, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
-
-//! Compute a scalar diagnostic quantity by name.
-PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
-  PetscErrorCode ierr, errcode = 1;
-
-  if (name == "ivol") {
-    errcode = 0;
-    ierr = compute_ice_volume(result); CHKERRQ(ierr);
-  }
-
-  if (name == "ivoltemp") {
-    errcode = 0;
-    ierr = compute_ice_volume_temperate(result); CHKERRQ(ierr);
-  }
-
-  if (name == "ivoltempf") {
-    errcode = 0;
-    PetscScalar ivol;
-    ierr = compute_ice_volume(ivol); CHKERRQ(ierr);
-    ierr = compute_ice_volume_temperate(result); CHKERRQ(ierr);
-    result /= ivol;
-  }
-
-  if (name == "ivolcold") {
-    errcode = 0;
-    ierr = compute_ice_volume_cold(result); CHKERRQ(ierr);
-  }
-
-  if (name == "ivolcoldf") {
-    errcode = 0;
-    PetscScalar ivol;
-    ierr = compute_ice_volume(ivol); CHKERRQ(ierr);
-    ierr = compute_ice_volume_cold(result); CHKERRQ(ierr);
-    result /= ivol;
-  }
-
-  if (name == "imass") {
-    errcode = 0;
-    PetscScalar ice_density = config.get("ice_density");
-    ierr = compute_ice_volume(result); CHKERRQ(ierr);
-    result *= ice_density;
-  }
-
-  if (name == "iarea") {
-    errcode = 0;
-    ierr = compute_ice_area(result); CHKERRQ(ierr);
-  }
-
-  if (name == "iareatemp") {
-    errcode = 0;
-    ierr = compute_ice_area_temperate(result); CHKERRQ(ierr);
-  }
-
-  if (name == "iareatempf") {
-    errcode = 0;
-    PetscScalar iarea;
-    ierr = compute_ice_area(iarea); CHKERRQ(ierr);
-    ierr = compute_ice_area_temperate(result); CHKERRQ(ierr);
-    result /= iarea;
-  }
-
-  if (name == "iareacold") {
-    errcode = 0;
-    ierr = compute_ice_area_cold(result); CHKERRQ(ierr);
-  }
-
-  if (name == "iareacoldf") {
-    errcode = 0;
-    PetscScalar iarea;
-    ierr = compute_ice_area(iarea); CHKERRQ(ierr);
-    ierr = compute_ice_area_cold(result); CHKERRQ(ierr);
-    result /= iarea;
-  }
-
-  if (name == "iareag") {
-    errcode = 0;
-    ierr = compute_ice_area_grounded(result); CHKERRQ(ierr);
-  }
-
-  if (name == "iareaf") {
-    errcode = 0;
-    ierr = compute_ice_area_floating(result); CHKERRQ(ierr);
-  }
-
-  if (name == "dt") {
-    errcode = 0;
-    result = dt;
-  }
-
-  if (name == "divoldt") {
-    errcode = 0;
-    result = dvoldt;
-  }
-
-  if (name == "dimassdt") {
-    errcode = 0;
-    PetscScalar ice_density = config.get("ice_density");
-    result = dvoldt * ice_density;
-  }
-
-  if (name == "ienthalpy") {
-    errcode = 0;
-    ierr = compute_ice_enthalpy(result); CHKERRQ(ierr);
-  }
-
-  if (name == "basal_ice_flux") {
-    errcode = 0;
-    result = total_basal_ice_flux;
-  }
-
-  if (name == "surface_ice_flux") {
-    errcode = 0;
-    result = total_surface_ice_flux;
-  }
-
-  if (name == "sub_shelf_ice_flux") {
-    errcode = 0;
-    result = total_sub_shelf_ice_flux;
-  }
-
-  if (name == "nonneg_rule_flux") {
-    errcode = 0;
-    result = nonneg_rule_flux;
-  }
-
-  if (name == "ocean_kill_flux") {
-    errcode = 0;
-    result = ocean_kill_flux;
-  }
-
-  if (name == "float_kill_flux") {
-    errcode = 0;
-    result = float_kill_flux;
-  }
-
-  if (name == "gDmax") {
-    errcode = 0;
-    ierr = stress_balance->get_max_diffusivity(result); CHKERRQ(ierr);
-  }
-
-
-  return errcode;
-}
-
-
-/*! Computes total ice fluxes in kg s-1 at 3 interfaces:
-
-  \li the ice-atmosphere interface: gets surface mass balance rate from
-      PISMSurfaceModel *surface,
-  \li the ice-ocean interface at the bottom of ice shelves: gets ocean-imposed
-      basal melt rate from PISMOceanModel *ocean, and
-  \li the ice-bedrock interface: gets basal melt rate from IceModelVec2S vbmr.
-
-A unit-conversion occurs for all three quantities, from ice-equivalent m s-1
-to kg s-1.  The sign convention about these fluxes is that positve flux means
-ice is being \e added to the ice fluid volume at that interface.
-
-These quantities should be understood as <i>instantaneous at the beginning of
-the time-step.</i>  Multiplying by dt will \b not necessarily give the
-corresponding change from the beginning to the end of the time-step.
-
-FIXME:  The calving rate can be computed by post-processing:
-divoldt = surface_ice_flux * iarea + basal_ice_flux * iareag + sub_shelf_ice_flux * iareaf + calving_flux_vol_rate
- */
-PetscErrorCode IceModel::ice_mass_bookkeeping() {
-  PetscErrorCode ierr;
-
-  bool include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
-
-  // note acab and shelfbmassflux are IceModelVec2S owned by IceModel
-  if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_mass_flux(acab);
-    CHKERRQ(ierr);
-  } else { SETERRQ(2,"PISM ERROR: surface == PETSC_NULL"); }
-
-  if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_mass_flux(shelfbmassflux);
-    CHKERRQ(ierr);
-  } else { SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL"); }
-
-  PetscScalar my_total_surface_ice_flux = 0.0, my_total_basal_ice_flux = 0.0,
-    my_total_sub_shelf_ice_flux = 0.0;
-
-  ierr = acab.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vbmr.begin_access(); CHKERRQ(ierr);
-
-  MaskQuery mask(vMask);
-
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // ignore ice-free cells:
-      if (mask.ice_free(i,j))
-        continue;
-
-      my_total_surface_ice_flux += acab(i,j) * cell_area(i,j); // note the "+="!
-
-      if (include_bmr_in_continuity) {
-        if (mask.ocean(i,j)) {
-          my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j) * cell_area(i,j); // note the "-="!
-        } else {
-          my_total_basal_ice_flux -= vbmr(i,j) * cell_area(i,j); // note the "-="!
-        }
-      }
-
-    }	// j
-  } // i
-
-  ierr = acab.end_access(); CHKERRQ(ierr);
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vbmr.end_access(); CHKERRQ(ierr);
-
-  PetscScalar ice_density = config.get("ice_density");
-  my_total_surface_ice_flux     *= ice_density;
-  my_total_sub_shelf_ice_flux   *= ice_density;
-  my_total_basal_ice_flux       *= ice_density;
-
-  ierr = PetscGlobalSum(&my_total_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&my_total_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&my_total_basal_ice_flux,     &total_basal_ice_flux,     grid.com); CHKERRQ(ierr);
-
-  return 0;
-}
-

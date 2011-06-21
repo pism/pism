@@ -103,345 +103,28 @@ PetscErrorCode IceModel::init_timeseries() {
   ierr = nc.open_for_writing(ts_filename.c_str(), (append==PETSC_TRUE), false); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = create_timeseries(); CHKERRQ(ierr);
-  
-  return 0;
-}
-
-//! \brief Creates DiagnosticTimeseries objects used to store and report scalar
-//! diagnostic quantities.
-PetscErrorCode IceModel::create_timeseries() {
-
-  string time_units = "years since " + config.get_string("reference_date");
-  
-  if (find(ts_vars.begin(), ts_vars.end(), "ivol") != ts_vars.end()) {
-    DiagnosticTimeseries *ivol = new DiagnosticTimeseries(&grid, "ivol", "t");
-
-    ivol->set_units("m3", "");
-    ivol->set_dimension_units(time_units, "");
-    ivol->output_filename = ts_filename;
-
-    ivol->set_attr("long_name", "total ice volume");
-    ivol->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(ivol);
+  // set the output file:
+  map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+  while (j != ts_diagnostics.end()) {
+    (j->second)->set_filename(ts_filename);
+    ++j;
   }
 
-  if (find(ts_vars.begin(), ts_vars.end(), "ivoltemp") != ts_vars.end()) {
-    DiagnosticTimeseries *ivoltemp = new DiagnosticTimeseries(&grid, "ivoltemp", "t");
+  // ignore times before (and including) the beginning of the run:
+  while (current_ts < ts_times.size() && ts_times[current_ts] <= grid.start_year)
+    current_ts++;
 
-    ivoltemp->set_units("m3", "");
-    ivoltemp->set_dimension_units(time_units, "");
-    ivoltemp->output_filename = ts_filename;
-
-    ivoltemp->set_attr("long_name", "temperate ice volume");
-    ivoltemp->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(ivoltemp);
+  if (ts_times.size() == current_ts) {
+    save_ts = false;
+    return 0;
   }
 
-  if (find(ts_vars.begin(), ts_vars.end(), "ivoltempf") != ts_vars.end()) {
-    DiagnosticTimeseries *ivoltempf = new DiagnosticTimeseries(&grid, "ivoltempf", "t");
-
-    ivoltempf->set_units("1", "");
-    ivoltempf->set_dimension_units(time_units, "");
-    ivoltempf->output_filename = ts_filename;
-
-    ivoltempf->set_attr("long_name", "temperate ice volume fraction");
-    ivoltempf->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(ivoltempf);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "ivolcold") != ts_vars.end()) {
-    DiagnosticTimeseries *ivolcold = new DiagnosticTimeseries(&grid, "ivolcold", "t");
-
-    ivolcold->set_units("m3", "");
-    ivolcold->set_dimension_units(time_units, "");
-    ivolcold->output_filename = ts_filename;
-
-    ivolcold->set_attr("long_name", "cold ice volume");
-    ivolcold->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(ivolcold);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "ivolcoldf") != ts_vars.end()) {
-    DiagnosticTimeseries *ivolcoldf = new DiagnosticTimeseries(&grid, "ivolcoldf", "t");
-
-    ivolcoldf->set_units("1", "");
-    ivolcoldf->set_dimension_units(time_units, "");
-    ivolcoldf->output_filename = ts_filename;
-
-    ivolcoldf->set_attr("long_name", "cold ice volume fraction");
-    ivolcoldf->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(ivolcoldf);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "ienthalpy") != ts_vars.end()) {
-    DiagnosticTimeseries *ienthalpy = new DiagnosticTimeseries(&grid, "ienthalpy", "t");
-
-    ienthalpy->set_units("J", "");
-    ienthalpy->set_dimension_units(time_units, "");
-    ienthalpy->output_filename = ts_filename;
-
-    ienthalpy->set_attr("long_name", "total ice enthalpy");
-    ienthalpy->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(ienthalpy);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "imass") != ts_vars.end()) {
-    DiagnosticTimeseries *imass = new DiagnosticTimeseries(&grid, "imass", "t");
-
-    imass->set_units("kg", "");
-    imass->set_dimension_units(time_units, "");
-    imass->output_filename = ts_filename;
-
-    imass->set_attr("long_name", "total ice mass");
-    imass->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(imass);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "iarea") != ts_vars.end()) {
-    DiagnosticTimeseries *iarea = new DiagnosticTimeseries(&grid, "iarea", "t");
-
-    iarea->set_units("m2", "");
-    iarea->set_dimension_units(time_units, "");
-    iarea->output_filename = ts_filename;
-
-    iarea->set_attr("long_name", "ice area");
-    iarea->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(iarea);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "iareatemp") != ts_vars.end()) {
-    DiagnosticTimeseries *iareatemp = new DiagnosticTimeseries(&grid, "iareatemp", "t");
-
-    iareatemp->set_units("m2", "");
-    iareatemp->set_dimension_units(time_units, "");
-    iareatemp->output_filename = ts_filename;
-
-    iareatemp->set_attr("long_name", "ice area temperate");
-    iareatemp->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(iareatemp);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "iareatempf") != ts_vars.end()) {
-    DiagnosticTimeseries *iareatempf = new DiagnosticTimeseries(&grid, "iareatempf", "t");
-
-    iareatempf->set_units("1", "");
-    iareatempf->set_dimension_units(time_units, "");
-    iareatempf->output_filename = ts_filename;
-
-    iareatempf->set_attr("long_name", "ice area temperate fraction");
-    iareatempf->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(iareatempf);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "iareacold") != ts_vars.end()) {
-    DiagnosticTimeseries *iareacold = new DiagnosticTimeseries(&grid, "iareacold", "t");
-
-    iareacold->set_units("m2", "");
-    iareacold->set_dimension_units(time_units, "");
-    iareacold->output_filename = ts_filename;
-
-    iareacold->set_attr("long_name", "ice area cold");
-    iareacold->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(iareacold);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "iareacoldf") != ts_vars.end()) {
-    DiagnosticTimeseries *iareacoldf = new DiagnosticTimeseries(&grid, "iareacoldf", "t");
-
-    iareacoldf->set_units("1", "");
-    iareacoldf->set_dimension_units(time_units, "");
-    iareacoldf->output_filename = ts_filename;
-
-    iareacoldf->set_attr("long_name", "ice area cold fraction");
-    iareacoldf->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(iareacoldf);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "iareag") != ts_vars.end()) {
-    DiagnosticTimeseries *iareag = new DiagnosticTimeseries(&grid, "iareag", "t");
-
-    iareag->set_units("m2", "");
-    iareag->set_dimension_units(time_units, "");
-    iareag->output_filename = ts_filename;
-
-    iareag->set_attr("long_name", "grounded ice area");
-    iareag->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(iareag);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "iareaf") != ts_vars.end()) {
-    DiagnosticTimeseries *iareaf = new DiagnosticTimeseries(&grid, "iareaf", "t");
-
-    iareaf->set_units("m2", "");
-    iareaf->set_dimension_units(time_units, "");
-    iareaf->output_filename = ts_filename;
-
-    iareaf->set_attr("long_name", "floating ice area");
-    iareaf->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(iareaf);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "dt") != ts_vars.end()) {
-    DiagnosticTimeseries *delta_t = new DiagnosticTimeseries(&grid, "dt", "t");
-
-    delta_t->set_units("s", "years");
-    delta_t->set_dimension_units(time_units, "");
-    delta_t->output_filename = ts_filename;
-
-    delta_t->set_attr("long_name", "mass continuity time-step");
-    delta_t->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(delta_t);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "gDmax") != ts_vars.end()) {
-    DiagnosticTimeseries *Dmax = new DiagnosticTimeseries(&grid, "gDmax", "t");
-
-    Dmax->set_units("m2 s-1", "");
-    Dmax->set_dimension_units(time_units, "");
-    Dmax->output_filename = ts_filename;
-
-    Dmax->set_attr("long_name", "maximum diffusivity");
-    Dmax->set_attr("valid_min", 0.0);
-
-    timeseries.push_back(Dmax);
-  }
-
-
-  // The following are in  config.get("ts_bad_set")  list.
-
-  if (find(ts_vars.begin(), ts_vars.end(), "divoldt") != ts_vars.end()) {
-    DiagnosticTimeseries *divoldt = new DiagnosticTimeseries(&grid, "divoldt", "t");
-
-    divoldt->set_units("m3 s-1", "");
-    divoldt->set_dimension_units(time_units, "");
-    divoldt->output_filename = ts_filename;
-
-    divoldt->set_attr("long_name", "total ice volume rate of change");
-
-    timeseries.push_back(divoldt);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "dimassdt") != ts_vars.end()) {
-    DiagnosticTimeseries *dimassdt = new DiagnosticTimeseries(&grid, "dimassdt", "t");
-
-    dimassdt->set_units("kg s-1", "");
-    dimassdt->set_dimension_units(time_units, "");
-    dimassdt->output_filename = ts_filename;
-
-    dimassdt->set_attr("long_name", "total ice mass rate of change");
-
-    timeseries.push_back(dimassdt);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "surface_ice_flux") != ts_vars.end()) {
-    DiagnosticTimeseries *tsif = new DiagnosticTimeseries(&grid, "surface_ice_flux", "t");
-
-    tsif->set_units("kg s-1", "");
-    tsif->set_dimension_units(time_units, "");
-    tsif->output_filename = ts_filename;
-
-    tsif->set_attr("long_name", "total over ice domain of top surface ice mass flux");
-    tsif->set_attr("comment", "positive means ice gain");
-
-    timeseries.push_back(tsif);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "basal_ice_flux") != ts_vars.end()) {
-    DiagnosticTimeseries *tbif = new DiagnosticTimeseries(&grid, "basal_ice_flux", "t");
-
-    tbif->set_units("kg s-1", "");
-    tbif->set_dimension_units(time_units, "");
-    tbif->output_filename = ts_filename;
-
-    tbif->set_attr("long_name", "total over ice domain of basal surface ice mass flux");
-    tbif->set_attr("comment", "positive means ice gain");
-
-    timeseries.push_back(tbif);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "sub_shelf_ice_flux") != ts_vars.end()) {
-    DiagnosticTimeseries *tssif = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux", "t");
-
-    tssif->set_units("kg s-1", "");
-    tssif->set_dimension_units(time_units, "");
-    tssif->output_filename = ts_filename;
-
-    tssif->set_attr("long_name", "total over ice domain of sub-ice-shelf ice mass flux");
-    tssif->set_attr("comment", "positive means ice gain");
-
-    timeseries.push_back(tssif);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "nonneg_rule_flux") != ts_vars.end()) {
-    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "nonneg_rule_flux", "t");
-
-    ts->set_units("kg s-1", "");
-    ts->set_dimension_units(time_units, "");
-    ts->output_filename = ts_filename;
-
-    ts->set_attr("long_name", "total over ice domain of ice mass gain by application of non-negative thickness rule");
-    ts->set_attr("comment", "positive means ice gain");
-
-    timeseries.push_back(ts);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "ocean_kill_flux") != ts_vars.end()) {
-    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "ocean_kill_flux", "t");
-
-    ts->set_units("kg s-1", "");
-    ts->set_dimension_units(time_units, "");
-    ts->output_filename = ts_filename;
-
-    ts->set_attr("long_name", "total over ice domain of ice mass gain by calving by application of -ocean_kill mechanism");
-    ts->set_attr("comment", "positive means ice gain");
-
-    timeseries.push_back(ts);
-  }
-
-  if (find(ts_vars.begin(), ts_vars.end(), "float_kill_flux") != ts_vars.end()) {
-    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "float_kill_flux", "t");
-
-    ts->set_units("kg s-1", "");
-    ts->set_dimension_units(time_units, "");
-    ts->output_filename = ts_filename;
-
-    ts->set_attr("long_name", "total over ice domain of ice mass gain by calving by application of -float_kill mechanism");
-    ts->set_attr("comment", "positive means ice gain");
-
-    timeseries.push_back(ts);
-  }
-
-  // as noted above, the variables listed in the bad_set may require a user to 
-  // very carefully interpret; thus the need to add a warning
-  string warning = config.get_string("ts_bad_set_warning"),
-         tmp;
-  istringstream arg(config.get_string("ts_bad_set_variables")); // string becomes stream
-  set<string> bad_vars;
-  while (getline(arg, tmp, ' ')) {
-    if (!tmp.empty()) // this ignores multiple spaces separating variable names
-      bad_vars.insert(tmp);
-  }
-  for (size_t i = 0; i < timeseries.size(); i++) {
-    if (set_contains(bad_vars,timeseries[i]->short_name)) {
-      timeseries[i]->set_attr("interpretation_warning", warning);
-    }
-  }
+  vector<double> tmp(ts_times.size() - current_ts);
+  for (unsigned int k = 0; k < tmp.size(); ++k)
+    tmp[k] = ts_times[current_ts + k];
+
+  ts_times = tmp;
+  current_ts = 0;
 
   return 0;
 }
@@ -449,7 +132,6 @@ PetscErrorCode IceModel::create_timeseries() {
 //! Write time-series.
 PetscErrorCode IceModel::write_timeseries() {
   PetscErrorCode ierr;
-  vector<DiagnosticTimeseries*>::iterator i;
 
   // return if no time-series requested
   if (!save_ts) return 0;
@@ -461,25 +143,31 @@ PetscErrorCode IceModel::write_timeseries() {
   // return if did not yet reach the time we need to save at
   if (ts_times[current_ts] > grid.year)
     return 0;
+  
+  for (set<string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
+    PISMTSDiagnostic *diag = ts_diagnostics[*j];
 
-  // compute values of requested scalar quantities:
-  for (i = timeseries.begin(); i < timeseries.end(); ++i) {
-    PetscScalar tmp;
-
-    ierr = compute_by_name((*i)->short_name, tmp); CHKERRQ(ierr);
-    
-    (*i)->append(grid.year, tmp);
+    if (diag != NULL) {
+      ierr = diag->update(grid.year - dt/secpera, grid.year); CHKERRQ(ierr);
+    }
   }
 
-  // Interpolate to put them on requested times:
-  while ((current_ts < ts_times.size()) &&
-         (ts_times[current_ts] <= grid.year)) {
-    
-    for (i = timeseries.begin(); i < timeseries.end(); ++i) {
-      ierr = (*i)->interp(ts_times[current_ts]); CHKERRQ(ierr);
-    }
 
-    current_ts++;
+  // Interpolate to put them on requested times:
+  for (; current_ts < ts_times.size() && ts_times[current_ts] <= grid.year; current_ts++) {
+
+    // the very first time (current_ts == 0) defines the left endpoint of the
+    // first time interval; we don't write a report at that time
+    if (current_ts == 0)
+      continue;
+
+    for (set<string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
+      PISMTSDiagnostic *diag = ts_diagnostics[*j];
+
+      if (diag != NULL) {
+        ierr = diag->save(ts_times[current_ts - 1], ts_times[current_ts]); CHKERRQ(ierr);
+      }
+    }
   }
 
   return 0;
@@ -696,7 +384,7 @@ PetscErrorCode IceModel::extras_max_timestep(double t_years, double& dt_years) {
   }
 
   bool force_times;
-  force_times = config.get_flag("force_output_times");
+  force_times = config.get_flag("extras_force_output_times");
 
   if (!force_times) {
     dt_years = -1;
@@ -726,8 +414,14 @@ PetscErrorCode IceModel::ts_max_timestep(double t_years, double& dt_years) {
     return 0;
   }
 
+  // make sure that we hit the left endpoint of the first report interval
+  if (t_years < ts_times[0]) {
+    dt_years = ts_times[0] - t_years;
+    return 0;
+  }
+
   bool force_times;
-  force_times = config.get_flag("force_output_times");
+  force_times = config.get_flag("ts_force_output_times");
 
   if (!force_times) {
     dt_years = -1;
@@ -748,10 +442,14 @@ PetscErrorCode IceModel::ts_max_timestep(double t_years, double& dt_years) {
 
 //! Flush scalar time-series.
 PetscErrorCode IceModel::flush_timeseries() {
+  PetscErrorCode ierr;
   // flush all the time-series buffers:
-  vector<DiagnosticTimeseries*>::iterator i;
-  for (i = timeseries.begin(); i < timeseries.end(); ++i) {
-    (*i)->flush();
+  for (set<string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
+    PISMTSDiagnostic *diag = ts_diagnostics[*j];
+
+    if (diag != NULL) {
+      ierr = diag->flush(); CHKERRQ(ierr);
+    }
   }
 
   return 0;
