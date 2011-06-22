@@ -1142,3 +1142,39 @@ bool SSAFD::is_marginal(int i, int j) {
      M.ice_free(M_ne) || M.ice_free(M_se) || M.ice_free(M_nw) || M.ice_free(M_sw));
 }
 
+SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SSAFD>(m, g, my_vars) {
+  
+  // set metadata:
+  dof = 2;
+  vars.resize(2);
+  vars[0].init_2d("nuH[0]", grid);
+  vars[1].init_2d("nuH[1]", grid);
+  
+  set_attrs("ice thickness times effective viscosity, i-offset", "",
+            "Pa s m", "kPa s m", 0);
+  set_attrs("ice thickness times effective viscosity, j-offset", "",
+            "Pa s m", "kPa s m", 1);
+}
+
+PetscErrorCode SSAFD_nuH::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  
+  IceModelVec2Stag *result = new IceModelVec2Stag;
+  ierr = result->create(grid, "nuH", true); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = model->nuH.copy_to(*result); CHKERRQ(ierr);
+  
+  output = result;
+  return 0;
+}
+
+void SSAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  SSA::get_diagnostics(dict);
+
+  dict["nuH"] = new SSAFD_nuH(this, grid, *variables);
+}
+

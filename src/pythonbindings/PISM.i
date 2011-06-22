@@ -410,6 +410,7 @@ typedef int NormType; // YUCK.
 
 %include "stressbalance/SSAFEM.hh"
 %include "stressbalance/SSAFEM_Forward.hh"
+%template(PISMDiag_SSAFD) PISMDiag<SSAFD>;
 %include "stressbalance/SSAFD.hh"
 %include "Mask.hh"
 %include "pism_python.hh"

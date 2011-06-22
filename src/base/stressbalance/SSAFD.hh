@@ -26,6 +26,7 @@
 //! PISM's SSA solver: the finite difference implementation
 class SSAFD : public SSA
 {
+  friend class SSAFD_nuH;
 public:
   SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
         const NCConfigVariable &c) :
@@ -49,6 +50,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 protected:
   virtual PetscErrorCode allocate_fd();
 
@@ -92,6 +94,15 @@ protected:
 //! Constructs a new SSAFD
 SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
                   IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
+
+//! \brief Reports the nuH (viscosity times thickness) product on the staggered
+//! grid.
+class SSAFD_nuH : public PISMDiag<SSAFD>
+{
+public:
+  SSAFD_nuH(SSAFD *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
 
 #endif /* _SSAFD_H_ */
 
