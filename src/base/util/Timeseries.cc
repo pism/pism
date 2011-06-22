@@ -231,15 +231,7 @@ int Timeseries::length() {
 DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, string name, string dimension_name)
   : Timeseries(g, name, dimension_name) {
 
-  buffer_size = 10000;		// just a default
-  start = 0;
-  rate_of_change = false;
-}
-
-DiagnosticTimeseries::DiagnosticTimeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name)
-  : Timeseries(c, r, name, dimension_name) {
-
-  buffer_size = 10000;		// just a default
+  buffer_size = (size_t)g->config.get("timeseries_buffer_size");
   start = 0;
   rate_of_change = false;
 }

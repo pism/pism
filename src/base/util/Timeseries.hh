@@ -160,7 +160,6 @@ protected:
 class DiagnosticTimeseries : public Timeseries {
 public:
   DiagnosticTimeseries(IceGrid * g, string name, string dimension_name);
-  DiagnosticTimeseries(MPI_Comm com, PetscMPIInt rank, string name, string dimension_name);
   ~DiagnosticTimeseries();
 
   PetscErrorCode append(double V, double a, double b);
