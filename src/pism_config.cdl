@@ -563,7 +563,7 @@ netcdf pism_config {
    pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dbdt dHdt dhdt diffusivity enthalpy enthalpybase enthalpysurf hardav lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf new_mask";
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 
-   pism_config:ts_default_variables = "dt ivol divoldt ivolcold ivolcoldf ivoltemp ivoltempf imass dimassdt iarea iareacoldf iareatempf iareag iareaf ienthalpy max_diffusivity surface_ice_flux basal_ice_flux sub_shelf_ice_flux nonneg_rule_flux ocean_kill_flux float_kill_flux";
+   pism_config:ts_default_variables = "dt ivol divoldt ivolcold ivolcoldf ivoltemp ivoltempf imass dimassdt iarea iareacoldf iareatempf iareag iareaf ienthalpy max_diffusivity cumulative_surface_ice_flux surface_ice_flux cumulative_basal_ice_flux basal_ice_flux cumulative_sub_shelf_ice_flux sub_shelf_ice_flux cumulative_nonneg_rule_flux nonneg_rule_flux cumulative_ocean_kill_flux ocean_kill_flux cumulative_float_kill_flux float_kill_flux";
    pism_config:ts_default_variables_doc = "Space-separated list of scalar diagnostic quantities to save, by default, if -ts_file and -ts_times are used, AND a -ts_vars list is not given.";
 
    pism_config:backup_interval = 1.0;

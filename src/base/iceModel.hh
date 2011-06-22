@@ -101,11 +101,17 @@ class IceModel {
   friend class IceModel_dt;
   friend class IceModel_max_diffusivity;
   friend class IceModel_surface_flux;
+  friend class IceModel_cumulative_surface_flux;
   friend class IceModel_basal_flux;
+  friend class IceModel_cumulative_basal_flux;
   friend class IceModel_sub_shelf_flux;
+  friend class IceModel_cumulative_sub_shelf_flux;
   friend class IceModel_nonneg_flux;
+  friend class IceModel_cumulative_nonneg_flux;
   friend class IceModel_ocean_kill_flux;
+  friend class IceModel_cumulative_ocean_kill_flux;
   friend class IceModel_float_kill_flux;
+  friend class IceModel_cumulative_float_kill_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);

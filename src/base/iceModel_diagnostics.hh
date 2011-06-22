@@ -293,6 +293,14 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
+//! \brief Reports the cumulative total surface ice flux.
+class IceModel_cumulative_surface_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_cumulative_surface_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
 //! \brief Reports the total basal ice flux.
 class IceModel_basal_flux : public PISMTSDiag<IceModel>
 {
@@ -301,11 +309,27 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
+//! \brief Reports the cumulative total basal ice flux.
+class IceModel_cumulative_basal_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_cumulative_basal_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
 //! \brief Reports the total sub-shelf ice flux.
 class IceModel_sub_shelf_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_sub_shelf_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
+//! \brief Reports the total sub-shelf ice flux.
+class IceModel_cumulative_sub_shelf_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_cumulative_sub_shelf_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
@@ -318,11 +342,28 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
+//! \brief Reports the cumulative 'numerical' ice flux resulting from enforcing the 'thk
+//! >= 0' rule.
+class IceModel_cumulative_nonneg_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_cumulative_nonneg_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
 //! \brief Reports the -ocean_kill flux.
 class IceModel_ocean_kill_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_ocean_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
+//! \brief Reports the cumulative -ocean_kill flux.
+class IceModel_cumulative_ocean_kill_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_cumulative_ocean_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
@@ -334,6 +375,13 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
+//! \brief Reports the total -float_kill flux.
+class IceModel_cumulative_float_kill_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_cumulative_float_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
 
 
 
