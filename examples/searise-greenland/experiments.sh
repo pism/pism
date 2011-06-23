@@ -7,9 +7,7 @@
 # Before using this script, run preprocess.sh and then initialization.sh
 # recommended way to run with N processors is
 #    "./experiments.sh N foo.nc >& out.experiments &"
-# to initialize from foo.nc.
-
-SPINUPRESULT=$2  # spinup 
+# to initialize from spinup result foo.nc
 
 echo
 echo "# ============================================================================="
@@ -27,8 +25,13 @@ else
 fi
 
 NN=2  # default number of processors
-if [ $# -gt 0 ] ; then  # if user says "control.sh 8" then NN = 8
+if [ $# -gt 0 ] ; then
   NN="$1"
+fi
+
+SPINUPRESULT=g10km_0_ftt.nc  # default name of spinup result
+if [ $# -gt 1 ] ; then
+  SPINUPRESULT="$2"
 fi
 
 PISM_CONFIG=searise_config.nc
@@ -125,9 +128,8 @@ echo
 echo "$SCRIPTNAME control coupler = '$COUPLER_CTRL'"
 echo "$SCRIPTNAME     AR4 coupler = '$COUPLER_AR4'"
 
-expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab"
+expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab,cbase,csurf"
 tspackage="-ts_vars ivol,iareag,iareaf"
-
 
 STARTTIME=0
 ENDTIME=500
@@ -186,7 +188,7 @@ for climate_scale_factor in 1.0 1.5 2.0; do
     EXNAME=${PISM_SRPREFIX2}_raw_y${ENDTIME}.nc
     TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX2}.nc
     echo
-    echo "$SCRIPTNAME run with AR4 climate from $STARTTIME to $ENDTIME years w save every 5 years:"
+    echo "$SCRIPTNAME run ${PISM_SRPREFIX2} with scaled AR4 climate from $STARTTIME to $ENDTIME years w save every 5 years:"
     echo
     cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
        -anomaly_temp $AR4TEMP -anomaly_precip $AR4PRECIP \
@@ -217,7 +219,7 @@ for sliding_scale_factor in 2 2.5 3; do
   EXNAME=${PISM_SRPREFIX1}_raw_y${ENDTIME}.nc
   TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX1}.nc
   echo
-  echo "$SCRIPTNAME run with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
+  echo "$SCRIPTNAME run ${PISM_SRPREFIX1} with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
   echo
   cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -sliding_scale $sliding_scale_factor \
@@ -248,7 +250,7 @@ for melt_rate in 2 20 200; do
   EXNAME=${PISM_SRPREFIX1}_raw_y${ENDTIME}.nc
   TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX1}.nc
   echo
-  echo "$SCRIPTNAME run with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
+  echo "$SCRIPTNAME run  ${PISM_SRPREFIX1} with steady climate from $STARTTIME to $ENDTIME years w save every 5 years:"
   echo
   cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -shelf_base_melt_rate $melt_rate \
