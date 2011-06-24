@@ -109,10 +109,8 @@ TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 
 FULLPHYS="-ssa_sliding -thk_eff $TILLPHI"
 
-TITLE="SeaRISE Greenland Experiment"
-
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -config_override $PISM_CONFIG -title \"$TITLE\" $FULLPHYS"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -config_override $PISM_CONFIG $FULLPHYS"
 
 echo "$SCRIPTNAME         tillphi = '$TILLPHI'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
@@ -128,7 +126,7 @@ echo
 echo "$SCRIPTNAME control coupler = '$COUPLER_CTRL'"
 echo "$SCRIPTNAME     AR4 coupler = '$COUPLER_AR4'"
 
-expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab,cbase,csurf"
+expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,dHdt,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab,cbase,csurf"
 tspackage="-ts_vars ivol,iareag,iareaf"
 
 STARTTIME=0

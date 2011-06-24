@@ -28,10 +28,10 @@ pism_floating = 3
 pism_ocean    = 4
 
 # SeaRISE mask values:
-searise_ocean = 0
-searise_grounded_ice = 1
-searise_floating_ice = 2
-searise_ice_free_land = 3
+searise_ocean = 1
+searise_ice_free_land = 2
+searise_grounded_ice = 3
+searise_floating_ice = 4
 
 nc = CDF(input, 'a')
 
@@ -44,8 +44,8 @@ except:
 thk = nc.variables['thk']
 mask = nc.variables['mask']
 
-mask.flag_meanings = "ocean grounded_ice floating_ice ice_free_land" ;
-mask.flag_values = [0, 1, 2, 3];
+mask.flag_meanings = "ice_free_ocean ice_free_land grounded_ice floating_ice" ;
+mask.flag_values = [1, 2, 3, 4];
 mask.long_name = "integer mask specifying cell type"
 
 for j in range(N):

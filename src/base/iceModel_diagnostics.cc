@@ -992,7 +992,7 @@ IceModel_iarea::IceModel_iarea(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iarea", "t");
 
-  ts->set_units("m2", "km2");
+  ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "total ice area");
   ts->set_attr("valid_min", 0.0);
@@ -1192,7 +1192,7 @@ IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, PISMVars &my_var
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareatemp", "t");
 
-  ts->set_units("m2", "km2");
+  ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "total area of temperate ice");
   ts->set_attr("valid_min", 0.0);
@@ -1252,7 +1252,7 @@ IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g, PISMVars &my_var
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareacold", "t");
 
-  ts->set_units("m2", "km2");
+  ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "total area of cold ice");
   ts->set_attr("valid_min", 0.0);
@@ -1338,7 +1338,7 @@ IceModel_iareag::IceModel_iareag(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareag", "t");
   
-  ts->set_units("m2", "km2");
+  ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "total grounded ice area");
 }
@@ -1363,7 +1363,7 @@ IceModel_iareaf::IceModel_iareaf(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareaf", "t");
   
-  ts->set_units("m2", "km2");
+  ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "total floating ice area");
 }
