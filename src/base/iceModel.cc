@@ -250,7 +250,7 @@ PetscErrorCode IceModel::createVecs() {
 
     ierr = vIcebergMask.set_attr("flag_values", icebergmask_values); CHKERRQ(ierr);
     ierr = vIcebergMask.set_attr("flag_meanings",
-      "no_iceberg not_set iceberg_candidate ocean_boundary grounded_boudary"); CHKERRQ(ierr);
+      "no_iceberg not_set iceberg_candidate ocean_boundary grounded_boundary"); CHKERRQ(ierr);
     vIcebergMask.output_data_type = NC_BYTE;
     ierr = variables.add(vIcebergMask); CHKERRQ(ierr);
   }

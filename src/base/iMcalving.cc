@@ -23,6 +23,10 @@
 #include "pism_signal.h"
 #include "Mask.hh"
 
+
+//! \file iMcalving.cc Methods implementing PIK options -eigen_calving and -calving_at_thickness [\ref Winkelmannetal2010TCD].
+
+
 //! \brief Uses principal strain rates to apply "eigencalving" with constant K.
 /*!
   See equation (26) in [\ref Winkelmannetal2010TCD].
@@ -30,7 +34,7 @@
 PetscErrorCode IceModel::eigenCalving() {
   const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
-  ierr = verbPrintf(4, grid.com, "######### applyCalvingRate is called \n");    CHKERRQ(ierr);
+  ierr = verbPrintf(4, grid.com, "######### eigenCalving() start \n");    CHKERRQ(ierr);
 
   // is ghost communication really needed here?
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
@@ -51,23 +55,15 @@ PetscErrorCode IceModel::eigenCalving() {
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vHnew.begin_access(); CHKERRQ(ierr);
-
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
-  ierr = vHref.begin_access(); CHKERRQ(ierr);
-  ierr = vPrinStrain1.begin_access(); CHKERRQ(ierr);
-  ierr = vPrinStrain2.begin_access(); CHKERRQ(ierr);
 
   IceModelVec2S vDiffCalvRate = vWork2d[1];
   ierr = vDiffCalvRate.set(0.0); CHKERRQ(ierr);
-  ierr = vDiffCalvRate.begin_access(); CHKERRQ(ierr);
 
   if (PetscAbs(dx - dy)/PetscMin(dx,dy) > 1e-2) {
-    ierr = PetscPrintf(grid.com,
+    PetscPrintf(grid.com,
       "PISMPIK_ERROR: -eigen_calving using a non-square grid cell does not work (yet);\n"
-                       "  since it has no direction!!!\n, dx = %f, dy = %f, rel. diff = %f",dx,dy,PetscAbs(dx - dy)/PetscMax(dx,dy));
+      "               since it has no direction!!!\n, dx = %f, dy = %f, rel. diff = %f",
+      dx,dy,PetscAbs(dx - dy)/PetscMax(dx,dy));
     PISMEnd();
   }
 
@@ -76,6 +72,14 @@ PetscErrorCode IceModel::eigenCalving() {
 
   MaskQuery mask(vMask);
 
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vHnew.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = vHref.begin_access(); CHKERRQ(ierr);
+  ierr = vPrinStrain1.begin_access(); CHKERRQ(ierr);
+  ierr = vPrinStrain2.begin_access(); CHKERRQ(ierr);
+  ierr = vDiffCalvRate.begin_access(); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
       // Average of strain-rate eigenvalues in adjacent floating gird cells to
@@ -92,8 +96,7 @@ PetscErrorCode IceModel::eigenCalving() {
       PetscInt M = 0;
 
       // find partially filled or empty grid boxes on the icefree ocean, which
-      // have floating ice neighbors after massContExplicitStep (mask not
-      // updated)
+      // have floating ice neighbors after massContExplicitStep (mask not updated)
       bool next_to_floating =
         ((vH(i + 1, j) > 0.0 && (vbed(i + 1, j) < (sea_level - ice_rho / ocean_rho*vH(i + 1, j)))) ||
          (vH(i - 1, j) > 0.0 && (vbed(i - 1, j) < (sea_level - ice_rho / ocean_rho*vH(i - 1, j)))) ||
@@ -142,11 +145,9 @@ PetscErrorCode IceModel::eigenCalving() {
           eigen2 /= M;
         }
 
-
         PetscScalar calvrateHorizontal = 0.0,
           eigenCalvOffset = 0.0; // if it's not exactly the zero line of
-                               // transition from compressive to extensive flow
-                               // regime
+                               // transition from compressive to extensive flow regime
 
         // calving law
         if ( eigen2 > eigenCalvOffset && eigen1 > 0.0) { // if spreading in all directions
@@ -160,8 +161,6 @@ PetscErrorCode IceModel::eigenCalving() {
 
         // apply calving rate at partially filled or empty grid cells
         if (calvrate > 0.0) {
-          //PetscScalar Href_old = vHref(i, j);
-          //vDiffCalvRate(i, j) = 0.0;
           vHref(i, j) -= calvrate * dt; // in m
           if(vHref(i, j) < 0.0) { // i.e. partially filled grid cell has completely calved off
             vDiffCalvRate(i, j) =  - vHref(i, j) / dt;// in m/s, means additional ice loss
@@ -197,13 +196,11 @@ PetscErrorCode IceModel::eigenCalving() {
 
         vHref(i, j) = vH(i, j) - (restCalvRate * dt); // in m
 
-        //Hav = vH(i, j);
         vHnew(i, j) = 0.0;
 
         if(vHref(i, j) < 0.0) { // i.e. terminal floating ice grid cell has calved off completely.
           // We do not account for further calving ice-inwards!
           // Alternatively CFL criterion for time stepping could be adjusted to maximum of calving rate.
-          //Hav = 0.0;
           vHref(i, j) = 0.0;
         }
       }
@@ -211,16 +208,15 @@ PetscErrorCode IceModel::eigenCalving() {
   }
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
-
-  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
-
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
   ierr = vHref.end_access(); CHKERRQ(ierr);
   ierr = vPrinStrain1.end_access(); CHKERRQ(ierr);
   ierr = vPrinStrain2.end_access(); CHKERRQ(ierr);
   ierr = vDiffCalvRate.end_access(); CHKERRQ(ierr);
+
+  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
+  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
 
   return 0;
 }
@@ -233,42 +229,34 @@ PetscErrorCode IceModel::eigenCalving() {
   Requires -part_grid to be "on".
 */
 PetscErrorCode IceModel::calvingAtThickness() {
-  //const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
-  ierr = verbPrintf(4, grid.com, "######### callvingAtThickness is called \n");    CHKERRQ(ierr);
+  ierr = verbPrintf(4, grid.com, "######### calvingAtThickness() start\n");    CHKERRQ(ierr);
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vHnew.begin_access(); CHKERRQ(ierr);
-
-  //ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
 
   double ocean_rho = config.get("sea_water_density"),
-    ice_rho = config.get("ice_density");
+         ice_rho   = config.get("ice_density"),
+         Hcalving  = config.get("calving_at_thickness");
 
   PetscReal sea_level;
   if (ocean != NULL) {
     ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
   } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
 
-  const PetscScalar Hcalving = config.get("calving_at_thickness");
-  //ierr = verbPrintf(3, grid.com, "!!! Hcalving=%f \n", Hcalving);
-
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vHnew.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
-
       bool hereFloating = (vH(i, j) > 0.0 && (vbed(i, j) < (sea_level - ice_rho / ocean_rho * vH(i, j))));
       bool icefreeOceanNeighbor = ( (vH(i + 1, j) == 0.0 && vbed(i + 1, j) < sea_level) ||
                                     (vH(i - 1, j) == 0.0 && vbed(i - 1, j) < sea_level) ||
                                     (vH(i, j + 1) == 0.0 && vbed(i, j + 1) < sea_level) ||
                                     (vH(i, j - 1) == 0.0 && vbed(i, j - 1) < sea_level));
-
-
       if (hereFloating && vH(i, j) <= Hcalving && icefreeOceanNeighbor) {
         vHnew(i, j) = 0.0;
       }
@@ -276,12 +264,10 @@ PetscErrorCode IceModel::calvingAtThickness() {
   }
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
 
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
-
-  //ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

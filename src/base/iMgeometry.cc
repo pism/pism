@@ -22,6 +22,9 @@
 #include "iceModel.hh"
 #include "Mask.hh"
 
+//! \file iMgeometry.cc Methods of IceModel with update and maintain consistency of ice sheet geometry.
+
+
 //! Update the surface elevation and the flow-type mask when the geometry has changed.
 /*!
   This procedure should be called whenever necessary to maintain consistency of geometry.
@@ -484,21 +487,14 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = redistResiduals(); CHKERRQ(ierr);
   }
 
-  // FIXME: maybe calving should be applied *before* the redistribution part?
+  // FIXME: calving should be applied *before* the redistribution part!
   if (config.get_flag("do_eigen_calving") && config.get_flag("use_ssa_velocity")) {
     ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
     ierr = eigenCalving(); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("do_thickness_calving")) {
-    if (config.get_flag("part_grid") == true) {
-      ierr = calvingAtThickness(); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(4, grid.com,
-                        "PISM - WARNING: calving at certain terminal ice thickness without application\n"
-                        "              of partially filled grid cell scheme may lead to non-moving\n"
-                        "              ice shelf front!\n"); CHKERRQ(ierr);
-    }
+  if (config.get_flag("do_thickness_calving") && config.get_flag("part_grid")) {
+    ierr = calvingAtThickness(); CHKERRQ(ierr);
   }
 
   // Check if the ice thickness exceeded the height of the computational box

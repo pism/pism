@@ -22,6 +22,9 @@
 #include <set>
 #include "iceModel.hh"
 
+//! \file iMoptions.cc Reading runtime options and setting configuration parameters.
+
+
 //! Read runtime (command line) options and alter the corresponding parameters or flags as appropriate.
 /*!
 A critical principle of this procedure is that it will not alter IceModel parameters and flags
@@ -145,6 +148,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   bool initfromT, initfromTandOm;
   ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
+
+  ierr = config.string_from_option("institution", "institution"); CHKERRQ(ierr);
 
   ierr = PISMOptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
 
@@ -306,7 +311,9 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("thk_eff_reduced","thk_eff_reduced");  CHKERRQ(ierr);
   
   ierr = config.string_from_option("title", "run_title"); CHKERRQ(ierr);
-  ierr = config.string_from_option("institution", "institution"); CHKERRQ(ierr);
+
+  ierr = config.flag_from_option("vpik", "verbose_pik_messages");  CHKERRQ(ierr);
+  if (getVerbosityLevel() > 2)  config.set_flag("verbose_pik_messages", true);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -314,11 +321,19 @@ PetscErrorCode  IceModel::setFromOptions() {
   global_attributes.set_string("institution", config.get_string("institution"));
   global_attributes.set_string("command", pism_args_string());
 
+  // warn about some option combinations
+  
   if (!config.get_flag("do_mass_conserve") && config.get_flag("do_skip")) {
     ierr = verbPrintf(2, grid.com,
-                      "PISM WARNING: Both -skip and -no_mass are set.\n"
-                      "              -skip only makes sense in runs updating ice geometry.\n"); CHKERRQ(ierr);
+      "PISM WARNING: Both -skip and -no_mass are set.\n"
+      "              -skip only makes sense in runs updating ice geometry.\n"); CHKERRQ(ierr);
+  }
 
+  if (config.get_flag("do_thickness_calving") && !config.get_flag("part_grid")) {
+    ierr = verbPrintf(2, grid.com,
+      "PISM WARNING: Calving at certain terminal ice thickness (-calving_at_thickness)\n"
+      "              without application of partially filled grid cell scheme (-part_grid)\n"
+      "              may lead to (incorrect) non-moving ice shelf front.\n"); CHKERRQ(ierr);
   }
 
   return 0;

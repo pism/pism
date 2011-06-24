@@ -22,7 +22,8 @@
 #include "iceModel.hh"
 #include "Mask.hh"
 
-// methods implementing PIK logic for -part_grid; see Albrecht et al 2011
+
+//! \file iMpartgrid.cc Methods implementing PIK option -part_grid [\ref Albrechtetal2011].
 
 
 //! Compute staggered grid velocities according to mask and regular grid velocities.
@@ -143,21 +144,13 @@ PetscErrorCode IceModel::redistResiduals() {
 // This routine carries-over the ice mass when using -part_redist option, one step in the loop.
 PetscErrorCode IceModel::calculateRedistResiduals() {
   PetscErrorCode ierr;
-  ierr = verbPrintf(4, grid.com, "calculateRedistResiduals() is called\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(4, grid.com, "######### calculateRedistResiduals() start\n"); CHKERRQ(ierr);
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
-  ierr = vHnew.begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-
-  ierr = vHref.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
 
   IceModelVec2S vHresidualnew = vWork2d[1];
   ierr = vHresidual.copy_to(vHresidualnew); CHKERRQ(ierr);
-  ierr = vHresidual.begin_access(); CHKERRQ(ierr);
-  ierr = vHresidualnew.begin_access(); CHKERRQ(ierr);
-
 
   if (ocean == PETSC_NULL) { SETERRQ(1, "PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal sea_level = 0.0; //FIXME
@@ -165,6 +158,12 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
 
   PetscScalar minHRedist = 50.0; // to avoid the propagation of thin ice shelf tongues
 
+  ierr = vHnew.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vHref.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = vHresidual.begin_access(); CHKERRQ(ierr);
+  ierr = vHresidualnew.begin_access(); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
       // first step: distributing residual ice masses
@@ -183,15 +182,13 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
         if (thk.n == 0.0 && bed.n < sea_level) {N++; neighbors.n = true;}
         if (thk.s == 0.0 && bed.s < sea_level) {N++; neighbors.s = true;}
 
-        //if (N > 0 && vH(i, j) > minHRedist)  {
-		if (N > 0)  {
+        if (N > 0)  {
           //remainder ice mass will be redistributed equally to all adjacent
           //imfrac boxes (is there a more physical way?)
           if (neighbors.e) vHref(i + 1, j) += vHresidual(i, j) / N;
           if (neighbors.w) vHref(i - 1, j) += vHresidual(i, j) / N;
           if (neighbors.n) vHref(i, j + 1) += vHresidual(i, j) / N;
           if (neighbors.s) vHref(i, j - 1) += vHresidual(i, j) / N;
-
           vHresidualnew(i, j) = 0.0;
         } else {
           vHnew(i, j) += vHresidual(i, j); // mass conservation, but thick ice at one grid cell possible
@@ -204,15 +201,20 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
       }
     }
   }
+  ierr = vHnew.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
-
 
   double  ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density"),
     C = ice_rho / ocean_rho;
   PetscScalar     H_average;
   PetscScalar     Hcut = 0.0;
+
+  ierr = vHnew.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
@@ -252,29 +254,31 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
       }
     }
   }
-
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vHnew.end_access(); CHKERRQ(ierr);
+  ierr = vHref.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = vHresidual.end_access(); CHKERRQ(ierr);
+  ierr = vHresidualnew.end_access(); CHKERRQ(ierr);
+  
   PetscScalar gHcut; //check, if redistribution should be run once more
   ierr = PetscGlobalSum(&Hcut, &gHcut, grid.com); CHKERRQ(ierr);
   putOnTop = PETSC_FALSE;
-  if (gHcut > 0.0) { repeatRedist = PETSC_TRUE;
-	if (gHcut < minHRedist) { putOnTop = PETSC_TRUE; }//to avoid a couple of repetition for the redistribution of very thin vHresiduals
-  } else { repeatRedist = PETSC_FALSE;}
-  //ierr = verbPrintf(3, grid.com, "!!! Hcut = %f \n", gHcut); CHKERRQ(ierr);
+  if (gHcut > 0.0) {
+    repeatRedist = PETSC_TRUE;
+    // avoid repetition for the redistribution of very thin vHresiduals
+    if (gHcut < minHRedist) { putOnTop = PETSC_TRUE; }
+  } else {
+    repeatRedist = PETSC_FALSE;
+  }
 
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vHnew.end_access(); CHKERRQ(ierr);
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
 
-  ierr = vHref.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
-
-  ierr = vHresidual.end_access(); CHKERRQ(ierr);
-  ierr = vHresidualnew.end_access(); CHKERRQ(ierr);
   ierr = vHresidualnew.beginGhostComm(vHresidual); CHKERRQ(ierr);
   ierr = vHresidualnew.endGhostComm(vHresidual); CHKERRQ(ierr);
 
-
   return 0;
 }
+
