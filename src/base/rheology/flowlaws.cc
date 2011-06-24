@@ -140,7 +140,7 @@ void IceFlowLaw::effectiveViscosity_with_derivative(PetscReal hardness, const Pe
     power = (1-n)/(2*n),
     my_nu = 0.5 * hardness * pow(schoofReg + alpha, power),
     my_dnu = power * my_nu / (schoofReg + alpha);
-    
+
   if (nu)   *nu = my_nu;
   if (dnu) *dnu = my_dnu;
 }
@@ -170,26 +170,40 @@ PetscReal IceFlowLaw::hardnessParameter_from_enth(PetscReal E, PetscReal p) cons
 PetscReal IceFlowLaw::averagedHardness_from_enth(PetscReal thickness, PetscInt kbelowH,
                                                  const PetscReal *zlevels,
                                                  const PetscReal *enthalpy) const {
-
   PetscReal B = 0;
+
+  // Use trapezoidal rule to integrate from 0 to zlevels[kbelowH]:
   if (kbelowH > 0) {
-    PetscReal dz = zlevels[1] - zlevels[0];
-    B += 0.5 * dz * hardnessParameter_from_enth(enthalpy[0],
-                                                EC->getPressureFromDepth(thickness) );
-    for (PetscInt m=1; m < kbelowH; m++) {
-      const PetscReal dzNEXT = zlevels[m+1] - zlevels[m],
-                        depth  = thickness - 0.5 * (zlevels[m+1] + zlevels[m]);
-      B += 0.5 * (dz + dzNEXT) * hardnessParameter_from_enth(enthalpy[m],
-                                                             EC->getPressureFromDepth(depth) );
-      dz = dzNEXT;
+    PetscReal
+      p0 = EC->getPressureFromDepth(thickness),
+      E0 = enthalpy[0],
+      h0 = hardnessParameter_from_enth(E0, p0); // ice hardness at the left endpoint
+
+    for (int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
+      const PetscReal
+        p1 = EC->getPressureFromDepth(thickness - zlevels[i]), // pressure at the right endpoint
+        E1 = enthalpy[i],       // enthalpy at the right endpoint
+        h1 = hardnessParameter_from_enth(E1, p1); // ice hardness at the right endpoint
+
+      // The midpoint rule sans the "1/2":
+      B += (zlevels[i] - zlevels[i-1]) * (h0 + h1);
+
+      h0 = h1;
     }
-    // use last dz from for loop
-    const PetscReal depth  = 0.5 * (thickness - zlevels[kbelowH]);
-    B += 0.5 * dz * hardnessParameter_from_enth(enthalpy[kbelowH],
-                                                EC->getPressureFromDepth(depth) );
   }
 
-  // so far B is an integral of ice hardness; compute the average now:
+  // Add the "1/2":
+  B *= 0.5;
+
+  // use the "rectangle method" to integrate from
+  // zlevels[kbelowH] to thickness:
+  PetscReal
+    depth = thickness - zlevels[kbelowH],
+    p = EC->getPressureFromDepth(depth);
+
+  B += depth * hardnessParameter_from_enth(enthalpy[kbelowH], p);
+
+  // Now B is an integral of ice hardness; next, compute the average:
   if (thickness > 0)
     B = B / thickness;
   else
@@ -206,15 +220,15 @@ This constructor just sets flow law factor for nonzero water content, from
 GPBLDIce::GPBLDIce(MPI_Comm c,const char pre[],
                    const NCConfigVariable &config) : IceFlowLaw(c,pre,config) {
   T_0              = config.get("water_melting_point_temperature");    // K
-  water_frac_coeff = config.get("gpbld_water_frac_coeff");  
+  water_frac_coeff = config.get("gpbld_water_frac_coeff");
   water_frac_observed_limit
-                   = config.get("gpbld_water_frac_observed_limit");              
+                   = config.get("gpbld_water_frac_observed_limit");
 }
 
 PetscErrorCode GPBLDIce::setFromOptions() {
   PetscErrorCode ierr;
 
-  ierr = IceFlowLaw::setFromOptions(); CHKERRQ(ierr); 
+  ierr = IceFlowLaw::setFromOptions(); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(comm,prefix,"GPBLDIce options",NULL); CHKERRQ(ierr);
   {
@@ -264,7 +278,7 @@ PetscReal GPBLDIce::softnessParameter_from_enth(
     PetscReal omega;
     ierr = EC->getWaterFraction(enthalpy,pressure,omega);
     // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
-    omega = PetscMin(omega,water_frac_observed_limit); 
+    omega = PetscMin(omega,water_frac_observed_limit);
     // next line implements eqn (23) in \ref AschwandenBlatter2009
     return softnessParameter_paterson_budd(T_0) * (1.0 + water_frac_coeff * omega);
   }
@@ -320,7 +334,7 @@ void CustomGlenIce::setSchoofRegularization(PetscReal vel_peryear,
                                             PetscReal len_km) {
   schoofVel = vel_peryear/secpera;
   schoofLen = len_km*1e3;
-  schoofReg = PetscSqr(schoofVel/schoofLen); 
+  schoofReg = PetscSqr(schoofVel/schoofLen);
 }
 
 // HookeIce
