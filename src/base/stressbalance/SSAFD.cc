@@ -669,8 +669,7 @@ PetscErrorCode SSAFD::solve() {
         if (reason < 0) {
           // KSP diverged
           ierr = verbPrintf(1,grid.com,
-              "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
-                    "  see PETSc man page for KSPGetConvergedReason() ...\n\n",
+              "\nPISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
               reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
           // for now, always write a file with a fixed filename  (FIXME: may want other mechanism?)
           char filename[PETSC_MAX_PATH_LEN] = "SSAFD_kspdivergederror.petsc";
@@ -688,7 +687,7 @@ PetscErrorCode SSAFD::solve() {
             PISMEnd();
           }
           ierr = verbPrintf(1,grid.com,
-            "WARNING: KSP diverged with epsilon=%8.2e.  Retrying with epsilon multiplied by %8.2e.\n",
+            "  KSP diverged with epsilon=%8.2e.  Retrying with epsilon multiplied by %8.2e.\n\n",
             epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
           epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
           // recovery requires recompute on nuH  (FIXME: could be implemented by max(eps,nuH) here?)

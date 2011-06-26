@@ -470,7 +470,7 @@ PetscErrorCode IceModel::model_state_setup() {
     ki   = config.get_flag("kill_icebergs");
   if (pg || pr || ki) {
     ierr = verbPrintf(2, grid.com,
-                      "  PISM-PIK mass/geometry methods are in use:  "); CHKERRQ(ierr);
+                      "* PISM-PIK mass/geometry methods are in use:  "); CHKERRQ(ierr);
 
     if (pg)   { ierr = verbPrintf(2, grid.com, "part_grid,"); CHKERRQ(ierr); }
     if (pr)   { ierr = verbPrintf(2, grid.com, "part_redist,"); CHKERRQ(ierr); }

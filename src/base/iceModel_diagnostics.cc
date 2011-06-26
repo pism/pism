@@ -1194,7 +1194,7 @@ IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, PISMVars &my_var
 
   ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total area of temperate ice");
+  ts->set_attr("long_name", "ice-covered area where basal ice is temperate");
   ts->set_attr("valid_min", 0.0);
 }
 
@@ -1220,7 +1220,7 @@ IceModel_iareatempf::IceModel_iareatempf(IceModel *m, IceGrid &g, PISMVars &my_v
 
   ts->set_units("1", "");
   ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "temperate ice area fraction");
+  ts->set_attr("long_name", "fraction of ice-covered area where basal ice is temperate");
   ts->set_attr("valid_min", 0.0);
   ts->set_attr("valid_max", 1.0);
 }
@@ -1254,7 +1254,7 @@ IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g, PISMVars &my_var
 
   ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total area of cold ice");
+  ts->set_attr("long_name", "ice-covered area where basal ice is cold");
   ts->set_attr("valid_min", 0.0);
 }
 
@@ -1280,7 +1280,7 @@ IceModel_iareacoldf::IceModel_iareacoldf(IceModel *m, IceGrid &g, PISMVars &my_v
 
   ts->set_units("1", "");
   ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "cold ice area fraction");
+  ts->set_attr("long_name", "fraction of ice-covered area where basal ice is cold");
   ts->set_attr("valid_min", 0.0);
   ts->set_attr("valid_max", 1.0);
 }

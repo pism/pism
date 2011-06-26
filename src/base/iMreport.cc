@@ -435,7 +435,7 @@ PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
   return 0;
 }
 
-//! Computes temperate ice area, in m^2.
+//! Computes area of basal ice which is temperate, in m^2.
 PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
@@ -459,7 +459,7 @@ PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
   return 0;
 }
 
-//! Computes cold ice area, in m^2.
+//! Computes area of basal ice which is cold, in m^2.
 PetscErrorCode IceModel::compute_ice_area_cold(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
