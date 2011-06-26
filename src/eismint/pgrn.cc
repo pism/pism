@@ -35,19 +35,13 @@ static char help[] =
 
 #include <petsc.h>
 #include "iceModel.hh"
-#include "pgrn_atmosphere.hh"
 
 #include "PCFactory.hh"
-#include "PISMAtmosphere.hh"
+#include "PAEismintGreenland.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 
 typedef enum {SSL2, SSL3, CCL3, GWL3} EISGREENrun;
-
-static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf,
-					PISMAtmosphereModel* &result) {
-  result = new PA_EISMINT_Greenland(g, conf);
-}
 
 static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
 						   NCConfigVariable &config) {
@@ -175,7 +169,6 @@ int main(int argc, char *argv[]){
     // boundary models:
     PAFactory pa(g, config);
     PISMAtmosphereModel *atmosphere;
-    pa.add_model("eismint_greenland", &create_pa_eismint_greenland);
     ierr = pa.set_default("eismint_greenland"); CHKERRQ(ierr);
 
     PSFactory ps(g, config);

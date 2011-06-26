@@ -121,6 +121,8 @@ add_library (pismboundary
   coupler/PASLapseRates.cc
   coupler/PASDirectForcing.cc
   coupler/PScalarForcing.cc
+  coupler/PAEismintGreenland.cc
+  coupler/PASeariseGreenland.cc
   coupler/PAYearlyCycle.cc
   coupler/PCFactory.cc
   coupler/PISMOcean.cc
@@ -197,7 +199,7 @@ add_executable (pisms pisms.cc
   ismip/iceMISMIPModel.cc)
 
 # EISMINT-Greenland
-add_executable (pgrn eismint/pgrn.cc eismint/pgrn_atmosphere.cc)
+add_executable (pgrn eismint/pgrn.cc)
 
 add_executable (pismebm coupler/ebm_driver.cc pismebm.cc)
 
@@ -211,7 +213,7 @@ add_executable (pismv pismv.cc)
 target_link_libraries (pismv pismverif pismbase)
 
 # Testing boundary models without ice dynamics.
-add_executable (pclimate pclimate.cc eismint/pgrn_atmosphere.cc)
+add_executable (pclimate pclimate.cc)
 target_link_libraries (pclimate pismboundary)
 
 find_program (NCGEN_PROGRAM "ncgen")

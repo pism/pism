@@ -111,33 +111,6 @@ protected:
   NCSpatialVariable airtemp_var;
 };
 
-
-//! \brief A modification of PAYearlyCycle tailored for the
-//! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
-//! present-day temperature parameterization and stored precipitation data.
-//! Adds the precipitation correction for spin-ups.
-class PA_SeaRISE_Greenland : public PAYearlyCycle {
-public:
-  PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
-    : PAYearlyCycle(g, conf)
-  {
-    paleo_precipitation_correction = false;
-    dTforcing = NULL;
-  }
-
-  virtual ~PA_SeaRISE_Greenland()
-  {
-    delete dTforcing;
-  }
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
-protected:
-  bool paleo_precipitation_correction;
-  Timeseries *dTforcing;
-  IceModelVec2S *lat, *lon, *surfelev;
-};
-
 class PAModifier : public Modifier<PISMAtmosphereModel>
 {
 public:

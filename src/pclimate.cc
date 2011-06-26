@@ -35,12 +35,6 @@ static char help[] =
 #include "coupler/PISMAtmosphere.hh"
 #include "coupler/PISMSurface.hh"
 #include "coupler/PISMOcean.hh"
-#include "eismint/pgrn_atmosphere.hh"
-
-static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf,
-					PISMAtmosphereModel* &result) {
-  result = new PA_EISMINT_Greenland(g, conf);
-}
 
 
 static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
@@ -402,7 +396,6 @@ int main(int argc, char *argv[]) {
     // Initialize boundary models:
     PAFactory pa(grid, config);
     PISMAtmosphereModel *atmosphere;
-    pa.add_model("eismint_greenland", &create_pa_eismint_greenland);
 
     PSFactory ps(grid, config);
     PISMSurfaceModel *surface;

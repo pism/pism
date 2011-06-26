@@ -23,6 +23,8 @@
 
 #include "PCFactory.hh"
 #include "PSExternal.hh"
+#include "PAEismintGreenland.hh"
+#include "PASeariseGreenland.hh"
 #include "PASDirectForcing.hh"
 #include "PSElevation.hh"
 #include "pism_const.hh"
@@ -41,6 +43,11 @@ static void create_pa_given(IceGrid& g, const NCConfigVariable& conf, PISMAtmosp
 
 static void create_pa_searise_greenland(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
   result = new PA_SeaRISE_Greenland(g, conf);
+}
+
+static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf,
+					PISMAtmosphereModel* &result) {
+  result = new PA_EISMINT_Greenland(g, conf);
 }
 
 static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf,
@@ -62,6 +69,7 @@ void PAFactory::add_standard_types() {
   add_model("constant",          &create_pa_constant);
   add_model("given",             &create_pa_given);
   add_model("searise_greenland", &create_pa_searise_greenland);
+  add_model("eismint_greenland", &create_pa_eismint_greenland);
   set_default("constant");
 
   add_modifier("anomaly",    &create_pa_anomalies);
