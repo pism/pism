@@ -63,6 +63,6 @@ ncatted -O -a units,t,a,c,"years since 1-1-1" $SLSERIES
 echo "  PISM-readable paleo-sea-level file $SLSERIES; for option -dSLforcing"
 echo
 
-echo "now run spin-up script 'antspinup.sh'"
+echo "now run spin-up script 'antspin.sh'"
 echo
 

@@ -1,0 +1,19 @@
+These are minimal scripts, for now.  They are less than needed for an actual
+SeaRISE submission.  Spinup (esp. thermodynamical) is not seriously addressed.
+
+See
+  http://websrv.cs.umt.edu/isis/index.php/Present_Day_Antarctica
+for a description of the data being used.
+
+To use,
+
+  $ ./preprocess.sh   # downloads with wget and NCO to preprocess to PISM-ready
+
+  $ ./antspin.sh N    # 30km grid run with N processes; first stage essentially
+                      #   smooths surface, while second stage actually uses
+                      #   full physics: sliding plus PIK calving front physics
+
+To do 15km run do "./antspin.sh N 1".  And "./antspin.sh N 2" gives 10km run.
+The modifications needed to run on 5km are easy, but require a big
+computer and a lot of processor-hours!
+

@@ -41,26 +41,19 @@ static char help[] =
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 
-typedef enum {SSL2, SSL3, CCL3, GWL3} EISGREENrun;
 
 static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
 						   NCConfigVariable &config) {
   PetscErrorCode ierr;
-  bool ssl2Set, ssl3Set, ccl3Set, gwl3Set;
-  EISGREENrun exper = SSL2;	// default
 
-  ierr = PISMOptionsIsSet("-ssl2", ssl2Set); CHKERRQ(ierr);
-  if (ssl2Set)   exper = SSL2;
-  ierr = PISMOptionsIsSet("-ccl3", ccl3Set); CHKERRQ(ierr);
-  if (ccl3Set)   exper = CCL3;
-  ierr = PISMOptionsIsSet("-gwl3", gwl3Set); CHKERRQ(ierr);
-  if (gwl3Set)   exper = GWL3;
-
+  bool ssl2Set,ssl3Set;
+  // we never care about default "-ssl2", but this avoids "Option left" message:
+  ierr = PISMOptionsIsSet("-ssl2", ssl2Set); CHKERRQ(ierr); 
   ierr = PISMOptionsIsSet("-ssl3", ssl3Set); CHKERRQ(ierr);
   if (ssl3Set) {
-    ierr = PetscPrintf(com,
-       "experiment SSL3 (-ssl3) is not implemented ... ENDING\n"
-       "  (choose parameters yourself, by runtime options)\n"); CHKERRQ(ierr);
+    PetscPrintf(com,
+       "PISM ERROR:  experiment SSL3 (-ssl3) is not implemented ... ENDING\n"
+       "  (implement by choosing config parameters and runtime options to your taste)\n");
     PISMEnd();
   }
 
@@ -69,23 +62,24 @@ static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
      CHKERRQ(ierr);
   config.set("enhancement_factor", 3.0);
   config.set_flag("ocean_kill", true);
+  // use the EISMINT-Greenland value if no value in -boot_file file
+  config.set("bootstrapping_geothermal_flux_value_no_var", 0.050);
 
-  if (exper != SSL2) { 
+  bool ccl3Set, gwl3Set;
+  ierr = PISMOptionsIsSet("-ccl3", ccl3Set); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-gwl3", gwl3Set); CHKERRQ(ierr);
+  if (ccl3Set || gwl3Set) {
     // use Lingle-Clark bed deformation model for CCL3 and GWL3 but not SSL2
     ierr = verbPrintf(2, com, 
       "  setting flags equivalent to: '-bed_def lc'; user options may override ...\n");
       CHKERRQ(ierr);
     config.set_string("bed_deformation_model", "lc");
   }
-
-  // use the EISMINT-Greenland value if no value in -boot_file file
-  config.set("bootstrapping_geothermal_flux_value_no_var", 0.050);
-
   bool gwl3_start_set;
   ierr = PISMOptionsIsSet("-gwl3_start_year", gwl3_start_set); CHKERRQ(ierr);
-  if ((exper != GWL3) && gwl3_start_set) {
-    ierr = PetscPrintf(com,
-		       "PISM ERROR: option -gwl3_start_year is only allowed if -gwl3 is set.\n"); CHKERRQ(ierr);
+  if (gwl3_start_set && !gwl3Set) {
+    PetscPrintf(com,
+       "PISM ERROR: option -gwl3_start_year is allowed only if -gwl3 is set.\n");
     PISMEnd();
   }
 
@@ -132,8 +126,6 @@ int main(int argc, char *argv[]){
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-    ierr = check_old_option_and_stop(com, "-boot_from", "-boot_file"); CHKERRQ(ierr); 
-
     bool iset, bfset;
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
@@ -143,10 +135,12 @@ int main(int argc, char *argv[]){
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
       "  -boot_file  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
       "              heuristics will build initial model state\n"
+      "and one of these EISMINT-Greenland experiments [-ssl2 is default]:\n"
+      "  -ssl2, -ccl3, -gwl3\n"
       "notes:\n"
       "  * pgrn is a special executable for EISMINT-Greenland\n"
       "  * one of -i or -boot_file is required\n"
-      "  * if -boot_file is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n"
+      "  * if -boot_file is used then '-Mx A -My B -Mz C -Lz D' is also required\n"
       "  * generally behaves like pismr after initialization\n";
     if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
       ierr = PetscPrintf(com,
