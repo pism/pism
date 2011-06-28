@@ -130,16 +130,16 @@ public:
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
 
-  bool strict_timestep_limit;
 protected:
-  vector<double> times,		//!< all the times available in filename
-    T;				//!< times stored in memory
+  vector<double> time,		//!< all the times available in filename
+    time_bounds;		//!< time bounds
   string filename;		//!< file to read (regrid) from
   DA da3;
   Vec v3;			//!< a 3D Vec used to store records
   void ***array3;
   int n_records,		//!< maximum number of records to store in memory
-    first;			//!< in-file index of the first record stored in memory
+    first,			//!< in-file index of the first record stored in memory
+    N;                   //!< number of records kept in memory
   LocalInterpCtx *lic;
 
   virtual PetscErrorCode destroy();

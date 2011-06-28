@@ -1332,6 +1332,25 @@ PetscErrorCode NCTimeseries::read(string filename, vector<double> &data) {
   return 0;
 }
 
+PetscErrorCode NCTimeseries::get_bounds_name(string filename, string &result) {
+  PetscErrorCode ierr;
+  NCTool nc(com, rank);
+  int varid;
+  bool exists;
+
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+  ierr = nc.find_variable(short_name, &varid, exists); CHKERRQ(ierr);
+  if (exists) {
+    ierr = nc.get_att_text(varid, "bounds", result); CHKERRQ(ierr);
+  } else {
+    result = "";
+  }
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 //! \brief Report the range of a time-series stored in \c data.
 PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
   double slope, intercept;
@@ -1578,8 +1597,8 @@ void NCGlobalAttributes::prepend_history(string message) {
 
 /// NCTimeBounds
 
-void NCTimeBounds::init(string dim_name, MPI_Comm c, PetscMPIInt r) {
-  NCVariable::init(dim_name + "_bounds", c, r);
+void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r) {
+  NCVariable::init(var_name, c, r);
   dimension_name = dim_name;
   bounds_name = "nv";           // number of vertices
 }
@@ -1589,7 +1608,6 @@ PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
   NCTool nc(com, rank);
   int ncid, varid;
   bool variable_exists;
-  string endpts_name;
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
   ncid = nc.get_ncid();
@@ -1617,12 +1635,12 @@ PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
   }
 
   ierr = nc.inq_dimname(dimids[0], dimension_name); CHKERRQ(ierr);
-  ierr = nc.inq_dimname(dimids[1], endpts_name); CHKERRQ(ierr);
+  ierr = nc.inq_dimname(dimids[1], bounds_name); CHKERRQ(ierr);
 
   unsigned int length;
 
   // Check that we have 2 vertices (interval end-points) per time record.
-  ierr = nc.get_dim_length(endpts_name, &length); CHKERRQ(ierr);
+  ierr = nc.get_dim_length(bounds_name, &length); CHKERRQ(ierr);
   if (length != 2) {
     PetscPrintf(com,
                 "PISM ERROR: A time-bounds variable has to have exactly 2 bounds per time record.\n"
@@ -1651,7 +1669,7 @@ PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
     ierr = nc_get_var_double(ncid, varid, &data[0]); 
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
-  ierr = MPI_Bcast(&data[0], length, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
+  ierr = MPI_Bcast(&data[0], 2*length, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
 
   // Find the corresponding 'time' variable. (We get units from the 'time'
   // variable, because according to CF-1.5 section 7.1 a "boundary variable"

@@ -97,6 +97,7 @@ protected:
   PetscMPIInt rank;
   NCTimeseries dimension, var;
   NCTimeBounds bounds;
+  bool use_bounds;
 
   vector<double> time;
   vector<double> values;

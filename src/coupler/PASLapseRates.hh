@@ -161,8 +161,6 @@ protected:
                                        "m", "surface_altitude"); CHKERRQ(ierr);
     ierr = reference_surface.init(filename); CHKERRQ(ierr);
 
-    reference_surface.strict_timestep_limit = ! enable_time_averaging;
-
     surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
     if (!surface) SETERRQ(1, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 

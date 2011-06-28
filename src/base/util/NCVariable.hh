@@ -146,6 +146,7 @@ public:
   virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode write(string filename, size_t start, double data, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
+  virtual PetscErrorCode get_bounds_name(string filename, string &result);
   virtual PetscErrorCode report_range(vector<double> &data);
 
   virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
@@ -154,7 +155,7 @@ public:
 class NCTimeBounds : public NCVariable
 {
 public:
-  void init(string dim_name, MPI_Comm c, PetscMPIInt r);
+  void init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r);
   virtual PetscErrorCode read(string filename, vector<double> &data);
   virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode write(string filename, size_t start, double a, double b, nc_type nctype = NC_DOUBLE);

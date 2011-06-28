@@ -26,10 +26,11 @@ Timeseries::Timeseries(IceGrid *g, string name, string dimension_name) {
 
   dimension.init(dimension_name, dimension_name, com, rank);
   var.init(name, dimension_name, com, rank);
-  bounds.init(dimension_name, com, rank);
+  bounds.init(dimension_name + "_bounds", dimension_name, com, rank);
   dimension.set_string("bounds", dimension_name + "_bounds");
 
   short_name = name;
+  use_bounds = true;
 }
 
 Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name) {
@@ -37,10 +38,11 @@ Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_
   rank = r;
   dimension.init(dimension_name, dimension_name, com, rank);
   var.init(name, dimension_name, com, rank);
-  bounds.init(dimension_name, com, rank);
+  bounds.init(dimension_name + "_bounds", dimension_name, com, rank);
   dimension.set_string("bounds", dimension_name + "_bounds");
 
   short_name = name;
+  use_bounds = true;
 }
 
 //! Read timeseries data from a NetCDF file \c filename.
@@ -93,6 +95,20 @@ PetscErrorCode Timeseries::read(const char filename[]) {
     PISMEnd();
   }
 
+  string time_bounds_name;
+  ierr = dimension.get_bounds_name(filename, time_bounds_name); CHKERRQ(ierr);
+
+  if (!time_bounds_name.empty()) {
+    use_bounds = true;
+
+    bounds.init(time_bounds_name, time_name, com, rank);
+    ierr = bounds.set_units(dimension.get_string("units")); CHKERRQ(ierr);
+
+    ierr = bounds.read(filename, time_bounds); CHKERRQ(ierr);
+  } else {
+    use_bounds = false;
+  }
+
   ierr = var.read(filename, values); CHKERRQ(ierr);
 
   if (time.size() != values.size()) {
@@ -115,16 +131,49 @@ PetscErrorCode Timeseries::write(const char filename[]) {
   // write the dimensional variable; this call should go first
   ierr = dimension.write(filename, 0, time); CHKERRQ(ierr);
   ierr = var.write(filename, 0, values); CHKERRQ(ierr);
+  
+  if (use_bounds) {
+    ierr = bounds.write(filename, 0, time_bounds); CHKERRQ(ierr);
+  }
 
   return 0;
 }
 
-//! Get an (linearly interpolated) value of timeseries at time \c t.
+//! Get a value of timeseries at time \c t.
 /*! Returns the first value or the last value if t is out of range on the left
   and right, respectively.
+
+  Uses time bounds if present (interpreting data as piecewise-constant) and
+  uses linear interpolation otherwise.
  */
 double Timeseries::operator()(double t) {
 
+  // piecewise-constant case:
+  if (use_bounds) {
+    vector<double>::iterator j;
+
+    j = lower_bound(time_bounds.begin(), time_bounds.end(), t); // binary search
+
+    if (j == time_bounds.end())
+      return values.back(); // out of range (on the right)
+
+    int i = (int)(j - time_bounds.begin());
+
+    if (i == 0)
+      return values[0];         // out of range (on the left)
+
+    if (i % 2 == 0) {
+      PetscPrintf(com,
+                  "PISM ERROR: time bounds array in %s does not represent continguous time intervals.\n"
+                  "            (PISM was trying to compute %s at time %3.3f years.)\n",
+                  bounds.short_name.c_str(), short_name.c_str(), t);
+      PISMEnd();
+    }
+
+    return values[(i-1)/2];
+  }
+
+  // piecewise-linear case:
   vector<double>::iterator end = time.end(), j;
   
   j = lower_bound(time.begin(), end, t); // binary search
@@ -150,11 +199,13 @@ double Timeseries::operator()(double t) {
  */
 double Timeseries::operator[](unsigned int j) const {
 
+#ifdef PISM_DEBUG
   if (j >= values.size()) {
     PetscPrintf(com, "ERROR: Timeseries %s: operator[]: invalid argument: size=%d, index=%d\n",
 		var.short_name.c_str(), values.size(), j);
     PISMEnd();
   }
+#endif
 
   return values[j];
 }
