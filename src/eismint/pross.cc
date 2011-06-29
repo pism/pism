@@ -508,7 +508,7 @@ PetscErrorCode write_results(ShallowStressBalance &ssa,
   PISMIO pio(&grid);
 
   ierr = pio.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  ierr = pio.append_time(0.0);
+  ierr = pio.append_time(grid.config.get_string("time_dimension_name"), 0.0);
   ierr = pio.close(); CHKERRQ(ierr);
 
   set<string>::iterator j = vars.begin();

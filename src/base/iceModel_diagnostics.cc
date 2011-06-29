@@ -308,8 +308,8 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
                                      Tij[k]);
         if (ierr) {
           PetscPrintf(grid.com,
-            "\n\nEnthalpyConverter.getAbsTemp() error at i=%d,j=%d,k=%d\n\n",
-            i,j,k);
+                      "\n\nEnthalpyConverter.getAbsTemp() error at i=%d,j=%d,k=%d\n\n",
+                      i,j,k);
         }
         CHKERRQ(ierr);
       }
@@ -370,8 +370,8 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
         ierr = model->EC->getPATemp(Enthij[k], p, Tij[k]);
         if (ierr) {
           PetscPrintf(grid.com,
-            "\n\nEnthalpyConverter.getAbsTemp() error at i=%d,j=%d,k=%d\n\n",
-            i,j,k);
+                      "\n\nEnthalpyConverter.getAbsTemp() error at i=%d,j=%d,k=%d\n\n",
+                      i,j,k);
         }
         CHKERRQ(ierr);
 
@@ -818,7 +818,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
         (*result)(i,j) = PetscMin((*result)(i,j), grid.zlevels[k]);
       } else {
         SETERRQ4(1, "This should never happen: (i=%d, j=%d, k=%d, ks=%d)\n",
-                    i, j, k, ks);
+                 i, j, k, ks);
       }
     }
   }
@@ -931,10 +931,8 @@ PetscErrorCode IceModel_new_mask::compute(IceModelVec* &output) {
 IceModel_ivol::IceModel_ivol(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "ivol", "t");
+  ts = new DiagnosticTimeseries(&grid, "ivol", time_dimension_name);
 
   ts->set_units("m3", "");
   ts->set_dimension_units(time_units, "");
@@ -958,10 +956,8 @@ IceModel_divoldt::IceModel_divoldt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "divoldt", "t");
+  ts = new DiagnosticTimeseries(&grid, "divoldt", time_dimension_name);
 
   ts->set_units("m3 s-1", "");
   ts->set_dimension_units(time_units, "");
@@ -987,10 +983,8 @@ IceModel_iarea::IceModel_iarea(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "iarea", "t");
+  ts = new DiagnosticTimeseries(&grid, "iarea", time_dimension_name);
 
   ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
@@ -1013,10 +1007,8 @@ IceModel_imass::IceModel_imass(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "imass", "t");
+  ts = new DiagnosticTimeseries(&grid, "imass", time_dimension_name);
 
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
@@ -1040,10 +1032,8 @@ IceModel_dimassdt::IceModel_dimassdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "dimassdt", "t");
+  ts = new DiagnosticTimeseries(&grid, "dimassdt", time_dimension_name);
 
   ts->set_units("kg s-1", "");
   ts->set_dimension_units(time_units, "");
@@ -1068,10 +1058,8 @@ IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "ivoltemp", "t");
+  ts = new DiagnosticTimeseries(&grid, "ivoltemp", time_dimension_name);
 
   ts->set_units("m3", "");
   ts->set_dimension_units(time_units, "");
@@ -1094,10 +1082,8 @@ IceModel_ivoltempf::IceModel_ivoltempf(IceModel *m, IceGrid &g, PISMVars &my_var
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "ivoltempf", "t");
+  ts = new DiagnosticTimeseries(&grid, "ivoltempf", time_dimension_name);
 
   ts->set_units("1", "");
   ts->set_dimension_units(time_units, "");
@@ -1128,10 +1114,8 @@ IceModel_ivolcold::IceModel_ivolcold(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "ivolcold", "t");
+  ts = new DiagnosticTimeseries(&grid, "ivolcold", time_dimension_name);
 
   ts->set_units("m3", "");
   ts->set_dimension_units(time_units, "");
@@ -1154,10 +1138,8 @@ IceModel_ivolcoldf::IceModel_ivolcoldf(IceModel *m, IceGrid &g, PISMVars &my_var
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "ivolcoldf", "t");
+  ts = new DiagnosticTimeseries(&grid, "ivolcoldf", time_dimension_name);
 
   ts->set_units("1", "");
   ts->set_dimension_units(time_units, "");
@@ -1187,10 +1169,8 @@ IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, PISMVars &my_var
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "iareatemp", "t");
+  ts = new DiagnosticTimeseries(&grid, "iareatemp", time_dimension_name);
 
   ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
@@ -1213,10 +1193,8 @@ IceModel_iareatempf::IceModel_iareatempf(IceModel *m, IceGrid &g, PISMVars &my_v
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "iareatempf", "t");
+  ts = new DiagnosticTimeseries(&grid, "iareatempf", time_dimension_name);
 
   ts->set_units("1", "");
   ts->set_dimension_units(time_units, "");
@@ -1247,10 +1225,8 @@ IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g, PISMVars &my_var
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "iareacold", "t");
+  ts = new DiagnosticTimeseries(&grid, "iareacold", time_dimension_name);
 
   ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
@@ -1273,10 +1249,8 @@ IceModel_iareacoldf::IceModel_iareacoldf(IceModel *m, IceGrid &g, PISMVars &my_v
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "iareacoldf", "t");
+  ts = new DiagnosticTimeseries(&grid, "iareacoldf", time_dimension_name);
 
   ts->set_units("1", "");
   ts->set_dimension_units(time_units, "");
@@ -1307,10 +1281,7 @@ IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m, IceGrid &g, PISMVars &my_var
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "ienthalpy", "t");
+  ts = new DiagnosticTimeseries(&grid, "ienthalpy", time_dimension_name);
   
   ts->set_units("J", "");
   ts->set_dimension_units(time_units, "");
@@ -1333,10 +1304,7 @@ IceModel_iareag::IceModel_iareag(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "iareag", "t");
+  ts = new DiagnosticTimeseries(&grid, "iareag", time_dimension_name);
   
   ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
@@ -1358,10 +1326,7 @@ IceModel_iareaf::IceModel_iareaf(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "iareaf", "t");
+  ts = new DiagnosticTimeseries(&grid, "iareaf", time_dimension_name);
   
   ts->set_units("m2", "");
   ts->set_dimension_units(time_units, "");
@@ -1383,10 +1348,7 @@ IceModel_dt::IceModel_dt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "dt", "t");
+  ts = new DiagnosticTimeseries(&grid, "dt", time_dimension_name);
   
   ts->set_units("second", "year");
   ts->set_dimension_units(time_units, "");
@@ -1405,10 +1367,7 @@ IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m, IceGrid &g, PISM
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "max_diffusivity", "t");
+  ts = new DiagnosticTimeseries(&grid, "max_diffusivity", time_dimension_name);
   
   ts->set_units("m2 s-1", "");
   ts->set_dimension_units(time_units, "");
@@ -1430,10 +1389,7 @@ IceModel_surface_flux::IceModel_surface_flux(IceModel *m, IceGrid &g, PISMVars &
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "surface_ice_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "surface_ice_flux", time_dimension_name);
   
   ts->set_units("kg s-1", "");
   ts->set_dimension_units(time_units, "");
@@ -1456,10 +1412,7 @@ IceModel_cumulative_surface_flux::IceModel_cumulative_surface_flux(IceModel *m, 
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_surface_ice_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "cumulative_surface_ice_flux", time_dimension_name);
   
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
@@ -1481,10 +1434,7 @@ IceModel_basal_flux::IceModel_basal_flux(IceModel *m, IceGrid &g, PISMVars &my_v
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "basal_ice_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "basal_ice_flux", time_dimension_name);
   
   ts->set_units("kg s-1", "");
   ts->set_dimension_units(time_units, "");
@@ -1507,10 +1457,7 @@ IceModel_cumulative_basal_flux::IceModel_cumulative_basal_flux(IceModel *m, IceG
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_basal_ice_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "cumulative_basal_ice_flux", time_dimension_name);
   
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
@@ -1532,10 +1479,7 @@ IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m, IceGrid &g, PISMVa
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux", time_dimension_name);
   
   ts->set_units("kg s-1", "");
   ts->set_dimension_units(time_units, "");
@@ -1558,10 +1502,7 @@ IceModel_cumulative_sub_shelf_flux::IceModel_cumulative_sub_shelf_flux(IceModel 
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_sub_shelf_ice_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "cumulative_sub_shelf_ice_flux", time_dimension_name);
   
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
@@ -1583,10 +1524,7 @@ IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m, IceGrid &g, PISMVars &my
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "nonneg_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "nonneg_flux", time_dimension_name);
   
   ts->set_units("kg s-1", "");
   ts->set_dimension_units(time_units, "");
@@ -1609,10 +1547,7 @@ IceModel_cumulative_nonneg_flux::IceModel_cumulative_nonneg_flux(IceModel *m, Ic
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_nonneg_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "cumulative_nonneg_flux", time_dimension_name);
   
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
@@ -1634,10 +1569,7 @@ IceModel_ocean_kill_flux::IceModel_ocean_kill_flux(IceModel *m, IceGrid &g, PISM
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "ocean_kill_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "ocean_kill_flux", time_dimension_name);
   
   ts->set_units("kg s-1", "");
   ts->set_dimension_units(time_units, "");
@@ -1660,10 +1592,7 @@ IceModel_cumulative_ocean_kill_flux::IceModel_cumulative_ocean_kill_flux(IceMode
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_ocean_kill_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "cumulative_ocean_kill_flux", time_dimension_name);
   
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
@@ -1685,10 +1614,7 @@ IceModel_float_kill_flux::IceModel_float_kill_flux(IceModel *m, IceGrid &g, PISM
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "float_kill_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "float_kill_flux", time_dimension_name);
   
   ts->set_units("kg s-1", "");
   ts->set_dimension_units(time_units, "");
@@ -1711,10 +1637,7 @@ IceModel_cumulative_float_kill_flux::IceModel_cumulative_float_kill_flux(IceMode
   : PISMTSDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  string time_units = "years since " + grid.config.get_string("reference_date");
-  
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_float_kill_flux", "t");
+  ts = new DiagnosticTimeseries(&grid, "cumulative_float_kill_flux", time_dimension_name);
   
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");

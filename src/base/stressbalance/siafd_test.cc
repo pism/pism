@@ -463,7 +463,7 @@ int main(int argc, char *argv[]) {
     PISMIO pio(&grid);
 
     ierr = pio.open_for_writing(output_file, false, true); CHKERRQ(ierr);
-    ierr = pio.append_time(0.0);
+    ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0);
     ierr = pio.close(); CHKERRQ(ierr); 
 
     ierr = vh.write(output_file.c_str()); CHKERRQ(ierr);

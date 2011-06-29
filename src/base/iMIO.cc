@@ -111,7 +111,7 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   // Prepare the file
   ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
   // append == false, check_dims == true
-  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.year); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Write metadata *before* variables:
@@ -686,7 +686,7 @@ PetscErrorCode IceModel::init_snapshots() {
 
     ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
     // append == true, check_dims == true
-    ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.year); CHKERRQ(ierr);
     ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
@@ -762,7 +762,7 @@ PetscErrorCode IceModel::write_backup() {
   // write metadata:
   ierr = nc.open_for_writing(backup_filename.c_str(), false, true); CHKERRQ(ierr);
   // append == false, check_dims == true
-  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.year); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Write metadata *before* variables:

@@ -236,15 +236,16 @@ PetscErrorCode PSExternal::write_coupling_fields() {
   // dimensional variables, otherwise overwrite the time stored in the time
   // variable.
   unsigned int t_len;
-  ierr = nc.get_dim_length("t", &t_len); CHKERRQ(ierr);
+  ierr = nc.get_dim_length(config.get_string("time_dimension_name"), &t_len); CHKERRQ(ierr);
 
   if (t_len == 0) {
     ierr = nc.create_dimensions(); CHKERRQ(ierr);
-    ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.year); CHKERRQ(ierr);
   } else {
     int t_varid;
     bool t_exists;
-    ierr = nc.find_variable("t", &t_varid, t_exists); CHKERRQ(ierr);
+    ierr = nc.find_variable(config.get_string("time_dimension_name"),
+                            &t_varid, t_exists); CHKERRQ(ierr);
     
     vector<double> time(1);
     time[0] = grid.year;

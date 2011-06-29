@@ -56,13 +56,12 @@ PetscErrorCode IceModel::set_grid_defaults() {
 
   // Determine the grid extent from a bootstrapping file:
   PISMIO nc(&grid);
-  bool x_dim_exists, y_dim_exists, t_exists, time_exists;
+  bool x_dim_exists, y_dim_exists, t_exists;
   ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
 
   ierr = nc.find_dimension("x", NULL, x_dim_exists); CHKERRQ(ierr);
   ierr = nc.find_dimension("y", NULL, y_dim_exists); CHKERRQ(ierr);
-  ierr = nc.find_variable("t", NULL, t_exists); CHKERRQ(ierr);
-  ierr = nc.find_variable("time", NULL, time_exists); CHKERRQ(ierr);
+  ierr = nc.find_variable(config.get_string("time_dimension_name"), NULL, t_exists); CHKERRQ(ierr);
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
@@ -102,7 +101,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   bool ys_set;
   ierr = PISMOptionsIsSet("-ys", ys_set); CHKERRQ(ierr);
   if (!ys_set) {
-    if (t_exists || time_exists) {
+    if (t_exists) {
       grid.year = gi.time / secpera; // set year from read-in time variable
       ierr = verbPrintf(2, grid.com, 
   		      "  time t = %5.4f years found; setting current year\n",

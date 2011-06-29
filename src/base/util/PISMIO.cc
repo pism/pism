@@ -211,16 +211,17 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, int z_count) const {
 
   // Fill start and count arrays:
   unsigned int t;
-  ierr = get_dim_length("t", &t); CHKERRQ(ierr);
+  ierr = get_dim_length(grid->config.get_string("time_dimension_name"),
+                        &t); CHKERRQ(ierr);
   t = t - 1;
 
   vector<int> start, count, imap;
   ierr = compute_start_and_count(varid,
-                                     t,
-                                     grid->xs, grid->xm,
-                                     grid->ys, grid->ym,
-                                     0, z_count,
-                                     start, count, imap); CHKERRQ(ierr);
+                                 t,
+                                 grid->xs, grid->xm,
+                                 grid->ys, grid->ym,
+                                 0, z_count,
+                                 start, count, imap); CHKERRQ(ierr);
 
   int N = (int)start.size();
 
@@ -724,7 +725,8 @@ bool PISMIO::check_dimensions() const {
 
   if (grid == NULL) SETERRQ(1, "PISMIO::check_dimensions(...): grid == NULL");
 
-  return check_dimension("t", -1); // length does not matter
+  return check_dimension(grid->config.get_string("time_dimension_name"),
+                         -1); // length does not matter
 }
 
 
@@ -742,10 +744,11 @@ PetscErrorCode PISMIO::create_dimensions() const {
 
   // t
   attrs["long_name"] = "time";
-  attrs["calendar"]  = "365_day";
+  attrs["calendar"]  = grid->config.get_string("calendar");
   attrs["units"]     = "years since " + grid->config.get_string("reference_date");
   attrs["axis"]      = "T";
-  ierr = create_dimension("t", NC_UNLIMITED, attrs, dimid, varid); CHKERRQ(ierr);
+  ierr = create_dimension(grid->config.get_string("time_dimension_name"),
+                          NC_UNLIMITED, attrs, dimid, varid); CHKERRQ(ierr);
 
   return 0;
 }

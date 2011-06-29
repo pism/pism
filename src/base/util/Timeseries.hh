@@ -49,7 +49,7 @@ using namespace std;
   object and reading data from a file.
 
   \code
-  dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
+  dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "time");
   ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
   ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
   ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");
@@ -126,7 +126,7 @@ protected:
   no unit conversion there).
 
   \code
-  offsets = new DiagnosticTimeseries(g, "delta_T", "t");
+  offsets = new DiagnosticTimeseries(g, "delta_T", "time");
   offsets->set_units("Kelvin", "Celsius");
   offsets->set_dimension_units("years", "");
   offsets->buffer_size = 100; // only store 100 entries; default is 10000

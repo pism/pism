@@ -254,7 +254,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
   // Write results to an output file:
   PISMIO pio(&grid);
   ierr = pio.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  ierr = pio.append_time(0.0); CHKERRQ(ierr);
+  ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
   ierr = pio.close(); CHKERRQ(ierr);
 
   ierr = surface.write(filename.c_str()); CHKERRQ(ierr);

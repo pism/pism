@@ -641,7 +641,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
 
   // append = false, check_dimensions = true
   ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  ierr = nc.append_time(grid->year); CHKERRQ(ierr); 
+  ierr = nc.append_time(grid->config.get_string("time_dimension_name"), grid->year); CHKERRQ(ierr); 
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write(filename, NC_DOUBLE); CHKERRQ(ierr); 

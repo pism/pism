@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
 
     ierr = pio.open_for_writing(outname, false, true); CHKERRQ(ierr);
     // append == true and check_dims == true
-    ierr = pio.append_time(grid.end_year); CHKERRQ(ierr);
+    ierr = pio.append_time(config.get_string("time_dimension_name"), grid.end_year); CHKERRQ(ierr);
     ierr = btu.define_variables(vars, pio, NC_DOUBLE); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
 

@@ -49,13 +49,8 @@ PetscErrorCode NCVariable::set_units(string new_units) {
     reference date specification always starts with this word).
   */
   int n = (int)new_units.find("since");
-  if (n != -1) {
+  if (n != -1)
     new_units.resize(n);
-
-    strings["long_name"] = "time";
-    strings["calendar"] = "365_day";
-    strings["axis"] = "T";
-  }
 
   if (utScan(new_units.c_str(), &units) != 0) {
     SETERRQ2(1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
@@ -92,13 +87,8 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
     reference date specification always starts with this word).
   */
   int n = (int)new_units.find("since");
-  if (n != -1) {
+  if (n != -1)
     new_units.resize(n);
-
-    strings["long_name"] = "time";
-    strings["calendar"] = "365_day";
-    strings["axis"] = "T";
-  }
 
   if (utScan(new_units.c_str(), &glaciological_units) != 0) {
     SETERRQ2(1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
@@ -129,7 +119,7 @@ NCSpatialVariable::NCSpatialVariable() {
   dimensions.clear();
   dimensions["x"] = "x";
   dimensions["y"] = "y";
-  dimensions["t"] = "t";
+  dimensions["t"] = "t";        // will be overriden later
 
   x_attrs["axis"]          = "X";
   x_attrs["long_name"]     = "X-coordinate in Cartesian system";
@@ -166,6 +156,7 @@ void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_level
 
   zlevels = z_levels;
   
+  dimensions["t"] = grid->config.get_string("time_dimension_name");
   if (nlevels > 1)
     dimensions["z"] = "z";      // default; can be overridder easily
 }

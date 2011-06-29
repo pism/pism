@@ -25,7 +25,7 @@ PSdTforcing::PSdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceMo
 {
   option = "-dTforcing";
   offset_name = "delta_T";
-  offset = new Timeseries(&grid, offset_name, "t");
+  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("Celsius", "");
   offset->set_dimension_units("years", "");
   offset->set_attr("long_name", "ice-surface temperature offsets");
@@ -57,7 +57,7 @@ PAdTforcing::PAdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmospher
 {
   option = "-dTforcing";
   offset_name = "delta_T";
-  offset = new Timeseries(&grid, offset_name, "t");
+  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("Celsius", "");
   offset->set_dimension_units("years", "");
   offset->set_attr("long_name", "near-surface air temperature offsets");
@@ -107,7 +107,7 @@ POdSLforcing::POdSLforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanMo
 {
   option = "-dSLforcing";
   offset_name = "delta_sea_level";
-  offset = new Timeseries(&grid, offset_name, "t");
+  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   
   offset->set_units("m", "");
   offset->set_dimension_units("years", "");

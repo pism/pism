@@ -192,7 +192,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   double t = 0, t_max = 50, my_dt = 0.35;
   while (t < t_max) {
     ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
-    ierr = nc.append_time(t); CHKERRQ(ierr);
+    ierr = nc.append_time(config.get_string("time_dimension_name"), t); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = vH.set(t*t); CHKERRQ(ierr);
@@ -251,7 +251,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   // append == false, check_dims == true
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
-  ierr = nc.append_time(T); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"), T); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = v.update(T, 0); CHKERRQ(ierr);
@@ -317,7 +317,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   // append == false, check_dims == true
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
-  ierr = nc.append_time(0.0); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = velocity.write(filename, NC_DOUBLE); CHKERRQ(ierr);

@@ -262,16 +262,16 @@ bool NCTool::check_dimension(string name, const int len) const {
 /*!
  * Does nothing on processors other than 0.
  */
-PetscErrorCode NCTool::append_time(PetscReal time) const {
+PetscErrorCode NCTool::append_time(string dimension_name, PetscReal time) const {
   int stat, t_id;
 
   if (rank != 0) return 0;
 
   size_t t_len;
-  stat = nc_inq_dimid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, dimension_name.c_str(), &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   stat = nc_inq_dimlen(ncid, t_id, &t_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-  stat = nc_inq_varid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_varid(ncid, dimension_name.c_str(), &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
   stat = data_mode(); CHKERRQ(stat); 
 
@@ -1025,7 +1025,7 @@ PetscErrorCode NCTool::inq_dimtype(string name, AxisType &result) const {
              name.find("z") == 0 || name.find("Z") == 0) {
     result = Z_AXIS;
     return 0;
-  } else if (name == "t" || name == "T" ||
+  } else if (name == "t" || name == "T" || name == "time" ||
              name.find("t") == 0 || name.find("T") == 0) {
     result = T_AXIS;
     return 0;

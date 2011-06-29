@@ -67,7 +67,8 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
       ierr = PetscPrintf(grid.com, "ERROR: option -paleo_precip requires -dTforcing.\n"); CHKERRQ(ierr);
       PISMEnd();
     }
-    dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
+    dTforcing = new Timeseries(grid.com, grid.rank, "delta_T",
+                               grid.config.get_string("time_dimension_name"));
     ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
     ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
     ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");

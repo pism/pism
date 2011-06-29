@@ -363,7 +363,7 @@ PetscErrorCode IceModel::write_extras() {
     
   ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
   // append == true, check_dims == true
-  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.year); CHKERRQ(ierr);
   ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
   ierr = nc.close(); CHKERRQ(ierr);
 

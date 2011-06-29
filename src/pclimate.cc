@@ -226,7 +226,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
         filename); CHKERRQ(ierr);
   }
 
-  DiagnosticTimeseries sea_level(grid, "sea_level", "t");
+  DiagnosticTimeseries sea_level(grid, "sea_level", grid->config.get_string("time_dimension_name"));
   sea_level.set_units("m", "m");
   sea_level.set_dimension_units("years", "");
   sea_level.output_filename = filename;
@@ -243,7 +243,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     // use original dt_years to get correct subinterval starts:
     const PetscReal pccyear = ys + k * dt_years; 
     ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr); // append=true,check_dims=false
-    ierr = nc.append_time(pccyear); CHKERRQ(ierr);
+    ierr = nc.append_time(grid->config.get_string("time_dimension_name"), pccyear); CHKERRQ(ierr);
     
     PetscScalar dt_update_years = PetscMin(use_dt_years, ye - pccyear);
 

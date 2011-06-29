@@ -173,9 +173,13 @@ class PISMTSDiag : public PISMTSDiagnostic
 {
 public:
   PISMTSDiag(Model *m, IceGrid &g, PISMVars &my_vars)
-    : PISMTSDiagnostic(g, my_vars), model(m) {}
+    : PISMTSDiagnostic(g, my_vars), model(m) {
+    time_units = "years since " + grid.config.get_string("reference_date");
+    time_dimension_name = grid.config.get_string("time_dimension_name");
+  }
 protected:
   Model *model;
+  string time_units, time_dimension_name;
 };
 
 #endif /* __PISMDiagnostic_hh */
