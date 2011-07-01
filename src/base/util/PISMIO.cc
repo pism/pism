@@ -261,13 +261,21 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, int z_count) const {
       grid->profiler->begin(event_write_proc0);
 
       // Convert start, count and imap to types NetCDF requires:
+
+      // We initialize the 'stride' array instead of passing a NULL pointer to
+      // nc_put_varm_double below to avoid a segfault caused by a bug in NetCDF
+      // 4.1.2 and 4.1.3. Please see https://www.unidata.ucar.edu/jira/browse/NCF-88 for details.
+      vector<ptrdiff_t> stride(N);
+
       for (int i = 0; i < N; ++i) {
         nc_start[i] = start[i];
         nc_count[i] = count[i];
         nc_imap[i]  = imap[i];
+        stride[i]   = 1;
       }
 
-      stat = nc_put_varm_double(ncid, varid, nc_start.data(), nc_count.data(), NULL, nc_imap.data(), a_double);
+      stat = nc_put_varm_double(ncid, varid, nc_start.data(), nc_count.data(),
+                                stride.data(), nc_imap.data(), a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       grid->profiler->end(event_write_proc0);
