@@ -33,12 +33,12 @@ PetscErrorCode PSDirectForcing::init(PISMVars &) {
   ierr = set_vec_parameters("", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
   ierr = temp.create(grid, temp_name, false); CHKERRQ(ierr);
-  ierr = smb.create(grid, smb_name, false); CHKERRQ(ierr);
+  ierr = mass_flux.create(grid, mass_flux_name, false); CHKERRQ(ierr);
 
   ierr = temp.set_attrs("climate_forcing",
                         "temperature of the ice at the ice surface but below firn processes",
                         "Kelvin", ""); CHKERRQ(ierr);
-  ierr = smb.set_attrs("climate_forcing",
+  ierr = mass_flux.set_attrs("climate_forcing",
                        "ice-equivalent surface mass balance (accumulation/ablation) rate",
                        "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
@@ -47,7 +47,7 @@ PetscErrorCode PSDirectForcing::init(PISMVars &) {
                     filename.c_str()); CHKERRQ(ierr);
 
   ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = smb.init(filename); CHKERRQ(ierr);
+  ierr = mass_flux.init(filename); CHKERRQ(ierr);
 
   return 0;
 }
@@ -56,10 +56,10 @@ PetscErrorCode PSDirectForcing::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr = update_internal(t_years, dt_years); CHKERRQ(ierr);
 
   if (enable_time_averaging) {
-    ierr = smb.average(t, dt); CHKERRQ(ierr); 
+    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
     ierr = temp.average(t, dt); CHKERRQ(ierr); 
   } else {
-    ierr = smb.get_record_years(t); CHKERRQ(ierr);
+    ierr = mass_flux.get_record_years(t); CHKERRQ(ierr);
     ierr = temp.get_record_years(t); CHKERRQ(ierr);
   }
 
@@ -67,7 +67,7 @@ PetscErrorCode PSDirectForcing::update(PetscReal t_years, PetscReal dt_years) {
 }
 
 PetscErrorCode PSDirectForcing::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = smb.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = mass_flux.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -88,11 +88,11 @@ PetscErrorCode PADirectForcing::init(PISMVars &) {
   ierr = set_vec_parameters("", ""); CHKERRQ(ierr);
 
   ierr = temp.create(grid, temp_name, false); CHKERRQ(ierr);
-  ierr = smb.create(grid, smb_name, false); CHKERRQ(ierr);
+  ierr = mass_flux.create(grid, mass_flux_name, false); CHKERRQ(ierr);
 
   ierr = temp.set_attrs("climate_forcing", "near-surface air temperature",
                         "Kelvin", ""); CHKERRQ(ierr);
-  ierr = smb.set_attrs("climate_forcing", "ice-equivalent precipitation rate",
+  ierr = mass_flux.set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                        "m s-1", ""); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
@@ -100,7 +100,7 @@ PetscErrorCode PADirectForcing::init(PISMVars &) {
                     filename.c_str()); CHKERRQ(ierr);
 
   ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = smb.init(filename); CHKERRQ(ierr);
+  ierr = mass_flux.init(filename); CHKERRQ(ierr);
 
   return 0;
 }
@@ -109,10 +109,10 @@ PetscErrorCode PADirectForcing::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr = update_internal(t_years, dt_years); CHKERRQ(ierr);
 
   if (enable_time_averaging) {
-    ierr = smb.average(t, dt); CHKERRQ(ierr); 
+    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
     ierr = temp.average(t, 1.0); CHKERRQ(ierr); // compute the "mean annual" temperature
   } else {
-    ierr = smb.get_record_years(t); CHKERRQ(ierr);
+    ierr = mass_flux.get_record_years(t); CHKERRQ(ierr);
     ierr = temp.get_record_years(t); CHKERRQ(ierr);
   }
 
@@ -120,7 +120,7 @@ PetscErrorCode PADirectForcing::update(PetscReal t_years, PetscReal dt_years) {
 }
 
 PetscErrorCode PADirectForcing::mean_precip(IceModelVec2S &result) {
-  PetscErrorCode ierr = smb.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = mass_flux.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 

@@ -44,7 +44,7 @@ public:
 
     dt_years = temp.max_timestep(t_years);
 
-    max_dt = smb.max_timestep(t_years);
+    max_dt = mass_flux.max_timestep(t_years);
 
     if (dt_years > 0) {
       if (max_dt > 0)
@@ -65,7 +65,7 @@ public:
   {
     if (keyword != "small") {
       result.insert(temp_name);
-      result.insert(smb_name);
+      result.insert(mass_flux_name);
     }
   }
 
@@ -77,8 +77,8 @@ public:
       ierr = temp.define(nc, nctype); CHKERRQ(ierr); 
     }
 
-    if (set_contains(vars, smb_name)) {
-      ierr = smb.define(nc, nctype); CHKERRQ(ierr);
+    if (set_contains(vars, mass_flux_name)) {
+      ierr = mass_flux.define(nc, nctype); CHKERRQ(ierr);
     }
 
     return 0;
@@ -92,16 +92,16 @@ public:
       ierr = temp.write(fname.c_str()); CHKERRQ(ierr);
     }
 
-    if (set_contains(vars, smb_name)) {
-      ierr = smb.write(fname.c_str()); CHKERRQ(ierr);
+    if (set_contains(vars, mass_flux_name)) {
+      ierr = mass_flux.write(fname.c_str()); CHKERRQ(ierr);
     }
 
     return 0;
   }
 
 protected:
-  IceModelVec2T temp, smb;
-  string filename, temp_name, smb_name;
+  IceModelVec2T temp, mass_flux;
+  string filename, temp_name, mass_flux_name, bc_option_name;
 
   PetscReal bc_period, bc_reference_year;
   bool enable_time_averaging;
@@ -117,7 +117,7 @@ protected:
 
     ierr = PetscOptionsBegin(Model::grid.com, "", "Direct forcing options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString("-bc_file", "Specifies a file with top-surface boundary conditions",
+      ierr = PISMOptionsString(bc_option_name, "Specifies a file with boundary conditions",
                                filename, bc_file_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-bc_period", "Specifies the length of the climate data period",
                              bc_period, bc_period_set); CHKERRQ(ierr);
@@ -136,20 +136,20 @@ protected:
     return 0;
   }
 
-  PetscErrorCode set_vec_parameters(string temp_std_name, string smb_std_name)
+  PetscErrorCode set_vec_parameters(string temp_std_name, string mass_flux_std_name)
   {
     PetscErrorCode ierr;
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size"),
-      temp_n_records = 1, smb_n_records = 1;
+      temp_n_records = 1, mass_flux_n_records = 1;
 
     NCTool nc(Model::grid.com, Model::grid.rank);
     ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
     ierr = nc.get_nrecords(temp_name, temp_std_name, temp_n_records); CHKERRQ(ierr);
-    ierr = nc.get_nrecords(smb_name,  smb_std_name,  smb_n_records);  CHKERRQ(ierr);
+    ierr = nc.get_nrecords(mass_flux_name,  mass_flux_std_name,  mass_flux_n_records);  CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
     temp_n_records = PetscMin(temp_n_records, buffer_size);
-    smb_n_records  = PetscMin(smb_n_records, buffer_size);
+    mass_flux_n_records  = PetscMin(mass_flux_n_records, buffer_size);
 
     if (temp_n_records < 1) {
       PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",
@@ -158,15 +158,15 @@ protected:
 
     }
 
-    if (smb_n_records < 1) {
+    if (mass_flux_n_records < 1) {
       PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",
-                  smb_name.c_str(), smb_std_name.c_str(), filename.c_str());
+                  mass_flux_name.c_str(), mass_flux_std_name.c_str(), filename.c_str());
       PISMEnd();
 
     }
 
     temp.set_n_records(temp_n_records);
-    smb.set_n_records(smb_n_records);
+    mass_flux.set_n_records(mass_flux_n_records);
 
     return 0;
   }
@@ -186,7 +186,7 @@ protected:
     Model::dt = dt_years;
 
     ierr = temp.update(Model::t, Model::dt); CHKERRQ(ierr);
-    ierr = smb.update(Model::t, Model::dt); CHKERRQ(ierr);
+    ierr = mass_flux.update(Model::t, Model::dt); CHKERRQ(ierr);
 
     return 0;
   }
@@ -210,7 +210,8 @@ public:
     : PDirectForcing<PISMSurfaceModel>(g, conf)
   {
     temp_name = "artm";
-    smb_name = "acab";
+    mass_flux_name = "acab";
+    bc_option_name = "-surface_bc_file";
   }
   virtual ~PSDirectForcing() {}
 
@@ -231,7 +232,8 @@ public:
     : PDirectForcing<PISMAtmosphereModel>(g, conf)
   {
     temp_name = "artm";
-    smb_name  = "precip";
+    mass_flux_name  = "precip";
+    bc_option_name = "-atmosphere_bc_file";
   }
 
   virtual ~PADirectForcing() {}

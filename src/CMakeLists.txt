@@ -120,6 +120,7 @@ add_library (pismboundary
   coupler/PAForcing.cc
   coupler/PASLapseRates.cc
   coupler/PASDirectForcing.cc
+  coupler/PODirectForcing.cc
   coupler/PScalarForcing.cc
   coupler/PAEismintGreenland.cc
   coupler/PASeariseGreenland.cc
