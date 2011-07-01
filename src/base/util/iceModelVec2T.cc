@@ -251,15 +251,15 @@ PetscErrorCode IceModelVec2T::update(double t_years, double dt_years) {
   // time interval available in the file (on the right)
   // 
   if (i == time_bounds.end()) {
-    m = time.size() - 1;
+    m = (int)(time.size() - 1);
   } else {
-    m = (i - time_bounds.begin() - 1) / 2;
+    m = (int)((i - time_bounds.begin() - 1) / 2);
   }
 
   if (j == time_bounds.end()) {
-    n = time.size() - 1;
+    n = (int)(time.size() - 1);
   } else {
-    n = (j - time_bounds.begin() - 1) / 2;
+    n = (int)((j - time_bounds.begin() - 1) / 2);
   }
 
   // check if all the records necessary to cover this interval fit in the
