@@ -583,7 +583,7 @@ PetscErrorCode IceModel::init_snapshots() {
     return 0;
   }
 
-  ierr = parse_times(grid.com, tmp, snapshot_times);
+  ierr = parse_times(grid.com, config, tmp, snapshot_times);
   if (ierr != 0) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_times argument failed.\n"); CHKERRQ(ierr);
     PISMEnd();

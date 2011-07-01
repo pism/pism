@@ -280,6 +280,26 @@ PetscErrorCode NCTool::append_time(string dimension_name, PetscReal time) const 
   return 0;
 }
 
+PetscErrorCode NCTool::append_time_bounds(string name, PetscReal t0, PetscReal t1) const {
+  int stat, t_id;
+
+  if (rank != 0) return 0;
+
+  size_t t_len;
+  stat = nc_inq_dimid(ncid, name.c_str(), &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimlen(ncid, t_id, &t_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  stat = nc_inq_varid(ncid, name.c_str(), &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  stat = data_mode(); CHKERRQ(stat); 
+
+  size_t start[] = {t_len, 0}, count[] = {1, 2};
+  double data[] = {t0, t1};
+  stat = nc_put_vara_double(ncid, t_id, start, count, data); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  return 0;
+}
+
 //! Opens a NetCDF file for reading.
 /*!
   Stops if a file does not exist or could not be opened.

@@ -234,7 +234,7 @@ bool ends_with(string str, string suffix) {
 }
 
 //! Parses a MATLAB-style range (a:delta:b).
-PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, double *b) {
+PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, double *b, string &keyword) {
   PetscErrorCode ierr;
   istringstream arg(str);
   vector<string> numbers;
@@ -253,10 +253,22 @@ PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, d
       return 1;
   }
 
+  keyword = "simple";
+
   // Convert each number from a string to double:
   for (int j = 0; j < 3; ++j) {
     double d;
     char *endptr;
+
+    // take care of daily, monthly and yearly keywords:
+    if (j == 1 && (numbers[j] == "daily" ||
+                   numbers[j] == "monthly" ||
+                   numbers[j] == "yearly")) {
+      keyword = numbers[j];
+      doubles[j] = 0;
+      continue;
+    }
+
     d = strtod(numbers[j].c_str(), &endptr);
     if (*endptr != '\0') {
       ierr = PetscPrintf(com, "PISM ERROR: Can't parse %s (%s is not a number).\n",
@@ -274,20 +286,116 @@ PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, d
   return 0;
 }
 
+vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
+                             int a, int b, string keyword) {
+  utUnit unit;
+  string unit_str = "years since " + config.get_string("reference_date");
+  vector<double> result;
+  double a_offset, b_offset;
+
+  // scan the units:
+  int err = utScan(unit_str.c_str(), &unit);
+  if (err != 0) {
+    PetscPrintf(com, "PISM ERROR: invalid units specification: %s\n",
+                unit_str.c_str());
+    PISMEnd();
+  }
+
+  // get the 'year' out of the reference date:
+  int reference_year, tmp1;
+  float tmp2;
+  utCalendar(0, &unit, &reference_year,
+             &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+
+  // compute the number of years-since-the-reference date 'a' corresponds to:
+  utInvCalendar(a,              // year
+                1, 1,           // month, day
+                0, 0, 0,        // hour, minute, second
+                &unit,
+                &a_offset);
+
+  // compute the number of years-since-the-reference date 'b' corresponds to:
+  utInvCalendar(b,              // year
+                1, 1,           // month, day
+                0, 0, 0,        // hour, minute, second
+                &unit,
+                &b_offset);
+
+  if (keyword == "daily") {
+
+    double t = a_offset, delta = 60*60*24; // seconds per day
+    int year = a;
+
+    do {
+      result.push_back(t);
+      t += delta/secpera;
+      utCalendar(t, &unit, &year, &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+    } while (year <= b);
+
+    // add the last record:
+    result.push_back(t);
+
+  } else if (keyword == "monthly") {
+
+    double t;
+    int y, m;
+    for (y = a; y <= b; y++) {
+      for (m = 1; m <= 12; m++) {
+        utInvCalendar(reference_year + y,   // year
+                      m, 1,                 // month, day
+                      0, 0, 0,              // hour, minute, second
+                      &unit,
+                      &t);
+        result.push_back(t);
+      }
+    }
+
+    // add the last record:
+    utInvCalendar(reference_year + b + 1,   // year
+                  1, 1,                     // month, day
+                  0, 0, 0,                  // hour, minute, second
+                  &unit,
+                  &t);
+    result.push_back(t);
+
+  } else if (keyword == "yearly") {
+
+    double t;
+    for (int y = a; y <= b+1; y++) {    // note the "b + 1"
+      utInvCalendar(reference_year + y,   // year
+                    1, 1,                 // month, day
+                    0, 0, 0,              // hour, minute, second
+                    &unit,
+                    &t);
+      result.push_back(t);
+    }
+
+  } else {
+    PetscPrintf(com,
+                "PISM ERROR: unknown time-step keyword: %s\n"
+                "            (only 'daily', 'monthly' and 'yearly' are implemented).\n",
+                keyword.c_str());
+    PISMEnd();
+  }
+  
+  return result;
+}
+
 //! Parses a time specification.
 /*!
   If it is a MATLAB-style range, then calls parse_range and computes all the points.
 
   If it is a comma-separated list, converts to double (with error-checking).
  */
-PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result) {
+PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string str, vector<double> &result) {
   PetscErrorCode ierr;
   int N;
 
   if (str.find(':') != string::npos) { // it's a range specification
     
     double a, delta, b;
-    ierr = parse_range(com, str, &a, &delta, &b);
+    string keyword;
+    ierr = parse_range(com, str, &a, &delta, &b, keyword);
     if (ierr != 0) return 1;
 
     if (a >= b) {
@@ -296,18 +404,24 @@ PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result) {
       return 1;
     }
 
-    if (delta <= 0) {
-      ierr = PetscPrintf(com, "PISM ERROR: delta <= 0 in the range specification %s.\n",
-			 str.c_str()); CHKERRQ(ierr);
-      return 1;
+    if (keyword != "simple") {
+
+      result = compute_times(com, config, (int)a, (int)b, keyword);
+
+    } else {
+      if (delta <= 0) {
+        ierr = PetscPrintf(com, "PISM ERROR: delta <= 0 in the range specification %s.\n",
+                           str.c_str()); CHKERRQ(ierr);
+        return 1;
+      }
+
+      N = (int)floor((b - a)/delta) + 1; // number of points in the range
+      result.resize(N);
+
+      for (int j = 0; j < N; ++j)
+        result[j] = a + delta*j;
     }
 
-    N = (int)floor((b - a)/delta) + 1; // number of points in the range
-    result.resize(N);
-
-    for (int j = 0; j < N; ++j)
-      result[j] = a + delta*j;
-    
   } else {			// it's a list of times
     istringstream arg(str);
     string tmp;

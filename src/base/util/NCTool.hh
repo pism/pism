@@ -80,6 +80,7 @@ public:
   virtual PetscErrorCode find_variable(string short_name, int *varid, bool &exists) const;
   virtual PetscErrorCode find_dimension(string short_name, int *dimid, bool &exists) const;
   virtual PetscErrorCode append_time(string name, PetscReal time) const;
+  virtual PetscErrorCode append_time_bounds(string name, PetscReal t0, PetscReal t1) const;
   virtual PetscErrorCode write_history(string history, bool overwrite = false) const;
   virtual bool check_dimension(string dim, int len) const;
 

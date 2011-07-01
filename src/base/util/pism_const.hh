@@ -164,9 +164,8 @@ PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(
     MPI_Comm com, const char old_name[], const char new_name[]);
 PetscErrorCode stop_if_set(MPI_Comm com, const char name[]);
-PetscErrorCode parse_range(
-    MPI_Comm com, string str, double *a, double *delta, double *b);
-PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result);
+PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, double *b, string &keyword);
+PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string str, vector<double> &result);
 
 // usage message and required options; drivers use these
 PetscErrorCode stop_on_version_option();
