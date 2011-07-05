@@ -115,7 +115,9 @@ protected:
 
     ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString("-bc_file", "Specifies a file with top-surface boundary conditions",
+      ierr = PISMOptionsString("-atmosphere_bc_file", "Specifies a file with top-surface boundary conditions",
+                               filename, bc_file_set); CHKERRQ(ierr);
+      ierr = PISMOptionsString("-surface_bc_file", "Specifies a file with top-surface boundary conditions",
                                filename, bc_file_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-bc_period", "Specifies the length of the climate data period",
                              bc_period, bc_period_set); CHKERRQ(ierr);
