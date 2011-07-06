@@ -78,7 +78,7 @@ cmd="mpiexec -n $NN pismr -e 3 -i ant_sia_steady.nc \
   $SKIP $COUPLER_FORCING $PIKOPTIONS $SSA $SLIDING \
   -ts_file ts_ant_m5ka.nc -ts_times -5000:1:0 \
   -extra_file ex_ant_m5ka.nc -extra_times -4975:25:-25 -extra_vars bmelt,tauc,tempicethk_basal,Href,csurf,cbase,mask,IcebergMask,diffusivity,thk \
-  -ys -5000 -ye 0 -o ant_m5ka.nc -o_size big"
+  -ys -5000 -ye 0 -o ant_m5ka.nc"
 $PISM_DO $cmd
 echo
 

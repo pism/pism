@@ -104,8 +104,8 @@ protected:
   virtual PetscErrorCode init_internal(PISMVars &vars)
   {
     PetscErrorCode ierr;
-    string filename;
-    bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
+    string afilename, sfilename;
+    bool abc_file_set, sbc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
 
     IceGrid &g = Mod::grid;
 
@@ -115,10 +115,12 @@ protected:
 
     ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
     {
+      // FIXME we want access to protected PDirectForcing::bc_option_name instead of
+      //       rechecking options here
       ierr = PISMOptionsString("-atmosphere_bc_file", "Specifies a file with top-surface boundary conditions",
-                               filename, bc_file_set); CHKERRQ(ierr);
+                               afilename, abc_file_set); CHKERRQ(ierr);
       ierr = PISMOptionsString("-surface_bc_file", "Specifies a file with top-surface boundary conditions",
-                               filename, bc_file_set); CHKERRQ(ierr);
+                               sfilename, sbc_file_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-bc_period", "Specifies the length of the climate data period",
                              bc_period, bc_period_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-bc_reference_year", "Boundary condition reference year",
@@ -131,10 +133,17 @@ protected:
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-    if (bc_file_set == false) {
-      PetscPrintf(g.com, "PISM ERROR: option -bc_file is required.\n");
+    if ((abc_file_set) && (sbc_file_set)) {
+      PetscPrintf(g.com, "PISM ERROR: both options -atmosphere_bc_file and -surface_bc_file are set.\n  Exactly one of these required.  (This code subject to FIXME.)\n");
       PISMEnd();
     }
+
+    if ((!abc_file_set) && (!sbc_file_set)) {
+      PetscPrintf(g.com, "PISM ERROR: neither option -atmosphere_bc_file and -surface_bc_file is set.\n  Exactly one of these required.  (This code subject to FIXME.)\n");
+      PISMEnd();
+    }
+    
+    string filename = (abc_file_set) ? afilename : sfilename;
 
     unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
       ref_surface_n_records = 1;
