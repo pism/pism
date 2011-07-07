@@ -63,6 +63,21 @@ ncatted -O -a units,t,a,c,"years since 1-1-1" $SLSERIES
 echo "  PISM-readable paleo-sea-level file $SLSERIES; for option -dSLforcing"
 echo
 
+
+# produce scaled future forcing data suitable to be used with options -surface given -bc_file foo.nc
+# from ANT_climate_forcing_2004_2098_v3.nc to be downloaded from http://websrv.cs.umt.edu/isis/index.php/Future_Climate_Data
+# direct link: http://www.cs.umt.edu/files/ANT_climate_forcing_2004_2098_v3.nc
+echo -n "creating scaled files ... "
+ncks -O ANT_climate_forcing_2004_2098_v3.nc ar4_ant_scalefactor_1.0.nc
+ncrename -O -v preciptation,acab ar4_ant_scalefactor_1.0.nc
+ncrename -O -v annualtemp,artm ar4_ant_scalefactor_1.0.nc
+
+echo -n "creating scaled files ... times 1.5 "
+ncap2 -s 'artm(:,:,:)= artm(0,:,:) + 1.5 * (artm(:,:,:)-artm(0,:,:))' -s 'acab(:,:,:)= acab(0,:,:) + 1.5 * (acab(:,:,:)-acab(0,:,:))' ar4_ant_scalefactor_1.0.nc ar4_ant_scalefactor_1.5.nc
+
+echo -n "creating scaled files ... times 2.0 "
+ncap2 -s 'artm(:,:,:)= artm(0,:,:) + 2.0 * (artm(:,:,:)-artm(0,:,:))' -s 'acab(:,:,:)= acab(0,:,:) + 2.0 * (acab(:,:,:)-acab(0,:,:))' ar4_ant_scalefactor_1.0.nc ar4_ant_scalefactor_2.0.nc
+
 echo "now run spin-up script 'antspin.sh'"
 echo
 
