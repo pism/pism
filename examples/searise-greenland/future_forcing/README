@@ -1,0 +1,33 @@
+Scripts here prepare future climate forcing data from SeaRISE for use with PISM.
+The input data is the AOGCM mean from IPCC AR4 runs.  See more at
+
+  http://websrv.cs.umt.edu/isis/index.php/Future_Climate_Data
+
+
+* download.sh:
+    i)   downloads global NetCDF climate file from SeaRISE site
+
+* preprocess.py:
+    0)   REQUIRES python modules:
+           numpy          : included with most python distributions
+           pyproj         : debian package python-pyproj; see http://code.google.com/p/pyproj/
+           griddata       : see http://code.google.com/p/griddata-python/
+           netcdf4-python : see http://code.google.com/p/netcdf4-python/
+         (Thanks whitaker...@gmail.com!)
+    i)   reads temperature, precipitation and surface elevation data obtained
+           from the AR4 AOGCM mean, which is on a lon,lat grid
+    ii)  extracts Greenland region and projects (and thus interpolates) data
+           onto the SeaRISE model domain, but on a coarse-ish 50km grid
+    iii) writes precip.nc, containing monthly precipitation rates, and
+           temp.nc with monthly 2m air temperatures
+
+* average.py:
+    0)   REQUIRES python modules:  numpy, netcdf4-python
+    i)   reads monthly data produced by preprocess.py
+    ii)  computes annual averages
+    iii) subtracts first year values to give anomalies
+    iv)  writes mean annual 2m air temperature and mean annual precipitation
+         rate anomalies to files ar4_temp_anomaly.nc and ar4_precip_anomaly.nc
+
+See ../preprocess.sh.  It scales these files for SeaRISE experiments C2,C3,C4.
+
