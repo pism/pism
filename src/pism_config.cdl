@@ -88,6 +88,9 @@ netcdf pism_config {
     pism_config:do_ssa_enhancement = "no";
     pism_config:do_ssa_enhancement_doc = "Set an enhancement factor for SSA-calculation.";
 
+    pism_config:scalebrutalSet = "false";
+    pism_config:scalebrutalSet_doc = "Enhance sliding speed brutally.";
+
     pism_config:include_bmr_in_continuity = "yes";
     pism_config:include_bmr_in_continuity_doc = "Include basal melt rate in the continuity equation";
 
@@ -140,6 +143,9 @@ netcdf pism_config {
     
     pism_config:ssa_enhancement_factor = 1.0;
     pism_config:ssa_enhancement_factor_doc = "; Flow enhancement factor for SSA";
+
+    pism_config:sliding_scale_brutal = 1.0;
+    pism_config:sliding_scale_brutal_doc = "; Brutal SSA Sliding Scale";
 
     pism_config:constant_grain_size = 1.0;
     pism_config:constant_grain_size_doc = "mm; Default constant grains size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law";

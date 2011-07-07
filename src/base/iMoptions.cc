@@ -245,7 +245,11 @@ PetscErrorCode  IceModel::setFromOptions() {
   }
 
   ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);
-
+  
+  ierr = config.scalar_from_option("sliding_scale_brutal","sliding_scale_brutal"); CHKERRQ(ierr);  
+  ierr = PISMOptionsIsSet("-sliding_scale_brutal", flag);  CHKERRQ(ierr);
+  if (flag)  config.set_flag("scalebrutalSet", true);
+  
   // check -ssa_floating_only
   ierr = PISMOptionsIsSet("-ssa_floating_only", flag);  CHKERRQ(ierr);
   if (flag) {

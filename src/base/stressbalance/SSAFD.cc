@@ -766,7 +766,16 @@ PetscErrorCode SSAFD::solve() {
   if (config.get_flag("write_ssa_system_to_matlab")) {
     ierr = writeSSAsystemMatlab(); CHKERRQ(ierr);
   }
+  
+  if (config.get_flag("scalebrutalSet")){
+    const PetscScalar sliding_scale_brutalFactor = config.get("sliding_scale_brutal");
+// ierr = verbPrintf(1,grid.com,"\nINFO:Sliding_scale_brutaFactorl=%f\n", sliding_scale_brutalFactor); CHKERRQ(ierr);
+      ierr = velocity.scale(sliding_scale_brutalFactor); CHKERRQ(ierr);
 
+      ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
+      ierr = velocity.endGhostComm(); CHKERRQ(ierr);      
+  }
+  
   return 0;
 }
 
