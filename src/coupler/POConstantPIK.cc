@@ -96,7 +96,16 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
   // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
   // PetscReal meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * rho_ice); // m s-1
 
-  PetscReal meltfactor = 1e-4;; //default, will be set via option
+  PetscReal meltfactor = 5e-3;  
+  bool meltfactorSet;
+  double meltfactor_pik;
+  ierr = PISMOptionsReal("-meltfactor_pik",
+                           "Uses as a meltfactor as in sub-shelf-melting parameterization of martin_winkelmann11",
+                           meltfactor_pik, meltfactorSet); CHKERRQ(ierr);
+  if (meltfactorSet) {
+    meltfactor = meltfactor_pik; //default is 5e-3 as in martin_winkelmann11 
+  }
+//   ierr = verbPrintf(2, grid.com,"meltfactor=%f\n",meltfactor); CHKERRQ(ierr);
 
   PetscScalar **H;
   ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
