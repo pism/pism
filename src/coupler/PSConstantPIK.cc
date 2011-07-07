@@ -105,7 +105,7 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      	result(i,j) = 273.15 + 30.7 - 0.0080830625 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ; //PollardMod2
+      	result(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
       	artm(i,j)=result(i,j);
       	//ierr = verbPrintf(2, grid.com,"!!!!! h=%f, lat=%f, artm=%f\n",(*usurf)(i,j),(*lat)(i,j),result(i,j)); CHKERRQ(ierr);
       }
