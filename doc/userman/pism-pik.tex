@@ -86,7 +86,7 @@ Option \intextoption{ocean_kill} is based on the mask values at the beginning of
 
 \subsection{Iceberg removal}
 \label{sec:kill-icebergs}
-The PISM-PIK calving mechanism remove ice along the seaward front of the ice shelf domain. This can lead to isolated grid cells of floating (or partially filled) ice or even a patch of floating ice (iceberg) fully surrounded by ice free ocean neighbors and hence detached from the feeding ice sheet. In such a situation the stress balance solver in SSA is not well-posed \cite{SchoofStream}. Option \intextoption{kill_iceberg} cleans this up.  It identifies such regions by checking iteratively for grid neighbors that are grounded, creating an ``iceberg mask'' showing floating ice that is, and is not (icebergs), attached to grounded ice.  It then eliminates these free-floating icebergs.
+The PISM-PIK calving mechanism removes ice along the seaward front of the ice shelf domain. This can lead to isolated grid cells of floating (or partially filled) ice or even a patch of floating ice (iceberg) fully surrounded by ice free ocean neighbors and hence detached from the feeding ice sheet. In such a situation the stress balance solver in SSA is not well-posed \cite{SchoofStream}. Option \intextoption{kill_iceberg} cleans this up.  It identifies such regions by checking iteratively for grid neighbors that are grounded, creating an ``iceberg mask'' showing floating ice that is, and is not (icebergs), attached to grounded ice.  It then eliminates these free-floating icebergs.
 
 
 %%% Local Variables: 
