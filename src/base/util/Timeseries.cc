@@ -308,7 +308,6 @@ PetscErrorCode DiagnosticTimeseries::flush() {
   // don't need to write the dimensional variable.
   ierr = nc.open_for_reading(output_filename.c_str()); CHKERRQ(ierr);
   ierr = nc.get_dim_length(dimension.short_name.c_str(), &len); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
   if (len > 0) {
     double last_time;
@@ -317,6 +316,8 @@ PetscErrorCode DiagnosticTimeseries::flush() {
       start = len;
     }
   }
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   if (len == (unsigned int)start) {
     ierr = dimension.write(output_filename.c_str(), start, time);   CHKERRQ(ierr);
