@@ -67,7 +67,9 @@ echo
 # produce scaled future forcing data suitable to be used with options -surface given -bc_file foo.nc
 # from ANT_climate_forcing_2004_2098_v3.nc to be downloaded from http://websrv.cs.umt.edu/isis/index.php/Future_Climate_Data
 # direct link: http://www.cs.umt.edu/files/ANT_climate_forcing_2004_2098_v3.nc
-echo -n "creating scaled files ... "
+echo -n "downloading future forcing data ... "
+wget -nc http://www.cs.umt.edu/files/ANT_climate_forcing_2004_2098_v3.nc
+echo "creating scaled files ... "
 ncks -O ANT_climate_forcing_2004_2098_v3.nc ar4_ant_scalefactor_1.0.nc
 ncrename -O -v preciptation,acab ar4_ant_scalefactor_1.0.nc
 ncrename -O -v annualtemp,artm ar4_ant_scalefactor_1.0.nc
@@ -75,8 +77,33 @@ ncrename -O -v annualtemp,artm ar4_ant_scalefactor_1.0.nc
 echo -n "creating scaled files ... times 1.5 "
 ncap2 -s 'artm(:,:,:)= artm(0,:,:) + 1.5 * (artm(:,:,:)-artm(0,:,:))' -s 'acab(:,:,:)= acab(0,:,:) + 1.5 * (acab(:,:,:)-acab(0,:,:))' ar4_ant_scalefactor_1.0.nc ar4_ant_scalefactor_1.5.nc
 
-echo -n "creating scaled files ... times 2.0 "
+echo "creating scaled files ... times 2.0 "
 ncap2 -s 'artm(:,:,:)= artm(0,:,:) + 2.0 * (artm(:,:,:)-artm(0,:,:))' -s 'acab(:,:,:)= acab(0,:,:) + 2.0 * (acab(:,:,:)-acab(0,:,:))' ar4_ant_scalefactor_1.0.nc ar4_ant_scalefactor_2.0.nc
+
+
+# as an alternative, create anomaly files, suitable (TODO check whether this also works with -surface pik) to be used
+# with options -surface given,anomaly --anomaly_artm ar4_ant_artm_anomaly_scalefactor_X.nc -anomaly_acab ar4_ant_acab_anomaly_scalefactor_X.nc
+
+echo "creating anomaly files ... "
+ncks -v acab ar4_ant_scalefactor_1.0.nc ar4_ant_acab_anomaly_scalefactor_1.0.nc
+ncks -v artm ar4_ant_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
+
+ncap2 -O -s 'acab(:,:,:)= (acab(:,:,:)-acab(0,:,:))' ar4_ant_acab_anomaly_scalefactor_1.0.nc ar4_ant_acab_anomaly_scalefactor_1.0.nc
+ncap2 -O -s 'artm(:,:,:)= (artm(:,:,:)-artm(0,:,:))' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
+
+echo -n "creating scaled files ... times 1.5 "
+echo -n "acab.. "
+ncap2 -s 'acab(:,:,:)= 1.5 * acab(:,:,:)' ar4_ant_acab_anomaly_scalefactor_1.0.nc ar4_ant_acab_anomaly_scalefactor_1.5.nc
+echo "artm.. "
+ncap2 -s 'artm(:,:,:)= 1.5 * artm(:,:,:)' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.5.nc
+
+echo -n "creating scaled files ... times 2.0 "
+echo -n "acab.. "
+ncap2 -s 'acab(:,:,:)= 2.0 * acab(:,:,:)' ar4_ant_acab_anomaly_scalefactor_1.0.nc ar4_ant_acab_anomaly_scalefactor_2.0.nc
+echo "artm.. "
+ncap2 -s 'artm(:,:,:)= 2.0 * artm(:,:,:)' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_2.0.nc
+
+
 
 echo "now run spin-up script 'antspin.sh'"
 echo
