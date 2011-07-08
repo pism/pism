@@ -100,12 +100,13 @@ protected:
   IceModelVec2S *surface, *thk;
   PetscReal bc_period, bc_reference_year, temp_lapse_rate;
   bool enable_time_averaging;
+  string bc_option_name;
 
   virtual PetscErrorCode init_internal(PISMVars &vars)
   {
     PetscErrorCode ierr;
-    string afilename, sfilename;
-    bool abc_file_set, sbc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
+    string filename;
+    bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
 
     IceGrid &g = Mod::grid;
 
@@ -117,10 +118,8 @@ protected:
     {
       // FIXME we want access to protected PDirectForcing::bc_option_name instead of
       //       rechecking options here
-      ierr = PISMOptionsString("-atmosphere_bc_file", "Specifies a file with top-surface boundary conditions",
-                               afilename, abc_file_set); CHKERRQ(ierr);
-      ierr = PISMOptionsString("-surface_bc_file", "Specifies a file with top-surface boundary conditions",
-                               sfilename, sbc_file_set); CHKERRQ(ierr);
+      ierr = PISMOptionsString(bc_option_name, "Specifies a file with top-surface boundary conditions",
+                               filename, bc_file_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-bc_period", "Specifies the length of the climate data period",
                              bc_period, bc_period_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-bc_reference_year", "Boundary condition reference year",
@@ -133,17 +132,10 @@ protected:
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-    if ((abc_file_set) && (sbc_file_set)) {
-      PetscPrintf(g.com, "PISM ERROR: both options -atmosphere_bc_file and -surface_bc_file are set.\n  Exactly one of these required.  (This code subject to FIXME.)\n");
+    if (bc_file_set == false) {
+      PetscPrintf(Model::grid.com, "PISM ERROR: option %sis required.\n", bc_option_name.c_str());
       PISMEnd();
     }
-
-    if ((!abc_file_set) && (!sbc_file_set)) {
-      PetscPrintf(g.com, "PISM ERROR: neither option -atmosphere_bc_file and -surface_bc_file is set.\n  Exactly one of these required.  (This code subject to FIXME.)\n");
-      PISMEnd();
-    }
-    
-    string filename = (abc_file_set) ? afilename : sfilename;
 
     unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
       ref_surface_n_records = 1;
@@ -229,6 +221,7 @@ public:
     : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
   {
     smb_lapse_rate = 0;
+    bc_option_name = "-surface_file";
   }
 
   virtual ~PSLapseRates() {}
@@ -247,6 +240,7 @@ public:
     : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
   {
     precip_lapse_rate = 0;
+    bc_option_name = "-atmosphere_file";
   }
 
   virtual ~PALapseRates() {}

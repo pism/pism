@@ -129,7 +129,7 @@ protected:
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option -bc_file is required.\n");
+      PetscPrintf(Model::grid.com, "PISM ERROR: option %sis required.\n", bc_option_name.c_str());
       PISMEnd();
     }
 
@@ -211,7 +211,7 @@ public:
   {
     temp_name = "artm";
     mass_flux_name = "acab";
-    bc_option_name = "-surface_bc_file";
+    bc_option_name = "-surface_file";
   }
   virtual ~PSDirectForcing() {}
 
@@ -233,7 +233,7 @@ public:
   {
     temp_name = "artm";
     mass_flux_name  = "precip";
-    bc_option_name = "-atmosphere_bc_file";
+    bc_option_name = "-atmosphere_file";
   }
 
   virtual ~PADirectForcing() {}
