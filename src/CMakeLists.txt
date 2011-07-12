@@ -117,6 +117,7 @@ target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalanc
 # Boundary models (surface, atmosphere, ocean).
 add_library (pismboundary
   coupler/PAConstant.cc
+  coupler/PAConstantPIK.cc
   coupler/PAForcing.cc
   coupler/PASLapseRates.cc
   coupler/PASDirectForcing.cc

@@ -38,6 +38,10 @@ static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtm
   result = new PAConstant(g, conf);
 }
 
+static void create_pa_constant_pik(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
+  result = new PAConstantPIK(g, conf);
+}
+
 static void create_pa_given(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
   result = new PADirectForcing(g, conf);
 }
@@ -71,6 +75,7 @@ void PAFactory::add_standard_types() {
   add_model("given",             &create_pa_given);
   add_model("searise_greenland", &create_pa_searise_greenland);
   add_model("eismint_greenland", &create_pa_eismint_greenland);
+  add_model("pik",               &create_pa_constant_pik);
   set_default("constant");
 
   add_modifier("anomaly",    &create_pa_anomalies);

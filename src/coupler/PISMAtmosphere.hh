@@ -81,6 +81,16 @@ protected:
   NCSpatialVariable airtemp_var;
 };
 
+class PAConstantPIK : public PAConstant
+{
+public:
+  PAConstantPIK(IceGrid &g, const NCConfigVariable &conf)
+    : PAConstant(g, conf) {};
+  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+protected:
+  IceModelVec2S *usurf, *lat;
+};
 
 //! A class containing an incomplete implementation of an atmosphere model
 //! based on a temperature parameterization using mean annual and mean July

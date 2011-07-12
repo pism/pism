@@ -1,5 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
-// Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
+// Copyright (C) 2008-2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -98,26 +97,24 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "parmeterized ice surface temperature \n";
 
-     ierr = result.begin_access();   CHKERRQ(ierr);
-     ierr = artm.begin_access();   CHKERRQ(ierr);
-    ierr = usurf->begin_access();   CHKERRQ(ierr);
-    ierr = lat->begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  ierr = result.begin_access();   CHKERRQ(ierr);
+  ierr = artm.begin_access();   CHKERRQ(ierr);
+  ierr = usurf->begin_access();   CHKERRQ(ierr);
+  ierr = lat->begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      	result(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
-      	artm(i,j)=result(i,j);
-      	//ierr = verbPrintf(2, grid.com,"!!!!! h=%f, lat=%f, artm=%f\n",(*usurf)(i,j),(*lat)(i,j),result(i,j)); CHKERRQ(ierr);
-      }
+      result(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
+      artm(i,j)=result(i,j);
+
     }
-    ierr = usurf->end_access();   CHKERRQ(ierr);
-    ierr = lat->end_access(); CHKERRQ(ierr);
-    ierr = result.end_access();   CHKERRQ(ierr);
-    ierr = artm.end_access();   CHKERRQ(ierr);
+  }
+  ierr = usurf->end_access();   CHKERRQ(ierr);
+  ierr = lat->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access();   CHKERRQ(ierr);
+  ierr = artm.end_access();   CHKERRQ(ierr);
 
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
-  //ierr = result.set(artm); CHKERRQ(ierr);
-  //ierr = results.copy_to(artm); CHKERRQ(ierr);
 
   return 0;
 }
