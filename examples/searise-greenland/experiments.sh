@@ -127,7 +127,7 @@ echo "$SCRIPTNAME control coupler = '$COUPLER_CTRL'"
 echo "$SCRIPTNAME     AR4 coupler = '$COUPLER_AR4'"
 
 # FIXME: removed dHdt from list, will be calculated in post-processing
-expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab,cbase,csurf"
+expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab,cbase,csurf,tempicethk_basal,tauc"
 tspackage="-ts_vars ivol,iareag,iareaf"
 
 STARTTIME=0

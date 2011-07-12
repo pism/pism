@@ -241,7 +241,7 @@ TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
 EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk"
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
