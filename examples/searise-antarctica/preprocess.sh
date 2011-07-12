@@ -81,8 +81,8 @@ echo "creating scaled files ... times 2.0 "
 ncap2 -s 'artm(:,:,:)= artm(0,:,:) + 2.0 * (artm(:,:,:)-artm(0,:,:))' -s 'acab(:,:,:)= acab(0,:,:) + 2.0 * (acab(:,:,:)-acab(0,:,:))' ar4_ant_scalefactor_1.0.nc ar4_ant_scalefactor_2.0.nc
 
 
-# as an alternative, create anomaly files, suitable (TODO check whether this also works with -surface pik) to be used
-# with options -surface given,anomaly --anomaly_artm ar4_ant_artm_anomaly_scalefactor_X.nc -anomaly_acab ar4_ant_acab_anomaly_scalefactor_X.nc
+# as an alternative, create anomaly files, suitable (TODO does not work in combination with -surface pik!!) to be used
+# with options -atmosphere given,anomaly -anomaly_temp ar4_ant_artm_anomaly_scalefactor_X.nc -anomaly_precip ar4_ant_acab_anomaly_scalefactor_X.nc
 
 echo "creating anomaly files ... "
 ncks -v acab ar4_ant_scalefactor_1.0.nc ar4_ant_acab_anomaly_scalefactor_1.0.nc

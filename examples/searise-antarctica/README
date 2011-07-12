@@ -23,3 +23,23 @@ Do this or similar to see dry-run:
   $ export PISM_DO=echo
   $ ./antspin.sh 8 1
 
+
+
+
+
+To do a full spinup with constant climate, do			#TODO, still preliminary, not yet ready to use...
+
+  $ ./antspinCC.sh N	#N being the processor number, default is 16
+
+For a spinup with glacial cycles, do 				#TODO, not yet there...
+
+  $ ./antspinGC.sh N	#N being the processor number 
+
+
+
+
+
+
+To perform the SeaRISE experiments, do				#TODO, still preliminary, not yet ready to use...
+
+  $ ./experiments.sh N	#N being the processor number, default is 16
