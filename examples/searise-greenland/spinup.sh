@@ -266,7 +266,7 @@ EXNAME=ex_$OUTNAME
 EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
 echo
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      including bed deformation and modified surface mass balance,"
+echo "$SCRIPTNAME      including bed deformation,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
      -bed_def lc $COUPLER_FORCING \

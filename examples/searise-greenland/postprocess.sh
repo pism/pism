@@ -25,7 +25,7 @@
 #    -- requires python and netcdf4-python
 
 set -e  # exit on error
-#set -x  # uncomment to see commands as they are issued
+set -x  # uncomment to see commands as they are issued
 
 MODEL=UAF1  # default initials and model number
 if [ $# -gt 0 ] ; then
@@ -47,18 +47,17 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
 
   echo "(postprocess.sh)    copying from name ${NAME}_raw_y*.nc and removing unreported fields ..."
   # create draft of deliverable file and remove two early-diagnosis fields:
-  ncks -v cbase,csurf,diffusivity,pism_overrides -x ${NAME}_raw_y*.nc -o ${NAME}.nc
+  ncks -O -v cbase,csurf,diffusivity,pism_overrides -x ${NAME}_raw_y*.nc -o ${NAME}.nc
 
   echo "(postprocess.sh)    combining annual scalar time series ts_y*_${NAME}.nc with spatial file ..."
   cp ts_y*_${NAME}.nc NEWTIME_ts_y*_${NAME}.nc
-  ncrename -d t,tseries -v t,tseries NEWTIME_ts_y*_${NAME}.nc # SeaRISE name choice
+  ncrename -d time,tseries -v time,tseries NEWTIME_ts_y*_${NAME}.nc # SeaRISE name choice
   ncecat -O NEWTIME_ts_y*_${NAME}.nc NEWTIME_ts_y*_${NAME}.nc # convert time to non-record dimension
   ncwa -O -a record NEWTIME_ts_y*_${NAME}.nc NEWTIME_ts_y*_${NAME}.nc # remove just-added record dimension
   ncks -A -v ivol,iareag,iareaf NEWTIME_ts_y*_${NAME}.nc -o ${NAME}.nc # actually combine
   rm NEWTIME_ts_y*_${NAME}.nc
 
   echo "(postprocess.sh)    fixing metadata and names ..."
-  ncrename -d t,time -v t,time ${NAME}.nc                     # SeaRISE name choice
   ncrename -v bwat,bwa ${NAME}.nc                             # fix "bwa" name
   ncatted -a units,time,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
   ncatted -a units,tseries,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
@@ -66,7 +65,7 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   ncatted -a coordinates,,d,c, ${NAME}.nc                     # remove all "coordinates = "lat long"",
                                                               #   because lat,lon are not present in file
   ncatted -a pism_intent,,d,c, ${NAME}.nc                     # irrelevant to SeaRISE purpose
-  #FIXME  note desired output gline_flx; what to do?
+  # we do not report gline_flx
   ncatted -a institution,global,c,c,"${INSTITUTION}" ${NAME}.nc
   ncatted -a title,global,m,c,"${NAME} SeaRISE Experiment (Greenland)" ${NAME}.nc
 
