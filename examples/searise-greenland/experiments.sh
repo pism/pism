@@ -110,7 +110,7 @@ TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 FULLPHYS="-ssa_sliding -thk_eff $TILLPHI"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -config_override $PISM_CONFIG $FULLPHYS"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -config_override $PISM_CONFIG $FULLPHYS -acab_cumulative"
 
 echo "$SCRIPTNAME         tillphi = '$TILLPHI'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
@@ -127,7 +127,7 @@ echo "$SCRIPTNAME control coupler = '$COUPLER_CTRL'"
 echo "$SCRIPTNAME     AR4 coupler = '$COUPLER_AR4'"
 
 # FIXME: removed dHdt from list, will be calculated in post-processing
-expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab,cbase,csurf,tempicethk_basal,tauc"
+expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab_cumulative,cbase,csurf,tempicethk_basal,tauc"
 tspackage="-ts_vars ivol,iareag,iareaf"
 
 STARTTIME=0
