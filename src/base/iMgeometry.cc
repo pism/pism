@@ -218,7 +218,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   const PetscScalar dx = grid.dx, dy = grid.dy;
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed"),
-    include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
+    include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
+    compute_cumulative_acab = config.get_flag("compute_cumulative_acab");
 
   if (surface != NULL) {
     ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
@@ -268,6 +269,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   if (do_ocean_kill) {
     ierr = ocean_kill_mask.begin_access(); CHKERRQ(ierr);
+  }
+
+  if (compute_cumulative_acab) {
+    ierr = acab_cumulative.begin_access(); CHKERRQ(ierr);
   }
 
   MaskQuery mask(vMask);
@@ -420,6 +425,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
         vHnew(i, j) = 0.0;
       }
 
+      // Track cumulative surface mass balance. Note that this keeps track of
+      // cumulative acab at all the grid cells (including ice-free cells). I'm
+      // not sure, but it might make more sense to only integrate acab in areas
+      // where there is ice due to flow or acab is positive; see
+      // my_surface_ice_flux accounting above.
+      if (compute_cumulative_acab /* && (there_is_ice_due_to_flow || acab(i, j) > 0) */) {
+        acab_cumulative(i, j) += acab(i, j) * dt;
+      }
+
     } // end of the inner for loop
   } // end of the outer for loop
 
@@ -431,6 +445,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
+
+  if (compute_cumulative_acab) {
+    ierr = acab_cumulative.end_access(); CHKERRQ(ierr);
+  }
 
   if (do_part_grid) {
     ierr = vHref.end_access(); CHKERRQ(ierr);

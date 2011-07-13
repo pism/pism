@@ -463,6 +463,10 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
   }
 
+  if (config.get_flag("compute_cumulative_acab")) {
+    ierr = acab_cumulative.set(0.0); CHKERRQ(ierr);
+  }
+
   // a report on whether PISM-PIK modifications of IceModel are in use
   const bool pg   = config.get_flag("part_grid"),
     pr   = config.get_flag("part_redist"),

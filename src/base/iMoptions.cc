@@ -319,6 +319,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.flag_from_option("vpik", "verbose_pik_messages");  CHKERRQ(ierr);
   if (getVerbosityLevel() > 2)  config.set_flag("verbose_pik_messages", true);
 
+  ierr = config.flag_from_option("acab_cumulative", "compute_cumulative_acab"); CHKERRQ(ierr);
+
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   global_attributes.set_string("title", config.get_string("run_title"));

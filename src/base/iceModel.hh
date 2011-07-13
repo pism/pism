@@ -81,6 +81,7 @@ class IceModel {
   friend class IceModel_tempicethk;
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
+  friend class IceModel_acab_cumulative;
   // scalar:
   friend class IceModel_ivol;
   friend class IceModel_divoldt;
@@ -225,11 +226,12 @@ protected:
         vPrinStrain2,   //!< minor principal component of horizontal strain-rate tensor
 
     acab,		//!< accumulation/ablation rate; no ghosts
+    acab_cumulative,    //!< cumulative acab
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
-	cell_area;		//!< cell areas (computed using the WGS84 datum)
+    cell_area;		//!< cell areas (computed using the WGS84 datum)
 
 	
  
@@ -238,7 +240,7 @@ protected:
     ocean_kill_mask,     //!< mask used by the -ocean_kill code 
     vIcebergMask, //!< mask for iceberg identification
 
-	vBCMask; //!< mask to determine Dirichlet boundary locations
+    vBCMask; //!< mask to determine Dirichlet boundary locations
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
 

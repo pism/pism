@@ -420,6 +420,14 @@ PetscErrorCode IceModel::createVecs() {
   acab.set_attr("comment", "positive values correspond to ice gain");
   ierr = variables.add(acab); CHKERRQ(ierr);
 
+  if (config.get_flag("compute_cumulative_acab")) {
+    ierr = acab_cumulative.create(grid, "acab_cumulative", false); CHKERRQ(ierr);
+    ierr = acab_cumulative.set_attrs("diagnostic",
+                                     "cumulative ice-equivalent surface mass balance",
+                                     "m", ""); CHKERRQ(ierr);
+    ierr = variables.add(acab_cumulative); CHKERRQ(ierr);
+  }
+
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
   ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);

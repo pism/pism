@@ -40,6 +40,11 @@ PetscErrorCode IceModel::init_diagnostics() {
   diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid, variables);
   diagnostics["new_mask"]         = new IceModel_new_mask(this, grid, variables);
 
+  if (config.get_flag("compute_cumulative_acab")) {
+    diagnostics["acab_cumulative"]  = new IceModel_acab_cumulative(this, grid, variables);
+  }
+
+
   ts_diagnostics["ivol"]          = new IceModel_ivol(this, grid, variables);
   ts_diagnostics["divoldt"]       = new IceModel_divoldt(this, grid, variables);
   ts_diagnostics["iarea"]         = new IceModel_iarea(this, grid, variables);
@@ -924,6 +929,30 @@ PetscErrorCode IceModel_new_mask::compute(IceModelVec* &output) {
 
   ierr = result->end_access(); CHKERRQ(ierr);
 
+  output = result;
+  return 0;
+}
+
+IceModel_acab_cumulative::IceModel_acab_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+  
+  // set metadata:
+  vars[0].init_2d("acab_cumulative", grid);
+  
+  set_attrs("acab_cumulative", "cumulative ice-equivalent surface mass balance",
+            "m", "m", 0);
+}
+
+PetscErrorCode IceModel_acab_cumulative::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "acab_cumulative", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = result->copy_from(model->acab_cumulative); CHKERRQ(ierr);
+  
   output = result;
   return 0;
 }

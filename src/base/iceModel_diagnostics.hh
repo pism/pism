@@ -383,6 +383,15 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
+//! \brief Reports cumulative surface mass balance.
+class IceModel_acab_cumulative : public PISMDiag<IceModel>
+{
+public:
+  IceModel_acab_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
 
 
 
