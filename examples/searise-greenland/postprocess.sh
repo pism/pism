@@ -47,8 +47,12 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
 
   echo "(postprocess.sh)    copying from name ${NAME}_raw_y*.nc and removing unreported fields ..."
   # create draft of deliverable file and remove two early-diagnosis fields:
-  ncks -O -v cbase,csurf,diffusivity,pism_overrides -x ${NAME}_raw_y*.nc -o ${NAME}.nc
-
+  ncks -O -v cbase,csurf,diffusivity,pism_overrides -x ${NAME}_raw_y*.nc -o ${NAME}_full.nc
+  # calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
+  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1)); dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1));}' ${NAME}_full.nc ${NAME}_full.nc
+  # We keep the "full" files for record
+  # select every fifth year, don't copy acab_cumulative
+  ncks -O -v acab_cumulative -x -d time,,,5 ${NAME}_full.nc ${NAME}.nc
   echo "(postprocess.sh)    combining annual scalar time series ts_y*_${NAME}.nc with spatial file ..."
   cp ts_y*_${NAME}.nc tmp.nc
   ncrename -d time,tseries -v time,tseries tmp.nc    # SeaRISE name choice

@@ -43,7 +43,7 @@ echo "done."
 echo
 
 # extract time series into files suitable for -dTforcing and -dSLforcing;
-# compare resulting files to grip_dT.nc and specmap_dSL.nc in pism0.2/examples/eisgreen/
+# compare resulting files to grip_dT.nc and specmap_dSL.nc in pism-dev/examples/eisgreen/
 TEMPSERIES=pism_dT.nc
 SLSERIES=pism_dSL.nc
 echo -n "creating paleo-temperature file $TEMPSERIES from $DATANAME for option -dTforcing ... "
@@ -56,7 +56,7 @@ echo "done."
 echo
 echo -n "creating paleo-sea-level file $SLSERIES from $DATANAME for option -dSLforcing ... "
 ncks -O -v sealeveltimes,sealevel_time_series $DATANAME $SLSERIES
-ncrename -O -d sealeveltimes,t -v sealeveltimes,t -v sealevel_time_series,delta_sea_level $SLSERIES
+ncrename -O -d sealeveltimes,time -v sealeveltimes,time -v sealevel_time_series,delta_sea_level $SLSERIES
 ncpdq -O --rdr=-time $SLSERIES $SLSERIES  # reverse time dimension
 ncap -O -s "time=-time" $SLSERIES $SLSERIES  # make times follow same convention as PISM
 ncatted -O -a units,time,a,c,"years since 1-1-1" $SLSERIES
