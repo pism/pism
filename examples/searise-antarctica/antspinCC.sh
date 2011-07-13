@@ -20,17 +20,17 @@ set -e  # exit on error
 echo "(antspinCC.sh)   Constant-climate spinup-script using SeaRISE-Antarctica data and -ssa_sliding and -pik"
 
 
-
 experiment=seaRISE
 version=pism-dev
-output_path=./results/$experiment/$scriptname/$laufname
 scriptname=spinupStSt
 laufname=ConstantClimate
+output_path=./results/$experiment/$scriptname/$laufname
+
 
 # naming directories
 RESDIR=$output_path/results/ 
 OUTDIR=$output_path/output/ 
-CODE_DIR=../../bin/
+CODE_DIR=../../bin
 BOOTDIR=.
 
 # naming files
@@ -41,8 +41,8 @@ PISM_EXEC="$CODE_DIR/pismr"
 echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 
 # creating directories for results
-mkdir $output_path/results
-mkdir $output_path/output
+mkdir -p $output_path/results
+mkdir -p $output_path/output
 
 # input data:
 PISM_INDATANAME=${BOOTDIR}/pism_Antarctica_5km.nc
@@ -106,7 +106,7 @@ SIA_ENHANCEMENT="-e 4.5"
 #INFO: in pism, the option '-pik' is implemented, and activates '-cfbc -part_grid -part_redist -kill_icebergs'
 #INFO: -meltfactor_pik 5e-3 is default when using -ocean pik
 PIKPHYS="-ssa_method fd -e_ssa 0.8 -pik -eigen_calving 2.0e18 -calving_at_thickness 50.0"
-PIKPHYS_COUPLING="-surface pik -ocean pik -meltfactor_pik 8e-3"
+PIKPHYS_COUPLING="-atmosphere pik -ocean pik -meltfactor_pik 8e-3"
 
 # sliding related options:
 PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.98"
@@ -117,8 +117,8 @@ FULLPHYS="-ssa_sliding -thk_eff $PARAMS $TILLPHI"
 
 
 echo "$SCRIPTNAME             PISM = $PISM_EXEC"
-echo "$SCRIPTNAME  	  FULLPHYS = $FULLPHYS"
-echo "$SCRIPTNAME  	   PIKPHYS = $PIKPHYS"
+echo "$SCRIPTNAME         FULLPHYS = $FULLPHYS"
+echo "$SCRIPTNAME          PIKPHYS = $PIKPHYS"
 echo "$SCRIPTNAME PIKPHYS_COUPLING = $PIKPHYS_COUPLING"
 
 
@@ -137,7 +137,7 @@ OUTNAME=${OUTDIR}$stage.out
 echo
 echo "$SCRIPTNAME  bootstrapping plus short SIA run for 100 a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip 10 -boot_file ${INNAME} $FIFTEENKMGRID \
-	$SIA_ENHANCEMENT $PIKPHYS_COUPLING_SeaRISE -ocean_kill \
+	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -ocean_kill \
 	-y 100 \
 	-o $RESNAME -o_size medium"
 echo $DO $cmd
@@ -245,22 +245,6 @@ $DO $cmd >> $OUTNAME
 
 echo
 echo "$SCRIPTNAME  spinup done"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
