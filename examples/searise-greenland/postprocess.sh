@@ -50,21 +50,21 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   ncks -O -v cbase,csurf,diffusivity,pism_overrides -x ${NAME}_raw_y*.nc -o ${NAME}.nc
 
   echo "(postprocess.sh)    combining annual scalar time series ts_y*_${NAME}.nc with spatial file ..."
-  cp ts_y*_${NAME}.nc NEWTIME_ts_y*_${NAME}.nc
-  ncrename -d time,tseries -v time,tseries NEWTIME_ts_y*_${NAME}.nc # SeaRISE name choice
-  ncecat -O NEWTIME_ts_y*_${NAME}.nc NEWTIME_ts_y*_${NAME}.nc # convert time to non-record dimension
-  ncwa -O -a record NEWTIME_ts_y*_${NAME}.nc NEWTIME_ts_y*_${NAME}.nc # remove just-added record dimension
-  ncks -A -v ivol,iareag,iareaf NEWTIME_ts_y*_${NAME}.nc -o ${NAME}.nc # actually combine
-  rm NEWTIME_ts_y*_${NAME}.nc
+  cp ts_y*_${NAME}.nc tmp.nc
+  ncrename -d time,tseries -v time,tseries tmp.nc    # SeaRISE name choice
+  ncecat -O tmp.nc tmp.nc                            # convert time to non-record dimension
+  ncwa -O -a record tmp.nc tmp.nc                    # remove just-added record dimension
+  ncks -A -v ivol,iareag,iareaf tmp.nc -o ${NAME}.nc # actually combine
+  rm tmp.nc                                          # clean up
 
   echo "(postprocess.sh)    fixing metadata and names ..."
-  ncrename -v bwat,bwa ${NAME}.nc                             # fix "bwa" name
+  ncrename -v bwat,bwa ${NAME}.nc                    # fix "bwa" name
   ncatted -a units,time,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
   ncatted -a units,tseries,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
-  ncatted -a bounds,,d,c, ${NAME}.nc                          # remove time bounds; no one will look anyway ...
-  ncatted -a coordinates,,d,c, ${NAME}.nc                     # remove all "coordinates = "lat long"",
-                                                              #   because lat,lon are not present in file
-  ncatted -a pism_intent,,d,c, ${NAME}.nc                     # irrelevant to SeaRISE purpose
+  ncatted -a bounds,,d,c, ${NAME}.nc                 # remove time bounds; no one care ...
+  ncatted -a coordinates,,d,c, ${NAME}.nc            # remove all "coordinates = "lat long"",
+                                                     #   because lat,lon are not present
+  ncatted -a pism_intent,,d,c, ${NAME}.nc            # irrelevant to SeaRISE purpose
   # we do not report gline_flx
   ncatted -a institution,global,c,c,"${INSTITUTION}" ${NAME}.nc
   ncatted -a title,global,m,c,"${NAME} SeaRISE Experiment (Greenland)" ${NAME}.nc
