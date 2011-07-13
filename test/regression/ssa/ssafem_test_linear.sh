@@ -5,6 +5,12 @@
 PISM_PATH=$1
 MPIEXEC=$2
 PISM_SOURCE_DIR=$3
+EXT=""
+if [ $# -ge 4 ] && [ "$4" == "-python" ]
+then
+  PISM_PATH=${PISM_SOURCE_DIR}/examples/python/ssa_tests
+  EXT=".py"
+fi
 
 # List of files to remove when done:
 files="foo.nc foo.nc~ test-out.txt"
@@ -16,8 +22,8 @@ set -e
 OPTS="-verbose 1 -ssa_method fem -o foo.nc"
 
 # do stuff
-$PISM_PATH/ssa_test_linear -Mx 61 -My 61 $OPTS > test-out.txt
-$PISM_PATH/ssa_test_linear -Mx 121 -My 121 $OPTS >> test-out.txt
+$PISM_PATH/ssa_test_linear${EXT} -Mx 61 -My 61 $OPTS > test-out.txt
+$PISM_PATH/ssa_test_linear${EXT} -Mx 121 -My 121 $OPTS >> test-out.txt
 
 set +e
 

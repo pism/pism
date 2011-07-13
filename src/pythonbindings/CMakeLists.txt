@@ -96,6 +96,24 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       PATTERN ".svn" EXCLUDE
     )
 
-  install(CODE "MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   export PYTHONPATH=${PISM_INSTALL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")")
-    
+# The python code snippit below returns 1 if python can 
+# import a PISM and if the directory of said PISM matches
+# the place we are about to install PISM python.  If the return
+# value is not 1, we print a message stating how to set your PYTHONPATH.
+# There is an unholy amount of escapes because we have a
+# CMAKE string wrapping a CMAKE string wrapping a shell string that contains quotes in a python command.  Blech.
+install(CODE "EXEC_PROGRAM( ${PYTHON_EXECUTABLE} ARGS -c ARGS \"'
+import os
+try:
+  import PISM
+except:
+  exit(0)
+if PISM.__file__ == os.path.join(\\\"${PISM_INSTALL_PYTHON_MODULE_DIR}\\\",
+\\\"PISM\\\",\\\"__init__.pyc\\\"):
+  exit(1)'\" RETURN_VALUE PISM_PYTHON_MATCHES OUTPUT_VARIABLE PYTHON_OUT )
+if(NOT PISM_PYTHON_MATCHES)
+    MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   export PYTHONPATH=${PISM_INSTALL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")
+endif()
+" )
+
 endif(Pism_BUILD_PYTHON_BINDINGS)

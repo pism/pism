@@ -223,6 +223,3 @@ endif()
 # PISM regression testing
 ENABLE_TESTING()
 add_subdirectory (test/regression)
-if (Pism_BUILD_PYTHON_BINDINGS)
-  add_subdirectory (examples/python)
-endif()

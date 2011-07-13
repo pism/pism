@@ -14,6 +14,10 @@ macro(pism_test name script)
   add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
 endmacro()
 
+macro(pism_python_test name script)
+  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python)
+endmacro()
+
 # Tests themselves:
 pism_test (pism_testing_tools test_00.sh)
 
@@ -87,3 +91,21 @@ pism_test (verif_PISMBedThermalUnit_test_K_regress btu_regression.sh)
 
 pism_test (runtime_viewers test_31.sh)
 
+
+if(Pism_BUILD_PYTHON_BINDINGS)
+
+	pism_python_test (verif_test_I_SSAFD_regress_SSA_plastic_py ssa/ssa_testi_fd.sh)
+
+	pism_python_test (verif_test_I_SSAFD_regress_SSA_plastic_py ssa/ssa_testi_fd.sh)
+
+	pism_python_test (verif_test_I_SSAFEM_regress_SSA_plastic_py ssa/ssa_testi_fem.sh)
+
+	pism_python_test (verif_test_J_SSAFD_regress_linear_SSA_floating_py ssa/ssa_testj_fd.sh)
+
+	pism_python_test (verif_test_J_SSAFEM_regress_linear_SSA_floating_py ssa/ssa_testj_fem.sh)
+
+	pism_python_test (verif_SSAFEM_regress_linear_flow_py ssa/ssafem_test_linear.sh)
+
+#	pism_python_test (verif_SSAFEM_regress_plug_flow_py ssa/ssafem_test_plug.sh)
+
+endif()
