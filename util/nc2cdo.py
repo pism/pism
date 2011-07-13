@@ -177,40 +177,36 @@ if __name__ == "__main__":
     ## If it does not yet exist, create variable 'lat_bounds'
     if not var in nc.variables.keys():
         var_out = nc.createVariable(var, 'f', dimensions=(ydim,xdim))
-        ## Assign units to variable 'lon'
-        var_out.units = "degreesE"
-        ## Assign long name to variable 'lon'
-        var_out.long_name = "Longitude"
-        ## Assign standard name to variable 'lon'
-        var_out.standard_name = "longitude"
-        ## Assign bounds to variable 'lon'
-        var_out.bounds = "lon_bounds"
         ## Assign values to variable 'lon'
         var_out[:] = lon
     else:
         var_out = nc.variables[var]
-        ## Assign bounds to variable 'lon'
-        var_out.bounds = "lon_bounds"
-
+    ## Assign units to variable 'lon'
+    var_out.units = "degreesE"
+    ## Assign long name to variable 'lon'
+    var_out.long_name = "Longitude"
+    ## Assign standard name to variable 'lon'
+    var_out.standard_name = "longitude"
+    ## Assign bounds to variable 'lon'
+    var_out.bounds = "lon_bounds"
+    
 
     var = 'lat'
     ## If it does not yet exist, create variable 'lat_bounds'
     if not var in nc.variables.keys():
         var_out = nc.createVariable(var, 'f', dimensions=(ydim,xdim))
-        ## Assign units to variable 'lat'
-        var_out.units = "degreesN";
-        ## Assign long name to variable 'lat'
-        var_out.long_name = "Latitude"
-        ## Assign standard name to variable 'lat'
-        var_out.standard_name = "latitude"
-        ## Assign bounds to variable 'lat'
-        var_out.bounds = "lat_bounds"
-        ## Assign values to variable 'lat'
         var_out[:] = lat
     else:
         var_out = nc.variables[var]
-        ## Assign bounds to variable 'lat'
-        var_out.bounds = "lat_bounds"
+    ## Assign units to variable 'lat'
+    var_out.units = "degreesN";
+    ## Assign long name to variable 'lat'
+    var_out.long_name = "Latitude"
+    ## Assign standard name to variable 'lat'
+    var_out.standard_name = "latitude"
+    ## Assign bounds to variable 'lat'
+    var_out.bounds = "lat_bounds"
+    ## Assign values to variable 'lat'
 
     ## Make sure variables have 'coordinates' attribute
     for var in nc.variables.keys():

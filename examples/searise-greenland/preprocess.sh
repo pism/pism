@@ -48,18 +48,18 @@ TEMPSERIES=pism_dT.nc
 SLSERIES=pism_dSL.nc
 echo -n "creating paleo-temperature file $TEMPSERIES from $DATANAME for option -dTforcing ... "
 ncks -O -v oisotopestimes,temp_time_series $DATANAME $TEMPSERIES
-ncrename -O -d oisotopestimes,t -v oisotopestimes,t -v temp_time_series,delta_T $TEMPSERIES
-ncpdq -O --rdr=-t $TEMPSERIES $TEMPSERIES  # reverse time dimension
-ncap -O -s "t=-t" $TEMPSERIES $TEMPSERIES  # make times follow same convention as PISM
-ncatted -O -a units,t,a,c,"years since 1-1-1" $TEMPSERIES
+ncrename -O -d oisotopestimes,time -v oisotopestimes,time -v temp_time_series,delta_T $TEMPSERIES
+ncpdq -O --rdr=-time $TEMPSERIES $TEMPSERIES  # reverse time dimension
+ncap -O -s "time=-time" $TEMPSERIES $TEMPSERIES  # make times follow same convention as PISM
+ncatted -O -a units,time,a,c,"years since 1-1-1" $TEMPSERIES
 echo "done."
 echo
 echo -n "creating paleo-sea-level file $SLSERIES from $DATANAME for option -dSLforcing ... "
 ncks -O -v sealeveltimes,sealevel_time_series $DATANAME $SLSERIES
 ncrename -O -d sealeveltimes,t -v sealeveltimes,t -v sealevel_time_series,delta_sea_level $SLSERIES
-ncpdq -O --rdr=-t $SLSERIES $SLSERIES  # reverse time dimension
-ncap -O -s "t=-t" $SLSERIES $SLSERIES  # make times follow same convention as PISM
-ncatted -O -a units,t,a,c,"years since 1-1-1" $SLSERIES
+ncpdq -O --rdr=-time $SLSERIES $SLSERIES  # reverse time dimension
+ncap -O -s "time=-time" $SLSERIES $SLSERIES  # make times follow same convention as PISM
+ncatted -O -a units,time,a,c,"years since 1-1-1" $SLSERIES
 echo "done."
 echo
 
