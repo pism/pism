@@ -46,13 +46,20 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   echo "(postprocess.sh)  working on deliverable $NAME.nc ..."
 
   echo "(postprocess.sh)    copying from name ${NAME}_raw_y*.nc and removing unreported fields ..."
-  # create draft of deliverable file and remove two early-diagnosis fields:
-  ncks -O -v cbase,csurf,diffusivity,pism_overrides -x ${NAME}_raw_y*.nc -o ${NAME}_full.nc
+  # create draft of deliverable file:
+  ncks -O ${NAME}_raw_y*.nc -o ${NAME}_full.nc
   # calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
   ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1)); dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1));}' ${NAME}_full.nc ${NAME}_full.nc
+  # adjust meta data for new fields
+  ncatted -a units,acab,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
+      -a long_name,acab,o,c,"surface mass balance" \
+      -a long_name,dHdt,o,c,"rate of change of ice thickness" \
+      -a cell_methods,acab,o,c,"time: mean (interval: 1 year)" \
+      -a cell_methods,dHdt,o,c,"time: mean (interval: 1 year)" ${NAME}_full.nc
   # We keep the "full" files for record
-  # select every fifth year, don't copy acab_cumulative
-  ncks -O -v acab_cumulative -x -d time,,,5 ${NAME}_full.nc ${NAME}.nc
+  # select every fifth year, don't copy acab_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides
+  ncks -O -x -v acab_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides \
+      -d time,,,5 ${NAME}_full.nc ${NAME}.nc
   echo "(postprocess.sh)    combining annual scalar time series ts_y*_${NAME}.nc with spatial file ..."
   cp ts_y*_${NAME}.nc tmp.nc
   ncrename -d time,tseries -v time,tseries tmp.nc    # SeaRISE name choice
@@ -65,7 +72,7 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   ncrename -v bwat,bwa ${NAME}.nc                    # fix "bwa" name
   ncatted -a units,time,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
   ncatted -a units,tseries,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
-  ncatted -a bounds,,d,c, ${NAME}.nc                 # remove time bounds; no one care ...
+  ncatted -a bounds,,d,c, ${NAME}.nc                 # remove time bounds; no one cares ...
   ncatted -a coordinates,,d,c, ${NAME}.nc            # remove all "coordinates = "lat long"",
                                                      #   because lat,lon are not present
   ncatted -a pism_intent,,d,c, ${NAME}.nc            # irrelevant to SeaRISE purpose
@@ -78,5 +85,6 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
 
   echo "(postprocess.sh)    file $NAME.nc done "
   echo
+  echo "(postprocess.sh) done "
 done
 
