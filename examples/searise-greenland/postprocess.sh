@@ -54,6 +54,8 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   ncatted -a units,acab,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
       -a long_name,acab,o,c,"surface mass balance" \
       -a long_name,dHdt,o,c,"rate of change of ice thickness" \
+      -a grid_mapping,acab,o,c,"mapping" \
+      -a grid_mapping,dHdt,o,c,"mapping" \
       -a cell_methods,acab,o,c,"time: mean (interval: 1 year)" \
       -a cell_methods,dHdt,o,c,"time: mean (interval: 1 year)" ${NAME}_full.nc
   # We keep the "full" files for record
