@@ -1,11 +1,21 @@
 Scripts here prepare future climate forcing data from SeaRISE for use with PISM.
-The input data is the AOGCM mean from IPCC AR4 runs.  See more at
-
+The input data is the AOGCM mean from IPCC AR4 runs, namely the global climate
+file (NetCDF) from the SeaRISE site.  See more at:
   http://websrv.cs.umt.edu/isis/index.php/Future_Climate_Data
 
+The sequence to do in this directory is:
+  $ ./download.sh
+  $ ./preprocess.py
+  $ ./average.py
+to generate these two files
+  ar4_temp_anomaly.nc
+  ar4_precip_anomaly.nc
+And these files should go at these URLs so that the scripts in
+../ = examples/searise-greenland/ will work correctly:
+  http://www.pism-docs.org/download/ar4_temp_anomaly.nc
+  http://www.pism-docs.org/download/ar4_precip_anomaly.nc
 
-* download.sh:
-    i)   downloads global NetCDF climate file from SeaRISE site
+The following are more detailed descriptions.
 
 * preprocess.py:
     0)   REQUIRES python modules:
@@ -18,8 +28,8 @@ The input data is the AOGCM mean from IPCC AR4 runs.  See more at
            from the AR4 AOGCM mean, which is on a lon,lat grid
     ii)  extracts Greenland region and projects (and thus interpolates) data
            onto the SeaRISE model domain, but on a coarse-ish 50km grid
-    iii) writes precip.nc, containing monthly precipitation rates, and
-           temp.nc with monthly 2m air temperatures
+    iii) writes precip.nc with monthly ice-equivalent precipitation rates,
+           and temp.nc with monthly 2m air temperatures
 
 * average.py:
     0)   REQUIRES python modules:  numpy, netcdf4-python

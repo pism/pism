@@ -71,10 +71,18 @@ echo
 echo "downloading future forcing data ... "
 wget -nc http://www.cs.umt.edu/files/ANT_climate_forcing_2004_2098_v3.nc
 
-echo "creating anomaly files ... "
+echo "creating unscaled precip anomaly file ... "
 ncks -v preciptation ANT_climate_forcing_2004_2098_v3.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
+# change name and convert to ice-equivalent units;
+# email 13 July 2011 from Bindshadler says Charles Jackson confirms density 1000.0 is correct
+ncap2 -O -s 'precip=float(preciptation*(1000.0/910.0))' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
+# remove the unneeded 'preciptation' var
+ncks -O -v preciptation -x ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
+# remove now incorrect lwe_... standard name
+ncatted -O -a standard_name,precip,d,, ar4_ant_precip_anomaly_scalefactor_1.0.nc
+
+echo "creating unscaled temp anomaly file ... "
 ncks -v annualtemp ANT_climate_forcing_2004_2098_v3.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
-ncrename -v preciptation,precip ar4_ant_precip_anomaly_scalefactor_1.0.nc
 ncrename -v annualtemp,artm ar4_ant_artm_anomaly_scalefactor_1.0.nc
 
 ncap2 -O -s 'precip(:,:,:)= (precip(:,:,:)-precip(0,:,:))' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc

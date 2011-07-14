@@ -71,7 +71,7 @@ echo "done."
 echo
 
 echo "fetching anomaly files ..."
-echo "   (these files can also be re-generated from scripts in future_forcing/) "
+echo "   (these files can be re-generated from scripts in subdirectory future_forcing/) "
 URL=http://www.pism-docs.org/download
 PRECIP=ar4_precip_anomaly.nc
 TEMP=ar4_temp_anomaly.nc

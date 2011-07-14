@@ -103,7 +103,7 @@ def prepare_temp_file(output, x, y):
 write   = stderr.write
 
 rho_ice = 910.0                  # ice density, kg/m3
-rho_w = 1000.0                   # pure water density, kg/m3
+rho_w = 1000.0                   # pure water density, kg/m3; Charles Jackson confirms this density
 
 input = "Climate_forcing_2004_2098_v3.nc"
 
@@ -162,7 +162,7 @@ for jmonth in time_months:
   t_precip_var[j] = jmonth / 12.0
   temp_var[j,:,:] = f_temp
   # convert to m/year ice equivalent:
-  precip_var[j,:,:] = f_precip * (rho_ice / rho_w)
+  precip_var[j,:,:] = f_precip * (rho_w / rho_ice)
 
   write(".")
 
