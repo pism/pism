@@ -102,6 +102,19 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precip(IceModelVec2S &result) {
 PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
 
+  if (lat->has_attr("missing_at_bootstrap")) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: latitude variable was missing at bootstrap;\n"
+      "  SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!!\n");
+      CHKERRQ(ierr);
+    PISMEnd();
+  }
+  if (lon->has_attr("missing_at_bootstrap")) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: longitude variable was missing at bootstrap;\n"
+      "  SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!!\n");
+      CHKERRQ(ierr);
+    PISMEnd();
+  }
+
   if ((fabs(t_years - t) < 1e-12) &&
       (fabs(dt_years - dt) < 1e-12))
     return 0;

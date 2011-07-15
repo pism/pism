@@ -69,7 +69,8 @@ echo
 # from ANT_climate_forcing_2004_2098_v3.nc to be downloaded from http://websrv.cs.umt.edu/isis/index.php/Future_Climate_Data
 # direct link: http://www.cs.umt.edu/files/ANT_climate_forcing_2004_2098_v3.nc
 echo "downloading future forcing data ... "
-wget -nc http://www.cs.umt.edu/files/ANT_climate_forcing_2004_2098_v3.nc
+#wget -nc http://www.cs.umt.edu/files/ANT_climate_forcing_2004_2098_v3.nc
+wget -nc http://kluis.cs.umt.edu/isis/ANT_climate_forcing_2004_2098_v3.nc
 
 echo "creating unscaled precip anomaly file ... "
 ncks -v preciptation ANT_climate_forcing_2004_2098_v3.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
