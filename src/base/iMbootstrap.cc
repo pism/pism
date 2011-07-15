@@ -78,6 +78,11 @@ PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
   bool hExists=false, maskExists=false;
   ierr = nc.find_variable("usurf", "surface_altitude", NULL,  hExists); CHKERRQ(ierr);
   ierr = nc.find_variable("mask", NULL, maskExists); CHKERRQ(ierr);
+
+  bool lonExists=false, latExists=false;
+  ierr = nc.find_variable("lon", "longitude", NULL,  lonExists); CHKERRQ(ierr);
+  ierr = nc.find_variable("lat", "latitude",  NULL,  latExists); CHKERRQ(ierr);
+
   ierr = nc.close(); CHKERRQ(ierr);
 
   // now work through all the 2d variables, regridding if present and otherwise
@@ -97,7 +102,14 @@ PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
 		    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
 
   ierr = vLongitude.regrid(filename, false); CHKERRQ(ierr);
+  if (!lonExists) {
+    ierr = vLongitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
+  }
   ierr =  vLatitude.regrid(filename, false); CHKERRQ(ierr);
+  if (!latExists) {
+    ierr = vLatitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
+  }
+
   ierr =         vH.regrid(filename, 
                            config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
   ierr =       vbed.regrid(filename,  

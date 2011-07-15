@@ -370,6 +370,9 @@ PetscErrorCode IceModel::compute_cell_areas() {
   if (!config.get_flag("correct_cell_areas"))
     return 0;
 
+  if (vLongitude.has_attr("missing_at_bootstrap") || vLatitude.has_attr("missing_at_bootstrap"))
+    return 0;
+
   ierr = verbPrintf(2,grid.com,
 		    "* Computing corrected cell areas using WGS84 datum...\n"); CHKERRQ(ierr);
 
