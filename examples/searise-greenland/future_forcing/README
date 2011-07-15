@@ -1,3 +1,9 @@
+*****
+NOTE:  You do not need to run the scripts in this subdirectory!
+That is, the script ../preprocess.sh should be able to download the ar4_...
+files directly from www.pism-docs.org.  These scripts *generate* those files.
+*****
+
 Scripts here prepare future climate forcing data from SeaRISE for use with PISM.
 The input data is the AOGCM mean from IPCC AR4 runs, namely the global climate
 file (NetCDF) from the SeaRISE site.  See more at:
