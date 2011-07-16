@@ -158,9 +158,10 @@ public:
     return 0;
   }
 
-  virtual void set_filename(string filename) {
+  virtual PetscErrorCode init(string filename) {
     if (ts)
-      ts->output_filename = filename;
+      return ts->init(filename);
+    return 0;
   }
 protected:
   PISMVars &variables;          //!< dictionary of variables

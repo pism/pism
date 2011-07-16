@@ -368,45 +368,75 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
 
   return 0;
 }
-
-//! Writes data to a file.
-PetscErrorCode DiagnosticTimeseries::flush() {
+PetscErrorCode DiagnosticTimeseries::init(string filename) {
   PetscErrorCode ierr;
   NCTool nc(com, rank);
   unsigned int len = 0;
 
-  // return cleanly if this DiagnosticTimeseries object was created but never
-  // used:
-  if (output_filename.empty())
-    return 0;
-
-  if (time.empty())
-    return 0;
-
-  ierr = nc.open_for_reading(output_filename.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_dim_length(dimension.short_name.c_str(), &len); CHKERRQ(ierr);
-
-  if (len > 0) {
-    double last_time;
-    ierr = nc.get_dim_limits(dimension.dimension_name, NULL, &last_time); CHKERRQ(ierr);
-    if (last_time/secpera < time.front()) {
-      start = len;
+  // Get the number of records in the file (for appending):
+  int file_exists = 0;
+  if (rank == 0) {
+    // Check if the file exists:
+    if (FILE *f = fopen(filename.c_str(), "r")) {
+      file_exists = 1;
+      fclose(f);
+    } else {
+      file_exists = 0;
     }
   }
+  ierr = MPI_Bcast(&file_exists, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
-
-  if (len == (unsigned int)start) {
-    ierr = dimension.write(output_filename.c_str(), start, time);   CHKERRQ(ierr);
-    ierr = bounds.write(output_filename.c_str(), start, time_bounds);   CHKERRQ(ierr);
+  if (file_exists == 1) {
+    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+    ierr = nc.get_dim_length(dimension.short_name.c_str(), &len); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
   }
-  ierr = var.write(output_filename.c_str(), start, values); CHKERRQ(ierr);
 
-  start += time.size();
-
-  time.clear();
-  values.clear();
-  time_bounds.clear();
+  output_filename = filename;
+  start = len;
 
   return 0;
 }
+
+
+  //! Writes data to a file.
+  PetscErrorCode DiagnosticTimeseries::flush() {
+    PetscErrorCode ierr;
+    NCTool nc(com, rank);
+    unsigned int len = 0;
+
+    // return cleanly if this DiagnosticTimeseries object was created but never
+    // used:
+    if (output_filename.empty())
+      return 0;
+
+    if (time.empty())
+      return 0;
+
+    ierr = nc.open_for_reading(output_filename.c_str()); CHKERRQ(ierr);
+    ierr = nc.get_dim_length(dimension.short_name.c_str(), &len); CHKERRQ(ierr);
+
+    if (len > 0) {
+      double last_time;
+      ierr = nc.get_dim_limits(dimension.dimension_name, NULL, &last_time); CHKERRQ(ierr);
+      if (last_time/secpera < time.front()) {
+        start = len;
+      }
+    }
+
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    if (len == (unsigned int)start) {
+      ierr = dimension.write(output_filename.c_str(), start, time);   CHKERRQ(ierr);
+      ierr = bounds.write(output_filename.c_str(), start, time_bounds);   CHKERRQ(ierr);
+    }
+    ierr = var.write(output_filename.c_str(), start, values); CHKERRQ(ierr);
+
+    start += time.size();
+
+    time.clear();
+    values.clear();
+    time_bounds.clear();
+
+    return 0;
+  }

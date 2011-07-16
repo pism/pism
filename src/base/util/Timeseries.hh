@@ -163,6 +163,7 @@ public:
   DiagnosticTimeseries(IceGrid * g, string name, string dimension_name);
   ~DiagnosticTimeseries();
 
+  PetscErrorCode init(string filename);
   PetscErrorCode append(double V, double a, double b);
   PetscErrorCode interp(double a, double b);
   PetscErrorCode flush();

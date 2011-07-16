@@ -106,7 +106,7 @@ PetscErrorCode IceModel::init_timeseries() {
   // set the output file:
   map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
   while (j != ts_diagnostics.end()) {
-    (j->second)->set_filename(ts_filename);
+    ierr = (j->second)->init(ts_filename); CHKERRQ(ierr);
     ++j;
   }
 
