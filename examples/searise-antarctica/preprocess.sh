@@ -104,6 +104,10 @@ ncap2 -s 'precip_anomaly(:,:,:)= 2.0 * precip_anomaly(:,:,:)' ar4_ant_precip_ano
 echo "temp_anomaly.. "
 ncap2 -s 'temp_anomaly(:,:,:)= 2.0 * temp_anomaly(:,:,:)' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_2.0.nc
 
+# For the temperature anomalies to be interpreted correctly they need to be in Kelvin:
+ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
+ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_1.5.nc ar4_ant_artm_anomaly_scalefactor_1.5.nc
+ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_2.0.nc ar4_ant_artm_anomaly_scalefactor_2.0.nc
 
 echo "now run spin-up script 'antspin.sh'"
 echo
