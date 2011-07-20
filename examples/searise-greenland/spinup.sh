@@ -289,7 +289,7 @@ echo "$SCRIPTNAME      including bed deformation and modified surface mass balan
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
      -bed_def lc $COUPLER_FTT \
-     -force_to_thk $INNAME \
+     -force_to_thk $INNAME -force_to_thk_alpha 0.005 \
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat -regrid_bed_special  \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
