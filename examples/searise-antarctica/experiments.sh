@@ -227,8 +227,8 @@ CLIMATE=2
 for climate_scale_factor in 1.0 1.5 2.0; do
 
 #    AR4_ANT=${BOOTDIR}/ar4_ant_scalefactor_${climate_scale_factor}.nc # this is not using anomalies, resulting in a jump in artm climate...
-    AR4_ANT_ACAB=${BOOTDIR}/ar4_ant_precip_scalefactor_${climate_scale_factor}.nc
-    AR4_ANT_ARTM=${BOOTDIR}/ar4_ant_artm_scalefactor_${climate_scale_factor}.nc
+    AR4_ANT_ACAB=${BOOTDIR}/ar4_ant_precip_anomaly_scalefactor_${climate_scale_factor}.nc
+    AR4_ANT_ARTM=${BOOTDIR}/ar4_ant_artm_anomaly_scalefactor_${climate_scale_factor}.nc
 
 	stage="C$CLIMATE"_"E0"
 	INNAME=$PISM_INDATANAME
