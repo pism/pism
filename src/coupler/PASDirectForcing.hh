@@ -129,7 +129,7 @@ protected:
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option %sis required.\n", bc_option_name.c_str());
+      PetscPrintf(Model::grid.com, "PISM ERROR: option %s is required.\n", bc_option_name.c_str());
       PISMEnd();
     }
 
