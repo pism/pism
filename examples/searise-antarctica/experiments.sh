@@ -1,8 +1,9 @@
 #!/bin/bash
 
+# Copyright (C) 2009-2011 The PISM Authors
 ##################################################################################
 # SeaRISE Experiments with PISM trunk (tested for revision 1844) using Data from Anne Le Brocq (from SeaRISE wiki)...
-#...with PIK physics (winkelmann_martin11), mostly as described in martin_winkelmann11 but with enthalpy model
+#...with PIK physics (winkelmann_martin11), mostly as described in martin_winkelmann11 but with enthalpy model and modified configuration parameters
 #...with constant climate, using constant Precip and a parameterization for artm as in martin_winkelmann11
 #...performing the SeaRISE experiments as described in http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet
 ##################################################################################
@@ -18,11 +19,11 @@ set -e  # exit on error
 echo "(experiments.sh)   Running the SeaRISE experiments now..."
 
 
-
+Prefix="PIK1_A_D3_"
 experiment=seaRISE
 version=pism-dev
 scriptname=experiments
-laufname=ConstantClimate
+laufname=ConstantClimate # this relates to the type of the spinup, namely antspinCC.sh
 output_path=./results/$experiment/$scriptname/$laufname
 
 # naming directories
@@ -44,6 +45,9 @@ mkdir -p $output_path/output
 
 # input data:
 PISM_INDATANAME=./results/$experiment/spinupStSt/$laufname/results/run.nc
+#PISM_INDATANAME=./results/$experiment/spinupStSt/$laufname/results/run_regrid10km.nc	#--> if using these, one might chosse higher skip-values!
+#PISM_INDATANAME=./results/$experiment/spinupStSt/$laufname/results/run_regrid7km.nc
+#PISM_INDATANAME=./results/$experiment/spinupStSt/$laufname/results/run_regrid5km.nc
 
 ###################################################################
 NN=16  # default number of processors
@@ -96,16 +100,16 @@ SKIPTENKM=100
 SKIPSEVENKM=100
 SKIPFIVEKM=200
 
-SIA_ENHANCEMENT="-e 4.5"
+SIA_ENHANCEMENT="-e 5.6"
 
 #PIK-stuff:
 #INFO: in pism, the option '-pik' is implemented, and activates '-cfbc -part_grid -part_redist -kill_icebergs'
 #INFO: -meltfactor_pik 5e-3 is default when using -ocean pik
-PIKPHYS="-ssa_method fd -e_ssa 0.8 -pik -eigen_calving 2.0e18 -calving_at_thickness 50.0"
-PIKPHYS_COUPLING="-surface pik -ocean pik -meltfactor_pik 8e-3"
+PIKPHYS="-ssa_method fd -e_ssa 0.6 -pik -eigen_calving 2.0e18 -calving_at_thickness 50.0"
+PIKPHYS_COUPLING="-atmosphere pik -ocean pik -meltfactor_pik 1.5e-2"
 
 # sliding related options:
-PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.98"
+PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.97"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 #TILLPHI="-topg_to_phi 5.0,20.0,-1000.0,0.0,10.0" # as in martin_winkelmann11
 FULLPHYS="-ssa_sliding -thk_eff $PARAMS $TILLPHI"
@@ -118,27 +122,27 @@ echo "$SCRIPTNAME PIKPHYS_COUPLING = $PIKPHYS_COUPLING"
 
 ###################################################################
 
-expackage="-extra_vars  usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab_cumulative,cbase,csurf,tempicethk_basal,tauc"
+expackage="-acab_cumulative -extra_vars  usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab_cumulative,cbase,csurf,tempicethk_basal,tauc"
 tspackage="-ts_vars ivol,iareag,iareaf"
 
 STARTTIME=0
 ENDTIME=500
 
-TIMES=${STARTTIME}:5:${ENDTIME}
+TIMES=${STARTTIME}:1:${ENDTIME}
 TSTIMES=${STARTTIME}:1:${ENDTIME}
 
 # #######################################
 # Control Run E0
 # #######################################
-stage=E0
+stage=C1_E0
 INNAME=$PISM_INDATANAME
-RESNAME=${RESDIR}$stage.nc
-OUTNAME=${OUTDIR}$stage.out
-TSNAME=${RESDIR}ts_$stage.nc
-EXTRANAME=${RESDIR}extra_$stage.nc
+RESNAME=${RESDIR}$Prefix$stage.nc
+OUTNAME=${OUTDIR}$Prefix$stage.out
+TSNAME=${RESDIR}ts_$Prefix$stage.nc
+EXTRANAME=${RESDIR}extra_$Prefix$stage.nc
 
 echo
-echo "$SCRIPTNAME Running SeaRISE Experiment M"
+echo "$SCRIPTNAME Running SeaRISE Control Run $Prefix$stage"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip 10 -i $INNAME \
 	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
 	-ys $STARTTIME -ye $ENDTIME \
@@ -148,7 +152,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -skip 10 -i $INNAME \
 echo $DO $cmd
 $DO $cmd >> $OUTNAME
 echo
-echo "$SCRIPTNAME  Control Run done... will need post-processing"
+echo "$SCRIPTNAME  Control Run $Prefix$stage done... will need post-processing"
 echo
 
 
@@ -158,15 +162,15 @@ echo
 MELTRATE=1
 for melt_rate in 2 20 200; do
 
-	stage="M$MELTRATE"
+	stage="C1_M$MELTRATE"
 	INNAME=$PISM_INDATANAME
-	RESNAME=${RESDIR}$stage.nc
-	OUTNAME=${OUTDIR}$stage.out
-	TSNAME=${RESDIR}ts_$stage.nc
-	EXTRANAME=${RESDIR}extra_$stage.nc
+	RESNAME=${RESDIR}$Prefix$stage.nc
+	OUTNAME=${OUTDIR}$Prefix$stage.out
+	TSNAME=${RESDIR}ts_$Prefix$stage.nc
+	EXTRANAME=${RESDIR}extra_$Prefix$stage.nc
 
 	echo
-	echo "$SCRIPTNAME Running SeaRISE Experiment M"
+	echo "$SCRIPTNAME Running SeaRISE Experiment $Prefix$stage"
 	cmd="$PISM_MPIDO $NN $PISM_EXEC -skip 10 -i $INNAME \
 		$SIA_ENHANCEMENT -atmosphere pik $PIKPHYS $FULLPHYS \
 		-ys $STARTTIME -ye $ENDTIME \
@@ -177,7 +181,7 @@ for melt_rate in 2 20 200; do
 	echo $DO $cmd
 	$DO $cmd >> $OUTNAME
 	echo
-	echo "$SCRIPTNAME  Experiment M$MELTRATE done... will need post-processing"
+	echo "$SCRIPTNAME  Experiment $Prefix$stage done... will need post-processing"
 	echo
 
 	MELTRATE=$(($MELTRATE + 1))
@@ -190,15 +194,15 @@ done
 SLIDING=1
 for sliding_scale_factor in 2 2.5 3; do
 
-	stage="S$SLIDING"
+	stage="C1_S$SLIDING"
 	INNAME=$PISM_INDATANAME
-	RESNAME=${RESDIR}$stage.nc
-	OUTNAME=${OUTDIR}$stage.out
-	TSNAME=${RESDIR}ts_$stage.nc
-	EXTRANAME=${RESDIR}extra_$stage.nc
+	RESNAME=${RESDIR}$Prefix$stage.nc
+	OUTNAME=${OUTDIR}$Prefix$stage.out
+	TSNAME=${RESDIR}ts_$Prefix$stage.nc
+	EXTRANAME=${RESDIR}extra_$Prefix$stage.nc
 
 	echo
-	echo "$SCRIPTNAME Running SeaRISE Experiment S"
+	echo "$SCRIPTNAME Running SeaRISE Experiment $Prefix$stage"
 	cmd="$PISM_MPIDO $NN $PISM_EXEC -skip 10 -i $INNAME \
 		$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
 		-ys $STARTTIME -ye $ENDTIME \
@@ -209,7 +213,7 @@ for sliding_scale_factor in 2 2.5 3; do
 	echo $DO $cmd
 	$DO $cmd >> $OUTNAME
 	echo
-	echo "$SCRIPTNAME  Experiments S$SLIDING done... will need post-processing"
+	echo "$SCRIPTNAME  Experiment $Prefix$stage done... will need post-processing"
 	echo
 
 	SLIDING=$(($SLIDING + 1))
@@ -226,15 +230,15 @@ for climate_scale_factor in 1.0 1.5 2.0; do
     AR4_ANT_ACAB=${BOOTDIR}/ar4_ant_precip_scalefactor_${climate_scale_factor}.nc
     AR4_ANT_ARTM=${BOOTDIR}/ar4_ant_artm_scalefactor_${climate_scale_factor}.nc
 
-	stage="C$CLIMATE"
+	stage="C$CLIMATE"_"E0"
 	INNAME=$PISM_INDATANAME
-	RESNAME=${RESDIR}$stage.nc
-	OUTNAME=${OUTDIR}$stage.out
-	TSNAME=${RESDIR}ts_$stage.nc
-	EXTRANAME=${RESDIR}extra_$stage.nc
+	RESNAME=${RESDIR}$Prefix$stage.nc
+	OUTNAME=${OUTDIR}$Prefix$stage.out
+	TSNAME=${RESDIR}ts_$Prefix$stage.nc
+	EXTRANAME=${RESDIR}extra_$Prefix$stage.nc
 
 	echo
-	echo "$SCRIPTNAME Running SeaRISE Experiment C$CLIMATE"
+	echo "$SCRIPTNAME Running SeaRISE Experiment  $Prefix$stage"
 	cmd="$PISM_MPIDO $NN $PISM_EXEC -skip 10 -i $INNAME \
 		$SIA_ENHANCEMENT -atmosphere pik,anomaly -ocean pik $PIKPHYS $FULLPHYS \
 		-ys $STARTTIME -ye $ENDTIME \
@@ -245,7 +249,7 @@ for climate_scale_factor in 1.0 1.5 2.0; do
 	echo $DO $cmd
 	$DO $cmd >> $OUTNAME
 	echo
-	echo "$SCRIPTNAME  Experiment C$CLIMATE done... will need post-processing"
+	echo "$SCRIPTNAME  Experiment $Prefix$stage done... will need post-processing"
 	echo
 
 	CLIMATE=$(($CLIMATE + 1))
@@ -256,8 +260,6 @@ done
 
 echo
 echo "$SCRIPTNAME  All Experiments done"
-
-
 
 
 

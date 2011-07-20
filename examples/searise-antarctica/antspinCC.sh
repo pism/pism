@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# !! ATTENTION !! this is preliminary, not ready to use yet
-
+# Copyright (C) 2009-2011 The PISM Authors
 ##################################################################################
 # Spinup of PISM trunk (tested for revision 1844) using Data from Anne Le Brocq (from SeaRISE wiki)...
-#...with PIK physics (winkelmann_martin11), mostly as described in martin_winkelmann11 but with enthalpy model
+#...with PIK physics (winkelmann_martin11), mostly as described in martin_winkelmann11 but with enthalpy model and modified configuration parameters
 #...with constant climate, using constant Precip and a parameterization for artm as in martin_winkelmann11
 #... WARNING: especially for the last part, where finer resolutions are run, output is large!
 ##################################################################################
@@ -100,16 +99,16 @@ SKIPTENKM=100
 SKIPSEVENKM=100
 SKIPFIVEKM=200
 
-SIA_ENHANCEMENT="-e 4.5"
+SIA_ENHANCEMENT="-e 5.6"
 
 #PIK-stuff:
 #INFO: in pism, the option '-pik' is implemented, and activates '-cfbc -part_grid -part_redist -kill_icebergs'
 #INFO: -meltfactor_pik 5e-3 is default when using -ocean pik
-PIKPHYS="-ssa_method fd -e_ssa 0.8 -pik -eigen_calving 2.0e18 -calving_at_thickness 50.0"
-PIKPHYS_COUPLING="-atmosphere pik -ocean pik -meltfactor_pik 8e-3"
+PIKPHYS="-ssa_method fd -e_ssa 0.6 -pik -eigen_calving 2.0e18 -calving_at_thickness 50.0"
+PIKPHYS_COUPLING="-atmosphere pik -ocean pik -meltfactor_pik 1.5e-2"
 
 # sliding related options:
-PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.98"
+PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.97"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 #TILLPHI="-topg_to_phi 5.0,20.0,-1000.0,0.0,10.0" # as in martin_winkelmann11
 FULLPHYS="-ssa_sliding -thk_eff $PARAMS $TILLPHI"
@@ -127,36 +126,38 @@ echo "$SCRIPTNAME PIKPHYS_COUPLING = $PIKPHYS_COUPLING"
 ### RUN
 
 
-
+# #######################################
 # bootstrap and SHORT smoothing run to 100 years
+# #######################################
 stage=smoothing
 INNAME=$PISM_INDATANAME
 RESNAME=${RESDIR}$stage.nc
 OUTNAME=${OUTDIR}$stage.out
-
+RUNTIME=100 
 echo
-echo "$SCRIPTNAME  bootstrapping plus short SIA run for 100 a"
+echo "$SCRIPTNAME  bootstrapping plus short SIA run for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip 10 -boot_file ${INNAME} $FIFTEENKMGRID \
 	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -ocean_kill \
-	-y 100 \
+	-y $RUNTIME \
 	-o $RESNAME -o_size medium"
 echo $DO $cmd
 $DO $cmd >> $OUTNAME
 #exit # <-- uncomment to stop here
 
-
+# #######################################
 # run with -no_mass (no surface change) on 15km for 200ka
+# #######################################
 stage=nomass
 INNAME=$RESNAME
 RESNAME=${RESDIR}$stage.nc
 OUTNAME=${OUTDIR}$stage.out
 TSNAME=${RESDIR}ts_$stage.nc
-RUNTIME=200000
+RUNTIME=200000 
 EXTRANAME=${RESDIR}extra_$stage.nc
 exfilepackage="-extra_times 0:10000:$RUNTIME -extra_vars bmelt,bwat,csurf,temppabase,diffusivity,hardav"
 
 echo
-echo "$SCRIPTNAME  -no_mass (no surface change) SIA for ${NOMASSRUN}a"
+echo "$SCRIPTNAME  -no_mass (no surface change) SIA for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -verbose 3 -i $INNAME $PIKPHYS_COUPLING  \
 	$SIA_ENHANCEMENT -no_mass \
   	-y $RUNTIME \
@@ -166,20 +167,21 @@ echo $DO $cmd
 $DO $cmd >> $OUTNAME
 #exit # <-- uncomment to stop here
 
-
+# #######################################
 # run into steady state with constant climate forcing
+# #######################################
 stage=run
 #INNAME=${BOOTDIR}/nomass.nc
 INNAME=$RESNAME
 RESNAME=${RESDIR}$stage.nc
 OUTNAME=${OUTDIR}$stage.out
 TSNAME=${RESDIR}ts_$stage.nc
-RUNTIME=100000
+RUNTIME=100000 
 EXTRANAME=${RESDIR}extra_$stage.nc
 exfilepackage="-extra_times 0:1000:$RUNTIME -extra_vars thk,usurf,cbase,cbar,mask,diffusivity,tauc,bmelt,bwat,temp "
 
 echo
-echo "$SCRIPTNAME  run into steady state with constant climate forcing"
+echo "$SCRIPTNAME  run into steady state with constant climate forcing for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip 10 -i $INNAME \
 	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
 	-ys 0 -y $RUNTIME \
@@ -191,8 +193,9 @@ echo $DO $cmd
 $DO $cmd >> $OUTNAME
 #exit # <-- uncomment to stop here
 
-
+# #######################################
 ## do a regridding to 10km:
+# #######################################
 #NN=64
 #stage=run_regrid10km
 #INNAME=${RESDIR}run.nc
@@ -207,7 +210,7 @@ $DO $cmd >> $OUTNAME
 #echo "$SCRIPTNAME  run into steady state with constant climate forcing.. regridding to 10km"
 #cmd="$PISM_MPIDO $NN $PISM_EXEC -skip $SKIPTENKM -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,bwat\
 #	-boot_file $PISM_INDATANAME $TENKMGRID \
-#	-e 4.5 $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
+#	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
 #	-ys 0 -y $RUNTIME \
 #	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 #	-extra_file $EXTRANAME $exfilepackage \
@@ -217,8 +220,9 @@ $DO $cmd >> $OUTNAME
 #$DO $cmd >> $OUTNAME
 ##exit # <-- uncomment to stop here
 
-
+# #######################################
 ## do a regridding to 6.7km:
+# #######################################
 #NN=128
 #stage=run_regrid7km
 #INNAME=${RESDIR}run.nc
@@ -233,7 +237,7 @@ $DO $cmd >> $OUTNAME
 #echo "$SCRIPTNAME  run into steady state with constant climate forcing.. regridding to 6.7km"
 #cmd="$PISM_MPIDO $NN $PISM_EXEC -skip $SKIPSEVENKM -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,bwat\
 #	-boot_file $PISM_INDATANAME $SEVENKMGRID \
-#	-e 4.5 $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
+#	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
 #	-ys 0 -y $RUNTIME \
 #	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 #	-extra_file $EXTRANAME $exfilepackage \
@@ -243,8 +247,38 @@ $DO $cmd >> $OUTNAME
 #$DO $cmd >> $OUTNAME
 ##exit # <-- uncomment to stop here
 
+# #######################################
+## do a regridding to 5km:
+# #######################################
+#NN=128
+#stage=run_regrid_5km
+#INNAME=${RESDIR}run.nc
+#RESNAME=${RESDIR}$stage.nc
+#OUTNAME=${OUTDIR}$stage.out
+#TSNAME=${RESDIR}ts_$stage.nc
+#RUNTIME=1000
+#EXTRANAME=${RESDIR}extra_$stage.nc
+#exfilepackage="-extra_times 0:250:$RUNTIME -extra_vars thk,usurf,cbase,cbar,mask,diffusivity,bmelt,bwat "
+
+#echo
+#echo "$SCRIPTNAME  run into steady state with constant climate forcing"
+#cmd="$PISM_MPIDO $NN $PISM_EXEC -skip $SKIPFIVEKM -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,bwat\
+#	-boot_file $PISM_INDATANAME $FIVEKMGRID \
+#	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
+#	-ys 0 -y $RUNTIME \
+#	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
+#	-extra_file $EXTRANAME $exfilepackage \
+#	-o $RESNAME -o_size big"
+#	
+#echo $DO $cmd 
+#$DO $cmd >> $OUTNAME
+##exit # <-- uncomment to stop here
+
+
 echo
 echo "$SCRIPTNAME  spinup done"
+
+
 
 
 
