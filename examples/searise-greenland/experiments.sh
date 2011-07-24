@@ -8,6 +8,8 @@
 # recommended way to run with N processors is
 #    "./experiments.sh N foo.nc >& out.experiments &"
 # to initialize from spinup result foo.nc
+# To turn on marine ice dynamics options, do
+#    "./experiments.sh N foo.nc 1 >& out.experiments &"
 
 echo
 echo "# ============================================================================="
@@ -32,6 +34,12 @@ fi
 SPINUPRESULT=g10km_0_ftt.nc  # default name of spinup result
 if [ $# -gt 1 ] ; then
   SPINUPRESULT="$2"
+fi
+
+PIKOPTIONS=""
+if [ $3 -eq "1" ] ; then  # PIKOPTIONS
+    # PIK marine ice dynamics
+    PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 100.0"  # parameters preliminary
 fi
 
 PISM_CONFIG=searise_config.nc
@@ -110,7 +118,7 @@ TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 FULLPHYS="-ssa_sliding -thk_eff $TILLPHI"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -config_override $PISM_CONFIG $FULLPHYS -acab_cumulative"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -config_override $PISM_CONFIG $FULLPHYS $PIKOPTIONS -acab_cumulative"
 
 echo "$SCRIPTNAME         tillphi = '$TILLPHI'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"

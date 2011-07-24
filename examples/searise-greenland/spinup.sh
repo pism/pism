@@ -166,7 +166,7 @@ TITLE="SeaRISE Greenland Spinup"
 # cat prefix and exec together
 PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG -title '$TITLE' "
 # PIK marine ice dynamics
-PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 50.0"  # parameters preliminary
+PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 100.0"  # parameters preliminary
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -ocean_kill"
