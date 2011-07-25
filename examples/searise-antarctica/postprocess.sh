@@ -79,6 +79,7 @@ for NAME in "${MODEL}_A_D3_C1_E0" \
   rm tmp.nc                                          # clean up
 
   echo "(postprocess.sh)    fixing metadata and names ..."
+  ncpdq -O -a time,y,x ${NAME}.nc ${NAME}.nc         # change dimension order
   ncrename -v bwat,bwa ${NAME}.nc                    # fix "bwa" name
   ncatted -a units,time,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
   ncatted -a units,tseries,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
