@@ -109,8 +109,8 @@ n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\par
 \end{eqnarray}
 Similar calculations to rewrite \eqref{BC_sheet} yield the boundary condition on a \textbf{grounded} front:
 \begin{eqnarray}%sheet_BC1 and sheet_BC2
-n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}b^2+\frac{\rho_w}{\rho}z_s^2  \right) \label{sheet_BC1}\\  
- n_y\left(\overline{\nu}H\frac{\partial u}{\partial x}+2\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_x}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & = & n_y\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}b^2+\frac{\rho_w}{\rho}z_s^2 \right). \label{sheet_BC2}
+n_x\left(2\overline{\nu}H\frac{\partial u}{\partial x}+\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & =  & n_x\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}( z_s-b)^2  \right) \label{sheet_BC1}\\  
+ n_y\left(\overline{\nu}H\frac{\partial u}{\partial x}+2\overline{\nu}H\frac{\partial v}{\partial y}  \right) + \frac{n_x}{2} \left(\overline{\nu}H\frac{\partial u}{\partial y} + \overline{\nu}H\frac{\partial v}{\partial x} \right) & = & n_y\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}(z_s - b)^2 \right). \label{sheet_BC2}
 \end{eqnarray}
 As the only difference between shelf and sheet is the right hand side of the boundary condition (this is not surprising as the only difference is the area on which the pressure is exerted), both boundary conditions can be formulated as one:
 \begin{eqnarray}%sheet_BC1 and sheet_BC2
@@ -121,8 +121,8 @@ with
 \begin{equation}
 \tau_{ocean} = \left\{
 \begin{array}{ll}
-\frac{\rho g}{4}\left(1-\frac{\rho}{\rho_w}\right)H^2 + \frac{\rho g}{2}z_sH  & \text{if shelf} \\
-\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho}b^2+\frac{\rho_w}{\rho}z_s^2 \right) & \text{if sheet}
+\frac{\rho g}{4}\left(1-\frac{\rho}{\rho_w}\right)H^2 & \text{if shelf} \\
+\frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho} ( z_s-b)^2 \right) & \text{if sheet}
 \end{array} \right.
 \end{equation}
 Obviously, there is no need to normalize the `normal vector' $\mathbf{n}$.
