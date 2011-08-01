@@ -355,6 +355,7 @@ PetscErrorCode IceModel::set_output_size(string option,
   string keyword;
   bool flag;
 
+  choices.insert("none");
   choices.insert("small");
   choices.insert("medium");
   choices.insert("big");
@@ -364,6 +365,10 @@ PetscErrorCode IceModel::set_output_size(string option,
 			 default_value, keyword, flag); CHKERRQ(ierr);
 
   result.clear();
+
+  if (keyword == "none") {
+    return 0;
+  }
 
   // Add all the model-state variables:
   set<string> vars = variables.keys();
@@ -444,5 +449,21 @@ PetscErrorCode IceModel::set_output_size(string option,
   }
 
   return 0;
+}
+
+
+//! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
+string IceModel::get_output_size(string option) {
+  set<string> choices;
+  string keyword;
+  bool flag;
+  choices.insert("none");
+  choices.insert("small");
+  choices.insert("medium");
+  choices.insert("big");
+  PISMOptionsList(grid.com, option,
+		  "UNKNOWN", choices,
+		  "UNKNOWN", keyword, flag);
+  return keyword;
 }
 

@@ -20,7 +20,7 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     \fileopt{i} & Chooses a PISM output file to restart from.  (``Restart'' because normally the first PISM run must come from data by bootstrapping (\intextoption{boot_file}) or using executables \texttt{pisms} or \texttt{pismv}.) \\
     \fileopt{o} & Chooses the output file name.  Default name is \texttt{unnamed.nc} under \texttt{pismr}, \texttt{simp_exper.nc} under \texttt{pisms}, and \texttt{verify.nc} under \texttt{pismv}.\\
     \txtopt{o_size}{[small, medium, big]} & Chooses the ``size'' of the output file to produce.
-    Possible options are \texttt{small} (only variables necessary to restart
+    Possible options are \texttt{none} (\emph{no} output file at all), \texttt{small} (only variables necessary to restart
     PISM), \texttt{medium} (the default, includes some diagnostic quantities)
     and \texttt{big} (writes all the variables mentioned in table
     \ref{tab:extra-vars}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
@@ -364,7 +364,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
     \intextoption{save_split} & Separate the snapshot output into files
     named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more
     than a dozen or so snapshots. \\
-    \txtopt{save_size}{[small, medium, big]} & similar to \texttt{o_size},
+    \txtopt{save_size}{[none,small, medium, big]} & similar to \texttt{o_size},
     changes the ``size'' of the file (or files) written; the default is ``small''\\
     \bottomrule
   \end{tabular}

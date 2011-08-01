@@ -164,6 +164,7 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode set_output_size(string option, string description,
 					 string default_value, set<string> &result);
+  virtual string         get_output_size(string option);
 
   // see iMutil.cc
   virtual void attach_surface_model(PISMSurfaceModel *surf);
