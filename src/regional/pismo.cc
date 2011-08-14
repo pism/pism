@@ -34,10 +34,10 @@ static char help[] =
 
 //! \file pismo.cc A regional (outlet glacier) model form of PISM.
 /*! \file pismo.cc 
-The classes in this file modify the basic PISM whole ice sheet modeling
-assumption.  Namely, that the ice sheet occupies a
-continent which is surrounded by ocean, or that the edge of the computational
-domain is in a region with strong ablation that the ice will not cross.
+The classes in this file modify basic PISM whole ice sheet modeling
+assumptions.  Especially that the ice sheet occupies a
+continent which is surrounded by ocean.  (Or that the edge of the computational
+domain is in a region with strong ablation that the ice will not cross.)
 
 Various simplifications and boundary conditions are enforced in a strip around
 the edge of the computational domain (variable \c no_model_mask and option
@@ -62,7 +62,8 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 protected:
-  IceModelVec2Int *no_model_mask;    
+  IceModelVec2Int *no_model_mask;
+  IceModelVec2S   *usurfstore;   
 };
 
 PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
@@ -75,6 +76,9 @@ PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
   no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
 
+  usurfstore = dynamic_cast<IceModelVec2S*>(vars.get("usurfstore"));
+  if (usurfstore == NULL) SETERRQ(1, "usurfstore is not available");
+
   return 0;
 }
 
@@ -83,23 +87,45 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
 
   ierr = SIAFD::compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
 
+  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
   ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
+  ierr = usurfstore->begin_access(); CHKERRQ(ierr);
+  IceModelVec2S hst = *usurfstore; // convenience
   PetscInt GHOSTS = 1;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       if ( ((*no_model_mask)(i,j) > 0.5) && ((*no_model_mask)(i+1,j) > 0.5) ) {
-        h_x(i,j,0) = 0.0;
-        h_y(i,j,0) = 0.0;
+        // both (i,j) and its right neighbor are in no_model strip, thus we do want to modify
+        if ((i < 0) || (i+1 > grid.Mx-1) || (j-1 < 0) || (j+1 > grid.My-1)) {
+          // avoid diff across computational bdry
+          h_x(i,j,0) = 0.0;
+          h_y(i,j,0) = 0.0;
+        } else {
+          // use stored h to get surface gradient; mahaffy method
+          h_x(i,j,0) = (hst(i+1,j) - hst(i,j)) / dx;
+          h_y(i,j,0) = ( + hst(i+1,j+1) + hst(i,j+1)
+                         - hst(i+1,j-1) - hst(i,j-1) ) / (4.0*dy);
+        }
       }
       if ( ((*no_model_mask)(i,j) > 0.5) && ((*no_model_mask)(i,j+1) > 0.5) ) {
-        h_x(i,j,1) = 0.0;
-        h_y(i,j,1) = 0.0;
+        // both (i,j) and its upper neighbor are in no_model strip, thus we do want to modify
+        if ((i-1 < 0) || (i+1 > grid.Mx-1) || (j < 0) || (j+1 > grid.My-1)) {
+          // avoid diff across computational bdry
+          h_x(i,j,1) = 0.0;
+          h_y(i,j,1) = 0.0;
+        } else {
+          // use stored h to get surface gradient; mahaffy method
+          h_x(i,j,1) = ( + hst(i+1,j+1) + hst(i+1,j)
+                         - hst(i-1,j+1) - hst(i-1,j) ) / (4.0*dx);
+          h_y(i,j,1) = (hst(i,j+1) - hst(i,j)) / dy;
+        }
       }
     }
   }
   ierr = no_model_mask->end_access(); CHKERRQ(ierr);
+  ierr = usurfstore->end_access(); CHKERRQ(ierr);
   ierr = h_y.end_access(); CHKERRQ(ierr);
   ierr = h_x.end_access(); CHKERRQ(ierr);
 
@@ -119,6 +145,7 @@ public:
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 protected:
   IceModelVec2Int *no_model_mask;    
+  IceModelVec2S   *usurfstore, *thkstore;
 };
 
 PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
@@ -129,6 +156,12 @@ PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
 
   no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
+
+  usurfstore = dynamic_cast<IceModelVec2S*>(vars.get("usurfstore"));
+  if (usurfstore == NULL) SETERRQ(1, "usurfstore is not available");
+
+  thkstore = dynamic_cast<IceModelVec2S*>(vars.get("thkstore"));
+  if (thkstore == NULL) SETERRQ(1, "thkstore is not available");
   
   return 0;
 }
@@ -138,19 +171,37 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
   ierr = SSAFD::compute_driving_stress(result); CHKERRQ(ierr);
 
+  const PetscReal standard_gravity = config.get("standard_gravity");
+
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
+  ierr = usurfstore->begin_access(); CHKERRQ(ierr);
+  ierr = thkstore->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if ((*no_model_mask)(i,j) > 0.5) {
-        result(i,j).u = 0.0;
-        result(i,j).v = 0.0;
+        // (i,j) is in no_model strip, thus we do want to modify
+        if ((i-1 < 0) || (i+1 > grid.Mx-1) || (j-1 < 0) || (j+1 > grid.My-1)) {
+          // avoid diff across computational bdry
+          result(i,j).u = 0.0;
+          result(i,j).v = 0.0;
+        } else {
+          const PetscScalar pressure = ice.rho * standard_gravity * (*thkstore)(i,j);
+          if (pressure <= 0.0) {
+            result(i,j).u = 0.0;
+            result(i,j).v = 0.0;
+          } else {
+            result(i,j).u = - pressure * usurfstore->diff_x(i,j);
+            result(i,j).v = - pressure * usurfstore->diff_y(i,j);
+          }
+        }
       }
     }
   }
+  ierr = usurfstore->end_access(); CHKERRQ(ierr);
+  ierr = thkstore->end_access(); CHKERRQ(ierr);
   ierr = no_model_mask->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -212,12 +263,14 @@ public:
      : IceModel(g,c,o) {};
 protected:
   virtual PetscErrorCode set_vars_from_options();
+  virtual PetscErrorCode bootstrap_2d(const char *filename);
   virtual PetscErrorCode initFromFile(const char *filename);
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_basal_yield_stress();
 private:
   IceModelVec2Int no_model_mask;    
+  IceModelVec2S   usurfstore, thkstore;
   PetscErrorCode  set_no_model_strip(PetscReal stripwidth);
 };
 
@@ -253,12 +306,14 @@ PetscErrorCode IceRegionalModel::createVecs() {
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
+  ierr = verbPrintf(2, grid.com,
+     "  creating IceRegionalModel vecs ...\n"); CHKERRQ(ierr);
+
   // stencil width of 2 needed for surfaceGradientSIA() action
   ierr = no_model_mask.create(grid, "no_model_mask", true, 2); CHKERRQ(ierr);
   ierr = no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
     "mask: compute driving stress and surface gradient normally or replace by zero",
     "", ""); CHKERRQ(ierr); // no units and no standard name
-
   double NMMASK_NORMAL   = 0.0,
          NMMASK_ZERO_OUT = 1.0;
   vector<double> mask_values(2);
@@ -271,6 +326,26 @@ PetscErrorCode IceRegionalModel::createVecs() {
   no_model_mask.output_data_type = NC_BYTE;
   ierr = no_model_mask.set(NMMASK_NORMAL); CHKERRQ(ierr);
   ierr = variables.add(no_model_mask); CHKERRQ(ierr);
+
+  // stencil width of 2 needed for differentiation because GHOSTS=1
+  ierr = usurfstore.create(grid, "usurfstore", true, 2); CHKERRQ(ierr);
+  ierr = usurfstore.set_attrs(
+    "model_state", // ensures that it gets written at the end of the run
+    "saved surface elevation for use to keep surface gradient constant in no_model strip",
+    "m",
+    ""); CHKERRQ(ierr); //  no standard name
+  ierr = usurfstore.set(0.0); CHKERRQ(ierr);
+  ierr = variables.add(usurfstore); CHKERRQ(ierr);
+
+  // stencil width of 1 needed for differentiation
+  ierr = thkstore.create(grid, "thkstore", true, 1); CHKERRQ(ierr);
+  ierr = thkstore.set_attrs(
+    "model_state", // ensures that it gets written at the end of the run
+    "saved ice thickness for use to keep driving stress constant in no_model strip",
+    "m",
+    ""); CHKERRQ(ierr); //  no standard name
+  ierr = thkstore.set(0.0); CHKERRQ(ierr);
+  ierr = variables.add(thkstore); CHKERRQ(ierr);
 
   return 0;
 }
@@ -337,6 +412,23 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
 }
 
 
+PetscErrorCode IceRegionalModel::bootstrap_2d(const char *filename) {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::bootstrap_2d(filename); CHKERRQ(ierr);
+
+  bool zgwnm;
+  ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
+  if (!zgwnm) {
+    ierr = verbPrintf(2, grid.com, 
+      "continuing bootstrapping for IceRegionalModel from file %s\n",filename); CHKERRQ(ierr);
+    ierr =  usurfstore.regrid(filename,0.0); CHKERRQ(ierr);
+    ierr =    thkstore.regrid(filename,0.0); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 
 PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
@@ -352,6 +444,7 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   int last_record;  // find index of the last record in the file
   ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
   last_record -= 1;
+
   bool nmm_exists;
   ierr = nc.find_variable("no_model_mask", NULL, nmm_exists); CHKERRQ(ierr);
   if (nmm_exists) {
@@ -361,6 +454,34 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
     // note: communication to fill stencil width should occur inside this call
     ierr = no_model_mask.read(filename, last_record); CHKERRQ(ierr);
   }
+  
+  bool zgwnm, us_exists, ts_exists;
+  ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
+  if (!zgwnm) {
+    ierr = nc.find_variable("usurfstore", NULL, us_exists); CHKERRQ(ierr);
+    ierr = nc.find_variable("thkstore", NULL, ts_exists); CHKERRQ(ierr);
+    if ((us_exists) && (ts_exists)) {
+      ierr = verbPrintf(2,grid.com,
+	"  reading 'usurfstore' from %s ...\n",
+	filename); CHKERRQ(ierr);
+      ierr = usurfstore.read(filename, last_record); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com,
+	"  reading 'thkstore' from %s ...\n",
+	filename); CHKERRQ(ierr);
+      ierr = thkstore.read(filename, last_record); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com,
+	"  PISM ERROR (IceRegionalModel):\n"
+	"    'usurfstore' and/or 'thkstore' not present in %s ... ENDING!\n"
+	"    (use option -zero_grad_where_no_model)\n",
+	filename); CHKERRQ(ierr);
+      PISMEnd();
+    }    
+  } else {
+    usurfstore.set(0.0);
+    thkstore.set(0.0);
+  }
+
   ierr = nc.close(); CHKERRQ(ierr);
 
   // at this point may or may not have a filled-in no_model_mask variable;
@@ -432,13 +553,10 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
-
-  MPI_Comm    com;
-  PetscMPIInt rank, size;
-
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
-  com = PETSC_COMM_WORLD;
+  MPI_Comm    com = PETSC_COMM_WORLD;
+  PetscMPIInt rank, size;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
@@ -469,7 +587,8 @@ int main(int argc, char *argv[]) {
          "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
       ierr = show_usage_and_quit(com, "pismo", usage.c_str()); CHKERRQ(ierr);
     } else {
-      vector<string> required;  required.clear();
+      vector<string> required;
+      required.clear();
       ierr = show_usage_check_req_opts(com, "pismo", required, usage.c_str()); CHKERRQ(ierr);
     }
 
@@ -479,28 +598,25 @@ int main(int argc, char *argv[]) {
     // initialize the ice dynamics model
     IceGrid g(com, rank, size, config);
     IceRegionalModel m(g, config, overrides);
+    ierr = m.setExecName("pismo"); CHKERRQ(ierr);
 
     // initialize boundary models
+    // factories allow runtime choice
     PAFactory pa(g, config);
-    PISMAtmosphereModel *atmosphere;
-
     PSFactory ps(g, config);
-    PISMSurfaceModel *surface;
-
     POFactory po(g, config);
-    PISMOceanModel *ocean;
-
+    // now read options and choose
+    PISMAtmosphereModel *atmosphere;
+    PISMSurfaceModel    *surface;
+    PISMOceanModel      *ocean;
     ierr = PetscOptionsBegin(com, "", "Options choosing PISM boundary models", ""); CHKERRQ(ierr);
     pa.create(atmosphere);
     ps.create(surface);
     po.create(ocean);
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-    surface->attach_atmosphere_model(atmosphere);
-
+    surface->attach_atmosphere_model(atmosphere); // IceModel m does not see atmosphere
     m.attach_ocean_model(ocean);
     m.attach_surface_model(surface);
-    ierr = m.setExecName("pismo"); CHKERRQ(ierr);
 
     ierr = m.init(); CHKERRQ(ierr);
 
