@@ -19,27 +19,45 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.usage = "usage: %prog [options]"
 parser.description = "A script for PISM output files to show time series plots using pylab."
+parser.add_option("-a",dest="t_a",type="int",
+                  help="start year, in years since 2004, default = 0",default=0)
+parser.add_option("-e",dest="t_e",type="int",
+                  help="end year, in years since 2004, default = 500",default=500)
 parser.add_option("-m", "--model",dest="model",
                   help="choose experiment, default UAF1",default="UAF1")
 
 
 (options, args) = parser.parse_args()
 model = options.model
+t_a = options.t_a
+t_e = options.t_e
 
 # first name in this list is CONTROL
 NCNAMES = [model + "_G_D3_C1_E0.nc",model + "_G_D3_C2_E0.nc",model + "_G_D3_C3_E0.nc",model + "_G_D3_C4_E0.nc",model + "_G_D3_C1_S1.nc",model + "_G_D3_C1_S2.nc",model + "_G_D3_C1_S3.nc",model + "_G_D3_C1_M1.nc",model + "_G_D3_C1_M2.nc",model + "_G_D3_C1_M3.nc"]
 
 # labels
 labels = ["AR4 A1B","AR4 A1B 1.5x","AR4 A1B 2x","2x basal sliding","2.5x basal sliding","3x basal sliding","2 m/a bmr","20 m/a bmr","200 m/a bmr"]
+# line colors
+colors = ['#984EA3', # violet
+          '#984EA3', # violet
+          '#984EA3', # violet
+          '#FF7F00', # orange
+          '#FF7F00', # orange
+          '#FF7F00', # orange
+          '#377EB8', # light blue
+          '#377EB8', # light blue
+          '#377EB8'] # light blue
+
+dashes = ['-','--','-.','-','--','-.','-','--','-.']
 
 print "control run name is " + NCNAMES[0]
 
 n = len(NCNAMES)
 nc0 = CDF(NCNAMES[0], 'r')
 try:
-  t = nc0.variables['tseries'][:]
+  t = nc0.variables['tseries'][t_a:t_e]
 except:
-  t = nc0.variables['time'][:]
+  t = nc0.variables['time'][t_a:t_e]
 nc0.close()
 
 ivol = zeros((len(t),n))
@@ -47,7 +65,7 @@ ivolshift = zeros((len(t),n-1))
 
 for j in range(n):
   nc = CDF(NCNAMES[j], 'r')
-  ivol[:,j] = nc.variables['ivol'][:]
+  ivol[:,j] = nc.variables['ivol'][t_a:t_e]
   nc.close()
 
 for j in range(n-1):
@@ -55,13 +73,39 @@ for j in range(n-1):
 
 # "2,850,000 km3 of ice were to melt, global sea levels would rise 7.2 m"
 scale = 7.2 / 2.850e6
+
+
+# screen plot with high contrast
+fig = plt.figure()
+ax = fig.add_subplot(111,axisbg='0.15')
+for j in range(n-1):
+    ax.plot(t,-(ivolshift[:,j]/1.0e9)*scale,dashes[j],color=colors[j],linewidth=3)
+ax.set_xlabel('years from 2004')
+ax.set_ylabel('sea level rise relative to control (m)')
+ax.legend(labels,loc='upper left')
+ax.grid(True,color='w')
+
+plt.show()
+
+
+# line colors
+colors = ['#984EA3', # violet
+          '#984EA3', # violet
+          '#984EA3', # violet
+          '#FF7F00', # orange
+          '#FF7F00', # orange
+          '#FF7F00', # orange
+          '#084594', # dark blue
+          '#084594', # dark blue
+          '#084594'] # dark blue
+
+# print plot with white background
 fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.plot(t,-(ivolshift/1.0e9)*scale)
+for j in range(n-1):
+    ax.plot(t,-(ivolshift[:,j]/1.0e9)*scale,dashes[j],color=colors[j],linewidth=2)
 ax.set_xlabel('years from 2004')
 ax.set_ylabel('sea level rise relative to control (m)')
 ax.legend(labels,loc='upper left')
 ax.grid(True)
-
-plt.show()
-
+plt.savefig(model + '_slr.pdf')
