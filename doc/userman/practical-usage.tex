@@ -155,13 +155,19 @@ PISM's signal handling.)
     \texttt{dt} & years & mass-continuity time-step\\ 
     \texttt{divoldt} & m$^{3}\,$s$^{-1}$ & ice volume rate of change\\
     \texttt{dimassdt} & kg s$^{-1}$ & ice mass rate of change\\
-    \texttt{gDmax} & m$^{2}$ s$^{-1}$ & maximum diffusivity \\
+    \texttt{max_diffusivity} & m$^{2}$ s$^{-1}$ & maximum diffusivity \\
     \texttt{surface_ice_flux} & kg s$^{-1}$ & total surface ice flux \\
+    \texttt{cumulative_surface_ice_flux} & kg & \ldots cumulative of the above \\
     \texttt{basal_ice_flux} & kg s$^{-1}$ & total basal ice flux \\
+    \texttt{cumulative_basal_ice_flux} & kg & \ldots cumulative of the above \\
     \texttt{sub_shelf_ice_flux} & kg s$^{-1}$  & total sub-ice-shelf ice flux \\
+    \texttt{cumulative_sub_shelf_ice_flux} & kg  & \ldots cumulative of the above \\
     \texttt{nonneg_rule_flux} & kg s$^{-1}$  & total ice flux from application of $H\ge 0$ constraint on ice thickness \\
+    \texttt{cumulative_nonneg_rule_flux} & kg  & \ldots cumulative of the above \\
     \texttt{ocean_kill_flux} & kg s$^{-1}$  & total ice flux from application of \texttt{-ocean_kill} option  \\
+    \texttt{cumulative_ocean_kill_flux} & kg  & \ldots cumulative of the above  \\
     \texttt{float_kill_flux} & kg s$^{-1}$  & total ice flux from application of \texttt{-float_kill} option  \\
+    \texttt{cumulative_float_kill_flux} & kg  & \ldots cumulative of the above \\
     \bottomrule
   \end{tabular}
  \label{tab:time-series}
