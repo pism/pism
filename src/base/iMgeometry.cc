@@ -195,7 +195,7 @@ the time-step.</i>  Multiplying by dt will \b not necessarily give the
 corresponding change from the beginning to the end of the time-step.
 
 FIXME:  The calving rate can be computed by post-processing:
-divoldt = surface_ice_flux * iarea + basal_ice_flux * iareag + sub_shelf_ice_flux * iareaf + calving_flux_vol_rate
+dimassdt = surface_ice_flux + basal_ice_flux + sub_shelf_ice_flux + discharge_flux_mass_rate + nonneg_rule_flux
 */
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
@@ -400,6 +400,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       // apply free boundary rule: negative thickness becomes zero
+      // This is the amount of ice *added* by enforcing H >= 0.
       if (vHnew(i, j) < 0) {
         if (there_is_ice_due_to_flow) {
           my_nonneg_rule_flux += ( - vHnew(i, j));

@@ -706,18 +706,6 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = ftt_mask.set(1.0); CHKERRQ(ierr); // default: applied in whole domain
   ftt_mask.write_in_glaciological_units = true;
 
-  ierr = ftt_modified_acab.create(grid, "ftt_modified_acab", false); CHKERRQ(ierr);
-  ierr = ftt_modified_acab.set_attrs(
-     "diagnostic",
-     "modified ice-equivalent surface mass balance rate;"
-       " result from force-to-thickness mechanism (which is a PSModifier)",
-     "m s-1", 
-     ""); CHKERRQ(ierr); // no standard name
-  ierr = ftt_modified_acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  ftt_modified_acab.write_in_glaciological_units = true;
-  ierr = ftt_modified_acab.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr); 
-  ierr = ftt_modified_acab.set(0.0); CHKERRQ(ierr); // no useful default
-
   input_file = fttfile;
 
   // determine exponential rate alpha from user option or from factor; option
@@ -858,20 +846,17 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
   ierr = target_thickness.begin_access(); CHKERRQ(ierr);
   ierr = ftt_mask.begin_access(); CHKERRQ(ierr); 
-  ierr = ftt_modified_acab.begin_access(); CHKERRQ(ierr); 
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (ftt_mask(i,j) > 0.5) {
         result(i,j) += lambda * alpha * (target_thickness(i,j) - H[i][j]);
       }
-      ftt_modified_acab(i,j) = result(i,j);
     }
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = target_thickness.end_access(); CHKERRQ(ierr);
   ierr = ftt_mask.end_access(); CHKERRQ(ierr); 
-  ierr = ftt_modified_acab.end_access(); CHKERRQ(ierr); 
   ierr = result.end_access(); CHKERRQ(ierr);
   // no communication needed
 
@@ -913,12 +898,11 @@ PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_y
   return 0;
 }
 
-//! Adds ftt_modified_acab to "big" output files.
+//! Adds variables to output files.
 void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
   if (input_model != NULL)
     input_model->add_vars_to_output(key, result);
 
-  result.insert("ftt_modified_acab");
   result.insert("ftt_mask");
   result.insert("ftt_target_thk");
 }
@@ -927,10 +911,6 @@ PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NCTool
   PetscErrorCode ierr;
 
   ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  if (set_contains(vars, "ftt_modified_acab")) {
-    ierr = ftt_modified_acab.define(nc, nctype); CHKERRQ(ierr); 
-  }  
 
   if (set_contains(vars, "ftt_mask")) {
     ierr = ftt_mask.define(nc, nctype); CHKERRQ(ierr);
@@ -947,10 +927,6 @@ PetscErrorCode PSForceThickness::write_variables(set<string> vars, string filena
   PetscErrorCode ierr;
 
   ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
-
-  if (set_contains(vars, "ftt_modified_acab")) {
-    ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr); 
-  }  
 
   if (set_contains(vars, "ftt_mask")) {
     ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr); 

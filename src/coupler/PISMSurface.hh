@@ -300,7 +300,7 @@ protected:
   string input_file;
   PetscReal alpha;
   IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
-  IceModelVec2S target_thickness, ftt_mask, ftt_modified_acab;
+  IceModelVec2S target_thickness, ftt_mask;
 };
 
 //! \brief A class implementing a constant-in-time surface model for the surface mass balance. Reads data

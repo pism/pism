@@ -4,38 +4,26 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-echo "Test #18: verif test G regression: thermo SIA w. time-dependent SMB."
+echo "Test #18: verif test K regression: cold ice method, bedrock thermal layer."
 # The list of files to delete when done.
-files="test_18-G-out.txt verify.nc verify.nc~"
+files="test-K-out.txt verify.nc verify.nc~"
 
 rm -f $files
 
-# run test G
-OPTS="-test G -Mbz 1 -Mz 31 -y 1000 -o_size small -verbose 1"
-$PISM_PATH/pismv -Mx 31 -My 31 $OPTS   > test_18-G-out.txt
-$PISM_PATH/pismv -Mx 41 -My 41 $OPTS  >> test_18-G-out.txt
+# run test K
+OPTS="-test K -Mx 4 -My 4 -y 13000.0 -Lbz 1000 -z_spacing equal -verbose 1 -o_size small"
+$PISM_PATH/pismv -Mz 41 -Mbz 11 -max_dt 60.0 $OPTS  > test-K-out.txt
+$PISM_PATH/pismv -Mz 81 -Mbz 21 -max_dt 30.0 $OPTS >> test-K-out.txt
 
 # compare results
-diff test_18-G-out.txt -  <<END-OF-OUTPUT
+diff test-K-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.780389   32.430770    7.148950    0.016288
-temp      :        maxT         avT    basemaxT     baseavT
-               0.835718    0.250497    0.759924    0.153262
-Sigma     :      maxSig       avSig
-               8.570017    0.996037
-surf vels :     maxUvec      avUvec        maxW         avW
-               0.944836    0.200079    0.028356    0.004029
+temp      :        maxT         avT       maxTb        avTb
+               0.046197    0.009550    0.043415    0.030336
 NUM ERRORS DONE
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.782888   30.763934    7.242048    0.015469
-temp      :        maxT         avT    basemaxT     baseavT
-               0.895269    0.249036    0.754972    0.157030
-Sigma     :      maxSig       avSig
-               8.211503    0.945963
-surf vels :     maxUvec      avUvec        maxW         avW
-               0.885743    0.194988    0.027397    0.004220
+temp      :        maxT         avT       maxTb        avTb
+               0.045014    0.008543    0.045004    0.028673
 NUM ERRORS DONE
 END-OF-OUTPUT
 

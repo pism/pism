@@ -82,6 +82,7 @@ class IceModel {
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
   friend class IceModel_acab_cumulative;
+  friend class IceModel_dHdt;
   // scalar:
   friend class IceModel_ivol;
   friend class IceModel_divoldt;

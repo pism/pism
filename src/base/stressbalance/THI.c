@@ -974,7 +974,10 @@ static PetscErrorCode DAGetInterpolation_THI(DA dac,DA daf,Mat *A,Vec *scale)
   PetscValidHeaderSpecific(dac,DM_COOKIE,1);
   PetscValidHeaderSpecific(daf,DM_COOKIE,2);
   PetscValidPointer(A,3);
-  if (scale) PetscValidPointer(scale,4);
+  if (scale) {
+    (void) ierr;   /* avoid compiler warning "empty body in an if-statement" */
+    PetscValidPointer(scale,4);
+  }
   ierr = PetscTypeCompare((PetscObject)dac,DA2D,&flg);
   if (!flg) SETERRQ(PETSC_ERR_ARG_WRONG,"Expected coarse DA to be 2D");
   ierr = PetscTypeCompare((PetscObject)daf,DA2D,&isda2);CHKERRQ(ierr);

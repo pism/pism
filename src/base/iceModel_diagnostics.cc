@@ -39,11 +39,11 @@ PetscErrorCode IceModel::init_diagnostics() {
   diagnostics["temppabase"]       = new IceModel_temppabase(this, grid, variables);
   diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid, variables);
   diagnostics["new_mask"]         = new IceModel_new_mask(this, grid, variables);
+  diagnostics["dHdt"]             = new IceModel_dHdt(this, grid, variables);
 
   if (config.get_flag("compute_cumulative_acab")) {
     diagnostics["acab_cumulative"]  = new IceModel_acab_cumulative(this, grid, variables);
   }
-
 
   ts_diagnostics["ivol"]          = new IceModel_ivol(this, grid, variables);
   ts_diagnostics["divoldt"]       = new IceModel_divoldt(this, grid, variables);
@@ -1681,5 +1681,75 @@ PetscErrorCode IceModel_cumulative_float_kill_flux::update(PetscReal a, PetscRea
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
   
+  return 0;
+}
+
+
+IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+  
+  // set metadata:
+  vars[0].init_2d("dHdt", grid);
+  
+  set_attrs("dHdt", "ice thickness rate of change",
+            "m s-1", "m year-1", 0);
+
+  vars[0].set("valid_min",  convert(-1e6, "m/year", "m/s"));
+  vars[0].set("valid_max",  convert( 1e6, "m/year", "m/s"));
+  vars[0].set("_FillValue", convert( 2e6, "m/year", "m/s"));
+
+  last_ice_thickness.create(grid, "last_ice_thickness", false);
+  last_ice_thickness.set_attrs("internal",
+                               "ice thickness at the time of the last report of dHdt",
+                               "m", "land_ice_thickness");
+
+  last_report_time = GSL_NAN;
+}
+
+PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "dHdt", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  if (gsl_isnan(last_report_time)) {
+    ierr = result->set(convert(2e6, "m/year", "m/s")); CHKERRQ(ierr);
+  } else {
+
+    ierr = result->begin_access(); CHKERRQ(ierr);
+    ierr = last_ice_thickness.begin_access(); CHKERRQ(ierr);
+    ierr = model->vH.begin_access(); CHKERRQ(ierr);
+    
+    PetscReal dt = convert(grid.year - last_report_time, "year", "s");
+    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+        (*result)(i, j) = (model->vH(i, j) - last_ice_thickness(i, j)) / dt;
+      }
+    }
+
+    ierr = model->vH.end_access(); CHKERRQ(ierr);
+    ierr = last_ice_thickness.end_access(); CHKERRQ(ierr);
+    ierr = result->end_access(); CHKERRQ(ierr);
+    
+  }
+
+  // Save the ice thickness and the corresponding time:
+  ierr = model->vH.begin_access(); CHKERRQ(ierr);
+  ierr = last_ice_thickness.begin_access(); CHKERRQ(ierr);
+    
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      last_ice_thickness(i, j) = model->vH(i, j);
+    }
+  }
+
+  ierr = last_ice_thickness.end_access(); CHKERRQ(ierr);
+  ierr = model->vH.end_access(); CHKERRQ(ierr);
+
+  last_report_time = grid.year;
+  
+  output = result;
   return 0;
 }

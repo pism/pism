@@ -4,49 +4,32 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-echo "Test #14: enthalpy symmetry near the base (pisms -no_cold)."
+echo "Test #14: verif test E regression: isothermal SIA with sliding."
 # The list of files to delete when done.
-files="simp_exper.nc"
+files="test_14-E-out.txt verify.nc verify.nc~"
 
 rm -f $files
-# run pisms
-$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 4100 -Mx 12 -My 12 -o_size big -no_cold
 
-/usr/bin/env python <<EOF
-try:
-    from netCDF3 import Dataset as NC
-except:
-    from netCDF4 import Dataset as NC
-from numpy import abs, arange
-from sys import exit
+# run test E
+OPTS="-test E -y 100 -o_size small -verbose 1 -Mbz 1"
+$PISM_PATH/pismv -Mx 21 -My 21 -Mz 3 $OPTS  > test_14-E-out.txt
+$PISM_PATH/pismv -Mx 41 -My 41 -Mz 3 $OPTS >> test_14-E-out.txt
 
-nc = NC("simp_exper.nc", 'r')
-var = nc.variables['enthalpy']
-n = 12; m = 12; tol = 1e-3
-
-for k in [0, 1, 2]:
-    v = var[0,k,:,:]	# time,z,y,x
-    for i in arange((n-1)/2):
-        for j in arange((m-1)/2):
-            ii = (n-1) - i
-            jj = (m-1) - j
-
-            delta = abs(v[i,j] - v[ii,j])
-            if (delta >= tol):
-                print "X-symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,ii,j,k,delta)
-                exit(1)
-
-            delta = abs(v[i,j] - v[i,jj])
-            if (delta >= tol):
-                print "Y-symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,i,jj,k,delta)
-                exit(1)
-                
-            delta = abs(v[i,j] - v[ii,jj])
-            if (delta >= tol):
-                print "Radial symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,ii,jj,k,delta)
-                exit(1)
-exit(0)
-EOF
+# compare results
+diff test_14-E-out.txt -  <<END-OF-OUTPUT
+NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+geometry  :    prcntVOL        maxH         avH   relmaxETA
+               0.848651  368.057068   32.711326    0.041252
+base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
+                4.1538    0.22008     0.43350    4.0511    2.0747
+NUM ERRORS DONE
+NUMERICAL ERRORS evaluated at final time (relative to exact solution):
+geometry  :    prcntVOL        maxH         avH   relmaxETA
+               0.352172  526.115752   26.312808    0.040403
+base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
+                1.3782    0.10231     0.20151    1.3573    1.0278
+NUM ERRORS DONE
+END-OF-OUTPUT
 
 if [ $? != 0 ];
 then

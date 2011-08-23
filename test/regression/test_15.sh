@@ -4,30 +4,26 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-echo "Test #15: verif test E regression: isothermal SIA with sliding."
+echo "Test #15: verif test C regression: isothermal SIA w. time-dependent SMB."
 # The list of files to delete when done.
-files="test_15-E-out.txt verify.nc verify.nc~"
+files="test_15-C-out.txt verify.nc verify.nc~"
 
 rm -f $files
 
-# run test E
-OPTS="-test E -y 100 -o_size small -verbose 1 -Mbz 1"
-$PISM_PATH/pismv -Mx 21 -My 21 -Mz 3 $OPTS  > test_15-E-out.txt
-$PISM_PATH/pismv -Mx 41 -My 41 -Mz 3 $OPTS >> test_15-E-out.txt
+# run test C
+OPTS="-test C -Mbz 1 -Mz 31 -y 5000 -o_size small -verbose 1"
+$PISM_PATH/pismv -Mx 31 -My 31 $OPTS  > test_15-C-out.txt
+$PISM_PATH/pismv -Mx 41 -My 41 $OPTS >> test_15-C-out.txt
 
 # compare results
-diff test_15-E-out.txt -  <<END-OF-OUTPUT
+diff test_15-C-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.848651  368.057068   32.711326    0.041252
-base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-                4.1538    0.22008     0.43350    4.0511    2.0747
+              80.824124  503.131175    3.114691    0.820828
 NUM ERRORS DONE
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.352172  526.115752   26.312808    0.040403
-base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-                1.3782    0.10231     0.20151    1.3573    1.0278
+              32.783573  193.022555    1.330304    0.405692
 NUM ERRORS DONE
 END-OF-OUTPUT
 

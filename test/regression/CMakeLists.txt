@@ -47,15 +47,15 @@ pism_test (SIA_mass_conservation test_12.sh)
 
 pism_test (temperature_continuity_base_polythermal temp_continuity.py)
 
-pism_test (enthalpy_symmetry_near_base test_14.sh)
+pism_test (enthalpy_symmetry_near_base test_13.sh)
 
-pism_test (verif_test_E_regress_SIA_sliding test_15.sh)
+pism_test (verif_test_E_regress_SIA_sliding test_14.sh)
 
-pism_test (verif_test_C_regress_SIA_time_SMB test_16.sh)
+pism_test (verif_test_C_regress_SIA_time_SMB test_15.sh)
 
-pism_test (verif_test_L_regress_SIA_nonflat_bed test_17.sh)
+pism_test (verif_test_L_regress_SIA_nonflat_bed test_16.sh)
 
-pism_test (verif_test_G_regress_thermo_SIA_time_SMB test_18.sh)
+pism_test (verif_test_G_regress_thermo_SIA_time_SMB test_17.sh)
 
 pism_test (verif_test_I_SSAFD_regress_SSA_plastic ssa/ssa_testi_fd.sh)
 
@@ -69,27 +69,27 @@ pism_test (verif_SSAFEM_regress_linear_flow ssa/ssafem_test_linear.sh)
 
 pism_test (verif_SSAFEM_regress_plug_flow ssa/ssafem_test_plug.sh)
 
-pism_test (verif_test_K_regress_cold_ice_bedrock_thermal test_21.sh)
+pism_test (verif_test_K_regress_cold_ice_bedrock_thermal test_18.sh)
 
-pism_test (EISMINT-Ross_experiment_regress test_22.sh)
+pism_test (EISMINT-Ross_experiment_regress test_19.sh)
 
-pism_test (GPBLD_flow_law_regress test_24.sh)
+pism_test (GPBLD_flow_law_regress test_20.sh)
 
-pism_test (Paterson-Budd_flow_law_regress test_25.sh)
+pism_test (Paterson-Budd_flow_law_regress test_21.sh)
 
-pism_test (Schoof_2003_bed_roughness_SIA_regress test_26.sh)
+pism_test (Schoof_2003_bed_roughness_SIA_regress test_22.sh)
 
-pism_test (comparing_restart_i_vs_boot_file_and_regrid_file test_27.sh)
+pism_test (comparing_restart_i_vs_boot_file_and_regrid_file test_23.sh)
 
-pism_test (Hooke_flow_law_regress test_28.sh)
+pism_test (Hooke_flow_law_regress test_24.sh)
 
-pism_test (hybrid_GK-PB_flow_law_regress test_29.sh)
+pism_test (hybrid_GK-PB_flow_law_regress test_25.sh)
 
-pism_test (cold_part_of_Paterson-Budd_flow_law_regress test_30.sh)
+pism_test (cold_part_of_Paterson-Budd_flow_law_regress test_26.sh)
 
 pism_test (verif_PISMBedThermalUnit_test_K_regress btu_regression.sh)
 
-pism_test (runtime_viewers test_31.sh)
+pism_test (runtime_viewers test_27.sh)
 
 
 if(Pism_BUILD_PYTHON_BINDINGS)

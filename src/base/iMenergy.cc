@@ -119,6 +119,10 @@ PetscErrorCode IceModel::energyStep() {
 //! the bedrock thermal layer will see.
 PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   PetscErrorCode  ierr;
+  PetscReal sea_level = 0,
+    T0 = config.get("water_melting_point_temperature"),
+    beta_CC_grad_sea_water = (config.get("beta_CC") * config.get("sea_water_density") *
+                              config.get("standard_gravity")); // K m-1
 
   // will need coupler fields in ice-free land and 
   if (surface != PETSC_NULL) {
@@ -127,7 +131,7 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
   if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
+    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
   } else {
     SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");
   }
@@ -137,11 +141,11 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
   MaskQuery mask(vMask);
 
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = artm.begin_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (mask.grounded(i,j)) {
@@ -150,14 +154,14 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
         } else { // ice: sees temp of base of ice
           const PetscReal pressure = EC->getPressureFromDepth(vH(i,j));
           PetscReal temp;
-          // ignor return code when getting temperature: we are committed to
+          // ignore return code when getting temperature: we are committed to
           //   this enthalpy field; getAbsTemp() only returns temperatures at or
           //   below pressure melting
           EC->getAbsTemp(result(i,j), pressure, temp);
           result(i,j) = temp;
         }
-      } else { // floating: apply shelf base temp as top of bedrock temp
-        result(i,j) = shelfbtemp(i,j);
+      } else { // floating: apply pressure melting temp as top of bedrock temp
+        result(i,j) = T0 - (sea_level - vbed(i,j)) * beta_CC_grad_sea_water;
       }
     }
   }
@@ -165,7 +169,7 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = artm.end_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

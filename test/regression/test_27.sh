@@ -4,27 +4,16 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-echo "Test #27: comparing restart: \"-i\" vs \"-boot_file\" & \"-regrid_file\"."
+echo "Test #27: testing whether runtime viewers break or not."
 # The list of files to delete when done.
-files="foo.nc bar.nc"
-
-bedrock="-Mbz 11 -Lbz 1000"
-opts="-Mx 21 -My 21 -Mz 31 -Lz 4000 $bedrock -o_size small"
+files="simp_exper.nc"
 
 rm -f $files
 
 set -e -x
 
-# create foo.nc (at about 6500 years we get some basal melting...)
-$MPIEXEC -n 2 $PISM_PATH/pisms -no_cold -y 6500 $opts -o foo.nc
+$PISM_PATH/pisms -eisII A -y 1000 -view_sounding temp,litho_temp -view_map velsurf,thk -Mbz 11 -Lbz 1000 -o_size small
 
-# bootstrap from it, re-gridding all the variables we can
-$PISM_PATH/pismr -boot_file foo.nc -regrid_file foo.nc -y 0 -surface constant -no_temp $opts -o bar.nc
-
-set +e
-
-# compare results (foo.nc and bar.nc contain model_state variables only)
-$PISM_PATH/nccmp.py foo.nc bar.nc
 if [ $? != 0 ];
 then
     exit 1

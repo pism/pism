@@ -391,11 +391,16 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-
-
-
-
-
+//! \brief Computes dHdt, the ice thickness rate of change.
+class IceModel_dHdt : public PISMDiag<IceModel>
+{
+public:
+  IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+protected:
+  IceModelVec2S last_ice_thickness;
+  PetscReal last_report_time;
+};
 
 
 
