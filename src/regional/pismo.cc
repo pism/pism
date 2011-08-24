@@ -291,9 +291,10 @@ protected:
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_basal_yield_stress();
+  virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
-                                           int i, int j,
-                                           planeStar<PetscScalar> &vel_output);
+                                                   int i, int j,
+                                                   planeStar<PetscScalar> &vel_output);
 private:
   IceModelVec2Int no_model_mask;    
   IceModelVec2S   usurfstore, thkstore;
@@ -576,27 +577,28 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
   return 0;
 }
 
-PetscErrorCode IceRegionalModel::cell_interface_velocities(bool do_part_grid,
-                                                   int i, int j,
-                                                   planeStar<PetscScalar> &vel) {
-  PetscErrorCode  ierr;
-  planeStar<PetscScalar> v;
+PetscErrorCode IceRegionalModel::massContExplicitStep() {
+  PetscErrorCode ierr;
 
-  // do whatever you normally do
-  ierr = IceModel::cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
-
-  // now set cell interface velocities to zero in no_model_strip
   ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if ((no_model_mask)(i,j) > 0.5) {
-        v.n = 0.; v.e = 0.;
-        v.s = 0.; v.w = 0.;
-      }
-    }
-  }
+
+  ierr = IceModel::massContExplicitStep(); CHKERRQ(ierr);
+
   ierr = no_model_mask.end_access(); CHKERRQ(ierr);
 
+  return 0;
+}
+
+PetscErrorCode IceRegionalModel::cell_interface_velocities(bool do_part_grid,
+                                                           int i, int j,
+                                                           planeStar<PetscScalar> &v) {
+  PetscErrorCode  ierr;
+  if (no_model_mask(i,j) > 0.5) {
+    v.n = 0.; v.e = 0.;
+    v.s = 0.; v.w = 0.;
+  } else {
+    ierr = IceModel::cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
+  }
 
   return 0;
 }
