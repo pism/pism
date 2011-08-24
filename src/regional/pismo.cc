@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Ed Bueler, Daniella DellaGiustina and Constantine Khroulev
+// Copyright (C) 2010, 2011 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -61,6 +61,7 @@ public:
   virtual ~SIAFD_Regional() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &diffusive_flux);
 protected:
   IceModelVec2Int *no_model_mask;
   IceModelVec2S   *usurfstore;   
@@ -128,6 +129,28 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
   ierr = usurfstore->end_access(); CHKERRQ(ierr);
   ierr = h_y.end_access(); CHKERRQ(ierr);
   ierr = h_x.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode SIAFD_Regional::get_diffusive_flux(IceModelVec2Stag* &result) {
+  PetscErrorCode ierr;
+
+  ierr = SIAFD::get_diffusive_flux(result); CHKERRQ(ierr);
+
+  // now set diffusive flux to zero in no_model_strip
+  ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
+  ierr = result->begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if ((*no_model_mask)(i,j) > 0.5) {
+        (*result)(i,j,0) = 0.;  
+        (*result)(i,j,1) = 0.;  
+      }
+    }
+  }
+  ierr = result->end_access(); CHKERRQ(ierr);
+  ierr = no_model_mask->end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -268,6 +291,9 @@ protected:
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_basal_yield_stress();
+  virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
+                                           int i, int j,
+                                           planeStar<PetscScalar> &vel_output);
 private:
   IceModelVec2Int no_model_mask;    
   IceModelVec2S   usurfstore, thkstore;
@@ -550,6 +576,30 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
   return 0;
 }
 
+PetscErrorCode IceRegionalModel::cell_interface_velocities(bool do_part_grid,
+                                                   int i, int j,
+                                                   planeStar<PetscScalar> &vel) {
+  PetscErrorCode  ierr;
+  planeStar<PetscScalar> v;
+
+  // do whatever you normally do
+  ierr = IceModel::cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
+
+  // now set cell interface velocities to zero in no_model_strip
+  ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if ((no_model_mask)(i,j) > 0.5) {
+        v.n = 0.; v.e = 0.;
+        v.s = 0.; v.w = 0.;
+      }
+    }
+  }
+  ierr = no_model_mask.end_access(); CHKERRQ(ierr);
+
+
+  return 0;
+}
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

@@ -356,7 +356,7 @@ protected:
   virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
 
   // see iMpartgrid.cc
-  PetscErrorCode cell_interface_velocities(bool do_part_grid,
+  virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
                                            int i, int j,
                                            planeStar<PetscScalar> &vel_output);
   PetscReal get_average_thickness(bool do_redist, planeStar<int> M,
