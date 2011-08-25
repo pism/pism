@@ -264,7 +264,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (dirichlet_bc) {
     ierr = vBCMask.begin_access();  CHKERRQ(ierr);
     ierr = vBCvel.begin_access();  CHKERRQ(ierr);
-    ierr = vbed.begin_access();  CHKERRQ(ierr);
   }
 
   if (do_ocean_kill) {
@@ -461,7 +460,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (dirichlet_bc) {
     ierr = vBCMask.end_access();  CHKERRQ(ierr);
     ierr = vBCvel.end_access();  CHKERRQ(ierr);
-    ierr = vbed.end_access();  CHKERRQ(ierr);
   }
 
   if (do_ocean_kill) {
