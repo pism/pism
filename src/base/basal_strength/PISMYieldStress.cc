@@ -270,11 +270,6 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
   PetscErrorCode ierr;
 
   bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
-  // only makes sense when use_ssa_when_grounded == TRUE
-  if (use_ssa_when_grounded == PETSC_FALSE) {
-    SETERRQ(1, "use_ssa_when_grounded == PETSC_FALSE but\n"
-               "  PISMDefaultYieldStress::basal_material_yield_stress() was called");
-  }
 
   const PetscScalar
     till_pw_fraction = config.get("till_pw_fraction"),
@@ -296,6 +291,18 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
   PetscInt GHOSTS = grid.max_stencil_width;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+
+      if (use_ssa_when_grounded == false) {
+
+        if (m.grounded(i, j)) {
+          result(i, j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if
+                                  // grounded and -ssa_floating_only is set
+        } else {
+          result(i, j) = 0.0;
+        }
+        continue;
+      }
+
       if (m.ocean(i, j)) {
         result(i, j) = 0.0;
       } else if (m.ice_free(i, j)) {
