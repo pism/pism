@@ -944,8 +944,8 @@ PetscErrorCode PSB_taud_mag::compute(IceModelVec* &output) {
           h_x += bed->diff_x(i,j);
           h_y += bed->diff_y(i,j);
         } else {  // floating or eta transformation is not used
-            h_x = surface->diff_x(i,j);
-            h_y = surface->diff_y(i,j);
+          h_x = surface->diff_x_p(i,j);
+          h_y = surface->diff_y_p(i,j);
         }
 
         result_ij_u = - pressure * h_x;

@@ -114,6 +114,21 @@ PetscErrorCode IceModel::update_surface_elevation() {
   return 0;
 }
 
+//! \brief Computes diffusive (SIA) fluxes through interfaces of a computational cell.
+/*!
+ * In IceModel this does nothing. This computation is isolated to aid regional modeling.
+ */
+PetscErrorCode IceModel::cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
+                                                       planeStar<PetscScalar> &Q_output) {
+  Q_output.e = Qstag(i, j, 0);
+  Q_output.n = Qstag(i, j, 1);
+  Q_output.w = Qstag(i-1, j, 0);
+  Q_output.s = Qstag(i, j-1, 1);
+
+  return 0;
+}
+
+
 
 //! Update the thickness from the diffusive flux and sliding velocity, and the surface and basal mass balance rates.
 /*!
@@ -256,7 +271,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
     if (do_redist) {
       ierr = vHresidual.begin_access(); CHKERRQ(ierr);
       // FIXME: next line causes mass loss if max_loopcount in redistResiduals()
-      //        was not sufficient to zero - out vHresidual already
+      //        was not sufficient to zero-out vHresidual already
       ierr = vHresidual.set(0.0); CHKERRQ(ierr);
     }
   }
@@ -282,10 +297,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
       PetscScalar divQ = 0.0;
 
       if (mask.grounded(i, j)) {
+        planeStar<PetscScalar> Q;
+        ierr = cell_interface_diffusive_flux(*Qdiff, i, j, Q); CHKERRQ(ierr);
         // staggered grid Div(Q) for diffusive non-sliding SIA deformation part:
         //    Qdiff = - D grad h
-        divQ = ((*Qdiff)(i, j, 0) - (*Qdiff)(i - 1, j, 0)) / dx
-          + ((*Qdiff)(i, j, 1) - (*Qdiff)(i, j - 1, 1)) / dy;
+        divQ = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
       }
 
       // get non-diffusive velocities according to old or -part_grid scheme

@@ -61,7 +61,6 @@ public:
   virtual ~SIAFD_Regional() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &diffusive_flux);
 protected:
   IceModelVec2Int *no_model_mask;
   IceModelVec2S   *usurfstore;   
@@ -129,28 +128,6 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
   ierr = usurfstore->end_access(); CHKERRQ(ierr);
   ierr = h_y.end_access(); CHKERRQ(ierr);
   ierr = h_x.end_access(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode SIAFD_Regional::get_diffusive_flux(IceModelVec2Stag* &result) {
-  PetscErrorCode ierr;
-
-  ierr = SIAFD::get_diffusive_flux(result); CHKERRQ(ierr);
-
-  // now set diffusive flux to zero in no_model_strip
-  ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if ((*no_model_mask)(i,j) > 0.5) {
-        (*result)(i,j,0) = 0.;  
-        (*result)(i,j,1) = 0.;  
-      }
-    }
-  }
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = no_model_mask->end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -295,6 +272,8 @@ protected:
   virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
                                                    int i, int j,
                                                    planeStar<PetscScalar> &vel_output);
+  virtual PetscErrorCode cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
+                                                       planeStar<PetscScalar> &Q_output);
 private:
   IceModelVec2Int no_model_mask;    
   IceModelVec2S   usurfstore, thkstore;
@@ -589,13 +568,32 @@ PetscErrorCode IceRegionalModel::massContExplicitStep() {
   return 0;
 }
 
+//! \brief Computes diffusive (SIA) fluxes through interfaces of a computational cell.
+/*!
+ * This disables diffusive (SIA) flow in the no_model_strip.
+ */
+PetscErrorCode IceRegionalModel::cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
+                                                               planeStar<PetscScalar> &Q_output) {
+  PetscErrorCode ierr;
+  if (no_model_mask(i, j) > 0.5) {
+    Q_output.e = Q_output.w = Q_output.n = Q_output.s = 0;
+  } else {
+    ierr = IceModel::cell_interface_diffusive_flux(Qstag, i, j, Q_output); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+//! \brief Computes advective velocities through cell interfaces.
+/*!
+ * This disables advective (SSA) flow in the no_model_strip.
+ */
 PetscErrorCode IceRegionalModel::cell_interface_velocities(bool do_part_grid,
                                                            int i, int j,
                                                            planeStar<PetscScalar> &v) {
   PetscErrorCode  ierr;
-  if (no_model_mask(i,j) > 0.5) {
-    v.n = 0.; v.e = 0.;
-    v.s = 0.; v.w = 0.;
+  if (no_model_mask(i, j) > 0.5) {
+    v.e = v.w = v.n = v.s = 0;
   } else {
     ierr = IceModel::cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
   }

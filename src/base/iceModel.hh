@@ -337,6 +337,8 @@ protected:
   virtual PetscErrorCode updateSurfaceElevationAndMask();
   virtual PetscErrorCode update_mask();
   virtual PetscErrorCode update_surface_elevation();
+  virtual PetscErrorCode cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
+                                                       planeStar<PetscScalar> &Q_output);
   virtual PetscErrorCode massContExplicitStep();
 
   // see iMhydrology.cc
@@ -357,8 +359,8 @@ protected:
 
   // see iMpartgrid.cc
   virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
-                                           int i, int j,
-                                           planeStar<PetscScalar> &vel_output);
+                                                   int i, int j,
+                                                   planeStar<PetscScalar> &vel_output);
   PetscReal get_average_thickness(bool do_redist, planeStar<int> M,
                                   planeStar<PetscScalar> H);
   virtual PetscErrorCode redistResiduals();

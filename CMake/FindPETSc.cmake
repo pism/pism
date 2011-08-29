@@ -91,6 +91,8 @@ elseif (PETSC_DIR)
 endif ()
 
 if (petsc_conf_rules AND petsc_conf_variables AND NOT petsc_config_current)
+  petsc_get_version()
+
   # Put variables into environment since they are needed to get
   # configuration (petscvariables) in the PETSc makefile
   set (ENV{PETSC_DIR} "${PETSC_DIR}")
@@ -226,8 +228,6 @@ int main(int argc,char *argv[]) {
       endif (petsc_works_alllibraries)
     endif (petsc_works_allincludes)
   endif (petsc_works_minimal)
-
-  petsc_get_version()
 
   # We do an out-of-source build so __FILE__ will be an absolute path, hence __INSDIR__ is superfluous
   if (${PETSC_VERSION} VERSION_LESS 3.1)
