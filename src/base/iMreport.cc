@@ -346,6 +346,44 @@ PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
   return 0;
 }
 
+//! Computes the ice volume, which is relevant for sea-level rise in m^3 in SEA-WATER EQUIVALENT.
+PetscErrorCode IceModel::compute_sealevel_volume(PetscScalar &result) {
+  PetscErrorCode ierr;
+  PetscScalar     volume=0.0;
+  MaskQuery mask(vMask);
+  double ocean_rho = config.get("sea_water_density");
+  double ice_rho = config.get("ice_density");
+  
+  if (ocean == PETSC_NULL) {  SETERRQ(1, "PISM ERROR: ocean == PETSC_NULL");  }
+  PetscReal sea_level;
+  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+  
+  ierr = vMask.begin_access(); CHKERRQ(ierr);  
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access();  CHKERRQ(ierr);
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (mask.grounded_ice(i,j)){
+	if (vH(i,j) > 0)
+	  if(vbed(i, j) > sea_level){
+	    volume += vH(i,j) * cell_area(i,j) * ice_rho/ocean_rho ;
+	  }else{
+	    volume += vH(i,j) * cell_area(i,j) * ice_rho/ocean_rho - cell_area(i,j) * ( sea_level - vbed(i, j) );
+	  }
+      }
+    }
+  }  
+  const PetscScalar oceanarea=3.61e14;//in square meters
+  volume /= oceanarea;
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  return 0;
+}
 
 //! Computes the temperate ice volume, in m^3.
 PetscErrorCode IceModel::compute_ice_volume_temperate(PetscScalar &result) {

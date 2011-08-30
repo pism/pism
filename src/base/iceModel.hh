@@ -85,6 +85,7 @@ class IceModel {
   friend class IceModel_dHdt;
   // scalar:
   friend class IceModel_ivol;
+  friend class IceModel_slvol;
   friend class IceModel_divoldt;
   friend class IceModel_iarea;
   friend class IceModel_imass;
@@ -382,6 +383,7 @@ protected:
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
+  virtual PetscErrorCode compute_sealevel_volume(PetscScalar &result);
   virtual PetscErrorCode compute_ice_volume_temperate(PetscScalar &result);
   virtual PetscErrorCode compute_ice_volume_cold(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area(PetscScalar &result);

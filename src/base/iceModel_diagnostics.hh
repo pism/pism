@@ -149,6 +149,14 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
+//! \brief Computes the total ice volume, which is relevant for sea-level
+class IceModel_slvol : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_slvol(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
 //! \brief Computes the rate of change of the total ice volume.
 class IceModel_divoldt : public PISMTSDiag<IceModel>
 {

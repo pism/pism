@@ -46,6 +46,7 @@ PetscErrorCode IceModel::init_diagnostics() {
   }
 
   ts_diagnostics["ivol"]          = new IceModel_ivol(this, grid, variables);
+  ts_diagnostics["slvol"]         = new IceModel_slvol(this, grid, variables);
   ts_diagnostics["divoldt"]       = new IceModel_divoldt(this, grid, variables);
   ts_diagnostics["iarea"]         = new IceModel_iarea(this, grid, variables);
   ts_diagnostics["imass"]         = new IceModel_imass(this, grid, variables);
@@ -975,6 +976,30 @@ PetscErrorCode IceModel_ivol::update(PetscReal a, PetscReal b) {
   PetscReal value;
 
   ierr = model->compute_ice_volume(value); CHKERRQ(ierr);
+
+  ierr = ts->append(value, a, b); CHKERRQ(ierr);
+
+  return 0;
+}
+
+IceModel_slvol::IceModel_slvol(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMTSDiag<IceModel>(m, g, my_vars) {
+
+  // set metadata:
+  ts = new DiagnosticTimeseries(&grid, "slvol", time_dimension_name);
+
+  ts->set_units("m", "");
+  ts->set_dimension_units(time_units, "");
+
+  ts->set_attr("long_name", "total sea-level relevant ice IN SEA-LEVEL EQUIVALENT");
+  ts->set_attr("valid_min", 0.0);
+}
+
+PetscErrorCode IceModel_slvol::update(PetscReal a, PetscReal b) {
+  PetscErrorCode ierr;
+  PetscReal value;
+
+  ierr = model->compute_sealevel_volume(value); CHKERRQ(ierr);
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
