@@ -23,6 +23,8 @@ void SIAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, grid, *variables);
   dict["thksmooth"] = new SIAFD_thksmooth(this, grid, *variables);
   dict["topgsmooth"] = new SIAFD_topgsmooth(this, grid, *variables);
+  dict["h_x"] = new SIAFD_h_x(this, grid, *variables);
+  dict["h_y"] = new SIAFD_h_y(this, grid, *variables);
 }
 
 SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars)
@@ -137,6 +139,70 @@ PetscErrorCode SIAFD_diffusivity::compute(IceModelVec* &output) {
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
   ierr = model->compute_diffusivity(*result); CHKERRQ(ierr); 
+
+  output = result;
+  return 0;
+}
+
+SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SIAFD>(m, g, my_vars) {
+  
+  // set metadata:
+  vars.resize(2);
+  vars[0].init_2d("h_x_i", grid);
+  vars[1].init_2d("h_x_j", grid);
+  
+  set_attrs("the x-component of the surface gradient, i-offset", "",
+            "", "", 0);
+  set_attrs("the x-component of the surface gradient, j-offset", "",
+            "", "", 0);
+}
+
+PetscErrorCode SIAFD_h_x::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  
+  IceModelVec2Stag *result = new IceModelVec2Stag;
+  ierr = result->create(grid, "h_x", true); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = model->compute_surface_gradient(model->work_2d_stag[0],
+                                         model->work_2d_stag[1]); CHKERRQ(ierr);
+
+  ierr = result->copy_from(model->work_2d_stag[0]); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SIAFD>(m, g, my_vars) {
+  
+  // set metadata:
+  vars.resize(2);
+  vars[0].init_2d("h_y_i", grid);
+  vars[1].init_2d("h_y_j", grid);
+  
+  set_attrs("the y-component of the surface gradient, i-offset", "",
+            "", "", 0);
+  set_attrs("the y-component of the surface gradient, j-offset", "",
+            "", "", 0);
+}
+
+PetscErrorCode SIAFD_h_y::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  
+  IceModelVec2Stag *result = new IceModelVec2Stag;
+  ierr = result->create(grid, "h_y", true); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = model->compute_surface_gradient(model->work_2d_stag[0],
+                                         model->work_2d_stag[1]); CHKERRQ(ierr);
+
+  ierr = result->copy_from(model->work_2d_stag[1]); CHKERRQ(ierr);
 
   output = result;
   return 0;

@@ -87,45 +87,65 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
 
   ierr = SIAFD::compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
 
+  IceModelVec2Int nmm = *no_model_mask;
+  IceModelVec2S hst = *usurfstore; // convenience
+
+  const int Mx = grid.Mx, My = grid.My;
   const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
-  ierr = usurfstore->begin_access(); CHKERRQ(ierr);
-  IceModelVec2S hst = *usurfstore; // convenience
+  ierr = nmm.begin_access(); CHKERRQ(ierr);
+  ierr = hst.begin_access(); CHKERRQ(ierr);
+
   PetscInt GHOSTS = 1;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      if ( ((*no_model_mask)(i,j) > 0.5) && ((*no_model_mask)(i+1,j) > 0.5) ) {
-        // both (i,j) and its right neighbor are in no_model strip, thus we do want to modify
-        if ((i < 0) || (i+1 > grid.Mx-1) || (j-1 < 0) || (j+1 > grid.My-1)) {
-          // avoid diff across computational bdry
-          h_x(i,j,0) = 0.0;
-          h_y(i,j,0) = 0.0;
-        } else {
-          // use stored h to get surface gradient; mahaffy method
-          h_x(i,j,0) = (hst(i+1,j) - hst(i,j)) / dx;
-          h_y(i,j,0) = ( + hst(i+1,j+1) + hst(i,j+1)
-                         - hst(i+1,j-1) - hst(i,j-1) ) / (4.0*dy);
-        }
+
+      // x-component, i-offset
+      if (nmm(i, j) > 0.5 || nmm(i + 1, j) > 0.5) {
+
+        if (i < 0 || i + 1 > Mx - 1)
+          h_x(i, j, 0) = 0.0;
+        else
+          h_x(i, j, 0) = (hst(i + 1, j) - hst(i, j)) / dx;
       }
-      if ( ((*no_model_mask)(i,j) > 0.5) && ((*no_model_mask)(i,j+1) > 0.5) ) {
-        // both (i,j) and its upper neighbor are in no_model strip, thus we do want to modify
-        if ((i-1 < 0) || (i+1 > grid.Mx-1) || (j < 0) || (j+1 > grid.My-1)) {
-          // avoid diff across computational bdry
-          h_x(i,j,1) = 0.0;
-          h_y(i,j,1) = 0.0;
-        } else {
-          // use stored h to get surface gradient; mahaffy method
-          h_x(i,j,1) = ( + hst(i+1,j+1) + hst(i+1,j)
-                         - hst(i-1,j+1) - hst(i-1,j) ) / (4.0*dx);
-          h_y(i,j,1) = (hst(i,j+1) - hst(i,j)) / dy;
-        }
+
+      // x-component, j-offset
+      if (nmm(i - 1, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
+          nmm(i - 1, j)     > 0.5 || nmm(i + 1, j)     > 0.5) {
+
+        if (i - 1 < 0 || j + 1 > My - 1 || i + 1 > Mx - 1)
+          h_x(i, j, 1) = 0.0;
+        else
+          h_x(i, j, 1) = ( + hst(i + 1, j + 1) + hst(i + 1, j)
+                           - hst(i - 1, j + 1) - hst(i - 1, j) ) / (4.0 * dx);
+
       }
+
+      // y-component, i-offset
+      if (nmm(i, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
+          nmm(i, j - 1) > 0.5 || nmm(i + 1, j - 1) > 0.5) {
+        if (i < 0 || j + 1 > My - 1 || i + 1 > Mx - 1 || j - 1 < 0)
+          h_y(i, j, 0) = 0.0;
+        else
+          h_y(i, j, 0) = ( + hst(i + 1, j + 1) + hst(i, j + 1)
+                           - hst(i + 1, j - 1) - hst(i, j - 1) ) / (4.0 * dy);
+      }
+
+      // y-component, j-offset
+      if (nmm(i, j) > 0.5 || nmm(i, j + 1) > 0.5) {
+        
+        if (j < 0 || j + 1 > My - 1)
+          h_y(i, j, 1) = 0.0;
+        else
+          h_y(i, j, 1) = (hst(i, j + 1) - hst(i, j)) / dy;
+      }
+
     }
   }
-  ierr = no_model_mask->end_access(); CHKERRQ(ierr);
-  ierr = usurfstore->end_access(); CHKERRQ(ierr);
+  ierr = nmm.end_access(); CHKERRQ(ierr);
+  ierr = hst.end_access(); CHKERRQ(ierr);
   ierr = h_y.end_access(); CHKERRQ(ierr);
   ierr = h_x.end_access(); CHKERRQ(ierr);
 
@@ -172,35 +192,36 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   ierr = SSAFD::compute_driving_stress(result); CHKERRQ(ierr);
 
   const PetscReal standard_gravity = config.get("standard_gravity");
+  IceModelVec2Int nmm = *no_model_mask;
 
   ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
+  ierr = nmm.begin_access(); CHKERRQ(ierr);
   ierr = usurfstore->begin_access(); CHKERRQ(ierr);
   ierr = thkstore->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((*no_model_mask)(i,j) > 0.5) {
-        // (i,j) is in no_model strip, thus we do want to modify
-        if ((i-1 < 0) || (i+1 > grid.Mx-1) || (j-1 < 0) || (j+1 > grid.My-1)) {
-          // avoid diff across computational bdry
-          result(i,j).u = 0.0;
-          result(i,j).v = 0.0;
-        } else {
-          const PetscScalar pressure = ice.rho * standard_gravity * (*thkstore)(i,j);
-          if (pressure <= 0.0) {
-            result(i,j).u = 0.0;
-            result(i,j).v = 0.0;
-          } else {
-            result(i,j).u = - pressure * usurfstore->diff_x(i,j);
-            result(i,j).v = - pressure * usurfstore->diff_y(i,j);
-          }
-        }
+      PetscScalar pressure = ice.rho * standard_gravity * (*thkstore)(i,j);
+      if (pressure <= 0) pressure = 0;
+
+      if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
+        if (i - 1 < 0 || i + 1 > grid.Mx - 1)
+          result(i, j).u = 0;
+        else
+          result(i, j).u = - pressure * usurfstore->diff_x(i,j);
       }
+
+      if (nmm(i, j) > 0.5 || nmm(i, j - 1) > 0.5 || nmm(i, j + 1) > 0.5) {
+        if (j - 1 < 0 || j + 1 > grid.My - 1)
+          result(i, j).v = 0;
+        else
+          result(i, j).v = - pressure * usurfstore->diff_y(i,j);
+      }
+
     }
   }
   ierr = usurfstore->end_access(); CHKERRQ(ierr);
   ierr = thkstore->end_access(); CHKERRQ(ierr);
-  ierr = no_model_mask->end_access(); CHKERRQ(ierr);
+  ierr = nmm.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -330,6 +351,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
 			"normal zero_out_driving_stress_and_surface_gradient");
 			CHKERRQ(ierr);
   no_model_mask.output_data_type = NC_BYTE;
+  no_model_mask.time_independent = true;
   ierr = no_model_mask.set(NMMASK_NORMAL); CHKERRQ(ierr);
   ierr = variables.add(no_model_mask); CHKERRQ(ierr);
 

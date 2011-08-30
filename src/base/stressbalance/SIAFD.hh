@@ -29,6 +29,8 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_topgsmooth;
   friend class SIAFD_thksmooth;
   friend class SIAFD_diffusivity;
+  friend class SIAFD_h_x;
+  friend class SIAFD_h_y;
 public:
   SIAFD(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
     : SSB_Modifier(g, i, e, c), WIDE_STENCIL(2) { allocate(); }
@@ -133,6 +135,24 @@ class SIAFD_diffusivity : public PISMDiag<SIAFD>
 {
 public:
   SIAFD_diffusivity(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the x-component of the ice surface gradient on the staggered
+//! grid as computed by SIAFD.
+class SIAFD_h_x : public PISMDiag<SIAFD>
+{
+public:
+  SIAFD_h_x(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the y-component of the ice surface gradient on the staggered
+//! grid as computed by SIAFD.
+class SIAFD_h_y : public PISMDiag<SIAFD>
+{
+public:
+  SIAFD_h_y(SIAFD *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
