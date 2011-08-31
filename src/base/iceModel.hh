@@ -370,15 +370,14 @@ protected:
   virtual PetscErrorCode volumeArea(
                        PetscScalar& gvolume,PetscScalar& garea);
   virtual PetscErrorCode energyStats(
-                       PetscScalar iarea,
-                       PetscScalar &gmeltfrac, PetscScalar &gtemp0);
+                       PetscScalar iarea,PetscScalar &gmeltfrac);
   virtual PetscErrorCode ageStats(PetscScalar ivol, PetscScalar &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(
               PetscTruth printPrototype, bool tempAndAge,
               PetscScalar year, PetscScalar delta_t, 
               PetscScalar volume, PetscScalar area,
-              PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
+              PetscScalar meltfrac, PetscScalar max_diffusivity);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:

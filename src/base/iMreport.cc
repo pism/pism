@@ -62,13 +62,11 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea) {
 
 
 /*!
-Computes fraction of the base which is melted and the ice basal temperature at the
-center of the ice sheet.
+Computes fraction of the base which is melted.
 
 Communication occurs here.
  */
-PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac,
-                                     PetscScalar &gtemp0) {
+PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac) {
   PetscErrorCode    ierr;
   PetscScalar       meltarea = 0.0, temp0 = 0.0;
   const PetscScalar a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
@@ -99,7 +97,6 @@ PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac,
 
   // communication
   ierr = PetscGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&temp0,    &gtemp0,    grid.com); CHKERRQ(ierr);
 
   // normalize fraction correctly
   if (iarea > 0.0)   gmeltfrac = gmeltfrac / iarea;
@@ -160,28 +157,15 @@ PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
 
 PetscErrorCode IceModel::summary(bool tempAndAge) {
   PetscErrorCode  ierr;
-  PetscScalar     divideH;
-  PetscScalar     gdivideH, gdivideT, gvolume, garea;
+  PetscScalar     gvolume, garea;
   PetscScalar     meltfrac = 0.0, origfrac = 0.0;
+  PetscScalar     max_diffusivity;
 
   // get volumes in m^3 and areas in m^2
   ierr = volumeArea(gvolume, garea); CHKERRQ(ierr);
   
-  // get thick0 = gdivideH
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  divideH = 0;
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-        divideH = vH(i,j);
-      }
-    }
-  }  
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&divideH, &gdivideH, grid.com); CHKERRQ(ierr);
-
   if (tempAndAge || (getVerbosityLevel() >= 3)) {
-    ierr = energyStats(garea, meltfrac, gdivideT); CHKERRQ(ierr);
+    ierr = energyStats(garea, meltfrac); CHKERRQ(ierr);
   }
 
   if ((tempAndAge || (getVerbosityLevel() >= 3)) && (config.get_flag("do_age"))) {
@@ -203,9 +187,12 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
     }
   }
    
+  // get maximum diffusivity
+  ierr = stress_balance->get_max_diffusivity(max_diffusivity); CHKERRQ(ierr);
+
   // main report: 'S' line
   ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.year,dt,
-                          gvolume,garea,meltfrac,gdivideH,gdivideT); CHKERRQ(ierr);
+                          gvolume,garea,meltfrac,max_diffusivity); CHKERRQ(ierr);
 
   return 0;
 }
@@ -239,9 +226,8 @@ The resulting numbers on an 'S' line have the following meaning in this base
 class version:
   - \c ivol is the total ice sheet volume
   - \c iarea is the total area occupied by positive thickness ice
-  - \c thick0 is the ice thickness at the center of the computational domain
-  - \c temp0 is the ice basal temperature at the center of the computational domain
-The last two can be interpreted as "sanity checks", because they give
+  - \c max_diff is the maximum diffusivity
+thick0 and temp0 can be interpreted as "sanity checks", because they give
 information about a location which may or may not be "typical".
 
 For more description and examples, see the PISM User's Manual.
@@ -252,7 +238,7 @@ PetscErrorCode IceModel::summaryPrintLine(
      PetscTruth printPrototype,  bool tempAndAge,
      PetscScalar year,  PetscScalar delta_t,
      PetscScalar volume,  PetscScalar area,
-     PetscScalar /* meltfrac */,  PetscScalar H0,  PetscScalar T0) {
+     PetscScalar /* meltfrac */,  PetscScalar max_diffusivity) {
 
   PetscErrorCode ierr;
   const bool do_energy = config.get_flag("do_energy");
@@ -274,15 +260,15 @@ PetscErrorCode IceModel::summaryPrintLine(
   if (printPrototype == PETSC_TRUE) {
     if (do_energy) {
       ierr = verbPrintf(2,grid.com,
-          "P         YEAR:     ivol   iarea     thick0     temp0\n");
+          "P         YEAR:     ivol     iarea     max_diff\n");
       ierr = verbPrintf(2,grid.com,
-          "U        years %skm^3 %skm^2        m         K\n",
+          "U        years %skm^3 %skm^2     m^2 s^-1\n",
           volscalestr,areascalestr);
     } else {
       ierr = verbPrintf(2,grid.com,
-          "P         YEAR:     ivol   iarea     thick0\n");
+          "P         YEAR:     ivol     iarea     max_diff\n");
       ierr = verbPrintf(2,grid.com,
-          "U        years %skm^3 %skm^2        m\n",
+          "U        years %skm^3 %skm^2     m^2 s^-1\n",
           volscalestr,areascalestr);
     }
   } else {
@@ -312,12 +298,12 @@ PetscErrorCode IceModel::summaryPrintLine(
       }
       if (do_energy) {
         ierr = verbPrintf(2,grid.com, 
-          "S %12.5f: %8.5f %7.4f %10.3f %9.4f\n",
-          year, volume/(scale*1.0e9), area/(scale*1.0e6), H0, T0); CHKERRQ(ierr);
+          "S %12.5f: %8.5f %9.4f %12.8f\n",
+                          year, volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity); CHKERRQ(ierr);
       } else {
         ierr = verbPrintf(2,grid.com, 
-          "S %12.5f: %8.5f %7.4f %10.3f\n",
-          year, volume/(scale*1.0e9), area/(scale*1.0e6), H0); CHKERRQ(ierr);
+          "S %12.5f: %8.5f %9.4f %12.8f\n",
+                          year, volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity); CHKERRQ(ierr);
       }
       mass_cont_sub_counter = 0;      
       mass_cont_sub_dtsum = 0.0;

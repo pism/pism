@@ -698,10 +698,10 @@ S  -3456.41429:  3.35908  2.1664   2748.786  271.2114
 \noindent The format of the third line, the summary, is simple:
 \small
 \begin{verbatim}
-S         YEAR:     ivol   iarea     thick0     temp0
+S         YEAR:     ivol     iarea     max_diff
 \end{verbatim}
 \normalsize
-That is, we have the total ice volume, total ice area, and the thickness and basal temperature at the center of the computational domain.  A ``\texttt{U}'' line near the beginning of the standard output indicates the units.
+That is, we have the total ice volume, total ice area, and the maximum diffusivity of the SIA mass conservation.  A ``\texttt{U}'' line near the beginning of the standard output indicates the units.
 
 The characters ``\texttt{ y SIA v\$Eh}'' at the beginning of the flag line give a very terse description of which physical processes were modeled in that time step.  Both the SIA and SSA stress balances were solved, and the latter, which is the most computationally-expensive, describes its nonlinear iterations.
 

@@ -765,7 +765,7 @@ PetscErrorCode IceModel::run() {
   ierr = verbPrintf(2,grid.com, "running forward ...\n"); CHKERRQ(ierr);
 
   stdout_flags.erase(); // clear it out
-  ierr = summaryPrintLine(PETSC_TRUE,do_energy, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE,do_energy, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   reset_counters();
   ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state

@@ -400,7 +400,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       if (include_bmr_in_continuity) {
         if (mask.ocean(i, j)) {
-          // sub-shelf mass flux accounting: Always count freeze-one, only
+          // sub-shelf mass flux accounting: Always count freeze-on, only
           // count melt if there was ice to melt.
           if (shelfbmassflux(i, j) < 0 || there_is_ice_due_to_flow)
             my_sub_shelf_ice_flux -= shelfbmassflux(i, j); // note the "-="
