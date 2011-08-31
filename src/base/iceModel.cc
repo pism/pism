@@ -484,8 +484,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 			      bool do_energy,
 			      bool do_diffuse_bwat,
 			      bool do_age,
-			      bool do_skip,
-			      bool use_ssa_when_grounded) {
+			      bool do_skip) {
   PetscErrorCode ierr;
 
   grid.profiler->begin(event_step);
@@ -541,11 +540,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   grid.profiler->end(event_beddef);
 
   //! \li update the yield stress for the plastic till model (if appropriate)
-  if (use_ssa_when_grounded) {
-    if (basal_yield_stress) {
-      ierr = basal_yield_stress->update(grid.year, dt / secpera); CHKERRQ(ierr);
-      ierr = basal_yield_stress->basal_material_yield_stress(vtauc); CHKERRQ(ierr);
-    }
+  if (basal_yield_stress) {
+    ierr = basal_yield_stress->update(grid.year, dt / secpera); CHKERRQ(ierr);
+    ierr = basal_yield_stress->basal_material_yield_stress(vtauc); CHKERRQ(ierr);
     stdout_flags += "y";
   } else stdout_flags += "$";
 
@@ -699,8 +696,7 @@ PetscErrorCode IceModel::run() {
     do_energy = config.get_flag("do_energy"),
     do_diffuse_bwat = config.get_flag("do_diffuse_bwat"),
     do_age = config.get_flag("do_age"),
-    do_skip = config.get_flag("do_skip"),
-    use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
+    do_skip = config.get_flag("do_skip");
   int stepcount = (config.get_flag("count_time_steps")) ? 0 : -1;
 
   // do a one-step diagnostic run:
@@ -730,7 +726,7 @@ PetscErrorCode IceModel::run() {
 
   
   ierr = step(do_mass_conserve, do_energy, do_diffuse_bwat, do_age,
-	      do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
+	      do_skip); CHKERRQ(ierr);
 
   // print verbose messages according to user-set verbosity
   if (tmp_verbosity > 2) {
@@ -771,7 +767,7 @@ PetscErrorCode IceModel::run() {
     maxdt_temporary = -1.0;
 
     ierr = step(do_mass_conserve, do_energy, do_diffuse_bwat, do_age,
-		do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
+		do_skip); CHKERRQ(ierr);
     
     // report a summary for major steps or the last one
     bool updateAtDepth = (skipCountDown == 0);

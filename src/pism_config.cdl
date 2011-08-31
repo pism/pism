@@ -169,6 +169,9 @@ netcdf pism_config {
     pism_config:default_tauc = 2e5;
     pism_config:default_tauc_doc = "Pa; fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default";
 
+    pism_config:high_tauc = 1e6;
+    pism_config:high_tauc_doc = "Pa; the 'high' yield stress value used in two cases: 1) (default): in grounded ice-free areas and 2) in \\b all grounded areas if -ssa_floating_only is set.";
+
     pism_config:sliding_scale_factor_reduces_tauc = -1.0;
     pism_config:sliding_scale_factor_reduces_tauc_doc = "; divides pseudo-plastic tauc (yield stress) by given factor; this would increase sliding by given factor in absence of membrane stresses; not used if negative or zero; not used by default";
 
