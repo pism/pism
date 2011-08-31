@@ -276,8 +276,8 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
     till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
     bwat_max = config.get("bwat_max"),
     ice_density = config.get("ice_density"),
-    standard_gravity = config.get("standard_gravity");
-
+    standard_gravity = config.get("standard_gravity"),
+    high_tauc = config.get("high_tauc");
 
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -295,8 +295,8 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
       if (use_ssa_when_grounded == false) {
 
         if (m.grounded(i, j)) {
-          result(i, j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if
-                                  // grounded and -ssa_floating_only is set
+          // large yield stress if grounded and -ssa_floating_only is set
+          result(i, j) = high_tauc; 
         } else {
           result(i, j) = 0.0;
         }
@@ -306,7 +306,7 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
       if (m.ocean(i, j)) {
         result(i, j) = 0.0;
       } else if (m.ice_free(i, j)) {
-        result(i, j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
+        result(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
         const PetscScalar
           p_over = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME task #7297
