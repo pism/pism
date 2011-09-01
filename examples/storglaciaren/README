@@ -1,3 +1,11 @@
-PISM Storglaciaren flowline example
+PISM Storglaciaren example.
 
-Run ./preprocess.sh to get started.
+For the flowline case, start with that section of the User's Manual.  Then do:
+  $ ./preprocess.sh
+  $ ./psg_flowline.sh N   # N processors
+
+For the PRELIMINARY 3d case, which is not yet documented in the User's Manual, do:
+  $ ./preprocess.sh
+  $ ./sg_create_3d.py
+  $ ./psg_3d.sh N         # N processors
+

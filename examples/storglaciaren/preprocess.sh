@@ -1,6 +1,5 @@
 #!/bin/bash
 
-./sg_create_3d.py
 ./sg_create_flowline.py
 DATANAME=storglaciaren_flowline.nc
 PISM_DATANAME=pism_$DATANAME

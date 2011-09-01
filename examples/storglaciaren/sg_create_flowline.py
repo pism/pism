@@ -86,5 +86,5 @@ artm_var = nc.createVariable("artm", 'f', dimensions=("x",))
 artm_var.units = "deg_C";
 artm_var[:] = artm
 
-
 nc.close()
+
