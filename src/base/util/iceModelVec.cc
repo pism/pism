@@ -123,7 +123,7 @@ PetscErrorCode IceModelVec::create_2d_da(DA &result, PetscInt da_dof, PetscInt s
 		    grid->My, grid->Mx, // N, M
 		    grid->Ny, grid->Nx, // n, m
 		    da_dof, stencil_width,
-                    grid->procs_y.data(), grid->procs_x.data(), // ly, lx
+                    &grid->procs_y[0], &grid->procs_x[0], // ly, lx
 		    &result); CHKERRQ(ierr);
 
   return 0;

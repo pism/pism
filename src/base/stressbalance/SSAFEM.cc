@@ -277,7 +277,7 @@ PetscErrorCode SSAFEM::setup()
       for (q=0; q<FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
         feS[q].B = ice.averagedHardness_from_enth(feS[q].H, grid.kBelowHeight(feS[q].H),
-                                                  grid.zlevels.data(), Enth_q[q]);
+                                                  &grid.zlevels[0], Enth_q[q]);
       }
     }
   }

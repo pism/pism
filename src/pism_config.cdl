@@ -578,10 +578,10 @@ netcdf pism_config {
    pism_config:WGS84_semiminor_axis = 6356752.314245;
    pism_config:WGS84_semiminor_axis_doc = "m; WGS84 reference ellipsoid semi-minor axis";
 
-   pism_config:output_medium = "acab artm cbar cbase csurf cflx dHdt diffusivity mask schoofs_theta tauc taud_mag thksmooth topgsmooth usurf wvelsurf temp enthalpy IcebergMask edot_1 edot_2";
+   pism_config:output_medium = "acab artm cbar cbase csurf cflx diffusivity mask schoofs_theta tauc taud_mag thksmooth topgsmooth usurf wvelsurf temp enthalpy IcebergMask edot_1 edot_2";
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size is selected. Does not include fields written by boundary models.";
 
-   pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dbdt dHdt dhdt diffusivity enthalpy enthalpybase enthalpysurf hardav lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf nuH";
+   pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dbdt diffusivity enthalpy enthalpybase enthalpysurf hardav lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf nuH";
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 
    pism_config:ts_default_variables = "dt ivol divoldt ivolcold ivolcoldf ivoltemp ivoltempf imass dimassdt iarea iareacoldf iareatempf iareag iareaf ienthalpy max_diffusivity cumulative_surface_ice_flux surface_ice_flux cumulative_basal_ice_flux basal_ice_flux cumulative_sub_shelf_ice_flux sub_shelf_ice_flux cumulative_nonneg_rule_flux nonneg_rule_flux cumulative_ocean_kill_flux ocean_kill_flux cumulative_float_kill_flux float_kill_flux";
