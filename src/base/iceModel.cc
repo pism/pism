@@ -418,7 +418,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   acab.write_in_glaciological_units = true;
   acab.set_attr("comment", "positive values correspond to ice gain");
-  ierr = variables.add(acab); CHKERRQ(ierr);
 
   if (config.get_flag("compute_cumulative_acab")) {
     ierr = acab_cumulative.create(grid, "acab_cumulative", false); CHKERRQ(ierr);
@@ -437,7 +436,6 @@ PetscErrorCode IceModel::createVecs() {
             "K", 
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
   CHKERRQ(ierr);
-  ierr = variables.add(artm); CHKERRQ(ierr);
 
   ierr = liqfrac_surface.create(grid, "liqfrac_surface", false); CHKERRQ(ierr);
   ierr = liqfrac_surface.set_attrs("climate_from_PISMSurfaceModel",
