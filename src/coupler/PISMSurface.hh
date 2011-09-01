@@ -284,7 +284,7 @@ public:
     : PSModifier(g, conf, input)
   {
     ice_thickness = NULL;
-    alpha = config.get("force_to_thickness_alpha");
+    alpha = convert(config.get("force_to_thickness_alpha"),"yr-1","s-1");
   }
 
   virtual ~PSForceThickness() {}

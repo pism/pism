@@ -471,11 +471,11 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal 
 
   // set up air temperature time series
   PetscInt Nseries;
-  ierr = mbscheme->getNForTemperatureSeries(t_years * secpera,
-					    dt_years * secpera, Nseries); CHKERRQ(ierr);
+  ierr = mbscheme->getNForTemperatureSeries(convert(t_years,"yr","s"),
+					    convert(dt_years,"yr","s"), Nseries); CHKERRQ(ierr);
 
-  const PetscScalar tseries = (t_years - floor(t_years)) * secpera,
-    dtseries = (dt_years * secpera) / ((PetscScalar) Nseries);
+  const PetscScalar tseries = convert(t_years - floor(t_years),"yr","s"),
+    dtseries = convert(dt_years,"yr","s") / ((PetscScalar) Nseries);
 
   // times for the air temperature time-series, in years:
   vector<PetscScalar> ts(Nseries), T(Nseries);
@@ -542,7 +542,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal 
       // use degree-day factors, and number of PDDs, and the snow precipitation, to
       //   get surface mass balance (and diagnostics: accumulation, melt, runoff)
       ierr = mbscheme->getMassFluxesFromPDDs(ddf,
-                                             dt_years * secpera, pddsum, snow_amount,
+                                             convert(dt_years,"yr","s"), pddsum, snow_amount,
                                              accumulation_rate(i,j), // output
                                              melt_rate(i,j), // output
                                              runoff_rate(i,j), // output
@@ -681,7 +681,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
     
   ierr = PetscOptionsReal("-force_to_thk_alpha",
 			  "Specifies the force-to-thickness alpha value in per-year units",
-			  "", alpha * secpera,
+			  "", convert(alpha,"yr-1","s-1"),
 			  &fttalpha, &fttalphaSet); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
@@ -713,12 +713,12 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   if (fttalphaSet == PETSC_TRUE) {
     ierr = verbPrintf(3, grid.com, "    option -force_to_thk_alpha seen\n");
        CHKERRQ(ierr);
-    alpha = fttalpha / secpera;
+    alpha = convert(fttalpha,"yr-1","s-1");
   }
     
   ierr = verbPrintf(2, grid.com,
-		    "    alpha = %.6f a-1 for %.3f a run, for -force_to_thk mechanism\n",
-		    alpha * secpera, grid.end_year - grid.start_year); CHKERRQ(ierr);
+		    "    alpha = %.6f a-1 for -force_to_thk mechanism\n",
+		    convert(alpha,"s-1","yr-1")); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -778,15 +778,10 @@ Let's assume \f$H(t_s)=H_0\f$.  This initial value problem has solution
 \f$H(t) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t-t_s)}\f$
 and so
   \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
+
 The constant \f$\alpha\f$ has a default value \c pism_config:force_to_thickness_alpha.
 
-The final feature is that we turn on this mechanism so it is harshest near the end
-of the run.  In particular,
-  \f[\Delta M = \lambda(t) \alpha (H_{\text{tar}} - H)\f]
-where
-  \f[\lambda(t) = \frac{t-t_s}{t_e-t_s}\f]
-
-The next exacmple uses files generated from the EISMINT-Greenland experiment;
+The next example uses files generated from the EISMINT-Greenland experiment;
 see the corresponding chapter of the User's Manual.
 
 Suppose we regard the SSL2 run as a spin-up to reach a better temperature field.
@@ -798,19 +793,65 @@ in which the ice sheet geometry goes from the the thickness values in
 \code
 #!/bin/bash
 
-NN=8
+NN=8  # default number of processors
+if [ $# -gt 0 ] ; then  # if user says "psearise.sh 8" then NN = 8
+  NN="$1"
+fi
 
-mpiexec -n $NN pismr -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+# set MPIDO if using different MPI execution command, for example:
+#  $ export PISM_MPIDO="aprun -n "
+if [ -n "${PISM_MPIDO:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO  (already set)"
+else
+  PISM_MPIDO="mpiexec -n "
+  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO"
+fi
+
+# check if env var PISM_DO was set (i.e. PISM_DO=echo for a 'dry' run)
+if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
+  echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
+else
+  PISM_DO="" 
+fi
+
+# prefix to pism (not to executables)
+if [ -n "${PISM_PREFIX:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX  (already set)"
+else
+  PISM_PREFIX=""    # just a guess
+  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX"
+fi
+
+# set PISM_EXEC if using different executables, for example:
+#  $ export PISM_EXEC="pismr -cold"
+if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
+else
+  PISM_EXEC="pismr"
+  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
+fi
+
+
+PISM="${PISM_PREFIX}${PISM_EXEC}"
+
+cmd="$PISM_MPIDO $NN $PISM -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+    -surface pdd -pdd_fausto \
+    -o no_force.nc -ts_file ts_no_force.nc -ts_times -500:10:0"
+#$PISM_DO $cmd
+
+echo
+
+cmd="$PISM_MPIDO $NN $PISM -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
   -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc \
-  -o with_force.nc -ts_file ts_with_force.nc -ts_times -500:10:0
-  
-mpiexec -n $NN pismr -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
-  -surface pdd -pdd_fausto \
-  -o no_force.nc -ts_file ts_no_force.nc -ts_times -500:10:0
+  -o with_force.nc -ts_file ts_with_force.nc -ts_times -500:10:0"
+#$PISM_DO $cmd
 
-mpiexec -n $NN pismr -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
-  -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc -force_to_thk_alpha 0.0002 \
-  -o weak_force.nc -ts_file ts_weak_force.nc -ts_times -500:10:0
+echo
+
+cmd="$PISM_MPIDO $NN $PISM -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+    -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc -force_to_thk_alpha 0.005 \
+    -o weak_force.nc -ts_file ts_weak_force.nc -ts_times -500:10:0"
+#$PISM_DO $cmd
 \endcode
 The script also has a run with no forcing, and one with forcing at a lower alpha value,
 a factor of ten smaller than the default.
@@ -832,15 +873,6 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   ierr = verbPrintf(5, grid.com,
      "    updating surface mass balance using -force_to_thk mechanism ...");
      CHKERRQ(ierr);
-    
-  // force-to-thickness mechanism is only full-strength at end of run
-  const PetscScalar lambda = (t - grid.start_year) / (grid.end_year - grid.start_year);
-  ierr = verbPrintf(5, grid.com,
-		    " (t_years = %.3f a, start_year = %.3f a, end_year = %.3f a, alpha = %.5f, lambda = %.3f)\n",
-		    t, grid.start_year , grid.end_year, alpha, lambda); CHKERRQ(ierr);
-  if ((lambda < 0.0) || (lambda > 1.0)) {
-    SETERRQ(4,"computed lambda (for -force_to_thk) out of range; in updateSurfMassFluxAndProvide()");
-  }
 
   PetscScalar **H;
   ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
@@ -850,7 +882,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (ftt_mask(i,j) > 0.5) {
-        result(i,j) += lambda * alpha * (target_thickness(i,j) - H[i][j]);
+        result(i,j) += alpha * (target_thickness(i,j) - H[i][j]);
       }
     }
   }
@@ -885,7 +917,7 @@ Therefore we set here
  */
 PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_years) {
   PetscErrorCode ierr;
-  PetscReal max_dt = 2.0 / (alpha * secpera);
+  PetscReal max_dt = 2.0 / alpha;
   
   ierr = input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
 

@@ -363,8 +363,8 @@ netcdf pism_config {
     pism_config:precip_exponential_factor_for_temperature = 0.07041666667;
     pism_config:precip_exponential_factor_for_temperature_doc = "Kelvin-1; = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [\\ref Huybrechts02] ";
 
-    pism_config:force_to_thickness_alpha = 6.33775292816370e-11;
-    pism_config:force_to_thickness_alpha_doc = "s-1; = 0.002 a-1; exponential coefficient in force-to-thickness mechanism";
+    pism_config:force_to_thickness_alpha = 0.01;
+    pism_config:force_to_thickness_alpha_doc = "yr-1; exponential coefficient in force-to-thickness mechanism";
 
 
     // PISMOceanModel constants

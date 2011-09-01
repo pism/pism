@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Runs the SSL2 EISMINT-Greenland experiment, starting from the output file
-# produced by bootstrap.sh.  Saves state every 10000 model years, and saves a timeseries of
-# volume every 100 years.  See the PISM User's Manual.
+# produced by bootstrap.sh.  Saves map-plane diagnostics every 1000 model years,
+# and saves a timeseries of volume every year.  See the PISM User's Manual.
 #
 # Recommended way to run with 8 processors is "./ssl2.sh 8 >& out.ssl2 &",
 # which saves a transcript in out.ssl2.
@@ -24,9 +24,9 @@ MPIDO="mpiexec -n"
 
 INFILE=green20km_Tsteady.nc
 
-snaps="-save_file snaps_ssl2.nc -save_times 10000:10000:100000"
+exs="-extra_file ex_ssl2.nc -extra_times 1000:1000:100000 -extra_vars diffusivity,temppabase,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf"
 
-ts="-ts_file vol_ssl2.nc -ts_vars ivol -ts_times 0:100:110000"
+ts="-ts_file vol_ssl2.nc -ts_times 0:yearly:110000"
 
-$SHOW $MPIDO $NN pgrn -ssl2 -skip 10 -i $INFILE -ys 0 -ye 110000 ${snaps} ${ts} -o green_ssl2_110ka.nc
+$SHOW $MPIDO $NN pgrn -ssl2 -skip 10 -i $INFILE -ys 0 -ye 110000 ${exs} ${ts} -o green_ssl2_110ka.nc
 
