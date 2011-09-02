@@ -1,7 +1,7 @@
 #!/bin/bash
 
 NN=8  # default number of processors
-if [ $# -gt 0 ] ; then  # if user says "psearise.sh 8" then NN = 8
+if [ $# -gt 0 ] ; then  # if user says test_ftt.sh 8" then NN = 8
   NN="$1"
 fi
 
@@ -41,25 +41,30 @@ fi
 
 PISM="${PISM_PREFIX}${PISM_EXEC}"
 
-cmd="$PISM_MPIDO $NN $PISM -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
     -surface pdd -pdd_fausto \
-    -o no_force.nc -ts_file ts_no_force.nc -ts_times -500:10:0"
-#$PISM_DO $cmd
+    -o no_force.nc -ts_file ts_no_force.nc -ts_times -1000:yearly:0"
+$PISM_DO $cmd
 
 echo
 
-cmd="$PISM_MPIDO $NN $PISM -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
   -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc \
-  -o with_force.nc -ts_file ts_with_force.nc -ts_times -500:10:0"
-#$PISM_DO $cmd
+  -o default_force.nc -ts_file ts_default_force.nc -ts_times -1000:yearly:0"
+$PISM_DO $cmd
 
 echo
 
-cmd="$PISM_MPIDO $NN $PISM -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
     -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc -force_to_thk_alpha 0.005 \
-    -o weak_force.nc -ts_file ts_weak_force.nc -ts_times -500:10:0"
-#$PISM_DO $cmd
+    -o weak_force.nc -ts_file ts_weak_force.nc -ts_times -1000:yearly:0"
+$PISM_DO $cmd
 
+
+cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+    -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc -force_to_thk_alpha 0.05 \
+    -o strong_force.nc -ts_file ts_strong_force.nc -ts_times -1000:yearly:0"
+$PISM_DO $cmd
 
 echo
 echo "Test restartability"
