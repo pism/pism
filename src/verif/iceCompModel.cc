@@ -70,6 +70,8 @@ PetscErrorCode IceCompModel::createVecs() {
   // this ensures that these variables are saved to an output file and are read
   // back in if -i option is used (they are "model_state", in a sense, since
   // PSDummy is used):
+  ierr = variables.add(artm); CHKERRQ(ierr);
+  ierr = variables.add(acab); CHKERRQ(ierr);
   ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
 
