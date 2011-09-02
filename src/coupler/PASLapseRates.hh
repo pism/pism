@@ -100,7 +100,7 @@ protected:
   IceModelVec2S *surface, *thk;
   PetscReal bc_period, bc_reference_year, temp_lapse_rate;
   bool enable_time_averaging;
-  string bc_option_name;
+  string option_prefix;
 
   virtual PetscErrorCode init_internal(PISMVars &vars)
   {
@@ -116,15 +116,17 @@ protected:
 
     ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
     {
-      // FIXME we want access to protected PDirectForcing::bc_option_name instead of
-      //       rechecking options here
-      ierr = PISMOptionsString(bc_option_name, "Specifies a file with top-surface boundary conditions",
+      ierr = PISMOptionsString(option_prefix + "_file",
+                               "Specifies a file with top-surface boundary conditions",
                                filename, bc_file_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-bc_period", "Specifies the length of the climate data period",
+      ierr = PISMOptionsReal(option_prefix + "_period",
+                             "Specifies the length of the climate data period",
                              bc_period, bc_period_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-bc_reference_year", "Boundary condition reference year",
+      ierr = PISMOptionsReal(option_prefix + "_reference_year",
+                             "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
-      ierr = PISMOptionsIsSet("-bc_time_average", "Enable time-averaging of boundary condition data",
+      ierr = PISMOptionsIsSet(option_prefix + "_time_average",
+                              "Enable time-averaging of boundary condition data",
                               enable_time_averaging); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-temp_lapse_rate",
                              "Elevation lapse rate for the temperature, in K per km",
@@ -133,7 +135,7 @@ protected:
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option %s is required.\n", bc_option_name.c_str());
+      PetscPrintf(Model::grid.com, "PISM ERROR: option %s is required.\n", option_prefix.c_str());
       PISMEnd();
     }
 
@@ -221,7 +223,7 @@ public:
     : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
   {
     smb_lapse_rate = 0;
-    bc_option_name = "-surface_file";
+    option_prefix = "-surface";
   }
 
   virtual ~PSLapseRates() {}
@@ -240,7 +242,7 @@ public:
     : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
   {
     precip_lapse_rate = 0;
-    bc_option_name = "-atmosphere_file";
+    option_prefix = "-atmosphere";
   }
 
   virtual ~PALapseRates() {}

@@ -30,7 +30,7 @@ public:
   {
     temp_name       = "shelfbtemp";
     mass_flux_name  = "shelfbmassflux";
-    bc_option_name = "-ocean_file";
+    option_prefix   = "-ocean";
   }
 
   virtual ~PODirectForcing() {}

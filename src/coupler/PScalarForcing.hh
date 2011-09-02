@@ -59,9 +59,9 @@ protected:
     {
       ierr = PISMOptionsString(option, "Specifies a file with scalar offsets",
                                filename, option_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-bc_period", "Specifies the length of the climate data period",
+      ierr = PISMOptionsReal(option + "_period", "Specifies the length of the climate data period",
                              bc_period, bc_period_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-bc_reference_year", "Boundary condition reference year",
+      ierr = PISMOptionsReal(option + "_reference_year", "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);

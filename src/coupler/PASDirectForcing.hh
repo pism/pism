@@ -101,7 +101,7 @@ public:
 
 protected:
   IceModelVec2T temp, mass_flux;
-  string filename, temp_name, mass_flux_name, bc_option_name;
+  string filename, temp_name, mass_flux_name, option_prefix;
 
   PetscReal bc_period, bc_reference_year;
   bool enable_time_averaging;
@@ -117,19 +117,23 @@ protected:
 
     ierr = PetscOptionsBegin(Model::grid.com, "", "Direct forcing options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString(bc_option_name, "Specifies a file with boundary conditions",
+      ierr = PISMOptionsString(option_prefix + "_file",
+                               "Specifies a file with boundary conditions",
                                filename, bc_file_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-bc_period", "Specifies the length of the climate data period",
+      ierr = PISMOptionsReal(option_prefix + "_period",
+                             "Specifies the length of the climate data period",
                              bc_period, bc_period_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-bc_reference_year", "Boundary condition reference year",
+      ierr = PISMOptionsReal(option_prefix + "_reference_year",
+                             "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
-      ierr = PISMOptionsIsSet("-bc_time_average", "Enable time-averaging of boundary condition data",
+      ierr = PISMOptionsIsSet(option_prefix + "_time_average",
+                              "Enable time-averaging of boundary condition data",
                               enable_time_averaging); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option %s is required.\n", bc_option_name.c_str());
+      PetscPrintf(Model::grid.com, "PISM ERROR: option %s is required.\n", option_prefix.c_str());
       PISMEnd();
     }
 
@@ -211,7 +215,7 @@ public:
   {
     temp_name = "artm";
     mass_flux_name = "acab";
-    bc_option_name = "-surface_file";
+    option_prefix = "-surface";
   }
   virtual ~PSDirectForcing() {}
 
@@ -233,7 +237,7 @@ public:
   {
     temp_name = "artm";
     mass_flux_name  = "precip";
-    bc_option_name = "-atmosphere_file";
+    option_prefix = "-atmosphere";
   }
 
   virtual ~PADirectForcing() {}
