@@ -19,6 +19,9 @@
 #include "SSAFEM_Forward.hh"
 #include "Mask.hh"
 
+
+/*! \brief Allocate PETSC structures needed for solving the various linearized
+problems associated with the forward problem. */
 PetscErrorCode SSAFEM_Forward::allocate_ksp()
 {
   PetscErrorCode ierr;
@@ -54,6 +57,7 @@ PetscErrorCode SSAFEM_Forward::allocate_ksp()
   return 0;
 }
 
+/*! \brief Undoes allocation in allocate_ksp */
 PetscErrorCode SSAFEM_Forward::deallocate_ksp()
 {
   PetscErrorCode ierr;
@@ -109,6 +113,8 @@ PetscErrorCode SSAFEM_Forward::set_initial_velocity_guess(  IceModelVec2V &v )
   return 0;
 }
 
+// FIXME
+/*! \brief apparently unused method! */
 PetscErrorCode SSAFEM_Forward::setup_vars()
 {
   PetscErrorCode ierr;
@@ -181,6 +187,7 @@ PetscErrorCode SSAFEM_Forward::solveF_core()
   return 0;
 }
 
+/* \brief Solves the nonlinear forward problem taking tauc to SSA velocities. */
 PetscErrorCode SSAFEM_Forward::solveF(IceModelVec2V &result)
 {
   PetscErrorCode ierr;
@@ -192,7 +199,7 @@ PetscErrorCode SSAFEM_Forward::solveF(IceModelVec2V &result)
   return 0;
 }
 
-
+/* \brief Solves the linearized forward problem */
 PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &result)
 {
   KSPConvergedReason  reason;
@@ -201,13 +208,16 @@ PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &resu
   PISMVector2 **vel;
   PISMVector2 **rhs;
 
+  // We need SSA velocities to compute the linearization
   ierr = solveF_core(); CHKERRQ(ierr);
 
+  // If tauc has been touched, we need to reassemble the linearzation matrix.
   if(m_reassemble_T_matrix_needed)
   {
     assemble_T_matrix();
   }
 
+  // Assemble the right-hand side for the linearized forward problem.
   dtauc.get_array(dtauc_a);  
   ierr = DAVecGetArray(SSADA,m_VecU,&vel); CHKERRQ(ierr);
   ierr = DAVecGetArray(SSADA,m_VecRHS2,&rhs); CHKERRQ(ierr);
@@ -215,7 +225,6 @@ PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &resu
   dtauc.end_access();
   ierr = DAVecRestoreArray(SSADA, m_VecU, &vel); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(SSADA, m_VecRHS2, &rhs); CHKERRQ(ierr);
-
 
 
   // call PETSc to solve linear system by iterative method.
@@ -240,6 +249,7 @@ PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &resu
   return 0;
 }
 
+//! \brief Solves the adjoint of the linearized forward problem.
 PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2S &result)
 {
   KSPConvergedReason  reason;
@@ -313,6 +323,7 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
   return 0;
 }
 
+//! \brief Builds the matrix for the linearized forward PDE.
 PetscErrorCode SSAFEM_Forward::assemble_T_matrix()
 {
   PISMVector2 **vel;

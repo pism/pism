@@ -241,20 +241,23 @@ if __name__ == '__main__':
                   PISM.PISM_Revision) 
   PISM.stop_on_version_option()
   usage = \
-"""  pross.py -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]
-  or (at python prompt)
-    run pross -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]
-  where:
-    -boot_file  IN.nc is input file in NetCDF format: 
-                contains PISM-written model state
-    -Mx         number of grid points in the x direction
-    -My         number of grid points in the y direction
-    -riggs      read RIGGS data from a file
-  notes:
-    * -boot_file is required
+"""This is a python implementation of the PISM 'pross' example.  It's usage
+is identical:  
+
+pross.py -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]
+or (at python prompt)
+  run pross -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]
+where:
+  -boot_file  IN.nc is input file in NetCDF format: 
+              contains PISM-written model state
+  -Mx         number of grid points in the x direction
+  -My         number of grid points in the y direction
+  -riggs      read RIGGS data from a file
+notes:
+  * -boot_file is required
 """
 
-  PISM.show_usage_check_req_opts(com,"pross",["-boot_file"],usage)
+  PISM.show_usage_check_req_opts(com,"python pross.py",["-boot_file"],usage)
 
   config = context.config()
   config.set_flag("use_ssa_velocity", True)

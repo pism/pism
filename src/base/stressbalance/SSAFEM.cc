@@ -439,7 +439,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
         PetscScalar *Duq = Du[q];
 
         // Coefficients and weights for this quadrature point.
-        const FEStoreNode *feS = &feStore[ij*4+q];
+        const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
         const PetscReal    jw  = JxW[q];
         PetscReal nuH, beta;
         ierr = PointwiseNuHAndBeta(feS,u+q,Duq,&nuH,NULL,&beta,NULL);CHKERRQ(ierr);

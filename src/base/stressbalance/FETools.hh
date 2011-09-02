@@ -140,7 +140,7 @@ in their documentation:
 - Dirichlet data: FEDOFMap
 - Vector valued functions: (FEDOFMap, FEQuadrature)
 
-It should be mentioned that the classes in this module are not intended
+The classes in this module are not intended
 to be a fancy finite element package.
 Their purpose is to clarify the steps that occur in the computation of
 residuals and Jacobians in SSAFEM, and to isolate and consolodate 

@@ -21,6 +21,15 @@
 
 #include "SSAFEM.hh"
 
+//! \file 
+//! \brief Class for implementing the hard parts of a 'siple' 
+// NonlinearForwardProblem for the SSA.
+/*!\file
+Discussion goes here about what the forward problem is, what its
+linearization (T) is, what the adjoint of said linearization (T^*)
+is, and the inner products.
+*/
+
 //! Forward problem for the map from yeild stress to velocities in the SSA
 class SSAFEM_Forward : public SSAFEM
 {
