@@ -1716,7 +1716,7 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   vars[0].init_2d("dHdt", grid);
   
-  set_attrs("dHdt", "ice thickness rate of change",
+  set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
             "m s-1", "m year-1", 0);
 
   vars[0].set("valid_min",  convert(-1e6, "m/year", "m/s"));
