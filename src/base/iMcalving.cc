@@ -35,6 +35,10 @@ PetscErrorCode IceModel::eigenCalving() {
   const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid.com, "######### eigenCalving() start \n");    CHKERRQ(ierr);
+  
+  PetscScalar
+    my_discharge_flux = 0,
+    discharge_flux = 0;
 
   // is ghost communication really needed here?
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
@@ -161,6 +165,7 @@ PetscErrorCode IceModel::eigenCalving() {
 
         // apply calving rate at partially filled or empty grid cells
         if (calvrate > 0.0) {
+	  my_discharge_flux -= calvrate * dt; // no need to account for diffcalvrate further down, its all in this line
           vHref(i, j) -= calvrate * dt; // in m
           if(vHref(i, j) < 0.0) { // i.e. partially filled grid cell has completely calved off
             vDiffCalvRate(i, j) =  - vHref(i, j) / dt;// in m/s, means additional ice loss
@@ -214,6 +219,10 @@ PetscErrorCode IceModel::eigenCalving() {
   ierr = vPrinStrain1.end_access(); CHKERRQ(ierr);
   ierr = vPrinStrain2.end_access(); CHKERRQ(ierr);
   ierr = vDiffCalvRate.end_access(); CHKERRQ(ierr);
+  
+  ierr = PetscGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
+  PetscScalar factor = config.get("ice_density") * (dx * dy);
+  cumulative_discharge_flux     += discharge_flux     * factor;
 
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
@@ -231,6 +240,11 @@ PetscErrorCode IceModel::eigenCalving() {
 PetscErrorCode IceModel::calvingAtThickness() {
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid.com, "######### calvingAtThickness() start\n");    CHKERRQ(ierr);
+  
+  PetscScalar
+    my_discharge_flux = 0,
+    discharge_flux = 0;
+  const PetscScalar dx = grid.dx, dy = grid.dy;
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
@@ -258,6 +272,7 @@ PetscErrorCode IceModel::calvingAtThickness() {
                                     (vH(i, j + 1) == 0.0 && vbed(i, j + 1) < sea_level) ||
                                     (vH(i, j - 1) == 0.0 && vbed(i, j - 1) < sea_level));
       if (hereFloating && vH(i, j) <= Hcalving && icefreeOceanNeighbor) {
+	my_discharge_flux -= vHnew(i, j);
         vHnew(i, j) = 0.0;
       }
     }
@@ -265,6 +280,10 @@ PetscErrorCode IceModel::calvingAtThickness() {
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
+  
+  ierr = PetscGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
+  PetscScalar factor = config.get("ice_density") * (dx * dy);
+  cumulative_discharge_flux     += discharge_flux     * factor;
 
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);

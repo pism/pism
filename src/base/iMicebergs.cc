@@ -238,6 +238,11 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid.com, "######### killIdentifiedIceBergs() start\n"); CHKERRQ(ierr);
   const bool vpik = config.get_flag("verbose_pik_messages");
+  
+  PetscScalar
+    my_discharge_flux = 0,
+    discharge_flux = 0; 
+  const PetscScalar dx = grid.dx, dy = grid.dy;
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
@@ -248,6 +253,7 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
 
       if (vIcebergMask(i, j) == ICEBERGMASK_ICEBERG_CAND) {
          // it is not a candidate any more, it is an iceberg!
+         my_discharge_flux -= vH(i, j);
          vH(i, j) = 0.0;
          vh(i, j) = 0.0;
          vMask(i, j) = MASK_ICE_FREE_OCEAN;
@@ -265,6 +271,10 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
   ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vh.end_access(); CHKERRQ(ierr);
+  
+  ierr = PetscGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
+  PetscScalar factor = config.get("ice_density") * (dx * dy);
+  cumulative_discharge_flux     += discharge_flux     * factor;
 
   ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vMask.endGhostComm(); CHKERRQ(ierr);
@@ -288,6 +298,11 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid.com, "######### killEasyIceBergs() start\n"); CHKERRQ(ierr);
   const bool vpik = config.get_flag("verbose_pik_messages");
+  
+  PetscScalar
+    my_discharge_flux = 0,
+    discharge_flux = 0;
+  const PetscScalar dx = grid.dx, dy = grid.dy;
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
@@ -352,6 +367,7 @@ PetscErrorCode IceModel::killEasyIceBergs() {
         if ((icount == 6 && hgrounded_eb < hfloating_eb && hgrounded_wb < hfloating_wb) ||
             (jcount == 6 && hgrounded_nb < hfloating_nb && hgrounded_sb < hfloating_sb)) {
 
+	  my_discharge_flux -= vHnew(i, j);
           vHnew(i, j) = 0.0;
           vh(i, j) = 0.0;
           vMask(i, j) = MASK_ICE_FREE_OCEAN;
@@ -389,6 +405,7 @@ PetscErrorCode IceModel::killEasyIceBergs() {
                                      thk.n == 0.0 && thk.s == 0.0);
 
       if (thk.ij > 0.0 && hgrounded < hfloating && all_4neighbors_icefree) {
+	my_discharge_flux -= vHnew(i, j);
         vHnew(i, j) = 0.0;
         vh(i, j) = 0.0;
         vMask(i, j) = MASK_ICE_FREE_OCEAN;
@@ -422,6 +439,7 @@ PetscErrorCode IceModel::killEasyIceBergs() {
                                      vH(i, j + 1) == 0.0 &&
                                      vH(i, j - 1) == 0.0);
       if (vHref(i, j) > 0.0 && all_4neighbors_icefree) {
+	my_discharge_flux -= vHref(i, j);
         vHref(i, j) = 0.0;
         if (vpik) {
           PetscSynchronizedPrintf(grid.com, 
@@ -437,6 +455,10 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   ierr = vHref.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
+  
+  ierr = PetscGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
+  PetscScalar factor = config.get("ice_density") * (dx * dy);
+  cumulative_discharge_flux     += discharge_flux     * factor;
 
   if (vpik)  // actually get output from PetscSynchronizedPrintf()
     PetscSynchronizedFlush(grid.com);

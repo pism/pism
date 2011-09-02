@@ -115,6 +115,9 @@ class IceModel {
   friend class IceModel_cumulative_ocean_kill_flux;
   friend class IceModel_float_kill_flux;
   friend class IceModel_cumulative_float_kill_flux;
+  friend class IceModel_discharge_flux;
+  friend class IceModel_cumulative_discharge_flux;
+  
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
@@ -263,6 +266,7 @@ protected:
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     cumulative_basal_ice_flux,
     cumulative_float_kill_flux,
+    cumulative_discharge_flux,
     cumulative_nonneg_rule_flux,
     cumulative_ocean_kill_flux,
     cumulative_sub_shelf_ice_flux,

@@ -76,6 +76,8 @@ PetscErrorCode IceModel::init_diagnostics() {
   ts_diagnostics["cumulative_ocean_kill_flux"]    = new IceModel_cumulative_ocean_kill_flux(this, grid, variables);
   ts_diagnostics["float_kill_flux"]    = new IceModel_float_kill_flux(this, grid, variables);
   ts_diagnostics["cumulative_float_kill_flux"]    = new IceModel_cumulative_float_kill_flux(this, grid, variables);
+  ts_diagnostics["discharge_flux"]    = new IceModel_discharge_flux(this, grid, variables);
+  ts_diagnostics["cumulative_discharge_flux"]    = new IceModel_cumulative_discharge_flux(this, grid, variables);
 
 
   // Get diagnostics supported by the stress balance object:
@@ -1709,6 +1711,50 @@ PetscErrorCode IceModel_cumulative_float_kill_flux::update(PetscReal a, PetscRea
   return 0;
 }
 
+IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMTSDiag<IceModel>(m, g, my_vars) {
+  
+  // set metadata:
+  ts = new DiagnosticTimeseries(&grid, "discharge_flux", time_dimension_name);
+  
+  ts->set_units("kg s-1", "");
+  ts->set_dimension_units(time_units, "");
+  ts->set_attr("long_name", "discharge (calving & icebergs) flux");
+  ts->rate_of_change = true;
+}
+
+PetscErrorCode IceModel_discharge_flux::update(PetscReal a, PetscReal b) {
+  PetscErrorCode ierr;
+  PetscReal value;
+ 
+  value = model->cumulative_discharge_flux;
+
+  ierr = ts->append(value, a, b); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+IceModel_cumulative_discharge_flux::IceModel_cumulative_discharge_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMTSDiag<IceModel>(m, g, my_vars) {
+  
+  // set metadata:
+  ts = new DiagnosticTimeseries(&grid, "cumulative_discharge_flux", time_dimension_name);
+  
+  ts->set_units("kg", "");
+  ts->set_dimension_units(time_units, "");
+  ts->set_attr("long_name", "cumulative discharge (calving etc.) flux");
+}
+
+PetscErrorCode IceModel_cumulative_discharge_flux::update(PetscReal a, PetscReal b) {
+  PetscErrorCode ierr;
+  PetscReal value;
+ 
+  value = model->cumulative_discharge_flux;
+
+  ierr = ts->append(value, a, b); CHKERRQ(ierr);
+  
+  return 0;
+}
 
 IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {

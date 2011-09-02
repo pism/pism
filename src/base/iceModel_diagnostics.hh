@@ -383,11 +383,27 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
-//! \brief Reports the total -float_kill flux.
+//! \brief Reports the cumulative total -float_kill flux.
 class IceModel_cumulative_float_kill_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_cumulative_float_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
+//! \brief Reports the total discharge flux.
+class IceModel_discharge_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_discharge_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
+//! \brief Reports the cumulative total discharge flux.
+class IceModel_cumulative_discharge_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_cumulative_discharge_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
