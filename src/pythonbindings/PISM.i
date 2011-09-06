@@ -189,6 +189,7 @@ typedef int NormType; // YUCK.
 
 %apply PetscInt & OUTPUT {PetscInt & result};
 %apply PetscReal & OUTPUT {PetscReal & result};
+%apply PetscScalar & OUTPUT {PetscScalar & result};
 %apply PetscReal & OUTPUT {PetscReal & out};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag};
 
