@@ -154,9 +154,9 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, int z_count, int t) const
           imap[j]  = imap0[j];
 	}
       } else {
-        MPI_Recv(start.data(), N, MPI_INT, proc, start_tag, com, &mpi_stat);
-        MPI_Recv(count.data(), N, MPI_INT, proc, count_tag, com, &mpi_stat);
-        MPI_Recv(imap.data(),  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
+        MPI_Recv(&start[0], N, MPI_INT, proc, start_tag, com, &mpi_stat);
+        MPI_Recv(&count[0], N, MPI_INT, proc, count_tag, com, &mpi_stat);
+        MPI_Recv(&imap[0],  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
       }
 
       // Convert start, count and imap to types NetCDF requires:
@@ -166,7 +166,7 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, int z_count, int t) const
         nc_imap[i]  = imap[i];
       }
 
-      stat = nc_get_varm_double(ncid, varid, nc_start.data(), nc_count.data(), NULL, nc_imap.data(), a_double);
+      stat = nc_get_varm_double(ncid, varid, &nc_start[0], &nc_count[0], NULL, &nc_imap[0], a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       if (proc != 0) {
@@ -175,9 +175,9 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, int z_count, int t) const
       }
     }
   } else {                      // if (rank == 0)
-    MPI_Send(start.data(), N, MPI_INT, 0, start_tag, com);
-    MPI_Send(count.data(), N, MPI_INT, 0, count_tag, com);
-    MPI_Send(imap.data(),  N, MPI_INT, 0, imap_tag,  com);
+    MPI_Send(&start[0], N, MPI_INT, 0, start_tag, com);
+    MPI_Send(&count[0], N, MPI_INT, 0, count_tag, com);
+    MPI_Send(&imap[0],  N, MPI_INT, 0, imap_tag,  com);
     MPI_Recv(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, com, &mpi_stat);
   }
 
@@ -251,9 +251,9 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, int z_count) const {
     for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
       if (proc != 0) {
         grid->profiler->begin(event_write_send_and_receive);
-        MPI_Recv(start.data(), N, MPI_INT, proc, start_tag, com, &mpi_stat);
-        MPI_Recv(count.data(), N, MPI_INT, proc, count_tag, com, &mpi_stat);
-        MPI_Recv(imap.data(),  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
+        MPI_Recv(&start[0], N, MPI_INT, proc, start_tag, com, &mpi_stat);
+        MPI_Recv(&count[0], N, MPI_INT, proc, count_tag, com, &mpi_stat);
+        MPI_Recv(&imap[0],  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
 	MPI_Recv(a_double, buffer_size, MPI_DOUBLE, proc, data_tag, com, &mpi_stat);
         grid->profiler->end(event_write_send_and_receive);
       }
@@ -274,17 +274,17 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, int z_count) const {
         stride[i]   = 1;
       }
 
-      stat = nc_put_varm_double(ncid, varid, nc_start.data(), nc_count.data(),
-                                stride.data(), nc_imap.data(), a_double);
+      stat = nc_put_varm_double(ncid, varid, &nc_start[0], &nc_count[0],
+                                &stride[0], &nc_imap[0], a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       grid->profiler->end(event_write_proc0);
     }
   } else {  // all other processors send to rank 0 processor
     grid->profiler->begin(event_write_send_and_receive);
-    MPI_Send(start.data(), N, MPI_INT, 0, start_tag, com);
-    MPI_Send(count.data(), N, MPI_INT, 0, count_tag, com);
-    MPI_Send(imap.data(),  N, MPI_INT, 0, imap_tag,  com);
+    MPI_Send(&start[0], N, MPI_INT, 0, start_tag, com);
+    MPI_Send(&count[0], N, MPI_INT, 0, count_tag, com);
+    MPI_Send(&imap[0],  N, MPI_INT, 0, imap_tag,  com);
     MPI_Send(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, com);
     grid->profiler->end(event_write_send_and_receive);
   }
@@ -418,9 +418,9 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
           imap[i]  = imap0[i];
 	}
       } else {
-        MPI_Recv(start.data(), N, MPI_INT, proc, start_tag, com, &mpi_stat);
-	MPI_Recv(count.data(), N, MPI_INT, proc, count_tag, com, &mpi_stat);
-	MPI_Recv(imap.data(),  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
+        MPI_Recv(&start[0], N, MPI_INT, proc, start_tag, com, &mpi_stat);
+	MPI_Recv(&count[0], N, MPI_INT, proc, count_tag, com, &mpi_stat);
+	MPI_Recv(&imap[0],  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
       }
 
       // Convert start, count and imap to types NetCDF requires and compute how
@@ -433,7 +433,7 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
         a_len = a_len * count[i];
       }
 
-      stat = nc_get_varm_double(ncid, varid, nc_start.data(), nc_count.data(), NULL, nc_imap.data(), buffer);
+      stat = nc_get_varm_double(ncid, varid, &nc_start[0], &nc_count[0], NULL, &nc_imap[0], buffer);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       // send the filled buffer
@@ -442,9 +442,9 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
       }
     }
   } else { // not process 0:
-    MPI_Send(start.data(), N, MPI_INT, 0, start_tag, com);  // send out my start
-    MPI_Send(count.data(), N, MPI_INT, 0, count_tag, com);  // send out my count
-    MPI_Send(imap.data(),  N, MPI_INT, 0, imap_tag,  com);  // send out my imap
+    MPI_Send(&start[0], N, MPI_INT, 0, start_tag, com);  // send out my start
+    MPI_Send(&count[0], N, MPI_INT, 0, count_tag, com);  // send out my count
+    MPI_Send(&imap[0],  N, MPI_INT, 0, imap_tag,  com);  // send out my imap
     MPI_Recv(buffer, buffer_length, MPI_DOUBLE, 0, data_tag, com, &mpi_stat); // get back filled buffer
   }
 

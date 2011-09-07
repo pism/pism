@@ -193,7 +193,7 @@ PetscErrorCode NCTool::put_dimension(int varid, const vector<double> &vals) cons
 
   ierr = data_mode(); CHKERRQ(ierr); 
 
-  stat = nc_put_var_double(ncid, varid, vals.data()); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_put_var_double(ncid, varid, &vals[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   return 0;
 }
 

@@ -142,7 +142,7 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, int N,
 
   ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
 
-  ierr = reference_surface.interp(i, j, N, ts, usurf.data()); CHKERRQ(ierr);
+  ierr = reference_surface.interp(i, j, N, ts, &usurf[0]); CHKERRQ(ierr);
 
   for (int m = 0; m < N; ++m) {
     values[m] -= temp_lapse_rate * ((*surface)(i, j) - usurf[m]);

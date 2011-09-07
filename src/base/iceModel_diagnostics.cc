@@ -121,7 +121,7 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
       const PetscScalar H = model->vH(i,j);
       if (H > 0.0) {
         (*result)(i,j) = model->ice->averagedHardness_from_enth(H, grid.kBelowHeight(H),
-                                                                grid.zlevels.data(), Eij);
+                                                                &grid.zlevels[0], Eij);
       } else { // put negative value below valid range
         (*result)(i,j) = fillval;
       }

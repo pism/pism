@@ -348,7 +348,7 @@ PetscErrorCode IceGrid::createDA() {
                     My, Mx,
 		    Ny, Nx,
 		    1, max_stencil_width, // dof, stencil width
-                    procs_y.data(), procs_x.data(),
+                    &procs_y[0], &procs_x[0],
 		    &da2);
   if (ierr != 0) {
     PetscErrorCode ierr2;

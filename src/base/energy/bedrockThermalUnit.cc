@@ -368,7 +368,7 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years)
       }
       Tbnew[k0] = (*bedtoptemp)(i,j);
 
-      ierr = temp.setInternalColumn(i,j,Tbnew.data()); CHKERRQ(ierr); // copy from Tbnew into temp memory
+      ierr = temp.setInternalColumn(i,j,&Tbnew[0]); CHKERRQ(ierr); // copy from Tbnew into temp memory
     }
   }
   ierr = bedtoptemp->end_access(); CHKERRQ(ierr);

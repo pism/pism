@@ -63,7 +63,7 @@ PetscErrorCode computeSigmaErrors(IceModelVec3 &Sigma,
         r = sqrt(PetscSqr(xx) + PetscSqr(yy));
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
-        bothexact(0.0,r,grid.zlevels.data(),Mz,0.0,
+        bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
                   &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
 
         for (PetscInt k = 0; k < Mz; k++)
@@ -231,7 +231,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
           T[k]=Ts;
       } else {
         r = PetscMax(r,1.0); // avoid singularity at origin
-        bothexact(0.0,r,grid.zlevels.data(),Mz,0.0,
+        bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
                   &H[i][j],dummy5,T,dummy1,dummy2,dummy3,dummy4);
       }
       ierr = enthalpy->setInternalColumn(i,j,T); CHKERRQ(ierr);
