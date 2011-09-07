@@ -146,6 +146,24 @@ PetscErrorCode PADirectForcing::end_pointwise_access() {
 
 PetscErrorCode PADirectForcing::temp_time_series(int i, int j, int N,
                                                  PetscReal *ts, PetscReal *values) {
-  PetscErrorCode ierr = temp.interp(i, j, N, ts, values); CHKERRQ(ierr);
+
+  PetscReal *ptr;
+
+  if (bc_period > 0.01) {
+    // Recall that this method is called for each map-plane point during a
+    // time-step. This if-condition is here to avoid calling my_mod() if the
+    // user didn't ask for periodized climate.
+    ts_mod.reserve(N);
+
+    for (int k = 0; k < N; ++k)
+      ts_mod[k] = my_mod(ts[k]);
+
+    ptr = &ts_mod[0];
+  } else {
+    ptr = ts;
+  }
+
+  PetscErrorCode ierr = temp.interp(i, j, N, ptr, values); CHKERRQ(ierr);
+
   return 0;
 }

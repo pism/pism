@@ -55,7 +55,7 @@ public:
     // If the user asked for periodized climate, limit time-steps so that PISM
     // never tries to average data over an interval that begins in one period and
     // ends in the next one.
-    if (bc_period > 1e-6)
+    if (bc_period > 0.01)
       dt_years = PetscMin(dt_years, bc_period - t_years);
 
     return 0;
@@ -250,6 +250,8 @@ public:
   virtual PetscErrorCode end_pointwise_access();  
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
+protected:
+  vector<PetscReal> ts_mod;
 };
 
 #endif /* _PASDIRECTFORCING_H_ */

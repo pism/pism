@@ -246,6 +246,8 @@ PetscErrorCode IceModelVec2T::update(int start) {
       missing -= kept;
       start += kept;
       first += discarded;
+    } else {
+      first = start;
     }
   } else {
     first = start;
