@@ -467,6 +467,8 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = acab_cumulative.set(0.0); CHKERRQ(ierr);
   }
 
+  ierr = compute_cell_areas(); CHKERRQ(ierr);
+
   // a report on whether PISM-PIK modifications of IceModel are in use
   const bool pg   = config.get_flag("part_grid"),
     pr   = config.get_flag("part_redist"),
@@ -768,9 +770,6 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_timeseries(); CHKERRQ(ierr);
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
-
-  // compute (possibly corrected) cell areas:
-  ierr = compute_cell_areas(); CHKERRQ(ierr);
 
   event_step      = grid.profiler->create("step",     "time spent doing time-stepping");
   event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");

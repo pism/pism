@@ -105,6 +105,7 @@ add_library (pismbase
   base/iMtemp.cc
   base/iMtimeseries.cc
   base/iMutil.cc
+  base/iMcell_areas.cc
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc

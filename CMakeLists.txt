@@ -22,24 +22,31 @@ if (NOT Pism_MANUAL_BUILD)
   find_package (PETSc REQUIRED)
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
-  find_package (FFTW)
   # use the PETSc compiler as a hint when looking for an MPI compiler
   set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
   find_package (MPI REQUIRED)
+  # optional
+  find_package (FFTW)
+  find_package (PROJ4)
 else ()
   # includes
   set (PETSC_INCLUDES "EDIT_THIS" CACHE STRING "PETSc include directories (semicolon-separated list)")
   set (GSL_INCLUDES   "EDIT_THIS" CACHE STRING "GSL include directories (semicolon-separated list)")
-  set (FFTW_INCLUDES "EDIT_THIS" CACHE STRING "FFTW include directories (semicolon-separated list)")
-  set (FFTW_FOUND "OFF" CACHE BOOL "Set to 'ON' to build with FFTW3.")
   set (NETCDF_INCLUDES "EDIT_THIS" CACHE STRING "NetCDF include directories (semicolon-separated list)")
   set (MPI_INCLUDE_PATH "EDIT_THIS" CACHE STRING "MPI include directories (semicolon-separated list)")
+  # optional:
+  set (FFTW_INCLUDES "EDIT_THIS" CACHE STRING "FFTW include directories (semicolon-separated list)")
+  set (FFTW_FOUND "OFF" CACHE BOOL "Set to 'ON' to build with FFTW3.")
+  set (PROJ4_INCLUDES "EDIT_THIS" CACHE STRING "proj.4 include directories (semicolon-separated list)")
+  set (PROJ4_FOUND "OFF" CACHE BOOL "Set to 'ON' to build with proj.4.")
   # libraries
   set (PETSC_LIBRARIES "EDIT_THIS" CACHE STRING "PETSc libraries (semicolon-separated list)")
   set (GSL_LIBRARIES "EDIT_THIS" CACHE STRING "GSL libraries (semicolon-separated list)")
-  set (FFTW_LIBRARIES "EDIT_THIS" CACHE STRING "FFTW libraries (semicolon-separated list)")
   set (NETCDF_LIBRARIES "EDIT_THIS" CACHE STRING "NetCDF libraries (semicolon-separated list)")
   set (MPI_LIBRARIES "EDIT_THIS" CACHE STRING "MPI libraries (semicolon-separated list)")
+  # optional
+  set (FFTW_LIBRARIES "EDIT_THIS" CACHE STRING "FFTW libraries (semicolon-separated list)")
+  set (PROJ4_LIBRARIES "EDIT_THIS" CACHE STRING "proj.4 libraries (semicolon-separated list)")
   # programs
   set (MPIEXEC "EDIT_THIS" CACHE FILEPATH "MPI program to run parallel tasks with")
 endif()
@@ -200,6 +207,7 @@ endif ()
 include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_INCLUDE_PATH} ${FFTW_INCLUDES})
 set (Pism_EXTERNAL_LIBS ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
 
+# Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=1)
   include_directories (${FFTW_INCLUDE_DIRS})
@@ -207,6 +215,13 @@ if (FFTW_FOUND)
 else (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=0)
 endif (FFTW_FOUND)
+
+# Do cell area computations the right way if proj.4 was found.
+if (PROJ4_FOUND)
+  add_definitions (-DPISM_HAVE_PROJ4=1)
+  include_directories (${PROJ4_INCLUDES})
+  list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
+endif()
 
 add_custom_target (etags
   COMMAND find -E src -regex ".*\\.(c|cc|h|hh)" | xargs etags
