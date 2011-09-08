@@ -292,6 +292,8 @@ void IceModel::attach_ocean_model(PISMOceanModel *my_ocean) {
   ocean = my_ocean;
 }
 
+#if (PISM_HAVE_PROJ4==0)      // no proj.4
+
 //! Computes the area of a triangle using vector cross product.
 static PetscReal triangle_area(PetscReal *A, PetscReal *B, PetscReal *C) {
   PetscReal V1[3], V2[3];
@@ -440,4 +442,10 @@ PetscErrorCode IceModel::compute_cell_areas() {
 
   return 0;
 }
+
+#elif (PISM_HAVE_PROJ4==1)      // no proj.4
+// use the version in iMcell_areas.cc
+#else  // PISM_HAVE_PROJ4 is not set
+#error "PISM build system error: PISM_HAVE_PROJ4 is not set."
+#endif
 

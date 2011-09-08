@@ -21,6 +21,7 @@ find_package (PETSc REQUIRED)
 find_package (GSL REQUIRED)
 find_package (NetCDF REQUIRED)
 find_package (FFTW)
+find_package (PROJ4)
 
 # use the PETSc compiler as a hint when looking for an MPI compiler
 set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
@@ -35,7 +36,11 @@ option (Pism_BUILD_PYTHON_BINDINGS "Build (experimental) python bindings" OFF)
 
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
 option (Pism_NETCDF4_OUTPUT        "Turn this on to make PISM produce NetCDF-4 files" OFF)
-option (Pism_NETCDF4_COMPRESS     "Tirn this on to make PISM produce compressed NetCDF-4 files" OFF)
+option (Pism_NETCDF4_COMPRESS     "Turn this on to make PISM produce compressed NetCDF-4 files" OFF)
+
+if (PROJ4_FOUND)
+  option (Pism_USE_PROJ4            "Turn this on to use proj.4 for cell area computations" OFF)
+endif ()
 
 if (Pism_NETCDF4_COMPRESS AND NOT Pism_NETCDF4_OUTPUT)
   set (Pism_NETCDF4_OUTPUT ON CACHE BOOL "Write NetCDF-4-format PISM output files" FORCE)
@@ -182,6 +187,7 @@ endif ()
 include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_INCLUDE_PATH} ${FFTW_INCLUDES})
 set (Pism_EXTERNAL_LIBS ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
 
+# Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=1)
   include_directories (${FFTW_INCLUDE_DIRS})
@@ -189,6 +195,13 @@ if (FFTW_FOUND)
 else (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=0)
 endif (FFTW_FOUND)
+
+# Do cell area computations the right way if proj.4 was found.
+if (Pism_USE_PROJ4)
+  add_definitions (-DPISM_HAVE_PROJ4=1)
+  include_directories (${PROJ4_INCLUDES})
+  list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
+endif()
 
 add_custom_target (etags
   COMMAND find -E src -regex ".*\\.(c|cc|h|hh)" | xargs etags
