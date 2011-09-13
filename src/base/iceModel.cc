@@ -400,7 +400,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = cell_area.set_attrs("diagnostic", "cell areas", "m2", ""); CHKERRQ(ierr);
   ierr = cell_area.set_attr("comment",
                             "values are equal to dx*dy "
-                            "if latitude and longitude fields are not available; "
+                            "if projection parameters are not available; "
                             "otherwise WGS84 ellipsoid is used"); CHKERRQ(ierr); 
   cell_area.time_independent = true;
   ierr = cell_area.set_glaciological_units("km2"); CHKERRQ(ierr);

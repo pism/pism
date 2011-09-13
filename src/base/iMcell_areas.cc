@@ -22,36 +22,6 @@
 
 #include <proj_api.h>
 
-//! Computes geocentric x-coordinate of a point using reference ellipsoid parameters.
-//! (see http://en.wikipedia.org/wiki/Reference_ellipsoid)
-static PetscReal geo_x(PetscReal a, PetscReal b,
-		       PetscReal lon, PetscReal lat) {
-  const PetscReal oe = acos(b/a),
-    N = a/sqrt( 1 - PetscSqr( sin(oe)*sin(lat) ) );
-
-  return N * cos(lat) * cos(lon);
-}
-
-//! Computes geocentric y-coordinate of a point using reference ellipsoid parameters.
-//! (see http://en.wikipedia.org/wiki/Reference_ellipsoid)
-static PetscReal geo_y(PetscReal a, PetscReal b,
-		       PetscReal lon, PetscReal lat) {
-  const PetscReal oe = acos(b/a),
-    N = a/sqrt( 1 - PetscSqr( sin(oe)*sin(lat) ) );
-
-  return N * cos(lat) * sin(lon);
-}
-
-//! Computes geocentric z-coordinate of a point using reference ellipsoid parameters.
-//! (see http://en.wikipedia.org/wiki/Reference_ellipsoid)
-static PetscReal geo_z(PetscReal a, PetscReal b,
-		       PetscReal /*lon*/, PetscReal lat) {
-  const PetscReal oe = acos(b/a),
-    N = a/sqrt( 1 - PetscSqr( sin(oe)*sin(lat) ) );
-
-  return N * sin(lat) * PetscSqr(b/a);
-}
-
 //! Computes the area of a triangle using vector cross product.
 static PetscReal triangle_area(PetscReal *A, PetscReal *B, PetscReal *C) {
   PetscReal V1[3], V2[3];
@@ -67,7 +37,7 @@ static PetscReal triangle_area(PetscReal *A, PetscReal *B, PetscReal *C) {
 
 PetscErrorCode IceModel::compute_cell_areas() {
   PetscErrorCode ierr;
-  projPJ pism, lonlat;
+  projPJ pism, lonlat, geocent;
 
   if (config.get_flag("correct_cell_areas") == false ||
       mapping.has("proj4") == false) {
@@ -79,12 +49,9 @@ PetscErrorCode IceModel::compute_cell_areas() {
 
   string proj_string = mapping.get_string("proj4");
 
-  // WGS84 parameters:
-  PetscReal a = config.get("WGS84_semimajor_axis"),
-    b = config.get("WGS84_semiminor_axis");
-
-  lonlat = pj_init_plus("+proj=lonlat +datum=WGS84 +ellps=WGS84");
-  pism   = pj_init_plus(proj_string.c_str());
+  lonlat  = pj_init_plus("+proj=lonlat +datum=WGS84 +ellps=WGS84");
+  geocent = pj_init_plus("+proj=geocent +datum=WGS84 +ellps=WGS84");
+  pism    = pj_init_plus(proj_string.c_str());
 
   if (pism == NULL) {
     PetscPrintf(grid.com, "PISM ERROR: proj.4 string '%s' is invalid. Exiting...\n",
@@ -114,44 +81,36 @@ PetscErrorCode IceModel::compute_cell_areas() {
   ierr =  cell_area.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double x = grid.x[i], y = grid.y[j];
+      double x = grid.x[i], y = grid.y[j], Z;
 
+      // compute the cell area:
       double x_nw = x - dx2, y_nw = y + dy2;
-      pj_transform(pism, lonlat, 1, 1, &x_nw, &y_nw, NULL);
+      Z = 0;
+      pj_transform(pism, geocent, 1, 1, &x_nw, &y_nw, &Z);
+      PetscReal nw[3] = {x_nw, y_nw, Z};
 
       double x_ne = x + dx2, y_ne = y + dy2;
-      pj_transform(pism, lonlat, 1, 1, &x_ne, &y_ne, NULL);
+      Z = 0;
+      pj_transform(pism, geocent, 1, 1, &x_ne, &y_ne, &Z);
+      PetscReal ne[3] = {x_ne, y_ne, Z};
 
       double x_se = x + dx2, y_se = y - dy2;
-      pj_transform(pism, lonlat, 1, 1, &x_se, &y_se, NULL);
+      Z = 0;
+      pj_transform(pism, geocent, 1, 1, &x_se, &y_se, &Z);
+      PetscReal se[3] = {x_se, y_se, Z};
 
       double x_sw = x - dx2, y_sw = y - dy2;
-      pj_transform(pism, lonlat, 1, 1, &x_sw, &y_sw, NULL);
+      Z = 0;
+      pj_transform(pism, geocent, 1, 1, &x_sw, &y_sw, &Z);
+      PetscReal sw[3] = {x_sw, y_sw, Z};
 
+      cell_area(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
+
+      // compute lon,lat coordinates:
       pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
-
       // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
       vLongitude(i, j) = x * RAD_TO_DEG;
       vLatitude(i, j)  = y * RAD_TO_DEG;
-
-      // geocentric coordinates:
-      PetscReal sw[3] = {geo_x(a, b, x_sw, y_sw),
-			 geo_y(a, b, x_sw, y_sw),
-			 geo_z(a, b, x_sw, y_sw)};
-
-      PetscReal se[3] = {geo_x(a, b, x_se, y_se),
-			 geo_y(a, b, x_se, y_se),
-			 geo_z(a, b, x_se, y_se)};
-
-      PetscReal ne[3] = {geo_x(a, b, x_ne, y_ne),
-			 geo_y(a, b, x_ne, y_ne),
-			 geo_z(a, b, x_ne, y_ne)};
-
-      PetscReal nw[3] = {geo_x(a, b, x_nw, y_nw),
-			 geo_y(a, b, x_nw, y_nw),
-			 geo_z(a, b, x_nw, y_nw)};
-
-      cell_area(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
     }
   }
   ierr =  cell_area.end_access(); CHKERRQ(ierr);  
@@ -160,6 +119,7 @@ PetscErrorCode IceModel::compute_cell_areas() {
 
   pj_free(pism);
   pj_free(lonlat);
+  pj_free(geocent);
 
   return 0;
 }
