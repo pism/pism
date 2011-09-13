@@ -902,7 +902,7 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
                     "additionalAtStartTimestep() in IceCompModel entered with test %c",
                     testname); CHKERRQ(ierr);
 
-  if (exactOnly == PETSC_TRUE)
+  if (exactOnly == PETSC_TRUE && testname != 'K')
     dt_force = config.get("maximum_time_step_years") * secpera;
 
   // these have no changing boundary conditions or comp sources:
