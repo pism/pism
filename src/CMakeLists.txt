@@ -135,6 +135,7 @@ add_library (pismboundary
   coupler/PSElevation.cc
   coupler/PSConstantPIK.cc
   coupler/POConstantPIK.cc
+  coupler/PSDirectAnomalies.cc
   )
 target_link_libraries (pismboundary pismutil)
 
