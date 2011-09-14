@@ -694,7 +694,18 @@ PetscErrorCode IceCompModel::fillBasalMeltRateSolnTestO() {
 
 PetscErrorCode IceCompModel::initTestsKO() {
   PetscErrorCode    ierr;
-  
+
+  if (testname == 'K') {
+    bool Mbz_set;
+    int Mbz;
+    ierr = PISMOptionsInt("-Mbz", "Number of levels in the bedrock thermal model",
+                          Mbz, Mbz_set); CHKERRQ(ierr);
+    if (Mbz_set && Mbz < 2) {
+      PetscPrintf(grid.com, "PISM ERROR: pismv test K requires a bedrock thermal layer 1000m deep.\n");
+      PISMEnd();
+    }
+  }
+
   ierr = acab.set(0.0); CHKERRQ(ierr);
   ierr = artm.set(223.15); CHKERRQ(ierr);
 
