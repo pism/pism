@@ -41,6 +41,8 @@ PetscErrorCode PSDirectForcing::init(PISMVars &) {
   ierr = mass_flux.set_attrs("climate_forcing",
                        "ice-equivalent surface mass balance (accumulation/ablation) rate",
                        "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+  ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  mass_flux.write_in_glaciological_units = true;
 
   ierr = verbPrintf(2,grid.com,
                     "    reading boundary conditions from %s ...\n",

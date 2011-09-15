@@ -49,10 +49,21 @@ PetscErrorCode IceModel::compute_cell_areas() {
 
   string proj_string = mapping.get_string("proj4");
 
-  lonlat  = pj_init_plus("+proj=lonlat +datum=WGS84 +ellps=WGS84");
-  geocent = pj_init_plus("+proj=geocent +datum=WGS84 +ellps=WGS84");
-  pism    = pj_init_plus(proj_string.c_str());
+  lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
+  if (lonlat == NULL) {
+    PetscPrintf(grid.com, "PISM ERROR: projection initialization failed "
+                "('+proj=latlong +datum=WGS84 +ellps=WGS84').\n");
+    PISMEnd();
+  }
 
+  geocent = pj_init_plus("+proj=geocent +datum=WGS84 +ellps=WGS84");
+  if (geocent == NULL) {
+    PetscPrintf(grid.com, "PISM ERROR: projection initialization failed "
+                "('+proj=geocent +datum=WGS84 +ellps=WGS84').\n");
+    PISMEnd();
+  }
+
+  pism = pj_init_plus(proj_string.c_str());
   if (pism == NULL) {
     PetscPrintf(grid.com, "PISM ERROR: proj.4 string '%s' is invalid. Exiting...\n",
                 proj_string.c_str());
