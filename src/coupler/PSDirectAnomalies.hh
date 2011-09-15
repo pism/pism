@@ -16,11 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSDirectANOMALIES_H_
-#define _PSDirectANOMALIES_H_
+#ifndef _PSDIRECTANOMALIES_H_
+#define _PSDIRECTANOMALIES_H_
 
 #include "PASDirectForcing.hh"
 
+//! \brief This class applies time-dependent 'acab' and 'artm' read from a
+//! -surface_file as anomalies relative to 'acab' and 'artm' read from an input
+//! (-i or -boot_file) file.
 class PSDirectAnomalies : public PSDirectForcing
 {
 public:
@@ -31,7 +34,8 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
 protected:
-  IceModelVec2S mass_flux_0, mass_flux_in;
+  IceModelVec2S mass_flux_0, mass_flux_input,
+    temp_0, temp_input;
 };
 
-#endif /* _PSDirectANOMALIES_H_ */
+#endif /* _PSDIRECTANOMALIES_H_ */

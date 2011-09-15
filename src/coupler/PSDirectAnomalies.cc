@@ -31,22 +31,33 @@ PetscErrorCode PSDirectAnomalies::init(PISMVars &vars) {
   ierr = mass_flux_0.set_attrs("internal", "surface mass flux at the beginning of a run",
                                "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
-  ierr = mass_flux_in.create(grid, "acab", false); CHKERRQ(ierr);
-  ierr = mass_flux_in.set_attrs("model_state", "surface mass flux to apply anomalies to",
+  ierr = mass_flux_input.create(grid, "acab", false); CHKERRQ(ierr);
+  ierr = mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
                                     "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+
+  ierr = temp_0.create(grid, "temp_0", false); CHKERRQ(ierr);
+  ierr = temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
+                          ""); CHKERRQ(ierr);
+
+  ierr = temp_input.create(grid, "artm", false); CHKERRQ(ierr);
+  ierr = temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to", "K",
+                              ""); CHKERRQ(ierr);
 
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
   if (regrid) {
-    ierr = mass_flux_in.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = mass_flux_input.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = temp_input.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = mass_flux_in.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = mass_flux_input.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = temp_input.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
   
   // get the mass balance at the beginning of the run:
   ierr = PSDirectForcing::update(grid.start_year, 0); CHKERRQ(ierr);
 
   ierr = mass_flux.copy_to(mass_flux_0); CHKERRQ(ierr);
+  ierr = temp.copy_to(temp_0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -58,15 +69,25 @@ PetscErrorCode PSDirectAnomalies::update(PetscReal t_years, PetscReal dt_years) 
 
   ierr = mass_flux.begin_access(); CHKERRQ(ierr);
   ierr = mass_flux_0.begin_access(); CHKERRQ(ierr);
-  ierr = mass_flux_in.begin_access(); CHKERRQ(ierr);
+  ierr = mass_flux_input.begin_access(); CHKERRQ(ierr);
+
+  ierr = temp.begin_access(); CHKERRQ(ierr);
+  ierr = temp_0.begin_access(); CHKERRQ(ierr);
+  ierr = temp_input.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_in(i, j);
+      mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);
+
+      temp(i, j) = temp(i, j) - temp_0(i, j) + temp_input(i, j);
     }
   }
 
-  ierr = mass_flux_in.end_access(); CHKERRQ(ierr);
+  ierr = temp_input.end_access(); CHKERRQ(ierr);
+  ierr = temp_0.end_access(); CHKERRQ(ierr);
+  ierr = temp.end_access(); CHKERRQ(ierr);
+
+  ierr = mass_flux_input.end_access(); CHKERRQ(ierr);
   ierr = mass_flux_0.end_access(); CHKERRQ(ierr);
   ierr = mass_flux.end_access(); CHKERRQ(ierr);
 
