@@ -308,29 +308,29 @@ vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
              &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
 
   // compute the number of years-since-the-reference date 'a' corresponds to:
-  utInvCalendar(a,              // year
-                1, 1,           // month, day
-                0, 0, 0,        // hour, minute, second
+  utInvCalendar(reference_year + a, // year
+                1, 1,               // month, day
+                0, 0, 0,            // hour, minute, second
                 &unit,
                 &a_offset);
 
   // compute the number of years-since-the-reference date 'b' corresponds to:
-  utInvCalendar(b,              // year
-                1, 1,           // month, day
-                0, 0, 0,        // hour, minute, second
+  utInvCalendar(reference_year + b, // year
+                1, 1,               // month, day
+                0, 0, 0,            // hour, minute, second
                 &unit,
                 &b_offset);
 
   if (keyword == "daily") {
 
     double t = a_offset, delta = 60*60*24; // seconds per day
-    int year = a;
+    int year;
 
     do {
       result.push_back(t);
       t += delta/secpera;
       utCalendar(t, &unit, &year, &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
-    } while (year <= b);
+    } while (year <= reference_year + b);
 
     // add the last record:
     result.push_back(t);
