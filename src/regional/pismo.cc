@@ -607,7 +607,7 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
     PISMEnd();
   }
 
-  if (config.get_flag("do_cold_ice_methods");) {
+  if (config.get_flag("do_cold_ice_methods")) {
     PetscPrintf(grid.com, "PISM ERROR: pismo does not support the 'cold' mode.\n");
     PISMEnd();
   }
