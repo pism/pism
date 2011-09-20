@@ -606,6 +606,12 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
       "   pismo has no well-defined semantics without it!  ENDING ...\n\n"); CHKERRQ(ierr);
     PISMEnd();
   }
+
+  if (config.get_flag("do_cold_ice_methods");) {
+    PetscPrintf(grid.com, "PISM ERROR: pismo does not support the 'cold' mode.\n");
+    PISMEnd();
+  }
+
   return 0;
 }
 
@@ -665,10 +671,15 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
   // note that the call above sets vWork3d; ghosts are comminucated later (in
   // IceModel::energyStep()).
+  ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
+
   ierr = vWork3d.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (no_model_mask(i, j) < 0.5)
+        continue;
+
       ierr = vWork3d.getInternalColumn(i, j, &new_enthalpy); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i, j, &old_enthalpy); CHKERRQ(ierr);
 
@@ -684,11 +695,16 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   ierr = bmr_stored.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (no_model_mask(i, j) < 0.5)
+        continue;
+
       vbmr(i, j) = bmr_stored(i, j);
     }
   }
   ierr = bmr_stored.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);
+
+  ierr = no_model_mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
