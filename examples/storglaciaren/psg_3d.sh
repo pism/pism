@@ -68,13 +68,19 @@ INNAME=$PISM_DATANAME
 COUPLER="-surface constant" # FIXME  should be using PSElevation as in flowline example
 
 # 40 m grid
-GRID="-Mx 94 -My 51 -Mz 101 -Mbz 1 -Lz 500 -z_spacing equal"
+GRID="-Mx 94 -My 51 -Mz 151 -Mbz 1 -Lz 300 -z_spacing equal"
 GS=40
 SKIP=200
+
 # 20 m grid
-#GRID="-Mx 186 -My 101 -Mz 101 -Mbz 1 -Lz 500 -z_spacing equal"
+#GRID="-Mx 186 -My 101 -Mz 301 -Mbz 1 -Lz 300 -z_spacing equal"
+#GS=20
+#SKIP=500
+
 # 10 m grid
-#GRID="-Mx 371 -My 201 -Mz 101 -Mbz 1 -Lz 500 -z_spacing equal"
+#GRID="-Mx 371 -My 201 -Mz 301 -Mbz 1 -Lz 300 -z_spacing equal"
+#GS=10
+#SKIP=500
 
 # bootstrap and do smoothing run
 OUTNAME=psg_3d_${GS}m_pre1.nc
@@ -95,8 +101,6 @@ cmd="$PISM_MPIDO $NN $PISM -i $INNAME \
   $COUPLER -y 200 -no_mass -o $incSTEADYNAME"
 $PISM_DO $cmd
 
-# FIXME: this is needed in r1897 (and probably many earlier) because acab missing from -surface constant -no_mass combination; see bug #18593
-cp $incSTEADYNAME $STEADYNAME
-cmd="ncks -A -v acab $INNAME $STEADYNAME"
-$PISM_DO $cmd
+echo
+echo "$SCRIPTNAME  done"
 
