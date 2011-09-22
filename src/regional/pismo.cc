@@ -321,6 +321,14 @@ PetscErrorCode IceRegionalModel::setFromOptions() {
 
   ierr = config.flag_from_option("ssa_dirichlet_bc", "dirichlet_bc"); CHKERRQ(ierr);
 
+  bool no_model_strip_set;
+  ierr = PISMOptionsIsSet("-no_model_strip", "No-model strip, in km",
+                          no_model_strip_set); CHKERRQ(ierr);
+
+  if (no_model_strip_set) {
+    ierr = no_model_mask.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -342,6 +350,8 @@ PetscErrorCode IceRegionalModel::set_no_model_strip(PetscReal strip) {
       }
     }
     ierr = no_model_mask.end_access(); CHKERRQ(ierr);
+
+    ierr = no_model_mask.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
 
     ierr = no_model_mask.beginGhostComm(); CHKERRQ(ierr);
     ierr = no_model_mask.endGhostComm(); CHKERRQ(ierr);
