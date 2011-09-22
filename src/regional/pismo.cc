@@ -321,14 +321,6 @@ PetscErrorCode IceRegionalModel::setFromOptions() {
 
   ierr = config.flag_from_option("ssa_dirichlet_bc", "dirichlet_bc"); CHKERRQ(ierr);
 
-  bool no_model_strip_set;
-  ierr = PISMOptionsIsSet("-no_model_strip", "No-model strip, in km",
-                          no_model_strip_set); CHKERRQ(ierr);
-
-  if (no_model_strip_set) {
-    ierr = no_model_mask.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
@@ -548,6 +540,14 @@ PetscErrorCode IceRegionalModel::bootstrap_2d(const char *filename) {
 PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
 
+  bool no_model_strip_set;
+  ierr = PISMOptionsIsSet("-no_model_strip", "No-model strip, in km",
+                          no_model_strip_set); CHKERRQ(ierr);
+
+  if (no_model_strip_set) {
+    ierr = no_model_mask.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+  }
+
   ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
@@ -614,7 +614,6 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
     ierr = set_no_model_strip(1000.0*stripkm); CHKERRQ(ierr);
   } else {
     if (nmm_exists) { // the o.k. case; we just need to warn if option is given without number
-      bool no_model_strip_set;
       ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
       if (no_model_strip_set) {
         ierr = verbPrintf(2, grid.com,
