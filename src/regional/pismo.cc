@@ -409,26 +409,10 @@ PetscErrorCode IceRegionalModel::createVecs() {
                               "m s-1", ""); CHKERRQ(ierr);
 
   if (config.get_flag("dirichlet_bc")) {
-    variables.remove("velbar");
-    // IceModel allocated vBCvel and vBCMask; we need to override metadata and
-    // copy no_model_mask into bcflag
-    ierr = vBCvel.set_name("bar_ssa_bc"); CHKERRQ(ierr);
-    ierr = vBCvel.set_attrs("model_state",
-                            "X-component of the SSA velocity boundary conditions",
-                            "m s-1", "", 0); CHKERRQ(ierr);
-    ierr = vBCvel.set_attrs("model_state",
-                            "Y-component of the SSA velocity boundary conditions",
-                            "m s-1", "", 1); CHKERRQ(ierr);
-    ierr = vBCvel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-    vBCvel.write_in_glaciological_units = true;
+    // remove the bcflag variable from the dictionary
+    variables.remove("bcflag");
 
-    ierr = variables.add(vBCvel); CHKERRQ(ierr);
-
-    for (int j = 0; j < 2; ++j) {
-      ierr = vBCvel.set_attr("valid_min",  convert(-1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
-      ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
-      ierr = vBCvel.set_attr("_FillValue", convert(2e6, "m/year", "m/second"), j); CHKERRQ(ierr);
-    }
+    ierr = variables.add(no_model_mask, "bcflag"); CHKERRQ(ierr);
   }
 
   return 0;

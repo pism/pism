@@ -71,22 +71,22 @@ PetscErrorCode SSA::init(PISMVars &vars) {
                            filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    bool dont_read_initial_guess, ubar_ssa_found, vbar_ssa_found;
+    bool dont_read_initial_guess, u_ssa_found, v_ssa_found;
     int start;
     NCTool nc(grid.com, grid.rank);
 
     ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 
     ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-    ierr = nc.find_variable("ubar_ssa", NULL, ubar_ssa_found); CHKERRQ(ierr); 
-    ierr = nc.find_variable("vbar_ssa", NULL, vbar_ssa_found); CHKERRQ(ierr); 
+    ierr = nc.find_variable("u_ssa", NULL, u_ssa_found); CHKERRQ(ierr); 
+    ierr = nc.find_variable("v_ssa", NULL, v_ssa_found); CHKERRQ(ierr); 
     ierr = nc.get_nrecords(start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr); 
     start -= 1;
 
-    if (ubar_ssa_found && vbar_ssa_found &&
+    if (u_ssa_found && v_ssa_found &&
         (! dont_read_initial_guess)) {
-      ierr = verbPrintf(3,grid.com,"Reading ubar_ssa and vbar_ssa...\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(3,grid.com,"Reading u_ssa and v_ssa...\n"); CHKERRQ(ierr);
 
       ierr = velocity.read(filename.c_str(), start); CHKERRQ(ierr); 
     }
@@ -99,8 +99,8 @@ PetscErrorCode SSA::init(PISMVars &vars) {
     bc_locations = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
     if (bc_locations == NULL) SETERRQ(1, "bc_locations is not available");
     
-    vel_bc = dynamic_cast<IceModelVec2V*>(vars.get("velbar"));
-    if (vel_bc == NULL) SETERRQ(1, "velbar is not available");
+    vel_bc = dynamic_cast<IceModelVec2V*>(vars.get("vel_ssa_bc"));
+    if (vel_bc == NULL) SETERRQ(1, "vel_ssa_bc is not available");
   }
 
   event_ssa = grid.profiler->create("ssa_update", "time spent solving the SSA");
@@ -126,7 +126,7 @@ PetscErrorCode SSA::allocate() {
                                 "m s-1", ""); CHKERRQ(ierr);
 
   // override velocity metadata
-  ierr = velocity.set_name("bar_ssa"); CHKERRQ(ierr);
+  ierr = velocity.set_name("_ssa"); CHKERRQ(ierr);
   ierr = velocity.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
                             "m s-1", "", 0); CHKERRQ(ierr);
 
@@ -472,14 +472,14 @@ PetscErrorCode SSA::set_initial_guess(IceModelVec2V &guess) {
 
 
 void SSA::add_vars_to_output(string /*keyword*/, set<string> &result) {
-  result.insert("velbar_ssa");
+  result.insert("vel_ssa");
 }
 
 
 PetscErrorCode SSA::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "velbar_ssa")) {
+  if (set_contains(vars, "vel_ssa")) {
     ierr = velocity.define(nc, nctype); CHKERRQ(ierr);
   }
 
@@ -490,7 +490,7 @@ PetscErrorCode SSA::define_variables(set<string> vars, const NCTool &nc, nc_type
 PetscErrorCode SSA::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "velbar_ssa")) {
+  if (set_contains(vars, "vel_ssa")) {
     ierr = velocity.write(filename.c_str()); CHKERRQ(ierr);
   }
 

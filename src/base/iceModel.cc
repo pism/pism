@@ -375,7 +375,7 @@ PetscErrorCode IceModel::createVecs() {
 
 
     // vel_bc
-    ierr = vBCvel.create(grid, "bar", true, WIDE_STENCIL); CHKERRQ(ierr); // ubar and vbar
+    ierr = vBCvel.create(grid, "_ssa_bc", true, WIDE_STENCIL); CHKERRQ(ierr); // u_ssa_bc and v_ssa_bc
     ierr = vBCvel.set_attrs("model_state",
                             "X-component of the SSA velocity boundary conditions",
                             "m s-1", "", 0); CHKERRQ(ierr);
