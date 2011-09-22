@@ -409,7 +409,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
                               "m s-1", ""); CHKERRQ(ierr);
 
   if (config.get_flag("dirichlet_bc")) {
-    ierr = variables.remove("velbar"); CHKERRQ(ierr);
+    variables.remove("velbar");
     // IceModel allocated vBCvel and vBCMask; we need to override metadata and
     // copy no_model_mask into bcflag
     ierr = vBCvel.set_name("bar_ssa_bc"); CHKERRQ(ierr);
