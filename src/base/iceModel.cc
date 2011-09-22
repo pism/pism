@@ -164,9 +164,9 @@ PetscErrorCode IceModel::createVecs() {
   ierr = Enth3.create(grid, "enthalpy", true, WIDE_STENCIL); CHKERRQ(ierr);
   // POSSIBLE standard name = land_ice_enthalpy
   ierr = Enth3.set_attrs(
-     "model_state",
-     "ice enthalpy (includes sensible heat, latent heat, pressure)",
-     "J kg-1", ""); CHKERRQ(ierr);
+                         "model_state",
+                         "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                         "J kg-1", ""); CHKERRQ(ierr);
   ierr = variables.add(Enth3); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods")) {
@@ -251,7 +251,7 @@ PetscErrorCode IceModel::createVecs() {
 
     ierr = vIcebergMask.set_attr("flag_values", icebergmask_values); CHKERRQ(ierr);
     ierr = vIcebergMask.set_attr("flag_meanings",
-      "no_iceberg not_set iceberg_candidate ocean_boundary grounded_boundary"); CHKERRQ(ierr);
+                                 "no_iceberg not_set iceberg_candidate ocean_boundary grounded_boundary"); CHKERRQ(ierr);
     vIcebergMask.output_data_type = NC_BYTE;
     ierr = variables.add(vIcebergMask); CHKERRQ(ierr);
   }
@@ -269,15 +269,15 @@ PetscErrorCode IceModel::createVecs() {
   // temperature seen by top of bedrock thermal layer
   ierr = bedtoptemp.create(grid, "bedtoptemp", false); CHKERRQ(ierr); // never differentiated
   ierr = bedtoptemp.set_attrs("internal",
-                        "temperature of top of bedrock thermal layer",
-			"K", ""); CHKERRQ(ierr);
+                              "temperature of top of bedrock thermal layer",
+                              "K", ""); CHKERRQ(ierr);
   ierr = bedtoptemp.set_glaciological_units("K");
   ierr = variables.add(bedtoptemp); CHKERRQ(ierr);
 
   // effective thickness of subglacial melt water
   ierr = vbwat.create(grid, "bwat", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vbwat.set_attrs("model_state", "effective thickness of subglacial melt water",
-			  "m", ""); CHKERRQ(ierr);
+                         "m", ""); CHKERRQ(ierr);
   ierr = vbwat.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = vbwat.set_attr("valid_max", config.get("bwat_max")); CHKERRQ(ierr);
   ierr = variables.add(vbwat); CHKERRQ(ierr);
@@ -338,13 +338,13 @@ PetscErrorCode IceModel::createVecs() {
                            "m", ""); CHKERRQ(ierr);
     ierr = variables.add(vHref); CHKERRQ(ierr);
 
-	if (config.get_flag("part_redist") == true){
+    if (config.get_flag("part_redist") == true){
       // Hav
       ierr = vHresidual.create(grid, "Hresidual", true); CHKERRQ(ierr);
       ierr = vHresidual.set_attrs("diagnostic", "residual ice thickness in recently filled boundary grid cell",
-                          "m", ""); CHKERRQ(ierr);
+                                  "m", ""); CHKERRQ(ierr);
       ierr = variables.add(vHresidual); CHKERRQ(ierr);
-	}
+    }
   }
 
   if (config.get_flag("do_eigen_calving") == true) {
@@ -362,36 +362,34 @@ PetscErrorCode IceModel::createVecs() {
 
   if (config.get_flag("dirichlet_bc") == true) {
     // bc_locations
-	  ierr = vBCMask.create(grid, "bcflag", true, WIDE_STENCIL); CHKERRQ(ierr);
-      ierr = vBCMask.set_attrs("model_state", "Dirichlet boundary mask",
-       			 "", ""); CHKERRQ(ierr);
-      vector<double> bc_mask_values(2);
-      bc_mask_values[0] = 0;
-      bc_mask_values[1] = 1;
-      ierr = vBCMask.set_attr("flag_values", bc_mask_values); CHKERRQ(ierr);
-      ierr = vBCMask.set_attr("flag_meanings", "no_data bc_condition"); CHKERRQ(ierr);
-      vBCMask.output_data_type = NC_BYTE;
-      ierr = variables.add(vBCMask); CHKERRQ(ierr);
+    ierr = vBCMask.create(grid, "bcflag", true, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = vBCMask.set_attrs("model_state", "Dirichlet boundary mask",
+                             "", ""); CHKERRQ(ierr);
+    vector<double> bc_mask_values(2);
+    bc_mask_values[0] = 0;
+    bc_mask_values[1] = 1;
+    ierr = vBCMask.set_attr("flag_values", bc_mask_values); CHKERRQ(ierr);
+    ierr = vBCMask.set_attr("flag_meanings", "no_data bc_condition"); CHKERRQ(ierr);
+    vBCMask.output_data_type = NC_BYTE;
+    ierr = variables.add(vBCMask); CHKERRQ(ierr);
 
 
-     // vel_bc
-     ierr = vBCvel.create(grid, "bar", true, WIDE_STENCIL); CHKERRQ(ierr); // ubar and vbar
-     ierr = vBCvel.set_attrs("model_state",
-                              "X-component of the SSA velocity boundary conditions",
-                              "m s-1", "", 0); CHKERRQ(ierr);
-     ierr = vBCvel.set_attrs("model_state",
-                              "Y-component of the SSA velocity boundary conditions",
-                              "m s-1", "", 1); CHKERRQ(ierr);
-     ierr = vBCvel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-     ierr = vBCvel.set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
-     ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
-     ierr = vBCvel.set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
-     ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
-     ierr = vBCvel.set_attr("_FillValue", convert(2e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
-     ierr = vBCvel.set_attr("_FillValue", convert(2e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
-     //just for diagnostics...
-     ierr = variables.add(vBCvel); CHKERRQ(ierr);
-
+    // vel_bc
+    ierr = vBCvel.create(grid, "bar", true, WIDE_STENCIL); CHKERRQ(ierr); // ubar and vbar
+    ierr = vBCvel.set_attrs("model_state",
+                            "X-component of the SSA velocity boundary conditions",
+                            "m s-1", "", 0); CHKERRQ(ierr);
+    ierr = vBCvel.set_attrs("model_state",
+                            "Y-component of the SSA velocity boundary conditions",
+                            "m s-1", "", 1); CHKERRQ(ierr);
+    ierr = vBCvel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+    for (int j = 0; j < 2; ++j) {
+      ierr = vBCvel.set_attr("valid_min",  convert(-1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("_FillValue", convert(2e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+    }
+    //just for diagnostics...
+    ierr = variables.add(vBCvel); CHKERRQ(ierr);
   }
 
 
@@ -411,11 +409,11 @@ PetscErrorCode IceModel::createVecs() {
   // mean annual net ice equivalent surface mass balance rate
   ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = acab.set_attrs(
-            "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
-            "ice-equivalent surface mass balance (accumulation/ablation) rate",
-	    "m s-1",  // m *ice-equivalent* per second
-	    "land_ice_surface_specific_mass_balance");  // CF standard_name
-	    CHKERRQ(ierr);
+                        "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
+                        "ice-equivalent surface mass balance (accumulation/ablation) rate",
+                        "m s-1",  // m *ice-equivalent* per second
+                        "land_ice_surface_specific_mass_balance");  // CF standard_name
+  CHKERRQ(ierr);
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   acab.write_in_glaciological_units = true;
   acab.set_attr("comment", "positive values correspond to ice gain");
@@ -432,10 +430,10 @@ PetscErrorCode IceModel::createVecs() {
   //   processes (e.g. "10 m" or ice temperatures)
   ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);
   ierr = artm.set_attrs(
-            "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
-            "annual average ice surface temperature, below firn processes",
-            "K", 
-            "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
+                        "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
+                        "annual average ice surface temperature, below firn processes",
+                        "K", 
+                        "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
   CHKERRQ(ierr);
 
   ierr = liqfrac_surface.create(grid, "liqfrac_surface", false); CHKERRQ(ierr);
@@ -449,8 +447,8 @@ PetscErrorCode IceModel::createVecs() {
   //   grounded ice
   ierr = shelfbmassflux.create(grid, "shelfbmassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = shelfbmassflux.set_attrs(
-           "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-	   "m s-1", ""); CHKERRQ(ierr); 
+                                  "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                                  "m s-1", ""); CHKERRQ(ierr); 
   // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
   // rescales from m/s to m/a when writing to NetCDF and std out:
   shelfbmassflux.write_in_glaciological_units = true;
@@ -461,8 +459,8 @@ PetscErrorCode IceModel::createVecs() {
   // ice boundary tempature at the base of the ice shelf
   ierr = shelfbtemp.create(grid, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = shelfbtemp.set_attrs(
-           "climate_state", "absolute temperature at ice shelf base",
-	   "K", ""); CHKERRQ(ierr);
+                              "climate_state", "absolute temperature at ice shelf base",
+                              "K", ""); CHKERRQ(ierr);
   // PROPOSED standard name = ice_shelf_basal_temperature
   // do not add; boundary models are in charge here
   // ierr = variables.add(shelfbtemp); CHKERRQ(ierr);

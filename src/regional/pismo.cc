@@ -170,9 +170,15 @@ protected:
 
 PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
   PetscErrorCode ierr;
+
   ierr = SSAFD::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,"  using the regional version of the SSA solver...\n"); CHKERRQ(ierr);
+
+  if (config.get_flag("dirichlet_bc")) {
+    ierr = verbPrintf(2,grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n"); 
+    CHKERRQ(ierr);
+  }
 
   no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
@@ -182,7 +188,7 @@ PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
 
   thkstore = dynamic_cast<IceModelVec2S*>(vars.get("thkstore"));
   if (thkstore == NULL) SETERRQ(1, "thkstore is not available");
-  
+
   return 0;
 }
 
@@ -299,6 +305,7 @@ protected:
                                                        planeStar<PetscScalar> &Q_output);
   virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
                                                  PetscScalar* bulgeCount);
+  virtual PetscErrorCode setFromOptions();
 private:
   IceModelVec2Int no_model_mask;    
   IceModelVec2S   usurfstore, thkstore;
@@ -306,6 +313,16 @@ private:
   PetscErrorCode  set_no_model_strip(PetscReal stripwidth);
 };
 
+//! \brief 
+PetscErrorCode IceRegionalModel::setFromOptions() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
+
+  ierr = config.flag_from_option("ssa_dirichlet_bc", "dirichlet_bc"); CHKERRQ(ierr);
+
+  return 0;
+}
 
 //! \brief Set no_model_mask variable to have value 1 in strip of width 'strip'
 //! m around edge of computational domain, and value 0 otherwise.
@@ -384,14 +401,35 @@ PetscErrorCode IceRegionalModel::createVecs() {
   ierr = thkstore.set(0.0); CHKERRQ(ierr);
   ierr = variables.add(thkstore); CHKERRQ(ierr);
 
-  ierr = bmr_stored.create(grid, "bmr_stored",
-                           true, 2); CHKERRQ(ierr); // for compatibility with IceModel::vbmr
+  // Note that the name of this variable (bmr_stored) does not matter: it is
+  // *never* read or written. We make a copy of bmelt instead.
+  ierr = bmr_stored.create(grid, "bmr_stored", true, 2); CHKERRQ(ierr);
   ierr = bmr_stored.set_attrs("internal",
                               "time-independent basal melt rate in the no-model-strip",
                               "m s-1", ""); CHKERRQ(ierr);
-  bmr_stored.time_independent = false;
-  ierr = bmr_stored.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  bmr_stored.write_in_glaciological_units = true;
+
+  if (config.get_flag("dirichlet_bc")) {
+    ierr = variables.remove("velbar"); CHKERRQ(ierr);
+    // IceModel allocated vBCvel and vBCMask; we need to override metadata and
+    // copy no_model_mask into bcflag
+    ierr = vBCvel.set_name("bar_ssa_bc"); CHKERRQ(ierr);
+    ierr = vBCvel.set_attrs("model_state",
+                            "X-component of the SSA velocity boundary conditions",
+                            "m s-1", "", 0); CHKERRQ(ierr);
+    ierr = vBCvel.set_attrs("model_state",
+                            "Y-component of the SSA velocity boundary conditions",
+                            "m s-1", "", 1); CHKERRQ(ierr);
+    ierr = vBCvel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+    vBCvel.write_in_glaciological_units = true;
+
+    ierr = variables.add(vBCvel); CHKERRQ(ierr);
+
+    for (int j = 0; j < 2; ++j) {
+      ierr = vBCvel.set_attr("valid_min",  convert(-1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("_FillValue", convert(2e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+    }
+  }
 
   return 0;
 }
@@ -404,6 +442,30 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   // Now save the basal melt rate at the beginning of the run.
   
   ierr = bmr_stored.copy_from(vbmr); CHKERRQ(ierr);
+
+  if (config.get_flag("dirichlet_bc")) {
+    double fill = convert(2e6, "m/year", "m/second");
+
+    ierr = vBCMask.begin_access(); CHKERRQ(ierr);
+    ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
+    ierr = vBCvel.begin_access(); CHKERRQ(ierr);
+    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+
+        if (no_model_mask(i, j) < 0.5) {
+          vBCvel(i, j).u = fill;
+          vBCvel(i, j).v = fill;
+          vBCMask(i, j)  = 0;
+        } else {
+          vBCMask(i, j) = 1;
+        }
+
+      }
+    }
+    ierr = vBCMask.end_access(); CHKERRQ(ierr);
+    ierr = vBCvel.end_access(); CHKERRQ(ierr);
+    ierr = no_model_mask.end_access(); CHKERRQ(ierr);
+  }
 
   return 0;
 }

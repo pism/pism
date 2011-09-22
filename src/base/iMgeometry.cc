@@ -308,6 +308,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
       planeStar<int> M = vMask.int_star(i, j);
       planeStar<PetscScalar> v;
 
+      ierr = cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
+
       if (dirichlet_bc) {
         //the staggered velocities have to be adjusted to Dirichlet boundary conditions
         if (vBCMask.as_int(i,j) == 0) {
@@ -316,8 +318,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
           if (vBCMask.as_int(i,j+1) == 1) v.n = vBCvel(i, j + 1).v;
           if (vBCMask.as_int(i,j-1) == 1) v.s = vBCvel(i, j - 1).v;
         }
-      } else {
-        ierr = cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
       }
 
       // membrane stress (and/or basal sliding) part: upwind by staggered grid
@@ -442,11 +442,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       // Track cumulative surface mass balance. Note that this keeps track of
-      // cumulative acab at all the grid cells (including ice-free cells). I'm
-      // not sure, but it might make more sense to only integrate acab in areas
-      // where there is ice due to flow or acab is positive; see
-      // my_surface_ice_flux accounting above.
-      if (compute_cumulative_acab /* && (there_is_ice_due_to_flow || acab(i, j) > 0) */) {
+      // cumulative acab at all the grid cells (including ice-free cells).
+      if (compute_cumulative_acab) {
         acab_cumulative(i, j) += acab(i, j) * dt;
       }
 
