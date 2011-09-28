@@ -146,10 +146,11 @@ PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
   }
 
   if (config.get_flag("dirichlet_bc")) {
-    ierr = vBCMask.regrid(filename,
-                             config.get("bootstrapping_BCMask_value_no_var")); CHKERRQ(ierr);
-    ierr = vBCvel.regrid(filename,
-                             config.get("bootstrapping_BCvel_value_no_var")); CHKERRQ(ierr);
+    // Do not use Dirichlet B.C. anywhere if bcflag is not present.
+    ierr = vBCMask.regrid(filename, 0.0); CHKERRQ(ierr);
+    // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that
+    // makes sense is the zero Dirichlet B.C.
+    ierr = vBCvel.regrid(filename,  0.0); CHKERRQ(ierr);
   }
 
   bool Lz_set;
