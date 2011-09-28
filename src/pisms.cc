@@ -28,8 +28,8 @@ static char help[] =
 #include "eismint/icePSTexModel.hh"
 #include "ismip/iceMISMIPModel.hh"
 
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMOcean.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

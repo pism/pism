@@ -24,8 +24,8 @@ static char help[] =
 #include "IceGrid.hh"
 #include "iceModel.hh"
 
-#include "coupler/PCFactory.hh"
-#include "coupler/PISMOcean.hh"
+#include "PCFactory.hh"
+#include "PISMOcean.hh"
 #include "PSExternal.hh"
 
 int main(int argc, char *argv[]) {

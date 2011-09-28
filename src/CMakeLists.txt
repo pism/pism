@@ -1,13 +1,17 @@
 include_directories (
   base
-  earth
-  coupler
-  udunits
   base/stressbalance
   base/util
   base/energy
   base/rheology
-  base/basal_strength)
+  base/basal_strength
+  earth
+  coupler
+  coupler/atmosphere
+  coupler/surface
+  coupler/ocean
+  udunits
+  )
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
@@ -116,29 +120,6 @@ add_library (pismbase
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance)
 
-# Boundary models (surface, atmosphere, ocean).
-add_library (pismboundary
-  coupler/PAConstant.cc
-  coupler/PAConstantPIK.cc
-  coupler/PAForcing.cc
-  coupler/PASLapseRates.cc
-  coupler/PASDirectForcing.cc
-  coupler/PODirectForcing.cc
-  coupler/PScalarForcing.cc
-  coupler/PAEismintGreenland.cc
-  coupler/PASeariseGreenland.cc
-  coupler/PAYearlyCycle.cc
-  coupler/PCFactory.cc
-  coupler/PISMOcean.cc
-  coupler/PISMSurface.cc
-  coupler/localMassBalance.cc
-  coupler/PSExternal.cc
-  coupler/PSElevation.cc
-  coupler/PSConstantPIK.cc
-  coupler/POConstantPIK.cc
-  coupler/PSDirectAnomalies.cc
-  )
-target_link_libraries (pismboundary pismutil)
 
 # Bed deformation models.
 add_library (pismearth
@@ -206,7 +187,7 @@ add_executable (pisms pisms.cc
 # EISMINT-Greenland
 add_executable (pgrn eismint/pgrn.cc)
 
-add_executable (pismebm coupler/ebm_driver.cc pismebm.cc)
+add_executable (pismebm coupler/surface/ebm_driver.cc pismebm.cc)
 
 # All of the following are linked against pismbase
 foreach (EXEC pismr pismo pisms pgrn pismebm)
@@ -232,7 +213,7 @@ add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
   pismr pismo pisms pismv pgrn pclimate pismebm ## executables
-  pismutil pismboundary pismverif pismbase pismflowlaws pismearth pismudunits # libraries
+  pismutil pismverif pismbase pismflowlaws pismearth pismudunits # libraries
   RUNTIME DESTINATION ${Pism_BIN_DIR}
   LIBRARY DESTINATION ${Pism_LIB_DIR}
   ARCHIVE DESTINATION ${Pism_LIB_DIR})
@@ -282,6 +263,7 @@ if (Pism_BUILD_EXTRA_EXECS)
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
 endif (Pism_BUILD_EXTRA_EXECS)
 
+add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (eismint)
 add_subdirectory (pythonbindings)

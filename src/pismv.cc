@@ -29,8 +29,8 @@ static char help[] =
 #include "IceGrid.hh"
 #include "verif/iceCompModel.hh"
 
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMOcean.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
 
 // a wrapper that seems to be necessary to make std::transform below work
 static inline char pism_toupper(char c)

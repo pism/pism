@@ -31,10 +31,10 @@ static char help[] =
 #include "PISMIO.hh"
 #include "NCVariable.hh"
 
-#include "coupler/PCFactory.hh"
-#include "coupler/PISMAtmosphere.hh"
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMOcean.hh"
+#include "PCFactory.hh"
+#include "PISMAtmosphere.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
 
 
 static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
