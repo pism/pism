@@ -60,7 +60,7 @@ public:
                *w,
                *Sigma;
 
-private:
+protected:
   PetscInt     Mz;
   PetscScalar  ice_rho, ice_c, ice_k, ice_K, ice_K0,
                dx, dy, dtTemp, dzEQ, nuEQ, iceK, iceRcold, iceRtemp;

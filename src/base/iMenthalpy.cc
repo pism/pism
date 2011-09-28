@@ -18,8 +18,8 @@
 
 #include "iceModel.hh"
 #include "enthSystem.hh"
+#include "DrainageCalculator.hh"
 #include "Mask.hh"
-
 
 //! \file iMenthalpy.cc Methods of IceModel which implement the enthalpy formulation of conservation of energy.
 
@@ -211,39 +211,6 @@ PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
 
   return 0;
 }
-
-
-//! Compute the rate of drainage D(omega) for temperate ice.
-class DrainageCalculator {
-
-public:
-  DrainageCalculator(const NCConfigVariable &config) {
-    OM1 = config.get("drainage_target_water_frac"); // 0.01
-    OM2 = 2.0 * OM1;
-    OM3 = 3.0 * OM1;
-    DR3 = config.get("drainage_max_rate"); // 0.05 a-1 
-    DR2 = 0.1 * DR3;
-  }
-  virtual ~DrainageCalculator() {}
-
-  //! Return D(omega), as in figure in [\ref AschwandenBuelerKhroulevBlatter].
-  virtual PetscReal get_drainage_rate(PetscReal omega) {
-    if (omega > OM1) {
-      if (omega > OM2) {
-        if (omega > OM3) {
-          return DR3;
-        } else
-          return DR2 + (DR3 - DR2) * (omega - OM2) / OM1;
-      } else
-        return DR2 * (omega - OM1) / OM1;
-    } else {
-      return 0.0;
-    }
-  }
-
-private:
-  PetscReal OM1, OM2, OM3, DR2, DR3;
-};
 
 
 //! Update ice enthalpy field based on conservation of energy.
