@@ -181,7 +181,7 @@ class PAForcing : public PAModifier {
 public:
   PAForcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel *input);
   virtual ~PAForcing();
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict);
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);

@@ -86,7 +86,7 @@ PetscErrorCode IceCompModel::initTestFG() {
           bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
                      &H[i][j],&accum[i][j],T,dummy1,dummy2,dummy3,dummy4);
         } else {
-          bothexact(convert(grid.year, "years", "seconds"),r,&grid.zlevels[0],Mz,ApforG,
+          bothexact(grid.time->current(),r,&grid.zlevels[0],Mz,ApforG,
                      &H[i][j],&accum[i][j],T,dummy1,dummy2,dummy3,dummy4);
         }
       }
@@ -144,7 +144,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
           bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
                     &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC);
         } else {
-          bothexact(convert(grid.year, "years", "seconds"),r,&grid.zlevels[0],Mz,ApforG,
+          bothexact(grid.time->current(),r,&grid.zlevels[0],Mz,ApforG,
                     &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC);
         }
         for (PetscInt k=0;  k<Mz;  k++) // scale Sigma to J/(s m^3)
@@ -214,7 +214,7 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
           bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
                     &H[i][j],&accum[i][j],T,Uradial,w, Sigma,SigmaC);
         } else {
-          bothexact(convert(grid.year, "years", "seconds"),r,&grid.zlevels[0],Mz,ApforG,
+          bothexact(grid.time->current(),r,&grid.zlevels[0],Mz,ApforG,
                     &H[i][j],&accum[i][j],T,Uradial,w, Sigma,SigmaC);
         }
         for (PetscInt k = 0; k < Mz; k++) {
@@ -294,7 +294,7 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(
                       &junk0,&junk1,Tex,dummy1,dummy2,dummy3,dummy4);
             break;
           case 'G':
-            bothexact(convert(grid.year, "years", "seconds"),r,&grid.zlevels[0],Mz,ApforG,
+            bothexact(grid.time->current(),r,&grid.zlevels[0],Mz,ApforG,
                       &junk0,&junk1,Tex,dummy1,dummy2,dummy3,dummy4);
             break;
           default:  SETERRQ(1,"temperature errors only computable for tests F and G\n");
@@ -353,11 +353,11 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   switch (testname) {
     case 'K':
       for (PetscInt k = 0; k < Mz; k++) {
-        ierr = exactK(convert(grid.year, "years", "seconds"), grid.zlevels[k], &Tex[k], &FF,
+        ierr = exactK(grid.time->current(), grid.zlevels[k], &Tex[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       for (PetscInt k = 0; k < Mbz; k++) {
-        ierr = exactK(convert(grid.year, "years", "seconds"), zblevels[k], &Tbex[k], &FF,
+        ierr = exactK(grid.time->current(), zblevels[k], &Tbex[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       break;
@@ -447,7 +447,7 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
           } else {
             r=PetscMax(r,1.0);
             z=0.0;
-            bothexact(convert(grid.year, "years", "seconds"),r,&z,1,ApforG,
+            bothexact(grid.time->current(),r,&z,1,ApforG,
                       &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
           }
           break;
@@ -512,7 +512,7 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
                       &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
             break;
           case 'G':
-            bothexact(convert(grid.year, "years", "seconds"),r,&grid.zlevels[0],Mz,ApforG,
+            bothexact(grid.time->current(),r,&grid.zlevels[0],Mz,ApforG,
                       &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
             break;
           default:
@@ -574,7 +574,7 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
                       &dummy0,&dummy1,&dummy2,&radialUex,&wex,&dummy3,&dummy4);
             break;
           case 'G':
-            bothexact(convert(grid.year, "years", "seconds"),r,&(H[i][j]),1,ApforG,
+            bothexact(grid.time->current(),r,&(H[i][j]),1,ApforG,
                       &dummy0,&dummy1,&dummy2,&radialUex,&wex,&dummy3,&dummy4);
             break;
           default:  SETERRQ(1,"surface velocity errors only computed for tests F and G\n");
@@ -649,7 +649,7 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
   switch (testname) {
     case 'K':
       for (PetscInt k=0; k<Mz; k++) {
-        ierr = exactK(convert(grid.year, "years", "seconds"), grid.zlevels[k], &Tcol[k], &FF,
+        ierr = exactK(grid.time->current(), grid.zlevels[k], &Tcol[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       break;
@@ -738,7 +738,7 @@ PetscErrorCode BTU_Verification::bootstrap() {
   switch (testname) {
     case 'K':
       for (PetscInt k=0; k<Mbz; k++) {
-        if (exactK(convert(grid.year, "years", "seconds"), zlevels[k], &Tbcol[k], &FF,
+        if (exactK(grid.time->current(), zlevels[k], &Tbcol[k], &FF,
                    (bedrock_is_ice==PETSC_TRUE)))
           SETERRQ1(1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n",
                    zlevels[k]);

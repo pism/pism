@@ -139,7 +139,7 @@ PetscErrorCode PSExternal::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PSExternal::max_timestep(PetscReal t_years, PetscReal &dt_years) {
+PetscErrorCode PSExternal::max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict) {
   double delta = 0.5 * update_interval;
   double next_update = ceil(t_years / delta) * delta;
 
@@ -147,6 +147,7 @@ PetscErrorCode PSExternal::max_timestep(PetscReal t_years, PetscReal &dt_years) 
     next_update = t_years + delta;
   
   dt_years = next_update - t_years;
+  restrict = true;
 
   return 0;
 }
@@ -186,7 +187,7 @@ PetscErrorCode PSExternal::update(PetscReal t_years, PetscReal dt_years) {
     }
 
     // we're at the end of a run, so no pre-computing is necessary.
-    if (PetscAbs(t_years + dt_years - grid.end_year) < 1e-12)
+    if (PetscAbs(t_years + dt_years - grid.time->end_year()) < 1e-12)
       return 0;
 
     // time to run EBM to pre-compute B.C.
@@ -240,7 +241,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
 
   if (t_len == 0) {
     ierr = nc.create_dimensions(); CHKERRQ(ierr);
-    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.year); CHKERRQ(ierr);
+    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->year()); CHKERRQ(ierr);
   } else {
     int t_varid;
     bool t_exists;
@@ -248,7 +249,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
                             &t_varid, t_exists); CHKERRQ(ierr);
     
     vector<double> time(1);
-    time[0] = grid.year;
+    time[0] = grid.time->year();
     ierr = nc.put_dimension(t_varid, time); CHKERRQ(ierr);
   }
 

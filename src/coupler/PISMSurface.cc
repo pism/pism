@@ -402,12 +402,12 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
   // if -pdd_annualize is set, update mass balance immediately (at the
   // beginning of the run)
-  next_pdd_update_year = grid.year;
+  next_pdd_update_year = grid.time->year();
 
   return 0;
 }
 
-PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal t_years, PetscReal &dt_years) {
+PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict) {
   PetscErrorCode ierr;
 
   if (pdd_annualize) {
@@ -420,10 +420,19 @@ PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal t_years, PetscReal &dt
   }
 
   PetscReal dt_atmosphere;
-  ierr = atmosphere->max_timestep(t_years, dt_atmosphere); CHKERRQ(ierr);
+  ierr = atmosphere->max_timestep(t_years, dt_atmosphere, restrict); CHKERRQ(ierr);
 
-  if (dt_atmosphere > 0)
-    dt_years = PetscMin(dt_years, dt_atmosphere);
+  if (restrict) {
+    if (dt_years > 0)
+      dt_years = PetscMin(dt_years, dt_atmosphere);
+    else
+      dt_years = dt_atmosphere;
+  }
+
+  if (dt_years > 0)
+    restrict = true;
+  else
+    restrict = false;
 
   return 0;
 }
@@ -925,17 +934,22 @@ Equivalently (since \f$\alpha \Delta t>0\f$),
 Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
-PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_years) {
+PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict) {
   PetscErrorCode ierr;
   PetscReal max_dt = 2.0 / alpha;
   
-  ierr = input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+  ierr = input_model->max_timestep(t_years, dt_years, restrict); CHKERRQ(ierr);
 
-  if (dt_years > 0) {
+  if (restrict) {
     if (max_dt > 0)
       dt_years = PetscMin(max_dt, dt_years);
   }
   else dt_years = max_dt;
+
+  if (dt_years > 0)
+    restrict = true;
+  else
+    restrict = false;
 
   return 0;
 }

@@ -296,14 +296,13 @@ PetscErrorCode SSATestCase::write(const string &filename)
 /*! Initialize a uniform, shallow (3 z-levels), doubly periodic grid with 
 half-widths (Lx,Ly) and Mx by My nodes for time-independent computations.*/
 PetscErrorCode init_shallow_grid(IceGrid &grid, PetscReal Lx, 
-                                      PetscReal Ly, PetscInt Mx, PetscInt My, Periodicity p)
+                                 PetscReal Ly, PetscInt Mx, PetscInt My, Periodicity p)
 {
   PetscErrorCode ierr;
   
   grid.Lx = Lx;
   grid.Ly = Ly;
   grid.periodicity = p;
-  grid.start_year = grid.year = 0.0;
   grid.Mx = Mx; grid.My=My; grid.Mz = 3;
   
   grid.compute_nprocs();

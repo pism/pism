@@ -41,10 +41,10 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
   if (surface != NULL) {
-    ierr = surface->update(grid.year, 0); CHKERRQ(ierr);
+    ierr = surface->update(grid.time->year(), 0); CHKERRQ(ierr);
   } else SETERRQ(1, "surface == NULL");
   if (ocean != NULL) {
-    ierr = ocean->update(grid.year, 0); CHKERRQ(ierr);
+    ierr = ocean->update(grid.time->year(), 0); CHKERRQ(ierr);
   } else SETERRQ(1, "ocean == NULL");
 
   // Fill 3D fields using heuristics:
@@ -182,7 +182,7 @@ PetscErrorCode IceModel::bootstrap_3d() {
     ierr = verbPrintf(2, grid.com, 
       "  setting initial age to %.4f years\n", config.get("initial_age_of_ice_years"));
       CHKERRQ(ierr);
-    tau3.set(config.get("initial_age_of_ice_years") * secpera);
+      tau3.set(convert(config.get("initial_age_of_ice_years"), "years", "seconds"));
   }
   
   ierr = verbPrintf(2, grid.com, 

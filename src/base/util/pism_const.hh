@@ -47,23 +47,6 @@ enum PismMask {
   MASK_ICE_FREE_OCEAN   = 4
 };
 
-enum PISM_CELL_TYPE {
-  GROUNDED_MARGIN_EMPTY   = 0,  // ice-free land next to ice
-  GROUNDED_MARGIN_FULL    = 1,  // ice next to ice-free land
-  GROUNDED_INTERIOR_EMPTY = 2,  // ice-free land away from ice
-  GROUNDED_INTERIOR_FULL  = 3,  // grounded ice interior
-  OCEAN_MARGIN_EMPTY      = 4,  // ocean next to ice
-  OCEAN_MARGIN_FULL       = 5,  // shelf next to ice-free ocean
-  OCEAN_INTERIOR_EMPTY    = 6,  // ocean away from ice
-  OCEAN_INTERIOR_FULL     = 7   // ice shelf interior
-};
-
-enum PISM_MASK_FLAG {
-  FLAG_IS_FULL = 1,
-  FLAG_IS_INTERIOR = 2,
-  FLAG_IS_OCEAN = 4
-};
-
 enum PismIcebergMask {
   ICEBERGMASK_NO_ICEBERG = -3,
   ICEBERGMASK_NOT_SET = 0,

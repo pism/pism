@@ -56,7 +56,7 @@ int IceModel::endOfTimeStepHook() {
     char str[TEMPORARY_STRING_LENGTH];
     snprintf(str, sizeof(str), 
        "EARLY EXIT caused by signal SIGTERM.  Completed timestep at year=%.3f.",
-       grid.year);
+       grid.time->year());
     stampHistory(str);
     return 1;
   }
@@ -64,7 +64,7 @@ int IceModel::endOfTimeStepHook() {
   if (pism_signal == SIGUSR1) {
     char file_name[PETSC_MAX_PATH_LEN];
     snprintf(file_name, PETSC_MAX_PATH_LEN, "%s-%5.3f.nc",
-             executable_short_name.c_str(), grid.year);
+             executable_short_name.c_str(), grid.time->year());
     verbPrintf(1, grid.com, 
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
        file_name);
@@ -118,7 +118,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
   wall_clock_hours = (current_time - start_time) / 3600.0;
   proc_hours = grid.size * wall_clock_hours;
-  mypph = (grid.year - grid.start_year) / proc_hours;
+  mypph = (grid.time->year() - grid.time->start_year()) / proc_hours;
 
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes

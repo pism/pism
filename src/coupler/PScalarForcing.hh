@@ -37,7 +37,7 @@ public:
 
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
   {
-    Mod::t = my_mod(t_years);
+    Mod::t = Mod::grid.time->mod(t_years - bc_reference_year, bc_period);
     Mod::dt = dt_years;
 
     PetscErrorCode ierr = Mod::input_model->update(t_years, dt_years); CHKERRQ(ierr);
@@ -90,17 +90,6 @@ protected:
       PetscErrorCode ierr = result.shift((*offset)(Mod::t + 0.5*Mod::dt)); CHKERRQ(ierr);
     }
     return 0;
-  }
-
-  //! \brief Computes year modulo bc_period if bc_period is active.
-  PetscReal my_mod(PetscReal in) {
-    if (bc_period < 1e-6) return in;
-
-    // compute time since the reference year:
-    PetscReal delta = in - bc_reference_year;
-
-    // compute delta mod bc_period:
-    return delta - floor(delta / bc_period) * bc_period;
   }
 
   Model *input;

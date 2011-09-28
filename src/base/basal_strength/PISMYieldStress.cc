@@ -236,8 +236,8 @@ PetscErrorCode PISMDefaultYieldStress::write_variables(set<string> vars, string 
   return 0;
 }
 
-PetscErrorCode PISMDefaultYieldStress::update(PetscReal t_years, PetscReal dt_years) {
-  t = t_years; dt = dt_years;
+PetscErrorCode PISMDefaultYieldStress::update(PetscReal my_t, PetscReal my_dt) {
+  t = my_t; dt = my_dt;
   // this model performs a "diagnostic" computation (i.e. without time-stepping)
   return 0;
 }

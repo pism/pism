@@ -193,7 +193,7 @@ public:
   virtual ~PSTemperatureIndex();
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(string keyword, set<string> &result);
@@ -292,7 +292,7 @@ public:
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);

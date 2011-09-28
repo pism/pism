@@ -328,7 +328,6 @@ int main(int argc, char *argv[]) {
 
     grid.Lx = grid.Ly = 900e3;
     grid.Lz = 4000;
-    grid.start_year = grid.year = 0.0;
     grid.Mx = grid.My = 61;
     grid.Mz = 61;
     

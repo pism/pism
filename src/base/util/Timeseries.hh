@@ -102,6 +102,7 @@ protected:
   vector<double> time;
   vector<double> values;
   vector<double> time_bounds;
+  void private_constructor(MPI_Comm com, PetscMPIInt rank, string name, string dimension_name);
 };
 
 //! A class for storing and writing diagnostic time-series.

@@ -119,7 +119,7 @@ PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
     return 0;  // leave now
 
   const PetscScalar  a = grid.dx * grid.dy * 1e-3 * 1e-3, // area unit (km^2)
-    currtime = grid.year * secpera; // seconds
+    currtime = grid.time->current(); // seconds
 
   PetscScalar *tau, origvol = 0.0;
   ierr = vH.begin_access(); CHKERRQ(ierr);
@@ -191,7 +191,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
   ierr = stress_balance->get_max_diffusivity(max_diffusivity); CHKERRQ(ierr);
 
   // main report: 'S' line
-  ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.year,dt,
+  ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.time->year(),dt,
                           gvolume,garea,meltfrac,max_diffusivity); CHKERRQ(ierr);
 
   return 0;

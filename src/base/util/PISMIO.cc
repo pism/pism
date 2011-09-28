@@ -650,7 +650,9 @@ PetscErrorCode PISMIO::get_grid(string filename, string var_name) {
   //  grid->periodicity = NONE; 
   grid->x0   = gi.x0;
   grid->y0   = gi.y0;
-  grid->year = convert(gi.time, "seconds", "years");
+
+  grid->time->set_start(gi.time);
+  ierr = grid->time->init(); CHKERRQ(ierr); // re-initialize to take the new start time into account
 
   ierr = grid->compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid->set_vertical_levels(gi.zlevels); CHKERRQ(ierr);

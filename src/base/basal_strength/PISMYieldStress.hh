@@ -89,7 +89,7 @@ public:
 
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 protected:
@@ -131,7 +131,7 @@ public:
 
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 protected:

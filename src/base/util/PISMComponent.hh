@@ -45,8 +45,8 @@
 
   The main difference is that diagnostic components do not need to know the
   model time to perform an update, while time-stepping ones need to know the
-  time-step to update for (usually given as the t_years, dt_years pair defining
-  the (t_years, t_years + dt_years) interval) and may impose restrictions on a
+  time-step to update for (usually given as the my_t, my_dt pair defining
+  the (my_t, my_t + my_dt) interval) and may impose restrictions on a
   time-step that is possible at a given time during a run.
 
   \subsection pismcomponent_init Initialization
@@ -155,13 +155,13 @@ public:
   { t = dt = GSL_NAN; }
   virtual ~PISMComponent_TS() {}
 
-  //! \brief Reports the maximum time-step the model can take at t_years. Sets
-  //! dt_years to -1 if any time-step is OK.
-  virtual PetscErrorCode max_timestep(PetscReal /*t_years*/, PetscReal &dt_years)
-  { dt_years = -1; return 0; }
+  //! \brief Reports the maximum time-step the model can take at my_t. Sets
+  //! my_dt to -1 if any time-step is OK.
+  virtual PetscErrorCode max_timestep(PetscReal /*my_t*/, PetscReal &my_dt, bool &restrict)
+  { my_dt = -1; restrict = false; return 0; }
 
   //! Update a model, if necessary.
-  virtual PetscErrorCode update(PetscReal /*t_years*/, PetscReal /*dt_years*/) = 0;
+  virtual PetscErrorCode update(PetscReal /*my_t*/, PetscReal /*my_dt*/) = 0;
 
 protected:
   PetscReal t,			//!< Last time used as an argument for the update() method.
@@ -210,17 +210,17 @@ public:
     input_model->get_diagnostics(dict);
   }
 
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years)
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
   {
-    PetscErrorCode ierr = input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+    PetscErrorCode ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
     return 0;
   }
 
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
   {
-    Model::t = t_years;
-    Model::dt = dt_years;
-    PetscErrorCode ierr = input_model->update(t_years, dt_years); CHKERRQ(ierr);
+    Model::t = my_t;
+    Model::dt = my_dt;
+    PetscErrorCode ierr = input_model->update(my_t, my_dt); CHKERRQ(ierr);
     return 0;
   }
 

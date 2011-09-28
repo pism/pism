@@ -19,6 +19,7 @@
 #include <petscfix.h>
 #include "IceGrid.hh"
 #include "pism_const.hh"
+#include "PISMTime.hh"
 
 IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 		 const NCConfigVariable &conf)
@@ -62,8 +63,6 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   lambda = config.get("grid_lambda");
 
-  year     = start_year = config.get("start_year");
-  end_year = start_year + config.get("run_length_years");
   Mx  = static_cast<PetscInt>(config.get("grid_Mx"));
   My  = static_cast<PetscInt>(config.get("grid_My"));
   Mz  = static_cast<PetscInt>(config.get("grid_Mz"));
@@ -81,6 +80,13 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
   compute_horizontal_spacing();
 
   profiler = new PISMProf(com, rank, size);
+
+  time = new PISMTime(com, config);
+
+  if (time->init() != 0) {
+    PetscPrintf(com, "PISM ERROR: PISMTime initialization failed.\n");
+    PISMEnd();
+  }
 }
 
 
@@ -177,7 +183,7 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
          Mx,My,Mz); CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,com,
          "            dx = %6.3f km, dy = %6.3f km, year = %8.4f,\n",
-         dx/1000.0,dy/1000.0,year); CHKERRQ(ierr);
+                    dx/1000.0,dy/1000.0, time->year()); CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,com,
          "            Nx = %d, Ny = %d]\n",
          Nx,Ny); CHKERRQ(ierr);
@@ -628,7 +634,9 @@ PetscErrorCode IceGrid::report_parameters() {
   // report on time axis
   ierr = verbPrintf(2, com,
            "   time interval (length)   [ %.2f a, %.2f a]  (%.4f a)\n",
-		    start_year, end_year, end_year - start_year); CHKERRQ(ierr);
+		    time->start_year(),
+                    time->end_year(),
+                    time->run_length_years()); CHKERRQ(ierr);
 
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   ierr = printInfo(3); CHKERRQ(ierr);

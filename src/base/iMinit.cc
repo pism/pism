@@ -102,18 +102,13 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = PISMOptionsIsSet("-ys", ys_set); CHKERRQ(ierr);
   if (!ys_set) {
     if (t_exists) {
-      grid.year = gi.time / secpera; // set year from read-in time variable
+      grid.time->set_start(gi.time);
+      grid.time->init();        // re-initialize to take the new start time into account
       ierr = verbPrintf(2, grid.com, 
   		      "  time t = %5.4f years found; setting current year\n",
-		      grid.year); CHKERRQ(ierr);
-    } else {
-      grid.year = 0.0;
-      ierr = verbPrintf(2, grid.com, 
-		      "  time dimension was not found; setting current year to 0.0 years\n",
-		      grid.year); CHKERRQ(ierr);
+                        grid.time->year()); CHKERRQ(ierr);
     }
   }
-  grid.start_year = grid.year;
 
   // Grid dimensions should not be deduced from a bootstrapping file, so we
   // check if these options are set and stop if they are not.
@@ -292,8 +287,6 @@ PetscErrorCode IceModel::grid_setup() {
       PISMEnd();
     }
 
-    grid.start_year = grid.year; // can be overridden using the -ys option
-
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
     ierr = ignore_option(grid.com, "-Mx");    CHKERRQ(ierr);
@@ -394,10 +387,6 @@ PetscErrorCode IceModel::grid_setup() {
     }
   } // -Nx and -Ny set
 
-  // Process -y, -ys, -ye. We are reading these options here because couplers
-  // might need to know what year it is.
-  ierr = set_time_from_options(); CHKERRQ(ierr);
-
   grid.check_parameters();
 
   ierr = grid.createDA(); CHKERRQ(ierr);
@@ -451,12 +440,12 @@ PetscErrorCode IceModel::model_state_setup() {
   // the regrid() call.
   if (beddef) {
     ierr = beddef->init(variables); CHKERRQ(ierr);
-    last_bed_def_update = grid.year;
+    last_bed_def_update = grid.time->start();
   }
 
   if (btu) {
-    ierr = surface->update(grid.start_year, 0); CHKERRQ(ierr);
-    ierr = ocean->update(grid.start_year, 0); CHKERRQ(ierr);
+    ierr = surface->update(grid.time->start_year(), 0); CHKERRQ(ierr);
+    ierr = ocean->update(grid.time->start_year(), 0); CHKERRQ(ierr);
     ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
     ierr = btu->init(variables); CHKERRQ(ierr);
   }
@@ -785,65 +774,6 @@ PetscErrorCode IceModel::misc_setup() {
   event_output    = grid.profiler->create("output", "time spent writing an output file");
   event_snapshots = grid.profiler->create("snapshots", "time spent writing snapshots");
   event_backups   = grid.profiler->create("backups", "time spent writing backups");
-
-  return 0;
-}
-
-//! Determine the run length, starting and ending years using command-line options.
-PetscErrorCode  IceModel::set_time_from_options() {
-  PetscErrorCode ierr;
-
-  // read options about year of start, year of end, number of run years;
-  // note grid.year has already been set from input file or defaults
-  PetscReal usrStartYear = grid.start_year,
-    usrEndYear = grid.end_year,
-    usrRunYears = grid.end_year - grid.start_year;
-  bool ysSet = false, yeSet = false, ySet = false;
-
-  ierr = PetscOptionsBegin(grid.com, "", "Time: start year, end year and run length", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsReal("-ys", "Start year",        usrStartYear, ysSet); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-ye", "End year",          usrEndYear,   yeSet); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-y",  "years; Run length", usrRunYears,  ySet);  CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-
-  if (ysSet && yeSet && ySet) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: all of -y, -ys, -ye are set. Exiting...\n");
-    CHKERRQ(ierr);
-    PISMEnd();
-  }
-  if (ySet && yeSet) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: using -y and -ye together is not allowed. Exiting...\n"); CHKERRQ(ierr);
-    PISMEnd();
-  }
-
-  // Set the start year if -ys is set, use the default (stored in
-  // grid.start_year) otherwise.
-  if (ysSet == PETSC_TRUE) {
-    grid.start_year = usrStartYear;
-    grid.year = usrStartYear;
-  } else {
-    grid.year = grid.start_year;
-  }
-
-  if (yeSet == PETSC_TRUE) {
-    if (usrEndYear < grid.start_year) {
-      ierr = PetscPrintf(grid.com,
-			"PISM ERROR: -ye (%3.3f) is less than -ys (%3.3f) (or input file year or default).\n"
-			"PISM cannot run backward in time.\n",
-			 usrEndYear, grid.start_year); CHKERRQ(ierr);
-      PISMEnd();
-    }
-    grid.end_year = usrEndYear;
-  } else if (ySet == PETSC_TRUE) {
-    grid.end_year = grid.start_year + usrRunYears;
-  } else {
-    grid.end_year = grid.start_year + config.get("run_length_years");
-  }
-
-  t_years_TempAge = grid.year;
 
   return 0;
 }

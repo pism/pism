@@ -32,7 +32,7 @@ public:
   PISMBedDef(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PISMBedDef() {}
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years) = 0;
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
   virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/);
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/,
                                           nc_type /*nctype*/);
@@ -55,7 +55,7 @@ public:
   PBPointwiseIsostasy(IceGrid &g, const NCConfigVariable &conf); 
   virtual ~PBPointwiseIsostasy() {}
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 protected:
   PetscErrorCode allocate();
   IceModelVec2S thk_last;	//!< last ice thickness
@@ -71,7 +71,7 @@ public:
   virtual ~PBLingleClark();
 
   PetscErrorCode init(PISMVars &vars);
-  PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 protected:
   PetscErrorCode correct_topg();
   PetscErrorCode allocate();

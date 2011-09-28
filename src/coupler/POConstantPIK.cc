@@ -115,7 +115,11 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-    	  // compute T_f[i][j] according to beckmann_goosse03, which has the meaning of the freezing temperature of the ocean water directly under the shelf, (of salinity 35psu) [this is related to the Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for details]
+    	  // compute T_f[i][j] according to beckmann_goosse03, which has the
+    	  // meaning of the freezing temperature of the ocean water directly
+    	  // under the shelf, (of salinity 35psu) [this is related to the
+    	  // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
+    	  // details]
     	  PetscScalar shelfbaseelev = - (rho_ice / rho_ocean) * H[i][j],
     	  T_f= 273.15+ (0.0939 -0.057 * 35.0 + 7.64e-4 * shelfbaseelev); // add 273.15 to get it in Kelvin... 35 is the salinity
 
@@ -125,7 +129,6 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
 
       	  // shelfbmassflux is positive if ice is freezing on; here it is always negative:
       	  // same sign as OceanHeatFlux... positive if massflux FROM ice TO ocean
-      	  //result(i,j) = oceanheatflux / (L * rho_ice) * secpera; // m a-1
       	  result(i,j) = oceanheatflux / (L * rho_ice); // m s-1
 
       }

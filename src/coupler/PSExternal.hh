@@ -71,7 +71,7 @@ public:
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict);
 protected:
   double gamma, update_interval, ebm_update_interval, last_ebm_update_year, last_bc_update_year;
   IceModelVec2S acab, artm;

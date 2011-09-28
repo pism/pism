@@ -344,14 +344,12 @@ int main(int argc, char *argv[]) {
     IceGrid grid(com, rank, size, config);
     
     bool flag;
-    PetscReal ys = 0.0, ye = 0.0, dt_years = 0.0;
+    PetscReal dt_years = 0.0;
     ierr = PetscOptionsBegin(grid.com, "", "PCLIMATE options", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-i", "Input file name",  inname, flag); CHKERRQ(ierr);
       ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
 
-      ierr = PISMOptionsReal("-ys", "Start year", ys, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-ye", "End year",   ye, flag); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -362,11 +360,6 @@ int main(int argc, char *argv[]) {
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
 
     mapping.init("mapping", com, rank);
-
-    // These values may be used by surface, atmosphere of ocean models:
-    grid.year = ys;		
-    grid.start_year = ys;
-    grid.end_year = ye;
 
     // allocate IceModelVecs needed by boundary models and put them in a dictionary:
     PISMVars variables;
@@ -421,7 +414,9 @@ int main(int argc, char *argv[]) {
 
     ierr = writePCCStateAtTimes(variables, surface, ocean,
                                 outname.c_str(), &grid,
-				ys, ye, dt_years,
+				grid.time->start_year(),
+                                grid.time->end_year(),
+                                dt_years,
                                 mapping); CHKERRQ(ierr);
 
     if (override_used) {

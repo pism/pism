@@ -259,7 +259,7 @@ PetscErrorCode BedDeformLC::uplift_init() {
 }
 
 
-PetscErrorCode BedDeformLC::step(const PetscScalar dtyear, const PetscScalar yearFromStart) {
+PetscErrorCode BedDeformLC::step(const PetscScalar dt_seconds, const PetscScalar seconds_from_start) {
   // solves: 
   //     (2 eta |grad| U^{n+1}) + (dt/2) * ( rho_r g U^{n+1} + D grad^4 U^{n+1} )
   //   = (2 eta |grad| U^n) - (dt/2) * ( rho_r g U^n + D grad^4 U^n ) - dt * rho g Hstart
@@ -273,7 +273,7 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dtyear, const PetscScalar yea
   ierr = VecWAXPY(Hdiff, -1, *Hstart, *H); CHKERRQ(ierr);
 
 #if (PISM_HAVE_FFTW)
-  const PetscScalar dt = dtyear * secpera;
+  const PetscScalar dt = dt_seconds;
   PetscScalar **dH, **lft, **rgt;
 
   // note ice thicknesses and bed elevations only on physical ("thin") grid
@@ -373,7 +373,7 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dtyear, const PetscScalar yea
   delvolume = delvolume * dx * dy;  // make into a volume
   const PetscScalar Hequiv = delvolume / (pi * Requiv * Requiv);
 
-  const PetscScalar vd_time = yearFromStart * secpera;
+  const PetscScalar vd_time = seconds_from_start;
   const PetscScalar discshift = viscDisc(vd_time,Hequiv,Requiv,Lav,rho,standard_gravity,D,eta) - av; 
   for (PetscInt i=0; i < Nx; i++) {
     for (PetscInt j=0; j < Ny; j++) {

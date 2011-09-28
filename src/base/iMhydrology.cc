@@ -39,7 +39,7 @@ PetscErrorCode IceModel::diffuse_bwat() {
 
   const PetscScalar
     L = config.get("bwat_diffusion_distance"),
-    diffusion_time = config.get("bwat_diffusion_time") * secpera; // convert to seconds
+    diffusion_time = convert(config.get("bwat_diffusion_time"), "years", "seconds"); // convert to seconds
 
   const PetscScalar K = L * L / (2.0 * diffusion_time),
                     Rx = K * (dt_years_TempAge * secpera) / (grid.dx * grid.dx),

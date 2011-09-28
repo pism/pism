@@ -35,18 +35,20 @@ PetscErrorCode IceBasalResistancePlasticLaw::printInfo(int verbthresh, MPI_Comm 
     if (pseudo_q == 1.0) {
       ierr = verbPrintf(verbthresh, com, 
         "Using linearly viscous till with u_threshold = %.2f m/a.\n", 
-        pseudo_u_threshold * secpera); CHKERRQ(ierr);
+                        convert(pseudo_u_threshold, "m/s", "m/year")); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(verbthresh, com, 
         "Using pseudo-plastic till with eps = %10.5e m/a, q = %.4f,"
         " and u_threshold = %.2f m/a.\n", 
-        plastic_regularize * secpera, pseudo_q, pseudo_u_threshold * secpera); 
+                        convert(plastic_regularize, "m/s", "m/year"),
+                        pseudo_q,
+                        convert(pseudo_u_threshold, "m/s", "m/year")); 
         CHKERRQ(ierr);
     }
   } else {
     ierr = verbPrintf(verbthresh, com, 
       "Using purely plastic till with eps = %10.5e m/a.\n",
-      plastic_regularize * secpera); CHKERRQ(ierr);
+                      convert(plastic_regularize, "m/s", "m/year")); CHKERRQ(ierr);
   }
   return 0;
 }

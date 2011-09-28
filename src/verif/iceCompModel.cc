@@ -419,19 +419,19 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
           exactA(r,&H[i][j],&accum[i][j]);
           break;
         case 'B':
-          exactB(grid.year*secpera,r,&H[i][j],&accum[i][j]);
+          exactB(grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
         case 'C':
-          exactC(grid.year*secpera,r,&H[i][j],&accum[i][j]);
+          exactC(grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
         case 'D':
-          exactD(grid.year*secpera,r,&H[i][j],&accum[i][j]);
+          exactD(grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
         case 'E':
           exactE(xx,yy,&H[i][j],&accum[i][j],&dummy1,&dummy2,&dummy3);
           break;
         case 'H':
-          exactH(f,grid.year*secpera,r,&H[i][j],&accum[i][j]);
+          exactH(f,grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
         default:  SETERRQ(1,"test must be A, B, C, D, E, or H");
       }
@@ -569,13 +569,13 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
       PetscScalar r = grid.radius(i,j);
       switch (testname) {
         case 'C':
-          exactC(grid.year*secpera,r,&dummy,&accum[i][j]);
+          exactC(grid.time->current(),r,&dummy,&accum[i][j]);
           break;
         case 'D':
-          exactD(grid.year*secpera,r,&dummy,&accum[i][j]);
+          exactD(grid.time->current(),r,&dummy,&accum[i][j]);
           break;
         case 'H':
-          exactH(f,grid.year*secpera,r,&dummy,&accum[i][j]);
+          exactH(f,grid.time->current(),r,&dummy,&accum[i][j]);
           break;
         default:  SETERRQ(1,"testname must be C, D, or H");
       }
@@ -620,16 +620,16 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
           exactA(r,&H[i][j],&accum[i][j]);
           break;
         case 'B':
-          exactB(grid.year*secpera,r,&H[i][j],&accum[i][j]);
+          exactB(grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
         case 'C':
-          exactC(grid.year*secpera,r,&H[i][j],&accum[i][j]);
+          exactC(grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
         case 'D':
-          exactD(grid.year*secpera,r,&H[i][j],&accum[i][j]);
+          exactD(grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
         case 'H':
-          exactH(f,grid.year*secpera,r,&H[i][j],&accum[i][j]);
+          exactH(f,grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
         default:  SETERRQ(1,"test must be A, B, C, D, or H");
       }
@@ -748,13 +748,13 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
           exactA(r,&Hexact,&dummy);
           break;
         case 'B':
-          exactB(grid.year*secpera,r,&Hexact,&dummy);
+          exactB(grid.time->current(),r,&Hexact,&dummy);
           break;
         case 'C':
-          exactC(grid.year*secpera,r,&Hexact,&dummy);
+          exactC(grid.time->current(),r,&Hexact,&dummy);
           break;
         case 'D':
-          exactD(grid.year*secpera,r,&Hexact,&dummy);
+          exactD(grid.time->current(),r,&Hexact,&dummy);
           break;
         case 'E':
           exactE(xx,yy,&Hexact,&dummy,&dummy1,&dummy2,&dummy3);
@@ -775,12 +775,12 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
           } else {
             r=PetscMax(r,1.0);
             z=0.0;
-            bothexact(grid.year*secpera,r,&z,1,ApforG,
+            bothexact(grid.time->current(),r,&z,1,ApforG,
                       &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
           }
           break;
         case 'H':
-          exactH(f,grid.year*secpera,r,&Hexact,&dummy);
+          exactH(f,grid.time->current(),r,&Hexact,&dummy);
           break;
         case 'K':
         case 'O':

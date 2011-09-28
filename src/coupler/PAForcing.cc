@@ -106,11 +106,11 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
 }
 
 PetscErrorCode PAForcing::max_timestep(PetscReal t_years,
-				       PetscReal &dt_years) {
+				       PetscReal &dt_years, bool &restrict) {
   PetscErrorCode ierr;
   PetscReal max_dt = -1;
   
-  ierr = input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+  ierr = input_model->max_timestep(t_years, dt_years, restrict); CHKERRQ(ierr);
 
   if (temp_anomaly != NULL) {
     max_dt = temp_anomaly->max_timestep(t_years);
@@ -131,6 +131,11 @@ PetscErrorCode PAForcing::max_timestep(PetscReal t_years,
     }
     else dt_years = max_dt;
   }
+
+  if (dt_years > 0)
+    restrict = true;
+  else
+    restrict = false;
 
   return 0;
 }

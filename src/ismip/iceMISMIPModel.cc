@@ -295,10 +295,17 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   return 0;
 }
 
+PetscErrorCode IceMISMIPModel::grid_setup() {
+  PetscErrorCode ierr = IceModel::grid_setup(); CHKERRQ(ierr);
+
+  ierr =  set_time_from_options(); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+
 PetscErrorCode IceMISMIPModel::set_time_from_options() {
   PetscErrorCode ierr;
-
-  ierr = IceModel::set_time_from_options(); CHKERRQ(ierr);
 
   // use MISMIP runtimeyears UNLESS USER SPECIFIES A RUN LENGTH
   // use -y option, if given, to overwrite runtimeyears
@@ -315,10 +322,10 @@ PetscErrorCode IceMISMIPModel::set_time_from_options() {
       "IceMISMIPModel: setting max run length to %5.2f years (from MISMIP specs)\n",
       runtimeyears); CHKERRQ(ierr);
     if (ysSet == PETSC_FALSE) {
-      grid.year = 0.0;
-      grid.start_year = 0.0;
+      grid.time->set(0.0);
+      grid.time->set_start(0.0);
     }
-    grid.end_year = grid.start_year + runtimeyears;
+    grid.time->set_end(grid.time->start() + convert(runtimeyears, "years", "seconds"));
   }
 
   return 0;
@@ -654,7 +661,7 @@ PetscErrorCode IceMISMIPModel::calving() {
 
 PetscErrorCode IceMISMIPModel::additionalAtStartTimestep() {
   // this is called at start of each pass through time-stepping loop IceModel::run()
-  const PetscScalar tonext50 = (50.0 - fmod(grid.year, 50.0)) * secpera;
+  const PetscScalar tonext50 = (50.0 - fmod(grid.time->year(), 50.0)) * secpera;
   if (maxdt_temporary < 0.0) {  // it has not been set
     maxdt_temporary = tonext50;
   } else {
@@ -705,7 +712,7 @@ PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
 
   snprintf(str, sizeof(str), 
        "Stopping.  Completed timestep year=%.3f.  Writing MISMIP files.\n",
-       grid.year);
+           grid.time->year());
   ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
   stampHistory(str);
 
@@ -750,7 +757,7 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
   ierr = vh.begin_access(); CHKERRQ(ierr);
   ierr = vbed.begin_access(); CHKERRQ(ierr);
   if (mismiptype == 'f') {
-    ierr = PetscViewerASCIIPrintf(view,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.year);
+    ierr = PetscViewerASCIIPrintf(view,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.time->year());
                CHKERRQ(ierr);
   } else {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -1051,9 +1058,8 @@ is computed as in MISMIP description, and finite differences.
       
       // now check if MISMIP steady state criteria are achieved:
       if ((rstats.dHdtnorm * secpera < dHdtnorm_atol) && (PetscAbs(mstats.dxgdt) * secpera < dxgdt_atol)) {
-        // set the IceModel goal of end_year to the current year;
-        //   causes immediate stop
-        grid.end_year = grid.year;  
+        // set the IceModel time to the current time; causes immediate stop
+        grid.time->set_end(grid.time->current());
       }
     }
   }

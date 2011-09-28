@@ -500,9 +500,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li determine the maximum time-step boundary models can take
   double apcc_dt;
-  ierr = surface->max_timestep(grid.year, apcc_dt); CHKERRQ(ierr);
+  bool restrict_dt;
+  ierr = surface->max_timestep(grid.time->year(), apcc_dt, restrict_dt); CHKERRQ(ierr);
   apcc_dt *= secpera;
-  if (apcc_dt > 0.0) {
+  if (restrict_dt) {
     if (maxdt_temporary > 0)
       maxdt_temporary = PetscMin(apcc_dt, maxdt_temporary);
     else
@@ -510,9 +511,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
 
   double opcc_dt;
-  ierr = ocean->max_timestep(grid.year, opcc_dt); CHKERRQ(ierr);
+  ierr = ocean->max_timestep(grid.time->year(), opcc_dt, restrict_dt); CHKERRQ(ierr);
   opcc_dt *= secpera;
-  if (opcc_dt > 0.0) {
+  if (restrict_dt) {
     if (maxdt_temporary > 0)
       maxdt_temporary = PetscMin(opcc_dt, maxdt_temporary);
     else
@@ -520,9 +521,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
 
   double ts_dt;
-  ierr = ts_max_timestep(grid.year, ts_dt); CHKERRQ(ierr);
+  ierr = ts_max_timestep(grid.time->year(), ts_dt, restrict_dt); CHKERRQ(ierr);
   ts_dt *= secpera;
-  if (ts_dt > 0.0) {
+  if (restrict_dt) {
     if (maxdt_temporary > 0)
       maxdt_temporary = PetscMin(ts_dt, maxdt_temporary);
     else
@@ -532,9 +533,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! \li apply the time-step restriction from the -extra_{times,file,vars}
   //! mechanism
   double extras_dt;
-  ierr = extras_max_timestep(grid.year, extras_dt); CHKERRQ(ierr);
+  ierr = extras_max_timestep(grid.time->year(), extras_dt, restrict_dt); CHKERRQ(ierr);
   extras_dt *= secpera;
-  if (extras_dt > 0.0) {
+  if (restrict_dt) {
     if (maxdt_temporary > 0)
       maxdt_temporary = PetscMin(extras_dt, maxdt_temporary);
     else
@@ -557,7 +558,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (basal_yield_stress) {
-    ierr = basal_yield_stress->update(grid.year, dt / secpera); CHKERRQ(ierr);
+    ierr = basal_yield_stress->update(grid.time->year(), dt / secpera); CHKERRQ(ierr);
     ierr = basal_yield_stress->basal_material_yield_stress(vtauc); CHKERRQ(ierr);
     stdout_flags += "y";
   } else stdout_flags += "$";
@@ -571,7 +572,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   // stability criterion; note *lots* of communication is avoided by skipping
   // SSA (and temp/age)
 
-  bool updateAtDepth = (skipCountDown == 0);
+  bool updateAtDepth = (skipCountDown == 0),
+    do_energy_step = updateAtDepth && do_energy;
   
   grid.profiler->begin(event_velocity);
 
@@ -599,12 +601,12 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   ierr = determineTimeStep(do_energy); CHKERRQ(ierr);
 
   //! \li Update surface and ocean models.
-  ierr = surface->update(grid.year, dt / secpera); CHKERRQ(ierr);
-  ierr = ocean->update(grid.year,   dt / secpera); CHKERRQ(ierr);
+  ierr = surface->update(grid.time->year(), dt / secpera); CHKERRQ(ierr);
+  ierr = ocean->update(grid.time->year(),   dt / secpera); CHKERRQ(ierr);
 
 
   dt_years_TempAge += dt / secpera;
-  // IceModel::dt,dtTempAge,grid.year are now set correctly according to
+  // IceModel::dt,dtTempAge,grid.time->year() are now set correctly according to
   //    mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and
   //    other criteria from derived class additionalAtStartTimestep(), and from
   //    "-skip" mechanism
@@ -627,7 +629,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! \li update the enthalpy (or temperature) field according to the conservation of
   //!  energy model based (especially) on the new velocity field; see
   //!  energyStep()
-  if (updateAtDepth && do_energy) { // do the temperature step
+  if (do_energy_step) { // do the energy step
     ierr = energyStep(); CHKERRQ(ierr);
     stdout_flags += "E";
   } else {
@@ -673,9 +675,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! \li call additionalAtEndTimestep() to let derived classes do more
   ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
-  grid.year += dt / secpera;  // adopt the new time
-  if (updateAtDepth && do_energy) { // FIXME: must be same condition as "do the temperature step"
-    t_years_TempAge = grid.year;
+  // Done with the step; now adopt the new time.
+  grid.time->step(dt);
+
+  if (do_energy_step) {
+    t_years_TempAge = grid.time->year();
     dt_years_TempAge = 0.0;
   }
 
@@ -720,35 +724,30 @@ PetscErrorCode IceModel::run() {
   skipCountDown = 0;
   dt_years_TempAge = 0.0;
   dt = 0.0;
-  PetscReal end_year = grid.end_year;
+  PetscReal run_end = grid.time->end();
   
   // FIXME:  In the case of derived class diagnostic time series this fixed
   //         step-length can be problematic.  The fix may have to be in the derived class.
   //         The problem is that unless the derived class fully reinitializes its
   //         time series then there can be a request for an interpolation on [A,B]
   //         where A>B.  See IcePSTexModel.
-  //grid.end_year = grid.start_year + 1; // all what matters is that it is
-  //				       // greater than start_year
-  grid.end_year = grid.start_year + 0.01; // all what matters is that it is
-				       // greater than start_year
-
+  grid.time->set_end(grid.time->start() + 1); // run for 1 second
   
-  ierr = step(do_mass_conserve, do_energy, do_diffuse_bwat, do_age,
-	      do_skip); CHKERRQ(ierr);
+  ierr = step(do_mass_conserve, do_energy, do_diffuse_bwat, do_age, do_skip); CHKERRQ(ierr);
 
   // print verbose messages according to user-set verbosity
   if (tmp_verbosity > 2) {
     ierr = PetscPrintf(grid.com,
-      " done; reached time %.4f a\n", grid.year); CHKERRQ(ierr);
+      " done; reached time %.4f a\n", grid.time->year()); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com,
       "  re-setting model state as initialized ...\n"); CHKERRQ(ierr);
   }
 
   // re-initialize the model:
   global_attributes.set_string("history", "");
-  grid.year = grid.start_year;
-  t_years_TempAge = grid.year;
-  grid.end_year = end_year;
+  grid.time->set(grid.time->start());
+  t_years_TempAge = grid.time->start_year();
+  grid.time->set_end(run_end);
   ierr = model_state_setup(); CHKERRQ(ierr);
 
   // restore verbosity:
@@ -768,7 +767,9 @@ PetscErrorCode IceModel::run() {
   ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
 
   // main loop for time evolution
-  for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt/secpera) {
+  // IceModel::step calls grid.time->step(dt), ensuring that this while loop
+  // will terminate
+  while (grid.time->current() < grid.time->end()) {
     
     stdout_flags.erase();  // clear it out
     dt_force = -1.0;
@@ -808,7 +809,7 @@ PetscErrorCode IceModel::run() {
   if (stepcount >= 0) {
     ierr = verbPrintf(1,grid.com,
               "count_time_steps:  run() took %d steps\naverage dt = %.6f years\n",
-              stepcount,(grid.end_year-grid.start_year)/(double)stepcount); CHKERRQ(ierr);
+                      stepcount, grid.time->run_length_years()/(double)stepcount); CHKERRQ(ierr);
   }
 
   return 0;

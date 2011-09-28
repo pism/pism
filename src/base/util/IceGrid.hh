@@ -22,6 +22,7 @@
 #include <petscda.h>
 #include "NCVariable.hh"
 #include "PISMProf.hh"
+#include "PISMTime.hh"
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
@@ -178,11 +179,8 @@ public:
   PetscInt max_stencil_width;   //!< \brief maximum stencil width supported by
                                 //!< the DA in this IceGrid object
 
-  PetscScalar year,       //!< current time (years)
-    start_year,		  //!< the year this run started from
-    end_year;		  //!< time to stop at
-  
   PISMProf *profiler;           //!< PISM profiler object; allows tracking how long a computation takes
+  PISMTime *time;               //!< The time management object (hides calendar computations)
 protected:
   PetscScalar lambda;	 //!< quadratic vertical spacing parameter
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();

@@ -23,10 +23,8 @@
 
 PBLingleClark::PBLingleClark(IceGrid &g, const NCConfigVariable &conf)
   : PISMBedDef(g, conf) {
-  PetscErrorCode ierr;
 
-  ierr = allocate();
-  if (ierr != 0) {
+  if (allocate() != 0) {
     PetscPrintf(grid.com, "PBLingleClark::PBLingleClark(...): allocate() failed\n");
     PISMEnd();
   }
@@ -34,10 +32,8 @@ PBLingleClark::PBLingleClark(IceGrid &g, const NCConfigVariable &conf)
 }
 
 PBLingleClark::~PBLingleClark() {
-  PetscErrorCode ierr;
 
-  ierr = deallocate();
-  if (ierr != 0) {
+  if (deallocate() != 0) {
     PetscPrintf(grid.com, "PBLingleClark::~PBLingleClark(...): deallocate() failed\n");
     PISMEnd();
   }
@@ -244,28 +240,30 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
 
 //! Update the Lingle-Clark bed deformation model.
-PetscErrorCode PBLingleClark::update(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
-  if ((fabs(t_years - t)   < 1e-12) &&
-      (fabs(dt_years - dt) < 1e-12))
+  if ((fabs(my_t - t)   < 1e-12) &&
+      (fabs(my_dt - dt) < 1e-12))
     return 0;
 
-  t  = t_years;
-  dt = dt_years;
+  t  = my_t;
+  dt = my_dt;
 
   // Check if it's time to update:
-  PetscScalar dt_beddef = t_years - t_beddef_last;
-  if (dt_beddef < config.get("bed_def_interval_years"))
+  PetscScalar dt_beddef = my_t - t_beddef_last; // in seconds
+  if (dt_beddef < convert(config.get("bed_def_interval_years"), "years", "seconds"))
     return 0;
 
-  t_beddef_last = t_years;
+  t_beddef_last = my_t;
 
   ierr = transfer_to_proc0(thk,  Hp0);   CHKERRQ(ierr);
   ierr = transfer_to_proc0(topg, bedp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {  // only processor zero does the step
-    ierr = bdLC.step(dt_beddef, t_years - grid.start_year); CHKERRQ(ierr);
+    ierr = bdLC.step(dt_beddef, // time step, in seconds
+                     my_t - grid.time->start()); // time since the start of the run, in seconds
+    CHKERRQ(ierr);
   }
 
   ierr = transfer_from_proc0(bedp0, topg); CHKERRQ(ierr);

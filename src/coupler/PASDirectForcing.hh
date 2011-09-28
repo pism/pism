@@ -35,12 +35,12 @@ public:
 
   virtual ~PDirectForcing() {}
 
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years)
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict)
   {
     PetscReal max_dt = -1;
 
     // "Periodize" the climate:
-    t_years = my_mod(t_years);
+    t_years = Model::grid.time->mod(t_years - bc_reference_year, bc_period);
 
     dt_years = temp.max_timestep(t_years);
 
@@ -57,6 +57,11 @@ public:
     // ends in the next one.
     if (bc_period > 0.01)
       dt_years = PetscMin(dt_years, bc_period - t_years);
+
+    if (dt_years > 0)
+      restrict = true;
+    else
+      restrict = false;
 
     return 0;
   }
@@ -180,7 +185,7 @@ protected:
     PetscErrorCode ierr;
 
     // "Periodize" the climate:
-    t_years = my_mod(t_years);
+    t_years = Model::grid.time->mod(t_years - bc_reference_year, bc_period);
 
     if ((fabs(t_years - Model::t) < 1e-12) &&
         (fabs(dt_years - Model::dt) < 1e-12))
@@ -193,17 +198,6 @@ protected:
     ierr = mass_flux.update(Model::t, Model::dt); CHKERRQ(ierr);
 
     return 0;
-  }
-
-  PetscReal my_mod(PetscReal input)
-  {
-    if (bc_period < 0.01) return input;
-
-    // compute time since the reference year:
-    PetscReal delta = input - bc_reference_year;
-
-    // compute delta mod bc_period:
-    return delta - floor(delta / bc_period) * bc_period;
   }
 };
 

@@ -84,6 +84,7 @@ public:
   virtual PetscErrorCode allocate_basal_resistance_law();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode init_couplers();
+  virtual PetscErrorCode grid_setup();
   virtual PetscErrorCode set_time_from_options();
   virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode set_vars_from_options();

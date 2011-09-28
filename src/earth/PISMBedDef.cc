@@ -77,7 +77,7 @@ PetscErrorCode PISMBedDef::write_variables(set<string> vars, string filename) {
 PetscErrorCode PISMBedDef::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t_beddef_last = grid.year;
+  t_beddef_last = grid.time->year();
 
   thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!thk) SETERRQ(1, "ERROR: thk is not available");
@@ -94,13 +94,13 @@ PetscErrorCode PISMBedDef::init(PISMVars &vars) {
   return 0;
 }
 
-//! Compute bed uplift.
+//! Compute bed uplift (dt_beddef is in seconds).
 PetscErrorCode PISMBedDef::compute_uplift(PetscScalar dt_beddef) {
   PetscErrorCode ierr;
 
   ierr = topg->add(-1, topg_last, *uplift); CHKERRQ(ierr);
   //! uplift = (topg - topg_last) / dt
-  ierr = uplift->scale(1.0 / (dt_beddef * secpera)); CHKERRQ(ierr); 
+  ierr = uplift->scale(1.0 / dt_beddef); CHKERRQ(ierr); 
 
   return 0;
 }

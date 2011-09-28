@@ -80,8 +80,8 @@ PetscErrorCode PISMConstantYieldStress::write_variables(set<string> vars, string
 }
 
 
-PetscErrorCode PISMConstantYieldStress::update(PetscReal t_years, PetscReal dt_years) {
-  t = t_years; dt = dt_years;
+PetscErrorCode PISMConstantYieldStress::update(PetscReal my_t, PetscReal my_dt) {
+  t = my_t; dt = my_dt;
   return 0;
 }
 

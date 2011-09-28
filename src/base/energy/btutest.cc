@@ -52,7 +52,7 @@ PetscErrorCode BTU_Test::bootstrap() {
         for (PetscInt k=0; k < Mbz; k++) {
           const PetscReal z = zlevels[k];
           PetscReal FF; // Test K:  use Tb[k], ignore FF
-          ierr = exactK(grid.start_year * secpera, z, &Tb[k], &FF, 0); CHKERRQ(ierr);
+          ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
         }
       }
     }
@@ -141,19 +141,21 @@ int main(int argc, char *argv[]) {
     // when IceGrid constructor is called, these settings are used
     config.set_string("grid_ice_vertical_spacing","equal");
     config.set_string("grid_bed_vertical_spacing","equal");
+    config.set("start_year", 0.0);
+    config.set("run_length_years", 1.0);
 
     // create grid and set defaults
     IceGrid grid(com, rank, size, config);
-    config.set("grid_Mbz", 11); 
-    config.set("grid_Lbz", 1000); 
     grid.Mz = 41;
     grid.Lz = 4000.0;
     grid.Mx = 3;
     grid.My = 3;
     grid.Lx = 1500e3;
     grid.Ly = grid.Lx;
-    grid.start_year = 0.0;
-    grid.end_year = 1.0;
+
+    // Mbz and Lbz are used by the PISMBedThermalUnit, not by IceGrid
+    config.set("grid_Mbz", 11); 
+    config.set("grid_Lbz", 1000); 
 
     ierr = verbPrintf(2,com,
 	"  initializing IceGrid from options ...\n"); CHKERRQ(ierr);
@@ -163,8 +165,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-ys", "starting time in years", grid.start_year, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-ye", "starting time in years", grid.end_year, flag); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
       ierr = PISMOptionsInt("-Mz", "number of vertical layers in ice", grid.Mz, flag); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag); CHKERRQ(ierr);
@@ -200,15 +200,16 @@ int main(int argc, char *argv[]) {
     ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
     // worry about time step
-    int  N = (int)ceil((grid.end_year - grid.start_year) / dt_years);
+    int  N = (int)ceil((grid.time->end_year() - grid.time->start_year()) / dt_years);
     PetscReal old_dt_years = dt_years;
-    dt_years = (grid.end_year - grid.start_year) / (double)N;
+    dt_years = (grid.time->end_year() - grid.time->start_year()) / (double)N;
     ierr = verbPrintf(2,com,
         "  user set timestep of %.4f years ...\n"
         "  reset to %.4f years to get integer number of steps ... \n",
 	old_dt_years,dt_years); CHKERRQ(ierr);
     PetscReal max_dt_years;
-    ierr = btu.max_timestep(0.0, max_dt_years); CHKERRQ(ierr);
+    bool restrict_dt;
+    ierr = btu.max_timestep(0.0, max_dt_years, restrict_dt); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
         "  PISMBedThermalUnit reports max timestep of %.4f years ...\n",
 	max_dt_years); CHKERRQ(ierr);
@@ -217,7 +218,7 @@ int main(int argc, char *argv[]) {
     // actually do the time-stepping
     ierr = verbPrintf(2,com,"  running ...\n  "); CHKERRQ(ierr);
     for (PetscInt n = 0; n < N; n++) {
-      const PetscReal y = grid.start_year + dt_years * (double)n;  // time at start of time-step
+      const PetscReal y = grid.time->start_year() + dt_years * (double)n;  // time at start of time-step
 
       // compute exact ice temperature at z=0 at time y
       ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
@@ -247,10 +248,10 @@ int main(int argc, char *argv[]) {
 
     // get, and tell stdout, the correct answer from Test K
     PetscReal TT, FF; // Test K:  use FF, ignore TT
-    ierr = exactK(grid.end_year * secpera, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
+    ierr = exactK(grid.time->end(), 0.0, &TT, &FF, 0); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
         "  exact Test K reports upward heat flux at z=0, at end year %.2f, as G_0 = %.7f W m-2;\n",
-	grid.end_year,FF); CHKERRQ(ierr);
+                      grid.time->end_year(), FF); CHKERRQ(ierr);
 
     // compute numerical error
     PetscReal maxghferr, avghferr;
@@ -278,7 +279,7 @@ int main(int argc, char *argv[]) {
 
     ierr = pio.open_for_writing(outname, false, true); CHKERRQ(ierr);
     // append == true and check_dims == true
-    ierr = pio.append_time(config.get_string("time_dimension_name"), grid.end_year); CHKERRQ(ierr);
+    ierr = pio.append_time(config.get_string("time_dimension_name"), grid.time->end_year()); CHKERRQ(ierr);
     ierr = btu.define_variables(vars, pio, NC_DOUBLE); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
 

@@ -29,6 +29,7 @@ add_library (pismutil
   base/util/NCTool.cc
   base/util/pism_const.cc
   base/util/pism_default_config.cc
+  base/util/PISMTime.cc
   base/enthalpyConverter.cc
   base/pism_revision.cc
   )

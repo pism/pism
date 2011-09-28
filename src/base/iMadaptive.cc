@@ -34,7 +34,7 @@ The maximum vertical velocity is computed but it does not affect
 PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscErrorCode ierr;
   PetscScalar *u, *v, *w;
-  PetscScalar locCFLmaxdt = config.get("maximum_time_step_years") * secpera;
+  PetscScalar locCFLmaxdt = convert(config.get("maximum_time_step_years"), "years", "seconds");
 
   IceModelVec3 *u3, *v3, *w3;
 
@@ -170,7 +170,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
     do_energy = config.get_flag("do_energy");
 
-  const PetscScalar timeToEnd = (grid.end_year - grid.year) * secpera;
+  const PetscScalar timeToEnd = grid.time->end() - grid.time->current();
   if (dt_force > 0.0) {
     dt = dt_force; // override usual dt mechanism
     adaptReasonFlag = 'f';
@@ -194,9 +194,10 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
     }
     if (btu) {
       PetscReal btu_dt;
-      ierr = btu->max_timestep(grid.year, btu_dt); CHKERRQ(ierr); // returns years
+      bool restrict;
+      ierr = btu->max_timestep(grid.time->year(), btu_dt, restrict); CHKERRQ(ierr); // returns years
       btu_dt *= secpera;
-      if (btu_dt < dt) {
+      if (restrict && btu_dt < dt) {
         dt = btu_dt;
         adaptReasonFlag = 'b';
       }

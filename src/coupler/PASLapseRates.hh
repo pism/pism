@@ -47,7 +47,7 @@ public:
     PetscReal &m_dt = Mod::dt;
 
     // "Periodize" the climate:
-    t_years = my_mod(t_years);
+    t_years = Mod::grid.time->mod(t_years - bc_reference_year,  bc_period);
 
     if ((fabs(t_years - m_t) < 1e-12) &&
         (fabs(dt_years - m_dt) < 1e-12))
@@ -69,14 +69,14 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years) {
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict) {
     PetscErrorCode ierr;
     PetscReal max_dt = -1;
 
     // "Periodize" the climate:
-    t_years = my_mod(t_years);
+    t_years = Mod::grid.time->mod(t_years - bc_reference_year, bc_period);
 
-    ierr = Mod::input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+    ierr = Mod::input_model->max_timestep(t_years, dt_years, restrict); CHKERRQ(ierr);
 
     max_dt = reference_surface.max_timestep(t_years);
 
@@ -91,6 +91,11 @@ public:
     // ends in the next one.
     if (bc_period > 1e-6)
       dt_years = PetscMin(dt_years, bc_period - t_years);
+
+    if (dt_years > 0)
+      restrict = true;
+    else
+      restrict = false;
 
     return 0;
   }
@@ -202,17 +207,6 @@ protected:
     ierr = thk->end_access(); CHKERRQ(ierr);
 
     return 0;
-  }
-
-  //! \brief Computes year modulo bc_period if bc_period is active.
-  PetscReal my_mod(PetscReal in) {
-    if (bc_period < 1e-6) return in;
-
-    // compute time since the reference year:
-    PetscReal delta = in - bc_reference_year;
-
-    // compute delta mod bc_period:
-    return delta - floor(delta / bc_period) * bc_period;
   }
 };
 

@@ -153,12 +153,12 @@ PetscErrorCode PADirectForcing::temp_time_series(int i, int j, int N,
 
   if (bc_period > 0.01) {
     // Recall that this method is called for each map-plane point during a
-    // time-step. This if-condition is here to avoid calling my_mod() if the
-    // user didn't ask for periodized climate.
+    // time-step. This if-condition is here to avoid calling
+    // grid.time->mod() if the user didn't ask for periodized climate.
     ts_mod.reserve(N);
 
     for (int k = 0; k < N; ++k)
-      ts_mod[k] = my_mod(ts[k]);
+      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_year, bc_period);
 
     ptr = &ts_mod[0];
   } else {

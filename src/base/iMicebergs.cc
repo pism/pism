@@ -309,7 +309,6 @@ PetscErrorCode IceModel::killEasyIceBergs() {
 
   PetscReal sea_level;
   if (ocean != NULL) {
-    //ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
     ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
   } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
 

@@ -511,37 +511,39 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
     }
   }
 
-  double dt_years = convert(dt, "seconds", "years");
+  double dt_years = convert(dt, "seconds", "years"),
+    a = grid.time->year() - dt_years,
+    b = grid.time->year();
 
-  dt_ser->append(dt_years, grid.year - dt_years, grid.year);
-  dt_ser->interp(grid.year - dt_years, grid.year);
+  dt_ser->append(dt_years, a, b);
+  dt_ser->interp(a, b);
 
-  ivol->append(gvolume, grid.year - dt_years, grid.year);
-  ivol->interp(grid.year - dt_years, grid.year);
-  iarea->append(garea, grid.year - dt_years, grid.year);
-  iarea->interp(grid.year - dt_years, grid.year);
-  maxcbar->append(gmaxcbarALL, grid.year - dt_years, grid.year);
-  maxcbar->interp(grid.year - dt_years, grid.year);
+  ivol->append(gvolume, a, b);
+  ivol->interp(a, b);
+  iarea->append(garea, a, b);
+  iarea->interp(a, b);
+  maxcbar->append(gmaxcbarALL, a, b);
+  maxcbar->interp(a, b);
 
-  avup0->append(gavcup[0], grid.year - dt_years, grid.year);
-  avup0->interp(grid.year - dt_years, grid.year);
-  avup1->append(gavcup[1], grid.year - dt_years, grid.year);
-  avup1->interp(grid.year - dt_years, grid.year);
-  avup2->append(gavcup[2], grid.year - dt_years, grid.year);
-  avup2->interp(grid.year - dt_years, grid.year);
+  avup0->append(gavcup[0], a, b);
+  avup0->interp(a, b);
+  avup1->append(gavcup[1], a, b);
+  avup1->interp(a, b);
+  avup2->append(gavcup[2], a, b);
+  avup2->interp(a, b);
 
-  avdwn0->append(gavcdown[0], grid.year - dt_years, grid.year);
-  avdwn0->interp(grid.year - dt_years, grid.year);
-  avdwn1->append(gavcdown[1], grid.year - dt_years, grid.year);
-  avdwn1->interp(grid.year - dt_years, grid.year);
-  avdwn2->append(gavcdown[2], grid.year - dt_years, grid.year);
-  avdwn2->interp(grid.year - dt_years, grid.year);
+  avdwn0->append(gavcdown[0], a, b);
+  avdwn0->interp(a, b);
+  avdwn1->append(gavcdown[1], a, b);
+  avdwn1->interp(a, b);
+  avdwn2->append(gavcdown[2], a, b);
+  avdwn2->interp(a, b);
 
   if (exper_chosen != 3) {
-    avup3->append(gavcup[3], grid.year - dt_years, grid.year);
-    avup3->interp(grid.year - dt_years, grid.year);
-    avdwn3->append(gavcdown[3], grid.year - dt_years, grid.year);
-    avdwn3->interp(grid.year - dt_years, grid.year);
+    avup3->append(gavcup[3], a, b);
+    avup3->interp(a, b);
+    avdwn3->append(gavcdown[3], a, b);
+    avdwn3->interp(a, b);
   }
 
   return 0;

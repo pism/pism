@@ -20,20 +20,16 @@
 #include <algorithm>
 #include "pism_const.hh"
 
-Timeseries::Timeseries(IceGrid *g, string name, string dimension_name) {
-  com = g->com;
-  rank = g->rank;
-
-  dimension.init(dimension_name, dimension_name, com, rank);
-  var.init(name, dimension_name, com, rank);
-  bounds.init(dimension_name + "_bounds", dimension_name, com, rank);
-  dimension.set_string("bounds", dimension_name + "_bounds");
-
-  short_name = name;
-  use_bounds = true;
+Timeseries::Timeseries(IceGrid *g, string name, string dimension_name)
+{
+  private_constructor(g->com, g->rank, name, dimension_name);
 }
 
 Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name) {
+  private_constructor(c, r, name, dimension_name);
+}
+
+void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r, string name, string dimension_name) {
   com = c;
   rank = r;
   dimension.init(dimension_name, dimension_name, com, rank);
@@ -44,6 +40,7 @@ Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_
   short_name = name;
   use_bounds = true;
 }
+
 
 //! Read timeseries data from a NetCDF file \c filename.
 PetscErrorCode Timeseries::read(const char filename[]) {

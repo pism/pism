@@ -356,7 +356,6 @@ protected:
   virtual PetscErrorCode killEasyIceBergs();       // FIXME: do we want this one to happen even if eigencalving does not happen?  should we be calling this one before any time that principal values need to be computed?
 
   // see iMIO.cc
-  virtual PetscErrorCode set_time_from_options();
   virtual PetscErrorCode dumpToFile(const char *filename);
   virtual PetscErrorCode regrid(int dimensions);
   virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
@@ -446,7 +445,7 @@ protected:
   PetscErrorCode init_timeseries();
   PetscErrorCode flush_timeseries();
   PetscErrorCode write_timeseries();
-  PetscErrorCode ts_max_timestep(double t_years, double& dt_years);
+  PetscErrorCode ts_max_timestep(double t_years, double& dt_years, bool &restrict);
 
   // spatially-varying time-series
   bool save_extra, extra_file_is_ready, split_extra;
@@ -456,7 +455,7 @@ protected:
   set<string> extra_vars;
   PetscErrorCode init_extras();
   PetscErrorCode write_extras();
-  PetscErrorCode extras_max_timestep(double t_years, double& dt_years);
+  PetscErrorCode extras_max_timestep(double t_years, double& dt_years, bool &restrict);
 
   // automatic backups
   double backup_interval;

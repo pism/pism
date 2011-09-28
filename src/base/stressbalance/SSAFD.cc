@@ -791,7 +791,7 @@ PetscErrorCode SSAFD::writeSSAsystemMatlab() {
 
   // FIXME: the file name prefix should be an option
   strcpy(file_name,"pism_SSAFD");
-  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m", grid.year);
+  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m", grid.time->year());
   strcat(file_name,yearappend);
   ierr = verbPrintf(2, grid.com,
              "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
@@ -830,7 +830,7 @@ PetscErrorCode SSAFD::writeSSAsystemMatlab() {
   ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
 
   // save coordinates (for viewing, primarily)
-  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",grid.year);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",grid.time->year());  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
             "x=%12.3f + (0:%d)*%12.3f;\n"
             "y=%12.3f + (0:%d)*%12.3f;\n",

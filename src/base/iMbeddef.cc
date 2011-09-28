@@ -64,20 +64,21 @@ PetscErrorCode IceModel::bed_def_step(bool &bed_changed) {
 
   if (beddef == NULL) SETERRQ(1, "beddef == NULL");
 
-  double bedDefIntervalYears = config.get("bed_def_interval_years");
+  double update_interval = convert(config.get("bed_def_interval_years"),
+                                   "years", "seconds");
 
   // This is a front end to the bed deformation update system.  It updates
-  // no more often than bedDefIntervalYears.
+  // no more often than update_interval.
 
   // If the bed elevations are not expired, exit cleanly.
-  const PetscScalar dtBedDefYears = grid.year - last_bed_def_update;
-  if (dtBedDefYears >= bedDefIntervalYears) {
+  const PetscScalar dt_beddef = grid.time->current() - last_bed_def_update;
+  if (dt_beddef >= update_interval) {
 
-    ierr = beddef->update(grid.year, dt); CHKERRQ(ierr);
+    ierr = beddef->update(grid.time->current(), dt); CHKERRQ(ierr);
 
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
-    last_bed_def_update = grid.year;
+    last_bed_def_update = grid.time->current();
     // Mark bed topography as "modified":
     vbed.inc_state_counter();
     // SIAFD::update() uses this to decide if we need to re-compute the

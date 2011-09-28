@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
         ierr = VecGetArray2d(uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
         for (PetscInt i=0; i<Mx; i++) {
           for (PetscInt j=0; j<My; j++) {
-            const PetscScalar peak_up = 0.010 / secpera;  // 10 mm/a
+            const PetscScalar peak_up = convert(10, "mm/year", "m/s");  // 10 mm/a
             const PetscScalar r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
             if (r < 1.5 * R0) {
               upl[i][j] = peak_up * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0; 

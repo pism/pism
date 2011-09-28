@@ -263,18 +263,19 @@ all nonnegative, equivalently \f$1-2R\ge 0\f$ or \f$R\le 1/2\f$ or
         \f[\Delta t \le \frac{\Delta z^2}{2 D}.\f]
 This is a formula for the maximum stable timestep.  For more, see [\ref MortonMayers].
 
-The above describes the general case where Mbz > 1.  If not, this method returns
-5e9 years for the maximum time step ... the age of the earth.
+The above describes the general case where Mbz > 1.
  */
-PetscErrorCode PISMBedThermalUnit::max_timestep(PetscReal /*t_years*/, PetscReal &dt_years) {
+PetscErrorCode PISMBedThermalUnit::max_timestep(PetscReal /*t_years*/, PetscReal &dt_years, bool &restrict) {
 
   if (temp.was_created()) {
     PetscReal dzb;
     temp.get_spacing(dzb);
     dt_years = dzb * dzb / (2.0 * bed_D);  // max dt from stability; in seconds
     dt_years /= secpera;
+    restrict = true;
   } else {
-    dt_years = 5.0e9; // a long time for ice sheet modeling
+    dt_years = 0;
+    restrict = false;
   }
   return 0;
 }
@@ -325,8 +326,9 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years)
   }
   // CHECK: is desired time-step too long?
   PetscScalar mydtyears;
-  ierr = max_timestep(t_years,mydtyears); CHKERRQ(ierr);
-  if (mydtyears < dt_years) {
+  bool restrict_dt;
+  ierr = max_timestep(t_years, mydtyears, restrict_dt); CHKERRQ(ierr);
+  if (restrict_dt && mydtyears < dt_years) {
      SETERRQ(3,"PISMBedThermalUnit::update() thinks you asked for too big a timestep\n"); }
 
   // o.k., we have checked; we are going to do the desired timestep!

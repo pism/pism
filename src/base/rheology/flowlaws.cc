@@ -65,8 +65,8 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &conf
   Q_cold = config.get("Paterson-Budd_Q_cold");
   Q_warm = config.get("Paterson-Budd_Q_warm");
   crit_temp = config.get("Paterson-Budd_critical_temperature");
-  schoofLen = config.get("Schoof_regularizing_length") * 1e3; // convert to meters
-  schoofVel = config.get("Schoof_regularizing_velocity")/secpera; // convert to m/s
+  schoofLen = convert(config.get("Schoof_regularizing_length"), "km", "m"); // convert to meters
+  schoofVel = convert(config.get("Schoof_regularizing_velocity"), "m/year", "m/s"); // convert to m/s
   schoofReg = PetscSqr(schoofVel/schoofLen);
 
   if (config.get_flag("verification_mode")) {
@@ -82,8 +82,8 @@ IceFlowLaw::~IceFlowLaw() {
 
 PetscErrorCode IceFlowLaw::setFromOptions() {
   PetscErrorCode ierr;
-  PetscReal slen=schoofLen/1e3,	// convert to km
-    svel=schoofVel*secpera;	// convert to m/year
+  PetscReal slen=convert(schoofLen, "m", "km"),	// convert to km
+    svel=convert(schoofVel, "m/s", "m/year");	// convert to m/year
 
   ierr = PetscOptionsBegin(comm,prefix,"IceFlowLaw options",NULL); CHKERRQ(ierr);
   {
@@ -95,8 +95,8 @@ PetscErrorCode IceFlowLaw::setFromOptions() {
                             "Regularizing length (Schoof definition, km)",
                             "",slen,&slen,NULL);CHKERRQ(ierr);
 
-    schoofVel = svel / secpera;	// convert to m/s
-    schoofLen = slen * 1e3;	// convert to meters
+    schoofVel = convert(svel, "m/year", "m/s");	// convert to m/s
+    schoofLen = convert(slen, "km", "m");	// convert to meters
     schoofReg = PetscSqr(schoofVel/schoofLen);
 
     ierr = PetscOptionsReal("-ice_pb_A_cold",
