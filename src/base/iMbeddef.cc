@@ -73,7 +73,7 @@ PetscErrorCode IceModel::bed_def_step(bool &bed_changed) {
   const PetscScalar dtBedDefYears = grid.year - last_bed_def_update;
   if (dtBedDefYears >= bedDefIntervalYears) {
 
-    ierr = beddef->update(grid.year, dt); CHKERRQ(ierr);
+    ierr = beddef->update(grid.year, dtBedDefYears); CHKERRQ(ierr);
 
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
