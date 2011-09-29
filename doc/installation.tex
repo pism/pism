@@ -208,13 +208,32 @@ able to install it with just a few clicks.
 
 Download a binary package from \url{http://www.pism-docs.org} and either run
 \begin{verbatim}
-$ sudo dpkg -i pism-xxx-FIXME.deb
+$ sudo dpkg -i pism_0.4-1.deb
 \end{verbatim}%$
 or double-click on the file and click ``Install'' (will require administrative privileges). This will install PISM, making sure that
 all the libraries it needs are in place and downloading them if necessary.
 
-This route is the fastest and easiest if you want to learn about or use a stable PISM version. If you do need features only
-present in development versions, you will need to compile PISM using its source code.
+If this package installation reports no errors, the best way to see that open a terminal and confirm that PISM can already run in parallel:
+\begin{verbatim}
+$ mpiexec -n 2 pisms -o firsttest.nc   # 'mpiexec' for parallel runs
+...                                    # standard output from PISM as it runs
+$ ncview firsttest.nc                  # use your package manager to get ncview,
+                                       #   a tool for looking at NetCDF files
+\end{verbatim}%$
+The above gives a boring model of a circular ice sheet.  If you see that when viewing the NetCDF file \texttt{firsttest.nc}, then PISM already works, and what you need are example data sets to do something interesting with.  Here is the easiest way to get an \texttt{examples/} directory that the \emph{User's Manual} assumes:
+\begin{verbatim}
+$ wget -nc http://www.pism-docs.org/download/examples0.4.tar.gz
+$ mkdir pismdata
+$ cd pismdata
+$ tar -xzvf examples0.4.tar.gz
+$ cd examples0.4/
+$ ls                   # you should see subdirectory "searise-greenland/" and etc.
+\end{verbatim}%$
+And at this point, please read the \emph{User's Manual}.  It describes the SeaRISE-Greenland, EISMINT-Greenland, St\"orglaciaren, and other modeling examples using data from this \texttt{examples0.4/} directory and its subdirectories.
+
+The above installation route is the fastest and easiest if you want to use the latest PISM release.  If you need features only present in development versions, or you want to modify the source code of the latest release, you will need to compile PISM using its source code.  
+
+
 
 \subsubsection{Installing PISM's prerequisites using a meta-package and building PISM from source}
 \label{sec:deb-pism-toolkit}
