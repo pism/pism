@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <stdlib.h>
 #include <string.h>
 
 //! \brief PISM verbosity level; determines how much gets printed to the
@@ -680,13 +680,25 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
 PetscErrorCode PISMOptionsInt(string option, string text,
 			      PetscInt &result, bool &is_set) {
   PetscErrorCode ierr;
+  char str[TEMPORARY_STRING_LENGTH];
   PetscTruth flag;
+  char *endptr;
 
-  ierr = PetscOptionsInt(option.c_str(), text.c_str(), "",
-			 result, &result, &flag);
-  CHKERRQ(ierr);
+  ierr = PetscOptionsString(option.c_str(), text.c_str(), "", "none", str,
+			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
   is_set = (flag == PETSC_TRUE);
+
+  if (is_set == false)
+    return 0;
+
+  result = strtol(str, &endptr, 10);
+  if (*endptr != '\0') {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+                       "PISM ERROR: Can't parse \"%s %s\": (%s is not a number).\n",
+                       option.c_str(), str, str); CHKERRQ(ierr);
+    PISMEnd();
+  }
 
   return 0;
 }
@@ -695,13 +707,25 @@ PetscErrorCode PISMOptionsInt(string option, string text,
 PetscErrorCode PISMOptionsReal(string option, string text,
 			       PetscReal &result, bool &is_set) {
   PetscErrorCode ierr;
+  char str[TEMPORARY_STRING_LENGTH];
   PetscTruth flag;
+  char *endptr;
 
-  ierr = PetscOptionsReal(option.c_str(), text.c_str(), "",
-			  result, &result, &flag);
-  CHKERRQ(ierr);
+  ierr = PetscOptionsString(option.c_str(), text.c_str(), "", "none", str,
+			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
   is_set = (flag == PETSC_TRUE);
+
+  if (is_set == false)
+    return 0;
+
+  result = strtod(str, &endptr);
+  if (*endptr != '\0') {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+                       "PISM ERROR: Can't parse \"%s %s\": (%s is not a number).\n",
+                       option.c_str(), str, str); CHKERRQ(ierr);
+    PISMEnd();
+  }
 
   return 0;
 }
@@ -733,7 +757,7 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
 	ierr = PetscPrintf(PETSC_COMM_WORLD,
 			   "PISM ERROR: Can't parse %s (%s is not a number).\n",
 			   tmp.c_str(), tmp.c_str()); CHKERRQ(ierr);
-	return 1;
+	PISMEnd();
       }
       else
 	result.push_back(d);
