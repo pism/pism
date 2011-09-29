@@ -206,9 +206,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           double ice_pressure = ice.rho * standard_gravity * H_ij,
             ocean_pressure;
 
-          const double h_grounded = (*bed)(i,j) + H_ij,
-            h_floating = sea_level + (1.0 - ice.rho / ocean_rho) * H_ij,
-            H_ij2 = H_ij*H_ij;
+          const double h_grounded = (*bed)(i,j) + H_ij, H_ij2 = H_ij*H_ij;
 
           //double h_ij = 0.0, tdx = 0.0, tdy = 0.0;
           double h_ij = 0.0, tdx = taud(i, j).u, tdy = taud(i, j).v;
@@ -219,19 +217,20 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             // this is not really the ocean_pressure, but the difference between
             // ocean_pressure and isotrop.normal stresses (=pressure) from within
             // the ice
-            h_ij = h_floating;
+            h_ij = (1.0 - ice.rho / ocean_rho) * H_ij;
           } else {
-            h_ij = h_grounded;
             if( (*bed)(i,j) >= sea_level) {
               // boundary condition for a "cliff" (grounded ice next to
               // ice-free ocean) or grounded margin.
               ocean_pressure = 0.5 * ice.rho * standard_gravity * H_ij2;
               // this is not 'zero' because the isotrop.normal stresses
               // (=pressure) from within the ice figures on RHS
+	      h_ij = H_ij;
             } else {
               // boundary condition for marine terminating glacier
               ocean_pressure = 0.5 * ice.rho * standard_gravity *
                 (H_ij2 - (ocean_rho / ice.rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
+	      h_ij = H_ij + (*bed)(i,j) - sea_level;
             }
           }
 
