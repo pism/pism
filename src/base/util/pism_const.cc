@@ -806,7 +806,7 @@ PetscErrorCode PISMOptionsInt(string option, string text,
   if (is_set == false)
     return 0;
 
-  result = strtol(str, &endptr, 10);
+  result = (int) strtol(str, &endptr, 10);
   if (*endptr != '\0') {
     ierr = PetscPrintf(PETSC_COMM_WORLD,
                        "PISM ERROR: Can't parse \"%s %s\": (%s is not a number).\n",

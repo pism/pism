@@ -203,13 +203,12 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           if (M.ice_free(M_n)) bPP = 0;
           if (M.ice_free(M_s)) bMM = 0;
 
-          double ice_pressure = ice.rho * standard_gravity * H_ij,
-            ocean_pressure;
-
-          const double h_grounded = (*bed)(i,j) + H_ij, H_ij2 = H_ij*H_ij;
-
-          //double h_ij = 0.0, tdx = 0.0, tdy = 0.0;
-          double h_ij = 0.0, tdx = taud(i, j).u, tdy = taud(i, j).v;
+          const double ice_pressure = ice.rho * standard_gravity * H_ij,
+                       H_ij2        = H_ij*H_ij;
+          double ocean_pressure,
+                 h_ij = 0.0,
+                 tdx  = taud(i,j).u,
+                 tdy  = taud(i,j).v;
 
           if ((*bed)(i,j) < (sea_level - (ice.rho / ocean_rho) * H_ij)) {
             //calving front boundary condition for floating shelf
