@@ -111,6 +111,9 @@ netcdf pism_config {
     pism_config:do_diffuse_bwat = "no";
     pism_config:do_diffuse_bwat_doc = "Do explicit time stepping of equation (11) in [\\ref BBssasliding] to diffuse the layer of stored basal water (bwat).  Normally bwat affects the basal values of the internal energy (enthalpy or temperature) field and it affects the strength of the subglacial layer (the basal stress).";
 
+    pism_config:use_linear_in_temperature_heat_capacity = "no";
+    pism_config:use_linear_in_temperature_heat_capacity_doc = "If yes, use varcEnthalpyConverter class to convert (internally) temperature to/from enthalpy.  It is based on equation (4.39) in [\\ref GreveBlatter2009].  Otherwise use default class EnthalpyConverter which has temperature-independent (i.e. constant) specific heat capacity, set by constant ice_specific_heat_capacity.";
+
 
     // parameters:
 

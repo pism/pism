@@ -23,14 +23,19 @@
 
 //! Enthalpy converter based on specific heat which is linear in temperature.
 /*!
-See equation (4.39) in \ref GreveBlatter2009,
-        \f[C_i(T) = 146.3 + 7.253 T = 2009.0 + 7.253 (T - T_r)\f]
-where \f$T\f$ is in Kelvin and the reference temperature is \f$T_r = 256.82\f$ K. 
+This EnthalpyConverter object converts between enthalpy and temperature using
+linear-in-temperature specific heat capacity.  We implement only 
+Equation (4.39) in [\ref GreveBlatter2009],
+        \f[ C(T) = 146.3 + 7.253 T = c_i + 7.253 (T - T_r) \f]
+where \f$T\f$ is in Kelvin, \f$c_i = 2009\,\, \text{J}\,\text{kg}^{-1}\,\text{K}^{-1}\f$,
+and the reference temperature is \f$T_r = 256.82\f$ K.
  */
 class varcEnthalpyConverter : public EnthalpyConverter {
 public:
   varcEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {}
   virtual ~varcEnthalpyConverter() {}
+
+  virtual PetscErrorCode viewConstants(PetscViewer viewer) const;
 
   virtual double         getEnthalpyCTS(double p) const;
 

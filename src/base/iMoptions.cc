@@ -316,6 +316,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   
   ierr = config.string_from_option("title", "run_title"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("varc", "use_linear_in_temperature_heat_capacity");  CHKERRQ(ierr);
+
   ierr = config.flag_from_option("vpik", "verbose_pik_messages");  CHKERRQ(ierr);
   if (getVerbosityLevel() > 2)  config.set_flag("verbose_pik_messages", true);
 

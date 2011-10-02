@@ -27,6 +27,8 @@
 #include "SSAFEM.hh"
 #include "BlatterStressBalance.hh"
 #include "Mask.hh"
+#include "enthalpyConverter.hh"
+#include "varcEnthalpyConverter.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -550,7 +552,11 @@ PetscErrorCode IceModel::allocate_enthalpy_converter() {
   if (EC != NULL)
     return 0;
 
-  EC = new EnthalpyConverter(config);
+  if (config.get_flag("use_linear_in_temperature_heat_capacity"))
+    EC = new varcEnthalpyConverter(config);
+  else
+    EC = new EnthalpyConverter(config);
+
   if (getVerbosityLevel() > 3) {
     PetscViewer viewer;
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);

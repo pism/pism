@@ -77,6 +77,24 @@ double varcEnthalpyConverter::TfromE(double E) const {
 }
 
 
+PetscErrorCode varcEnthalpyConverter::viewConstants(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+
+  PetscTruth iascii;
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
+  if (!iascii) { SETERRQ(1,"Only ASCII viewer for EnthalpyConverter\n"); }
+
+  ierr = PetscViewerASCIIPrintf(viewer,
+    "\n<using varcEnthalpyConverter which has additional built-in constants to implement\n"
+       "  equation (4.39) from Greve & Blatter (2009)>"); CHKERRQ(ierr);
+
+  ierr = EnthalpyConverter::viewConstants(viewer); CHKERRQ(ierr);
+  return 0;
+}
+
 //! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
 /*!
 Calls EfromT().
