@@ -26,13 +26,24 @@ varkenthSystemCtx::varkenthSystemCtx(
       : enthSystemCtx(config, my_Enth3, my_Mz, my_prefix) {
       
   EC = new EnthalpyConverter(config);
+  R  = new PetscScalar[Mz];
 }
 
 
 varkenthSystemCtx::~varkenthSystemCtx() {
   delete EC;
+  delete [] R;
 }
 
+PetscErrorCode varkenthSystemCtx::initAllColumns(
+      const PetscScalar my_dx, const PetscScalar my_dy, 
+      const PetscScalar my_dtTemp, const PetscScalar my_dzEQ) {
+
+  PetscErrorCode ierr;
+  ierr = enthSystemCtx::initAllColumns(my_dx, my_dy, my_dtTemp, my_dzEQ); CHKERRQ(ierr);
+  for (PetscInt k = 0; k < Mz; k++)  R[k] = iceRcold;  // fill with cold constant value for safety
+  return 0;
+}
 
 
 PetscErrorCode varkenthSystemCtx::viewConstants(
@@ -55,9 +66,6 @@ PetscErrorCode varkenthSystemCtx::viewConstants(
 }
 
 
-// FIXME:  Neumann boundary condition should be fixed to use getvark() also,
-//         but the base of the ice is where the k(T) value is close to k_i anyway
-
 /*!  Equation (4.37) in \ref GreveBlatter2009 is
   \f[ k(T ) = 9.828 e^{−0.0057 T} \f]
 where \f$T\f$ is in Kelvin and the resulting conductivity is in units W m−1 K−1.
@@ -67,13 +75,61 @@ PetscScalar varkenthSystemCtx::getvark(PetscScalar T) {
 }
 
 
+PetscErrorCode varkenthSystemCtx::setNeumannBasal(PetscScalar Y) {
+ PetscErrorCode ierr;
+#ifdef PISM_DEBUG
+  ierr = checkReadyToSolve(); CHKERRQ(ierr);
+  if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
+    SETERRQ(1, "setting basal boundary conditions twice in varkenthSystemCtx");
+  }
+#endif
+
+  PetscScalar Rc, Rr, Rtmp;
+  const PetscScalar Rfactor = dtTemp / (PetscSqr(dzEQ) * ice_rho * ice_c);
+  for (PetscInt k = 0; k < 2; k++) {
+    if (Enth[k] < Enth_s[k]) {
+      // cold case
+      const PetscScalar depth = (ks - k) * dzEQ; // FIXME: commits O(dz) error because
+                                                 //        ks * dzEQ is not exactly the thickness
+      PetscScalar T;
+      ierr = EC->getAbsTemp(Enth[k], EC->getPressureFromDepth(depth), T); CHKERRQ(ierr); 
+      Rtmp = getvark(T) * Rfactor;
+    } else {
+      // temperate case
+      Rtmp = iceRtemp;
+    }
+    if (k == 0)  Rc = Rtmp;
+    else         Rr = Rtmp;
+  }
+
+  const PetscScalar
+      Rminus = Rc,
+      Rplus  = 0.5 * (Rc + Rr);
+  a0 = 1.0 + Rminus + Rplus;  // = D[0]
+  a1 = - Rminus - Rplus;      // = U[0]
+  const PetscScalar X = - 2.0 * dzEQ * Y;  // E(-dz) = E(+dz) + X
+  // zero vertical velocity contribution
+  b = Enth[0] + Rminus * X;   // = rhs[0]
+  if (!ismarginal) {
+    planeStar<PetscScalar> ss;
+    ierr = Enth3->getPlaneStar_fine(i,j,0,&ss); CHKERRQ(ierr);
+    const PetscScalar UpEnthu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
+                                             u[0] * (ss.ij  - ss.w) / dx;
+    const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
+                                             v[0] * (ss.ij  - ss.s) / dy;
+    b += dtTemp * ((Sigma[0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
+  }
+  return 0;
+}
+
+
 PetscErrorCode varkenthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
   PetscErrorCode ierr;
 #ifdef PISM_DEBUG
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((gsl_isnan(a0)) || (gsl_isnan(a1)) || (gsl_isnan(b))) {
     SETERRQ(1, "solveThisColumn() should only be called after\n"
-               "  setting basal boundary condition in enthSystemCtx"); }
+               "  setting basal boundary condition in varkenthSystemCtx"); }
 #endif
   // k=0 equation is already established
   // L[0] = 0.0;  // not allocated
@@ -81,23 +137,28 @@ PetscErrorCode varkenthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCod
   U[0] = a1;
   rhs[0] = b;
 
+  // fill R[]
   const PetscScalar Rfactor = dtTemp / (PetscSqr(dzEQ) * ice_rho * ice_c);
+  for (PetscInt k = 0; k < ks; k++) {
+    if (Enth[k] < Enth_s[k]) {
+      // cold case
+      const PetscScalar depth = (ks - k) * dzEQ; // FIXME: commits O(dz) error because
+                                                 //        ks * dzEQ is not exactly the thickness
+      PetscScalar T;
+      ierr = EC->getAbsTemp(Enth[k], EC->getPressureFromDepth(depth), T); CHKERRQ(ierr); 
+      R[k] = getvark(T) * Rfactor;
+    } else {
+      // temperate case
+      R[k] = iceRtemp;
+    }
+  }
+  for (PetscInt k = ks; k < Mz; k++)  R[k] = iceRcold;
 
   // generic ice segment in k location (if any; only runs if ks >= 2)
   for (PetscInt k = 1; k < ks; k++) {
-    // FIXME:  below commits O(dz) error in depth because ks * dzEQ is not exactly the thickness
-    // FIXME:  below is inefficient because k(T) at grid points are (expensively)
-    //         recomputed instead of being stored in a column
-    PetscScalar Tl, Tc, Tr;
-    ierr = EC->getAbsTemp(Enth[k-1], EC->getPressureFromDepth((ks - (k-1))*dzEQ), Tl); CHKERRQ(ierr); 
-    ierr = EC->getAbsTemp(Enth[k],   EC->getPressureFromDepth((ks - ( k ))*dzEQ), Tc); CHKERRQ(ierr); 
-    ierr = EC->getAbsTemp(Enth[k+1], EC->getPressureFromDepth((ks - (k+1))*dzEQ), Tr); CHKERRQ(ierr); 
     const PetscScalar
-        Rl = (Enth[k-1] < Enth_s[k-1]) ? (getvark(Tl) * Rfactor) : iceRtemp,
-        Rc = (Enth[k]   < Enth_s[k]  ) ? (getvark(Tc) * Rfactor) : iceRtemp,
-        Rr = (Enth[k+1] < Enth_s[k+1]) ? (getvark(Tr) * Rfactor) : iceRtemp,
-        Rminus = 0.5 * (Rl + Rc),
-        Rplus  = 0.5 * (Rc + Rr);
+        Rminus = 0.5 * (R[k-1] + R[k]  ),
+        Rplus  = 0.5 * (R[k]   + R[k+1]);
     L[k] = - Rminus;
     D[k] = 1.0 + Rminus + Rplus;
     U[k] = - Rplus;
