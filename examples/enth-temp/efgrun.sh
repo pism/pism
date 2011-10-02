@@ -49,9 +49,11 @@ else
 fi
 
 # executable
-PISM_EXEC="pgrn"
+PISM_EXEC="pismr"
 
 echo
+
+
 
 # preprocess.sh generates eis_green_smoothed.nc; run it first
 if [ -n "${PISM_DATANAME:+1}" ] ; then  # check if env var is already set
@@ -60,7 +62,10 @@ else
   PISM_DATANAME=eis_green_smoothed.nc
 fi
 
-for INPUT in $PISM_DATANAME; do
+PISM_CDL=eismint_config.cdl
+PISM_CONFIG=eismint_config.nc
+
+for INPUT in $PISM_DATANAME $PISM_CDL; do
   if [ -e "$INPUT" ] ; then  # check if file exist
     echo "$SCRIPTNAME           input   $INPUT (found)"
   else
@@ -73,13 +78,7 @@ for INPUT in $PISM_DATANAME; do
 done
 
 INNAME=$PISM_DATANAME
-
-# cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ssl2 -cts"
-
-echo "$SCRIPTNAME      executable = '$PISM'"
-echo ""
-
+ncgen -o $PISM_CONFIG $PISM_CDL
 
 EXVARS="enthalpybase,temppabase,tempicethk_basal,tempicethk,bmelt,bwat,usurf,csurf,mask,hardav,diffusivity" # add mask, so that check_stationarity.py ignores ice-free areas.
 PREFIX=efg
@@ -93,7 +92,7 @@ GRIDBASE="-Lz 4000 -Lbz 2000 -Mbz 51"
 CGRID="${GRIDBASE} -Mx 83 -My 141 -Mz 101"   # coarse grid = 20km
 FGRID="${GRIDBASE} -Mx 165 -My 281 -Mz 201"  # fine grid = 10km
 
-for METHOD in "enth" "temp"; do
+for METHOD in "enth" "temp" "vark" "varc" "varck"; do
 
     if [ ${METHOD} == "temp" ]; then
         COEM="-cold"
@@ -102,6 +101,22 @@ for METHOD in "enth" "temp"; do
         COEM=
         REGRIDVARS="enthalpy,thk,litho_temp,bwat,bmelt"
     fi
+
+    if [ ${METHOD} == "vark" ] ; then
+        PISM_EXEC="varkpismr"
+    elif [ ${METHOD} == "varck" ] ; then
+        PISM_EXEC="varkpismr -varc"
+    elif [ ${METHOD} == "varc" ] ; then
+        PISM_EXEC="pismr -varc"
+    else
+        PISM_EXEC="pismr"
+    fi
+
+    # cat prefix and exec together
+    PISM="${PISM_PREFIX}${PISM_EXEC} -cts -atmosphere eismint_greenland -surface pdd -config_override $PISM_CONFIG"
+
+    echo "$SCRIPTNAME      executable = '$PISM'"
+    echo ""
 
     echo "$SCRIPTNAME ++++ doing 20km $METHOD run ++++"
     SKIP=10
