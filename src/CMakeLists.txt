@@ -35,6 +35,7 @@ add_library (pismutil
   base/util/pism_default_config.cc
   base/util/PISMTime.cc
   base/enthalpyConverter.cc
+  base/varcEnthalpyConverter.cc
   base/pism_revision.cc
   )
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})

@@ -29,14 +29,14 @@ of energy in vertical column, for enthalpy.
 Has additional enthalpy-dependent conductivity in
 cold ice.  Everything is the same except that the conductivity in
 solveThisColumn() has additional hardwired conductivity structure from
-formula (4.37) in \ref GreveBlatter.
+formula (4.37) in [\ref GreveBlatter2009].
 
 This implementation does stupid code duplication.  If we use this and think
 it is worth keeping then FIXME: it should be made configurable and this code
 duplication should be removed.
 
 This is to address R. Greve's concerns about the submitted paper
-\ref AschwandenBuelerKhroulevBlatter.
+[\ref AschwandenBuelerKhroulevBlatter].
  */
 class varkenthSystemCtx : public enthSystemCtx {
 

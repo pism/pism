@@ -16,18 +16,81 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+
+#include "pism_const.hh"
 #include "varcEnthalpyConverter.hh"
 
-double EnthalpyConverter::getEnthalpyCTS(double p) const {
+
+/*!
+A calculation only used in the cold case.
+
+Let \f$c_i=2009\,\, \text{J}\,\text{kg}^{-1}\,\text{K}^{-1}\f$, the default
+constant value.  Note equation (4.39) in [\ref GreveBlatter2009] says 
+\f$C(T) = c_i + 7.253 (T - T_r)\f$ using a reference temperature
+\f$T_r = 256.82\f$ K.  Thus the calculation of enthalpy from cold ice
+temperature is: 
+\f{align*}{
+  E(T) &= \int_{T_0}^T C(T')\,dT \\
+       &= c_i (T-T_0) + \frac{7.253}{2} \left((T-T_r)^2 - (T_0-T_r)^2\right) \\
+       &= \left(c_i + 7.253 \left(\frac{T+T_0}{2} - T_r\right)\right) (T- T_0).
+\f}
+ */
+double varcEnthalpyConverter::EfromT(double T) const {
   const double
-     T        = getMeltingTemp(p),
      T_r      = 256.82,
      Trefdiff = 0.5 * (T + T_0) - T_r; 
-  return c_i * (T - T_0) + 7.253 * Trefdiff * (T - T_0);
+  return (c_i + 7.253 * Trefdiff) * (T - T_0);
 }
 
 
-PetscErrorCode EnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
+/*!
+A calculation only used in the cold case.
+
+From the documentation for EfromT(), in the cold ice case we must solve the equation
+  \f[ E = \left(c_i + 7.253 \left(\frac{T+T_0}{2} - T_r\right)\right) (T- T_0) \f]
+for \f$T\f$.  This equation is quadratic in \f$T\f$.  If we write it in terms
+of \f$\Delta T = T-T_0\f$ and \f$\alpha = 2/7.253\f$ then it says
+  \f[ E = c_i \Delta T + \alpha^{-1} \left(\Delta T + 2(T_0-T_r)\right) \Delta T.\f]
+Rearranging as a standard form quadratic in unknown \f$\Delta T\f$ gives
+  \f[ 0 = \Delta T^2 + \left[\alpha c_i + 2(T_0-T_r)\right] \Delta T - \alpha E.\f]
+Define
+  \f[ \beta = \alpha c_i + 2(T_0-T_r) = 486.64, \f]
+which has units K; the value comes from \f$c_i=2009\f$, \f$T_0=223.15\f$, and
+\f$T_r=256.82\f$.  Then the solution of the quadratic is the one which makes 
+\f$\Delta T \ge 0\f$ assuming \f$E\ge 0\f$; we stop otherwise.  With the usual
+rewriting to avoid cancellation we have
+  \f[ \Delta T = \frac{-\beta + \sqrt{\beta^2 + 4 \alpha E}}{2} = \frac{2 \alpha E}{\sqrt{\beta^2 + 4 \alpha E} + \beta}.\f]
+Of course, \f$T=T_0 + \Delta T\f$.
+ */
+double varcEnthalpyConverter::TfromE(double E) const {
+  if (E < 0.0) {
+    PetscPrintf(PETSC_COMM_WORLD,"\n\nE < 0 in varcEnthalpyConverter is not allowed.  FIXME.\n\n");
+    PISMEnd();
+  }
+  const double
+    T_r   = 256.82,
+    ALPHA = 2.0 / 7.253,
+    BETA  = ALPHA * c_i + 2.0 * (T_0 - T_r),
+    tmp   = 2.0 * ALPHA * E,
+    dT    = tmp / (sqrt(BETA*BETA + 2.0*tmp) + BETA);
+  return T_0 + dT;
+}
+
+
+//! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
+/*!
+Calls EfromT().
+ */
+double varcEnthalpyConverter::getEnthalpyCTS(double p) const {
+  return EfromT(getMeltingTemp(p));
+}
+
+
+//! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
+/*!
+Calls TfromE().
+ */
+PetscErrorCode varcEnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
   double E_s, E_l;
   PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
   if (E >= E_l) { // enthalpy equals or exceeds that of liquid water
@@ -35,7 +98,7 @@ PetscErrorCode EnthalpyConverter::getAbsTemp(double E, double p, double &T) cons
     return 1;
   }
   if (E < E_s) {
-    T = (E / c_i) + T_0;  FIXME
+    T = TfromE(E);
   } else {
     T = getMeltingTemp(p);
   }
@@ -43,6 +106,10 @@ PetscErrorCode EnthalpyConverter::getAbsTemp(double E, double p, double &T) cons
 }
 
 
+//! Redefined from EnthalpyConverter version, for use when specific heat capacity depends on temperature.
+/*!
+Calls EfromT().
+ */
 PetscErrorCode varcEnthalpyConverter::getEnth(
                   double T, double omega, double p, double &E) const {
   const double T_m = getMeltingTemp(p);
@@ -59,10 +126,7 @@ PetscErrorCode varcEnthalpyConverter::getEnth(
     SETERRQ3(4,"T < T_m AND omega > 0 is contradictory\n\n",T,T_m,omega);
   }
   if (T < T_m) {
-    const double
-       T_r      = 256.82,
-       Trefdiff = 0.5 * (T + T_0) - T_r; 
-    E = c_i * (T - T_0) + 7.253 * Trefdiff * (T - T_0);
+    E = EfromT(T);
   } else {
     E = getEnthalpyCTS(p) + omega * L;
   }

@@ -19,7 +19,7 @@
 #ifndef __varcEnthalpyConverter_hh
 #define __varcEnthalpyConverter_hh
 
-#include "EnthalpyConverter.hh"
+#include "enthalpyConverter.hh"
 
 //! Enthalpy converter based on specific heat which is linear in temperature.
 /*!
@@ -37,6 +37,10 @@ public:
   virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;
 
   virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
+
+protected:
+  double EfromT(double T) const;
+  double TfromE(double E) const;
 };
 
 #endif // __varcEnthalpyConverter_hh
