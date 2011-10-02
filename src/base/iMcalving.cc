@@ -24,12 +24,12 @@
 #include "Mask.hh"
 
 
-//! \file iMcalving.cc Methods implementing PIK options -eigen_calving and -calving_at_thickness [\ref Winkelmannetal2010TCD].
+//! \file iMcalving.cc Methods implementing PIK options -eigen_calving and -calving_at_thickness [\ref Winkelmannetal2011].
 
 
 //! \brief Uses principal strain rates to apply "eigencalving" with constant K.
 /*!
-  See equation (26) in [\ref Winkelmannetal2010TCD].
+  See equation (26) in [\ref Winkelmannetal2011].
 */
 PetscErrorCode IceModel::eigenCalving() {
   const PetscScalar   dx = grid.dx, dy = grid.dy;

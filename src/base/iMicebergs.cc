@@ -21,7 +21,7 @@
 #include "iceModel.hh"
 #include "Mask.hh"
 
-//! \file iMicebergs.cc Methods implementing PIK option -kill_icebergs [\ref Winkelmannetal2010TCD].
+//! \file iMicebergs.cc Methods implementing PIK option -kill_icebergs [\ref Winkelmannetal2011].
 
 
 //! \brief Identify and eliminate free-floating icebergs, which cause

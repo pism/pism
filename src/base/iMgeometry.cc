@@ -179,11 +179,11 @@ PetscErrorCode IceModel::cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, 
   \f$\Delta t \sim \Delta x^2 / \max D\f$; see also [\ref MortonMayers].
 
   The divergence of the flux from velocity \f$\mathbf{U}_b\f$ is computed by
-  the PIK upwinding technique [equation (25) in \ref Winkelmannetal2010TCD].
+  the PIK upwinding technique [equation (25) in \ref Winkelmannetal2011].
   The CFL condition for this advection scheme is checked; see
   computeMax2DSlidingSpeed() and determineTimeStep().  This method implements the
   direct-superposition (PIK) hybrid which adds the SSA velocity to the SIA velocity
-  [equation (15) in \ref Winkelmannetal2010TCD].  The hybrid described by equations
+  [equation (15) in \ref Winkelmannetal2011].  The hybrid described by equations
   (21) and (22) in \ref BBL is no longer used.
 
   Checks are made which can generate zero thickness according to minimal calving
