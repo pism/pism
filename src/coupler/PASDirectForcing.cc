@@ -54,15 +54,15 @@ PetscErrorCode PSDirectForcing::init(PISMVars &) {
   return 0;
 }
 
-PetscErrorCode PSDirectForcing::update(PetscReal t_years, PetscReal dt_years) {
-  PetscErrorCode ierr = update_internal(t_years, dt_years); CHKERRQ(ierr);
+PetscErrorCode PSDirectForcing::update(PetscReal my_t, PetscReal my_dt) {
+  PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   if (enable_time_averaging) {
     ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
     ierr = temp.average(t, dt); CHKERRQ(ierr); 
   } else {
-    ierr = mass_flux.get_record_years(t); CHKERRQ(ierr);
-    ierr = temp.get_record_years(t); CHKERRQ(ierr);
+    ierr = mass_flux.at_time(t); CHKERRQ(ierr);
+    ierr = temp.at_time(t); CHKERRQ(ierr);
   }
 
   return 0;
@@ -107,15 +107,15 @@ PetscErrorCode PADirectForcing::init(PISMVars &) {
   return 0;
 }
 
-PetscErrorCode PADirectForcing::update(PetscReal t_years, PetscReal dt_years) {
-  PetscErrorCode ierr = update_internal(t_years, dt_years); CHKERRQ(ierr);
+PetscErrorCode PADirectForcing::update(PetscReal my_t, PetscReal my_dt) {
+  PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   if (enable_time_averaging) {
     ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
     ierr = temp.average(t, 1.0); CHKERRQ(ierr); // compute the "mean annual" temperature
   } else {
-    ierr = mass_flux.get_record_years(t); CHKERRQ(ierr);
-    ierr = temp.get_record_years(t); CHKERRQ(ierr);
+    ierr = mass_flux.at_time(t); CHKERRQ(ierr);
+    ierr = temp.at_time(t); CHKERRQ(ierr);
   }
 
   return 0;

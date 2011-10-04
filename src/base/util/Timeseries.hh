@@ -138,15 +138,15 @@ protected:
   Once this is set up, one can add calls like
 
   \code
-  offsets->append(t_years - dt_years, t_years, TsOffset);
-  offsets->interp(time - dt_years, time);
+  offsets->append(my_t - my_dt, my_t, TsOffset);
+  offsets->interp(time - my_dt, time);
   \endcode
 
-  to the code. The first call will store the (t_years, TsOffset). The second
+  to the code. The first call will store the (my_t, TsOffset). The second
   call will use linear interpolation to find the value at \c time years.  Note
   that the first call adds to a buffer but does not yield any output without 
   the second call.  Therefore, even if interpolation is not really needed
-  because time==t_years, the call to interp() should still occur.
+  because time==my_t, the call to interp() should still occur.
   
   Finally, the destructor of DiagnosticTimeseries will flush(), which writes out
   the buffered values:

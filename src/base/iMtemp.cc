@@ -138,7 +138,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     tempSystemCtx system(fMz, "temperature");
     system.dx              = grid.dx;
     system.dy              = grid.dy;
-    system.dtTemp          = dt_years_TempAge * secpera; // same time step for temp and age, currently
+    system.dtTemp          = dt_TempAge; // same time step for temp and age, currently
     system.dzEQ            = fdz;
     system.ice_rho         = ice->rho;
     system.ice_c_p         = ice->c_p;
@@ -308,8 +308,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           if (Tnew[k] < globalMinAllowedTemp) {
             ierr = PetscPrintf(PETSC_COMM_SELF,
                                "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
-                               " proc %d; mask=%d; w=%f]]\n",
-                               Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),system.w[k]*secpera); CHKERRQ(ierr);
+                               " proc %d; mask=%d; w=%f m/a]]\n",
+                               Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),
+                               convert(system.w[k], "m/s", "m/year")); CHKERRQ(ierr);
             myLowTempCount++;
           }
           if (Tnew[k] < artm(i,j) - bulgeMax) {
@@ -339,7 +340,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             ierr = PetscPrintf(PETSC_COMM_SELF,
                                "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                                " proc %d; mask=%d; w=%f]]\n",
-                               Tnew[0],i,j,grid.rank,vMask.as_int(i,j),system.w[0]*secpera); CHKERRQ(ierr);
+                               Tnew[0],i,j,grid.rank,vMask.as_int(i,j),
+                               convert(system.w[0], "m/s", "m/year")); CHKERRQ(ierr);
             myLowTempCount++;
           }
           if (Tnew[0] < artm(i,j) - bulgeMax) {
@@ -374,9 +376,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           // basalMeltRate is rate of change of bwat[][];  can be negative
           //   (subglacial water freezes-on); note this rate is calculated
           //   *before* limiting bwat.
-          basalMeltRate[i][j] = (bwatnew - bwat[i][j]) / (dt_years_TempAge * secpera);
+          basalMeltRate[i][j] = (bwatnew - bwat[i][j]) / dt_TempAge;
           // model loss to undetermined exterior:
-          bwatnew -= bwat_decay_rate * (dt_years_TempAge * secpera);  
+          bwatnew -= bwat_decay_rate * dt_TempAge;  
           bwat[i][j] = PetscMin(bwat_max, PetscMax(bwatnew, 0.0));
         }
 

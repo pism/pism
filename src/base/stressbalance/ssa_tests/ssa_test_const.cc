@@ -86,10 +86,10 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
 {
   // Use a pseudo-plastic law with a constant q determined at run time
   basal = new IceBasalResistancePlasticLaw(
-         config.get("plastic_regularization") / secpera,
+         config.get("plastic_regularization", "1/year", "1/second"),
          true, // do not force a pure-plastic law
          basal_q,
-         config.get("pseudo_plastic_uthreshold") / secpera);
+         config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   // The following is irrelevant because we will force linear rheology later.
   ice = new CustomGlenIce(grid.com, "", config);
@@ -163,7 +163,7 @@ PetscErrorCode SSATestCaseConst::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
  PetscReal /*x*/, PetscReal /*y*/, PetscReal *u, PetscReal *v)
 {
   PetscScalar earth_grav = config.get("standard_gravity");
-  PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold") / secpera;
+  PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
   
   *u = pow(ice->rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
   *v = 0;

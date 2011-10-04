@@ -989,6 +989,11 @@ double NCConfigVariable::get(string name) const {
   return 0;			// can't happen
 }
 
+double NCConfigVariable::get(string name, string u1, string u2) const {
+  return convert(this->get(name), u1.c_str(), u2.c_str());
+}
+
+
 //! Returns a boolean flag by name. Unset flags are treated as if they are set to 'false'.
 /*!
   Strings "false", "no", "off" are interpreted as 'false'; "true", "on", "yes" -- as 'true'.

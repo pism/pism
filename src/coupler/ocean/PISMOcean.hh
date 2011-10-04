@@ -49,8 +49,8 @@ public:
   virtual ~POConstant() {}
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  { t = my_t; dt = my_dt; return 0; } // do nothing
 
   virtual PetscErrorCode sea_level_elevation(PetscReal &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
@@ -76,8 +76,8 @@ public:
   POConstantPIK(IceGrid &g, const NCConfigVariable &conf);
   virtual ~POConstantPIK() {}
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  { t = my_t; dt = my_dt; return 0; } // do nothing
   virtual PetscErrorCode sea_level_elevation(PetscReal &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);

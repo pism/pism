@@ -288,7 +288,10 @@ PetscErrorCode reportErrors(IceGrid &grid,
   ierr = verbPrintf(1,grid.com, 
                     "surf vels :     maxUvec      avUvec        maxW         avW\n"); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
-                    maxUerr*secpera, avUerr*secpera, maxWerr*secpera, avWerr*secpera); CHKERRQ(ierr);
+                    convert(maxUerr, "m/s", "m/year"),
+                    convert(avUerr, "m/s", "m/year"),
+                    convert(maxWerr, "m/s", "m/year"),
+                    convert(avWerr, "m/s", "m/year")); CHKERRQ(ierr);
 
   return 0;
 }
@@ -419,10 +422,10 @@ int main(int argc, char *argv[]) {
     // This is never used (but it is a required argument of the
     // PISMStressBalance constructor).
     IceBasalResistancePlasticLaw basal(
-           config.get("plastic_regularization") / secpera, 
+           config.get("plastic_regularization", "1/year", "1/second"), 
            config.get_flag("do_pseudo_plastic_till"),
            config.get("pseudo_plastic_q"),
-           config.get("pseudo_plastic_uthreshold") / secpera);
+           config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
     // Create the SIA solver object:
 

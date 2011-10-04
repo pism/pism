@@ -84,6 +84,8 @@ PetscErrorCode PSExternal::init(PISMVars &vars) {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
+  update_interval = convert(update_interval, "years", "seconds");
+
   for (unsigned int i = 0; i < ebm_var_names.size(); ++i) {
     IceModelVec *var = vars.get(ebm_var_names[i]);
 
@@ -139,14 +141,14 @@ PetscErrorCode PSExternal::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PSExternal::max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict) {
-  double delta = 0.5 * update_interval;
-  double next_update = ceil(t_years / delta) * delta;
+PetscErrorCode PSExternal::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+  double delta = convert(0.5 * update_interval, "years", "seconds");
+  double next_update = ceil(my_t / delta) * delta;
 
-  if (PetscAbs(next_update - t_years) < 1e-6)
-    next_update = t_years + delta;
+  if (PetscAbs(next_update - my_t) < 1e-6)
+    next_update = my_t + delta;
   
-  dt_years = next_update - t_years;
+  my_dt = next_update - my_t;
   restrict = true;
 
   return 0;
@@ -154,44 +156,44 @@ PetscErrorCode PSExternal::max_timestep(PetscReal t_years, PetscReal &dt_years, 
 
 //! \brief Update the surface mass balance field by reading from a file created
 //! by an EBM. Also, write ice surface elevation and bed topography for an EBM to read.
-PetscErrorCode PSExternal::update(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PSExternal::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
-  if ((fabs(t_years - t) < 1e-12) &&
-      (fabs(dt_years - dt) < 1e-12))
+  if ((fabs(my_t - t) < 1e-12) &&
+      (fabs(my_dt - dt) < 1e-12))
     return 0;
 
-  t = t_years;
-  dt = dt_years;
+  t = my_t;
+  dt = my_dt;
 
   // This convoluted comparison is here to make it update the B.C. at the
-  // beginning of a run, when last_bc_update_year is NAN, plus later on when
+  // beginning of a run, when last_bc_update is NAN, plus later on when
   // necessary (any comparison with a NAN evaluates to "false").
-  if (! (t_years + dt_years <= last_bc_update_year + update_interval) ) {
+  if (! (my_t + my_dt <= last_bc_update + update_interval) ) {
 
     if (ebm_is_running) {
       // EBM is running (pre-computing B.C.)
       ierr = wait(); CHKERRQ(ierr);
     } else {
       // EBM is not running (probably at the beginning of a run)
-      ierr = run(t_years); CHKERRQ(ierr);
+      ierr = run(my_t); CHKERRQ(ierr);
       ierr = wait(); CHKERRQ(ierr);
     }
 
     ierr = update_acab(); CHKERRQ(ierr);
     ierr = update_artm(); CHKERRQ(ierr);
-    last_bc_update_year = t_years;
-  } else if (t_years + dt_years > last_ebm_update_year + ebm_update_interval) {
+    last_bc_update = my_t;
+  } else if (my_t + my_dt > last_ebm_update + ebm_update_interval) {
     if (ebm_is_running) {
       ierr = wait(); CHKERRQ(ierr);
     }
 
     // we're at the end of a run, so no pre-computing is necessary.
-    if (PetscAbs(t_years + dt_years - grid.time->end_year()) < 1e-12)
+    if (PetscAbs(my_t + my_dt - grid.time->end()) < 1e-12)
       return 0;
 
     // time to run EBM to pre-compute B.C.
-    ierr = run(t_years); CHKERRQ(ierr);
+    ierr = run(my_t); CHKERRQ(ierr);
 
     // EBM always runs at the beginning of a PISM run, then after 1/2 of an
     // update interval. After than it runs once per update interval, in the
@@ -206,9 +208,9 @@ PetscErrorCode PSExternal::update_artm() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(2, grid.com, "Reading the temperature at the top of the ice from %s for year = %1.1f...\n",
-                    ebm_output.c_str(), t); 
+                    ebm_output.c_str(), grid.time->seconds_to_years(t)); 
 
-  ierr = artm.regrid(ebm_output.c_str(), true); CHKERRQ(ierr);
+  ierr = artm.regrid(ebm_output, true); CHKERRQ(ierr);
 
   return 0;
 }
@@ -217,9 +219,9 @@ PetscErrorCode PSExternal::update_acab() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(2, grid.com, "Reading the accumulation/ablation rate from %s for year = %1.1f...\n",
-                    ebm_output.c_str(), t); 
+                    ebm_output.c_str(), grid.time->seconds_to_years(t)); 
 
-  ierr = acab.regrid(ebm_output.c_str(), true); CHKERRQ(ierr);
+  ierr = acab.regrid(ebm_output, true); CHKERRQ(ierr);
 
   return 0;
 }
@@ -229,8 +231,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
   PetscErrorCode ierr;
   PISMIO nc(&grid);
 
-  ierr = nc.open_for_writing(ebm_input.c_str(),
-                             true, false); CHKERRQ(ierr);
+  ierr = nc.open_for_writing(ebm_input, true, false); CHKERRQ(ierr);
   // "append" (i.e. do not move the file aside) and do not check dimensions.
 
   // Determine if the file is empty; if it is, create dimenstions and
@@ -241,7 +242,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
 
   if (t_len == 0) {
     ierr = nc.create_dimensions(); CHKERRQ(ierr);
-    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->year()); CHKERRQ(ierr);
+    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
   } else {
     int t_varid;
     bool t_exists;
@@ -249,7 +250,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
                             &t_varid, t_exists); CHKERRQ(ierr);
     
     vector<double> time(1);
-    time[0] = grid.time->year();
+    time[0] = grid.time->current();
     ierr = nc.put_dimension(t_varid, time); CHKERRQ(ierr);
   }
 
@@ -264,16 +265,16 @@ PetscErrorCode PSExternal::write_coupling_fields() {
   // write
   for (unsigned int i = 0; i < ebm_vars.size(); ++i) {
     IceModelVec *var = ebm_vars[i];
-    ierr = var->write(ebm_input.c_str()); CHKERRQ(ierr);
+    ierr = var->write(ebm_input); CHKERRQ(ierr);
   }
 
   return 0;
 }
 
 //! \brief Run an external model.
-PetscErrorCode PSExternal::run(double t_years) {
+PetscErrorCode PSExternal::run(double my_t) {
   PetscErrorCode ierr;
-  double year = (double)t_years;
+  double year = (double)my_t;
 
   ierr = write_coupling_fields(); CHKERRQ(ierr);
 
@@ -281,7 +282,7 @@ PetscErrorCode PSExternal::run(double t_years) {
     MPI_Send(&year, 1, MPI_DOUBLE, 0, TAG_EBM_RUN, inter_comm);
   }
 
-  last_ebm_update_year = t_years;
+  last_ebm_update = my_t;
   ebm_is_running = true;
 
   return 0;
@@ -378,11 +379,11 @@ PetscErrorCode PSExternal::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "artm")) {
-    ierr = artm.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = artm.write(filename); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "acab")) {
-    ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = acab.write(filename); CHKERRQ(ierr);
   }
 
   return 0;
@@ -413,11 +414,11 @@ PetscErrorCode PSExternal_ALR::init(PISMVars &vars) {
   ierr = find_pism_input(pism_input, regrid, start); CHKERRQ(ierr); 
 
   if (regrid) {
-    ierr = artm_0.regrid(pism_input.c_str(), true); CHKERRQ(ierr);
-    ierr =   artm.regrid(pism_input.c_str(), true); CHKERRQ(ierr);
+    ierr = artm_0.regrid(pism_input, true); CHKERRQ(ierr);
+    ierr =   artm.regrid(pism_input, true); CHKERRQ(ierr);
   } else {
-    ierr = artm_0.read(pism_input.c_str(), start); CHKERRQ(ierr);
-    ierr =   artm.read(pism_input.c_str(), start); CHKERRQ(ierr);
+    ierr = artm_0.read(pism_input, start); CHKERRQ(ierr);
+    ierr =   artm.read(pism_input, start); CHKERRQ(ierr);
   }
 
   ierr = PetscOptionsBegin(grid.com, "", "PSExternal_ALR options", ""); CHKERRQ(ierr);

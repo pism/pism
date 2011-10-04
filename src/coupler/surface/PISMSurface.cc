@@ -152,7 +152,7 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   bool regrid = false;
   int start = -1;
 
-  ierr = verbPrintf(2, grid.com, 
+  ierr = verbPrintf(2, grid.com,
      "* Initializing the constant-in-time surface processes model PSConstant.\n"
      "  It reads surface mass balance and ice upper-surface temperature\n"
      "  directly from the file and holds them constant.\n"
@@ -162,9 +162,9 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
 
   // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
   ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
-  ierr = acab.set_attrs("climate_state", 
+  ierr = acab.set_attrs("climate_state",
 			"constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
-			"m s-1", 
+			"m s-1",
 			"land_ice_surface_specific_mass_balance"); // CF standard_name
 			CHKERRQ(ierr);
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
@@ -175,15 +175,15 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
 			"constant-in-time ice temperature at the ice surface",
 			"K",
 			""); CHKERRQ(ierr);
-  
+
   // find PISM input file to read data from:
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate and temperatures from file
-  ierr = verbPrintf(2, grid.com, 
+  ierr = verbPrintf(2, grid.com,
     "    reading ice-equivalent surface mass balance rate 'acab'\n"
     "    and ice surface temperature  'artm' from %s ... \n",
-    input_file.c_str()); CHKERRQ(ierr); 
+    input_file.c_str()); CHKERRQ(ierr);
   if (regrid) {
     ierr = acab.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
     ierr = artm.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
@@ -228,11 +228,11 @@ PetscErrorCode PSConstant::define_variables(set<string> vars, const NCTool &nc, 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, "artm")) {
-    ierr = artm.define(nc, nctype); CHKERRQ(ierr); 
+    ierr = artm.define(nc, nctype); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "acab")) {
-    ierr = acab.define(nc, nctype); CHKERRQ(ierr); 
+    ierr = acab.define(nc, nctype); CHKERRQ(ierr);
   }
 
   return 0;
@@ -278,7 +278,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
   ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", 
+  ierr = PetscOptionsBegin(grid.com, "",
                            "Temperature-index (PDD) scheme for surface (snow) processes", "");
                            CHKERRQ(ierr);
   {
@@ -304,7 +304,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
     ierr = PISMOptionsReal("-pdd_std_dev", "PDD standard deviation",
                            base_pddStdDev, pSet); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-pdd_positive_threshold_temp", 
+    ierr = PISMOptionsReal("-pdd_positive_threshold_temp",
                            "PDD uses this temp in K to determine 'positive' temperatures",
                            base_pddThresholdTemp, pSet); CHKERRQ(ierr);
   }
@@ -344,7 +344,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
                         CHKERRQ(ierr);
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   acab.write_in_glaciological_units = true;
-  ierr = acab.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr); 
+  ierr = acab.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr);
 
   // diagnostic fields:
 
@@ -381,7 +381,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
 
   if (fausto_params) {
-    ierr = verbPrintf(2, grid.com, 
+    ierr = verbPrintf(2, grid.com,
        "  Setting PDD parameters using formulas (6) and (7) in [Faustoetal2009]...\n");
        CHKERRQ(ierr);
 
@@ -391,7 +391,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
     if (!usurf)
       SETERRQ(12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
-   
+
     faustogreve = new FaustoGrevePDDObject(grid, config);
   } else {
     // generally, this is the case in which degree day factors do not depend
@@ -402,34 +402,34 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
   // if -pdd_annualize is set, update mass balance immediately (at the
   // beginning of the run)
-  next_pdd_update_year = grid.time->year();
+  next_pdd_update = grid.time->current();
 
   return 0;
 }
 
-PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict) {
+PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
   if (pdd_annualize) {
-    if (PetscAbs(t_years - next_pdd_update_year) < 1e-12)
-      dt_years = 1.0;
+    if (PetscAbs(my_t - next_pdd_update) < 1e-12)
+      my_dt = convert(1.0, "years", "seconds");
     else
-      dt_years = next_pdd_update_year - t_years;
+      my_dt = next_pdd_update - my_t;
   } else {
-    dt_years = -1;
+    my_dt = -1;
   }
 
   PetscReal dt_atmosphere;
-  ierr = atmosphere->max_timestep(t_years, dt_atmosphere, restrict); CHKERRQ(ierr);
+  ierr = atmosphere->max_timestep(my_t, dt_atmosphere, restrict); CHKERRQ(ierr);
 
   if (restrict) {
-    if (dt_years > 0)
-      dt_years = PetscMin(dt_years, dt_atmosphere);
+    if (my_dt > 0)
+      my_dt = PetscMin(my_dt, dt_atmosphere);
     else
-      dt_years = dt_atmosphere;
+      my_dt = dt_atmosphere;
   }
 
-  if (dt_years > 0)
+  if (my_dt > 0)
     restrict = true;
   else
     restrict = false;
@@ -437,42 +437,44 @@ PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal t_years, PetscReal &dt
   return 0;
 }
 
-PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
-  if ((fabs(t_years - t) < 1e-12) &&
-      (fabs(dt_years - dt) < 1e-12))
+  PetscReal one_year = convert(1.0, "years", "seconds");
+
+  if ((fabs(my_t - t) < 1e-12) &&
+      (fabs(my_dt - dt) < 1e-12))
     return 0;
 
-  t  = t_years;
-  dt = dt_years;
+  t  = my_t;
+  dt = my_dt;
 
   // This flag is set in pclimate to allow testing the model. It does not
   // affect the normal operation of PISM.
   if (config.get_flag("pdd_limit_timestep")) {
-    dt_years = PetscMin(dt_years, 1.0);
+    my_dt = PetscMin(my_dt, one_year);
   }
 
   if (pdd_annualize) {
-    if (t_years + dt_years > next_pdd_update_year) {
-      ierr = verbPrintf(3, grid.com, 
+    if (my_t + my_dt > next_pdd_update) {
+      ierr = verbPrintf(3, grid.com,
                         "  Updating mass balance for one year starting at %1.1f years...\n",
-                        t_years);
-      ierr = update_internal(t_years, 1.0); CHKERRQ(ierr);
-      next_pdd_update_year = t_years + 1.0;
+                        grid.time->seconds_to_years(my_t));
+      ierr = update_internal(my_t, one_year); CHKERRQ(ierr);
+      next_pdd_update = my_t + one_year;
     }
   } else {
-    ierr = update_internal(t_years, dt_years); CHKERRQ(ierr);
+    ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
   }
 
   return 0;
 }
 
-PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
   // to ensure that temperature time series are correct:
-  ierr = atmosphere->update(t_years, dt_years); CHKERRQ(ierr);
+  ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
 
   // This is a point-wise (local) computation, so we can use "acab" to store
   // precipitation:
@@ -480,16 +482,18 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal 
 
   // set up air temperature time series
   PetscInt Nseries;
-  ierr = mbscheme->getNForTemperatureSeries(convert(t_years,"yr","s"),
-					    convert(dt_years,"yr","s"), Nseries); CHKERRQ(ierr);
+  ierr = mbscheme->getNForTemperatureSeries(my_t, my_dt, Nseries); CHKERRQ(ierr);
 
-  const PetscScalar tseries = convert(t_years - floor(t_years),"yr","s"),
-    dtseries = convert(dt_years,"yr","s") / ((PetscScalar) Nseries);
+  PetscReal one_year = convert(1.0, "years", "seconds");
+
+  // time since the beginning of the year, in seconds
+  const PetscScalar tseries = grid.time->mod(my_t, one_year),
+    dtseries = my_dt / ((PetscScalar) Nseries);
 
   // times for the air temperature time-series, in years:
   vector<PetscScalar> ts(Nseries), T(Nseries);
   for (PetscInt k = 0; k < Nseries; ++k)
-    ts[k] = t_years + k * dt_years / Nseries;
+    ts[k] = my_t + k * my_dt / Nseries;
 
   if (lat != NULL) {
     ierr = lat->begin_access(); CHKERRQ(ierr);
@@ -518,7 +522,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal 
   ierr = accumulation_rate.begin_access(); CHKERRQ(ierr);
   ierr = melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = runoff_rate.begin_access(); CHKERRQ(ierr);
-  
+
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -528,11 +532,12 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal 
       if (faustogreve != NULL) {
 	// we have been asked to set mass balance parameters according to
 	//   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-	ierr = faustogreve->setDegreeDayFactors(i,j,(*usurf)(i,j),(*lat)(i,j),(*lon)(i,j),ddf);
-	           CHKERRQ(ierr);
+	ierr = faustogreve->setDegreeDayFactors(i, j, (*usurf)(i, j),
+                                                (*lat)(i, j), (*lon)(i, j), ddf);
+        CHKERRQ(ierr);
       }
 
-      // use the temperature time series, the "positive" threshhold, and the 
+      // use the temperature time series, the "positive" threshhold, and the
       //   standard deviation of the daily variability to get the number of
       //   positive degree days (PDDs)
       PetscScalar sigma = base_pddStdDev;
@@ -550,13 +555,12 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal 
 
       // use degree-day factors, and number of PDDs, and the snow precipitation, to
       //   get surface mass balance (and diagnostics: accumulation, melt, runoff)
-      ierr = mbscheme->getMassFluxesFromPDDs(ddf,
-                                             convert(dt_years,"yr","s"), pddsum, snow_amount,
+      ierr = mbscheme->getMassFluxesFromPDDs(ddf, my_dt, pddsum, snow_amount,
                                              accumulation_rate(i,j), // output
                                              melt_rate(i,j), // output
                                              runoff_rate(i,j), // output
                                              acab(i,j)); // acab = smb (output)
-                                             CHKERRQ(ierr); 
+                                             CHKERRQ(ierr);
     }
   }
 
@@ -616,21 +620,21 @@ PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const NCTo
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, "acab")) {
-    ierr = acab.define(nc, nctype); CHKERRQ(ierr); 
+    ierr = acab.define(nc, nctype); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "saccum")) {
-    ierr = accumulation_rate.define(nc, nctype); CHKERRQ(ierr); 
-  }  
+    ierr = accumulation_rate.define(nc, nctype); CHKERRQ(ierr);
+  }
 
   if (set_contains(vars, "smelt")) {
-    ierr = melt_rate.define(nc, nctype); CHKERRQ(ierr); 
-  }  
+    ierr = melt_rate.define(nc, nctype); CHKERRQ(ierr);
+  }
 
   if (set_contains(vars, "srunoff")) {
-    ierr = runoff_rate.define(nc, nctype); CHKERRQ(ierr); 
-  }  
-  
+    ierr = runoff_rate.define(nc, nctype); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -645,15 +649,15 @@ PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string file
 
   if (set_contains(vars, "saccum")) {
     ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
-  }  
+  }
 
   if (set_contains(vars, "smelt")) {
     ierr = melt_rate.write(filename.c_str()); CHKERRQ(ierr);
-  }  
+  }
 
   if (set_contains(vars, "srunoff")) {
-    ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr); 
-  }  
+    ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -687,7 +691,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
       "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
     PISMEnd();
   }
-    
+
   ierr = PetscOptionsReal("-force_to_thk_alpha",
 			  "Specifies the force-to-thickness alpha value in per-year units",
 			  "", convert(alpha,"yr-1","s-1"),
@@ -701,9 +705,9 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr); // name to read by
   ierr = target_thickness.set_attrs( // set attributes for the read stage; see below for reset
-     "diagnostic", 
+     "diagnostic",
      "target thickness for force-to-thickness mechanism (hit this at end of run)",
-     "m", 
+     "m",
      "land_ice_thickness"); CHKERRQ(ierr); // standard_name *to read by*
   target_thickness.write_in_glaciological_units = true;
 
@@ -724,7 +728,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
        CHKERRQ(ierr);
     alpha = convert(fttalpha,"yr-1","s-1");
   }
-    
+
   ierr = verbPrintf(2, grid.com,
 		    "    alpha = %.6f a-1 for -force_to_thk mechanism\n",
 		    convert(alpha,"s-1","yr-1")); CHKERRQ(ierr);
@@ -739,15 +743,15 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = nc.find_variable("ftt_mask", NULL, mask_exists); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com, 
+  ierr = verbPrintf(2, grid.com,
 		    "    reading target thickness 'thk' from %s ...\n"
 		    "    (this field will appear in output file as 'ftt_target_thk')\n",
-		    fttfile); CHKERRQ(ierr); 
+		    fttfile); CHKERRQ(ierr);
   ierr = target_thickness.regrid(fttfile, true); CHKERRQ(ierr);
 
   if (mask_exists) {
-    ierr = verbPrintf(2, grid.com, 
-                      "    reading force-to-thickness mask 'ftt_mask' from %s ...\n", fttfile); CHKERRQ(ierr); 
+    ierr = verbPrintf(2, grid.com,
+                      "    reading force-to-thickness mask 'ftt_mask' from %s ...\n", fttfile); CHKERRQ(ierr);
     ierr = ftt_mask.regrid(fttfile, true); CHKERRQ(ierr);
   }
 
@@ -767,13 +771,13 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 /*!
 If \c -force_to_thk \c foo.nc is in use then vthktarget will have a target ice thickness
 map.  Let \f$H_{\text{tar}}\f$ be this target thickness,
-and let \f$H\f$ be the current model thickness.  Recall that the mass continuity 
+and let \f$H\f$ be the current model thickness.  Recall that the mass continuity
 equation solved by IceModel::massContExplicitStep() is
   \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
 and that this procedure is supposed to produce \f$M\f$.
 In this context, the semantics of \c -force_to_thk are that \f$M\f$ is modified
 by a multiple of the difference between the target thickness and the current thickness.
-In particular, the \f$\Delta M\f$ that is produced here is 
+In particular, the \f$\Delta M\f$ that is produced here is
   \f[\Delta M = \alpha (H_{\text{tar}} - H)\f]
 where \f$\alpha>0\f$ is determined below.  Note \f$\Delta M\f$ is positive in
 areas where \f$H_{\text{tar}} > H\f$, so we are adding mass there, and we are ablating
@@ -794,10 +798,10 @@ The next example uses files generated from the EISMINT-Greenland experiment;
 see the corresponding chapter of the User's Manual.
 
 Suppose we regard the SSL2 run as a spin-up to reach a better temperature field.
-It is a spinup in which the surface was allowed to evolve.  Assume the 
+It is a spinup in which the surface was allowed to evolve.  Assume the
 early file \c green20km_y1.nc has the target thickness, because it essentially
 has the input thickness.  This script adds a 500 a run, to finalize the spinup,
-in which the ice sheet geometry goes from the the thickness values in 
+in which the ice sheet geometry goes from the the thickness values in
 \c green_ssl2_110ka.nc to values very close to those in \c green20km_y1.nc:
 \code
 #!/bin/bash
@@ -820,7 +824,7 @@ fi
 if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
   echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
 else
-  PISM_DO="" 
+  PISM_DO=""
 fi
 
 # prefix to pism (not to executables)
@@ -896,7 +900,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscScalar **H;
   ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
   ierr = target_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = ftt_mask.begin_access(); CHKERRQ(ierr); 
+  ierr = ftt_mask.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -907,7 +911,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = target_thickness.end_access(); CHKERRQ(ierr);
-  ierr = ftt_mask.end_access(); CHKERRQ(ierr); 
+  ierr = ftt_mask.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   // no communication needed
 
@@ -934,19 +938,19 @@ Equivalently (since \f$\alpha \Delta t>0\f$),
 Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
-PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict) {
+PetscErrorCode PSForceThickness::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
   PetscErrorCode ierr;
-  PetscReal max_dt = 2.0 / alpha;
-  
-  ierr = input_model->max_timestep(t_years, dt_years, restrict); CHKERRQ(ierr);
+  PetscReal max_dt = 2.0 / alpha * secpera; // convert to seconds
+
+  ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
 
   if (restrict) {
     if (max_dt > 0)
-      dt_years = PetscMin(max_dt, dt_years);
+      my_dt = PetscMin(max_dt, my_dt);
   }
-  else dt_years = max_dt;
+  else my_dt = max_dt;
 
-  if (dt_years > 0)
+  if (my_dt > 0)
     restrict = true;
   else
     restrict = false;
@@ -970,11 +974,11 @@ PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NCTool
 
   if (set_contains(vars, "ftt_mask")) {
     ierr = ftt_mask.define(nc, nctype); CHKERRQ(ierr);
-  }  
+  }
 
   if (set_contains(vars, "ftt_target_thk")) {
     ierr = target_thickness.define(nc, nctype); CHKERRQ(ierr);
-  }  
+  }
 
   return 0;
 }
@@ -985,12 +989,12 @@ PetscErrorCode PSForceThickness::write_variables(set<string> vars, string filena
   ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
 
   if (set_contains(vars, "ftt_mask")) {
-    ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr); 
-  }  
+    ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
+  }
 
   if (set_contains(vars, "ftt_target_thk")) {
     ierr = target_thickness.write(filename.c_str()); CHKERRQ(ierr);
-  }  
+  }
 
   return 0;
 }

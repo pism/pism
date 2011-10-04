@@ -64,8 +64,7 @@ PetscErrorCode IceModel::bed_def_step(bool &bed_changed) {
 
   if (beddef == NULL) SETERRQ(1, "beddef == NULL");
 
-  double update_interval = convert(config.get("bed_def_interval_years"),
-                                   "years", "seconds");
+  double update_interval = config.get("bed_def_interval_years", "years", "seconds");
 
   // This is a front end to the bed deformation update system.  It updates
   // no more often than update_interval.

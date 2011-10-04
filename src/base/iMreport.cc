@@ -280,7 +280,7 @@ PetscErrorCode IceModel::summaryPrintLine(
     }
     if ((tempAndAge == PETSC_TRUE) || (!do_energy) || (getVerbosityLevel() > 2)) {
       char tempstr[90] = "";
-      const PetscScalar major_dt_years = mass_cont_sub_dtsum / secpera;
+      const PetscScalar major_dt_years = convert(mass_cont_sub_dtsum, "seconds", "years");
       if (mass_cont_sub_counter == 1) {
         snprintf(tempstr,90, " (dt=%.5f)", major_dt_years);
       } else {

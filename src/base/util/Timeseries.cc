@@ -344,7 +344,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
 
   if (rate_of_change) {
     // use backward-in-time finite difference to compute the rate of change:
-    value = (v_current - v_previous) / ((b - a) * secpera);
+    value = (v_current - v_previous) / (b - a);
 
     // remember the value of the "cumulative" quantity for differencing during
     // the next call:
@@ -416,7 +416,7 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
     if (len > 0) {
       double last_time;
       ierr = nc.get_dim_limits(dimension.dimension_name, NULL, &last_time); CHKERRQ(ierr);
-      if (last_time/secpera < time.front()) {
+      if (last_time < time.front()) {
         start = len;
       }
     }

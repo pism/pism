@@ -62,10 +62,10 @@ PetscErrorCode PSDirectAnomalies::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSDirectAnomalies::update(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PSDirectAnomalies::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
-  ierr = PSDirectForcing::update(t_years, dt_years); CHKERRQ(ierr);
+  ierr = PSDirectForcing::update(my_t, my_dt); CHKERRQ(ierr);
 
   ierr = mass_flux.begin_access(); CHKERRQ(ierr);
   ierr = mass_flux_0.begin_access(); CHKERRQ(ierr);

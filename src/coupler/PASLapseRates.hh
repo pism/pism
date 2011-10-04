@@ -39,60 +39,61 @@ public:
 
   virtual ~PLapseRates() {}
 
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
   {
     PetscErrorCode ierr;
 
+    // a convenience
     PetscReal &m_t = Mod::t;
     PetscReal &m_dt = Mod::dt;
 
     // "Periodize" the climate:
-    t_years = Mod::grid.time->mod(t_years - bc_reference_year,  bc_period);
+    my_t = Mod::grid.time->mod(my_t - bc_reference_year,  bc_period);
 
-    if ((fabs(t_years - m_t) < 1e-12) &&
-        (fabs(dt_years - m_dt) < 1e-12))
+    if ((fabs(my_t - m_t) < 1e-12) &&
+        (fabs(my_dt - m_dt) < 1e-12))
       return 0;
 
-    m_t = t_years;
-    m_dt = dt_years;
+    m_t = my_t;
+    m_dt = my_dt;
 
-    ierr = Mod::input_model->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
 
     ierr = reference_surface.update(m_t, m_dt); CHKERRQ(ierr);
 
     if (enable_time_averaging) {
       ierr = reference_surface.interp(m_t + 0.5*m_dt); CHKERRQ(ierr);
     } else {
-      ierr = reference_surface.get_record_years(m_t); CHKERRQ(ierr);
+      ierr = reference_surface.at_time(m_t); CHKERRQ(ierr);
     }
 
     return 0;
   }
 
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict) {
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
     PetscErrorCode ierr;
     PetscReal max_dt = -1;
 
     // "Periodize" the climate:
-    t_years = Mod::grid.time->mod(t_years - bc_reference_year, bc_period);
+    my_t = Mod::grid.time->mod(my_t - bc_reference_year, bc_period);
 
-    ierr = Mod::input_model->max_timestep(t_years, dt_years, restrict); CHKERRQ(ierr);
+    ierr = Mod::input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
 
-    max_dt = reference_surface.max_timestep(t_years);
+    max_dt = reference_surface.max_timestep(my_t);
 
-    if (dt_years > 0) {
+    if (my_dt > 0) {
       if (max_dt > 0)
-        dt_years = PetscMin(max_dt, dt_years);
+        my_dt = PetscMin(max_dt, my_dt);
     }
-    else dt_years = max_dt;
+    else my_dt = max_dt;
 
     // If the user asked for periodized climate, limit time-steps so that PISM
     // never tries to average data over an interval that begins in one period and
     // ends in the next one.
     if (bc_period > 1e-6)
-      dt_years = PetscMin(dt_years, bc_period - t_years);
+      my_dt = PetscMin(my_dt, bc_period - my_t);
 
-    if (dt_years > 0)
+    if (my_dt > 0)
       restrict = true;
     else
       restrict = false;

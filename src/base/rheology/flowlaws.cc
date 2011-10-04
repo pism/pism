@@ -65,8 +65,8 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &conf
   Q_cold = config.get("Paterson-Budd_Q_cold");
   Q_warm = config.get("Paterson-Budd_Q_warm");
   crit_temp = config.get("Paterson-Budd_critical_temperature");
-  schoofLen = convert(config.get("Schoof_regularizing_length"), "km", "m"); // convert to meters
-  schoofVel = convert(config.get("Schoof_regularizing_velocity"), "m/year", "m/s"); // convert to m/s
+  schoofLen = config.get("Schoof_regularizing_length", "km", "m"); // convert to meters
+  schoofVel = config.get("Schoof_regularizing_velocity", "m/year", "m/s"); // convert to m/s
   schoofReg = PetscSqr(schoofVel/schoofLen);
 
   if (config.get_flag("verification_mode")) {
@@ -332,8 +332,8 @@ void CustomGlenIce::setDensity(PetscReal density) { rho = density; }
 
 void CustomGlenIce::setSchoofRegularization(PetscReal vel_peryear,
                                             PetscReal len_km) {
-  schoofVel = vel_peryear/secpera;
-  schoofLen = len_km*1e3;
+  schoofVel = convert(vel_peryear, "m/year", "m/second");
+  schoofLen = convert(len_km, "km", "m");
   schoofReg = PetscSqr(schoofVel/schoofLen);
 }
 

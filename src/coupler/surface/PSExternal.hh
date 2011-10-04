@@ -49,8 +49,8 @@ public:
   {
     update_interval = 1;        // years
     ebm_update_interval = 0.5 * update_interval;
-    last_ebm_update_year = GSL_NAN;
-    last_bc_update_year = GSL_NAN;
+    last_ebm_update = GSL_NAN;
+    last_bc_update = GSL_NAN;
     ebm_is_running = false;
     inter_comm = my_inter_comm;
   }
@@ -70,10 +70,10 @@ public:
 
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
 protected:
-  double gamma, update_interval, ebm_update_interval, last_ebm_update_year, last_bc_update_year;
+  double gamma, update_interval, ebm_update_interval, last_ebm_update, last_bc_update;
   IceModelVec2S acab, artm;
   MPI_Comm inter_comm;
   string ebm_command, ebm_input, ebm_output;
@@ -82,7 +82,7 @@ protected:
 
   virtual PetscErrorCode update_artm();
   virtual PetscErrorCode update_acab();
-  virtual PetscErrorCode run(double t_years);
+  virtual PetscErrorCode run(double my_t);
   virtual PetscErrorCode wait();
   virtual PetscErrorCode write_coupling_fields();
 };

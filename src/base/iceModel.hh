@@ -257,8 +257,8 @@ protected:
 
   // parameters
   PetscReal   dt,     //!< mass continuity time step, s
-              t_years_TempAge,  //!< time of last update for enthalpy/temperature
-              dt_years_TempAge,  //!< enthalpy/temperature and age time-steps
+              t_TempAge,  //!< time of last update for enthalpy/temperature
+              dt_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
@@ -445,7 +445,7 @@ protected:
   PetscErrorCode init_timeseries();
   PetscErrorCode flush_timeseries();
   PetscErrorCode write_timeseries();
-  PetscErrorCode ts_max_timestep(double t_years, double& dt_years, bool &restrict);
+  PetscErrorCode ts_max_timestep(double my_t, double& my_dt, bool &restrict);
 
   // spatially-varying time-series
   bool save_extra, extra_file_is_ready, split_extra;
@@ -455,7 +455,7 @@ protected:
   set<string> extra_vars;
   PetscErrorCode init_extras();
   PetscErrorCode write_extras();
-  PetscErrorCode extras_max_timestep(double t_years, double& dt_years, bool &restrict);
+  PetscErrorCode extras_max_timestep(double my_t, double& my_dt, bool &restrict);
 
   // automatic backups
   double backup_interval;

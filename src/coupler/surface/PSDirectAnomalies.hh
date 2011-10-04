@@ -32,7 +32,7 @@ public:
   virtual ~PSDirectAnomalies() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 protected:
   IceModelVec2S mass_flux_0, mass_flux_input,
     temp_0, temp_input;

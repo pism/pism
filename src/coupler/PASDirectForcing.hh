@@ -35,30 +35,30 @@ public:
 
   virtual ~PDirectForcing() {}
 
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict)
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
   {
     PetscReal max_dt = -1;
 
     // "Periodize" the climate:
-    t_years = Model::grid.time->mod(t_years - bc_reference_year, bc_period);
+    my_t = Model::grid.time->mod(my_t - bc_reference_year, bc_period);
 
-    dt_years = temp.max_timestep(t_years);
+    my_dt = temp.max_timestep(my_t);
 
-    max_dt = mass_flux.max_timestep(t_years);
+    max_dt = mass_flux.max_timestep(my_t);
 
-    if (dt_years > 0) {
+    if (my_dt > 0) {
       if (max_dt > 0)
-        dt_years = PetscMin(max_dt, dt_years);
+        my_dt = PetscMin(max_dt, my_dt);
     }
-    else dt_years = max_dt;
+    else my_dt = max_dt;
 
     // If the user asked for periodized climate, limit time-steps so that PISM
     // never tries to average data over an interval that begins in one period and
     // ends in the next one.
     if (bc_period > 0.01)
-      dt_years = PetscMin(dt_years, bc_period - t_years);
+      my_dt = PetscMin(my_dt, bc_period - my_t);
 
-    if (dt_years > 0)
+    if (my_dt > 0)
       restrict = true;
     else
       restrict = false;
@@ -180,19 +180,19 @@ protected:
     return 0;
   }
 
-  virtual PetscErrorCode update_internal(PetscReal t_years, PetscReal dt_years)
+  virtual PetscErrorCode update_internal(PetscReal my_t, PetscReal my_dt)
   {
     PetscErrorCode ierr;
 
     // "Periodize" the climate:
-    t_years = Model::grid.time->mod(t_years - bc_reference_year, bc_period);
+    my_t = Model::grid.time->mod(my_t - bc_reference_year, bc_period);
 
-    if ((fabs(t_years - Model::t) < 1e-12) &&
-        (fabs(dt_years - Model::dt) < 1e-12))
+    if ((fabs(my_t - Model::t) < 1e-12) &&
+        (fabs(my_dt - Model::dt) < 1e-12))
       return 0;
 
-    Model::t  = t_years;
-    Model::dt = dt_years;
+    Model::t  = my_t;
+    Model::dt = my_dt;
 
     ierr = temp.update(Model::t, Model::dt); CHKERRQ(ierr);
     ierr = mass_flux.update(Model::t, Model::dt); CHKERRQ(ierr);
@@ -217,7 +217,7 @@ public:
   { delete input; }
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
@@ -237,7 +237,7 @@ public:
   virtual ~PADirectForcing() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
   virtual PetscErrorCode mean_precip(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 

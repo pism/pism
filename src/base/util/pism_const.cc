@@ -289,7 +289,7 @@ PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, d
 vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
                              int a, int b, string keyword) {
   utUnit unit;
-  string unit_str = "years since " + config.get_string("reference_date");
+  string unit_str = "seconds since " + config.get_string("reference_date");
   vector<double> result;
   double a_offset, b_offset;
 
@@ -307,14 +307,14 @@ vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
   utCalendar(0, &unit, &reference_year,
              &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
 
-  // compute the number of years-since-the-reference date 'a' corresponds to:
+  // compute the number of seconds-since-the-reference date 'a' corresponds to:
   utInvCalendar(reference_year + a, // year
                 1, 1,               // month, day
                 0, 0, 0,            // hour, minute, second
                 &unit,
                 &a_offset);
 
-  // compute the number of years-since-the-reference date 'b' corresponds to:
+  // compute the number of seconds-since-the-reference date 'b' corresponds to:
   utInvCalendar(reference_year + b, // year
                 1, 1,               // month, day
                 0, 0, 0,            // hour, minute, second
@@ -328,7 +328,7 @@ vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
 
     do {
       result.push_back(t);
-      t += delta/secpera;
+      t += delta;
       utCalendar(t, &unit, &year, &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
     } while (year <= reference_year + b);
 
@@ -419,7 +419,7 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
       result.resize(N);
 
       for (int j = 0; j < N; ++j)
-        result[j] = a + delta*j;
+        result[j] = convert(a + delta*j, "years", "seconds");
     }
 
   } else {			// it's a list of times
@@ -438,7 +438,7 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
 	return 1;
       }
       else
-	result.push_back(d);
+	result.push_back(convert(d, "years", "seconds"));
     }
     sort(result.begin(), result.end());
   }

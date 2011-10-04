@@ -26,8 +26,8 @@ PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf)
   reference_date = config.get_string("reference_date");
   calendar_string = "365_day";  // only 365_day is supported by this class
 
-  run_start = config.get("start_year") * secpera;
-  run_end   = run_start + config.get("run_length_years") * secpera;
+  run_start = config.get("start_year", "years", "seconds");
+  run_end   = run_start + config.get("run_length_years", "years", "seconds");
 
   time_in_seconds = run_start;
 }
@@ -75,19 +75,9 @@ PetscErrorCode PISMTime::init() {
   } else if (y_set == true) {
     run_end = run_start + y * secpera;
   } else {
-    run_end = run_start + config.get("run_length_years") * secpera;
+    run_end = run_start + config.get("run_length_years", "years", "seconds");
   }
 
   return 0;
-}
-
-/*!
- * This "date" is just the year in this 365-day-calendar implementation.
- */
-string PISMTime::print() {
-  char result[20];
-  snprintf(result, 20, "%3.3f", year());
-
-  return string(result);
 }
 

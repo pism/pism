@@ -36,7 +36,7 @@ public:
   virtual ~PODirectForcing() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
   virtual PetscErrorCode sea_level_elevation(PetscReal &result) {
     result = sea_level;

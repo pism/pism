@@ -711,7 +711,7 @@ PetscErrorCode PISMIO::create_dimensions() const {
   // t
   attrs["long_name"] = "time";
   attrs["calendar"]  = grid->config.get_string("calendar");
-  attrs["units"]     = "years since " + grid->config.get_string("reference_date");
+  attrs["units"]     = grid->time->units();
   attrs["axis"]      = "T";
   ierr = create_dimension(grid->config.get_string("time_dimension_name"),
                           NC_UNLIMITED, attrs, dimid, varid); CHKERRQ(ierr);

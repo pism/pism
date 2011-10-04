@@ -84,7 +84,11 @@ public:
   //! \brief Returns the fraction of a year passed since the last beginning of
   //! a year.
   virtual PetscReal year_fraction(PetscReal T)
-  { return ( to_years(T) - floor(to_years(T)) ) / secpera; }
+  { return seconds_to_years(T) - floor(seconds_to_years(T)); }
+
+  //! \brief Returns the year corresponding to time T.
+  virtual PetscReal year(PetscReal T)
+  { return seconds_to_years(T); }
 
   //! \brief Returns current time, in years.
   virtual PetscReal year()
@@ -112,8 +116,8 @@ public:
   virtual string calendar()
   { return calendar_string; }
 
-  //! \brief Returns the string with the current "date" (for std. output).
-  virtual string print();
+  virtual PetscReal seconds_to_years(PetscReal T)
+  { return T / secpera; }
 
 protected:
   MPI_Comm com;
@@ -124,9 +128,6 @@ protected:
     run_end;                    //!< run end tim, in seconds since the reference time
   string reference_date,     //!< CF reference date; used in the units string
     calendar_string;         //!< CF calendard string
-
-  virtual PetscReal to_years(PetscReal T)
-  { return T / secpera; }
 };
 
 #endif /* _PISMTIME_H_ */

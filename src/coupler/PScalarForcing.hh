@@ -35,12 +35,12 @@ public:
       delete offset;
   }
 
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
   {
-    Mod::t = Mod::grid.time->mod(t_years - bc_reference_year, bc_period);
-    Mod::dt = dt_years;
+    Mod::t  = Mod::grid.time->mod(my_t - bc_reference_year, bc_period);
+    Mod::dt = my_dt;
 
-    PetscErrorCode ierr = Mod::input_model->update(t_years, dt_years); CHKERRQ(ierr);
+    PetscErrorCode ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
     return 0;
   }
 

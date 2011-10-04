@@ -483,7 +483,7 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   ierr = vGhf.set(0.0); CHKERRQ(ierr);
 
   ierr = artm.set(ice->melting_point_temp); CHKERRQ(ierr);
-  ierr = acab.set(0.3/secpera); CHKERRQ(ierr);
+  ierr = acab.set(convert(0.3, "m/year", "m/s")); CHKERRQ(ierr);
 
   ierr = setBed(); CHKERRQ(ierr);
 

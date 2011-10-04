@@ -111,7 +111,7 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   // Prepare the file
   ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
   // append == false, check_dims == true
-  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->year()); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Write metadata *before* variables:
@@ -639,11 +639,11 @@ PetscErrorCode IceModel::init_snapshots() {
       return 0;
 
     // do we need to save *now*?
-    if ( (grid.time->year() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size()) ) {
+    if ( (grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size()) ) {
       saving_after = snapshot_times[current_snapshot];
 
       while ((current_snapshot < snapshot_times.size()) &&
-             (snapshot_times[current_snapshot] <= grid.time->year()))
+             (snapshot_times[current_snapshot] <= grid.time->current()))
         current_snapshot++;
     } else {
       // we don't need to save now, so just return
@@ -665,7 +665,8 @@ PetscErrorCode IceModel::init_snapshots() {
 
     ierr = verbPrintf(2, grid.com,
                       "\nsaving snapshot to %s at %.5f a, for time-step goal %.5f a\n\n",
-                      filename, grid.time->year(),saving_after);
+                      filename, grid.time->year(),
+                      grid.time->seconds_to_years(saving_after));
     CHKERRQ(ierr);
 
     // create line for history in .nc file, including time of write
@@ -674,7 +675,8 @@ PetscErrorCode IceModel::init_snapshots() {
     char tmp[TEMPORARY_STRING_LENGTH];
     snprintf(tmp, TEMPORARY_STRING_LENGTH,
              "%s: %s snapshot at %10.5f a, for time-step goal %10.5f a\n",
-             date_str.c_str(), executable_short_name.c_str(), grid.time->year(), saving_after);
+             date_str.c_str(), executable_short_name.c_str(), grid.time->year(),
+             grid.time->seconds_to_years(saving_after));
 
     if (!snapshots_file_is_ready) {
 
@@ -690,7 +692,7 @@ PetscErrorCode IceModel::init_snapshots() {
 
     ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
     // append == true, check_dims == true
-    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->year()); CHKERRQ(ierr);
+    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
     ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
@@ -766,7 +768,7 @@ PetscErrorCode IceModel::write_backup() {
   // write metadata:
   ierr = nc.open_for_writing(backup_filename.c_str(), false, true); CHKERRQ(ierr);
   // append == false, check_dims == true
-  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->year()); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Write metadata *before* variables:

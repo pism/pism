@@ -82,10 +82,10 @@ PetscErrorCode SSATestCaseExp::initializeSSAModel()
   // Use a pseudo-plastic law with linear till
   PetscScalar linear_q = 1.;
   basal = new IceBasalResistancePlasticLaw(
-         config.get("plastic_regularization") / secpera,
+         config.get("plastic_regularization", "1/year", "1/second"),
          true, // do not force a pure-plastic law
          linear_q,
-         config.get("pseudo_plastic_uthreshold") / secpera);
+         config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   // The following is irrelevant because we will force linear rheology later.
   ice = new CustomGlenIce(grid.com, "", config);
@@ -110,7 +110,7 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   ierr = thickness.set(H0); CHKERRQ(ierr);
   ierr = surface.set(H0); CHKERRQ(ierr);
   ierr = bed.set(0.); CHKERRQ(ierr);
-  // PetscScalar threshold_velocity = config.get("pseudo_plastic_uthreshold") / secpera;
+  // PetscScalar threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
   // PetscScalar tauc0 = 4*nu0*H0*threshold_velocity*log(2)*log(2)/(4*L*L);
   // printf("tauc0=%g\n",tauc0);
   ierr = tauc.set(tauc0); CHKERRQ(ierr);
@@ -153,7 +153,7 @@ PetscErrorCode SSATestCaseExp::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
                                              PetscReal x, PetscReal /*y*/,
                                              PetscReal *u, PetscReal *v)
 {
-  PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold") / secpera;
+  PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
   PetscScalar v0 = 100./secpera ; // 100 m/s.
   // PetscScalar alpha=log(2.)/(2*L);
   PetscScalar alpha = sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );

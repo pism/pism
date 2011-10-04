@@ -92,6 +92,9 @@ protected:
 
   // profiling
   int event_sia;
+
+  // unit conversion
+  PetscReal second_to_kiloyear;
 };
 
 //! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the

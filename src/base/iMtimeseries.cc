@@ -141,20 +141,20 @@ PetscErrorCode IceModel::write_timeseries() {
     return 0;
 
   // return if did not yet reach the time we need to save at
-  if (ts_times[current_ts] > grid.time->year())
+  if (ts_times[current_ts] > grid.time->current())
     return 0;
   
   for (set<string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
     PISMTSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {
-      ierr = diag->update(grid.time->year() - dt/secpera, grid.time->year()); CHKERRQ(ierr);
+      ierr = diag->update(grid.time->current() - dt, grid.time->current()); CHKERRQ(ierr);
     }
   }
 
 
   // Interpolate to put them on requested times:
-  for (; current_ts < ts_times.size() && ts_times[current_ts] <= grid.time->year(); current_ts++) {
+  for (; current_ts < ts_times.size() && ts_times[current_ts] <= grid.time->current(); current_ts++) {
 
     // the very first time (current_ts == 0) defines the left endpoint of the
     // first time interval; we don't write a report at that time
@@ -302,17 +302,17 @@ PetscErrorCode IceModel::write_extras() {
     return 0;
 
   // do we need to save *now*?
-  if ( current_extra < extra_times.size() && grid.time->year() >= extra_times[current_extra] ) {
+  if ( current_extra < extra_times.size() && grid.time->current() >= extra_times[current_extra] ) {
     saving_after = extra_times[current_extra];
 
-    while (current_extra < extra_times.size() && extra_times[current_extra] <= grid.time->year())
+    while (current_extra < extra_times.size() && extra_times[current_extra] <= grid.time->current())
       current_extra++;
   } else {
     // we don't need to save now, so just return
     return 0;
   }
 
-  if (saving_after < grid.time->start_year()) {
+  if (saving_after < grid.time->start()) {
     // Suppose a user tells PISM to write data at times 0:1000:10000. Suppose
     // also that PISM writes a backup file at year 2500 and gets stopped.
     // 
@@ -363,7 +363,8 @@ PetscErrorCode IceModel::write_extras() {
     
   ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
   // append == true, check_dims == true
-  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->year()); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"),
+                        grid.time->current()); CHKERRQ(ierr);
   ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -374,35 +375,32 @@ PetscErrorCode IceModel::write_extras() {
 
 //! Computes the maximum time-step we can take and still hit all the requested years.
 /*!
-  Sets dt_years to -1 if any time-step is OK.
+  Sets restrict to 'false' if any time-step is OK.
  */
-PetscErrorCode IceModel::extras_max_timestep(double t_years, double& dt_years, bool &restrict) {
+PetscErrorCode IceModel::extras_max_timestep(double my_t, double& my_dt, bool &restrict) {
 
   if (!save_extra) {
-    dt_years = -1;
+    my_dt = -1;
     restrict = false;
     return 0;
   }
 
-  bool force_times;
-  force_times = config.get_flag("extras_force_output_times");
-
-  if (!force_times) {
-    dt_years = -1;
+  if (config.get_flag("extras_force_output_times") == false) {
+    my_dt = -1;
     restrict = false;
     return 0;
   }
 
   vector<double>::iterator j;
-  j = upper_bound(extra_times.begin(), extra_times.end(), t_years);
+  j = upper_bound(extra_times.begin(), extra_times.end(), my_t);
 
   if (j == extra_times.end()) {
-    dt_years = -1;
+    my_dt = -1;
     restrict = false;
     return 0;
   }
 
-  dt_years = *j - t_years;
+  my_dt = *j - my_t;
   restrict = true;
 
   return 0;
@@ -410,19 +408,19 @@ PetscErrorCode IceModel::extras_max_timestep(double t_years, double& dt_years, b
 
 //! Computes the maximum time-step we can take and still hit all the requested years.
 /*!
-  Sets dt_years to -1 if any time-step is OK.
+  Sets restrict to 'false' if any time-step is OK.
  */
-PetscErrorCode IceModel::ts_max_timestep(double t_years, double& dt_years, bool &restrict) {
+PetscErrorCode IceModel::ts_max_timestep(double my_t, double& my_dt, bool &restrict) {
 
   if (!save_ts) {
-    dt_years = -1;
+    my_dt = -1;
     restrict = false;
     return 0;
   }
 
   // make sure that we hit the left endpoint of the first report interval
-  if (t_years < ts_times[0]) {
-    dt_years = ts_times[0] - t_years;
+  if (my_t < ts_times[0]) {
+    my_dt = ts_times[0] - my_t;
     restrict = true;
     return 0;
   }
@@ -431,21 +429,21 @@ PetscErrorCode IceModel::ts_max_timestep(double t_years, double& dt_years, bool 
   force_times = config.get_flag("ts_force_output_times");
 
   if (!force_times) {
-    dt_years = -1;
+    my_dt = -1;
     restrict = false;
     return 0;
   }
 
   vector<double>::iterator j;
-  j = upper_bound(ts_times.begin(), ts_times.end(), t_years);
+  j = upper_bound(ts_times.begin(), ts_times.end(), my_t);
 
   if (j == ts_times.end()) {
-    dt_years = -1;
+    my_dt = -1;
     restrict = false;
     return 0;
   }
 
-  dt_years = *j - t_years;
+  my_dt = *j - my_t;
   restrict = true;
 
   return 0;

@@ -106,6 +106,7 @@ public:
   virtual PetscErrorCode write(string filename) const;
   virtual string get_config_filename() const;
   virtual double get(string) const;
+  virtual double get(string name, string u1, string u2) const;
   virtual bool   get_flag(string) const;
   virtual string get_string(string name) const;
   virtual void   set_flag(string, bool);

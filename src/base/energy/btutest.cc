@@ -199,33 +199,34 @@ int main(int argc, char *argv[]) {
 
     ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
+    PetscReal dt_seconds = convert(dt_years, "years", "seconds");
+
     // worry about time step
-    int  N = (int)ceil((grid.time->end_year() - grid.time->start_year()) / dt_years);
-    PetscReal old_dt_years = dt_years;
-    dt_years = (grid.time->end_year() - grid.time->start_year()) / (double)N;
+    int  N = (int)ceil((grid.time->end() - grid.time->start()) / dt_seconds);
+    dt_seconds = (grid.time->end() - grid.time->start()) / (double)N;
     ierr = verbPrintf(2,com,
-        "  user set timestep of %.4f years ...\n"
-        "  reset to %.4f years to get integer number of steps ... \n",
-	old_dt_years,dt_years); CHKERRQ(ierr);
-    PetscReal max_dt_years;
+                      "  user set timestep of %.4f years ...\n"
+                      "  reset to %.4f years to get integer number of steps ... \n",
+                      dt_years, convert(dt_seconds, "seconds", "years")); CHKERRQ(ierr);
+    PetscReal max_dt;
     bool restrict_dt;
-    ierr = btu.max_timestep(0.0, max_dt_years, restrict_dt); CHKERRQ(ierr);
+    ierr = btu.max_timestep(0.0, max_dt, restrict_dt); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
         "  PISMBedThermalUnit reports max timestep of %.4f years ...\n",
-	max_dt_years); CHKERRQ(ierr);
+                      convert(max_dt, "seconds", "years")); CHKERRQ(ierr);
 
 
     // actually do the time-stepping
     ierr = verbPrintf(2,com,"  running ...\n  "); CHKERRQ(ierr);
     for (PetscInt n = 0; n < N; n++) {
-      const PetscReal y = grid.time->start_year() + dt_years * (double)n;  // time at start of time-step
+      const PetscReal time = grid.time->start() + dt_seconds * (double)n;  // time at start of time-step
 
       // compute exact ice temperature at z=0 at time y
       ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
       for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
         for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
           PetscReal TT, FF; // Test K:  use TT, ignore FF
-          ierr = exactK(y * secpera, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
+          ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
           (*bedtoptemp)(i,j) = TT;
         }
       }
@@ -233,7 +234,7 @@ int main(int argc, char *argv[]) {
       // we are not communicating anything, which is fine
 
       // update the temperature inside the thermal layer using bedtoptemp
-      ierr = btu.update(y, dt_years); CHKERRQ(ierr);
+      ierr = btu.update(time, dt_seconds); CHKERRQ(ierr);
       ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
     }
 
@@ -279,7 +280,7 @@ int main(int argc, char *argv[]) {
 
     ierr = pio.open_for_writing(outname, false, true); CHKERRQ(ierr);
     // append == true and check_dims == true
-    ierr = pio.append_time(config.get_string("time_dimension_name"), grid.time->end_year()); CHKERRQ(ierr);
+    ierr = pio.append_time(config.get_string("time_dimension_name"), grid.time->end()); CHKERRQ(ierr);
     ierr = btu.define_variables(vars, pio, NC_DOUBLE); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
 

@@ -50,8 +50,8 @@ public:
   //! begin_pointwise_access() and end_pointwise_access()
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values) = 0;
-  //! \brief Sets result to a snapshot of temperature for the time
-  //! t_years. (For disgnostic purposes.)
+  //! \brief Sets result to a snapshot of temperature for the current time.
+  //! (For diagnostic purposes.)
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result) = 0;
 };
 
@@ -63,8 +63,8 @@ public:
   PAConstant(IceGrid &g, const NCConfigVariable &conf)
     : PISMAtmosphereModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  { t = my_t; dt = my_dt; return 0; } // do nothing
   virtual PetscErrorCode mean_precip(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
@@ -87,7 +87,7 @@ public:
   PAConstantPIK(IceGrid &g, const NCConfigVariable &conf)
     : PAConstant(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 protected:
   IceModelVec2S *usurf, *lat;
 };
@@ -105,7 +105,7 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   //! This method implements the parameterization.
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years) = 0;
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
   virtual PetscErrorCode mean_precip(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
@@ -181,12 +181,12 @@ class PAForcing : public PAModifier {
 public:
   PAForcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel *input);
   virtual ~PAForcing();
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict);
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode mean_precip(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
   virtual PetscErrorCode begin_pointwise_access();

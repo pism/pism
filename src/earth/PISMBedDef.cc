@@ -77,7 +77,7 @@ PetscErrorCode PISMBedDef::write_variables(set<string> vars, string filename) {
 PetscErrorCode PISMBedDef::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t_beddef_last = grid.time->year();
+  t_beddef_last = grid.time->start();
 
   thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!thk) SETERRQ(1, "ERROR: thk is not available");

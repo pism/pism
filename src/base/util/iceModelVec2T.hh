@@ -114,18 +114,18 @@ public:
   virtual PetscErrorCode create(IceGrid &mygrid, string my_short_name,
                                 bool local, int width = 1);
   virtual PetscErrorCode init(string filename);
-  virtual PetscErrorCode update(double t_years, double dt_years);
+  virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);
-  virtual double         max_timestep(double t_years);
+  virtual double         max_timestep(double my_t);
 
-  virtual PetscErrorCode get_record_years(double t_years);
+  virtual PetscErrorCode at_time(double my_t);
 
-  virtual PetscErrorCode interp(double t_years);
+  virtual PetscErrorCode interp(double my_t);
   virtual PetscErrorCode interp(int i, int j, int N,
 				PetscScalar *times, PetscScalar *results);
-  virtual PetscErrorCode average(double t_years, double dt_years);
-  virtual PetscErrorCode average(int i, int j, double t_years, double dt_years,
+  virtual PetscErrorCode average(double my_t, double my_dt);
+  virtual PetscErrorCode average(int i, int j, double my_t, double my_dt,
 				 double &result);
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();

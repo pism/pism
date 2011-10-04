@@ -105,34 +105,34 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PAForcing::max_timestep(PetscReal t_years,
-				       PetscReal &dt_years, bool &restrict) {
+PetscErrorCode PAForcing::max_timestep(PetscReal my_t,
+				       PetscReal &my_dt, bool &restrict) {
   PetscErrorCode ierr;
   PetscReal max_dt = -1;
   
-  ierr = input_model->max_timestep(t_years, dt_years, restrict); CHKERRQ(ierr);
+  ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
 
   if (temp_anomaly != NULL) {
-    max_dt = temp_anomaly->max_timestep(t_years);
+    max_dt = temp_anomaly->max_timestep(my_t);
 
-    if (dt_years > 0) {
+    if (my_dt > 0) {
       if (max_dt > 0)
-	dt_years = PetscMin(max_dt, dt_years);
+	my_dt = PetscMin(max_dt, my_dt);
     }
-    else dt_years = max_dt;
+    else my_dt = max_dt;
   }
 
   if (precip_anomaly != NULL) {
-    dt_years = precip_anomaly->max_timestep(t_years);
+    my_dt = precip_anomaly->max_timestep(my_t);
 
-    if (dt_years > 0) {
+    if (my_dt > 0) {
       if (max_dt > 0)
-	dt_years = PetscMin(max_dt, dt_years);
+	my_dt = PetscMin(max_dt, my_dt);
     }
-    else dt_years = max_dt;
+    else my_dt = max_dt;
   }
 
-  if (dt_years > 0)
+  if (my_dt > 0)
     restrict = true;
   else
     restrict = false;
@@ -219,24 +219,24 @@ PetscErrorCode PAForcing::write_variables(set<string> vars,  string filename) {
   return 0;
 }
 
-PetscErrorCode PAForcing::update(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PAForcing::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
-  if ((fabs(t_years - t) < 1e-12) &&
-      (fabs(dt_years - dt) < 1e-12))
+  if ((fabs(my_t - t) < 1e-12) &&
+      (fabs(my_dt - dt) < 1e-12))
     return 0;
 
-  t  = t_years;
-  dt = dt_years;
+  t  = my_t;
+  dt = my_dt;
 
-  ierr = input_model->update(t_years, dt_years); CHKERRQ(ierr);
+  ierr = input_model->update(my_t, my_dt); CHKERRQ(ierr);
 
   if (temp_anomaly != NULL) {
-    ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = temp_anomaly->update(my_t, my_dt); CHKERRQ(ierr);
   }
 
   if (precip_anomaly != NULL) {
-    ierr = precip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = precip_anomaly->update(my_t, my_dt); CHKERRQ(ierr);
   }
 
   return 0;

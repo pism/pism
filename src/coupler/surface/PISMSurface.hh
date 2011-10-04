@@ -68,8 +68,8 @@ public:
   { delete input; }
 
   virtual PetscErrorCode init(PISMVars &) { return 0; };
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  { t = my_t; dt = my_dt; return 0; } // do nothing
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S&)
   { return 0; }
 
@@ -104,11 +104,11 @@ public:
   PSSimple(IceGrid &g, const NCConfigVariable &conf)
     : PISMSurfaceModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
   {
-    t = t_years; dt = dt_years;
+    t = my_t; dt = my_dt;
     if (atmosphere) {
-      PetscErrorCode ierr = atmosphere->update(t_years, dt_years); CHKERRQ(ierr);
+      PetscErrorCode ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
     }
     return 0;
   }
@@ -147,8 +147,8 @@ public:
   {};
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  { t = my_t; dt = my_dt; return 0; } // do nothing
   //! This surface model does not use an atmosphere model.
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
   { delete input; }
@@ -191,16 +191,16 @@ class PSTemperatureIndex : public PISMSurfaceModel {
 public:
   PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PSTemperatureIndex();
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict);
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);  
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
-  virtual PetscErrorCode update_internal(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update_internal(PetscReal my_t, PetscReal my_dt);
   LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
 
   FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
@@ -220,7 +220,7 @@ protected:
                                      //!needs 3D location to determine degree
                                      //!day factors.
   bool pdd_annualize;
-  PetscReal next_pdd_update_year;
+  PetscReal next_pdd_update;
 };
 
 //! \brief A base class for mechanisms which modify the results of a surface
@@ -292,7 +292,7 @@ public:
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years, bool &restrict);
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
@@ -321,8 +321,8 @@ public:
   // Does not have an atmosphere model.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
 
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  { t = my_t; dt = my_dt; return 0; } // do nothing
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);

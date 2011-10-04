@@ -52,7 +52,7 @@ PetscErrorCode IcevarkModel::enthalpyAndDrainageStep(
       "PISM ERROR:  IcevarkModel::enthalpyAndDrainageStep() called but do_cold_ice_methods==true\n");
   }
 
-  const PetscReal dt_secs = dt_years_TempAge * secpera;
+  const PetscReal dt_secs = dt_TempAge;
 
   // get fine grid levels in ice
   PetscInt    fMz = grid.Mz_fine;  

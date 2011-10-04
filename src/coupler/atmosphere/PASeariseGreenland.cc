@@ -99,7 +99,7 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precip(IceModelVec2S &result) {
 //! \brief Updates mean annual and mean July near-surface air temperatures.
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
-PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
   if (lat->has_attr("missing_at_bootstrap")) {
@@ -115,12 +115,12 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal t_years, PetscReal dt_year
     PISMEnd();
   }
 
-  if ((fabs(t_years - t) < 1e-12) &&
-      (fabs(dt_years - dt) < 1e-12))
+  if ((fabs(my_t - t) < 1e-12) &&
+      (fabs(my_dt - dt) < 1e-12))
     return 0;
 
-  t  = t_years;
-  dt = dt_years;
+  t  = my_t;
+  dt = my_dt;
 
   const PetscReal 
     d_ma     = config.get("snow_temp_fausto_d_ma"),      // K

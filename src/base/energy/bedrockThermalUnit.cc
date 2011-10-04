@@ -265,16 +265,15 @@ This is a formula for the maximum stable timestep.  For more, see [\ref MortonMa
 
 The above describes the general case where Mbz > 1.
  */
-PetscErrorCode PISMBedThermalUnit::max_timestep(PetscReal /*t_years*/, PetscReal &dt_years, bool &restrict) {
+PetscErrorCode PISMBedThermalUnit::max_timestep(PetscReal /*my_t*/, PetscReal &my_dt, bool &restrict) {
 
   if (temp.was_created()) {
     PetscReal dzb;
     temp.get_spacing(dzb);
-    dt_years = dzb * dzb / (2.0 * bed_D);  // max dt from stability; in seconds
-    dt_years /= secpera;
+    my_dt = dzb * dzb / (2.0 * bed_D);  // max dt from stability; in seconds
     restrict = true;
   } else {
-    dt_years = 0;
+    my_dt = 0;
     restrict = false;
   }
   return 0;
@@ -293,7 +292,7 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 
 FIXME:  now a trapezoid rule could be used
 */
-PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
   if (!temp.was_created())  return 0;  // in this case we are up to date
@@ -301,39 +300,39 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years)
   // as a derived class of PISMComponent_TS, has t,dt members which keep track
   // of last update time-interval; so we do some checks ...
   // CHECK: has the desired time-interval already been dealt with?
-  if ((fabs(t_years - t) < 1e-12) && (fabs(dt_years - dt) < 1e-12))  return 0;
+  if ((fabs(my_t - t) < 1e-12) && (fabs(my_dt - dt) < 1e-12))  return 0;
 
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
-  if (dt_years < 0) {
+  if (my_dt < 0) {
      SETERRQ(1,"PISMBedThermalUnit::update() does not allow negative timesteps\n"); }
-  // CHECK: is desired time-interval equal to [t_years,t_years+dt_years] where t_years = t + dt?
+  // CHECK: is desired time-interval equal to [my_t,my_t+my_dt] where my_t = t + dt?
   if ((!gsl_isnan(t)) && (!gsl_isnan(dt))) { // this check should not fire on first use
     bool contiguous = true;
 
     if (fabs(t + dt) < 1) {
-      if ( fabs(t_years - (t + dt)) >= 1e-12 ) // check if the absolute difference is small
+      if ( fabs(my_t - (t + dt)) >= 1e-12 ) // check if the absolute difference is small
         contiguous = false;
     } else {
-      if ( fabs(t_years - (t + dt)) / (t + dt) >= 1e-12 ) // check if the relative difference is small
+      if ( fabs(my_t - (t + dt)) / (t + dt) >= 1e-12 ) // check if the relative difference is small
         contiguous = false;
     }
 
     if (contiguous == false) {
      SETERRQ4(2,"PISMBedThermalUnit::update() requires next update to be contiguous with last;\n"
-                "  stored:        t = %f a,       dt = %f a\n"
-                "  desired: t_years = %f a, dt_years = %f a\n",
-              t,dt,t_years,dt_years); }
+                "  stored:     t = %f s,    dt = %f s\n"
+                "  desired: my_t = %f s, my_dt = %f s\n",
+              t,dt,my_t,my_dt); }
   }
   // CHECK: is desired time-step too long?
-  PetscScalar mydtyears;
+  PetscScalar my_max_dt;
   bool restrict_dt;
-  ierr = max_timestep(t_years, mydtyears, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt && mydtyears < dt_years) {
+  ierr = max_timestep(my_t, my_max_dt, restrict_dt); CHKERRQ(ierr);
+  if (restrict_dt && my_max_dt < my_dt) {
      SETERRQ(3,"PISMBedThermalUnit::update() thinks you asked for too big a timestep\n"); }
 
   // o.k., we have checked; we are going to do the desired timestep!
-  t  = t_years;
-  dt = dt_years;
+  t  = my_t;
+  dt = my_dt;
 
   if (bedtoptemp == NULL)      SETERRQ(5, "bedtoptemp was never initialized");
   if (ghf == NULL)      SETERRQ(6, "bheatflx was never initialized");
@@ -349,7 +348,7 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years)
   }
 #endif
 
-  const PetscReal bed_R  = bed_D * (dt_years * secpera) / (dzb * dzb);
+  const PetscReal bed_R  = bed_D * my_dt / (dzb * dzb);
 
   PetscScalar *Tbold;
   vector<PetscScalar> Tbnew(Mbz);

@@ -173,7 +173,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     // we're found the time dimension
     NCTimeseries time_dimension;
     time_dimension.init(dimname, dimname, grid->com, grid->rank);
-    ierr = time_dimension.set_units("years"); CHKERRQ(ierr);
+    ierr = time_dimension.set_units("seconds"); CHKERRQ(ierr);
     ierr = time_dimension.read(filename.c_str(), time); CHKERRQ(ierr);
 
     string bounds_name;
@@ -223,8 +223,8 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   return 0;
 }
 
-//! Read some data to make sure that the interval (t_years, t_years + dt_years) is covered.
-PetscErrorCode IceModelVec2T::update(double t_years, double dt_years) {
+//! Read some data to make sure that the interval (my_t, my_t + my_dt) is covered.
+PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
   vector<double>::iterator i, j;
   int m, n, last;
@@ -237,17 +237,17 @@ PetscErrorCode IceModelVec2T::update(double t_years, double dt_years) {
       t1 = time_bounds[last * 2 + 1];
 
     // just return if we have all the data we need:
-    if (t_years >= t0 && t_years + dt_years <= t1)
+    if (my_t >= t0 && my_t + my_dt <= t1)
       return 0;
   }
 
-  // i will point to the smallest t so that t >= t_years 
-  i = lower_bound(time_bounds.begin(), time_bounds.end(), t_years);
+  // i will point to the smallest t so that t >= my_t 
+  i = lower_bound(time_bounds.begin(), time_bounds.end(), my_t);
 
-  // j will point to the smallest t so that t >= t_years + dt_years
-  j = lower_bound(time_bounds.begin(), time_bounds.end(), t_years + dt_years);
+  // j will point to the smallest t so that t >= my_t + my_dt
+  j = lower_bound(time_bounds.begin(), time_bounds.end(), my_t + my_dt);
 
-  // some of the the interval (t_years, t_years + dt_years) is outside of the
+  // some of the the interval (my_t, my_t + my_dt) is outside of the
   // time interval available in the file (on the right)
   // 
   if (i == time_bounds.end()) {
@@ -307,8 +307,10 @@ PetscErrorCode IceModelVec2T::update(int start) {
                     "  reading \"%s\" into buffer\n"
                     "          (short_name = %s): %d records, covering intervals (%3.3f, %3.3f) through (%3.3f, %3.3f) years...\n",
 		    long_name.c_str(), name.c_str(), missing,
-		    time_bounds[start*2], time_bounds[start*2 + 1],
-                    time_bounds[(start + missing - 1)*2], time_bounds[(start + missing - 1)*2 + 1]);
+                    grid->time->seconds_to_years(time_bounds[start*2]),
+                    grid->time->seconds_to_years(time_bounds[start*2 + 1]),
+                    grid->time->seconds_to_years(time_bounds[(start + missing - 1)*2]),
+                    grid->time->seconds_to_years(time_bounds[(start + missing - 1)*2 + 1]));
 
   for (int j = 0; j < missing; ++j) {
     if (lic != NULL) {
@@ -376,17 +378,17 @@ PetscErrorCode IceModelVec2T::get_record(int n) {
   return 0;
 }
 
-//! \brief Given the time t_years and the current selected time-step dt_years,
+//! \brief Given the time my_t and the current selected time-step my_dt,
 //! determines the maximum possible time-step this IceModelVec2T allows.
 /*!
-  Returns -1 if any time step is OK at t_years.
+  Returns -1 if any time step is OK at my_t.
  */
-double IceModelVec2T::max_timestep(double t_years) {
+double IceModelVec2T::max_timestep(double my_t) {
   // only allow going to till the next record
   vector<double>::iterator l = upper_bound(time_bounds.begin(),
-                                           time_bounds.end(), t_years);
+                                           time_bounds.end(), my_t);
   if (l != time_bounds.end()) {
-    PetscReal tmp = *l - t_years;
+    PetscReal tmp = *l - my_t;
 
     if (tmp > 1e-8)
       return tmp;
@@ -399,14 +401,14 @@ double IceModelVec2T::max_timestep(double t_years) {
 
 }
 
-//! \brief Get the record that is just before t_years.
-PetscErrorCode IceModelVec2T::get_record_years(double t_years) {
+//! \brief Get the record that is just before my_t.
+PetscErrorCode IceModelVec2T::at_time(double my_t) {
   int     last = first + (N - 1);
   double *j,
     *start = &time_bounds[first * 2],
     *end = &time_bounds[last * 2 + 1];
 
-  j = lower_bound(start, end, t_years); // binary search
+  j = lower_bound(start, end, my_t); // binary search
 
   if (j == end) {
     return get_record(N - 1); // out of range (on the right)
@@ -422,7 +424,7 @@ PetscErrorCode IceModelVec2T::get_record_years(double t_years) {
     PetscPrintf(grid->com,
                 "PISM ERROR: time bounds array does not represent continguous time intervals.\n"
                 "            (PISM was trying to compute %s at time %3.3f years.)\n",
-                name.c_str(), t_years);
+                name.c_str(), grid->time->seconds_to_years(my_t));
     PISMEnd();
   }
 
@@ -430,18 +432,18 @@ PetscErrorCode IceModelVec2T::get_record_years(double t_years) {
 }
 
 
-//! Extract data corresponding to t_years using linear interpolation.
+//! Extract data corresponding to my_t using linear interpolation.
 /*!
   Note: this method does not check if an update() call is necessary!
  */
-PetscErrorCode IceModelVec2T::interp(double t_years) {
+PetscErrorCode IceModelVec2T::interp(double my_t) {
   PetscErrorCode ierr;
   int     last = first + (N - 1);
   double *p,
     *start = &time_bounds[first * 2],
     *end = &time_bounds[last * 2 + 1];
   
-  p = lower_bound(start, end, t_years); // binary search
+  p = lower_bound(start, end, my_t); // binary search
 
   if (p == end) {
     ierr = get_record(N - 1); CHKERRQ(ierr);
@@ -456,7 +458,7 @@ PetscErrorCode IceModelVec2T::interp(double t_years) {
   }
 
   int m = first + k;
-  double lambda = (t_years - time[m]) / (time[m + 1] - time[m]);
+  double lambda = (my_t - time[m]) / (time[m + 1] - time[m]);
   
   PetscScalar **a2, ***a3;
 
@@ -504,23 +506,25 @@ PetscErrorCode IceModelVec2T::interp(int i, int j, int number,
   return 0;
 }
 
-//! \brief Finds the average value at i,j over the interval (t_years, t_years +
-//! dt_years) using trapezoidal rule.
+//! \brief Finds the average value at i,j over the interval (my_t, my_t +
+//! my_dt) using trapezoidal rule.
 /*!
   Can (and should) be optimized. Later, though.
  */
-PetscErrorCode IceModelVec2T::average(int i, int j, double t_years, double dt_years,
+PetscErrorCode IceModelVec2T::average(int i, int j, double my_t, double my_dt,
 				      double &result) {
   PetscErrorCode ierr;
+
+  PetscReal dt_years = grid->time->seconds_to_years(my_dt);
 
   // Determine the number of small time-steps to use for averaging:
   int M = (int) ceil(52 * (dt_years) + 1); // (52 weeks in a year)
   if (M < 2) M = 2;
 
   vector<double> ts(M), values(M);
-  double dt = dt_years / (M - 1);
+  double dt = my_dt / (M - 1);
   for (int k = 0; k < M; k++)
-    ts[k] = t_years + k * dt;
+    ts[k] = my_t + k * dt;
   
   ierr = interp(i, j, M, &ts[0], &values[0]); CHKERRQ(ierr);
 
@@ -534,7 +538,7 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double t_years, double dt_ye
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::average(double t_years, double dt_years) {
+PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   PetscErrorCode ierr;
   PetscScalar **a2;
 
@@ -542,7 +546,7 @@ PetscErrorCode IceModelVec2T::average(double t_years, double dt_years) {
   ierr = get_array(a2);
   for (PetscInt   i = grid->xs; i < grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j) {
-      ierr = average(i, j, t_years, dt_years, a2[i][j]); CHKERRQ(ierr);
+      ierr = average(i, j, my_t, my_dt, a2[i][j]); CHKERRQ(ierr);
     }
   }
 

@@ -27,9 +27,9 @@ public:
   virtual ~PA_EISMINT_Greenland() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 protected:
-  virtual PetscReal greenhouse_shift(PetscReal t_years, PetscReal dt_years);
+  virtual PetscReal greenhouse_shift(PetscReal my_t, PetscReal my_dt);
   bool do_greenhouse_warming;
   PetscReal greenhouse_warming_start_year;
   IceModelVec2S *lat, *surfelev;

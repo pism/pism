@@ -34,7 +34,7 @@ The maximum vertical velocity is computed but it does not affect
 PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscErrorCode ierr;
   PetscScalar *u, *v, *w;
-  PetscScalar locCFLmaxdt = convert(config.get("maximum_time_step_years"), "years", "seconds");
+  PetscScalar locCFLmaxdt = config.get("maximum_time_step_years", "years", "seconds");
 
   IceModelVec3 *u3, *v3, *w3;
 
@@ -92,7 +92,8 @@ sliding case we have a CFL condition.
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
   PISMVector2 **vel;
-  PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years") * secpera;
+  PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years",
+                                         "years", "seconds");
 
   MaskQuery mask(vMask);
 
@@ -179,7 +180,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       adaptReasonFlag = 'e';
     }
   } else {
-    dt = config.get("maximum_time_step_years") * secpera;
+    dt = config.get("maximum_time_step_years", "years", "seconds");
     bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
     adaptReasonFlag = 'm';
@@ -195,8 +196,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
     if (btu) {
       PetscReal btu_dt;
       bool restrict;
-      ierr = btu->max_timestep(grid.time->year(), btu_dt, restrict); CHKERRQ(ierr); // returns years
-      btu_dt *= secpera;
+      ierr = btu->max_timestep(grid.time->current(), btu_dt, restrict); CHKERRQ(ierr); // returns years
       if (restrict && btu_dt < dt) {
         dt = btu_dt;
         adaptReasonFlag = 'b';
@@ -243,8 +243,8 @@ It is handled by temperatureAgeStep(), not here.
 PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
   PetscErrorCode  ierr;
 
-  const PetscScalar cflx = grid.dx / (dt_years_TempAge * secpera),
-                    cfly = grid.dy / (dt_years_TempAge * secpera);
+  const PetscScalar cflx = grid.dx / dt_TempAge,
+                    cfly = grid.dy / dt_TempAge;
 
   PetscScalar *u, *v;
   IceModelVec3 *u3, *v3, *dummy;

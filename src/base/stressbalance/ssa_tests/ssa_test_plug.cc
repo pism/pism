@@ -92,10 +92,10 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
   // The following is irrelevant because tauc=0
   PetscScalar linear_q = 1.;
   basal = new IceBasalResistancePlasticLaw(
-         config.get("plastic_regularization") / secpera,
+         config.get("plastic_regularization", "1/year", "1/second"),
          true, // do not force a pure-plastic law
          linear_q,
-         config.get("pseudo_plastic_uthreshold") / secpera);
+         config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   // Use constant hardness
   CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config);

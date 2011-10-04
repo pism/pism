@@ -36,8 +36,8 @@ PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBala
 Because Calov-Greve method uses Simpson's rule to do integral, we choose the 
 returned number of times N to be odd.
  */
-PetscErrorCode PDDMassBalance::getNForTemperatureSeries(
-                   PetscScalar /* t */, PetscScalar dt, PetscInt &N) {
+PetscErrorCode PDDMassBalance::getNForTemperatureSeries(PetscScalar /* t */,
+                                                        PetscScalar dt, PetscInt &N) {
   PetscInt    NperYear = static_cast<PetscInt>( 
                            config.get("pdd_max_temperature_evals_per_year") );
   PetscScalar dt_years = dt / secpera;
@@ -66,8 +66,7 @@ user selects a random PDD implementation with <tt>-pdd_rand</tt> or
 <tt>-pdd_std_dev</tt>.  Note that the integral is over a time interval of length
 \c dt instead of a whole year as stated in \ref CalovGreve05 .
  */
-PetscScalar PDDMassBalance::CalovGreveIntegrand(
-               PetscScalar sigma, PetscScalar TacC) {
+PetscScalar PDDMassBalance::CalovGreveIntegrand(PetscScalar sigma, PetscScalar TacC) {
   const PetscScalar Z    = TacC / (sqrt(2.0) * sigma);
   return (sigma / sqrt(2.0 * pi)) * exp(-Z*Z) + (TacC / 2.0) * gsl_sf_erfc(-Z);
 }
@@ -297,8 +296,7 @@ PetscScalar PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries(
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(
-      IceGrid &g, const NCConfigVariable &myconfig)
+FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const NCConfigVariable &myconfig)
   : grid(g), config(myconfig) {
 
   PetscErrorCode ierr;
@@ -317,16 +315,15 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(
 
   ierr = temp_mj.create(grid, "temp_mj_faustogreve", false);
   ierr = temp_mj.set_attrs("internal",
-                               "mean July air temp from Fausto et al (2009) parameterization",
-                               "K",
-                               "");
+                           "mean July air temp from Fausto et al (2009) parameterization",
+                           "K", "");
 }
 
 
-PetscErrorCode FaustoGrevePDDObject::setDegreeDayFactors(
-                   PetscInt i, PetscInt j,
-                   PetscScalar /* usurf */, PetscScalar lat, PetscScalar /* lon */,
-                   DegreeDayFactors &ddf) {
+PetscErrorCode FaustoGrevePDDObject::setDegreeDayFactors(PetscInt i, PetscInt j,
+                                                         PetscScalar /* usurf */,
+                                                         PetscScalar lat, PetscScalar /* lon */,
+                                                         DegreeDayFactors &ddf) {
 
   PetscErrorCode ierr = temp_mj.begin_access(); CHKERRQ(ierr);
   const PetscScalar T_mj = temp_mj(i,j);

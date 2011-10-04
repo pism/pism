@@ -47,6 +47,8 @@ PetscErrorCode SIAFD::allocate() {
   // bed smoother
   bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
 
+  second_to_kiloyear = convert(1, "second", "1000 years");
+
   return 0;
 }
 
@@ -1003,7 +1005,7 @@ PetscScalar SIAFD::grainSizeVostok(PetscScalar age_seconds) const {
     5.9000e-03, 6.2000e-03, 5.4000e-03, 6.8000e-03, 3.5000e-03,
     6.0000e-03, 8.0000e-03, 8.3000e-03, 3.6000e-03, 3.8000e-03,
     9.5000e-03, 1.0000e-02 };
-  const PetscScalar a = age_seconds * 1.0e-3 / secpera; // Age in ka
+  const PetscScalar a = age_seconds * second_to_kiloyear; // Age in ka
   PetscInt l = 0;               // Left end of the binary search
   PetscInt r = numPoints - 1;   // Right end
 

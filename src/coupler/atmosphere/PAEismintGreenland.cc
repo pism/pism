@@ -24,15 +24,15 @@ PA_EISMINT_Greenland::PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &c
   greenhouse_warming_start_year = 0.0;
 }
 
-PetscErrorCode PA_EISMINT_Greenland::update(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PA_EISMINT_Greenland::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
-  if ((fabs(t_years - t) < 1e-12) &&
-      (fabs(dt_years - dt) < 1e-12))
+  if ((fabs(my_t - t) < 1e-12) &&
+      (fabs(my_dt - dt) < 1e-12))
     return 0;
 
-  t  = t_years;
-  dt = dt_years;
+  t  = my_t;
+  dt = my_dt;
 
   ierr = surfelev->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
@@ -52,7 +52,7 @@ PetscErrorCode PA_EISMINT_Greenland::update(PetscReal t_years, PetscReal dt_year
   ierr = temp_mj.end_access();  CHKERRQ(ierr);
 
   if (do_greenhouse_warming == PETSC_TRUE) {
-    const PetscScalar shift = greenhouse_shift(t_years, dt_years);
+    const PetscScalar shift = greenhouse_shift(my_t, my_dt);
     ierr = temp_ma.shift(shift); CHKERRQ(ierr);
     ierr = temp_mj.shift(shift); CHKERRQ(ierr);
   }
@@ -96,16 +96,17 @@ PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
   return 0;
 }
 
-PetscReal PA_EISMINT_Greenland::greenhouse_shift(PetscReal t_years, PetscReal dt_years) {
+PetscReal PA_EISMINT_Greenland::greenhouse_shift(PetscReal my_t, PetscReal my_dt) {
   // compute age back to start of GWL3; use midpoint of interval as the time
-  PetscScalar age = (t_years + 0.5 * dt_years) - greenhouse_warming_start_year;
-  if (age <= 0.0) {
+  PetscScalar age_years = grid.time->seconds_to_years(my_t + 0.5 * my_dt) - greenhouse_warming_start_year;
+
+  if (age_years <= 0.0) {
     return 0.0; // before time 0.0, no warming
   } else {
-    if (age <= 80.0) {
-      return age * 0.035;
-    } else if (age <= 500.0) {
-      return 2.8 + (age - 80.0) * 0.0017;
+    if (age_years <= 80.0) {
+      return age_years * 0.035;
+    } else if (age_years <= 500.0) {
+      return 2.8 + (age_years - 80.0) * 0.0017;
     } else { // after 500 years, constant amount
       return 3.514;
     }

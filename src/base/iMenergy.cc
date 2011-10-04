@@ -52,7 +52,7 @@ PetscErrorCode IceModel::energyStep() {
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyAndDrainageStep()
   ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
-  ierr = btu->update(t_years_TempAge, dt_years_TempAge); CHKERRQ(ierr);  // has ptr to bedtoptemp
+  ierr = btu->update(t_TempAge, dt_TempAge); CHKERRQ(ierr);  // has ptr to bedtoptemp
 
   if (config.get_flag("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:

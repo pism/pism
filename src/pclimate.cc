@@ -176,7 +176,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 					   PISMSurfaceModel *surface,
 					   PISMOceanModel* ocean,
 					   const char *filename, IceGrid* grid,
-					   PetscReal ys, PetscReal ye, PetscReal dt_years,
+					   PetscReal time_start, PetscReal time_end, PetscReal dt,
 					   NCConfigVariable &mapping) {
 
   MPI_Comm com = grid->com;
@@ -217,7 +217,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   ierr = global_attrs.write(filename); CHKERRQ(ierr);
 
   PetscInt NN;  // get number of times at which PISM boundary model state is written
-  NN = (int) ceil((ye - ys) / dt_years);
+  NN = (int) ceil((time_end - time_start) / dt);
   if (NN > 1000)
     SETERRQ(2,"PCLIMATE ERROR: refuse to write more than 1000 times!");
   if (NN > 50) {
@@ -228,29 +228,31 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   DiagnosticTimeseries sea_level(grid, "sea_level", grid->config.get_string("time_dimension_name"));
   sea_level.set_units("m", "m");
-  sea_level.set_dimension_units("years", "");
+  sea_level.set_dimension_units("seconds", "");
   sea_level.output_filename = filename;
   sea_level.set_attr("long_name", "sea level elevation");
 
-  PetscScalar use_dt_years = dt_years;
+  PetscScalar use_dt = dt;
 
   set<string> vars_to_write;
   surface->add_vars_to_output("big", vars_to_write);
   ocean->add_vars_to_output("big", vars_to_write);
 
   // write the states
-  for (PetscInt k=0; k < NN; k++) {
-    // use original dt_years to get correct subinterval starts:
-    const PetscReal pccyear = ys + k * dt_years; 
+  for (PetscInt k = 0; k < NN; k++) {
+    // use original dt to get correct subinterval starts:
+    const PetscReal time = time_start + k * dt; 
     ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr); // append=true,check_dims=false
-    ierr = nc.append_time(grid->config.get_string("time_dimension_name"), pccyear); CHKERRQ(ierr);
+    ierr = nc.append_time(grid->config.get_string("time_dimension_name"),
+                          time); CHKERRQ(ierr);
     
-    PetscScalar dt_update_years = PetscMin(use_dt_years, ye - pccyear);
+    PetscScalar dt_update = PetscMin(use_dt, time_end - time);
 
     char timestr[TEMPORARY_STRING_LENGTH];
     snprintf(timestr, sizeof(timestr), 
-        "  boundary models updated for [%11.3f a,%11.3f a] ...", 
-        pccyear, pccyear + dt_update_years);
+             "  boundary models updated for [%11.3f a,%11.3f a] ...", 
+             convert(time, "seconds", "years"),
+             convert(time + dt_update, "seconds", "years"));
     ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
     ierr = verbPrintf(3,com,"\n%s writing result to %s ..",timestr,filename); CHKERRQ(ierr);
     strncat(timestr,"\n",1);
@@ -260,8 +262,8 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = usurf->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
     // update surface and ocean models' outputs:
-    ierr = surface->update(pccyear, dt_update_years); CHKERRQ(ierr);
-    ierr = ocean->update(pccyear, dt_update_years); CHKERRQ(ierr);
+    ierr = surface->update(time, dt_update); CHKERRQ(ierr);
+    ierr = ocean->update(time, dt_update); CHKERRQ(ierr);
 
     ierr = surface->ice_surface_mass_flux(*acab); CHKERRQ(ierr);
     ierr = surface->ice_surface_temperature(*artm); CHKERRQ(ierr);
@@ -269,8 +271,8 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     PetscReal current_sea_level;
     ierr = ocean->sea_level_elevation(current_sea_level); CHKERRQ(ierr);
 
-    sea_level.append(current_sea_level, pccyear - dt_years, pccyear);
-    sea_level.interp(pccyear - dt_years, pccyear);
+    sea_level.append(current_sea_level, time - dt, time);
+    sea_level.interp(time - dt, time);
 
     // ask ocean and surface models to write variables:
     ierr = surface->write_variables(vars_to_write, filename); CHKERRQ(ierr);
@@ -414,9 +416,9 @@ int main(int argc, char *argv[]) {
 
     ierr = writePCCStateAtTimes(variables, surface, ocean,
                                 outname.c_str(), &grid,
-				grid.time->start_year(),
-                                grid.time->end_year(),
-                                dt_years,
+				grid.time->start(),
+                                grid.time->end(),
+                                convert(dt_years, "years", "seconds"),
                                 mapping); CHKERRQ(ierr);
 
     if (override_used) {

@@ -167,16 +167,15 @@ PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
 }
 
 PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, int N,
-							      PetscReal *ts, PetscReal *values) {
+                                               PetscReal *ts, PetscReal *values) {
   // constants related to the standard yearly cycle
   const PetscReal
-    radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
     sperd = 8.64e4, // exact number of seconds per day
-    julydaysec = sperd * snow_temp_july_day;
+    julyday_fraction = (sperd / secpera) * snow_temp_july_day;
 
   for (PetscInt k = 0; k < N; ++k) {
-    double tk = ( ts[k] - floor(ts[k]) ) * secpera; // time from the beginning of a year, in seconds
-    values[k] = temp_ma(i,j) + (temp_mj(i,j) - temp_ma(i,j)) * cos(radpersec * (tk - julydaysec));
+    double tk = grid.time->year_fraction(ts[k]) - julyday_fraction;
+    values[k] = temp_ma(i,j) + (temp_mj(i,j) - temp_ma(i,j)) * cos(2.0 * pi * tk);
   }
 
   return 0;
@@ -185,16 +184,13 @@ PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, int N,
 PetscErrorCode PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
   const PetscReal
-    radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
     sperd = 8.64e4, // exact number of seconds per day
-    julydaysec = sperd * config.get("snow_temp_july_day");
+    julyday_fraction = (sperd / secpera) * snow_temp_july_day;
 
-  double T = t + 0.5 * dt;
-
-  double t_sec = ( T - floor(T) ) * secpera; // time from the beginning of a year, in seconds
+  double T = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction;
 
   ierr = temp_mj.add(-1.0, temp_ma, result); CHKERRQ(ierr); // tmp = temp_mj - temp_ma
-  ierr = result.scale(cos(radpersec * (t_sec - julydaysec))); CHKERRQ(ierr);
+  ierr = result.scale(cos(2 * pi * T)); CHKERRQ(ierr);
   ierr = result.add(1.0, temp_ma); CHKERRQ(ierr);
   // result = temp_ma + (temp_mj - temp_ma) * cos(radpersec * (T - julydaysec));
 
