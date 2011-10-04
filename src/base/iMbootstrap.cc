@@ -69,10 +69,14 @@ PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
   // report on resulting computational box, rescale grid, actually create a
   // local interpolation context
   ierr = verbPrintf(2, grid.com, 
-         "  rescaling computational box for ice from -boot_file file and\n"
-         "    user options to dimensions:\n"
-         "    [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-         grid.Lx/1000.0,grid.Lx/1000.0,grid.Ly/1000.0,grid.Ly/1000.0,grid.Lz); 
+                    "  rescaling computational box for ice from -boot_file file and\n"
+                    "    user options to dimensions:\n"
+                    "    [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+                    (grid.x0 - grid.Lx)/1000.0,
+                    (grid.x0 + grid.Lx)/1000.0,
+                    (grid.y0 - grid.Ly)/1000.0,
+                    (grid.y0 + grid.Ly)/1000.0,
+                    grid.Lz); 
          CHKERRQ(ierr);
 
   bool hExists=false, maskExists=false;

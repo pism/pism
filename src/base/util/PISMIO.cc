@@ -62,19 +62,21 @@ PetscErrorCode PISMIO::get_grid_info(string name, grid_info &g) const {
       {
         ierr = get_dim_length(dimname, &g.x_len); CHKERRQ(ierr);
         ierr = get_dim_limits(dimname, &g.x_min, &g.x_max); CHKERRQ(ierr);
+        ierr = get_dimension(dimname, g.x); CHKERRQ(ierr);
         break;
       }
     case Y_AXIS:
       {
         ierr = get_dim_length(dimname, &g.y_len); CHKERRQ(ierr);
         ierr = get_dim_limits(dimname, &g.y_min, &g.y_max); CHKERRQ(ierr);
+        ierr = get_dimension(dimname, g.y); CHKERRQ(ierr);
         break;
       }
     case Z_AXIS:
       {
         ierr = get_dim_length(dimname, &g.z_len); CHKERRQ(ierr);
         ierr = get_dim_limits(dimname, &g.z_min, &g.z_max); CHKERRQ(ierr);
-        ierr = get_dimension(dimname, g.zlevels); CHKERRQ(ierr);
+        ierr = get_dimension(dimname, g.z); CHKERRQ(ierr);
         break;
       }
     case T_AXIS:
@@ -91,12 +93,6 @@ PetscErrorCode PISMIO::get_grid_info(string name, grid_info &g) const {
       }
     } // switch
   }   // for loop
-
-  g.x0 = (g.x_max + g.x_min) / 2.0;
-  g.y0 = (g.y_max + g.y_min) / 2.0;
-  
-  g.Lx = (g.x_max - g.x_min) / 2.0;
-  g.Ly = (g.y_max - g.y_min) / 2.0;
 
   return 0;
 }
@@ -391,8 +387,8 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
   int nlevels = (int)zlevels_out.size();
 
   ierr = compute_start_and_count(varid, t_start,
-                                     x_start, x_count, y_start, y_count, z_start, z_count,
-                                     start, count, imap); CHKERRQ(ierr);
+                                 x_start, x_count, y_start, y_count, z_start, z_count,
+                                 start, count, imap); CHKERRQ(ierr);
 
   int N = (int)start.size();
 
@@ -424,7 +420,8 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
 	MPI_Recv(&imap[0],  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
       }
 
-      // Convert start, count and imap to types NetCDF requires and compute how
+      // Convert start, count and imap from integers (for use in MPI calls
+      // above) to types NetCDF requires (size_t and ptrdiff_t) and compute how
       // much data we're going to read (for communication, below):
       int a_len = 1;
       for (int i = 0; i < N; ++i) {
@@ -454,7 +451,7 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
   // That is, it should be enough of the source variable so that \e interpolation
   // (not extrapolation) onto the local processor's part of the target grid is possible.
   //ierr = lic->printArray(grid.com); CHKERRQ(ierr);
-  
+
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (buffer)
   PetscScalar *vec_a;
@@ -466,41 +463,16 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
       for (int k = 0; k < nlevels; k++) {
         // location (x,y,z) is in target computational domain
         const double
-          x = grid->x[i] - grid->x0,
-          y = grid->y[j] - grid->y0,
           z = zlevels_out[k];
 
-        // We need to know how the point (x,y,z) sits within the local block we
-        // pulled from the netCDF file.  This part is special to a regular
-        // grid.  In particular floor(ic) is the index of the 'left neighbor'
-        // and ceil(ic) is the index of the 'right neighbor'.
-        double ic = (x - lic->fstart[X]) / lic->delta[X];
-        double jc = (y - lic->fstart[Y]) / lic->delta[Y];
-
-        // bounds checking on ic and jc; cases where this is essential *have* been observed
-        if ((int)floor(ic) < 0) {
-          ic = 0.0;
-          //SETERRQ2(101,"(int)floor(ic) < 0      [%d < 0; ic = %16.15f]",(int)floor(ic),ic);
-        }
-        if ((int)floor(jc) < 0) {
-          jc = 0.0;
-          //SETERRQ2(102,"(int)floor(jc) < 0      [%d < 0; jc = %16.15f]",(int)floor(jc),jc);
-        }
-        if ((int)ceil(ic) > x_count-1) {
-          ic = (double)(x_count-1);
-          //SETERRQ3(103,"(int)ceil(ic) > lic->count[1]-1      [%d > %d; ic = %16.15f]",
-          //     (int)ceil(ic), lic->count[1]-1, ic);
-        }
-        if ((int)ceil(jc) > y_count-1) {
-          jc = (double)(y_count-1);
-          //SETERRQ3(104,"(int)ceil(jc) > lic->count[2]-1      [%d > %d; jc = %16.15f]",
-          //     (int)ceil(jc), lic->count[2]-1, jc);
-        }
+        // Indices of neighboring points.
+        const int
+          Im = lic->x_left[i  - grid->xs],
+          Ip = lic->x_right[i - grid->xs],
+          Jm = lic->y_left[j  - grid->ys],
+          Jp = lic->y_right[j - grid->ys];
 
         double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
-
-        const int Im = (int)floor(ic), Ip = (int)ceil(ic),
-          Jm = (int)floor(jc), Jp = (int)ceil(jc);
 
         if (nlevels > 1) {
           // get the index into the source grid, for just below the level z
@@ -509,20 +481,6 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
           // We pretend that there are always 8 neighbors (4 in the map plane,
           // 2 vertical levels). And compute the indices into the buffer for
           // those neighbors.
-          // Note that floor(ic) + 1 = ceil(ic) does not hold when ic is an
-          // integer.  Computation of the domain (in constructor of LocalInterpCtx; note
-          // that lic->count uses ceil) must be done in a compatible way,
-          // otherwise we can index improperly here.  When it is in the
-          // interior, it should not matter (since the coefficient of the
-          // erroneous point will be 0), but if it occurs at the end of the
-          // buffer, it will index off the array, possibly causing a
-          // segmentation fault.
-          //
-          // In light of this degenerate case, we observe that not all of these
-          // neighbors are necessarily unique, but doing it this way enables us
-          // to not handle all the cases explicitly.
-          // 
-          // (These comments do not apply to the z case.)
           const int mmm = (Im * y_count + Jm) * z_count + kc;
           const int mmp = (Im * y_count + Jm) * z_count + kc + 1;
           const int mpm = (Im * y_count + Jp) * z_count + kc;
@@ -534,11 +492,6 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
 
           // We know how to index the neighbors, but we don't yet know where the
           // point lies within this box.  This is represented by kk in [0,1].
-          // For the irregular case, with left index km and right index kp in the source grid, we
-          // would have
-          //   kk = (km == kp) ? 0.0 : (z - Z(km)) / (Z(kp) - Z(km))
-          // where Z(.) are the physical coordinates on the source grid.  Note
-          // that any value in [0,1] would be okay when km == kp.
           const double zkc = zlevels_in[kc];
           double dz;
           if (kc == z_count - 1) {
@@ -561,13 +514,16 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
           a_pp = buffer[Ip * y_count + Jp];
         }
 
-        const double jj = jc - floor(jc);
+        // interpolation coefficient in the y direction
+        const double jj = lic->y_alpha[j - grid->ys];
 
         // interpolate in y direction
         const double a_m = a_mm * (1.0 - jj) + a_mp * jj;
         const double a_p = a_pm * (1.0 - jj) + a_pp * jj;
 
-        const double ii = ic - floor(ic);
+        // interpolation coefficient in the x direction
+        const double ii = lic->x_alpha[i - grid->xs];
+
         int index = ((i - grid->xs) * grid->ym + (j - grid->ys)) * nlevels + k;
 
         // index into the new array and interpolate in x direction
@@ -615,14 +571,14 @@ int PISMIO::compute_block_size(vector<int> count) const {
 //! Initializes the IceGrid object from a NetCDF file.
 PetscErrorCode PISMIO::get_grid(string filename, string var_name) {
   PetscErrorCode ierr;
-  grid_info gi;
+  grid_info input;
   vector<double> z_levels, zb_levels;
 
   if (grid == NULL) SETERRQ(1, "PISMIO::get_grid(...): grid == NULL");
 
   ierr = open_for_reading(filename); CHKERRQ(ierr);
 
-  ierr = get_grid_info(var_name, gi);
+  ierr = get_grid_info(var_name, input);
   // Close the file and return 1 if the variable could not be found. We don't
   // use CHKERRQ(ierr) to let the caller handle this error.
   if (ierr != 0) {
@@ -631,31 +587,31 @@ PetscErrorCode PISMIO::get_grid(string filename, string var_name) {
   }
 
   // if we have no vertical grid information, create a fake 2-level vertical grid.
-  if (gi.zlevels.size() < 2) {
+  if (input.z.size() < 2) {
     double Lz = grid->config.get("grid_Lz");
     ierr = verbPrintf(3, com,
                       "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                       "         Using 2 levels and Lz of %3.3fm\n",
                       var_name.c_str(), filename.c_str(), Lz); CHKERRQ(ierr);
 
-    gi.zlevels.push_back(0);
-    gi.zlevels.push_back(Lz);
+    input.z.push_back(0);
+    input.z.push_back(Lz);
   }
 
-  grid->Mx = gi.x_len;
-  grid->My = gi.y_len;
-  grid->Lx = gi.Lx;
-  grid->Ly = gi.Ly;
+  grid->Mx = input.x_len;
+  grid->My = input.y_len;
   // NB: We don't try to deduce periodicity from an input file.
   //  grid->periodicity = NONE; 
-  grid->x0   = gi.x0;
-  grid->y0   = gi.y0;
+  grid->x0 = (input.x_max + input.x_min) / 2.0;
+  grid->y0 = (input.y_max + input.y_min) / 2.0;
+  grid->Lx = (input.x_max - input.x_min) / 2.0;
+  grid->Ly = (input.y_max - input.y_min) / 2.0;
 
-  grid->time->set_start(gi.time);
+  grid->time->set_start(input.time);
   ierr = grid->time->init(); CHKERRQ(ierr); // re-initialize to take the new start time into account
 
   ierr = grid->compute_horizontal_spacing(); CHKERRQ(ierr);
-  ierr = grid->set_vertical_levels(gi.zlevels); CHKERRQ(ierr);
+  ierr = grid->set_vertical_levels(input.z); CHKERRQ(ierr);
 
   // We're ready to call grid->createDA().
 
@@ -837,8 +793,6 @@ PetscErrorCode PISMIO::compute_start_and_count(int varid,
       count[j] = 1;
       imap[j]  = 1;             // is this right?
     }
-
-    //    fprintf(stderr, "start[%d] = %ld, count[%d] = %ld, imap[%d] = %d\n", j, start[j], j, count[j], j, imap[j]); 
   }
 
   return 0;

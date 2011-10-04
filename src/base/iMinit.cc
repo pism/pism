@@ -39,7 +39,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   PetscErrorCode ierr;
   bool Mx_set, My_set, Mz_set, Lz_set, boot_file_set;
   string filename;
-  grid_info gi;
+  grid_info input;
 
   // Get the bootstrapping file name:
   
@@ -74,7 +74,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   names.push_back("thk");
   names.push_back("topg");
   for (unsigned int i = 0; i < names.size(); ++i) {
-    ierr = nc.get_grid_info(names[i], gi);
+    ierr = nc.get_grid_info(names[i], input);
     if (ierr == 0) break;
   }
 
@@ -94,17 +94,17 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Set the grid center and horizontal extent:
-  grid.x0 = gi.x0;
-  grid.y0 = gi.y0;
-  grid.Lx = gi.Lx;
-  grid.Ly = gi.Ly;
+  grid.x0 = (input.x_max + input.x_min) / 2.0;
+  grid.y0 = (input.y_max + input.y_min) / 2.0;
+  grid.Lx = (input.x_max - input.x_min) / 2.0;
+  grid.Ly = (input.y_max - input.y_min) / 2.0;
 
   // read grid.year if no option overrides it (avoids unnecessary reporting)
   bool ys_set;
   ierr = PISMOptionsIsSet("-ys", ys_set); CHKERRQ(ierr);
   if (!ys_set) {
     if (t_exists) {
-      grid.time->set_start(gi.time);
+      grid.time->set_start(input.time);
       grid.time->init();        // re-initialize to take the new start time into account
       ierr = verbPrintf(2, grid.com, 
   		      "  time t = %5.4f years found; setting current year\n",
@@ -153,7 +153,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
 			 y_scale,  Ly_set); CHKERRQ(ierr);
   ierr = PISMOptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
 			 x_scale,  Lx_set); CHKERRQ(ierr);
-  // Vertical extent (in the ice and bedrock, correspondingly):
+  // Vertical extent (in the ice):
   ierr = PISMOptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
 			 z_scale,  Lz_set); CHKERRQ(ierr);
 
@@ -164,6 +164,13 @@ PetscErrorCode IceModel::set_grid_from_options() {
 			grid.Mx, Mx_set); CHKERRQ(ierr);
   ierr = PISMOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
 			grid.Mz, Mz_set); CHKERRQ(ierr);
+
+  vector<double> x_range, y_range;
+  bool x_range_set, y_range_set;
+  ierr = PISMOptionsRealArray("-x_range", "min,max x coordinate values",
+                              x_range, x_range_set); CHKERRQ(ierr);
+  ierr = PISMOptionsRealArray("-y_range", "min,max y coordinate values",
+                              y_range, y_range_set); CHKERRQ(ierr);
 
   string keyword;
   set<string> z_spacing_choices;
@@ -202,6 +209,18 @@ PetscErrorCode IceModel::set_grid_from_options() {
   if (Lx_set)    grid.Lx  = x_scale * 1000.0; // convert to meters
   if (Ly_set)    grid.Ly  = y_scale * 1000.0; // convert to meters
   if (Lz_set)    grid.Lz  = z_scale;	      // in meters already
+
+  if (x_range_set && y_range_set) {
+    if (x_range.size() != 2 || y_range.size() != 2) {
+      PetscPrintf(grid.com, "PISM ERROR: -x_range and/or -y_range argument is invalid.\n");
+      PISMEnd();
+    }
+
+    grid.x0 = (x_range[0] + x_range[1]) / 2.0;
+    grid.y0 = (y_range[0] + y_range[1]) / 2.0;
+    grid.Lx = (x_range[1] - x_range[0]) / 2.0;
+    grid.Ly = (y_range[1] - y_range[0]) / 2.0;
+  }
 
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid.compute_vertical_levels();    CHKERRQ(ierr);

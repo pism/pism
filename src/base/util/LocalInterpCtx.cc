@@ -45,52 +45,35 @@
   The \c IceGrid is used to determine what ranges of the target arrays (i.e. \c Vecs into which NetCDF
   information will be interpolated) are owned by each processor.
 */
-LocalInterpCtx::LocalInterpCtx(grid_info g, IceGrid &grid) {
+LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
-  const double Lx = grid.Lx,
-               Ly = grid.Ly,
-               slop = 1.000001; // allowed slop; grids must be subsets within this factor
+
   com = grid.com;
   rank = grid.rank;
   report_range = true;
 
-  g.print(com);
+  input.print(com);
 
-  PetscScalar dx0 = grid.x0 - g.x0,
-              dy0 = grid.y0 - g.y0;
-  if (sqrt(dx0*dx0 + dy0*dy0) > 1e-6) {
-    PetscPrintf(com, "PISM ERROR: Grid centers do not match!\n");
-    PISMEnd();
-  }
+  if (!(grid.x.front() >= input.x_min && grid.x.back() <= input.x_max &&
+        grid.y.front() >= input.y_min && grid.y.back() <= input.y_max)) {
 
-  if (g.Lx*slop < Lx) {
     PetscPrintf(com,
 		"target computational domain not a subset of source (in NetCDF file)\n"
 		"  computational domain:\n");
-    PetscPrintf(com,
-		"    need  Lx < g.Lx,  but Lx = %5.4f km while g.Lx = %5.4f km\n"
-		"    ENDING ...\n",
-		Lx/1000.0, g.Lx);
+    PetscPrintf(grid.com, "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
+                grid.x.front(), grid.x.back(), grid.y.front(), grid.y.back());
+    PetscPrintf(grid.com, "source domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
+                input.x_min, input.x_max, input.y_min, input.y_max);
     PISMEnd();
-  }
-  if (g.Ly*slop < Ly) {
-    PetscPrintf(com,
-		"target computational domain not a subset of source (in NetCDF file)\n"
-		"  computational domain:\n");
-    PetscPrintf(com,
-		"    need  Ly < g.Ly,  but Ly = %5.4f km while g.Ly = %5.4f km\n"
-		"    ENDING ...\n",
-		Ly/1000.0, g.Ly);
-   PISMEnd();
   }
 
   // FIXME: put back vertical extent check
 
   // limits of the processor's part of the target computational domain
-  double xbdy_tgt[2] = {grid.x[grid.xs] - grid.x0,
-                        grid.x[grid.xs + grid.xm - 1] - grid.x0};
-  double ybdy_tgt[2] = {grid.y[grid.ys] - grid.y0,
-                        grid.y[grid.ys + grid.ym - 1] - grid.y0};
+  double x_min = grid.x[grid.xs],
+    x_max = grid.x[grid.xs + grid.xm - 1],
+    y_min = grid.y[grid.ys],
+    y_max = grid.y[grid.ys + grid.ym - 1];
 
 /*
 To make this work with unequal spacing <i>in the horizontal dimension</i>, IF EVER NEEDED,
@@ -110,43 +93,33 @@ Note that \c lic.start and \c lic.count is all that is necessary to pull the cor
 data from the netCDF file, so if we implement this general scheme, the \c fstart
 and \c delta entries in the struct will not be meaningful.
  */
- 
-  // Distances between entries (i.e. dx and dy and dz) in the netCDF file (floating point).
-  delta[T] = GSL_NAN; // Delta probably will never make sense in the time dimension.
-  delta[X] = (g.x_max - g.x_min) / (g.x_len - 1);
-  delta[Y] = (g.y_max - g.y_min) / (g.y_len - 1);
 
-  // start[i] = index of the first needed entry in the source netCDF file; start[i] is of type int
-  // We use the latest time.
-  start[T] = g.t_len - 1;
+  // T
+  start[T] = input.t_len - 1;       // use the latest time.
+  count[T] = 1;                     // read only one record
 
-  // The following intentionally under-counts the number of times delta[X] fits in the
-  // interval (xbdy_tgt[0], -g.Lx), which is the number of points to skip in
-  // the X-direction, and therefore the index of the first needed point
-  // (because indices start at zero).
-  start[X] = (unsigned)PetscMax(floor((xbdy_tgt[0] - (-g.Lx)) / delta[X] - 0.5), 0);
+  // X
+  start[X] = 0;
+  while (start[X] + 1 < input.x_len && input.x[start[X] + 1] < x_min)
+    start[X]++;
 
-  // Same in the Y-direction.
-  start[Y] = (unsigned)PetscMax(floor((ybdy_tgt[0] - (-g.Ly)) / delta[Y] - 0.5), 0);
+  count[X] = 0;
+  while (start[X] + count[X] < input.x_len && input.x[start[X] + count[X]] <= x_max)
+    count[X]++;
 
-  start[Z] = 0;			// start at base of ice
+  // Y
+  start[Y] = 0;
+  while (start[Y] + 1 < input.y_len && input.y[start[Y] + 1] < y_min)
+    start[Y]++;
 
-  fstart[T] = g.time;
-  fstart[X] = -g.Lx + start[X] * delta[X];
-  fstart[Y] = -g.Ly + start[Y] * delta[Y];
+  count[Y] = 0;
+  while (start[Y] + count[Y] < input.y_len && input.y[start[Y] + count[Y]] <= y_max)
+    count[Y]++;
 
-  count[T] = 1;			// Only take one time.
-  count[X] = 1 + (int)ceil((xbdy_tgt[1] - fstart[X]) / delta[X]);
-  count[Y] = 1 + (int)ceil((ybdy_tgt[1] - fstart[Y]) / delta[Y]);
-  // make count[] smaller if start[]+count[] would go past end of range:
-  while (start[X]+count[X] > g.x_len)
-    count[X]--;
-  while (start[Y]+count[Y] > g.y_len)
-    count[Y]--;
-
-  count[Z] = PetscMax(g.z_len, 1); // read at least one level
-
-  zlevels = g.zlevels;
+  // Z
+  start[Z] = 0;                    // always start at the base
+  count[Z] = PetscMax(input.z_len, 1); // read at least one level
+  zlevels = input.z;
 
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
@@ -155,6 +128,43 @@ and \c delta entries in the struct will not be meaningful.
   int my_a_len = a_len;
   MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, com);
   PetscMalloc(a_len * sizeof(double), &(a));
+
+  // Compute indices of neighbors and map-plane interpolation coefficients.
+  x_left.resize(grid.xm);
+  x_right.resize(grid.xm);
+  x_alpha.resize(grid.xm);
+
+  // x-direction
+  for (PetscInt i = 0; i < grid.xm; ++i) {
+    double x = grid.x[grid.xs + i];
+
+    for (unsigned int k = start[X]; k < start[X] + count[X]; ++k) {
+      if (input.x[k] <= x && input.x[k + 1] >= x) {
+        x_left[i]  = PetscMin(k     - start[X], count[X] - 1);
+        x_right[i] = PetscMin(k + 1 - start[X], count[X] - 1);
+        x_alpha[i] = (x - input.x[k]) / (input.x[k + 1] - input.x[k]);
+        break;
+      }
+    }
+  }
+
+  // y-direction
+  y_left.resize(grid.ym);
+  y_right.resize(grid.ym);
+  y_alpha.resize(grid.ym);
+
+  for (PetscInt j = 0; j < grid.ym; ++j) {
+    double y = grid.y[grid.ys + j];
+
+    for (unsigned int k = start[Y]; k < start[Y] + count[Y]; ++k) {
+      if (input.y[k] <= y && input.y[k + 1] >= y) {
+        y_left[j]  = PetscMin(k     - start[Y], count[Y] - 1);
+        y_right[j] = PetscMin(k + 1 - start[Y], count[Y] - 1);
+        y_alpha[j] = (y - input.y[k]) / (input.y[k + 1] - input.y[k]);
+        break;
+      }
+    }
+  }
 }
 
 
@@ -184,17 +194,11 @@ grid_info::grid_info() {
   x_len  = 0;
   y_len  = 0;
   z_len  = 0;
-  zb_len = 0;
-  x0     = 0;
-  y0     = 0;
-  Lx     = 0;
-  Ly     = 0;
   x_min  = 0;
   x_max  = 0;
   y_min  = 0;
   y_max  = 0;
   z_max  = 0;
-  zb_min = 0;
 }
 
 PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
@@ -203,13 +207,14 @@ PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
   ierr = verbPrintf(threshold, com, "\nRegridding file grid info:\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(threshold, com, "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
-		    x_len, x_min/1000.0, x_max/1000.0, x0/1000.0, Lx/1000.0); CHKERRQ(ierr);
+		    x_len, x_min/1000.0, x_max/1000.0, (x_min + x_max)/2.0/1000.0,
+                    (x_max - x_min)/1000.0); CHKERRQ(ierr);
   ierr = verbPrintf(threshold, com, "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
-		    y_len, y_min/1000.0, y_max/1000.0, y0/1000.0, Ly/1000.0); CHKERRQ(ierr);
+		    y_len, y_min/1000.0, y_max/1000.0,
+                    (y_min + y_max)/2.0/1000.0,
+                    (y_max - y_min)/1000.0); CHKERRQ(ierr);
   ierr = verbPrintf(threshold, com, "  z:  %5d points, [%10.3f, %10.3f] m\n",
 		    z_len, zero, z_max); CHKERRQ(ierr);
-  ierr = verbPrintf(threshold, com, "  zb: %5d points, [%10.3f, %10.3f] m\n",
-		    zb_len, zb_min, zero); CHKERRQ(ierr);
   ierr = verbPrintf(threshold, com, "  t:  %5d points, last time = %.3f years\n\n",
 		    t_len, convert(time, "seconds", "years")); CHKERRQ(ierr);
   return 0;

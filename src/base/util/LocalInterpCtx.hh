@@ -25,21 +25,15 @@
 class grid_info {
 public:
   // dimension lengths
-  unsigned int t_len, x_len, y_len, z_len,
-    zb_len;                 // DEPRECATED
+  unsigned int t_len, x_len, y_len, z_len;
   double time,			//!< current time (seconds)
-    x0,				//!< x-coordinate of the grid center
-    y0,				//!< y-coordinate of the grid center
-    Lx,				//!< half-width in the X-direction
-    Ly,				//!< half-width in the Y-direction
     x_min,			//!< [x_min, x_max] is the X extent of the grid
     x_max,			//!< [x_min, x_max] is the X extent of the grid
     y_min,			//!< [y_min, y_max] is the Y extent of the grid
     y_max,			//!< [y_min, y_max] is the Y extent of the grid
-    zb_min,			//!< minimal value of the zb dimension # DEPRECATED
     z_min,			//!< minimal value of the z dimension
     z_max;			//!< maximal value of the z dimension
-  vector<double> zlevels;       //!< vertical levels
+  vector<double> x, y, z;       //!< coordinates
   grid_info();
   PetscErrorCode print(MPI_Comm com, int threshold = 3);
 };
@@ -77,10 +71,11 @@ The arrays \c start and \c count have 5 integer entries, corresponding to the di
  */
 class LocalInterpCtx {
 public:
-  double fstart[3], delta[3];
-  unsigned int start[4], count[4];    // Indices in netCDF file.
-  double *a;		     //!< temporary buffer
-  int a_len;		     //!< the size of the buffer
+  unsigned int start[4], count[4]; // Indices in netCDF file.
+  vector<int> x_left, x_right, y_left, y_right; // neighbors
+  vector<double> x_alpha, y_alpha;
+  double *a;                       //!< temporary buffer
+  int a_len;                       //!< the size of the buffer
   vector<double> zlevels;
   bool report_range;
   MPI_Comm com;			//!< MPI Communicator (for printing, mostly)

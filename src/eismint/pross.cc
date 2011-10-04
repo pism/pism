@@ -392,7 +392,7 @@ PetscErrorCode grid_setup(IceGrid &grid) {
   PetscErrorCode ierr;
   string filename;
   PISMIO pio(&grid);
-  grid_info g;
+  grid_info input;
 
   ierr = PetscOptionsBegin(grid.com, "", "PROSS Grid options", ""); CHKERRQ(ierr);
   {
@@ -405,15 +405,16 @@ PetscErrorCode grid_setup(IceGrid &grid) {
     }
 
     ierr = pio.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-    ierr = pio.get_grid_info("land_ice_thickness", g); CHKERRQ(ierr);
+    ierr = pio.get_grid_info("land_ice_thickness", input); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
-    grid.Mx = g.x_len;
-    grid.My = g.y_len;
+    grid.Mx = input.x_len;
+    grid.My = input.y_len;
     grid.Mz = 2;
-    grid.x0 = g.x0;
-    grid.y0 = g.y0;
-    grid.Lx = g.Lx;
-    grid.Ly = g.Ly;
+    // Set the grid center and horizontal extent:
+    grid.x0 = (input.x_max + input.x_min) / 2.0;
+    grid.y0 = (input.y_max + input.y_min) / 2.0;
+    grid.Lx = (input.x_max - input.x_min) / 2.0;
+    grid.Ly = (input.y_max - input.y_min) / 2.0;
 
     ierr = PISMOptionsInt("-Mx", "Number of grid points in the X-direction",
                           grid.Mx, flag); CHKERRQ(ierr);
