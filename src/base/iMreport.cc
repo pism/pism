@@ -351,12 +351,13 @@ PetscErrorCode IceModel::compute_sealevel_volume(PetscScalar &result) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (mask.grounded_ice(i,j)){
-	if (vH(i,j) > 0)
+	if (vH(i,j) > 0) {
 	  if(vbed(i, j) > sea_level){
 	    volume += vH(i,j) * cell_area(i,j) * ice_rho/ocean_rho ;
-	  }else{
+	  } else {
 	    volume += vH(i,j) * cell_area(i,j) * ice_rho/ocean_rho - cell_area(i,j) * ( sea_level - vbed(i, j) );
 	  }
+	}
       }
     }
   }  

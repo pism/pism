@@ -92,6 +92,8 @@ public:
 
   PetscErrorCode         additionalAtStartTimestep();
   PetscErrorCode         additionalAtEndTimestep();
+
+  using IceModel::summaryPrintLine;
   virtual PetscErrorCode summaryPrintLine(
                  PetscTruth printPrototype,  bool tempAndAge,
                  PetscScalar year,  PetscScalar dt, 
