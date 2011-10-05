@@ -40,7 +40,7 @@ class columnSystemCtx {
 
 public:
   columnSystemCtx(PetscInt my_nmax, string my_prefix);
-  ~columnSystemCtx();
+  virtual ~columnSystemCtx();
 
   PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
 
@@ -48,9 +48,9 @@ public:
   PetscScalar    ddratio(const PetscInt n) const;
 
   PetscErrorCode viewVectorValues(PetscViewer viewer,
-                                  PetscScalar *v, PetscInt m, const char* info) const;
+                                  const PetscScalar *v, PetscInt m, const char* info) const;
   PetscErrorCode viewMatrix(PetscViewer viewer, const char* info) const;
-  PetscErrorCode viewSystem(PetscViewer viewer) const;
+  virtual PetscErrorCode viewSystem(PetscViewer viewer) const;
 
   PetscErrorCode reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex);
   PetscErrorCode viewColumnInfoMFile(PetscScalar *x, PetscInt n);
@@ -65,9 +65,9 @@ protected:
   // deliberately protected so only derived classes can use
   PetscErrorCode solveTridiagonalSystem(const PetscInt n, PetscScalar **x);
   
+  string      prefix;
 private:
   bool        indicesValid;
-  string      prefix;
   PetscErrorCode resetColumn();
 };
 

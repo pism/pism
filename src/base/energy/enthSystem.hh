@@ -34,20 +34,18 @@ class enthSystemCtx : public columnSystemCtx {
 
 public:
   enthSystemCtx(const NCConfigVariable &config, IceModelVec3 &my_Enth3, int my_Mz, string my_prefix);
-  ~enthSystemCtx();
+  virtual ~enthSystemCtx();
 
-  PetscErrorCode initAllColumns(
-      const PetscScalar my_dx, const PetscScalar my_dy, 
-      const PetscScalar my_dtTemp, const PetscScalar my_dzEQ);
+  PetscErrorCode initAllColumns(PetscScalar my_dx, PetscScalar my_dy, 
+                                PetscScalar my_dtTemp, PetscScalar my_dzEQ);
 
-  PetscErrorCode setSchemeParamsThisColumn(
-      const bool my_ismarginal, const PetscScalar my_lambda);  
-  PetscErrorCode setBoundaryValuesThisColumn(
-      const PetscScalar my_Enth_surface);
+  PetscErrorCode initThisColumn(bool my_ismarginal, PetscScalar my_lambda);  
+  PetscErrorCode setBoundaryValuesThisColumn(PetscScalar my_Enth_surface);
   PetscErrorCode setDirichletBasal(PetscScalar Y);
   PetscErrorCode setNeumannBasal(PetscScalar Y);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
+  PetscErrorCode viewSystem(PetscViewer viewer) const;
 
   PetscErrorCode solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex);
 
@@ -59,7 +57,6 @@ public:
                *v,
                *w,
                *Sigma;
-
 protected:
   PetscInt     Mz;
   PetscScalar  ice_rho, ice_c, ice_k, ice_K, ice_K0,
@@ -67,7 +64,10 @@ protected:
   IceModelVec3 *Enth3;
   PetscScalar  lambda, Enth_ks, a0, a1, b;
   bool         ismarginal;
+  vector<PetscScalar> R; // value of k \Delta t / (\rho c \Delta x^2) in
+                         // column, using current values of enthalpy
 
+  virtual PetscErrorCode assemble_R();
   PetscErrorCode checkReadyToSolve();
 };
 

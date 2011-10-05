@@ -114,6 +114,8 @@ netcdf pism_config {
     pism_config:use_linear_in_temperature_heat_capacity = "no";
     pism_config:use_linear_in_temperature_heat_capacity_doc = "If yes, use varcEnthalpyConverter class to convert (internally) temperature to/from enthalpy.  It is based on equation (4.39) in [\\ref GreveBlatter2009].  Otherwise use default class EnthalpyConverter which has temperature-independent (i.e. constant) specific heat capacity, set by constant ice_specific_heat_capacity.";
 
+    pism_config:use_temperature_dependent_thermal_conductivity = "no";
+    pism_config:use_temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [\ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice_thermal_conductivity.";
 
     // parameters:
 

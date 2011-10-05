@@ -161,7 +161,7 @@ Give description string as \c info argument.
 Result should be executable as part of a Matlab/Octave script.
  */
 PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
-                                                 PetscScalar *v, PetscInt m, const char* info) const {
+                                                 const PetscScalar *v, PetscInt m, const char* info) const {
   PetscErrorCode ierr;
 
   if (v==NULL) {

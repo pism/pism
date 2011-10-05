@@ -26,10 +26,10 @@
 Like enthSystemCtx, just does a tridiagonal linear system for conservation
 of energy in vertical column, for enthalpy.
 
-Has additional enthalpy-dependent conductivity in
-cold ice.  Everything is the same except that the conductivity in
-solveThisColumn() has additional hardwired conductivity structure from
-formula (4.37) in [\ref GreveBlatter2009].
+Has additional enthalpy-dependent conductivity in cold ice. Also supports
+enthalpy- (temperature) dependent heat capacity if
+use_linear_in_temperature_heat_capacity is set. Everything is the same except
+the assemble_R() method is based on formula (4.37) in [\ref GreveBlatter2009].
 
 This implementation does stupid code duplication.  If we use this and think
 it is worth keeping then FIXME: it should be made configurable and this code
@@ -41,24 +41,22 @@ This is to address R. Greve's concerns about the submitted paper
 class varkenthSystemCtx : public enthSystemCtx {
 
 public:
-  varkenthSystemCtx(const NCConfigVariable &config, IceModelVec3 &my_Enth3, int my_Mz, string my_prefix);
-  ~varkenthSystemCtx();
+  varkenthSystemCtx(const NCConfigVariable &config, IceModelVec3 &my_Enth3,
+                    int my_Mz, string my_prefix, EnthalpyConverter *EC);
+  ~varkenthSystemCtx() {}
 
   PetscErrorCode initAllColumns(const PetscScalar my_dx, const PetscScalar my_dy, 
                                 const PetscScalar my_dtTemp, const PetscScalar my_dzEQ);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
 
-  PetscErrorCode setNeumannBasal(PetscScalar Y);
-
-  PetscErrorCode solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex);
-
 protected:
   PetscScalar       getvark(PetscScalar T);
+  PetscScalar       getvarc(PetscScalar T);
+  PetscErrorCode    assemble_R();
   EnthalpyConverter *EC;  // needed to get temperature from enthalpy because that is
                           //   what conductivity depends on
-  PetscScalar  *R;        // value of k \Delta t / (\rho c \Delta x^2) in column,
-                          //   using current values of enthalpy
+  bool use_variable_c;
 };
 
 #endif   //  ifndef __varkenthSystem_hh

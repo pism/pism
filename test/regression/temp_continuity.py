@@ -49,7 +49,7 @@ for dt in dts:
 
 # these deltas are observed to decrease O(dt^1) approximately, which is expected from theory
 for (dt, delta) in zip(dts, deltas):
-    stderr.write("dt = %f, delta = %f" % (dt, delta))
+    stderr.write("dt = %f, delta = %f\n" % (dt, delta))
 
 # the only test is whether they decrease; no rate measured
 if any(diff(deltas) > 0):

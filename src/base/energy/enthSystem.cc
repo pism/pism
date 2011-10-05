@@ -20,8 +20,8 @@
 #include <gsl/gsl_math.h>
 
 
-enthSystemCtx::enthSystemCtx(
-    const NCConfigVariable &config, IceModelVec3 &my_Enth3, int my_Mz, string my_prefix)
+enthSystemCtx::enthSystemCtx(const NCConfigVariable &config,
+                             IceModelVec3 &my_Enth3, int my_Mz, string my_prefix)
       : columnSystemCtx(my_Mz, my_prefix) {  // <- critical: sets size of sys
   Mz = my_Mz;
 
@@ -47,6 +47,7 @@ enthSystemCtx::enthSystemCtx(
   Sigma  = new PetscScalar[Mz];
   Enth   = new PetscScalar[Mz];
   Enth_s = new PetscScalar[Mz];  // enthalpy of pressure-melting-point
+  R.resize(Mz);
 
   Enth3 = &my_Enth3;  // points to IceModelVec3
 }
@@ -62,9 +63,8 @@ enthSystemCtx::~enthSystemCtx() {
 }
 
 
-PetscErrorCode enthSystemCtx::initAllColumns(
-      const PetscScalar my_dx, const PetscScalar my_dy, 
-      const PetscScalar my_dtTemp, const PetscScalar my_dzEQ) {
+PetscErrorCode enthSystemCtx::initAllColumns(PetscScalar my_dx,  PetscScalar my_dy, 
+                                             PetscScalar my_dtTemp,  PetscScalar my_dzEQ) {
   dx     = my_dx;
   dy     = my_dy;
   dtTemp = my_dtTemp;
@@ -76,8 +76,7 @@ PetscErrorCode enthSystemCtx::initAllColumns(
 }
 
 
-PetscErrorCode enthSystemCtx::setSchemeParamsThisColumn(
-                     bool my_ismarginal, const PetscScalar my_lambda) {
+PetscErrorCode enthSystemCtx::initThisColumn(bool my_ismarginal, PetscScalar my_lambda) {
 #ifdef PISM_DEBUG
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
      "setSchemeParamsThisColumn() should only be called after\n"
@@ -87,12 +86,14 @@ PetscErrorCode enthSystemCtx::setSchemeParamsThisColumn(
 #endif
   ismarginal = my_ismarginal;
   lambda = my_lambda;
+
+  PetscErrorCode ierr =  assemble_R(); CHKERRQ(ierr);
   return 0;
 }
 
 
 PetscErrorCode enthSystemCtx::setBoundaryValuesThisColumn(
-           const PetscScalar my_Enth_surface) {
+            PetscScalar my_Enth_surface) {
 #ifdef PISM_DEBUG
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
      "setBoundaryValuesThisColumn() should only be called after\n"
@@ -201,10 +202,10 @@ PetscErrorCode enthSystemCtx::setNeumannBasal(PetscScalar Y) {
   }
 #endif
   const PetscScalar
-      Rc = (Enth[0] < Enth_s[0]) ? iceRcold : iceRtemp,
-      Rr = (Enth[1] < Enth_s[1]) ? iceRcold : iceRtemp,
-      Rminus = Rc,
-      Rplus  = 0.5 * (Rc + Rr);
+    Rc = R[0],
+    Rr = R[1],
+    Rminus = Rc,
+    Rplus  = 0.5 * (Rc + Rr);
   a0 = 1.0 + Rminus + Rplus;  // = D[0]
   a1 = - Rminus - Rplus;      // = U[0]
   const PetscScalar X = - 2.0 * dzEQ * Y;  // E(-dz) = E(+dz) + X
@@ -219,6 +220,21 @@ PetscErrorCode enthSystemCtx::setNeumannBasal(PetscScalar Y) {
                                              v[0] * (ss.ij  - ss.s) / dy;
     b += dtTemp * ((Sigma[0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
   }
+  return 0;
+}
+
+//! \brief Assemble the R array.
+PetscErrorCode enthSystemCtx::assemble_R() {
+
+  for (PetscInt k = 0; k <= ks; k++)
+    R[k] = (Enth[k] < Enth_s[k]) ? iceRcold : iceRtemp;
+
+  // R[k] for k > ks are never used
+
+#ifdef PISM_DEBUG
+  for (int k = ks + 1; k < Mz; ++k)
+    R[k] = GSL_NAN;
+#endif
   return 0;
 }
 
@@ -242,11 +258,8 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
   // generic ice segment in k location (if any; only runs if ks >= 2)
   for (PetscInt k = 1; k < ks; k++) {
     const PetscScalar
-        Rl = (Enth[k-1] < Enth_s[k-1]) ? iceRcold : iceRtemp,
-        Rc = (Enth[k] < Enth_s[k]) ? iceRcold : iceRtemp,
-        Rr = (Enth[k+1] < Enth_s[k+1]) ? iceRcold : iceRtemp,
-        Rminus = 0.5 * (Rl + Rc),
-        Rplus  = 0.5 * (Rc + Rr);
+        Rminus = 0.5 * (R[k-1] + R[k]  ),
+        Rplus  = 0.5 * (R[k]   + R[k+1]);
     L[k] = - Rminus;
     D[k] = 1.0 + Rminus + Rplus;
     U[k] = - Rplus;
@@ -298,3 +311,15 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
   return 0;
 }
 
+//! View the tridiagonal system A x = b to a PETSc viewer, both A as a full matrix and b as a vector.
+PetscErrorCode enthSystemCtx::viewSystem(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+  string info;
+  info = prefix + "_A";
+  ierr = viewMatrix(viewer,info.c_str()); CHKERRQ(ierr);
+  info = prefix + "_rhs";
+  ierr = viewVectorValues(viewer,rhs,nmax,info.c_str()); CHKERRQ(ierr);
+  info = prefix + "_R";
+  ierr = viewVectorValues(viewer,&R[0],Mz,info.c_str()); CHKERRQ(ierr);
+  return 0;
+}
