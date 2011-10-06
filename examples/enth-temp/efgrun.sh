@@ -59,11 +59,10 @@ echo
 if [ -n "${PISM_DATANAME:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME   PISM_DATANAME = $PISM_DATANAME  (already set)"
 else
-  PISM_DATANAME=eis_green_smoothed.nc
+  PISM_DATANAME=../eisgreen/eis_green_smoothed.nc
 fi
 
-PISM_CDL=eismint_config.cdl
-PISM_CONFIG=eismint_config.nc
+PISM_CONFIG=../eisgreen/eismint_config.nc
 
 for INPUT in $PISM_DATANAME $PISM_CDL; do
   if [ -e "$INPUT" ] ; then  # check if file exist
@@ -71,14 +70,13 @@ for INPUT in $PISM_DATANAME $PISM_CDL; do
   else
     echo "$SCRIPTNAME           input   $INPUT (MISSING!!)"
     echo
-    echo "$SCRIPTNAME           please run ../examples/preprocess.sh, exiting"
+    echo "$SCRIPTNAME           please run preprocess.sh in ../eisgreen/, exiting"
     echo
     exit
   fi
 done
 
 INNAME=$PISM_DATANAME
-ncgen -o $PISM_CONFIG $PISM_CDL
 
 EXVARS="enthalpybase,temppabase,tempicethk_basal,tempicethk,bmelt,bwat,usurf,csurf,mask,hardav,diffusivity" # add mask, so that check_stationarity.py ignores ice-free areas.
 PREFIX=efg

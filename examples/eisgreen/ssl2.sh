@@ -28,5 +28,7 @@ exs="-extra_file ex_ssl2.nc -extra_times 1000:1000:100000 -extra_vars diffusivit
 
 ts="-ts_file vol_ssl2.nc -ts_times 0:yearly:110000"
 
-$SHOW $MPIDO $NN pgrn -ssl2 -skip 10 -i $INFILE -ys 0 -ye 110000 ${exs} ${ts} -o green_ssl2_110ka.nc
+PGRN="pismr -config_override eismint_config.nc -atmosphere eismint_greenland -surface pdd"
+
+$SHOW $MPIDO $NN $PGRN -ssl2 -skip 10 -i $INFILE -ys 0 -ye 110000 ${exs} ${ts} -o green_ssl2_110ka.nc
 

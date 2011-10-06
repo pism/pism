@@ -40,4 +40,4 @@ SEE ALSO
 - PISM's *Cheat Sheet* for a quick overview of command-line options.
 - PISM's *Source Code Browser* for technical documentation.
 
-Another important PISM executables include **pisms**, **pismv**, **pgrn** and **pross**. 
+Another important PISM executables include **pisms**, **pismv** and **pross**. 

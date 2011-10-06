@@ -12,7 +12,10 @@
 
 Reference \cite{Roache} gives a broad discussion of verification and validation in computational fluid dynamics. See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models, and \cite{BBssasliding,SchoofStream} for verification using an exact solution to the SSA equations for ice streams.  
 
-In PISM there is a separate executable \texttt{pismv} which is used for verification.  The source codes which are verified by \texttt{pismv} are, however, exactly the same, in exactly the same source files, as is run by the non-verification executables \texttt{pismr}, \texttt{pisms}, \texttt{pgrn}, etc.  In technical terms, \texttt{pismv} runs a derived class of the base class \texttt{IceModel}\index{IceModel C++ class!derived class for verification}.  All PISM executables run \texttt{IceModel}, but derived classes add bits of code, in this case the exact solutions.
+In PISM there is a separate executable \texttt{pismv} which is used for
+verification.  The source codes which are verified by \texttt{pismv} are,
+however, exactly the same, in exactly the same source files, as is run by the
+non-verification executables \texttt{pismr}, \texttt{pisms}, etc.  In technical terms, \texttt{pismv} runs a derived class of the base class \texttt{IceModel}\index{IceModel C++ class!derived class for verification}.  All PISM executables run \texttt{IceModel}, but derived classes add bits of code, in this case the exact solutions.
 
 \begin{table}[ht]
 \centering

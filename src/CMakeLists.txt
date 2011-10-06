@@ -186,13 +186,10 @@ add_executable (pisms pisms.cc
   eismint/icePSTexModel.cc
   ismip/iceMISMIPModel.cc)
 
-# EISMINT-Greenland
-add_executable (pgrn eismint/pgrn.cc)
-
 add_executable (pismebm coupler/surface/ebm_driver.cc pismebm.cc)
 
 # All of the following are linked against pismbase
-foreach (EXEC pismr pismo pisms pgrn pismebm)
+foreach (EXEC pismr pismo pisms pismebm)
   target_link_libraries (${EXEC} pismbase)
 endforeach (EXEC)
 
@@ -214,7 +211,7 @@ add_custom_command (OUTPUT pism_config.nc
 add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
-  pismr pismo pisms pismv pgrn pclimate pismebm ## executables
+  pismr pismo pisms pismv pclimate pismebm ## executables
   pismutil pismverif pismbase pismflowlaws pismearth pismudunits # libraries
   RUNTIME DESTINATION ${Pism_BIN_DIR}
   LIBRARY DESTINATION ${Pism_LIB_DIR}

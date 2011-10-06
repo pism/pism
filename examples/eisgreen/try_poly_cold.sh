@@ -13,7 +13,9 @@ OPTIONS="-e 3 -ocean_kill -surface pdd -atmosphere searise_greenland -skip 10"
 
 IN=green20km_y1_big.nc
 
-mpiexec -n $NN pgrn -boot_file eis_green_smoothed.nc \
+PGRN="pismr -config_override eismint_config.nc -atmosphere eismint_greenland -surface pdd"
+
+mpiexec -n $NN $PGRN -boot_file eis_green_smoothed.nc \
   -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -skip 1 -y 1 -o $IN -o_size big
 
 # polythermal version
