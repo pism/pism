@@ -111,7 +111,7 @@ PetscErrorCode IceModel::init_timeseries() {
   }
 
   // ignore times before (and including) the beginning of the run:
-  while (current_ts < ts_times.size() && ts_times[current_ts] < grid.time->start_year())
+  while (current_ts < ts_times.size() && ts_times[current_ts] < grid.time->start())
     current_ts++;
 
   if (ts_times.size() == current_ts) {
