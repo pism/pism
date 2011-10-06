@@ -185,15 +185,14 @@ temperature at the corresponding z level.
 PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
 					      PetscScalar thk,
 					      PetscInt ks,
+					      PetscScalar ice_rho_c,
+                                              PetscScalar ice_k,
 					      const PetscScalar *Enth,
 					      const PetscScalar *w,
 					      PetscScalar *lambda,
 					      PetscScalar **Enth_s) {
 
   *lambda = 1.0;  // start with centered implicit for more accuracy
-  const PetscScalar
-      ice_rho_c = ice->rho * ice->c_p,
-      ice_k     = ice->k;
   for (PetscInt k = 0; k <= ks; k++) {
     (*Enth_s)[k] = EC->getEnthalpyCTS(EC->getPressureFromDepth(thk - grid.zlevels_fine[k]));
 
@@ -245,6 +244,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
   const PetscScalar
     p_air     = config.get("surface_pressure"),
+    ice_rho   = config.get("ice_density"),
     ice_k     = config.get("ice_thermal_conductivity"),
     ice_c     = config.get("ice_specific_heat_capacity"),
     ice_K     = ice_k / ice_c, // enthalpy-conductivity for cold ice
@@ -385,7 +385,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         ierr = w3->getValColumn(i,j,ks,esys->w); CHKERRQ(ierr);
 
         PetscScalar lambda;
-        ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, esys->Enth, esys->w, // FIXME task #7297
+        ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, ice_rho * ice_c, ice_k,
+                                    esys->Enth, esys->w, // FIXME task #7297
                                     &lambda, &esys->Enth_s); CHKERRQ(ierr);
         if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
 
@@ -411,7 +412,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
             PetscScalar hf_up;
             if (k1_istemperate) {
               const PetscScalar pbasal = EC->getPressureFromDepth(vH(i,j)); // FIXME task #7297
-              hf_up = - ice->k * (EC->getMeltingTemp(p1) - EC->getMeltingTemp(pbasal)) / fdz;
+              hf_up = - ice_k * (EC->getMeltingTemp(p1) - EC->getMeltingTemp(pbasal)) / fdz;
             } else {
               hf_up = - ice_K * (esys->Enth[1] - esys->Enth[0]) / fdz;
             }

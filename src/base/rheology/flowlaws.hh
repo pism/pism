@@ -81,9 +81,6 @@ public:
   // ideally these would be protected or private:
   PetscReal rho,          //!< ice density
     beta_CC_grad, //!< Clausius-Clapeyron gradient
-    k,            //!< thermal conductivity
-    c_p,          //!< specific heat capacity
-    latentHeat,   //!< latent heat capacity
     melting_point_temp;  //!< for water, 273.15 K
 protected:
   PetscReal softnessParameter_paterson_budd(PetscReal T_pa) const;

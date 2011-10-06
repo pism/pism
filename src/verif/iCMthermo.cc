@@ -129,6 +129,10 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
   PetscScalar *SigmaC;
   SigmaC = new PetscScalar[Mz];
 
+  const PetscScalar
+    ice_rho   = config.get("ice_density"),
+    ice_c     = config.get("ice_specific_heat_capacity");
+
   // before temperature and flow step, set Sigma_c and accumulation from exact values
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = SigmaComp3.begin_access(); CHKERRQ(ierr);
@@ -148,7 +152,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
                     &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC);
         }
         for (PetscInt k=0;  k<Mz;  k++) // scale Sigma to J/(s m^3)
-          SigmaC[k] = SigmaC[k] * ice->rho * ice->c_p;
+          SigmaC[k] = SigmaC[k] * ice_rho * ice_c;
         ierr = SigmaComp3.setInternalColumn(i,j,SigmaC); CHKERRQ(ierr);
       }
     }
@@ -183,6 +187,10 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   w = new PetscScalar[grid.Mz];
   Sigma = new PetscScalar[grid.Mz];
   SigmaC = new PetscScalar[grid.Mz];
+
+  const PetscScalar
+    ice_rho   = config.get("ice_density"),
+    ice_c     = config.get("ice_specific_heat_capacity");
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = acab.get_array(accum); CHKERRQ(ierr);
@@ -220,8 +228,8 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
         for (PetscInt k = 0; k < Mz; k++) {
           u[k] = Uradial[k]*(xx/r);
           v[k] = Uradial[k]*(yy/r);
-          Sigma[k] = Sigma[k] * ice->rho * ice->c_p; // scale Sigma to J/(s m^3)
-          SigmaC[k] = SigmaC[k] * ice->rho * ice->c_p; // scale SigmaC to J/(s m^3)
+          Sigma[k] = Sigma[k] * ice_rho * ice_c; // scale Sigma to J/(s m^3)
+          SigmaC[k] = SigmaC[k] * ice_rho * ice_c; // scale SigmaC to J/(s m^3)
         }
         ierr = T3.setInternalColumn(i,j,T); CHKERRQ(ierr);
         ierr = u3->setInternalColumn(i,j,u); CHKERRQ(ierr);
@@ -495,6 +503,10 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
   dummy1 = new PetscScalar[Mz];  dummy2 = new PetscScalar[Mz];
   dummy3 = new PetscScalar[Mz];  dummy4 = new PetscScalar[Mz];
 
+  const PetscScalar
+    ice_rho   = config.get("ice_density"),
+    ice_c     = config.get("ice_specific_heat_capacity");
+
   PetscScalar *Sig;
   IceModelVec3 *Sigma3;
   ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr);
@@ -519,7 +531,7 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
             SETERRQ(1,"strain-heating (Sigma) errors only computable for tests F and G\n");
         }
         for (PetscInt k = 0; k < Mz; k++)
-          Sigex[k] = Sigex[k] * ice->rho * ice->c_p; // scale exact Sigma to J/(s m^3)
+          Sigex[k] = Sigex[k] * ice_rho * ice_c; // scale exact Sigma to J/(s m^3)
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
         ierr = Sigma3->getInternalColumn(i,j,&Sig); CHKERRQ(ierr);
         for (PetscInt k = 0; k < ks; k++) {  // only eval error if below num surface

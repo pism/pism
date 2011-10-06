@@ -26,13 +26,14 @@
 
 //! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
 PetscErrorCode IceModel::excessToFromBasalMeltLayer(
-                const PetscScalar rho_c, const PetscScalar z, const PetscScalar dz,
+                const PetscScalar rho, const PetscScalar c, const PetscScalar L,
+                const PetscScalar z, const PetscScalar dz,
                 PetscScalar *Texcess, PetscScalar *bwat) {
 
   const PetscScalar darea = grid.dx * grid.dy,
                     dvol = darea * dz,
-                    dE = rho_c * (*Texcess) * dvol,
-                    massmelted = dE / ice->latentHeat;
+                    dE = rho * c * (*Texcess) * dvol,
+                    massmelted = dE / L;
 
   if (allowAboveMelting == PETSC_TRUE) {
     SETERRQ(1,"IceModel::excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
@@ -44,7 +45,7 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
     const PetscScalar FRACTION_TO_BASE
                          = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
     // note: ice-equiv thickness:
-    *bwat += (FRACTION_TO_BASE * massmelted) / (ice->rho * darea);  
+    *bwat += (FRACTION_TO_BASE * massmelted) / (rho * darea);  
     *Texcess = 0.0;
   } else {  // neither Texcess nor bwat needs to change if Texcess < 0.0
     // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
@@ -53,13 +54,13 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
       SETERRQ(1, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
     }
     if (*bwat > 0.0) {
-      const PetscScalar thicknessToFreezeOn = - massmelted / (ice->rho * darea);
+      const PetscScalar thicknessToFreezeOn = - massmelted / (rho * darea);
       if (thicknessToFreezeOn <= *bwat) { // the water *is* available to freeze on
         *bwat -= thicknessToFreezeOn;
         *Texcess = 0.0;
       } else { // only refreeze bwat thickness of water; update Texcess
         *bwat = 0.0;
-        const PetscScalar dTemp = ice->latentHeat * ice->rho * (*bwat) / (rho_c * dz);
+        const PetscScalar dTemp = L * (*bwat) / (c * dz);
         *Texcess += dTemp;
       }
     } 
@@ -135,24 +136,27 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     bool viewOneColumn;
     ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
+    const PetscScalar
+      ice_rho   = config.get("ice_density"),
+      ice_k     = config.get("ice_thermal_conductivity"),
+      ice_c     = config.get("ice_specific_heat_capacity"),
+      L         = config.get("water_latent_heat_fusion");
+
     tempSystemCtx system(fMz, "temperature");
     system.dx              = grid.dx;
     system.dy              = grid.dy;
     system.dtTemp          = dt_TempAge; // same time step for temp and age, currently
     system.dzEQ            = fdz;
-    system.ice_rho         = ice->rho;
-    system.ice_c_p         = ice->c_p;
-    system.ice_k           = ice->k;
+    system.ice_rho         = ice_rho;
+    system.ice_k           = ice_k;
+    system.ice_c_p         = ice_c;
 
     PetscScalar *x;  
     x = new PetscScalar[fMz]; // space for solution of system
 
-    // constants needed after solution of system, in insertion phase
-    const PetscScalar rho_c_I = ice->rho * ice->c_p;
-
     // this is bulge limit constant in K; is max amount by which ice
     //   or bedrock can be lower than surface temperature
-    const PetscScalar bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice->c_p;
+    const PetscScalar bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice_c;
 
     const PetscReal bwat_decay_rate = config.get("bwat_decay_rate");  // m s-1
 
@@ -249,8 +253,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
           for (PetscInt k = 1; k < ks; k++) {   
             const PetscScalar denom = (PetscAbs(system.w[k]) + 0.000001/secpera)
-              * ice->rho * ice->c_p * fdz;  
-            lambda = PetscMin(lambda, 2.0 * ice->k / denom);
+              * ice_rho * ice_c * fdz;  
+            lambda = PetscMin(lambda, 2.0 * ice_k / denom);
           }
           if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
           // if isMarginal then only do vertical conduction for ice; ignore advection
@@ -299,7 +303,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             if (x[k] > Tpmp) {
               Tnew[k] = Tpmp;
               PetscScalar Texcess = x[k] - Tpmp; // always positive
-              excessToFromBasalMeltLayer(rho_c_I, fzlev[k], fdz, &Texcess, &bwatnew);
+              excessToFromBasalMeltLayer(ice_rho, ice_c, L, fzlev[k], fdz, &Texcess, &bwatnew);
               // Texcess  will always come back zero here; ignore it
             } else {
               Tnew[k] = x[k];
@@ -327,9 +331,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             if (mask.ocean(i,j)) {
               // when floating, only half a segment has had its temperature raised
               // above Tpmp
-              excessToFromBasalMeltLayer(rho_c_I/2, 0.0, fdz, &Texcess, &bwatnew);
+              excessToFromBasalMeltLayer(ice_rho, ice_c, L, 0.0, fdz/2.0, &Texcess, &bwatnew);
             } else {
-              excessToFromBasalMeltLayer(rho_c_I, 0.0, fdz, &Texcess, &bwatnew);
+              excessToFromBasalMeltLayer(ice_rho, ice_c, L, 0.0, fdz, &Texcess, &bwatnew);
             }
             Tnew[0] = Tpmp + Texcess;
             if (Tnew[0] > (Tpmp + 0.00001)) {

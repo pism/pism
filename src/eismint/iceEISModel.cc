@@ -179,10 +179,10 @@ PetscErrorCode  IceEISModel::allocate_flowlaw() {
   // zero thickness bedrock layer is the default, but we want the ice/rock
   // interface segment to have geothermal flux applied directly to ice without
   // jump in material properties at base.
-  config.set("bedrock_thermal_density", ice->rho);
-  config.set("bedrock_thermal_conductivity", ice->k);
-  config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
-  
+  config.set("bedrock_thermal_density", config.get("ice_density"));
+  config.set("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
+  config.set("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
+
   return 0;
 }
 

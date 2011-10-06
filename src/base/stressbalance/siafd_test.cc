@@ -32,9 +32,9 @@ static char help[] =
 #include "exactTestsFG.h"
 #include "basal_resistance.hh"
 
-PetscErrorCode computeSigmaErrors(IceModelVec3 &Sigma,
+PetscErrorCode computeSigmaErrors(const NCConfigVariable &config,
+                                  IceModelVec3 &Sigma,
                                   IceModelVec2S &thickness,
-                                  IceFlowLaw &ice,
                                   IceGrid &grid,
                                   PetscScalar &gmaxSigmaerr,
                                   PetscScalar &gavSigmaerr) {
@@ -45,6 +45,10 @@ PetscErrorCode computeSigmaErrors(IceModelVec3 &Sigma,
   const PetscInt Mz = grid.Mz;
   
   const PetscScalar LforFG = 750000; // m
+
+  const PetscScalar
+    ice_rho   = config.get("ice_density"),
+    ice_c     = config.get("ice_specific_heat_capacity");
 
   PetscScalar   *dummy1, *dummy2, *dummy3, *dummy4, *Sigex;
   PetscScalar   junk0, junk1;
@@ -67,7 +71,7 @@ PetscErrorCode computeSigmaErrors(IceModelVec3 &Sigma,
                   &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
 
         for (PetscInt k = 0; k < Mz; k++)
-          Sigex[k] = Sigex[k] * ice.rho * ice.c_p; // scale exact Sigma to J/(s m^3)
+          Sigex[k] = Sigex[k] * ice_rho * ice_c; // scale exact Sigma to J/(s m^3)
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
         ierr = Sigma.getInternalColumn(i,j,&Sig); CHKERRQ(ierr);
         for (PetscInt k = 0; k < ks; k++) {  // only eval error if below num surface
@@ -256,8 +260,8 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   return 0;
 }
 
-PetscErrorCode reportErrors(IceGrid &grid,
-                            IceFlowLaw &ice,
+PetscErrorCode reportErrors(const NCConfigVariable &config,
+                            IceGrid &grid,
                             IceModelVec2S *thickness,
                             IceModelVec3 *u_sia, IceModelVec3 *v_sia,
                             IceModelVec3 *w_sia,
@@ -267,8 +271,8 @@ PetscErrorCode reportErrors(IceGrid &grid,
 
   // Sigma errors if appropriate; reported in 10^6 J/(s m^3)
   PetscScalar maxSigerr, avSigerr;
-  ierr = computeSigmaErrors(*Sigma, *thickness,
-                            ice, grid,
+  ierr = computeSigmaErrors(config, *Sigma, *thickness,
+                            grid,
                             maxSigerr, avSigerr); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com, 
@@ -458,7 +462,7 @@ int main(int argc, char *argv[]) {
 
     ierr = stress_balance.get_volumetric_strain_heating(sigma); CHKERRQ(ierr); 
 
-    ierr = reportErrors(grid, ice,
+    ierr = reportErrors(config, grid,
                         &vH, u_sia, v_sia, w_sia, sigma); CHKERRQ(ierr);
 
     // Write results to an output file:

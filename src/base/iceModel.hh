@@ -328,6 +328,8 @@ protected:
   virtual PetscErrorCode getEnthalpyCTSColumn(PetscScalar p_air, //!< atmospheric pressure
 					      PetscScalar thk,	 //!< ice thickness
 					      PetscInt ks,	 //!< index of the level just below the surface
+					      PetscScalar ice_rho_c,
+                                              PetscScalar ice_k,
 					      const PetscScalar *Enth, //!< Enthalpy
 					      const PetscScalar *w,    //!< vert. velocity
 					      PetscScalar *lambda,     //!< lambda
@@ -397,7 +399,8 @@ protected:
   
   // see iMtemp.cc
   virtual PetscErrorCode excessToFromBasalMeltLayer(
-                      const PetscScalar rho_c, const PetscScalar z, const PetscScalar dz,
+                      const PetscScalar rho, const PetscScalar c, const PetscScalar L,
+                      const PetscScalar z, const PetscScalar dz,
                       PetscScalar *Texcess, PetscScalar *bwat);
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
 

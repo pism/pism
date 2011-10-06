@@ -253,9 +253,9 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
     if (testname == 'K') {
       ierr = verbPrintf(1,grid.com,
                         "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
-      config.set("bedrock_thermal_density", ice->rho);
-      config.set("bedrock_thermal_conductivity", ice->k);
-      config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
+      config.set("bedrock_thermal_density", config.get("ice_density"));
+      config.set("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
+      config.set("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
       bedrock_is_ice_forK = PETSC_TRUE;
     } else {
       ierr = verbPrintf(1,grid.com,
@@ -269,9 +269,9 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    config.set("bedrock_thermal_density", ice->rho);
-    config.set("bedrock_thermal_conductivity", ice->k);
-    config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
+    config.set("bedrock_thermal_density", config.get("ice_density"));
+    config.set("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
+    config.set("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
   }
 
   btu = new BTU_Verification(grid, config, testname, bedrock_is_ice_forK);

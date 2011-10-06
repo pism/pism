@@ -240,6 +240,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   PetscScalar *T = new PetscScalar[grid.Mz];
   const bool do_cold = config.get_flag("do_cold_ice_methods");
+  const PetscScalar ice_k = config.get("ice_thermal_conductivity");
 
   if (surface != NULL) {
     ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
@@ -266,8 +267,8 @@ PetscErrorCode IceModel::putTempAtDepth() {
       
       // within ice
       const PetscScalar g = vGhf(i,j);
-      const PetscScalar beta = (4.0/21.0) * (g / (2.0 * ice->k * HH * HH * HH));
-      const PetscScalar alpha = (g / (2.0 * HH * ice->k)) - 2.0 * HH * HH * beta;
+      const PetscScalar beta = (4.0/21.0) * (g / (2.0 * ice_k * HH * HH * HH));
+      const PetscScalar alpha = (g / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
       for (PetscInt k = 0; k < ks; k++) {
         const PetscScalar depth = HH - grid.zlevels[k];
         const PetscScalar Tpmp = ice->melting_point_temp - ice->beta_CC_grad * depth;

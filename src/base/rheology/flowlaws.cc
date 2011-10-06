@@ -54,9 +54,6 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &conf
 
   rho          = config.get("ice_density");
   beta_CC_grad = config.get("beta_CC") * rho * standard_gravity;
-  k            = config.get("ice_thermal_conductivity");
-  c_p          = config.get("ice_specific_heat_capacity");
-  latentHeat   = config.get("water_latent_heat_fusion");
   melting_point_temp = config.get("water_melting_point_temperature");
   n            = config.get("Glen_exponent");
 
