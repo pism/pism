@@ -24,10 +24,10 @@
 /*!
 A calculation only used in the cold case.
 
-Let \f$c_i=2009\,\, \text{J}\,\text{kg}^{-1}\,\text{K}^{-1}\f$, the default
+Let \f$c_i=2009.0\,\, \text{J}\,\text{kg}^{-1}\,\text{K}^{-1}\f$, the default
 constant value.  Note equation (4.39) in [\ref GreveBlatter2009] says 
 \f$C(T) = c_i + 7.253 (T - T_r)\f$ using a reference temperature
-\f$T_r = 256.82\f$ K.  Thus the calculation of enthalpy from cold ice
+\f$T_r = 256.81786846822\f$ K.  Thus the calculation of enthalpy from cold ice
 temperature is: 
 \f{align*}{
   E(T) &= \int_{T_0}^T C(T')\,dT \\
@@ -37,7 +37,7 @@ temperature is:
  */
 double varcEnthalpyConverter::EfromT(double T) const {
   const double
-     T_r      = 256.82,
+     T_r      = 256.81786846822,
      Trefdiff = 0.5 * (T + T_0) - T_r; 
   return (c_i + 7.253 * Trefdiff) * (T - T_0);
 }
@@ -56,7 +56,7 @@ Rearranging as a standard form quadratic in unknown \f$\Delta T\f$ gives
 Define
   \f[ \beta = \alpha c_i + 2(T_0-T_r) = 486.64, \f]
 which has units K; the value comes from \f$c_i=2009\f$, \f$T_0=223.15\f$, and
-\f$T_r=256.82\f$.  Then the solution of the quadratic is the one which makes 
+\f$T_r=256.81786846822\f$.  Then the solution of the quadratic is the one which makes 
 \f$\Delta T \ge 0\f$ assuming \f$E\ge 0\f$; we stop otherwise.  With the usual
 rewriting to avoid cancellation we have
   \f[ \Delta T = \frac{-\beta + \sqrt{\beta^2 + 4 \alpha E}}{2} = \frac{2 \alpha E}{\sqrt{\beta^2 + 4 \alpha E} + \beta}.\f]
@@ -68,7 +68,7 @@ double varcEnthalpyConverter::TfromE(double E) const {
     PISMEnd();
   }
   const double
-    T_r   = 256.82,
+    T_r   = 256.81786846822,
     ALPHA = 2.0 / 7.253,
     BETA  = ALPHA * c_i + 2.0 * (T_0 - T_r),
     tmp   = 2.0 * ALPHA * E,

@@ -28,7 +28,7 @@ linear-in-temperature specific heat capacity.  We implement only
 Equation (4.39) in [\ref GreveBlatter2009],
         \f[ C(T) = 146.3 + 7.253 T = c_i + 7.253 (T - T_r) \f]
 where \f$T\f$ is in Kelvin, \f$c_i = 2009\,\, \text{J}\,\text{kg}^{-1}\,\text{K}^{-1}\f$,
-and the reference temperature is \f$T_r = 256.82\f$ K.
+and the reference temperature is \f$T_r = 256.81786846822\f$ K.
  */
 class varcEnthalpyConverter : public EnthalpyConverter {
 public:
