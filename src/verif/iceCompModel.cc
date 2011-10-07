@@ -148,6 +148,8 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
     PISMEnd();
   }
 
+  ierr =  grid.time->init(); CHKERRQ(ierr);
+
   return 0;
 }
 

@@ -82,11 +82,8 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
   profiler = new PISMProf(com, rank, size);
 
   time = new PISMTime(com, config);
-
-  if (time->init() != 0) {
-    PetscPrintf(com, "PISM ERROR: PISMTime initialization failed.\n");
-    PISMEnd();
-  }
+  // time->init() will be called later (in IceModel::set_grid_defaults() or
+  // PISMIO::get_grid()).
 }
 
 

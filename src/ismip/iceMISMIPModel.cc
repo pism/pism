@@ -90,6 +90,7 @@ IceMISMIPModel::~IceMISMIPModel() {
 
 PetscErrorCode IceMISMIPModel::set_grid_defaults() {
   grid.My = 3;
+  PetscErrorCode ierr =  grid.time->init(); CHKERRQ(ierr);
   return 0;
 }
 

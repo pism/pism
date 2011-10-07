@@ -99,18 +99,19 @@ PetscErrorCode IceModel::set_grid_defaults() {
   grid.Lx = (input.x_max - input.x_min) / 2.0;
   grid.Ly = (input.y_max - input.y_min) / 2.0;
 
-  // read grid.year if no option overrides it (avoids unnecessary reporting)
+  // read current time if no option overrides it (avoids unnecessary reporting)
   bool ys_set;
   ierr = PISMOptionsIsSet("-ys", ys_set); CHKERRQ(ierr);
   if (!ys_set) {
     if (t_exists) {
       grid.time->set_start(input.time);
-      grid.time->init();        // re-initialize to take the new start time into account
       ierr = verbPrintf(2, grid.com, 
   		      "  time t = %5.4f years found; setting current year\n",
                         grid.time->year()); CHKERRQ(ierr);
     }
   }
+
+  ierr =  grid.time->init(); CHKERRQ(ierr);
 
   // Grid dimensions should not be deduced from a bootstrapping file, so we
   // check if these options are set and stop if they are not.
