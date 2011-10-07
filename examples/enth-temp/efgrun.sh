@@ -101,17 +101,17 @@ for METHOD in "enth" "temp" "vark" "varc" "varck"; do
     fi
 
     if [ ${METHOD} == "vark" ] ; then
-        PISM_EXEC="varkpismr"
+        OPTIONS="-vark"
     elif [ ${METHOD} == "varck" ] ; then
-        PISM_EXEC="varkpismr -varc"
+        OPTIONS="-vark -varc"
     elif [ ${METHOD} == "varc" ] ; then
-        PISM_EXEC="pismr -varc"
+        OPTIONS="-varc"
     else
-        PISM_EXEC="pismr"
+        OPTIONS=""
     fi
 
     # cat prefix and exec together
-    PISM="${PISM_PREFIX}${PISM_EXEC} -cts -atmosphere eismint_greenland -surface pdd -config_override $PISM_CONFIG"
+    PISM="${PISM_PREFIX}${PISM_EXEC} $OPTIONS -cts -atmosphere eismint_greenland -surface pdd -config_override $PISM_CONFIG"
 
     echo "$SCRIPTNAME      executable = '$PISM'"
     echo ""
