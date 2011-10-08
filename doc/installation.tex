@@ -367,12 +367,12 @@ You should configure and build PETSc \emph{essentially} as described on the PETS
 \begin{verbatim}
 $  export PETSC_DIR=$PWD
 $  export PETSC_ARCH=linux-gnu-opt
-$  ./config/configure.py --with-shared --with-dynamic --with-debugging=no
+$  ./config/configure.py --with-shared --with-debugging=no
 \end{verbatim}
 
 Turning off the inclusion of the debugging symbols gives a significant speed improvement.
 
-Using shared and dynamic libraries may be unwise on certain clusters, etc.; check with your system administrator.
+Using shared libraries may be unwise on certain clusters, etc.; check with your system administrator.
 
 Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\texttt{--with-fortran=0} \texttt{--download-c-blas-lapack=1}'' to the other configure options.
 
@@ -497,7 +497,7 @@ $  fink install netcdf gsl fftw3
 The next three commands completed the PETSc installation:
 \begin{verbatim}
 $  export PETSC_DIR=$PWD; export PETSC_ARCH=macosx;
-$  ./config/configure.py --with-shared --with-dynamic --with-debugging=no \
+$  ./config/configure.py --with-shared --with-debugging=no \
         --with-fortran=0 --with-blas-lapack-dir=/usr/ --with-mpi-dir=/usr/
 $  make all test
 \end{verbatim}
