@@ -485,7 +485,6 @@ During the time-step we perform the following actions:
  */
 PetscErrorCode IceModel::step(bool do_mass_continuity,
 			      bool do_energy,
-			      bool do_diffuse_bwat,
 			      bool do_age,
 			      bool do_skip) {
   PetscErrorCode ierr;
@@ -549,13 +548,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   
   grid.profiler->end(event_beddef);
 
-  //! \li update the yield stress for the plastic till model (if appropriate)
-  if (basal_yield_stress) {
-    ierr = basal_yield_stress->update(grid.time->current(), dt); CHKERRQ(ierr);
-    ierr = basal_yield_stress->basal_material_yield_stress(vtauc); CHKERRQ(ierr);
-    stdout_flags += "y";
-  } else stdout_flags += "$";
-
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
   //! horizontal velocity is updated; see velocity()
@@ -567,6 +559,13 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   bool updateAtDepth = (skipCountDown == 0),
     do_energy_step = updateAtDepth && do_energy;
+
+  //! \li update the yield stress for the plastic till model (if appropriate)
+  if (updateAtDepth && basal_yield_stress) {
+    ierr = basal_yield_stress->update(grid.time->current(), dt); CHKERRQ(ierr);
+    ierr = basal_yield_stress->basal_material_yield_stress(vtauc); CHKERRQ(ierr);
+    stdout_flags += "y";
+  } else stdout_flags += "$";
   
   grid.profiler->begin(event_velocity);
 
@@ -630,8 +629,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   
   grid.profiler->end(event_energy);
 
-  //! \li diffuse the stored basal water if that is requested
-  if (do_diffuse_bwat) {
+  // finally, diffuse the stored basal water once per energy step, if it is requested
+  if (do_energy_step && config.get_flag("do_diffuse_bwat")) {
     ierr = diffuse_bwat(); CHKERRQ(ierr);
   }
 
@@ -698,7 +697,6 @@ PetscErrorCode IceModel::run() {
 
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
     do_energy = config.get_flag("do_energy"),
-    do_diffuse_bwat = config.get_flag("do_diffuse_bwat"),
     do_age = config.get_flag("do_age"),
     do_skip = config.get_flag("do_skip");
   int stepcount = (config.get_flag("count_time_steps")) ? 0 : -1;
@@ -725,7 +723,7 @@ PetscErrorCode IceModel::run() {
   //         where A>B.  See IcePSTexModel.
   grid.time->set_end(grid.time->start() + 1); // run for 1 second
   
-  ierr = step(do_mass_conserve, do_energy, do_diffuse_bwat, do_age, do_skip); CHKERRQ(ierr);
+  ierr = step(do_mass_conserve, do_energy, do_age, do_skip); CHKERRQ(ierr);
 
   // print verbose messages according to user-set verbosity
   if (tmp_verbosity > 2) {
@@ -767,8 +765,7 @@ PetscErrorCode IceModel::run() {
     dt_force = -1.0;
     maxdt_temporary = -1.0;
 
-    ierr = step(do_mass_conserve, do_energy, do_diffuse_bwat, do_age,
-		do_skip); CHKERRQ(ierr);
+    ierr = step(do_mass_conserve, do_energy, do_age, do_skip); CHKERRQ(ierr);
     
     // report a summary for major steps or the last one
     bool updateAtDepth = (skipCountDown == 0);

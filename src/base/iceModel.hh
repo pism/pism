@@ -148,11 +148,7 @@ public:
   // see iceModel.cc
   PetscErrorCode init();
   virtual PetscErrorCode run();
-  virtual PetscErrorCode step(bool do_mass_continuity, 
-                              bool do_energy,
-                              bool do_diffuse_bwat,
-			      bool do_age,
-			      bool do_skip);
+  virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual void reset_counters();
 
