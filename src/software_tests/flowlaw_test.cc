@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     EnthalpyConverter EC(config);
 
     IceFlowLaw *ice = NULL;
-    IceFlowLawFactory ice_factory(com, NULL, config);
+    IceFlowLawFactory ice_factory(com, NULL, config, &EC);
 
     string ice_type = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type

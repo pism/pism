@@ -18,7 +18,7 @@
 
 #include "iceModel.hh"
 #include "enthSystem.hh"
-#include "varkenthSystem.hh"
+#include "varenthSystem.hh"
 #include "DrainageCalculator.hh"
 #include "Mask.hh"
 
@@ -265,8 +265,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   Enthnew = new PetscScalar[fMz];  // new enthalpy in column
 
   enthSystemCtx *esys;
-  if (config.get_flag("use_temperature_dependent_thermal_conductivity")) {
-    esys  = new varkenthSystemCtx(config, Enth3, fMz, "varkenth", EC);
+  if (config.get_flag("use_temperature_dependent_thermal_conductivity") ||
+      config.get_flag("use_linear_in_temperature_heat_capacity")) {
+    esys  = new varenthSystemCtx(config, Enth3, fMz, "varenth", EC);
   } else {
     esys  = new enthSystemCtx(config, Enth3, fMz, "enth");
   }
@@ -432,7 +433,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         ierr = v3->getValColumn(i,j,ks,esys->v); CHKERRQ(ierr);
         ierr = Sigma3->getValColumn(i,j,ks,esys->Sigma); CHKERRQ(ierr);
 
-        ierr = esys->initThisColumn(isMarginal, lambda); CHKERRQ(ierr);
+        ierr = esys->initThisColumn(isMarginal, lambda, vH(i, j)); CHKERRQ(ierr);
         ierr = esys->setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
 
         // determine lowest-level equation at bottom of ice; see decision chart

@@ -71,8 +71,9 @@ PetscErrorCode SSATestCaseJ::initializeSSAModel()
          config.get("pseudo_plastic_q"),
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
-  ice = new CustomGlenIce(grid.com, "", config);
   enthalpyconverter = new EnthalpyConverter(config);
+  ice = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
+
   return 0;
 }
 

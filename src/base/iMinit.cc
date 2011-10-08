@@ -538,14 +538,14 @@ PetscErrorCode IceModel::allocate_flowlaw() {
     return 0;
 
   // Initialize the IceFlowLaw object:
-  if (!config.get_flag("do_cold_ice_methods")) {
+  if (config.get_flag("do_cold_ice_methods") == false) {
     ierr = verbPrintf(2, grid.com,
                       "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
     ierr = verbPrintf(3, grid.com,
                       "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
 
     // new flowlaw which has dependence on enthalpy, not temperature
-    ice = new GPBLDIce(grid.com, "", config);
+    ice = new GPBLDIce(grid.com, "", config, EC);
   } else {
     ierr = verbPrintf(2, grid.com,
                       "  doing cold ice methods ...\n"); CHKERRQ(ierr);
@@ -555,6 +555,24 @@ PetscErrorCode IceModel::allocate_flowlaw() {
     //   (e.g. verification and EISMINT II and EISMINT-Greenland) are cold,
     //   but the really important cases (e.g. SeaRISE-Greenland) are polythermal
     // in cold case we may have various IceFlowLaw s, e.g. set by derived classes
+
+    IceFlowLawFactory iceFactory(grid.com, NULL, config, EC);
+    // Default ice type:
+    iceFactory.setType(ICE_PB);
+
+    bool flag;
+    ierr = PISMOptionsIsSet("-gk", flag); CHKERRQ(ierr);
+    if (flag) {
+      ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
+    }
+
+    // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice;
+    ierr = PISMOptionsIsSet("-gk_age", flag); CHKERRQ(ierr);
+    if (flag) {
+      config.set_flag("compute_grain_size_using_age", true);
+      ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
+    }
+
     ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
     ierr = iceFactory.create(&ice); CHKERRQ(ierr);
   }
@@ -706,9 +724,10 @@ PetscErrorCode IceModel::allocate_basal_resistance_law() {
 PetscErrorCode IceModel::allocate_submodels() {
   PetscErrorCode ierr;
 
-  // these two have to go first
-  ierr = allocate_flowlaw(); CHKERRQ(ierr);
+  // this has to go first:
   ierr = allocate_enthalpy_converter(); CHKERRQ(ierr);
+  // then this:
+  ierr = allocate_flowlaw(); CHKERRQ(ierr);
 
   // this has to happen before allocate_stressbalance() is called
   ierr = allocate_basal_resistance_law(); CHKERRQ(ierr);

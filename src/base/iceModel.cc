@@ -24,7 +24,7 @@
 #include "pism_signal.h"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
-  : grid(g), config(conf), overrides(conf_overrides), iceFactory(grid.com,NULL, conf), ice(NULL) {
+  : grid(g), config(conf), overrides(conf_overrides), ice(NULL) {
 
   if (utIsInit() == 0) {
     if (utInit(NULL) != 0) {
@@ -79,9 +79,6 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   reset_counters();
 
   allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
-
-  // Default ice type:
-  iceFactory.setType(ICE_PB);
 }
 
 void IceModel::reset_counters() {

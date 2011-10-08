@@ -99,12 +99,12 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
          config.get("pseudo_plastic_q"),
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
-  ice = new CustomGlenIce(grid.com, "", config);
+  enthalpyconverter = new EnthalpyConverter(config);
+  ice = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
   
   CustomGlenIce *ice_custom = dynamic_cast<CustomGlenIce*>(ice);
   ice_custom->setHardness(1.9e8);
 
-  enthalpyconverter = new EnthalpyConverter(config);
   return 0;
 }
 

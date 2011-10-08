@@ -154,8 +154,6 @@ public:
 			      bool do_age,
 			      bool do_skip);
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
-  virtual IceFlowLawFactory &getIceFlowLawFactory() { return iceFactory; }
-  virtual IceFlowLaw *getIceFlowLaw() {return ice;}
   virtual void reset_counters();
 
   // see iMbootstrap.cc 
@@ -193,7 +191,6 @@ protected:
     &overrides;			 //!< flags and parameters overriding config, see -config_override
   NCGlobalAttributes    global_attributes;
 
-  IceFlowLawFactory     iceFactory;
   IceFlowLaw            *ice;
 
   PISMYieldStress *basal_yield_stress;

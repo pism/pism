@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __varkenthSystem_hh
-#define __varkenthSystem_hh
+#ifndef __varenthSystem_hh
+#define __varenthSystem_hh
 
 #include "enthSystem.hh"
 
@@ -26,38 +26,31 @@
 Like enthSystemCtx, just does a tridiagonal linear system for conservation
 of energy in vertical column, for enthalpy.
 
-Has additional enthalpy-dependent conductivity in cold ice. Also supports
-enthalpy- (temperature) dependent heat capacity if
-use_linear_in_temperature_heat_capacity is set. Everything is the same except
-the assemble_R() method is based on formula (4.37) in [\ref GreveBlatter2009].
-
-This implementation does stupid code duplication.  If we use this and think
-it is worth keeping then FIXME: it should be made configurable and this code
-duplication should be removed.
+Has additional enthalpy-dependent conductivity and/or heat capacity in cold
+ice. Everything is the same except the assemble_R() method is based on formulas
+(4.37) and (4.39) in [\ref GreveBlatter2009].
 
 This is to address R. Greve's concerns about the submitted paper
 [\ref AschwandenBuelerKhroulevBlatter].
  */
-class varkenthSystemCtx : public enthSystemCtx {
+class varenthSystemCtx : public enthSystemCtx {
 
 public:
-  varkenthSystemCtx(const NCConfigVariable &config, IceModelVec3 &my_Enth3,
+  varenthSystemCtx(const NCConfigVariable &config, IceModelVec3 &my_Enth3,
                     int my_Mz, string my_prefix, EnthalpyConverter *EC);
-  ~varkenthSystemCtx() {}
+  virtual ~varenthSystemCtx() {}
 
-  PetscErrorCode initAllColumns(const PetscScalar my_dx, const PetscScalar my_dy, 
-                                const PetscScalar my_dtTemp, const PetscScalar my_dzEQ);
-
-  PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
-
+  PetscErrorCode initThisColumn(bool my_ismarginal,
+                                PetscScalar my_lambda,
+                                PetscReal ice_thickness);  
 protected:
-  PetscScalar       getvark(PetscScalar T);
-  PetscScalar       getvarc(PetscScalar T);
-  PetscErrorCode    assemble_R();
+  PetscScalar k_from_T(PetscScalar T);
+  virtual PetscErrorCode assemble_R();
   EnthalpyConverter *EC;  // needed to get temperature from enthalpy because that is
                           //   what conductivity depends on
-  bool use_variable_c;
+  PetscReal ice_thickness;
+  bool k_depends_on_T;
 };
 
-#endif   //  ifndef __varkenthSystem_hh
+#endif   //  ifndef __varenthSystem_hh
 

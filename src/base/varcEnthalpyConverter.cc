@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler
+// Copyright (C) 2011 The PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,9 +37,8 @@ temperature is:
  */
 double varcEnthalpyConverter::EfromT(double T) const {
   const double
-     T_r      = 256.81786846822,
      Trefdiff = 0.5 * (T + T_0) - T_r; 
-  return (c_i + 7.253 * Trefdiff) * (T - T_0);
+  return (c_i + c_gradient * Trefdiff) * (T - T_0);
 }
 
 
@@ -68,8 +67,7 @@ double varcEnthalpyConverter::TfromE(double E) const {
     PISMEnd();
   }
   const double
-    T_r   = 256.81786846822,
-    ALPHA = 2.0 / 7.253,
+    ALPHA = 2.0 / c_gradient,
     BETA  = ALPHA * c_i + 2.0 * (T_0 - T_r),
     tmp   = 2.0 * ALPHA * E,
     dT    = tmp / (sqrt(BETA*BETA + 2.0*tmp) + BETA);

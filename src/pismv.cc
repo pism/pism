@@ -71,7 +71,6 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     config.set_flag("use_eta_transformation", false);
-    config.set_flag("verification_mode",      true);
 
     IceGrid      g(com, rank, size, config);
 
@@ -81,13 +80,11 @@ int main(int argc, char *argv[]) {
 
     // determine test (and whether to report error)
     string testname = "A";
-    bool   dontReport, test_chosen;
+    bool   test_chosen;
     ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-test", "Specifies PISM verification test",
 			       testname, test_chosen); CHKERRQ(ierr);
-      ierr = PISMOptionsIsSet("-no_report", "Don't report numerical errors",
-			      dontReport); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -107,20 +104,9 @@ int main(int argc, char *argv[]) {
     ierr = mComp.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
 
-    ThermoGlenArrIce* tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIceFlowLaw());
-    if (dontReport == PETSC_FALSE) {
+    ierr = mComp.reportErrors();  CHKERRQ(ierr);
 
-      if (testname != "V" && !IceFlowLawIsPatersonBuddCold(tgaice, config) &&
-          ((testname == "F") || (testname == "G"))) {
-        ierr = verbPrintf(1,com, 
-                          "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
-                          "   for reported errors in test %c to be meaningful!\n",
-                          testname.c_str()); CHKERRQ(ierr);
-      }
-      ierr = mComp.reportErrors();  CHKERRQ(ierr);
-    }
     ierr = mComp.writeFiles("verify.nc"); CHKERRQ(ierr);
-    
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

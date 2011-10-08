@@ -76,7 +76,9 @@ PetscErrorCode enthSystemCtx::initAllColumns(PetscScalar my_dx,  PetscScalar my_
 }
 
 
-PetscErrorCode enthSystemCtx::initThisColumn(bool my_ismarginal, PetscScalar my_lambda) {
+PetscErrorCode enthSystemCtx::initThisColumn(bool my_ismarginal,
+                                             PetscScalar my_lambda,
+                                             PetscReal /*ice_thickness*/) {
 #ifdef PISM_DEBUG
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
      "setSchemeParamsThisColumn() should only be called after\n"
@@ -230,7 +232,6 @@ PetscErrorCode enthSystemCtx::assemble_R() {
     R[k] = (Enth[k] < Enth_s[k]) ? iceRcold : iceRtemp;
 
   // R[k] for k > ks are never used
-
 #ifdef PISM_DEBUG
   for (int k = ks + 1; k < Mz; ++k)
     R[k] = GSL_NAN;

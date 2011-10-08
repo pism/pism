@@ -613,7 +613,8 @@ int main(int argc, char *argv[]) {
 
     ierr = read_input_data(g, vars, config); CHKERRQ(ierr);
 
-    CustomGlenIce ice(g.com, "", config);
+    EnthalpyConverter EC(config);
+    CustomGlenIce ice(g.com, "", config, &EC);
 
     IceBasalResistancePlasticLaw basal(config.get("plastic_regularization") / secpera, 
                                        config.get_flag("do_pseudo_plastic_till"),
@@ -621,7 +622,6 @@ int main(int argc, char *argv[]) {
                                        config.get("pseudo_plastic_uthreshold") / secpera);
     ierr = basal.printInfo(1,g.com); CHKERRQ(ierr);
 
-    EnthalpyConverter EC(config);
 
     // Create the SSA solver object; we'll need to deallocate it later.
     SSA *ssa = ssafactory(g, basal, ice, EC, config);

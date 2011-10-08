@@ -55,8 +55,9 @@ static inline PetscReal secondInvariantDu(const PetscReal Du[])
  */
 class IceFlowLaw {
 public:
-  IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &config);
-  virtual ~IceFlowLaw();
+  IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &config,
+             EnthalpyConverter *EC);
+  virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
 
   virtual PetscReal effectiveViscosity(PetscReal hardness,
@@ -82,6 +83,7 @@ public:
   PetscReal rho,          //!< ice density
     beta_CC_grad, //!< Clausius-Clapeyron gradient
     melting_point_temp;  //!< for water, 273.15 K
+  EnthalpyConverter *EC;
 protected:
   PetscReal softnessParameter_paterson_budd(PetscReal T_pa) const;
 
@@ -95,11 +97,10 @@ protected:
 
   MPI_Comm comm;
   char prefix[256];
-  EnthalpyConverter *EC;
 };
 
 // Helper functions:
-PetscTruth IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const NCConfigVariable &);
+PetscTruth IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const NCConfigVariable &, EnthalpyConverter*);
 PetscTruth IceFlowLawUsesGrainSize(IceFlowLaw *);
 
 //! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
@@ -109,7 +110,8 @@ PetscTruth IceFlowLawUsesGrainSize(IceFlowLaw *);
  */
 class GPBLDIce : public IceFlowLaw {
 public:
-  GPBLDIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
+  GPBLDIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+           EnthalpyConverter *EC);
   virtual ~GPBLDIce() {}
 
   virtual PetscErrorCode setFromOptions();
@@ -122,8 +124,9 @@ protected:
 //! Derived class of IceFlowLaw for Paterson-Budd (1982)-Glen ice.
 class ThermoGlenIce : public IceFlowLaw {
 public:
-  ThermoGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config)
-    : IceFlowLaw(c, pre, config) {
+  ThermoGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+                EnthalpyConverter *my_EC)
+    : IceFlowLaw(c, pre, config, my_EC) {
     n = 3;    // Paterson-Budd has the fixed Glen exponent, so it's hard-wired.
   }
   virtual ~ThermoGlenIce() {}
@@ -148,7 +151,8 @@ public:
 //! Isothermal Glen ice allowing extra customization.
 class CustomGlenIce : public ThermoGlenIce {
 public:
-  CustomGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
+  CustomGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+                EnthalpyConverter *my_EC);
   virtual ~CustomGlenIce() {}
 
   virtual PetscReal softnessParameter_from_enth(PetscReal, PetscReal) const
@@ -184,7 +188,8 @@ protected:
 //! The Hooke flow law.
 class HookeIce : public ThermoGlenIce {
 public:
-  HookeIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
+  HookeIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+           EnthalpyConverter *EC);
   virtual ~HookeIce() {}
   virtual PetscReal softnessParameter_from_temp(PetscReal T_pa) const;
 protected:
@@ -195,8 +200,9 @@ protected:
 //! Cold case of Paterson-Budd
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
-  ThermoGlenArrIce(MPI_Comm c, const char pre[], const NCConfigVariable &config)
-    : ThermoGlenIce(c, pre, config) {}
+  ThermoGlenArrIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+                   EnthalpyConverter *my_EC)
+    : ThermoGlenIce(c, pre, config, my_EC) {}
   virtual ~ThermoGlenArrIce() {}
   virtual PetscReal A() const { return A_cold; }
   virtual PetscReal Q() const { return Q_cold; }
@@ -218,8 +224,9 @@ public:
 //! Warm case of Paterson-Budd
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
-  ThermoGlenArrIceWarm(MPI_Comm c, const char pre[], const NCConfigVariable &config)
-    : ThermoGlenArrIce(c, pre, config) {}
+  ThermoGlenArrIceWarm(MPI_Comm c, const char pre[],
+                       const NCConfigVariable &config, EnthalpyConverter *my_EC)
+    : ThermoGlenArrIce(c, pre, config, my_EC) {}
   virtual ~ThermoGlenArrIceWarm() {}
 
   virtual PetscReal A() const { return A_warm; }
@@ -243,7 +250,8 @@ derived class.
  */
 class HybridIce : public ThermoGlenIce {
 public:
-  HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
+  HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+            EnthalpyConverter *my_EC);
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
                                      PetscReal pressure, PetscReal gs) const;
   GKparts flowParts(PetscReal stress, PetscReal temp, PetscReal pressure) const;
@@ -268,7 +276,8 @@ Peltier et al 2000, which is even simpler.
  */
 class HybridIceStripped : public HybridIce {
 public:
-  HybridIceStripped(MPI_Comm c, const char pre[], const NCConfigVariable &config);
+  HybridIceStripped(MPI_Comm c, const char pre[],
+                    const NCConfigVariable &config, EnthalpyConverter *my_EC);
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
                                      PetscReal pressure, PetscReal gs) const;
 protected:

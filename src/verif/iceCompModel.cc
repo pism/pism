@@ -24,9 +24,9 @@
 #include <algorithm>  // required by sort(...) in test L
 
 #include "tests/exactTestsABCDE.h"
-#include "tests/exactTestsFG.h" 
-#include "tests/exactTestH.h" 
-#include "tests/exactTestL.h" 
+#include "tests/exactTestsFG.h"
+#include "tests/exactTestH.h"
+#include "tests/exactTestL.h"
 
 #include "iceCompModel.hh"
 #include "SIA_Sliding.hh"
@@ -36,24 +36,24 @@ const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
 IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides, int mytest)
   : IceModel(g, conf, conf_overrides), tgaIce(NULL) {
-  
+
   // note lots of defaults are set by the IceModel constructor
 
   // defaults for IceCompModel:
   testname = mytest;
   exactOnly = PETSC_FALSE;
   bedrock_is_ice_forK = PETSC_FALSE;
-  
+
   // Override some defaults from parent class
   config.set("enhancement_factor", 1.0);
   config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
                                           // parameterization
 
-  // set values of flags in run() 
+  // set values of flags in run()
   config.set_flag("do_mass_conserve", true);
   config.set_flag("use_ssa_velocity", false);
   config.set_flag("include_bmr_in_continuity", false);
-  config.set_flag("use_ssa_when_grounded", false);  
+  config.set_flag("use_ssa_when_grounded", false);
 }
 
 PetscErrorCode IceCompModel::createVecs() {
@@ -130,8 +130,8 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
   case 'K':
   case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-    config.set("grid_Mbz", 2); 
-    config.set("grid_Lbz", 1000); 
+    config.set("grid_Mbz", 2);
+    config.set("grid_Lbz", 1000);
     grid.Lx = grid.Ly = 1000e3;
     grid.Lz = 4000;
     grid.periodicity = XY_PERIODIC;
@@ -198,30 +198,23 @@ PetscErrorCode IceCompModel::setFromOptions() {
   }
 
   if (testname == 'V') {
-
     // no sub-shelf melting
-    config.set_flag("include_bmr_in_continuity", false); 
+    config.set_flag("include_bmr_in_continuity", false);
 
     // this test is isothermal
     config.set_flag("do_energy", false);
 
-    // do use the SIA stress balance
+    // do not use the SIA stress balance
     config.set_flag("do_sia", false);
 
     // do use the SSA solver
     config.set_flag("use_ssa_velocity", true);
 
     // compute surface gradient inward
-    config.set_flag("compute_surf_grad_inward_ssa", true); 
+    config.set_flag("compute_surf_grad_inward_ssa", true);
 
     // this certainly is not a "dry silumation"
     config.set_flag("is_dry_simulation", false);
-
-    // use CustomGlenIce, which allows easy setting of ice hardness
-    ierr = iceFactory.setType(ICE_CUSTOM); CHKERRQ(ierr);
-  } else {
-    // Set the default for IceCompModel:
-    ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
   }
 
   config.set_flag("do_cold_ice_methods", true);
@@ -238,7 +231,7 @@ PetscErrorCode IceCompModel::allocate_enthalpy_converter() {
 
   // allocate the "special" enthalpy converter;
   EC = new ICMEnthalpyConverter(config);
-  
+
   return 0;
 }
 
@@ -277,14 +270,27 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
   }
 
   btu = new BTU_Verification(grid, config, testname, bedrock_is_ice_forK);
-  
+
   return 0;
 }
 
 PetscErrorCode IceCompModel::allocate_flowlaw() {
   PetscErrorCode ierr;
 
-  ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
+  IceFlowLawFactory iceFactory(grid.com, NULL, config, EC);
+  if (testname == 'V') {
+    // use CustomGlenIce, which allows easy setting of ice hardness
+    ierr = iceFactory.setType(ICE_CUSTOM); CHKERRQ(ierr);
+  } else {
+    // Set the default for IceCompModel:
+    ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
+  }
+
+  ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
+  ierr = iceFactory.create(&ice); CHKERRQ(ierr);
+
+  // set options specific to this particular ice type:
+  ierr = ice->setFromOptions(); CHKERRQ(ierr);
 
   if (testname != 'V') {
     // check on whether the options (already checked) chose the right IceFlowLaw for verification;
@@ -292,8 +298,8 @@ PetscErrorCode IceCompModel::allocate_flowlaw() {
     //   flow law to have the errors make sense
     tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
     if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
-    if (IceFlowLawIsPatersonBuddCold(ice, config) == PETSC_FALSE) {
-      ierr = verbPrintf(1, grid.com, 
+    if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == PETSC_FALSE) {
+      ierr = verbPrintf(1, grid.com,
                         "WARNING: user set -gk; default flow law should be -ice_type arr for IceCompModel\n");
       CHKERRQ(ierr);
     }
@@ -305,7 +311,7 @@ PetscErrorCode IceCompModel::allocate_flowlaw() {
 
     ice_custom->setHardness(1.9e8);
   }
-  
+
   return 0;
 }
 
@@ -316,6 +322,7 @@ PetscErrorCode IceCompModel::allocate_stressbalance() {
     return 0;
 
   if (testname == 'E') {
+    config.set_flag("sia_sliding_verification_mode", true);
     ShallowStressBalance *ssb = new SIA_Sliding(grid, *basal, *ice, *EC, config);
     SIAFD *sia = new SIAFD(grid, *ice, *EC, config);
 
@@ -324,13 +331,13 @@ PetscErrorCode IceCompModel::allocate_stressbalance() {
   } else {
     ierr = IceModel::allocate_stressbalance(); CHKERRQ(ierr);
   }
-  
+
   return 0;
 }
 
 PetscErrorCode IceCompModel::allocate_bed_deformation() {
   PetscErrorCode ierr;
-  
+
   ierr = IceModel::allocate_bed_deformation(); CHKERRQ(ierr);
 
   f = ice->rho / config.get("lithosphere_density");  // for simple isostasy
@@ -338,11 +345,11 @@ PetscErrorCode IceCompModel::allocate_bed_deformation() {
   string bed_def_model = config.get_string("bed_deformation_model");
 
   if ( (testname == 'H') && bed_def_model != "iso" ) {
-    ierr = verbPrintf(1,grid.com, 
+    ierr = verbPrintf(1,grid.com,
                       "IceCompModel WARNING: Test H should be run with option\n"
                       "  '-bed_def iso'  for the reported errors to be correct.\n"); CHKERRQ(ierr);
   }
-  
+
   return 0;
 }
 
@@ -407,7 +414,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr = artm.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
-  
+
   ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
 
   ierr = acab.get_array(accum); CHKERRQ(ierr);
@@ -478,7 +485,7 @@ PetscErrorCode IceCompModel::initTestL() {
   PetscScalar     A0, T0, **H, **accum, **bed;
 
   if (testname != 'L')  { SETERRQ(1,"test must be 'L'"); }
-  
+
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
@@ -486,7 +493,7 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = artm.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
-  
+
   // setup to evaluate test L; requires solving an ODE numerically using sorted list
   //   of radii, sorted in decreasing radius order
   const int  MM = grid.xm * grid.ym;
@@ -530,7 +537,7 @@ PetscErrorCode IceCompModel::initTestL() {
   }
   CHKERRQ(ierr);
   delete [] rr;
-  
+
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
@@ -710,7 +717,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
       PetscScalar &gmaxHerr, PetscScalar &gavHerr, PetscScalar &gmaxetaerr,
       PetscScalar &centerHerr) {
   // compute errors in thickness, eta=thickness^{(2n+2)/n}, volume, area
-  
+
   PetscErrorCode  ierr;
   PetscScalar     **H, **HexactL;
   PetscScalar     Hexact, vol, area, domeH, volexact, areaexact, domeHexact;
@@ -819,8 +826,8 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
   if (testname == 'L') {
     ierr = vHexactL.end_access(); CHKERRQ(ierr);
   }
-  
-  // globalize (find errors over all processors) 
+
+  // globalize (find errors over all processors)
   PetscScalar gvol, garea, gdomeH;
   ierr = PetscGlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&domeHexact, &gdomeHexact, grid.com); CHKERRQ(ierr);
@@ -835,10 +842,10 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
   ierr = PetscGlobalSum(&avHerr, &gavHerr, grid.com); CHKERRQ(ierr);
   gavHerr = gavHerr/(grid.Mx*grid.My);
   ierr = PetscGlobalMax(&etaerr, &gmaxetaerr, grid.com); CHKERRQ(ierr);
-  
+
   ierr = PetscGlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
   centerHerr = PetscAbsReal(gdomeH - gdomeHexact);
-  
+
   return 0;
 }
 
@@ -867,7 +874,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       if (H[i][j] > 0.0) {
         PetscScalar xx = grid.x[i], yy = grid.y[j];
-        exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact); 
+        exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
         // compute maximum errors
         const PetscScalar uberr = PetscAbsReal(bvel[i][j].u - ubexact);
         const PetscScalar vberr = PetscAbsReal(bvel[i][j].v - vbexact);
@@ -875,7 +882,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
         maxvberr = PetscMax(maxvberr,vberr);
         const PetscScalar vecerr = sqrt(uberr*uberr + vberr*vberr);
         maxvecerr = PetscMax(maxvecerr,vecerr);
-        avvecerr += vecerr;      
+        avvecerr += vecerr;
       }
     }
   }
@@ -888,7 +895,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   ierr = PetscGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
-  
+
   const PetscScalar xpeak = 450e3 * cos(25.0*(pi/180.0)),
                     ypeak = 450e3 * sin(25.0*(pi/180.0));
   exactE(xpeak,ypeak,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
@@ -899,7 +906,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
 
 PetscErrorCode IceCompModel::additionalAtStartTimestep() {
   PetscErrorCode    ierr;
-  
+
   ierr = verbPrintf(5,grid.com,
                     "additionalAtStartTimestep() in IceCompModel entered with test %c",
                     testname); CHKERRQ(ierr);
@@ -908,7 +915,7 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
     dt_force = config.get("maximum_time_step_years", "years", "seconds");
 
   // these have no changing boundary conditions or comp sources:
-  if (strchr("AEBKLO",testname) != NULL) 
+  if (strchr("AEBKLO",testname) != NULL)
     return 0;
 
   switch (testname) {
@@ -933,7 +940,7 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
 
 PetscErrorCode IceCompModel::additionalAtEndTimestep() {
   PetscErrorCode    ierr;
-  
+
   ierr = verbPrintf(5,grid.com,
                     "additionalAtEndTimestep() in IceCompModel entered with test %c",testname);
   CHKERRQ(ierr);
@@ -943,13 +950,13 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
     ierr = reset_thickness_tests_AE(); CHKERRQ(ierr);
   }
 
-  // do nothing at the end of the time step unless the user has asked for the 
+  // do nothing at the end of the time step unless the user has asked for the
   // exact solution to overwrite the numerical solution
-  if (exactOnly == PETSC_FALSE)  
+  if (exactOnly == PETSC_FALSE)
     return 0;
 
   // because user wants exact solution, fill gridded values from exact formulas;
-  // important notes: 
+  // important notes:
   //     (1) the numerical computation *has* already occurred, in run(),
   //           and we just overwrite it with the exact solution here
   //     (2) certain diagnostic quantities like dHdt are computed numerically,
@@ -996,7 +1003,7 @@ PetscErrorCode IceCompModel::summary(bool /* tempAndAge */) {
 
 
 PetscErrorCode IceCompModel::reportErrors() {
-  // geometry errors to report (for all tests except K and O): 
+  // geometry errors to report (for all tests except K and O):
   //    -- max thickness error
   //    -- average (at each grid point on whole grid) thickness error
   //    -- max (thickness)^(2n+2)/n error
@@ -1028,7 +1035,24 @@ PetscErrorCode IceCompModel::reportErrors() {
   //    -- av |<ub,vb> - <ubexact,vbexact>| error
 
   PetscErrorCode  ierr;
-  ierr = verbPrintf(1,grid.com, 
+
+  bool dont_report;
+  ierr = PISMOptionsIsSet("-no_report", "Don't report numerical errors",
+                          dont_report); CHKERRQ(ierr);
+
+  if (dont_report)
+    return 0;
+
+  ThermoGlenArrIce* tgaice = dynamic_cast<ThermoGlenArrIce*>(ice);
+  if (testname != 'V' && !IceFlowLawIsPatersonBuddCold(tgaice, config, EC) &&
+      ((testname == 'F') || (testname == 'G'))) {
+    ierr = verbPrintf(1, grid.com,
+                      "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
+                      "   for reported errors in test %c to be meaningful!\n",
+                      testname); CHKERRQ(ierr);
+  }
+
+  ierr = verbPrintf(1,grid.com,
      "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
   CHKERRQ(ierr);
 
@@ -1078,7 +1102,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = computeGeometryErrors(volexact,areaexact,domeHexact,
                                  volerr,areaerr,maxHerr,avHerr,maxetaerr,centerHerr);
             CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
+    ierr = verbPrintf(1,grid.com,
             "geometry  :    prcntVOL        maxH         avH   relmaxETA\n");
             CHKERRQ(ierr);  // no longer reporting centerHerr
     const PetscScalar   m = (2.0 * ice->exponent() + 2.0) / ice->exponent();
@@ -1116,10 +1140,10 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = computeTemperatureErrors(maxTerr, avTerr); CHKERRQ(ierr);
     ierr = computeBasalTemperatureErrors(basemaxTerr, baseavTerr, basecenterTerr);
        CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
+    ierr = verbPrintf(1,grid.com,
        "temp      :        maxT         avT    basemaxT     baseavT\n");
        CHKERRQ(ierr);  // no longer reporting   basecenterT
-    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
        maxTerr, avTerr, basemaxTerr, baseavTerr); CHKERRQ(ierr);
 
     if (netcdf_report) {
@@ -1145,9 +1169,9 @@ PetscErrorCode IceCompModel::reportErrors() {
     PetscScalar maxTerr, avTerr, maxTberr, avTberr;
     ierr = computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr);
        CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
+    ierr = verbPrintf(1,grid.com,
        "temp      :        maxT         avT       maxTb        avTb\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                   maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
 
     if (netcdf_report) {
@@ -1175,9 +1199,9 @@ PetscErrorCode IceCompModel::reportErrors() {
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxSigerr, avSigerr;
     ierr = computeSigmaErrors(maxSigerr, avSigerr); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
+    ierr = verbPrintf(1,grid.com,
        "Sigma     :      maxSig       avSig\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n", 
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n",
                   maxSigerr*1.0e6, avSigerr*1.0e6); CHKERRQ(ierr);
 
     if (netcdf_report) {
@@ -1198,9 +1222,9 @@ PetscErrorCode IceCompModel::reportErrors() {
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxUerr, avUerr, maxWerr, avWerr;
     ierr = computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
+    ierr = verbPrintf(1,grid.com,
        "surf vels :     maxUvec      avUvec        maxW         avW\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
+    ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                   maxUerr*secpera, avUerr*secpera, maxWerr*secpera, avWerr*secpera); CHKERRQ(ierr);
 
     if (netcdf_report) {
@@ -1230,11 +1254,11 @@ PetscErrorCode IceCompModel::reportErrors() {
     PetscScalar exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
     ierr = computeBasalVelocityErrors(exactmaxspeed,
                           maxvecerr,avvecerr,maxuberr,maxvberr); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, 
+    ierr = verbPrintf(1,grid.com,
        "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
        CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n", 
-                  maxvecerr*secpera, avvecerr*secpera, 
+    ierr = verbPrintf(1,grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n",
+                  maxvecerr*secpera, avvecerr*secpera,
                   (avvecerr/exactmaxspeed)*100.0,
                   maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
 
@@ -1264,12 +1288,12 @@ PetscErrorCode IceCompModel::reportErrors() {
     PetscScalar maxbmelterr, minbmelterr;
     ierr = computeBasalMeltRateErrors(maxbmelterr, minbmelterr); CHKERRQ(ierr);
     if (maxbmelterr != minbmelterr) {
-       ierr = verbPrintf(1,grid.com, 
+       ierr = verbPrintf(1,grid.com,
           "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
-          "  are different: maxbmelterr = %f, minbmelterr = %f\n", 
+          "  are different: maxbmelterr = %f, minbmelterr = %f\n",
           maxbmelterr * secpera, minbmelterr * secpera); CHKERRQ(ierr);
     }
-    ierr = verbPrintf(1,grid.com, 
+    ierr = verbPrintf(1,grid.com,
        "basal melt:  max\n"); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %11.5f\n", maxbmelterr*secpera); CHKERRQ(ierr);
 
@@ -1288,11 +1312,11 @@ PetscErrorCode IceCompModel::reportErrors() {
 
 //! \brief Initialize test V.
 /*
- Try 
+ Try
 
  pismv -test V -y 1000 -part_grid -ssa_method fd_pik -o fig4-blue.nc
  pismv -test V -y 1000 -part_grid -ssa_method fd -o fig4-green.nc
- 
+
  to try to reproduce Figure 4.
 
  Try
@@ -1321,7 +1345,7 @@ PetscErrorCode IceCompModel::test_V_init() {
   ierr = artm.set(273.15); CHKERRQ(ierr);
 
   // initialize mass balance:
-  ierr = acab.set(0.0); CHKERRQ(ierr); 
+  ierr = acab.set(0.0); CHKERRQ(ierr);
 
   // initialize the bed topography
   ierr = vbed.set(-1000); CHKERRQ(ierr);
@@ -1363,7 +1387,7 @@ PetscErrorCode IceCompModel::test_V_set_thickness_bc() {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (i <= 2) {
         vH(i,j) = upstream_thk;
-      }      
+      }
     }
   }
   ierr = vH.end_access(); CHKERRQ(ierr);

@@ -32,7 +32,12 @@ and the reference temperature is \f$T_r = 256.81786846822\f$ K.
  */
 class varcEnthalpyConverter : public EnthalpyConverter {
 public:
-  varcEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {}
+  varcEnthalpyConverter(const NCConfigVariable &config)
+    : EnthalpyConverter(config),
+      T_r(256.81786846822),
+      c_gradient(7.253)
+  {
+  }
   virtual ~varcEnthalpyConverter() {}
 
   virtual PetscErrorCode viewConstants(PetscViewer viewer) const;
@@ -43,7 +48,25 @@ public:
 
   virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
 
+  /*!
+    Equation (4.39) in [\ref GreveBlatter2009] is
+    \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
+    \f$T_r = 256.82\f$ K.
+  */
+  virtual PetscReal c_from_T(PetscReal T)
+  { return c_i + c_gradient * (T - T_r); }
+
+  virtual PetscReal c_from_enth(PetscReal E, PetscReal p)
+  {
+    PetscReal T;
+    getAbsTemp(E, p, T);
+    return c_from_T(T);
+  }
+
 protected:
+  const double T_r,  //!< reference temperature in the parameterization of C(T)
+    c_gradient;      //!< \brief the rate of change of C with respect to T in
+                     //!< the parameterization of C(T)
   double EfromT(double T) const;
   double TfromE(double E) const;
 };

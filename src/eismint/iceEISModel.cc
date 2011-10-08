@@ -174,8 +174,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
 PetscErrorCode  IceEISModel::allocate_flowlaw() {
   PetscErrorCode ierr;
 
-  iceFactory.setType(ICE_PB);  // Paterson-Budd; can be overridden by options
-
   ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
 
   // Make bedrock thermal material properties into ice properties.  Note that
@@ -193,8 +191,6 @@ PetscErrorCode  IceEISModel::allocate_flowlaw() {
 PetscErrorCode IceEISModel::allocate_stressbalance() {
   PetscErrorCode ierr;
 
-  // If both SIA and SSA are "on", the SIA and SSA velocities are always added
-  // up (there is no switch saying "do the hybrid").
   if (stress_balance == NULL) {
     ShallowStressBalance *my_stress_balance;
 

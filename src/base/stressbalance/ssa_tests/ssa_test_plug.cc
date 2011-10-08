@@ -97,8 +97,11 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
          linear_q,
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
+  // Enthalpy converter is irrelevant (but still required) for this test.
+  enthalpyconverter = new EnthalpyConverter(config);
+
   // Use constant hardness
-  CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config);
+  CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
   glenIce->setHardness(B0);
   glenIce->setExponent(glen_n);
   // PetscReal velpera = 1000; // m/a
@@ -106,8 +109,6 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
   // glenIce->setSchoofRegularization( velpera, length );
   ice = glenIce;
 
-  // Enthalpy converter is irrelevant for this test.
-  enthalpyconverter = new EnthalpyConverter(config);
   return 0;
 }
 

@@ -335,9 +335,18 @@ PetscErrorCode IceMISMIPModel::set_time_from_options() {
 PetscErrorCode IceMISMIPModel::allocate_flowlaw() {
   PetscErrorCode ierr;
 
-  iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice density, hardness, etc.
+  if (config.get_flag("do_cold_ice_methods") == true) {
+    IceFlowLawFactory iceFactory(grid.com, NULL, config, EC);
+    iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice density, hardness, etc.
 
-  ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
+    ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
+    ierr = iceFactory.create(&ice); CHKERRQ(ierr);
+  } else {
+    ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
+  }
+
+  // set options specific to this particular ice type:
+  ierr = ice->setFromOptions(); CHKERRQ(ierr);
 
   // from Table 4
   const PetscScalar Aexper1or2[10] = {0.0, // zero position not used

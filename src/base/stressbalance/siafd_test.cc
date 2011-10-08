@@ -363,8 +363,8 @@ int main(int argc, char *argv[]) {
     ierr = grid.printInfo(1); CHKERRQ(ierr);
     //ierr = grid.printVertLevels(1); CHKERRQ(ierr); 
 
-    ThermoGlenArrIce ice(grid.com, "", config);
     ICMEnthalpyConverter EC(config);
+    ThermoGlenArrIce ice(grid.com, "", config, &EC);
 
     IceModelVec2S vh, vH, vbed;
     IceModelVec2Int vMask;

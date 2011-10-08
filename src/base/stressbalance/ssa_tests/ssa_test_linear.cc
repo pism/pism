@@ -88,10 +88,9 @@ PetscErrorCode SSATestCaseExp::initializeSSAModel()
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   // The following is irrelevant because we will force linear rheology later.
-  ice = new CustomGlenIce(grid.com, "", config);
-
-  // I believe this is irrelevant as well.
   enthalpyconverter = new EnthalpyConverter(config);
+  ice = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
+
   return 0;
 }
 

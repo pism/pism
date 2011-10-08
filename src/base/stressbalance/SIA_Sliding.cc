@@ -43,7 +43,7 @@ PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
 
   standard_gravity = config.get("standard_gravity");
-  verification_mode = config.get_flag("verification_mode");
+  verification_mode = config.get_flag("sia_sliding_verification_mode");
 
   if (config.has("EISMINT_II_experiment"))
     eisII_experiment = config.get_string("EISMINT_II_experiment");

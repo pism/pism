@@ -131,17 +131,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   //   this form allows a constant value of grain size to be input in mm
   ierr = config.scalar_from_option("gk", "constant_grain_size"); CHKERRQ(ierr);
 
-  ierr = PISMOptionsIsSet("-gk", flag); CHKERRQ(ierr);
-  if (flag) {
-    ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
-  }
-
-  // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice;
-  ierr = PISMOptionsIsSet("-gk_age", flag); CHKERRQ(ierr);
-  if (flag) {
-    config.set_flag("compute_grain_size_using_age", true);
-    ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
-  }
 
   ierr = PISMOptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
 

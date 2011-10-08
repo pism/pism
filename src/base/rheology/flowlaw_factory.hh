@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,20 +31,23 @@
 
 class IceFlowLawFactory {
 public:
-  IceFlowLawFactory(MPI_Comm,const char prefix[], const NCConfigVariable &conf);
+  IceFlowLawFactory(MPI_Comm, const char prefix[], const NCConfigVariable &conf,
+                    EnthalpyConverter *my_EC);
   ~IceFlowLawFactory();
   PetscErrorCode setType(const char[]);
   PetscErrorCode setFromOptions();
   PetscErrorCode registerType(const char[],
-		  PetscErrorCode(*)(MPI_Comm,const char[], const NCConfigVariable &,IceFlowLaw **));
+		  PetscErrorCode(*)(MPI_Comm,const char[], const NCConfigVariable &,
+                                    EnthalpyConverter*, IceFlowLaw **));
   PetscErrorCode create(IceFlowLaw **);
 private:
   PetscErrorCode registerAll();
 private:
   MPI_Comm comm;
-  char prefix[256],type_name[256];
+  char prefix[256], type_name[256];
   PetscFList type_list;
   const NCConfigVariable &config;
+  EnthalpyConverter *EC;
 };
 
 

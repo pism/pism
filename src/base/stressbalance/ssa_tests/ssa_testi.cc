@@ -81,11 +81,11 @@ PetscErrorCode SSATestCaseI::initializeSSAModel()
          config.get("pseudo_plastic_q"),
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
-  CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config);
+  enthalpyconverter = new EnthalpyConverter(config);
+  CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
   glenIce->setHardness(B_schoof);
   ice = glenIce;
 
-  enthalpyconverter = new EnthalpyConverter(config);
   return 0;
 }
 

@@ -22,9 +22,10 @@
 #undef ALEN
 #define ALEN(a) (sizeof(a)/sizeof(a)[0])
 
-IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : config(conf)
-{
-  comm = c;
+IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
+                                     const char pre[], const NCConfigVariable &conf,
+                                     EnthalpyConverter *my_EC)
+  : comm(c), config(conf), EC(my_EC) {
   prefix[0] = 0;
   if (pre) {
     PetscStrncpy(prefix,pre,sizeof(prefix));
@@ -47,7 +48,8 @@ IceFlowLawFactory::~IceFlowLawFactory()
 #undef __FUNCT__
 #define __FUNCT__ "IceFlowLawFactory::registerType"
 PetscErrorCode IceFlowLawFactory::registerType(const char tname[],
-					PetscErrorCode(*icreate)(MPI_Comm,const char[],const NCConfigVariable &, IceFlowLaw**))
+               PetscErrorCode(*icreate)(MPI_Comm,const char[],const NCConfigVariable &,
+                                        EnthalpyConverter*, IceFlowLaw**))
 {
   PetscErrorCode ierr;
 
@@ -57,26 +59,33 @@ PetscErrorCode IceFlowLawFactory::registerType(const char tname[],
 }
 
 
-static PetscErrorCode create_custom(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
-  *i = new (CustomGlenIce)(comm, pre, config);  return 0;
+static PetscErrorCode create_custom(MPI_Comm comm,const char pre[],
+                                    const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (CustomGlenIce)(comm, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_pb(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
-  *i = new (ThermoGlenIce)(comm, pre, config);  return 0;
+static PetscErrorCode create_pb(MPI_Comm comm,const char pre[],
+                                const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (ThermoGlenIce)(comm, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
-  *i = new (GPBLDIce)(comm, pre, config);  return 0;
+static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[],
+                                   const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (GPBLDIce)(comm, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_hooke(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
-  *i = new (HookeIce)(comm, pre, config);  return 0;
+static PetscErrorCode create_hooke(MPI_Comm comm,const char pre[],
+                                   const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (HookeIce)(comm, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_arr(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIce)(comm, pre, config);  return 0;
+static PetscErrorCode create_arr(MPI_Comm comm,const char pre[],
+                                 const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (ThermoGlenArrIce)(comm, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_arrwarm(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIceWarm)(comm, pre, config);  return 0;
+static PetscErrorCode create_arrwarm(MPI_Comm comm,const char pre[],
+                                     const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (ThermoGlenArrIceWarm)(comm, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_hybrid(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
-  *i = new (HybridIce)(comm, pre, config);  return 0;
+static PetscErrorCode create_hybrid(MPI_Comm comm,const char pre[],
+                                    const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (HybridIce)(comm, pre, config, EC);  return 0;
 }
 
 
@@ -145,7 +154,7 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
     if (flg) {ierr = setType(my_type_name);CHKERRQ(ierr);}
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
-  
+
 //  ierr = PetscPrintf(comm,"IceFlowLawFactory::type_name=%s at end of IceFlowLawFactory::setFromOptions()\n",
 //                     type_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -156,17 +165,17 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
 #define __FUNCT__ "IceFlowLawFactory::create"
 PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
 {
-  PetscErrorCode ierr,(*r)(MPI_Comm,const char[],const NCConfigVariable &,IceFlowLaw**);
+  PetscErrorCode ierr,(*r)(MPI_Comm,const char[],const NCConfigVariable &,EnthalpyConverter*,IceFlowLaw**);
   IceFlowLaw *ice;
 
   PetscFunctionBegin;
   PetscValidPointer(inice,3);
   *inice = 0;
   // find the function that can create selected ice type:
-  ierr = PetscFListFind(type_list,comm,type_name,(void(**)(void))&r);CHKERRQ(ierr);
+  ierr = PetscFListFind(type_list, comm, type_name, (void(**)(void))&r);CHKERRQ(ierr);
   if (!r) SETERRQ1(1,"Selected Ice type %s not available, but we shouldn't be able to get here anyway",type_name);
   // create an IceFlowLaw instance:
-  ierr = (*r)(comm,prefix,config,&ice);CHKERRQ(ierr);
+  ierr = (*r)(comm, prefix, config, EC, &ice);CHKERRQ(ierr);
   *inice = ice;
   PetscFunctionReturn(0);
 }

@@ -77,6 +77,9 @@ public:
   virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
   virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
 
+  virtual PetscReal c_from_T(PetscReal /*T*/)
+  { return c_i; }
+
 protected:
   double T_melting, L, c_i, rho_i, g, p_air, beta, T_tol;
   double T_0;

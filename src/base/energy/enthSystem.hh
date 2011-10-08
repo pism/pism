@@ -39,7 +39,9 @@ public:
   PetscErrorCode initAllColumns(PetscScalar my_dx, PetscScalar my_dy, 
                                 PetscScalar my_dtTemp, PetscScalar my_dzEQ);
 
-  PetscErrorCode initThisColumn(bool my_ismarginal, PetscScalar my_lambda);  
+  PetscErrorCode initThisColumn(bool my_ismarginal,
+                                PetscScalar my_lambda,
+                                PetscReal ice_thickness);  
   PetscErrorCode setBoundaryValuesThisColumn(PetscScalar my_Enth_surface);
   PetscErrorCode setDirichletBasal(PetscScalar Y);
   PetscErrorCode setNeumannBasal(PetscScalar Y);
