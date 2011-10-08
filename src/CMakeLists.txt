@@ -36,10 +36,20 @@ add_library (pismutil
   base/util/PISMTime.cc
   base/enthalpyConverter.cc
   base/varcEnthalpyConverter.cc
-  base/pism_revision.cc
   )
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)
+
+add_custom_target (touch_pism_revision
+  COMMAND ${CMAKE_COMMAND} -E touch pism_revision.cc
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/base
+  VERBATIM)
+
+# PISM Revision string
+set_source_files_properties (base/pism_revision.cc
+  PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
+add_library (pismrevision STATIC base/pism_revision.cc)
+add_dependencies (pismrevision touch_pism_revision)
 
 # Add a preprocessor flag if NetCDF-4 output was requested.
 if (Pism_NETCDF4_OUTPUT)
@@ -120,8 +130,7 @@ add_library (pismbase
   base/basal_strength/PISMConstantYieldStress.cc
   base/basal_strength/basal_resistance.cc
 )
-target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance)
-
+target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 
 # Bed deformation models.
 add_library (pismearth
@@ -139,8 +148,6 @@ target_link_libraries (pismearth pismutil)
 set_source_files_properties (earth/cubature.c
   PROPERTIES COMPILE_FLAGS "-w")
 
-set_source_files_properties (base/pism_revision.cc
-  PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
 set_source_files_properties (base/util/pism_default_config.cc
   PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
 set_source_files_properties (udunits/utlib.c
@@ -199,7 +206,7 @@ target_link_libraries (pismv pismverif pismbase)
 
 # Testing boundary models without ice dynamics.
 add_executable (pclimate pclimate.cc)
-target_link_libraries (pclimate pismboundary)
+target_link_libraries (pclimate pismboundary pismrevision)
 
 find_program (NCGEN_PROGRAM "ncgen")
 mark_as_advanced(NCGEN_PROGRAM)
