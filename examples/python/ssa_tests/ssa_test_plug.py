@@ -45,18 +45,20 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     #// The following is irrelevant because tauc=0
     linear_q = 1.;
     self.basal = PISM.IceBasalResistancePlasticLaw(
-          config.get("plastic_regularization") / PISM.secpera,
+          config.get("plastic_regularization","1/year","1/second"),
           True, #// do not force a pure-plastic law
           linear_q,
-          config.get("pseudo_plastic_uthreshold") / PISM.secpera);
+          config.get("pseudo_plastic_uthreshold","1/year","1/second") );
 
-    #// Use constant hardness
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config);
-    self.ice.setHardness(B0);
-    self.ice.setExponent(glen_n);
 
     #// Enthalpy converter is irrelevant for this test.
     self.enthalpyconverter = PISM.EnthalpyConverter(config);
+
+    #// Use constant hardness
+    self.ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpy);
+    self.ice.setHardness(B0);
+    self.ice.setExponent(glen_n);
+
 
   def initSSACoefficients(self):
     solver = self.solver

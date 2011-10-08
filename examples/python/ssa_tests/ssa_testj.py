@@ -34,13 +34,13 @@ class testj(PISM.ssa.SSAExactTestCase):
   def initPhysics(self):
     config = self.config
     self.basal = PISM.IceBasalResistancePlasticLaw(
-           config.get("plastic_regularization") / PISM.secpera,
+           config.get("plastic_regularization","1/year","1/second"),
            config.get_flag("do_pseudo_plastic_till"),
            config.get("pseudo_plastic_q"),
-           config.get("pseudo_plastic_uthreshold") / PISM.secpera);
+           config.get("pseudo_plastic_uthreshold","1/year","1/second") );
 
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config)
     self.enthalpyconverter = PISM.EnthalpyConverter(config)
+    self.ice = PISM.CustomGlenIce(self.grid.com, "", config,self.enthalpyconverter)
 
   def initSSACoefficients(self):
     solver = self.solver

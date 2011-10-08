@@ -39,15 +39,13 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     config = self.config
     linear_q = 1.
     self.basal = PISM.IceBasalResistancePlasticLaw(
-           config.get("plastic_regularization") / PISM.secpera,
+           config.get("plastic_regularization","1/year","1/second"),
            True, # do not force pure plastic
            linear_q,
-           config.get("pseudo_plastic_uthreshold") / PISM.secpera);
+           config.get("pseudo_plastic_uthreshold","1/year","1/second"));
 
-    # The following are irrelevant because we force linear rheology 
-    # and don't use the enthalpyconverter
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config)
     self.enthalpyconverter = PISM.EnthalpyConverter(config)
+    self.ice = PISM.CustomGlenIce(self.grid.com, "", config, self.enthalpyconverter)
 
   def initSSACoefficients(self):
     solver = self.solver

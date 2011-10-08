@@ -273,6 +273,17 @@ typedef int NormType; // YUCK.
     }
 };
 
+// FIXME
+// IceModelVec2 imports IceModelVec::write with a 'using' declaration,
+// and implements a write method with the same signature as one of the
+// two IceModelVec::write methods.  This confuses SWIG, which gives a
+// warning that the reimplemented IceModelVec2::write is shadowed by the
+// IceModelVec::write.  The SWIG generated code actually does the right
+// thing, and the warning is wrong.  Trying to reproduce the warning
+// in a simple test setting failed.  This should get cleaned up, and
+// a bug reported to SWIG if needed.  For now, we do the following hack.
+%rename(write_as_type) IceModelVec2::write(string,nc_type);
+
 %extend Timeseries
 {
     %ignore operator[];

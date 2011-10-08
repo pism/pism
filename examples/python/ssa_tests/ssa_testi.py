@@ -46,15 +46,16 @@ class testi(PISM.ssa.SSAExactTestCase):
     do_pseudo_plastic = True
     plastic_q = 0.
     self.basal = PISM.IceBasalResistancePlasticLaw(
-      config.get("plastic_regularization") / PISM.secpera,
+      config.get("plastic_regularization","1/year","1/second"),
       do_pseudo_plastic, plastic_q,
-      config.get("pseudo_plastic_uthreshold") / PISM.secpera);
-
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config);
-    self.ice.setHardness(B_schoof)
+      config.get("pseudo_plastic_uthreshold","1/year","1/second"));
 
     # irrelevant
     self.enthalpyconverter = PISM.EnthalpyConverter(config);
+
+    self.ice = PISM.CustomGlenIce(self.grid.com, "", config, self.enthalpyconverter);
+    self.ice.setHardness(B_schoof)
+
 
   def initSSACoefficients(self):
     solver = self.solver
