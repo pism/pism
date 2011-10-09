@@ -1,22 +1,24 @@
 // -*- mode: c++ -*-
 
-/*! \mainpage PISM utility classes (grid, I/O, etc)
+/*! \mainpage PISM utility classes (grid management, parallel communication, NetCDF I/O, etc)
 
-This source code browser documents PISM classes that create the infrastructure
-for PISM's code implementing physical models. These classes are not
-ice-sheet-modeling specific and can be used as a separate library.
+This source code browser documents the PISM classes that form the infrastructure
+for PISM's implementations of physical models. These classes are not
+ice-sheet-modeling specific, but would any support shallow, two-dimensional,
+regular grid, parallel scientific computations which need NetCDF input and output.
+These classes could be used as a separate library.
 
-Click on "Classes" above to see the full list of classes in this library; for a
-list of key classes, see below.
+Click on "Classes" above to see the full list of classes in this library.  Some
+key classes include:
 
 - IceGrid
-- IceModelVec2S, IceModelVec2V, IceModelVec3 and IceModelVec3Bedrock
+- IceModelVec2S, IceModelVec2Stag, IceModelVec2V, and IceModelVec3
 - PISMComponent, PISMComponent_Diag and PISMComponent_TS
 - Timeseries
 - NCTool
 - PISMIO
 
-The following pages describe some important classes and their intended uses.
+The following pages describe some important infrastructure concepts and techniques:
 
 - \ref computational_grid "Organization of PISM's computational grid"
 - \ref imv_allocation "IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields"

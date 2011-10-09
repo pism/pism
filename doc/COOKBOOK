@@ -21,22 +21,27 @@ Ed's cookbook for maintaining PISM:
   These files: manual.pdf, installation.pdf, cheatsheet.pdf.
   And a recent version of the source code browser, next.
 
-3)  How do I upload a recent version of the source code browser?
+3)  How do I upload a recent version of the (development) source code browser?
 
   Build it, tar it, send to dogbert, then get on dogbert and unzip it in the right place:
   
    $ cd 'pism build directory'
-   $ make browser_base                          # tools needed: doxygen, latex
-   $ cd doc/browser/base/                       # in the build dir
-   $ tar -cvzf browser_recent.tar.gz html/
-   $ scp browser_recent.tar.gz bueler@dogbert.gi.alaska.edu:~bueler/pismdocs/
+   $ make browser_base                         # tools needed: doxygen, latex
+   $ make browser_util
+   $ cd doc/browser/                           # in the build dir
+   $ tar -cvzf browser_recent.tar.gz base/* util/*
+   $ scp browser_recent.tar.gz bueler@dogbert.gi.alaska.edu:~bueler/pismdocs/doxy-trunk/
    $ ssh -XY bueler@dogbert.gi.alaska.edu
-   $ mv doxy/ doxy_olddate                      # SAVE OLD?
-   $ tar -xvf browser_recent.tar.gz             # CREATES doxy/html/
-   $ [FIXME: do same for browser_util]
+   $ cd pismdocs/doxy-trunk/
+   $ mv browser/ old_browser_DATE/             # save old if you want to
+   $ mkdir browser/
+   $ cd browser/
+   $ tar -xvf ../browser_recent.tar.gz         # CREATES base/html/* and util/html/*
    
-  Now try "firefox www.pism-docs.org/doxy/???FIXME/html/index.html" on remote machine.  If
-  success, log off of dogbert.
+  Now try "firefox www.pism-docs.org/doxy-trunk/browser/base/html/index.html" on
+  a remote machine.  If success, log off of dogbert.
+  
+  To post a stable version, substitute "doxy/" for "doxy-trunk/" above.
 
  
 4)  How big is the PISM source code?
