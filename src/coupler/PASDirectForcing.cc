@@ -158,7 +158,7 @@ PetscErrorCode PADirectForcing::temp_time_series(int i, int j, int N,
     ts_mod.reserve(N);
 
     for (int k = 0; k < N; ++k)
-      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_year, bc_period);
+      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_time, bc_period);
 
     ptr = &ts_mod[0];
   } else {

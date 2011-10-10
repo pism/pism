@@ -37,7 +37,7 @@ public:
 
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
   {
-    Mod::t  = Mod::grid.time->mod(my_t - bc_reference_year, bc_period);
+    Mod::t  = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
     Mod::dt = my_dt;
 
     PetscErrorCode ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
@@ -52,15 +52,15 @@ protected:
 
     IceGrid &g = Mod::grid;
 
-    bc_period = 0;
-    bc_reference_year = 0;
+    PetscReal bc_period_years = 0,
+      bc_reference_year = 0;
 
     ierr = PetscOptionsBegin(g.com, "", "Scalar forcing options", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString(option, "Specifies a file with scalar offsets",
                                filename, option_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal(option + "_period", "Specifies the length of the climate data period",
-                             bc_period, bc_period_set); CHKERRQ(ierr);
+                             bc_period_years, bc_period_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal(option + "_reference_year", "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
     }
@@ -71,6 +71,14 @@ protected:
                         option.c_str()); CHKERRQ(ierr);
       delete offset;
       offset = NULL;
+    }
+
+    if (bc_period_set) {
+      bc_period = g.time->years_to_seconds(bc_period_years);
+    }
+
+    if (bc_ref_year_set) {
+      bc_reference_time = g.time->years_to_seconds(bc_reference_year);
     }
 
     if (offset) {
@@ -96,7 +104,8 @@ protected:
   Timeseries *offset;
   string filename, offset_name, option;
 
-  PetscReal bc_period, bc_reference_year;
+  PetscReal bc_period,          // in seconds
+    bc_reference_time;          // in seconds
 
 };
 

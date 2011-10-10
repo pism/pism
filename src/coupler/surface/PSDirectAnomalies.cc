@@ -54,7 +54,7 @@ PetscErrorCode PSDirectAnomalies::init(PISMVars &vars) {
   }
   
   // get the mass balance at the beginning of the run:
-  ierr = PSDirectForcing::update(grid.time->start_year(), 0); CHKERRQ(ierr);
+  ierr = PSDirectForcing::update(grid.time->start(), 0); CHKERRQ(ierr);
 
   ierr = mass_flux.copy_to(mass_flux_0); CHKERRQ(ierr);
   ierr = temp.copy_to(temp_0); CHKERRQ(ierr);

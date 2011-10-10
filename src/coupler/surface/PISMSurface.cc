@@ -459,7 +459,7 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
     if (my_t + my_dt > next_pdd_update) {
       ierr = verbPrintf(3, grid.com,
                         "  Updating mass balance for one year starting at %1.1f years...\n",
-                        grid.time->seconds_to_years(my_t));
+                        grid.time->year(my_t));
       ierr = update_internal(my_t, one_year); CHKERRQ(ierr);
       next_pdd_update = my_t + one_year;
     }

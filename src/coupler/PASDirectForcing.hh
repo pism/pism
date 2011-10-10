@@ -40,7 +40,7 @@ public:
     PetscReal max_dt = -1;
 
     // "Periodize" the climate:
-    my_t = Model::grid.time->mod(my_t - bc_reference_year, bc_period);
+    my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
 
     my_dt = temp.max_timestep(my_t);
 
@@ -108,7 +108,8 @@ protected:
   IceModelVec2T temp, mass_flux;
   string filename, temp_name, mass_flux_name, option_prefix;
 
-  PetscReal bc_period, bc_reference_year;
+  PetscReal bc_period,          // in seconds
+    bc_reference_time;          // in seconds
   bool enable_time_averaging;
 
   PetscErrorCode process_options()
@@ -116,9 +117,12 @@ protected:
     PetscErrorCode ierr;
     bool bc_file_set, bc_period_set, bc_ref_year_set;
   
-    bc_period = 0;
-    bc_reference_year = 0;
+    PetscReal bc_period_years = 0,
+      bc_reference_year = 0;
+
     enable_time_averaging = false;
+    bc_period = 0;
+    bc_reference_time = 0;
 
     ierr = PetscOptionsBegin(Model::grid.com, "", "Direct forcing options", ""); CHKERRQ(ierr);
     {
@@ -127,7 +131,7 @@ protected:
                                filename, bc_file_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal(option_prefix + "_period",
                              "Specifies the length of the climate data period",
-                             bc_period, bc_period_set); CHKERRQ(ierr);
+                             bc_period_years, bc_period_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal(option_prefix + "_reference_year",
                              "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
@@ -138,8 +142,16 @@ protected:
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option %s is required.\n", option_prefix.c_str());
+      PetscPrintf(Model::grid.com, "PISM ERROR: option %s_file is required.\n", option_prefix.c_str());
       PISMEnd();
+    }
+
+    if (bc_ref_year_set) {
+      bc_reference_time = Model::grid.time->years_to_seconds(bc_reference_year);
+    }
+
+    if (bc_period_set) {
+      bc_period = Model::grid.time->years_to_seconds(bc_period_years);
     }
 
     return 0;
@@ -185,7 +197,7 @@ protected:
     PetscErrorCode ierr;
 
     // "Periodize" the climate:
-    my_t = Model::grid.time->mod(my_t - bc_reference_year, bc_period);
+    my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
 
     if ((fabs(my_t - Model::t) < 1e-12) &&
         (fabs(my_dt - Model::dt) < 1e-12))

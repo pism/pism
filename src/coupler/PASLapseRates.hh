@@ -48,7 +48,7 @@ public:
     PetscReal &m_dt = Mod::dt;
 
     // "Periodize" the climate:
-    my_t = Mod::grid.time->mod(my_t - bc_reference_year,  bc_period);
+    my_t = Mod::grid.time->mod(my_t - bc_reference_time,  bc_period);
 
     if ((fabs(my_t - m_t) < 1e-12) &&
         (fabs(my_dt - m_dt) < 1e-12))
@@ -75,7 +75,7 @@ public:
     PetscReal max_dt = -1;
 
     // "Periodize" the climate:
-    my_t = Mod::grid.time->mod(my_t - bc_reference_year, bc_period);
+    my_t = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
 
     ierr = Mod::input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
 
@@ -104,7 +104,9 @@ public:
 protected:
   IceModelVec2T reference_surface;
   IceModelVec2S *surface, *thk;
-  PetscReal bc_period, bc_reference_year, temp_lapse_rate;
+  PetscReal bc_period,          // in seconds
+    bc_reference_time,          // in seconds
+    temp_lapse_rate;
   bool enable_time_averaging;
   string option_prefix;
 
@@ -117,8 +119,8 @@ protected:
     IceGrid &g = Mod::grid;
 
     enable_time_averaging = false;
-    bc_period = 0;
-    bc_reference_year = 0;
+    PetscReal bc_period_years = 0,
+      bc_reference_year = 0;
 
     ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
     {
@@ -127,7 +129,7 @@ protected:
                                filename, bc_file_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal(option_prefix + "_period",
                              "Specifies the length of the climate data period",
-                             bc_period, bc_period_set); CHKERRQ(ierr);
+                             bc_period_years, bc_period_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal(option_prefix + "_reference_year",
                              "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
@@ -141,8 +143,16 @@ protected:
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option %s is required.\n", option_prefix.c_str());
+      PetscPrintf(Model::grid.com, "PISM ERROR: option %s_file is required.\n", option_prefix.c_str());
       PISMEnd();
+    }
+
+    if (bc_ref_year_set) {
+      bc_reference_time = Model::grid.time->years_to_seconds(bc_reference_year);
+    }
+
+    if (bc_period_set) {
+      bc_period = Model::grid.time->years_to_seconds(bc_period_years);
     }
 
     unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),

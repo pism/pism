@@ -666,7 +666,7 @@ PetscErrorCode IceModel::init_snapshots() {
     ierr = verbPrintf(2, grid.com,
                       "\nsaving snapshot to %s at %.5f a, for time-step goal %.5f a\n\n",
                       filename, grid.time->year(),
-                      grid.time->seconds_to_years(saving_after));
+                      grid.time->year(saving_after));
     CHKERRQ(ierr);
 
     // create line for history in .nc file, including time of write
@@ -676,7 +676,7 @@ PetscErrorCode IceModel::init_snapshots() {
     snprintf(tmp, TEMPORARY_STRING_LENGTH,
              "%s: %s snapshot at %10.5f a, for time-step goal %10.5f a\n",
              date_str.c_str(), executable_short_name.c_str(), grid.time->year(),
-             grid.time->seconds_to_years(saving_after));
+             grid.time->year(saving_after));
 
     if (!snapshots_file_is_ready) {
 

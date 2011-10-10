@@ -119,6 +119,9 @@ public:
   virtual PetscReal seconds_to_years(PetscReal T)
   { return T / secpera; }
 
+  virtual PetscReal years_to_seconds(PetscReal T)
+  { return T * secpera; }
+
 protected:
   MPI_Comm com;
   const NCConfigVariable &config;

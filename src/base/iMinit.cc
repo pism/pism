@@ -466,8 +466,8 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    ierr = surface->update(grid.time->start_year(), 0); CHKERRQ(ierr);
-    ierr = ocean->update(grid.time->start_year(), 0); CHKERRQ(ierr);
+    ierr = surface->update(grid.time->start(), 0); CHKERRQ(ierr);
+    ierr = ocean->update(grid.time->start(), 0); CHKERRQ(ierr);
     ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
     ierr = btu->init(variables); CHKERRQ(ierr);
   }

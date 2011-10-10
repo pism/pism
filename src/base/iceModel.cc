@@ -797,7 +797,8 @@ PetscErrorCode IceModel::run() {
 
   if (stepcount >= 0) {
     ierr = verbPrintf(1,grid.com,
-              "count_time_steps:  run() took %d steps\naverage dt = %.6f years\n",
+                      "count_time_steps:  run() took %d steps\n"
+                      "average dt = %.6f years\n",
                       stepcount, grid.time->run_length_years()/(double)stepcount); CHKERRQ(ierr);
   }
 

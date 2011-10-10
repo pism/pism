@@ -307,10 +307,10 @@ PetscErrorCode IceModelVec2T::update(int start) {
                     "  reading \"%s\" into buffer\n"
                     "          (short_name = %s): %d records, covering intervals (%3.3f, %3.3f) through (%3.3f, %3.3f) years...\n",
 		    long_name.c_str(), name.c_str(), missing,
-                    grid->time->seconds_to_years(time_bounds[start*2]),
-                    grid->time->seconds_to_years(time_bounds[start*2 + 1]),
-                    grid->time->seconds_to_years(time_bounds[(start + missing - 1)*2]),
-                    grid->time->seconds_to_years(time_bounds[(start + missing - 1)*2 + 1]));
+                    grid->time->year(time_bounds[start*2]),
+                    grid->time->year(time_bounds[start*2 + 1]),
+                    grid->time->year(time_bounds[(start + missing - 1)*2]),
+                    grid->time->year(time_bounds[(start + missing - 1)*2 + 1]));
 
   for (int j = 0; j < missing; ++j) {
     if (lic != NULL) {
@@ -424,7 +424,7 @@ PetscErrorCode IceModelVec2T::at_time(double my_t) {
     PetscPrintf(grid->com,
                 "PISM ERROR: time bounds array does not represent continguous time intervals.\n"
                 "            (PISM was trying to compute %s at time %3.3f years.)\n",
-                name.c_str(), grid->time->seconds_to_years(my_t));
+                name.c_str(), grid->time->year(my_t));
     PISMEnd();
   }
 
@@ -515,7 +515,7 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double my_t, double my_dt,
 				      double &result) {
   PetscErrorCode ierr;
 
-  PetscReal dt_years = grid->time->seconds_to_years(my_dt);
+  PetscReal dt_years = grid->time->seconds_to_years(my_dt); // *not* time->year(my_dt)
 
   // Determine the number of small time-steps to use for averaging:
   int M = (int) ceil(52 * (dt_years) + 1); // (52 weeks in a year)

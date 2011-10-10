@@ -118,6 +118,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
   wall_clock_hours = (current_time - start_time) / 3600.0;
   proc_hours = grid.size * wall_clock_hours;
+  // MYPPH stands for "model years per processor hour"
   mypph = (grid.time->year() - grid.time->start_year()) / proc_hours;
 
   // get PETSc's reported number of floating point ops (*not* per time) on this

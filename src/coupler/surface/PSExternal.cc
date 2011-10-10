@@ -208,7 +208,7 @@ PetscErrorCode PSExternal::update_artm() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(2, grid.com, "Reading the temperature at the top of the ice from %s for year = %1.1f...\n",
-                    ebm_output.c_str(), grid.time->seconds_to_years(t)); 
+                    ebm_output.c_str(), grid.time->year(t)); 
 
   ierr = artm.regrid(ebm_output, true); CHKERRQ(ierr);
 
@@ -219,7 +219,7 @@ PetscErrorCode PSExternal::update_acab() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(2, grid.com, "Reading the accumulation/ablation rate from %s for year = %1.1f...\n",
-                    ebm_output.c_str(), grid.time->seconds_to_years(t)); 
+                    ebm_output.c_str(), grid.time->year(t)); 
 
   ierr = acab.regrid(ebm_output, true); CHKERRQ(ierr);
 
