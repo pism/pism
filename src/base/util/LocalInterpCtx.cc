@@ -103,8 +103,8 @@ and \c delta entries in the struct will not be meaningful.
   while (start[X] + 1 < input.x_len && input.x[start[X] + 1] < x_min)
     start[X]++;
 
-  count[X] = 0;
-  while (start[X] + count[X] < input.x_len && input.x[start[X] + count[X]] <= x_max)
+  count[X] = 1;
+  while (start[X] + count[X] < input.x_len && input.x[start[X] + count[X] - 1] <= x_max)
     count[X]++;
 
   // Y
@@ -112,8 +112,8 @@ and \c delta entries in the struct will not be meaningful.
   while (start[Y] + 1 < input.y_len && input.y[start[Y] + 1] < y_min)
     start[Y]++;
 
-  count[Y] = 0;
-  while (start[Y] + count[Y] < input.y_len && input.y[start[Y] + count[Y]] <= y_max)
+  count[Y] = 1;
+  while (start[Y] + count[Y] < input.y_len && input.y[start[Y] + count[Y] - 1] <= y_max)
     count[Y]++;
 
   // Z
