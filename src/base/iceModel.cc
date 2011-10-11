@@ -605,7 +605,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   grid.profiler->begin(event_age);
   
   //! \li update the age of the ice (if appropriate)
-  if (do_age) {
+  if (do_age && updateAtDepth) {
     ierr = ageStep(); CHKERRQ(ierr);
     stdout_flags += "a";
   } else {
