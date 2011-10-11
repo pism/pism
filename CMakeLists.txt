@@ -19,7 +19,21 @@ list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
 
 if (NOT Pism_MANUAL_BUILD)
-  find_package (PETSc REQUIRED)
+
+  find_package (PETSc)
+  if (NOT PETSC_FOUND)
+    get_filename_component(pcc ${PETSC_COMPILER} REALPATH)
+    get_filename_component(cc ${CMAKE_C_COMPILER} REALPATH)
+    if (NOT (${pcc} STREQUAL ${cc}))
+      message(WARNING "PETSC_COMPILER does not match CMAKE_C_COMPILER\n"
+	"  PETSC_COMPILER=${PETSC_COMPILER}\n"
+	"  CMAKE_C_COMPILER=${CMAKE_C_COMPILER}\n"
+	"Try running \n"
+	"  rm CMakeCache.txt && cmake -DCMAKE_C_COMPILER=${PETSC_COMPILER} ${CMAKE_SOURCE_DIR}")
+    endif()
+    message(FATAL_ERROR  "PISM configuration failed: PETSc was not found.")
+  endif()
+
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
   # use the PETSc compiler as a hint when looking for an MPI compiler
