@@ -110,7 +110,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   mask_values[1] = 1;
   ierr = bc_mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = bc_mask.set_attr("flag_meanings",
-                          "no_data dirichlet_bc_location"); CHKERRQ(ierr);
+                          "no_data ssa_dirichlet_bc_location"); CHKERRQ(ierr);
   bc_mask.output_data_type = NC_BYTE;
   ierr = vars.add(bc_mask); CHKERRQ(ierr);
   

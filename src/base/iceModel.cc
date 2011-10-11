@@ -357,7 +357,7 @@ PetscErrorCode IceModel::createVecs() {
     ierr = variables.add(vPrinStrain2); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("dirichlet_bc") == true) {
+  if (config.get_flag("ssa_dirichlet_bc") == true) {
     // bc_locations
     ierr = vBCMask.create(grid, "bcflag", true, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = vBCMask.set_attrs("model_state", "Dirichlet boundary mask",

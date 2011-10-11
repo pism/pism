@@ -149,7 +149,7 @@ PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
     ierr = vPrinStrain2.set(0.0); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("dirichlet_bc")) {
+  if (config.get_flag("ssa_dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bcflag is not present.
     ierr = vBCMask.regrid(filename, 0.0); CHKERRQ(ierr);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that

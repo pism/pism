@@ -275,7 +275,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       ierr = vHresidual.set(0.0); CHKERRQ(ierr);
     }
   }
-  const bool dirichlet_bc = config.get_flag("dirichlet_bc");
+  const bool dirichlet_bc = config.get_flag("ssa_dirichlet_bc");
   if (dirichlet_bc) {
     ierr = vBCMask.begin_access();  CHKERRQ(ierr);
     ierr = vBCvel.begin_access();  CHKERRQ(ierr);

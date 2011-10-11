@@ -175,7 +175,7 @@ PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
 
   ierr = verbPrintf(2,grid.com,"  using the regional version of the SSA solver...\n"); CHKERRQ(ierr);
 
-  if (config.get_flag("dirichlet_bc")) {
+  if (config.get_flag("ssa_dirichlet_bc")) {
     ierr = verbPrintf(2,grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n"); 
     CHKERRQ(ierr);
   }
@@ -319,7 +319,7 @@ PetscErrorCode IceRegionalModel::setFromOptions() {
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
 
-  ierr = config.flag_from_option("ssa_dirichlet_bc", "dirichlet_bc"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("ssa_dirichlet_bc", "ssa_dirichlet_bc"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -359,13 +359,6 @@ PetscErrorCode IceRegionalModel::createVecs() {
   ierr = verbPrintf(2, grid.com,
      "  creating IceRegionalModel vecs ...\n"); CHKERRQ(ierr);
 
-  // Most PISM variables are initialized in IceModel::model_state_setup() and
-  // *not* in IceModel::createVecs().
-  // 
-  // We can get away with initializing no_model_mask, thkstore, usurfstore,
-  // bmr_stored and enthalpy_stored here because all these variables are
-  // constant in time.
-
   // stencil width of 2 needed for surfaceGradientSIA() action
   ierr = no_model_mask.create(grid, "no_model_mask", true, 2); CHKERRQ(ierr);
   ierr = no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
@@ -390,7 +383,6 @@ PetscErrorCode IceRegionalModel::createVecs() {
     "saved surface elevation for use to keep surface gradient constant in no_model strip",
     "m",
     ""); CHKERRQ(ierr); //  no standard name
-  ierr = usurfstore.set(0.0); CHKERRQ(ierr);
   ierr = variables.add(usurfstore); CHKERRQ(ierr);
 
   // stencil width of 1 needed for differentiation
@@ -400,7 +392,6 @@ PetscErrorCode IceRegionalModel::createVecs() {
     "saved ice thickness for use to keep driving stress constant in no_model strip",
     "m",
     ""); CHKERRQ(ierr); //  no standard name
-  ierr = thkstore.set(0.0); CHKERRQ(ierr);
   ierr = variables.add(thkstore); CHKERRQ(ierr);
 
   // Note that the name of this variable (bmr_stored) does not matter: it is
@@ -410,7 +401,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
                               "time-independent basal melt rate in the no-model-strip",
                               "m s-1", ""); CHKERRQ(ierr);
 
-  if (config.get_flag("dirichlet_bc")) {
+  if (config.get_flag("ssa_dirichlet_bc")) {
     // remove the bcflag variable from the dictionary
     variables.remove("bcflag");
 
@@ -429,7 +420,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   
   ierr = bmr_stored.copy_from(vbmr); CHKERRQ(ierr);
 
-  if (config.get_flag("dirichlet_bc")) {
+  if (config.get_flag("ssa_dirichlet_bc")) {
     double fill = convert(2e6, "m/year", "m/second");
 
     ierr = vBCMask.begin_access(); CHKERRQ(ierr);
@@ -453,9 +444,29 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
     ierr = no_model_mask.end_access(); CHKERRQ(ierr);
   }
 
+
+  bool zgwnm;
+  ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
+  if (zgwnm) {
+    ierr = thkstore.set(0.0); CHKERRQ(ierr);
+    ierr = usurfstore.set(0.0); CHKERRQ(ierr);
+  }
+
+  bool nmstripSet;
+  PetscReal stripkm;
+  ierr = PISMOptionsReal("-no_model_strip", 
+                         "width in km of strip near boundary in which modeling is turned off",
+			 stripkm, nmstripSet);
+
+  if (nmstripSet) {
+    ierr = verbPrintf(2, grid.com,
+                      "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
+                      stripkm); CHKERRQ(ierr);
+    ierr = set_no_model_strip(convert(stripkm, "km", "m")); CHKERRQ(ierr);
+  }
+
   return 0;
 }
-
 
 PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   PetscErrorCode ierr;
@@ -524,14 +535,8 @@ PetscErrorCode IceRegionalModel::bootstrap_2d(const char *filename) {
 
   ierr = IceModel::bootstrap_2d(filename); CHKERRQ(ierr);
 
-  bool zgwnm;
-  ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
-  if (!zgwnm) {
-    ierr = verbPrintf(2, grid.com, 
-      "continuing bootstrapping for IceRegionalModel from file %s\n",filename); CHKERRQ(ierr);
-    ierr =  usurfstore.regrid(filename,0.0); CHKERRQ(ierr);
-    ierr =    thkstore.regrid(filename,0.0); CHKERRQ(ierr);
-  }
+  ierr = usurfstore.regrid(filename, 0.0); CHKERRQ(ierr);
+  ierr =   thkstore.regrid(filename, 0.0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -539,6 +544,7 @@ PetscErrorCode IceRegionalModel::bootstrap_2d(const char *filename) {
 
 PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
+  NCTool nc(grid.com, grid.rank);
 
   bool no_model_strip_set;
   ierr = PISMOptionsIsSet("-no_model_strip", "No-model strip, in km",
@@ -548,87 +554,50 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
     ierr = no_model_mask.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
   }
 
-  ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
-
   ierr = verbPrintf(2, grid.com,
      "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
      filename); CHKERRQ(ierr);
 
-  NCTool nc(grid.com, grid.rank);
-  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-  int last_record;  // find index of the last record in the file
-  ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
-  last_record -= 1;
+  ierr =  nc.open_for_reading(filename); CHKERRQ(ierr);
 
-  bool nmm_exists;
-  ierr = nc.find_variable("no_model_mask", NULL, nmm_exists); CHKERRQ(ierr);
-  if (nmm_exists) {
-    ierr = verbPrintf(2,grid.com,
-	"  reading 'no_model_mask' from %s ...\n",
-	filename); CHKERRQ(ierr);
-    // note: communication to fill stencil width should occur inside this call
-    ierr = no_model_mask.read(filename, last_record); CHKERRQ(ierr);
+  // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
+  // The user is probably using -regrid_file to bring in SSA B.C. data.
+  if (config.get_flag("ssa_dirichlet_bc")) {
+    bool u_ssa_exists, v_ssa_exists;
+
+    ierr = nc.find_variable("u_ssa_bc", NULL, u_ssa_exists); CHKERRQ(ierr);
+    ierr = nc.find_variable("v_ssa_bc", NULL, v_ssa_exists); CHKERRQ(ierr);
+
+    if (! (u_ssa_exists && v_ssa_exists)) {
+      ierr = vBCvel.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com,
+                        "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
+                        "              This may be overridden by the -regrid_file option.\n",
+                        filename); CHKERRQ(ierr);
+
+      ierr = vBCvel.set(0.0); CHKERRQ(ierr);
+    }
   }
-  
-  bool zgwnm, us_exists, ts_exists;
+
+  bool zgwnm;
   ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
-  if (!zgwnm) {
-    ierr = nc.find_variable("usurfstore", NULL, us_exists); CHKERRQ(ierr);
-    ierr = nc.find_variable("thkstore", NULL, ts_exists); CHKERRQ(ierr);
-    if ((us_exists) && (ts_exists)) {
-      ierr = verbPrintf(2,grid.com,
-	"  reading 'usurfstore' from %s ...\n",
-	filename); CHKERRQ(ierr);
-      ierr = usurfstore.read(filename, last_record); CHKERRQ(ierr);
-      ierr = verbPrintf(2,grid.com,
-	"  reading 'thkstore' from %s ...\n",
-	filename); CHKERRQ(ierr);
-      ierr = thkstore.read(filename, last_record); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com,
-	"  PISM ERROR (IceRegionalModel):\n"
-	"    'usurfstore' and/or 'thkstore' not present in %s ... ENDING!\n"
-	"    (use option -zero_grad_where_no_model)\n",
-	filename); CHKERRQ(ierr);
-      PISMEnd();
-    }    
-  } else {
-    usurfstore.set(0.0);
-    thkstore.set(0.0);
+  if (zgwnm) {
+    ierr = thkstore.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+    ierr = usurfstore.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+  }
+
+  ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
+
+  if (config.get_flag("ssa_dirichlet_bc")) {
+      ierr = vBCvel.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  }
+
+  if (zgwnm) {
+    ierr = thkstore.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+    ierr = usurfstore.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
-
-  // at this point may or may not have a filled-in no_model_mask variable;
-  //   next try to create it from user option, which overrides input file
-  PetscReal stripkm;
-  bool nmm_realset;
-  ierr = PISMOptionsReal("-no_model_strip", 
-                         "width in km of strip near boundary in which modeling is turned off",
-			 stripkm, nmm_realset); CHKERRQ(ierr);
-  if (nmm_realset) {
-    ierr = verbPrintf(2, grid.com,
-      "  option -no_model_strip read ...\n"
-      "  (re)setting boundary strip width to %.2f km ...\n",
-      stripkm); CHKERRQ(ierr);
-    ierr = set_no_model_strip(1000.0*stripkm); CHKERRQ(ierr);
-  } else {
-    if (nmm_exists) { // the o.k. case; we just need to warn if option is given without number
-      ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
-      if (no_model_strip_set) {
-        ierr = verbPrintf(2, grid.com,
-          "\nPISMO WARNING: option '-no_model_strip' seen with no real value.  Option ignored\n"
-          "  because no_model_mask variable was read from input file.  Proceeding ...\n\n");
-          CHKERRQ(ierr);
-      }
-    } else { // bad case: we still don't have a no_model_mask and we have to fail
-      ierr = verbPrintf(1, grid.com,
-        "\nPISMO ERROR: option '-no_model_strip X' not seen.  No no_model_mask variable\n"
-        "  found in input file.  ENDING ...\n\n");
-        CHKERRQ(ierr);
-      PISMEnd();
-    }
-  }
 
   return 0;
 }
@@ -637,27 +606,16 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
 PetscErrorCode IceRegionalModel::set_vars_from_options() {
   PetscErrorCode ierr;
   bool nmstripSet;
-  PetscReal stripkm;
 
   // base class reads the -boot_file option and does the bootstrapping:
   ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "IceRegionalModel", ""); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com, 
-                    "* Initializing IceRegionalModel variables ...\n"); CHKERRQ(ierr);
-  ierr = PISMOptionsReal("-no_model_strip", 
-                         "width in km of strip near boundary in which modeling is turned off",
-			 stripkm, nmstripSet);
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (nmstripSet) {
-    ierr = verbPrintf(2, grid.com,
-      "    option -no_model_strip read ... setting boundary strip width to %.2f km\n",
-      stripkm); CHKERRQ(ierr);
-    ierr = set_no_model_strip(convert(stripkm, "km", "m")); CHKERRQ(ierr);
-  } else {
+  ierr = PISMOptionsIsSet("-no_model_strip", 
+                          "width in km of strip near boundary in which modeling is turned off",
+                          nmstripSet);
+  if (!nmstripSet) {
     ierr = PetscPrintf(grid.com,
-      "\nPISMO ERROR: option '-no_model_strip X' is REQUIRED if '-i' is not used.\n"
+      "PISMO ERROR: option '-no_model_strip X' is REQUIRED if '-i' is not used.\n"
       "   pismo has no well-defined semantics without it!  ENDING ...\n\n"); CHKERRQ(ierr);
     PISMEnd();
   }

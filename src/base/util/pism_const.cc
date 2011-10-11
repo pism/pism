@@ -806,6 +806,13 @@ PetscErrorCode PISMOptionsInt(string option, string text,
   if (is_set == false)
     return 0;
 
+  if (strlen(str) == 0) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+                       "ERROR: command line option '%s' requires an argument.\n",
+                       option.c_str()); CHKERRQ(ierr);
+    PISMEnd();
+  }
+
   result = (int) strtol(str, &endptr, 10);
   if (*endptr != '\0') {
     ierr = PetscPrintf(PETSC_COMM_WORLD,
@@ -832,6 +839,13 @@ PetscErrorCode PISMOptionsReal(string option, string text,
 
   if (is_set == false)
     return 0;
+
+  if (strlen(str) == 0) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+                       "ERROR: command line option '%s' requires an argument.\n",
+                       option.c_str()); CHKERRQ(ierr);
+    PISMEnd();
+  }
 
   result = strtod(str, &endptr);
   if (*endptr != '\0') {

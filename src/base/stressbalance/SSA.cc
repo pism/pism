@@ -95,7 +95,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
     ierr = velocity.set(0.0); CHKERRQ(ierr); // default initial guess
   }
 
-  if (config.get_flag("dirichlet_bc")) {
+  if (config.get_flag("ssa_dirichlet_bc")) {
     bc_locations = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
     if (bc_locations == NULL) SETERRQ(1, "bc_locations is not available");
     
