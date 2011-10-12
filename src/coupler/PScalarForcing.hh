@@ -75,10 +75,14 @@ protected:
 
     if (bc_period_set) {
       bc_period = g.time->years_to_seconds(bc_period_years);
+    } else {
+      bc_period = 0;
     }
 
     if (bc_ref_year_set) {
       bc_reference_time = g.time->years_to_seconds(bc_reference_year);
+    } else {
+      bc_reference_time = 0;
     }
 
     if (offset) {

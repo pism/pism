@@ -149,10 +149,14 @@ protected:
 
     if (bc_ref_year_set) {
       bc_reference_time = Model::grid.time->years_to_seconds(bc_reference_year);
+    } else {
+      bc_reference_time = 0;
     }
 
     if (bc_period_set) {
       bc_period = Model::grid.time->years_to_seconds(bc_period_years);
+    } else {
+      bc_period = 0;
     }
 
     unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
