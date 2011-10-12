@@ -417,33 +417,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   ierr = IceModel::model_state_setup(); CHKERRQ(ierr);
 
   // Now save the basal melt rate at the beginning of the run.
-  
   ierr = bmr_stored.copy_from(vbmr); CHKERRQ(ierr);
-
-  if (config.get_flag("ssa_dirichlet_bc")) {
-    double fill = convert(2e6, "m/year", "m/second");
-
-    ierr = vBCMask.begin_access(); CHKERRQ(ierr);
-    ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
-    ierr = vBCvel.begin_access(); CHKERRQ(ierr);
-    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-
-        if (no_model_mask(i, j) < 0.5) {
-          vBCvel(i, j).u = fill;
-          vBCvel(i, j).v = fill;
-          vBCMask(i, j)  = 0;
-        } else {
-          vBCMask(i, j) = 1;
-        }
-
-      }
-    }
-    ierr = vBCMask.end_access(); CHKERRQ(ierr);
-    ierr = vBCvel.end_access(); CHKERRQ(ierr);
-    ierr = no_model_mask.end_access(); CHKERRQ(ierr);
-  }
-
 
   bool zgwnm;
   ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
