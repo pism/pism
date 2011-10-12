@@ -21,17 +21,13 @@
 
 #include "enthSystem.hh"
 
-//! Replacement column solver for enthalpy using variable conductivity for cold ice.
+//! Replacement column solver for enthalpy method, using variable conductivity for cold ice.
 /*!
-Like enthSystemCtx, just does a tridiagonal linear system for conservation
-of energy in vertical column, for enthalpy.
-
-Has additional enthalpy-dependent conductivity and/or heat capacity in cold
-ice. Everything is the same except the assemble_R() method is based on formulas
-(4.37) and (4.39) in [\ref GreveBlatter2009].
-
-This is to address R. Greve's concerns about the submitted paper
-[\ref AschwandenBuelerKhroulevBlatter].
+Like base class enthSystemCtx.  Solves a tridiagonal linear system for conservation
+of energy in vertical column, for the enthalpy method [\ref AschwandenBuelerKhroulevBlatter].
+Allows enthalpy-dependent conductivity and/or heat capacity in cold
+ice.  Everything is the same except that the assemble_R() method is
+based on formulas (4.37) and (4.39) in [\ref GreveBlatter2009].
  */
 class varenthSystemCtx : public enthSystemCtx {
 
@@ -46,8 +42,7 @@ public:
 protected:
   PetscScalar k_from_T(PetscScalar T);
   virtual PetscErrorCode assemble_R();
-  EnthalpyConverter *EC;  // needed to get temperature from enthalpy because that is
-                          //   what conductivity depends on
+  EnthalpyConverter *EC;  // conductivity has known dependence on T, not enthalpy
   PetscReal ice_thickness;
   bool k_depends_on_T;
 };

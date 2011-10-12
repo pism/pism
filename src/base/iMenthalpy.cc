@@ -177,7 +177,7 @@ PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
 }
 
 
-//! Compute the CTS value of enthalpy in an ice column, and the lambda for BOMBPROOF.
+//! Compute the CTS value of enthalpy in an ice column.
 /*!
 Return argument Enth_s[Mz] has the enthalpy value for the pressure-melting 
 temperature at the corresponding z level.
@@ -185,18 +185,34 @@ temperature at the corresponding z level.
 PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
 					      PetscScalar thk,
 					      PetscInt ks,
-					      PetscScalar ice_rho_c,
-                                              PetscScalar ice_k,
-					      const PetscScalar *Enth,
-					      const PetscScalar *w,
-					      PetscScalar *lambda,
 					      PetscScalar **Enth_s) {
+
+  for (PetscInt k = 0; k <= ks; k++) {
+    const PetscScalar p = EC->getPressureFromDepth(thk - grid.zlevels_fine[k]); // FIXME task #7297
+    (*Enth_s)[k] = EC->getEnthalpyCTS(p);
+  }
+  for (PetscInt k = ks+1; k < grid.Mz_fine; k++) {
+    (*Enth_s)[k] = EC->getEnthalpyCTS(p_air);
+  }
+  return 0;
+}
+
+
+//! Compute the lambda for BOMBPROOF.
+/*!
+See page \ref bombproofenth.
+ */
+PetscErrorCode IceModel::getlambdaColumn(PetscInt ks,
+					 PetscScalar ice_rho_c,
+                                         PetscScalar ice_k,
+					 const PetscScalar *Enth,
+					 const PetscScalar *Enth_s,
+					 const PetscScalar *w,
+					 PetscScalar *lambda) {
 
   *lambda = 1.0;  // start with centered implicit for more accuracy
   for (PetscInt k = 0; k <= ks; k++) {
-    (*Enth_s)[k] = EC->getEnthalpyCTS(EC->getPressureFromDepth(thk - grid.zlevels_fine[k]));
-
-    if (Enth[k] > (*Enth_s)[k]) { // lambda = 0 if temperate ice present in column
+    if (Enth[k] > Enth_s[k]) { // lambda = 0 if temperate ice present in column
       *lambda = 0.0;
     } else {
       const PetscScalar 
@@ -204,11 +220,6 @@ PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
       *lambda = PetscMin(*lambda, 2.0 * ice_k / denom);
     }
   }
-
-  for (PetscInt k = ks+1; k < grid.Mz_fine; k++) {
-    (*Enth_s)[k] = EC->getEnthalpyCTS(p_air);
-  }
-
   return 0;
 }
 
@@ -385,10 +396,12 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         ierr = Enth3.getValColumn(i,j,ks,esys->Enth); CHKERRQ(ierr);
         ierr = w3->getValColumn(i,j,ks,esys->w); CHKERRQ(ierr);
 
+        ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, &esys->Enth_s); CHKERRQ(ierr);
+
         PetscScalar lambda;
-        ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, ice_rho * ice_c, ice_k,
-                                    esys->Enth, esys->w, // FIXME task #7297
-                                    &lambda, &esys->Enth_s); CHKERRQ(ierr);
+        ierr = getlambdaColumn(ks, ice_rho * ice_c, ice_k,
+                               esys->Enth, esys->Enth_s, esys->w,
+                               &lambda); CHKERRQ(ierr);
         if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
 
         // if there is subglacial water, don't allow ice base enthalpy to be below

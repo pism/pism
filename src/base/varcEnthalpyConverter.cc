@@ -86,8 +86,12 @@ PetscErrorCode varcEnthalpyConverter::viewConstants(PetscViewer viewer) const {
   if (!iascii) { SETERRQ(1,"Only ASCII viewer for EnthalpyConverter\n"); }
 
   ierr = PetscViewerASCIIPrintf(viewer,
-    "\n<using varcEnthalpyConverter which has additional built-in constants to implement\n"
-       "  equation (4.39) from Greve & Blatter (2009)>"); CHKERRQ(ierr);
+    "\n<class varcEnthalpyConverter has two additional constants, so as to implement\n"
+       "  equation (4.39) from Greve & Blatter (2009):"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   T_r   = %12.5f (K)\n",         T_r); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   c_gradient = %12.8f  >\n",    c_gradient); CHKERRQ(ierr);
 
   ierr = EnthalpyConverter::viewConstants(viewer); CHKERRQ(ierr);
   return 0;

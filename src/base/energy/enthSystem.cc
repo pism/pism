@@ -119,7 +119,7 @@ PetscErrorCode enthSystemCtx::viewConstants(
   if (!iascii) { SETERRQ(1,"Only ASCII viewer for enthSystemCtx::viewConstants()\n"); }
   
   ierr = PetscViewerASCIIPrintf(viewer,
-                   "\n<<VIEWING enthSystemCtx:\n"); CHKERRQ(ierr);
+                   "\n<<VIEWING enthSystemCtx with prefix '%s':\n",prefix.c_str()); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                      "for ALL columns:\n"); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
@@ -225,7 +225,21 @@ PetscErrorCode enthSystemCtx::setNeumannBasal(PetscScalar Y) {
   return 0;
 }
 
-//! \brief Assemble the R array.
+
+//! \brief Assemble the R array.  The R value switches at the CTS.
+/*!  In a simple abstract diffusion
+  \f[ \frac{\partial u}{\partial t} = D \frac{\partial^2 u}{\partial z^2}, \f]
+with time steps \f$\Delta t\f$ and spatial steps \f$\Delta z\f$ we define
+  \f[ R = \frac{D \Delta t}{\Delta z^2}. \f]
+This is used in an implicit method to write each line in the linear system, for
+example [\ref MortonMayers]:
+  \f[ -R U_{j-1}^{n+1} + (1+2R) U_j^{n+1} - R U_{j+1}^{n+1} = U_j^n. \f]
+  
+In the case of conservation of energy [\ref AschwandenBuelerKhroulevBlatter],
+  \f[ u=E \qquad \text{ and } \qquad D = \frac{K}{\rho} \qquad \text{ and } \qquad K = \frac{k}{c}. \f]
+Thus
+  \f[ R = \frac{k \Delta t}{\rho c \Delta z^2}. \f]
+ */
 PetscErrorCode enthSystemCtx::assemble_R() {
 
   for (PetscInt k = 0; k <= ks; k++)
