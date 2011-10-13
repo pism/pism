@@ -224,6 +224,8 @@ if (Pism_USE_PROJ4)
   add_definitions (-DPISM_HAVE_PROJ4=1)
   include_directories (${PROJ4_INCLUDES})
   list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
+else()
+  add_definitions (-DPISM_HAVE_PROJ4=0)
 endif()
 
 add_custom_target (etags

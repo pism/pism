@@ -255,10 +255,6 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     PetscTruth dTforcing_set;
     char dT_file[PETSC_MAX_PATH_LEN];
 
-    ierr = verbPrintf(2, grid.com, 
-      "  reading delta T data from forcing file %s for -paleo_precip actions ...\n",
-      dT_file);  CHKERRQ(ierr);
-
     ierr = PetscOptionsString("-dTforcing", "Specifies the air temperature offsets file",
 			      "", "",
 			      dT_file, PETSC_MAX_PATH_LEN, &dTforcing_set); CHKERRQ(ierr);
@@ -266,6 +262,11 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
       ierr = PetscPrintf(grid.com, "ERROR: option -paleo_precip requires -dTforcing.\n"); CHKERRQ(ierr);
       PISMEnd();
     }
+
+    ierr = verbPrintf(2, grid.com, 
+      "  reading delta T data from forcing file %s for -paleo_precip actions ...\n",
+      dT_file);  CHKERRQ(ierr);
+
     dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
     ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
     ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
