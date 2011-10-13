@@ -52,22 +52,8 @@ onto these points, we need the indices \f$\{I_m, \dots, I_{m'}\}\f$ of the netCD
 
   \f[  [x(i_m), x(i_{m'})] \quad \text{is a subset of} \quad  [x(I_m), x(I_{m'})]  \f]
 
-In the code, \c xbdy\f$[2] = \{x(i_m), x(i_{m'})\}\f$.  We have obtained the netCDF bounds 
-\f$x(I_0)\f$ and \f$x(I_N)\f$ in the \c bdy array and the
-number of elements \f$N+1\f$ in the \c dim array.
-
-This is a summary of the fields of a \c LocalInterpCtx, and a translation between scalars in the previous
-paragraphs and the fields:
- - \f$I_m = \operatorname{floor}((x(i_m) - A) / H)\f$ is called \c start
- - \f$I_{m'} - I_m = \operatorname{ceil}((x(i_{m'}) - X(I_m)) / H\f$ is \c count - 1
- - \f$X(I_m)\f$ is called \c fstart
- - \f$H\f$ is called \c delta
-
-\c delta and \c fstart are not used in the vertical dimension because the spacing is not 
-generally equal.  Rather, \c zlevs and \c zblevs contain the needed information.
-
-The arrays \c start and \c count have 5 integer entries, corresponding to the dimensions
-\f$t, x, y, z, zb\f$.
+The arrays \c start and \c count have 4 integer entries, corresponding to the dimensions
+\f$t, x, y, z(zb)\f$.
  */
 class LocalInterpCtx {
 public:
@@ -76,13 +62,13 @@ public:
   vector<double> x_alpha, y_alpha;
   double *a;                       //!< temporary buffer
   int a_len;                       //!< the size of the buffer
-  vector<double> zlevels;
+  vector<double> zlevels;          //!< input z levels
   bool report_range;
   MPI_Comm com;			//!< MPI Communicator (for printing, mostly)
   PetscMPIInt rank;		//!< MPI rank, to allocate a_raw on proc 0 only
 
 public:
-  LocalInterpCtx(grid_info g, IceGrid &grid);
+  LocalInterpCtx(grid_info g, IceGrid &grid, PetscReal z_min, PetscReal z_max);
   ~LocalInterpCtx();
   PetscErrorCode printArray();
 protected:

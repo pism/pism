@@ -38,14 +38,14 @@
 
   Note this constructor doesn't extract new information from the NetCDF file or
   do communication. The information from the NetCDF file must already be
-  extracted, validly stored in a grid_info structure \c g and preallocated arrays
-  \c zlevsIN[], \c zblevsIN[], and each processor must have the same values for
-  all of them.
+  extracted, validly stored in a grid_info structure \c input.
 
-  The \c IceGrid is used to determine what ranges of the target arrays (i.e. \c Vecs into which NetCDF
-  information will be interpolated) are owned by each processor.
+  The \c IceGrid is used to determine what ranges of the target arrays (i.e. \c
+  Vecs into which NetCDF information will be interpolated) are owned by each
+  processor.
 */
-LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid) {
+LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid,
+                               PetscReal z_min, PetscReal z_max) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   com = grid.com;
@@ -55,44 +55,28 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid) {
   input.print(com);
 
   if (!(grid.x.front() >= input.x_min && grid.x.back() <= input.x_max &&
-        grid.y.front() >= input.y_min && grid.y.back() <= input.y_max)) {
+        grid.y.front() >= input.y_min && grid.y.back() <= input.y_max &&
+        z_min >= input.z_min && z_max <= input.z_max)) {
 
     PetscPrintf(com,
 		"target computational domain not a subset of source (in NetCDF file)\n"
 		"  computational domain:\n");
-    PetscPrintf(grid.com, "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
-                grid.x.front(), grid.x.back(), grid.y.front(), grid.y.back());
-    PetscPrintf(grid.com, "source domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
-                input.x_min, input.x_max, input.y_min, input.y_max);
+    PetscPrintf(grid.com, "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
+                grid.x.front(), grid.x.back(),
+                grid.y.front(), grid.y.back(),
+                z_min, z_max);
+    PetscPrintf(grid.com, "source domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
+                input.x_min, input.x_max,
+                input.y_min, input.y_max,
+                input.z_min, input.z_max);
     PISMEnd();
   }
-
-  // FIXME: put back vertical extent check
 
   // limits of the processor's part of the target computational domain
   double x_min = grid.x[grid.xs],
     x_max = grid.x[grid.xs + grid.xm - 1],
     y_min = grid.y[grid.ys],
     y_max = grid.y[grid.ys + grid.ym - 1];
-
-/*
-To make this work with unequal spacing <i>in the horizontal dimension</i>, IF EVER NEEDED,
-we have some choices.
-Suppose a processor owns indices \f$\{i_m, \dots, i_{m'}\}\f$ and we know nothing about the
-spacing.  Then to find the interpolated value at \f$x(j)\f$ where \f$i_m \le j \le i_{m'}\f$
-we need the index \f$J\f$ such that \f$X(J) \le x(j) \le X(J+1)\f$.
-
-Note that we could just loop through an array of \f$X(\cdot)\f$ to find \f$J\f$, and it would
-not be a performance bottleneck.  It would also be more general.  Of course, for
-a special case like Chebyshev-Gauss-Lobatto we can compute the indices.  A good
-approach would be to have a structure representing the layout in each dimension.
-Then we can have a function which takes a floating point value and returns the
-largest index which is not greater than that value.
-
-Note that \c lic.start and \c lic.count is all that is necessary to pull the correct
-data from the netCDF file, so if we implement this general scheme, the \c fstart
-and \c delta entries in the struct will not be meaningful.
- */
 
   // T
   start[T] = input.t_len - 1;       // use the latest time.
@@ -190,15 +174,20 @@ PetscErrorCode LocalInterpCtx::printArray() {
 }
 
 grid_info::grid_info() {
-  t_len  = 0;
-  x_len  = 0;
-  y_len  = 0;
-  z_len  = 0;
-  x_min  = 0;
-  x_max  = 0;
-  y_min  = 0;
-  y_max  = 0;
-  z_max  = 0;
+  t_len = 0;
+  time  = 0;
+
+  x_len = 0;
+  x_max = 0;
+  x_min = 0;
+
+  y_len = 0;
+  y_max = 0;
+  y_min = 0;
+
+  z_len = 0;
+  z_min = 0;
+  z_max = 0;
 }
 
 PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {

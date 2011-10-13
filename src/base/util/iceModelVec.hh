@@ -471,10 +471,10 @@ public:
   virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3D &imv3_source);
   virtual PetscErrorCode endGhostCommTransfer(IceModelVec3D &imv3_source);
   virtual PetscScalar    getValZ(PetscInt i, PetscInt j, PetscScalar z);
-  virtual PetscErrorCode  isLegalLevel(PetscScalar z);
+  virtual PetscErrorCode isLegalLevel(PetscScalar z);
 protected:
-  virtual PetscErrorCode  allocate(IceGrid &mygrid, string my_short_name,
-                                   bool has_ghosts, vector<double> levels, int stencil_width = 1);
+  virtual PetscErrorCode allocate(IceGrid &mygrid, string my_short_name,
+                                  bool has_ghosts, vector<double> levels, int stencil_width = 1);
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode has_nan();
 

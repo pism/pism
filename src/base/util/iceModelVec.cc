@@ -464,7 +464,7 @@ PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* 
   } else {
     CHKERRQ(ierr);              // catch other errors
     //! the *caller* is in charge of destroying lic
-    lic = new LocalInterpCtx(gi, *grid);
+    lic = new LocalInterpCtx(gi, *grid, zlevels.front(), zlevels.back());
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
