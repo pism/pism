@@ -68,22 +68,6 @@ else ()
   set (NCVariable_flags "-DPISM_WRITE_COMPRESSED_NETCDF4=0")
 endif ()
 
-# Set variable storage order in PISM output files.
-if     (Pism_VARIABLE_ORDER STREQUAL "xyz")
-  message (STATUS "Using the t,x,y,z variable order (fastest).")
-  set (fast_write "1")
-elseif (Pism_VARIABLE_ORDER STREQUAL "yxz")
-  message (STATUS "Using the t,y,x,z variable order.")
-  set (fast_write "2")
-elseif (Pism_VARIABLE_ORDER STREQUAL "zyx")
-  message (STATUS "Using the t,z,y,x variable order (slowest).")
-  set (fast_write "3")
-else ()
-  message (FATAL_ERROR "Pism_VARIABLE_ORDER has to be set to one of 'xyz','yxz','zyx'.")
-endif ()
-
-set (NCVariable_flags "${NCVariable_flags} -DPISM_VARIABLE_ORDER=${fast_write}")
-
 set_source_files_properties (base/util/NCVariable.cc
   PROPERTIES COMPILE_FLAGS ${NCVariable_flags})
 

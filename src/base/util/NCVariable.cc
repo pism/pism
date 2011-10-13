@@ -108,6 +108,7 @@ PetscErrorCode NCSpatialVariable::reset() {
   NCVariable::reset();
 
   time_independent = false;
+  variable_order = "xyz";
   strings["coordinates"] = "lat lon";
   strings["grid_mapping"] = "mapping";
 
@@ -158,7 +159,7 @@ void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_level
   
   dimensions["t"] = grid->config.get_string("time_dimension_name");
   if (nlevels > 1)
-    dimensions["z"] = "z";      // default; can be overridder easily
+    dimensions["z"] = "z";      // default; can be overridden easily
 }
 
 void NCSpatialVariable::set_levels(const vector<double> &levels) {
@@ -733,17 +734,17 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
 
   // Use t,x,y,z(zb) variable order: it is weird, but matches in-memory storage
   // order and is *a lot* faster.
-#if (PISM_VARIABLE_ORDER == 1)
-  ierr = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  ierr = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-#endif
+  if (variable_order == "xyz") {
+    ierr = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
 
   // Use the t,y,x,z variable order: also weird, somewhat slower, but 2D fields
   // are stored in the "natural" order.
-#if  (PISM_VARIABLE_ORDER == 2)
-  ierr = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  ierr = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-#endif
+  if (variable_order == "yxz") {
+    ierr = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
 
   if (z != "") {
     ierr = nc_inq_dimid(ncid, z.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -754,10 +755,10 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
 
   // Use the t,z(zb),y,x variables order: more natural for plotting and post-processing,
   // but requires transposing data while writing and is *a lot* slower.
-#if (PISM_VARIABLE_ORDER == 3)
-  ierr = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  ierr = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-#endif
+  if (variable_order == "zyx") {
+    ierr = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
     
   ierr = nc_def_var(ncid, short_name.c_str(), nctype, ndims, dimids, &varid);
   CHKERRQ(check_err(ierr,__LINE__,__FILE__));

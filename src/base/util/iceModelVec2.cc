@@ -626,8 +626,10 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, string my_name, bool loca
   name = my_name;
 
   vars.resize(dof);
-  for (int j = 0; j < dof; ++j)
+  for (int j = 0; j < dof; ++j) {
     vars[j].init_2d(my_name, my_grid);
+    vars[j].variable_order = grid->config.get_string("output_variable_order");
+  }
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 

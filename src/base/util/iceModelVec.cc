@@ -411,6 +411,8 @@ PetscErrorCode IceModelVec::reset_attrs(int N) {
   output_data_type = NC_DOUBLE;
 
   vars[N].reset();
+  if (grid)
+    vars[N].variable_order = grid->config.get_string("output_variable_order");
 
   return 0;
 }

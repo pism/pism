@@ -45,6 +45,7 @@ public:
     x_attrs, y_attrs, z_attrs;
   bool time_independent;        //!< a variable in a NetCDF file will not
                                 //! depend on 't' if this is true.
+  string variable_order;        //!< variable order in output files;
 protected:
   int nlevels;
   vector<double> zlevels;

@@ -313,6 +313,18 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.flag_from_option("acab_cumulative", "compute_cumulative_acab"); CHKERRQ(ierr);
 
+  set<string> variable_order_choices;
+  variable_order_choices.insert("xyz");
+  variable_order_choices.insert("yxz");
+  variable_order_choices.insert("zyx");
+  string variable_order = "xyz";
+  bool variable_order_set;
+  ierr = PISMOptionsList(grid.com, "-o_order", "Variable order in output files",
+                         variable_order_choices, variable_order, variable_order, variable_order_set); CHKERRQ(ierr);
+  if (variable_order_set) {
+    config.set_string("output_variable_order", variable_order);
+  }
+
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   global_attributes.set_string("title", config.get_string("run_title"));
