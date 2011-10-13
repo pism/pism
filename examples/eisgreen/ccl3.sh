@@ -35,7 +35,7 @@ snaps="-save_file snaps_ccl3.nc -save_times -240000:10000:-10000"
 
 ts="-ts_file vol_ccl3.nc -ts_vars ivol -ts_times -249900:100:0"
 
-PGRN="pismr -config_override eismint_config-ccl3-gwl3.nc -surface pdd"
+PGRN="pismr -e 3 -ocean_kill -atmosphere eismint_greenland -surface pdd"
 
-$SHOW $MPIDO $NN $PGRN -skip 10 -i $INFILE -ys -249900 -ye 0 ${forcing} ${snaps} ${ts} -o green_ccl3_year0.nc
+$SHOW $MPIDO $NN $PGRN -bed_def lc -skip 20 -i $INFILE -ys -249900 -ye 0 ${forcing} ${snaps} ${ts} -o green_ccl3_year0.nc
 

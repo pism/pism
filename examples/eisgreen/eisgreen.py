@@ -97,6 +97,8 @@ H   = zeros( (int(dim[0]), int(dim[1])), float32)
 B   = zeros( (int(dim[0]), int(dim[1])), float32)
 acc = zeros( (int(dim[0]), int(dim[1])), float32)
 
+ghf = 0.050 * ones( (int(dim[0]), int(dim[1])), float32)  # geothermal flux = 50 mW m-2
+
 Scount=0;
 Hcount=0
 Bcount=0
@@ -149,6 +151,7 @@ hvar = ncfile.createVariable('usurf', 'f4', dimensions=('y', 'x'))
 thkvar = ncfile.createVariable('thk', 'f4', dimensions=('y', 'x'))
 bedvar = ncfile.createVariable('topg', 'f4', dimensions=('y', 'x'), fill_value=topg_fill_value) 
 accvar = ncfile.createVariable('precip', 'f4', dimensions=('y', 'x'))
+bheatflxvar = ncfile.createVariable('bheatflx', 'f4', dimensions=('y', 'x'))
 
 # set the attributes of the variables
 polarVar.grid_mapping_name = 'polar_stereographic'
@@ -190,6 +193,9 @@ bedvar.valid_min = topg_valid_min
 accvar.long_name = 'mean annual ice-equivalent precipitation rate'
 accvar.units = 'm year-1'
 
+bheatflxvar.long_name = 'upward geothermal flux at bedrock surface'
+bheatflxvar.units = 'W m-2'
+
 # write the data to the NetCDF file
 spacing = float(dim[2])*1000
 for i in range(int(dim[0])):
@@ -202,6 +208,7 @@ hvar[:] = S
 thkvar[:] = H
 bedvar[:] = B
 accvar[:] = acc
+bheatflxvar[:] = ghf
 ncfile.close()
 print "NetCDF file ",WRIT_FILE," created"
 

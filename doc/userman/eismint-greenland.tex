@@ -2,9 +2,7 @@
 \section{Example: Modeling the Greenland ice sheet (EISMINT-Greenland)}\label{sec:eismint-greenland} \index{PISM!running the EISMINT-Greenland intercomparison}\index{Ice Sheets!Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
 \optsection{EISMINT-Greenland}
 
-In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use older data from the 1990s ice sheet modelling intercomparison EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}, but it is an excellent tutorial example.
-
-The data are freely available at
+In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use older data from the 1990s ice sheet modelling intercomparison EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}, but it is an excellent tutorial example.  The data are freely available at
 
 \begin{center}
   \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}
@@ -69,11 +67,10 @@ $ ./eiscore.py
 
 \subsubsection*{Bootstrapping}  \label{sect:green-bootstrapping}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model.  \footnote{The continuum model is the differential equations describing ice flow inside PISM.  See section \ref{sect:boot} for more on ``bootstrapping''.}
 
-We do a one model year run using option \texttt{-boot_file} to ``bootstrap'' from file \texttt{eis_green_smoothed.nc}, reading EISMINT-Greenland parameters from \texttt{eismint_config.nc} and using command-line options to enable an elevation- and latitude-dependent near-surface air temperature parameterization and a PDD model.\footnote{You can run \texttt{ncdump eismint_config.nc} to see the parameter values.}
+We do a one model year run using option \texttt{-boot_file} to ``bootstrap'' from file \texttt{eis_green_smoothed.nc}, using command-line options to enable an elevation- and latitude-dependent near-surface air temperature parameterization and a PDD model.
 
-% pismr -config_override eismint_config.nc -boot_file eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -Mbz 21 -skip 1 -y 1 -o green20km_y1.nc
 \begin{verbatim}
-$ pismr -config_override eismint_config.nc -surface pdd -atmosphere eismint_greenland
+$ pismr -e 3 -ocean_kill -surface pdd -atmosphere eismint_greenland \
         -boot_file eis_green_smoothed.nc -Mx 83 -My 141 \
         -Lz 4000 -Mz 51 -Lbz 2000 -Mbz 21 -skip 1 -y 1 -o green20km_y1.nc
 \end{verbatim}%$
@@ -84,8 +81,7 @@ $ pismr -config_override eismint_config.nc -surface pdd -atmosphere eismint_gree
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-PISMR trunk 0.4.1961 (basic evolution run mode)
-CONFIG OVERRIDES read from file 'eismint_config.nc'.
+PISMR trunk 0.4.1985 (basic evolution run mode)
   setting flow law to polythermal type ...
 * Initializing bed smoother object with 5.000 km half-width ...
 * Initializing the SIA stress balance modifier...
@@ -119,8 +115,8 @@ bootstrapping by PISM default method from file eis_green_smoothed.nc
                    \ not found; using default constant    0.00 (m)
   absent bmelt     / ice basal melt rate in ice thickness per time
                    \ not found; using default constant    0.00 (m year-1)
-  absent bheatflx  / upward geothermal flux at bedrock surface
-                   \ not found; using default constant   50.00 (mW m-2)
+  FOUND  bheatflx  / upward geothermal flux at bedrock surface
+                   \ min,max =    50.000,   50.000 (mW m-2)
   absent dbdt      / bedrock uplift rate
                    \ not found; using default constant    0.00 (m year-1)
   filling in ice and bedrock temperatures using surface temps and quartic guess
@@ -154,17 +150,17 @@ doing preliminary step to fill diagnostic quantities ...
 running forward ...
 P         YEAR:     ivol     iarea     max_diff
 U        years 10^6_km^3 10^6_km^2     m^2 s^-1
-S      0.00000:  2.82500    1.6708   9.87263627
+S      0.00000:  2.82500    1.6708   9.87263673
  $v$Eh d (dt=0.15391)
-S      0.15391:  2.82512    2.2308   9.87263627
+S      0.15391:  2.82512    2.2308   9.87263673
  $v$Eh d (dt=0.21700)
-S      0.37091:  2.82525    2.1280   6.99952380
+S      0.37091:  2.82525    2.1280   6.99952416
  $v$Eh d (dt=0.24986)
-S      0.62077:  2.82491    1.6724   6.07770753
+S      0.62077:  2.82491    1.6724   6.07770786
  $v$Eh d (dt=0.28176)
-S      0.90253:  2.82503    1.7692   5.38835821
+S      0.90253:  2.82503    1.7692   5.38835851
  $v$Eh e (dt=0.09747)
-S      1.00000:  2.82510    2.2308   4.89872704
+S      1.00000:  2.82510    2.2308   4.89872732
 ... done with run
 Writing model state to file `green20km_y1.nc'
 \end{verbatim}
@@ -180,56 +176,52 @@ What has happened?  As noted, \emph{all} real ice sheet data fails to contain ce
 
 Note that EISMINT-Greenland specifies an 83 by 141 point grid, but you may use other numbers for \texttt{-Mx} and \texttt{-My} if desired.  In such cases the data will be linearly interpolated onto your grid.  Larger values will produce slower runs.
 
-The option \texttt{-boot_file} stands for ``bootstrap from''.  A different option \texttt{-i}, for ``input file'', is used for a file which has full initial conditions.  In practice, \texttt{-i} is only used with a NetCDF file which was previously saved by PISM.  That is, \texttt{-i} is used to continue a run from a saved state.
+The option \texttt{-boot_file} stands for ``bootstrap from file''.  A different option \texttt{-i}, for ``input file'', is used for a file which has full initial conditions.  In practice, \texttt{-i} is only used with a NetCDF file which was previously saved by PISM.  That is, \texttt{-i} is used to continue a run from a saved state.
 
-Note the choice of the height of the computational box (``\texttt{-Lz 4000}''), of the number of vertical levels (``\texttt{-Mz 51}'' for levels in ice and ``\texttt{-Mbz 51}'' for levels in bedrock). The messages to standard out show that the vertical spacing is about 20 m near the base and more than 130 m at the top of the computational box (where it matters less).
+Note the choice of the height of the computational box (``\texttt{-Lz 4000}''), of the number of vertical levels (``\texttt{-Mz 51}'' for levels in ice and ``\texttt{-Mbz 21}'' for levels in bedrock). The messages to standard out show that the vertical spacing is about 20 m near the base and more than 130 m at the top of the computational box where it matters less.
 
-We see the report that bootstrapping has applied an interpolation scheme to the surface temperatures and geothermal fluxes to estimate preliminary temperatures within the ice.  It is based on a heuristic for the amount of downward flow in a column.  Thus bootstrapping quickly creates a temperature field at depth, but it is not a field in equilibrium with the flow.  (That's coming \dots)
+We see the report that bootstrapping has applied an interpolation scheme to the surface temperatures and geothermal fluxes to estimate preliminary temperatures within the ice.  It is based on a heuristic for the typical amount of downward flow in a column.  Thus bootstrapping quickly creates a temperature field at depth, but it is not a field in equilibrium with the flow.
 
-The bootstrapping mode also fills in several default values.  For instance, the variables \texttt{bwat} (effective thickness of basal water), \texttt{tillphi} (till friction angle), \texttt{bheatflx} (geothermal flux), and \texttt{dbdt} (bed uplift rate) were not found in the input file.   (They would be present in a saved PISM model state and they are part of the ``full initial conditions'' referred to earlier.)  Also, note that the data had redundant surface elevation values in the sense that PISM bootstrapping includes the computation ``\texttt{usurf = topg + thk}'' of the surface elevation from the ice thickness and the bed elevation.
+The bootstrapping mode also fills in several default values.  For instance, the variables \texttt{bwat} (effective thickness of basal water), \texttt{tillphi} (till friction angle), and \texttt{dbdt} (bed uplift rate) were not found in the input file.   They would be present in a saved PISM model state and they are part of the ``full initial conditions'' referred to earlier)  Also, the data had redundant surface elevation values, in the sense that PISM uses the computation ``\texttt{usurf = topg + thk}'' of the surface elevation from the ice thickness and the bed elevation, and we are warned that the thickness and bedrock elevations are used and the surface elevations are ignored.
 
-In addition to the default bootstrapping actions there are additional settings special to EISMINT-Greenland.  For instance, because there is no EISMINT-Greenland gridded data set for surface temperature \cite{RitzEISMINT}.  Instead there is a formula (parameterization) which determines the temperature as a function of latitude and surface elevation.  The code behind \texttt{-surface eismint_greenland} knows this formula and uses it.  Also the prescribed constant value for geothermal flux is set.
-(This and other parameters, such as PDD factors, are read in from \texttt{eismint_config.nc}.)
+In addition to the default bootstrapping actions there are additional settings special to EISMINT-Greenland.  For instance, there is no EISMINT-Greenland gridded data set for surface temperature \cite{RitzEISMINT}.  Instead there is a formula (parameterization) which determines the temperature as a function of latitude and surface elevation.  The code behind \texttt{-atmosphere eismint_greenland} knows this formula and uses it.  Note that PDD factors use the PISM default values simply because the values from \cite{RitzEISMINT} are chosen to be the PISM default values.
 
-As suggested a few paragraphs back, it is helpful to do a better job of filling in the temperatures within the ice.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model while holding the upper ice surface stationary.  This is a continuation of ``bootstrapping''.  The effect is to create a temperature field which is approximately stationary with respect to advection and conduction.\footnote{The resulting temperature field is not a fully physical temperature field, however, because it comes from a steadiness assumption about the geometry of the ice sheet.  Said another way, it is a temperature field in equilibrium with a velocity field for which the surface kinematical equation \cite{Fowler} is \emph{not} satisfied.}  We create this temperature field by running for 25000 years\footnote{In fact a longer run is reasonable.  The exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.  But the goal is merely to get to a state which is reasonable for starting a complete steady-state run.} with non-evolving surface.  The option \texttt{-no_mass} turns off the map-plane mass continuity scheme, and thus any evolution of the surface.
+As suggested a few paragraphs back, it is helpful to do a better job of filling in the temperatures within the ice.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model while holding the upper ice surface stationary.  This is effectively a continuation of ``bootstrapping''.  The result is to create a temperature field which is approximately stationary with respect to advection and conduction.  We create this temperature field by running for 25000 years with non-evolving surface.  The option \texttt{-no_mass} turns off the map-plane mass continuity scheme, and thus any evolution of the surface.  
 
 \begin{verbatim}
-$ mpiexec -n 2 pismr -config_override eismint_config.nc \
-          -surface pdd -atmosphere eismint_greenland \
+$ mpiexec -n 2 pismr -e 3 -ocean_kill -atmosphere eismint_greenland -surface pdd \
           -i green20km_y1.nc -no_mass -y 25000 -o green20km_Tsteady.nc
 \end{verbatim}%$
 \noindent This last run takes less than half of a processor-hour.  Parallel processing is effective here, up to perhaps a peak real time speed with 40 processors for this coarse 83$\times$141 grid.  (Finer grid computations, for instance on a 5km grid for a Greenland-sized ice sheet, are \emph{easier} to parallelize in the sense that greater maximum speedup over one processor is attainable \cite{BBssasliding}.)
 
+The velocity field in \texttt{green20km_Tsteady.nc}, with which the temperature field is approximately in balance, is not one for which the surface kinematical equation \cite{Fowler}, equivalently the mass continuity equation, is satisfied.  So the temperature field is only approximately steady, and significant evolution resumes when we again ``turn on'' the mass continuity equation, as we do next.  Also, a longer run like the above would be reasonable because the exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years, but the goal is merely to get to a state which is reasonable, before starting a complete steady-state run, as we are about to do.
+
 The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree day (PDD) model which is turned on using the \texttt{-surface pdd} option.  The PDD model is, by default, implemented by the deterministic scheme described in \cite{CalovGreve05}, but the user can add option \texttt{-pdd_rand} to use a stochastic PDD implementation.
 
-\subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2'' (turned on using the option \intextoption{ssl2}).  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  If 8 processors are used, a ten thousand model year run might look like this:
+\subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field and essentially the present day geometry (thickness), our first experiment is the steady state run ``SSL2'' turned on using the option \intextoption{ssl2}.  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  If 8 processors are used, a ten thousand model year run might look like this:
 
 \begin{verbatim}
-$ mpiexec -n 8 pismr -config_override eismint_config.nc \
-          -surface pdd -atmosphere eismint_greenland \
-          -i green20km_Tsteady.nc -y 10000 -ys 0 \
-          -o green_SSL2_10k.nc
+$ mpiexec -n 8 pismr -e 3 -ocean_kill -surface pdd -atmosphere eismint_greenland \
+          -i green20km_Tsteady.nc -y 10000 -ys 0 -o green_SSL2_10k.nc
 \end{verbatim}%$
 \noindent We could continue for another ten thousand years by starting from the saved file and continuing for 10000 more model years:
 \begin{verbatim}
-$ mpiexec -n 8 pismr -config_override eismint_config.nc \
-          -surface pdd -atmosphere eismint_greenland \
-          -i green_SSL2_10k.nc -y 10000 \
-          -o green_SSL2_20k.nc
+$ mpiexec -n 8 pismr -e 3 -ocean_kill -surface pdd -atmosphere eismint_greenland \
+          -i green_SSL2_10k.nc -y 10000 -o green_SSL2_20k.nc
 \end{verbatim}%$
 \noindent And so on.
 
 The script \texttt{ssh2.sh} uses options \texttt{ts_file} and \texttt{extra_file} to save scalar and map-plane diagnostic quantities every year and every 1000 years, respectively. So our discussion will now assume that the user \emph{actually} did this to completion:
 
 \begin{verbatim}
-./ssh2.sh 2 >> out.ssl2 &
+./ssl2.sh 2 >> out.ssl2 &
 \end{verbatim}
 
-\noindent This puts the run in the background and generates a text file logging the whole run.  The whole SSL2 run should take something like 120 processor hours.  Three files appear, \texttt{vol_ssl2.nc}, \texttt{snaps_ssl2.nc}, and, at the end of the run, \texttt{green_ssl2_110ka.nc}.
+\noindent This puts a two processor run in the background and generates a text file logging the whole run.  It should take something like 120 processor hours.  Three files appear, \texttt{vol_ssl2.nc}, \texttt{ex_ssl2.nc}, and, at the end of the run, \texttt{green_ssl2_110ka.nc}.
 
-The SSL2 simulation is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.  One can look at the standard output text file by a minimal method like ``\texttt{less out.ssl2}''.  The user can more clearly see the behavior over time of the volume, area, basal melt fraction, and a couple of other default quantities, by viewing the NetCDF file \texttt{vol_ssl2.nc}.  We leave it as an exercise to find the first 10000 model year period in which the volume changes by less that 0.01\%.
+The SSL2 simulation is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.  One may see the behaviour over time of the volume, area, basal melt fraction, and a couple of other default quantities, by viewing the NetCDF file \texttt{vol_ssl2.nc}.  We leave it as an exercise to find the first 10000 model year period in which the volume changes by less that 0.01\%.
 
-In any case, one sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume a bit more than $4 \times 10^{6}\,\text{km}^3$.  The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully coupled steady state.
+The volume shows a consistent growing-but-leveling-out trend, with a final volume a bit more than $4 \times 10^{6}\,\text{km}^3$.  The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The melt fraction indicates that, measured by basal melt fraction, the temperature field from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully-coupled steady state.
 
 \begin{figure}[ht]
 \centering
@@ -250,12 +242,11 @@ We will use the final NetCDF file \texttt{green_ssl2_110ka.nc} to continue the E
 \begin{figure}[ht]
 \centering
 \mbox{\phantom{|}\hspace{-1.0in}\includegraphics[height=3.0in,keepaspectratio=true]{greenH-SSL2}\,\includegraphics[height=3.0in,width=2.3in]{greenTpa-SSL2}\,\includegraphics[height=3.0in,keepaspectratio=true]{greencbar-SSL2}}
-%\includegraphics[height=3.7in,width=2.9in]{greenTpa-SSL2}
-\caption{Ice thickness (meters; left), basal temperature (degrees C below 0; middle), and vertically-averaged horizontal velocity (m/a; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Note that in the temperature graph the pressure-melting temperature areas are white.}
+\caption{Ice thickness (meters; left), basal temperature (degrees C below 0; middle), and vertically-averaged horizontal velocity (m/a; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Pressure-melting temperature areas are white.}
 \label{fig:ssl2thickTpa}
 \end{figure}
 
-In addition to the more standardized EISMINT-Greenland intercomparison called ``SSL2'', a ``SSL3'' was proposed to allow each participant to choose additional parameters and adjust other aspects of the model.  (Sliding, for instance, is an outstanding omission here.)  We omit this run for tutorial purposes, however, and proceed to use climate forcing in runs ``CCL3'' and ``GWL3''.
+In addition to the standard EISMINT-Greenland intercomparison called ``SSL2'', a ``SSL3'' was proposed to allow each participant to choose additional parameters and adjust other aspects of the model.  (Sliding, for instance, is an outstanding omission here.)  We omit this for tutorial purposes, however, and proceed to use climate forcing in runs ``CCL3'' and ``GWL3''.
 
 
 \subsubsection*{Climate forcing from GRIP and SPECMAP} 
@@ -264,7 +255,7 @@ The next experiment starts from the end of the steady state SSL2 run above.  Rec
 
 The script \texttt{ccl3.sh} runs the CCL3 experiment for the full 250ka period, with this single command
 \begin{verbatim}
-mpiexec -n 8 pismr -config_override eismint_config-ccl3-gwl3.nc \
+mpiexec -n 8 pismr -e 3 -ocean_kill -bed_def lc
         -surface pdd -skip 10 -i green_ssl2_110ka.nc \
         -ys -249900 -ye 0 -atmosphere eismint_greenland,dTforcing \
         -dTforcing grip_dT.nc -ocean constant,dSLforcing \
@@ -272,7 +263,7 @@ mpiexec -n 8 pismr -config_override eismint_config-ccl3-gwl3.nc \
         -save_times -240000:10000:-10000 -ts_file vol_ccl3.nc \
         -ts_vars ivol -ts_times -249900:100:0 -o green_ccl3_year0.nc
 \end{verbatim}
-\noindent The config file \texttt{eismint_config-ccl3-gwl3.nc} contains the same EISMINT-Greenland parameters as \texttt{eismint_config.nc} and Option also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
+\noindent We turn on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model, with an assumption of zero uplift rate at the start of the run, using option \intextoption{bed_def} \texttt{lc}.
 
 The resulting thickness difference, relative to the end of the SSL2 run, and the pressure-adjusted basal temperature, are shown in Figure \ref{fig:cclthickTpa}.
 
@@ -286,15 +277,15 @@ The resulting thickness difference, relative to the end of the SSL2 run, and the
 EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing (noting no GRIP or SPECMAP data are known from the future!):
 
 \begin{verbatim}
-mpiexec -n 8 pismr -config_override eismint_config-ccl3-gwl3.nc \
+mpiexec -n 8 pismr -e 3 -ocean_kill -bed_def lc \
         -surface pdd -atmosphere eismint_greenland \
         -i green_ccl3_year0.nc -y 500 -o green_ccl3_year500.nc
 \end{verbatim}
 
-A final ``greenhouse warming'' experiment ``GWL3'' (turned on using \intextoption{gwl3_start_year}) is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
+A final ``greenhouse warming'' experiment ``GWL3'', turned on using \intextoption{gwl3_start_year}, is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
 \begin{verbatim}
-mpiexec -n 8 pismr -config_override eismint_config-ccl3-gwl3.nc \
+mpiexec -n 8 pismr -e 3 -ocean_kill -bed_def lc \
         -surface pdd -atmosphere eismint_greenland \
         -gwl3_start_year 0 -i green_ccl3_year0.nc -y 500 -o green_gwl3_year500.nc
 \end{verbatim}
@@ -305,7 +296,6 @@ mpiexec -n 8 pismr -config_override eismint_config-ccl3-gwl3.nc \
 Assuming that \texttt{green20km_y1.nc} was produced by the run above (see section
 \ref{sect:green-bootstrapping}), one can run the following to check if the PDD
 model in PISM (see section \ref{sec:boundary-models}) is ``reasonable'':
-% pclimate -i green20km_y1.nc -atmosphere eismint_greenland -surface pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc 
 \begin{verbatim}
 $ pclimate -i green20km_y1.nc -atmosphere eismint_greenland -surface pdd \
            -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc 
@@ -317,9 +307,7 @@ This produces the file \texttt{pddmovie.nc} with several variables: \texttt{acab
 ice-equivalent precipitation rate) and some others.
 
 Variables \texttt{artm} and \texttt{precip} do not evolve over time because the 
-former is generated from ice sheet geometry and latitude by the EISMINT-Greenland
-formulas \cite{RitzEISMINT}, while the latter is part of the EISMINT-Greenland data
-itself.
+former is generated from ice sheet geometry and latitude by the EISMINT-Greenland formulas \cite{RitzEISMINT}, while the latter is part of the EISMINT-Greenland data itself.
 
 The other two variables were used to create figure \ref{fig:pddseries}, which
 shows the time-series of the accumulation rate (top graph) and the air
@@ -352,7 +340,6 @@ Here are two things to notice:
 
 \bigskip
 We can also test the surface temperature forcing code with the following command.
-% pclimate -i green20km_y1.nc -o dT_movie.nc -atmosphere eismint_greenland,dTforcing -dTforcing grip_dT.nc -ys -2.5e5 -ye 0 -dt 2000
 \begin{verbatim}
 $ pclimate -i green20km_y1.nc -o dT_movie.nc \
            -atmosphere eismint_greenland,dTforcing -dTforcing grip_dT.nc \
@@ -371,8 +358,7 @@ This figure shows the GRIP temperature offsets (top graph; compare to figure \re
 
 \begin{comment}
   FIXME: Variable acab in following is worth looking at. It looks right and it
-  may be possible to compare to other paleo-limate studies:
-% pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc -atmosphere eismint_greenland,dTforcing -surface pdd -ocean constant,dSLforcing
+  may be possible to compare to other paleo-climate studies:
 \begin{verbatim}
 $ pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0 \
            -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \

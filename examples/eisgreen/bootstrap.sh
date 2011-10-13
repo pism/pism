@@ -13,7 +13,7 @@ if [ $# -gt 0 ] ; then  # if user says "bootstrap.sh 8" then NN = 8
 fi
 set -e  # exit on error
 
-PGRN="pismr -config_override eismint_config.nc -atmosphere eismint_greenland -surface pdd"
+PGRN="pismr -e 3 -ocean_kill -atmosphere eismint_greenland -surface pdd"
 
 echo ""
 echo "BOOTSTRAP.SH: running pismr on eis_green_smoothed.nc for 1 year to smooth surface;"

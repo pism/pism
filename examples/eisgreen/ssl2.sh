@@ -24,11 +24,11 @@ MPIDO="mpiexec -n"
 
 INFILE=green20km_Tsteady.nc
 
-exs="-extra_file ex_ssl2.nc -extra_times 1000:1000:100000 -extra_vars diffusivity,temppabase,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf"
+exs="-extra_file ex_ssl2.nc -extra_times 1000:1000:100000 -extra_vars diffusivity,temppabase,csurf,hardav,bmelt,tempicethk_basal,mask,dHdt,thk,topg,usurf"
 
 ts="-ts_file vol_ssl2.nc -ts_times 0:yearly:110000"
 
-PGRN="pismr -config_override eismint_config.nc -atmosphere eismint_greenland -surface pdd"
+PGRN="pismr -e 3 -ocean_kill -atmosphere eismint_greenland -surface pdd"
 
-$SHOW $MPIDO $NN $PGRN -ssl2 -skip 10 -i $INFILE -ys 0 -ye 110000 ${exs} ${ts} -o green_ssl2_110ka.nc
+$SHOW $MPIDO $NN $PGRN -skip 20 -i $INFILE -ys 0 -ye 110000 ${exs} ${ts} -o green_ssl2_110ka.nc
 

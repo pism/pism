@@ -382,8 +382,11 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
   if (fausto_params) {
     ierr = verbPrintf(2, grid.com,
-       "  Setting PDD parameters using formulas (6) and (7) in [Faustoetal2009]...\n");
+       "  Setting PDD parameters from [Faustoetal2009] ...\n");
        CHKERRQ(ierr);
+
+    //FIXME: this seems not to work because config is "const"?:  config.set("pdd_std_dev",2.53);
+    base_pddStdDev = 2.53;
 
     lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
     if (!lon)
