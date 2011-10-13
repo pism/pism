@@ -114,6 +114,9 @@ int main(int argc, char *argv[]) {
     NCConfigVariable config, overrides;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "BTUTEST %s (test program for PISMBedThermalUnit)\n",
+		      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     // check required options
     vector<string> required;

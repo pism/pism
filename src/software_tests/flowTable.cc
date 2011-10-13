@@ -42,6 +42,12 @@ int main(int argc, char *argv[]) {
   NCConfigVariable config, overrides;
   ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
+  ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+  ierr = verbPrintf(2,com, 
+     "FLOWTABLE %s (test program for ThermoGlenIce,HybridIce,EnthalpyConverter classes)\n",
+     PISM_Revision); CHKERRQ(ierr);
+  ierr = stop_on_version_option(); CHKERRQ(ierr);
+
   EnthalpyConverter EC(config);
 
   double     T0=273.15, dT=10, p=2e7;

@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMTESTS %s (unit tests and new-code-playground mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     IceUnitModel m(g, config, overrides);
     ierr = m.setExecName("pismtests"); CHKERRQ(ierr);

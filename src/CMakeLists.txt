@@ -251,16 +251,16 @@ if (Pism_BUILD_EXTRA_EXECS)
   endforeach (EXEC)
 
   add_executable (tryLCbd earth/tryLCbd.cc)
-  target_link_libraries (tryLCbd pismearth)
+  target_link_libraries (tryLCbd pismearth pismrevision)
 
   add_executable (pismtests software_tests/pismtests.cc software_tests/iMtests.cc)
   target_link_libraries (pismtests pismbase)
 
   add_executable (flowTable software_tests/flowTable.cc base/rheology/flowlaws.cc)
-  target_link_libraries (flowTable pismutil)
+  target_link_libraries (flowTable pismutil pismrevision)
 
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
-  target_link_libraries (btutest pismutil)
+  target_link_libraries (btutest pismutil pismrevision)
 
   install (TARGETS
     ${SIMPLE_EXECS} tryLCbd pismtests flowTable btutest
