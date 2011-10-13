@@ -59,7 +59,7 @@ PetscErrorCode varenthSystemCtx::initThisColumn(bool my_ismarginal,
 
 //! \brief Assemble the R array for the current column, in the case with temperature-dependent properties.
 /*!
-In this class the conductivity \f$k=k(T)\f$ and the specific heat capacity
+In this implementation the conductivity \f$k=k(T)\f$ and the specific heat capacity
 \f$c=c(T)\f$ are allowed to depend on temperature.  Thus also \f$R=R(T)\f$
 depends on the temperature.  We get the temperature from the enthalpy.
  */

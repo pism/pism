@@ -321,15 +321,17 @@ protected:
   virtual PetscErrorCode getEnthalpyCTSColumn(PetscScalar p_air, //!< atmospheric pressure
 					      PetscScalar thk,	 //!< ice thickness
 					      PetscInt ks,	 //!< index of the level just below the surface
-					      PetscScalar **Enth_s); //!< enthalpy of pressure-melting temperature cold ice
+					      PetscScalar **Enth_s //!< enthalpy of pressure-melting temperature cold ice
+					      );
 
   virtual PetscErrorCode getlambdaColumn(PetscInt ks,	       //!< index of the level just below the surface
-					 PetscScalar ice_rho_c,
-                                         PetscScalar ice_k,
-					 const PetscScalar *Enth,
-					 const PetscScalar *Enth_s,
+					 PetscScalar ice_rho_c,//!< default value only
+                                         PetscScalar ice_k,    //!< default value only
+					 const PetscScalar *Enth,   //!< enthalpy in the column
+					 const PetscScalar *Enth_s, //!< enthalpy of pressure-melting temperature cold ice
 					 const PetscScalar *w, //!< vert. velocity
-					 PetscScalar *lambda);
+					 PetscScalar *lambda //!< constant controlling choice of implicit method
+					 );
 
   virtual PetscErrorCode enthalpyAndDrainageStep(
                 PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,

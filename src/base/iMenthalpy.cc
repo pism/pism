@@ -191,8 +191,9 @@ PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
     const PetscScalar p = EC->getPressureFromDepth(thk - grid.zlevels_fine[k]); // FIXME task #7297
     (*Enth_s)[k] = EC->getEnthalpyCTS(p);
   }
+  const PetscScalar Es_air = EC->getEnthalpyCTS(p_air);
   for (PetscInt k = ks+1; k < grid.Mz_fine; k++) {
-    (*Enth_s)[k] = EC->getEnthalpyCTS(p_air);
+    (*Enth_s)[k] = Es_air;
   }
   return 0;
 }
@@ -253,16 +254,22 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   PetscScalar fdz = grid.dz_fine;
   vector<double> &fzlev = grid.zlevels_fine;
 
+  // essentially physical constants
   const PetscScalar
-    p_air     = config.get("surface_pressure"),
-    ice_rho   = config.get("ice_density"),
-    ice_k     = config.get("ice_thermal_conductivity"),
-    ice_c     = config.get("ice_specific_heat_capacity"),
-    ice_K     = ice_k / ice_c, // enthalpy-conductivity for cold ice
-    L         = config.get("water_latent_heat_fusion"),  // J kg-1
-    bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
+    p_air     = config.get("surface_pressure"),          // Pa
+    ice_rho   = config.get("ice_density"),               // kg m-3
+    L         = config.get("water_latent_heat_fusion");  // J kg-1
+
+  // constants used in controlling numerical scheme
+  const PetscScalar
+    default_ice_k = config.get("ice_thermal_conductivity"),   // used in setting lambda
+    default_ice_c = config.get("ice_specific_heat_capacity"), // used in setting lambda
+    bulgeEnthMax  = config.get("enthalpy_cold_bulge_max");    // J kg-1
+
+  // constants used in hydrology model
+  const PetscScalar
     bwat_decay_rate = config.get("bwat_decay_rate"),   // m s-1
-    bwat_max = config.get("bwat_max");                 // m
+    bwat_max        = config.get("bwat_max");          // m
 
   DrainageCalculator dc(config);
   
@@ -399,7 +406,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, &esys->Enth_s); CHKERRQ(ierr);
 
         PetscScalar lambda;
-        ierr = getlambdaColumn(ks, ice_rho * ice_c, ice_k,
+        ierr = getlambdaColumn(ks, ice_rho * default_ice_c, default_ice_k,
                                esys->Enth, esys->Enth_s, esys->w,
                                &lambda); CHKERRQ(ierr);
         if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
@@ -423,12 +430,16 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           if (base_is_cold) {
               vbmr(i,j) = 0.0;  // zero melt rate if cold base
           } else {
+            const PetscScalar pbasal = EC->getPressureFromDepth(vH(i,j)); // FIXME task #7297
             PetscScalar hf_up;
             if (k1_istemperate) {
-              const PetscScalar pbasal = EC->getPressureFromDepth(vH(i,j)); // FIXME task #7297
-              hf_up = - ice_k * (EC->getMeltingTemp(p1) - EC->getMeltingTemp(pbasal)) / fdz;
+              const PetscScalar Tpmpbasal = EC->getMeltingTemp(pbasal);
+              hf_up = - esys->k_from_T(Tpmpbasal) * (EC->getMeltingTemp(p1) - Tpmpbasal) / fdz;
             } else {
-              hf_up = - ice_K * (esys->Enth[1] - esys->Enth[0]) / fdz;
+              PetscScalar Tbasal;
+              ierr = EC->getAbsTemp(esys->Enth[0], pbasal, Tbasal); CHKERRQ(ierr);
+              const PetscScalar Kbasal = esys->k_from_T(Tbasal) / EC->c_from_T(Tbasal);
+              hf_up = - Kbasal * (esys->Enth[1] - esys->Enth[0]) / fdz;
             }
             // compute basal melt rate from flux balance; vbmr = - Mb / rho in
             //   efgis paper; after we compute it we make sure there is no
@@ -459,14 +470,13 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                                        Enth0); CHKERRQ(ierr);
           ierr = esys->setDirichletBasal(Enth0); CHKERRQ(ierr);
         } else if (base_is_cold) {
-          // cold, grounded base case:  Neumann q . n = q_lith . n + F_b   and   q = - K_i \nabla H
-          ierr = esys->setNeumannBasal(- (G0(i,j) + (*Rb)(i,j)) / ice_K); CHKERRQ(ierr);
+          // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
+          ierr = esys->setBasalHeatFlux(G0(i,j) + (*Rb)(i,j)); CHKERRQ(ierr);
         } else {
           // warm, grounded base case
           if (k1_istemperate) {
-            // positive thickness of temperate ice:  Neumann q . n = 0 and q = - K_0 \nabla H
-            //   so H(k=1)-H(k=0) = 0
-            ierr = esys->setNeumannBasal(0.0); CHKERRQ(ierr);
+            // positive thickness of temperate ice; homogeneous Neumann case:  q . n = 0
+            ierr = esys->setBasalHeatFlux(0.0); CHKERRQ(ierr);
           } else {
             // no thickness of temperate ice:  Dirichlet  H = H_s(pbasal)
             ierr = esys->setDirichletBasal(esys->Enth_s[0]); CHKERRQ(ierr);

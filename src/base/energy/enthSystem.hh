@@ -42,9 +42,12 @@ public:
   PetscErrorCode initThisColumn(bool my_ismarginal,
                                 PetscScalar my_lambda,
                                 PetscReal ice_thickness);  
+
+  PetscScalar k_from_T(PetscScalar T);
+
   PetscErrorCode setBoundaryValuesThisColumn(PetscScalar my_Enth_surface);
   PetscErrorCode setDirichletBasal(PetscScalar Y);
-  PetscErrorCode setNeumannBasal(PetscScalar Y);
+  PetscErrorCode setBasalHeatFlux(PetscScalar hf);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
   PetscErrorCode viewSystem(PetscViewer viewer) const;

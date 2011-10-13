@@ -26,8 +26,8 @@
 Like base class enthSystemCtx.  Solves a tridiagonal linear system for conservation
 of energy in vertical column, for the enthalpy method [\ref AschwandenBuelerKhroulevBlatter].
 Allows enthalpy-dependent conductivity and/or heat capacity in cold
-ice.  Everything is the same except that the assemble_R() method is
-based on formulas (4.37) and (4.39) in [\ref GreveBlatter2009].
+ice.  Everything is the same except that we use formulas (4.37) and (4.39) in
+[\ref GreveBlatter2009].
  */
 class varenthSystemCtx : public enthSystemCtx {
 
@@ -36,11 +36,12 @@ public:
                     int my_Mz, string my_prefix, EnthalpyConverter *EC);
   virtual ~varenthSystemCtx() {}
 
+  PetscScalar k_from_T(PetscScalar T);
+
   PetscErrorCode initThisColumn(bool my_ismarginal,
                                 PetscScalar my_lambda,
                                 PetscReal ice_thickness);  
 protected:
-  PetscScalar k_from_T(PetscScalar T);
   virtual PetscErrorCode assemble_R();
   EnthalpyConverter *EC;  // conductivity has known dependence on T, not enthalpy
   PetscReal ice_thickness;

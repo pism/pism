@@ -76,6 +76,14 @@ PetscErrorCode enthSystemCtx::initAllColumns(PetscScalar my_dx,  PetscScalar my_
 }
 
 
+/*!
+In this implementation, \f$k\f$ does not depend on temperature.
+ */
+PetscScalar enthSystemCtx::k_from_T(PetscScalar /*T*/) {
+  return ice_k;
+}
+
+
 PetscErrorCode enthSystemCtx::initThisColumn(bool my_ismarginal,
                                              PetscScalar my_lambda,
                                              PetscReal /*ice_thickness*/) {
@@ -184,18 +192,25 @@ PetscErrorCode enthSystemCtx::setDirichletBasal(PetscScalar Y) {
 }
 
 
-//! Set coefficients in discrete equation for \f$\partial E / \partial z = Y\f$ at base of ice.
+//! Set coefficients in discrete equation for Neumann condition at base of ice.
 /*!
-This method combines the Neumann boundary condition with the differential equation.
-The vertical advection part is zeroed-out.  The error in the pure conductive and
-smooth conductivity case is \f$O(\Delta z^2)\f$.
+This method generates the Neumann boundary condition for the linear system.
 
-This code is near-duplication of code in solveThisColumn() below.
+The Neumann boundary condition is
+   \f[ \frac{\partial E}{\partial z} = - \frac{\phi}{K} \f]
+where \f$\phi\f$ is the heat flux.  Here \f$K\f$ is allowed to vary, and takes
+its value from the value computed in assemble_R().
+
+The boundary condition is combined with the partial differential equation by the
+technique of introducing an imaginary point at \f$z=-\Delta z\f$ and then
+eliminating it.
+
+The error in the pure conductive and smooth conductivity case is \f$O(\Delta z^2)\f$.
 
 This method should only be called if everything but the basal boundary condition
 is already set.
  */
-PetscErrorCode enthSystemCtx::setNeumannBasal(PetscScalar Y) {
+PetscErrorCode enthSystemCtx::setBasalHeatFlux(PetscScalar hf) {
  PetscErrorCode ierr;
 #ifdef PISM_DEBUG
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
@@ -203,6 +218,11 @@ PetscErrorCode enthSystemCtx::setNeumannBasal(PetscScalar Y) {
     SETERRQ(1, "setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
+  // extract K from R[0], so this code works even if K=K(T)
+  // recall:   R = (ice_K / ice_rho) * dtTemp / PetscSqr(dzEQ)
+  const PetscScalar
+    K = (ice_rho * PetscSqr(dzEQ) * R[0]) / dtTemp,
+    Y = - hf / K;
   const PetscScalar
     Rc = R[0],
     Rr = R[1],
@@ -210,7 +230,11 @@ PetscErrorCode enthSystemCtx::setNeumannBasal(PetscScalar Y) {
     Rplus  = 0.5 * (Rc + Rr);
   a0 = 1.0 + Rminus + Rplus;  // = D[0]
   a1 = - Rminus - Rplus;      // = U[0]
-  const PetscScalar X = - 2.0 * dzEQ * Y;  // E(-dz) = E(+dz) + X
+  // next line says 
+  //   (E(+dz) - E(-dz)) / (2 dz) = Y
+  // or equivalently
+  //   E(-dz) = E(+dz) + X
+  const PetscScalar X = - 2.0 * dzEQ * Y;
   // zero vertical velocity contribution
   b = Enth[0] + Rminus * X;   // = rhs[0]
   if (!ismarginal) {
