@@ -55,14 +55,21 @@ option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verifica
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build (experimental) python bindings" OFF)
+option (Pism_RESET_LINKER_FLAGS "Set linker flags using PISM's CMake variables from linker command-line options")
 
+set (PISM_SHARED_LIBRARY_LINK_C_FLAGS "" CACHE STRING
+  "Sets CMAKE_SHARED_LIBRARY_LINK_C_FLAGS to this if Pism_RESET_LINKER_FLAGS is ON")
+set (PISM_SHARED_LIBRARY_LINK_CXX_FLAGS "" CACHE STRING
+  "Sets CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS to this if Pism_RESET_LINKER_FLAGS is ON")
+mark_as_advanced (PISM_SHARED_LIBRARY_LINK_C_FLAGS PISM_SHARED_LIBRARY_LINK_CXX_FLAGS
+  Pism_ADD_FPIC Pism_RESET_LINKER_FLAGS)
 
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
 option (Pism_NETCDF4_OUTPUT        "Turn this on to make PISM produce NetCDF-4 files" OFF)
 option (Pism_NETCDF4_COMPRESS     "Turn this on to make PISM produce compressed NetCDF-4 files" OFF)
 
 if (PROJ4_FOUND)
-  option (Pism_USE_PROJ4            "Turn this on to use proj.4 for cell area computations" OFF)
+  option (Pism_USE_PROJ4 "Turn this on to use proj.4 for cell area computations" OFF)
 endif ()
 
 if (Pism_NETCDF4_COMPRESS AND NOT Pism_NETCDF4_OUTPUT)
@@ -128,9 +135,17 @@ endif ()
 
 # Add -fPIC to CXX flags; note that this will not show up in CMakeCache.txt
 if (Pism_ADD_FPIC)
-  message (STATUS "Adding -fPIC to C++ compiler flags.")
-  set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}")
+  if (NOT CMAKE_CXX_FLAGS MATCHES "-fPIC")
+    message (STATUS "Adding -fPIC to C++ compiler flags.")
+    set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
+  endif()
 endif ()
+
+# This resets linker options.
+if (Pism_RESET_LINKER_FLAGS)
+  SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS ${PISM_SHARED_LIBRARY_LINK_C_FLAGS})
+  SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS ${PISM_SHARED_LIBRARY_LINK_CXX_FLAGS})
+endif()
 
 # Set Pism_REVISION
 # Git
