@@ -15,7 +15,9 @@ digraph pism_init {
 
     is_i_set1 [label = "Is -i set?"];
 
-    grid_from_file [label = "Get ALL grid settings from file" URL="\ref PISMIO::get_grid()"];
+    //FIXME: ref into browser_util:
+    // grid_from_file [label = "Get ALL grid settings from file" URL="\ref PISMIO::get_grid()"];
+    grid_from_file [label = "Get ALL grid settings from file (PISMIO::get_grid())"];
 
     subgraph cluster_set_grid_defaults {
       label = "Set default grid parameters\nIceModel::set_grid_defaults()";
@@ -24,7 +26,9 @@ digraph pism_init {
 
       is_boot_file_set1 [label = "Is -boot_file set?"];
       
-      grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="\ref PISMIO::get_grid()"];
+      //FIXME: ref into browser_util:
+      // grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="\ref PISMIO::get_grid()"];
+      grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid; see PISMIO::get_grid())"];
       
       fail_in_IceModel1 [label = "ERROR in base class IceModel"]
       
@@ -40,7 +44,9 @@ digraph pism_init {
       
     grid_from_boot_file -> grid_from_options;
 
-    createDA [label = "Distribute the model across processors\nIceGrid::createDA()" URL="\ref IceGrid::createDA()"];
+    //FIXME: ref into browser_util:
+    //  createDA [label = "Distribute the model across processors\nIceGrid::createDA()" URL="\ref IceGrid::createDA()"];
+    createDA [label = "Distribute the model across processors\nIceGrid::createDA()"];
     {grid_from_file grid_from_options} -> createDA;
   }
 
@@ -50,11 +56,8 @@ digraph pism_init {
   createVecs [label = "Memory allocation\nIceModel::createVecs()" color=darkgreen URL="\ref IceModel::createVecs()"];
   setFromOptions -> createVecs;
 
-  init_physics [label = "Some physics initialization\nIceModel::init_physics()" color=darkgreen URL="\ref IceModel::init_physics()"];
-  createVecs -> init_physics;
-
   init_couplers [label = "Init atmosphere and ocean couplers\nIceModel::init_couplers()" color=darkgreen URL="\ref IceModel::init_couplers()"];
-  init_physics -> init_couplers;
+  createVecs -> init_couplers;
 
   init_couplers -> is_i_set2;
 
@@ -90,7 +93,9 @@ digraph pism_init {
   }  
 
 
-  report [label = "IceGrid::report_grid_parameters()" URL="\ref IceGrid::report_grid_parameters()"];
+  //FIXME: ref into browser_util:
+  // report [label = "IceGrid::report_parameters()" URL="\ref IceGrid::report_parameters()"];
+  report [label = "IceGrid::report_parameters()"];
   regrid -> report;
 
   allocate_internal_objects [label = "Allocate memory for additional internals\nIceModel::allocate_internal_objects()" URL="\ref IceModel::allocate_internal_objects()"];
