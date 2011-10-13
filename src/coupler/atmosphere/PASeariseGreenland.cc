@@ -56,13 +56,14 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     PetscTruth dTforcing_set;
     char dT_file[PETSC_MAX_PATH_LEN];
 
+    ierr = PetscOptionsString("-dTforcing", "Specifies the air temperature offsets file",
+			      "", "",
+			      dT_file, PETSC_MAX_PATH_LEN, &dTforcing_set); CHKERRQ(ierr);
+
     ierr = verbPrintf(2, grid.com, 
       "  reading delta T data from forcing file %s for -paleo_precip actions ...\n",
       dT_file);  CHKERRQ(ierr);
 
-    ierr = PetscOptionsString("-dTforcing", "Specifies the air temperature offsets file",
-			      "", "",
-			      dT_file, PETSC_MAX_PATH_LEN, &dTforcing_set); CHKERRQ(ierr);
     if (!dTforcing_set) {
       ierr = PetscPrintf(grid.com, "ERROR: option -paleo_precip requires -dTforcing.\n"); CHKERRQ(ierr);
       PISMEnd();
