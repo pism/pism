@@ -55,7 +55,7 @@ option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verifica
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build (experimental) python bindings" OFF)
-option (Pism_RESET_LINKER_FLAGS "Set linker flags using PISM's CMake variables from linker command-line options")
+option (Pism_RESET_LINKER_FLAGS "Set linker flags using CMake variables PISM_SHARED_LIBRARY_LINK_C_FLAGS and PISM_SHARED_LIBRARY_LINK_CXX_FLAGS")
 
 set (PISM_SHARED_LIBRARY_LINK_C_FLAGS "" CACHE STRING
   "Sets CMAKE_SHARED_LIBRARY_LINK_C_FLAGS to this if Pism_RESET_LINKER_FLAGS is ON")
