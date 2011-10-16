@@ -62,6 +62,8 @@ PetscErrorCode IceModel::init_diagnostics() {
   ts_diagnostics["iareaf"]        = new IceModel_iareaf(this, grid, variables);
   ts_diagnostics["dt"]            = new IceModel_dt(this, grid, variables);
   ts_diagnostics["max_diffusivity"] = new IceModel_max_diffusivity(this, grid, variables);
+  ts_diagnostics["ienthalpy"]     = new IceModel_ienthalpy(this, grid, variables);
+
 
   ts_diagnostics["surface_ice_flux"]   = new IceModel_surface_flux(this, grid, variables);
   ts_diagnostics["cumulative_surface_ice_flux"]   = new IceModel_cumulative_surface_flux(this, grid, variables);
