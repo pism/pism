@@ -17,7 +17,7 @@ include_directories (
 # utility functions and classes plus the "enthalpy converter" (which is used
 # all over the place).
 add_library (pismutil
-  base/EnthalpyConverter.cc
+  base/enthalpyConverter.cc
   base/util/LocalInterpCtx.cc
   base/util/IceGrid.cc
   base/util/NCVariable.cc
