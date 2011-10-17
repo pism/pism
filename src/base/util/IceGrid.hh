@@ -21,6 +21,7 @@
 
 #include <petscda.h>
 #include <vector>
+#include <string>
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER

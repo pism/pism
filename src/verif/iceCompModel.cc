@@ -33,7 +33,7 @@
 #include "SIAFD.hh"
 #include "flowlaw_factory.hh"
 #include "PISMStressBalance.hh"
-#include "EnthalpyConverter.hh"
+#include "enthalpyConverter.hh"
 #include "NCTool.hh"
 
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
