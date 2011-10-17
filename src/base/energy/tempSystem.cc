@@ -113,7 +113,7 @@ PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(
 
 
 PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
-  PetscErrorCode ierr;
+
   if (!initAllDone) {  SETERRQ(2,
      "solveThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
   if (!schemeParamsValid) {  SETERRQ(3,
@@ -151,7 +151,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
       if (!isMarginal) {
         rhs[0] += dtTemp * 0.5 * Sigma[0]/ rho_c_I;
         planeStar<PetscScalar> ss;
-        ierr = T3->getPlaneStar(i,j,0,&ss);
+        T3->getPlaneStar(i,j,0,&ss);
         const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
                                               u[0] * (ss.ij  - ss.w) / dx;
         const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
@@ -175,7 +175,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
   // generic ice segment; build 1:ks-1 eqns
   for (PetscInt k = 1; k < ks; k++) {
     planeStar<PetscScalar> ss;
-    ierr = T3->getPlaneStar_fine(i,j,k,&ss);
+    T3->getPlaneStar_fine(i,j,k,&ss);
     const PetscScalar UpTu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
                                           u[k] * (ss.ij  - ss.w) / dx;
     const PetscScalar UpTv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :

@@ -345,7 +345,7 @@ static PetscErrorCode THIInitial(DMMG dmmg,Vec X)
   THI         thi   = (THI)dmmg->user;
   DA          da    = (DA)dmmg->dm;
   PetscInt    i,j,k,xs,xm,ys,ym,zs,zm,mx,my;
-  PetscReal   hx,hy;
+  PetscReal   hx;
   PrmNode     **prm;
   Node        ***x;
   PetscErrorCode ierr;
@@ -356,7 +356,6 @@ static PetscErrorCode THIInitial(DMMG dmmg,Vec X)
   ierr = DAVecGetArray(da,X,&x);CHKERRQ(ierr);
   ierr = DAGetPrmNodeArray(da,&prm);CHKERRQ(ierr);
   hx = thi->Lx / mx;
-  hy = thi->Ly / my;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       for (k=zs; k<zs+zm; k++) {

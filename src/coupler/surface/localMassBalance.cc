@@ -299,8 +299,6 @@ PetscScalar PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries(
 FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const NCConfigVariable &myconfig)
   : grid(g), config(myconfig) {
 
-  PetscErrorCode ierr;
-
   beta_ice_w = config.get("pdd_fausto_beta_ice_w");
   beta_snow_w = config.get("pdd_fausto_beta_snow_w");
 
@@ -313,10 +311,10 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const NCConfigVariable &m
   ice_density = config.get("ice_density");
   pdd_fausto_latitude_beta_w = config.get("pdd_fausto_latitude_beta_w");
 
-  ierr = temp_mj.create(grid, "temp_mj_faustogreve", false);
-  ierr = temp_mj.set_attrs("internal",
-                           "mean July air temp from Fausto et al (2009) parameterization",
-                           "K", "");
+  temp_mj.create(grid, "temp_mj_faustogreve", false);
+  temp_mj.set_attrs("internal",
+                    "mean July air temp from Fausto et al (2009) parameterization",
+                    "K", "");
 }
 
 

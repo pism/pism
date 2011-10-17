@@ -141,7 +141,7 @@ PetscErrorCode IceModel::compute_cell_areas() {
   PetscErrorCode ierr;
 
   // proj.4 was not found; use uncorrected areas.
-  ierr = cell_area.set(grid.dx * grid.dy);
+  ierr = cell_area.set(grid.dx * grid.dy); CHKERRQ(ierr);
 
   return 0;
 }
