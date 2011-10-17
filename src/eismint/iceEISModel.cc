@@ -21,6 +21,7 @@
 #include "iceEISModel.hh"
 #include "SIAFD.hh"
 #include "SIA_Sliding.hh"
+#include "PISMStressBalance.hh"
 
 IceEISModel::IceEISModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : IceModel(g, conf, conf_overrides) {

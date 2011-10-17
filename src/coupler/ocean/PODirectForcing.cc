@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PODirectForcing.hh"
+#include "IceGrid.hh"
 
 PetscErrorCode PODirectForcing::init(PISMVars &) {
   PetscErrorCode ierr;

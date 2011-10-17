@@ -21,6 +21,7 @@
 // temperature and precipitaiton anomalies (-atmosphere ...,forcing).
 
 #include "PISMAtmosphere.hh"
+#include "IceGrid.hh"
 
 PAForcing::PAForcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel *input)
   : PAModifier(g, conf, input) {

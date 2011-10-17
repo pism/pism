@@ -18,7 +18,8 @@
 
 #include "BlatterStressBalance.hh"
 #include "THI.c"
-
+#include "PISMOcean.hh"
+#include "IceGrid.hh"
 
 PetscErrorCode BlatterStressBalance::init(PISMVars &vars) {
   //PetscErrorCode ierr;

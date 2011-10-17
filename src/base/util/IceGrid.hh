@@ -20,9 +20,16 @@
 #define __grid_hh
 
 #include <petscda.h>
-#include "NCVariable.hh"
-#include "PISMProf.hh"
-#include "PISMTime.hh"
+#include <vector>
+
+// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
+/// @cond NAMESPACE_BROWSER
+using namespace std;
+/// @endcond
+
+class PISMTime;
+class PISMProf;
+class NCConfigVariable;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;

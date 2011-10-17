@@ -24,8 +24,10 @@
 #include <string>
 #include <vector>
 #include <set>
-#include "NCVariable.hh"
 
+#include "udunits.h"
+
+class NCConfigVariable;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER

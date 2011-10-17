@@ -17,7 +17,9 @@ include_directories (
 # utility functions and classes plus the "enthalpy converter" (which is used
 # all over the place).
 add_library (pismutil
+  base/EnthalpyConverter.cc
   base/util/LocalInterpCtx.cc
+  base/util/IceGrid.cc
   base/util/NCVariable.cc
   base/util/PISMComponent.cc
   base/util/PISMIO.cc
@@ -34,7 +36,6 @@ add_library (pismutil
   base/util/pism_const.cc
   base/util/pism_default_config.cc
   base/util/PISMTime.cc
-  base/enthalpyConverter.cc
   base/varcEnthalpyConverter.cc
   )
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})

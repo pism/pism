@@ -18,6 +18,11 @@
 
 #include "PISMIO.hh"
 #include "pism_const.hh"
+#include "IceGrid.hh"
+#include "PISMProf.hh"
+#include "LocalInterpCtx.hh"
+#include "NCVariable.hh"
+#include "PISMTime.hh"
 
 PISMIO::PISMIO(IceGrid *my_grid)
   : NCTool(my_grid->com, my_grid->rank) {

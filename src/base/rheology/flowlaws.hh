@@ -19,9 +19,10 @@
 #ifndef __flowlaws_hh
 #define __flowlaws_hh
 
-#include <petsc.h>
-#include "enthalpyConverter.hh"
-#include "NCVariable.hh"
+#include <petscsys.h>
+
+class EnthalpyConverter;
+class NCConfigVariable;
 
 // This uses the definition of second invariant from Hutter and several others, namely
 // \f$ \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$

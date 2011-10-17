@@ -18,6 +18,9 @@
 
 #include "SSA.hh"
 #include "Mask.hh"
+#include "basal_resistance.hh"
+#include "PISMVars.hh"
+#include "PISMProf.hh"
 
 SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
          IceFlowLaw &i, EnthalpyConverter &e,

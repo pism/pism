@@ -38,23 +38,26 @@ file containing a complete model state, versus bootstrapping).
 #include <petscsnes.h>
 #include <petsctime.h>		// PetscGetTime()
 
-#include "flowlaw_factory.hh"   // IceFlowLawFactory and friends
-#include "basal_resistance.hh"  // IceBasalResistancePlasticLaw
-#include "PISMYieldStress.hh"
+#include "flowlaws.hh"
+
+
 #include "pism_const.hh"
-#include "enthalpyConverter.hh"
-#include "IceGrid.hh"
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
-#include "PISMBedSmoother.hh"
 #include "PISMVars.hh"
-#include "Timeseries.hh"
-#include "PISMStressBalance.hh"
-#include "bedrockThermalUnit.hh"
 
-#include "PISMBedDef.hh"
-#include "PISMOcean.hh"
-#include "PISMSurface.hh"
+// forward declarations
+class IceGrid;
+class EnthalpyConverter;
+class PISMYieldStress;
+class IceBasalResistancePlasticLaw;
+class PISMStressBalance;
+class PISMSurfaceModel;
+class PISMOceanModel;
+class PISMBedDef;
+class PISMBedThermalUnit;
+class PISMDiagnostic;
+class PISMTSDiagnostic;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER

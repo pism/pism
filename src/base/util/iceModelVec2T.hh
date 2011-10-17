@@ -19,17 +19,7 @@
 #ifndef __IceModelVec2T_hh
 #define __IceModelVec2T_hh
 
-#include <petsc.h>
-#include <string>
-#include <vector>
-#include "NCVariable.hh"
 #include "iceModelVec.hh"
-#include "NCTool.hh"
-
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
 
 //! A class for storing and accessing 2D time-series (for climate forcing)
 /*! This class was created to read time-dependent and spatially-varying climate

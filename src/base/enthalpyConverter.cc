@@ -19,7 +19,7 @@
 #include <petsc.h>  // for PetscErrorPrintf, etc.
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
-
+#include "NCVariable.hh"
 
 EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1

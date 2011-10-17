@@ -24,6 +24,8 @@ static char help[] =
 #include "PISMIO.hh"
 #include "NCVariable.hh"
 #include "bedrockThermalUnit.hh"
+#include "PISMTime.hh"
+#include "PISMVars.hh"
 
 #include "../../verif/tests/exactTestK.h"
 

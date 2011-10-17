@@ -18,6 +18,8 @@
 
 #include "SIA_Sliding.hh"
 #include "Mask.hh"
+#include "enthalpyConverter.hh"
+#include "PISMVars.hh"
 
 PetscErrorCode SIA_Sliding::allocate() {
   PetscErrorCode ierr;

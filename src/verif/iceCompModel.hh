@@ -20,6 +20,7 @@
 #define __iceCompModel_hh
 
 #include "iceModel.hh"
+#include "bedrockThermalUnit.hh"
 
 class BTU_Verification : public PISMBedThermalUnit
 {

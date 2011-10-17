@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "iceModel.hh"
+#include "IceGrid.hh"
 
 #if (PISM_HAVE_PROJ4==1)
 

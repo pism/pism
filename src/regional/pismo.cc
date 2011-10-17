@@ -29,8 +29,10 @@ static char help[] =
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "PISMStressBalance.hh"
+#include "PISMYieldStress.hh"
 #include "SIAFD.hh"
 #include "SSAFD.hh"
+#include "NCTool.hh"
 
 //! \file pismo.cc A regional (outlet glacier) model form of PISM.
 /*! \file pismo.cc 

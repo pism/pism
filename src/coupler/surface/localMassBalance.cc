@@ -24,6 +24,7 @@
 #include "pism_const.hh"
 #include "NCVariable.hh"
 #include "localMassBalance.hh"
+#include "IceGrid.hh"
 
 PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBalance(myconfig) {
   precip_as_snow = config.get_flag("interpret_precip_as_snow");

@@ -21,6 +21,7 @@
 // constant).
 
 #include "PISMAtmosphere.hh"
+#include "IceGrid.hh"
 
 PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;

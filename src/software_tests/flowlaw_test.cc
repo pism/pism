@@ -20,6 +20,7 @@
 #include "pism_const.hh"
 #include "flowlaw_factory.hh"
 #include "NCVariable.hh"
+#include "enthalpyConverter.hh"
 
 static char help[] =
   "Calls IceFlowLaw with various values of arguments and prints results.\n"

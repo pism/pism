@@ -18,6 +18,14 @@
 
 #include "SIAFD.hh"
 #include "Mask.hh"
+#include "PISMBedSmoother.hh"
+#include "enthalpyConverter.hh"
+#include "PISMVars.hh"
+#include "PISMProf.hh"
+
+SIAFD::~SIAFD() {
+  delete bed_smoother;
+}
 
 //! \brief Allocate the SIAFD module.
 PetscErrorCode SIAFD::allocate() {

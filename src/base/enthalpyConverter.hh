@@ -19,7 +19,9 @@
 #ifndef __enthalpyConverter_hh
 #define __enthalpyConverter_hh
 
-#include "NCVariable.hh"
+#include <petscsys.h>
+
+class NCConfigVariable;
 
 //! Converts between specific enthalpy and temperature or liquid content.
 /*!

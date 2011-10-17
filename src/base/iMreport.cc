@@ -17,12 +17,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include "iceModel.hh"
-#include "Mask.hh"
-
 #include <petscsys.h>
 #include <stdarg.h>
 #include <stdlib.h>
+
+#include "iceModel.hh"
+#include "Mask.hh"
+#include "PISMStressBalance.hh"
+#include "PISMOcean.hh"
+#include "enthalpyConverter.hh"
+#include "PISMTime.hh"
 
 //!  Computes volume and area of ice sheet, for reporting purposes.
 /*!

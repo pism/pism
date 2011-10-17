@@ -20,9 +20,9 @@
 #define __Timeseries_hh
 
 #include "NCVariable.hh"
-#include "IceGrid.hh"
-#include "NCTool.hh"
 #include <deque>
+
+class IceGrid;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER

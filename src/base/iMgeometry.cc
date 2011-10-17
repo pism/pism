@@ -19,8 +19,12 @@
 #include <cmath>
 #include <cstring>
 #include <petscda.h>
+
 #include "iceModel.hh"
 #include "Mask.hh"
+#include "PISMOcean.hh"
+#include "PISMSurface.hh"
+#include "PISMStressBalance.hh"
 
 //! \file iMgeometry.cc Methods of IceModel with update and maintain consistency of ice sheet geometry.
 

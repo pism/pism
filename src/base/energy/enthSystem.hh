@@ -19,7 +19,12 @@
 #ifndef __enthSystem_hh
 #define __enthSystem_hh
 
+#include <vector>
+
 #include "columnSystem.hh"
+
+class NCConfigVariable;
+class IceModelVec3;
 
 //! Tridiagonal linear system for conservation of energy in vertical column of ice enthalpy.
 /*!

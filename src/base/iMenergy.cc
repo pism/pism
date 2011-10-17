@@ -18,6 +18,10 @@
 
 #include "iceModel.hh"
 #include "Mask.hh"
+#include "bedrockThermalUnit.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
+#include "enthalpyConverter.hh"
 
 //! \file iMenergy.cc Methods of IceModel which address conservation of energy.
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.

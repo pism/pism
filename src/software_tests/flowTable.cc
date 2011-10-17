@@ -20,6 +20,8 @@
 #include "pism_const.hh"
 #include "flowlaws.hh"
 #include "NCVariable.hh"
+#include "enthalpyConverter.hh"
+
 
 static char help[] =
   "Show a table of flow results from the Goldsby-Kohlstedt law (HYBRIDICE),\n"

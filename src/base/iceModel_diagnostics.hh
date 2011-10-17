@@ -20,6 +20,7 @@
 #define _ICEMODEL_DIAGNOSTICS_H_
 
 #include "iceModel.hh"
+#include "PISMDiagnostic.hh"
 
 //! \brief Computes vertically-averaged ice hardness.
 class IceModel_hardav : public PISMDiag<IceModel>

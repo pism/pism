@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,8 @@
 #define _PISMSTRESSBALANCE_DIAGNOSTICS_H_
 
 #include "PISMStressBalance.hh"
+#include "PISMDiagnostic.hh"
+
 
 //! \brief Computes the vertically-averaged ice velocity.
 class PSB_velbar : public PISMDiag<PISMStressBalance>

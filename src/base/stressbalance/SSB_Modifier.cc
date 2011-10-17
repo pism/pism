@@ -17,6 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSB_Modifier.hh"
+#include "flowlaws.hh"
+#include "PISMVars.hh"
+#include "IceGrid.hh"
 
 PetscErrorCode SSB_Modifier::allocate() {
   PetscErrorCode ierr;

@@ -19,9 +19,13 @@
 #ifndef __PISMDiagnostic_hh
 #define __PISMDiagnostic_hh
 
-#include "iceModelVec.hh"
-#include "PISMVars.hh"
-#include "Timeseries.hh"
+#include "NCSpatialVariable.hh"
+#include "Timeseries.hh"        // inline code
+#include "PISMTime.hh"
+#include "IceGrid.hh"
+
+class IceModelVec;
+class PISMVars;
 
 //! \brief Class representing diagnostic computations in PISM.
 /*!

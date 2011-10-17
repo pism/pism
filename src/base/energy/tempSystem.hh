@@ -19,10 +19,12 @@
 #ifndef __tempSystem_hh
 #define __tempSystem_hh
 
-#include <petsc.h>
-#include "iceModelVec.hh"
-#include "columnSystem.hh"
+#include <petscsys.h>
 
+#include "columnSystem.hh"
+#include "pism_const.hh"
+
+class IceModelVec3;
 
 //! Tridiagonal linear system for vertical column of temperature-based conservation of energy problem.
 /*!

@@ -18,7 +18,8 @@
 
 #include "PISMSurface.hh"
 #include "PISMIO.hh"
-
+#include "PISMVars.hh"
+#include "IceGrid.hh"
 
 ///// Constant-in-time surface model for accumulation,
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation

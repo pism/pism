@@ -25,6 +25,10 @@
 
 #include "PISMSurface.hh"
 #include "PISMAtmosphere.hh"
+#include "PISMVars.hh"
+#include "PISMTime.hh"
+#include "IceGrid.hh"
+#include "NCTool.hh"
 
 template <class Model, class Mod>
 class PLapseRates : public Mod

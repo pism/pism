@@ -20,6 +20,8 @@
 // Implementation of the constant-in-time ocean model.
 
 #include "PISMOcean.hh"
+#include "PISMVars.hh"
+#include "IceGrid.hh"
 
 POConstant::POConstant(IceGrid &g, const NCConfigVariable &conf)
   : PISMOceanModel(g, conf) {

@@ -25,8 +25,7 @@
 
 
 #include <petscmat.h>
-#include "iceModelVec.hh"
-#include "flowlaws.hh"
+#include "iceModelVec.hh"       // to get PISMVector2
 
 //! \file 
 //! \brief Classes for implementing the Finite Element Method on an IceGrid.

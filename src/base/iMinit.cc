@@ -20,6 +20,7 @@
 //documentation comment in iceModel.cc for the order in which they are called.
 
 #include <petscda.h>
+
 #include "iceModel.hh"
 #include "PISMIO.hh"
 #include "SIAFD.hh"
@@ -29,6 +30,15 @@
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
+#include "PISMBedDef.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
+#include "PISMYieldStress.hh"
+#include "bedrockThermalUnit.hh"
+#include "flowlaw_factory.hh"
+#include "basal_resistance.hh"
+#include "PISMProf.hh"
+#include "LocalInterpCtx.hh"
 
 //! Set default values of grid parameters.
 /*!

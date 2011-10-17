@@ -22,6 +22,16 @@
 
 #include "iceModel.hh"
 #include "pism_signal.h"
+#include "PISMStressBalance.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
+#include "PISMBedDef.hh"
+#include "bedrockThermalUnit.hh"
+#include "PISMYieldStress.hh"
+#include "basal_resistance.hh"
+#include "enthalpyConverter.hh"
+#include "PISMProf.hh"
+
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : grid(g), config(conf), overrides(conf_overrides), ice(NULL) {

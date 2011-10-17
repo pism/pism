@@ -18,6 +18,8 @@
 
 #include "PSElevation.hh"
 #include "PISMIO.hh"
+#include "PISMVars.hh"
+#include "IceGrid.hh"
 
 
 ///// Elevation-dependent temperature and surface mass balance.

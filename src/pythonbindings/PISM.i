@@ -35,6 +35,10 @@
 #include "iceModel.hh"
 #include "SNESProblem.hh"
 #include "Mask.hh"
+#include "basal_resistance.hh"
+#include "enthalpyConverter.hh"
+#include "IceGrid.hh"
+#include "LocalInterpCtx.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it

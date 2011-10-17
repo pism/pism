@@ -35,6 +35,8 @@ static char help[] =
 #include "PISMAtmosphere.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
+#include "PISMVars.hh"
+#include "PISMTime.hh"
 
 
 static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {

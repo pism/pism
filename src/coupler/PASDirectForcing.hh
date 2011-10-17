@@ -25,6 +25,8 @@
 #include "PISMSurface.hh"
 #include "PISMAtmosphere.hh"
 #include "iceModelVec2T.hh"
+#include "PISMTime.hh"
+#include "NCTool.hh"
 
 template <class Model>
 class PDirectForcing : public Model

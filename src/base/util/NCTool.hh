@@ -19,7 +19,7 @@
 #ifndef __NCTool_hh
 #define __NCTool_hh
 
-#include <petsc.h>
+#include <petscsys.h>
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -27,7 +27,6 @@
 #define MPI_INCLUDED 1
 #endif
 #include <netcdf.h>		// nc_type
-
 // Note: as far as I (CK) can tell, MPI_INCLUDED is a MPICH invention.
 
 #include "udunits.h"	// utUnit

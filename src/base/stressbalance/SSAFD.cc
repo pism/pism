@@ -18,6 +18,7 @@
 
 #include "SSAFD.hh"
 #include "Mask.hh"
+#include "basal_resistance.hh"
 
 SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                 IceFlowLaw &i, EnthalpyConverter &ec,

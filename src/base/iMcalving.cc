@@ -22,6 +22,7 @@
 #include "iceModel.hh"
 #include "pism_signal.h"
 #include "Mask.hh"
+#include "PISMOcean.hh"
 
 
 //! \file iMcalving.cc Methods implementing PIK options -eigen_calving and -calving_at_thickness [\ref Winkelmannetal2011].

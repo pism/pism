@@ -21,6 +21,11 @@
 #include "varenthSystem.hh"
 #include "DrainageCalculator.hh"
 #include "Mask.hh"
+#include "PISMStressBalance.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
+#include "bedrockThermalUnit.hh"
+#include "enthalpyConverter.hh"
 
 //! \file iMenthalpy.cc Methods of IceModel which implement the enthalpy formulation of conservation of energy.
 

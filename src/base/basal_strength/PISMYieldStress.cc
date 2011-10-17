@@ -18,6 +18,7 @@
 
 #include "PISMYieldStress.hh"
 #include "Mask.hh"
+#include "PISMVars.hh"
 
 //! \file PISMYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
 /*! \file PISMYieldStress.cc

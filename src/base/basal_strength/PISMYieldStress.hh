@@ -21,6 +21,7 @@
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
+#include "PISMDiagnostic.hh"
 
 //! Local copy of parameters used by IceModel::getBasalWaterPressure().
 struct BWPparams {

@@ -19,9 +19,11 @@
 #include <cstring>
 #include <cstdlib>
 #include <petscda.h>
-#include "NCTool.hh"
 
+#include "NCTool.hh"
 #include "iceModelVec.hh"
+#include "IceGrid.hh"
+#include "LocalInterpCtx.hh"
 
 // this file contains methods for derived classes IceModelVec2S and IceModelVec2Int
 

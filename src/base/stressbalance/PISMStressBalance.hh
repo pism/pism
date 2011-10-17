@@ -19,12 +19,13 @@
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
 
-#include "PISMComponent.hh"
+#include "PISMComponent.hh"     // derives from PISMComponent_Diag
 #include "iceModelVec.hh"
-#include "ShallowStressBalance.hh"
-#include "SSB_Modifier.hh"
-#include "PISMDiagnostic.hh"
-#include "PISMOcean.hh"
+
+class ShallowStressBalance;
+class SSB_Modifier;
+class PISMDiagnostic;
+class PISMOceanModel;
 
 //! The class defining PISM's interface to the shallow stress balance code.
 /*!

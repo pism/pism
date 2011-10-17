@@ -21,10 +21,12 @@
 // creating corresponding models and stringing them together to get requested
 // data-flow.
 
+#include <map>
+
 #include "PISMAtmosphere.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
-#include <map>
+#include "IceGrid.hh"
 
 template <class Model, class Modifier>
 class PCFactory {

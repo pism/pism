@@ -19,8 +19,11 @@
 #include <cmath>
 #include <cstring>
 #include <petscda.h>
+
 #include "iceModel.hh"
 #include "Mask.hh"
+#include "PISMStressBalance.hh"
+#include "PISMOcean.hh"
 
 
 //! \file iMpartgrid.cc Methods implementing PIK option -part_grid [\ref Albrechtetal2011].

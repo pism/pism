@@ -19,6 +19,7 @@
 #include "SSAFEM.hh"
 #include "FETools.hh"
 #include "Mask.hh"
+#include "basal_resistance.hh"
 
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
                 IceFlowLaw &i, EnthalpyConverter &ec, 

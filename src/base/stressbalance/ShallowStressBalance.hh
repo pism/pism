@@ -21,10 +21,11 @@
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
-#include "PISMVars.hh"
-#include "flowlaws.hh"
-#include "basal_resistance.hh"
-#include "enthalpyConverter.hh"
+
+class PISMVars;
+class IceFlowLaw;
+class EnthalpyConverter;
+class IceBasalResistancePlasticLaw;
 
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance : public PISMComponent_Diag

@@ -19,6 +19,9 @@
 #include "pism_const.hh"
 #include "iceModelVec.hh"
 #include "PISMIO.hh"
+#include "PISMTime.hh"
+#include "IceGrid.hh"
+#include "LocalInterpCtx.hh"
 
 IceModelVec::IceModelVec() {
   access_counter = 0;

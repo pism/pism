@@ -28,6 +28,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "NCVariable.hh"
+
+
 //! \brief PISM verbosity level; determines how much gets printed to the
 //! standard out.
 static PetscInt verbosityLevel;

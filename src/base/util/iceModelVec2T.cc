@@ -21,6 +21,9 @@
 #include "iceModelVec2T.hh"
 #include "PISMIO.hh"
 #include "pism_const.hh"
+#include "PISMTime.hh"
+#include "LocalInterpCtx.hh"
+#include "IceGrid.hh"
 
 IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   localp = false;

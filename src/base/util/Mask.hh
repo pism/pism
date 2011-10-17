@@ -19,9 +19,11 @@
 #ifndef _MASK_H_
 #define _MASK_H_
 
+// the following three includes are needed here because of inlined code
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
 #include "flowlaws.hh"
+#include "IceGrid.hh"
 
 class Mask
 {

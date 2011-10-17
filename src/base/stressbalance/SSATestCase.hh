@@ -20,9 +20,10 @@
 #define _SSATESTCASE_H_
 
 #include "SSA.hh"
-
-
-
+#include "enthalpyConverter.hh"
+#include "basal_resistance.hh"
+#include "flowlaws.hh"
+#include "PISMVars.hh"
 
 //! Helper function for initializing a grid with the given dimensions and periodicity.
 //! The grid is shallow (3 z-layers).

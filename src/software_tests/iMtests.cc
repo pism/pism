@@ -22,6 +22,7 @@
 #include "iceModelVec2T.hh"
 #include "PISMIO.hh"
 #include "PISMProf.hh"
+#include "IceGrid.hh"
 
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {

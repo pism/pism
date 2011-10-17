@@ -20,6 +20,8 @@
 #include "iceModelVec.hh"
 #include "columnSystem.hh"
 #include "iceModel.hh"
+#include "PISMStressBalance.hh"
+#include "IceGrid.hh"
 
 //! Tridiagonal linear system for vertical column of age (pure advection) problem.
 class ageSystemCtx : public columnSystemCtx {

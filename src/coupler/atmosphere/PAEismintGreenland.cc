@@ -17,6 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PAEismintGreenland.hh"
+#include "PISMVars.hh"
+#include "PISMTime.hh"
+#include "IceGrid.hh"
 
 PA_EISMINT_Greenland::PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf)
   : PAYearlyCycle(g, conf) {

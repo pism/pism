@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "iceModel.hh"
+#include "IceGrid.hh"
 
 //! \file iMhydrology.cc Currently, only the most minimal possible hydrology model: diffusion of stored basal water.
 

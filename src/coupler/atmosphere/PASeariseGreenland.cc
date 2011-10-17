@@ -23,6 +23,8 @@
 // This includes the SeaRISE Greenland parameterization.
 
 #include "PASeariseGreenland.hh"
+#include "PISMVars.hh"
+#include "IceGrid.hh"
 
 
 ///// PA_SeaRISE_Greenland

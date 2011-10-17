@@ -20,7 +20,9 @@
 #define __NCSpatialVariable
 
 #include "NCVariable.hh"
-#include "LocalInterpCtx.hh"
+
+class LocalInterpCtx;
+class IceGrid;
 
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class NCSpatialVariable : public NCVariable {

@@ -19,12 +19,30 @@
 #ifndef __PISMComponent_hh
 #define __PISMComponent_hh
 
-#include <petsc.h>
+#include <petscsys.h>
 #include <gsl/gsl_math.h>
-#include "NCVariable.hh"
-#include "PISMVars.hh"
-#include "IceGrid.hh"
-#include "PISMDiagnostic.hh"
+#include <string>
+#include <set>
+#include <map>
+
+// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
+/// @cond NAMESPACE_BROWSER
+using namespace std;
+/// @endcond
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
+#include <netcdf.h>		// nc_type
+// Note: as far as I (CK) can tell, MPI_INCLUDED is a MPICH invention.
+
+class IceGrid;
+class NCConfigVariable;
+class PISMDiagnostic;
+class PISMVars;
+class NCTool;
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!

@@ -18,6 +18,8 @@
 
 #include "PISMComponent.hh"
 #include "PISMIO.hh"
+#include "IceGrid.hh"
+#include "pism_const.hh"
 
 //! Finds PISM's input (-i or -boot_file) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file

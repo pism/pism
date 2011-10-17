@@ -20,9 +20,10 @@
 #include <cstring>
 #include <cstdlib>
 #include <petscda.h>
-#include "NCTool.hh"
 
+#include "NCTool.hh"
 #include "iceModelVec.hh"
+#include "IceGrid.hh"
 
 // this file contains method for derived class IceModelVec3
 

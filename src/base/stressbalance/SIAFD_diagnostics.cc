@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SIAFD.hh"
+#include "PISMBedSmoother.hh"
+#include "PISMVars.hh"
 
 void SIAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["diffusivity"] = new SIAFD_diffusivity(this, grid, *variables);

@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -20,10 +20,11 @@
 #define _SSB_MODIFIER_H_
 
 #include "iceModelVec.hh"
-#include "PISMVars.hh"
-#include "flowlaws.hh"
-#include "enthalpyConverter.hh"
 #include "PISMComponent.hh"
+
+class PISMVars;
+class IceFlowLaw;
+class EnthalpyConverter;
 
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier : public PISMComponent_Diag

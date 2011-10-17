@@ -20,6 +20,8 @@
 
 #include "PISMBedDef.hh"
 #include "PISMIO.hh"
+#include "PISMTime.hh"
+#include "IceGrid.hh"
 
 PBLingleClark::PBLingleClark(IceGrid &g, const NCConfigVariable &conf)
   : PISMBedDef(g, conf) {

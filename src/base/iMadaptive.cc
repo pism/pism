@@ -19,6 +19,9 @@
 #include "iceModel.hh"
 #include <petscvec.h>
 #include "Mask.hh"
+#include "PISMStressBalance.hh"
+#include "bedrockThermalUnit.hh"
+#include "PISMTime.hh"
 
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!

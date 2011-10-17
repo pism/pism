@@ -20,7 +20,14 @@
 #include <cmath>
 #include <sstream>
 #include <set>
+
 #include "iceModel.hh"
+#include "PISMBedDef.hh"
+#include "bedrockThermalUnit.hh"
+#include "PISMYieldStress.hh"
+#include "PISMStressBalance.hh"
+#include "PISMOcean.hh"
+#include "PISMSurface.hh"
 
 //! \file iMoptions.cc Reading runtime options and setting configuration parameters.
 

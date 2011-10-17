@@ -20,8 +20,8 @@
 #ifndef _SNESPROBLEM_H_
 #define _SNESPROBLEM_H_
 
-#include "IceGrid.hh"
-#include "iceModelVec.hh"
+#include "IceGrid.hh"           // inline implementation in the header uses IceGrid
+#include "iceModelVec.hh"       // to get PISMVector2
 
 template<int DOF, class U> class SNESProblem{
 public:

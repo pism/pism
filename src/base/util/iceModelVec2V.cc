@@ -18,6 +18,7 @@
 
 #include "iceModelVec.hh"
 #include "pism_const.hh"
+#include "IceGrid.hh"
 
 IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   dof = 2;

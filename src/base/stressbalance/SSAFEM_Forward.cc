@@ -18,6 +18,7 @@
 
 #include "SSAFEM_Forward.hh"
 #include "Mask.hh"
+#include "basal_resistance.hh"
 
 
 /*! \brief Allocate PETSC structures needed for solving the various linearized

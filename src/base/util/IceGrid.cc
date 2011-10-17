@@ -20,6 +20,9 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "PISMTime.hh"
+#include "PISMProf.hh"
+#include "NCVariable.hh"
+
 
 IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 		 const NCConfigVariable &conf)

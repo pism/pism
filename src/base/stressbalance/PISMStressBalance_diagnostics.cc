@@ -18,6 +18,9 @@
 
 #include "PISMStressBalance_diagnostics.hh"
 #include "Mask.hh"
+#include "ShallowStressBalance.hh"
+#include "SSB_Modifier.hh"
+#include "PISMVars.hh"
 
 void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
 

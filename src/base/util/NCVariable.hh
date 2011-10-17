@@ -24,7 +24,16 @@
 #include <string>
 #include <petscda.h>
 #include "udunits.h"
-#include "NCTool.hh"
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
+#include <netcdf.h>		// nc_type
+// Note: as far as I (CK) can tell, MPI_INCLUDED is a MPICH invention.
+
+class NCTool;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER

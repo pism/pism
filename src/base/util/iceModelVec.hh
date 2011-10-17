@@ -22,11 +22,12 @@
 #include <cstring>
 #include <cstdlib>
 #include <petscda.h>
-#include "udunits.h"
-#include "NCTool.hh"
+
 #include "NCSpatialVariable.hh"
 #include "pism_const.hh"
-#include "LocalInterpCtx.hh"
+
+class NCTool;
+class LocalInterpCtx;
 
 //! \brief Abstract class for reading, writing, allocating, and accessing a
 //! DA-based PETSc Vec from within IceModel.

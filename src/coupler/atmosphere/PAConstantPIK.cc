@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMAtmosphere.hh"
+#include "PISMVars.hh"
+#include "IceGrid.hh"
 
 PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
   PetscErrorCode ierr;

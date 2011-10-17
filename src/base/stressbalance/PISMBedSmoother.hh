@@ -20,9 +20,10 @@
 #define __PISMBedSmoother_hh
 
 #include <petsc.h>
-#include "NCVariable.hh"
-#include "IceGrid.hh"
 #include "iceModelVec.hh"
+
+class IceGrid;
+class NCConfigVariable;
 
 //! PISM bed smoother, plus bed roughness parameterization, based on Schoof (2003).
 /*!

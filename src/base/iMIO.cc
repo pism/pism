@@ -23,7 +23,15 @@
 #include <algorithm>
 #include <sstream>
 #include <set>
+
 #include "PISMIO.hh"
+#include "PISMBedDef.hh"
+#include "bedrockThermalUnit.hh"
+#include "PISMYieldStress.hh"
+#include "PISMStressBalance.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
+#include "PISMProf.hh"
 
 //! Save model state in NetCDF format.
 /*!

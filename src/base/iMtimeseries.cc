@@ -16,10 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "iceModel.hh"
 #include <sstream>
 #include <algorithm>
+
+#include "iceModel.hh"
 #include "PISMIO.hh"
+#include "PISMStressBalance.hh"
+#include "PISMDiagnostic.hh"
+#include "PISMTime.hh"
 
 //! Initializes the code writing scalar time-series.
 PetscErrorCode IceModel::init_timeseries() {

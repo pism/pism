@@ -19,6 +19,9 @@
 
 #include "PISMSurface.hh"
 #include "PISMIO.hh"
+#include "PISMVars.hh"
+#include "PISMTime.hh"
+#include "IceGrid.hh"
 
 ///// PISMSurfaceModel base class:
 

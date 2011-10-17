@@ -19,9 +19,10 @@
 #ifndef _SIAFD_H_
 #define _SIAFD_H_
 
-#include "SSB_Modifier.hh"
-#include "PISMBedSmoother.hh"
-#include "PISMDiagnostic.hh"
+#include "SSB_Modifier.hh"      // derivesfrom SSB_Modifier
+#include "PISMDiagnostic.hh"    // derives from PISMDiag
+
+class PISMBedSmoother;
 
 class SIAFD : public SSB_Modifier
 {
@@ -35,7 +36,7 @@ public:
   SIAFD(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
     : SSB_Modifier(g, i, e, c), WIDE_STENCIL(2) { allocate(); }
 
-  virtual ~SIAFD() { delete bed_smoother; }
+  virtual ~SIAFD();
 
   virtual PetscErrorCode init(PISMVars &vars);
 

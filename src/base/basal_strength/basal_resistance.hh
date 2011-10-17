@@ -19,7 +19,7 @@
 #ifndef __basal_resistance_hh
 #define __basal_resistance_hh
 
-#include <petsc.h>
+#include <petscsys.h>
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!

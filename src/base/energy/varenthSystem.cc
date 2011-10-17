@@ -16,11 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
 #include "varenthSystem.hh"
-#include <gsl/gsl_math.h>
-
+#include "NCVariable.hh"
 
 varenthSystemCtx::varenthSystemCtx(const NCConfigVariable &config,
                                      IceModelVec3 &my_Enth3, int my_Mz,

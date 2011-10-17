@@ -19,8 +19,12 @@
 #ifndef __PISMIO
 #define __PISMIO
 
+#include <petscvec.h>
 #include "NCTool.hh"
-#include "LocalInterpCtx.hh"
+
+class IceGrid;
+class LocalInterpCtx;
+struct grid_info;
 
 //! A class containing IO functions used to read and write spatial variables.
 /*!

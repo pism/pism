@@ -20,6 +20,13 @@
 #include "PISMDiagnostic.hh"
 #include "Mask.hh"
 
+#include "PISMBedDef.hh"
+#include "PISMYieldStress.hh"
+#include "PISMStressBalance.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
+#include "enthalpyConverter.hh"
+
 
 PetscErrorCode IceModel::init_diagnostics() {
 

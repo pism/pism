@@ -19,6 +19,8 @@
 // Utility functions used by the SSAFEM code.
 
 #include "FETools.hh"
+#include "flowlaws.hh"
+#include "IceGrid.hh"
 
 const FEShapeQ1::ShapeFunctionSpec FEShapeQ1::shapeFunction[FEShapeQ1::Nk] = 
 {FEShapeQ1::shape0, FEShapeQ1::shape1, FEShapeQ1::shape2, FEShapeQ1::shape3};

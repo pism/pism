@@ -17,6 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "iceModel.hh"
+#include "PISMBedDef.hh"
+#include "PISMTime.hh"
+#include "IceGrid.hh"
 
 PetscErrorCode IceModel::allocate_bed_deformation() {
   PetscErrorCode ierr;

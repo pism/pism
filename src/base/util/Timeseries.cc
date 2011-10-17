@@ -19,6 +19,8 @@
 #include "Timeseries.hh"
 #include <algorithm>
 #include "pism_const.hh"
+#include "IceGrid.hh"
+#include "NCTool.hh"
 
 Timeseries::Timeseries(IceGrid *g, string name, string dimension_name)
 {

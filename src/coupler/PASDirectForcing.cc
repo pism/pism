@@ -20,6 +20,7 @@
 // time-dependent B.C. data from a file (-surface given and -atmosphere given).
 
 #include "PASDirectForcing.hh"
+#include "IceGrid.hh"
 
 PetscErrorCode PSDirectForcing::init(PISMVars &) {
   PetscErrorCode ierr;

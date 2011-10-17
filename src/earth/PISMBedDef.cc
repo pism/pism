@@ -17,6 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMBedDef.hh"
+#include "PISMTime.hh"
+#include "PISMVars.hh"
+#include "IceGrid.hh"
 
 PISMBedDef::PISMBedDef(IceGrid &g, const NCConfigVariable &conf)
   : PISMComponent_TS(g, conf) {

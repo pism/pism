@@ -18,6 +18,9 @@
 
 #include "bedrockThermalUnit.hh"
 #include "PISMIO.hh"
+#include "PISMVars.hh"
+#include "LocalInterpCtx.hh"
+#include "IceGrid.hh"
 
 bool IceModelVec3BTU::good_init() {
   return ((n_levels >= 2) && (Lbz > 0.0) && (v != PETSC_NULL));

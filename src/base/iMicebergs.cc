@@ -18,8 +18,10 @@
 
 #include <cmath>
 #include <petscda.h>
+
 #include "iceModel.hh"
 #include "Mask.hh"
+#include "PISMOcean.hh"
 
 //! \file iMicebergs.cc Methods implementing PIK option -kill_icebergs [\ref Winkelmannetal2011].
 

@@ -18,7 +18,8 @@
 
 #include "enthSystem.hh"
 #include <gsl/gsl_math.h>
-
+#include "NCVariable.hh"
+#include "iceModelVec.hh"
 
 enthSystemCtx::enthSystemCtx(const NCConfigVariable &config,
                              IceModelVec3 &my_Enth3, int my_Mz, string my_prefix)

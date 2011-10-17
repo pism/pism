@@ -21,7 +21,9 @@
 #include <cmath>
 #include <petscda.h>
 #include <petscksp.h>
+
 #include "iceModel.hh"
+#include "PISMDiagnostic.hh"
 
 //! Update the runtime graphical viewers.
 /*!

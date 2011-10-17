@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMBedDef.hh"
+#include "IceGrid.hh"
 
 PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const NCConfigVariable &conf)
   : PISMBedDef(g, conf) {

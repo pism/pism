@@ -20,6 +20,7 @@
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
 
+#include "NCVariable.hh"
 
 PetscTruth IceFlowLawUsesGrainSize(IceFlowLaw *ice) {
   static const PetscReal gs[] = {1e-4,1e-3,1e-2,1},s=1e4,E=500000,p=1e6;

@@ -17,6 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMStressBalance.hh"
+#include "ShallowStressBalance.hh"
+#include "SSB_Modifier.hh"
+#include "PISMOcean.hh"
+#include "IceGrid.hh"
 
 PISMStressBalance::PISMStressBalance(IceGrid &g,
                                      ShallowStressBalance *sb,

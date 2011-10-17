@@ -31,6 +31,10 @@ static char help[] =
 #include "SIAFD.hh"
 #include "exactTestsFG.h"
 #include "basal_resistance.hh"
+#include "enthalpyConverter.hh"
+#include "SSB_Modifier.hh"
+#include "ShallowStressBalance.hh"
+#include "PISMVars.hh"
 
 PetscErrorCode computeSigmaErrors(const NCConfigVariable &config,
                                   IceModelVec3 &Sigma,

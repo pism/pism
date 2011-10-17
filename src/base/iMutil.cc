@@ -18,9 +18,16 @@
 
 #include <sstream>
 #include <cstring>
+#include <petscvec.h>
+
 #include "iceModel.hh"
 #include "pism_signal.h"
-#include <petscvec.h>
+#include "PISMSurface.hh"
+#include "PISMStressBalance.hh"
+#include "enthalpyConverter.hh"
+#include "PISMTime.hh"
+#include "IceGrid.hh"
+
 
 //! Virtual.  Does nothing in \c IceModel.  Derived classes can do more computation in each time step.
 PetscErrorCode IceModel::additionalAtStartTimestep() {

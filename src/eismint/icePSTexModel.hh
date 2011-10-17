@@ -20,8 +20,10 @@
 #define __icePSTexModel_hh
 
 #include <petsc.h>
+
 #include "basal_resistance.hh"
 #include "iceEISModel.hh"
+#include "PISMYieldStress.hh"
 
 //! Derived class for Plastic till ice Stream with Thermocoupling (PST) experiments.
 /*!

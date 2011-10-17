@@ -23,6 +23,9 @@
 #include "iceMISMIPModel.hh"
 #include "SSA.hh"
 #include "Mask.hh"
+#include "flowlaw_factory.hh"
+#include "PISMStressBalance.hh"
+#include "PISMOcean.hh"
 
 PetscErrorCode MISMIPBasalResistanceLaw::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;

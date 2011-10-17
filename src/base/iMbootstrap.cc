@@ -19,6 +19,11 @@
 
 #include "iceModel.hh"
 #include "PISMIO.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
+#include "enthalpyConverter.hh"
+#include "PISMTime.hh"
+#include "IceGrid.hh"
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 

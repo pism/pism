@@ -21,6 +21,8 @@
 // and a cosine yearly cycle for near-surface air temperatures.
 
 #include "PISMAtmosphere.hh"
+#include "PISMTime.hh"
+#include "IceGrid.hh"
 
 //! Allocates memory and reads in the precipitaion data.
 PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {

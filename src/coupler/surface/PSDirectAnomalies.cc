@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PSDirectAnomalies.hh"
+#include "IceGrid.hh"
 
 PetscErrorCode PSDirectAnomalies::init(PISMVars &vars) {
   PetscErrorCode ierr;
