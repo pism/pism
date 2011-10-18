@@ -657,7 +657,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
 
 //! Checks if an IceModelVec is allocated.  Terminates if not.
 PetscErrorCode  IceModelVec::checkAllocated() {
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   if (v == PETSC_NULL) {
     SETERRQ1(1,"IceModelVec ERROR: IceModelVec with name='%s' WAS NOT allocated\n",
              name.c_str());
@@ -668,7 +668,7 @@ PetscErrorCode  IceModelVec::checkAllocated() {
 
 //! Checks if the access to the array is available.
 PetscErrorCode  IceModelVec::checkHaveArray() {
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
   if (array == PETSC_NULL) {
@@ -704,7 +704,7 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &ot
 //! Checks if an IceModelVec is allocated and calls DAVecGetArray.
 PetscErrorCode  IceModelVec::begin_access() {
   PetscErrorCode ierr;
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (access_counter < 0)
@@ -723,7 +723,7 @@ PetscErrorCode  IceModelVec::begin_access() {
 //! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
 PetscErrorCode  IceModelVec::end_access() {
   PetscErrorCode ierr;
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (array == NULL)
@@ -889,9 +889,7 @@ PetscErrorCode IceModelVec::has_nan() {
   return 0;
 }
 
-//! \brief Check the array indices and warn if they are out of range.
 void IceModelVec::check_array_indices(int i, int j) {
-#ifdef PISM_DEBUG
   PetscReal ghost_width = 0;
   if (localp) ghost_width = da_stencil_width;
   if ((i < grid->xs - ghost_width) ||
@@ -901,8 +899,6 @@ void IceModelVec::check_array_indices(int i, int j) {
     PetscPrintf(grid->com, "ERROR: indices out of range accessing array '%s'. "
                 "It will probably segfault.\n", name.c_str());
   }
-#endif // PISM_DEBUG
-  i = j;                        // to avoid a compiler warning; does nothing
 }
 
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/

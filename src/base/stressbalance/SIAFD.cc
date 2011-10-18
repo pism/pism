@@ -748,7 +748,8 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
 
   double enhancement_factor = config.get("enhancement_factor"),
     n_glen  = ice.exponent(),
-    Sig_pow = (1.0 + n_glen) / (2.0 * n_glen);
+    Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
+    e_to_a_power = pow(enhancement_factor,-1/n_glen);
 
   for (PetscInt o = 0; o < 2; ++o) {
     PetscInt GHOSTS = 1;
@@ -775,7 +776,7 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
           PetscReal pressure = EC.getPressureFromDepth(depth);
 
           PetscReal sigma_sia = delta_ij[k] * alpha_squared * pressure,
-            BofT = ice.hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen),
+            BofT = ice.hardnessParameter_from_enth(E[k], pressure) * e_to_a_power,
             D2_ssa = (*D2_input)(i,j);
 
           if (M.grounded_ice(i, j)) {
@@ -946,23 +947,33 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = I[0].getInternalColumn(i,j,&IEAST); CHKERRQ(ierr);
-      ierr = I[0].getInternalColumn(i-1,j,&IWEST); CHKERRQ(ierr);
-      ierr = I[1].getInternalColumn(i,j,&INORTH); CHKERRQ(ierr);
-      ierr = I[1].getInternalColumn(i,j-1,&ISOUTH); CHKERRQ(ierr);
+      ierr = I[0].getInternalColumn(i, j, &IEAST); CHKERRQ(ierr);
+      ierr = I[0].getInternalColumn(i - 1, j, &IWEST); CHKERRQ(ierr);
+      ierr = I[1].getInternalColumn(i, j, &INORTH); CHKERRQ(ierr);
+      ierr = I[1].getInternalColumn(i, j - 1, &ISOUTH); CHKERRQ(ierr);
 
       ierr = u_out.getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
       ierr = v_out.getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
 
+      // Fetch values from 2D fields *outside* of the k-loop:
+      PetscScalar h_x_w = h_x(i - 1, j, 0), h_x_e = h_x(i, j, 0),
+        h_x_n = h_x(i, j, 1), h_x_s = h_x(i, j - 1, 1);
+
+      PetscScalar h_y_w = h_y(i - 1, j, 0), h_y_e = h_y(i, j, 0),
+        h_y_n = h_y(i, j, 1), h_y_s = h_y(i, j - 1, 1);
+
+      PetscScalar vel_input_u = (*vel_input)(i, j).u,
+        vel_input_v = (*vel_input)(i, j).v;
+
       for (PetscInt k = 0; k < grid.Mz; ++k) {
-        u_ij[k] = - 0.25 * ( IEAST[k] * h_x(i,j,0) + IWEST[k] * h_x(i-1,j,0) +
-                             INORTH[k] * h_x(i,j,1) + ISOUTH[k] * h_x(i,j-1,1) );
-        v_ij[k] = - 0.25 * ( IEAST[k] * h_y(i,j,0) + IWEST[k] * h_y(i-1,j,0) +
-                             INORTH[k] * h_y(i,j,1) + ISOUTH[k] * h_y(i,j-1,1) );
+        u_ij[k] = - 0.25 * ( IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
+                             INORTH[k] * h_x_n + ISOUTH[k] * h_x_s );
+        v_ij[k] = - 0.25 * ( IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
+                             INORTH[k] * h_y_n + ISOUTH[k] * h_y_s );
 
         // Add the "SSA" velocity:
-        u_ij[k] += (*vel_input)(i,j).u;
-        v_ij[k] += (*vel_input)(i,j).v;
+        u_ij[k] += vel_input_u;
+        v_ij[k] += vel_input_v;
       }
     }
   }

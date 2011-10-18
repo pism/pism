@@ -198,7 +198,7 @@ double Timeseries::operator()(double t) {
  */
 double Timeseries::operator[](unsigned int j) const {
 
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   if (j >= values.size()) {
     PetscPrintf(com, "ERROR: Timeseries %s: operator[]: invalid argument: size=%d, index=%d\n",
 		var.short_name.c_str(), values.size(), j);

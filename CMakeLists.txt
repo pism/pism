@@ -128,9 +128,9 @@ else ()
 endif ()
 
 # Deal with build types
-set (Pism_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
+set (Pism_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
 # Force the default cache entry to obey Pism_BUILD_TYPE
-set (CMAKE_BUILD_TYPE ${Pism_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
+set (CMAKE_BUILD_TYPE ${Pism_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None (CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
 mark_as_advanced (CMAKE_BUILD_TYPE) # hide the default entry
 if (Pism_BUILD_TYPE MATCHES "Debug")
   option (Pism_DEBUG              "Enables extra checks in the code."          OFF)
@@ -140,8 +140,11 @@ endif (Pism_BUILD_TYPE MATCHES "Debug")
 
 # Enable extra checks in the code:
 if (Pism_DEBUG)
-  message (STATUS "Adding -DPISM_DEBUG to compiler flags.")
+  message (STATUS "Adding -DPISM_DEBUG=1 to compiler flags.")
   add_definitions (-DPISM_DEBUG=1)
+else()
+  message (STATUS "Adding -DPISM_DEBUG=0 to compiler flags.")
+  add_definitions (-DPISM_DEBUG=0)
 endif ()
 
 # Add -fPIC to CXX flags; note that this will not show up in CMakeCache.txt

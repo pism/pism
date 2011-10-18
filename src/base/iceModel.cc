@@ -688,7 +688,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   char tempstr[5];  snprintf(tempstr,5," %c", adaptReasonFlag);
   stdout_flags += tempstr;
 
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   ierr = variables.check_for_nan(); CHKERRQ(ierr);
 #endif
 

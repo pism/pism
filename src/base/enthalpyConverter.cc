@@ -241,6 +241,7 @@ These inequalities may be violated in the sixth digit or so, however.
 PetscErrorCode EnthalpyConverter::getEnth(
                   double T, double omega, double p, double &E) const {
   const double T_m = getMeltingTemp(p);
+#if (PISM_DEBUG==1)
   if (T <= 0.0) {
     SETERRQ1(1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
   }
@@ -253,6 +254,7 @@ PetscErrorCode EnthalpyConverter::getEnth(
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
     SETERRQ3(4,"T < T_m AND omega > 0 is contradictory\n\n",T,T_m,omega);
   }
+#endif
   if (T < T_m) {
     E = c_i * (T - T_0);
   } else {
@@ -285,9 +287,11 @@ but ensures \f$0\le \omega \le 1\f$ in second case.  Calls getEnth() for
 PetscErrorCode EnthalpyConverter::getEnthPermissive(
                   double T, double omega, double p, double &E) const {
   PetscErrorCode ierr;
+#if (PISM_DEBUG==1)
   if (T <= 0.0) {
     SETERRQ1(1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
   }
+#endif
   const double T_m = getMeltingTemp(p);
   if (T < T_m) {
     ierr = getEnth(T, 0.0, p, E); CHKERRQ(ierr);
@@ -307,9 +311,11 @@ These inequalities may be violated in the sixth digit or so, however.
  */
 PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
                         double omega, double p, double &E) const {
+#if (PISM_DEBUG==1)
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
     SETERRQ1(2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
   }
+#endif
   E = getEnthalpyCTS(p) + omega * L;
   return 0;
 }

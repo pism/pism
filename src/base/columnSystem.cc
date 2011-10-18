@@ -301,7 +301,7 @@ Negative return code indicates a software problem.
  */
 PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
                   const PetscInt n, PetscScalar **x) {
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   if (x == NULL) { SETERRQ(-999,"x is NULL in columnSystemCtx"); }
   if (*x == NULL) { SETERRQ(-998,"*x is NULL in columnSystemCtx"); }
   if (n < 1) { SETERRQ(-997,"instance size n < 1 in columnSystemCtx"); }

@@ -95,7 +95,7 @@ inline double convert(double value, const char spec1[], const char spec2[]) {
 
   errcode = utScan(spec1, &unit1);
   if (errcode != 0) {
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
     PetscPrintf(MPI_COMM_SELF, "utScan failed trying to parse %s\n", spec1);
     PISMEnd();
 #endif
@@ -104,7 +104,7 @@ inline double convert(double value, const char spec1[], const char spec2[]) {
 
   errcode = utScan(spec2, &unit2);
   if (errcode != 0) {
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
     PetscPrintf(MPI_COMM_SELF, "utScan failed trying to parse %s\n", spec2);
     PISMEnd();
 #endif
@@ -113,7 +113,7 @@ inline double convert(double value, const char spec1[], const char spec2[]) {
 
   errcode = utConvert(&unit1, &unit2, &slope, &intercept);
   if (errcode != 0) {
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
     PetscPrintf(MPI_COMM_SELF, "utConvert failed trying to convert %s to %s\n", spec1, spec2);
     PISMEnd();
 #endif

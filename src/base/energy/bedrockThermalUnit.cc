@@ -344,7 +344,7 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
   temp.get_spacing(dzb);
   const PetscInt  k0  = Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
 
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   for (PetscInt k = 0; k < Mbz; k++) { // working upward from base
     const PetscReal  z = - Lbz + (double)k * dzb;
     ierr = temp.isLegalLevel(z); CHKERRQ(ierr);

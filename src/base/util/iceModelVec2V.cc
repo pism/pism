@@ -50,11 +50,6 @@ PetscErrorCode IceModelVec2V::get_array(PISMVector2** &a) {
   return 0;
 }
 
-PISMVector2& IceModelVec2V::operator()(int i, int j) {
-  check_array_indices(i, j);
-  return static_cast<PISMVector2**>(array)[i][j];
-}
-
 PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PISMVector2** a;

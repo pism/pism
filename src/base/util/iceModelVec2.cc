@@ -654,7 +654,7 @@ PetscErrorCode  IceModelVec2Stag::create(IceGrid &my_grid, string my_short_name,
 
 PetscErrorCode  IceModelVec2Stag::begin_access() {
   PetscErrorCode ierr;
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (access_counter < 0)
@@ -675,7 +675,7 @@ PetscErrorCode  IceModelVec2Stag::end_access() {
   PetscErrorCode ierr;
   access_counter--;
 
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (access_counter < 0)
@@ -688,11 +688,6 @@ PetscErrorCode  IceModelVec2Stag::end_access() {
   }
 
   return 0;
-}
-
-PetscScalar& IceModelVec2Stag::operator() (int i, int j, int k) {
-  check_array_indices(i, j);
-  return static_cast<PetscScalar***>(array)[i][j][k];
 }
 
 PetscErrorCode IceModelVec2Stag::get_array(PetscScalar*** &a) {

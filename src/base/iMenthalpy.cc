@@ -361,7 +361,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt ks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
       // check if ks is valid
       if ((ks < 0) || (ks >= grid.Mz_fine)) {
         PetscPrintf(grid.com,

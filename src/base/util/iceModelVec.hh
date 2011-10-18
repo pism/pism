@@ -215,7 +215,7 @@ public:
 
   bool   report_range;                 //!< If true, report range when regridding.
   bool   write_in_glaciological_units, //!< \brief If true, data is written to
-                                       //!< a file in "human-friendly" units.
+  //!< a file in "human-friendly" units.
     time_independent;                  //!< \brief If true, corresponding
                                        //!< NetCDF variables do not depend on
                                        //!< the 't' dimension.
@@ -253,7 +253,9 @@ protected:
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
-  virtual void check_array_indices(int i, int j);
+
+  //! \brief Check the array indices and warn if they are out of range.
+  void check_array_indices(int i, int j);
   virtual PetscErrorCode reset_attrs(int N);
   virtual PetscErrorCode get_interp_context(string filename, LocalInterpCtx* &lic);
 };
@@ -320,18 +322,21 @@ public:
   /*!
     Note that i corresponds to the x direction and j to the y.
   */
-  virtual inline PetscScalar& operator() (int i, int j) {
+  inline PetscScalar& operator() (int i, int j) {
+#if (PISM_DEBUG==1)
     check_array_indices(i, j);
+#endif
     return static_cast<PetscScalar**>(array)[i][j];
   }
 
-  virtual inline planeStar<PetscScalar> star(int i, int j) {
+  inline planeStar<PetscScalar> star(int i, int j) {
+#if (PISM_DEBUG==1)
     check_array_indices(i, j);
     check_array_indices(i+1, j);
     check_array_indices(i-1, j);
     check_array_indices(i, j+1);
     check_array_indices(i, j-1);
-
+#endif
     planeStar<PetscScalar> result;
   
     result.ij = operator()(i,j);
@@ -349,18 +354,22 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Int : public IceModelVec2S {
 public:
-  virtual inline int as_int(int i, int j) {
+  inline int as_int(int i, int j) {
+#if (PISM_DEBUG==1)
     check_array_indices(i, j);
+#endif
     const PetscScalar **a = (const PetscScalar**) array;
     return static_cast<int>(floor(a[i][j] + 0.5));
   }
 
-  virtual inline planeStar<int> int_star(int i, int j) {
+  inline planeStar<int> int_star(int i, int j) {
+#if (PISM_DEBUG==1)
     check_array_indices(i, j);
     check_array_indices(i+1, j);
     check_array_indices(i-1, j);
     check_array_indices(i, j+1);
     check_array_indices(i, j-1);
+#endif
 
     planeStar<int> result;
     result.ij = as_int(i,j);
@@ -403,15 +412,21 @@ public:
   using IceModelVec2::write;
   virtual PetscErrorCode get_array(PISMVector2 ** &a);
   virtual PetscErrorCode magnitude(IceModelVec2S &result);
-  virtual PISMVector2&   operator()(int i, int j);
+  inline PISMVector2& operator()(int i, int j) {
+#if (PISM_DEBUG == 1)
+    check_array_indices(i, j);
+#endif
+    return static_cast<PISMVector2**>(array)[i][j];
+  }
 
-  virtual inline planeStar<PISMVector2> star(int i, int j) {
+  inline planeStar<PISMVector2> star(int i, int j) {
+#if (PISM_DEBUG==1)
     check_array_indices(i, j);
     check_array_indices(i+1, j);
     check_array_indices(i-1, j);
     check_array_indices(i, j+1);
     check_array_indices(i, j-1);
-
+#endif
     planeStar<PISMVector2> result;
   
     result.ij = operator()(i,j);
@@ -442,7 +457,12 @@ public:
   virtual PetscErrorCode get_array(PetscScalar*** &a);
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
-  virtual PetscScalar& operator() (int i, int j, int k);
+  inline PetscScalar& operator() (int i, int j, int k) {
+#if (PISM_DEBUG == 1)
+    check_array_indices(i, j);
+#endif
+    return static_cast<PetscScalar***>(array)[i][j][k];
+  }
   virtual PetscErrorCode norm_all(NormType n, PetscReal &result0, PetscReal &result1);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2V &result);

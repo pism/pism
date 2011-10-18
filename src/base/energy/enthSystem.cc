@@ -88,7 +88,7 @@ PetscScalar enthSystemCtx::k_from_T(PetscScalar /*T*/) {
 PetscErrorCode enthSystemCtx::initThisColumn(bool my_ismarginal,
                                              PetscScalar my_lambda,
                                              PetscReal /*ice_thickness*/) {
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
      "setSchemeParamsThisColumn() should only be called after\n"
      "  initAllColumns() in enthSystemCtx"); }
@@ -105,7 +105,7 @@ PetscErrorCode enthSystemCtx::initThisColumn(bool my_ismarginal,
 
 PetscErrorCode enthSystemCtx::setBoundaryValuesThisColumn(
             PetscScalar my_Enth_surface) {
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
      "setBoundaryValuesThisColumn() should only be called after\n"
      "  initAllColumns() in enthSystemCtx"); }
@@ -179,7 +179,7 @@ This method should only be called if everything but the basal boundary condition
 is already set.
  */
 PetscErrorCode enthSystemCtx::setDirichletBasal(PetscScalar Y) {
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   PetscErrorCode ierr;
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
@@ -213,7 +213,7 @@ is already set.
  */
 PetscErrorCode enthSystemCtx::setBasalHeatFlux(PetscScalar hf) {
  PetscErrorCode ierr;
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
     SETERRQ(1, "setting basal boundary conditions twice in enthSystemCtx");
@@ -271,7 +271,7 @@ PetscErrorCode enthSystemCtx::assemble_R() {
     R[k] = (Enth[k] < Enth_s[k]) ? iceRcold : iceRtemp;
 
   // R[k] for k > ks are never used
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   for (int k = ks + 1; k < Mz; ++k)
     R[k] = GSL_NAN;
 #endif
@@ -283,7 +283,7 @@ PetscErrorCode enthSystemCtx::assemble_R() {
 the new values of the ice enthalpy. */
 PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
   PetscErrorCode ierr;
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((gsl_isnan(a0)) || (gsl_isnan(a1)) || (gsl_isnan(b))) {
     SETERRQ(1, "solveThisColumn() should only be called after\n"
@@ -339,7 +339,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
     (*x)[k] = Enth_ks;
   }
 
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   if (pivoterrorindex == 0) {
     // if success, mark column as done by making scheme params and b.c. coeffs invalid
     lambda  = -1.0;

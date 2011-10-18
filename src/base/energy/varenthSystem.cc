@@ -85,7 +85,7 @@ PetscErrorCode varenthSystemCtx::assemble_R() {
   }
 
   // R[k] for k > ks are never used
-#ifdef PISM_DEBUG
+#if (PISM_DEBUG==1)
   for (int k = ks + 1; k < Mz; ++k)
     R[k] = GSL_NAN;
 #endif
