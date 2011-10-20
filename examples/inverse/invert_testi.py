@@ -47,12 +47,13 @@ class testi(PISMSSAForwardProblem):
          config.get_flag("do_pseudo_plastic_till"),
          config.get("pseudo_plastic_q"),
          config.get("pseudo_plastic_uthreshold") / PISM.secpera);
-
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config);
-    self.ice.setHardness(B_schoof)
-
+ 
     # irrelevant
     self.enthalpyconverter = PISM.EnthalpyConverter(config);
+
+    self.ice = PISM.CustomGlenIce(self.grid.com, "", config,self.enthalpyconverter);
+    self.ice.setHardness(B_schoof)
+
 
   def initSSACoefficients(self):
     solver = self.solver
@@ -82,7 +83,7 @@ class testi(PISMSSAForwardProblem):
         (bed_ij,junk,u,v) = PISM.exactI(m_schoof,x,y)
         bed[i,j] = bed_ij
         surface[i,j] = bed_ij + H0_schoof
-
+    
         edge = ( (j == 0) or (j == grid.My - 1) ) or ( (i==0) or (i==grid.Mx-1) );
         if (edge):
           bc_mask[i,j] = 1;

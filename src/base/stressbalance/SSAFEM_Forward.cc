@@ -19,6 +19,7 @@
 #include "SSAFEM_Forward.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
+#include "PISMVars.hh"
 
 
 /*! \brief Allocate PETSC structures needed for solving the various linearized
@@ -101,6 +102,20 @@ PetscErrorCode SSAFEM_Forward::deallocate_ksp()
 
   if (m_VecV != PETSC_NULL) {
     ierr = VecDestroy(m_VecV); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+// Initialize the solver, called once by the client before use.
+PetscErrorCode SSAFEM_Forward::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  ierr = SSAFEM::init(vars); CHKERRQ(ierr);
+
+  m_l2_weight = dynamic_cast<IceModelVec2S*>(vars.get("range_l2_weight"));
+  if (m_l2_weight == NULL){
+    verbPrintf(3,grid.com,"Weight for inverse problem L2 norm not available; using standard L2 norm.\n");
   }
 
   return 0;
@@ -465,7 +480,7 @@ PetscErrorCode SSAFEM_Forward::domainIP_core(PetscReal **A, PetscReal**B, PetscS
       } // q
     } // j
   } // i
-  
+
   ierr = PetscGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
   return 0;
 }
@@ -479,6 +494,17 @@ PetscErrorCode SSAFEM_Forward::rangeIP_core(PISMVector2 **A, PISMVector2**B, Pet
   PetscReal IP = 0;
 
   PISMVector2 a[FEQuadrature::Nq], b[FEQuadrature::Nq];
+
+  PetscReal **W;
+  PetscReal l2_weight[FEQuadrature::Nq];
+  if(m_l2_weight!=NULL) {
+    ierr = m_l2_weight->get_array(W);CHKERRQ(ierr);    
+  } else {
+    for(int q=0;q<FEQuadrature::Nq;q++) {
+      l2_weight[q]=1;
+    }
+  }
+
 
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
@@ -495,13 +521,19 @@ PetscErrorCode SSAFEM_Forward::rangeIP_core(PISMVector2 **A, PISMVector2**B, Pet
       dofmap.extractLocalDOFs(i,j,B,tmp);
       quadrature.computeTrialFunctionValues(tmp,b);
       
-      // quadrature.computeTrialFunctionValues(i,j,dofmap,A,a);
-      // quadrature.computeTrialFunctionValues(i,j,dofmap,B,b);
+      if(m_l2_weight != NULL) {
+        quadrature.computeTrialFunctionValues(i,j,dofmap,W,l2_weight);        
+      }
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        IP += JxW[q]*(a[q].u*b[q].u + a[q].v*b[q].v);
+        IP += JxW[q]*(a[q].u*b[q].u + a[q].v*b[q].v)*l2_weight[q];
       } // q
     } // j
   } // i
+
+  if(m_l2_weight!=NULL) {
+    ierr = m_l2_weight->end_access();CHKERRQ(ierr);    
+  }
+  
   
   PetscReal area = 4*grid.Lx*grid.Ly;
   IP /= area;
@@ -660,6 +692,16 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
 
+  PetscReal **W;
+  PetscReal l2_weight[FEQuadrature::Nq];
+  if(m_l2_weight!=NULL) {
+    ierr = m_l2_weight->get_array(W);CHKERRQ(ierr);    
+  } else {
+    for(int q=0;q<FEQuadrature::Nq;q++) {
+      l2_weight[q]=1;
+    }
+  }
+
   // Iterate over the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
@@ -698,8 +740,8 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
         const PetscReal    jw  = JxW[q]/area;
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
-          y[k].u += jw*testqk.val*res[q].u;
-          y[k].v += jw*testqk.val*res[q].v;
+          y[k].u += jw*testqk.val*res[q].u*l2_weight[q];
+          y[k].v += jw*testqk.val*res[q].v*l2_weight[q];
         }
       } // q
 
@@ -723,6 +765,10 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
     ierr = bc_locations->end_access();CHKERRQ(ierr);
   }
 
+  if(m_l2_weight!=NULL) {
+    ierr = m_l2_weight->end_access();CHKERRQ(ierr);    
+  }
+  
   return 0;
 }
 

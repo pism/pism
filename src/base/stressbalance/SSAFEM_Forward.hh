@@ -55,6 +55,8 @@ public:
     deallocate_ksp();
   }
 
+  virtual PetscErrorCode init(PISMVars &vars);
+
   PetscErrorCode allocate_ksp();  
   PetscErrorCode deallocate_ksp();
 
@@ -106,6 +108,9 @@ protected:
   Vec m_VecZ2, m_VecZ, m_VecRHS2;
   //! Left- and right-hand side for linear scalar problems.
   Vec m_VecV, m_VecRHS;
+
+  // Optional weight for a weighted L2 norm in the range.
+  IceModelVec2S *m_l2_weight;
 
   bool m_reassemble_T_matrix_needed, m_forward_F_needed;
 };
