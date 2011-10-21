@@ -136,7 +136,7 @@ PetscErrorCode SSAFEM_Forward::setup_vars()
   PetscErrorCode ierr;
   ierr = setup(); CHKERRQ(ierr);
   ierr = assemble_DomainNorm_matrix(); CHKERRQ(ierr);
-  
+  ierr = compute_range_l2_area(&m_range_l2_area);
   return 0;
 }
 
@@ -505,7 +505,6 @@ PetscErrorCode SSAFEM_Forward::rangeIP_core(PISMVector2 **A, PISMVector2**B, Pet
     }
   }
 
-
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
@@ -534,13 +533,58 @@ PetscErrorCode SSAFEM_Forward::rangeIP_core(PISMVector2 **A, PISMVector2**B, Pet
     ierr = m_l2_weight->end_access();CHKERRQ(ierr);    
   }
   
-  
-  PetscReal area = 4*grid.Lx*grid.Ly;
-  IP /= area;
+  IP /= m_range_l2_area;
   ierr = PetscGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
 
   return 0;
 }
+
+PetscErrorCode SSAFEM_Forward::compute_range_l2_area(PetscScalar *OUTPUT)
+{
+  PetscInt         i,j;
+  PetscErrorCode   ierr;
+
+  // The value of the inner product on the local part of the domain.
+  PetscReal IP = 0;
+
+  PetscReal **W;
+  PetscReal l2_weight[FEQuadrature::Nq];
+  if(m_l2_weight!=NULL) {
+    ierr = m_l2_weight->get_array(W);CHKERRQ(ierr);    
+  } else {
+    for(int q=0;q<FEQuadrature::Nq;q++) {
+      l2_weight[q]=1;
+    }
+  }
+
+  // Jacobian times weights for quadrature.
+  PetscScalar JxW[FEQuadrature::Nq];
+  quadrature.getWeightedJacobian(JxW);
+
+  // Loop through all LOCAL elements.
+  PetscInt xs = element_index.lxs, xm = element_index.lxm,
+           ys = element_index.lys, ym = element_index.lym;
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+      PISMVector2 tmp[FEQuadrature::Nq];      
+      if(m_l2_weight != NULL) {
+        quadrature.computeTrialFunctionValues(i,j,dofmap,W,l2_weight);
+      }
+      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+        IP += JxW[q]*l2_weight[q];
+      } // q
+    } // j
+  } // i
+
+  if(m_l2_weight!=NULL) {
+    ierr = m_l2_weight->end_access();CHKERRQ(ierr);    
+  }
+
+  ierr = PetscGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
+
+  return 0;
+}
+
 
 PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **gdtauc, PISMVector2 **grhs)
 {  
@@ -733,6 +777,10 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
       // Zero out the element-local residual in prep for updating it.
       for(k=0;k<FEQuadrature::Nk;k++){ 
         y[k].u = 0; y[k].v = 0;
+      }
+
+      if(m_l2_weight != NULL) {
+        quadrature.computeTrialFunctionValues(i,j,dofmap,W,l2_weight);
       }
 
       for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.

@@ -97,6 +97,8 @@ protected:
   PetscErrorCode assemble_TStarA_rhs( PISMVector2 **R, PISMVector2 **RHS);
 
   PetscErrorCode assemble_TStarB_rhs( PISMVector2 **Z, PISMVector2 **U, PetscScalar **RHS );
+
+  PetscErrorCode compute_range_l2_area(PetscScalar *OUTPUT);
   
   // PetscErrorCode assemble_TStar_rhs();
 
@@ -111,6 +113,8 @@ protected:
 
   // Optional weight for a weighted L2 norm in the range.
   IceModelVec2S *m_l2_weight;
+
+  PetscReal m_range_l2_area;
 
   bool m_reassemble_T_matrix_needed, m_forward_F_needed;
 };

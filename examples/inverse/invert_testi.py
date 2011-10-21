@@ -4,11 +4,19 @@ from petsc4py import PETSc
 import numpy as np
 from dmutils import msg
 import tozero
+import siple
 
 import PISM
 
 from pismssaforward import PISMSSAForwardProblem, InvertSSANLCG, InvertSSAIGN
 from linalg_pism import PISMLocalVector
+
+def pism_print_logger(message,severity):
+  verb = severity
+  com = PISM.Context().com
+  PISM.verbPrintf(verb,com, "%s\n" % message)
+siple.reporting.clear_loggers()
+siple.reporting.add_logger(pism_print_logger)
 
 Mx = 11 
 My = 61
@@ -23,6 +31,8 @@ B_schoof = 3.7e8;     # Pa s^{1/3}; hardness
 p_schoof = 4.0/3.0;   # = 1 + 1/n
 
 rms_error = 1. #m/a
+
+right_side_weight = 1.
 
 def testi_tauc(grid,ice,tauc):
   standard_gravity = PISM.global_config().get("standard_gravity");
@@ -90,19 +100,35 @@ class testi(PISMSSAForwardProblem):
           vel_bc[i,j].u = u;
           vel_bc[i,j].v = v;
 
+  def initInversionVariables(self):
+    grid = self.grid
+
+    l2_weight = PISM.IceModelVec2S();
+    l2_weight.create(grid, 'range_l2_weight', True, PISM.util.WIDE_STENCIL)
+    l2_weight.set_attrs("diagnostic", "range l2 weight", "", "");
+    self.solver.range_l2_weight = l2_weight
+    
+    with PISM.util.Access(comm=[l2_weight]):
+      for (i,j) in grid.points():
+        if grid.y[j] < 0:
+          l2_weight[i,j] = 1.;
+        else:
+          l2_weight[i,j] = right_side_weight;
+
 ## Main code starts here
 
 context = PISM.Context()
 config = context.config()
 PISM.set_abort_on_sigint(True)
 
-for o in PISM.OptionsGroup(context.com,"","Test J"):
+for o in PISM.OptionsGroup(context.com,"","Invert test I"):
   Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
   My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
   output_file = PISM.optionsString("-o","output file",default="invert_testi.nc")
   verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
   method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
   rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=rms_error)
+  right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
 
 PISM.setVerbosityLevel(verbosity)
 forward_problem = testi(Mx,My)
@@ -116,32 +142,45 @@ forward_problem.F(PISMLocalVector(tauc_true),out=PISMLocalVector(u_true))
 
 tauc = PISM.util.standardYieldStressVec(grid)
 testi_tauc(grid,forward_problem.ice,tauc)
-tauc.scale(0.01)
+tauc.scale(0.1)
+
 # tauc0 = 1e6 # Pa
 # tauc.set(tauc0)
 
 if method == "ign":
-  solver = InvertSSAIGN(forward_problem)
+  Solver = InvertSSAIGN
+  (forward_problem)
 else:
-  solver = InvertSSANLCG(forward_problem)  
-  if method == "sd":
-    solver.params.steepest_descent = True
-solver.params.verbose   = True
-solver.params.deriv_eps = 0.
+  Solver = InvertSSANLCG
+  
+
+params=Solver.defaultParameters()
+if method == "sd":
+  params.steepest_descent = True
+
+params.linearsolver.ITER_MAX=1000
+params.linearsolver.verbose = True
+params.verbose   = True
+params.deriv_eps = 0.
+
+solver=Solver(forward_problem,params=params)  
+
 # solver.params.linesearch.verbose=True
 rms_error /= PISM.secpera # m/s
 (tauc,u) = solver.solve(tauc,u_true,rms_error)
-
-tz = tozero.ToProcZero(grid)
-tauc_a = tz.communicate(tauc)
-if not tauc_a is None:
-  from matplotlib import pyplot
-  pyplot.imshow(tauc_a)
-  pyplot.show()
-context.com.barrier()
 
 forward_problem.write(output_file)
 tauc.write(output_file)
 tauc_true.write(output_file)
 u.set_name("_computed",0)
 u.write(output_file)
+
+tz = tozero.ToProcZero(grid)
+tauc_a = tz.communicate(tauc)
+if not tauc_a is None:
+  from matplotlib import pyplot
+  pyplot.imshow(tauc_a)
+  pyplot.draw()
+  #pyplot.show()  
+context.com.barrier()
+siple.reporting.endpause()

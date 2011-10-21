@@ -10,7 +10,7 @@ from math import sqrt
 class SSAForwardSolver(PISM.ssa.SSASolver):
   def __init__(self,grid,ice,basal,enthalpyconverter,config=None):
     PISM.ssa.SSASolver.__init__(self,grid,ice,basal,enthalpyconverter,config)
-
+    self.range_l2_weight=None
   
   def init_vars(self):
     pismVars = PISM.PISMVars()
@@ -18,6 +18,10 @@ class SSAForwardSolver(PISM.ssa.SSASolver):
                 self.enthalpy,self.ice_mask]:
         pismVars.add(var)
         
+    if not self.range_l2_weight is None:
+      pismVars.add(self.range_l2_weight)
+      
+    
     # The SSA instance will not keep a reference to pismVars; it only uses it to extract
     # its desired variables.  So it is safe to pass it pismVars and then let pismVars
     # go out of scope at the end of this method.
@@ -33,12 +37,19 @@ class SSAForwardSolver(PISM.ssa.SSASolver):
   def _constructSSA(self):
     return PISM.SSAFEM_Forward(self.grid,self.basal,self.ice,self.enthalpyconverter,self.config)
 
+  def write(self,filename):
+    PISM.ssa.SSASolver.write(self,filename)
+    if not self.range_l2_weight is None:
+      self.range_l2_weight.write(filename)
+
 WIDE_STENCIL = 2
 
 class PISMSSAForwardProblem(NonlinearForwardProblem,PISM.ssa.SSATestCase):
   
   def __init__(self,Mx,My):
     PISM.ssa.SSATestCase.__init__(self,Mx,My)
+
+    self.initInversionVariables()
 
     self.solver.init_vars()
 
