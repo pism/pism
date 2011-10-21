@@ -8,7 +8,8 @@ from linalg_pism import PISMLocalVector
 from math import sqrt
 
 class SSAForwardSolver(PISM.ssa.SSASolver):
-  def __init__(self,grid,ice,basal,enthalpyconverter,config=None):
+  def __init__(self,grid,ice,basal,enthalpyconverter,tauc_param,config=None):
+    self.tauc_param = tauc_param
     PISM.ssa.SSASolver.__init__(self,grid,ice,basal,enthalpyconverter,config)
     self.range_l2_weight=None
   
@@ -35,7 +36,7 @@ class SSAForwardSolver(PISM.ssa.SSASolver):
     self.ssa_init = True
     
   def _constructSSA(self):
-    return PISM.SSAFEM_Forward(self.grid,self.basal,self.ice,self.enthalpyconverter,self.config)
+    return PISM.InvSSAForwardProblem(self.grid,self.basal,self.ice,self.enthalpyconverter,self.tauc_param,self.config)
 
   def write(self,filename):
     PISM.ssa.SSASolver.write(self,filename)
@@ -47,6 +48,7 @@ WIDE_STENCIL = 2
 class PISMSSAForwardProblem(NonlinearForwardProblem,PISM.ssa.SSATestCase):
   
   def __init__(self,Mx,My):
+    self.tauc_param = PISM.cvar.g_InvTaucParamIdent;
     PISM.ssa.SSATestCase.__init__(self,Mx,My)
 
     self.initInversionVariables()
@@ -55,7 +57,7 @@ class PISMSSAForwardProblem(NonlinearForwardProblem,PISM.ssa.SSATestCase):
 
 
   def _constructSSA(self):
-    return SSAForwardSolver(self.grid,self.ice,self.basal,self.enthalpyconverter,self.config)
+    return SSAForwardSolver(self.grid,self.ice,self.basal,self.enthalpyconverter,self.tauc_param,self.config)
 
   def F(self, x,out=None,guess=None):
     """

@@ -139,7 +139,6 @@ set_source_files_properties (udunits/utlib.c
   PROPERTIES COMPILE_FLAGS
   "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
 
-
 # Verification tests.
 add_library (pismverif
   verif/iCMthermo.cc
@@ -257,4 +256,5 @@ endif (Pism_BUILD_EXTRA_EXECS)
 add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (eismint)
+add_subdirectory (inverse)
 add_subdirectory (pythonbindings)

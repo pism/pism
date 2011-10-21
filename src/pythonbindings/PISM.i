@@ -29,7 +29,8 @@
 #include "Timeseries.hh"
 #include "exactTestsIJ.h"
 #include "stressbalance/SSAFEM.hh"
-#include "stressbalance/SSAFEM_Forward.hh"
+#include "inverse/InvSSAForwardProblem.hh"
+#include "inverse/InvTaucParameterization.hh"
 #include "stressbalance/SSAFD.hh"
 #include "pism_python.hh"
 #include "iceModel.hh"
@@ -423,9 +424,9 @@ typedef int NormType; // YUCK.
 // it is used.
 %template(PISMDiag_SSA) PISMDiag<SSA>;
 %include "stressbalance/SSA.hh"
-
 %include "stressbalance/SSAFEM.hh"
-%include "stressbalance/SSAFEM_Forward.hh"
+%include "inverse/InvSSAForwardProblem.hh"
+%include "inverse/InvTaucParameterization.hh"
 %template(PISMDiag_SSAFD) PISMDiag<SSAFD>;
 %include "stressbalance/SSAFD.hh"
 %include "Mask.hh"

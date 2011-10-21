@@ -2,7 +2,6 @@ import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import numpy as np
-from dmutils import msg
 import tozero
 import siple
 

@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "SSAFEM_Forward.hh"
+#include "InvSSAForwardProblem.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
@@ -24,7 +24,7 @@
 
 /*! \brief Allocate PETSC structures needed for solving the various linearized
 problems associated with the forward problem. */
-PetscErrorCode SSAFEM_Forward::allocate_ksp()
+PetscErrorCode InvSSAForwardProblem::allocate_ksp()
 {
   PetscErrorCode ierr;
 
@@ -60,7 +60,7 @@ PetscErrorCode SSAFEM_Forward::allocate_ksp()
 }
 
 /*! \brief Undoes allocation in allocate_ksp */
-PetscErrorCode SSAFEM_Forward::deallocate_ksp()
+PetscErrorCode InvSSAForwardProblem::deallocate_ksp()
 {
   PetscErrorCode ierr;
 
@@ -107,8 +107,23 @@ PetscErrorCode SSAFEM_Forward::deallocate_ksp()
   return 0;
 }
 
+PetscErrorCode InvSSAForwardProblem::allocate_store()
+{
+  // We own an FEElementMap that knows how many finite element
+  // elements we need to access. We use it to determine the
+  // size our per-quadrature point storage.
+  PetscInt nElements = element_index.element_count();
+  m_dtauc_dp_store = new PetscReal[FEQuadrature::Nq*nElements];  
+  return 0;
+}
+
+PetscErrorCode InvSSAForwardProblem::deallocate_store(){
+  delete [] m_dtauc_dp_store;
+}
+
+
 // Initialize the solver, called once by the client before use.
-PetscErrorCode SSAFEM_Forward::init(PISMVars &vars) {
+PetscErrorCode InvSSAForwardProblem::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = SSAFEM::init(vars); CHKERRQ(ierr);
@@ -121,7 +136,7 @@ PetscErrorCode SSAFEM_Forward::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::set_initial_velocity_guess(  IceModelVec2V &v )
+PetscErrorCode InvSSAForwardProblem::set_initial_velocity_guess(  IceModelVec2V &v )
 {
   PetscErrorCode ierr;
   ierr = v.copy_to(SSAX); CHKERRQ(ierr);
@@ -131,7 +146,7 @@ PetscErrorCode SSAFEM_Forward::set_initial_velocity_guess(  IceModelVec2V &v )
 
 // FIXME
 /*! \brief apparently unused method! */
-PetscErrorCode SSAFEM_Forward::setup_vars()
+PetscErrorCode InvSSAForwardProblem::setup_vars()
 {
   PetscErrorCode ierr;
   ierr = setup(); CHKERRQ(ierr);
@@ -140,7 +155,7 @@ PetscErrorCode SSAFEM_Forward::setup_vars()
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::set_tauc(IceModelVec2S &new_tauc )
+PetscErrorCode InvSSAForwardProblem::set_tauc(IceModelVec2S &new_tauc )
 {
   PetscErrorCode ierr;
   PetscInt i,j,q;
@@ -154,9 +169,10 @@ PetscErrorCode SSAFEM_Forward::set_tauc(IceModelVec2S &new_tauc )
       PetscReal taucq[FEQuadrature::Nq];
       quadrature.computeTrialFunctionValues(i,j,dofmap,tauc_array,taucq);
       const PetscInt ij = element_index.flatten(i,j);
-      FEStoreNode *feS = &feStore[4*ij];
+      FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq];
+      PetscReal *dtauc_dp = m_dtauc_dp_store + ij*FEQuadrature::Nq;
       for (q=0; q<4; q++) {
-        feS[q].tauc = taucq[q]; // Or exp(taucq[q])!
+        m_tauc_param.toTauc(taucq[q],&(feS[q].tauc),dtauc_dp+q);
       }
     }
   }
@@ -168,7 +184,7 @@ PetscErrorCode SSAFEM_Forward::set_tauc(IceModelVec2S &new_tauc )
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::solveF_core()
+PetscErrorCode InvSSAForwardProblem::solveF_core()
 {
   PetscErrorCode ierr;
   if(m_forward_F_needed)
@@ -204,7 +220,7 @@ PetscErrorCode SSAFEM_Forward::solveF_core()
 }
 
 /* \brief Solves the nonlinear forward problem taking tauc to SSA velocities. */
-PetscErrorCode SSAFEM_Forward::solveF(IceModelVec2V &result)
+PetscErrorCode InvSSAForwardProblem::solveF(IceModelVec2V &result)
 {
   PetscErrorCode ierr;
   ierr = solveF_core(); CHKERRQ(ierr);
@@ -216,7 +232,7 @@ PetscErrorCode SSAFEM_Forward::solveF(IceModelVec2V &result)
 }
 
 /* \brief Solves the linearized forward problem */
-PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &result)
+PetscErrorCode InvSSAForwardProblem::solveT( IceModelVec2S &dtauc, IceModelVec2V &result)
 {
   KSPConvergedReason  reason;
   PetscErrorCode ierr;
@@ -250,11 +266,11 @@ PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &resu
   ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
   if (reason < 0) {
     SETERRQ1(1, 
-      "SSAFEM_Forward::solveT solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
+      "InvSSAForwardProblem::solveT solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
   }
   else  
   {
-    verbPrintf(4,grid.com,"SSAFEM_Forward::solveT converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"InvSSAForwardProblem::solveT converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
 
   // Extract the solution and communicate.
@@ -266,7 +282,7 @@ PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &resu
 }
 
 //! \brief Solves the adjoint of the linearized forward problem.
-PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2S &result)
+PetscErrorCode InvSSAForwardProblem::solveTStar( IceModelVec2V &residual, IceModelVec2S &result)
 {
   KSPConvergedReason  reason;
   PetscErrorCode ierr;
@@ -298,11 +314,11 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
   ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
   if (reason < 0) {
     SETERRQ1(1, 
-      "SSAFEM_Forward::solveTStarA solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
+      "InvSSAForwardProblem::solveTStarA solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
   }
   else  
   {
-    verbPrintf(4,grid.com,"SSAFEM_Forward::solveTStarA converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"InvSSAForwardProblem::solveTStarA converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
 
 
@@ -325,10 +341,10 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
   ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
   if (reason < 0) {
     SETERRQ1(1, 
-      "SSAFEM_Forward::solveTStarB solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
+      "InvSSAForwardProblem::solveTStarB solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
   }
   else  {
-    verbPrintf(4,grid.com,"SSAFEM_Forward::solveTStarB converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"InvSSAForwardProblem::solveTStarB converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
     
   // Extract the solution and communicate.
@@ -340,7 +356,7 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
 }
 
 //! \brief Builds the matrix for the linearized forward PDE.
-PetscErrorCode SSAFEM_Forward::assemble_T_matrix()
+PetscErrorCode InvSSAForwardProblem::assemble_T_matrix()
 {
   PISMVector2 **vel;
   PetscErrorCode ierr;
@@ -354,7 +370,7 @@ PetscErrorCode SSAFEM_Forward::assemble_T_matrix()
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::assemble_DomainNorm_matrix()
+PetscErrorCode InvSSAForwardProblem::assemble_DomainNorm_matrix()
 {
   // Just L2 matrix for now.
   PetscInt         i,j;
@@ -405,7 +421,7 @@ PetscErrorCode SSAFEM_Forward::assemble_DomainNorm_matrix()
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::domainIP(Vec a, Vec b, PetscScalar *OUTPUT)
+PetscErrorCode InvSSAForwardProblem::domainIP(Vec a, Vec b, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PetscScalar **A, **B;
@@ -416,7 +432,7 @@ PetscErrorCode SSAFEM_Forward::domainIP(Vec a, Vec b, PetscScalar *OUTPUT)
   ierr = DAVecRestoreArray(grid.da2,b,&B); CHKERRQ(ierr);  
   return 0;
 }
-PetscErrorCode SSAFEM_Forward::domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscScalar *OUTPUT)
+PetscErrorCode InvSSAForwardProblem::domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PetscReal **A, **B;
@@ -428,7 +444,7 @@ PetscErrorCode SSAFEM_Forward::domainIP(IceModelVec2S &a, IceModelVec2S &b, Pets
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::rangeIP(Vec a, Vec b, PetscScalar *OUTPUT)
+PetscErrorCode InvSSAForwardProblem::rangeIP(Vec a, Vec b, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PISMVector2 **A, **B;
@@ -440,7 +456,7 @@ PetscErrorCode SSAFEM_Forward::rangeIP(Vec a, Vec b, PetscScalar *OUTPUT)
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscScalar *OUTPUT)
+PetscErrorCode InvSSAForwardProblem::rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PISMVector2 **A, **B;
@@ -452,7 +468,7 @@ PetscErrorCode SSAFEM_Forward::rangeIP(IceModelVec2V &a, IceModelVec2V &b, Petsc
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT)
+PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT)
 {
 
   // Just L2 matrix for now.
@@ -485,7 +501,7 @@ PetscErrorCode SSAFEM_Forward::domainIP_core(PetscReal **A, PetscReal**B, PetscS
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::rangeIP_core(PISMVector2 **A, PISMVector2**B, PetscScalar *OUTPUT)
+PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**B, PetscScalar *OUTPUT)
 {
   PetscInt         i,j;
   PetscErrorCode   ierr;
@@ -539,7 +555,7 @@ PetscErrorCode SSAFEM_Forward::rangeIP_core(PISMVector2 **A, PISMVector2**B, Pet
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::compute_range_l2_area(PetscScalar *OUTPUT)
+PetscErrorCode InvSSAForwardProblem::compute_range_l2_area(PetscScalar *OUTPUT)
 {
   PetscInt         i,j;
   PetscErrorCode   ierr;
@@ -586,7 +602,7 @@ PetscErrorCode SSAFEM_Forward::compute_range_l2_area(PetscScalar *OUTPUT)
 }
 
 
-PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **gdtauc, PISMVector2 **grhs)
+PetscErrorCode InvSSAForwardProblem::assemble_T_rhs( PISMVector2 **gvel, PetscReal **gdtauc, PISMVector2 **grhs)
 {  
   PetscInt         i,j,k,q;
   PetscErrorCode   ierr;
@@ -663,18 +679,19 @@ PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **g
         const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
         const PetscReal    jw  = JxW[q];
 
-        // Determine dbeta/dtauc at the quadrature point
-        PetscReal dbeta_dtauc = 0;
+        // Determine dbeta/dp at the quadrature point
+        PetscReal dbeta_dp = 0;
         if( M.grounded_ice(feS->mask) ) {
-          dbeta_dtauc = basal.drag(dtauc[q],u[q].u,u[q].v);
+          PetscReal dbeta_dtauc = basal.drag(dtauc[q],u[q].u,u[q].v);
+          PetscReal dtauc_dp = m_dtauc_dp_store[ij*FEQuadrature::Nq+q];
+          dbeta_dp = dbeta_dtauc*dtauc_dp;
         }
-        // dbeta_dtauc *= exp(dtauc[q]) 
-
+        
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
           //Note the -= (not +=) in the following lines.
-          y[k].u -= jw*dbeta_dtauc*testqk.val*u[q].u;
-          y[k].v -= jw*dbeta_dtauc*testqk.val*u[q].v;
+          y[k].u -= jw*dbeta_dp*testqk.val*u[q].u;
+          y[k].v -= jw*dbeta_dp*testqk.val*u[q].v;
         } // k
       } // q
 
@@ -701,7 +718,7 @@ PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **g
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2 **RHS)
+PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2 **RHS)
 {  
   PetscInt         i,j,k,q;
   PetscErrorCode   ierr;
@@ -821,7 +838,7 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
 }
 
 
-PetscErrorCode SSAFEM_Forward::assemble_TStarB_rhs( PISMVector2 **Z, 
+PetscErrorCode InvSSAForwardProblem::assemble_TStarB_rhs( PISMVector2 **Z, 
                                                     PISMVector2 **U,
                                                     PetscScalar **RHS)
 {
@@ -882,8 +899,9 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarB_rhs( PISMVector2 **Z,
         PetscReal notquitebeta = 0;
         if( M.grounded_ice(feS->mask) ) {
           notquitebeta = basal.drag(1.,u[q].u,u[q].v);
+          PetscReal dtauc_dp = m_dtauc_dp_store[ij*FEQuadrature::Nq+q];
+          notquitebeta*=dtauc_dp;
         }
-        // dbeta_dtauc *= exp(dtauc[q]) 
 
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];

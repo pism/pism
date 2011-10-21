@@ -16,10 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SSAFEM_FORWARD_H_
-#define _SSAFEM_FORWARD_H_
+#ifndef _INVSSAFORWARDPROBLEM_H_
+#define _INVSSAFORWARDPROBLEM_H_
 
 #include "SSAFEM.hh"
+#include "InvTaucParameterization.hh"
 
 //! \file 
 //! \brief Class for implementing the hard parts of a 'siple' 
@@ -31,13 +32,13 @@ is, and the inner products.
 */
 
 //! Forward problem for the map from yeild stress to velocities in the SSA
-class SSAFEM_Forward : public SSAFEM
+class InvSSAForwardProblem : public SSAFEM
 {
 
 public:
 
-  SSAFEM_Forward(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, 
-                 EnthalpyConverter &e,
+  InvSSAForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, 
+    EnthalpyConverter &e, InvTaucParameterization &tp,
                  const NCConfigVariable &c) 
            : SSAFEM(g,b,i,e,c), 
              m_KSP(0), m_KSP_B(0), m_MatA(0), m_MatB(0),
@@ -45,20 +46,28 @@ public:
              m_VecZ(0), m_VecRHS2(0),
              m_VecV(0), m_VecRHS(0),
              m_reassemble_T_matrix_needed(true),
-             m_forward_F_needed(true)
+             m_forward_F_needed(true),
+             m_tauc_param(tp)
   {
-    allocate_ksp();
+    PetscErrorCode ierr = allocate_ksp();
+    if (ierr != 0) {
+      PetscPrintf(grid.com, "FATAL ERROR: InvSSAForwardProblem allocation failed.\n");
+      PISMEnd();
+    }    
+    ierr = allocate_store();
+    if (ierr != 0) {
+      PetscPrintf(grid.com, "FATAL ERROR: InvSSAForwardProblem allocation failed.\n");
+      PISMEnd();
+    }    
   };
 
-  virtual ~SSAFEM_Forward()
+  virtual ~InvSSAForwardProblem()
   {
+    deallocate_store();
     deallocate_ksp();
   }
 
   virtual PetscErrorCode init(PISMVars &vars);
-
-  PetscErrorCode allocate_ksp();  
-  PetscErrorCode deallocate_ksp();
 
   PetscErrorCode set_initial_velocity_guess(IceModelVec2V &v);
 
@@ -81,6 +90,13 @@ public:
   PetscErrorCode rangeIP(Vec a, Vec b, PetscScalar *OUTPUT);
 
 protected:
+  PetscErrorCode allocate_ksp();  
+
+  PetscErrorCode deallocate_ksp();
+
+  PetscErrorCode allocate_store();  
+
+  PetscErrorCode deallocate_store();
 
   PetscErrorCode domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT);
 
@@ -114,9 +130,16 @@ protected:
   // Optional weight for a weighted L2 norm in the range.
   IceModelVec2S *m_l2_weight;
 
+  // Store for values of dtauc_dxi at the quad points.
+  
+  PetscReal *m_dtauc_dp_store;
+
   PetscReal m_range_l2_area;
+
+  InvTaucParameterization &m_tauc_param;
 
   bool m_reassemble_T_matrix_needed, m_forward_F_needed;
 };
 
-#endif
+//_INVSSAFORWARDPROBLEM_H_
+#endif 

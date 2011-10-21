@@ -12,7 +12,6 @@ add_library (pismstressbalance
   SSA_diagnostics.cc
   SSAFD.cc
   SSAFEM.cc  
-  SSAFEM_Forward.cc  
   FETools.cc
   SSATestCase.cc
   SIA_Sliding.cc
