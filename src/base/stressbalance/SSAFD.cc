@@ -102,6 +102,14 @@ PetscErrorCode SSAFD::deallocate_fd() {
 PetscErrorCode SSAFD::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = SSA::init(vars); CHKERRQ(ierr);
+  
+  // The FD solver does not support direct specification of a driving stress;
+  // a surface elevation must be explicitly given.
+  if(surface == NULL) {
+    SETERRQ(1, "The finite difference SSA solver requires a surface elevation.\
+An explicit driving stress was specified instead and cannot be used.");
+  }
+  
   ierr = verbPrintf(2,grid.com,
                     "  [using the KSP-based finite difference implementation]\n"); CHKERRQ(ierr);
 

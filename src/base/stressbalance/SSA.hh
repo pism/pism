@@ -184,6 +184,7 @@ protected:
 
   IceModelVec2Int *mask;
   IceModelVec2S *thickness, *tauc, *surface, *bed;
+  IceModelVec2V *driving_stress;
   IceModelVec2V taud, velocity_old;
   IceModelVec3 *enthalpy;
 

@@ -203,6 +203,7 @@ PetscErrorCode SSAFEM::setup()
                  **tauc_array,
                   *Enth_e[4],
                   *Enth_q[4];
+  PISMVector2    **ds;
   PetscInt         i,j,k,q,p,
                    Mz = grid.Mz;
   PetscErrorCode   ierr;
@@ -215,7 +216,15 @@ PetscErrorCode SSAFEM::setup()
   GeometryCalculator gc(sea_level, ice, config);
   
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
-  ierr = surface->get_array(h);CHKERRQ(ierr);
+  bool driving_stress_explicit;
+  if( surface != NULL) {
+    driving_stress_explicit = false;
+    ierr = surface->get_array(h);CHKERRQ(ierr);    
+  } else {
+    driving_stress_explicit = true;
+    ierr = driving_stress->get_array(ds);CHKERRQ(ierr);        
+  }
+  
   ierr = thickness->get_array(H);CHKERRQ(ierr);
   ierr = bed->get_array(topg);CHKERRQ(ierr);
   ierr = tauc->get_array(tauc_array);CHKERRQ(ierr);
@@ -225,9 +234,14 @@ PetscErrorCode SSAFEM::setup()
   for (i=xs; i<xs+xm; i++) {
     for (j=ys;j<ys+ym; j++) {
       
-      // Extract coefficient values at the quadrature points.
       PetscReal hq[FEQuadrature::Nq],hxq[FEQuadrature::Nq],hyq[FEQuadrature::Nq];
-      quadrature.computeTrialFunctionValues(i,j,dofmap,h,hq,hxq,hyq);
+      PISMVector2 dsq[FEQuadrature::Nq];
+      if(driving_stress_explicit) {
+        quadrature.computeTrialFunctionValues(i,j,dofmap,ds,dsq);
+      } else {
+        // Extract coefficient values at the quadrature points.
+        quadrature.computeTrialFunctionValues(i,j,dofmap,h,hq,hxq,hyq);        
+      }
 
       PetscReal Hq[FEQuadrature::Nq], bq[FEQuadrature::Nq], taucq[FEQuadrature::Nq];
       quadrature.computeTrialFunctionValues(i,j,dofmap,H,Hq);
@@ -240,8 +254,14 @@ PetscErrorCode SSAFEM::setup()
         feS[q].H  = Hq[q];
         feS[q].b  = bq[q];
         feS[q].tauc = taucq[q];
-        feS[q].hx = hxq[q];
-        feS[q].hy = hyq[q];
+        if(driving_stress_explicit) {
+          feS[q].driving_stress = dsq[q];
+        } else {
+          feS[q].driving_stress.u = -ice.rho*earth_grav*Hq[q]*hxq[q];
+          feS[q].driving_stress.v = -ice.rho*earth_grav*Hq[q]*hyq[q];         
+        }
+        // feS[q].hx = hxq[q];
+        // feS[q].hy = hyq[q];
 
         feS[q].mask = gc.mask(feS[q].b, feS[q].H);
       }
@@ -447,8 +467,8 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
 
         // The next few lines compute the actual residual for the element.
         PISMVector2 f;
-        f.u = beta*u[q].u + ice.rho*earth_grav*feS->H*feS->hx;
-        f.v = beta*u[q].v + ice.rho*earth_grav*feS->H*feS->hy;
+        f.u = beta*u[q].u - feS->driving_stress.u;
+        f.v = beta*u[q].v - feS->driving_stress.v;
 
         for(k=0; k<4;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];

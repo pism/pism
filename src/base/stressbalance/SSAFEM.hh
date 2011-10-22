@@ -26,7 +26,8 @@
 
 //! Storage for SSA coefficients at a quadrature point.
 struct FEStoreNode {
-  PetscReal H,tauc,hx,hy,b,B;
+  PetscReal H,tauc,b,B;
+  PISMVector2 driving_stress;
   PetscInt mask;
 };
 
@@ -104,6 +105,7 @@ protected:
   virtual PetscErrorCode solve();
   
   virtual PetscErrorCode setFromOptions();
+
 
   // objects used internally
   IceModelVec2S hardav;         // vertically-averaged ice hardness
