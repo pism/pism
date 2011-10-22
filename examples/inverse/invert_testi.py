@@ -7,7 +7,7 @@ import siple
 
 import PISM
 
-from pismssaforward import PISMSSAForwardProblem, InvertSSANLCG, InvertSSAIGN
+from pismssaforward import PISMSSAForwardProblem, InvertSSANLCG, InvertSSAIGN, tauc_params
 from linalg_pism import PISMLocalVector
 
 def pism_print_logger(message,severity):
@@ -128,6 +128,10 @@ for o in PISM.OptionsGroup(context.com,"","Invert test I"):
   method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
   rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=rms_error)
   right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
+  tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp"],"ident")
+
+config.set_string("inv_ssa_tauc_param",tauc_param_type)
+tauc_param = tauc_params[tauc_param_type]
 
 PISM.setVerbosityLevel(verbosity)
 forward_problem = testi(Mx,My)
@@ -136,12 +140,39 @@ grid = forward_problem.grid
 tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
 testi_tauc(grid,forward_problem.ice,tauc_true)
 
+if config.get_string('inv_ssa_tauc_param')=='ident':
+  zeta_true = tauc_true
+else:
+  zeta_true = PISM.IceModelVec2S();
+  zeta_true.create(grid, "zeta_true", True, PISM.util.WIDE_STENCIL)
+  with PISM.util.Access(nocomm=[tauc_true],comm=[zeta_true]):
+    for (i,j) in grid.points():
+      zeta_true[i,j] = tauc_param.fromTauc(tauc_true[i,j])
+
 u_true = PISM.util.standard2dVelocityVec(grid,name="_true")
-forward_problem.F(PISMLocalVector(tauc_true),out=PISMLocalVector(u_true))
+forward_problem.F(PISMLocalVector(zeta_true),out=PISMLocalVector(u_true))
 
 tauc = PISM.util.standardYieldStressVec(grid)
 testi_tauc(grid,forward_problem.ice,tauc)
 tauc.scale(0.1)
+
+if config.get_string('inv_ssa_tauc_param')=='ident':
+  zeta = tauc
+else:
+  zeta = PISM.IceModelVec2S();
+  zeta.create(grid, "zeta", True, PISM.util.WIDE_STENCIL)
+  with PISM.util.Access(nocomm=[tauc],comm=[zeta]):
+    for (i,j) in grid.points():
+      zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
+
+
+  tauc2 = PISM.util.standardYieldStressVec(grid)
+  with PISM.util.Access(nocomm=[zeta,tauc],comm=[tauc2]):
+    for (i,j) in grid.points():
+      (tauc2[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
+      print tauc2[i,j], tauc[i,j], zeta[i,j]
+
+
 
 # tauc0 = 1e6 # Pa
 # tauc.set(tauc0)
@@ -166,7 +197,15 @@ solver=Solver(forward_problem,params=params)
 
 # solver.params.linesearch.verbose=True
 rms_error /= PISM.secpera # m/s
-(tauc,u) = solver.solve(tauc,u_true,rms_error)
+(zeta,u) = solver.solve(zeta,u_true,rms_error)
+
+if config.get_string('inv_ssa_tauc_param')=='ident':
+  tauc = zeta
+else:
+  with PISM.util.Access(nocomm=[zeta],comm=[tauc]):
+    for (i,j) in grid.points():
+      (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
+
 
 forward_problem.write(output_file)
 tauc.write(output_file)
