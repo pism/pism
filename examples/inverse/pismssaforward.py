@@ -12,18 +12,35 @@ tauc_params = {"ident":PISM.cvar.g_InvTaucParamIdent,
                "exp":PISM.cvar.g_InvTaucParamExp }
 
 class SSAForwardSolver(PISM.ssa.SSASolver):
-  def __init__(self,grid,ice,basal,enthalpyconverter,config):
+  def __init__(self,grid,config):
+    PISM.ssa.SSASolver.__init__(self,grid,config)
     tauc_param_type = config.get_string("inv_ssa_tauc_param")
     self.tauc_param = tauc_params[tauc_param_type]
-    PISM.ssa.SSASolver.__init__(self,grid,ice,basal,enthalpyconverter,config)
     self.range_l2_weight=None
+
+  def allocateCoeffs(self,using_l2_weight=False,**kwargs):
+    PISM.ssa.SSASolver.allocateCoeffs(self,**kwargs)
+
+    if using_l2_weight:      
+      self.range_l2_weight = PISM.IceModelVec2S();
+      self.range_l2_weight.create(self.grid, 'range_l2_weight', True, PISM.util.WIDE_STENCIL)
+      self.range_l2_weight.set_attrs("diagnostic", "range l2 weight", "", "");
+    
   
   def init_vars(self):
     pismVars = PISM.PISMVars()
-    for var in [self.surface,self.thickness,self.bed,self.tauc,
+    for var in [self.thickness,self.bed,self.tauc,
                 self.enthalpy,self.ice_mask]:
         pismVars.add(var)
-        
+    
+    if not self.surface is None:
+      pismVars.add(self.surface)
+    if not self.drivingstress is None:
+      print 'adding driving stress'
+      print self.drivingstress.string_attr("name")
+      pismVars.add(self.drivingstress,'ssa_driving_stress')
+    
+    
     if not self.range_l2_weight is None:
       pismVars.add(self.range_l2_weight)
       
@@ -40,8 +57,8 @@ class SSAForwardSolver(PISM.ssa.SSASolver):
 
     self.ssa_init = True
     
-  def _constructSSA(self):
-    return PISM.InvSSAForwardProblem(self.grid,self.basal,self.ice,self.enthalpyconverter,self.tauc_param,self.config)
+  def buildSSA(self):
+    self.ssa = PISM.InvSSAForwardProblem(self.grid,self.basal,self.ice,self.enthalpyconverter,self.tauc_param,self.config)
 
   def write(self,filename):
     PISM.ssa.SSASolver.write(self,filename)
@@ -50,18 +67,19 @@ class SSAForwardSolver(PISM.ssa.SSASolver):
 
 WIDE_STENCIL = 2
 
-class PISMSSAForwardProblem(NonlinearForwardProblem,PISM.ssa.SSATestCase):
+class PISMSSAForwardProblem(NonlinearForwardProblem,PISM.ssa.SSARun):
   
-  def __init__(self,Mx,My):
-    PISM.ssa.SSATestCase.__init__(self,Mx,My)
+  def __init__(self):
+    PISM.ssa.SSARun.__init__(self)
 
-    self.initInversionVariables()
+  def setup(self):
+    PISM.ssa.SSARun.setup(self)
 
+    # FIXME: This is a lousy name....
     self.solver.init_vars()
 
-
   def _constructSSA(self):
-    return SSAForwardSolver(self.grid,self.ice,self.basal,self.enthalpyconverter,self.config)
+    return SSAForwardSolver(self.grid,self.config)
 
   def F(self, x,out=None,guess=None):
     """

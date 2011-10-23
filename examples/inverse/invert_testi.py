@@ -29,13 +29,14 @@ B_schoof = 3.7e8;     # Pa s^{1/3}; hardness
                       # given on p. 239 of Schoof; why so big?
 p_schoof = 4.0/3.0;   # = 1 + 1/n
 
+slope = 0.001
+
 rms_error = 1. #m/a
 
 right_side_weight = 1.
 
 def testi_tauc(grid,ice,tauc):
-  standard_gravity = PISM.global_config().get("standard_gravity");
-  slope = 0.001
+  standard_gravity = grid.config.get("standard_gravity");
   f = ice.rho*standard_gravity*H0_schoof*slope
   with PISM.util.Access(comm=tauc):
     for (i,j) in grid.points():
@@ -43,71 +44,62 @@ def testi_tauc(grid,ice,tauc):
       tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
 
 class testi(PISMSSAForwardProblem):
+  def __init__(self,Mx,My):
+    PISMSSAForwardProblem.__init__(self)
+    self.grid = PISM.Context().newgrid()
+    self.Mx = Mx
+    self.My = My
 
-  def initGrid(self,Mx,My):
+  def _initGrid(self):
+    Mx=self.Mx; My=self.My
     Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
     Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.XY_PERIODIC);
+    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NONE);
 
-  def initPhysics(self):
+  def _initPhysics(self):
     config = self.config
-    self.basal = PISM.IceBasalResistancePlasticLaw(
+    basal = PISM.IceBasalResistancePlasticLaw(
          config.get("plastic_regularization") / PISM.secpera,
          config.get_flag("do_pseudo_plastic_till"),
          config.get("pseudo_plastic_q"),
          config.get("pseudo_plastic_uthreshold") / PISM.secpera);
  
     # irrelevant
-    self.enthalpyconverter = PISM.EnthalpyConverter(config);
+    enthalpyconverter = PISM.EnthalpyConverter(config);
 
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config,self.enthalpyconverter);
-    self.ice.setHardness(B_schoof)
+    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
+    ice.setHardness(B_schoof)
+    
+    self.solver.setPhysics(ice,basal,enthalpyconverter)
 
 
-  def initSSACoefficients(self):
+  def _initSSACoefficients(self):
     solver = self.solver
+    solver.allocateCoeffs(using_l2_weight=True,using_explicit_driving_stress=True)
     solver.allocateBCs()
-    solver.bc_mask.set(0)
     solver.thickness.set(H0_schoof)
     solver.ice_mask.set(PISM.MASK_GROUNDED)
+    solver.bed.set(0.)
 
-    # The finite difference code uses the following flag to treat 
-    # the non-periodic grid correctly.
-    self.config.set_flag("compute_surf_grad_inward_ssa", True);
-    self.config.set("epsilon_ssafd", 0.0);  # don't use this lower bound
-    
-    testi_tauc(self.grid,self.ice,self.solver.tauc)
-    # solver.tauc.set(0.)
-
-    bc_mask = solver.bc_mask
-    vel_bc  = self.solver.vel_bc
-    surface = solver.surface
-    bed     = solver.bed
+    testi_tauc(solver.grid,solver.ice,solver.tauc)
 
     grid = self.grid
-    vars = [surface,bed,vel_bc,bc_mask]
-    with PISM.util.Access(comm=vars):
+    standard_gravity = grid.config.get("standard_gravity");
+    f = self.solver.ice.rho*standard_gravity*H0_schoof*slope
+    driving_stress = solver.drivingstress
+    with PISM.util.Access(comm=[driving_stress,solver.bc_mask,solver.vel_bc]):
       for (i,j) in grid.points():
-        x=grid.x[i]; y=grid.y[j]
-        (bed_ij,junk,u,v) = PISM.exactI(m_schoof,x,y)
-        bed[i,j] = bed_ij
-        surface[i,j] = bed_ij + H0_schoof
-    
-        edge = ( (j == 0) or (j == grid.My - 1) ) or ( (i==0) or (i==grid.Mx-1) );
-        if (edge):
-          bc_mask[i,j] = 1;
-          vel_bc[i,j].u = u;
-          vel_bc[i,j].v = v;
+        driving_stress[i,j].u = f
+        driving_stress[i,j].v = 0
 
-  def initInversionVariables(self):
-    grid = self.grid
+        if(j == 0):
+          solver.bc_mask[i,j]=1
+          solver.vel_bc[i,j].u=0
+          solver.vel_bc[i,j].v=0
 
-    l2_weight = PISM.IceModelVec2S();
-    l2_weight.create(grid, 'range_l2_weight', True, PISM.util.WIDE_STENCIL)
-    l2_weight.set_attrs("diagnostic", "range l2 weight", "", "");
-    self.solver.range_l2_weight = l2_weight
-    
-    with PISM.util.Access(comm=[l2_weight]):
+
+    l2_weight=solver.range_l2_weight
+    with PISM.util.Access(comm=l2_weight):
       for (i,j) in grid.points():
         if grid.y[j] < 0:
           l2_weight[i,j] = 1.;
@@ -135,10 +127,12 @@ tauc_param = tauc_params[tauc_param_type]
 
 PISM.setVerbosityLevel(verbosity)
 forward_problem = testi(Mx,My)
+forward_problem.setup()
+
 grid = forward_problem.grid
 
 tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
-testi_tauc(grid,forward_problem.ice,tauc_true)
+testi_tauc(grid,forward_problem.solver.ice,tauc_true)
 
 if config.get_string('inv_ssa_tauc_param')=='ident':
   zeta_true = tauc_true
@@ -153,8 +147,8 @@ u_true = PISM.util.standard2dVelocityVec(grid,name="_true")
 forward_problem.F(PISMLocalVector(zeta_true),out=PISMLocalVector(u_true))
 
 tauc = PISM.util.standardYieldStressVec(grid)
-testi_tauc(grid,forward_problem.ice,tauc)
-tauc.scale(0.1)
+testi_tauc(grid,forward_problem.solver.ice,tauc)
+tauc.scale(.1)
 
 if config.get_string('inv_ssa_tauc_param')=='ident':
   zeta = tauc
@@ -164,15 +158,6 @@ else:
   with PISM.util.Access(nocomm=[tauc],comm=[zeta]):
     for (i,j) in grid.points():
       zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
-
-
-  tauc2 = PISM.util.standardYieldStressVec(grid)
-  with PISM.util.Access(nocomm=[zeta,tauc],comm=[tauc2]):
-    for (i,j) in grid.points():
-      (tauc2[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
-      print tauc2[i,j], tauc[i,j], zeta[i,j]
-
-
 
 # tauc0 = 1e6 # Pa
 # tauc.set(tauc0)

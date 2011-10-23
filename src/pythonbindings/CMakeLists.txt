@@ -110,8 +110,8 @@ try:
   import PISM
 except:
   exit(0)
-if PISM.__file__ == os.path.join(\\\"${PISM_INSTALL_PYTHON_MODULE_DIR}\\\",
-\\\"PISM\\\",\\\"__init__.pyc\\\"):
+if os.path.realpath(PISM.__file__) == os.path.realpath(os.path.join(\\\"${PISM_INSTALL_PYTHON_MODULE_DIR}\\\",
+\\\"PISM\\\",\\\"__init__.pyc\\\")):
   exit(1)'\" RETURN_VALUE PISM_PYTHON_MATCHES OUTPUT_VARIABLE PYTHON_OUT )
 if(NOT PISM_PYTHON_MATCHES)
     MESSAGE(\"\n   ATTENTION! To complete installation of Python bindings you need to add\n\n   export PYTHONPATH=${PISM_INSTALL_PYTHON_MODULE_DIR}:\$PYTHONPATH\n\n   to your .bashrc or equivalent. \")

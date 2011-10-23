@@ -26,24 +26,29 @@ from petsc4py import PETSc
 import PISM
 
 class testj(PISM.ssa.SSAExactTestCase):
-  def initGrid(self,Mx,My):
+
+  def _initGrid(self):
     halfWidth = 300.0e3
     Lx = halfWidth; Ly = halfWidth
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.XY_PERIODIC);
+    PISM.util.init_shallow_grid(self.grid,Lx,Ly,self.Mx,self.My,PISM.XY_PERIODIC);
 
-  def initPhysics(self):
+  def _initPhysics(self):
     config = self.config
-    self.basal = PISM.IceBasalResistancePlasticLaw(
+    basal = PISM.IceBasalResistancePlasticLaw(
            config.get("plastic_regularization","1/year","1/second"),
            config.get_flag("do_pseudo_plastic_till"),
            config.get("pseudo_plastic_q"),
            config.get("pseudo_plastic_uthreshold","1/year","1/second") );
 
-    self.enthalpyconverter = PISM.EnthalpyConverter(config)
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config,self.enthalpyconverter)
+    enthalpyconverter = PISM.EnthalpyConverter(config)
+    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter)
 
-  def initSSACoefficients(self):
+    self.solver.setPhysics(ice,basal,enthalpyconverter)
+
+
+  def _initSSACoefficients(self):
     solver = self.solver
+    solver.allocateCoeffs()
     solver.allocateBCs()
 
     solver.tauc.set(0.0) # irrelevant for test J
@@ -54,38 +59,37 @@ class testj(PISM.ssa.SSAExactTestCase):
     solver.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
     ocean_rho = self.config.get("sea_water_density");
+    ice_rho = self.solver.ice.rho
     
-    nu0 = 30.0 * 1.0e6 * PISM.secpera; # 9.45e14 Pa s 
-    H0 = 500.0;                        # 500 m typical thickness
-
     # The PISM.utils.Access object ensures that we call beginAccess for each
     # variable in 'vars', and that endAccess is called for each one on exiting
     # the 'with' block.
     vars = [solver.thickness, solver.surface, solver.bc_mask, solver.vel_bc]
-    with PISM.util.Access(vars):
+    with PISM.util.Access(comm=vars):
       grid = self.grid
       for (i,j) in grid.points():
         x = grid.x[i]; y = grid.y[j]
         (H,junk,u,v) = PISM.exactJ(x,y);
         solver.thickness[i,j] = H;
-        solver.surface[i,j] = (1.0 - self.ice.rho / ocean_rho) * H; #// FIXME task #7297
+        solver.surface[i,j] = (1.0 - ice_rho / ocean_rho) * H; #// FIXME task #7297
   
         # // special case at center point (Dirichlet BC)
         if (i == (grid.Mx)/2) and (j == (grid.My)/2):
           solver.bc_mask[i,j] = 1;
           solver.vel_bc[i,j] = [u,v]
 
-    # // communicate what we have set
-    for v in vars:
-      v.beginGhostComm(); v.endGhostComm();
 
+  def _initSSA(self):
     # Test J has a viscosity that is independent of velocity.  So we force a 
     # constant viscosity by settting the strength_extension
     # thickness larger than the given ice thickness. (max = 770m).
 
-    solver.ssa.strength_extension.set_notional_strength(nu0 * H0);
-    solver.ssa.strength_extension.set_min_thickness(800.);
+    nu0 = 30.0 * 1.0e6 * PISM.secpera; # 9.45e14 Pa s 
+    H0 = 500.0;                        # 500 m typical thickness
 
+    ssa = self.solver.ssa
+    ssa.strength_extension.set_notional_strength(nu0 * H0);
+    ssa.strength_extension.set_min_thickness(800.);
 
   def exactSolution(self,i,j,x,y):
     (j1,j2,u,v) = PISM.exactJ(x,y);
@@ -104,6 +108,8 @@ if __name__ == '__main__':
 
   PISM.setVerbosityLevel(verbosity)
   tc = testj(Mx,My)
+  tc.setup()
   tc.solve()
   tc.report()
   tc.write(output_file)
+  tc.teardown()

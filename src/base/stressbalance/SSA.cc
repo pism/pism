@@ -65,8 +65,6 @@ PetscErrorCode SSA::init(PISMVars &vars) {
     SETERRQ(1, "neither surface_altitude nor ssa_driving_stress is available");
   }
 
-  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
-
   bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
   if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
 

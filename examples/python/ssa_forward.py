@@ -24,12 +24,15 @@ petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import PISM, math, time
 
-class ssa_from_boot_file(PISM.ssa.SSATestCase):
-  def __init__(self,Mx,My,boot_file):
+class ssa_from_boot_file(PISM.ssa.SSARun):
+  def __init__(self,boot_file,gridsize=None):
+    PISM.ssa.SSARun.__init__(self)
+    self.grid = PISM.Context().newgrid()
+    self.gridsize=gridsize
+    self.config = self.grid.config
     self.boot_file = boot_file
-    PISM.ssa.SSATestCase.__init__(self,Mx,My)
 
-  def setFromOptions(self):
+  def _setFromOptions(self):
     config = self.config
     
     # FIXME (DAM 4/28/11)
@@ -53,33 +56,38 @@ class ssa_from_boot_file(PISM.ssa.SSATestCase):
       config.scalar_from_option("plastic_reg", "plastic_regularization")
 
 
-  def initGrid(self,Mx,My):
+  def _initGrid(self):
+    # FIXME: allow specification of Mx and My different from what's
+    # in the boot_file.
     PISM.util.init_grid_from_file(self.grid,self.boot_file,
                                   periodicity=PISM.XY_PERIODIC);
 
-  def initPhysics(self):
+  def _initPhysics(self):
     config = self.config
-    self.basal = PISM.IceBasalResistancePlasticLaw(
+    basal = PISM.IceBasalResistancePlasticLaw(
            config.get("plastic_regularization") / PISM.secpera,
            config.get_flag("do_pseudo_plastic_till"),
            config.get("pseudo_plastic_q"),
            config.get("pseudo_plastic_uthreshold") / PISM.secpera);
 
-    if PISM.optionsIsSet("-ssa_glen"):
-      self.ice = PISM.CustomGlenIce(self.grid.com,"",config)
-      B_schoof = 3.7e8;     # Pa s^{1/3}; hardness 
-      self.ice.setHardness(B_schoof)
-    else:
-      self.ice =  PISM.GPBLDIce(self.grid.com, "", config)
-    self.ice.setFromOptions()
-    
-    self.enthalpyconverter = PISM.EnthalpyConverter(config)
+    enthalpyconverter = PISM.EnthalpyConverter(config)
     if PISM.getVerbosityLevel() >3:
-      self.enthalpyconverter.viewConstants(PETSc.Viewer.STDOUT())
+      enthalpyconverter.viewConstants(PETSc.Viewer.STDOUT())
 
-  def initSSACoefficients(self):
+    if PISM.optionsIsSet("-ssa_glen"):
+      ice = PISM.CustomGlenIce(self.grid.com,"",config,enthalpyconverter)
+      B_schoof = 3.7e8;     # Pa s^{1/3}; hardness 
+      ice.setHardness(B_schoof)
+    else:
+      ice =  PISM.GPBLDIce(self.grid.com, "", config,enthalpyconverter)
+    ice.setFromOptions()
+
+    self.solver.setPhysics(ice,basal,enthalpyconverter)
+
+  def _initSSACoefficients(self):
     # Read PISM SSA related state variables
     solver = self.solver
+    solver.allocateCoeffs()
 
     thickness = solver.thickness; bed = solver.bed; enthalpy = solver.enthalpy
     mask = solver.ice_mask; surface = solver.surface
@@ -90,7 +98,7 @@ class ssa_from_boot_file(PISM.ssa.SSATestCase):
   
     # variables mask and surface are computed from the geometry previously read
     sea_level = 0 # FIXME setFromOption?
-    gc = PISM.GeometryCalculator(sea_level,self.ice,self.config)
+    gc = PISM.GeometryCalculator(sea_level,self.solver.ice,self.config)
     with PISM.util.Access(nocomm=[thickness,bed],comm=[mask,surface]):
       GHOSTS = self.grid.max_stencil_width;
       for (i,j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
@@ -106,7 +114,7 @@ class ssa_from_boot_file(PISM.ssa.SSATestCase):
       v.regrid(self.boot_file,True)
 
     standard_gravity = self.config.get("standard_gravity")
-    ice_rho = self.ice.rho
+    ice_rho = self.solver.ice.rho
     basal_till = BasalTillStrength(self.grid,ice_rho,standard_gravity)
     basal_till.updateYieldStress(mask, thickness, bwat, bmr, tillphi, 
                                  solver.tauc)
@@ -164,7 +172,7 @@ class BasalTillStrength:
     rho_g = self.rho_g
 
 
-    with PISM.util.Access(nocomm=[mask,tauc,thickness,bwat,bmr,tillphi]):
+    with PISM.util.Access(nocomm=[mask,thickness,bwat,bmr,tillphi],comm=tauc):
       mq = PISM.MaskQuery(mask)
       GHOSTS = self.grid.max_stencil_width;
       for (i,j) in self.grid.points_with_ghosts(nGhosts = GHOSTS):
@@ -242,17 +250,18 @@ if __name__ == '__main__':
 
   config = context.config()
   for o in PISM.OptionsGroup(com,"","SSA Forward"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in the X-direction",default=None)
-    My = PISM.optionsInt("-My","Number of grid points in the Y-direction",default=None)
     boot_file = PISM.optionsString("-i","file to bootstrap from")
     output_file = PISM.optionsString("-o","output file",default="ssa_forward.nc")
 
-  test_case = ssa_from_boot_file(Mx,My,boot_file)
+  ssa_run = ssa_from_boot_file(boot_file)
+
+  ssa_run.setup()
 
   solve_t0 = time.clock()
-  test_case.solve()
+  ssa_run.solve()
   solve_t = time.clock()-solve_t0
 
   PISM.verbPrintf(2,context.com,"Solve time %g seconds.\n",solve_t)
 
-  test_case.write(output_file)
+  ssa_run.write(output_file)
+  ssa_run.teardown()

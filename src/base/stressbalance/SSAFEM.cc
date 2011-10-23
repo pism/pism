@@ -229,11 +229,11 @@ PetscErrorCode SSAFEM::setup()
   ierr = bed->get_array(topg);CHKERRQ(ierr);
   ierr = tauc->get_array(tauc_array);CHKERRQ(ierr);
 
+
   PetscInt xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;  
   for (i=xs; i<xs+xm; i++) {
     for (j=ys;j<ys+ym; j++) {
-      
       PetscReal hq[FEQuadrature::Nq],hxq[FEQuadrature::Nq],hyq[FEQuadrature::Nq];
       PISMVector2 dsq[FEQuadrature::Nq];
       if(driving_stress_explicit) {
@@ -302,7 +302,11 @@ PetscErrorCode SSAFEM::setup()
       }
     }
   }
-  ierr = surface->end_access();CHKERRQ(ierr);
+  if(surface != NULL) {
+    ierr = surface->end_access();CHKERRQ(ierr);
+  } else {
+    ierr = driving_stress->end_access();CHKERRQ(ierr);
+  }
   ierr = thickness->end_access();CHKERRQ(ierr);
   ierr = bed->end_access();CHKERRQ(ierr);
   ierr = tauc->end_access();CHKERRQ(ierr);

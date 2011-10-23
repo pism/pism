@@ -36,15 +36,16 @@ glen_n = 3.
 
 
 class test_plug(PISM.ssa.SSAExactTestCase):
-  def initGrid(self,Mx,My):
+  def _initGrid(self):
+    Mx = self.Mx; My = self.My
     PISM.util.init_shallow_grid(self.grid,L,L,Mx,My,PISM.NONE)
 
-  def initPhysics(self):
+  def _initPhysics(self):
     config = self.config
     
     #// The following is irrelevant because tauc=0
     linear_q = 1.;
-    self.basal = PISM.IceBasalResistancePlasticLaw(
+    basal = PISM.IceBasalResistancePlasticLaw(
           config.get("plastic_regularization","1/year","1/second"),
           True, #// do not force a pure-plastic law
           linear_q,
@@ -52,24 +53,23 @@ class test_plug(PISM.ssa.SSAExactTestCase):
 
 
     #// Enthalpy converter is irrelevant for this test.
-    self.enthalpyconverter = PISM.EnthalpyConverter(config);
+    enthalpyconverter = PISM.EnthalpyConverter(config);
 
     #// Use constant hardness
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpy);
-    self.ice.setHardness(B0);
-    self.ice.setExponent(glen_n);
+    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
+    ice.setHardness(B0);
+    ice.setExponent(glen_n);
 
+    self.solver.setPhysics(ice,basal,enthalpyconverter)
 
-  def initSSACoefficients(self):
+  def _initSSACoefficients(self):
     solver = self.solver
+    solver.allocateCoeffs()
     solver.allocateBCs()
 
     #// The finite difference code uses the following flag to treat the non-periodic grid correctly.
     # self.config.set_flag("compute_surf_grad_inward_ssa", True);
     # self.config.set("epsilon_ssafd", 0.0);
-
-    # Ensure we never use the strength extension.
-    solver.ssa.strength_extension.set_min_thickness(H0/2);
 
     # Set constant coefficients.
     solver.thickness.set(H0)
@@ -100,9 +100,13 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     for v in vars:
       v.beginGhostComm(); v.endGhostComm()
 
+  def _initSSA(self):
+    # Ensure we never use the strength extension.
+    self.solver.ssa.strength_extension.set_min_thickness(H0/2);
+
   def exactSolution(self,i,j,x,y):
     earth_grav = self.config.get("standard_gravity");
-    f = self.ice.rho * earth_grav * H0* dhdx;
+    f = self.solver.ice.rho * earth_grav * H0* dhdx;
     ynd = y/L
   
     u = 0.5*(f**3)*(L**4)/((B0*H0)**3)*(1-ynd**4);
@@ -122,6 +126,4 @@ if __name__ == '__main__':
 
   PISM.setVerbosityLevel(verbosity)
   tc = test_plug(Mx,My)
-  tc.solve()
-  tc.report()
-  tc.write(output_file)
+  tc.run(output_file)

@@ -36,29 +36,32 @@ p_schoof = 4.0/3.0;   # = 1 + 1/n
 
 class testi(PISM.ssa.SSAExactTestCase):
 
-  def initGrid(self,Mx,My):
+  def _initGrid(self):
+    Mx = self.Mx; My = self.My;
     Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
     Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
     PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NONE);
 
-  def initPhysics(self):
+  def _initPhysics(self):
     config = self.config
     do_pseudo_plastic = True
     plastic_q = 0.
-    self.basal = PISM.IceBasalResistancePlasticLaw(
+    basal = PISM.IceBasalResistancePlasticLaw(
       config.get("plastic_regularization","1/year","1/second"),
       do_pseudo_plastic, plastic_q,
       config.get("pseudo_plastic_uthreshold","1/year","1/second"));
 
     # irrelevant
-    self.enthalpyconverter = PISM.EnthalpyConverter(config);
+    enthalpyconverter = PISM.EnthalpyConverter(config);
 
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config, self.enthalpyconverter);
-    self.ice.setHardness(B_schoof)
+    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
+    ice.setHardness(B_schoof)
+    self.solver.setPhysics(ice,basal,enthalpyconverter)
 
 
-  def initSSACoefficients(self):
+  def _initSSACoefficients(self):
     solver = self.solver
+    solver.allocateCoeffs()
     solver.allocateBCs()
     solver.bc_mask.set(0)
     solver.thickness.set(H0_schoof)
@@ -71,23 +74,21 @@ class testi(PISM.ssa.SSAExactTestCase):
 
     standard_gravity = self.config.get("standard_gravity");
     theta = math.atan(0.001)
-    f = self.ice.rho*standard_gravity*H0_schoof*math.tan(theta)
+    f = self.solver.ice.rho*standard_gravity*H0_schoof*math.tan(theta)
     grid = self.grid
-    with PISM.util.Access([solver.tauc]):
+    with PISM.util.Access(comm=[solver.tauc]):
       for (i,j) in grid.points():
         y=grid.y[j]
         solver.tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
-    solver.tauc.beginGhostComm(); solver.tauc.endGhostComm();
-
 
     bc_mask = solver.bc_mask
-    vel_bc  = self.solver.vel_bc
+    vel_bc  = solver.vel_bc
     surface = solver.surface
     bed     = solver.bed
 
     grid = self.grid
     vars = [surface,bed,vel_bc,bc_mask]
-    with PISM.util.Access(vars):
+    with PISM.util.Access(comm=vars):
       for (i,j) in grid.points():
         x=grid.x[i]; y=grid.y[j]
         (bed_ij,junk,u,v) = PISM.exactI(m_schoof,x,y)
@@ -99,9 +100,6 @@ class testi(PISM.ssa.SSAExactTestCase):
           bc_mask[i,j] = 1;
           vel_bc[i,j].u = u;
           vel_bc[i,j].v = v;
-
-    for v in vars:
-      v.beginGhostComm(); v.endGhostComm()
       
   def exactSolution( self, i, j, x, y ):
     (j1,j2,u,v) = PISM.exactI(m_schoof,x,y)
@@ -121,9 +119,7 @@ if __name__ == '__main__':
 
   PISM.setVerbosityLevel(verbosity)
   tc = testi(Mx,My)
-  tc.solve()
-  tc.report()
-  tc.write(output_file)
+  tc.run(output_file)
 
 
 

@@ -32,31 +32,26 @@ nu0 = 30.0 * 1.0e6 * PISM.secpera; #/* = 9.45e14 Pa s */
 tauc0 = 1.e4; #// 1kPa
 
 class test_linear(PISM.ssa.SSAExactTestCase):
-  def initGrid(self,Mx,My):
-    PISM.util.init_shallow_grid(self.grid,L,L,Mx,My,PISM.NONE);
+  def _initGrid(self):
+    PISM.util.init_shallow_grid(self.grid,L,L,self.Mx,self.My,PISM.NONE);
 
-  def initPhysics(self):
+  def _initPhysics(self):
     config = self.config
     linear_q = 1.
-    self.basal = PISM.IceBasalResistancePlasticLaw(
+    basal = PISM.IceBasalResistancePlasticLaw(
            config.get("plastic_regularization","1/year","1/second"),
            True, # do not force pure plastic
            linear_q,
            config.get("pseudo_plastic_uthreshold","1/year","1/second"));
 
-    self.enthalpyconverter = PISM.EnthalpyConverter(config)
-    self.ice = PISM.CustomGlenIce(self.grid.com, "", config, self.enthalpyconverter)
+    enthalpyconverter = PISM.EnthalpyConverter(config)
+    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter)
+    self.solver.setPhysics(ice,basal,enthalpyconverter)
 
-  def initSSACoefficients(self):
+  def _initSSACoefficients(self):
     solver = self.solver
-    # The following ensure that the strength extension is used everywhere
-    se = solver.ssa.strength_extension
-    se.set_notional_strength(nu0 * H0);
-    se.set_min_thickness(4000*10);
-
-    # For the benefit of SSAFD on a non-periodic grid
-    self.config.set_flag("compute_surf_grad_inward_ssa", True);
-
+    solver.allocateCoeffs()
+    
     solver.thickness.set(H0)
     solver.surface.set(H0)
     solver.bed.set(0.)
@@ -84,6 +79,16 @@ class test_linear(PISM.ssa.SSAExactTestCase):
       for v in vars:
         v.beginGhostComm(); v.endGhostComm();
 
+  def _initSSA(self):
+    # The following ensure that the strength extension is used everywhere
+    se = self.solver.ssa.strength_extension
+    se.set_notional_strength(nu0 * H0);
+    se.set_min_thickness(4000*10);
+
+    # For the benefit of SSAFD on a non-periodic grid
+    self.config.set_flag("compute_surf_grad_inward_ssa", True);
+
+
   def exactSolution(self, i, j, x, y ):
     tauc_threshold_velocity = self.config.get("pseudo_plastic_uthreshold") / PISM.secpera;
     v0 = 100./PISM.secpera ; #// 100 m/s.
@@ -99,11 +104,9 @@ if __name__ == '__main__':
   for o in PISM.OptionsGroup(context.com,"","Test Lineaer"):
     Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
     My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
-    output_file = PISM.optionsString("-o","output file",default="testj.nc")
+    output_file = PISM.optionsString("-o","output file",default="test_linear.nc")
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
   PISM.setVerbosityLevel(verbosity)
   tc = test_linear(Mx,My)
-  tc.solve()
-  tc.report()
-  tc.write(output_file)
+  tc.run(output_file)
