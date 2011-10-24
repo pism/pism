@@ -35,6 +35,12 @@ rms_error = 1. #m/a
 
 right_side_weight = 1.
 
+ssa_l2_coeff = 1.
+ssa_h1_coeff = 0.
+
+tauc_guess_scale = 0.2
+tauc_guess_const = None
+
 def testi_tauc(grid,ice,tauc):
   standard_gravity = grid.config.get("standard_gravity");
   f = ice.rho*standard_gravity*H0_schoof*slope
@@ -54,7 +60,7 @@ class testi(PISMSSAForwardProblem):
     Mx=self.Mx; My=self.My
     Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
     Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NONE);
+    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.X_PERIODIC);
 
   def _initPhysics(self):
     config = self.config
@@ -92,11 +98,10 @@ class testi(PISMSSAForwardProblem):
         driving_stress[i,j].u = f
         driving_stress[i,j].v = 0
 
-        if(j == 0):
+        if (j == 0) or (j==grid.My-1):
           solver.bc_mask[i,j]=1
           solver.vel_bc[i,j].u=0
           solver.vel_bc[i,j].v=0
-
 
     l2_weight=solver.range_l2_weight
     with PISM.util.Access(comm=l2_weight):
@@ -121,8 +126,16 @@ for o in PISM.OptionsGroup(context.com,"","Invert test I"):
   rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=rms_error)
   right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
   tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp"],"ident")
+  ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=ssa_l2_coeff)
+  ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=ssa_h1_coeff)
+  tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
+  tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
+
 
 config.set_string("inv_ssa_tauc_param",tauc_param_type)
+config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
+config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
+
 tauc_param = tauc_params[tauc_param_type]
 
 PISM.setVerbosityLevel(verbosity)
@@ -131,6 +144,7 @@ forward_problem.setup()
 
 grid = forward_problem.grid
 
+# Build the true yeild stress for test I
 tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
 testi_tauc(grid,forward_problem.solver.ice,tauc_true)
 
@@ -143,13 +157,20 @@ else:
     for (i,j) in grid.points():
       zeta_true[i,j] = tauc_param.fromTauc(tauc_true[i,j])
 
+# Send the true yeild stress through the forward problem to 
+# get at true velocity field.
 u_true = PISM.util.standard2dVelocityVec(grid,name="_true")
 forward_problem.F(PISMLocalVector(zeta_true),out=PISMLocalVector(u_true))
 
+# Build the initial guess for tauc for the inversion.
 tauc = PISM.util.standardYieldStressVec(grid)
-testi_tauc(grid,forward_problem.solver.ice,tauc)
-tauc.scale(.1)
+if not tauc_guess_const is None:
+  tauc.set(tauc_guess_const)
+else:
+  testi_tauc(grid,forward_problem.solver.ice,tauc)
+  tauc.scale(tauc_guess_scale)
 
+# Convert over to parameterized tauc
 if config.get_string('inv_ssa_tauc_param')=='ident':
   zeta = tauc
 else:
@@ -159,22 +180,19 @@ else:
     for (i,j) in grid.points():
       zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
 
-# tauc0 = 1e6 # Pa
-# tauc.set(tauc0)
-
+# Build the inversion algorithm, and set up its arguments.
 if method == "ign":
   Solver = InvertSSAIGN
-  (forward_problem)
 else:
   Solver = InvertSSANLCG
-  
 
 params=Solver.defaultParameters()
 if method == "sd":
   params.steepest_descent = True
-
-params.linearsolver.ITER_MAX=1000
-params.linearsolver.verbose = True
+  params.ITER_MAX=10000
+elif method =="ign":
+  params.linearsolver.ITER_MAX=1000
+  params.linearsolver.verbose = True
 params.verbose   = True
 params.deriv_eps = 0.
 
@@ -191,7 +209,6 @@ else:
     for (i,j) in grid.points():
       (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
 
-
 forward_problem.write(output_file)
 tauc.write(output_file)
 tauc_true.write(output_file)
@@ -200,10 +217,12 @@ u.write(output_file)
 
 tz = tozero.ToProcZero(grid)
 tauc_a = tz.communicate(tauc)
+tauc_true = tz.communicate(tauc_true)
 if not tauc_a is None:
   from matplotlib import pyplot
-  pyplot.imshow(tauc_a)
+  pyplot.plot(grid.y,tauc_a[:,Mx/2])
+  pyplot.plot(grid.y,tauc_true[:,Mx/2])
   pyplot.draw()
-  #pyplot.show()  
+
 context.com.barrier()
 siple.reporting.endpause()

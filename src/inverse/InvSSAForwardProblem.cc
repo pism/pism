@@ -387,6 +387,9 @@ PetscErrorCode InvSSAForwardProblem::assemble_DomainNorm_matrix()
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
 
+  PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
+  PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
+
   // Loop through all the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
@@ -406,8 +409,9 @@ PetscErrorCode InvSSAForwardProblem::assemble_DomainNorm_matrix()
         for (PetscInt k=0; k<4; k++) {   // Test functions
           for (PetscInt l=0; l<4; l++) { // Trial functions
             const FEFunctionGerm &test_qk=test[q][k];
-            const FEFunctionGerm &test_ql=test[q][l];
-            K[k][l]     += JxW[q]*test_qk.val*test_ql.val;
+            const FEFunctionGerm &test_ql=test[q][l];            
+            K[k][l]     += JxW[q]*(cL2*test_qk.val*test_ql.val 
+            +  cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy) );
           } // l
         } // k
       } // q
@@ -478,21 +482,26 @@ PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, 
   // The value of the inner product.
   PetscReal IP = 0;
 
-  PetscReal a[FEQuadrature::Nq], b[FEQuadrature::Nq];
+  PetscReal a[FEQuadrature::Nq], b[FEQuadrature::Nq],
+    ax[FEQuadrature::Nq], bx[FEQuadrature::Nq],
+    ay[FEQuadrature::Nq], by[FEQuadrature::Nq];
 
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
+
+  PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
+  PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
 
   // Loop through all LOCAL elements.
   PetscInt xs = element_index.lxs, xm = element_index.lxm,
            ys = element_index.lys, ym = element_index.lym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-      quadrature.computeTrialFunctionValues(i,j,dofmap,A,a);
-      quadrature.computeTrialFunctionValues(i,j,dofmap,B,b);
+      quadrature.computeTrialFunctionValues(i,j,dofmap,A,a,ax,ay);
+      quadrature.computeTrialFunctionValues(i,j,dofmap,B,b,bx,by);
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        IP += JxW[q]*a[q]*b[q];
+        IP += JxW[q]*(cL2*a[q]*b[q]+ cH1*(ax[q]*bx[q]+ay[q]*by[q]));
       } // q
     } // j
   } // i
