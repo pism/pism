@@ -119,7 +119,7 @@ for attr in sort(var.ncattrs()):
     except:
       docstring = "[missing]"
 
-    if type(value) == str:
+    if isinstance(value, (str, unicode)):
         continue
 
     print '<tr><td class="indexkey">%s</td>' % attr
