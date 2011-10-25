@@ -119,6 +119,7 @@ PetscErrorCode InvSSAForwardProblem::allocate_store()
 
 PetscErrorCode InvSSAForwardProblem::deallocate_store(){
   delete [] m_dtauc_dp_store;
+  return 0;
 }
 
 
@@ -591,7 +592,6 @@ PetscErrorCode InvSSAForwardProblem::compute_range_l2_area(PetscScalar *OUTPUT)
            ys = element_index.lys, ym = element_index.lym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-      PISMVector2 tmp[FEQuadrature::Nq];      
       if(m_l2_weight != NULL) {
         quadrature.computeTrialFunctionValues(i,j,dofmap,W,l2_weight);
       }
@@ -728,7 +728,7 @@ PetscErrorCode InvSSAForwardProblem::assemble_T_rhs( PISMVector2 **gvel, PetscRe
 }
 
 PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2 **RHS)
-{  
+{ 
   PetscInt         i,j,k,q;
   PetscErrorCode   ierr;
   PetscReal        **bc_mask;
@@ -767,7 +767,7 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
   if(m_l2_weight!=NULL) {
     ierr = m_l2_weight->get_array(W);CHKERRQ(ierr);    
   } else {
-    for(int q=0;q<FEQuadrature::Nq;q++) {
+    for(q=0;q<FEQuadrature::Nq;q++) {
       l2_weight[q]=1;
     }
   }
@@ -840,9 +840,9 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
   }
 
   if(m_l2_weight!=NULL) {
-    ierr = m_l2_weight->end_access();CHKERRQ(ierr);    
+    ierr = m_l2_weight->end_access();CHKERRQ(ierr);
   }
-  
+
   return 0;
 }
 

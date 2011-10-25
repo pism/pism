@@ -45,9 +45,9 @@ public:
              m_VecU(0), m_VecZ2(0),
              m_VecZ(0), m_VecRHS2(0),
              m_VecV(0), m_VecRHS(0),
+             m_tauc_param(tp),
              m_reassemble_T_matrix_needed(true),
-             m_forward_F_needed(true),
-             m_tauc_param(tp)
+             m_forward_F_needed(true)
   {
     PetscErrorCode ierr = allocate_ksp();
     if (ierr != 0) {

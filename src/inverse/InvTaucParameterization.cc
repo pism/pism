@@ -75,3 +75,17 @@ PetscErrorCode InvTaucParamExp::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
   // }
   return 0;
 }
+
+PetscErrorCode InvTaucParamLinear::toTauc( PetscReal p, PetscReal *value, 
+                                           PetscReal *derivative)
+{
+  *value = m_scale*p;
+  *derivative = m_scale;
+  return 0;
+}
+
+PetscErrorCode InvTaucParamLinear::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
+{
+  *OUTPUT = tauc/m_scale;
+  return 0;
+}

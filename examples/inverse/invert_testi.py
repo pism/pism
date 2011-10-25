@@ -191,7 +191,7 @@ if method == "sd":
   params.steepest_descent = True
   params.ITER_MAX=10000
 elif method =="ign":
-  params.linearsolver.ITER_MAX=1000
+  params.linearsolver.ITER_MAX=10000
   params.linearsolver.verbose = True
 params.verbose   = True
 params.deriv_eps = 0.

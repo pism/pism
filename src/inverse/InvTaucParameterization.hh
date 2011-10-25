@@ -100,6 +100,23 @@ public:
   virtual PetscErrorCode fromTauc( PetscReal tauc, PetscReal *OUTPUT);
 };
 
+/*! Parameterization \f$\tau_c=F(p)\f$ with $F(p)=exp(p)$. */
+class InvTaucParamLinear: public InvTaucParameterization
+{
+public:
+  InvTaucParamLinear(PetscReal scale){ m_scale = scale; };
+
+  virtual ~InvTaucParamLinear() {};
+
+  virtual PetscErrorCode toTauc( PetscReal p, PetscReal *value, PetscReal *derivative);
+
+  virtual PetscErrorCode fromTauc( PetscReal tauc, PetscReal *OUTPUT);
+
+private:
+  PetscReal m_scale;
+};
+
+
 /*! Some handy pre-instantiated parameterizations. */
 extern InvTaucParamIdent g_InvTaucParamIdent;
 extern InvTaucParamSquare g_InvTaucParamSquare;
