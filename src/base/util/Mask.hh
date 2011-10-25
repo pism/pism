@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -53,6 +53,9 @@ public:
     alpha = 1 - ice.rho / config.get("sea_water_density");
     is_dry_simulation = config.get_flag("is_dry_simulation");
   }
+
+  virtual void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
+    IceModelVec2Int &out_mask, IceModelVec2S &out_bed  );
 
   inline void compute(PetscReal bed, PetscReal thickness,
                       int *out_mask, PetscReal *out_surface) {

@@ -55,6 +55,26 @@ class ssa_from_boot_file(PISM.ssa.SSARun):
       # // controls regularization of plastic basal sliding law
       config.scalar_from_option("plastic_reg", "plastic_regularization")
 
+    for o in PISM.OptionsGroup(title="BasalTillStrength"):
+      # // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
+      # // from the thickness of the basal melt water bwat
+      # // Note: option is given in kPa.
+      config.scalar_from_option("plastic_c0", "till_c_0");
+
+      # // till_pw_fraction is a parameter in the computation of the till yield stress tau_c
+      # // from the thickness of the basal melt water bwat
+      # // option a pure number (a fraction); no conversion
+      config.scalar_from_option("plastic_pwfrac", "till_pw_fraction")
+
+
+      config.flag_from_option("thk_eff", "thk_eff_basal_water_pressure")
+
+      if PISM.optionsIsSet("-use_ssa_when_grounded"):
+        config.scalar_from_option("use_ssa_when_grounded", "use_ssa_when_grounded")
+      else:
+        # We're using the SSA, and PISM.PISMYieldStress needs to know this
+        # to compute yeild stresses.
+        config.set_flag("use_ssa_when_grounded",True);
 
   def _initGrid(self):
     # FIXME: allow specification of Mx and My different from what's
@@ -99,25 +119,25 @@ class ssa_from_boot_file(PISM.ssa.SSARun):
     # variables mask and surface are computed from the geometry previously read
     sea_level = 0 # FIXME setFromOption?
     gc = PISM.GeometryCalculator(sea_level,self.solver.ice,self.config)
-    with PISM.util.Access(nocomm=[thickness,bed],comm=[mask,surface]):
-      GHOSTS = self.grid.max_stencil_width;
-      for (i,j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
-        (mask[i,j],surface[i,j]) = gc.compute(bed[i,j],thickness[i,j])
+    gc.compute(bed,thickness,mask,surface)
 
     # Compute yield stress from PISM state variables
     # (basal melt rate, tillphi, and basal water height)
     grid = self.grid
+
     bmr   = PISM.util.standardBasalMeltRateVec(grid)
     tillphi = PISM.util.standardTillPhiVec(grid)
     bwat = PISM.util.standardBasalWaterVec(grid)
     for v in [bmr,tillphi,bwat]:
-      v.regrid(self.boot_file,True)
+       v.regrid(self.boot_file,True)
+    pvars = PISM.PISMVars()
+    for v in [thickness,bed,mask,bmr,tillphi,bwat]:
+       pvars.add(v)
 
-    standard_gravity = self.config.get("standard_gravity")
-    ice_rho = self.solver.ice.rho
-    basal_till = BasalTillStrength(self.grid,ice_rho,standard_gravity)
-    basal_till.updateYieldStress(mask, thickness, bwat, bmr, tillphi, 
-                                 solver.tauc)
+    yieldstress = PISM.PISMDefaultYieldStress(grid,grid.config)
+    yieldstress.init(pvars) 
+    yieldstress.basal_material_yield_stress(solver.tauc)
+
 
 
 class BasalTillStrength:

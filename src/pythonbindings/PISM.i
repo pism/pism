@@ -40,6 +40,7 @@
 #include "enthalpyConverter.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
+#include "PISMYieldStress.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -197,7 +198,6 @@ typedef int NormType; // YUCK.
 %apply PetscScalar & OUTPUT {PetscScalar & result};
 %apply PetscReal & OUTPUT {PetscReal & out};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag};
-
 
 %Pism_pointer_reference_is_always_output(IceModelVec2S)
 %Pism_pointer_reference_is_always_output(IceModelVec2V)
@@ -431,6 +431,8 @@ typedef int NormType; // YUCK.
 %include "stressbalance/SSAFD.hh"
 %include "Mask.hh"
 %include "pism_python.hh"
+%template(PISMDiag_PISMDefaultYieldStress) PISMDiag<PISMDefaultYieldStress>;
+%include "PISMYieldStress.hh"
 
 
 

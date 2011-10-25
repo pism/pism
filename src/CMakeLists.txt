@@ -32,6 +32,7 @@ add_library (pismutil
   base/util/iceModelVec2V.cc
   base/util/iceModelVec3.cc
   base/util/iceModelVec2T.cc
+  base/util/Mask.cc
   base/util/NCTool.cc
   base/util/pism_const.cc
   base/util/pism_default_config.cc
