@@ -1,56 +1,28 @@
-// Copyright (C) 2010-2011 Jed Brown and Ed Bueler
-//
-// This file is part of PISM.
-//
-// PISM is free software; you can redistribute it and/or modify it under the
-// terms of the GNU General Public License as published by the Free Software
-// Foundation; either version 2 of the License, or (at your option) any later
-// version.
-//
-// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-// details.
-//
-// You should have received a copy of the GNU General Public License
-// along with PISM; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+/* Copyright (C) 2010-2011 Jed Brown and Ed Bueler */
 
-//! \file THI.c  Implementation of abstract data type (C language) for Jed's Blatter solver ("Toy Hydrostatic Ice").
+/* This file is part of PISM. */
 
-#include "THItools.h"
+/* PISM is free software; you can redistribute it and/or modify it under the */
+/* terms of the GNU General Public License as published by the Free Software */
+/* Foundation; either version 2 of the License, or (at your option) any later */
+/* version. */
+
+/* PISM is distributed in the hope that it will be useful, but WITHOUT ANY */
+/* WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS */
+/* FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more */
+/* details. */
+
+/* You should have received a copy of the GNU General Public License */
+/* along with PISM; if not, write to the Free Software */
+/* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA */
+
+/* ! \file THI.c  Implementation of abstract data type (C language) for Jed's Blatter solver ("Toy Hydrostatic Ice"). */
+
+#include "THI.hh"
 
 static PetscCookie THI_COOKIE;
 
-typedef enum {THIASSEMBLY_TRIDIAGONAL,THIASSEMBLY_FULL} THIAssemblyMode;
 
-typedef struct _p_THI   *THI;
-
-struct _p_THI {
-  PETSCHEADER(int);
-  void (*initialize)(THI,PetscReal x,PetscReal y,PrmNode *p);
-  PetscInt  nlevels;
-  PetscInt  zlevels;
-  PetscReal Lx,Ly,Lz;           /* Model domain */
-  PetscReal alpha;              /* Bed angle */
-  Units     units;
-  PetscReal dirichlet_scale;
-  PetscReal ssa_friction_scale;
-  PRange    eta;
-  PRange    beta2;
-  struct {
-    PetscReal Bd2,eps,exponent;
-  } viscosity;
-  struct {
-    PetscReal irefgam,eps2,exponent;
-  } friction;
-  PetscReal rhog;
-  PetscTruth no_slip;
-  PetscTruth tridiagonal;
-  PetscTruth coarse2d;
-  PetscTruth verbose;
-  MatType mattype;
-};
 
 /* Tests A and C are from the ISMIP-HOM paper (Pattyn et al. 2008) */
 static void THIInitialize_HOM_A(THI thi,PetscReal x,PetscReal y,PrmNode *p)
@@ -134,7 +106,7 @@ static void THIViscosity(THI thi,PetscReal gam,PetscReal *eta,PetscReal *deta)
 
 #undef __FUNCT__  
 #define __FUNCT__ "THIDestroy"
-static PetscErrorCode THIDestroy(THI thi)
+PetscErrorCode THIDestroy(THI thi)
 {
   PetscErrorCode ierr;
 
@@ -148,7 +120,7 @@ static PetscErrorCode THIDestroy(THI thi)
 
 #undef __FUNCT__  
 #define __FUNCT__ "THICreate"
-static PetscErrorCode THICreate(MPI_Comm comm,THI *inthi)
+PetscErrorCode THICreate(MPI_Comm comm,THI *inthi)
 {
   static PetscTruth registered = PETSC_FALSE;
   THI thi;
@@ -302,7 +274,7 @@ static PetscErrorCode THIInitializePrm(THI thi,DA da2prm,Vec prm)
 
 #undef __FUNCT__  
 #define __FUNCT__ "THISetDMMG"
-static PetscErrorCode THISetDMMG(THI thi,DMMG *dmmg)
+PetscErrorCode THISetDMMG(THI thi,DMMG *dmmg)
 {
   PetscErrorCode ierr;
   PetscInt i;
@@ -340,7 +312,7 @@ static PetscErrorCode THISetDMMG(THI thi,DMMG *dmmg)
 
 #undef __FUNCT__  
 #define __FUNCT__ "THIInitial"
-static PetscErrorCode THIInitial(DMMG dmmg,Vec X)
+PetscErrorCode THIInitial(DMMG dmmg,Vec X)
 {
   THI         thi   = (THI)dmmg->user;
   DA          da    = (DA)dmmg->dm;
@@ -416,7 +388,7 @@ static void PointwiseNonlinearity2D(THI thi,Node n[],PetscReal phi[],PetscReal d
 
 #undef __FUNCT__  
 #define __FUNCT__ "THIFunctionLocal"
-static PetscErrorCode THIFunctionLocal(DALocalInfo *info,Node ***x,Node ***f,THI thi)
+PetscErrorCode THIFunctionLocal(DALocalInfo *info,Node ***x,Node ***f,THI thi)
 {
   PetscInt       xs,ys,xm,ym,zm,i,j,k,q,l;
   PetscReal      hx,hy,etamin,etamax,beta2min,beta2max;
@@ -571,7 +543,7 @@ static PetscErrorCode THISurfaceStatistics(DA da,Vec X,PetscReal *min,PetscReal 
 
 #undef __FUNCT__  
 #define __FUNCT__ "THISolveStatistics"
-static PetscErrorCode THISolveStatistics(THI thi,DMMG *dmmg,PetscInt coarsened,const char name[])
+PetscErrorCode THISolveStatistics(THI thi,DMMG *dmmg,PetscInt coarsened,const char name[])
 {
   MPI_Comm       comm    = ((PetscObject)thi)->comm;
   PetscInt       nlevels = DMMGGetLevels(dmmg),level = nlevels-1-coarsened;
@@ -633,7 +605,7 @@ static PetscErrorCode THISolveStatistics(THI thi,DMMG *dmmg,PetscInt coarsened,c
 
 #undef __FUNCT__  
 #define __FUNCT__ "THIJacobianLocal_2D"
-static PetscErrorCode THIJacobianLocal_2D(DALocalInfo *info,Node **x,Mat B,THI thi)
+PetscErrorCode THIJacobianLocal_2D(DALocalInfo *info,Node **x,Mat B,THI thi)
 {
   PetscInt       xs,ys,xm,ym,i,j,q,l,ll;
   PetscReal      hx,hy;
@@ -709,7 +681,7 @@ static PetscErrorCode THIJacobianLocal_2D(DALocalInfo *info,Node **x,Mat B,THI t
 
 #undef __FUNCT__  
 #define __FUNCT__ "THIJacobianLocal_3D"
-static PetscErrorCode THIJacobianLocal_3D(DALocalInfo *info,Node ***x,Mat B,THI thi,THIAssemblyMode amode)
+PetscErrorCode THIJacobianLocal_3D(DALocalInfo *info,Node ***x,Mat B,THI thi,THIAssemblyMode amode)
 {
   PetscInt       xs,ys,xm,ym,zm,i,j,k,q,l,ll;
   PetscReal      hx,hy;
@@ -908,7 +880,7 @@ static PetscErrorCode THIJacobianLocal_3D(DALocalInfo *info,Node ***x,Mat B,THI 
 
 #undef __FUNCT__  
 #define __FUNCT__ "THIJacobianLocal_3D_Full"
-static PetscErrorCode THIJacobianLocal_3D_Full(DALocalInfo *info,Node ***x,Mat B,THI thi)
+PetscErrorCode THIJacobianLocal_3D_Full(DALocalInfo *info,Node ***x,Mat B,THI thi)
 {
   PetscErrorCode ierr;
 
@@ -919,7 +891,7 @@ static PetscErrorCode THIJacobianLocal_3D_Full(DALocalInfo *info,Node ***x,Mat B
 
 #undef __FUNCT__  
 #define __FUNCT__ "THIJacobianLocal_3D_Tridiagonal"
-static PetscErrorCode THIJacobianLocal_3D_Tridiagonal(DALocalInfo *info,Node ***x,Mat B,THI thi)
+PetscErrorCode THIJacobianLocal_3D_Tridiagonal(DALocalInfo *info,Node ***x,Mat B,THI thi)
 {
   PetscErrorCode ierr;
 
@@ -930,7 +902,7 @@ static PetscErrorCode THIJacobianLocal_3D_Tridiagonal(DALocalInfo *info,Node ***
 
 #undef __FUNCT__  
 #define __FUNCT__ "DARefineHierarchy_THI"
-static PetscErrorCode DARefineHierarchy_THI(DA dac0,PetscInt nlevels,DA hierarchy[])
+PetscErrorCode DARefineHierarchy_THI(DA dac0,PetscInt nlevels,DA hierarchy[])
 {
   PetscErrorCode ierr;
   THI thi;
@@ -964,7 +936,7 @@ static PetscErrorCode DARefineHierarchy_THI(DA dac0,PetscInt nlevels,DA hierarch
 
 #undef __FUNCT__  
 #define __FUNCT__ "DAGetInterpolation_THI"
-static PetscErrorCode DAGetInterpolation_THI(DA dac,DA daf,Mat *A,Vec *scale)
+PetscErrorCode DAGetInterpolation_THI(DA dac,DA daf,Mat *A,Vec *scale)
 {
   PetscErrorCode ierr;
   PetscTruth flg,isda2;
@@ -1017,7 +989,7 @@ static PetscErrorCode DAGetInterpolation_THI(DA dac,DA daf,Mat *A,Vec *scale)
 
 #undef __FUNCT__  
 #define __FUNCT__ "DAGetMatrix_THI_Tridiagonal"
-static PetscErrorCode DAGetMatrix_THI_Tridiagonal(DA da,const MatType mtype,Mat *J)
+PetscErrorCode DAGetMatrix_THI_Tridiagonal(DA da,const MatType mtype,Mat *J)
 {
   PetscErrorCode ierr;
   Mat A;

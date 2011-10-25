@@ -53,10 +53,10 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid,
   report_range = true;
 
   input.print(com);
-
-  if (!(grid.x.front() >= input.x_min && grid.x.back() <= input.x_max &&
-        grid.y.front() >= input.y_min && grid.y.back() <= input.y_max &&
-        z_min >= input.z_min && z_max <= input.z_max)) {
+  PetscReal eps = 1e-6;         // tolerance (in meters)
+  if (!(grid.x.front() >= input.x_min - eps && grid.x.back() <= input.x_max + eps &&
+        grid.y.front() >= input.y_min - eps && grid.y.back() <= input.y_max + eps &&
+        z_min >= input.z_min - eps && z_max <= input.z_max + eps)) {
 
     PetscPrintf(com,
 		"target computational domain not a subset of source (in NetCDF file)\n"

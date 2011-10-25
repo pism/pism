@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2011 Jed Brown and Ed Bueler
+// Copyright (C) 2010-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define _BLATTERSTRESSBALANCE_H_
 
 #include "PISMStressBalance.hh"
+#include "THI.hh"
 
 //! Blatter-Pattyn stress balance based on Jed Brown's PETSc tutorial ex48.c (Brown et al. 2011).
 /*!
@@ -73,23 +74,20 @@ compile-time options.
 class BlatterStressBalance : public PISMStressBalance
 {
 public:
-  BlatterStressBalance(IceGrid &g, PISMOceanModel *ocean_model, const NCConfigVariable &conf)
-        : PISMStressBalance(g,NULL,NULL,ocean_model,conf)
-    { }
+  BlatterStressBalance(IceGrid &g, PISMOceanModel *ocean_model, const NCConfigVariable &conf);
 
-  virtual ~BlatterStressBalance() {}
+  virtual ~BlatterStressBalance();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &/*locations*/,
                                                  IceModelVec2V &/*velocities*/)
-      { SETERRQ(1,"not clear yet how to do this"); return 0; }
+  { SETERRQ(1,"not clear yet how to do this"); return 0; }
 
-  //! Update all the fields: u,v,w,uvbar,D2?,other?.  If fast == true then halt.
   virtual PetscErrorCode update(bool fast);
 
   virtual PetscErrorCode get_advective_2d_velocity(IceModelVec2V* &result) 
-      { result = &uvbar; return 0; }
+  { result = &vertically_averaged_velocity; return 0; }
 
   virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result)
       { PetscErrorCode ierr = result->set(0.0); CHKERRQ(ierr); return 0; }
@@ -126,18 +124,19 @@ public:
       {  return 0; }  // FIXME: implementation needed
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/)
-      {  }  // FIXME: implementation needed?
+  {  }  // FIXME: implementation needed?
 
 protected:
   IceModelVec3 u,v;
-  IceModelVec2V uvbar;
+  IceModelVec2V vertically_averaged_velocity;
 
-// FIXME:  almost certainly this needs to be re-implemented to take values from
-//   FEM grid and integrate vertically to get vertical velocity values on 
-//   IceModel grid:
-// virtual PetscErrorCode compute_vertical_velocity(
-//                IceModelVec3 *u, IceModelVec3 *v, IceModelVec2S *bmr,
-//                IceModelVec3 &result);
+  THI thi;
+  DMMG *dmmg;
+
+  PetscErrorCode allocate_blatter();
+  PetscErrorCode deallocate_blatter();
+  PetscErrorCode mesh_to_regular_grid();
+  PetscErrorCode regular_grid_to_mesh();
 
 };
 
