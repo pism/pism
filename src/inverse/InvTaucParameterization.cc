@@ -56,18 +56,27 @@ PetscErrorCode InvTaucParamSquare::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
   return 0;
 }
 
+PetscReal exp_eps = 100.;
 PetscErrorCode InvTaucParamExp::toTauc( PetscReal p, PetscReal *value, 
                                            PetscReal *derivative)
 {
   PetscReal exp_p=exp(p);
-  if(value != NULL) *value = exp_p;
-  if(derivative != NULL) *derivative = exp_p;
+  if(exp_p<exp_eps)
+  {
+    if(value != NULL) *value = exp_eps;
+    if(derivative != NULL) *derivative = 0;
+  }
+  else
+  {
+    if(value != NULL) *value = exp_p - exp_eps;
+    if(derivative != NULL) *derivative = exp_p;    
+  }
   return 0;
 }
 
 PetscErrorCode InvTaucParamExp::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
-  *OUTPUT = log(tauc);
+  *OUTPUT = log(tauc+exp_eps);
   // if(tauc>=0) {
   //   *OUTPUT = log(tauc); 
   // } else {

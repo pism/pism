@@ -7,6 +7,21 @@ from siple.reporting import msg
 from linalg_pism import PISMLocalVector
 from math import sqrt
 
+def pism_print_logger(message,severity):
+  verb = severity
+  com = PISM.Context().com
+  PISM.verbPrintf(verb,com, "%s\n" % message)
+
+def pism_pause(message_in=None,message_out=None):
+  com = PISM.Context().com
+  if not message_in is None:
+    PISM.verbPrintf(1,com,message_in+"\n")
+  import sys
+  ch = sys.stdin.read(1)
+  if not message_out is None:
+    PISM.verbPrintf(1,com,message_out+"\n")
+  
+
 tauc_params = {"ident":PISM.cvar.g_InvTaucParamIdent, 
                "square":PISM.cvar.g_InvTaucParamSquare,
                "exp":PISM.cvar.g_InvTaucParamExp }
@@ -306,3 +321,65 @@ class InvertSSAIGN(InvertIGN):
     Solve the ill posed problem F(x)=y where y is know to an L infinity error deltaLInf
     """
     return InvertIGN.solve(self,x,y,deltaLInf)
+
+class PlotListener:  
+  def __init__(self,grid):
+    import tozero
+    self.tz_scalar = tozero.ToProcZero(grid,dof=1)
+    self.tz_vector = tozero.ToProcZero(grid,dof=2)
+  
+  def __call__(self,solver,count,x,Fx,y,d,r,*args):
+    from matplotlib import pyplot as pp
+    import siple
+    vd = self.tz_scalar.communicate(d.core())
+    vx = self.tz_scalar.communicate(x.core())
+    r = self.tz_vector.communicate(r.core())
+    y = self.tz_vector.communicate(y.core())
+    if not vd is None:
+      r *= PISM.secpera
+      y *= PISM.secpera
+      
+      pp.clf()
+      pp.subplot(2,3,1)
+      pp.imshow(y[0,:,:])
+      pp.colorbar()
+      pp.title('yu')
+      pp.jet()
+
+      pp.subplot(2,3,4)
+      pp.imshow(y[1,:,:])
+      pp.colorbar()
+      pp.title('yv')
+      pp.jet()
+
+      
+      pp.subplot(2,3,2)
+      pp.imshow(r[0,:,:])
+      pp.colorbar()
+      pp.title('ru')
+      pp.jet()
+
+      pp.subplot(2,3,5)
+      pp.imshow(r[1,:,:])
+      pp.colorbar()
+      pp.title('rv')
+      pp.jet()
+
+      vd *= -1
+      pp.subplot(2,3,3)      
+      pp.imshow(vd)
+      pp.colorbar()
+      pp.jet()
+      pp.title('-d')
+      
+      pp.subplot(2,3,6)      
+      pp.imshow(vx)
+      pp.colorbar()
+      pp.title('zeta')
+      pp.jet()
+
+      pp.draw()
+
+def pauseListener(*args):
+    import siple
+    siple.reporting.pause()

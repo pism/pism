@@ -1,3 +1,23 @@
+#! /usr/bin/env python
+#
+# Copyright (C) 2011 David Maxwell
+# 
+# This file is part of PISM.
+# 
+# PISM is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+# 
+# PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with PISM; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
 import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
@@ -7,15 +27,14 @@ import siple
 
 import PISM
 
-from pismssaforward import PISMSSAForwardProblem, InvertSSANLCG, InvertSSAIGN, tauc_params
+from pismssaforward import PISMSSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
+tauc_params, PlotListener, pism_print_logger, pism_pause, pauseListener
 from linalg_pism import PISMLocalVector
 
-def pism_print_logger(message,severity):
-  verb = severity
-  com = PISM.Context().com
-  PISM.verbPrintf(verb,com, "%s\n" % message)
 siple.reporting.clear_loggers()
 siple.reporting.add_logger(pism_print_logger)
+siple.reporting.set_pause_callback(pism_pause)
+print siple.reporting.pause_callback
 
 Mx = 11 
 My = 61
@@ -112,117 +131,126 @@ class testi(PISMSSAForwardProblem):
           l2_weight[i,j] = right_side_weight;
 
 ## Main code starts here
+if __name__ == "__main__":
+  context = PISM.Context()
+  config = context.config()
+  PISM.set_abort_on_sigint(True)
 
-context = PISM.Context()
-config = context.config()
-PISM.set_abort_on_sigint(True)
+  for o in PISM.OptionsGroup(context.com,"","Invert test I"):
+    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
+    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
+    output_file = PISM.optionsString("-o","output file",default="invert_testi.nc")
+    verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
+    method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
+    rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=rms_error)
+    right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
+    tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp"],"ident")
+    ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=ssa_l2_coeff)
+    ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=ssa_h1_coeff)
+    tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
+    tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
+    do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=True)
+    do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
 
-for o in PISM.OptionsGroup(context.com,"","Invert test I"):
-  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
-  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
-  output_file = PISM.optionsString("-o","output file",default="invert_testi.nc")
-  verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-  method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
-  rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=rms_error)
-  right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
-  tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp"],"ident")
-  ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=ssa_l2_coeff)
-  ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=ssa_h1_coeff)
-  tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
-  tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
+  config.set_string("inv_ssa_tauc_param",tauc_param_type)
+  config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
+  config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
+
+  tauc_param = tauc_params[tauc_param_type]
+
+  PISM.setVerbosityLevel(verbosity)
+  forward_problem = testi(Mx,My)
+  forward_problem.setup()
+
+  grid = forward_problem.grid
+
+  # Build the true yeild stress for test I
+  tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
+  testi_tauc(grid,forward_problem.solver.ice,tauc_true)
+
+  # Convert tauc_true to zeta_true
+  if config.get_string('inv_ssa_tauc_param')=='ident':
+    zeta_true = tauc_true
+  else:
+    zeta_true = PISM.IceModelVec2S();
+    zeta_true.create(grid, "zeta_true", True, PISM.util.WIDE_STENCIL)
+    with PISM.util.Access(nocomm=[tauc_true],comm=[zeta_true]):
+      for (i,j) in grid.points():
+        zeta_true[i,j] = tauc_param.fromTauc(tauc_true[i,j])
+
+  # Send the true yeild stress through the forward problem to 
+  # get at true velocity field.
+  u_true = PISM.util.standard2dVelocityVec(grid,name="_true")
+  forward_problem.F(PISMLocalVector(zeta_true),out=PISMLocalVector(u_true))
+
+  # Build the initial guess for tauc for the inversion.
+  tauc = PISM.util.standardYieldStressVec(grid)
+  if not tauc_guess_const is None:
+    tauc.set(tauc_guess_const)
+  else:
+    testi_tauc(grid,forward_problem.solver.ice,tauc)
+    tauc.scale(tauc_guess_scale)
+
+  # Convert tauc guess to zeta guess
+  if config.get_string('inv_ssa_tauc_param')=='ident':
+    zeta = tauc
+  else:
+    zeta = PISM.IceModelVec2S();
+    zeta.create(grid, "zeta", True, PISM.util.WIDE_STENCIL)
+    with PISM.util.Access(nocomm=[tauc],comm=[zeta]):
+      for (i,j) in grid.points():
+        zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
+
+  # Determine the inversion algorithm, and set up its arguments.
+  if method == "ign":
+    Solver = InvertSSAIGN
+  else:
+    Solver = InvertSSANLCG
+
+  params=Solver.defaultParameters()
+  if method == "sd":
+    params.steepest_descent = True
+    params.ITER_MAX=10000
+  elif method =="ign":
+    params.linearsolver.ITER_MAX=10000
+    params.linearsolver.verbose = True
+  params.verbose   = True
+  params.deriv_eps = 0.
 
 
-config.set_string("inv_ssa_tauc_param",tauc_param_type)
-config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
-config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
+  # Run the inversion
+  solver=Solver(forward_problem,params=params)  
+  if do_plotting:
+    solver.addIterationListener(PlotListener(grid))
+  if do_pause:
+    solver.addIterationListener(pauseListener)
+    
+  rms_error /= PISM.secpera # m/s
+  (zeta,u) = solver.solve(zeta,u_true,rms_error)
 
-tauc_param = tauc_params[tauc_param_type]
+  # Convert back from zeta to tauc
+  if config.get_string('inv_ssa_tauc_param')=='ident':
+    tauc = zeta
+  else:
+    with PISM.util.Access(nocomm=[zeta],comm=[tauc]):
+      for (i,j) in grid.points():
+        (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
 
-PISM.setVerbosityLevel(verbosity)
-forward_problem = testi(Mx,My)
-forward_problem.setup()
+  # Write solution out to netcdf file
+  forward_problem.write(output_file)
+  tauc.write(output_file)
+  tauc_true.write(output_file)
+  u.set_name("_computed",0)
+  u.write(output_file)
 
-grid = forward_problem.grid
-
-# Build the true yeild stress for test I
-tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
-testi_tauc(grid,forward_problem.solver.ice,tauc_true)
-
-if config.get_string('inv_ssa_tauc_param')=='ident':
-  zeta_true = tauc_true
-else:
-  zeta_true = PISM.IceModelVec2S();
-  zeta_true.create(grid, "zeta_true", True, PISM.util.WIDE_STENCIL)
-  with PISM.util.Access(nocomm=[tauc_true],comm=[zeta_true]):
-    for (i,j) in grid.points():
-      zeta_true[i,j] = tauc_param.fromTauc(tauc_true[i,j])
-
-# Send the true yeild stress through the forward problem to 
-# get at true velocity field.
-u_true = PISM.util.standard2dVelocityVec(grid,name="_true")
-forward_problem.F(PISMLocalVector(zeta_true),out=PISMLocalVector(u_true))
-
-# Build the initial guess for tauc for the inversion.
-tauc = PISM.util.standardYieldStressVec(grid)
-if not tauc_guess_const is None:
-  tauc.set(tauc_guess_const)
-else:
-  testi_tauc(grid,forward_problem.solver.ice,tauc)
-  tauc.scale(tauc_guess_scale)
-
-# Convert over to parameterized tauc
-if config.get_string('inv_ssa_tauc_param')=='ident':
-  zeta = tauc
-else:
-  zeta = PISM.IceModelVec2S();
-  zeta.create(grid, "zeta", True, PISM.util.WIDE_STENCIL)
-  with PISM.util.Access(nocomm=[tauc],comm=[zeta]):
-    for (i,j) in grid.points():
-      zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
-
-# Build the inversion algorithm, and set up its arguments.
-if method == "ign":
-  Solver = InvertSSAIGN
-else:
-  Solver = InvertSSANLCG
-
-params=Solver.defaultParameters()
-if method == "sd":
-  params.steepest_descent = True
-  params.ITER_MAX=10000
-elif method =="ign":
-  params.linearsolver.ITER_MAX=10000
-  params.linearsolver.verbose = True
-params.verbose   = True
-params.deriv_eps = 0.
-
-solver=Solver(forward_problem,params=params)  
-
-# solver.params.linesearch.verbose=True
-rms_error /= PISM.secpera # m/s
-(zeta,u) = solver.solve(zeta,u_true,rms_error)
-
-if config.get_string('inv_ssa_tauc_param')=='ident':
-  tauc = zeta
-else:
-  with PISM.util.Access(nocomm=[zeta],comm=[tauc]):
-    for (i,j) in grid.points():
-      (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
-
-forward_problem.write(output_file)
-tauc.write(output_file)
-tauc_true.write(output_file)
-u.set_name("_computed",0)
-u.write(output_file)
-
-tz = tozero.ToProcZero(grid)
-tauc_a = tz.communicate(tauc)
-tauc_true = tz.communicate(tauc_true)
-if not tauc_a is None:
-  from matplotlib import pyplot
-  pyplot.plot(grid.y,tauc_a[:,Mx/2])
-  pyplot.plot(grid.y,tauc_true[:,Mx/2])
-  pyplot.draw()
-
-context.com.barrier()
-siple.reporting.endpause()
+  # Draw a pretty picture
+  tz = tozero.ToProcZero(grid)
+  tauc_a = tz.communicate(tauc)
+  tauc_true = tz.communicate(tauc_true)
+  if do_plotting and (not tauc_a is None):
+    from matplotlib import pyplot
+    pyplot.clf()
+    pyplot.plot(grid.y,tauc_a[:,Mx/2])
+    pyplot.plot(grid.y,tauc_true[:,Mx/2])
+    pyplot.draw()
+    siple.reporting.endpause()
