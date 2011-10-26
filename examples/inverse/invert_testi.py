@@ -67,7 +67,8 @@ class TestIPlotListener(PlotListener):
     pp.plot(x[:,N])
     pp.title('zeta')
 
-    pp.draw()
+    pp.ion()
+    pp.show()
 
 
 Mx = 11 
@@ -301,8 +302,6 @@ if __name__ == "__main__":
     pyplot.clf()
     pyplot.plot(grid.y,tauc_a[:,Mx/2])
     pyplot.plot(grid.y,tauc_true[:,Mx/2])
-    pyplot.draw()
-    import platform
-    if platform.mac_ver() == '':
-      pyplot.show()
+    pyplot.ion()
+    pyplot.show()
     siple.reporting.endpause()

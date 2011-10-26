@@ -2,7 +2,8 @@ import PISM
 
 from siple.gradient.forward import NonlinearForwardProblem
 from siple.gradient.nonlinear import InvertNLCG, InvertIGN
-from siple.reporting import msg
+from siple.reporting import msg, std_pause
+
 
 from linalg_pism import PISMLocalVector
 from math import sqrt
@@ -14,7 +15,10 @@ def pism_print_logger(message,severity):
   PISM.verbPrintf(verb,com, "%s\n" % message)
 
 def pism_pause(message_in=None,message_out=None):
-  com = PISM.Context().com
+  import sys, os
+  fd = sys.stdin.fileno()
+  if os.isatty(fd):
+    return std_pause(message_in,message_out)
   if not message_in is None:
     PISM.verbPrintf(1,com,message_in+"\n")
   import sys
@@ -357,10 +361,10 @@ class PlotListener:
     y = self.tz_vector.communicate(y.core())
     Fx = self.tz_vector.communicate(Fx.core())
 
-    r *= PISM.secpera
-    y *= PISM.secpera
-
     if not d is None:
+      r *= PISM.secpera
+      y *= PISM.secpera
+
       self.iteration(solver,count,x,Fx,y,d,r,*args)
 
   def iteration(self,solver,count,x,Fx,y,d,r,*args):      
@@ -404,7 +408,8 @@ class PlotListener:
     pp.title('zeta')
     pp.jet()
 
-    pp.draw()
+    pp.ion()
+    pp.show()
 
 def pauseListener(*args):
     import siple
