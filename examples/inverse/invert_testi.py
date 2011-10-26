@@ -29,12 +29,46 @@ import PISM
 
 from pismssaforward import PISMSSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
 tauc_params, PlotListener, pism_print_logger, pism_pause, pauseListener
-from linalg_pism import PISMLocalVector
+from linalg_pism import PISMLocalVector as PLV
+import pismssaforward
 
 siple.reporting.clear_loggers()
 siple.reporting.add_logger(pism_print_logger)
 siple.reporting.set_pause_callback(pism_pause)
-print siple.reporting.pause_callback
+
+class TestIPlotListener(PlotListener):
+  
+  def iteration(self,solver,count,x,Fx,y,d,r,*args):
+    from matplotlib import pyplot as pp
+    N = x.shape[1]/2
+    pp.clf()
+    pp.subplot(2,3,1)
+    pp.plot(y[0,:,N])
+    pp.title('yu')
+
+    pp.subplot(2,3,4)
+    pp.plot(y[1,:,N])
+    pp.title('yv')
+
+    pp.subplot(2,3,2)
+    pp.plot(r[0,:,N])
+    pp.title('ru')
+
+    pp.subplot(2,3,5)
+    pp.plot(r[1,:,N])
+    pp.title('rv')
+
+    d *= -1
+    pp.subplot(2,3,3)      
+    pp.plot(d[:,N])
+    pp.title('-d')
+    
+    pp.subplot(2,3,6)      
+    pp.plot(x[:,N])
+    pp.title('zeta')
+
+    pp.draw()
+
 
 Mx = 11 
 My = 61
@@ -125,7 +159,7 @@ class testi(PISMSSAForwardProblem):
     l2_weight=solver.range_l2_weight
     with PISM.util.Access(comm=l2_weight):
       for (i,j) in grid.points():
-        if grid.y[j] < 0:
+        if grid.y[j] <= 0:
           l2_weight[i,j] = 1.;
         else:
           l2_weight[i,j] = right_side_weight;
@@ -149,8 +183,10 @@ if __name__ == "__main__":
     ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=ssa_h1_coeff)
     tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
     tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
-    do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=True)
+    do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
+    do_final_plot = PISM.optionsFlag("-inv_plot","perform visualization at the end of the computation",default=True)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
+    test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
 
   config.set_string("inv_ssa_tauc_param",tauc_param_type)
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
@@ -181,7 +217,7 @@ if __name__ == "__main__":
   # Send the true yeild stress through the forward problem to 
   # get at true velocity field.
   u_true = PISM.util.standard2dVelocityVec(grid,name="_true")
-  forward_problem.F(PISMLocalVector(zeta_true),out=PISMLocalVector(u_true))
+  forward_problem.F(PLV(zeta_true),out=PLV(u_true))
 
   # Build the initial guess for tauc for the inversion.
   tauc = PISM.util.standardYieldStressVec(grid)
@@ -200,6 +236,19 @@ if __name__ == "__main__":
     with PISM.util.Access(nocomm=[tauc],comm=[zeta]):
       for (i,j) in grid.points():
         zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
+
+
+
+  if test_adjoint:
+    d = PLV(pismssaforward.randVectorS(grid,1e5))
+    r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera))
+    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
+    siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
+    exit(0)
+
+
+
+
 
   # Determine the inversion algorithm, and set up its arguments.
   if method == "ign":
@@ -221,7 +270,7 @@ if __name__ == "__main__":
   # Run the inversion
   solver=Solver(forward_problem,params=params)  
   if do_plotting:
-    solver.addIterationListener(PlotListener(grid))
+    solver.addIterationListener(TestIPlotListener(grid))
   if do_pause:
     solver.addIterationListener(pauseListener)
     
@@ -247,10 +296,13 @@ if __name__ == "__main__":
   tz = tozero.ToProcZero(grid)
   tauc_a = tz.communicate(tauc)
   tauc_true = tz.communicate(tauc_true)
-  if do_plotting and (not tauc_a is None):
+  if do_final_plot and (not tauc_a is None):
     from matplotlib import pyplot
     pyplot.clf()
     pyplot.plot(grid.y,tauc_a[:,Mx/2])
     pyplot.plot(grid.y,tauc_true[:,Mx/2])
     pyplot.draw()
+    import platform
+    if platform.mac_ver() == '':
+      pyplot.show()
     siple.reporting.endpause()

@@ -6,6 +6,7 @@ from siple.reporting import msg
 
 from linalg_pism import PISMLocalVector
 from math import sqrt
+import numpy as np
 
 def pism_print_logger(message,severity):
   verb = severity
@@ -20,7 +21,28 @@ def pism_pause(message_in=None,message_out=None):
   ch = sys.stdin.read(1)
   if not message_out is None:
     PISM.verbPrintf(1,com,message_out+"\n")
-  
+
+def randVectorS(grid,scale):
+  rv = PISM.IceModelVec2S();
+  rv.create(grid, 'rand vec', True, PISM.util.WIDE_STENCIL)
+  shape=(grid.xm,grid.ym)
+  r = np.random.normal(scale=scale,size=shape)
+  with PISM.util.Access(comm=rv):
+    for (i,j) in grid.points():
+      rv[i,j] = r[i,j]
+  return rv
+
+def randVectorV(grid,scale):
+  rv = PISM.IceModelVec2V();
+  rv.create(grid, 'rand vec', True, PISM.util.WIDE_STENCIL)
+  shape=(grid.xm,grid.ym)
+  r_u = np.random.normal(scale=scale,size=shape)
+  r_v = np.random.normal(scale=scale,size=shape)
+  with PISM.util.Access(comm=rv):
+    for (i,j) in grid.points():
+      rv[i,j].u = r_u[i,j]
+      rv[i,j].v = r_v[i,j]
+  return rv
 
 tauc_params = {"ident":PISM.cvar.g_InvTaucParamIdent, 
                "square":PISM.cvar.g_InvTaucParamSquare,
@@ -51,8 +73,6 @@ class SSAForwardSolver(PISM.ssa.SSASolver):
     if not self.surface is None:
       pismVars.add(self.surface)
     if not self.drivingstress is None:
-      print 'adding driving stress'
-      print self.drivingstress.string_attr("name")
       pismVars.add(self.drivingstress,'ssa_driving_stress')
     
     
@@ -331,54 +351,60 @@ class PlotListener:
   def __call__(self,solver,count,x,Fx,y,d,r,*args):
     from matplotlib import pyplot as pp
     import siple
-    vd = self.tz_scalar.communicate(d.core())
-    vx = self.tz_scalar.communicate(x.core())
+    d = self.tz_scalar.communicate(d.core())
+    x = self.tz_scalar.communicate(x.core())
     r = self.tz_vector.communicate(r.core())
     y = self.tz_vector.communicate(y.core())
-    if not vd is None:
-      r *= PISM.secpera
-      y *= PISM.secpera
-      
-      pp.clf()
-      pp.subplot(2,3,1)
-      pp.imshow(y[0,:,:])
-      pp.colorbar()
-      pp.title('yu')
-      pp.jet()
+    Fx = self.tz_vector.communicate(Fx.core())
 
-      pp.subplot(2,3,4)
-      pp.imshow(y[1,:,:])
-      pp.colorbar()
-      pp.title('yv')
-      pp.jet()
+    r *= PISM.secpera
+    y *= PISM.secpera
 
-      
-      pp.subplot(2,3,2)
-      pp.imshow(r[0,:,:])
-      pp.colorbar()
-      pp.title('ru')
-      pp.jet()
+    if not d is None:
+      self.iteration(solver,count,x,Fx,y,d,r,*args)
 
-      pp.subplot(2,3,5)
-      pp.imshow(r[1,:,:])
-      pp.colorbar()
-      pp.title('rv')
-      pp.jet()
+  def iteration(self,solver,count,x,Fx,y,d,r,*args):      
+    import matplotlib.pyplot as pp
+    pp.clf()
+    pp.subplot(2,3,1)
+    pp.imshow(y[0,:,:])
+    pp.colorbar()
+    pp.title('yu')
+    pp.jet()
 
-      vd *= -1
-      pp.subplot(2,3,3)      
-      pp.imshow(vd)
-      pp.colorbar()
-      pp.jet()
-      pp.title('-d')
-      
-      pp.subplot(2,3,6)      
-      pp.imshow(vx)
-      pp.colorbar()
-      pp.title('zeta')
-      pp.jet()
+    pp.subplot(2,3,4)
+    pp.imshow(y[1,:,:])
+    pp.colorbar()
+    pp.title('yv')
+    pp.jet()
 
-      pp.draw()
+    
+    pp.subplot(2,3,2)
+    pp.imshow(r[0,:,:])
+    pp.colorbar()
+    pp.title('ru')
+    pp.jet()
+
+    pp.subplot(2,3,5)
+    pp.imshow(r[1,:,:])
+    pp.colorbar()
+    pp.title('rv')
+    pp.jet()
+
+    d *= -1
+    pp.subplot(2,3,3)      
+    pp.imshow(d)
+    pp.colorbar()
+    pp.jet()
+    pp.title('-d')
+    
+    pp.subplot(2,3,6)      
+    pp.imshow(x)
+    pp.colorbar()
+    pp.title('zeta')
+    pp.jet()
+
+    pp.draw()
 
 def pauseListener(*args):
     import siple

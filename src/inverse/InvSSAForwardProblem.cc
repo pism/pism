@@ -579,7 +579,7 @@ PetscErrorCode InvSSAForwardProblem::compute_range_l2_area(PetscScalar *OUTPUT)
     ierr = m_l2_weight->get_array(W);CHKERRQ(ierr);    
   } else {
     for(int q=0;q<FEQuadrature::Nq;q++) {
-      l2_weight[q]=1;
+      l2_weight[q]=1.;
     }
   }
 
@@ -741,8 +741,6 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
     }
   }
 
-  PetscReal area = 4*grid.Lx*grid.Ly;
-
   // Start access of Dirichlet data, if present.
   if (bc_locations && vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
@@ -811,7 +809,7 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
 
       for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
         // Coefficients and weights for this quadrature point.
-        const PetscReal    jw  = JxW[q]/area;
+        const PetscReal    jw  = JxW[q]/m_range_l2_area;
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
           y[k].u += jw*testqk.val*res[q].u*l2_weight[q];
