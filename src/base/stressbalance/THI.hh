@@ -19,7 +19,7 @@
 #ifndef _THI_H_
 #define _THI_H_
 
-#include "THITools.hh"
+#include "THItools.hh"
 
 typedef struct _p_THI   *THI;
 
