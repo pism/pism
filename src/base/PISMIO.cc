@@ -168,12 +168,20 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, GridType dims) const {
         MPI_Recv(count, N, MPI_INT, proc, count_tag, com, &mpi_stat);
 	MPI_Recv(a_double, buffer_size, MPI_DOUBLE, proc, data_tag, com, &mpi_stat);
       }
+
+      // We initialize the 'stride' array instead of passing a NULL pointer to
+      // nc_put_varm_double below to avoid a segfault caused by a bug in NetCDF
+      // 4.1.2 and 4.1.3. Please see https://www.unidata.ucar.edu/jira/browse/NCF-88 for details.
+      vector<ptrdiff_t> stride(N);
+
+      for (int i = 0; i < N; ++i)
+        stride[i] = 1;
       
       size_t *nc_start, *nc_count;
       ptrdiff_t* imap;
       ierr = compute_start_and_count(varid, start, count, dims, nc_start, nc_count, imap); CHKERRQ(ierr);
 
-      stat = nc_put_varm_double(ncid, varid, nc_start, nc_count, NULL, imap, a_double);
+      stat = nc_put_varm_double(ncid, varid, nc_start, nc_count, &stride[0], imap, a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       delete[] nc_start;
