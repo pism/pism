@@ -36,133 +36,48 @@ siple.reporting.clear_loggers()
 siple.reporting.add_logger(pism_print_logger)
 siple.reporting.set_pause_callback(pism_pause)
 
-class TestIPlotListener(PlotListener):
-  
-  def iteration(self,solver,count,x,Fx,y,d,r,*args):
-    from matplotlib import pyplot as pp
-    N = x.shape[1]/2
-    pp.clf()
-    pp.subplot(2,3,1)
-    pp.plot(y[0,:,N])
-    pp.title('yu')
+default_ssa_l2_coeff = 1.
+default_ssa_h1_coeff = 0.
+default_tauc_guess_const = 1e6
+default_rms_error = 100
 
-    pp.subplot(2,3,4)
-    pp.plot(y[1,:,N])
-    pp.title('yv')
+class Vel2Tauc(PISM.ssa.SSAFromBootFile):
 
-    pp.subplot(2,3,2)
-    pp.plot(r[0,:,N])
-    pp.title('ru')
+  def _constructSSA(self):
+    return pismssaforward.SSAForwardSolver(self.grid,self.config)
 
-    pp.subplot(2,3,5)
-    pp.plot(r[1,:,N])
-    pp.title('rv')
+  def setup(self):
+    PISM.ssa.SSAFromBootFile.setup(self)
 
-    d *= -1
-    pp.subplot(2,3,3)      
-    pp.plot(d[:,N])
-    pp.title('-d')
-    
-    pp.subplot(2,3,6)      
-    pp.plot(x[:,N])
-    pp.title('zeta')
-
-    pp.ion()
-    pp.show()
-
-
-Mx = 11 
-My = 61
-
-m_schoof = 2;        # (pure number)
-L_schoof = 40e3;      # meters
-aspect_schoof = 0.05; # (pure)
-H0_schoof = aspect_schoof * L_schoof; 
-                      # = 2000 m THICKNESS
-B_schoof = 3.7e8;     # Pa s^{1/3}; hardness 
-                      # given on p. 239 of Schoof; why so big?
-p_schoof = 4.0/3.0;   # = 1 + 1/n
-
-slope = 0.001
-
-rms_error = 1. #m/a
-
-right_side_weight = 1.
-
-ssa_l2_coeff = 1.
-ssa_h1_coeff = 0.
-
-tauc_guess_scale = 0.2
-tauc_guess_const = None
-
-def testi_tauc(grid,ice,tauc):
-  standard_gravity = grid.config.get("standard_gravity");
-  f = ice.rho*standard_gravity*H0_schoof*slope
-  with PISM.util.Access(comm=tauc):
-    for (i,j) in grid.points():
-      y=grid.y[j]
-      tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
-
-class testi_run(InvSSARun):
-  def __init__(self,Mx,My):
-    self.grid = PISM.Context().newgrid()
-    self.Mx = Mx
-    self.My = My
-
-  def _initGrid(self):
-    Mx=self.Mx; My=self.My
-    Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-    Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.X_PERIODIC);
-
-  def _initPhysics(self):
-    config = self.config
-    basal = PISM.IceBasalResistancePlasticLaw(
-         config.get("plastic_regularization") / PISM.secpera,
-         config.get_flag("do_pseudo_plastic_till"),
-         config.get("pseudo_plastic_q"),
-         config.get("pseudo_plastic_uthreshold") / PISM.secpera);
- 
-    # irrelevant
-    enthalpyconverter = PISM.EnthalpyConverter(config);
-
-    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
-    ice.setHardness(B_schoof)
-    
-    self.solver.setPhysics(ice,basal,enthalpyconverter)
-
+    # FIXME: This is a lousy name....
+    self.solver.init_vars()
 
   def _initSSACoefficients(self):
+    # Read PISM SSA related state variables
     solver = self.solver
-    solver.allocateCoeffs(using_l2_weight=True,using_explicit_driving_stress=True)
-    solver.allocateBCs()
-    solver.thickness.set(H0_schoof)
-    solver.ice_mask.set(PISM.MASK_GROUNDED)
-    solver.bed.set(0.)
+    solver.allocateCoeffs(using_l2_weight=True)
 
-    testi_tauc(solver.grid,solver.ice,solver.tauc)
+    thickness = solver.thickness; bed = solver.bed; enthalpy = solver.enthalpy
+    mask = solver.ice_mask; surface = solver.surface
 
-    grid = self.grid
-    standard_gravity = grid.config.get("standard_gravity");
-    f = self.solver.ice.rho*standard_gravity*H0_schoof*slope
-    driving_stress = solver.drivingstress
-    with PISM.util.Access(comm=[driving_stress,solver.bc_mask,solver.vel_bc]):
-      for (i,j) in grid.points():
-        driving_stress[i,j].u = f
-        driving_stress[i,j].v = 0
+    # Read in the PISM state variables that are used directly in the SSA solver
+    for v in [thickness, bed, enthalpy]:
+      v.regrid(self.boot_file,True)
+  
+    # variables mask and surface are computed from the geometry previously read
+    sea_level = 0 # FIXME setFromOption?
+    gc = PISM.GeometryCalculator(sea_level,self.solver.ice,self.config)
+    gc.compute(bed,thickness,mask,surface)
 
-        if (j == 0) or (j==grid.My-1):
-          solver.bc_mask[i,j]=1
-          solver.vel_bc[i,j].u=0
-          solver.vel_bc[i,j].v=0
-
-    l2_weight=solver.range_l2_weight
-    with PISM.util.Access(comm=l2_weight):
-      for (i,j) in grid.points():
-        if grid.y[j] <= 0:
-          l2_weight[i,j] = 1.;
-        else:
-          l2_weight[i,j] = right_side_weight;
+    l2_weight = solver.range_l2_weight
+    with PISM.util.Access(comm=l2_weight,nocomm=mask):
+      l2_weight.set(0.)
+      grounded = PISM.MASK_GROUNDED
+      for (i,j) in solver.grid.points():
+        if mask[i-1,j-1]==grounded and mask[i-1,j]==grounded and mask[i-1,j+1]==grounded \
+           and mask[i,j-1]==grounded and mask[i,j]==grounded and mask[i,j+1]==grounded \
+           and mask[i+1,j-1]==grounded and mask[i+1,j]==grounded and mask[i+1,j+1]==grounded:
+          l2_weight[i,j] = 1
 
 ## Main code starts here
 if __name__ == "__main__":
@@ -170,25 +85,32 @@ if __name__ == "__main__":
   config = context.config()
   PISM.set_abort_on_sigint(True)
 
+  usage = \
+  """  vel2tauc.py -i IN.nc [-o file.nc]
+    where:
+      -i      IN.nc is input file in NetCDF format: contains PISM-written model state
+    notes:
+      * -i is required
+    """
+
+  PISM.show_usage_check_req_opts(context.com,"ssa_forward",["-i"],usage)
+
   for o in PISM.OptionsGroup(context.com,"","Invert test I"):
-    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=Mx)
-    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=My)
-    output_file = PISM.optionsString("-o","output file",default="invert_testi.nc")
+    bootfile = PISM.optionsString("-i","input file")
+    output_file = PISM.optionsString("-o","output file",default="vel2tauc_"+bootfile)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
     method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
-    rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=rms_error)
-    right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
+    rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=default_rms_error)
     tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp"],"ident")
-    ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=ssa_l2_coeff)
-    ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=ssa_h1_coeff)
-    tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
-    tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
+    print tauc_param_type
+    ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=default_ssa_l2_coeff)
+    ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=default_ssa_h1_coeff)
+    tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=default_tauc_guess_const)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
     do_final_plot = PISM.optionsFlag("-inv_plot","perform visualization at the end of the computation",default=True)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
-
 
   config.set_string("inv_ssa_tauc_param",tauc_param_type)
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
@@ -197,16 +119,26 @@ if __name__ == "__main__":
   tauc_param = tauc_params[tauc_param_type]
 
   PISM.setVerbosityLevel(verbosity)
-  testi = testi_run(Mx,My)
-  testi.setup()
+  vel2tauc = Vel2Tauc(bootfile)
+  vel2tauc.setup()
 
-  forward_problem = SSAForwardProblem(testi)
+  forward_problem = SSAForwardProblem(vel2tauc)
 
-  grid = testi.grid
+  grid = vel2tauc.grid
 
-  # Build the true yeild stress for test I
-  tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
-  testi_tauc(grid,testi.solver.ice,tauc_true)
+  bmr   = PISM.util.standardBasalMeltRateVec(grid)
+  tillphi = PISM.util.standardTillPhiVec(grid)
+  bwat = PISM.util.standardBasalWaterVec(grid)
+  for v in [bmr,tillphi,bwat]:
+     v.regrid(bootfile,True)
+  pvars = PISM.PISMVars()
+  for v in [vel2tauc.solver.thickness,vel2tauc.solver.bed,vel2tauc.solver.ice_mask,bmr,tillphi,bwat]:
+     pvars.add(v)
+
+  yieldstress = PISM.PISMDefaultYieldStress(grid,grid.config)
+  yieldstress.init(pvars)
+  tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")  
+  yieldstress.basal_material_yield_stress(tauc_true)
 
   # Convert tauc_true to zeta_true
   if config.get_string('inv_ssa_tauc_param')=='ident':
@@ -225,11 +157,8 @@ if __name__ == "__main__":
 
   # Build the initial guess for tauc for the inversion.
   tauc = PISM.util.standardYieldStressVec(grid)
-  if not tauc_guess_const is None:
-    tauc.set(tauc_guess_const)
-  else:
-    testi_tauc(grid,testi.solver.ice,tauc)
-    tauc.scale(tauc_guess_scale)
+  tauc.copy_from(tauc_true)
+  tauc.scale(0.5)
 
   # Convert tauc guess to zeta guess
   if config.get_string('inv_ssa_tauc_param')=='ident':
@@ -241,8 +170,6 @@ if __name__ == "__main__":
       for (i,j) in grid.points():
         zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
 
-
-
   if test_adjoint:
     d = PLV(pismssaforward.randVectorS(grid,1e5))
     r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera))
@@ -250,15 +177,14 @@ if __name__ == "__main__":
     siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
     exit(0)
 
-
-
-
-
   # Determine the inversion algorithm, and set up its arguments.
   if method == "ign":
     Solver = InvertSSAIGN
   else:
     Solver = InvertSSANLCG
+
+  # u_true = PISM.util.standard2dVelocityVec(grid,"bar_ssa")
+  # u_true.regrid(bootfile,True)
 
   params=Solver.defaultParameters()
   if method == "sd":
@@ -267,6 +193,7 @@ if __name__ == "__main__":
   elif method =="ign":
     params.linearsolver.ITER_MAX=10000
     params.linearsolver.verbose = True
+    # params.thetaMax=0.05
   if ls_verbose:
     params.linesearch.verbose = True
   params.verbose   = True
@@ -276,10 +203,10 @@ if __name__ == "__main__":
   # Run the inversion
   solver=Solver(forward_problem,params=params)  
   if do_plotting:
-    solver.addIterationListener(TestIPlotListener(grid))
+    solver.addIterationListener(PlotListener(grid))
   if do_pause:
     solver.addIterationListener(pauseListener)
-    
+
   rms_error /= PISM.secpera # m/s
   (zeta,u) = solver.solve(zeta,u_true,rms_error)
 
@@ -292,12 +219,13 @@ if __name__ == "__main__":
         (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
 
   # Write solution out to netcdf file
-  testi.write(output_file)
+  vel2tauc.write(output_file)
   tauc.write(output_file)
   tauc_true.write(output_file)
   u.set_name("_computed",0)
   u.write(output_file)
 
+  
   # Draw a pretty picture
   tz = tozero.ToProcZero(grid)
   tauc_a = tz.communicate(tauc)
@@ -305,8 +233,10 @@ if __name__ == "__main__":
   if do_final_plot and (not tauc_a is None):
     from matplotlib import pyplot
     pyplot.clf()
-    pyplot.plot(grid.y,tauc_a[:,Mx/2])
-    pyplot.plot(grid.y,tauc_true[:,Mx/2])
+    pyplot.subplot(1,2,1)
+    pyplot.imshow(tauc_a,origin='lower')
+    pyplot.subplot(1,2,2)
+    pyplot.imshow(tauc_true,origin='lower')
     pyplot.ion()
     pyplot.show()
     siple.reporting.endpause()

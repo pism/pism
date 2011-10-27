@@ -188,6 +188,12 @@ PetscErrorCode InvSSAForwardProblem::set_tauc(IceModelVec2S &new_tauc )
 PetscErrorCode InvSSAForwardProblem::solveF_core()
 {
   PetscErrorCode ierr;
+
+  // FIXME (DAM 10/25/11): All this lousy code duplication with SSAFEM::solve.  Why
+  // didn't I just call it when I wrote this in the first place???
+  m_epsilon_ssa = config.get("epsilon_ssafd");
+  const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
+  
   if(m_forward_F_needed)
   {
     // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
@@ -198,16 +204,47 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
     ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
     ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
 
+    SNESConvergedReason reason;
+    while(true) {
     // Solve:
     ierr = SNESSolve(snes,NULL,SSAX);CHKERRQ(ierr);
 
-    // See if it worked.
-    SNESConvergedReason reason;
-    ierr = SNESGetConvergedReason( snes, &reason); CHKERRQ(ierr);
-    if(reason < 0) {
+      // See if it worked.
+      ierr = SNESGetConvergedReason( snes, &reason); CHKERRQ(ierr);
+      if(reason >= 0) {
+        break;
+      }
+
+      ierr = verbPrintf(1,grid.com,
+          "\nPISM WARNING:  SNESSolve() reports 'diverged'; reason = %d = '%s'\n",
+          reason,SNESConvergedReasons[reason]); CHKERRQ(ierr);
+      // for now, always write a file with a fixed filename  (FIXME: may want other mechanism?)
+
+      // char filename[PETSC_MAX_PATH_LEN] = "SSAFEM_snesdivergederror.petsc";
+      // ierr = verbPrintf(1,grid.com,
+      //     "  writing linear system to PETSc binary file %s ...\n",filename); CHKERRQ(ierr);
+      // PetscViewer    viewer;
+      // ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
+      // ierr = MatView(A,viewer); CHKERRQ(ierr);
+      // ierr = VecView(SSARHS,viewer); CHKERRQ(ierr);
+      // ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+
       SETERRQ1(1, 
-        "SSAFEM solve failed to converge (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
+        "InvSSAForwardProblem solve failed to converge (SNES reason %s).\nSo we're giving up.\n\n", SNESConvergedReasons[reason]);
+
+
+      if(m_epsilon_ssa <= 0.)
+      {
+        SETERRQ1(1, 
+          "InvSSAForwardProblem solve failed to converge (SNES reason %s).\nRegularization parameter epsilon_ssa = %f <=0, so we're giving up.\n\n", SNESConvergedReasons[reason]);
+      }
+      else
+      {
+        // Bump the regularization and try it again.
+        m_epsilon_ssa *=  DEFAULT_EPSILON_MULTIPLIER_SSA;
+      }
     }
+
     verbPrintf(3,grid.com,"SSAFEM solve converged (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
 
     ierr =  DAGlobalToLocalBegin(SSADA, SSAX, INSERT_VALUES, m_VecU);  CHKERRQ(ierr);

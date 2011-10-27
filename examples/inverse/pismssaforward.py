@@ -106,11 +106,7 @@ class SSAForwardSolver(PISM.ssa.SSASolver):
 
 WIDE_STENCIL = 2
 
-class PISMSSAForwardProblem(NonlinearForwardProblem,PISM.ssa.SSARun):
-  
-  def __init__(self):
-    PISM.ssa.SSARun.__init__(self)
-
+class InvSSARun(PISM.ssa.SSARun):
   def setup(self):
     PISM.ssa.SSARun.setup(self)
 
@@ -119,6 +115,13 @@ class PISMSSAForwardProblem(NonlinearForwardProblem,PISM.ssa.SSARun):
 
   def _constructSSA(self):
     return SSAForwardSolver(self.grid,self.config)
+
+class SSAForwardProblem(NonlinearForwardProblem):
+  
+  def __init__(self,ssarun):
+    self.ssarun = ssarun
+    self.solver = ssarun.solver
+    self.grid = ssarun.grid
 
   def F(self, x,out=None,guess=None):
     """
@@ -371,39 +374,39 @@ class PlotListener:
     import matplotlib.pyplot as pp
     pp.clf()
     pp.subplot(2,3,1)
-    pp.imshow(y[0,:,:])
+    pp.imshow(y[0,:,:],origin='lower')
     pp.colorbar()
     pp.title('yu')
     pp.jet()
 
     pp.subplot(2,3,4)
-    pp.imshow(y[1,:,:])
+    pp.imshow(y[1,:,:],origin='lower')
     pp.colorbar()
     pp.title('yv')
     pp.jet()
 
     
     pp.subplot(2,3,2)
-    pp.imshow(r[0,:,:])
+    pp.imshow(r[0,:,:],origin='lower')
     pp.colorbar()
     pp.title('ru')
     pp.jet()
 
     pp.subplot(2,3,5)
-    pp.imshow(r[1,:,:])
+    pp.imshow(r[1,:,:],origin='lower')
     pp.colorbar()
     pp.title('rv')
     pp.jet()
 
     d *= -1
     pp.subplot(2,3,3)      
-    pp.imshow(d)
+    pp.imshow(d,origin='lower')
     pp.colorbar()
     pp.jet()
     pp.title('-d')
     
     pp.subplot(2,3,6)      
-    pp.imshow(x)
+    pp.imshow(x,origin='lower')
     pp.colorbar()
     pp.title('zeta')
     pp.jet()
