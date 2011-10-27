@@ -27,6 +27,9 @@
 set -e  # exit on error
 set -x  # uncomment to see commands as they are issued
 
+# seconds per year, from UDUNITS
+SECPERA=3.15569259747e7
+
 MODEL=UAF1  # default initials and model number
 if [ $# -gt 0 ] ; then
   MODEL="$1"
@@ -49,7 +52,7 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   # create draft of deliverable file:
   ncks -O ${NAME}_raw_y*.nc -o ${NAME}_full.nc
   # calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
-  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1)); dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1));}' ${NAME}_full.nc ${NAME}_full.nc
+  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}' ${NAME}_full.nc ${NAME}_full.nc
   # adjust meta data for new fields
   ncatted -a units,acab,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
       -a long_name,acab,o,c,"surface mass balance" \
