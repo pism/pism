@@ -38,8 +38,11 @@ siple.reporting.set_pause_callback(pism_pause)
 
 default_ssa_l2_coeff = 1.
 default_ssa_h1_coeff = 0.
-default_tauc_guess_const = 1e6
 default_rms_error = 100
+
+tauc_guess_scale = 0.2
+tauc_guess_const = None
+
 
 class Vel2Tauc(PISM.ssa.SSAFromBootFile):
 
@@ -79,6 +82,48 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
            and mask[i+1,j-1]==grounded and mask[i+1,j]==grounded and mask[i+1,j+1]==grounded:
           l2_weight[i,j] = 1
 
+class Vel2TaucPlotListener(PlotListener):
+  def __init__(self,grid,Vmax):
+    PlotListener.__init__(self,grid)
+    self.Vmax = Vmax
+  def iteration(self,solver,count,x,Fx,y,d,r,*args):      
+    import matplotlib.pyplot as pp
+    l2_weight=self.tz_scalar.communicate(solver.forward_problem.solver.range_l2_weight)
+
+    pp.clf()
+    
+    V = self.Vmax
+    pp.subplot(1,3,1)
+    rx = l2_weight*r[0,:,:]
+    rx = np.maximum(rx,-V)
+    rx = np.minimum(rx,V)
+    pp.imshow(rx,origin='lower')
+    pp.colorbar()
+    pp.title('ru')
+    pp.jet()
+
+    pp.subplot(1,3,2)
+    ry = l2_weight*r[1,:,:]
+    ry = np.maximum(ry,-V)
+    ry = np.minimum(ry,V)
+    pp.imshow(ry,origin='lower')
+    pp.colorbar()
+    pp.title('rv')
+    pp.jet()
+
+    d *= -1
+    pp.subplot(1,3,3)      
+    pp.imshow(d,origin='lower')
+    pp.colorbar()
+    pp.jet()
+    pp.title('-d')
+    
+    pp.ion()
+    pp.show()
+  
+  
+
+
 ## Main code starts here
 if __name__ == "__main__":
   context = PISM.Context()
@@ -105,12 +150,15 @@ if __name__ == "__main__":
     print tauc_param_type
     ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=default_ssa_l2_coeff)
     ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=default_ssa_h1_coeff)
-    tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=default_tauc_guess_const)
+    tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
+    tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
     do_final_plot = PISM.optionsFlag("-inv_plot","perform visualization at the end of the computation",default=True)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
+    ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
+    Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
   config.set_string("inv_ssa_tauc_param",tauc_param_type)
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
@@ -157,8 +205,11 @@ if __name__ == "__main__":
 
   # Build the initial guess for tauc for the inversion.
   tauc = PISM.util.standardYieldStressVec(grid)
-  tauc.copy_from(tauc_true)
-  tauc.scale(0.5)
+  if not tauc_guess_const is None:
+    tauc.set(tauc_guess_const)
+  else:
+    tauc.copy_from(tauc_true)
+    tauc.scale(tauc_guess_scale)
 
   # Convert tauc guess to zeta guess
   if config.get_string('inv_ssa_tauc_param')=='ident':
@@ -193,17 +244,16 @@ if __name__ == "__main__":
   elif method =="ign":
     params.linearsolver.ITER_MAX=10000
     params.linearsolver.verbose = True
-    # params.thetaMax=0.05
+    params.thetaMax=ign_theta
   if ls_verbose:
     params.linesearch.verbose = True
   params.verbose   = True
   params.deriv_eps = 0.
 
-
   # Run the inversion
   solver=Solver(forward_problem,params=params)  
   if do_plotting:
-    solver.addIterationListener(PlotListener(grid))
+    solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax))
   if do_pause:
     solver.addIterationListener(pauseListener)
 

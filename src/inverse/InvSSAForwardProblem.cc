@@ -20,7 +20,9 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
-
+#include <unistd.h> // for 'access'
+#include <sstream>
+#include "PISMIO.hh"
 
 /*! \brief Allocate PETSC structures needed for solving the various linearized
 problems associated with the forward problem. */
@@ -161,6 +163,10 @@ PetscErrorCode InvSSAForwardProblem::set_tauc(IceModelVec2S &new_tauc )
   PetscErrorCode ierr;
   PetscInt i,j,q;
 
+
+  //FIXME: This is temporarily here for debugging.
+  tauc->copy_from(new_tauc);
+  
   PetscReal **tauc_array;
   ierr = new_tauc.get_array(tauc_array);CHKERRQ(ierr);
   PetscInt xs = element_index.xs, xm = element_index.xm,
@@ -183,6 +189,28 @@ PetscErrorCode InvSSAForwardProblem::set_tauc(IceModelVec2S &new_tauc )
   m_forward_F_needed = true;
 
   return 0;
+}
+
+int findNextFile(const char *basename)
+{
+  int n=0;  
+  while(true)
+  {
+    std::ostringstream os_nc;
+    os_nc << basename << n << ".nc";
+    int a = access(os_nc.str().c_str(),W_OK);
+    bool does_not_exist = (access(os_nc.str().c_str(),W_OK) == -1) && (errno==ENOENT);
+    if( does_not_exist )
+    {
+      std::ostringstream os_petsc;
+      os_petsc << basename << n << ".petsc";
+      does_not_exist = (access(os_petsc.str().c_str(),W_OK) == -1) && (errno==ENOENT);      
+    }
+    
+    if(does_not_exist) break;
+    n++;
+  }
+  return n;
 }
 
 PetscErrorCode InvSSAForwardProblem::solveF_core()
@@ -218,17 +246,54 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
       ierr = verbPrintf(1,grid.com,
           "\nPISM WARNING:  SNESSolve() reports 'diverged'; reason = %d = '%s'\n",
           reason,SNESConvergedReasons[reason]); CHKERRQ(ierr);
-      // for now, always write a file with a fixed filename  (FIXME: may want other mechanism?)
+          
+      const char *savefile = "InvSSA_snesdivergederror";
+      int index = findNextFile(savefile);
+      
+      std::ostringstream os_petscfile;
+      os_petscfile << savefile << index << ".petsc";
+      std::string petscfile = os_petscfile.str();
+      const char *c_petscfile = petscfile.c_str();
 
       // char filename[PETSC_MAX_PATH_LEN] = "SSAFEM_snesdivergederror.petsc";
-      // ierr = verbPrintf(1,grid.com,
-      //     "  writing linear system to PETSc binary file %s ...\n",filename); CHKERRQ(ierr);
-      // PetscViewer    viewer;
-      // ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
-      // ierr = MatView(A,viewer); CHKERRQ(ierr);
-      // ierr = VecView(SSARHS,viewer); CHKERRQ(ierr);
-      // ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+      ierr = verbPrintf(1,grid.com,
+          "  writing linear system to PETSc binary file %s ...\n",c_petscfile); CHKERRQ(ierr);
+      PetscViewer    viewer;
+      ierr = PetscViewerBinaryOpen(grid.com, c_petscfile, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
+      ierr = MatView(J,viewer); CHKERRQ(ierr);
+      ierr = VecView(r,viewer); CHKERRQ(ierr);
+      ierr = VecView(SSAX,viewer); CHKERRQ(ierr);
+      ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
 
+    
+
+
+      std::ostringstream os_ncfile;
+      os_ncfile << savefile << index << ".nc";
+      std::string ncfile = os_ncfile.str();
+      const char * c_ncfile = ncfile.c_str();
+      
+      PISMIO pio(&grid);
+      pio.open_for_writing(c_ncfile,false,true);
+      pio.append_time(grid.config.get_string("time_dimension_name"),0.0);
+      pio.close();
+
+      mask->write(c_ncfile);
+      thickness->write(c_ncfile);
+      bed->write(c_ncfile);
+      tauc->write(c_ncfile);
+      enthalpy->write(c_ncfile);
+      
+      if(surface != NULL)
+      {
+        surface->write(c_ncfile);        
+      }
+      if(driving_stress != NULL)
+      {
+        surface->write(c_ncfile);        
+      }
+      
+      
       SETERRQ1(1, 
         "InvSSAForwardProblem solve failed to converge (SNES reason %s).\nSo we're giving up.\n\n", SNESConvergedReasons[reason]);
 
