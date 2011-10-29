@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <sstream>
+#include <algorithm>
 
 #include "pism_options.hh"
 #include "NCVariable.hh"
