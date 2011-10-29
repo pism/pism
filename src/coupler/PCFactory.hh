@@ -27,6 +27,7 @@
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "IceGrid.hh"
+#include "pism_options.hh"
 
 template <class Model, class Modifier>
 class PCFactory {

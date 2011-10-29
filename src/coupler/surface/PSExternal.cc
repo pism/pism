@@ -24,6 +24,7 @@
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "pism_options.hh"
 
 PSExternal::~PSExternal() {
   int done = 1;

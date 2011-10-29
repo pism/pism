@@ -50,7 +50,7 @@ PetscErrorCode IceModel::eigenCalving() {
   double ocean_rho = config.get("sea_water_density");
   double ice_rho = config.get("ice_density");
 
-  const PetscScalar eigenCalvFactor = config.get("eigen_calving");
+  const PetscScalar eigenCalvFactor = config.get("eigen_calving_K");
 
   PetscReal sea_level = 0;
 

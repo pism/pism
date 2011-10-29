@@ -21,6 +21,7 @@
 #include "flowlaws.hh"
 #include "NCVariable.hh"
 #include "enthalpyConverter.hh"
+#include "pism_options.hh"
 
 
 static char help[] =

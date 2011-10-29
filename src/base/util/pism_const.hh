@@ -27,8 +27,6 @@
 
 #include "udunits.h"
 
-class NCConfigVariable;
-
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
 using namespace std;
@@ -63,7 +61,6 @@ bool is_increasing(const vector<double> &a);
 
 PetscErrorCode setVerbosityLevel(PetscInt level);
 PetscInt       getVerbosityLevel();
-PetscErrorCode verbosityLevelFromOptions();
 PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 
 void endPrintRank();
@@ -122,49 +119,5 @@ inline double convert(double value, const char spec1[], const char spec2[]) {
 
   return value * slope + intercept;
 }
-
-// handy functions for processing options:
-PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string text, set<string> choices,
-			       string default_value, string &result, bool &flag);
-
-PetscErrorCode PISMOptionsString(string option, string text,
-				 string &result, bool &flag, bool allow_empty_arg = false);
-PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_value,
-				      vector<string>& result, bool &flag);
-
-PetscErrorCode PISMOptionsInt(string option, string text,
-			      PetscInt &result, bool &is_set);
-PetscErrorCode PISMOptionsIntArray(string option, string text,
-				   vector<PetscInt> &result, bool &is_set);
-
-PetscErrorCode PISMOptionsReal(string option, string text,
-			       PetscReal &result, bool &is_set);
-PetscErrorCode PISMOptionsRealArray(string option, string text,
-				    vector<PetscReal> &result, bool &is_set);
-
-PetscErrorCode PISMOptionsIsSet(string option, bool &result);
-PetscErrorCode PISMOptionsIsSet(string option, string descr, bool &result);
-
-PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
-PetscErrorCode check_old_option_and_stop(
-    MPI_Comm com, const char old_name[], const char new_name[]);
-PetscErrorCode stop_if_set(MPI_Comm com, const char name[]);
-PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, double *b, string &keyword);
-PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string str, vector<double> &result);
-
-// usage message and required options; drivers use these
-PetscErrorCode stop_on_version_option();
-PetscErrorCode show_usage_and_quit(
-    MPI_Comm com, const char execname[], const char usage[]);
-PetscErrorCode show_usage_check_req_opts(
-    MPI_Comm com, const char execname[], vector<string> required_options,
-    const char usage[]);
-
-// config file initialization:
-PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
-			   NCConfigVariable &config, NCConfigVariable &overrides);
-
-// debugging:
-PetscErrorCode pism_wait_for_gdb(MPI_Comm com, PetscMPIInt rank);
 
 #endif

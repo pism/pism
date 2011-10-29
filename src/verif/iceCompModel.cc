@@ -35,6 +35,7 @@
 #include "PISMStressBalance.hh"
 #include "enthalpyConverter.hh"
 #include "NCTool.hh"
+#include "pism_options.hh"
 
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
@@ -1318,14 +1319,14 @@ PetscErrorCode IceCompModel::reportErrors() {
 /*
  Try
 
- pismv -test V -y 1000 -part_grid -ssa_method fd_pik -o fig4-blue.nc
+ pismv -test V -y 1000 -part_grid -ssa_method fd -cfbc -o fig4-blue.nc
  pismv -test V -y 1000 -part_grid -ssa_method fd -o fig4-green.nc
 
  to try to reproduce Figure 4.
 
  Try
 
- pismv -test V -y 3000 -ssa_method fd_pik -o fig5.nc -calving_at_thickness 250 -part_grid
+ pismv -test V -y 3000 -ssa_method fd -cfbc -o fig5.nc -calving_at_thickness 250 -part_grid
 
  with -Mx 51, -Mx 101, -Mx 201 for figure 5,
 
@@ -1333,11 +1334,11 @@ PetscErrorCode IceCompModel::reportErrors() {
 
  for 6a and 6b,
 
- pismv -test V -y 300 -ssa_method fd_pik -part_grid -o fig6-cd.nc
+ pismv -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-cd.nc
 
  for 6c and 6d,
 
- pismv -test V -y 300 -ssa_method fd_pik -part_grid -part_redist -o fig6-ef.nc
+ pismv -test V -y 300 -ssa_method fd -cfbc -part_grid -part_redist -o fig6-ef.nc
 
  for 6e and 6f.
 

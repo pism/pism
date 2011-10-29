@@ -22,6 +22,7 @@
 #include "PISMOcean.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
+#include "pism_options.hh"
 
 POConstant::POConstant(IceGrid &g, const NCConfigVariable &conf)
   : PISMOceanModel(g, conf) {

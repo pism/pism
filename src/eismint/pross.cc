@@ -26,6 +26,7 @@
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
 #include "LocalInterpCtx.hh"
+#include "pism_options.hh"
 
 static char help[] =
   "Driver for EISMINT-Ross diagnostic velocity computation in ice shelf.\n"
@@ -587,7 +588,6 @@ int main(int argc, char *argv[]) {
     set<string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
-    ssa_choices.insert("fd_pik");
     string ssa_method = "fd";
 
     ierr = PetscOptionsBegin(com, "", "PROSS options", ""); CHKERRQ(ierr);

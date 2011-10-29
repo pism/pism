@@ -46,6 +46,8 @@ static char help[] =
 #include "exactTestsIJ.h"
 #include "SSATestCase.hh"
 #include <math.h>
+#include "pism_options.hh"
+
 class SSATestCaseConst: public SSATestCase
 {
 public:

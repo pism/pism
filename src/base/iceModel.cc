@@ -31,6 +31,7 @@
 #include "basal_resistance.hh"
 #include "enthalpyConverter.hh"
 #include "PISMProf.hh"
+#include "pism_options.hh"
 
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)

@@ -23,6 +23,7 @@
 #include "PISMOcean.hh"
 #include "PISMStressBalance.hh"
 #include "bedrockThermalUnit.hh"
+#include "pism_options.hh"
 
 
 //! \file iMtemp.cc Methods of IceModel which implement the cold-ice, temperature-based formulation of conservation of energy.

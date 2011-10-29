@@ -27,6 +27,7 @@ static char help[] =
 #include "eismint/iceEISModel.hh"
 #include "eismint/icePSTexModel.hh"
 #include "ismip/iceMISMIPModel.hh"
+#include "pism_options.hh"
 
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"

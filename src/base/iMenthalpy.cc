@@ -26,6 +26,7 @@
 #include "PISMOcean.hh"
 #include "bedrockThermalUnit.hh"
 #include "enthalpyConverter.hh"
+#include "pism_options.hh"
 
 //! \file iMenthalpy.cc Methods of IceModel which implement the enthalpy formulation of conservation of energy.
 

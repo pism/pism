@@ -25,7 +25,7 @@
 #include "PASeariseGreenland.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
-
+#include "pism_options.hh"
 
 ///// PA_SeaRISE_Greenland
 

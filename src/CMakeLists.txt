@@ -35,6 +35,7 @@ add_library (pismutil
   base/util/Mask.cc
   base/util/NCTool.cc
   base/util/pism_const.cc
+  base/util/pism_options.cc
   base/util/pism_default_config.cc
   base/util/PISMTime.cc
   base/varcEnthalpyConverter.cc

@@ -44,6 +44,7 @@ static char help[] =
 #include "pism_const.hh"
 #include "NCVariable.hh"
 #include "deformation.hh"
+#include "pism_options.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

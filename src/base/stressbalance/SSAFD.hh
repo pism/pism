@@ -89,6 +89,8 @@ protected:
   bool view_nuh;
   PetscViewer nuh_viewer;
   PetscInt nuh_viewer_size;
+
+  bool dump_system_matlab;
 };
 
 //! Constructs a new SSAFD

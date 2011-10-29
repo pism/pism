@@ -41,6 +41,7 @@
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
 #include "PISMYieldStress.hh"
+#include "pism_options.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -405,6 +406,7 @@ typedef int NormType; // YUCK.
 %include "IceGrid.hh"
 %include "NCVariable.hh"
 %include "pism_const.hh"
+%include "pism_options.hh"
 %include "Timeseries.hh"
 %include "iceModelVec.hh"
 %include "PISMVars.hh"

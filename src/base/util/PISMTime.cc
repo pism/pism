@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMTime.hh"
+#include "pism_options.hh"
 
 PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf)
   : com(c), config(conf) {

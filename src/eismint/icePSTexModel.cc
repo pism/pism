@@ -23,6 +23,7 @@
 #include "SSA.hh"
 #include "PISMStressBalance.hh"
 #include "NCTool.hh"
+#include "pism_options.hh"
 
 const PetscScalar 
   DEFAULT_PHI_STRONG = 15.0,  // till friction angle outside of stream

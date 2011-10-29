@@ -29,6 +29,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "NCTool.hh"
+#include "pism_options.hh"
 
 template <class Model, class Mod>
 class PLapseRates : public Mod

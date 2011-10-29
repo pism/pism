@@ -26,6 +26,7 @@ static char help[] =
 #include "flowlaws.hh"
 #include "enthalpyConverter.hh"
 #include "basal_resistance.hh"
+#include "pism_options.hh"
 
 /*!
  * Current inputs of the Blatter solver:

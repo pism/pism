@@ -31,6 +31,7 @@ static char help[] =
 #include "NCVariable.hh"
 #include "SSAFD.hh"
 #include "SSATestCase.hh"
+#include "pism_options.hh"
 
 const double H0 = 600;          // meters
 const double V0 = 300/secpera;  // 300 meters/year

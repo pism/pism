@@ -21,6 +21,7 @@
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
 #include "PISMProf.hh"
+#include "pism_options.hh"
 
 SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
          IceFlowLaw &i, EnthalpyConverter &e,

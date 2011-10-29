@@ -26,6 +26,7 @@
 #include "flowlaw_factory.hh"
 #include "PISMStressBalance.hh"
 #include "PISMOcean.hh"
+#include "pism_options.hh"
 
 PetscErrorCode MISMIPBasalResistanceLaw::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;

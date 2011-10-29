@@ -39,6 +39,7 @@
 #include "basal_resistance.hh"
 #include "PISMProf.hh"
 #include "LocalInterpCtx.hh"
+#include "pism_options.hh"
 
 //! Set default values of grid parameters.
 /*!

@@ -23,6 +23,7 @@ static char help[] =
   "(regression) test.\n\n";
 
 #include "pism_const.hh"
+#include "pism_options.hh"
 #include "iceModelVec.hh"
 #include "flowlaws.hh" // IceFlowLaw
 #include "PISMIO.hh"

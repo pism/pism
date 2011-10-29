@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMYieldStress.hh"
+#include "pism_options.hh"
 
 PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;

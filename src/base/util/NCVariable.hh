@@ -122,6 +122,7 @@ public:
   virtual PetscErrorCode flag_from_option(string, string);
   virtual PetscErrorCode scalar_from_option(string, string);
   virtual PetscErrorCode string_from_option(string, string);
+  virtual PetscErrorCode keyword_from_option(string, string, string);
   virtual void import_from(const NCConfigVariable &other);
   virtual void update_from(const NCConfigVariable &other);
 
@@ -143,6 +144,7 @@ public:
   virtual PetscErrorCode read(string filename);
   virtual PetscErrorCode write(string filename) const;
   virtual void prepend_history(string message);
+  virtual void set_from_config(const NCConfigVariable &input);
 protected:
   virtual PetscErrorCode write_attributes(const NCTool &nc, int, nc_type, bool) const;
 };

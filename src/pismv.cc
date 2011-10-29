@@ -31,6 +31,7 @@ static char help[] =
 
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
+#include "pism_options.hh"
 
 // a wrapper that seems to be necessary to make std::transform below work
 static inline char pism_toupper(char c)

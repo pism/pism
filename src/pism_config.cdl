@@ -88,9 +88,6 @@ netcdf pism_config {
     pism_config:write_ssa_system_to_matlab = "no";
     pism_config:write_ssa_system_to_matlab_doc = "Specifies whether to write the SSA system to a matlab file";
 
-    pism_config:do_ssa_enhancement = "no";
-    pism_config:do_ssa_enhancement_doc = "Set an enhancement factor for SSA-calculation.";
-
     pism_config:scalebrutalSet = "false";
     pism_config:scalebrutalSet_doc = "Enhance sliding speed brutally.";
 
@@ -154,6 +151,9 @@ netcdf pism_config {
 
     pism_config:compute_grain_size_using_age = "no";
     pism_config:compute_grain_size_using_age_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law";
+
+    pism_config:do_e_age_coupling = "no";
+    pism_config:do_e_age_coupling_doc = "Couple the SIA enhancement factor to age as in [\\ref Greve].";
 
     pism_config:start_year = 0;
     pism_config:start_year_doc = "years; Start year.";
@@ -254,8 +254,8 @@ netcdf pism_config {
     pism_config:max_low_temp_count = 10;
     pism_config:max_low_temp_count_doc = "Maximum number of grid points with ice temperature below global_min_allowed_temp.";
 
-    pism_config:eigen_calving = 0.0;
-    pism_config:eigen_calving_doc = "Set proportionality constant to determine calving rate from strain rates";
+    pism_config:eigen_calving_K = 0.0;
+    pism_config:eigen_calving_K_doc = "Set proportionality constant to determine calving rate from strain rates";
 
     pism_config:calving_at_thickness = 50.0;
     pism_config:calving_at_thickness_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";

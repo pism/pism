@@ -24,6 +24,7 @@
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "pism_options.hh"
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 

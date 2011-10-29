@@ -24,6 +24,7 @@ static char help[] = "Driver for PISM software unit tests.\n";
 
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
+#include "pism_options.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

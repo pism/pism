@@ -22,6 +22,7 @@
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "pism_options.hh"
 
 ///// PISMSurfaceModel base class:
 

@@ -24,6 +24,7 @@ static char help[] =
   "  software (regression) test.\n\n";
 
 #include "pism_const.hh"
+#include "pism_options.hh"
 #include "iceModelVec.hh"
 #include "flowlaws.hh" // IceFlowLaw
 #include "basal_resistance.hh" // IceBasalResistancePlasticLaw

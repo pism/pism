@@ -26,6 +26,7 @@ static char help[] =
 #include <vector>
 #include <petscda.h>
 #include "pism_const.hh"
+#include "pism_options.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
 #include "PISMIO.hh"

@@ -19,7 +19,7 @@
 static char help[] =
   "Tests PISMBedThermalUnit using Test K.  Sans IceModel.\n\n";
 
-#include "pism_const.hh"
+#include "pism_options.hh"
 #include "IceGrid.hh"
 #include "PISMIO.hh"
 #include "NCVariable.hh"

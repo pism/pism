@@ -19,6 +19,7 @@
 #include "SSAFD.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
+#include "pism_options.hh"
 
 SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                 IceFlowLaw &i, EnthalpyConverter &ec,
@@ -77,6 +78,8 @@ PetscErrorCode SSAFD::allocate_fd() {
   view_nuh = false;
   nuh_viewer_size = 300;
   nuh_viewer = PETSC_NULL;
+
+  dump_system_matlab = false;
   return 0;
 }
 
@@ -127,6 +130,14 @@ An explicit driving stress was specified instead and cannot be used.");
     ierr = verbPrintf(2,grid.com,
       "  using PISM-PIK calving-front stress boundary condition ...\n"); CHKERRQ(ierr);
   }
+
+  // option to save linear system in Matlab-readable ASCII format at end of each
+  // numerical solution of SSA equations; can be given with or without filename prefix
+  // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get 
+  // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
+  string tempPrefix;
+  ierr = PISMOptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format",
+			  dump_system_matlab); CHKERRQ(ierr);
 
   return 0;
 }
@@ -791,22 +802,27 @@ PetscErrorCode SSAFD::solve() {
 PetscErrorCode SSAFD::writeSSAsystemMatlab() {
   PetscErrorCode ierr;
   PetscViewer    viewer;
-  char           file_name[PETSC_MAX_PATH_LEN], yearappend[PETSC_MAX_PATH_LEN];
+  string prefix = "pism_SSAFD", file_name;
+  char           yearappend[PETSC_MAX_PATH_LEN];
 
   IceModelVec2S component;
   ierr = component.create(grid, "temp_storage", false); CHKERRQ(ierr);
 
-  // FIXME: the file name prefix should be an option
-  strcpy(file_name,"pism_SSAFD");
+  bool flag;
+  ierr = PISMOptionsString("ssafd_matlab",
+                           "Save the linear system to an ASCII .m file. Sets the file prefix.",
+                           prefix, flag); CHKERRQ(ierr);
+
   snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m", grid.time->year());
-  strcat(file_name,yearappend);
+  file_name = prefix + string(yearappend);
+
   ierr = verbPrintf(2, grid.com,
-             "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
-             file_name); CHKERRQ(ierr);
+                    "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
+                    file_name.c_str()); CHKERRQ(ierr);
   ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
   ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
-  ierr = PetscViewerFileSetName(viewer, file_name);CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(viewer, file_name.c_str());CHKERRQ(ierr);
 
   // get the command which started the run
   string cmdstr = pism_args_string();
@@ -990,9 +1006,9 @@ The resulting effective viscosity times thickness is regularized by ensuring tha
 its minimum is at least \f$\epsilon\f$.  This regularization constant is an argument.
 
 In this implementation we set \f$\nu H\f$ to a constant anywhere the ice is
-thinner than a certain minimum.  See SSAStrengthExtension and compare how SSAFD_PIK
-handles this issue.
- */
+thinner than a certain minimum. See SSAStrengthExtension and compare how this
+issue is handled when -cfbc is set.
+*/
 PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal epsilon) {
   PetscErrorCode ierr;
   PISMVector2 **uv;
@@ -1002,10 +1018,9 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar ssa_enhancement_factor=1.0;
-  double n_glen  = ice.exponent();
-  if (config.get_flag("do_ssa_enhancement"))
-    ssa_enhancement_factor=config.get("ssa_enhancement_factor");
+  PetscScalar ssa_enhancement_factor = config.get("ssa_enhancement_factor"),
+    n_glen = ice.exponent(),
+    nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
   const PetscScalar dx = grid.dx, dy = grid.dy;
 
@@ -1048,7 +1063,7 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
         }
 
         // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
-        result(i,j,o) /= pow(ssa_enhancement_factor,1/n_glen);
+        result(i,j,o) *= nu_enhancement_scaling;
 
         // We ensure that nuH is bounded below by a positive constant.
         result(i,j,o) = PetscMax(epsilon,result(i,j,o));

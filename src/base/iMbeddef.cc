@@ -20,6 +20,7 @@
 #include "PISMBedDef.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "pism_options.hh"
 
 PetscErrorCode IceModel::allocate_bed_deformation() {
   PetscErrorCode ierr;

@@ -24,6 +24,7 @@
 #include "PISMOcean.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "pism_options.hh"
 
 template<class Model, class Mod>
 class PScalarForcing : public Mod

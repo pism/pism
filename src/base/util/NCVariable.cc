@@ -17,11 +17,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <algorithm>
+#include <sstream>
+#include <set>
 
 #include "NCVariable.hh"
 #include "NCSpatialVariable.hh"
 #include "PISMIO.hh"
-#include "pism_const.hh"
+#include "pism_options.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
 
@@ -1169,6 +1171,36 @@ PetscErrorCode NCConfigVariable::string_from_option(string name, string paramete
   return 0;
 }
 
+//! \brief Set a keyword parameter from a command-line option.
+/*!
+ * This sets the parameter "parameter" after checking the "-name" command-line
+ * option. This option requires an argument, which has to match one of the
+ * keyword given in a comma-separated list "choices_list".
+ */
+PetscErrorCode NCConfigVariable::keyword_from_option(string name,
+                                                     string parameter,
+                                                     string choices_list) {
+  PetscErrorCode ierr;
+  istringstream arg(choices_list);
+  std::set<string> choices;     // the method "set(...)" is getting in the way here
+  string keyword, tmp;
+  bool flag;
+
+  // Split the list:
+  while (getline(arg, tmp, ','))
+    choices.insert(tmp);
+
+  ierr = PISMOptionsList(com, "-" + name,
+                         get_string(parameter + "_doc"),
+			 choices,
+                         get_string(parameter), keyword, flag); CHKERRQ(ierr);
+
+  if (flag)
+    this->set_string(parameter, keyword);
+
+  return 0;
+}
+
 //! Print all the attributes of a configuration variable.
 PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
   PetscErrorCode ierr;
@@ -1541,6 +1573,13 @@ PetscErrorCode NCGlobalAttributes::write(string filename) const {
 
   return 0;
 }
+
+void NCGlobalAttributes::set_from_config(const NCConfigVariable &config) {
+  this->set_string("title", config.get_string("run_title"));
+  this->set_string("institution", config.get_string("institution"));
+  this->set_string("command", pism_args_string());
+}
+
 
 //! Writes global attributes to a file. Prepends the history string.
 PetscErrorCode NCGlobalAttributes::write_attributes(const NCTool &nc, int, nc_type, bool) const {

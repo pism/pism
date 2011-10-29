@@ -24,6 +24,7 @@
 #include "PISMStressBalance.hh"
 #include "PISMDiagnostic.hh"
 #include "PISMTime.hh"
+#include "pism_options.hh"
 
 //! Initializes the code writing scalar time-series.
 PetscErrorCode IceModel::init_timeseries() {

@@ -25,6 +25,7 @@
 #include "PISMStressBalance.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "pism_options.hh"
 
 // boundary conditions for tests F, G (same as EISMINT II Experiment F)
 const PetscScalar IceCompModel::Ggeo = 0.042;

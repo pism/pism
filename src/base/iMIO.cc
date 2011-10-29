@@ -32,6 +32,7 @@
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "PISMProf.hh"
+#include "pism_options.hh"
 
 //! Save model state in NetCDF format.
 /*!
