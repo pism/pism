@@ -275,7 +275,21 @@ if __name__ == "__main__":
   u.set_name("_computed",0)
   u.write(output_file)
 
-  
+  # finish by updating history global attribute in output file
+  try:
+    from netCDF4 import Dataset as CDF
+  except:
+    from netCDF3 import Dataset as CDF
+  nc = CDF(output_file, 'a')  # append
+  import time
+  historysep = ' '
+  historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
+  if 'history' in nc.ncattrs():
+    nc.history = historystr + nc.history
+  else:
+    nc.history = historystr
+  nc.close()
+
   # Draw a pretty picture
   tz = tozero.ToProcZero(grid)
   tauc_a = tz.communicate(tauc)
