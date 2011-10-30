@@ -2,12 +2,36 @@ import PISM
 
 from siple.gradient.forward import NonlinearForwardProblem
 from siple.gradient.nonlinear import InvertNLCG, InvertIGN
-from siple.reporting import msg, std_pause
+from siple.reporting import msg
+import siple
 
 
 from linalg_pism import PISMLocalVector
 from math import sqrt
 import numpy as np
+
+class CaptureLogger:
+  def __init__(self):
+    self.diary =""
+    siple.reporting.add_logger(self)
+
+  def __call__(self,message,severity):
+    self.diary += message
+    self.diary += "\n"
+
+  def write(self,outfile):
+    try:
+      import netCDF4 as netCDF
+    except:
+      import netCDF3 as netCDF
+    d = netCDF.Dataset(outfile,'a')
+    if 'siple_log' in d.ncattrs():
+      d.siple_log = self.diary + "\n" + d.run_Log
+    else:
+      d.siple_log = self.diary
+    d.close()
+
+
 
 def pism_print_logger(message,severity):
   verb = severity
@@ -18,7 +42,7 @@ def pism_pause(message_in=None,message_out=None):
   import sys, os
   fd = sys.stdin.fileno()
   if os.isatty(fd):
-    return std_pause(message_in,message_out)
+    return siple.reporting.std_pause(message_in,message_out)
   if not message_in is None:
     PISM.verbPrintf(1,com,message_in+"\n")
   import sys

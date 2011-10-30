@@ -28,7 +28,8 @@ import siple
 import PISM
 
 from pismssaforward import InvSSARun, SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
-tauc_params, LinearPlotListener, PlotListener, pism_print_logger, pism_pause, pauseListener
+tauc_params, LinearPlotListener, PlotListener, pism_print_logger, pism_pause, pauseListener, \
+CaptureLogger
 from linalg_pism import PISMLocalVector as PLV
 import pismssaforward
 
@@ -77,9 +78,10 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
       l2_weight.set(0.)
       grounded = PISM.MASK_GROUNDED
       for (i,j) in solver.grid.points():
-        if mask[i-1,j-1]==grounded and mask[i-1,j]==grounded and mask[i-1,j+1]==grounded \
-           and mask[i,j-1]==grounded and mask[i,j]==grounded and mask[i,j+1]==grounded \
-           and mask[i+1,j-1]==grounded and mask[i+1,j]==grounded and mask[i+1,j+1]==grounded:
+        # if mask[i-1,j-1]==grounded and mask[i-1,j]==grounded and mask[i-1,j+1]==grounded \
+        #    and mask[i,j-1]==grounded and mask[i,j]==grounded and mask[i,j+1]==grounded \
+        #    and mask[i+1,j-1]==grounded and mask[i+1,j]==grounded and mask[i+1,j+1]==grounded:
+        if mask[i,j] == grounded:
           l2_weight[i,j] = 1
 
 class Vel2TaucPlotListener(PlotListener):
@@ -210,7 +212,7 @@ if __name__ == "__main__":
     tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
     tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
-    do_final_plot = PISM.optionsFlag("-inv_plot","perform visualization at the end of the computation",default=False)
+    do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
@@ -274,7 +276,7 @@ if __name__ == "__main__":
   else:
     zeta = PISM.IceModelVec2S();
     zeta.create(grid, "zeta", True, PISM.util.WIDE_STENCIL)
-    with PISM.util.Access(nocomm=[tauc],comm=[zeta]):
+    with PISM.util.Access(nocomm=tauc,comm=zeta):
       for (i,j) in grid.points():
         zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
 
@@ -308,6 +310,7 @@ if __name__ == "__main__":
   params.deriv_eps = 0.
 
   # Run the inversion
+  logger = CaptureLogger();
   solver=Solver(forward_problem,params=params)  
   if do_plotting:
     solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax))
@@ -323,7 +326,7 @@ if __name__ == "__main__":
   if config.get_string('inv_ssa_tauc_param')=='ident':
     tauc = zeta
   else:
-    with PISM.util.Access(nocomm=[zeta],comm=[tauc]):
+    with PISM.util.Access(nocomm=zeta,comm=tauc):
       for (i,j) in grid.points():
         (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
 
@@ -333,6 +336,7 @@ if __name__ == "__main__":
   tauc_true.write(output_file)
   u.set_name("_computed",0)
   u.write(output_file)
+  logger.write(output_file)
   
   # Draw a pretty picture
   tz = tozero.ToProcZero(grid)
