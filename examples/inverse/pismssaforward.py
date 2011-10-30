@@ -349,6 +349,26 @@ class InvertSSAIGN(InvertIGN):
     """
     return InvertIGN.solve(self,x,y,deltaLInf)
 
+class LinearPlotListener:  
+  def __init__(self,grid):
+    import tozero
+    self.tz_scalar = tozero.ToProcZero(grid,dof=1)
+    self.tz_vector = tozero.ToProcZero(grid,dof=2)
+
+  def __call__(self,solver,count,x,y,d,r,*args):
+    from matplotlib import pyplot as pp
+    import siple
+    d = self.tz_scalar.communicate(d.core())
+    x = self.tz_scalar.communicate(x.core())
+    r = self.tz_vector.communicate(r.core())
+    y = self.tz_vector.communicate(y.core())
+
+    if not d is None:
+      r *= PISM.secpera
+      y *= PISM.secpera
+
+      self.iteration(solver,count,x,y,d,r,*args)
+
 class PlotListener:  
   def __init__(self,grid):
     import tozero

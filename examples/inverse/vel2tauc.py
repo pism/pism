@@ -28,7 +28,7 @@ import siple
 import PISM
 
 from pismssaforward import InvSSARun, SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
-tauc_params, PlotListener, pism_print_logger, pism_pause, pauseListener
+tauc_params, LinearPlotListener, PlotListener, pism_print_logger, pism_pause, pauseListener
 from linalg_pism import PISMLocalVector as PLV
 import pismssaforward
 
@@ -86,8 +86,17 @@ class Vel2TaucPlotListener(PlotListener):
   def __init__(self,grid,Vmax):
     PlotListener.__init__(self,grid)
     self.Vmax = Vmax
+    
+    self.figure =None
+    
   def iteration(self,solver,count,x,Fx,y,d,r,*args):      
     import matplotlib.pyplot as pp
+
+    if self.figure is None:
+      self.figure = pp.figure()
+    else:
+      pp.figure(self.figure.number)
+
     l2_weight=self.tz_scalar.communicate(solver.forward_problem.solver.range_l2_weight)
 
     pp.clf()
@@ -118,6 +127,54 @@ class Vel2TaucPlotListener(PlotListener):
     pp.jet()
     pp.title('-d')
     
+    pp.ion()
+    pp.show()
+
+class Vel2TaucLinPlotListener(LinearPlotListener):
+  def __init__(self,grid,Vmax):
+    LinearPlotListener.__init__(self,grid)
+    self.Vmax = Vmax
+
+    self.figure =None
+
+  def iteration(self,solver,count,x,y,d,r,*args):      
+    import matplotlib.pyplot as pp
+
+    if self.figure is None:
+      self.figure = pp.figure()
+    else:
+      pp.figure(self.figure.number)
+
+    l2_weight=self.tz_scalar.communicate(solver.forward_problem.solver.range_l2_weight)
+
+    pp.clf()
+
+    V = self.Vmax
+    pp.subplot(1,3,1)
+    rx = l2_weight*r[0,:,:]
+    rx = np.maximum(rx,-V)
+    rx = np.minimum(rx,V)
+    pp.imshow(rx,origin='lower')
+    pp.colorbar()
+    pp.title('ru')
+    pp.jet()
+
+    pp.subplot(1,3,2)
+    ry = l2_weight*r[1,:,:]
+    ry = np.maximum(ry,-V)
+    ry = np.minimum(ry,V)
+    pp.imshow(ry,origin='lower')
+    pp.colorbar()
+    pp.title('rv')
+    pp.jet()
+
+    d *= -1
+    pp.subplot(1,3,3)      
+    pp.imshow(d,origin='lower')
+    pp.colorbar()
+    pp.jet()
+    pp.title('-d')
+
     pp.ion()
     pp.show()
   
@@ -153,7 +210,7 @@ if __name__ == "__main__":
     tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
     tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
-    do_final_plot = PISM.optionsFlag("-inv_plot","perform visualization at the end of the computation",default=True)
+    do_final_plot = PISM.optionsFlag("-inv_plot","perform visualization at the end of the computation",default=False)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
@@ -254,6 +311,8 @@ if __name__ == "__main__":
   solver=Solver(forward_problem,params=params)  
   if do_plotting:
     solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax))
+    if method=='ign':
+      solver.addLinearIterationListener(Vel2TaucLinPlotListener(grid,Vmax))
   if do_pause:
     solver.addIterationListener(pauseListener)
 
@@ -274,22 +333,7 @@ if __name__ == "__main__":
   tauc_true.write(output_file)
   u.set_name("_computed",0)
   u.write(output_file)
-
-  # finish by updating history global attribute in output file
-  try:
-    from netCDF4 import Dataset as CDF
-  except:
-    from netCDF3 import Dataset as CDF
-  nc = CDF(output_file, 'a')  # append
-  import time
-  historysep = ' '
-  historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
-  if 'history' in nc.ncattrs():
-    nc.history = historystr + nc.history
-  else:
-    nc.history = historystr
-  nc.close()
-
+  
   # Draw a pretty picture
   tz = tozero.ToProcZero(grid)
   tauc_a = tz.communicate(tauc)

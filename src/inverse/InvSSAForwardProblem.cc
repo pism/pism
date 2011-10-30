@@ -198,7 +198,6 @@ int findNextFile(const char *basename)
   {
     std::ostringstream os_nc;
     os_nc << basename << n << ".nc";
-    int a = access(os_nc.str().c_str(),W_OK);
     bool does_not_exist = (access(os_nc.str().c_str(),W_OK) == -1) && (errno==ENOENT);
     if( does_not_exist )
     {
@@ -290,7 +289,7 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
       }
       if(driving_stress != NULL)
       {
-        surface->write(c_ncfile);        
+        driving_stress->write(c_ncfile);        
       }
       
       
