@@ -143,6 +143,19 @@ PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
+  // Get the till friction angle from the the context and ignore options that
+  // would be used to set it otherwise.
+  IceModelVec2S *till_phi_input = dynamic_cast<IceModelVec2S*>(vars.get("tillphi"));
+  if (till_phi_input != NULL) {
+    ierr = till_phi.copy_from(*till_phi_input); CHKERRQ(ierr);
+
+    ierr = ignore_option(grid.com, "-plastic_phi"); CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-topg_to_phi"); CHKERRQ(ierr);
+
+    // We do not allow re-gridding in this case.
+
+    return 0;
+  }
 
   if (topg_to_phi_set && plastic_phi_set) {
     PetscPrintf(grid.com, "ERROR: only one of -plastic_phi and -topg_to_phi is allowed.\n");
