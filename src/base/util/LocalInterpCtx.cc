@@ -26,13 +26,13 @@
 //! Construct a local interpolation context from arrays of parameters.
 /*!
   This method constructs a class from existing information already read from a NetCDF file and stored
-  in arrays.  
-  
+  in arrays.
+
   The essential quantities to compute are where each processor should start within the NetCDF file grid
   (<tt>start[]</tt>) and how many grid points, from the starting place, the processor has.  The resulting
   portion of the grid is stored in array \c a (a field of the \c LocalInterCtx).
 
-  We make conservative choices about \c start[] and \c count[].  In particular, the portions owned by 
+  We make conservative choices about \c start[] and \c count[].  In particular, the portions owned by
   processors \e must overlap at one point in the NetCDF file grid, but they \e may overlap more than that
   (as computed here).
 
@@ -53,7 +53,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid,
   report_range = true;
 
   input.print(com);
-  PetscReal eps = 1e-6;         // tolerance (in meters)
+  PetscReal eps = 1e-6;         // tolerance (one micron)
   if (!(grid.x.front() >= input.x_min - eps && grid.x.back() <= input.x_max + eps &&
         grid.y.front() >= input.y_min - eps && grid.y.back() <= input.y_max + eps &&
         z_min >= input.z_min - eps && z_max <= input.z_max + eps)) {
@@ -122,14 +122,38 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid,
   for (PetscInt i = 0; i < grid.xm; ++i) {
     double x = grid.x[grid.xs + i];
 
-    for (unsigned int k = start[X]; k < start[X] + count[X]; ++k) {
-      if (input.x[k] <= x && input.x[k + 1] >= x) {
-        x_left[i]  = PetscMin(k     - start[X], count[X] - 1);
-        x_right[i] = PetscMin(k + 1 - start[X], count[X] - 1);
-        x_alpha[i] = (x - input.x[k]) / (input.x[k + 1] - input.x[k]);
+    // This is here to make it crash and burn if something goes wrong, instead
+    // of quietly doing the wrong thing.
+    x_left[i]  = -1;
+    x_right[i] = -1;
+    x_alpha[i] = -1;
+
+    for (unsigned int k = 0; k < count[X] - 1; ++k) {
+      unsigned kk = k + start[X];
+      if (input.x[kk] <= x && input.x[kk + 1] >= x) {
+        x_left[i]  = PetscMin(k,     count[X] - 1);
+        x_right[i] = PetscMin(k + 1, count[X] - 1);
+        x_alpha[i] = (x - input.x[kk]) / (input.x[kk + 1] - input.x[kk]);
         break;
       }
     }
+  }
+
+  // Check the smallest and the biggest x (all other indices are guaranteed to
+  // be initialized; these may remain "-1" because of rounding errors).
+
+  // (Note that would not be necessary if we didn't have "eps" at the top of
+  // this constructor, but that would make our code less robust. Also note that
+  // the code below does not cover the case of dx < eps with eps defined above.
+  // Something is seriously wrong if dx < "one micron", though.)
+  if (x_left[0] == -1)
+    x_alpha[0] = x_left[0] = x_right[0] = 0;
+
+  if (x_left[grid.xm - 1] == -1) {
+    int k = grid.xm - 1;
+    x_left[k]  = count[X] - 1;
+    x_right[k] = count[X] - 1;
+    x_alpha[k] = 0;
   }
 
   // y-direction
@@ -140,15 +164,35 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid,
   for (PetscInt j = 0; j < grid.ym; ++j) {
     double y = grid.y[grid.ys + j];
 
-    for (unsigned int k = start[Y]; k < start[Y] + count[Y]; ++k) {
-      if (input.y[k] <= y && input.y[k + 1] >= y) {
-        y_left[j]  = PetscMin(k     - start[Y], count[Y] - 1);
-        y_right[j] = PetscMin(k + 1 - start[Y], count[Y] - 1);
-        y_alpha[j] = (y - input.y[k]) / (input.y[k + 1] - input.y[k]);
+    // This is here to make it crash and burn if something goes wrong, instead
+    // of quietly doing the wrong thing.
+    y_left[j]  = -1;
+    y_right[j] = -1;
+    y_alpha[j] = -1;
+
+    for (unsigned int k = 0; k < count[Y] - 1; ++k) {
+      unsigned int kk = k + start[Y];
+      if (input.y[kk] <= y && input.y[kk + 1] >= y) {
+        y_left[j]  = PetscMin(k,     count[Y] - 1);
+        y_right[j] = PetscMin(k + 1, count[Y] - 1);
+        y_alpha[j] = (y - input.y[kk]) / (input.y[kk + 1] - input.y[kk]);
         break;
       }
     }
   }
+
+  // Check the smallest and the biggest y (all other indices are guaranteed to
+  // be initialized; these may remain "-1" because of rounding errors).
+  if (y_left[0] == -1)
+    y_alpha[0] = y_left[0]  = y_right[0] = 0;
+
+  if (y_left[grid.ym - 1] == -1) {
+    int k = grid.ym - 1;
+    y_left[k]  = count[Y] - 1;
+    y_right[k] = count[Y] - 1;
+    y_alpha[k] = 0;
+  }
+
 }
 
 
@@ -208,4 +252,3 @@ PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
 		    t_len, convert(time, "seconds", "years")); CHKERRQ(ierr);
   return 0;
 }
-

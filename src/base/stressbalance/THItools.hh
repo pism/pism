@@ -153,12 +153,15 @@ static void HexGrad(const PetscReal dphi[][3],const PetscReal zn[],PetscReal dz[
   }
 }
 
-static void HexComputeGeometry(PetscInt q,PetscReal hx,PetscReal hy,const PetscReal dz[restrict],PetscReal phi[restrict],PetscReal dphi[restrict][3],PetscReal *restrict jw)
+static void HexComputeGeometry(PetscInt q, PetscReal hx, PetscReal hy,
+                               const PetscReal dz[restrict], PetscReal phi[restrict],
+                               PetscReal dphi[restrict][3], PetscReal *restrict jw)
 {
-  const PetscReal
-    jac[3][3] = {{hx/2,0,0}, {0,hy/2,0}, {dz[0],dz[1],dz[2]}}
-  ,ijac[3][3] = {{1/jac[0][0],0,0}, {0,1/jac[1][1],0}, {-jac[2][0]/(jac[0][0]*jac[2][2]),-jac[2][1]/(jac[1][1]*jac[2][2]),1/jac[2][2]}}
-  ,jdet = jac[0][0]*jac[1][1]*jac[2][2];
+  const PetscReal jac[3][3] = {{hx/2,0,0}, {0,hy/2,0}, {dz[0],dz[1],dz[2]}},
+    ijac[3][3] = {{1/jac[0][0],0,0},
+                  {0,1/jac[1][1],0},
+                  {-jac[2][0]/(jac[0][0]*jac[2][2]),-jac[2][1]/(jac[1][1]*jac[2][2]),1/jac[2][2]}},
+      jdet = jac[0][0]*jac[1][1]*jac[2][2];
   PetscInt i;
 
   for (i=0; i<8; i++) {

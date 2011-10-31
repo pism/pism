@@ -23,7 +23,7 @@
 
 //! \file PISMYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
 /*! \file PISMYieldStress.cc
-The output variable of this submodel is \c tauc, the pseudo-plastic yield stress 
+The output variable of this submodel is \c tauc, the pseudo-plastic yield stress
 field that is used in the ShallowStressBalance (=SSA in 2011) objects.
 
 In the default implementation PISMDefaultYieldStress [\ref BBssasliding], the
@@ -56,16 +56,16 @@ PetscErrorCode PISMDefaultYieldStress::allocate() {
 
 
 //! Initialize the pseudo-plastic till mechanical model.
-/*! 
+/*!
 The pseudo-plastic till basal resistance model is governed by this power law
 equation,
     \f[ \tau_b = - \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}, \f]
 where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$ is the basal shear stress and
-\f$U=(u,v)\f$ is the sliding velocity.  We call the scalar field 
+\f$U=(u,v)\f$ is the sliding velocity.  We call the scalar field
 \f$\tau_c(t,x,y)\f$ the \e pseudo \e yield \e stress.  The constant
 \f$U_{\mathtt{th}}\f$ is the \e threshhold \e speed, and \f$q\f$ is the \e pseudo
 \e plasticity \e exponent.  See IceBasalResistancePlasticLaw::drag().  See also
-basal_material_yield_stress() and basal_water_pressure() for important model equations.  
+basal_material_yield_stress() and basal_water_pressure() for important model equations.
 
 The strength of the saturated till material is modeled by a Mohr-Coulomb
 relation [\ref Paterson, \ref SchoofStream],
@@ -76,7 +76,7 @@ basal_water_pressure()),
 The determination of the till friction angle \f$\varphi(x,y)\f$  is important.
 It is assumed in this default model to be a
 time-independent factor which describes the strength of the unsaturated "dry"
-till material.  Thus it is assumed to change more slowly than the basal water 
+till material.  Thus it is assumed to change more slowly than the basal water
 pressure, and it follows that it changes more slowly than the yield stress and
 the basal shear stress.
 
@@ -268,7 +268,7 @@ pore (=basal) water pressure, and \f$\mu\f$ is a strength coefficient for the
 mineral till (at least, it is independent of \f$p_w\f$).  The difference
     \f[   N = \rho g H - p_w   \f]
 is the effective pressure on the till.
- 
+
 We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
 and by expressing the coefficient as the tangent of a till friction angle
 \f$\varphi\f$:
@@ -276,7 +276,7 @@ and by expressing the coefficient as the tangent of a till friction angle
 Option  \c -plastic_c0 controls it \f$c_0\f$; see [\ref Paterson] table 8.1
 regarding values.
 
-The major concern with this is the model for basal water pressure \f$p_w\f$.  
+The major concern with this is the model for basal water pressure \f$p_w\f$.
 See basal_water_pressure().  See also [\ref BBssasliding] for a discussion
 of a complete model using these tools.
 
@@ -311,7 +311,7 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
 
         if (m.grounded(i, j)) {
           // large yield stress if grounded and -ssa_floating_only is set
-          result(i, j) = high_tauc; 
+          result(i, j) = high_tauc;
         } else {
           result(i, j) = 0.0;
         }
@@ -361,9 +361,9 @@ this incomplete stress balance.)  Thus the pseudo yield stress
 for some (geometry-dependent) constant \f$C\f$.  Multiplying \f$|\mathbf{U}|\f$
 by \f$A\f$ in this equation corresponds to dividing \f$\tau_c\f$ by \f$A^q\f$.
 The current method sets-up the mechanism, and updateYieldStressUsingBasalWater()
-actually computes it.  Note that the mechanism has no effect whatsoever if 
+actually computes it.  Note that the mechanism has no effect whatsoever if
 \f$q=0\f$, which is the purely plastic case. In that case there is \e no direct
-relation between the yield stress and the sliding velocity, and the difference 
+relation between the yield stress and the sliding velocity, and the difference
 between the driving stress and the yield stress is entirely held by the membrane
 stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1\f$.)
 */
@@ -379,8 +379,8 @@ stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
 /*!
 Computes the till friction angle \f$\phi(x,y)\f$ at a location, namely
-\c IceModel::vtillphi, as the following increasing, piecewise-linear function of 
-the bed elevation \f$b(x,y)\f$.  Let 
+\c IceModel::vtillphi, as the following increasing, piecewise-linear function of
+the bed elevation \f$b(x,y)\f$.  Let
 	\f[ M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}}) \f]
 be the slope of the nontrivial part.  Then
 	\f[ \phi(x,y) = \begin{cases}
@@ -490,7 +490,7 @@ The basic model is
   p_{over} = \rho g H, \\
   p_w = \alpha\, \frac{W}{W_{\text{max}}}\, p_{over}
 \f}
-where 
+where
   - \f$\rho\f$ is the ice density (ice_density) and \f$g\f$ is gravity,
   - \f$H\f$ is the ice thickness (thk),
   - \f$p_{over}\f$ is the ice overburden pressure,
@@ -501,7 +501,7 @@ where
 If flags \c p.usebmr or \c p.usethkeff are set then this formula is modified;
 see the code below for details.
 
-Because both \c bmr and \c bwat are zero at points where base of ice is 
+Because both \c bmr and \c bwat are zero at points where base of ice is
 below the pressure-melting temperature, the modeled basal water pressure is
 zero when the base is frozen.
 
@@ -586,7 +586,7 @@ PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscScalar thk, PetscS
 
 PYS_bwp::PYS_bwp(PISMDefaultYieldStress *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMDefaultYieldStress>(m, g, my_vars) {
-  
+
   // set metadata:
   vars[0].init_2d("bwp", grid);
   set_attrs("subglacial (pore) water pressure", "", "Pa", "Pa", 0);
@@ -638,7 +638,7 @@ PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
   MaskQuery m(*model->mask);
 
   ierr = m.fill_where_floating(*result, fillval); CHKERRQ(ierr);
-  
+
   output = result;
   return 0;
 }

@@ -440,7 +440,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
       // Initialize the map from global to local degrees of freedom for this element.
       dofmap.reset(i,j,grid);
 
-      // Obtain the value of the solution at the adjacent nodes to the element.
+      // Obtain the value of the solution at the nodes adjacent to the element.
       dofmap.extractLocalDOFs(i,j,xg,x);
 
       // These values now need to be adjusted if some nodes in the element have
