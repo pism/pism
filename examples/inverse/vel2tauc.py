@@ -206,7 +206,6 @@ if __name__ == "__main__":
     method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
     rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=default_rms_error)
     tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp"],"ident")
-    print tauc_param_type
     ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=default_ssa_l2_coeff)
     ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=default_ssa_h1_coeff)
     tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
@@ -321,6 +320,8 @@ if __name__ == "__main__":
 
   rms_error /= PISM.secpera # m/s
   (zeta,u) = solver.solve(zeta,u_true,rms_error)
+
+  # u = u_true
 
   # Convert back from zeta to tauc
   if config.get_string('inv_ssa_tauc_param')=='ident':

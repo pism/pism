@@ -184,7 +184,7 @@ if __name__ == "__main__":
     tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
     tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
-    do_final_plot = PISM.optionsFlag("-inv_plot","perform visualization at the end of the computation",default=True)
+    do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=True)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)

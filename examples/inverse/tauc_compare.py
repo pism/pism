@@ -16,7 +16,9 @@ Example: %prog -N 100 -n 0.1"""
 parser = OptionParser(usage=usage)
 parser.add_option("-i","--input_file",type='string',
                     help='input file')
-parser.add_option("-c","--cap",type='float',default=None,
+parser.add_option("-c","--tauc_cap",type='float',default=200000,
+                    help='maximum cap for difference')
+parser.add_option("-r","--rel_cap",type='float',default=1.,
                     help='maximum cap for difference')
 
 
@@ -44,31 +46,21 @@ tauc[not_ice]  = 0
 tauc_true[not_ice] = 0
 tauc_diff[not_sliding] = 0.
 
-if not options.cap is None:
-  C = options.cap
-  tauc_diff = np.maximum(tauc_diff,-C)
-  tauc_diff = np.minimum(tauc_diff,C)
-
-  # tauc = np.maximum(tauc,-10*C)
-  # tauc = np.minimum(tauc,10*C)
-  # 
-  # tauc_true = np.maximum(tauc_true,-10*C)
-  # tauc_true = np.minimum(tauc_true,10*C)
-
 # difference figure  
 pp.clf()
-pp.imshow(tauc_diff.transpose()/tauc_true.transpose(),origin='lower')
+rel_cap = options.rel_cap
+pp.imshow(tauc_diff.transpose()/tauc_true.transpose(),origin='lower',vmin=-rel_cap,vmax=rel_cap)
 pp.title(r'$(\tau_c$ - true) / true')
 pp.colorbar()
 
 # side-by-side comparison like from 'vel2tauc.py -inv_final_plot'
 pp.figure()
 pp.subplot(1,2,1)
-pp.imshow(tauc.transpose(),origin='lower',vmin=0.0,vmax=200000.0)
+pp.imshow(tauc.transpose(),origin='lower',vmin=0.0,vmax=options.tauc_cap)
 pp.title(r'$\tau_c$  [from inversion]')
 pp.colorbar()
 pp.subplot(1,2,2)
-pp.imshow(tauc_true.transpose(),origin='lower',vmin=0.0,vmax=200000.0)
+pp.imshow(tauc_true.transpose(),origin='lower',vmin=0.0,vmax=options.tauc_cap)
 pp.title(r'true $\tau_c$   [prior]')
 pp.colorbar()
 

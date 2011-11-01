@@ -14,23 +14,24 @@ class CaptureLogger:
   def __init__(self):
     self.diary =""
     siple.reporting.add_logger(self)
+    self.rank = PISM.Context().rank
+    self.com = PISM.Context().com
+
 
   def __call__(self,message,severity):
-    self.diary += message
-    self.diary += "\n"
+	if self.rank == 0:
+	  self.diary += message
+	  self.diary += "\n"
 
   def write(self,outfile):
-    try:
-      import netCDF4 as netCDF
-    except:
-      import netCDF3 as netCDF
-    d = netCDF.Dataset(outfile,'a')
-    if 'siple_log' in d.ncattrs():
-      d.siple_log = self.diary + "\n" + d.run_Log
-    else:
-      d.siple_log = self.diary
-    d.close()
-
+    if self.rank == 0:
+      d = PISM.netCDF.Dataset(outfile,'a')
+      if 'siple_log' in d.ncattrs():
+        d.siple_log = self.diary + "\n" + d.run_Log
+      else:
+        d.siple_log = self.diary
+      d.close()
+    self.com.barrier()
 
 
 def pism_print_logger(message,severity):
@@ -41,6 +42,7 @@ def pism_print_logger(message,severity):
 def pism_pause(message_in=None,message_out=None):
   import sys, os
   fd = sys.stdin.fileno()
+  com = PISM.Context().com
   if os.isatty(fd):
     return siple.reporting.std_pause(message_in,message_out)
   if not message_in is None:
