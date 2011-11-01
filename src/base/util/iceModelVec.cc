@@ -96,7 +96,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
 //! \brief Get the object state counter.
 /*!
  * This method returns the "revision number" of an IceModelVec.
- * 
+ *
  * It can be used to determine it a field was updated and if a certain
  * computation needs to be re-done. One example is computing the smoothed bed
  * for the SIA computation, which is only necessary if the bed deformation code
@@ -178,10 +178,10 @@ PetscErrorCode  IceModelVec::destroy() {
 }
 
 //! Result: min <- min(v[j]), max <- max(v[j]).
-/*! 
+/*!
 PETSc manual correctly says "VecMin and VecMax are collective on Vec" but
-GlobalMax,GlobalMin \e are needed, when localp==true, to get correct 
-values because Vecs created with DACreateLocalVector() are of type 
+GlobalMax,GlobalMin \e are needed, when localp==true, to get correct
+values because Vecs created with DACreateLocalVector() are of type
 VECSEQ and not VECMPI.  See src/trypetsc/localVecMax.c.
  */
 PetscErrorCode IceModelVec::range(PetscReal &min, PetscReal &max) {
@@ -207,7 +207,7 @@ PetscErrorCode IceModelVec::range(PetscReal &min, PetscReal &max) {
 
 
 //! Computes the norm of an IceModelVec by calling PETSc VecNorm.
-/*! 
+/*!
 See comment for range(); because local Vecs are VECSEQ, needs a reduce operation.
 See src/trypetsc/localVecMax.c.
 
@@ -224,7 +224,7 @@ PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
     // needs a reduce operation; use PetscGlobalMax if NORM_INFINITY,
     //   otherwise PetscGlobalSum; carefully in NORM_2 case
     if (n == NORM_1_AND_2) {
-      SETERRQ1(1, 
+      SETERRQ1(1,
          "IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))\n",
          name.c_str());
     } else if (n == NORM_1) {
@@ -279,7 +279,7 @@ PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x, IceModelVec &
   ierr = result.checkAllocated(); CHKERRQ(ierr);
   ierr = checkCompatibility("add", x); CHKERRQ(ierr);
   ierr = checkCompatibility("add", result); CHKERRQ(ierr);
-  
+
   ierr = VecWAXPY(result.v, alpha, x.v, v); CHKERRQ(ierr);
   return 0;
 }
@@ -379,7 +379,7 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
 //! Sets the variable name to \c name and resets metadata.
 PetscErrorCode  IceModelVec::set_name(string new_name, int N) {
   reset_attrs(N);
-  
+
   if (N == 0)
     name = new_name;
 
@@ -397,11 +397,11 @@ with a conversion to the glaciological units set here.
 PetscErrorCode  IceModelVec::set_glaciological_units(string my_units) {
 
   PetscErrorCode ierr;
-    
+
   for (int j = 0; j < dof; ++j) {
    ierr = vars[j].set_glaciological_units(my_units); CHKERRQ(ierr);
   }
-  
+
   return 0;
 }
 
@@ -414,8 +414,6 @@ PetscErrorCode IceModelVec::reset_attrs(int N) {
   output_data_type = NC_DOUBLE;
 
   vars[N].reset();
-  if (grid)
-    vars[N].variable_order = grid->config.get_string("output_variable_order");
 
   return 0;
 }
@@ -485,7 +483,7 @@ PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
   PetscErrorCode ierr;
   Vec g;
   LocalInterpCtx *lic = NULL;
-  
+
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
 
   if (lic != NULL) {
@@ -521,7 +519,7 @@ PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
   PetscErrorCode ierr;
   Vec g;
   LocalInterpCtx *lic = NULL;
-  
+
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
 
   if (lic != NULL) {
@@ -550,7 +548,7 @@ PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
 }
 
 //! Reads appropriate NetCDF variable(s) into an IceModelVec.
-PetscErrorCode IceModelVec::read(string filename, const unsigned int time) {           
+PetscErrorCode IceModelVec::read(string filename, const unsigned int time) {
   PetscErrorCode ierr;
   Vec g;
 
@@ -584,6 +582,7 @@ PetscErrorCode IceModelVec::define(const NCTool &nc, nc_type output_datatype) {
 
   for (int j = 0; j < dof; ++j) {
     vars[j].time_independent = time_independent;
+    vars[j].variable_order = grid->config.get_string("output_variable_order");
     ierr = vars[j].define(nc, dummy, output_datatype, write_in_glaciological_units); CHKERRQ(ierr);
   }
 
@@ -609,7 +608,7 @@ PetscErrorCode IceModelVec::write(string filename) {
   if (getVerbosityLevel() > 3) {
     ierr = PetscPrintf(grid->com, "  Writing %s...\n", name.c_str()); CHKERRQ(ierr);
   }
-  
+
   ierr = write(filename, output_data_type); CHKERRQ(ierr);
 
   return 0;
@@ -624,6 +623,7 @@ PetscErrorCode IceModelVec::write(string filename, nc_type nctype) {
     SETERRQ(1, "This method only supports IceModelVecs with dof == 1");
 
   vars[0].time_independent = time_independent;
+  vars[0].variable_order = grid->config.get_string("output_variable_order");
 
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
@@ -650,7 +650,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
                         grid->time->current()); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write(filename, NC_DOUBLE); CHKERRQ(ierr); 
+  ierr = write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
   return 0;
 }
