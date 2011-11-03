@@ -86,14 +86,14 @@ public:
 
   virtual PetscErrorCode update(bool fast);
 
-  virtual PetscErrorCode get_advective_2d_velocity(IceModelVec2V* &result) 
+  virtual PetscErrorCode get_advective_2d_velocity(IceModelVec2V* &result)
   { result = &vertically_averaged_velocity; return 0; }
 
   virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result)
-      { PetscErrorCode ierr = result->set(0.0); CHKERRQ(ierr); return 0; }
+  { PetscErrorCode ierr = result->set(0.0); CHKERRQ(ierr); return 0; }
 
   virtual PetscErrorCode get_max_diffusivity(PetscReal &Dmax)
-      { Dmax = 0; return 0; }
+  { Dmax = 0; return 0; }
 
   virtual PetscErrorCode get_max_2d_velocity(PetscReal &maxu, PetscReal &maxv);
 
@@ -103,32 +103,32 @@ public:
   virtual PetscErrorCode get_max_3d_velocity(PetscReal &maxu, PetscReal &maxv, PetscReal &maxw);
 
   virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &/*result*/)
-      { SETERRQ(2,"not implemented; implement by doing it"); return 0; }
+  { SETERRQ(2,"not implemented; implement by doing it"); return 0; }
 
   virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &/*result*/)
-      { SETERRQ(3,"not implemented; implement by getting max"); return 0; }
+  { SETERRQ(3,"not implemented; implement by getting max"); return 0; }
 
-  virtual PetscErrorCode get_principal_strain_rates(
-                IceModelVec2S &/*result_e1*/, IceModelVec2S &/*result_e2*/)
-      { SETERRQ(4,"not implemented; implement by vertical average"); return 0; }
+  virtual PetscErrorCode get_principal_strain_rates(IceModelVec2S &/*result_e1*/,
+                                                    IceModelVec2S &/*result_e2*/)
+  { SETERRQ(4,"not implemented; implement by vertical average"); return 0; }
 
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
   virtual PetscErrorCode stdout_report(string &/*result*/)
-      { return 0; }  // FIXME: implementation needed
+  { return 0; }  // FIXME: implementation needed
 
   virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
-      {  }  // FIXME: implementation needed
+  {  }  // FIXME: implementation needed
 
   virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
-      {  return 0; }  // FIXME: implementation needed
-
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/)
-  {  }  // FIXME: implementation needed?
+  {  return 0; }  // FIXME: implementation needed
 
 protected:
-  IceModelVec3 u,v;
+  IceModelVec3 u, v, Sigma;
   IceModelVec2V vertically_averaged_velocity;
+  IceModelVec2S basal_frictional_heating;
+
+  IceModelVec2S *topg, *usurf, *tauc;
 
   THI thi;
   DMMG *dmmg;
@@ -136,8 +136,10 @@ protected:
   PetscErrorCode allocate_blatter();
   PetscErrorCode deallocate_blatter();
   PetscErrorCode mesh_to_regular_grid();
-  PetscErrorCode regular_grid_to_mesh();
+  PetscErrorCode setup();
 
+  PetscErrorCode compute_basal_frictional_heating();
+  PetscErrorCode compute_volumetric_strain_heating();
 };
 
 #endif /* _BLATTERSTRESSBALANCE_H_ */

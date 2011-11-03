@@ -38,11 +38,11 @@ static char help[] =
 class SSATestCaseJ: public SSATestCase
 {
 public:
-  SSATestCaseJ( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &c ): 
+  SSATestCaseJ( MPI_Comm com, PetscMPIInt rank,
+                 PetscMPIInt size, NCConfigVariable &c ):
                  SSATestCase(com,rank,size,c)
   { };
-  
+
 protected:
   virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
 
@@ -50,7 +50,7 @@ protected:
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
+  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
     PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
 
 };
@@ -84,7 +84,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant for test J
   ierr = bed.set(0.0); CHKERRQ(ierr); // assures shelf is floating
   ierr = ice_mask.set(MASK_FLOATING); CHKERRQ(ierr);
-  ierr = enthalpy.set(528668.35); 
+  ierr = enthalpy.set(528668.35);
         CHKERRQ(ierr); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
@@ -92,7 +92,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   const PetscScalar nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
   const PetscScalar H0 = 500.0;       /* 500 m typical thickness */
 
-  // Test J has a viscosity that is independent of velocity.  So we force a 
+  // Test J has a viscosity that is independent of velocity.  So we force a
   // constant viscosity by settting the strength_extension
   // thickness larger than the given ice thickness. (max = 770m).
   ssa->strength_extension->set_notional_strength(nu0 * H0);
@@ -122,9 +122,9 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
         vel_bc(i,j).v = myv;
       }
     }
-  }  
+  }
 
-  ierr = surface.end_access(); CHKERRQ(ierr);    
+  ierr = surface.end_access(); CHKERRQ(ierr);
   ierr = thickness.end_access(); CHKERRQ(ierr);
   ierr = bc_mask.end_access(); CHKERRQ(ierr);
   ierr = vel_bc.end_access(); CHKERRQ(ierr);
@@ -142,12 +142,12 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ierr = vel_bc.beginGhostComm(); CHKERRQ(ierr);
   ierr = vel_bc.endGhostComm(); CHKERRQ(ierr);
 
-  ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
+  ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr);
 
-  return 0;    
+  return 0;
 }
 
-PetscErrorCode SSATestCaseJ::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
+PetscErrorCode SSATestCaseJ::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
                                            PetscReal x, PetscReal y,
                                            PetscReal *u, PetscReal *v)
 {
@@ -168,9 +168,9 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {  
+  {
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
@@ -201,14 +201,14 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      ierr = PISMOptionsInt("-Mx", "Number of grid points in the X direction", 
+      ierr = PISMOptionsInt("-Mx", "Number of grid points in the X direction",
                                                       Mx, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-My", "Number of grid points in the Y direction", 
+      ierr = PISMOptionsInt("-My", "Number of grid points in the Y direction",
                                                       My, flag); CHKERRQ(ierr);
       ierr = PISMOptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
                              ssa_choices, driver, driver, flag); CHKERRQ(ierr);
-             
-      ierr = PISMOptionsString("-o", "Set the output file name", 
+
+      ierr = PISMOptionsString("-o", "Set the output file name",
                                               output_file, flag); CHKERRQ(ierr);
       ierr = PISMOptionsInt("-verbose", "Verbosity level",
                             my_verbosity_level, flag); CHKERRQ(ierr);

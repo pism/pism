@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,45 @@
 #include "BlatterStressBalance.hh"
 #include "PISMOcean.hh"
 #include "IceGrid.hh"
+#include "PISMVars.hh"
+
+/*!
+ * FIXMEs:
+ *
+ * This setup does not allow depth-dependent anything.
+ *
+ * Periodic boundary conditions: we need a strength extension or something similar.
+ *
+ * We need to allow spatially-variable (and depth-dependent) ice hardness.
+ *
+ * We need to compute the basal frictional heating and the volumetric strain heating.
+ *
+ * We need to compute drag from tauc instead of just plugging it in (which is
+ * wrong). Alternatively, we can adjust THIFriction(...) so that it has tauc as
+ * an input (instead of beta0).
+ *
+ * We need to get rid of thi->alpha.
+ *
+ * The mesh_to_regular_grid() method needs to be fixed: it needs to interpolate
+ * u and v from mesh nodes to regular grid locations.
+ *
+ * We need to coarsen instead of refining. (The finest multigrid level is the
+ * one that needs to match the PISM grid.)
+ *
+ * We need to interpolate b (bed elevation), s (surface elevation) and beta0
+ * (tauc) into meshes used in all the multigrid levels. (So far we can use only
+ * one level.)
+ *
+ * We need to switch from using DMMG to SNESSetDM(...). See
+ * src/snes/examples/tutorials/ex{5,19,50}.c.
+ *
+ * We need to get the scaling straight. (From MKS to scaled variables in
+ * BlatterStressBalance::setup() and back in mesh_to_regular_grid().
+ *
+ * Right now the code in THI.cc has the no-slip boundary condition at the base
+ * hard-wired. This needs to change.
+ */
+
 
 BlatterStressBalance::BlatterStressBalance(IceGrid &g, PISMOceanModel *ocean_model, const NCConfigVariable &conf)
   : PISMStressBalance(g,NULL,NULL,ocean_model,conf)
@@ -39,89 +78,47 @@ BlatterStressBalance::~BlatterStressBalance()
 
 PetscErrorCode BlatterStressBalance::allocate_blatter() {
   PetscErrorCode ierr;
-  PetscInt i;
 
   ierr = THICreate(grid.com,&thi);CHKERRQ(ierr);
-  ierr = DMMGCreate(PETSC_COMM_WORLD,thi->nlevels,thi,&dmmg);CHKERRQ(ierr);
-  {
-    DA da;
-    int P = 2;
-    ierr = PetscOptionsBegin(grid.com,NULL,"Grid resolution options","");CHKERRQ(ierr);
-    {
-      if (thi->coarse2d) {
-        ierr = PetscOptionsInt("-blatter_zlevels",
-                               "Number of elements in z-direction on fine level","",thi->zlevels,&thi->zlevels,NULL); CHKERRQ(ierr);
-      } else {
-        ierr = PetscOptionsInt("-blatter_P",
-                               "Number of elements in z-direction on coarse level","",P,&P,NULL); CHKERRQ(ierr);
-      }
-    }
-    ierr = PetscOptionsEnd();CHKERRQ(ierr);
-    if (thi->coarse2d) {
-      ierr = DACreate2d(grid.com,DA_XYPERIODIC,DA_STENCIL_BOX,
-                        grid.My,grid.Mx,
-                        PETSC_DETERMINE,PETSC_DETERMINE,
-                        sizeof(Node)/sizeof(PetscScalar),1,0,0,&da);CHKERRQ(ierr);
-      da->ops->refinehierarchy  = DARefineHierarchy_THI;
-      da->ops->getinterpolation = DAGetInterpolation_THI;
-      ierr = PetscObjectCompose((PetscObject)da,"THI",(PetscObject)thi);CHKERRQ(ierr);
-    } else {
-      ierr = DACreate3d(grid.com,DA_YZPERIODIC,DA_STENCIL_BOX,
-                        P,grid.My,grid.Mx,
-                        1,PETSC_DETERMINE,PETSC_DETERMINE,
-                        sizeof(Node)/sizeof(PetscScalar),1,0,0,0,&da);CHKERRQ(ierr);
-    }
-    ierr = DASetFieldName(da,0,"x-velocity");CHKERRQ(ierr);
-    ierr = DASetFieldName(da,1,"y-velocity");CHKERRQ(ierr);
-    ierr = DMMGSetDM(dmmg,(DM)da);CHKERRQ(ierr);
-    ierr = DADestroy(da);CHKERRQ(ierr);
-  }
+  ierr = THISetup(grid.com, grid.da2, 2*grid.Lx, 2*grid.Ly, thi, &dmmg); CHKERRQ(ierr);
 
-  if (thi->tridiagonal) {
-    (DMMGGetDA(dmmg))->ops->getmatrix = DAGetMatrix_THI_Tridiagonal;
-  }
+  // now allocate u, v, and w:
 
-  {
-    /* Use the user-defined matrix type on all but the coarse level */
-    ierr = DMMGSetMatType(dmmg,thi->mattype);CHKERRQ(ierr);
-    /* PCREDUNDANT only works with AIJ, and so do the third-party direct solvers.  So when running in parallel, we can't
-     * use the faster (S)BAIJ formats on the coarse level. */
-    ierr = PetscFree(dmmg[0]->mtype);CHKERRQ(ierr);
-    ierr = PetscStrallocpy(MATAIJ,&dmmg[0]->mtype);CHKERRQ(ierr);
-  }
+  ierr =     u.create(grid, "uvel", true); CHKERRQ(ierr);
+  ierr =     u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
+			  "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
+  ierr =     u.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  u.write_in_glaciological_units = true;
 
-  /* Spectacularly ugly API, our function evaluation provides ghost values */
-  ierr = PetscOptionsSetValue("-dmmg_form_function_ghost","1");CHKERRQ(ierr);
+  ierr =     v.create(grid, "vvel", true); CHKERRQ(ierr);
+  ierr =     v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
+			  "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
+  ierr =     v.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  v.write_in_glaciological_units = true;
 
-  ierr = DMMGSetSNESLocal(dmmg,THIFunctionLocal,THIJacobianLocal_3D_Full,0,0);CHKERRQ(ierr);
+  ierr = vertically_averaged_velocity.create(grid, "bar", true); CHKERRQ(ierr); // components ubar, vbar
+  ierr = vertically_averaged_velocity.set_attrs("model_state",
+                                                "thickness-advective ice velocity (x-component)",
+                                                "m s-1", "", 0); CHKERRQ(ierr);
+  ierr = vertically_averaged_velocity.set_attrs("model_state",
+                                                "thickness-advective ice velocity (y-component)",
+                                                "m s-1", "", 1); CHKERRQ(ierr);
+  ierr = vertically_averaged_velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  vertically_averaged_velocity.write_in_glaciological_units = true;
 
-  if (thi->tridiagonal) {
-    ierr = DASetLocalJacobian(DMMGGetDA(dmmg),(DALocalFunction1)THIJacobianLocal_3D_Tridiagonal);CHKERRQ(ierr);
-  }
+  ierr = basal_frictional_heating.create(grid, "bfrict", false); CHKERRQ(ierr);
+  ierr = basal_frictional_heating.set_attrs("diagnostic",
+                                            "basal frictional heating",
+                                            "W m-2", ""); CHKERRQ(ierr);
+  ierr = basal_frictional_heating.set_glaciological_units("mW m-2"); CHKERRQ(ierr);
+  basal_frictional_heating.write_in_glaciological_units = true;
 
-  if (thi->coarse2d) {
-    for (i=0; i<DMMGGetLevels(dmmg)-1; i++) {
-      ierr = DASetLocalJacobian((DA)dmmg[i]->dm,(DALocalFunction1)THIJacobianLocal_2D);CHKERRQ(ierr);
-    }
-  }
-
-  for (i=0; i<DMMGGetLevels(dmmg); i++) {
-    /* This option is only valid for the SBAIJ format.  The matrices we assemble are symmetric, but the SBAIJ assembly
-     * functions will complain if we provide lower-triangular entries without setting this option. */
-    Mat B = dmmg[i]->B;
-    PetscTruth flg1,flg2;
-    ierr = PetscTypeCompare((PetscObject)B,MATSEQSBAIJ,&flg1);CHKERRQ(ierr);
-    ierr = PetscTypeCompare((PetscObject)B,MATMPISBAIJ,&flg2);CHKERRQ(ierr);
-    if (flg1 || flg2) {
-      ierr = MatSetOption(B,MAT_IGNORE_LOWER_TRIANGULAR,PETSC_TRUE);CHKERRQ(ierr);
-    }
-  }
-
-  ierr = MatSetOptionsPrefix(DMMGGetB(dmmg),"thi_");CHKERRQ(ierr);
-  ierr = DMMGSetFromOptions(dmmg);CHKERRQ(ierr);
-  ierr = THISetDMMG(thi,dmmg);CHKERRQ(ierr);
-
-  ierr = DMMGSetInitialGuess(dmmg,THIInitial);CHKERRQ(ierr);
+  // Sigma
+  ierr = Sigma.create(grid, "strainheat", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  ierr = Sigma.set_attrs("internal",
+                          "rate of strain heating in ice (dissipation heating)",
+	        	  "W m-3", ""); CHKERRQ(ierr);
+  ierr = Sigma.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -141,7 +138,14 @@ PetscErrorCode BlatterStressBalance::init(PISMVars &vars) {
 
   variables = &vars;
 
-  // FIXME: nontrivial initialization needed 
+  topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
+  if (topg == NULL) SETERRQ(1, "bedrock_altitude is not available");
+
+  usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
+  if (usurf == NULL) SETERRQ(1, "surface_altitude is not available");
+
+  tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
+  if (tauc == NULL) SETERRQ(1, "tauc is not available");
 
   return 0;
 }
@@ -156,20 +160,52 @@ PetscErrorCode BlatterStressBalance::update(bool fast) {
     PISMEnd();
   }
 
-  if (ocean) {
-    PetscReal sea_level;
-    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-    // FIXME: blatter object should know about sea level
-  }
+  // setup
+  ierr =  setup(); CHKERRQ(ierr);
 
+  // solve
   ierr = DMMGSolve(dmmg);CHKERRQ(ierr);
-  ierr = THISolveStatistics(thi,dmmg,0,"Full");CHKERRQ(ierr);
 
   // Transfer solution from the FEM mesh to the regular grid used in the rest
   // of PISM and compute the vertically-averaged velocity.
   ierr = mesh_to_regular_grid(); CHKERRQ(ierr);
-  
-  ierr = compute_vertical_velocity(&u, &v, basal_melt_rate, w); CHKERRQ(ierr); 
+
+  ierr = compute_vertical_velocity(&u, &v, basal_melt_rate, w); CHKERRQ(ierr);
+
+  // ierr =  compute_basal_frictional_heating(); CHKERRQ(ierr);
+
+  // ierr =  compute_volumetric_strain_heating(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode BlatterStressBalance::setup() {
+  PetscErrorCode ierr;
+  PrmNode **parameters;
+  DA da = (DA)dmmg[0]->dm;
+  ierr =  DAGetPrmNodeArray(da, &parameters); CHKERRQ(ierr);
+
+  ierr = topg->begin_access(); CHKERRQ(ierr);
+  ierr = usurf->begin_access(); CHKERRQ(ierr);
+  ierr = tauc->begin_access(); CHKERRQ(ierr);
+
+  // So far this is done on the coarsest level only.
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      parameters[i][j].b = (*topg)(i,j);
+      parameters[i][j].h = (*usurf)(i,j);
+      parameters[i][j].beta2 = (*tauc)(i,j);
+    }
+  }
+
+  ierr = topg->end_access(); CHKERRQ(ierr);
+  ierr = usurf->end_access(); CHKERRQ(ierr);
+  ierr = tauc->end_access(); CHKERRQ(ierr);
+
+  ierr =  DARestorePrmNodeArray(da, &parameters); CHKERRQ(ierr);
+
+  ierr = DAPrmNodeArrayCommBegin(da); CHKERRQ(ierr);
+  ierr = DAPrmNodeArrayCommEnd(da); CHKERRQ(ierr);
 
   return 0;
 }
@@ -177,15 +213,37 @@ PetscErrorCode BlatterStressBalance::update(bool fast) {
 PetscErrorCode BlatterStressBalance::mesh_to_regular_grid() {
   PetscErrorCode ierr;
 
+  PISMVector2 ***U;
+  PetscScalar *u_ij, *v_ij;
+  ierr = DAVecGetArray((DA)dmmg[0]->dm, dmmg[0]->x, &U); CHKERRQ(ierr);
+
+  ierr = u.begin_access(); CHKERRQ(ierr);
+  ierr = v.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      ierr = u.getInternalColumn(i,j,&u_ij); CHKERRQ(ierr);
+      ierr = v.getInternalColumn(i,j,&v_ij); CHKERRQ(ierr);
+
+      for (int k = 0; k < grid.Mz; ++k) {
+        u_ij[k] = U[i][j][1].u;
+        v_ij[k] = U[i][j][1].v;
+      }
+    }
+  }
+
+  ierr = v.end_access(); CHKERRQ(ierr);
+  ierr = u.end_access(); CHKERRQ(ierr);
+
+  ierr = DAVecRestoreArray((DA)dmmg[0]->dm, dmmg[0]->x, &U); CHKERRQ(ierr);
+
+  ierr = u.beginGhostComm(); CHKERRQ(ierr);
+  ierr = v.beginGhostComm(); CHKERRQ(ierr);
+  ierr = u.endGhostComm(); CHKERRQ(ierr);
+  ierr = v.endGhostComm(); CHKERRQ(ierr);
+
   return 0;
 }
-
-PetscErrorCode BlatterStressBalance::regular_grid_to_mesh() {
-  PetscErrorCode ierr;
-
-  return 0;
-}
-
 
 
 PetscErrorCode BlatterStressBalance::get_max_2d_velocity(PetscReal &maxu, PetscReal &maxv) {
@@ -208,7 +266,7 @@ PetscErrorCode BlatterStressBalance::get_max_3d_velocity(PetscReal &maxu, PetscR
   //   with less communication or better memory locality
 
   PetscErrorCode ierr;
-  
+
   ierr = u.begin_access(); CHKERRQ(ierr);
   ierr = v.begin_access(); CHKERRQ(ierr);
   ierr = w.begin_access(); CHKERRQ(ierr);
@@ -228,7 +286,7 @@ PetscErrorCode BlatterStressBalance::get_max_3d_velocity(PetscReal &maxu, PetscR
   }
   ierr = w.end_access(); CHKERRQ(ierr);
   ierr = v.end_access(); CHKERRQ(ierr);
-  ierr = u.end_access(); CHKERRQ(ierr);  
+  ierr = u.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&my_umax, &maxu, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&my_vmax, &maxv, grid.com); CHKERRQ(ierr);
@@ -237,12 +295,23 @@ PetscErrorCode BlatterStressBalance::get_max_3d_velocity(PetscReal &maxu, PetscR
   return 0;
 }
 
-
 PetscErrorCode BlatterStressBalance::extend_the_grid(PetscInt old_Mz) {
   PetscErrorCode ierr;
   ierr = u.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
   ierr = v.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
   ierr = w.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
+  ierr = Sigma.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
   return 0;
 }
 
+PetscErrorCode BlatterStressBalance::compute_basal_frictional_heating() {
+  PetscErrorCode ierr;
+  SETERRQ(1, "not implemented");
+  return 0;
+}
+
+PetscErrorCode BlatterStressBalance::compute_volumetric_strain_heating() {
+  PetscErrorCode ierr;
+  SETERRQ(1, "not implemented");
+  return 0;
+}

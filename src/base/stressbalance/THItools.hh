@@ -192,12 +192,6 @@ static void RangeUpdate(PetscReal *min,PetscReal *max,PetscReal x)
   if (x > *max) *max = x;
 }
 
-
-typedef struct {
-  PetscScalar u,v;
-} Node;
-
-
 /* PRange CLASS */
 
 typedef struct {
@@ -226,12 +220,6 @@ static PetscErrorCode PRangeMinMax(PRange *p,PetscReal min,PetscReal max)
 
 /* PrmNode CLASS */
 
-typedef struct {
-  PetscScalar b;                /* bed */
-  PetscScalar h;                /* thickness */
-  PetscScalar beta2;            /* friction */
-} PrmNode;
-
 static void PrmNodeHexGetZ(const PrmNode pn[],PetscInt k,PetscInt zm,PetscReal zn[])
 {
   const PetscScalar zm1 = zm-1,
@@ -247,37 +235,4 @@ static void PrmNodeHexGetZ(const PrmNode pn[],PetscInt k,PetscInt zm,PetscReal z
   for (i=0; i<8; i++) zn[i] = PetscRealPart(znl[i]);
 }
 
-#undef __FUNCT__  
-#define __FUNCT__ "DAGetPrmNodeArray"
-static PetscErrorCode DAGetPrmNodeArray(DA da,PrmNode ***prm)
-{
-  PetscErrorCode ierr;
-  DA             da2prm;
-  Vec            X;
-
-  PetscFunctionBegin;
-  ierr = PetscObjectQuery((PetscObject)da,"DA2Prm",(PetscObject*)&da2prm);CHKERRQ(ierr);
-  if (!da2prm) SETERRQ(PETSC_ERR_ARG_WRONG,"No DA2Prm composed with given DA");
-  ierr = PetscObjectQuery((PetscObject)da,"DA2Prm_Vec",(PetscObject*)&X);CHKERRQ(ierr);
-  if (!X) SETERRQ(PETSC_ERR_ARG_WRONG,"No DA2Prm_Vec composed with given DA");
-  ierr = DAVecGetArray(da2prm,X,prm);CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-#undef __FUNCT__  
-#define __FUNCT__ "DARestorePrmNodeArray"
-static PetscErrorCode DARestorePrmNodeArray(DA da,PrmNode ***prm)
-{
-  PetscErrorCode ierr;
-  DA             da2prm;
-  Vec            X;
-
-  PetscFunctionBegin;
-  ierr = PetscObjectQuery((PetscObject)da,"DA2Prm",(PetscObject*)&da2prm);CHKERRQ(ierr);
-  if (!da2prm) SETERRQ(PETSC_ERR_ARG_WRONG,"No DA2Prm composed with given DA");
-  ierr = PetscObjectQuery((PetscObject)da,"DA2Prm_Vec",(PetscObject*)&X);CHKERRQ(ierr);
-  if (!X) SETERRQ(PETSC_ERR_ARG_WRONG,"No DA2Prm_Vec composed with given DA");
-  ierr = DAVecRestoreArray(da2prm,X,prm);CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
 

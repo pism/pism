@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-static char help[] = 
+static char help[] =
   "The executable for testing the Blatter stress balance solver.\n";
 
 #include "BlatterStressBalance.hh"
@@ -28,14 +28,6 @@ static char help[] =
 #include "basal_resistance.hh"
 #include "pism_options.hh"
 
-/*!
- * Current inputs of the Blatter solver:
- * 
- * bed elevation, surface elevation, beta^2.
- *
- * They all go into PrmNode structures.
- */
-
 static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
@@ -45,7 +37,7 @@ static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
 
-  ierr = grid.createDA(); CHKERRQ(ierr);  
+  ierr = grid.createDA(); CHKERRQ(ierr);
 
   ierr = grid.printInfo(1); CHKERRQ(ierr);
 
@@ -65,6 +57,19 @@ static PetscErrorCode read_input_data(string filename, PISMVars &variables) {
   return 0;
 }
 
+//! \brief Write data to an output file.
+static PetscErrorCode write_data(string filename, PISMVars &variables) {
+  PetscErrorCode ierr;
+  // Get the names of all the variables allocated earlier:
+  set<string> vars = variables.keys();
+
+  for (set<string>::iterator i = vars.begin(); i != vars.end(); ++i) {
+    ierr = variables.get(*i)->write(filename); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 //! \brief Allocate IceModelVec2S variables.
 static PetscErrorCode allocate_variables(IceGrid &grid, PISMVars &variables) {
   PetscErrorCode ierr;
@@ -73,7 +78,7 @@ static PetscErrorCode allocate_variables(IceGrid &grid, PISMVars &variables) {
   surfelev = new IceModelVec2S;
   topg     = new IceModelVec2S;
   tauc     = new IceModelVec2S;
-  
+
   ierr = surfelev->create(grid, "usurf", false); CHKERRQ(ierr);
   ierr = surfelev->set_attrs("", "ice upper surface elevation",
                              "m", "surface_altitude"); CHKERRQ(ierr);
@@ -85,7 +90,7 @@ static PetscErrorCode allocate_variables(IceGrid &grid, PISMVars &variables) {
   ierr = variables.add(*topg); CHKERRQ(ierr);
 
   ierr = tauc->create(grid, "tauc", false); CHKERRQ(ierr);
-  ierr = tauc->set_attrs("diagnostic", 
+  ierr = tauc->set_attrs("diagnostic",
                          "yield stress for basal till (plastic or pseudo-plastic model)",
                          "Pa", ""); CHKERRQ(ierr);
   ierr = variables.add(*tauc); CHKERRQ(ierr);
@@ -119,11 +124,13 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {  
+  {
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    ierr = set_config_from_options(com, config); CHKERRQ(ierr);
+    ierr = setVerbosityLevel(2);
 
     ierr = verbPrintf(2, com,
                       "BLATTER_TEST: testing the Blatter stress balance solver.\n"); CHKERRQ(ierr);
@@ -167,7 +174,7 @@ int main(int argc, char *argv[]) {
     // This is never used (but it is a required argument of the
     // PISMStressBalance constructor).
     IceBasalResistancePlasticLaw basal(
-           config.get("plastic_regularization", "1/year", "1/second"), 
+           config.get("plastic_regularization", "1/year", "1/second"),
            config.get_flag("do_pseudo_plastic_till"),
            config.get("pseudo_plastic_q"),
            config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
@@ -178,17 +185,26 @@ int main(int argc, char *argv[]) {
 
     ierr =  read_input_data(input_file, variables); CHKERRQ(ierr);
 
-    // Allocate the Blatter solver:
+    // Initialize the Blatter solver:
     ierr = blatter.init(variables); CHKERRQ(ierr);
 
-    ierr = blatter.update(false); CHKERRQ(ierr); 
+    ierr = blatter.update(false); CHKERRQ(ierr);
 
     // Write results to an output file:
     PISMIO pio(&grid);
 
     ierr = pio.open_for_writing(output_file, false, true); CHKERRQ(ierr);
     ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0);
-    ierr = pio.close(); CHKERRQ(ierr); 
+    ierr = pio.close(); CHKERRQ(ierr);
+
+    ierr =  write_data(output_file, variables); CHKERRQ(ierr);
+
+    IceModelVec3 *u, *v, *w;
+    ierr =  blatter.get_3d_velocity(u, v, w); CHKERRQ(ierr);
+
+    ierr =  u->write(output_file); CHKERRQ(ierr);
+    ierr =  v->write(output_file); CHKERRQ(ierr);
+    ierr =  w->write(output_file); CHKERRQ(ierr);
 
     ierr =  deallocate_variables(variables); CHKERRQ(ierr);
 
