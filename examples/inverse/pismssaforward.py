@@ -33,6 +33,26 @@ class CaptureLogger:
       d.close()
     self.com.barrier()
 
+class CarefulCaptureLogger:
+  def __init__(self,filename):
+    if PISM.Context().rank == 0:
+      self.filename = filename
+    else:
+      self.filename = None
+    siple.reporting.add_logger(self)
+  
+  def __call__(self,message,severity):
+    if not self.filename is None:
+      d = PISM.netCDf.Dataset(self.filename,'a')
+      timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+      if 'siple_log' in d.ncattrs():
+        d.siple_log = "%s\n%s: %s" % (d.siple_log,timestamp,message)
+      else:
+        d.siple_log = "%s: %s" % (timestamp, message)
+      d.close()
+    self.com.barrier()
+
+
 
 def pism_print_logger(message,severity):
   verb = severity
@@ -59,7 +79,7 @@ def randVectorS(grid,scale):
   r = np.random.normal(scale=scale,size=shape)
   with PISM.util.Access(comm=rv):
     for (i,j) in grid.points():
-      rv[i,j] = r[i,j]
+      rv[i,j] = r[i-grid.xs,j-grid.ys]
   return rv
 
 def randVectorV(grid,scale):
@@ -70,8 +90,8 @@ def randVectorV(grid,scale):
   r_v = np.random.normal(scale=scale,size=shape)
   with PISM.util.Access(comm=rv):
     for (i,j) in grid.points():
-      rv[i,j].u = r_u[i,j]
-      rv[i,j].v = r_v[i,j]
+      rv[i,j].u = r_u[i-grid.xs,j-grid.ys]
+      rv[i,j].v = r_v[i-grid.xs,j-grid.ys]
   return rv
 
 tauc_params = {"ident":PISM.cvar.g_InvTaucParamIdent, 

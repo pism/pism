@@ -17,9 +17,10 @@ parser = OptionParser(usage=usage)
 parser.add_option("-i","--input_file",type='string',
                     help='input file')
 parser.add_option("-c","--tauc_cap",type='float',default=200000,
-                    help='maximum cap for difference')
-parser.add_option("-r","--rel_cap",type='float',default=1.,
-                    help='maximum cap for difference')
+                    help='maximum tauc value to display')
+
+parser.add_option("-e","--tauc_error_cap",type='float',default=0.2,
+                    help='maximum relative error to display')
 
 
 (options, args) = parser.parse_args()
@@ -46,10 +47,10 @@ tauc[not_ice]  = 0
 tauc_true[not_ice] = 0
 tauc_diff[not_sliding] = 0.
 
+
 # difference figure  
 pp.clf()
-rel_cap = options.rel_cap
-pp.imshow(tauc_diff.transpose()/tauc_true.transpose(),origin='lower',vmin=-rel_cap,vmax=rel_cap)
+pp.imshow(tauc_diff.transpose()/tauc_true.transpose(),origin='lower',vmin=-options.tauc_error_cap,vmax=options.tauc_error_cap)
 pp.title(r'$(\tau_c$ - true) / true')
 pp.colorbar()
 

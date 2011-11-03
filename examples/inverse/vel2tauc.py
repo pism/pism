@@ -24,6 +24,7 @@ from petsc4py import PETSc
 import numpy as np
 import tozero
 import siple
+import math
 
 import PISM
 
@@ -198,8 +199,8 @@ if __name__ == "__main__":
     """
 
   PISM.show_usage_check_req_opts(context.com,"ssa_forward",["-i"],usage)
-
-  for o in PISM.OptionsGroup(context.com,"","Invert test I"):
+  
+  for o in PISM.OptionsGroup(context.com,"","vel2tauc"):
     bootfile = PISM.optionsString("-i","input file")
     output_file = PISM.optionsString("-o","output file",default="vel2tauc_"+bootfile)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
@@ -217,6 +218,7 @@ if __name__ == "__main__":
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
+    noise = PISM.optionsReal("-rms_noise","pointwise rms noise to add (in m/a)",default=None)
 
   config.set_string("inv_ssa_tauc_param",tauc_param_type)
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
@@ -261,6 +263,13 @@ if __name__ == "__main__":
   u_true = PISM.util.standard2dVelocityVec(grid,name="_true")
   forward_problem.F(PLV(zeta_true),out=PLV(u_true))
 
+  if not noise is None:
+    u_noise = pismssaforward.randVectorV(grid,noise/math.sqrt(2))
+    unv = PLV(u_noise)
+    unv += PLV(u_true)
+  else:
+    u_noise = u_true
+  
   # Build the initial guess for tauc for the inversion.
   tauc = PISM.util.standardYieldStressVec(grid)
   if not tauc_guess_const is None:

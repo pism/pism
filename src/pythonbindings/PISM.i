@@ -42,6 +42,7 @@
 #include "LocalInterpCtx.hh"
 #include "PISMYieldStress.hh"
 #include "pism_options.hh"
+#include "SIAFD.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -202,6 +203,7 @@ typedef int NormType; // YUCK.
 
 %Pism_pointer_reference_is_always_output(IceModelVec2S)
 %Pism_pointer_reference_is_always_output(IceModelVec2V)
+%Pism_pointer_reference_is_always_output(IceModelVec3)
 
 
 // These methods are called from PISM.options.
@@ -219,7 +221,25 @@ typedef int NormType; // YUCK.
 // So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
 %rename verbPrintf _verbPrintf;
 
-
+%extend PISMVars
+{
+  %pythoncode
+  {
+    def __init__(self,*args):
+      this = _cpp.new_PISMVars()
+      try: self.this.append(this)
+      except: self.this = this
+      if len(args)>1:
+        raise ValueError("PISMVars can only be constructed from nothing, an IceModelVec, or a list of such.")
+      if len(args)==1:
+        if isinstance(args[0],IceModelVec):
+          self.add(args[0])
+        else:
+          # assume its a list of vecs
+          for v in args[0]:
+            self.add(v)
+  }
+}
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
 // elegant solution.
 %extend IceModelVec2S
@@ -419,6 +439,17 @@ typedef int NormType; // YUCK.
 %include "rheology/flowlaws.hh"
 %include "enthalpyConverter.hh"
 %include "stressbalance/ShallowStressBalance.hh"
+%include "SSB_Modifier.hh"
+%template(PISMDiag_SIAFD) PISMDiag<SIAFD>;
+# Swig is confused about SIAFD being concrete.  Changing
+# using PISMComponent_Diag::update;
+# in its interface to 
+# virtual PetscErrorCode update(bool) { return 0; }
+# convinces SWIG that it is concrete.  Is it because the
+# implementation of update comes from a class that is itself abstract?
+# Regardless, we assure SWIG that the class is concrete.
+%feature("notabstract") SIAFD;
+%include "SIAFD.hh"
 
 %include "iceModel.hh"
 
