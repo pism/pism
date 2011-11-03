@@ -8,6 +8,7 @@ PISM_SOURCE_DIR=$3
 EXT=""
 if [ $# -ge 4 ] && [ "$4" == "-python" ]
 then
+  PYTHONPATH=${PISM_PATH}
   PISM_PATH=${PISM_SOURCE_DIR}/examples/python/ssa_tests
   EXT=".py"
 fi

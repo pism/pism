@@ -118,4 +118,11 @@ if(NOT PISM_PYTHON_MATCHES)
 endif()
 " )
 
+add_custom_target (install_python_bindings_in_the_build_directory ALL
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/site-packages/ ${CMAKE_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_MODULE_LOCATION} ${CMAKE_BINARY_DIR}/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_MODULE_NAME}.py ${CMAKE_BINARY_DIR}/PISM/
+  VERBATIM
+  DEPENDS ${SWIG_MODULE_cpp_REAL_NAME})
+
 endif(Pism_BUILD_PYTHON_BINDINGS)
