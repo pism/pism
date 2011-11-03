@@ -8,14 +8,16 @@
 \hfill P.~Wesseling, (2001)  \emph{Principles of Computational Fluid Dynamics}, pp.~560--561 \cite{Wesseling}
 \bigskip
 
-\subsection{Ideas}  Verification is a crucial task for a code as complicated as PISM.\index{PISM!verification of}  It is the essentially mathematical task of checking that the predictions of the numerical code are close to the predictions of the continuum model (the one which the numerical code claims to approximate).  In verification there is no comparison between model output and observations of nature.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to the numerical approximations of those solutions.
+\subsection{Ideas}  Verification\index{PISM!verification of} is the essentially mathematical task of checking that the predictions of the numerical code are close to the predictions of a continuum model, the one which the numerical code claims to approximate.  It is a crucial task for a code as complicated as PISM. In verification there is no comparison between model output and observations of nature.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to their numerical approximations.
 
 Reference \cite{Roache} gives a broad discussion of verification and validation in computational fluid dynamics. See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models, and \cite{BBssasliding,SchoofStream} for verification using an exact solution to the SSA equations for ice streams.  
 
-In PISM there is a separate executable \texttt{pismv} which is used for
+In PISM there is a separate executable \texttt{pismv}, which is used
+for SIA-related verification, and there are additional scripts for SSA-related
 verification.  The source codes which are verified by \texttt{pismv} are,
-however, exactly the same, in exactly the same source files, as is run by the
-non-verification executables \texttt{pismr}, \texttt{pisms}, etc.  In technical terms, \texttt{pismv} runs a derived class of the base class \texttt{IceModel}\index{IceModel C++ class!derived class for verification}.  All PISM executables run \texttt{IceModel}, but derived classes add bits of code, in this case the exact solutions.
+however, exactly the same source files, as are run by the
+non-verification executables \texttt{pismr}, \texttt{pisms}, etc.  In
+technical terms, \texttt{pismv} runs a derived class of the PISM base class.
 
 \begin{table}[ht]
 \centering
@@ -41,6 +43,29 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREP] \\
 \end{table}
 
 \begin{table}[ht]
+\centering
+\caption{Canonical PISM \index{executables!\texttt{pismv}!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests-exec}
+\small
+\begin{tabular}{@{}llll}\toprule
+\textbf{Test} & \textbf{Example invocation}  \\ \midrule
+A & \texttt{pismv -test A -Mx 61 -My 61 -Mz 11 -y 25000} \\
+B & \texttt{pismv -test B -Mx 61 -My 61 -Mz 11 -ys 422.45 -y 25000}  \\
+C & \texttt{pismv -test C -Mx 61 -My 61 -Mz 11 -y 15208.0}  \\
+D & \texttt{pismv -test D -Mx 61 -My 61 -Mz 11 -y 25000}  \\
+E & \texttt{pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000}  \\
+F & \texttt{pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000}  \\
+G & \texttt{pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000}  \\
+H & \texttt{pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso} \\
+I & FIXME: use .py \texttt{ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11 } \\
+J & FIXME: use .py \texttt{ssa_testj -ssa_method fd -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12} \\
+K & \texttt{pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000} \\
+L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\
+\bottomrule
+\normalsize
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
   \centering
   \caption{pismv command-line options}
   \begin{tabular}{lp{0.7\linewidth}}
@@ -57,80 +82,41 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREP] \\
  \label{tab:pismv-options}
 \end{table}
 
-\begin{table}[ht]
-\centering
-\caption{Canonical PISM \index{executables!\texttt{pismv}!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests-exec}
-\small
-\begin{tabular}{@{}llll}\toprule
-\textbf{Test} & \textbf{Example invocation}  \\ \midrule
-A & \texttt{pismv -test A -Mx 61 -My 61 -Mz 11 -y 25000} \\
-B & \texttt{pismv -test B -Mx 61 -My 61 -Mz 11 -ys 422.45 -y 25000}  \\
-C & \texttt{pismv -test C -Mx 61 -My 61 -Mz 11 -y 15208.0}  \\
-D & \texttt{pismv -test D -Mx 61 -My 61 -Mz 11 -y 25000}  \\
-E & \texttt{pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000}  \\
-F & \texttt{pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000}  \\
-G & \texttt{pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000}  \\
-H & \texttt{pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso} \\
-I & \texttt{ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11 } \\
-J & \texttt{ssa_testj -ssa_method fd -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12} \\
-K & \texttt{pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000} \\
-L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\
-\bottomrule
-\normalsize
-\end{tabular}
-\end{table}
+Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.  Table \ref{tab:tests-exec} shows how to run each of them on a coarse grids.  Table \ref{tab:pismv-options} gives the special verification-related options of the \texttt{pismv} executable.
 
-Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.  Table \ref{tab:tests-exec} shows how to run each of them on a coarse grids.
+Numerical errors are not, however, the dominant reasons why ice sheet models give imperfect results.  The largest sources of errors include those from using the wrong (e.g.~over-simplified or incorrectly-parameterized) continuum model, and from observational or pre-processing errors present in input data.  Our focus here on numerical errors has a model-maintenance goal.  It is \emph{easier} to maintain code by quantitatively confirming that it produces small errors in cases where those can be measured, rather than ``eyeballing'' results to see that they are ``right'' according to human judgment.
 
-Numerical errors are not the dominant reasons why ice sheet models give imperfect results.  Other sources of ``errors'' include those from using the wrong (e.g.~over-simplified or incorrectly-parameterized) continuum model, and from observational or pre-processing errors present in input data.  Our focus here on numerical errors has a model-maintenance goal as much as any other, because it is \emph{easier} to maintain code by quantitatively confirming that it produces small errors in cases where those can be measured, rather than ``eyeballing'' results to see that they are ``right'' according to human intuition.
-
-
-\subsection{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit of zero size \cite{MortonMayers}.  For example, in the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the unreachable continuum limit $(0,0,0)$.  By ``measuring the error for each grid'' we mean computing a norm (or norms) of the difference between the numerical solution and the exact solution.
-
-The goal of verification is not generally to see that the error is zero at any stage on the refinement path, or even to show that the error is small in a predetermined absolute sense.  Rather the goals are
+\subsection{Refinement}  The goal of verification is not generally to see that the error is zero at any particular resolution, or even to show that the error is small in a predetermined absolute sense.  Rather the goals are
 \begin{itemize}
 \item to see that the error \emph{is} decreasing,
 \item to measure the rate at which it decreases, and
-\item to develop a realistic sense of the magnitude of numerical error which might occur in a realistic ice sheet model run.
+\item to develop a sense of the magnitude of numerical error which occurs in a realistic ice sheet model run.
 \end{itemize}
-Knowing the error decay rate may even give a prediction of how fine a grid is necessary to achieve a desired smallness for the numerical error.
+Knowing the error decay rate may give a prediction of how fine a grid is necessary to achieve a desired smallness for the numerical error.
 
-For an example of a refinement path, consider the goal of evaluating the
-isothermal shallow ice approximation components of PISM.  One available exact
-solution is the Halfar similarity solution \cite{Halfar83}, with zero
-accumulation, namely test B.  Here is a refinement path for evaluating
-numerical error relative to test B: \index{refinement path!example} \index{executables!\texttt{pismv}}
+Therefore one must ``go down'' a grid refinement ``path'' and measure numerical error for each grid \cite{Roache}.  The refinement path is defined\index{refinement path!definition} by a sequence of spatial grid cell sizes which decrease toward the refinement limit of zero size \cite{MortonMayers}.  In PISM the timestep $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  In PISM one specifies the number of grid points, thus the grid cell sizes because the overall dimensions of the computational box are normally fixed; see subsection \ref{subsect:coords}.  By ``measuring the error for each grid'' we mean computing a norm (or norms) of the difference between the numerical solution and the exact solution.
+
+For example, in tests of the thermomechanically-coupled SIA model one refines in three dimensions, and these runs produced figures 13, 14, and 15 of \cite{BBL}:\index{refinement path!example}
 \begin{quote}\small
 \begin{verbatim}
-pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31 -Mz 11
-pismv -test B -ys 422.45 -y 25000 -Mx 61 -My 61 -Mz 11
-pismv -test B -ys 422.45 -y 25000 -Mx 121 -My 121 -Mz 11
-pismv -test B -ys 422.45 -y 25000 -Mx 241 -My 241 -Mz 11
+pismv -test G -max_dt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61 -z_spacing equal
+pismv -test G -max_dt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91 -z_spacing equal
+pismv -test G -max_dt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121 -z_spacing equal
+pismv -test G -max_dt 10.0 -y 25000 -Mx 181 -My 181 -Mz 181 -z_spacing equal
+pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241 -z_spacing equal
+pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361 -z_spacing equal
 \end{verbatim}
 \normalsize\end{quote}
-One specifies the number of grid points, but this is equivalent to specifying the grid cell sizes if the overall dimensions of the computational box is fixed; see subsection \ref{subsect:coords}.  The refinement path is the sequence of triples $(\Delta x,\Delta y,\Delta t)$ with $\Delta x = \Delta y = 80,40,20,10$ and where $\Delta t$ is determined adaptively by a stability criterion (see subsection \ref{subsect:adapt}).  Note that the vertical grid spacing $\Delta z$ is fixed because this test is isothermal and the error does not depend on changing $\Delta z$.  The above four runs produce (parts of) figures 7, 8, 9, and 10 of \cite{BLKCB}, which show that the isothermal mass conservation scheme does a reasonable job of approximating the evolving surface.  Future improvements in the numerical scheme may make the error decrease faster or be smaller.
-
-For thermocoupled tests one refines in three dimensions.  For example, the runs\index{refinement path!example}
-\begin{quote}\small
-\begin{verbatim}
-pismv -test G -max_dt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61
-pismv -test G -max_dt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91
-pismv -test G -max_dt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121
-pismv -test G -max_dt 10.0 -y 25000 -Mx 181 -My 181 -Mz 181
-pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
-pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
-\end{verbatim}
-\normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, require a supercomputer.  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  Appropriate use \texttt{-skip} especially accelerates such fine-grid runs; see section \ref{sec:practical-usage}.
+The last two runs require a supercomputer!  In fact the $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps. Appropriate use of parallelism (\texttt{mpiexec -n NN pismv}) and of the \texttt{-skip} modification to adaptive timestepping accelerates such fine-grid runs; see section \ref{sec:practical-usage}.
 
 
 \subsection{Sample verification results}  Figures \ref{fig:thickerrsB} through
-\ref{fig:temperrsK} show a sampling of the results of verifying PISM using the
+\ref{fig:velerrsI} show a sampling of the results of verifying PISM using the
 tests described above.\index{PISM!verification results and reporting}  These
-figures were produced more-or-less automatically using Python scripts
-\texttt{test/vfnow.py} \index{executables!python scripts!\texttt{vfnow.py}} and \texttt{test/vnreport.py} \index{executables!python scripts!\texttt{vnreport.py}}.  See subsection \ref{subsect:scripts}.
+figures were produced automatically using Python scripts
+\texttt{test/vfnow.py} \index{executables!python scripts!\texttt{vfnow.py}} and \texttt{test/vnreport.py}.\index{executables!python scripts!\texttt{vnreport.py}}  See subsection \ref{subsect:scripts}.
 
-It must be pointed out that, to the experienced eye, these figures \emph{do not} show outstanding rates of convergence.  For the errors in tests B and G, a partial explanation comes in the discussion of margin shape in \cite{BLKCB}, and also from presumably imperfect numerical analysis choices.  For the errors in test I, a partial explanation is low degree of smoothness present for solutions in the Sobolev space used in \cite{SchoofStream}, but again perhaps from imperfect numerical choices.  We believe, however, that the free boundary nature of the continuum problems addressed by tests B, G, and I (and most other tests, not shown) is the underlying difficulty.  Test K, as a fixed boundary problem, does a little better \cite{BuelerTestK}.
+These figures \emph{do not} show outstanding rates of convergence, relative to textbook partial differential equation examples.  For the errors in tests B and G, see the discussion of free margin shape in \cite{BLKCB}.  For the errors in test I, note the low degree of smoothness of the continuum solution at the free boundary \cite{SchoofStream}.  
 
 \begin{figure}[ht]
 \centering
@@ -163,16 +149,10 @@ It must be pointed out that, to the experienced eye, these figures \emph{do not}
 \begin{figure}[ht]
 \centering
 \includegraphics[width=5.0in,keepaspectratio=true]{test-I-errors}
-\caption{Numerical errors in horizontal velocities in test I, an ice stream. \t{maximum_u} and \t{average_u} are errors in scalar velocity (because of symmetries in test I).  See \cite{SchoofStream,BBssasliding}.}
+\caption{FIXME:  verification scripts need updating to reproduce this.  Numerical errors in horizontal velocities in test I, an ice stream. \t{maximum_u} and \t{average_u} are errors in scalar velocity (because of symmetries in test I).  See \cite{SchoofStream,BBssasliding}.}
 \label{fig:velerrsI}
 \end{figure}
 
-\begin{figure}[ht]
-\centering
-\includegraphics[width=5.0in,keepaspectratio=true]{test-K-errors}
-\caption{Numerical temperature errors in test K, which tests the thermal bedrock model.  See \cite{BuelerTestK} for a discussion.}
-\label{fig:temperrsK}
-\end{figure}
 
 
 %%% Local Variables: 

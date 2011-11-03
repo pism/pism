@@ -24,12 +24,13 @@ NOTE: The path terminates with site-packages, not PISM.
 
 Now give it a shot.  Simply try "python -c 'import PISM'" to see if you get an error message.
 
-If this works, this is very promising.  Now go to the examples/python directory.  Try
+If this works, this is very promising.  Now go to the examples/python/ssa_tests/
+directory.  Try
 
-python ssa_testj.py
+  python ssa_testj.py
 
-python ssa_testj.py -Mx 121 -My 121 -snes_monitor
+  python ssa_testj.py -Mx 121 -My 121 -snes_monitor
 
-mpiexec -np 4 python ssa_testj.py
+  mpiexec -np 4 python ssa_testj.py
 
 
