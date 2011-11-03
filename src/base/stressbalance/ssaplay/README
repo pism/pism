@@ -1,25 +1,13 @@
-The various sources here are for reference and ideas on re-implementation,
-abstraction, and new application of the SSA equations.  None are currently
-being built with PISM.
+The old sources are for reference and ideas on modifications and new applications
+of the SSA equations, though it is unlikely they will be looked at often, if ever.
+None are currently being built with PISM.
 
-iMinverse.cc,iMinverseMat.cc:  new code to attempt ad hoc inversion with SSA;
-  will replace with principled version based on MacAyeal/Maxwell ideas
-  
-iMssaSNES.cc:  another of Ed's half-assed attempts
+iMinverse.cc,iMinverseMat.cc:  code attempts ad hoc inversion with SSA;
+  replaced with principled version based on Maxwell's use of SSAFEM and siple
 
-iceCalvBCModel.[hh|cc]: Contains some early ideas about calving front
+iceCalvBCModel.[hh|cc]: Contains early ideas about calving front
   forces.  The basic idea of a smoothed version of the (thk>0) mask, for calving
   front normal direction, is fine.  The matrix and rhs assembly is now (r1071)
-  bogus and should not be used.  Instead of all of this:  merge with PISM-PIK.
-  Note that exactTestM.[h|c] exact solution code remains in src/verif/tests/,
-  which is fine for reference, but it is not called by pismv.cc in r1072 and
-  later.
-
-
-SEE ALSO
-
-ssaJed/*:  Jed' finite element version of SSA added in early 2009; look in trunk
-  revision 831
-
-
+  bogus and should not be used.  Instead of all of this: use PISM-PIK improvements.
+  Note that exactTestM.[h|c] exact solution code remains in src/verif/tests/.
 
