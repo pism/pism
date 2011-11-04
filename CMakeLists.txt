@@ -1,7 +1,5 @@
 project (Pism)
 set (Pism_BRANCH "stable")
-set (Pism_VERSION_MAJOR "0")
-set (Pism_VERSION_MINOR "4")
 
 cmake_minimum_required (VERSION 2.6.2)
 
@@ -152,32 +150,18 @@ endif()
 if (EXISTS ${Pism_SOURCE_DIR}/.git)
   find_program (GIT git DOC "Git executable")
   mark_as_advanced(GIT)
-  execute_process (COMMAND ${GIT} svn info
+  execute_process (COMMAND ${GIT} describe --always --dirty=-modified --match v?.?
     WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-    OUTPUT_VARIABLE Pism_SVN_INFO)
-  string (REGEX REPLACE "^(.*\n)?URL: ([^\n]+).*" "\\2"
-    Pism_SVN_URL "${Pism_SVN_INFO}")
-  string (REGEX REPLACE "^(.*\n)?Revision: ([^\n]+).*" "\\2"
-    Pism_SVN_REVISION "${Pism_SVN_INFO}")
-  execute_process (COMMAND ${GIT} log --pretty=format:"%h %ci %s" -1
-    WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-    OUTPUT_VARIABLE Pism_GIT_LOG)
-  string (REGEX REPLACE "\"(.*)\"" "\\1" Pism_GIT_LOG "${Pism_GIT_LOG}")
-  string (REGEX REPLACE "'" "" Pism_GIT_LOG "${Pism_GIT_LOG}")
-  set (Pism_REVISION "${Pism_SVN_REVISION}")
+    OUTPUT_VARIABLE Pism_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif (EXISTS ${Pism_SOURCE_DIR}/.git)
-# Subversion
-if (EXISTS ${Pism_SOURCE_DIR}/.svn)
-  find_package (Subversion REQUIRED)
-  Subversion_WC_INFO (${Pism_SOURCE_DIR} Pism)
-  set (Pism_REVISION "${Pism_WC_REVISION}")
-endif (EXISTS ${Pism_SOURCE_DIR}/.svn)
-# Otherwise...
-if (NOT Pism_REVISION)
-  set (Pism_REVISION "0")
-endif (NOT Pism_REVISION)
 
-set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION_MAJOR}.${Pism_VERSION_MINOR}.${Pism_REVISION}")
+# Otherwise...
+if (NOT Pism_VERSION)
+  set (Pism_VERSION "unknown")
+endif (NOT Pism_VERSION)
+
+set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION}")
 
 # set Pism_DEFAULT_CONFIG_FILE
 if (NOT Pism_DEFAULT_CONFIG_FILE)
