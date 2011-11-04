@@ -68,7 +68,7 @@
 \author[]{the PISM authors}
 
 \date{\today.  Get PISM development version by \\
-\phantom{foobar} \qquad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \\
+\phantom{foobar} \qquad\texttt{git clone -b dev git://github.com/pism/pism.git pism-dev} \\
 Based on PISM revision \PISMREV\quad and PETSC release \PETSCREL.}
 
 
@@ -408,10 +408,10 @@ At this point you have configured the environment which PISM needs.  You are rea
 \item \label{getPISMstep} Check the website \url{http://www.pism-docs.org/} for the latest version of PISM.
 \item Do
 \begin{verbatim}
-$  svn co http://svn.gna.org/svn/pism/tags/stable0.4 pism0.4
+$  git clone git://github.com/pism/pism.git pism0.4
 \end{verbatim}
 \item A directory called ``\texttt{pism0.4/}'' will be created.  Note that in the future when you enter that directory,
-  \texttt{svn update} will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make -C
+  \texttt{git pull} will update to the latest revision of PISM.\footnote{Of course, after \t{git pull} you will \t{make -C
       build install} to recompile and re-install PISM.}
 \end{enumerate}
 
@@ -573,7 +573,7 @@ $ make test
 \subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is on-line at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a source code \emph{Browser} (HTML).  Completely up-to-date documentation can be built from \LaTeX~source in the \texttt{doc/} sub-directory, as described in the last section.
 
 A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step
-\ref{getPISMstep} above.  You can update your copy of PISM to the latest version by running \texttt{svn up} in the PISM directory
+\ref{getPISMstep} above.  You can update your copy of PISM to the latest version by running \texttt{git pull} in the PISM directory
 and \texttt{make install} in your build directory.
 
 

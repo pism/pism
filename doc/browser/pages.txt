@@ -38,7 +38,7 @@ help@pism-docs.org.
 \li To \e download the PISM source code see https://gna.org/projects/pism/.  
 Use of <a href="http://subversion.tigris.org/">subversion</a>
 to download is strongly recommended because, even for the stable branches of
-the code, bug fixes are easy to distribute by <tt>" svn update "</tt>.
+the code, bug fixes are easy to distribute by <tt>" git pull "</tt>.
 
 \li For help \e installing PISM, see the
 <a href="http://www.pism-docs.org/">PISM <i>Installation Manual</i></a>.
@@ -49,7 +49,7 @@ the code, bug fixes are easy to distribute by <tt>" svn update "</tt>.
 modify it or couple another model to it.
 
 \li There is also a
-<a href="http://svn.gna.org/viewcvs/pism/"><i>source code repository browsing tool</i></a>
+<a href="https://github.com/pism/pism"><i>source code repository browsing tool</i></a>
 at the <a href="https://gna.org/projects/pism/">PISM download site</a>.  It
 shows changes between source code revisions.
 
