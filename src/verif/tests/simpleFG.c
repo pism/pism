@@ -68,12 +68,14 @@ int main() {
   const double Cp=200.0;     /* m;  magnitude of the perturbation in test G */
   double year, r, HF, MF, HG, MG;
   double *z, *TF, *UF, *wF, *SigF, *SigcF, *TG, *UG, *wG, *SigG, *SigcG;
-  int j, Mz;
+  int j, Mz, scanret;
 
   printf("Enter  t  and  r  separated by space (or newline)\n");
   printf("       (in yrs and km, resp.; e.g. 500 500):\n");
-  scanf("%lf",&year);
-  scanf("%lf",&r);
+  scanret = scanf("%lf",&year);
+  if (scanret != 1) {  printf("... input error; exiting\n");  return 1;  }
+  scanret = scanf("%lf",&r);
+  if (scanret != 1) {  printf("... input error; exiting\n");  return 1;  }
   printf("Enter  z  values sep by space (in m);");
   printf(" '-1' to end; e.g. 0 100 500 1500 -1:\n");
 
@@ -85,7 +87,8 @@ int main() {
 
   j=0;
   do {
-    scanf("%lf",&z[j]);
+    scanret = scanf("%lf",&z[j]);
+    if (scanret != 1) {  printf("... input error; exiting\n");  return 1;  }
     j++;
     if (j>490) printf("\n\n\nWARNING simpleFG: enter -1 to stop soon!!!\n");
   } while (z[j-1]>=0.0);
