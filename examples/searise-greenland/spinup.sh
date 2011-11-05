@@ -175,7 +175,8 @@ COUPLER_FORCING="-atmosphere searise_greenland,dTforcing -surface pdd -paleo_pre
 # coupler settings for spin-up (i.e. with forcing) and force-to-thickness
 COUPLER_FTT="-atmosphere searise_greenland,dTforcing -surface pdd,forcing -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES -ocean_kill"
 # coupler settings for spinup (i.e. with forcing) and PIK marine ice dynamics
-COUPLER_PIK="-atmosphere searise_greenland,dTforcing -surface pdd -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES $PIKOPTIONS"
+COUPLER_PIK="-atmosphere searise_greenland,dTforcing -surface pdd -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES"
+COUPLER_PIKFTT="-atmosphere searise_greenland,dTforcing -surface pdd,forcing -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES $PIKOPTIONS"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
@@ -192,7 +193,7 @@ echo "$SCRIPTNAME forcing coupler = '$COUPLER_FORCING'"
 PRE0NAME=g${CS}km_pre100.nc
 echo
 echo "$SCRIPTNAME  bootstrapping plus short smoothing run (for ${SMOOTHRUNLENGTH}a)"
-cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -boot_file $INNAME $COARSEGRID \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $COARSESKIP -boot_file $INNAME $COARSEGRID \
   $COUPLER_SIMPLE -y ${SMOOTHRUNLENGTH} -o $PRE0NAME"
 $PISM_DO $cmd
 
@@ -224,7 +225,7 @@ EXTIMES=0:500:${NOMASSSIARUNLENGTH}
 EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
-cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
   -no_mass -ys 0 -y ${NOMASSSIARUNLENGTH} \
   -extra_file $EX1NAME -extra_vars $EXVARS -extra_times $EXTIMES -o $PRE1NAME"
 $PISM_DO $cmd
@@ -249,7 +250,7 @@ EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
-cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE1NAME $FULLPHYS -bed_def lc $COUPLER_FORCING \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $COARSESKIP -i $PRE1NAME $FULLPHYS -bed_def lc $COUPLER_FORCING \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
@@ -272,7 +273,7 @@ echo
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
      -bed_def lc $COUPLER_FORCING \
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat,bmelt -regrid_bed_special  \
      -ts_file $TSNAME -ts_times $TSTIMES \
@@ -291,7 +292,7 @@ echo
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation and modified surface mass balance,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
      -bed_def lc $COUPLER_FTT \
      -force_to_thk $INNAME -force_to_thk_alpha 0.005 \
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat -regrid_bed_special  \
@@ -302,6 +303,26 @@ $PISM_DO $cmd
 
 # "PIK" run
 
+OUTNAME=g${FS}km_0_pik_ftt.nc
+TSNAME=ts_$OUTNAME
+TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
+EXNAME=ex_$OUTNAME
+EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
+echo
+echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
+echo "$SCRIPTNAME      including bed deformation, and PIK marine ice dynamics,"
+echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
+     -bed_def lc $COUPLER_PIK \
+     -force_to_thk $INNAME -force_to_thk_alpha 0.005 \
+     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat,bmelt -regrid_bed_special  \
+     -ts_file $TSNAME -ts_times $TSTIMES \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
+$PISM_DO $cmd
+
+# "PIK" + "force-to-thickness" run
+
 OUTNAME=g${FS}km_0_pik.nc
 TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
@@ -311,8 +332,8 @@ echo
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, and PIK marine ice dynamics,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
-     -bed_def lc $COUPLER_PIK \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
+     -bed_def lc $COUPLER_PIKFTT \
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat,bmelt -regrid_bed_special  \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
