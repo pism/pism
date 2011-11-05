@@ -5,25 +5,23 @@ All information about PISM can be found at
 
    www.pism-docs.org
    
-To download the trunk, namely "pism-dev", use subversion:
+To download the latest stable release use git:
 
-   svn co http://svn.gna.org/svn/pism/trunk pism-dev
+  $ git clone git@github.com:pism/pism.git pism0.4
 
 For complete installation instructions get the PISM Installation Manual (PDF)
 from www.pism-docs.org.
 
 Intallation high points:  PETSc (http://www-unix.mcs.anl.gov/petsc/) must be
-installed and functioning before PISM can be built.  In fact we assume now that
+installed and functioning before PISM can be built.  We assume now that
 PETSC_DIR and PETSC_ARCH are set properly.
 
 To install PISM locally (in the PISM source tree), do
 
-  $ cd pism-dev
-  $ export PISM_INSTALL_PREFIX=${PWD}
-  $ export PATH=${PWD}/bin:${PATH}
-  $ mkdir -p build
+  $ cd pism0.4
+  $ mkdir build
   $ cd build
-  $ cmake ..
+  $ cmake ..     # do 'c' then check that flags are right, then generate
   $ make install
 
 You can check that PISM executables can be found by running:
@@ -32,28 +30,22 @@ You can check that PISM executables can be found by running:
 
 and this should tell you a directory in which executable "pismr" is found.
 
+You can test the build by running a suite of software/regression tests:
+
+  $ make test
+
 Now run a simplified geometry experiment on 1 processor:
 
   $ pisms
 
 Everything is working if this run goes for 1000 model years and ends with
-"... done with run".
-
-With 2 processes:
+"... done with run".  Again but with 2 MPI processes:
 
   $ mpiexec -n 2 pisms
 
-To get source code updates including bug fixes, and build and install them, do
-
-  $ svn up
-  $ make -C build install
-
-in the PISM source directory.
-
-Please see the Installation Manual for more information on the build process.
-
-The PISM User's Manual will explain most of what you want to know to do ice
-sheet modeling.  Find it at www.pism-docs.org.
+Please see the Installation Manual at www.pism-docs.org for more information on
+the build process.  The PISM User's Manual, also at www.pism-docs.org, will
+explain most of what you want to know to do ice sheet modeling with PISM.
 
 If you have questions about PISM usage, installation, or creating new models,
 e-mail us at <help@pism-docs.org>.
