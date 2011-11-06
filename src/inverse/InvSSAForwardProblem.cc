@@ -131,8 +131,8 @@ PetscErrorCode InvSSAForwardProblem::init(PISMVars &vars) {
 
   ierr = SSAFEM::init(vars); CHKERRQ(ierr);
 
-  m_l2_weight = dynamic_cast<IceModelVec2S*>(vars.get("range_l2_weight"));
-  if (m_l2_weight == NULL){
+  m_misfit_weight = dynamic_cast<IceModelVec2S*>(vars.get("vel_misfit_weight"));
+  if (m_misfit_weight == NULL){
     verbPrintf(3,grid.com,"Weight for inverse problem L2 norm not available; using standard L2 norm.\n");
   }
 
@@ -623,12 +623,12 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
   PISMVector2 a[FEQuadrature::Nq], b[FEQuadrature::Nq];
 
   PetscReal **W;
-  PetscReal l2_weight[FEQuadrature::Nq];
-  if(m_l2_weight!=NULL) {
-    ierr = m_l2_weight->get_array(W);CHKERRQ(ierr);    
+  PetscReal misfit_weight[FEQuadrature::Nq];
+  if(m_misfit_weight!=NULL) {
+    ierr = m_misfit_weight->get_array(W);CHKERRQ(ierr);    
   } else {
     for(int q=0;q<FEQuadrature::Nq;q++) {
-      l2_weight[q]=1;
+      misfit_weight[q]=1;
     }
   }
 
@@ -647,17 +647,17 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
       dofmap.extractLocalDOFs(i,j,B,tmp);
       quadrature.computeTrialFunctionValues(tmp,b);
       
-      if(m_l2_weight != NULL) {
-        quadrature.computeTrialFunctionValues(i,j,dofmap,W,l2_weight);        
+      if(m_misfit_weight != NULL) {
+        quadrature.computeTrialFunctionValues(i,j,dofmap,W,misfit_weight);        
       }
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        IP += JxW[q]*(a[q].u*b[q].u + a[q].v*b[q].v)*l2_weight[q];
+        IP += JxW[q]*(a[q].u*b[q].u + a[q].v*b[q].v)*misfit_weight[q];
       } // q
     } // j
   } // i
 
-  if(m_l2_weight!=NULL) {
-    ierr = m_l2_weight->end_access();CHKERRQ(ierr);    
+  if(m_misfit_weight!=NULL) {
+    ierr = m_misfit_weight->end_access();CHKERRQ(ierr);    
   }
   
   IP /= m_range_l2_area;
@@ -675,12 +675,12 @@ PetscErrorCode InvSSAForwardProblem::compute_range_l2_area(PetscScalar *OUTPUT)
   PetscReal IP = 0;
 
   PetscReal **W;
-  PetscReal l2_weight[FEQuadrature::Nq];
-  if(m_l2_weight!=NULL) {
-    ierr = m_l2_weight->get_array(W);CHKERRQ(ierr);    
+  PetscReal misfit_weight[FEQuadrature::Nq];
+  if(m_misfit_weight!=NULL) {
+    ierr = m_misfit_weight->get_array(W);CHKERRQ(ierr);    
   } else {
     for(int q=0;q<FEQuadrature::Nq;q++) {
-      l2_weight[q]=1.;
+      misfit_weight[q]=1.;
     }
   }
 
@@ -693,17 +693,17 @@ PetscErrorCode InvSSAForwardProblem::compute_range_l2_area(PetscScalar *OUTPUT)
            ys = element_index.lys, ym = element_index.lym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-      if(m_l2_weight != NULL) {
-        quadrature.computeTrialFunctionValues(i,j,dofmap,W,l2_weight);
+      if(m_misfit_weight != NULL) {
+        quadrature.computeTrialFunctionValues(i,j,dofmap,W,misfit_weight);
       }
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        IP += JxW[q]*l2_weight[q];
+        IP += JxW[q]*misfit_weight[q];
       } // q
     } // j
   } // i
 
-  if(m_l2_weight!=NULL) {
-    ierr = m_l2_weight->end_access();CHKERRQ(ierr);    
+  if(m_misfit_weight!=NULL) {
+    ierr = m_misfit_weight->end_access();CHKERRQ(ierr);    
   }
 
   ierr = PetscGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
@@ -862,12 +862,12 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
 
   PetscReal **W;
-  PetscReal l2_weight[FEQuadrature::Nq];
-  if(m_l2_weight!=NULL) {
-    ierr = m_l2_weight->get_array(W);CHKERRQ(ierr);    
+  PetscReal misfit_weight[FEQuadrature::Nq];
+  if(m_misfit_weight!=NULL) {
+    ierr = m_misfit_weight->get_array(W);CHKERRQ(ierr);    
   } else {
     for(q=0;q<FEQuadrature::Nq;q++) {
-      l2_weight[q]=1;
+      misfit_weight[q]=1;
     }
   }
 
@@ -904,8 +904,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
         y[k].u = 0; y[k].v = 0;
       }
 
-      if(m_l2_weight != NULL) {
-        quadrature.computeTrialFunctionValues(i,j,dofmap,W,l2_weight);
+      if(m_misfit_weight != NULL) {
+        quadrature.computeTrialFunctionValues(i,j,dofmap,W,misfit_weight);
       }
 
       for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
@@ -913,8 +913,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
         const PetscReal    jw  = JxW[q]/m_range_l2_area;
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
-          y[k].u += jw*testqk.val*res[q].u*l2_weight[q];
-          y[k].v += jw*testqk.val*res[q].v*l2_weight[q];
+          y[k].u += jw*testqk.val*res[q].u*misfit_weight[q];
+          y[k].v += jw*testqk.val*res[q].v*misfit_weight[q];
         }
       } // q
 
@@ -938,8 +938,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
     ierr = bc_locations->end_access();CHKERRQ(ierr);
   }
 
-  if(m_l2_weight!=NULL) {
-    ierr = m_l2_weight->end_access();CHKERRQ(ierr);
+  if(m_misfit_weight!=NULL) {
+    ierr = m_misfit_weight->end_access();CHKERRQ(ierr);
   }
 
   return 0;

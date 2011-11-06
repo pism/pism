@@ -24,7 +24,7 @@ from petsc4py import PETSc
 import numpy as np
 import tozero
 import siple
-import math
+import os, math
 
 import PISM
 
@@ -42,11 +42,12 @@ default_ssa_l2_coeff = 1.
 default_ssa_h1_coeff = 0.
 default_rms_error = 100
 
-tauc_guess_scale = 0.2
-tauc_guess_const = None
 
 
 class Vel2Tauc(PISM.ssa.SSAFromBootFile):
+  def __init__(self,input_filename,inv_data_filename):
+    PISM.ssa.SSAFromBootFile.__init__(self,input_filename)
+    self.inv_data_filename = inv_data_filename
 
   def _constructSSA(self):
     return pismssaforward.SSAForwardSolver(self.grid,self.config)
@@ -60,7 +61,7 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
   def _initSSACoefficients(self):
     # Read PISM SSA related state variables
     solver = self.solver
-    solver.allocateCoeffs(using_l2_weight=True)
+    solver.allocateCoeffs()
 
     thickness = solver.thickness; bed = solver.bed; enthalpy = solver.enthalpy
     mask = solver.ice_mask; surface = solver.surface
@@ -74,16 +75,9 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
     gc = PISM.GeometryCalculator(sea_level,self.solver.ice,self.config)
     gc.compute(bed,thickness,mask,surface)
 
-    l2_weight = solver.range_l2_weight
-    with PISM.util.Access(comm=l2_weight,nocomm=mask):
-      l2_weight.set(0.)
-      grounded = PISM.MASK_GROUNDED
-      for (i,j) in solver.grid.points():
-        # if mask[i-1,j-1]==grounded and mask[i-1,j]==grounded and mask[i-1,j+1]==grounded \
-        #    and mask[i,j-1]==grounded and mask[i,j]==grounded and mask[i,j+1]==grounded \
-        #    and mask[i+1,j-1]==grounded and mask[i+1,j]==grounded and mask[i+1,j+1]==grounded:
-        if mask[i,j] == grounded:
-          l2_weight[i,j] = 1
+    weight = solver.vel_misfit_weight
+    weight.regrid(self.inv_data_filename,True)
+
 
 class Vel2TaucPlotListener(PlotListener):
   def __init__(self,grid,Vmax):
@@ -100,7 +94,7 @@ class Vel2TaucPlotListener(PlotListener):
     else:
       pp.figure(self.figure.number)
 
-    l2_weight=self.tz_scalar.communicate(solver.forward_problem.solver.range_l2_weight)
+    l2_weight=self.tz_scalar.communicate(solver.forward_problem.solver.vel_misfit_weight)
 
     pp.clf()
     
@@ -148,7 +142,7 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
     else:
       pp.figure(self.figure.number)
 
-    l2_weight=self.tz_scalar.communicate(solver.forward_problem.solver.range_l2_weight)
+    l2_weight=self.tz_scalar.communicate(solver.forward_problem.solver.vel_misfit_weight)
 
     pp.clf()
 
@@ -201,16 +195,15 @@ if __name__ == "__main__":
   PISM.show_usage_check_req_opts(context.com,"ssa_forward",["-i"],usage)
   
   for o in PISM.OptionsGroup(context.com,"","vel2tauc"):
-    bootfile = PISM.optionsString("-i","input file")
-    output_file = PISM.optionsString("-o","output file",default="vel2tauc_"+bootfile)
+    input_filename = PISM.optionsString("-i","input file")
+    output_filename = PISM.optionsString("-o","output file",default="vel2tauc_"+os.path.basename(input_filename))
+    inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
     method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
     rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=default_rms_error)
     tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp"],"ident")
     ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=default_ssa_l2_coeff)
     ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=default_ssa_h1_coeff)
-    tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
-    tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
     do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
@@ -218,7 +211,6 @@ if __name__ == "__main__":
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
-    noise = PISM.optionsReal("-rms_noise","pointwise rms noise to add (in m/a)",default=None)
 
   config.set_string("inv_ssa_tauc_param",tauc_param_type)
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
@@ -227,70 +219,38 @@ if __name__ == "__main__":
   tauc_param = tauc_params[tauc_param_type]
 
   PISM.setVerbosityLevel(verbosity)
-  vel2tauc = Vel2Tauc(bootfile)
+  vel2tauc = Vel2Tauc(input_filename,inv_data_filename)
   vel2tauc.setup()
 
   forward_problem = SSAForwardProblem(vel2tauc)
 
   grid = vel2tauc.grid
 
-  bmr   = PISM.util.standardBasalMeltRateVec(grid)
-  tillphi = PISM.util.standardTillPhiVec(grid)
-  bwat = PISM.util.standardBasalWaterVec(grid)
-  for v in [bmr,tillphi,bwat]:
-     v.regrid(bootfile,True)
-  pvars = PISM.PISMVars()
-  for v in [vel2tauc.solver.thickness,vel2tauc.solver.bed,vel2tauc.solver.ice_mask,bmr,tillphi,bwat]:
-     pvars.add(v)
+  modeldata = vel2tauc.solver
+  grid = modeldata.grid
 
-  yieldstress = PISM.PISMDefaultYieldStress(grid,grid.config)
-  yieldstress.init(pvars)
-  tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")  
-  yieldstress.basal_material_yield_stress(tauc_true)
-
-  # Convert tauc_true to zeta_true
-  if config.get_string('inv_ssa_tauc_param')=='ident':
-    zeta_true = tauc_true
-  else:
-    zeta_true = PISM.IceModelVec2S();
-    zeta_true.create(grid, "zeta_true", True, PISM.util.WIDE_STENCIL)
-    with PISM.util.Access(nocomm=[tauc_true],comm=[zeta_true]):
-      for (i,j) in grid.points():
-        zeta_true[i,j] = tauc_param.fromTauc(tauc_true[i,j])
-
-  # Send the true yeild stress through the forward problem to 
-  # get at true velocity field.
-  u_true = PISM.util.standard2dVelocityVec(grid,name="_true")
-  forward_problem.F(PLV(zeta_true),out=PLV(u_true))
-
-  if not noise is None:
-    u_noise = pismssaforward.randVectorV(grid,noise/math.sqrt(2))
-    unv = PLV(u_noise)
-    unv += PLV(u_true)
-  else:
-    u_noise = u_true
+  vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed')
+  vel_ssa_observed.regrid(inv_data_filename,True)
   
-  # Build the initial guess for tauc for the inversion.
+  tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
+  tauc_prior.regrid(inv_data_filename,True)
+
   tauc = PISM.util.standardYieldStressVec(grid)
-  if not tauc_guess_const is None:
-    tauc.set(tauc_guess_const)
-  else:
-    tauc.copy_from(tauc_true)
-    tauc.scale(tauc_guess_scale)
+  tauc.copy_from(tauc_prior)
 
   # Convert tauc guess to zeta guess
   if config.get_string('inv_ssa_tauc_param')=='ident':
-    zeta = tauc
+    zeta = tauc_prior
   else:
     zeta = PISM.IceModelVec2S();
     zeta.create(grid, "zeta", True, PISM.util.WIDE_STENCIL)
-    with PISM.util.Access(nocomm=tauc,comm=zeta):
+    with PISM.util.Access(nocomm=tauc_prior,comm=zeta):
       for (i,j) in grid.points():
-        zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
+        zeta[i,j] = tauc_param.fromTauc(tauc_prior[i,j])
 
   if test_adjoint:
-    d = PLV(pismssaforward.randVectorS(grid,1e5))
-    r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera))
+    d = PLV(pismssaforward.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL))
+    r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
     (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
     siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
     exit(0)
@@ -300,9 +260,6 @@ if __name__ == "__main__":
     Solver = InvertSSAIGN
   else:
     Solver = InvertSSANLCG
-
-  # u_true = PISM.util.standard2dVelocityVec(grid,"bar_ssa")
-  # u_true.regrid(bootfile,True)
 
   params=Solver.defaultParameters()
   if method == "sd":
@@ -328,9 +285,7 @@ if __name__ == "__main__":
     solver.addIterationListener(pauseListener)
 
   rms_error /= PISM.secpera # m/s
-  (zeta,u) = solver.solve(zeta,u_true,rms_error)
-
-  # u = u_true
+  (zeta,u) = solver.solve(zeta,vel_ssa_observed,rms_error)
 
   # Convert back from zeta to tauc
   if config.get_string('inv_ssa_tauc_param')=='ident':
@@ -341,24 +296,11 @@ if __name__ == "__main__":
         (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
 
   # Write solution out to netcdf file
-  vel2tauc.write(output_file)
-  tauc.write(output_file)
-  tauc_true.write(output_file)
-  u.set_name("_computed",0)
-  u.write(output_file)
-  logger.write(output_file)
+  vel2tauc.write(output_filename)
+  tauc.write(output_filename)
+  tauc_prior.write(output_filename)
   
-  # Draw a pretty picture
-  tz = tozero.ToProcZero(grid)
-  tauc_a = tz.communicate(tauc)
-  tauc_true = tz.communicate(tauc_true)
-  if do_final_plot and (not tauc_a is None):
-    from matplotlib import pyplot
-    pyplot.clf()
-    pyplot.subplot(1,2,1)
-    pyplot.imshow(tauc_a,origin='lower')
-    pyplot.subplot(1,2,2)
-    pyplot.imshow(tauc_true,origin='lower')
-    pyplot.ion()
-    pyplot.show()
-    siple.reporting.endpause()
+  u.set_name("_ssa_inv",0)
+  u.write(output_filename)
+
+  logger.write(output_filename)

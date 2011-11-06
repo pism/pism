@@ -37,7 +37,7 @@ class PISMLocalVector(AbstractVector):
       c = PISM.IceModelVec2S()
     else:
       c = PISM.IceModelVec2V()    
-    c.create(self.grid,"",True,2)
+    c.create(self.grid,"",True,self._core.get_stencil_width())
     return PISMLocalVector(c)
     
   def zero_like(self):

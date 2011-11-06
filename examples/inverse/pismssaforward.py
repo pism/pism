@@ -72,9 +72,12 @@ def pism_pause(message_in=None,message_out=None):
   if not message_out is None:
     PISM.verbPrintf(1,com,message_out+"\n")
 
-def randVectorS(grid,scale):
+def randVectorS(grid,scale,stencil_width=None):
   rv = PISM.IceModelVec2S();
-  rv.create(grid, 'rand vec', True, PISM.util.WIDE_STENCIL)
+  if stencil_width is None:
+    rv.create(grid, 'rand vec', False)
+  else:
+    rv.create(grid, 'rand vec', True, stencil_width)
   shape=(grid.xm,grid.ym)
   r = np.random.normal(scale=scale,size=shape)
   with PISM.util.Access(comm=rv):
@@ -82,13 +85,17 @@ def randVectorS(grid,scale):
       rv[i,j] = r[i-grid.xs,j-grid.ys]
   return rv
 
-def randVectorV(grid,scale):
+def randVectorV(grid,scale,stencil_width=None):
   rv = PISM.IceModelVec2V();
-  rv.create(grid, 'rand vec', True, PISM.util.WIDE_STENCIL)
+  if stencil_width is None:
+    rv.create(grid, 'rand vec', False)
+  else:
+    rv.create(grid, 'rand vec', True,stencil_width)
+    
   shape=(grid.xm,grid.ym)
   r_u = np.random.normal(scale=scale,size=shape)
   r_v = np.random.normal(scale=scale,size=shape)
-  with PISM.util.Access(comm=rv):
+  with PISM.util.Access(nocomm=rv):
     for (i,j) in grid.points():
       rv[i,j].u = r_u[i-grid.xs,j-grid.ys]
       rv[i,j].v = r_v[i-grid.xs,j-grid.ys]
@@ -105,15 +112,10 @@ class SSAForwardSolver(PISM.ssa.SSASolver):
     self.tauc_param = tauc_params[tauc_param_type]
     self.range_l2_weight=None
 
-  def allocateCoeffs(self,using_l2_weight=False,**kwargs):
+  def allocateCoeffs(self,**kwargs):
     PISM.ssa.SSASolver.allocateCoeffs(self,**kwargs)
+    self.vel_misfit_weight = PISM.util.standardVelocityMisfitWeight(self.grid)
 
-    if using_l2_weight:      
-      self.range_l2_weight = PISM.IceModelVec2S();
-      self.range_l2_weight.create(self.grid, 'range_l2_weight', True, PISM.util.WIDE_STENCIL)
-      self.range_l2_weight.set_attrs("diagnostic", "range l2 weight", "", "");
-    
-  
   def init_vars(self):
     pismVars = PISM.PISMVars()
     for var in [self.thickness,self.bed,self.tauc,
@@ -126,8 +128,8 @@ class SSAForwardSolver(PISM.ssa.SSASolver):
       pismVars.add(self.drivingstress,'ssa_driving_stress')
     
     
-    if not self.range_l2_weight is None:
-      pismVars.add(self.range_l2_weight)
+    if not self.vel_misfit_weight is None:
+      pismVars.add(self.vel_misfit_weight)
       
     
     # The SSA instance will not keep a reference to pismVars; it only uses it to extract

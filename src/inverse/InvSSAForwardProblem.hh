@@ -45,7 +45,7 @@ public:
              m_VecU(0), m_VecZ2(0),
              m_VecZ(0), m_VecRHS2(0),
              m_VecV(0), m_VecRHS(0),
-             m_l2_weight(NULL),
+             m_misfit_weight(NULL),
              m_tauc_param(tp),
              m_reassemble_T_matrix_needed(true),
              m_forward_F_needed(true)
@@ -129,7 +129,7 @@ protected:
   Vec m_VecV, m_VecRHS;
 
   // Optional weight for a weighted L2 norm in the range.
-  IceModelVec2S *m_l2_weight;
+  IceModelVec2S *m_misfit_weight;
 
   // Store for values of dtauc_dxi at the quad points.
   
