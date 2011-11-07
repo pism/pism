@@ -104,6 +104,23 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
     return PISM.InvSSAForwardProblem(md.grid,md.basal,md.ice,md.enthalpyconverter,self.tauc_param,self.config)
 
 
+  def write(self,filename,append=False):
+    if not append:
+      PISM.ssa.SSAFromBootFile.write(self,filename)
+    else:
+      grid = self.grid
+      vecs = self.modeldata.vecs
+
+      pio = PISM.PISMIO(grid)
+      pio.open_for_writing(filename,True,True) #append mode!
+      
+      self.modeldata.vecs.write(filename)
+      pio.close()
+
+      # Save time & command line
+      PISM.util.writeProvenance(filename)
+
+
 class Vel2TaucPlotListener(PlotListener):
   def __init__(self,grid,Vmax):
     PlotListener.__init__(self,grid)
@@ -220,9 +237,23 @@ if __name__ == "__main__":
   # FIXME:  Required should be -i or -a
   # PISM.show_usage_check_req_opts(context.com,"ssa_forward",["-i"],usage)
   
+  append_mode = False
   for o in PISM.OptionsGroup(context.com,"","vel2tauc"):
     input_filename = PISM.optionsString("-i","input file")
-    output_filename = PISM.optionsString("-o","output file",default="vel2tauc_"+os.path.basename(input_filename))
+    append_filename = PISM.optionsString("-a","append file",default=None)
+    output_filename = PISM.optionsString("-o","output file",default=None)
+
+    if (not input_filename is None) and (not append_filename is None):
+      raise RuntimeError("Only one of -i/-a is allowed.")
+
+    if (not output_filename is None) and (not append_filename is None):
+      raise RuntimeError("Only one of -a/-o is allowed.")
+
+    if not(append_filename is None):
+      input_filename = append_filename
+      output_filename = append_filename
+      append_mode = True
+
     inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
     method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
@@ -237,6 +268,11 @@ if __name__ == "__main__":
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
+
+  if output_filename is None:
+    output_filename = "vel2tauc_"+os.path.basename(input_filename)    
+
+  saving_inv_data = (inv_data_filename != output_filename)
 
   config.set_string("inv_ssa_tauc_param",tauc_param_type)
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
@@ -253,6 +289,7 @@ if __name__ == "__main__":
   grid = vel2tauc.grid
 
   modeldata = vel2tauc.modeldata
+  vecs = modeldata.vecs
   grid = modeldata.grid
 
   vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed')
@@ -262,11 +299,14 @@ if __name__ == "__main__":
   tauc_prior.regrid(inv_data_filename,True)
 
   tauc = PISM.util.standardYieldStressVec(grid)
-  tauc.copy_from(tauc_prior)
+  
+  vecs.add(vel_ssa_observed,writing=saving_inv_data)
+  vecs.add(tauc_prior,writing=saving_inv_data)
 
   # Convert tauc guess to zeta guess
   if config.get_string('inv_ssa_tauc_param')=='ident':
-    zeta = tauc_prior
+    tauc.copy_from(tauc_prior)
+    zeta = tauc
   else:
     zeta = PISM.IceModelVec2S();
     zeta.create(grid, "zeta", True, PISM.util.WIDE_STENCIL)
@@ -321,12 +361,13 @@ if __name__ == "__main__":
       for (i,j) in grid.points():
         (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
 
-  # Write solution out to netcdf file
-  vel2tauc.write(output_filename)
-  tauc.write(output_filename)
-  tauc_prior.write(output_filename)
-  
+  if vecs.has('tauc'): vecs.remove('tauc')
+  vecs.add(tauc,writing=True)
+
   u.set_name("_ssa_inv",0)
-  u.write(output_filename)
+  vecs.add(u,writing=True)
+
+  # Write solution out to netcdf file
+  vel2tauc.write(output_filename,append=append_mode)
 
   logger.write(output_filename)

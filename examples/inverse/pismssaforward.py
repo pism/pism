@@ -27,7 +27,7 @@ class CaptureLogger:
     if self.rank == 0:
       d = PISM.netCDF.Dataset(outfile,'a')
       if 'siple_log' in d.ncattrs():
-        d.siple_log = self.diary + "\n" + d.run_Log
+        d.siple_log = self.diary + "\n" + d.siple_log
       else:
         d.siple_log = self.diary
       d.close()
