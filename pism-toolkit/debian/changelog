@@ -1,5 +1,6 @@
-pism-toolkit (0.1-1) unstable; urgency=low
+pism-toolkit (0.1-2) unstable; urgency=low
 
-  * Initial release.
+	* Updated the debian/control file (switched to git).
+	* Initial release.
 
- -- Constantine Khroulev <ckhroulev@alaska.edu>  Thu, 06 Jan 2011 13:42:31 -0900
+ -- Constantine Khroulev <ckhroulev@alaska.edu>  Mon, 07 Nov 2011 14:10:00 -0900

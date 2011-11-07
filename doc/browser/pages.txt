@@ -35,8 +35,8 @@ Just do <tt>"make browser_base"</tt> in the build directory.
 \li You can \e get \e help, send comments, or ask for new features by email to
 help@pism-docs.org.
 
-\li To \e download the PISM source code see https://gna.org/projects/pism/.  
-Use of <a href="http://subversion.tigris.org/">subversion</a>
+\li To \e download the PISM source code see https://github.com/pism/pism.
+Use of <a href="http://git-scm.com/">Git</a>
 to download is strongly recommended because, even for the stable branches of
 the code, bug fixes are easy to distribute by <tt>" git pull "</tt>.
 
