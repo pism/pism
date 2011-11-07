@@ -62,11 +62,11 @@ class testi(PISM.ssa.SSAExactTestCase):
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
     self._allocateBCs()
-    vars = self.modeldata.vars
+    vecs = self.modeldata.vecs
 
-    vars.bc_mask.set(0)
-    vars.thickness.set(H0_schoof)
-    vars.ice_mask.set(PISM.MASK_GROUNDED)
+    vecs.bc_mask.set(0)
+    vecs.thickness.set(H0_schoof)
+    vecs.ice_mask.set(PISM.MASK_GROUNDED)
 
     # The finite difference code uses the following flag to treat 
     # the non-periodic grid correctly.
@@ -77,15 +77,15 @@ class testi(PISM.ssa.SSAExactTestCase):
     theta = math.atan(0.001)
     f = self.modeldata.ice.rho*standard_gravity*H0_schoof*math.tan(theta)
     grid = self.grid
-    with PISM.util.Access(comm=[vars.tauc]):
+    with PISM.util.Access(comm=[vecs.tauc]):
       for (i,j) in grid.points():
         y=grid.y[j]
-        vars.tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
+        vecs.tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
 
-    bc_mask = vars.bc_mask
-    vel_bc  = vars.vel_bc
-    surface = vars.surface
-    bed     = vars.bed
+    bc_mask = vecs.bc_mask
+    vel_bc  = vecs.vel_bc
+    surface = vecs.surface
+    bed     = vecs.bed
     grid = self.grid
     with PISM.util.Access(comm=[surface,bed,vel_bc,bc_mask]):
       for (i,j) in grid.points():

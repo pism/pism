@@ -52,17 +52,17 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     self._allocStdSSACoefficients()
     self._allocateBCs()
 
-    vars = self.modeldata.vars
+    vecs = self.modeldata.vecs
     
-    vars.thickness.set(H0)
-    vars.surface.set(H0)
-    vars.bed.set(0.)
-    vars.tauc.set(tauc0)
+    vecs.thickness.set(H0)
+    vecs.surface.set(H0)
+    vecs.bed.set(0.)
+    vecs.tauc.set(tauc0)
 
-    bc_mask = vars.bc_mask
+    bc_mask = vecs.bc_mask
     bc_mask.set(0)
 
-    vel_bc  = vars.vel_bc
+    vel_bc  = vecs.vel_bc
     
     grid = self.grid
     with PISM.util.Access(comm=[bc_mask, vel_bc]):

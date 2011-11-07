@@ -49,13 +49,13 @@ class testj(PISM.ssa.SSAExactTestCase):
     self._allocStdSSACoefficients()
     self._allocateBCs()
 
-    vars = self.modeldata.vars
-    vars.tauc.set(0.0) # irrelevant for test J
-    vars.bed.set(0.0) 
-    vars.ice_mask.set(PISM.MASK_FLOATING)
-    vars.bc_mask.set(0) # No dirichlet data.
+    vecs = self.modeldata.vecs
+    vecs.tauc.set(0.0) # irrelevant for test J
+    vecs.bed.set(0.0) 
+    vecs.ice_mask.set(PISM.MASK_FLOATING)
+    vecs.bc_mask.set(0) # No dirichlet data.
 
-    vars.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
+    vecs.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
     ocean_rho = self.config.get("sea_water_density");
     ice_rho = self.modeldata.ice.rho
@@ -63,19 +63,19 @@ class testj(PISM.ssa.SSAExactTestCase):
     # The PISM.utils.Access object ensures that we call beginAccess for each
     # variable in 'vars', and that endAccess is called for each one on exiting
     # the 'with' block.
-    ivars = [vars.thickness, vars.surface, vars.bc_mask, vars.vel_bc]
-    with PISM.util.Access(comm=ivars):
+    
+    with PISM.util.Access(comm=[vecs.thickness, vecs.surface, vecs.bc_mask, vecs.vel_bc]):
       grid = self.grid
       for (i,j) in grid.points():
         x = grid.x[i]; y = grid.y[j]
         (H,junk,u,v) = PISM.exactJ(x,y);
-        vars.thickness[i,j] = H;
-        vars.surface[i,j] = (1.0 - ice_rho / ocean_rho) * H; #// FIXME task #7297
+        vecs.thickness[i,j] = H;
+        vecs.surface[i,j] = (1.0 - ice_rho / ocean_rho) * H; #// FIXME task #7297
   
         # // special case at center point (Dirichlet BC)
         if (i == (grid.Mx)/2) and (j == (grid.My)/2):
-          vars.bc_mask[i,j] = 1;
-          vars.vel_bc[i,j] = [u,v]
+          vecs.bc_mask[i,j] = 1;
+          vecs.vel_bc[i,j] = [u,v]
 
   def _initSSA(self):
     # Test J has a viscosity that is independent of velocity.  So we force a 

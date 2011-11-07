@@ -53,23 +53,22 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
 
     PISM.ssa.SSAFromBootFile.setup(self)
 
-    vars = self.modeldata.vars
+    vecs = self.modeldata.vecs
 
     # The SSA instance will not keep a reference to pismVars; it only uses it to extract
     # its desired variables.  So it is safe to pass it pismVars and then let pismVars
     # go out of scope at the end of this method.
 
-    self.ssa.init(vars.asPISMVars())
+    self.ssa.init(vecs.asPISMVars())
 
-    if vars.has('vel_bc'):
-      self.ssa.set_boundary_conditions(vars.bc_mask,vars.vel_bc)
+    if vecs.has('vel_bc'):
+      self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
 
     # FIXME: Fix this lousy name
     self.ssa.setup_vars()
 
     def _constructSSA(self):
       md = self.modeldata
-      vars  = self.modeldata.vars
       tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
       self.tauc_param = tauc_params[tauc_param_type]
       return PISM.InvSSAForwardProblem(md.grid,md.basal,md.ice,md.enthalpyconverter,self.tauc_param,self.config)
@@ -79,7 +78,7 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
     
     # Read PISM SSA related state variables
 
-    vecs = self.modeldata.vars
+    vecs = self.modeldata.vecs
     thickness = vecs.thickness; bed = vecs.bed; enthalpy = vecs.enthalpy
     mask = vecs.ice_mask; surface = vecs.surface
 
@@ -99,7 +98,7 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
 
   def _constructSSA(self):
     md = self.modeldata
-    vecs  = self.modeldata.vars
+    vecs  = self.modeldata.vecs
     tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
     self.tauc_param = tauc_params[tauc_param_type]
     return PISM.InvSSAForwardProblem(md.grid,md.basal,md.ice,md.enthalpyconverter,self.tauc_param,self.config)

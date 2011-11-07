@@ -64,17 +64,17 @@ class test_plug(PISM.ssa.SSAExactTestCase):
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
     self._allocateBCs()
-    vars = self.modeldata.vars
+    vecs = self.modeldata.vecs
 
     # Set constant coefficients.
-    vars.thickness.set(H0)
-    vars.tauc.set(tauc0)
-    vars.ice_mask.set(PISM.MASK_GROUNDED)
+    vecs.thickness.set(H0)
+    vecs.tauc.set(tauc0)
+    vecs.ice_mask.set(PISM.MASK_GROUNDED)
   
-    bc_mask = vars.bc_mask
-    vel_bc  = vars.vel_bc
-    bed     = vars.bed
-    surface = vars.surface
+    bc_mask = vecs.bc_mask
+    vel_bc  = vecs.vel_bc
+    bed     = vecs.bed
+    surface = vecs.surface
     
     grid = self.grid
     with PISM.util.Access(comm=[bc_mask, vel_bc, bed, surface]):

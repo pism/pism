@@ -64,38 +64,38 @@ class pross(PISM.ssa.SSARun):
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
     self._allocateBCs(velname='bar',maskname='bcflag')
-    vars = self.modeldata.vars
+    vecs = self.modeldata.vecs
     grid = self.modeldata.grid
 
     obsAzimuth = PISM.IceModelVec2S()
     obsAzimuth.create(grid, "azi_obs", True);
     obsAzimuth.set_attrs("", "observed ice velocity azimuth", "degrees_east", "");
-    vars.add(obsAzimuth,"obsAzimuth")
+    vecs.add(obsAzimuth,"obsAzimuth")
 
     obsMagnitude = PISM.IceModelVec2S()
     obsMagnitude.create(grid, "mag_obs", True)
     obsMagnitude.set_attrs("", "observed ice velocity magnitude", "m s-1", "");
     obsMagnitude.set_glaciological_units("m year-1");
     obsMagnitude.write_in_glaciological_units = True;
-    vars.add(obsMagnitude,"obsMagnitude")
+    vecs.add(obsMagnitude,"obsMagnitude")
 
     obsAccurate = PISM.IceModelVec2S()
     obsAccurate.create(grid, "accur", True)
     obsAccurate.set_attrs("", "flag for accurate observed velocity","", "");
-    vars.add(obsAccurate,"obsAccurate")
+    vecs.add(obsAccurate,"obsAccurate")
 
     longitude = PISM.util.standardLongitudeVec(grid)
     latitude  = PISM.util.standardLatitudeVec(grid)
-    vars.add(longitude,"longitude")
-    vars.add(latitude,"latitude")
+    vecs.add(longitude,"longitude")
+    vecs.add(latitude,"latitude")
     
     for v in [longitude, latitude,obsAzimuth,obsAccurate,obsMagnitude]:
       v.regrid(self.boot_file,True)
 
-    thickness = vars.thickness; bed = vars.bed; enthalpy = vars.enthalpy
-    mask = vars.ice_mask; surface = vars.surface; tauc = vars.tauc
+    thickness = vecs.thickness; bed = vecs.bed; enthalpy = vecs.enthalpy
+    mask = vecs.ice_mask; surface = vecs.surface; tauc = vecs.tauc
 
-    for v in [bed,mask,thickness,vars.vel_bc,vars.vel_bc,vars.bc_mask]:
+    for v in [bed,mask,thickness,vecs.vel_bc,vecs.bc_mask]:
       v.regrid(self.boot_file,True)
 
     enthalpy.set(528668.35)  # Corresponds to 263.15 Kelvin at depth=0.
@@ -119,14 +119,14 @@ class pross(PISM.ssa.SSARun):
     grid = self.grid
     area = grid.dx*grid.dy
   
-    vars = self.modeldata.vars
+    vecs = self.modeldata.vecs
     
-    mask = vars.ice_mask;
-    H = vars.thickness;
-    azi= vars.obsAzimuth;
-    mag = vars.obsMagnitude;
-    acc = vars.obsAccurate;
-    vel_ssa = vars.vel_ssa
+    mask = vecs.ice_mask;
+    H = vecs.thickness;
+    azi= vecs.obsAzimuth;
+    mag = vecs.obsMagnitude;
+    acc = vecs.obsAccurate;
+    vel_ssa = vecs.vel_ssa
 
     m = PISM.MaskQuery(mask)
     
@@ -188,9 +188,9 @@ class pross(PISM.ssa.SSARun):
 
     length = latdata.length();
 
-    vars = self.modeldata.vars
-    vel_ssa = vars.vel_ssa;
-    clat = vars.latitude; clon = vars.longitude; mask = vars.ice_mask;
+    vecs = self.modeldata.vecs
+    vel_ssa = vecs.vel_ssa;
+    clat = vecs.latitude; clon = vecs.longitude; mask = vecs.ice_mask;
 
     secpera=PISM.secpera
     with PISM.util.Access([clat,clon,mask,vel_ssa]):

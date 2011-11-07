@@ -83,18 +83,18 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
     self._allocateBCs()
-    vars = self.modeldata.vars
+    vecs = self.modeldata.vecs
 
-    vars.tauc.set(0.0)     # irrelevant
-    vars.bed.set(-1000.0); # assures shelf is floating
-    vars.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
+    vecs.tauc.set(0.0)     # irrelevant
+    vecs.bed.set(-1000.0); # assures shelf is floating
+    vecs.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
     grid = self.grid
-    thickness=vars.thickness;
-    surface = vars.surface
-    bc_mask = vars.bc_mask
-    vel_bc = vars.vel_bc
-    ice_mask = vars.ice_mask
+    thickness=vecs.thickness;
+    surface = vecs.surface
+    bc_mask = vecs.bc_mask
+    vel_bc = vecs.vel_bc
+    ice_mask = vecs.ice_mask
 
     ocean_rho = self.config.get("sea_water_density");
     ice_rho   = self.modeldata.ice.rho

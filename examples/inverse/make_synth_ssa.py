@@ -32,27 +32,27 @@ tauc_prior_const = None
 def addGroundedIceMisfitWeight(modeldata):
   grid = modeldata.grid
   weight = PISM.util.standardVelocityMisfitWeight(grid)
-  mask = modeldata.vars.ice_mask
+  mask = modeldata.vecs.ice_mask
   with PISM.util.Access(comm=weight,nocomm=mask):
     weight.set(0.)
     grounded = PISM.MASK_GROUNDED
     for (i,j) in grid.points():
       if mask[i,j] == grounded:
         weight[i,j] = 1
-  modeldata.vars.add(weight)
+  modeldata.vecs.add(weight)
 
 def addConstTaucPrior(modeldata,const):
   grid = modeldata.grid
   tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior')
   tauc_prior.set(const)
-  modeldata.vars.add(tauc_prior)
+  modeldata.vecs.add(tauc_prior)
 
 def addScaledTaucPrior(modeldata,scale):
   grid = modeldata.grid
   tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior')
-  tauc_prior.copy_from(modeldata.vars.tauc)
+  tauc_prior.copy_from(modeldata.vecs.tauc)
   tauc_prior.scale(scale)
-  modeldata.vars.add(tauc_prior)
+  modeldata.vecs.add(tauc_prior)
 
 # The main code for a run follows:
 if __name__ == '__main__':
@@ -117,18 +117,18 @@ if __name__ == '__main__':
   # Save time & command line
   PISM.util.writeProvenance(output_file_name)
   
-  tauc_true = modeldata.vars.tauc
+  tauc_true = modeldata.vecs.tauc
   tauc_true.set_name('tauc_true')
   tauc_true.write(output_file_name)
 
-  vel_ssa_observed = modeldata.vars.vel_ssa
+  vel_ssa_observed = modeldata.vecs.vel_ssa
   if not noise is None:
     u_noise = pismssaforward.randVectorV(grid,noise/math.sqrt(2),vel_ssa_observed.get_stencil_width())
     vel_ssa_observed.add(1./PISM.secpera,u_noise)
-  vel_ssa_observed.set_name('_ssa_observed')
+  # vel_ssa_observed.set_name('_ssa_observed')
   vel_ssa_observed.write(output_file_name)
   
-  modeldata.vars.tauc_prior.write(output_file_name)
-  modeldata.vars.vel_misfit_weight.write(output_file_name)
+  modeldata.vecs.tauc_prior.write(output_file_name)
+  modeldata.vecs.vel_misfit_weight.write(output_file_name)
 
   ssa_run.teardown()

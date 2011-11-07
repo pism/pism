@@ -134,7 +134,7 @@ class testi_run(InvSSARun):
 
 
   def _initSSACoefficients(self):
-    vecs = self.modeldata.vars; grid = self.grid
+    vecs = self.modeldata.vecs; grid = self.grid
     vecs.add( util.standardIceThicknessVec( grid ), 'thickness')
     vecs.add( util.standardBedrockElevationVec(grid), 'bed')
     vecs.add( util.standardYieldStressVec( grid ), 'tauc')
