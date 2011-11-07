@@ -49,22 +49,39 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
     PISM.ssa.SSAFromBootFile.__init__(self,input_filename)
     self.inv_data_filename = inv_data_filename
 
-  def _constructSSA(self):
-    return pismssaforward.SSAForwardSolver(self.grid,self.config)
-
   def setup(self):
+
     PISM.ssa.SSAFromBootFile.setup(self)
 
-    # FIXME: This is a lousy name....
-    self.solver.init_vars()
+    vars = self.modeldata.vars
+
+    # The SSA instance will not keep a reference to pismVars; it only uses it to extract
+    # its desired variables.  So it is safe to pass it pismVars and then let pismVars
+    # go out of scope at the end of this method.
+
+    self.ssa.init(vars.asPISMVars())
+
+    if vars.has('vel_bc'):
+      self.ssa.set_boundary_conditions(vars.bc_mask,vars.vel_bc)
+
+    # FIXME: Fix this lousy name
+    self.ssa.setup_vars()
+
+    def _constructSSA(self):
+      md = self.modeldata
+      vars  = self.modeldata.vars
+      tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
+      self.tauc_param = tauc_params[tauc_param_type]
+      return PISM.InvSSAForwardProblem(md.grid,md.basal,md.ice,md.enthalpyconverter,self.tauc_param,self.config)
 
   def _initSSACoefficients(self):
+    self._allocStdSSACoefficients()
+    
     # Read PISM SSA related state variables
-    solver = self.solver
-    solver.allocateCoeffs()
 
-    thickness = solver.thickness; bed = solver.bed; enthalpy = solver.enthalpy
-    mask = solver.ice_mask; surface = solver.surface
+    vecs = self.modeldata.vars
+    thickness = vecs.thickness; bed = vecs.bed; enthalpy = vecs.enthalpy
+    mask = vecs.ice_mask; surface = vecs.surface
 
     # Read in the PISM state variables that are used directly in the SSA solver
     for v in [thickness, bed, enthalpy]:
@@ -72,11 +89,20 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
   
     # variables mask and surface are computed from the geometry previously read
     sea_level = 0 # FIXME setFromOption?
-    gc = PISM.GeometryCalculator(sea_level,self.solver.ice,self.config)
+    gc = PISM.GeometryCalculator(sea_level,self.modeldata.ice,self.config)
     gc.compute(bed,thickness,mask,surface)
 
-    weight = solver.vel_misfit_weight
+    vecs.add( PISM.util.standardVelocityMisfitWeight(self.grid) )
+    weight = vecs.vel_misfit_weight
     weight.regrid(self.inv_data_filename,True)
+
+
+  def _constructSSA(self):
+    md = self.modeldata
+    vecs  = self.modeldata.vars
+    tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
+    self.tauc_param = tauc_params[tauc_param_type]
+    return PISM.InvSSAForwardProblem(md.grid,md.basal,md.ice,md.enthalpyconverter,self.tauc_param,self.config)
 
 
 class Vel2TaucPlotListener(PlotListener):
@@ -181,7 +207,7 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
 ## Main code starts here
 if __name__ == "__main__":
   context = PISM.Context()
-  config = context.config()
+  config = context.config
   PISM.set_abort_on_sigint(True)
 
   usage = \
@@ -192,7 +218,8 @@ if __name__ == "__main__":
       * -i is required
     """
 
-  PISM.show_usage_check_req_opts(context.com,"ssa_forward",["-i"],usage)
+  # FIXME:  Required should be -i or -a
+  # PISM.show_usage_check_req_opts(context.com,"ssa_forward",["-i"],usage)
   
   for o in PISM.OptionsGroup(context.com,"","vel2tauc"):
     input_filename = PISM.optionsString("-i","input file")
@@ -226,7 +253,7 @@ if __name__ == "__main__":
 
   grid = vel2tauc.grid
 
-  modeldata = vel2tauc.solver
+  modeldata = vel2tauc.modeldata
   grid = modeldata.grid
 
   vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed')

@@ -287,9 +287,13 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
       {
         surface->write(c_ncfile);        
       }
-      if(driving_stress != NULL)
+      if(driving_stress_x != NULL)
       {
-        driving_stress->write(c_ncfile);        
+        driving_stress_x->write(c_ncfile);        
+      }
+      if(driving_stress_y != NULL)
+      {
+        driving_stress_y->write(c_ncfile);        
       }
       
       

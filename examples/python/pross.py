@@ -34,70 +34,83 @@ DEFAULT_nuH = DEFAULT_MIN_THICKNESS * DEFAULT_CONSTANT_HARDNESS_FOR_SSA / \
 # COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
 #          30 MPa yr for \bar\nu
 
-class pross(PISM.ssa.SSATestCase):
+class pross(PISM.ssa.SSARun):
   def __init__(self,Mx,My,boot_file,riggs_file):
+    PISM.ssa.SSARun.__init__(self)
+    self.Mx = Mx; self.My = My;
+    
     # Set the file names so that grid construction knows where to find
     # the boot_file
     self.boot_file = boot_file
     self.riggs_file = riggs_file
 
-    PISM.ssa.SSATestCase.__init__(self,Mx,My)
-
-    # the superclass built us a grid.
-    grid = self.grid
-    
-    self.obsAzimuth = PISM.IceModelVec2S()
-    self.obsAzimuth.create(grid, "azi_obs", True);
-    self.obsAzimuth.set_attrs("", "observed ice velocity azimuth", "degrees_east", "");
-
-    self.obsMagnitude = PISM.IceModelVec2S()
-    self.obsMagnitude.create(grid, "mag_obs", True)
-    self.obsMagnitude.set_attrs("", "observed ice velocity magnitude", "m s-1", "");
-    self.obsMagnitude.set_glaciological_units("m year-1");
-    self.obsMagnitude.write_in_glaciological_units = True;
-
-    self.obsAccurate = PISM.IceModelVec2S()
-    self.obsAccurate.create(grid, "accur", True)
-    self.obsAccurate.set_attrs("", "flag for accurate observed velocity","", "");
-
-    self.longitude = PISM.util.standardLongitudeVec(grid)
-    self.latitude  = PISM.util.standardLatitudeVec(grid)
-    vars = set([self.longitude, self.latitude,self.obsAzimuth,self.obsAccurate,self.obsMagnitude])
-    for v in vars:
-      v.regrid(boot_file,True)
-
-  def initGrid(self,Mx,My):
-    PISM.util.init_grid2d_from_file(self.grid,self.boot_file,Mx,My)
+  def _initGrid(self):
+    self.grid = PISM.Context().newgrid()
+    PISM.util.init_grid2d_from_file(self.grid,self.boot_file,self.Mx,self.My)
     self.grid.printInfo(1)
 
-  def initPhysics(self):
+  def _initPhysics(self):
     secpera = PISM.secpera
-    self.ice = PISM.CustomGlenIce(self.grid.com,"",config)
-    self.ice.setHardness(DEFAULT_CONSTANT_HARDNESS_FOR_SSA);
-    self.basal = PISM.IceBasalResistancePlasticLaw(  config.get("plastic_regularization") / secpera, 
+    enthalpyconverter = PISM.EnthalpyConverter(config)
+    ice = PISM.CustomGlenIce(self.grid.com,"",config,enthalpyconverter)
+    ice.setHardness(DEFAULT_CONSTANT_HARDNESS_FOR_SSA);
+    basal = PISM.IceBasalResistancePlasticLaw(  config.get("plastic_regularization") / secpera, 
                                            config.get_flag("do_pseudo_plastic_till"),
                                            config.get("pseudo_plastic_q"),
                                            config.get("pseudo_plastic_uthreshold") / secpera)
-    self.basal.printInfo(1,self.grid.com)
-    self.enthalpyconverter = PISM.EnthalpyConverter(config)
+    basal.printInfo(1,self.grid.com)
+    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
+    
+  def _initSSACoefficients(self):
+    self._allocStdSSACoefficients()
+    self._allocateBCs(velname='bar',maskname='bcflag')
+    vars = self.modeldata.vars
+    grid = self.modeldata.grid
 
-  def initSSACoefficients(self):
-    solver = self.solver
-    solver.allocateBCs(velname='bar',maskname='bcflag')
+    obsAzimuth = PISM.IceModelVec2S()
+    obsAzimuth.create(grid, "azi_obs", True);
+    obsAzimuth.set_attrs("", "observed ice velocity azimuth", "degrees_east", "");
+    vars.add(obsAzimuth,"obsAzimuth")
 
-    solver.readCoeffsFromFile(self.boot_file,omit=[solver.tauc,solver.enthalpy,solver.surface])
-    solver.enthalpy.set(528668.35)  # Corresponds to 263.15 Kelvin at depth=0.
-                                    # The CustomGlenIce flow law does not use it.
+    obsMagnitude = PISM.IceModelVec2S()
+    obsMagnitude.create(grid, "mag_obs", True)
+    obsMagnitude.set_attrs("", "observed ice velocity magnitude", "m s-1", "");
+    obsMagnitude.set_glaciological_units("m year-1");
+    obsMagnitude.write_in_glaciological_units = True;
+    vars.add(obsMagnitude,"obsMagnitude")
+
+    obsAccurate = PISM.IceModelVec2S()
+    obsAccurate.create(grid, "accur", True)
+    obsAccurate.set_attrs("", "flag for accurate observed velocity","", "");
+    vars.add(obsAccurate,"obsAccurate")
+
+    longitude = PISM.util.standardLongitudeVec(grid)
+    latitude  = PISM.util.standardLatitudeVec(grid)
+    vars.add(longitude,"longitude")
+    vars.add(latitude,"latitude")
+    
+    for v in [longitude, latitude,obsAzimuth,obsAccurate,obsMagnitude]:
+      v.regrid(self.boot_file,True)
+
+    thickness = vars.thickness; bed = vars.bed; enthalpy = vars.enthalpy
+    mask = vars.ice_mask; surface = vars.surface; tauc = vars.tauc
+
+    for v in [bed,mask,thickness,vars.vel_bc,vars.vel_bc,vars.bc_mask]:
+      v.regrid(self.boot_file,True)
+
+    enthalpy.set(528668.35)  # Corresponds to 263.15 Kelvin at depth=0.
+                             # The CustomGlenIce flow law does not use it.
     # set the basal yield stress (does not matter; everything is floating)
-    solver.tauc.set(0.0)
+    tauc.set(0.0)
 
+    surface.copy_from(thickness)
     ice_rho = config.get("ice_density")
     ocean_rho = config.get("sea_water_density")
-    solver.thickness.copy_to(solver.surface)
-    solver.surface.scale(1.0 - ice_rho / ocean_rho)
+    surface.scale(1.0 - ice_rho / ocean_rho)
 
-    solver.ssa.strength_extension.set_min_thickness(DEFAULT_MIN_THICKNESS);
-    solver.ssa.strength_extension.set_notional_strength(DEFAULT_nuH);
+  def _initSSA(self):
+    self.ssa.strength_extension.set_min_thickness(DEFAULT_MIN_THICKNESS);
+    self.ssa.strength_extension.set_notional_strength(DEFAULT_nuH);
 
   def report(self):
     uerr = 0.0; verr=0.0; relvecerr=0.0; accN=0.0 
@@ -106,12 +119,14 @@ class pross(PISM.ssa.SSATestCase):
     grid = self.grid
     area = grid.dx*grid.dy
   
-    mask = self.solver.ice_mask;
-    H = self.solver.thickness;
-    azi=self.obsAzimuth;
-    mag = self.obsMagnitude;
-    acc = self.obsAccurate;
-    vel_ssa = self.solver.solution();
+    vars = self.modeldata.vars
+    
+    mask = vars.ice_mask;
+    H = vars.thickness;
+    azi= vars.obsAzimuth;
+    mag = vars.obsMagnitude;
+    acc = vars.obsAccurate;
+    vel_ssa = vars.vel_ssa
 
     m = PISM.MaskQuery(mask)
     
@@ -173,8 +188,9 @@ class pross(PISM.ssa.SSATestCase):
 
     length = latdata.length();
 
-    vel_ssa = self.solver.solution();
-    clat = self.latitude; clon = self.longitude; mask = self.solver.ice_mask;
+    vars = self.modeldata.vars
+    vel_ssa = vars.vel_ssa;
+    clat = vars.latitude; clon = vars.longitude; mask = vars.ice_mask;
 
     secpera=PISM.secpera
     with PISM.util.Access([clat,clon,mask,vel_ssa]):
@@ -212,23 +228,6 @@ number of RIGGS points in computed ice shelf region = %8.2f""", length , g_goodp
     r.println("Chi^2 statistic for computed results compared to RIGGS is %10.3f",
                       g_ChiSqr * (156.0 / g_goodptcount))
 
-  def write(self,filename):
-    PISM.ssa.SSATestCase.write(self,filename)
-
-    vars = set([self.longitude, self.latitude,self.obsAzimuth,self.obsAccurate,self.obsMagnitude])
-    for v in vars:
-      v.write(filename)
-
-    cbar = PISM.IceModelVec2S();
-    cbar.create(self.grid,"cbar",False)
-    cbar.set_attrs( "diagnostic", 
-                    "magnitude of vertically-integrated horizontal velocity of ice",
-                    "m s-1", "");
-    cbar.set_glaciological_units("m year-1")
-    cbar.write_in_glaciological_units = True;
-    self.solver.solution().magnitude(cbar)
-    cbar.write(filename)
-
 
 # The main code for a run follows:
 if __name__ == '__main__':
@@ -259,7 +258,7 @@ notes:
 
   PISM.show_usage_check_req_opts(com,"python pross.py",["-boot_file"],usage)
 
-  config = context.config()
+  config = context.config
   config.set_flag("use_ssa_velocity", True)
   config.set_flag("use_ssa_when_grounded", False)
   config.set_flag("use_constant_nuh_for_ssa", False)
@@ -273,6 +272,7 @@ notes:
     output_file = PISM.optionsString("-o","output file",default="ross_computed.nc")
 
   test_case = pross(Mx,My,boot_file,riggs_file)
+  test_case.setup()
   test_case.solve()
   test_case.report()
   test_case.write(output_file)

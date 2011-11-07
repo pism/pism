@@ -202,8 +202,9 @@ PetscErrorCode SSAFEM::setup()
                  **topg,
                  **tauc_array,
                   *Enth_e[4],
-                  *Enth_q[4];
-  PISMVector2    **ds;
+                  *Enth_q[4],
+                  **ds_x,
+                  **ds_y;
   PetscInt         i,j,k,q,p,
                    Mz = grid.Mz;
   PetscErrorCode   ierr;
@@ -222,7 +223,8 @@ PetscErrorCode SSAFEM::setup()
     ierr = surface->get_array(h);CHKERRQ(ierr);    
   } else {
     driving_stress_explicit = true;
-    ierr = driving_stress->get_array(ds);CHKERRQ(ierr);        
+    ierr = driving_stress_x->get_array(ds_x);CHKERRQ(ierr);
+    ierr = driving_stress_y->get_array(ds_y);CHKERRQ(ierr);
   }
   
   ierr = thickness->get_array(H);CHKERRQ(ierr);
@@ -235,9 +237,10 @@ PetscErrorCode SSAFEM::setup()
   for (i=xs; i<xs+xm; i++) {
     for (j=ys;j<ys+ym; j++) {
       PetscReal hq[FEQuadrature::Nq],hxq[FEQuadrature::Nq],hyq[FEQuadrature::Nq];
-      PISMVector2 dsq[FEQuadrature::Nq];
+      PetscReal ds_xq[FEQuadrature::Nq], ds_yq[FEQuadrature::Nq];
       if(driving_stress_explicit) {
-        quadrature.computeTrialFunctionValues(i,j,dofmap,ds,dsq);
+        quadrature.computeTrialFunctionValues(i,j,dofmap,ds_x,ds_xq);
+        quadrature.computeTrialFunctionValues(i,j,dofmap,ds_y,ds_yq);
       } else {
         // Extract coefficient values at the quadrature points.
         quadrature.computeTrialFunctionValues(i,j,dofmap,h,hq,hxq,hyq);        
@@ -255,7 +258,8 @@ PetscErrorCode SSAFEM::setup()
         feS[q].b  = bq[q];
         feS[q].tauc = taucq[q];
         if(driving_stress_explicit) {
-          feS[q].driving_stress = dsq[q];
+          feS[q].driving_stress.u = ds_xq[q];
+          feS[q].driving_stress.v = ds_yq[q];
         } else {
           feS[q].driving_stress.u = -ice.rho*earth_grav*Hq[q]*hxq[q];
           feS[q].driving_stress.v = -ice.rho*earth_grav*Hq[q]*hyq[q];         
@@ -305,7 +309,8 @@ PetscErrorCode SSAFEM::setup()
   if(surface != NULL) {
     ierr = surface->end_access();CHKERRQ(ierr);
   } else {
-    ierr = driving_stress->end_access();CHKERRQ(ierr);
+    ierr = driving_stress_x->end_access();CHKERRQ(ierr);
+    ierr = driving_stress_y->end_access();CHKERRQ(ierr);
   }
   ierr = thickness->end_access();CHKERRQ(ierr);
   ierr = bed->end_access();CHKERRQ(ierr);

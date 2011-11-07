@@ -105,70 +105,40 @@ tauc_params = {"ident":PISM.cvar.g_InvTaucParamIdent,
                "square":PISM.cvar.g_InvTaucParamSquare,
                "exp":PISM.cvar.g_InvTaucParamExp }
 
-class SSAForwardSolver(PISM.ssa.SSASolver):
-  def __init__(self,grid,config):
-    PISM.ssa.SSASolver.__init__(self,grid,config)
-    tauc_param_type = config.get_string("inv_ssa_tauc_param")
-    self.tauc_param = tauc_params[tauc_param_type]
-    self.range_l2_weight=None
-
-  def allocateCoeffs(self,**kwargs):
-    PISM.ssa.SSASolver.allocateCoeffs(self,**kwargs)
-    self.vel_misfit_weight = PISM.util.standardVelocityMisfitWeight(self.grid)
-
-  def init_vars(self):
-    pismVars = PISM.PISMVars()
-    for var in [self.thickness,self.bed,self.tauc,
-                self.enthalpy,self.ice_mask]:
-        pismVars.add(var)
-    
-    if not self.surface is None:
-      pismVars.add(self.surface)
-    if not self.drivingstress is None:
-      pismVars.add(self.drivingstress,'ssa_driving_stress')
-    
-    
-    if not self.vel_misfit_weight is None:
-      pismVars.add(self.vel_misfit_weight)
-      
-    
-    # The SSA instance will not keep a reference to pismVars; it only uses it to extract
-    # its desired variables.  So it is safe to pass it pismVars and then let pismVars
-    # go out of scope at the end of this method.
-    self.ssa.init(pismVars)
-
-    if not self.vel_bc is None:
-      self.ssa.set_boundary_conditions(self.bc_mask,self.vel_bc)
-
-    self.ssa.setup_vars()
-
-    self.ssa_init = True
-    
-  def buildSSA(self):
-    self.ssa = PISM.InvSSAForwardProblem(self.grid,self.basal,self.ice,self.enthalpyconverter,self.tauc_param,self.config)
-
-  def write(self,filename):
-    PISM.ssa.SSASolver.write(self,filename)
-    if not self.range_l2_weight is None:
-      self.range_l2_weight.write(filename)
-
 WIDE_STENCIL = 2
 
 class InvSSARun(PISM.ssa.SSARun):
+
   def setup(self):
+
     PISM.ssa.SSARun.setup(self)
 
-    # FIXME: This is a lousy name....
-    self.solver.init_vars()
+    vars = self.modeldata.vars
+
+    # The SSA instance will not keep a reference to pismVars; it only uses it to extract
+    # its desired variables.  So it is safe to pass it pismVars and then let pismVars
+    # go out of scope at the end of this method.
+
+    self.ssa.init(vars.asPISMVars())
+
+    if vars.has('vel_bc'):
+      self.ssa.set_boundary_conditions(vars.bc_mask,vars.vel_bc)
+
+    # FIXME: Fix this lousy name
+    self.ssa.setup_vars()
 
   def _constructSSA(self):
-    return SSAForwardSolver(self.grid,self.config)
+    md = self.modeldata
+    vars  = self.modeldata.vars
+    tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
+    self.tauc_param = tauc_params[tauc_param_type]
+    return PISM.InvSSAForwardProblem(md.grid,md.basal,md.ice,md.enthalpyconverter,self.tauc_param,self.config)
 
 class SSAForwardProblem(NonlinearForwardProblem):
   
   def __init__(self,ssarun):
     self.ssarun = ssarun
-    self.solver = ssarun.solver
+    self.ssa = self.ssarun.ssa
     self.grid = ssarun.grid
 
   def F(self, x,out=None,guess=None):
@@ -183,8 +153,8 @@ class SSAForwardProblem(NonlinearForwardProblem):
     #   self.solver.set_initial_velocity_guess(guess)
     if out is None:
       out = self.rangeVector()
-    self.solver.ssa.set_tauc(x.core())
-    self.solver.ssa.solveF(out.core())
+    self.ssa.set_tauc(x.core())
+    self.ssa.solveF(out.core())
     return out
 
   def T(self,d,out=None):
@@ -196,7 +166,7 @@ class SSAForwardProblem(NonlinearForwardProblem):
     """
     if out is None:
       out = self.rangeVector()
-    self.solver.ssa.solveT(d.core(),out.core())
+    self.ssa.solveT(d.core(),out.core())
     return out
 
   def TStar(self,r,out=None):
@@ -208,7 +178,7 @@ class SSAForwardProblem(NonlinearForwardProblem):
     """
     if out is None:
       out = self.domainVector()
-    self.solver.ssa.solveTStar(r.core(),out.core())
+    self.ssa.solveTStar(r.core(),out.core())
     return out
 
   def linearizeAt(self,x,guess=None):
@@ -217,7 +187,7 @@ class SSAForwardProblem(NonlinearForwardProblem):
 
     Nonlinear problems often make use of an initial guess; this can be provided in 'guess'.
     """
-    self.solver.ssa.set_tauc(x.core())
+    self.ssa.set_tauc(x.core())
 
   def evalFandLinearize(self,x,out=None,guess=None):
     """
@@ -229,20 +199,20 @@ class SSAForwardProblem(NonlinearForwardProblem):
     if out is None:
       out = self.rangeVector()
     self.linearizeAt(x)
-    self.solver.ssa.solveF(out.core())
+    self.ssa.solveF(out.core())
     return out
   
   def rangeIP(self,a,b):
     """
     Computes the inner product of two vectors in the range.
     """
-    return self.solver.ssa.rangeIP(a.core(),b.core())
+    return self.ssa.rangeIP(a.core(),b.core())
 
   def domainIP(self,a,b):
     """
     Computes the inner product of two vectors in the domain.
     """
-    return self.solver.ssa.domainIP(a.core(),b.core())
+    return self.ssa.domainIP(a.core(),b.core())
 
   def rangeVector(self):
     """Constructs a brand new vector from the range vector space"""

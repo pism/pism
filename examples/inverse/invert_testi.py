@@ -26,6 +26,7 @@ import tozero
 import siple
 
 import PISM
+from PISM import util
 
 from pismssaforward import InvSSARun, SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
 tauc_params, PlotListener, pism_print_logger, pism_pause, pauseListener
@@ -129,45 +130,54 @@ class testi_run(InvSSARun):
     ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
     ice.setHardness(B_schoof)
     
-    self.solver.setPhysics(ice,basal,enthalpyconverter)
+    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
 
 
   def _initSSACoefficients(self):
-    solver = self.solver
-    solver.allocateCoeffs(using_l2_weight=True,using_explicit_driving_stress=True)
-    solver.allocateBCs()
-    solver.thickness.set(H0_schoof)
-    solver.ice_mask.set(PISM.MASK_GROUNDED)
-    solver.bed.set(0.)
+    vecs = self.modeldata.vars; grid = self.grid
+    vecs.add( util.standardIceThicknessVec( grid ), 'thickness')
+    vecs.add( util.standardBedrockElevationVec(grid), 'bed')
+    vecs.add( util.standardYieldStressVec( grid ), 'tauc')
+    vecs.add( util.standardEnthalpyVec( grid ), 'enthalpy' )
+    vecs.add( util.standardIceMask( grid ), 'ice_mask' )
+    vecs.add( util.standardDrivingStressX( grid ) )
+    vecs.add( util.standardDrivingStressY( grid ) )
+    vecs.add( util.standardVelocityMisfitWeight(grid) )
 
-    testi_tauc(solver.grid,solver.ice,solver.tauc)
+
+    self._allocateBCs()
+
+    vecs.thickness.set(H0_schoof)
+    vecs.ice_mask.set(PISM.MASK_GROUNDED)
+    vecs.bed.set(0.)
+
+    testi_tauc(self.modeldata.grid,self.modeldata.ice,vecs.tauc)
 
     grid = self.grid
     standard_gravity = grid.config.get("standard_gravity");
-    f = self.solver.ice.rho*standard_gravity*H0_schoof*slope
-    driving_stress = solver.drivingstress
-    with PISM.util.Access(comm=[driving_stress,solver.bc_mask,solver.vel_bc]):
+    f = self.modeldata.ice.rho*standard_gravity*H0_schoof*slope
+    vecs.ssa_driving_stress_y.set(0)
+    vecs.ssa_driving_stress_x.set(f)
+    
+    with PISM.util.Access(comm=[vecs.bc_mask,vecs.vel_bc]):
       for (i,j) in grid.points():
-        driving_stress[i,j].u = f
-        driving_stress[i,j].v = 0
-
         if (j == 0) or (j==grid.My-1):
-          solver.bc_mask[i,j]=1
-          solver.vel_bc[i,j].u=0
-          solver.vel_bc[i,j].v=0
+          vecs.bc_mask[i,j]=1
+          vecs.vel_bc[i,j].u=0
+          vecs.vel_bc[i,j].v=0
 
-    l2_weight=solver.range_l2_weight
-    with PISM.util.Access(comm=l2_weight):
+    misfit_weight=vecs.vel_misfit_weight
+    with PISM.util.Access(comm=misfit_weight):
       for (i,j) in grid.points():
         if grid.y[j] <= 0:
-          l2_weight[i,j] = 1.;
+          misfit_weight[i,j] = 1.;
         else:
-          l2_weight[i,j] = right_side_weight;
+          misfit_weight[i,j] = right_side_weight;
 
 ## Main code starts here
 if __name__ == "__main__":
   context = PISM.Context()
-  config = context.config()
+  config = context.config
   PISM.set_abort_on_sigint(True)
 
   for o in PISM.OptionsGroup(context.com,"","Invert test I"):
@@ -206,7 +216,7 @@ if __name__ == "__main__":
 
   # Build the true yeild stress for test I
   tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
-  testi_tauc(grid,testi.solver.ice,tauc_true)
+  testi_tauc(grid,testi.modeldata.ice,tauc_true)
 
   # Convert tauc_true to zeta_true
   if config.get_string('inv_ssa_tauc_param')=='ident':
@@ -228,7 +238,7 @@ if __name__ == "__main__":
   if not tauc_guess_const is None:
     tauc.set(tauc_guess_const)
   else:
-    testi_tauc(grid,testi.solver.ice,tauc)
+    testi_tauc(grid,testi.modeldata.ice,tauc)
     tauc.scale(tauc_guess_scale)
 
   # Convert tauc guess to zeta guess

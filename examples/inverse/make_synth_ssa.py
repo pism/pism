@@ -32,27 +32,27 @@ tauc_prior_const = None
 def addGroundedIceMisfitWeight(modeldata):
   grid = modeldata.grid
   weight = PISM.util.standardVelocityMisfitWeight(grid)
-  mask = modeldata.ice_mask
+  mask = modeldata.vars.ice_mask
   with PISM.util.Access(comm=weight,nocomm=mask):
     weight.set(0.)
     grounded = PISM.MASK_GROUNDED
     for (i,j) in grid.points():
       if mask[i,j] == grounded:
         weight[i,j] = 1
-  modeldata.addVariable(weight)
+  modeldata.vars.add(weight)
 
 def addConstTaucPrior(modeldata,const):
   grid = modeldata.grid
   tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior')
   tauc_prior.set(const)
-  modeldata.addVariable(tauc_prior)
+  modeldata.vars.add(tauc_prior)
 
 def addScaledTaucPrior(modeldata,scale):
   grid = modeldata.grid
   tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior')
-  tauc_prior.copy_from(modeldata.tauc)
+  tauc_prior.copy_from(modeldata.vars.tauc)
   tauc_prior.scale(scale)
-  modeldata.addVariable(tauc_prior)
+  modeldata.vars.add(tauc_prior)
 
 # The main code for a run follows:
 if __name__ == '__main__':
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
   PISM.show_usage_check_req_opts(com,"ssa_forward",["-i"],usage)
 
-  config = context.config()
+  config = context.config
   for o in PISM.OptionsGroup(com,"","SSA Forward"):
     input_file_name = PISM.optionsString("-i","file to bootstrap from")
     output_file_name = PISM.optionsString("-o","output file",default="make_synth_ssa.nc")
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     noise = PISM.optionsReal("-rms_noise","pointwise rms noise to add (in m/a)",default=None)
 
 
-  PISM.Context().config().set_string("ssa_method","fem")
+  config.set_string("ssa_method","fem")
   
   ssa_run = PISM.ssa.SSAFromBootFile(input_file_name)
 
@@ -99,16 +99,15 @@ if __name__ == '__main__':
 
   PISM.verbPrintf(2,context.com,"Solve time %g seconds.\n",solve_t)
 
-  modeldata = ssa_run.solver
+  modeldata = ssa_run.modeldata
   grid = modeldata.grid
 
   addGroundedIceMisfitWeight(modeldata)
+  
   if not tauc_prior_const is None:
     addConstTaucPrior(modeldata,tauc_prior_const)
   else:
     addScaledTaucPrior(modeldata,tauc_prior_scale)
-
-  addGroundedIceMisfitWeight(modeldata)
 
   pio = PISM.PISMIO(grid)
   pio.open_for_writing(output_file_name,False,True)
@@ -118,18 +117,18 @@ if __name__ == '__main__':
   # Save time & command line
   PISM.util.writeProvenance(output_file_name)
   
-  tauc_true = modeldata.tauc
+  tauc_true = modeldata.vars.tauc
   tauc_true.set_name('tauc_true')
   tauc_true.write(output_file_name)
 
-  vel_ssa_observed = modeldata.vel_ssa
+  vel_ssa_observed = modeldata.vars.vel_ssa
   if not noise is None:
     u_noise = pismssaforward.randVectorV(grid,noise/math.sqrt(2),vel_ssa_observed.get_stencil_width())
     vel_ssa_observed.add(1./PISM.secpera,u_noise)
   vel_ssa_observed.set_name('_ssa_observed')
   vel_ssa_observed.write(output_file_name)
   
-  modeldata.tauc_prior.write(output_file_name)
-  modeldata.vel_misfit_weight.write(output_file_name)
+  modeldata.vars.tauc_prior.write(output_file_name)
+  modeldata.vars.vel_misfit_weight.write(output_file_name)
 
   ssa_run.teardown()

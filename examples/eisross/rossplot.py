@@ -93,8 +93,8 @@ def get_var(nc, name):
 H         = get_var(infile, "thk")
 mask      = get_var(infile, "mask")
 cbar      = get_var(infile, "cbar")
-ubar      = get_var(infile, "ubar_ssa")
-vbar      = get_var(infile, "vbar_ssa")
+ubar      = get_var(infile, "u_ssa")
+vbar      = get_var(infile, "v_ssa")
 pismaccur = get_var(infile, "accur")
 print "done."
 

@@ -34,6 +34,8 @@ SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
   surface = NULL;
   bed = NULL;
   enthalpy = NULL;
+  driving_stress_x = NULL;
+  driving_stress_y = NULL;
 
   strength_extension = new SSAStrengthExtension(config);
   allocate();
@@ -58,12 +60,16 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   if (tauc == NULL) SETERRQ(1, "tauc is not available");
 
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  driving_stress = dynamic_cast<IceModelVec2V*>(vars.get("ssa_driving_stress"));
-  if( (surface != NULL) && (driving_stress!=NULL) ) {
-    SETERRQ(1, "at most one of surface_altitude or ssa_driving_stress may be specified");
-  }
-  if( (surface == NULL) && (driving_stress == NULL) ) {
-    SETERRQ(1, "neither surface_altitude nor ssa_driving_stress is available");
+  driving_stress_x = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_x"));
+  driving_stress_y = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_y"));
+  if( (driving_stress_x==NULL) && (driving_stress_y==NULL) ) {
+    if(surface == NULL) {
+      SETERRQ(1, "neither surface_altitude nor ssa_driving_stress_x/y is available");      
+    }
+  } else if(surface !=NULL){
+    SETERRQ(1, "at most one of surface_altitude or ssa_driving_stress_x/y may be specified");    
+  } else if( (driving_stress_x==NULL) || (driving_stress_y==NULL) ) {
+    SETERRQ(1, "both of ssa_driving_stress_x/y must be specified if one is");
   }
 
   bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
