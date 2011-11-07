@@ -589,11 +589,21 @@ PetscErrorCode IceModelVec::define(const NCTool &nc, nc_type output_datatype) {
   return 0;
 }
 
+//! \brief Returns a copy of a NCSpatialVariable object containing metadata for
+//! the compoment N.
+NCSpatialVariable IceModelVec::get_metadata(int N) {
+  if (N < 0 || N >= dof)
+    return NCSpatialVariable();
+
+  return vars[N];
+}
+
+
 //! \brief Copies metadata from a variable var into the N-th component of this
 //! IceModelVec.
 PetscErrorCode IceModelVec::set_metadata(NCSpatialVariable &var, int N) {
 
-  if (N >= dof)
+  if (N < 0 || N >= dof)
     SETERRQ(1, "invalid N (>= dof)");
 
   vars[N] = var;
