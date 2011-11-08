@@ -145,7 +145,7 @@ PetscErrorCode SSA::allocate() {
   vector<string> long_names;
   long_names.push_back("SSA model ice velocity in the X direction");
   long_names.push_back("SSA model ice velocity in the Y direction");
-  ierr = velocity.rename("_ssa_blat",long_names,""); CHKERRQ(ierr);
+  ierr = velocity.rename("_ssa",long_names,""); CHKERRQ(ierr);
 
   // mimic IceGrid::createDA() with TRANSPOSE :
   PetscInt dof=2, stencil_width=1;
