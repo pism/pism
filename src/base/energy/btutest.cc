@@ -181,6 +181,7 @@ int main(int argc, char *argv[]) {
     grid.compute_ownership_ranges();
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
     ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
+    ierr = grid.time->init(); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
 
     // allocate tools and IceModelVecs
