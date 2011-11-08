@@ -18,7 +18,7 @@
 
 
 #include <cmath>
-#include <petscda.h>
+#include <petscdmda.h>
 #include "iceModel.hh"
 #include "pism_signal.h"
 #include "Mask.hh"
@@ -56,7 +56,7 @@ PetscErrorCode IceModel::eigenCalving() {
 
   if (ocean != NULL) {
     ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
+  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
@@ -221,7 +221,7 @@ PetscErrorCode IceModel::eigenCalving() {
   ierr = vPrinStrain2.end_access(); CHKERRQ(ierr);
   ierr = vDiffCalvRate.end_access(); CHKERRQ(ierr);
   
-  ierr = PetscGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   cumulative_discharge_flux     += discharge_flux     * factor;
 
@@ -260,7 +260,7 @@ PetscErrorCode IceModel::calvingAtThickness() {
   PetscReal sea_level;
   if (ocean != NULL) {
     ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
+  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vHnew.begin_access(); CHKERRQ(ierr);
@@ -282,7 +282,7 @@ PetscErrorCode IceModel::calvingAtThickness() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
   
-  ierr = PetscGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   cumulative_discharge_flux     += discharge_flux     * factor;
 

@@ -21,8 +21,8 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 
-SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
-                IceFlowLaw &i, EnthalpyConverter &ec, 
+SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
+                IceFlowLaw &i, EnthalpyConverter &ec,
                 const NCConfigVariable &c)
 {
   return new SSAFEM(g,b,i,ec,c);
@@ -37,8 +37,8 @@ PetscErrorCode SSAFEM::allocate_fem() {
   earth_grav = config.get("standard_gravity");
   m_beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
 
-  ierr = DACreateGlobalVector(SSADA, &r);CHKERRQ(ierr);
-  ierr = DAGetMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(SSADA, &r);CHKERRQ(ierr);
+  ierr = DMGetMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
 
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
 
@@ -50,7 +50,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
-  // Allocate feStore, which contains coefficient data at the quadrature points of all the elements.  
+  // Allocate feStore, which contains coefficient data at the quadrature points of all the elements.
   // There are nElement elements, and FEQuadrature::Nq quadrature points.
   PetscInt nElements = element_index.element_count();
   feStore = new FEStoreNode[FEQuadrature::Nq*nElements];
@@ -69,10 +69,10 @@ PetscErrorCode SSAFEM::allocate_fem() {
 PetscErrorCode SSAFEM::deallocate_fem() {
   PetscErrorCode ierr;
 
-  ierr = SNESDestroy(snes);CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes);CHKERRQ(ierr);
   delete feStore;
-  ierr = VecDestroy(r); CHKERRQ(ierr);
-  ierr = MatDestroy(J); CHKERRQ(ierr);
+  ierr = VecDestroy(&r); CHKERRQ(ierr);
+  ierr = MatDestroy(&J); CHKERRQ(ierr);
 
   return 0;
 }
@@ -122,8 +122,8 @@ PetscErrorCode SSAFEM::solve()
   PetscErrorCode ierr;
   PetscViewer    viewer;
   char           filename[PETSC_MAX_PATH_LEN];
-  PetscTruth     flg;
-  
+  PetscBool     flg;
+
   m_epsilon_ssa = config.get("epsilon_ssafd");
 
   ierr = PetscOptionsGetString(NULL, "-ssa_view", filename,
@@ -137,21 +137,22 @@ PetscErrorCode SSAFEM::solve()
     ierr = PetscViewerASCIIPrintf(viewer,"solution vector before SSASolve_FE\n");
              CHKERRQ(ierr);
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
-  ierr = DASetLocalFunction(SSADA,(DALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
-  ierr = DASetLocalJacobian(SSADA,(DALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
+  ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
+  ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
   callback_data.da = SSADA;  callback_data.ssa = this;
+  ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
   ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
 
   stdout_ssa = "";
-  if (getVerbosityLevel() >= 2) 
+  if (getVerbosityLevel() >= 2)
     stdout_ssa = "  SSA: ";
-  
+
   // Set up the system to solve (store coefficient data at the quadrature points):
   ierr = setup(); CHKERRQ(ierr);
 
@@ -163,7 +164,7 @@ PetscErrorCode SSAFEM::solve()
   ierr = SNESGetConvergedReason( snes, &reason); CHKERRQ(ierr);
   if(reason < 0)
   {
-    SETERRQ1(1, 
+    SETERRQ1(grid.com, 1,
       "SSAFEM solve failed to converge (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
   }
   else if(getVerbosityLevel() > 2)
@@ -184,7 +185,7 @@ PetscErrorCode SSAFEM::solve()
     ierr = PetscViewerASCIIPrintf(viewer,"solution vector after SSASolve\n");
              CHKERRQ(ierr);
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
   return 0;
 }
@@ -213,27 +214,27 @@ PetscErrorCode SSAFEM::setup()
   {
     Enth_q[q] = new PetscReal[Mz];
   }
-  
+
   GeometryCalculator gc(sea_level, ice, config);
-  
+
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
   bool driving_stress_explicit;
   if( surface != NULL) {
     driving_stress_explicit = false;
-    ierr = surface->get_array(h);CHKERRQ(ierr);    
+    ierr = surface->get_array(h);CHKERRQ(ierr);
   } else {
     driving_stress_explicit = true;
     ierr = driving_stress_x->get_array(ds_x);CHKERRQ(ierr);
     ierr = driving_stress_y->get_array(ds_y);CHKERRQ(ierr);
   }
-  
+
   ierr = thickness->get_array(H);CHKERRQ(ierr);
   ierr = bed->get_array(topg);CHKERRQ(ierr);
   ierr = tauc->get_array(tauc_array);CHKERRQ(ierr);
 
 
   PetscInt xs = element_index.xs, xm = element_index.xm,
-           ys = element_index.ys, ym = element_index.ym;  
+           ys = element_index.ys, ym = element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys;j<ys+ym; j++) {
       PetscReal hq[FEQuadrature::Nq],hxq[FEQuadrature::Nq],hyq[FEQuadrature::Nq];
@@ -243,7 +244,7 @@ PetscErrorCode SSAFEM::setup()
         quadrature.computeTrialFunctionValues(i,j,dofmap,ds_y,ds_yq);
       } else {
         // Extract coefficient values at the quadrature points.
-        quadrature.computeTrialFunctionValues(i,j,dofmap,h,hq,hxq,hyq);        
+        quadrature.computeTrialFunctionValues(i,j,dofmap,h,hq,hxq,hyq);
       }
 
       PetscReal Hq[FEQuadrature::Nq], bq[FEQuadrature::Nq], taucq[FEQuadrature::Nq];
@@ -262,7 +263,7 @@ PetscErrorCode SSAFEM::setup()
           feS[q].driving_stress.v = ds_yq[q];
         } else {
           feS[q].driving_stress.u = -ice.rho*earth_grav*Hq[q]*hxq[q];
-          feS[q].driving_stress.v = -ice.rho*earth_grav*Hq[q]*hyq[q];         
+          feS[q].driving_stress.v = -ice.rho*earth_grav*Hq[q]*hyq[q];
         }
         // feS[q].hx = hxq[q];
         // feS[q].hy = hyq[q];
@@ -270,10 +271,10 @@ PetscErrorCode SSAFEM::setup()
         feS[q].mask = gc.mask(feS[q].b, feS[q].H);
       }
 
-      // In the following, we obtain the averaged hardness value from enthalpy by 
-      // interpolating enthalpy in each column over a quadrature point and then 
-      // taking the average over the column.  A faster approach would be to take 
-      // the column average over each element nodes and then interpolate to the 
+      // In the following, we obtain the averaged hardness value from enthalpy by
+      // interpolating enthalpy in each column over a quadrature point and then
+      // taking the average over the column.  A faster approach would be to take
+      // the column average over each element nodes and then interpolate to the
       // quadrature points. Does this make a difference?
 
       // Obtain the values of enthalpy at each vertical level at each of the vertices
@@ -283,13 +284,13 @@ PetscErrorCode SSAFEM::setup()
       ierr = enthalpy->getInternalColumn(i+1,j+1,&Enth_e[2]);CHKERRQ(ierr);
       ierr = enthalpy->getInternalColumn(i,j+1,&Enth_e[3]);CHKERRQ(ierr);
 
-      // We now want to interpolate to the quadrature points at each of the 
+      // We now want to interpolate to the quadrature points at each of the
       // vertical levels.  It would be nice to use quadrature::computeTestFunctionValues,
       // but the way we have just obtained the values at the element vertices
       // using getInternalColumn doesn't make this straightforward.  So we compute the values
       // by hand.
       const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
-      for (k=0; k<Mz; k++) { 
+      for (k=0; k<Mz; k++) {
         Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
         for (q=0; q<FEQuadrature::Nq; q++) {
           for (p=0; p<FEQuadrature::Nk; p++) {
@@ -340,7 +341,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
 {
 
   Mask M;
-  
+
   if (feS->H < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
     if (dNuH) *dNuH = 0;
@@ -352,7 +353,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
   }
   *nuH  *=  2;
   if (dNuH) *dNuH *= 2;
-  
+
   if( M.grounded_ice(feS->mask) )
   {
     basal.dragWithDerivative(feS->tauc,u->u,u->v,beta,dbeta);
@@ -369,10 +370,10 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
 
 //! \brief Sets Dirichlet boundary conditions. Called from SSAFEFunction and
 //! SSAFEJacobian.
-/*! If for some vertex \a local_bc_mask indicates that it 
+/*! If for some vertex \a local_bc_mask indicates that it
 is an explicit Dirichlet node, the values of x for that node is set from the Dirichlet
 data BC_vel. The row and column in the \a dofmap are set as invalid.
-This last step ensures that the residual and Jacobian entries 
+This last step ensures that the residual and Jacobian entries
 corresponding to a Dirichlet unknown are not set in the main loops of
 SSAFEM::compute_local_function and SSSAFEM:compute_local_jacobian.
 */
@@ -387,7 +388,7 @@ void SSAFEM::FixDirichletValues( PetscReal local_bc_mask[],PISMVector2 **BC_vel,
       x[k].v = BC_vel[ii][jj].v;
       // Mark any kind of Dirichlet node as not to be touched
       my_dofmap.markRowInvalid(k);
-      my_dofmap.markColInvalid(k);      
+      my_dofmap.markColInvalid(k);
     }
   }
 }
@@ -395,7 +396,7 @@ void SSAFEM::FixDirichletValues( PetscReal local_bc_mask[],PISMVector2 **BC_vel,
 //! Implements the callback for computing the SNES local function.
 /*! Compute the residual \f[r_{ij}= G(x,\psi_{ij}) \f] where \f$G\f$ is the weak form of the SSA, \f$x\f$
 is the current approximate solution, and the \f$\psi_{ij}\f$ are test functions. */
-PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg)
+PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg)
 {
   PetscInt         i,j,k,q;
   PetscReal        **bc_mask;
@@ -410,7 +411,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
       yg[i][j].u = yg[i][j].v = 0;
     }
   }
-  
+
   // Start access of Dirichlet data, if present.
   if (bc_locations && vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
@@ -438,7 +439,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Storage for element-local solution and residuals.
-      PISMVector2     x[4],y[4]; 
+      PISMVector2     x[4],y[4];
       // Index into coefficient storage in feStore
       const PetscInt ij = element_index.flatten(i,j);
 
@@ -456,7 +457,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
       }
 
       // Zero out the element-local residual in prep for updating it.
-      for(k=0;k<FEQuadrature::Nk;k++){ 
+      for(k=0;k<FEQuadrature::Nk;k++){
         y[k].u = 0; y[k].v = 0;
       }
 
@@ -507,7 +508,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
     ierr = vel_bc->end_access(); CHKERRQ(ierr);
   }
 
-  PetscTruth monitorFunction;
+  PetscBool monitorFunction;
   ierr = PetscOptionsHasName(NULL,"-ssa_monitor_function",&monitorFunction);CHKERRQ(ierr);
   if (monitorFunction) {
     ierr = PetscPrintf(grid.com,"SSA Solution and Function values (pointwise residuals)\n");CHKERRQ(ierr);
@@ -527,10 +528,10 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
 
 
 //! Implements the callback for computing the SNES local Jacobian.
-/*! Compute the Jacobian \f[J_{ij}{kl} \frac{d r_{ij}}{d x_{kl}}= G(x,\psi_{ij}) \f] 
-where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate solution, and 
+/*! Compute the Jacobian \f[J_{ij}{kl} \frac{d r_{ij}}{d x_{kl}}= G(x,\psi_{ij}) \f]
+where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate solution, and
 the \f$\psi_{ij}\f$ are test functions. */
-PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVector2 **xg, Mat Jac )
+PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVector2 **xg, Mat Jac )
 {
 
   PetscReal      **bc_mask;
@@ -547,7 +548,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
   // Start access to Dirichlet data if present.
   if (bc_locations && vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
-    ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr); 
+    ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr);
   }
 
   // Jacobian times weights for quadrature.
@@ -574,14 +575,14 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
       // Values of the solution at the nodes of the current element.
       PISMVector2    x[FEQuadrature::Nk];
 
-      // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees 
+      // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
       // of freedom per elment, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
       // entries in the local Jacobian.
       PetscReal      K[(2*FEQuadrature::Nk)*(2*FEQuadrature::Nk)];
 
       // Index into the coefficient storage array.
       const PetscInt ij = element_index.flatten(i,j);
-      
+
       // Initialize the map from global to local degrees of freedom for this element.
       dofmap.reset(i,j,grid);
 
@@ -630,7 +631,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
             cvy = dyt*(2*Dwq[1]+Dwq[0]) + dxt*Dwq[2],
             cux = (2*Dwq[0]+Dwq[1])*dx + Dwq[2]*dy,
             cuy = (2*Dwq[1]+Dwq[0])*dy + Dwq[2]*dx;
-            
+
             if(nuH==0)
             {
               verbPrintf(1,grid.com,"nuh=0 i %d j %d q %d k %d\n",i,j,q,k);
@@ -649,10 +650,10 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
       ierr = dofmap.addLocalJacobianBlock(K,Jac);
     } // j
   } // i
-  
-  
-  // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now 
-  // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these 
+
+
+  // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
+  // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
   // columns previously, the symmetry of the Jacobian matrix is preserved.
   if (bc_locations && vel_bc) {
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -674,28 +675,28 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
   if(vel_bc) {
     ierr = vel_bc->end_access(); CHKERRQ(ierr);
   }
-  
+
   ierr = MatAssemblyBegin(Jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-  PetscTruth monitor_jacobian;
+  PetscBool monitor_jacobian;
   ierr = PetscOptionsHasName(NULL,"-ssa_monitor_jacobian",&monitor_jacobian);CHKERRQ(ierr);
   if (monitor_jacobian) {
     PetscViewer    viewer;
-    
+
     char           file_name[PETSC_MAX_PATH_LEN];
     PetscInt iter;
     ierr = SNESGetIterationNumber(snes,&iter);
     snprintf(file_name,  PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m",iter);
 
-      ierr = verbPrintf(2, grid.com, 
+      ierr = verbPrintf(2, grid.com,
                  "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
                  file_name); CHKERRQ(ierr);
       ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
-      ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
+      ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);CHKERRQ(ierr);
       ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
       ierr = PetscViewerFileSetName(viewer, file_name);CHKERRQ(ierr);
-      
+
       ierr = PetscObjectSetName((PetscObject) Jac,"A"); CHKERRQ(ierr);
       ierr = MatView(Jac, viewer);CHKERRQ(ierr);
   }
@@ -707,7 +708,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
 }
 
 //!
-PetscErrorCode SSAFEFunction(DALocalInfo *info,
+PetscErrorCode SSAFEFunction(DMDALocalInfo *info,
                              const PISMVector2 **xg, PISMVector2 **yg,
                              SSAFEM_SNESCallbackData *fe)
 {
@@ -715,7 +716,7 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
 }
 
 
-PetscErrorCode SSAFEJacobian(DALocalInfo *info,
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info,
                              const PISMVector2 **xg, Mat J,
                              SSAFEM_SNESCallbackData *fe)
 {

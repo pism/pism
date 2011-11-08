@@ -18,7 +18,7 @@
 
 #include <cstring>
 #include <cstdio>
-#include <petscda.h>
+#include <petscdmda.h>
 #include "iceModel.hh"
 #include <algorithm>
 #include <sstream>
@@ -183,18 +183,18 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
     if (stress_balance != NULL) {
       ierr = stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
-      SETERRQ(1,"PISM ERROR: stress_balance == NULL");
+      SETERRQ(grid.com, 1,"PISM ERROR: stress_balance == NULL");
     }
 
     if (surface != NULL) {
       ierr = surface->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
-      SETERRQ(1,"PISM ERROR: surface == NULL");
+      SETERRQ(grid.com, 1,"PISM ERROR: surface == NULL");
     }
     if (ocean != NULL) {
       ierr = ocean->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
-      SETERRQ(1,"PISM ERROR: ocean == NULL");
+      SETERRQ(grid.com, 1,"PISM ERROR: ocean == NULL");
     }
 
     ierr = nc.close(); CHKERRQ(ierr);
@@ -233,19 +233,19 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
   if (stress_balance != NULL) {
     ierr = stress_balance->write_variables(vars, filename); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: stress_balance == NULL");
+    SETERRQ(grid.com, 1,"PISM ERROR: stress_balance == NULL");
   }
 
   // Ask boundary models to write their variables:
   if (surface != NULL) {
     ierr = surface->write_variables(vars, filename); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: surface == NULL");
+    SETERRQ(grid.com, 1,"PISM ERROR: surface == NULL");
   }
   if (ocean != NULL) {
     ierr = ocean->write_variables(vars, filename); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: ocean == NULL");
+    SETERRQ(grid.com, 1,"PISM ERROR: ocean == NULL");
   }
 
   // All the remaining names in vars must be of diagnostic quantities.
@@ -490,7 +490,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     if (! (dimensions == 0 ||
            dimensions == 2 ||
            dimensions == 3))
-      SETERRQ(1, "dimensions can only be 0, 2 or 3");
+      SETERRQ(grid.com, 1, "dimensions can only be 0, 2 or 3");
 
     ierr = PetscOptionsBegin(grid.com, PETSC_NULL, "Options controlling regridding",
                              PETSC_NULL); CHKERRQ(ierr);

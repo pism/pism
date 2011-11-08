@@ -19,7 +19,7 @@
 #include <sstream>
 #include <cstring>
 #include <cmath>
-#include <petscda.h>
+#include <petscdmda.h>
 #include <petscksp.h>
 
 #include "iceModel.hh"
@@ -75,7 +75,7 @@ PetscErrorCode IceModel::update_viewers() {
       }
 
       IceModelVec2S *v2d = dynamic_cast<IceModelVec2S*>(v);
-      if (v2d == NULL) SETERRQ(1,"get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+      if (v2d == NULL) SETERRQ(grid.com, 1,"get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
 
       ierr = v2d->view(viewer, PETSC_NULL); CHKERRQ(ierr);
 
@@ -96,7 +96,7 @@ PetscErrorCode IceModel::update_viewers() {
       }
 
       IceModelVec2V *v2d = dynamic_cast<IceModelVec2V*>(v);
-      if (v2d == NULL) SETERRQ(1,"get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+      if (v2d == NULL) SETERRQ(grid.com, 1,"get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
 
       ierr = v2d->view(v1, v2); CHKERRQ(ierr);
     }
@@ -143,7 +143,7 @@ PetscErrorCode IceModel::update_viewers() {
 
     if (dims == 3) {
 	IceModelVec3D *v3d = dynamic_cast<IceModelVec3D*>(v);
-	if (v3d == NULL) SETERRQ(1,"get_ndims() returns GRID_3D but dynamic_cast gives a NULL");
+	if (v3d == NULL) SETERRQ(grid.com, 1,"get_ndims() returns GRID_3D but dynamic_cast gives a NULL");
 	ierr = v3d->view_sounding(id, jd, viewer); CHKERRQ(ierr);
     }
 
@@ -155,7 +155,7 @@ PetscErrorCode IceModel::update_viewers() {
 //! Initialize run-time diagnostic viewers.
 PetscErrorCode IceModel::init_viewers() {
   PetscErrorCode ierr;
-  PetscTruth flag;
+  PetscBool flag;
   char tmp[TEMPORARY_STRING_LENGTH];
 
   ierr = PetscOptionsBegin(grid.com, PETSC_NULL,

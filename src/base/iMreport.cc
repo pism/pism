@@ -40,7 +40,7 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea) {
 
   PetscErrorCode  ierr;
   PetscScalar     volume=0.0, area=0.0;
-  
+
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
@@ -53,14 +53,14 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea) {
         volume += dv;
       }
     }
-  }  
+  }
 
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&volume, &gvolume, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&volume, &gvolume, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -74,7 +74,7 @@ PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac) 
   PetscErrorCode    ierr;
   PetscScalar       meltarea = 0.0, temp0 = 0.0;
   const PetscScalar a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
-  
+
   ierr = vH.begin_access(); CHKERRQ(ierr);
 
   // use Enth3 to get stats
@@ -100,7 +100,7 @@ PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac) 
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   // communication
-  ierr = PetscGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
 
   // normalize fraction correctly
   if (iarea > 0.0)   gmeltfrac = gmeltfrac / iarea;
@@ -119,7 +119,7 @@ PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
 
   gorigfrac = -1.0;  // result value if not do_age
 
-  if (!config.get_flag("do_age")) 
+  if (!config.get_flag("do_age"))
     return 0;  // leave now
 
   const PetscScalar  a = grid.dx * grid.dy * 1e-3 * 1e-3, // area unit (km^2)
@@ -149,7 +149,7 @@ PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
   ierr = tau3.end_access(); CHKERRQ(ierr);
 
   // communicate to turn into global original fraction
-  ierr = PetscGlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
 
   // normalize fraction correctly
   if (ivol > 0.0)    gorigfrac = gorigfrac / ivol;
@@ -167,7 +167,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
 
   // get volumes in m^3 and areas in m^2
   ierr = volumeArea(gvolume, garea); CHKERRQ(ierr);
-  
+
   if (tempAndAge || (getVerbosityLevel() >= 3)) {
     ierr = energyStats(garea, meltfrac); CHKERRQ(ierr);
   }
@@ -181,7 +181,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
     const PetscScalar CFLviolpercent = 100.0 * CFLviolcount / (grid.Mx * grid.Mz * grid.Mz);
     // at default verbosity level, only report CFL viols if above:
     const PetscScalar CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
-    if (   (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT) 
+    if (   (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT)
         || (getVerbosityLevel() > 2) ) {
       char tempstr[90] = "";
       snprintf(tempstr,90,
@@ -190,12 +190,12 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
       stdout_flags = tempstr + stdout_flags;
     }
   }
-   
+
   // get maximum diffusivity
   ierr = stress_balance->get_max_diffusivity(max_diffusivity); CHKERRQ(ierr);
 
   // main report: 'S' line
-  ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.time->year(),dt,
+  ierr = summaryPrintLine(PETSC_FALSE,(PetscBool)tempAndAge,grid.time->year(),dt,
                           gvolume,garea,meltfrac,max_diffusivity); CHKERRQ(ierr);
 
   return 0;
@@ -204,7 +204,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
 
 //! Print a line to stdout which summarizes the state of the modeled ice sheet at the end of the time step.
 /*!
-Generally, two lines are printed to stdout, the first starting with a space 
+Generally, two lines are printed to stdout, the first starting with a space
 and the second starting with the character 'S' in the left-most column (column 1).
 
 The first line shows flags for which processes executed, and the length of the
@@ -220,7 +220,7 @@ characters are printed:
 This column 1 convention allows automatic tools to read PISM stdout
 and produce time-series.  The 'P' and 'U' lines are intended to appear once at
 the beginning of the run, while an 'S' line appears at every time step.
-This base class version gives a report based on the information included in the 
+This base class version gives a report based on the information included in the
 EISMINT II intercomparison of ice sheet models[\ref EISMINT00].
 
 Note that the inputs \c volume and \c area to this method are in m^3 and m^2,
@@ -239,7 +239,7 @@ Derived classes of IceModel may redefine this method and print alternate
 information.  Use of DiagnosticTimeseries may be superior, however.
  */
 PetscErrorCode IceModel::summaryPrintLine(
-     PetscTruth printPrototype,  bool tempAndAge,
+     PetscBool printPrototype,  bool tempAndAge,
      PetscScalar year,  PetscScalar delta_t,
      PetscScalar volume,  PetscScalar area,
      PetscScalar /* meltfrac */,  PetscScalar max_diffusivity) {
@@ -258,9 +258,9 @@ PetscErrorCode IceModel::summaryPrintLine(
 
   // this version keeps track of what has been done so as to minimize stdout:
   static string stdout_flags_count0;
-  static int    mass_cont_sub_counter = 0;  
+  static int    mass_cont_sub_counter = 0;
   static double mass_cont_sub_dtsum = 0.0;
-  
+
   if (printPrototype == PETSC_TRUE) {
     if (do_energy) {
       ierr = verbPrintf(2,grid.com,
@@ -279,7 +279,7 @@ PetscErrorCode IceModel::summaryPrintLine(
     if (mass_cont_sub_counter == 0)
       stdout_flags_count0 = stdout_flags;
     if (delta_t > 0.0) {
-      mass_cont_sub_counter++;      
+      mass_cont_sub_counter++;
       mass_cont_sub_dtsum += delta_t;
     }
     if ((tempAndAge == PETSC_TRUE) || (!do_energy) || (getVerbosityLevel() > 2)) {
@@ -301,15 +301,15 @@ PetscErrorCode IceModel::summaryPrintLine(
         ierr = verbPrintf(2,grid.com, stdout_ssa.c_str()); CHKERRQ(ierr);
       }
       if (do_energy) {
-        ierr = verbPrintf(2,grid.com, 
+        ierr = verbPrintf(2,grid.com,
           "S %12.5f: %8.5f %9.4f %12.8f\n",
                           year, volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity); CHKERRQ(ierr);
       } else {
-        ierr = verbPrintf(2,grid.com, 
+        ierr = verbPrintf(2,grid.com,
           "S %12.5f: %8.5f %9.4f %12.8f\n",
                           year, volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity); CHKERRQ(ierr);
       }
-      mass_cont_sub_counter = 0;      
+      mass_cont_sub_counter = 0;
       mass_cont_sub_dtsum = 0.0;
     }
   }
@@ -320,7 +320,7 @@ PetscErrorCode IceModel::summaryPrintLine(
 PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     volume=0.0;
-  
+
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -328,11 +328,11 @@ PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
       if (vH(i,j) > 0)
         volume += vH(i,j) * cell_area(i,j);
     }
-  }  
+  }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -343,12 +343,12 @@ PetscErrorCode IceModel::compute_sealevel_volume(PetscScalar &result) {
   MaskQuery mask(vMask);
   double ocean_rho = config.get("sea_water_density");
   double ice_rho = config.get("ice_density");
-  
-  if (ocean == PETSC_NULL) {  SETERRQ(1, "PISM ERROR: ocean == PETSC_NULL");  }
+
+  if (ocean == PETSC_NULL) {  SETERRQ(grid.com, 1, "PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal sea_level;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  
-  ierr = vMask.begin_access(); CHKERRQ(ierr);  
+
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vbed.begin_access();  CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
@@ -364,7 +364,7 @@ PetscErrorCode IceModel::compute_sealevel_volume(PetscScalar &result) {
 	}
       }
     }
-  }  
+  }
   const PetscScalar oceanarea=3.61e14;//in square meters
   volume /= oceanarea;
   ierr = cell_area.end_access(); CHKERRQ(ierr);
@@ -372,7 +372,7 @@ PetscErrorCode IceModel::compute_sealevel_volume(PetscScalar &result) {
   ierr = vbed.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -380,7 +380,7 @@ PetscErrorCode IceModel::compute_sealevel_volume(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_volume_temperate(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     volume=0.0;
-  
+
   PetscScalar *Enth;  // do NOT delete this pointer: space returned by
                       //   getInternalColumn() is allocated already
   ierr = vH.begin_access(); CHKERRQ(ierr);
@@ -391,7 +391,7 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(PetscScalar &result) {
       if (vH(i,j) > 0) {
         const PetscInt ks = grid.kBelowHeight(vH(i,j));
         ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-        for (PetscInt k=0; k<ks; ++k) {	  
+        for (PetscInt k=0; k<ks; ++k) {
           if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) { // FIXME task #7297
             volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
           }
@@ -401,12 +401,12 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(PetscScalar &result) {
         }
       }
     }
-  }  
+  }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -414,7 +414,7 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_volume_cold(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     volume=0.0;
-  
+
   PetscScalar *Enth;  // do NOT delete this pointer: space returned by
                       //   getInternalColumn() is allocated already
   ierr = vH.begin_access(); CHKERRQ(ierr);
@@ -425,7 +425,7 @@ PetscErrorCode IceModel::compute_ice_volume_cold(PetscScalar &result) {
       if (vH(i,j) > 0) {
         const PetscInt ks = grid.kBelowHeight(vH(i,j));
         ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-        for (PetscInt k=0; k<ks; ++k) {	  
+        for (PetscInt k=0; k<ks; ++k) {
           if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) { // FIXME task #7297
             volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
           }
@@ -435,12 +435,12 @@ PetscErrorCode IceModel::compute_ice_volume_cold(PetscScalar &result) {
         }
       }
     }
-  }  
+  }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -448,7 +448,7 @@ PetscErrorCode IceModel::compute_ice_volume_cold(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
-  
+
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -456,11 +456,11 @@ PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
       if (vH(i,j) > 0)
         area += cell_area(i,j);
     }
-  }  
+  }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -468,7 +468,7 @@ PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
-  
+
   ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
   PetscScalar **Enthbase;
   ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
@@ -480,11 +480,11 @@ PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
       if ( (vH(i,j) > 0) && (EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) ) // FIXME task #7297
         area += cell_area(i,j);
     }
-  }  
+  }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -492,7 +492,7 @@ PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area_cold(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
-  
+
   ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
   PetscScalar **Enthbase;
   ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
@@ -504,11 +504,11 @@ PetscErrorCode IceModel::compute_ice_area_cold(PetscScalar &result) {
       if ( (vH(i,j) > 0) && (!EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) ) // FIXME task #7297
         area += cell_area(i,j);
     }
-  }  
+  }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -526,11 +526,11 @@ PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
       if (mask.grounded_ice(i,j))
         area += cell_area(i,j);
     }
-  }  
+  }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -540,7 +540,7 @@ PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
   PetscScalar     area=0.0;
 
   MaskQuery mask(vMask);
-  
+
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -548,11 +548,11 @@ PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
       if (mask.floating_ice(i,j))
         area += cell_area(i,j);
     }
-  }  
+  }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -584,11 +584,11 @@ PetscErrorCode IceModel::compute_ice_enthalpy(PetscScalar &result) {
       }
     }
   }
-  ierr = vH.end_access(); CHKERRQ(ierr);  
+  ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
-  
+
   enthalpysum *= config.get("ice_density") * (grid.dx * grid.dy);
-  
-  ierr = PetscGlobalSum(&enthalpysum, &result, grid.com); CHKERRQ(ierr);
+
+  ierr = PISMGlobalSum(&enthalpysum, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }

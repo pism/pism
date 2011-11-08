@@ -47,7 +47,7 @@ PetscErrorCode IceModel::diffuse_bwat() {
                     Ry = K * dt_TempAge / (grid.dy * grid.dy),
                     oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
   if (oneM4R <= 0.0) {
-    SETERRQ(1,
+    SETERRQ(grid.com, 1,
        "PISM ERROR: diffuse_bwat() requires 1 - 2Rx - 2Ry <= 0 and an explicit step;\n"
        "  current timestep means this method is unstable; believed so rare that\n"
        "  timestep restriction is not part of the adaptive scheme ... ENDING!\n");

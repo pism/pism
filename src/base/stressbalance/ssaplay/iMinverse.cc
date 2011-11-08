@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petscda.h>
+#include <petscdmda.h>
 #include "nc_util.hh"
 #include "LocalInterpCtx.hh"
 #include "iceModelVec.hh"

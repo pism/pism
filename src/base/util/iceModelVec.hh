@@ -21,7 +21,7 @@
 
 #include <cstring>
 #include <cstdlib>
-#include <petscda.h>
+#include <petscdmda.h>
 
 #include "NCSpatialVariable.hh"
 #include "pism_const.hh"
@@ -194,6 +194,7 @@ public:
   virtual PetscErrorCode  rename(const string &short_name, const string &long_name, 
                                  const string &standard_name, int component=0);
   virtual PetscErrorCode  set_intent(string pism_intent, int component=0);
+  virtual NCSpatialVariable get_metadata(int N);
   virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);
   virtual PetscErrorCode  define(const NCTool &nc, nc_type output_datatype);
@@ -238,7 +239,7 @@ protected:
   IceGrid      *grid;
   int          dof,             //!< number of "degrees of freedom" per grid point
     da_stencil_width;           //!< stencil width supported by the DA
-  DA           da;
+  DM           da;
   bool         localp;          //!< localp == true means "has ghosts"
 
   //! It is a map, because a temporary IceModelVec can be used to view
@@ -251,7 +252,7 @@ protected:
   int access_counter;		// used in begin_access() and end_access()
   int state_counter;            //!< Internal IceModelVec "revision number"
 
-  virtual PetscErrorCode create_2d_da(DA &result, PetscInt da_dof, PetscInt stencil_width);
+  virtual PetscErrorCode create_2d_da(DM &result, PetscInt da_dof, PetscInt stencil_width);
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();

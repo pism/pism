@@ -66,10 +66,10 @@ PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
   ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
 
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   return 0;
 }
@@ -110,8 +110,8 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
   ierr = v.end_access(); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);  
 
-  ierr = PetscGlobalMax(&my_u_max, &u_max, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&my_v_max, &v_max, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&my_u_max, &u_max, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&my_v_max, &v_max, grid.com); CHKERRQ(ierr);
 
   // diffusive flux and maximum diffusivity
   ierr = diffusive_flux.set(0.0); CHKERRQ(ierr);

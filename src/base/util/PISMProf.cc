@@ -18,6 +18,7 @@
 
 #include "PISMProf.hh"
 #include "NCTool.hh"
+#include "pism_const.hh"
 
 /// PISMEvent
 PISMEvent::PISMEvent() {
@@ -155,7 +156,7 @@ PetscErrorCode PISMProf::save_report(string filename) {
 
     double time = events[j].total_time;
 
-    PetscGlobalMax(&time, &time, com);
+    PISMGlobalMax(&time, &time, com);
 
     // ignore events that took less than 0.001 seconds
     if (time < 1e-3)

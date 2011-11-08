@@ -96,7 +96,7 @@ public:
                            int N = 0) {
     PetscErrorCode ierr;
 
-    if (N >= dof) SETERRQ(1, "invalid N (>= dof)");
+    if (N >= dof) SETERRQ(grid.com, 1, "invalid N (>= dof)");
 
     vars[N].set_string("pism_intent", "diagnostic");
     if (my_long_name != "") 

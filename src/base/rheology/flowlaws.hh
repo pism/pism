@@ -101,8 +101,8 @@ protected:
 };
 
 // Helper functions:
-PetscTruth IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const NCConfigVariable &, EnthalpyConverter*);
-PetscTruth IceFlowLawUsesGrainSize(IceFlowLaw *);
+PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const NCConfigVariable &, EnthalpyConverter*);
+PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *);
 
 //! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
 /*!

@@ -38,7 +38,7 @@ static PetscInt verbosityLevel;
 //! \brief Set the PISM verbosity level.
 PetscErrorCode setVerbosityLevel(PetscInt level) {
   if ((level < 0) || (level > 5)) {
-     SETERRQ(1,"verbosity level invalid");
+    SETERRQ(PETSC_COMM_SELF, 1,"verbosity level invalid");
   }
   verbosityLevel = level;
   return 0;  
@@ -77,10 +77,12 @@ PetscErrorCode verbPrintf(const int thresh,
 
   extern FILE *petsc_history;
 
-  if ((thresh < 1) || (thresh > 5)) { SETERRQ(1,"invalid threshold in verbPrintf()"); }
 
   PetscFunctionBegin;
   if (!comm) comm = PETSC_COMM_WORLD;
+
+  if ((thresh < 1) || (thresh > 5)) { SETERRQ(comm, 1,"invalid threshold in verbPrintf()"); }
+
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
   if (!rank && ((verbosityLevel >= thresh) || petsc_history) ) {
     va_list Argp;
@@ -89,7 +91,7 @@ PetscErrorCode verbPrintf(const int thresh,
     ierr = PetscStrstr(format,"%A",&sub1);CHKERRQ(ierr);
     if (sub1) {
       ierr = PetscStrstr(format,"%",&sub2);CHKERRQ(ierr);
-      if (sub1 != sub2) SETERRQ(PETSC_ERR_ARG_WRONG,"%%A format must be first in format string");
+      if (sub1 != sub2) SETERRQ(comm, PETSC_ERR_ARG_WRONG,"%%A format must be first in format string");
       ierr    = PetscStrlen(format,&len);CHKERRQ(ierr);
       ierr    = PetscMalloc((len+16)*sizeof(char),&buffer);CHKERRQ(ierr);
       ierr    = PetscStrcpy(buffer,format);CHKERRQ(ierr);

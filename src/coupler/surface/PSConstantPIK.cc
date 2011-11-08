@@ -39,10 +39,10 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
 
 
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-   if (!usurf) SETERRQ(12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
+   if (!usurf) SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 
   lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-  if (!lat) SETERRQ(1, "ERROR: latitude is not available");
+  if (!lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
 
 
 

@@ -51,32 +51,32 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   ierr = verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n"); CHKERRQ(ierr);
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(1, "mask is not available");
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
-  if (tauc == NULL) SETERRQ(1, "tauc is not available");
+  if (tauc == NULL) SETERRQ(grid.com, 1, "tauc is not available");
 
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
   driving_stress_x = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_x"));
   driving_stress_y = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_y"));
   if( (driving_stress_x==NULL) && (driving_stress_y==NULL) ) {
     if(surface == NULL) {
-      SETERRQ(1, "neither surface_altitude nor ssa_driving_stress_x/y is available");      
+      SETERRQ(grid.com, 1, "neither surface_altitude nor ssa_driving_stress_x/y is available");      
     }
   } else if(surface !=NULL){
-    SETERRQ(1, "at most one of surface_altitude or ssa_driving_stress_x/y may be specified");    
+    SETERRQ(grid.com, 1, "at most one of surface_altitude or ssa_driving_stress_x/y may be specified");    
   } else if( (driving_stress_x==NULL) || (driving_stress_y==NULL) ) {
-    SETERRQ(1, "both of ssa_driving_stress_x/y must be specified if one is");
+    SETERRQ(grid.com, 1, "both of ssa_driving_stress_x/y must be specified if one is");
   }
 
   bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
+  if (bed == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
 
   // Check if PISM is being initialized from an output file from a previous run
@@ -113,10 +113,10 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 
   if (config.get_flag("ssa_dirichlet_bc")) {
     bc_locations = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
-    if (bc_locations == NULL) SETERRQ(1, "bc_locations is not available");
+    if (bc_locations == NULL) SETERRQ(grid.com, 1, "bc_locations is not available");
     
     vel_bc = dynamic_cast<IceModelVec2V*>(vars.get("vel_ssa_bc"));
-    if (vel_bc == NULL) SETERRQ(1, "vel_ssa_bc is not available");
+    if (vel_bc == NULL) SETERRQ(grid.com, 1, "vel_ssa_bc is not available");
   }
 
   event_ssa = grid.profiler->create("ssa_update", "time spent solving the SSA");
@@ -149,14 +149,16 @@ PetscErrorCode SSA::allocate() {
 
   // mimic IceGrid::createDA() with TRANSPOSE :
   PetscInt dof=2, stencil_width=1;
-  ierr = DACreate2d(grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
-                    grid.My, grid.Mx,
-                    grid.Ny, grid.Nx,
-                    dof, stencil_width,
-                    &grid.procs_y[0], &grid.procs_x[0],
-                    &SSADA); CHKERRQ(ierr);
+  ierr = DMDACreate2d(grid.com,
+                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                      DMDA_STENCIL_BOX,
+                      grid.My, grid.Mx,
+                      grid.Ny, grid.Nx,
+                      dof, stencil_width,
+                      &grid.procs_y[0], &grid.procs_x[0],
+                      &SSADA); CHKERRQ(ierr);
 
-  ierr = DACreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
   
   return 0;
 }
@@ -166,11 +168,11 @@ PetscErrorCode SSA::deallocate() {
   PetscErrorCode ierr;
 
   if (SSAX != PETSC_NULL) {
-    ierr = VecDestroy(SSAX); CHKERRQ(ierr);
+    ierr = VecDestroy(&SSAX); CHKERRQ(ierr);
   }
 
   if (SSADA != PETSC_NULL) {
-    ierr = DADestroy(SSADA);CHKERRQ(ierr);
+    ierr = DMDestroy(&SSADA);CHKERRQ(ierr);
   }
   
   return 0;
@@ -464,8 +466,8 @@ PetscErrorCode SSA::compute_maximum_velocity() {
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = velocity.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&my_max_u, &max_u, grid.com); CHKERRQ(ierr); 
-  ierr = PetscGlobalMax(&my_max_v, &max_v, grid.com); CHKERRQ(ierr); 
+  ierr = PISMGlobalMax(&my_max_u, &max_u, grid.com); CHKERRQ(ierr); 
+  ierr = PISMGlobalMax(&my_max_v, &max_v, grid.com); CHKERRQ(ierr); 
   return 0;
 }
 

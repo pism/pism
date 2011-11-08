@@ -83,7 +83,7 @@ $ mpiexec -np 2 ./poisson -da_grid_x 320 -da_grid_y 320 -snes_rtol 1.0e-2 # WEAK
 
  */
 
-#include "petscda.h"
+#include "petscdmda.h"
 #include "petscsnes.h"
 #include <math.h>
 
@@ -145,7 +145,7 @@ int main(int argc,char **argv) {
 
   ierr = DASetLocalFunction(user.da,(DALocalFunction1)FormFunctionLocal);CHKERRQ(ierr);
 
-  PetscTruth nojac = PETSC_FALSE;
+  PetscBool nojac = PETSC_FALSE;
   ierr = PetscOptionsGetTruth(PETSC_NULL,"-no_jacobian",&nojac,0); CHKERRQ(ierr);
   if (nojac == PETSC_TRUE) {
     ierr = PetscOptionsSetValue("-snes_mf", PETSC_NULL); CHKERRQ(ierr);
@@ -183,7 +183,7 @@ int main(int argc,char **argv) {
 
   /* optionally, draw viewers; all fields appear in same viewer here;
      use -draw_pause N to see for N secs each, e.g. -dodraw -draw_pause 3 */
-  PetscTruth dodraw = PETSC_FALSE;
+  PetscBool dodraw = PETSC_FALSE;
   ierr = PetscOptionsGetTruth(PETSC_NULL,"-dodraw",&dodraw,0); CHKERRQ(ierr);
   if (dodraw) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,

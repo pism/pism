@@ -192,11 +192,11 @@ int main(int argc, char *argv[]) {
 
     // top of bedrock layer temperature; filled from Test K exact values
     bedtoptemp = dynamic_cast<IceModelVec2S*>(variables.get("bedtoptemp"));
-    if (bedtoptemp == NULL) SETERRQ(1, "bedtoptemp is not available");
+    if (bedtoptemp == NULL) SETERRQ(com, 1, "bedtoptemp is not available");
 
     // lithosphere (bottom of bedrock layer) heat flux; has constant value
     ghf = dynamic_cast<IceModelVec2S*>(variables.get("bheatflx"));
-    if (ghf == NULL) SETERRQ(2, "bheatflx is not available");
+    if (ghf == NULL) SETERRQ(com, 2, "bheatflx is not available");
     ierr = ghf->set(0.042); CHKERRQ(ierr);  // see Test K
 
     // initialize BTU object:

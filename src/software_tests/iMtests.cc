@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <vector>
-#include <petscda.h>
+#include <petscdmda.h>
 #include "iMtests.hh"
 #include "iceModelVec2T.hh"
 #include "PISMIO.hh"

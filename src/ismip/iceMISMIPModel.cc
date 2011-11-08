@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <petscda.h>
+#include <petscdmda.h>
 #include "pism_const.hh"
 #include "iceModel.hh"
 #include "iceMISMIPModel.hh"
@@ -89,7 +89,7 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVaria
 IceMISMIPModel::~IceMISMIPModel() {
   // this destructor gets called even if user does *not* choose -mismip
   if (tviewfile != PETSC_NULL)
-    PetscViewerDestroy(tviewfile);
+    PetscViewerDestroy(&tviewfile);
 }
 
 PetscErrorCode IceMISMIPModel::set_grid_defaults() {
@@ -246,10 +246,10 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
       }
       runtimeyears = timeexper3b[stepindex];
     } else {
-      SETERRQ(99, "how did I get here?");
+      SETERRQ(grid.com, 99, "how did I get here?");
     }
   } else {
-      SETERRQ(99, "how did I get here?");
+      SETERRQ(grid.com, 99, "how did I get here?");
   }
 
   // read option    -try_calving      [OFF]
@@ -282,7 +282,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   } else if (modelnum == 2) {
     config.set_flag("do_sia", true);
   } else {
-    SETERRQ(98, "how did I get here?");    
+    SETERRQ(grid.com, 98, "how did I get here?");    
   }
 
   // see Table 3
@@ -293,7 +293,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     m_MISMIP = 1.0;
     C_MISMIP = 7.2082e10;
   } else {
-    SETERRQ(99, "how did I get here?");
+    SETERRQ(grid.com, 99, "how did I get here?");
   }
   regularize_MISMIP = 0.01 / secpera;
   
@@ -389,10 +389,10 @@ PetscErrorCode IceMISMIPModel::allocate_flowlaw() {
       } else if (sliding == 'b') {
         cgi->setSoftness(Aexper3b[stepindex]);
       } else {
-        SETERRQ(99, "how did I get here?");
+        SETERRQ(grid.com, 99, "how did I get here?");
       }
     } else {
-      SETERRQ(99, "how did I get here?");
+      SETERRQ(grid.com, 99, "how did I get here?");
     }
 
     // if needed, get B_MISMIP  by  cgi->hardnessParameter(273.15)
@@ -426,7 +426,7 @@ PetscErrorCode IceMISMIPModel::allocate_stressbalance() {
   ierr = IceModel::allocate_stressbalance(); CHKERRQ(ierr);
 
   SSA *ssa = dynamic_cast<SSA*>(stress_balance->get_stressbalance());
-  if (ssa == NULL) { SETERRQ(1, "ssa == NULL"); }
+  if (ssa == NULL) { SETERRQ(grid.com, 1, "ssa == NULL"); }
 
   const PetscReal
     MIN_THICKNESS = 5.0,                       // meters
@@ -519,9 +519,9 @@ PetscErrorCode IceMISMIPModel::init_couplers() {
   if (ocean != PETSC_NULL) {
     POConstant *co = dynamic_cast<POConstant*>(ocean);
     if (co == NULL)
-      SETERRQ(1, "PISM ERROR: co == NULL in IceMISMIPModel ... ocean model is not a POConstant!\n");
+      SETERRQ(grid.com, 1, "PISM ERROR: co == NULL in IceMISMIPModel ... ocean model is not a POConstant!\n");
   } else {
-    SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL");
+    SETERRQ(grid.com, 2,"PISM ERROR: ocean == PETSC_NULL");
   }
   
   return 0;
@@ -539,7 +539,7 @@ PetscErrorCode IceMISMIPModel::misc_setup() {
            initials.c_str(), modelnum, exper, sliding, gridmode, stepindex);
 
   // if user says "-o foo.nc"
-  PetscTruth  oused;
+  PetscBool  oused;
   char        oname[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-o", oname, PETSC_MAX_PATH_LEN, &oused);
            CHKERRQ(ierr);
@@ -591,7 +591,7 @@ PetscErrorCode IceMISMIPModel::setBed() {
                           xs6 = xs4 * xs2;
         vbed(i,j) = 729.0 - 2184.0 * xs2 + 1031.72 * xs4 - 151.72 * xs6;
       } else {
-        SETERRQ(99,"how did I get here?");
+        SETERRQ(grid.com, 99,"how did I get here?");
       }
 
     }
@@ -799,7 +799,7 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
   ierr = vbed.end_access(); CHKERRQ(ierr);
   ierr = vh.end_access(); CHKERRQ(ierr);
   ierr = PetscViewerFlush(view); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(view); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&view); CHKERRQ(ierr);
   return 0;
 }
 
@@ -838,8 +838,8 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
     myb1 = vbed(ig,0);
     myq1 =    q(ig,0);
   }
-  ierr = PetscGlobalMax(&myb1, &mstats.b1, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&myq1, &mstats.q1, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&myb1, &mstats.b1, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&myq1, &mstats.q1, grid.com); CHKERRQ(ierr);
 
   if ( (ig-1 >= grid.xs) && (ig-1 < grid.xs + grid.xm) &&
        (0  >= grid.ys) && (0  < grid.ys + grid.ym) ) {  // if (ig-1,0) is in ownership
@@ -847,9 +847,9 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
     myb2 = vbed(ig-1,0);
     myq2 =    q(ig-1,0);
   }
-  ierr = PetscGlobalMax(&myh2, &mstats.h2, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&myb2, &mstats.b2, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&myq2, &mstats.q2, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&myh2, &mstats.h2, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&myb2, &mstats.b2, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&myq2, &mstats.q2, grid.com); CHKERRQ(ierr);
 
   if ( (ig+1 >= grid.xs) && (ig+1 < grid.xs + grid.xm) &&
        (0  >= grid.ys) && (0  < grid.ys + grid.ym) ) {  // if (ig+1,0) is in ownership
@@ -857,9 +857,9 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
     myb3 = vbed(ig+1,0);
     myq3 =    q(ig+1,0);
   }
-  ierr = PetscGlobalMax(&myh3, &mstats.h3, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&myb3, &mstats.b3, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&myq3, &mstats.q3, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&myh3, &mstats.h3, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&myb3, &mstats.b3, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&myq3, &mstats.q3, grid.com); CHKERRQ(ierr);
 
   ierr =   vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
@@ -929,7 +929,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
   delete vel_bar;
 
-  ierr = PetscGlobalMax(&ig, &gig, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&ig, &gig, grid.com); CHKERRQ(ierr);
   rstats.ig = gig;
   
   const PetscScalar gigfrom0 =
@@ -943,20 +943,20 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   } else {
     myhxg = 0.0;
   } 
-  ierr = PetscGlobalMax(&myhxg, &rstats.hxg, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&myhxg, &rstats.hxg, grid.com); CHKERRQ(ierr);
 
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&maxubar, &rstats.maxubar, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxubar, &rstats.maxubar, grid.com); CHKERRQ(ierr);
     
-  ierr = PetscGlobalSum(&Ngrounded, &rstats.Ngrounded, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avubargrounded, &gavubargrounded, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&Ngrounded, &rstats.Ngrounded, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avubargrounded, &gavubargrounded, grid.com); CHKERRQ(ierr);
   if (rstats.Ngrounded > 0)   gavubargrounded = gavubargrounded / rstats.Ngrounded;
   else                        gavubargrounded = 0.0;  // degenerate case
   rstats.avubarG = gavubargrounded;
 
-  ierr = PetscGlobalSum(&Nfloating, &rstats.Nfloating, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avubarfloating, &gavubarfloating, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&Nfloating, &rstats.Nfloating, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avubarfloating, &gavubarfloating, grid.com); CHKERRQ(ierr);
   if (rstats.Nfloating > 0)   gavubarfloating = gavubarfloating / rstats.Nfloating;
   else                        gavubarfloating = 0.0;  // degenerate case
   rstats.avubarF = gavubarfloating;
@@ -974,13 +974,13 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   }
   ierr = vH.end_access(); CHKERRQ(ierr);
   // ierr = vdHdt.end_access(); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
 
 PetscErrorCode IceMISMIPModel::summaryPrintLine(
-     PetscTruth printPrototype,  bool /*tempAndAge*/,
+     PetscBool printPrototype,  bool /*tempAndAge*/,
      PetscScalar year,  PetscScalar /*dt*/, 
      PetscScalar volume,  PetscScalar /*area_kmsquare*/,
      PetscScalar /*meltfrac*/,  PetscScalar H0,  PetscScalar /*T0*/) {

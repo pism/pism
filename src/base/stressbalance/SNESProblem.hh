@@ -26,11 +26,11 @@
 template<int DOF, class U> class SNESProblem{
 public:
   SNESProblem(IceGrid &g);
-  
+
   virtual ~SNESProblem();
 
   virtual PetscErrorCode solve();
-  
+
   virtual const char *name();
 
   virtual Vec solution()
@@ -45,10 +45,10 @@ protected:
   virtual PetscErrorCode setFromOptions();
 
   virtual PetscErrorCode finalize();
-  
-  virtual PetscErrorCode compute_local_function(DALocalInfo *info, const U **xg, U **yg) = 0;  
 
-  virtual PetscErrorCode compute_local_jacobian(DALocalInfo *info, const U **x,  Mat B) = 0;
+  virtual PetscErrorCode compute_local_function(DMDALocalInfo *info, const U **xg, U **yg) = 0;
+
+  virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const U **x,  Mat B) = 0;
 
   IceGrid     &m_grid;
 
@@ -56,19 +56,19 @@ protected:
   Vec          m_X;
   Vec          m_F;
   SNES         m_snes;
-  DA           m_DA;
+  DM           m_DA;
 
 private:
 
   struct SNESProblemCallbackData {
-    DA           da;
+    DM           da;
     SNESProblem<DOF,U> *solver;
   };
 
   SNESProblemCallbackData m_callbackData;
 
-  static PetscErrorCode LocalFunction(DALocalInfo *info, const U **x, U **f, SNESProblemCallbackData *);
-  static PetscErrorCode LocalJacobian(DALocalInfo *info, const U **x, Mat B, SNESProblemCallbackData *);
+  static PetscErrorCode LocalFunction(DMDALocalInfo *info, const U **x, U **f, SNESProblemCallbackData *);
+  static PetscErrorCode LocalJacobian(DMDALocalInfo *info, const U **x, Mat B, SNESProblemCallbackData *);
 
 };
 
@@ -78,7 +78,7 @@ typedef SNESProblem<2,PISMVector2> SNESVectorProblem;
 
 
 template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::LocalFunction(DALocalInfo *info,
+PetscErrorCode SNESProblem<DOF,U>::LocalFunction(DMDALocalInfo *info,
                              const U **x, U **f,
                              SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
 {
@@ -86,7 +86,7 @@ PetscErrorCode SNESProblem<DOF,U>::LocalFunction(DALocalInfo *info,
 }
 
 template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::LocalJacobian(DALocalInfo *info,
+PetscErrorCode SNESProblem<DOF,U>::LocalJacobian(DMDALocalInfo *info,
                              const U **x, Mat J,
                              SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
 {
@@ -106,7 +106,7 @@ template<int DOF, class U>
 SNESProblem<DOF,U>::~SNESProblem()
 {
   PetscErrorCode ierr = finalize();
-  CHKERRABORT(m_grid.com,ierr);  
+  CHKERRABORT(m_grid.com,ierr);
 }
 
 template<int DOF, class U>
@@ -122,26 +122,30 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
 
   // mimic IceGrid::createDA() with TRANSPOSE :
   PetscInt stencil_width=1;
-  ierr = DACreate2d(m_grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
-                    m_grid.My, m_grid.Mx,
-                    m_grid.Ny, m_grid.Nx,
-                    DOF, stencil_width,
-                    &m_grid.procs_y[0], &m_grid.procs_x[0],
-                    &m_DA); CHKERRQ(ierr);
+  ierr = DMDACreate2d(m_grid.com,
+                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                      DMDA_STENCIL_BOX,
+                      m_grid.My, m_grid.Mx,
+                      m_grid.Ny, m_grid.Nx,
+                      DOF, stencil_width,
+                      &m_grid.procs_y[0], &m_grid.procs_x[0],
+                      &m_DA); CHKERRQ(ierr);
 
-  ierr = DACreateGlobalVector(m_DA, &m_X); CHKERRQ(ierr);
-  ierr = DACreateGlobalVector(m_DA, &m_F); CHKERRQ(ierr);
-  ierr = DAGetMatrix(m_DA, "baij",  &m_J); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(m_DA, &m_X); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(m_DA, &m_F); CHKERRQ(ierr);
+  ierr = DMGetMatrix(m_DA, "baij",  &m_J); CHKERRQ(ierr);
 
   ierr = SNESCreate(m_grid.com, &m_snes);CHKERRQ(ierr);
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
-  ierr = DASetLocalFunction(m_DA,(DALocalFunction1)SNESProblem<DOF,U>::LocalFunction);CHKERRQ(ierr);
-  ierr = DASetLocalJacobian(m_DA,(DALocalFunction1)SNESProblem<DOF,U>::LocalJacobian);CHKERRQ(ierr);
+  ierr = DMDASetLocalFunction(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalFunction);CHKERRQ(ierr);
+  ierr = DMDASetLocalJacobian(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalJacobian);CHKERRQ(ierr);
   m_callbackData.da = m_DA;  m_callbackData.solver = this;
+
+  ierr = SNESSetDM(m_snes, m_DA); CHKERRQ(ierr);
   ierr = SNESSetFunction(m_snes, m_F, SNESDAFormFunction, &m_callbackData);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(m_snes, m_J, m_J, SNESDAComputeJacobian, &m_callbackData);CHKERRQ(ierr);  
+  ierr = SNESSetJacobian(m_snes, m_J, m_J, SNESDAComputeJacobian, &m_callbackData);CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(m_snes);CHKERRQ(ierr);
 
@@ -153,10 +157,10 @@ template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::finalize() {
   PetscErrorCode ierr;
 
-  ierr = SNESDestroy(m_snes);CHKERRQ(ierr);
-  ierr = VecDestroy(m_X); CHKERRQ(ierr);
-  ierr = VecDestroy(m_F); CHKERRQ(ierr);
-  ierr = MatDestroy(m_J); CHKERRQ(ierr);
+  ierr = SNESDestroy(&m_snes);CHKERRQ(ierr);
+  ierr = VecDestroy(&m_X); CHKERRQ(ierr);
+  ierr = VecDestroy(&m_F); CHKERRQ(ierr);
+  ierr = MatDestroy(&m_J); CHKERRQ(ierr);
 
   return 0;
 }
@@ -174,13 +178,13 @@ PetscErrorCode SNESProblem<DOF,U>::solve()
 
   // Solve:
   ierr = SNESSolve(m_snes,NULL,m_X);CHKERRQ(ierr);
-  
+
   // See if it worked.
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason( m_snes, &reason); CHKERRQ(ierr);
   if(reason < 0)
   {
-    SETERRQ2(1, 
+    SETERRQ2(m_grid.com, 1,
       "SNESProblem %s solve failed to converge (SNES reason %s)\n\n", name(), SNESConvergedReasons[reason]);
   }
 

@@ -31,7 +31,7 @@ compare graphical views of assembly:
 */
 
 #include "petscksp.h"
-#include "petscda.h"
+#include "petscdmda.h"
 
 #undef __FUNCT__
 #define __FUNCT__ "main"

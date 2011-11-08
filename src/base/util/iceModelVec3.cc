@@ -19,7 +19,7 @@
 #include <sstream>
 #include <cstring>
 #include <cstdlib>
-#include <petscda.h>
+#include <petscdmda.h>
 
 #include "NCTool.hh"
 #include "iceModelVec.hh"
@@ -53,11 +53,11 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, string my_name,
                                         bool local, vector<double> levels, int stencil_width) {
   PetscErrorCode ierr;
   if (!utIsInit()) {
-    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+    SETERRQ(grid->com, 1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
 
   if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec3 with name='%s' already allocated\n",name.c_str());
+    SETERRQ1(grid->com, 1,"IceModelVec3 with name='%s' already allocated\n",name.c_str());
   }
   
   grid = &my_grid;
@@ -69,9 +69,9 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, string my_name,
   ierr = create_2d_da(da, n_levels, da_stencil_width); CHKERRQ(ierr);
 
   if (local) {
-    ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(da, &v); CHKERRQ(ierr);
   } else {
-    ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(da, &v); CHKERRQ(ierr);
   }
 
   localp = local;
@@ -92,7 +92,7 @@ PetscErrorCode IceModelVec3D::destroy() {
   if (sounding_viewers != NULL) {
     for (i = (*sounding_viewers).begin(); i != (*sounding_viewers).end(); ++i) {
       if ((*i).second != PETSC_NULL) {
-	ierr = PetscViewerDestroy((*i).second); CHKERRQ(ierr);
+	ierr = PetscViewerDestroy(&(*i).second); CHKERRQ(ierr);
       }
     }
     delete sounding_viewers;
@@ -100,7 +100,7 @@ PetscErrorCode IceModelVec3D::destroy() {
   }
 
   if (sounding_buffer != PETSC_NULL) {
-    ierr = VecDestroy(sounding_buffer); CHKERRQ(ierr);
+    ierr = VecDestroy(&sounding_buffer); CHKERRQ(ierr);
     sounding_buffer = PETSC_NULL;
   }
 
@@ -113,11 +113,11 @@ PetscErrorCode  IceModelVec3D::begin_access() {
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (access_counter < 0)
-    SETERRQ(1, "IceModelVec3D::begin_access(): access_counter < 0");
+    SETERRQ(grid->com, 1, "IceModelVec3D::begin_access(): access_counter < 0");
 #endif
 
   if (access_counter == 0) {
-    ierr = DAVecGetArrayDOF(da, v, &array); CHKERRQ(ierr);
+    ierr = DMDAVecGetArrayDOF(da, v, &array); CHKERRQ(ierr);
   }
 
   access_counter++;
@@ -133,11 +133,11 @@ PetscErrorCode  IceModelVec3D::end_access() {
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (access_counter < 0)
-    SETERRQ(1, "IceModelVec3D::end_access(): access_counter < 0");
+    SETERRQ(grid->com, 1, "IceModelVec3D::end_access(): access_counter < 0");
 #endif
 
   if (access_counter == 0) {
-    ierr = DAVecRestoreArrayDOF(da, v, &array); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArrayDOF(da, v, &array); CHKERRQ(ierr);
     array = NULL;
   }
 
@@ -147,16 +147,16 @@ PetscErrorCode  IceModelVec3D::end_access() {
 PetscErrorCode  IceModelVec3D::beginGhostCommTransfer(IceModelVec3D &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
-    SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
+    SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
                "  (has name='%s')\n", name.c_str());
   }
   if (imv3_source.localp) {
-    SETERRQ1(2,"source IceModelVec3 must be GLOBAL! (has name='%s')\n",
+    SETERRQ1(grid->com, 2,"source IceModelVec3 must be GLOBAL! (has name='%s')\n",
                imv3_source.name.c_str());
   }
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = imv3_source.checkAllocated(); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalBegin(da, imv3_source.v, INSERT_VALUES, v); CHKERRQ(ierr);
+  ierr = DMGlobalToLocalBegin(da, imv3_source.v, INSERT_VALUES, v); CHKERRQ(ierr);
   return 0;
 }
 
@@ -164,17 +164,17 @@ PetscErrorCode  IceModelVec3D::beginGhostCommTransfer(IceModelVec3D &imv3_source
 PetscErrorCode  IceModelVec3D::endGhostCommTransfer(IceModelVec3D &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
-    SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
+    SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
                "  (has name='%s')\n",
                name.c_str());
   }
   if (imv3_source.localp) {
-    SETERRQ1(2,"source IceModelVec3 must be GLOBAL! (has name='%s')\n",
+    SETERRQ1(grid->com, 2,"source IceModelVec3 must be GLOBAL! (has name='%s')\n",
                imv3_source.name.c_str());
   }
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = imv3_source.checkAllocated(); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalEnd(da, imv3_source.v, INSERT_VALUES, v); CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(da, imv3_source.v, INSERT_VALUES, v); CHKERRQ(ierr);
   return 0;
 }
 
@@ -183,7 +183,7 @@ PetscErrorCode  IceModelVec3D::isLegalLevel(PetscScalar z) {
   double z_min = zlevels.front(),
     z_max = zlevels.back();
   if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
-    SETERRQ2(1,"level z = %5.4f is outside the valid range;\n"
+    SETERRQ2(grid->com, 1,"level z = %5.4f is outside the valid range;\n"
                "  IceModelVec3 has name='%s'; ENDING!\n",
               z,name.c_str());
   }
@@ -276,7 +276,7 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar
   ierr = isLegalLevel(z);  CHKERRQ(ierr);
   // check ownership here?
   if (!localp) {
-    SETERRQ1(1,"IceModelVec3 ERROR: IceModelVec3 with name='%s' is GLOBAL\n"
+    SETERRQ1(grid->com, 1,"IceModelVec3 ERROR: IceModelVec3 with name='%s' is GLOBAL\n"
                "  and cannot do getPlaneStarZ()\n", name.c_str());
   }
   check_array_indices(i, j);
@@ -479,13 +479,13 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, PetscScalar z) {
   PetscScalar    **slice_val;
 
   ierr = begin_access(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid->da2, gslice, &slice_val); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(grid->da2, gslice, &slice_val); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
       slice_val[i][j] = getValZ(i,j,z);
     }
   }
-  ierr = DAVecRestoreArray(grid->da2, gslice, &slice_val); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(grid->da2, gslice, &slice_val); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
@@ -532,7 +532,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2S &myH) {
   PetscErrorCode ierr;
   PetscScalar    **H, **surf_val;
   ierr = begin_access(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
   ierr = myH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
@@ -540,7 +540,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2S &myH) {
     }
   }
   ierr = myH.end_access(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -603,14 +603,14 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_valu
 
   // Fill the new layer:
   PetscScalar ***a;
-  ierr = DAVecGetArrayDOF(da, v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(da, v, &a); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
       for (PetscInt k = old_Mz; k < n_levels; k++)
 	a[i][j][k] = fill_value;
     }
   }
-  ierr = DAVecRestoreArrayDOF(da, v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(da, v, &a); CHKERRQ(ierr);
 
   // This communicates the ghosts just to update the new levels. Since this
   // only happens when the grid is extended it should not matter.
@@ -632,7 +632,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
 
   // Fill the new layer:
   PetscScalar ***a, **filler;
-  ierr = DAVecGetArrayDOF(da, v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(da, v, &a); CHKERRQ(ierr);
   ierr = fill_values.get_array(filler); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
@@ -640,7 +640,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
 	a[i][j][k] = filler[i][j];
     }
   }
-  ierr = DAVecRestoreArrayDOF(da, v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(da, v, &a); CHKERRQ(ierr);
   ierr = fill_values.end_access(); CHKERRQ(ierr);
 
   // This communicates the ghosts just to update the new levels. Since this
@@ -657,7 +657,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
 PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   PetscErrorCode ierr;
   Vec v_new;
-  DA da_new;
+  DM da_new;
 
   // This code should match what is being done in IceModelVec3D::allocate():
 
@@ -669,35 +669,35 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   ierr = create_2d_da(da_new, n_levels, da_stencil_width); CHKERRQ(ierr);
   
   if (localp) {
-    ierr = DACreateLocalVector(da_new, &v_new); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(da_new, &v_new); CHKERRQ(ierr);
   } else {
-    ierr = DACreateGlobalVector(da_new, &v_new); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(da_new, &v_new); CHKERRQ(ierr);
   }
 
   // Copy all the values from the old Vec to the new one:
   PetscScalar ***a_new;
   PetscScalar ***a_old;
-  ierr = DAVecGetArrayDOF(da, v, &a_old); CHKERRQ(ierr);
-  ierr = DAVecGetArrayDOF(da_new, v_new, &a_new); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(da, v, &a_old); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(da_new, v_new, &a_new); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
       for (PetscInt k=0; k < old_Mz; k++)
 	a_new[i][j][k] = a_old[i][j][k];
     }
   }
-  ierr = DAVecRestoreArrayDOF(da, v, &a_old); CHKERRQ(ierr);
-  ierr = DAVecRestoreArrayDOF(da_new, v_new, &a_new); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(da, v, &a_old); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(da_new, v_new, &a_new); CHKERRQ(ierr);
 
   // Deallocate old DA and Vec:
-  ierr = VecDestroy(v); CHKERRQ(ierr);
+  ierr = VecDestroy(&v); CHKERRQ(ierr);
   v = v_new;
 
-  ierr = DADestroy(da); CHKERRQ(ierr);
+  ierr = DMDestroy(&da); CHKERRQ(ierr);
   da = da_new;
 
   // de-allocate the sounding buffer because we'll need a bigger one
   if (sounding_buffer != NULL) {
-    ierr = VecDestroy(sounding_buffer); CHKERRQ(ierr);
+    ierr = VecDestroy(&sounding_buffer); CHKERRQ(ierr);
     sounding_buffer = PETSC_NULL;
   }
 

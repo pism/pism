@@ -40,7 +40,7 @@ static char help[] =
 #include <cmath>
 #include <cstdio>
 #include <petscvec.h>
-#include <petscda.h>
+#include <petscdmda.h>
 #include "pism_const.hh"
 #include "NCVariable.hh"
 #include "deformation.hh"
@@ -65,10 +65,10 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     BedDeformLC bdlc;
-    DA          da2;
+    DM          da2;
     Vec         H, bed, Hstart, bedstart, uplift;
     
-    PetscTruth  include_elastic = PETSC_FALSE,
+    PetscBool  include_elastic = PETSC_FALSE,
                 do_uplift = PETSC_FALSE;
     PetscScalar H0 = 1000.0;            // ice disc load thickness
 
@@ -109,15 +109,17 @@ int main(int argc, char *argv[]) {
       ierr = VecDuplicate(H, &Hstart); CHKERRQ(ierr);
       ierr = VecDuplicate(H, &bedstart); CHKERRQ(ierr);
       ierr = VecDuplicate(H, &uplift); CHKERRQ(ierr);
-      
+
       // in order to show bed elevation as a picture, create a da 
-      ierr = DACreate2d(PETSC_COMM_SELF, DA_XYPERIODIC, DA_STENCIL_STAR,
-                    My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
-                    PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
-      ierr = DASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 
-                                 PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-      ierr = DACreateGlobalVector(da2, &bed); CHKERRQ(ierr);
-      
+      ierr = DMDACreate2d(PETSC_COMM_SELF,
+                          DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                          DMDA_STENCIL_STAR,
+                          My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
+                          PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
+      ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 
+                                       PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+      ierr = DMCreateGlobalVector(da2, &bed); CHKERRQ(ierr);
+
       // create a bed viewer
       PetscViewer viewer;
       PetscDraw   draw;
@@ -212,13 +214,13 @@ int main(int argc, char *argv[]) {
       }
       ierr = PetscPrintf(PETSC_COMM_SELF,"\ndone\n"); CHKERRQ(ierr);
 
-      ierr = VecDestroy(H); CHKERRQ(ierr);
-      ierr = VecDestroy(bed); CHKERRQ(ierr);
-      ierr = VecDestroy(Hstart); CHKERRQ(ierr);
-      ierr = VecDestroy(bedstart); CHKERRQ(ierr);
-      ierr = VecDestroy(uplift); CHKERRQ(ierr);
-      ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
-      ierr = DADestroy(da2); CHKERRQ(ierr);
+      ierr = VecDestroy(&H); CHKERRQ(ierr);
+      ierr = VecDestroy(&bed); CHKERRQ(ierr);
+      ierr = VecDestroy(&Hstart); CHKERRQ(ierr);
+      ierr = VecDestroy(&bedstart); CHKERRQ(ierr);
+      ierr = VecDestroy(&uplift); CHKERRQ(ierr);
+      ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+      ierr = DMDestroy(&da2); CHKERRQ(ierr);
     }
   }
 

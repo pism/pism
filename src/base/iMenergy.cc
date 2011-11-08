@@ -44,7 +44,7 @@ PetscErrorCode IceModel::energyStep() {
   PetscErrorCode  ierr;
 
   PetscScalar  myCFLviolcount = 0.0,   // these are counts but they are type "PetscScalar"
-               myVertSacrCount = 0.0,  //   because that type works with PetscGlobalSum()
+               myVertSacrCount = 0.0,  //   because that type works with PISMGlobalSum()
                myBulgeCount = 0.0;
   PetscScalar gVertSacrCount, gBulgeCount;
 
@@ -80,7 +80,7 @@ PetscErrorCode IceModel::energyStep() {
     ierr = Enth3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
     ierr = Enth3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);
 
-    ierr = PetscGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
     if (gLiquifiedVol > 0.0) {
       ierr = verbPrintf(1,grid.com,
         "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
@@ -93,9 +93,9 @@ PetscErrorCode IceModel::energyStep() {
   ierr = vbmr.beginGhostComm(); CHKERRQ(ierr);
   ierr = vbmr.endGhostComm(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const PetscScalar bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const PetscScalar BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
@@ -107,7 +107,7 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
-  ierr = PetscGlobalSum(&myBulgeCount, &gBulgeCount, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&myBulgeCount, &gBulgeCount, grid.com); CHKERRQ(ierr);
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";
@@ -132,12 +132,12 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   if (surface != PETSC_NULL) {
     ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
+    SETERRQ(grid.com, 1,"PISM ERROR: surface == PETSC_NULL");
   }
   if (ocean != PETSC_NULL) {
     ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
   } else {
-    SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");
+    SETERRQ(grid.com, 5,"PISM ERROR: ocean == PETSC_NULL");
   }
 
   // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below

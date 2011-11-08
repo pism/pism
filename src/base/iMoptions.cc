@@ -218,7 +218,7 @@ PetscErrorCode IceModel::set_output_size(string option,
 
     return 0;
   } else {
-    SETERRQ(1, "can't happen");
+    SETERRQ(grid.com, 1, "can't happen");
   }
 
   return 0;

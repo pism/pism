@@ -42,7 +42,7 @@ public:
 
     func = models[name];
     if (!func) {
-      SETERRQ1(1,"ERROR: type %s is not registered", name.c_str());
+      SETERRQ1(grid.com, 1,"ERROR: type %s is not registered", name.c_str());
     } else {
       default_type = name;
     }

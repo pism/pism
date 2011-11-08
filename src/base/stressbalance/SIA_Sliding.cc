@@ -51,19 +51,19 @@ PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
     eisII_experiment = config.get_string("EISMINT_II_experiment");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(1, "mask is not available");
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
   bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
+  if (bed == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   return 0;
 }
@@ -260,7 +260,7 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
     ierr = surface_gradient_mahaffy(h_x, h_y); CHKERRQ(ierr);
 
   } else {
-    SETERRQ(1, "can't happen");
+    SETERRQ(grid.com, 1, "can't happen");
   }
 
   return 0;

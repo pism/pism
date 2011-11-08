@@ -18,7 +18,7 @@
 
 #include <cmath>
 #include <cstring>
-#include <petscda.h>
+#include <petscdmda.h>
 
 #include "iceModel.hh"
 #include "pism_signal.h"
@@ -128,7 +128,7 @@ IceModel::~IceModel() {
   map<string,PetscViewer>::iterator k = viewers.begin();
   while (k != viewers.end()) {
     if ((*k).second != PETSC_NULL) {
-      PetscViewerDestroy((*k).second);
+      PetscViewerDestroy(&(*k).second);
       ++k;
     }
   }

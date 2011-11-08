@@ -19,7 +19,7 @@
 #ifndef __iceEISModel_hh
 #define __iceEISModel_hh
 
-#include <petscda.h>
+#include <petscdmda.h>
 #include "iceModel.hh"
 
 

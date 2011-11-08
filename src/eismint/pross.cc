@@ -36,7 +36,7 @@ static char help[] =
 
 PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_ssa) {
   PetscErrorCode  ierr;
-  PetscTruth      riggsSet;
+  PetscBool      riggsSet;
   char            riggsfile[PETSC_MAX_PATH_LEN];
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-riggs", riggsfile,
@@ -48,13 +48,13 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
   IceModelVec2Int *mask;
 
   longitude = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-  if (longitude == NULL) SETERRQ(1, "longitude is not available");
+  if (longitude == NULL) SETERRQ(grid.com, 1, "longitude is not available");
 
   latitude = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-  if (latitude == NULL) SETERRQ(1, "latitude is not available");
+  if (latitude == NULL) SETERRQ(grid.com, 1, "latitude is not available");
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(1, "mask is not available");
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   ierr = verbPrintf(2,grid.com,"comparing to RIGGS data in %s ...\n",
                     riggsfile); CHKERRQ(ierr);
@@ -119,8 +119,8 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
   }
   ChiSqr = ChiSqr / PetscSqr(30.0); // see page 48 of MacAyeal et al
   PetscScalar g_goodptcount, g_ChiSqr;
-  ierr = PetscGlobalSum(&goodptcount, &g_goodptcount, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&ChiSqr, &g_ChiSqr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&goodptcount, &g_goodptcount, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&ChiSqr, &g_ChiSqr, grid.com); CHKERRQ(ierr);
   ierr = verbPrintf(4,grid.com,"number of RIGGS data points = %d\n"
                     "number of RIGGS points in computed ice shelf region = %8.2f\n",
                     len, g_goodptcount); CHKERRQ(ierr);
@@ -147,19 +147,19 @@ PetscErrorCode compute_errors(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_
   IceModelVec2Int *mask;
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(1, "mask is not available");
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   obsAzimuth = dynamic_cast<IceModelVec2S*>(vars.get("azi_obs"));
-  if (obsAzimuth == NULL) SETERRQ(1, "azi_obs is not available");
+  if (obsAzimuth == NULL) SETERRQ(grid.com, 1, "azi_obs is not available");
 
   obsMagnitude = dynamic_cast<IceModelVec2S*>(vars.get("mag_obs"));
-  if (obsMagnitude == NULL) SETERRQ(1, "mag_obs is not available");
+  if (obsMagnitude == NULL) SETERRQ(grid.com, 1, "mag_obs is not available");
 
   obsAccurate = dynamic_cast<IceModelVec2S*>(vars.get("accur"));
-  if (obsAccurate == NULL) SETERRQ(1, "accur is not available");
+  if (obsAccurate == NULL) SETERRQ(grid.com, 1, "accur is not available");
 
   MaskQuery m(*mask);
 
@@ -205,13 +205,13 @@ PetscErrorCode compute_errors(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_
 
   PetscScalar  guerr, gverr, grelvecerr, gaccN, 
     gaccArea, gmaxcComputed, gvecErrAcc;
-  ierr = PetscGlobalMax(&maxcComputed, &gmaxcComputed, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&accN, &gaccN, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&accArea, &gaccArea, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&verr, &gverr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&uerr, &guerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&relvecerr, &grelvecerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&vecErrAcc, &gvecErrAcc, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxcComputed, &gmaxcComputed, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&accN, &gaccN, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&accArea, &gaccArea, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&verr, &gverr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&uerr, &guerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&relvecerr, &grelvecerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&vecErrAcc, &gvecErrAcc, grid.com); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,"maximum computed speed in ice shelf is %10.3f (m/a)\n",
                     gmaxcComputed * secpera); CHKERRQ(ierr);
@@ -443,10 +443,10 @@ PetscErrorCode set_surface_elevation(PISMVars &vars, const NCConfigVariable &con
   IceModelVec2S *surface, *thickness;
 
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+  if (surface == NULL) SETERRQ(PETSC_COMM_SELF, 1, "surface_altitude is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(PETSC_COMM_SELF, 1, "land_ice_thickness is not available");
 
   PetscReal ice_rho = config.get("ice_density"),
     ocean_rho = config.get("sea_water_density");
@@ -648,10 +648,10 @@ int main(int argc, char *argv[]) {
     IceModelVec2Int *bc_mask;
     IceModelVec2V *bc_vel;
     bc_mask = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
-    if (bc_mask == NULL) SETERRQ(1, "bcflag is not available");
+    if (bc_mask == NULL) SETERRQ(com, 1, "bcflag is not available");
 
     bc_vel = dynamic_cast<IceModelVec2V*>(vars.get("velbar"));
-    if (bc_vel == NULL) SETERRQ(1, "velbar is not available");
+    if (bc_vel == NULL) SETERRQ(com, 1, "velbar is not available");
 
     ierr = ssa->set_boundary_conditions(*bc_mask, *bc_vel); CHKERRQ(ierr);
 

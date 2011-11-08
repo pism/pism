@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
-#include <petscda.h>
+#include <petscdmda.h>
 #include "tests/exactTestsFG.h" 
 #include "tests/exactTestK.h" 
 #include "tests/exactTestO.h" 
@@ -309,7 +309,7 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(
             bothexact(grid.time->current(),r,&grid.zlevels[0],Mz,ApforG,
                       &junk0,&junk1,Tex,dummy1,dummy2,dummy3,dummy4);
             break;
-          default:  SETERRQ(1,"temperature errors only computable for tests F and G\n");
+          default:  SETERRQ(grid.com, 1,"temperature errors only computable for tests F and G\n");
         }
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
         for (PetscInt k = 0; k < ks; k++) {  // only eval error if below num surface
@@ -327,10 +327,10 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(
   delete [] Tex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
   
-  ierr = PetscGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
   PetscScalar  gavcount;
-  ierr = PetscGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
   gavTerr = gavTerr/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -342,7 +342,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   PetscErrorCode ierr;
 
   if ((testname != 'K') && (testname != 'O'))
-    SETERRQ(1,"ice and bedrock temperature errors only computable for tests K and O\n");
+    SETERRQ(grid.com, 1,"ice and bedrock temperature errors only computable for tests K and O\n");
 
   PetscScalar    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
   PetscScalar    maxTberr = 0.0, avTberr = 0.0, avbcount = 0.0;
@@ -355,7 +355,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   IceModelVec3BTU *bedrock_temp;
 
   BTU_Verification *my_btu = dynamic_cast<BTU_Verification*>(btu);
-  if (my_btu == NULL) SETERRQ(1, "my_btu == NULL");
+  if (my_btu == NULL) SETERRQ(grid.com, 1, "my_btu == NULL");
   ierr = my_btu->get_temp(bedrock_temp); CHKERRQ(ierr);
 
   vector<double> zblevels = bedrock_temp->get_levels();
@@ -384,7 +384,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
              CHKERRQ(ierr);
       }
       break;
-    default: SETERRQ(2,"again: ice and bedrock temperature errors only for tests K and O\n");
+    default: SETERRQ(grid.com, 2,"again: ice and bedrock temperature errors only for tests K and O\n");
   }
     
   ierr = T3.begin_access(); CHKERRQ(ierr);
@@ -412,16 +412,16 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
 
   delete [] Tex;  delete [] Tbex;
   
-  ierr = PetscGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
   PetscScalar  gavcount;
-  ierr = PetscGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
   gavTerr = gavTerr/PetscMax(gavcount,1.0);  // avoid div by zero
 
-  ierr = PetscGlobalMax(&maxTberr, &gmaxTberr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avTberr, &gavTberr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxTberr, &gmaxTberr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avTberr, &gavTberr, grid.com); CHKERRQ(ierr);
   PetscScalar  gavbcount;
-  ierr = PetscGlobalSum(&avbcount, &gavbcount, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avbcount, &gavbcount, grid.com); CHKERRQ(ierr);
   gavTberr = gavTberr/PetscMax(gavbcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -463,7 +463,7 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
                       &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
           }
           break;
-        default:  SETERRQ(1,"temperature errors only computable for tests F and G\n");
+        default:  SETERRQ(grid.com, 1,"temperature errors only computable for tests F and G\n");
       }
 
       const PetscScalar Tbase = T3.getValZ(i,j,0.0);
@@ -481,11 +481,11 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
   
   PetscScalar gdomeT, gdomeTexact;
 
-  ierr = PetscGlobalMax(&Terr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&Terr, &gmaxTerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
   gavTerr = gavTerr/(grid.Mx*grid.My);
-  ierr = PetscGlobalMax(&domeT, &gdomeT, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&domeTexact, &gdomeTexact, grid.com); CHKERRQ(ierr);  
+  ierr = PISMGlobalMax(&domeT, &gdomeT, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&domeTexact, &gdomeTexact, grid.com); CHKERRQ(ierr);  
   centerTerr = PetscAbsReal(gdomeT - gdomeTexact);
   
   return 0;
@@ -532,7 +532,7 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
                       &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
             break;
           default:
-            SETERRQ(1,"strain-heating (Sigma) errors only computable for tests F and G\n");
+            SETERRQ(grid.com, 1,"strain-heating (Sigma) errors only computable for tests F and G\n");
         }
         for (PetscInt k = 0; k < Mz; k++)
           Sigex[k] = Sigex[k] * ice_rho * ice_c; // scale exact Sigma to J/(s m^3)
@@ -553,10 +553,10 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
   delete [] Sigex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
   
-  ierr = PetscGlobalMax(&maxSigerr, &gmaxSigmaerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avSigerr, &gavSigmaerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxSigerr, &gmaxSigmaerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avSigerr, &gavSigmaerr, grid.com); CHKERRQ(ierr);
   PetscScalar  gavcount;
-  ierr = PetscGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
   gavSigmaerr = gavSigmaerr/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -593,7 +593,7 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
             bothexact(grid.time->current(),r,&(H[i][j]),1,ApforG,
                       &dummy0,&dummy1,&dummy2,&radialUex,&wex,&dummy3,&dummy4);
             break;
-          default:  SETERRQ(1,"surface velocity errors only computed for tests F and G\n");
+          default:  SETERRQ(grid.com, 1,"surface velocity errors only computed for tests F and G\n");
         }
         const PetscScalar uex = (xx/r) * radialUex;
         const PetscScalar vex = (yy/r) * radialUex;
@@ -614,11 +614,11 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = w3->end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avUerr, &gavUerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avUerr, &gavUerr, grid.com); CHKERRQ(ierr);
   gavUerr = gavUerr/(grid.Mx*grid.My);
-  ierr = PetscGlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
   gavWerr = gavWerr/(grid.Mx*grid.My);
   return 0;
 }
@@ -631,7 +631,7 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
   PetscScalar    bmelt,dum1,dum2,dum3,dum4;
 
   if (testname != 'O')
-    SETERRQ(1,"basal melt rate errors are only computable for test O\n");
+    SETERRQ(grid.com, 1,"basal melt rate errors are only computable for test O\n");
 
   // we just need one constant from exact solution:
   ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
@@ -646,8 +646,8 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
   }
   ierr = vbmr.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&maxbmelterr, &gmaxbmelterr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMin(&minbmelterr, &gminbmelterr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxbmelterr, &gmaxbmelterr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMin(&minbmelterr, &gminbmelterr, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -674,7 +674,7 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
         ierr = exactO(grid.zlevels[k], &Tcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
       }
       break;
-    default:  SETERRQ(2,"only fills temperature solutions for tests K and O\n");
+    default:  SETERRQ(grid.com, 2,"only fills temperature solutions for tests K and O\n");
   }
 
   // copy column values into 3D arrays
@@ -698,7 +698,7 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
 PetscErrorCode IceCompModel::fillBasalMeltRateSolnTestO() {
   PetscErrorCode    ierr;
   PetscScalar       bmelt, dum1, dum2, dum3, dum4;
-  if (testname != 'O') { SETERRQ(1,"only fills basal melt rate soln for test O\n"); }
+  if (testname != 'O') { SETERRQ(grid.com, 1,"only fills basal melt rate soln for test O\n"); }
 
   // we just need one constant from exact solution:
   ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
@@ -756,7 +756,7 @@ PetscErrorCode BTU_Verification::bootstrap() {
       for (PetscInt k=0; k<Mbz; k++) {
         if (exactK(grid.time->current(), zlevels[k], &Tbcol[k], &FF,
                    (bedrock_is_ice==PETSC_TRUE)))
-          SETERRQ1(1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n",
+          SETERRQ1(grid.com, 1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n",
                    zlevels[k]);
       }
       break;

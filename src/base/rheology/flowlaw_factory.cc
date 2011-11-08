@@ -116,7 +116,7 @@ PetscErrorCode IceFlowLawFactory::setType(const char type[])
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = PetscFListFind(type_list,comm,type,(void(**)(void))&r);CHKERRQ(ierr);
+  ierr = PetscFListFind(type_list, comm, type, PETSC_FALSE, (void(**)(void))&r);CHKERRQ(ierr);
   if (!r) {
     ierr = PetscPrintf(comm, "PISM ERROR: Selected ice type \"%s\" is not available.\n",type); CHKERRQ(ierr);
     PISMEnd();
@@ -130,7 +130,7 @@ PetscErrorCode IceFlowLawFactory::setType(const char type[])
 PetscErrorCode IceFlowLawFactory::setFromOptions()
 {
   PetscErrorCode ierr;
-  PetscTruth flg;
+  PetscBool flg;
   char my_type_name[256];
 
   PetscFunctionBegin;
@@ -172,8 +172,8 @@ PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
   PetscValidPointer(inice,3);
   *inice = 0;
   // find the function that can create selected ice type:
-  ierr = PetscFListFind(type_list, comm, type_name, (void(**)(void))&r);CHKERRQ(ierr);
-  if (!r) SETERRQ1(1,"Selected Ice type %s not available, but we shouldn't be able to get here anyway",type_name);
+  ierr = PetscFListFind(type_list, comm, type_name, PETSC_FALSE, (void(**)(void))&r);CHKERRQ(ierr);
+  if (!r) SETERRQ1(comm, 1,"Selected Ice type %s not available, but we shouldn't be able to get here anyway",type_name);
   // create an IceFlowLaw instance:
   ierr = (*r)(comm, prefix, config, EC, &ice);CHKERRQ(ierr);
   *inice = ice;

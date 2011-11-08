@@ -21,6 +21,7 @@
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
+#include "IceGrid.hh"
 
 class PISMVars;
 class IceFlowLaw;
@@ -81,7 +82,7 @@ public:
 
   virtual PetscErrorCode compute_principal_strain_rates(
                 IceModelVec2S &/*result_e1*/, IceModelVec2S &/*result_e2*/)
-  { SETERRQ(1,"not implemented in base class"); return 0; }
+  { SETERRQ(grid.com, 1,"not implemented in base class"); return 0; }
 
   // helpers:
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -117,7 +117,7 @@ PetscErrorCode IceCalvBCModel::writeCFfields(const char* default_filename) {
   PetscErrorCode ierr;
   
   char filename[PETSC_MAX_PATH_LEN];
-  PetscTruth o_set;
+  PetscBool o_set;
   ierr = PetscOptionsGetString(PETSC_NULL, "-o", filename, PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
 
   // Use the default if the output file name was not given:

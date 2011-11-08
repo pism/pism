@@ -51,7 +51,7 @@ PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
   ierr = model->bed_smoother->get_theta(*surface, model->config.get("Glen_exponent"),
                                         WIDE_STENCIL, result); CHKERRQ(ierr);
@@ -105,13 +105,13 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (mask == NULL) SETERRQ(1, "mask is not available");
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   ierr = model->bed_smoother->get_smoothed_thk(*surface, *thickness, *mask, WIDE_STENCIL,
                                                result); CHKERRQ(ierr);

@@ -31,15 +31,16 @@ bool IceModelVec3BTU::good_init() {
 PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name[], bool local,
                                       int myMbz, PetscReal myLbz, int stencil_width) {
   PetscErrorCode ierr;
+  grid = &mygrid;
+
   if (!utIsInit()) {
-    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+    SETERRQ(grid->com, 1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
 
   if (v != PETSC_NULL) {
-    SETERRQ1(2,"IceModelVec3BTU with name='%s' already allocated\n",name.c_str());
+    SETERRQ1(grid->com, 2,"IceModelVec3BTU with name='%s' already allocated\n",name.c_str());
   }
 
-  grid = &mygrid;
   name = my_short_name;
 
   n_levels = myMbz;
@@ -55,9 +56,9 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
 
   localp = local;
   if (local) {
-    ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(da, &v); CHKERRQ(ierr);
   } else {
-    ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(da, &v); CHKERRQ(ierr);
   }
 
   vars[0].init_3d(name, mygrid, zlevels);
@@ -71,14 +72,14 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
   attrs["positive"]      = "up";
 
   if (!good_init()) {
-    SETERRQ1(1,"create() says IceModelVec3BTU with name %s was not properly created\n",
+    SETERRQ1(grid->com, 1,"create() says IceModelVec3BTU with name %s was not properly created\n",
              name.c_str());  }
   return 0;
 }
 
 PetscErrorCode IceModelVec3BTU::get_layer_depth(PetscReal &depth) {
   if (!good_init()) {
-    SETERRQ1(1,"get_layer_depth() says IceModelVec3BTU with name %s was not properly created\n",
+    SETERRQ1(grid->com, 1,"get_layer_depth() says IceModelVec3BTU with name %s was not properly created\n",
              name.c_str());
   }
   depth = Lbz;
@@ -87,7 +88,7 @@ PetscErrorCode IceModelVec3BTU::get_layer_depth(PetscReal &depth) {
 
 PetscErrorCode IceModelVec3BTU::get_spacing(PetscReal &dzb) {
   if (!good_init()) {
-    SETERRQ1(1,"get_spacing() says IceModelVec3BTU with name %s was not properly created\n",
+    SETERRQ1(grid->com, 1,"get_spacing() says IceModelVec3BTU with name %s was not properly created\n",
              name.c_str());
   }
   dzb = Lbz / (n_levels - 1);
@@ -115,7 +116,7 @@ PetscErrorCode PISMBedThermalUnit::allocate(int my_Mbz, double my_Lbz) {
   Lbz = my_Lbz;
 
   if ((Lbz <= 0.0) && (Mbz > 1)) {
-     SETERRQ(1,"PISMBedThermalUnit can not be created with negative or zero Lbz value\n"
+     SETERRQ(grid.com, 1,"PISMBedThermalUnit can not be created with negative or zero Lbz value\n"
                " and more than one layers\n"); }
 
   if (Mbz > 1) {
@@ -144,10 +145,10 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
 
   // Get pointers to fields owned by IceModel.
   bedtoptemp = dynamic_cast<IceModelVec2S*>(vars.get("bedtoptemp"));
-  if (bedtoptemp == NULL) SETERRQ(1, "bedtoptemp is not available");
+  if (bedtoptemp == NULL) SETERRQ(grid.com, 1, "bedtoptemp is not available");
 
   ghf = dynamic_cast<IceModelVec2S*>(vars.get("bheatflx"));
-  if (ghf == NULL) SETERRQ(2, "bheatflx is not available");
+  if (ghf == NULL) SETERRQ(grid.com, 2, "bheatflx is not available");
 
   Mbz = (PetscInt)config.get("grid_Mbz");
   Lbz = (PetscInt)config.get("grid_Lbz");
@@ -308,7 +309,7 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
 
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (my_dt < 0) {
-     SETERRQ(1,"PISMBedThermalUnit::update() does not allow negative timesteps\n"); }
+     SETERRQ(grid.com, 1,"PISMBedThermalUnit::update() does not allow negative timesteps\n"); }
   // CHECK: is desired time-interval equal to [my_t,my_t+my_dt] where my_t = t + dt?
   if ((!gsl_isnan(t)) && (!gsl_isnan(dt))) { // this check should not fire on first use
     bool contiguous = true;
@@ -322,7 +323,7 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
     }
 
     if (contiguous == false) {
-     SETERRQ4(2,"PISMBedThermalUnit::update() requires next update to be contiguous with last;\n"
+     SETERRQ4(grid.com, 2,"PISMBedThermalUnit::update() requires next update to be contiguous with last;\n"
                 "  stored:     t = %f s,    dt = %f s\n"
                 "  desired: my_t = %f s, my_dt = %f s\n",
               t,dt,my_t,my_dt); }
@@ -332,14 +333,14 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
   bool restrict_dt;
   ierr = max_timestep(my_t, my_max_dt, restrict_dt); CHKERRQ(ierr);
   if (restrict_dt && my_max_dt < my_dt) {
-     SETERRQ(3,"PISMBedThermalUnit::update() thinks you asked for too big a timestep\n"); }
+     SETERRQ(grid.com, 3,"PISMBedThermalUnit::update() thinks you asked for too big a timestep\n"); }
 
   // o.k., we have checked; we are going to do the desired timestep!
   t  = my_t;
   dt = my_dt;
 
-  if (bedtoptemp == NULL)      SETERRQ(5, "bedtoptemp was never initialized");
-  if (ghf == NULL)      SETERRQ(6, "bheatflx was never initialized");
+  if (bedtoptemp == NULL)      SETERRQ(grid.com, 5, "bedtoptemp was never initialized");
+  if (ghf == NULL)      SETERRQ(grid.com, 6, "bheatflx was never initialized");
 
   PetscReal dzb;
   temp.get_spacing(dzb);

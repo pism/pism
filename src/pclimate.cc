@@ -24,7 +24,7 @@ static char help[] =
 #include <string>
 #include <sstream>
 #include <vector>
-#include <petscda.h>
+#include <petscdmda.h>
 #include "pism_const.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
@@ -189,19 +189,19 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   IceModelVec2S *usurf, *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
 
   usurf = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-  if (usurf == NULL) { SETERRQ(1, "usurf is not available"); }
+  if (usurf == NULL) { SETERRQ(com, 1, "usurf is not available"); }
 
   artm = dynamic_cast<IceModelVec2S*>(variables.get("artm"));
-  if (artm == NULL) { SETERRQ(1, "artm is not available"); }
+  if (artm == NULL) { SETERRQ(com, 1, "artm is not available"); }
 
   acab = dynamic_cast<IceModelVec2S*>(variables.get("acab"));
-  if (acab == NULL) { SETERRQ(1, "acab is not available"); }
+  if (acab == NULL) { SETERRQ(com, 1, "acab is not available"); }
 
   shelfbasetemp = dynamic_cast<IceModelVec2S*>(variables.get("shelfbasetemp"));
-  if (shelfbasetemp == NULL) { SETERRQ(1, "shelfbasetemp is not available"); }
+  if (shelfbasetemp == NULL) { SETERRQ(com, 1, "shelfbasetemp is not available"); }
 
   shelfbasemassflux = dynamic_cast<IceModelVec2S*>(variables.get("shelfbasemassflux"));
-  if (shelfbasemassflux == NULL) { SETERRQ(1, "shelfbasemassflux is not available"); }
+  if (shelfbasemassflux == NULL) { SETERRQ(com, 1, "shelfbasemassflux is not available"); }
 
   global_attrs.init("global_attributes", com, grid->rank);
   global_attrs.set_string("Conventions", "CF-1.4");
@@ -222,7 +222,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   PetscInt NN;  // get number of times at which PISM boundary model state is written
   NN = (int) ceil((time_end - time_start) / dt);
   if (NN > 1000)
-    SETERRQ(2,"PCLIMATE ERROR: refuse to write more than 1000 times!");
+    SETERRQ(com, 2,"PCLIMATE ERROR: refuse to write more than 1000 times!");
   if (NN > 50) {
     ierr = PetscPrintf(com,
         "\nPCLIMATE ATTENTION: writing more than 50 times to '%s'!!\n\n",

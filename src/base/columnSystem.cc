@@ -139,7 +139,7 @@ PetscScalar columnSystemCtx::ddratio(const PetscInt n) const {
 
 PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(
                   PetscInt my_i, PetscInt my_j, PetscInt my_ks) {
-  if (indicesValid) {  SETERRQ(3,
+  if (indicesValid) {  SETERRQ(PETSC_COMM_SELF, 3,
      "setIndicesAndClearThisColumn() called twice in same column"); }
   i = my_i;
   j = my_j;
@@ -165,18 +165,18 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
   PetscErrorCode ierr;
 
   if (v==NULL) {
-    SETERRQ1(2,"columnSystem ERROR: can't view '%s' by v=NULL pointer ... ending ...\n", info);
+    SETERRQ1(PETSC_COMM_SELF, 2,"columnSystem ERROR: can't view '%s' by v=NULL pointer ... ending ...\n", info);
   }
   if (m<1) {
-    SETERRQ1(3,"columnSystem ERROR: can't view '%s' because m<1 ... ending ...\n",info);
+    SETERRQ1(PETSC_COMM_SELF, 3,"columnSystem ERROR: can't view '%s' because m<1 ... ending ...\n",info);
   }
 
-  PetscTruth iascii;
+  PetscBool iascii;
   if (!viewer) {
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
   }
-  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
-  if (!iascii) { SETERRQ(1,"Only ASCII viewer for ColumnSystem\n"); }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
+  if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for ColumnSystem\n"); }
 
   ierr = PetscViewerASCIIPrintf(viewer,
      "\n%% viewing ColumnSystem column object with description '%s' (columns  [k value])\n",
@@ -206,21 +206,21 @@ Give description string as \c info argument.
  */
 PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info) const {
   PetscErrorCode ierr;
-  PetscTruth iascii;
+  PetscBool iascii;
   if (!viewer) {
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
   }
-  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
-  if (!iascii) { SETERRQ(1,"Only ASCII viewer for ColumnSystem\n"); }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
+  if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for ColumnSystem\n"); }
 
   if (L==NULL) {
-    SETERRQ1(2,"columnSystemCtx ERROR: can't matrix '%s' because L==NULL ... ending ...\n", info);
+    SETERRQ1(PETSC_COMM_SELF, 2,"columnSystemCtx ERROR: can't matrix '%s' because L==NULL ... ending ...\n", info);
   }
   if (D==NULL) {
-    SETERRQ1(3,"columnSystemCtx ERROR: can't matrix '%s' because D==NULL ... ending ...\n", info);
+    SETERRQ1(PETSC_COMM_SELF, 3,"columnSystemCtx ERROR: can't matrix '%s' because D==NULL ... ending ...\n", info);
   }
   if (U==NULL) {
-    SETERRQ1(4,"columnSystemCtx ERROR: can't matrix '%s' because U==NULL ... ending ...\n", info);
+    SETERRQ1(PETSC_COMM_SELF, 4,"columnSystemCtx ERROR: can't matrix '%s' because U==NULL ... ending ...\n", info);
   }
 
   if (nmax < 2) {
@@ -302,12 +302,12 @@ Negative return code indicates a software problem.
 PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
                   const PetscInt n, PetscScalar **x) {
 #if (PISM_DEBUG==1)
-  if (x == NULL) { SETERRQ(-999,"x is NULL in columnSystemCtx"); }
-  if (*x == NULL) { SETERRQ(-998,"*x is NULL in columnSystemCtx"); }
-  if (n < 1) { SETERRQ(-997,"instance size n < 1 in columnSystemCtx"); }
-  if (n > nmax) { SETERRQ(-996,"instance size n too large in columnSystemCtx"); }
+  if (x == NULL) { SETERRQ(PETSC_COMM_SELF, -999,"x is NULL in columnSystemCtx"); }
+  if (*x == NULL) { SETERRQ(PETSC_COMM_SELF, -998,"*x is NULL in columnSystemCtx"); }
+  if (n < 1) { SETERRQ(PETSC_COMM_SELF, -997,"instance size n < 1 in columnSystemCtx"); }
+  if (n > nmax) { SETERRQ(PETSC_COMM_SELF, -996,"instance size n too large in columnSystemCtx"); }
 
-  if (!indicesValid) { SETERRQ(-995,"column indices not valid in columnSystemCtx"); }
+  if (!indicesValid) { SETERRQ(PETSC_COMM_SELF, -995,"column indices not valid in columnSystemCtx"); }
 #endif
   PetscScalar b;
   b = D[0];
@@ -386,7 +386,7 @@ PetscErrorCode columnSystemCtx::viewColumnInfoMFile(char *filename, PetscScalar 
   PetscErrorCode ierr;
   PetscViewer viewer;
   ierr = PetscViewerCreate(PETSC_COMM_SELF, &viewer);CHKERRQ(ierr);
-  ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
+  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
   ierr = PetscViewerFileSetName(viewer, filename);CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
@@ -398,7 +398,7 @@ PetscErrorCode columnSystemCtx::viewColumnInfoMFile(char *filename, PetscScalar 
     snprintf(info,PETSC_MAX_PATH_LEN, "%s_x", prefix.c_str());
     ierr = viewVectorValues(viewer, x, n, info); CHKERRQ(ierr);
   }
-  ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   return 0;
 }
 

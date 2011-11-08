@@ -3,7 +3,7 @@ static char help[] =
 "\nDemonstrates that on DA-created *local* Vecs, the functions\n"
 "VecMax(), VecMin(), VecNorm() do not work well because these\n"
 "local Vecs are actually of type VECSEQ.  A solution used in PISM\n"
-"is to add a PetscGlobalMax(), etc. after VecMax().\n\n"
+"is to add a PISMGlobalMax(), etc. after VecMax().\n\n"
 "Note that the synopsis of DACreateLocalVector() is\n"
 "'Creates a Seq PETSc vector that may be used with the DAXXX routines.'\n\n";
 
@@ -27,7 +27,7 @@ for local  Vec:  max = 0.50, min = 0.00, infnorm = 0.50, twonorm = 1.82
 
 */
 
-#include "petscda.h"
+#include "petscdmda.h"
 #include <math.h>
 
 extern PetscErrorCode fillWithData(DA,Vec*,Vec*);

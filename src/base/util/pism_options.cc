@@ -45,7 +45,7 @@ See verbPrintf().
 PetscErrorCode verbosityLevelFromOptions() {
   PetscErrorCode ierr;
   PetscInt       myLevel;
-  PetscTruth     verbose, levelSet;
+  PetscBool     verbose, levelSet;
   
   ierr = setVerbosityLevel(2);  
   ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &myLevel, &levelSet); CHKERRQ(ierr);
@@ -61,7 +61,7 @@ PetscErrorCode verbosityLevelFromOptions() {
 //! Print a warning telling the user that an option was ignored.
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]) {
   PetscErrorCode ierr;
-  PetscTruth option_is_set;
+  PetscBool option_is_set;
 
   char tmp[1]; // dummy string
   ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, 1, &option_is_set); CHKERRQ(ierr);
@@ -77,7 +77,7 @@ PetscErrorCode ignore_option(MPI_Comm com, const char name[]) {
 //! Stop if an option \c old_name is set, printing a message that \c new_name should be used instead.
 PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]) {
   PetscErrorCode ierr;
-  PetscTruth option_is_set;
+  PetscBool option_is_set;
 
   char tmp[1]; // dummy string
   ierr = PetscOptionsGetString(PETSC_NULL, old_name, tmp, 1, &option_is_set); CHKERRQ(ierr);
@@ -94,7 +94,7 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], co
 //!Stop if an option \c name is set.
 PetscErrorCode stop_if_set(MPI_Comm com, const char name[]) {
   PetscErrorCode ierr;
-  PetscTruth option_is_set;
+  PetscBool option_is_set;
 
   char tmp[1]; // dummy string
   ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, 1, &option_is_set); CHKERRQ(ierr);
@@ -421,7 +421,7 @@ PetscErrorCode show_usage_check_req_opts(
    has been set. Therefore "flag" is altered by this function call. For other
    arguments "value" to PetscOptionsXXXX(....,&value,&flag), the value of
    "value" is only set if the user specified the option. Therefore "flag"
-   should always be given a local PetscTruth variable if we want to preserve
+   should always be given a local PetscBool variable if we want to preserve
    previously set IceModel flags. By contrast, for various parameters "value"
    we can use the IceModel parameter itself without fear of overwriting
    defaults unless, of course, the user wants them overwritten. It is also o.k.
@@ -435,10 +435,10 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   string list, descr;
-  PetscTruth opt_set = PETSC_FALSE;
+  PetscBool opt_set = PETSC_FALSE;
 
   if (choices.empty()) {
-    SETERRQ(1, "PISMOptionsList: empty choices argument");
+    SETERRQ(com, 1, "PISMOptionsList: empty choices argument");
   }
 
   set<string>::iterator j = choices.begin();
@@ -478,7 +478,7 @@ PetscErrorCode PISMOptionsString(string option, string text,
 				 string &result, bool &is_set, bool allow_empty_arg) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
-  PetscTruth flag;
+  PetscBool flag;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
 			    result.c_str(), tmp,
@@ -508,7 +508,7 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
 				      vector<string>& result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
-  PetscTruth opt_set = PETSC_FALSE;
+  PetscBool opt_set = PETSC_FALSE;
 
   ierr = PetscOptionsString(opt.c_str(), text.c_str(), "", default_value.c_str(),
 			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
@@ -545,7 +545,7 @@ PetscErrorCode PISMOptionsInt(string option, string text,
 			      PetscInt &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
-  PetscTruth flag;
+  PetscBool flag;
   char *endptr;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "", "none", str,
@@ -579,7 +579,7 @@ PetscErrorCode PISMOptionsReal(string option, string text,
 			       PetscReal &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
-  PetscTruth flag;
+  PetscBool flag;
   char *endptr;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "", "none", str,
@@ -613,7 +613,7 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
 				    vector<PetscReal> &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
-  PetscTruth flag;
+  PetscBool flag;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
 			    "none", str,
@@ -677,7 +677,7 @@ PetscErrorCode PISMOptionsIntArray(string option, string text,
 PetscErrorCode PISMOptionsIsSet(string option, bool &result) {
   PetscErrorCode ierr;
   char tmp[1];
-  PetscTruth flag;
+  PetscBool flag;
 
   ierr = PetscOptionsGetString(PETSC_NULL, option.c_str(), tmp, 1, &flag); CHKERRQ(ierr);
 
@@ -691,7 +691,7 @@ PetscErrorCode PISMOptionsIsSet(string option, string text,
 				bool &result) {
   PetscErrorCode ierr;
   char tmp[1];
-  PetscTruth flag;
+  PetscBool flag;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
 			    "", tmp, 1, &flag); CHKERRQ(ierr);

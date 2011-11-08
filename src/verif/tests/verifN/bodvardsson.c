@@ -12,7 +12,7 @@ static const char help[] =
 "TO DO:  * add Picard or Jacobian\n"
 "        * reasonable initial guesses\n";
 
-#include "petscda.h"
+#include "petscdmda.h"
 #include "petscsnes.h"
 
 #include "../exactTestN.h"
@@ -32,7 +32,7 @@ typedef struct {
   DA          scalarda;/* 1d,dof=1 distributed array for parameters depending on x */
   PetscMPIInt rank;
   PetscInt    Mx, xs, xm, solnghostwidth;
-  PetscTruth  upwind1; /* if true, used low-order upwinding */
+  PetscBool  upwind1; /* if true, used low-order upwinding */
   PetscReal   dx, secpera, n, rho, rhow, g;
   PetscReal   H0;      /* thickness at x=0, for Dirichlet condition on mass cont */
   PetscReal   xc;      /* location at which stress (Neumann) condition applied to SSA eqn */
@@ -395,7 +395,7 @@ int main(int argc,char **argv)
   PetscInt               its, i, tmpxs, tmpxm; /* iteration count, index, etc. */
   PetscReal              tmp1, tmp2, tmp3, tmp4, tmp5,
                          errnorms[2], descaleNode[2];
-  PetscTruth             eps_set = PETSC_FALSE, dump = PETSC_FALSE, exactinitial = PETSC_FALSE,
+  PetscBool             eps_set = PETSC_FALSE, dump = PETSC_FALSE, exactinitial = PETSC_FALSE,
                          snes_mf_set, snes_fd_set;
   MatFDColoring          matfdcoloring = 0;
   ISColoring             iscoloring;
