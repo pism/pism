@@ -191,6 +191,9 @@ public:
   virtual vector<double>  array_attr(string name, int component = 0);
   virtual PetscErrorCode  set_attrs(string my_pism_intent, string my_long_name,
 				    string my_units, string my_standard_name, int component = 0);
+  virtual PetscErrorCode  rename(const string &short_name, const string &long_name, 
+                                 const string &standard_name, int component=0);
+  virtual PetscErrorCode  set_intent(string pism_intent, int component=0);
   virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);
   virtual PetscErrorCode  define(const NCTool &nc, nc_type output_datatype);
@@ -442,6 +445,10 @@ public:
   using IceModelVec2::is_valid;
   virtual bool           is_valid(PetscScalar u, PetscScalar v);
   virtual PetscErrorCode set_name(string name, int component = 0);
+  virtual PetscErrorCode  rename(const string &short_name, const string &long_name, 
+                                 const string &standard_name, int component = 0);
+  virtual PetscErrorCode  rename(const string &short_name, const vector<string> &long_names, 
+                                 const string &standard_name);
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.

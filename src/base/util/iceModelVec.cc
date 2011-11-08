@@ -388,6 +388,33 @@ PetscErrorCode  IceModelVec::set_name(string new_name, int N) {
   return 0;
 }
 
+//! Sets the variable's various names without changing any other metadata
+PetscErrorCode IceModelVec::rename(const string &short_name, const string &long_name, 
+                               const string &standard_name, int N)
+{
+  if(!short_name.empty()){
+    if (N == 0) name = short_name; 
+    vars[N].short_name = short_name;
+  }
+  
+  if (!long_name.empty()) {
+    vars[N].set_string("long_name", long_name);
+  }
+
+  if (!standard_name.empty()) {
+    vars[N].set_string("standard_name", standard_name);
+  }
+
+  return 0;
+}  
+
+//! Changes the variable's pism_intent.
+PetscErrorCode  IceModelVec::set_intent(string pism_intent, int component)
+{
+  vars[component].set_string("pism_intent", pism_intent);  
+  return 0;
+}
+
 //! Sets the glaciological units of an IceModelVec.
 /*!
 This affects NCVariable::report_range() and IceModelVec::write().  In write(),

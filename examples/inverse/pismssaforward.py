@@ -107,6 +107,38 @@ tauc_params = {"ident":PISM.cvar.g_InvTaucParamIdent,
 
 WIDE_STENCIL = 2
 
+
+def computeSIASurfaceVelocities(modeldata):
+  """From the PISM model data in `modeldata`, generate the surface
+  horizontal velocities corresponding to solving the SIA with zero
+  basal sliding.
+  """
+  md = modeldata
+  grid = md.grid
+  sia = PISM.SIAFD(md.grid,md.ice,md.enthalpyconverter,md.config)
+  sia.init(md.vecs.asPISMVars())
+
+  zero_sliding = PISM.IceModelVec2V()
+  zero_sliding.create(grid, 'basal_velocity', False )
+  zero_sliding.set(0.)
+
+  zero_D2 = PISM.IceModelVec2S();
+  zero_D2.create(grid, 'D2', True, PISM.util.WIDE_STENCIL)
+  zero_D2.set(0)
+
+  sia.update(zero_sliding,zero_D2,False)
+  (u,v) = sia.get_horizontal_3d_velocity()
+
+  vel_sia = PISM.util.standard2dVelocityVec(grid,name="_sia",stencil_width=1)
+  tmp = PISM.IceModelVec2S()
+  tmp.create(grid,'tmp',False)
+  u.getSurfaceValues(tmp,md.vecs.thickness)
+  vel_sia.set_component(0,tmp)
+  v.getSurfaceValues(tmp,md.vecs.thickness)
+  vel_sia.set_component(1,tmp)
+  
+  return vel_sia
+
 class InvSSARun(PISM.ssa.SSARun):
 
   def setup(self):

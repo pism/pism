@@ -86,3 +86,55 @@ PetscErrorCode IceModelVec2V::set_name(string new_name, int /*component = 0*/) {
   return 0;
 }
 
+//! Sets the variable's various names without changing any other metadata
+PetscErrorCode IceModelVec2V::rename(const string &short_name, const string &long_name, 
+                               const string &standard_name, int /* component */ )
+{
+  if(!short_name.empty())
+  {
+    string tmp = short_name;
+    name = "vel" + tmp;
+
+    vars[0].short_name = "u" + tmp;
+    vars[1].short_name = "v" + tmp;    
+  }
+
+  if (!long_name.empty()) {
+    string xprefix = "X component of ";
+    string yprefix = "Y component of ";
+    vars[0].set_string("long_name", xprefix + long_name);
+    vars[1].set_string("long_name", yprefix + long_name);
+  }
+
+  if (!standard_name.empty()) {
+    vars[0].set_string("standard_name", standard_name);
+    vars[1].set_string("standard_name", standard_name);
+  }
+
+  return 0;
+}  
+
+//! Sets the variable's various names without changing any other metadata
+PetscErrorCode IceModelVec2V::rename(const string &short_name, const vector<string> &long_names, 
+                               const string &standard_name)
+{
+  if(!short_name.empty())
+  {
+    string tmp = short_name;
+
+    name = "vel" + tmp;
+
+    vars[0].short_name = "u" + tmp;
+    vars[1].short_name = "v" + tmp;    
+  }
+
+  vars[0].set_string("long_name", long_names[0]);
+  vars[1].set_string("long_name", long_names[1]);
+
+  if (!standard_name.empty()) {
+    vars[0].set_string("standard_name", standard_name);
+    vars[1].set_string("standard_name", standard_name);
+  }
+
+  return 0;
+}  

@@ -39,20 +39,7 @@ def addGroundedIceMisfitWeight(modeldata):
     for (i,j) in grid.points():
       if mask[i,j] == grounded:
         weight[i,j] = 1
-  modeldata.vecs.add(weight)
-
-def addConstTaucPrior(modeldata,const):
-  grid = modeldata.grid
-  tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior')
-  tauc_prior.set(const)
-  modeldata.vecs.add(tauc_prior)
-
-def addScaledTaucPrior(modeldata,scale):
-  grid = modeldata.grid
-  tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior')
-  tauc_prior.copy_from(modeldata.vecs.tauc)
-  tauc_prior.scale(scale)
-  modeldata.vecs.add(tauc_prior)
+  modeldata.vecs.add(weight,writing=True)    
 
 # The main code for a run follows:
 if __name__ == '__main__':
@@ -85,7 +72,7 @@ if __name__ == '__main__':
     tauc_prior_scale = PISM.optionsReal("-tauc_prior_scale","initial guess for tauc to be this factor of the true value",default=tauc_prior_scale)
     tauc_prior_const = PISM.optionsReal("-tauc_prior_const","initial guess for tauc to be this constant",default=tauc_prior_const)
     noise = PISM.optionsReal("-rms_noise","pointwise rms noise to add (in m/a)",default=None)
-
+    generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed","generate observed SSA velocities",default=False)
 
   config.set_string("ssa_method","fem")
   
@@ -101,34 +88,49 @@ if __name__ == '__main__':
 
   modeldata = ssa_run.modeldata
   grid = modeldata.grid
+  vecs = modeldata.vecs
 
+  # Add the misfit weight.
   addGroundedIceMisfitWeight(modeldata)
-  
+
+  # Generate a prior guess for tauc
+  tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior',desc="initial guess for (pseudo-plastic) basal yield stress in an inversion")
+  vecs.add(tauc_prior,writing=True)
   if not tauc_prior_const is None:
-    addConstTaucPrior(modeldata,tauc_prior_const)
+    tauc_prior.set(tauc_prior_const)
   else:
-    addScaledTaucPrior(modeldata,tauc_prior_scale)
+    tauc_prior.copy_from(modeldata.vecs.tauc)
+    tauc_prior.scale(tauc_prior_scale)
+  
+  tauc_true = modeldata.vecs.tauc
+  tauc_true.set_name('tauc_true')
+  tauc_true.set_attrs("diagnostic", "value of basal yield stress used to generate synthetic SSA velocities", "Pa", ""); 
+  vecs.markForWriting(tauc_true)
+
+  vel_ssa_observed = vecs.vel_ssa_blat
+  vel_ssa_observed.rename("_ssa_observed","'observed' SSA velocities'","")
+  if generate_ssa_observed:
+    vecs.markForWriting(vel_ssa_observed)
+    final_velocity = vel_ssa_observed
+  else:
+    vel_sia_observed = pismssaforward.computeSIASurfaceVelocities(modeldata)
+    vel_ssa_observed.rename("_sia_observed","'observed' SIA velocities'","")
+    vel_surface_observed = PISM.util.standard2dVelocityVec(grid,"_surface_observed","observed surface velocities",stencil_width=1)
+    vel_surface_observed.copy_from(vel_sia_observed)
+    vel_surface_observed.add(1.,vel_ssa_observed)
+    vecs.markForWriting(vel_surface_observed)
+    final_velocity = vel_surface_observed
+
+  if not noise is None:
+    u_noise = pismssaforward.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
+    final_velocity.add(1./PISM.secpera,u_noise)
 
   pio = PISM.PISMIO(grid)
   pio.open_for_writing(output_file_name,False,True)
   pio.append_time(grid.config.get_string("time_dimension_name"),0.0)
   pio.close()
+
+  vecs.write(output_file_name)
   
   # Save time & command line
   PISM.util.writeProvenance(output_file_name)
-  
-  tauc_true = modeldata.vecs.tauc
-  tauc_true.set_name('tauc_true')
-  tauc_true.write(output_file_name)
-
-  vel_ssa_observed = modeldata.vecs.vel_ssa
-  if not noise is None:
-    u_noise = pismssaforward.randVectorV(grid,noise/math.sqrt(2),vel_ssa_observed.get_stencil_width())
-    vel_ssa_observed.add(1./PISM.secpera,u_noise)
-  # vel_ssa_observed.set_name('_ssa_observed')
-  vel_ssa_observed.write(output_file_name)
-  
-  modeldata.vecs.tauc_prior.write(output_file_name)
-  modeldata.vecs.vel_misfit_weight.write(output_file_name)
-
-  ssa_run.teardown()

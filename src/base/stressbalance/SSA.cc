@@ -142,14 +142,10 @@ PetscErrorCode SSA::allocate() {
                                 "m s-1", ""); CHKERRQ(ierr);
 
   // override velocity metadata
-  ierr = velocity.set_name("_ssa"); CHKERRQ(ierr);
-  ierr = velocity.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
-                            "m s-1", "", 0); CHKERRQ(ierr);
-
-  ierr = velocity.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
-                            "m s-1", "", 1); CHKERRQ(ierr);
-
-  ierr = velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  vector<string> long_names;
+  long_names.push_back("SSA model ice velocity in the X direction");
+  long_names.push_back("SSA model ice velocity in the Y direction");
+  ierr = velocity.rename("_ssa_blat",long_names,""); CHKERRQ(ierr);
 
   // mimic IceGrid::createDA() with TRANSPOSE :
   PetscInt dof=2, stencil_width=1;

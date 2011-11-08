@@ -266,6 +266,7 @@ if __name__ == "__main__":
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
+    use_tauc_prior = PISM.optionsFlag("-use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
@@ -292,16 +293,37 @@ if __name__ == "__main__":
   vecs = modeldata.vecs
   grid = modeldata.grid
 
-  vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed')
-  vel_ssa_observed.regrid(inv_data_filename,True)
-  
-  tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
-  tauc_prior.regrid(inv_data_filename,True)
+  vel_ssa_observed = None
+  vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed',stencil_width=1)
+  if PISM.util.fileHasVariable(inv_data_filname,"u_ssa_observed"):
+    vel_ssa_observed.regrid(inv_data_filename,True)
+    vecs.add(vel_ssa_observed,writing=saving_inv_data)
+  else:
+    if not PISM.util.fileHasVariable(inv_data_filname,"u_surface_observed"):
+      ERROR MESSAGE
+    vel_surface_observed = PISM.util.standard2dVelocityVec(grid,'_surface_observed',stencil_width=1)
+    vel_surface_observed.regrid(inv_data_filename,True)
+    vecs.add(vel_surface_observed,writing=saving_inv_data)
+    
+    vel_sia_observed = pismssaforward.computeSIASurfaceVelocities(modeldata)
+    vel_sia_observed.rename('_sia_observed',"'observed' SIA velocities'","")
+    vel_ssa_observed.copy_from(vel_surface_observed)
+    vel_ssa_observed.add(-1,vel_sia_observed)
+    vecs.add(vel_ssa_observed,writing=True)
 
+  # Determine the prior guess for tauc: either the tauc from the input
+  # file, or if -using-tauc-prior the tauc_prior from the inv_datafile
+  tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
   tauc = PISM.util.standardYieldStressVec(grid)
-  
-  vecs.add(vel_ssa_observed,writing=saving_inv_data)
+  if use_tauc_prior:
+    tauc_prior.regrid(inv_data_filename,True)
+  else:
+    if not PISM.util.fileHasVariable(input_filname,"tauc"):
+      ERROR MESSAGE
+    tauc.regrid(inv_data_filename,True)
+    tauc_prior.copy_from(tauc)
   vecs.add(tauc_prior,writing=saving_inv_data)
+
 
   # Convert tauc guess to zeta guess
   if config.get_string('inv_ssa_tauc_param')=='ident':
@@ -361,10 +383,12 @@ if __name__ == "__main__":
       for (i,j) in grid.points():
         (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
 
+  # It may be that a 'tauc' was read in earlier.  We replace it with
+  # our newly generated one.
   if vecs.has('tauc'): vecs.remove('tauc')
   vecs.add(tauc,writing=True)
 
-  u.set_name("_ssa_inv",0)
+  u.rename("_ssa_inv","SSA velocity computed by inversion","")
   vecs.add(u,writing=True)
 
   # Write solution out to netcdf file
