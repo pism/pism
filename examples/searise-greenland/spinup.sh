@@ -1,4 +1,4 @@
-#!/bin/bash
+e#!/bin/bash
 
 # Copyright (C) 2009-2011 The PISM Authors
 
@@ -9,6 +9,9 @@
 #
 # recommended way to run with N processors is " ./spinup.sh N >& out.spinup & "
 # which gives a viewable (with "less", for example) transcript in out.spinup
+
+# seconds per year, from UDUNITS
+SECPERA=3.15569259747e7
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
   echo "[SCRIPTNAME=$SCRIPTNAME (already set)]"
@@ -105,6 +108,7 @@ INNAME=$PISM_DATANAME
 SMOOTHRUNLENGTH=100
 NOMASSSIARUNLENGTH=50000
 PALEOSTARTYEAR=-125000
+FTTENDTIME=-100
 
 # grids
 VDIMS="-Lz 4000 -Lbz 2000"
@@ -234,7 +238,8 @@ $PISM_DO $cmd
 # pre-spinup done; ready to use paleoclimate forcing for real spinup ...
 
 EXSTEP=500
-TSSTEP=1
+EXFSTEP=10
+TSSTEP=yearly
 
 STARTTIME=$PALEOSTARTYEAR
 
@@ -262,7 +267,9 @@ STARTTIME=$ENDTIME
 ENDTIME=0 # BP
 STARTNAME=$OUTNAME
 
+# ######################################
 # "regular" run
+# ######################################
 
 OUTNAME=g${FS}km_0.nc
 TSNAME=ts_$OUTNAME
@@ -270,6 +277,7 @@ TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
 EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
 echo
+echo "$SCRIPTNAME  regular run"
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
@@ -281,14 +289,44 @@ cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGR
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
-# "force-to-thickness" run
+# ######################################
+# "PIK" run
+# ######################################
 
-OUTNAME=g${FS}km_0_ftt.nc
+STARTTIME=$COARSEENDTIME
+ENDTIME=0
+OUTNAME=g${FS}km_0_pik.nc
 TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
 EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
 echo
+echo "$SCRIPTNAME  PIK run"
+echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
+echo "$SCRIPTNAME      including bed deformation, and PIK marine ice dynamics,"
+echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
+     -bed_def lc $COUPLER_PIK \
+     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat,bmelt -regrid_bed_special  \
+     -ts_file $TSNAME -ts_times $TSTIMES \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
+$PISM_DO $cmd
+
+# ######################################
+# "force-to-thickness" run
+# ######################################
+
+STARTTIME=$COARSEENDTIME
+ENDTIME=$FTTENDTIME
+ET=$(($FTTENDTIME/-1))
+OUTNAME=g${FS}km_m${ET}a_ftt.nc
+TSNAME=ts_$OUTNAME
+TSTIMES=$STARTTIME:$TSSTEP:$FTTENDTIME
+EXNAME=ex_$OUTNAME
+EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$FTTENDTIME
+echo
+echo "$SCRIPTNAME  force-to-thickness run"
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation and modified surface mass balance,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
@@ -298,47 +336,119 @@ cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGR
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat -regrid_bed_special  \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
-     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
+     -ys $STARTTIME -ye $FTTENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
-# "PIK" run
-
-OUTNAME=g${FS}km_0_pik_ftt.nc
+STARTTIME=$FTTENDTIME
+ENDTIME=0
+STARTNAME=$OUTNAME
+OUTNAME=g${FS}km_0_ftt.nc
 TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
-EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
+EXTIMES=$(($STARTTIME+$EXFSTEP)):$EXFSTEP:$ENDTIME
 echo
-echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      including bed deformation, and PIK marine ice dynamics,"
+echo "$SCRIPTNAME  force-to-thickness run"
+echo "$SCRIPTNAME  do paleo-climate forcing run with full physics,"
+echo "$SCRIPTNAME      including bed deformation and modified surface mass balance,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
-     -bed_def lc $COUPLER_PIK \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -i $STARTNAME $FULLPHYS \
+     -bed_def lc $COUPLER_FTT \
      -force_to_thk $INNAME -force_to_thk_alpha 0.005 \
-     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat,bmelt -regrid_bed_special  \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
-# "PIK" + "force-to-thickness" run
+echo
+echo "$SCRIPTNAME  some postprocessing"
+echo
+# calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
+cmd="ncap2 -O -s '*sz_idt=time.size(); acab[\$time,\$x,\$y]= 0.f; dHdt[\$time,\$x,\$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}' $EXNAME $EXNAME"
+$PISM_DO $cmd
+echo
+# adjust meta data for new fields
+cmd="ncatted -a units,acab,o,c,'m year-1' -a units,dHdt,o,c,'m year-1' \
+      -a long_name,acab,o,c,'surface mass balance' \
+      -a long_name,dHdt,o,c,'rate of change of ice thickness' \
+      -a grid_mapping,acab,o,c,'mapping' \
+      -a grid_mapping,dHdt,o,c,'mapping' \
+      -a cell_methods,acab,o,c,'time: mean (interval: $EXFSTEP years)' \
+      -a cell_methods,dHdt,o,c,'time: mean (interval: $EXFSTEP years)' $EXNAME"
+$PISM_DO $cmd
+echo
+# now extract last acab record
+cmd="ncks -A -v acab -d time,$ENDTIME. $EXNAME $OUTNAME"
+$PISM_DO $cmd
 
-OUTNAME=g${FS}km_0_pik.nc
+
+# ######################################
+# "PIK" + "force-to-thickness" run
+# ######################################
+
+STARTTIME=$COARSEENDTIME
+ET=$(($FTTENDTIME/-1))
+ENDTIME=$FTTENDTIME
+OUTNAME=g${FS}km_m${ET}a_pik_ftt.nc
 TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
 EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
 echo
+echo "$SCRIPTNAME  PIK + force-to-thickness run"
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, and PIK marine ice dynamics,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
      -bed_def lc $COUPLER_PIKFTT \
-     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat,bmelt -regrid_bed_special  \
+     -force_to_thk $INNAME -force_to_thk_alpha 0.005 \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
+
+STARTTIME=$FTTENDTIME
+ENDTIME=0
+STARTNAME=$OUTNAME
+OUTNAME=g${FS}km_0_pik_ftt.nc
+TSNAME=ts_$OUTNAME
+TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
+EXNAME=ex_$OUTNAME
+EXTIMES=$(($STARTTIME+$EXFSTEP)):$EXFSTEP:$ENDTIME
+echo
+echo "$SCRIPTNAME  PIK + force-to-thickness run"
+echo "$SCRIPTNAME do paleo-climate forcing run with full physics,"
+echo "$SCRIPTNAME      including bed deformation, and PIK marine ice dynamics,"
+echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -i $STARTNAME $FULLPHYS \
+     -bed_def lc $COUPLER_PIKFTT \
+     -force_to_thk $INNAME -force_to_thk_alpha 0.005 \
+     -ts_file $TSNAME -ts_times $TSTIMES \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
+$PISM_DO $cmd
+
+echo
+echo "$SCRIPTNAME  some postprocessing"
+echo
+# calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
+cmd="ncap2 -O -s '*sz_idt=time.size(); acab[\$time,\$x,\$y]= 0.f; dHdt[\$time,\$x,\$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}' $EXNAME $EXNAME"
+$PISM_DO $cmd
+echo
+# adjust meta data for new fields
+cmd="ncatted -a units,acab,o,c,'m year-1' -a units,dHdt,o,c,'m year-1' \
+      -a long_name,acab,o,c,'surface mass balance' \
+      -a long_name,dHdt,o,c,'rate of change of ice thickness' \
+      -a grid_mapping,acab,o,c,'mapping' \
+      -a grid_mapping,dHdt,o,c,'mapping' \
+      -a cell_methods,acab,o,c,'time: mean (interval: $EXFSTEP years)' \
+      -a cell_methods,dHdt,o,c,'time: mean (interval: $EXFSTEP years)' $EXNAME"
+$PISM_DO $cmd
+echo
+# now extract last acab record
+cmd="ncks -A -v acab -d time,$ENDTIME. $EXNAME $OUTNAME"
+$PISM_DO $cmd
+
 
 echo
 echo "$SCRIPTNAME  spinup done"
