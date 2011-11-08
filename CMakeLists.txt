@@ -164,7 +164,7 @@ endif()
 if (EXISTS ${Pism_SOURCE_DIR}/.git)
   find_program (GIT git DOC "Git executable")
   mark_as_advanced(GIT)
-  execute_process (COMMAND ${GIT} describe --always --dirty=-modified --match v?.?
+  execute_process (COMMAND ${GIT} describe --always --match v?.?
     WORKING_DIRECTORY ${Pism_SOURCE_DIR}
     OUTPUT_VARIABLE Pism_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE)

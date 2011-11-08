@@ -158,7 +158,7 @@ PetscErrorCode IcePSTexModel::prepare_series() {
 
   // set up the file with name seriesname
   char outname[PETSC_MAX_PATH_LEN];
-  PetscTruth o_set;
+  PetscBool o_set;
   ierr = PetscOptionsGetString(PETSC_NULL, "-o", outname, PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
   if (!o_set)
     strncpy(outname, "unnamedpst.nc", PETSC_MAX_PATH_LEN);
@@ -447,7 +447,7 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   IceModelVec *tmp;
   ierr = diagnostics["velbar"]->compute(tmp); CHKERRQ(ierr);
   IceModelVec2V *vel_bar = dynamic_cast<IceModelVec2V*>(tmp);
-  if (!vel_bar) SETERRQ(1, "dynamic_cast failure");
+  if (!vel_bar) SETERRQ(grid.com, 1, "dynamic_cast failure");
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vel_bar->begin_access(); CHKERRQ(ierr);
@@ -496,17 +496,17 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   delete tmp;
 
   // globalize and actually compute averages
-  ierr = PetscGlobalMax(&maxcbarALL, &gmaxcbarALL, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxcbarALL, &gmaxcbarALL, grid.com); CHKERRQ(ierr);
   for (PetscInt m=0; m<4; m++) {
-    ierr = PetscGlobalSum(&areaup[m], &gareaup[m], grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&avcup[m], &gavcup[m], grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&areaup[m], &gareaup[m], grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&avcup[m], &gavcup[m], grid.com); CHKERRQ(ierr);
     if (gareaup[m] > 0.0) {
       gavcup[m] = gavcup[m] / gareaup[m];
     } else {
       gavcup[m] = 0.0;
     }
-    ierr = PetscGlobalSum(&areadown[m], &gareadown[m], grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&avcdown[m], &gavcdown[m], grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&areadown[m], &gareadown[m], grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&avcdown[m], &gavcdown[m], grid.com); CHKERRQ(ierr);
     if (gareadown[m] > 0.0) {
       gavcdown[m] = gavcdown[m] / gareadown[m];
     } else {

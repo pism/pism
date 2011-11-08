@@ -96,8 +96,6 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
 	pism_python_test (verif_test_I_SSAFD_regress_SSA_plastic_py ssa/ssa_testi_fd.sh)
 
-	pism_python_test (verif_test_I_SSAFD_regress_SSA_plastic_py ssa/ssa_testi_fd.sh)
-
 	pism_python_test (verif_test_I_SSAFEM_regress_SSA_plastic_py ssa/ssa_testi_fem.sh)
 
 	pism_python_test (verif_test_J_SSAFD_regress_linear_SSA_floating_py ssa/ssa_testj_fd.sh)
@@ -106,6 +104,8 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
 	pism_python_test (verif_SSAFEM_regress_linear_flow_py ssa/ssafem_test_linear.sh)
 
-#	pism_python_test (verif_SSAFEM_regress_plug_flow_py ssa/ssafem_test_plug.sh)
+        pism_python_test (verif_SSAFEM_regress_plug_flow_py ssa/ssafem_test_plug.sh)
+
+        pism_python_test (EISMINT-Ross_experiment_regress_py test_19.sh)
 
 endif()

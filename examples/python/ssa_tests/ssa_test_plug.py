@@ -32,7 +32,6 @@ tauc0 = 0.; #// No basal shear stress
 B0 = 3.7e8; #// Pa s^{1/3}; hardness 
            #// given on p. 239 of Schoof; why so big?
 glen_n = 3.
-#this->glen_n = n;      
 
 
 class test_plug(PISM.ssa.SSAExactTestCase):
@@ -60,30 +59,25 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     ice.setHardness(B0);
     ice.setExponent(glen_n);
 
-    self.solver.setPhysics(ice,basal,enthalpyconverter)
+    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
 
   def _initSSACoefficients(self):
-    solver = self.solver
-    solver.allocateCoeffs()
-    solver.allocateBCs()
-
-    #// The finite difference code uses the following flag to treat the non-periodic grid correctly.
-    # self.config.set_flag("compute_surf_grad_inward_ssa", True);
-    # self.config.set("epsilon_ssafd", 0.0);
+    self._allocStdSSACoefficients()
+    self._allocateBCs()
+    vecs = self.modeldata.vecs
 
     # Set constant coefficients.
-    solver.thickness.set(H0)
-    solver.tauc.set(tauc0)
-    solver.ice_mask.set(PISM.MASK_GROUNDED)
+    vecs.thickness.set(H0)
+    vecs.tauc.set(tauc0)
+    vecs.ice_mask.set(PISM.MASK_GROUNDED)
   
-    bc_mask = solver.bc_mask
-    vel_bc  = solver.vel_bc
-    bed     = solver.bed
-    surface = solver.surface
+    bc_mask = vecs.bc_mask
+    vel_bc  = vecs.vel_bc
+    bed     = vecs.bed
+    surface = vecs.surface
     
-    vars = [bc_mask, vel_bc, bed, surface]
     grid = self.grid
-    with PISM.util.Access(vars):
+    with PISM.util.Access(comm=[bc_mask, vel_bc, bed, surface]):
       for (i,j) in grid.points():
         x=grid.x[i]; y=grid.y[j]
         
@@ -96,17 +90,18 @@ class test_plug(PISM.ssa.SSAExactTestCase):
           [u,v] = self.exactSolution(i,j,x,y);
           vel_bc(i,j).u = u;
           vel_bc(i,j).v = v;
-  
-    for v in vars:
-      v.beginGhostComm(); v.endGhostComm()
 
   def _initSSA(self):
     # Ensure we never use the strength extension.
-    self.solver.ssa.strength_extension.set_min_thickness(H0/2);
+    self.ssa.strength_extension.set_min_thickness(H0/2);
+
+    #// The finite difference code uses the following flag to treat the non-periodic grid correctly.
+    # self.config.set_flag("compute_surf_grad_inward_ssa", True);
+    # self.config.set("epsilon_ssafd", 0.0);
 
   def exactSolution(self,i,j,x,y):
     earth_grav = self.config.get("standard_gravity");
-    f = self.solver.ice.rho * earth_grav * H0* dhdx;
+    f = self.modeldata.ice.rho * earth_grav * H0* dhdx;
     ynd = y/L
   
     u = 0.5*(f**3)*(L**4)/((B0*H0)**3)*(1-ynd**4);
@@ -118,12 +113,13 @@ if __name__ == '__main__':
 
   PISM.set_abort_on_sigint(True)
 
-  for o in PISM.OptionsGroup(context.com,"","Test J"):
+  for o in PISM.OptionsGroup(context.com,"","Test Plug"):
     Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
     My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
     output_file = PISM.optionsString("-o","output file",default="test_plug.nc")
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
-
+  
   PISM.setVerbosityLevel(verbosity)
+
   tc = test_plug(Mx,My)
   tc.run(output_file)

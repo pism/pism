@@ -60,7 +60,7 @@ public:
   //! Set strength = (viscosity times thickness).
   /*! Determines nu by input strength and current min_thickness. */
   virtual PetscErrorCode set_notional_strength(PetscReal my_nuH) {
-     if (my_nuH <= 0.0) SETERRQ(1,"nuH must be positive");
+     if (my_nuH <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"nuH must be positive");
      constant_nu = my_nuH / min_thickness;
      return 0;
   }
@@ -68,7 +68,7 @@ public:
   //! Set minimum thickness to trigger use of extension.
   /*! Preserves strength (nuH) by also updating using current nu.  */
   virtual PetscErrorCode set_min_thickness(PetscReal my_min_thickness) {
-     if (my_min_thickness <= 0.0) SETERRQ(1,"min_thickness must be positive");
+     if (my_min_thickness <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"min_thickness must be positive");
      PetscReal nuH = constant_nu * min_thickness;
      min_thickness = my_min_thickness;
      constant_nu = nuH / min_thickness;
@@ -184,14 +184,15 @@ protected:
 
   IceModelVec2Int *mask;
   IceModelVec2S *thickness, *tauc, *surface, *bed;
-  IceModelVec2V *driving_stress;
+  IceModelVec2S *driving_stress_x;
+  IceModelVec2S *driving_stress_y;
   IceModelVec2V taud, velocity_old;
   IceModelVec3 *enthalpy;
 
   string stdout_ssa;
 
   // objects used by the SSA solver (internally)
-  DA  SSADA;                    // dof=2 DA (grid.da2 has dof=1)
+  DM  SSADA;                    // dof=2 DA (grid.da2 has dof=1)
   Vec SSAX;  // global vector for solution
 
   // profiling

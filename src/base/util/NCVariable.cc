@@ -58,7 +58,7 @@ PetscErrorCode NCVariable::set_units(string new_units) {
     new_units.resize(n);
 
   if (utScan(new_units.c_str(), &units) != 0) {
-    SETERRQ2(1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
+    SETERRQ2(com, 1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());
   }
 
@@ -96,12 +96,12 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
     new_units.resize(n);
 
   if (utScan(new_units.c_str(), &glaciological_units) != 0) {
-    SETERRQ2(1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
+    SETERRQ2(com, 1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());
   }
   
   if (utConvert(&units, &glaciological_units, &a, &b) == UT_ECONVERT) {
-    SETERRQ3(1, "PISM ERROR: NCVariable '%s': attempted to set glaciological units to '%s', which is not compatible with '%s'.\n",
+    SETERRQ3(com, 1, "PISM ERROR: NCVariable '%s': attempted to set glaciological units to '%s', which is not compatible with '%s'.\n",
 	     short_name.c_str(), new_units.c_str(), units_string.c_str());
   }
 
@@ -183,10 +183,10 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
   PISMIO nc(grid);
 
   if (grid == NULL)
-    SETERRQ(1, "NCVariable::read: grid is NULL.");
+    SETERRQ(com, 1, "NCVariable::read: grid is NULL.");
 
   if (grid->da2 == PETSC_NULL)
-    SETERRQ(1, "NCVariable::read: grid.da2 is NULL.");
+    SETERRQ(com, 1, "NCVariable::read: grid.da2 is NULL.");
 
   // Open the file:
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
@@ -283,10 +283,10 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
   PISMIO nc(grid);
 
   if (grid == NULL)
-    SETERRQ(1, "NCVariable::regrid: grid is NULL.");
+    SETERRQ(com, 1, "NCVariable::regrid: grid is NULL.");
 
   if (grid->da2 == PETSC_NULL)
-    SETERRQ(1, "NCVariable::regrid: grid.da2 is NULL.");
+    SETERRQ(com, 1, "NCVariable::regrid: grid.da2 is NULL.");
 
   // Open the file
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
@@ -299,7 +299,7 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
 
   if (!exists) {		// couldn't find the variable
     if (critical) {		// if it's critical, print an error message and stop
-      // SETERRQ1(1, "Variable '%s' was not found.\n", short_name);
+      // SETERRQ1(com, 1, "Variable '%s' was not found.\n", short_name);
       ierr = PetscPrintf(com,
 			"PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
 			 short_name.c_str(), filename.c_str());
@@ -627,7 +627,7 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
   PetscErrorCode ierr;
 
   if (grid == NULL)
-    SETERRQ(1, "NCVariable::check_range: grid is NULL.");
+    SETERRQ(com, 1, "NCVariable::check_range: grid is NULL.");
 
   ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);

@@ -18,7 +18,7 @@
 
 #include <cmath>
 #include <cstring>
-#include <petscda.h>
+#include <petscdmda.h>
 
 #include "iceModel.hh"
 #include "Mask.hh"
@@ -58,7 +58,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 PetscErrorCode IceModel::update_mask() {
   PetscErrorCode ierr;
 
-  if (ocean == PETSC_NULL) {  SETERRQ(1, "PISM ERROR: ocean == PETSC_NULL");  }
+  if (ocean == PETSC_NULL) {  SETERRQ(grid.com, 1, "PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal sea_level;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
@@ -88,7 +88,7 @@ PetscErrorCode IceModel::update_surface_elevation() {
 
   MaskQuery mask(vMask);
 
-  if (ocean == PETSC_NULL) {  SETERRQ(1, "PISM ERROR: ocean == PETSC_NULL");  }
+  if (ocean == PETSC_NULL) {  SETERRQ(grid.com, 1, "PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal sea_level;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
@@ -104,7 +104,7 @@ PetscErrorCode IceModel::update_surface_elevation() {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       // take this opportunity to check that vH(i, j) >= 0
       if (vH(i, j) < 0) {
-        SETERRQ2(1, "Thickness negative at point i=%d, j=%d", i, j);
+        SETERRQ2(grid.com, 1, "Thickness negative at point i=%d, j=%d", i, j);
       }
       vh(i, j) = gc.surface(vbed(i, j), vH(i, j));
     }
@@ -242,11 +242,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   if (surface != NULL) {
     ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
-  } else { SETERRQ(1, "PISM ERROR: surface == NULL"); }
+  } else { SETERRQ(grid.com, 1, "PISM ERROR: surface == NULL"); }
 
   if (ocean != NULL) {
     ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
-  } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
+  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
@@ -485,12 +485,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // flux accounting
   {
-    ierr = PetscGlobalSum(&my_basal_ice_flux,     &basal_ice_flux,     grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&my_float_kill_flux,    &float_kill_flux,    grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&my_nonneg_rule_flux,   &nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&my_ocean_kill_flux,    &ocean_kill_flux,    grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&my_sub_shelf_ice_flux, &sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&my_surface_ice_flux,   &surface_ice_flux,   grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&my_basal_ice_flux,     &basal_ice_flux,     grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&my_float_kill_flux,    &float_kill_flux,    grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&my_nonneg_rule_flux,   &nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&my_ocean_kill_flux,    &ocean_kill_flux,    grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&my_sub_shelf_ice_flux, &sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&my_surface_ice_flux,   &surface_ice_flux,   grid.com); CHKERRQ(ierr);
 
     // FIXME: use corrected cell areas (when available)
     PetscScalar factor = config.get("ice_density") * (dx * dy);

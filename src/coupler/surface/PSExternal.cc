@@ -409,7 +409,7 @@ PetscErrorCode PSExternal_ALR::init(PISMVars &vars) {
   CHKERRQ(ierr);
 
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (usurf == NULL) SETERRQ(1, "surface_altitude is not available");
+  if (usurf == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
   // artm_0 is the initial condition; artm_0 = artm(t_0) + gamma*usurf(t_0)
   ierr = artm_0.create(grid, "usurf", false); CHKERRQ(ierr);

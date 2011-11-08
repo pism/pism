@@ -63,10 +63,10 @@ netcdf pism_config {
 
     pism_config:kill_icebergs = "no";
     pism_config:kill_icebergs_doc = "identify and kill detached ice-shelf areas";
-    
+
     pism_config:do_eigen_calving = "false";
     pism_config:do_eigen_calving_doc = "calculate strain rates and related calving rate";
-    
+
     pism_config:do_thickness_calving = "false";
     pism_config:do_thickness_calving_doc = "ad hoc calving at certain threshold for terminal ice thickness";
 
@@ -112,34 +112,34 @@ netcdf pism_config {
     pism_config:use_linear_in_temperature_heat_capacity_doc = "If yes, use varcEnthalpyConverter class to convert (internally) temperature to/from enthalpy.  It is based on equation (4.39) in [\\ref GreveBlatter2009].  Otherwise use default class EnthalpyConverter which has temperature-independent (i.e. constant) specific heat capacity, set by constant ice_specific_heat_capacity.";
 
     pism_config:use_temperature_dependent_thermal_conductivity = "no";
-    pism_config:use_temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [\ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice_thermal_conductivity.";
+    pism_config:use_temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [\\ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice_thermal_conductivity.";
 
     // parameters:
 
     pism_config:bootstrapping_H_value_no_var = 0.0;
     pism_config:bootstrapping_H_value_no_var_doc = "m; thickness value to use if thk (land_ice_thickness) variable is absent in bootstrapping file";
-    
+
     pism_config:bootstrapping_bed_value_no_var = 1.0;
     pism_config:bootstrapping_bed_value_no_var_doc = "m; bed elevation value to use if topg (bedrock_altitude) variable is absent in bootstrapping file";
-    
+
     pism_config:bootstrapping_geothermal_flux_value_no_var = 0.042;
     pism_config:bootstrapping_geothermal_flux_value_no_var_doc = "W m-2; geothermal flux value to use if bheatflx variable is absent in bootstrapping file";
-    
+
     pism_config:bootstrapping_uplift_value_no_var = 0.0;
     pism_config:bootstrapping_uplift_value_no_var_doc = "m s-1; uplift value to use if dbdt variable is absent in bootstrapping file";
-    
+
     pism_config:bootstrapping_bwat_value_no_var = 0.0;
     pism_config:bootstrapping_bwat_value_no_var_doc = "m; basal melt water effective thickness value to use if variable bwat is absent in bootstrapping file";
-    
+
     pism_config:bootstrapping_bmelt_value_no_var = 0.0;
     pism_config:bootstrapping_bmelt_value_no_var_doc = "m s-1; basal melt rate value to use if variable bmelt is absent in bootstrapping file";
-    
+
     pism_config:bootstrapping_tillphi_value_no_var = 15.0;
     pism_config:bootstrapping_tillphi_value_no_var_doc = "degrees; till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip";
-    
+
     pism_config:enhancement_factor = 1.0;
     pism_config:enhancement_factor_doc = "; Flow enhancement factor for SIA";
-    
+
     pism_config:ssa_enhancement_factor = 1.0;
     pism_config:ssa_enhancement_factor_doc = "; Flow enhancement factor for SSA";
 
@@ -189,8 +189,8 @@ netcdf pism_config {
     pism_config:sliding_scale_factor_reduces_tauc_doc = "; divides pseudo-plastic tauc (yield stress) by given factor; this would increase sliding by given factor in absence of membrane stresses; not used if negative or zero; not used by default";
 
     pism_config:beta_ice_free_bedrock = 1.8e9;
-    pism_config:beta_ice_free_bedrock_doc = "Pa s m-1; value is for ice stream E from [\ref HulbeMacAyeal]; thus sliding velocity, but we hope it doesn't matter much; at 100 m a-1 the linear sliding law gives 57040 Pa basal shear stress";
-    
+    pism_config:beta_ice_free_bedrock_doc = "Pa s m-1; value is for ice stream E from [\\ref HulbeMacAyeal]; thus sliding velocity, but we hope it doesn't matter much; at 100 m a-1 the linear sliding law gives 57040 Pa basal shear stress";
+
     pism_config:bwat_max = 2.0;
     pism_config:bwat_max_doc = "meters; maximum thickness of the basal melt water layer";
 
@@ -207,7 +207,7 @@ netcdf pism_config {
     pism_config:minimum_temperature_for_sliding_doc = "K; This is less than water_melting_point_temperature.  If ice base is above this value then decide to do SIA sliding, if that mechanism is active at all.";
 
     pism_config:skip_max = 10;
-    pism_config:skip_max_doc = "Number of mass-balance steps, including SIA diﬀusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done";
+    pism_config:skip_max_doc = "Number of mass-balance steps, including SIA diffusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done";
 
     pism_config:default_till_phi = 30.0;
     pism_config:default_till_phi_doc = "degrees; fill value for till friction angle";
@@ -382,7 +382,7 @@ netcdf pism_config {
 
     pism_config:water_melting_point_temperature = 273.15;
     pism_config:water_melting_point_temperature_doc = "K; melting point of pure water";
- 
+
     pism_config:enthalpy_converter_reference_temperature = 223.15;
     pism_config:enthalpy_converter_reference_temperature_doc = "K; = T_0 in enthalpy formulas in [\\ref AschwandenBuelerKhroulevBlatter]";
 
@@ -448,10 +448,10 @@ netcdf pism_config {
 
     pism_config:enthalpy_cold_bulge_max = 60270.0;
     pism_config:enthalpy_cold_bulge_max_doc = "J kg-1; = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
-                              
+
     pism_config:enthalpy_temperate_conductivity_ratio = 0.1;
     pism_config:enthalpy_temperate_conductivity_ratio_doc = "pure number; K in cold ice is multiplied by this fraction to give K0 in [\\ref AschwandenBuelerKhroulevBlatter]";
-                              
+
     pism_config:gpbld_water_frac_coeff = 181.25;
     pism_config:gpbld_water_frac_coeff_doc = "; coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref GreveBlatter2009, \\ref LliboutryDuval1985]";
 
@@ -466,7 +466,7 @@ netcdf pism_config {
 
     pism_config:fresh_water_density = 1000.0;
     pism_config:fresh_water_density_doc = "kg m-3;";
-   
+
     pism_config:sea_water_density = 1028.0;
     pism_config:sea_water_density_doc = "kg m-3;";
 
@@ -505,10 +505,10 @@ netcdf pism_config {
 
     pism_config:timeseries_buffer_size = 10000;
     pism_config:timeseries_buffer_size_doc = "; Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
-    
+
     pism_config:summary_volarea_scale_factor_log10 = 6;
     pism_config:summary_volarea_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume and area in summary line to stdout";
-    
+
     pism_config:viewer_size = 320;
     pism_config:viewer_size_doc = "; default diagnostic viewer size";
 
@@ -553,7 +553,7 @@ netcdf pism_config {
    pism_config:grid_Lx = 1500e3;
    pism_config:grid_Lx_doc = "m; Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
 
-   pism_config:grid_Ly = 1500e3; 
+   pism_config:grid_Ly = 1500e3;
    pism_config:grid_Ly_doc = "m; Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
 
    pism_config:grid_Lz = 4000;

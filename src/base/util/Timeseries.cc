@@ -324,7 +324,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
   PetscErrorCode ierr;
 
   if (t.empty()) {
-    SETERRQ(1, "DiagnosticTimeseries::interp(...): interpolation buffer is empty");
+    SETERRQ(com, 1, "DiagnosticTimeseries::interp(...): interpolation buffer is empty");
   }
 
   if (t.size() == 1) {
@@ -334,7 +334,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
   }
 
   if ((b < t[0]) || (b > t[1])) {
-    SETERRQ1(1, "DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
+    SETERRQ1(com, 1, "DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
              b);
   }
 

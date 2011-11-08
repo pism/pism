@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
     if (MISMIPchosen == PETSC_TRUE) {
       IceMISMIPModel* mMISMIP = dynamic_cast<IceMISMIPModel*>(m);
-      if (!mMISMIP) { SETERRQ(4, "PISMS: mismip write files ... how did I get here?"); }
+      if (!mMISMIP) { SETERRQ(com, 4, "PISMS: mismip write files ... how did I get here?"); }
       ierr = mMISMIP->writeMISMIPFinalFiles(); CHKERRQ(ierr);
     }
     

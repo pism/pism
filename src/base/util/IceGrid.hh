@@ -19,7 +19,7 @@
 #ifndef __grid_hh
 #define __grid_hh
 
-#include <petscda.h>
+#include <petscdmda.h>
 #include <vector>
 #include <string>
 
@@ -132,7 +132,7 @@ public:
   const NCConfigVariable &config;
   MPI_Comm    com;
   PetscMPIInt rank, size;
-  DA          da2;
+  DM          da2;
 
   PetscInt    xs,               //!< starting x-index of a processor sub-domain
     xm,                         //!< number of grid points (in the x-direction) in a processor sub-domain

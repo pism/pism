@@ -19,7 +19,7 @@
 #ifndef __iceCalvBCModel_hh
 #define __iceCalvBCModel_hh
 
-#include <petscda.h>
+#include <petscdmda.h>
 #include <petscmat.h>
 #include "iceModelVec.hh"
 #include "iceExactSSAModel.hh"

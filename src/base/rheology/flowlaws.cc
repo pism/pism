@@ -22,7 +22,7 @@
 
 #include "NCVariable.hh"
 
-PetscTruth IceFlowLawUsesGrainSize(IceFlowLaw *ice) {
+PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *ice) {
   static const PetscReal gs[] = {1e-4,1e-3,1e-2,1},s=1e4,E=500000,p=1e6;
   PetscReal ref = ice->flow_from_enth(s,E,p,gs[0]);
   for (int i=1; i<4; i++) {
@@ -32,7 +32,7 @@ PetscTruth IceFlowLawUsesGrainSize(IceFlowLaw *ice) {
 }
 
 // Rather than make this part of the base class, we just check at some reference values.
-PetscTruth IceFlowLawIsPatersonBuddCold(IceFlowLaw *ice, const NCConfigVariable &config,
+PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *ice, const NCConfigVariable &config,
                                         EnthalpyConverter *EC) {
   static const struct {PetscReal s,E,p,gs;} v[] = {
     {1e3,223,1e6,1e-3},{450000,475000,500000,525000},{5e4,268,5e6,3e-3},{1e5,273,8e6,5e-3}};

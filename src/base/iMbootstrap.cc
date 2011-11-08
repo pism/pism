@@ -48,10 +48,10 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   // conditions provided by couplers):
   if (surface != NULL) {
     ierr = surface->update(grid.time->start(), 0); CHKERRQ(ierr);
-  } else SETERRQ(1, "surface == NULL");
+  } else SETERRQ(grid.com, 1, "surface == NULL");
   if (ocean != NULL) {
     ierr = ocean->update(grid.time->start(), 0); CHKERRQ(ierr);
-  } else SETERRQ(1, "ocean == NULL");
+  } else SETERRQ(grid.com, 1, "ocean == NULL");
 
   // Fill 3D fields using heuristics:
   ierr = bootstrap_3d(); CHKERRQ(ierr);
@@ -251,7 +251,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   if (surface != NULL) {
     ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
   } else {
-    SETERRQ(1, "PISM ERROR: surface == NULL");
+    SETERRQ(grid.com, 1, "PISM ERROR: surface == NULL");
   }
 
   IceModelVec3 *result;

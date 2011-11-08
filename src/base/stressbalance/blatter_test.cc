@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2, com,
                       "BLATTER_TEST: testing the Blatter stress balance solver.\n"); CHKERRQ(ierr);
 
-    PetscTruth usage_set, help_set;
+    PetscBool usage_set, help_set;
     ierr = PetscOptionsHasName(PETSC_NULL, "-usage", &usage_set); CHKERRQ(ierr);
     ierr = PetscOptionsHasName(PETSC_NULL, "-help", &help_set); CHKERRQ(ierr);
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {

@@ -23,14 +23,14 @@
 
 int nc_check(int stat) {
   if (stat)
-    SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
+    SETERRQ1(PETSC_COMM_SELF, 1, "NC_ERR: %s\n", nc_strerror(stat));
   return 0;
 }
 
 int check_err(const int stat, const int line, const char *file) {
   if (stat != NC_NOERR) {
     (void) fprintf(stderr, "line %d of %s: %s\n", line, file, nc_strerror(stat));
-    SETERRQ1(1, "NC_ERR: %s\n", nc_strerror(stat));
+    SETERRQ1(PETSC_COMM_SELF, 1, "NC_ERR: %s\n", nc_strerror(stat));
     //exit(1);
   }
   return 0;
@@ -308,7 +308,7 @@ PetscErrorCode NCTool::open_for_reading(string filename) {
   PetscErrorCode ierr;
   int stat = 0;
 
-  if (ncid >= 0) SETERRQ(1, "NCTool::open_for_reading(): ncid >= 0 at the beginning of the call");
+  if (ncid >= 0) SETERRQ(com, 1, "NCTool::open_for_reading(): ncid >= 0 at the beginning of the call");
 
   if (rank == 0) {
     stat = nc_open(filename.c_str(), NC_NOWRITE, &ncid);
@@ -340,7 +340,7 @@ PetscErrorCode NCTool::close() {
 PetscErrorCode NCTool::open_for_writing(string filename) {
   int stat;
 
-  if (ncid >= 0) SETERRQ(1, "NCTool::open_for_writing(): ncid >= 0 at the beginning of the call");
+  if (ncid >= 0) SETERRQ(com, 1, "NCTool::open_for_writing(): ncid >= 0 at the beginning of the call");
 
   if (rank == 0) {
     bool file_exists = false;
@@ -497,7 +497,7 @@ PetscErrorCode NCTool::get_dim_limits(string name, double *min, double *max) con
     }
 
     if (utScan(internal_units, &internal) != 0) {
-      SETERRQ(1, "UDUNITS failed trying to scan internal units.");
+      SETERRQ(com, 1, "UDUNITS failed trying to scan internal units.");
     }
 
     // Get the units information:
@@ -520,7 +520,7 @@ PetscErrorCode NCTool::get_dim_limits(string name, double *min, double *max) con
 			   name.c_str(), internal_units); CHKERRQ(ierr);
 	PISMEnd();
       }
-      SETERRQ1(1, "UDUNITS failure: error code = %d", ierr);
+      SETERRQ1(com, 1, "UDUNITS failure: error code = %d", ierr);
     }
 
 
@@ -595,7 +595,7 @@ PetscErrorCode NCTool::get_dimension(string name, vector<double> &result) const 
     }
 
     if (utScan(internal_units, &internal) != 0) {
-      SETERRQ(1, "UDUNITS failed trying to scan internal units.");
+      SETERRQ(com, 1, "UDUNITS failed trying to scan internal units.");
     }
 
     // Get the units information:
@@ -618,7 +618,7 @@ PetscErrorCode NCTool::get_dimension(string name, vector<double> &result) const 
 			   name.c_str(), internal_units); CHKERRQ(ierr);
 	PISMEnd();
       }
-      SETERRQ1(1, "UDUNITS failure: error code = %d", ierr);
+      SETERRQ1(com, 1, "UDUNITS failure: error code = %d", ierr);
     }
 
     result.resize(len);
@@ -716,7 +716,7 @@ PetscErrorCode NCTool::get_att_double(const int varid, string name,
   if (stat == NC_NOERR) {
     ierr = MPI_Bcast(&result[0], len, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
   } else {
-    SETERRQ(1, "Error reading an attribute.");
+    SETERRQ(com, 1, "Error reading an attribute.");
   }
 
   return 0;
@@ -914,7 +914,7 @@ PetscErrorCode NCTool::data_mode() const {
 
   //! 50000 (below) means that we allocate 50Kb for metadata in NetCDF files
   //! created by PISM.
-  ierr = nc__enddef(ncid,50000,4,0,4); CHKERRQ(check_err(ierr,__LINE__,__FILE__))
+  ierr = nc__enddef(ncid,50000,4,0,4); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   def_mode = false;
 

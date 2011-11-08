@@ -87,7 +87,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
 
   // get access to ice upper surface elevation
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (!usurf) SETERRQ(12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
+  if (!usurf) SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 
 
   // allocate NCSpatialVariables for storing temperature and surface mass balance fields
@@ -172,7 +172,7 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
         }
       else
         {
-          SETERRQ(1,"HOW DID I GET HERE? ... ending...\n");
+          SETERRQ(grid.com, 1,"HOW DID I GET HERE? ... ending...\n");
         }
       ierr = verbPrintf(5, grid.com,"!!!!! z=%.2f, acab=%.2f\n",z,result(i,j)*secpera); CHKERRQ(ierr);
     }
@@ -209,8 +209,8 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
         }
       else
         {
-          SETERRQ(1,"HOW DID I GET HERE? ... ending...\n");
-        }        
+          SETERRQ(grid.com, 1,"HOW DID I GET HERE? ... ending...\n");
+        }
       ierr = verbPrintf(5, grid.com,"!!!!! z=%.2f, artm_min=%.2f, dTdz=%.2f, dz=%.2f, artm=%.2f\n",z,artm_min,dTdz,z - z_artm_min,result(i,j)); CHKERRQ(ierr);
     }
   }

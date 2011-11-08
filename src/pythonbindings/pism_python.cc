@@ -19,17 +19,19 @@
 #include "pism_python.hh"
 #include "petsc.h"
 #include "pism_python_signal.hh"
+#include "pism_const.hh"
+
 PetscErrorCode globalMax(PetscReal local_max, PetscReal *result, MPI_Comm comm)
 {
-  return PetscGlobalMax(&local_max,result,comm);
+  return PISMGlobalMax(&local_max,result,comm);
 }
 PetscErrorCode globalMin(PetscReal local_min, PetscReal *result, MPI_Comm comm)
 {
-  return PetscGlobalMin(&local_min,result,comm);  
+  return PISMGlobalMin(&local_min,result,comm);  
 }
 PetscErrorCode globalSum(PetscReal local_sum, PetscReal *result, MPI_Comm comm)
 {
-  return PetscGlobalSum(&local_sum,result,comm);  
+  return PISMGlobalSum(&local_sum,result,comm);  
 }
 
 PetscErrorCode optionsGroupBegin(MPI_Comm comm,const char *prefix,const char *mess,const char *sec)

@@ -68,7 +68,7 @@
 \author[]{the PISM authors}
 
 \date{\today.  Get PISM development version by \\
-\phantom{foobar} \qquad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \\
+\phantom{foobar} \qquad\texttt{git clone -b dev git://github.com/pism/pism.git pism-dev} \\
 Based on PISM revision \PISMREV\quad and PETSC release \PETSCREL.}
 
 
@@ -177,7 +177,8 @@ One library is only used for the earth deformation (``isostatic rebound'') model
 \bigskip
 
 
-In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM pre- and post-processing, while Subversion (\url{http://subversion.apache.org/http://subversion.tigris.org/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.  Additionally, the following Python packages are needed to do all the examples in the \emph{User's Manual} (which run python scripts).
+In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM
+pre- and post-processing, while Git (\url{http://git-scm.com/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.  Additionally, the following Python packages are needed to do all the examples in the \emph{User's Manual} (which run python scripts).
 \bigskip
 
 \fattablespacing
@@ -272,7 +273,7 @@ Find and install (using \texttt{apt-get} or \texttt{synaptic}, for example) the 
       \texttt{netcdf-bin} & (and perhaps grab \texttt{nco} at the same time)\\
       \texttt{libnetcdf-dev} & \\
       \texttt{g++} & without this you may see a compiler error: ``\texttt{gcc: error} \texttt{trying to} \texttt{exec 'cc1plus'}''\\
-      \texttt{subversion} & \\
+      \texttt{git} & \\
       \texttt{python-dev} & (helps with scripts \dots perhaps not essential) \\
       \texttt{ncview} & (grab if available) \\
       \bottomrule
@@ -306,7 +307,7 @@ $  ./configure --x-libraries=/usr/lib
 \item You will need a UNIX system with Internet access. A GNU/Linux environment will be easiest but other UNIX versions have been
   used successfully. Package management systems are useful for installing many of the tools listed in section
   \ref{sec:prerequisites}, \emph{but} an up-to-date PETSc distribution may not be available in your system's package
-  repositories. You will need \href{http://www.python.org/}{Python} and \href{http://subversion.tigris.org/}{Subversion}
+  repositories. You will need \href{http://www.python.org/}{Python} and \href{http://git-scm.com/}{Git}
   installed, but these are included in all current Linux distributions. To use the (recommended) graphical output of PISM you will
   need an \href{http://www.x.org/}{X Windows server}.
 
@@ -403,15 +404,15 @@ those mentioned so far.
 At this point you have configured the environment which PISM needs.  You are ready to build PISM itself, which is a much quicker procedure!
 
 \begin{enumerate}\setcounter{enumi}{7}
-\item Get the latest source\index{PISM!download source code} for PISM using the Subversion\index{Subversion} version control system:
+\item Get the latest source\index{PISM!download source code} for PISM using the Git\index{Git} version control system:
 \begin{enumerate}
 \item \label{getPISMstep} Check the website \url{http://www.pism-docs.org/} for the latest version of PISM.
 \item Do
 \begin{verbatim}
-$  svn co http://svn.gna.org/svn/pism/tags/stable0.4 pism0.4
+$  git clone git://github.com/pism/pism.git pism0.4
 \end{verbatim}
 \item A directory called ``\texttt{pism0.4/}'' will be created.  Note that in the future when you enter that directory,
-  \texttt{svn update} will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make -C
+  \texttt{git pull} will update to the latest revision of PISM.\footnote{Of course, after \t{git pull} you will \t{make -C
       build install} to recompile and re-install PISM.}
 \end{enumerate}
 
@@ -476,20 +477,19 @@ source /sw/bin/init.sh
 \end{verbatim}
 for Fink.
 
-\item Note that it is not necessary to install Python, as it is bundled with the operating system (as are BLAS, LAPACK, OpenMPI
-  and Subversion).
+\item Note that it is not necessary to install Python, as it is bundled with the operating system (as are BLAS, LAPACK and OpenMPI).
 
   Some PISM scripts use Scipy. It is possible to install it using MacPorts,  using \href{http://www.enthought.com/}{Enthought Python Distributions} is another option.
 
 \item  If you're using MacPorts, do
 \begin{verbatim}
-$  sudo port install netcdf ncview gsl fftw-3
+$  sudo port install netcdf ncview gsl fftw-3 git-core
 \end{verbatim}%$
 to install NetCDF, ncview, GSL and FFTW.
 
 If you're using Fink, use the following command instead (\texttt{ncview} is only available in the unstable branch).
 \begin{verbatim}
-$  fink install netcdf gsl fftw3
+$  fink install netcdf gsl fftw3 git
 \end{verbatim}
 
 \item At this point, all the PISM prerequisites except PETSc are installed. Download the latest PETSc tarball from the
@@ -572,8 +572,8 @@ $ make test
 
 \subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is on-line at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a source code \emph{Browser} (HTML).  Completely up-to-date documentation can be built from \LaTeX~source in the \texttt{doc/} sub-directory, as described in the last section.
 
-A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step
-\ref{getPISMstep} above.  You can update your copy of PISM to the latest version by running \texttt{svn up} in the PISM directory
+A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Git, as in step
+\ref{getPISMstep} above.  You can update your copy of PISM to the latest version by running \texttt{git pull} in the PISM directory
 and \texttt{make install} in your build directory.
 
 

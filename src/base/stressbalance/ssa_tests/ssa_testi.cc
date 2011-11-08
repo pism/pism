@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
-    PetscTruth usage_set, help_set;
+    PetscBool usage_set, help_set;
     ierr = PetscOptionsHasName(PETSC_NULL, "-usage", &usage_set); CHKERRQ(ierr);
     ierr = PetscOptionsHasName(PETSC_NULL, "-help", &help_set); CHKERRQ(ierr);
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {

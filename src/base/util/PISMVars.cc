@@ -42,7 +42,7 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
     if (standard_names[standard_name] == NULL)
       standard_names[standard_name] = &v;
     else
-      SETERRQ1(1, "PISMVars::add(): an IceModelVec with the standard_name '%s' was added already.",
+      SETERRQ1(PETSC_COMM_SELF, 1, "PISMVars::add(): an IceModelVec with the standard_name '%s' was added already.",
                standard_name.c_str());
 
   }
@@ -50,7 +50,7 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
   if (variables[short_name] == NULL)
     variables[short_name] = &v;
   else
-    SETERRQ1(1, "PISMVars::add(): an IceModelVec with the short_name '%s' was added already.",
+    SETERRQ1(PETSC_COMM_SELF, 1, "PISMVars::add(): an IceModelVec with the short_name '%s' was added already.",
              short_name.c_str());
 
   return 0;

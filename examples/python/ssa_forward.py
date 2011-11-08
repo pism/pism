@@ -49,7 +49,6 @@ if __name__ == '__main__':
 
   PISM.show_usage_check_req_opts(com,"ssa_forward",["-i"],usage)
 
-  config = context.config()
   for o in PISM.OptionsGroup(com,"","SSA Forward"):
     boot_file = PISM.optionsString("-i","file to bootstrap from")
     output_file = PISM.optionsString("-o","output file",default="ssa_forward.nc")

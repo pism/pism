@@ -27,7 +27,7 @@ class CaptureLogger:
     if self.rank == 0:
       d = PISM.netCDF.Dataset(outfile,'a')
       if 'siple_log' in d.ncattrs():
-        d.siple_log = self.diary + "\n" + d.run_Log
+        d.siple_log = self.diary + "\n" + d.siple_log
       else:
         d.siple_log = self.diary
       d.close()
@@ -72,9 +72,12 @@ def pism_pause(message_in=None,message_out=None):
   if not message_out is None:
     PISM.verbPrintf(1,com,message_out+"\n")
 
-def randVectorS(grid,scale):
+def randVectorS(grid,scale,stencil_width=None):
   rv = PISM.IceModelVec2S();
-  rv.create(grid, 'rand vec', True, PISM.util.WIDE_STENCIL)
+  if stencil_width is None:
+    rv.create(grid, 'rand vec', False)
+  else:
+    rv.create(grid, 'rand vec', True, stencil_width)
   shape=(grid.xm,grid.ym)
   r = np.random.normal(scale=scale,size=shape)
   with PISM.util.Access(comm=rv):
@@ -82,13 +85,17 @@ def randVectorS(grid,scale):
       rv[i,j] = r[i-grid.xs,j-grid.ys]
   return rv
 
-def randVectorV(grid,scale):
+def randVectorV(grid,scale,stencil_width=None):
   rv = PISM.IceModelVec2V();
-  rv.create(grid, 'rand vec', True, PISM.util.WIDE_STENCIL)
+  if stencil_width is None:
+    rv.create(grid, 'rand vec', False)
+  else:
+    rv.create(grid, 'rand vec', True,stencil_width)
+    
   shape=(grid.xm,grid.ym)
   r_u = np.random.normal(scale=scale,size=shape)
   r_v = np.random.normal(scale=scale,size=shape)
-  with PISM.util.Access(comm=rv):
+  with PISM.util.Access(nocomm=rv):
     for (i,j) in grid.points():
       rv[i,j].u = r_u[i-grid.xs,j-grid.ys]
       rv[i,j].v = r_v[i-grid.xs,j-grid.ys]
@@ -98,75 +105,40 @@ tauc_params = {"ident":PISM.cvar.g_InvTaucParamIdent,
                "square":PISM.cvar.g_InvTaucParamSquare,
                "exp":PISM.cvar.g_InvTaucParamExp }
 
-class SSAForwardSolver(PISM.ssa.SSASolver):
-  def __init__(self,grid,config):
-    PISM.ssa.SSASolver.__init__(self,grid,config)
-    tauc_param_type = config.get_string("inv_ssa_tauc_param")
-    self.tauc_param = tauc_params[tauc_param_type]
-    self.range_l2_weight=None
-
-  def allocateCoeffs(self,using_l2_weight=False,**kwargs):
-    PISM.ssa.SSASolver.allocateCoeffs(self,**kwargs)
-
-    if using_l2_weight:      
-      self.range_l2_weight = PISM.IceModelVec2S();
-      self.range_l2_weight.create(self.grid, 'range_l2_weight', True, PISM.util.WIDE_STENCIL)
-      self.range_l2_weight.set_attrs("diagnostic", "range l2 weight", "", "");
-    
-  
-  def init_vars(self):
-    pismVars = PISM.PISMVars()
-    for var in [self.thickness,self.bed,self.tauc,
-                self.enthalpy,self.ice_mask]:
-        pismVars.add(var)
-    
-    if not self.surface is None:
-      pismVars.add(self.surface)
-    if not self.drivingstress is None:
-      pismVars.add(self.drivingstress,'ssa_driving_stress')
-    
-    
-    if not self.range_l2_weight is None:
-      pismVars.add(self.range_l2_weight)
-      
-    
-    # The SSA instance will not keep a reference to pismVars; it only uses it to extract
-    # its desired variables.  So it is safe to pass it pismVars and then let pismVars
-    # go out of scope at the end of this method.
-    self.ssa.init(pismVars)
-
-    if not self.vel_bc is None:
-      self.ssa.set_boundary_conditions(self.bc_mask,self.vel_bc)
-
-    self.ssa.setup_vars()
-
-    self.ssa_init = True
-    
-  def buildSSA(self):
-    self.ssa = PISM.InvSSAForwardProblem(self.grid,self.basal,self.ice,self.enthalpyconverter,self.tauc_param,self.config)
-
-  def write(self,filename):
-    PISM.ssa.SSASolver.write(self,filename)
-    if not self.range_l2_weight is None:
-      self.range_l2_weight.write(filename)
-
 WIDE_STENCIL = 2
 
 class InvSSARun(PISM.ssa.SSARun):
+
   def setup(self):
+
     PISM.ssa.SSARun.setup(self)
 
-    # FIXME: This is a lousy name....
-    self.solver.init_vars()
+    vecs = self.modeldata.vecs
+
+    # The SSA instance will not keep a reference to pismVars; it only uses it to extract
+    # its desired variables.  So it is safe to pass it pismVars and then let pismVars
+    # go out of scope at the end of this method.
+
+    self.ssa.init(vecs.asPISMVars())
+
+    if vecs.has('vel_bc'):
+      self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
+
+    # FIXME: Fix this lousy name
+    self.ssa.setup_vars()
 
   def _constructSSA(self):
-    return SSAForwardSolver(self.grid,self.config)
+    md = self.modeldata
+    vecs  = self.modeldata.vecs
+    tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
+    self.tauc_param = tauc_params[tauc_param_type]
+    return PISM.InvSSAForwardProblem(md.grid,md.basal,md.ice,md.enthalpyconverter,self.tauc_param,self.config)
 
 class SSAForwardProblem(NonlinearForwardProblem):
   
   def __init__(self,ssarun):
     self.ssarun = ssarun
-    self.solver = ssarun.solver
+    self.ssa = self.ssarun.ssa
     self.grid = ssarun.grid
 
   def F(self, x,out=None,guess=None):
@@ -181,8 +153,8 @@ class SSAForwardProblem(NonlinearForwardProblem):
     #   self.solver.set_initial_velocity_guess(guess)
     if out is None:
       out = self.rangeVector()
-    self.solver.ssa.set_tauc(x.core())
-    self.solver.ssa.solveF(out.core())
+    self.ssa.set_tauc(x.core())
+    self.ssa.solveF(out.core())
     return out
 
   def T(self,d,out=None):
@@ -194,7 +166,7 @@ class SSAForwardProblem(NonlinearForwardProblem):
     """
     if out is None:
       out = self.rangeVector()
-    self.solver.ssa.solveT(d.core(),out.core())
+    self.ssa.solveT(d.core(),out.core())
     return out
 
   def TStar(self,r,out=None):
@@ -206,7 +178,7 @@ class SSAForwardProblem(NonlinearForwardProblem):
     """
     if out is None:
       out = self.domainVector()
-    self.solver.ssa.solveTStar(r.core(),out.core())
+    self.ssa.solveTStar(r.core(),out.core())
     return out
 
   def linearizeAt(self,x,guess=None):
@@ -215,7 +187,7 @@ class SSAForwardProblem(NonlinearForwardProblem):
 
     Nonlinear problems often make use of an initial guess; this can be provided in 'guess'.
     """
-    self.solver.ssa.set_tauc(x.core())
+    self.ssa.set_tauc(x.core())
 
   def evalFandLinearize(self,x,out=None,guess=None):
     """
@@ -227,20 +199,20 @@ class SSAForwardProblem(NonlinearForwardProblem):
     if out is None:
       out = self.rangeVector()
     self.linearizeAt(x)
-    self.solver.ssa.solveF(out.core())
+    self.ssa.solveF(out.core())
     return out
   
   def rangeIP(self,a,b):
     """
     Computes the inner product of two vectors in the range.
     """
-    return self.solver.ssa.rangeIP(a.core(),b.core())
+    return self.ssa.rangeIP(a.core(),b.core())
 
   def domainIP(self,a,b):
     """
     Computes the inner product of two vectors in the domain.
     """
-    return self.solver.ssa.domainIP(a.core(),b.core())
+    return self.ssa.domainIP(a.core(),b.core())
 
   def rangeVector(self):
     """Constructs a brand new vector from the range vector space"""

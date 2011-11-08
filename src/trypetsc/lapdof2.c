@@ -59,7 +59,7 @@ coordinates i,j to the global row and column in A.*
 */
 
 #include "petscksp.h"
-#include "petscda.h"
+#include "petscdmda.h"
 
 /* the dof=2 Vecs are m-length arrays of these pairs */
 typedef struct {

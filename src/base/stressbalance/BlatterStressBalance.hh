@@ -21,6 +21,7 @@
 
 #include "PISMStressBalance.hh"
 #include "THI.hh"
+#include "IceGrid.hh"
 
 //! Blatter-Pattyn stress balance based on Jed Brown's PETSc tutorial ex48.c (Brown et al. 2011).
 /*!
@@ -82,7 +83,7 @@ public:
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &/*locations*/,
                                                  IceModelVec2V &/*velocities*/)
-  { SETERRQ(1,"not clear yet how to do this"); return 0; }
+  { SETERRQ(grid.com, 1,"not clear yet how to do this"); return 0; }
 
   virtual PetscErrorCode update(bool fast);
 
@@ -103,14 +104,14 @@ public:
   virtual PetscErrorCode get_max_3d_velocity(PetscReal &maxu, PetscReal &maxv, PetscReal &maxw);
 
   virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &/*result*/)
-  { SETERRQ(2,"not implemented; implement by doing it"); return 0; }
+  { SETERRQ(grid.com, 2,"not implemented; implement by doing it"); return 0; }
 
   virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &/*result*/)
-  { SETERRQ(3,"not implemented; implement by getting max"); return 0; }
+  { SETERRQ(grid.com, 3,"not implemented; implement by getting max"); return 0; }
 
   virtual PetscErrorCode get_principal_strain_rates(IceModelVec2S &/*result_e1*/,
                                                     IceModelVec2S &/*result_e2*/)
-  { SETERRQ(4,"not implemented; implement by vertical average"); return 0; }
+  { SETERRQ(grid.com, 4,"not implemented; implement by vertical average"); return 0; }
 
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 

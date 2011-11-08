@@ -83,13 +83,13 @@ PetscErrorCode PISMBedDef::init(PISMVars &vars) {
   t_beddef_last = grid.time->start();
 
   thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (!thk) SETERRQ(1, "ERROR: thk is not available");
+  if (!thk) SETERRQ(grid.com, 1, "ERROR: thk is not available");
 
   topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (!topg) SETERRQ(1, "ERROR: topg is not available");
+  if (!topg) SETERRQ(grid.com, 1, "ERROR: topg is not available");
 
   uplift = dynamic_cast<IceModelVec2S*>(vars.get("tendency_of_bedrock_altitude"));
-  if (!uplift) SETERRQ(1, "ERROR: uplift is not available");
+  if (!uplift) SETERRQ(grid.com, 1, "ERROR: uplift is not available");
 
   // Save the bed elevation at the beginning of the run:
   ierr = topg_initial.copy_from(*topg); CHKERRQ(ierr);

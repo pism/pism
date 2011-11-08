@@ -124,7 +124,7 @@ protected:
   vector<double> time,		//!< all the times available in filename
     time_bounds;		//!< time bounds
   string filename;		//!< file to read (regrid) from
-  DA da3;
+  DM da3;
   Vec v3;			//!< a 3D Vec used to store records
   void ***array3;
   int n_records,		//!< maximum number of records to store in memory

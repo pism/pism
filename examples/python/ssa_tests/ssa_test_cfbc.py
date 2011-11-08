@@ -63,7 +63,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     PISM.util.init_shallow_grid(self.grid,Lx,Ly,self.Mx,self.My,PISM.Y_PERIODIC)
 
   def _initPhysics(self):
-    config = self.solver.config
+    config = self.config
     config.set_flag("compute_surf_grad_inward_ssa", True); 
     config.set_flag("calving_front_stress_boundary_condition", True); 
 
@@ -78,32 +78,32 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
     ice.setHardness(1.9e8)
     
-    self.solver.setPhysics(ice,basal,enthalpyconverter)
+    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
 
   def _initSSACoefficients(self):
-    solver = self.solver
-    solver.allocateCoeffs()
-    solver.allocateBCs()
-    solver.tauc.set(0.0)     # irrelevant
-    solver.bed.set(-1000.0); # assures shelf is floating
-    solver.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
+    self._allocStdSSACoefficients()
+    self._allocateBCs()
+    vecs = self.modeldata.vecs
+
+    vecs.tauc.set(0.0)     # irrelevant
+    vecs.bed.set(-1000.0); # assures shelf is floating
+    vecs.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
     grid = self.grid
-    thickness=solver.thickness;
-    surface = solver.surface
-    bc_mask = solver.bc_mask
-    vel_bc = solver.vel_bc
-    ice_mask = solver.ice_mask
+    thickness=vecs.thickness;
+    surface = vecs.surface
+    bc_mask = vecs.bc_mask
+    vel_bc = vecs.vel_bc
+    ice_mask = vecs.ice_mask
 
-    ocean_rho = solver.config.get("sea_water_density");
-    ice_rho   = solver.ice.rho
+    ocean_rho = self.config.get("sea_water_density");
+    ice_rho   = self.modeldata.ice.rho
     
     with PISM.util.Access(comm=[thickness,surface,bc_mask,vel_bc,ice_mask]):
       for (i,j) in grid.points():
         x = grid.x[i]
         if x <= 0:
           thickness[i,j] = H_exact( x + self.grid.Lx )
-          print thickness[i,j]
           ice_mask[i,j]  = PISM.MASK_FLOATING
         else:
           thickness[i,j] = 0
@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
   PISM.setVerbosityLevel(verbosity)
 
-  context.config().set_string('ssa_method','fd')
+  context.config.set_string('ssa_method','fd')
 
   tc = test_cfbc(Mx,My)
   tc.run(output_file)

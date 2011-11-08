@@ -39,7 +39,7 @@ John von Neumann
 - Valid boolean flag values are "yes", "true", "on" for TRUE and "no",
   "false", "off" for FALSE.  Lowercase only.  They have to be enclosed in quotes
   in pism_config.cdl.
-  
+
 \par To create and use an alternate config file:
 
 \par Method 1, by using util/pism_config_editor.py:
@@ -64,7 +64,7 @@ John von Neumann
 
 \par Method 3, using a netCDF Operator (NCO):
 - This illustration changes the Clausius-Clapeyron constant from its default value to
-  9.7008e-8 K Pa-1.  First you make a copy of lib/pism_config.nc, assuming the 
+  9.7008e-8 K Pa-1.  First you make a copy of lib/pism_config.nc, assuming the
   PISM source is built.  Then make your modification of the desired attribute
   (of the only variable in myconfig.nc, namely \c pism_config), using ncatted
   (see <a href="http://nco.sourceforge.net/">NCO homepage</a>).  Then view your handiwork
@@ -123,7 +123,7 @@ for attr in sort(var.ncattrs()):
         continue
 
     print '<tr><td class="indexkey">%s</td>' % attr
-    
+
     if (abs(value) >= 1e7):
         print '<td class="indexvalue">%e</td>' % value, # use scientific notation if a number is big
     elif (int(value) == value):
@@ -132,8 +132,8 @@ for attr in sort(var.ncattrs()):
         print '<td class="indexvalue">%e</td>' % value, # use scientific notation if small (and not zero; prev case)
     else:
         print '<td class="indexvalue">%f</td>' % value,
-    
-    print '<td class="indexvalue">%s</td></tr>' % docstring
+
+    print unicode('<td class="indexvalue">%s</td></tr>' % docstring).encode('utf8')
 
 print "</table>"
 

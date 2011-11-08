@@ -71,11 +71,11 @@ VecScatterBegin/End() to scatter the natural vector onto process 0.
 PetscErrorCode PISMBedSmoother::allocate() {
   PetscErrorCode ierr;
 
-  ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
 
   // note we want a global Vec but reordered in the natural ordering so when it
   // is scattered to proc zero it is not all messed up; see above
-  ierr = DACreateNaturalVector(grid.da2, &g2natural); CHKERRQ(ierr);
+  ierr = DMDACreateNaturalVector(grid.da2, &g2natural); CHKERRQ(ierr);
   // next get scatter context *and* allocate one of Vecs on proc zero
   ierr = VecScatterCreateToZero(g2natural, &scatter, &topgp0); CHKERRQ(ierr);
       
@@ -120,16 +120,16 @@ PetscErrorCode PISMBedSmoother::allocate() {
 PetscErrorCode PISMBedSmoother::deallocate() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(g2); CHKERRQ(ierr);
-  ierr = VecDestroy(g2natural); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(scatter); CHKERRQ(ierr);
+  ierr = VecDestroy(&g2); CHKERRQ(ierr);
+  ierr = VecDestroy(&g2natural); CHKERRQ(ierr);
+  ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
 
-  ierr = VecDestroy(topgp0); CHKERRQ(ierr);
-  ierr = VecDestroy(topgsmoothp0); CHKERRQ(ierr);
-  ierr = VecDestroy(maxtlp0); CHKERRQ(ierr);
-  ierr = VecDestroy(C2p0); CHKERRQ(ierr);
-  ierr = VecDestroy(C3p0); CHKERRQ(ierr);
-  ierr = VecDestroy(C4p0); CHKERRQ(ierr);
+  ierr = VecDestroy(&topgp0); CHKERRQ(ierr);
+  ierr = VecDestroy(&topgsmoothp0); CHKERRQ(ierr);
+  ierr = VecDestroy(&maxtlp0); CHKERRQ(ierr);
+  ierr = VecDestroy(&C2p0); CHKERRQ(ierr);
+  ierr = VecDestroy(&C3p0); CHKERRQ(ierr);
+  ierr = VecDestroy(&C4p0); CHKERRQ(ierr);
   // no need to destroy topgsmooth,maxtl,C2,C3,C4; their destructors do it
   return 0;
 }
@@ -176,7 +176,7 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(
   PetscErrorCode ierr;
 
   if ((Nx_in >= grid.Mx) || (Ny_in >= grid.My)) {
-    SETERRQ(1,"PISM ERROR: input Nx, Ny in bed smoother is too large because\n"
+    SETERRQ(grid.com, 1,"PISM ERROR: input Nx, Ny in bed smoother is too large because\n"
               "            domain of smoothing exceeds IceGrid domain\n");
   }
   Nx = Nx_in; Ny = Ny_in;
@@ -340,7 +340,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S usurf,
   MaskQuery M(mask);
 
   if (GHOSTS > maxGHOSTS) {
-    SETERRQ2(1,"PISM ERROR:  PISMBedSmoother fields do not have stencil\n"
+    SETERRQ2(grid.com, 1,"PISM ERROR:  PISMBedSmoother fields do not have stencil\n"
                "  width sufficient to fill thksmooth with GHOSTS=%d;\n"
                "  construct PISMBedSmoother with MAX_GHOSTS>=%d\n",
                GHOSTS,GHOSTS);
@@ -356,7 +356,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S usurf,
   for (PetscInt i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       if (thk(i,j) < 0.0) {
-        SETERRQ2(2,
+        SETERRQ2(grid.com, 2,
           "PISM ERROR:  PISMBedSmoother detects negative original thickness\n"
           "  at location (i,j) = (%d,%d) ... ending\n",i,j);
       } else if (thk(i,j) == 0.0) {
@@ -415,7 +415,7 @@ PetscErrorCode PISMBedSmoother::get_theta(
   PetscErrorCode ierr;
 
   if (GHOSTS > maxGHOSTS) {
-    SETERRQ2(1,
+    SETERRQ2(grid.com, 1,
 "PISM ERROR:  PISMBedSmoother::topgsmooth,maxtl,C2,C3,C4 do not have stencil\n"
 "  width sufficient to fill theta with GHOSTS=%d;  construct PISMBedSmoother\n"
 "  with MAX_GHOSTS>=%d\n", GHOSTS,GHOSTS);
@@ -443,7 +443,7 @@ PetscErrorCode PISMBedSmoother::get_theta(
         const PetscReal Hinv = 1.0 / PetscMax(H, 1.0);
         PetscReal omega = 1.0 + Hinv*Hinv * ( C2(i,j) + Hinv * ( C3(i,j) + Hinv*C4(i,j) ) );
         if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
-          SETERRQ2(1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
+          SETERRQ2(grid.com, 1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
                      "    in PISMBedSmoother.get_theta() ... ending\n",i,j);
         }
 

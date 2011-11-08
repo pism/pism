@@ -56,16 +56,17 @@ class testi(PISM.ssa.SSAExactTestCase):
 
     ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
     ice.setHardness(B_schoof)
-    self.solver.setPhysics(ice,basal,enthalpyconverter)
+    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
 
 
   def _initSSACoefficients(self):
-    solver = self.solver
-    solver.allocateCoeffs()
-    solver.allocateBCs()
-    solver.bc_mask.set(0)
-    solver.thickness.set(H0_schoof)
-    solver.ice_mask.set(PISM.MASK_GROUNDED)
+    self._allocStdSSACoefficients()
+    self._allocateBCs()
+    vecs = self.modeldata.vecs
+
+    vecs.bc_mask.set(0)
+    vecs.thickness.set(H0_schoof)
+    vecs.ice_mask.set(PISM.MASK_GROUNDED)
 
     # The finite difference code uses the following flag to treat 
     # the non-periodic grid correctly.
@@ -74,21 +75,19 @@ class testi(PISM.ssa.SSAExactTestCase):
 
     standard_gravity = self.config.get("standard_gravity");
     theta = math.atan(0.001)
-    f = self.solver.ice.rho*standard_gravity*H0_schoof*math.tan(theta)
+    f = self.modeldata.ice.rho*standard_gravity*H0_schoof*math.tan(theta)
     grid = self.grid
-    with PISM.util.Access(comm=[solver.tauc]):
+    with PISM.util.Access(comm=[vecs.tauc]):
       for (i,j) in grid.points():
         y=grid.y[j]
-        solver.tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
+        vecs.tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
 
-    bc_mask = solver.bc_mask
-    vel_bc  = solver.vel_bc
-    surface = solver.surface
-    bed     = solver.bed
-
+    bc_mask = vecs.bc_mask
+    vel_bc  = vecs.vel_bc
+    surface = vecs.surface
+    bed     = vecs.bed
     grid = self.grid
-    vars = [surface,bed,vel_bc,bc_mask]
-    with PISM.util.Access(comm=vars):
+    with PISM.util.Access(comm=[surface,bed,vel_bc,bc_mask]):
       for (i,j) in grid.points():
         x=grid.x[i]; y=grid.y[j]
         (bed_ij,junk,u,v) = PISM.exactI(m_schoof,x,y)
@@ -118,6 +117,7 @@ if __name__ == '__main__':
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
   PISM.setVerbosityLevel(verbosity)
+
   tc = testi(Mx,My)
   tc.run(output_file)
 

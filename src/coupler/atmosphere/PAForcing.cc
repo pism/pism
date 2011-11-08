@@ -36,7 +36,7 @@ PAForcing::~PAForcing() {
 
 PetscErrorCode PAForcing::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  PetscTruth temp_anomaly_set, precip_anomaly_set;
+  PetscBool temp_anomaly_set, precip_anomaly_set;
   char temp_anomalies_file[PETSC_MAX_PATH_LEN],
     precip_anomalies_file[PETSC_MAX_PATH_LEN];
 

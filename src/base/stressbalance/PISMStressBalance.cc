@@ -270,7 +270,7 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
   ierr = v->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&my_w_max, &w_max, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&my_w_max, &w_max, grid.com); CHKERRQ(ierr);
   
   return 0;
 }

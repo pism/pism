@@ -20,7 +20,7 @@
 
 #include "THI.hh"
 #include "THItools.hh"
-static PetscCookie THI_COOKIE;
+static PetscClassId THI_COOKIE;
 
 struct _p_THI {
   PETSCHEADER(int);
@@ -39,9 +39,9 @@ struct _p_THI {
     PetscReal irefgam, eps2, exponent;
   } friction;
   PetscReal rhog;
-  PetscTruth no_slip;
-  PetscTruth tridiagonal;
-  PetscTruth verbose;
+  PetscBool no_slip;
+  PetscBool tridiagonal;
+  PetscBool verbose;
   MatType mattype;
 };
 
@@ -126,7 +126,7 @@ PetscErrorCode THIDestroy(THI thi)
   if (--((PetscObject)thi)->refct > 0) PetscFunctionReturn(0);
   ierr = PetscFree(thi->units);CHKERRQ(ierr);
   ierr = PetscFree(thi->mattype);CHKERRQ(ierr);
-  ierr = PetscHeaderDestroy(thi);CHKERRQ(ierr);
+  ierr = PetscHeaderDestroy(&thi);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -135,7 +135,7 @@ PetscErrorCode THIDestroy(THI thi)
 //! \brief Allocate the THI object.
 PetscErrorCode THICreate(MPI_Comm comm, THI *inthi)
 {
-  static PetscTruth registered = PETSC_FALSE;
+  static PetscBool registered = PETSC_FALSE;
   THI thi;
   Units units;
   PetscErrorCode ierr;
@@ -143,10 +143,10 @@ PetscErrorCode THICreate(MPI_Comm comm, THI *inthi)
   PetscFunctionBegin;
   *inthi = 0;
   if (!registered) {
-    ierr = PetscCookieRegister("Toy Hydrostatic Ice", &THI_COOKIE);CHKERRQ(ierr);
+    ierr = PetscClassIdRegister("Toy Hydrostatic Ice", &THI_COOKIE);CHKERRQ(ierr);
     registered = PETSC_TRUE;
   }
-  ierr = PetscHeaderCreate(thi, _p_THI, 0, THI_COOKIE, -1, "THI", comm, THIDestroy, 0);CHKERRQ(ierr);
+  ierr = PetscHeaderCreate(thi, _p_THI, 0, THI_COOKIE, -1, "THI", "", "",  comm, THIDestroy, 0);CHKERRQ(ierr);
 
   ierr = PetscNew(struct _n_Units, &thi->units);CHKERRQ(ierr);
   units = thi->units;
@@ -192,10 +192,10 @@ PetscErrorCode THICreate(MPI_Comm comm, THI *inthi)
     thi->friction.exponent = (m-1)/2;
     ierr = PetscOptionsReal("-thi_dirichlet_scale", "Scale Dirichlet boundary conditions by this factor", "", thi->dirichlet_scale, &thi->dirichlet_scale, NULL);CHKERRQ(ierr);
     ierr = PetscOptionsInt("-thi_nlevels", "Number of levels of refinement", "", thi->nlevels, &thi->nlevels, NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsTruth("-thi_tridiagonal", "Assemble a tridiagonal system (column coupling only) on the finest level", "", thi->tridiagonal, &thi->tridiagonal, NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-thi_tridiagonal", "Assemble a tridiagonal system (column coupling only) on the finest level", "", thi->tridiagonal, &thi->tridiagonal, NULL);CHKERRQ(ierr);
     ierr = PetscOptionsList("-thi_mat_type", "Matrix type", "MatSetType", MatList, mtype, (char*)mtype, sizeof(mtype), NULL);CHKERRQ(ierr);
     ierr = PetscStrallocpy(mtype, &thi->mattype);CHKERRQ(ierr);
-    ierr = PetscOptionsTruth("-thi_verbose", "Enable verbose output (like matrix sizes and statistics)", "", thi->verbose, &thi->verbose, NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-thi_verbose", "Enable verbose output (like matrix sizes and statistics)", "", thi->verbose, &thi->verbose, NULL);CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
 
@@ -233,23 +233,23 @@ PetscErrorCode THISetDMMG(THI thi, DMMG *dmmg)
   PetscInt i;
 
   PetscFunctionBegin;
-  if (DMMGGetLevels(dmmg) != thi->nlevels) SETERRQ(PETSC_ERR_ARG_CORRUPT, "DMMG nlevels does not agree with THI");
+  if (DMMGGetLevels(dmmg) != thi->nlevels) SETERRQ(((PetscObject)thi)->comm, PETSC_ERR_ARG_CORRUPT, "DMMG nlevels does not agree with THI");
   for (i=0; i<thi->nlevels; i++) {
     PetscInt Mx, My, Mz, mx, my, s, dim;
-    DAStencilType  st;
-    DA da = (DA)dmmg[i]->dm, da2prm;
+    DMDAStencilType  st;
+    DM da = dmmg[i]->dm, da2prm;
     Vec X;
-    ierr = DAGetInfo(da, &dim, &Mz, &My, &Mx, 0, &my, &mx, 0, &s, 0, &st);CHKERRQ(ierr);
-    ierr = DACreate2d(((PetscObject)thi)->comm,
-                      DA_XYPERIODIC,
-                      st, // stencil type
-                      My, Mx, // number of grid points in each direction
-                      my, mx, // number of processors in each direction
-                      sizeof(PrmNode)/sizeof(PetscScalar), // number of degrees of freedom
-                      s, // stencil width
-                      PETSC_NULL, PETSC_NULL, // pointers to lists defining partitions in each direction
-                      &da2prm);CHKERRQ(ierr);
-    ierr = DACreateLocalVector(da2prm, &X);CHKERRQ(ierr);
+    ierr = DMDAGetInfo(da, &dim, &Mz, &My, &Mx, 0, &my, &mx, 0, &s, 0, 0, 0, &st);CHKERRQ(ierr);
+    ierr = DMDACreate2d(((PetscObject)thi)->comm,
+                        DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                        st, // stencil type
+                        My, Mx, // number of grid points in each direction
+                        my, mx, // number of processors in each direction
+                        sizeof(PrmNode)/sizeof(PetscScalar), // number of degrees of freedom
+                        s, // stencil width
+                        PETSC_NULL, PETSC_NULL, // pointers to lists defining partitions in each direction
+                        &da2prm);CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(da2prm, &X);CHKERRQ(ierr);
     {
       PetscReal Lx = thi->Lx / thi->units->meter, Ly = thi->Ly / thi->units->meter;
       ierr = PetscPrintf(((PetscObject)thi)->comm,
@@ -259,8 +259,8 @@ PetscErrorCode THISetDMMG(THI thi, DMMG *dmmg)
     }
     ierr = PetscObjectCompose((PetscObject)da, "DA2Prm", (PetscObject)da2prm);CHKERRQ(ierr);
     ierr = PetscObjectCompose((PetscObject)da, "DA2Prm_Vec", (PetscObject)X);CHKERRQ(ierr);
-    ierr = DADestroy(da2prm);CHKERRQ(ierr);
-    ierr = VecDestroy(X);CHKERRQ(ierr);
+    ierr = DMDestroy(&da2prm);CHKERRQ(ierr);
+    ierr = VecDestroy(&X);CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
@@ -288,7 +288,7 @@ static void PointwiseNonlinearity(THI thi, const Node n[restrict 8], const Petsc
 
 #undef __FUNCT__
 #define __FUNCT__ "THIFunctionLocal"
-PetscErrorCode THIFunctionLocal(DALocalInfo *info, Node ***x, Node ***f, THI thi)
+PetscErrorCode THIFunctionLocal(DMDALocalInfo *info, Node ***x, Node ***f, THI thi)
 {
   PetscInt       xs, ys, xm, ym, zm, i, j, k, q, l;
   PetscReal      hx, hy, etamin, etamax, beta2min, beta2max;
@@ -309,7 +309,7 @@ PetscErrorCode THIFunctionLocal(DALocalInfo *info, Node ***x, Node ***f, THI thi
   beta2min = 1e100;
   beta2max = 0;
 
-  ierr = DAGetPrmNodeArray(info->da, &prm);CHKERRQ(ierr);
+  ierr = DMDAGetPrmNodeArray(info->da, &prm);CHKERRQ(ierr);
 
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
@@ -386,7 +386,7 @@ PetscErrorCode THIFunctionLocal(DALocalInfo *info, Node ***x, Node ***f, THI thi
     }
   }
 
-  ierr = DARestorePrmNodeArray(info->da, &prm);CHKERRQ(ierr);
+  ierr = DMDARestorePrmNodeArray(info->da, &prm);CHKERRQ(ierr);
 
   ierr = PRangeMinMax(&thi->eta, etamin, etamax);CHKERRQ(ierr);
   ierr = PRangeMinMax(&thi->beta2, beta2min, beta2max);CHKERRQ(ierr);
@@ -417,7 +417,7 @@ static PetscErrorCode THIMatrixStatistics(THI thi, Mat B, PetscViewer viewer)
 
 #undef __FUNCT__
 #define __FUNCT__ "THIJacobianLocal_3D"
-PetscErrorCode THIJacobianLocal_3D(DALocalInfo *info, Node ***x, Mat B, THI thi, THIAssemblyMode amode)
+PetscErrorCode THIJacobianLocal_3D(DMDALocalInfo *info, Node ***x, Mat B, THI thi, THIAssemblyMode amode)
 {
   PetscInt       xs, ys, xm, ym, zm, i, j, k, q, l, ll;
   PetscReal      hx, hy;
@@ -434,7 +434,7 @@ PetscErrorCode THIJacobianLocal_3D(DALocalInfo *info, Node ***x, Mat B, THI thi,
   hy = thi->Ly / info->my;
 
   ierr = MatZeroEntries(B);CHKERRQ(ierr);
-  ierr = DAGetPrmNodeArray(info->da, &prm);CHKERRQ(ierr);
+  ierr = DMDAGetPrmNodeArray(info->da, &prm);CHKERRQ(ierr);
 
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
@@ -605,7 +605,7 @@ PetscErrorCode THIJacobianLocal_3D(DALocalInfo *info, Node ***x, Mat B, THI thi,
       }
     }
   }
-  ierr = DARestorePrmNodeArray(info->da, &prm);CHKERRQ(ierr);
+  ierr = DMDARestorePrmNodeArray(info->da, &prm);CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -616,7 +616,7 @@ PetscErrorCode THIJacobianLocal_3D(DALocalInfo *info, Node ***x, Mat B, THI thi,
 
 #undef __FUNCT__
 #define __FUNCT__ "THIJacobianLocal_3D_Full"
-PetscErrorCode THIJacobianLocal_3D_Full(DALocalInfo *info, Node ***x, Mat B, THI thi)
+PetscErrorCode THIJacobianLocal_3D_Full(DMDALocalInfo *info, Node ***x, Mat B, THI thi)
 {
   PetscErrorCode ierr;
 
@@ -627,7 +627,7 @@ PetscErrorCode THIJacobianLocal_3D_Full(DALocalInfo *info, Node ***x, Mat B, THI
 
 #undef __FUNCT__
 #define __FUNCT__ "THIJacobianLocal_3D_Tridiagonal"
-PetscErrorCode THIJacobianLocal_3D_Tridiagonal(DALocalInfo *info, Node ***x, Mat B, THI thi)
+PetscErrorCode THIJacobianLocal_3D_Tridiagonal(DMDALocalInfo *info, Node ***x, Mat B, THI thi)
 {
   PetscErrorCode ierr;
 
@@ -635,124 +635,126 @@ PetscErrorCode THIJacobianLocal_3D_Tridiagonal(DALocalInfo *info, Node ***x, Mat
   ierr = THIJacobianLocal_3D(info, x, B, thi, THIASSEMBLY_TRIDIAGONAL);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-
 #undef __FUNCT__
-#define __FUNCT__ "DARefineHierarchy_THI"
-PetscErrorCode DARefineHierarchy_THI(DA dac0, PetscInt nlevels, DA hierarchy[])
+#define __FUNCT__ "DMRefineHierarchy_THI"
+static PetscErrorCode DMRefineHierarchy_THI(DM dac0,PetscInt nlevels,DM hierarchy[])
 {
   PetscErrorCode ierr;
   THI thi;
-  PetscInt dim, M, N, m, n, s, dof;
-  DA dac, daf;
-  DAStencilType  st;
+  PetscInt dim,M,N,m,n,s,dof;
+  DM dac,daf;
+  DMDAStencilType  st;
+  DM_DA *ddf,*ddc;
 
   PetscFunctionBegin;
-  ierr = PetscObjectQuery((PetscObject)dac0, "THI", (PetscObject*)&thi);CHKERRQ(ierr);
-  if (!thi) SETERRQ(PETSC_ERR_ARG_WRONG, "Cannot refine this DA, missing composed THI instance");
+  ierr = PetscObjectQuery((PetscObject)dac0,"THI",(PetscObject*)&thi);CHKERRQ(ierr);
+  if (!thi) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_WRONG,"Cannot refine this DMDA, missing composed THI instance");
   if (nlevels > 1) {
-    ierr = DARefineHierarchy(dac0, nlevels-1, hierarchy);CHKERRQ(ierr);
+    ierr = DMRefineHierarchy(dac0,nlevels-1,hierarchy);CHKERRQ(ierr);
     dac = hierarchy[nlevels-2];
   } else {
     dac = dac0;
   }
-  ierr = DAGetInfo(dac, &dim, &N, &M, 0, &n, &m, 0, &dof, &s, 0, &st);CHKERRQ(ierr);
-  if (dim != 2) SETERRQ(PETSC_ERR_ARG_WRONG, "This function can only refine 2D DAs");
-  /* Creates a 3D DA with the same map-plane layout as the 2D one, with contiguous columns */
-  ierr = DACreate3d(((PetscObject)dac)->comm, DA_YZPERIODIC, st, thi->zlevels, N, M, 1, n, m, dof, s, NULL, NULL, NULL, &daf);CHKERRQ(ierr);
+  ierr = DMDAGetInfo(dac,&dim, &N,&M,0, &n,&m,0, &dof,&s,0,0,0,&st);CHKERRQ(ierr);
+  if (dim != 2) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_WRONG,"This function can only refine 2D DMDAs");
+  /* Creates a 3D DMDA with the same map-plane layout as the 2D one, with contiguous columns */
+  ierr = DMDACreate3d(((PetscObject)dac)->comm,
+                      DMDA_BOUNDARY_NONE, DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                      st,
+                      thi->zlevels, N, M,
+                      1, n, m,
+                      dof, s, PETSC_NULL, PETSC_NULL, PETSC_NULL, &daf);CHKERRQ(ierr);
   daf->ops->getmatrix        = dac->ops->getmatrix;
   daf->ops->getinterpolation = dac->ops->getinterpolation;
   daf->ops->getcoloring      = dac->ops->getcoloring;
-  daf->interptype            = dac->interptype;
+  ddf = (DM_DA*)daf->data;
+  ddc = (DM_DA*)dac->data;
+  ddf->interptype            = ddc->interptype;
 
-  ierr = DASetFieldName(daf, 0, "x-velocity");CHKERRQ(ierr);
-  ierr = DASetFieldName(daf, 1, "y-velocity");CHKERRQ(ierr);
+  ierr = DMDASetFieldName(daf,0,"x-velocity");CHKERRQ(ierr);
+  ierr = DMDASetFieldName(daf,1,"y-velocity");CHKERRQ(ierr);
   hierarchy[nlevels-1] = daf;
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "DAGetInterpolation_THI"
-PetscErrorCode DAGetInterpolation_THI(DA dac, DA daf, Mat *A, Vec *scale)
+#undef __FUNCT__  
+#define __FUNCT__ "DMGetInterpolation_DA_THI"
+static PetscErrorCode DMGetInterpolation_DA_THI(DM dac,DM daf,Mat *A,Vec *scale)
 {
   PetscErrorCode ierr;
-  PetscTruth flg, isda2;
+  PetscInt       dim;  
 
   PetscFunctionBegin;
-  PetscValidHeaderSpecific(dac, DM_COOKIE, 1);
-  PetscValidHeaderSpecific(daf, DM_COOKIE, 2);
-  PetscValidPointer(A, 3);
-  if (scale) {
-    (void) ierr;   /* avoid compiler warning "empty body in an if-statement" */
-    PetscValidPointer(scale, 4);
-  }
-  ierr = PetscTypeCompare((PetscObject)dac, DA2D, &flg);
-  if (!flg) SETERRQ(PETSC_ERR_ARG_WRONG, "Expected coarse DA to be 2D");
-  ierr = PetscTypeCompare((PetscObject)daf, DA2D, &isda2);CHKERRQ(ierr);
-  if (isda2) {
-    /* We are in the 2D problem and use normal DA interpolation */
-    ierr = DAGetInterpolation(dac, daf, A, scale);CHKERRQ(ierr);
+  PetscValidHeaderSpecific(dac,DM_CLASSID,1);
+  PetscValidHeaderSpecific(daf,DM_CLASSID,2);
+  PetscValidPointer(A,3);
+  if (scale) PetscValidPointer(scale,4);
+  ierr = DMDAGetInfo(daf,&dim,0,0,0,0,0,0,0,0,0,0,0,0);CHKERRQ(ierr);
+  if (dim  == 2) {
+    /* We are in the 2D problem and use normal DMDA interpolation */
+    ierr = DMGetInterpolation(dac,daf,A,scale);CHKERRQ(ierr);
   } else {
-    PetscInt i, j, k, xs, ys, zs, xm, ym, zm, mx, my, mz, rstart, cstart;
+    PetscInt i,j,k,xs,ys,zs,xm,ym,zm,mx,my,mz,rstart,cstart;
     Mat B;
 
-    ierr = DAGetInfo(daf, 0, &mz, &my, &mx, 0, 0, 0, 0, 0, 0, 0);CHKERRQ(ierr);
-    ierr = DAGetCorners(daf, &zs, &ys, &xs, &zm, &ym, &xm);CHKERRQ(ierr);
-    if (zs != 0) SETERRQ(1, "unexpected");
-    ierr = MatCreate(((PetscObject)daf)->comm, &B);CHKERRQ(ierr);
-    ierr = MatSetSizes(B, xm*ym*zm, xm*ym, mx*my*mz, mx*my);CHKERRQ(ierr);
-
-    ierr = MatSetType(B, MATAIJ);CHKERRQ(ierr);
-    ierr = MatSeqAIJSetPreallocation(B, 1, NULL);CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation(B, 1, NULL, 0, NULL);CHKERRQ(ierr);
-    ierr = MatGetOwnershipRange(B, &rstart, NULL);CHKERRQ(ierr);
-    ierr = MatGetOwnershipRangeColumn(B, &cstart, NULL);CHKERRQ(ierr);
+    ierr = DMDAGetInfo(daf,0, &mz,&my,&mx, 0,0,0, 0,0,0,0,0,0);CHKERRQ(ierr);
+    ierr = DMDAGetCorners(daf,&zs,&ys,&xs,&zm,&ym,&xm);CHKERRQ(ierr);
+    if (zs != 0) SETERRQ(PETSC_COMM_SELF,1,"unexpected");
+    ierr = MatCreate(((PetscObject)daf)->comm,&B);CHKERRQ(ierr);
+    ierr = MatSetSizes(B,xm*ym*zm,xm*ym,mx*my*mz,mx*my);CHKERRQ(ierr);
+    
+    ierr = MatSetType(B,MATAIJ);CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation(B,1,NULL);CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation(B,1,NULL,0,NULL);CHKERRQ(ierr);
+    ierr = MatGetOwnershipRange(B,&rstart,NULL);CHKERRQ(ierr);
+    ierr = MatGetOwnershipRangeColumn(B,&cstart,NULL);CHKERRQ(ierr);
     for (i=xs; i<xs+xm; i++) {
       for (j=ys; j<ys+ym; j++) {
         for (k=zs; k<zs+zm; k++) {
-          PetscInt i2 = i*ym+j, i3 = i2*zm+k;
+          PetscInt i2 = i*ym+j,i3 = i2*zm+k;
           PetscScalar val = ((k == 0 || k == mz-1) ? 0.5 : 1.) / (mz-1.); /* Integration using trapezoid rule */
-          ierr = MatSetValue(B, cstart+i3, rstart+i2, val, INSERT_VALUES);CHKERRQ(ierr);
+          ierr = MatSetValue(B,cstart+i3,rstart+i2,val,INSERT_VALUES);CHKERRQ(ierr);
         }
       }
     }
-    ierr = MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-    ierr = MatCreateMAIJ(B, sizeof(Node)/sizeof(PetscScalar), A);CHKERRQ(ierr);
-    ierr = MatDestroy(B);CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(B,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+    ierr = MatCreateMAIJ(B,sizeof(Node)/sizeof(PetscScalar),A);CHKERRQ(ierr);
+    ierr = MatDestroy(&B);CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "DAGetMatrix_THI_Tridiagonal"
-PetscErrorCode DAGetMatrix_THI_Tridiagonal(DA da, const MatType mtype, Mat *J)
+#undef __FUNCT__  
+#define __FUNCT__ "DMGetMatrix_THI_Tridiagonal"
+static PetscErrorCode DMGetMatrix_THI_Tridiagonal(DM da,const MatType mtype,Mat *J)
 {
   PetscErrorCode ierr;
   Mat A;
-  PetscInt xm, ym, zm, dim, dof = 2, starts[3], dims[3];
-  ISLocalToGlobalMapping ltog, ltogb;
+  PetscInt xm,ym,zm,dim,dof = 2,starts[3],dims[3];
+  ISLocalToGlobalMapping ltog,ltogb;
 
   PetscFunctionBegin;
-  ierr = DAGetInfo(da, &dim, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);CHKERRQ(ierr);
-  if (dim != 3) SETERRQ(PETSC_ERR_ARG_WRONG, "Expected DA to be 3D");
-  ierr = DAGetCorners(da, 0, 0, 0, &zm, &ym, &xm);CHKERRQ(ierr);
-  ierr = DAGetISLocalToGlobalMapping(da, &ltog);CHKERRQ(ierr);
-  ierr = DAGetISLocalToGlobalMappingBlck(da, &ltogb);CHKERRQ(ierr);
-  ierr = MatCreate(((PetscObject)da)->comm, &A);CHKERRQ(ierr);
-  ierr = MatSetSizes(A, dof*xm*ym*zm, dof*xm*ym*zm, PETSC_DETERMINE, PETSC_DETERMINE);CHKERRQ(ierr);
-  ierr = MatSetType(A, mtype);CHKERRQ(ierr);
+  ierr = DMDAGetInfo(da,&dim, 0,0,0, 0,0,0, 0,0,0,0,0,0);CHKERRQ(ierr);
+  if (dim != 3) SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_WRONG,"Expected DMDA to be 3D");
+  ierr = DMDAGetCorners(da,0,0,0,&zm,&ym,&xm);CHKERRQ(ierr);
+  ierr = DMGetLocalToGlobalMapping(da,&ltog);CHKERRQ(ierr);
+  ierr = DMGetLocalToGlobalMappingBlock(da,&ltogb);CHKERRQ(ierr);
+  ierr = MatCreate(((PetscObject)da)->comm,&A);CHKERRQ(ierr);
+  ierr = MatSetSizes(A,dof*xm*ym*zm,dof*xm*ym*zm,PETSC_DETERMINE,PETSC_DETERMINE);CHKERRQ(ierr);
+  ierr = MatSetType(A,mtype);CHKERRQ(ierr);
   ierr = MatSetFromOptions(A);CHKERRQ(ierr);
-  ierr = MatSeqAIJSetPreallocation(A, 6, PETSC_NULL);CHKERRQ(ierr);
-  ierr = MatMPIAIJSetPreallocation(A, 6, PETSC_NULL, 0, PETSC_NULL);CHKERRQ(ierr);
-  ierr = MatSeqBAIJSetPreallocation(A, dof, 3, PETSC_NULL);CHKERRQ(ierr);
-  ierr = MatMPIBAIJSetPreallocation(A, dof, 3, PETSC_NULL, 0, PETSC_NULL);CHKERRQ(ierr);
-  ierr = MatSeqSBAIJSetPreallocation(A, dof, 2, PETSC_NULL);CHKERRQ(ierr);
-  ierr = MatMPISBAIJSetPreallocation(A, dof, 2, PETSC_NULL, 0, PETSC_NULL);CHKERRQ(ierr);
-  ierr = MatSetBlockSize(A, dof);CHKERRQ(ierr);
-  ierr = MatSetLocalToGlobalMapping(A, ltog);CHKERRQ(ierr);
-  ierr = MatSetLocalToGlobalMappingBlock(A, ltogb);CHKERRQ(ierr);
-  ierr = DAGetGhostCorners(da, &starts[0], &starts[1], &starts[2], &dims[0], &dims[1], &dims[2]);CHKERRQ(ierr);
-  ierr = MatSetStencil(A, dim, dims, starts, dof);CHKERRQ(ierr);
+  ierr = MatSeqAIJSetPreallocation(A,6,PETSC_NULL);CHKERRQ(ierr);
+  ierr = MatMPIAIJSetPreallocation(A,6,PETSC_NULL,0,PETSC_NULL);CHKERRQ(ierr);
+  ierr = MatSeqBAIJSetPreallocation(A,dof,3,PETSC_NULL);CHKERRQ(ierr);
+  ierr = MatMPIBAIJSetPreallocation(A,dof,3,PETSC_NULL,0,PETSC_NULL);CHKERRQ(ierr);
+  ierr = MatSeqSBAIJSetPreallocation(A,dof,2,PETSC_NULL);CHKERRQ(ierr);
+  ierr = MatMPISBAIJSetPreallocation(A,dof,2,PETSC_NULL,0,PETSC_NULL);CHKERRQ(ierr);
+  ierr = MatSetBlockSize(A,dof);CHKERRQ(ierr);
+  ierr = MatSetLocalToGlobalMapping(A,ltog,ltog);CHKERRQ(ierr);
+  ierr = MatSetLocalToGlobalMappingBlock(A,ltogb,ltogb);CHKERRQ(ierr);
+  ierr = DMDAGetGhostCorners(da,&starts[0],&starts[1],&starts[2],&dims[0],&dims[1],&dims[2]);CHKERRQ(ierr);
+  ierr = MatSetStencil(A,dim,dims,starts,dof);CHKERRQ(ierr);
   *J = A;
   PetscFunctionReturn(0);
 }
@@ -761,9 +763,9 @@ PetscErrorCode DAGetMatrix_THI_Tridiagonal(DA da, const MatType mtype, Mat *J)
 /*!
  * Here
  * - Lx and Ly are the domain dimensions, not the half-lengths.
- * - pism_da2 is the DA used by PISM. The 
+ * - pism_da2 is the DA used by PISM. The
  */
-PetscErrorCode THISetup(MPI_Comm comm, DA pism_da2, PetscReal Lx, PetscReal Ly,
+PetscErrorCode THISetup(MPI_Comm comm, DM pism_da2, PetscReal Lx, PetscReal Ly,
                         THI thi, DMMG **dmmg_out) {
   PetscErrorCode ierr;
   PetscInt i;
@@ -778,7 +780,7 @@ PetscErrorCode THISetup(MPI_Comm comm, DA pism_da2, PetscReal Lx, PetscReal Ly,
   DMMG *dmmg = *dmmg_out;;
 
   {
-    DA da;
+    DM da;
     int P = 2;
     ierr = PetscOptionsBegin(comm, NULL, "Grid resolution options", "");CHKERRQ(ierr);
     {
@@ -790,33 +792,35 @@ PetscErrorCode THISetup(MPI_Comm comm, DA pism_da2, PetscReal Lx, PetscReal Ly,
     // Get the parametes of the DA used in PISM so that we can create a compatible one.
     PetscInt Mx, My, mx, my;
     const PetscInt *lx, *ly;
-    ierr =  DAGetInfo(pism_da2,
-                      NULL,           // number of dimensions
-                      &My, &Mx, NULL, // number of grid points in y, x, z directions
-                      &my, &mx, NULL, // number of processors in y, x, z directions
-                      NULL,           // dof
-                      NULL,           // stencil width
-                      NULL,           // wrap
-                      NULL);          // stencil type
+    ierr =  DMDAGetInfo(pism_da2,
+                        NULL,           // number of dimensions
+                        &My, &Mx, NULL, // number of grid points in y, x, z directions
+                        &my, &mx, NULL, // number of processors in y, x, z directions
+                        NULL,           // dof
+                        NULL,           // stencil width
+                        NULL,NULL,NULL, // wrap
+                        NULL);          // stencil type
     CHKERRQ(ierr);
-    ierr = DAGetOwnershipRanges(pism_da2, &ly, &lx, NULL); CHKERRQ(ierr);
+    ierr = DMDAGetOwnershipRanges(pism_da2, &ly, &lx, NULL); CHKERRQ(ierr);
 
-    ierr = DACreate3d(comm, DA_YZPERIODIC, DA_STENCIL_BOX,
-                      P, My, Mx, // number of grid points
-                      1, my, mx, // number of processors
-                      sizeof(Node)/sizeof(PetscScalar), // dof
-                      1,                                // stencil width
-                      &P, ly, lx,
-                      &da);CHKERRQ(ierr);
+    ierr = DMDACreate3d(comm,
+                        DMDA_BOUNDARY_NONE, DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                        DMDA_STENCIL_BOX,
+                        P, My, Mx, // number of grid points
+                        1, my, mx, // number of processors
+                        sizeof(Node)/sizeof(PetscScalar), // dof
+                        1,                                // stencil width
+                        &P, ly, lx,
+                        &da);CHKERRQ(ierr);
 
-    ierr = DASetFieldName(da, 0, "x-velocity");CHKERRQ(ierr);
-    ierr = DASetFieldName(da, 1, "y-velocity");CHKERRQ(ierr);
+    ierr = DMDASetFieldName(da, 0, "x-velocity");CHKERRQ(ierr);
+    ierr = DMDASetFieldName(da, 1, "y-velocity");CHKERRQ(ierr);
     ierr = DMMGSetDM(dmmg, (DM)da);CHKERRQ(ierr);
-    ierr = DADestroy(da);CHKERRQ(ierr);
+    ierr = DMDestroy(&da);CHKERRQ(ierr);
   }
 
   if (thi->tridiagonal) {
-    (DMMGGetDA(dmmg))->ops->getmatrix = DAGetMatrix_THI_Tridiagonal;
+    (DMMGGetDM(dmmg))->ops->getmatrix = DMGetMatrix_THI_Tridiagonal;
   }
 
   {
@@ -835,8 +839,8 @@ PetscErrorCode THISetup(MPI_Comm comm, DA pism_da2, PetscReal Lx, PetscReal Ly,
   ierr = DMMGSetSNESLocal(dmmg, THIFunctionLocal, THIJacobianLocal_3D_Full, 0, 0);CHKERRQ(ierr);
 
   if (thi->tridiagonal) {
-    ierr = DASetLocalJacobian(DMMGGetDA(dmmg),
-                              (DALocalFunction1)THIJacobianLocal_3D_Tridiagonal);CHKERRQ(ierr);
+    ierr = DMDASetLocalJacobian(DMMGGetDM(dmmg),
+                                (DMDALocalFunction1)THIJacobianLocal_3D_Tridiagonal);CHKERRQ(ierr);
   }
 
   for (i=0; i<DMMGGetLevels(dmmg); i++) {
@@ -844,7 +848,7 @@ PetscErrorCode THISetup(MPI_Comm comm, DA pism_da2, PetscReal Lx, PetscReal Ly,
      * are symmetric, but the SBAIJ assembly functions will complain if we
      * provide lower-triangular entries without setting this option. */
     Mat B = dmmg[i]->B;
-    PetscTruth flg1, flg2;
+    PetscBool flg1, flg2;
     ierr = PetscTypeCompare((PetscObject)B, MATSEQSBAIJ, &flg1);CHKERRQ(ierr);
     ierr = PetscTypeCompare((PetscObject)B, MATMPISBAIJ, &flg2);CHKERRQ(ierr);
     if (flg1 || flg2) {
@@ -861,64 +865,64 @@ PetscErrorCode THISetup(MPI_Comm comm, DA pism_da2, PetscReal Lx, PetscReal Ly,
 
 #undef __FUNCT__
 #define __FUNCT__ "DAGetPrmNodeArray"
-PetscErrorCode DAGetPrmNodeArray(DA da, PrmNode ***prm)
+PetscErrorCode DMDAGetPrmNodeArray(DM da, PrmNode ***prm)
 {
   PetscErrorCode ierr;
-  DA             da2prm;
+  DM             da2prm;
   Vec            X;
 
   PetscFunctionBegin;
   ierr = PetscObjectQuery((PetscObject)da, "DA2Prm", (PetscObject*)&da2prm);CHKERRQ(ierr);
-  if (!da2prm) SETERRQ(PETSC_ERR_ARG_WRONG, "No DA2Prm composed with given DA");
+  if (!da2prm) SETERRQ(((PetscObject)da)->comm, PETSC_ERR_ARG_WRONG, "No DA2Prm composed with given DA");
   ierr = PetscObjectQuery((PetscObject)da, "DA2Prm_Vec", (PetscObject*)&X);CHKERRQ(ierr);
-  if (!X) SETERRQ(PETSC_ERR_ARG_WRONG, "No DA2Prm_Vec composed with given DA");
-  ierr = DAVecGetArray(da2prm, X, prm);CHKERRQ(ierr);
+  if (!X) SETERRQ(((PetscObject)da)->comm, PETSC_ERR_ARG_WRONG, "No DA2Prm_Vec composed with given DA");
+  ierr = DMDAVecGetArray(da2prm, X, prm);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 #undef __FUNCT__
 #define __FUNCT__ "DARestorePrmNodeArray"
-PetscErrorCode DARestorePrmNodeArray(DA da, PrmNode ***prm)
+PetscErrorCode DMDARestorePrmNodeArray(DM da, PrmNode ***prm)
 {
   PetscErrorCode ierr;
-  DA             da2prm;
+  DM             da2prm;
   Vec            X;
 
   PetscFunctionBegin;
   ierr = PetscObjectQuery((PetscObject)da, "DA2Prm", (PetscObject*)&da2prm);CHKERRQ(ierr);
-  if (!da2prm) SETERRQ(PETSC_ERR_ARG_WRONG, "No DA2Prm composed with given DA");
+  if (!da2prm) SETERRQ(((PetscObject)da)->comm, PETSC_ERR_ARG_WRONG, "No DA2Prm composed with given DA");
   ierr = PetscObjectQuery((PetscObject)da, "DA2Prm_Vec", (PetscObject*)&X);CHKERRQ(ierr);
-  if (!X) SETERRQ(PETSC_ERR_ARG_WRONG, "No DA2Prm_Vec composed with given DA");
-  ierr = DAVecRestoreArray(da2prm, X, prm);CHKERRQ(ierr);
+  if (!X) SETERRQ(((PetscObject)da)->comm, PETSC_ERR_ARG_WRONG, "No DA2Prm_Vec composed with given DA");
+  ierr = DMDAVecRestoreArray(da2prm, X, prm);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DAPrmNodeArrayCommBegin(DA da)
+PetscErrorCode DMDAPrmNodeArrayCommBegin(DM da)
 {
   PetscErrorCode ierr;
-  DA             da2prm;
+  DM             da2prm;
   Vec            X;
 
   PetscFunctionBegin;
   ierr = PetscObjectQuery((PetscObject)da, "DA2Prm", (PetscObject*)&da2prm);CHKERRQ(ierr);
-  if (!da2prm) SETERRQ(PETSC_ERR_ARG_WRONG, "No DA2Prm composed with given DA");
+  if (!da2prm) SETERRQ(((PetscObject)da)->comm, PETSC_ERR_ARG_WRONG, "No DA2Prm composed with given DA");
   ierr = PetscObjectQuery((PetscObject)da, "DA2Prm_Vec", (PetscObject*)&X);CHKERRQ(ierr);
-  if (!X) SETERRQ(PETSC_ERR_ARG_WRONG, "No DA2Prm_Vec composed with given DA");
-  ierr = DALocalToLocalBegin(da2prm, X, INSERT_VALUES, X);CHKERRQ(ierr);
+  if (!X) SETERRQ(((PetscObject)da)->comm, PETSC_ERR_ARG_WRONG, "No DA2Prm_Vec composed with given DA");
+  ierr = DMDALocalToLocalBegin(da2prm, X, INSERT_VALUES, X);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DAPrmNodeArrayCommEnd(DA da)
+PetscErrorCode DMDAPrmNodeArrayCommEnd(DM da)
 {
   PetscErrorCode ierr;
-  DA             da2prm;
+  DM             da2prm;
   Vec            X;
 
   PetscFunctionBegin;
   ierr = PetscObjectQuery((PetscObject)da, "DA2Prm", (PetscObject*)&da2prm);CHKERRQ(ierr);
-  if (!da2prm) SETERRQ(PETSC_ERR_ARG_WRONG, "No DA2Prm composed with given DA");
+  if (!da2prm) SETERRQ(((PetscObject)da)->comm, PETSC_ERR_ARG_WRONG, "No DA2Prm composed with given DA");
   ierr = PetscObjectQuery((PetscObject)da, "DA2Prm_Vec", (PetscObject*)&X);CHKERRQ(ierr);
-  if (!X) SETERRQ(PETSC_ERR_ARG_WRONG, "No DA2Prm_Vec composed with given DA");
-  ierr = DALocalToLocalEnd(da2prm, X, INSERT_VALUES, X);CHKERRQ(ierr);
+  if (!X) SETERRQ(((PetscObject)da)->comm, PETSC_ERR_ARG_WRONG, "No DA2Prm_Vec composed with given DA");
+  ierr = DMDALocalToLocalEnd(da2prm, X, INSERT_VALUES, X);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

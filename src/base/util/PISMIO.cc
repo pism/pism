@@ -579,7 +579,7 @@ PetscErrorCode PISMIO::get_grid(string filename, string var_name) {
   grid_info input;
   vector<double> z_levels, zb_levels;
 
-  if (grid == NULL) SETERRQ(1, "PISMIO::get_grid(...): grid == NULL");
+  if (grid == NULL) SETERRQ(com, 1, "PISMIO::get_grid(...): grid == NULL");
 
   ierr = open_for_reading(filename); CHKERRQ(ierr);
 
@@ -636,7 +636,7 @@ PetscErrorCode PISMIO::open_for_writing(string filename, bool append,
 					bool check_dims) {
   int stat;
 
-  if (ncid >= 0) SETERRQ(1, "PISMIO::open_for_writing(): ncid >= 0 at the beginning of the call");
+  if (ncid >= 0) SETERRQ(com, 1, "PISMIO::open_for_writing(): ncid >= 0 at the beginning of the call");
 
   if (append == false) {
     // if append == false, we need to check if the file exists and move it
@@ -694,7 +694,7 @@ PetscErrorCode PISMIO::open_for_writing(string filename, bool append,
 //! Always returns true on processors other than zero.
 bool PISMIO::check_dimensions() const {
 
-  if (grid == NULL) SETERRQ(1, "PISMIO::check_dimensions(...): grid == NULL");
+  if (grid == NULL) SETERRQ(com, 1, "PISMIO::check_dimensions(...): grid == NULL");
 
   return check_dimension(grid->config.get_string("time_dimension_name"),
                          -1); // length does not matter
@@ -707,7 +707,7 @@ PetscErrorCode PISMIO::create_dimensions() const {
   int ierr, dimid, varid;
   map<string,string> attrs;
 
-  if (grid == NULL) SETERRQ(1, "PISMIO::create_dimensions(...): grid == NULL");
+  if (grid == NULL) SETERRQ(com, 1, "PISMIO::create_dimensions(...): grid == NULL");
   
   if (grid->rank != 0) return 0;
 

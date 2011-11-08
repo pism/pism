@@ -5,7 +5,7 @@ parts := eismint-greenland.tex eismint-ross.tex getting-started.tex \
 	 simplified-geometry.tex storglaciaren.tex verification.tex
 
 revision:
-	@svnversion > revision.tex
+	git describe --always --match v?.? > revision.tex
 .PHONY: revision
 
 revclean:

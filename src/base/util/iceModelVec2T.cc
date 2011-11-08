@@ -71,7 +71,7 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, string my_short_name,
   PetscErrorCode ierr;
 
   if (local) {
-    SETERRQ(1, "IceModelVec2T cannot be 'local'");
+    SETERRQ(grid->com, 1, "IceModelVec2T cannot be 'local'");
   }
 
   ierr = IceModelVec2S::create(my_grid, my_short_name, false, width); CHKERRQ(ierr);
@@ -80,7 +80,7 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, string my_short_name,
   ierr = create_2d_da(da3, n_records, 1); CHKERRQ(ierr);
 
   // allocate the 3D Vec:
-  ierr = DACreateGlobalVector(da3, &v3); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da3, &v3); CHKERRQ(ierr);
 
   return 0;
 }
@@ -91,11 +91,11 @@ PetscErrorCode IceModelVec2T::destroy() {
   ierr = IceModelVec2S::destroy(); CHKERRQ(ierr);
 
   if (v3 != PETSC_NULL) {
-    ierr = VecDestroy(v3); CHKERRQ(ierr);
+    ierr = VecDestroy(&v3); CHKERRQ(ierr);
     v3 = PETSC_NULL;
   }
   if (da3 != PETSC_NULL) {
-    ierr = DADestroy(da3); CHKERRQ(ierr);
+    ierr = DMDestroy(&da3); CHKERRQ(ierr);
     da3 = PETSC_NULL;
   }
 
@@ -112,7 +112,7 @@ PetscErrorCode IceModelVec2T::get_array3(PetscScalar*** &a3) {
 PetscErrorCode IceModelVec2T::begin_access() {
   PetscErrorCode ierr;
   if (access_counter == 0) {
-    ierr = DAVecGetArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
+    ierr = DMDAVecGetArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
   }
 
   // this call will increment the access_counter
@@ -126,7 +126,7 @@ PetscErrorCode IceModelVec2T::end_access() {
   PetscErrorCode ierr = IceModelVec2S::end_access(); CHKERRQ(ierr);
 
   if (access_counter == 0) {
-    ierr = DAVecRestoreArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
     array3 = PETSC_NULL;
   }
 
@@ -268,7 +268,7 @@ PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
   // check if all the records necessary to cover this interval fit in the
   // buffer:
   if (n - m + 1 > n_records)
-    SETERRQ(1, "IceModelVec2T::update(): timestep is too big");
+    SETERRQ(grid->com, 1, "IceModelVec2T::update(): timestep is too big");
 
   ierr = update(m); CHKERRQ(ierr);
 
@@ -281,7 +281,7 @@ PetscErrorCode IceModelVec2T::update(int start) {
   int time_size = (int)time.size();
 
   if ((start < 0) || (start >= time_size))
-    SETERRQ1(1, "IceModelVec2T::update(int start): start = %d is invalid", start);
+    SETERRQ1(grid->com, 1, "IceModelVec2T::update(int start): start = %d is invalid", start);
 
   int missing = PetscMin(n_records, time_size - start);
   

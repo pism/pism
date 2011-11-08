@@ -52,7 +52,7 @@ protected:
     z_artm_min, z_artm_max,
     acab_min, acab_max, acab_limit_min, acab_limit_max,
     z_acab_min, z_ELA, z_acab_max;
-  PetscTruth elev_artm_set, elev_acab_set, acab_limits_set;
+  PetscBool elev_artm_set, elev_acab_set, acab_limits_set;
 
 };
 

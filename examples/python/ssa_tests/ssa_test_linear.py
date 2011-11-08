@@ -46,28 +46,26 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
     enthalpyconverter = PISM.EnthalpyConverter(config)
     ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter)
-    self.solver.setPhysics(ice,basal,enthalpyconverter)
+    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
 
   def _initSSACoefficients(self):
-    solver = self.solver
-    solver.allocateCoeffs()
-    
-    solver.thickness.set(H0)
-    solver.surface.set(H0)
-    solver.bed.set(0.)
-    solver.tauc.set(tauc0)
+    self._allocStdSSACoefficients()
+    self._allocateBCs()
 
-    # Set boundary conditions (Dirichlet all the way around).
-    self.solver.allocateBCs()
+    vecs = self.modeldata.vecs
     
-    bc_mask = self.solver.bc_mask
-    bc_mask.set(PISM.MASK_GROUNDED)
+    vecs.thickness.set(H0)
+    vecs.surface.set(H0)
+    vecs.bed.set(0.)
+    vecs.tauc.set(tauc0)
 
-    vel_bc  = self.solver.vel_bc
+    bc_mask = vecs.bc_mask
+    bc_mask.set(0)
+
+    vel_bc  = vecs.vel_bc
     
     grid = self.grid
-    vars = [bc_mask, vel_bc]
-    with PISM.util.Access(vars):
+    with PISM.util.Access(comm=[bc_mask, vel_bc]):
       for (i,j) in grid.points():
         edge = ( (j == 0) or (j == grid.My - 1) ) or ( (i==0) or (i==grid.Mx-1) );
         if edge:
@@ -76,12 +74,10 @@ class test_linear(PISM.ssa.SSAExactTestCase):
           [u,v] = self.exactSolution(i,j,x,y);
           vel_bc[i,j].u = u;
           vel_bc[i,j].v = v;
-      for v in vars:
-        v.beginGhostComm(); v.endGhostComm();
 
   def _initSSA(self):
     # The following ensure that the strength extension is used everywhere
-    se = self.solver.ssa.strength_extension
+    se = self.ssa.strength_extension
     se.set_notional_strength(nu0 * H0);
     se.set_min_thickness(4000*10);
 
