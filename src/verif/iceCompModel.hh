@@ -57,7 +57,7 @@ public:
 protected:
   // related to all (or most) tests
   ThermoGlenArrIce *tgaIce;
-  PetscTruth   exactOnly;
+  PetscBool   exactOnly;
   int          testname;
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
@@ -123,7 +123,7 @@ protected:
 
 private:
   PetscScalar        f;       // ratio of ice density to bedrock density
-  PetscTruth         bedrock_is_ice_forK;
+  PetscBool         bedrock_is_ice_forK;
 
   static const PetscScalar ablationRateOutside;
 

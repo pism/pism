@@ -253,7 +253,7 @@ PetscErrorCode IceModel_proc_ice_area::compute(IceModelVec* &output) {
   IceModelVec2S *thickness;
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "proc_ice_area", false); CHKERRQ(ierr);
@@ -304,10 +304,10 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
   IceModelVec3 *enthalpy;
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   PetscScalar *Tij, *Enthij; // columns of these values
   ierr = result->begin_access(); CHKERRQ(ierr);
@@ -367,10 +367,10 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   IceModelVec3 *enthalpy;
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   PetscScalar *Tij, *Enthij; // columns of these values
   ierr = result->begin_access(); CHKERRQ(ierr);
@@ -435,10 +435,10 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   IceModelVec3 *enthalpy;
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   PetscScalar *Enthij; // columns of these values
   ierr = result->begin_access(); CHKERRQ(ierr);
@@ -572,13 +572,13 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
 
   ierr = enth.compute(output); CHKERRQ(ierr);
   result = dynamic_cast<IceModelVec2S*>(output);
-  if (result == NULL) SETERRQ(1, "dynamic_cast failure");
+  if (result == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
 
   // result contains basal enthalpy; note that it is allocated by
   // enth.compute().
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
@@ -623,13 +623,13 @@ PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
   IceModelVec2S *result, *thickness;
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   IceModel_enthalpysurf enth(model, grid, variables);
 
   ierr = enth.compute(output); CHKERRQ(ierr);
   result = dynamic_cast<IceModelVec2S*>(output);
-  if (result == NULL) SETERRQ(1, "dynamic_cast failure");
+  if (result == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
 
   // result contains surface enthalpy; note that it is allocated by
   // enth.compute().
@@ -833,7 +833,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
         (*result)(i,j) = PetscMax((*result)(i,j), grid.zlevels[k-1]);
         (*result)(i,j) = PetscMin((*result)(i,j), grid.zlevels[k]);
       } else {
-        SETERRQ4(1, "This should never happen: (i=%d, j=%d, k=%d, ks=%d)\n",
+        SETERRQ4(grid.com, 1, "This should never happen: (i=%d, j=%d, k=%d, ks=%d)\n",
                  i, j, k, ks);
       }
     }

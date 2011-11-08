@@ -406,7 +406,7 @@ const PetscReal FEQuadrature::quadWeights[FEQuadrature::Nq]  = {1,1,1,1};
 
 
 //! Legacy code that needs to vanish. \todo Make it go away.
-PetscTruth Floating(const IceFlowLaw &ice, PetscScalar ocean_rho,
+PetscBool Floating(const IceFlowLaw &ice, PetscScalar ocean_rho,
                            PetscReal H, PetscReal bed)
 {
   return ice.rho*H + ocean_rho*bed < 0 ? PETSC_TRUE : PETSC_FALSE;

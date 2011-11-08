@@ -43,13 +43,13 @@ BedDeformLC::~BedDeformLC() {
     fftw_free(bdin);
     fftw_free(bdout);
 #endif
-    VecDestroy(Hdiff);
-    VecDestroy(dbedElastic);
-    VecDestroy(platefat);
-    VecDestroy(plateoffset);
-    VecDestroy(vleft);
-    VecDestroy(vright);
-    VecDestroy(lrmE);
+    VecDestroy(&Hdiff);
+    VecDestroy(&dbedElastic);
+    VecDestroy(&platefat);
+    VecDestroy(&plateoffset);
+    VecDestroy(&vleft);
+    VecDestroy(&vright);
+    VecDestroy(&lrmE);
     delete [] cx;  delete [] cy;
   }
   allocDone = PETSC_FALSE;
@@ -57,7 +57,7 @@ BedDeformLC::~BedDeformLC() {
 
 
 PetscErrorCode BedDeformLC::settings(const NCConfigVariable &config,
-                  PetscTruth  myinclude_elastic,
+                  PetscBool  myinclude_elastic,
                   PetscInt myMx, PetscInt myMy, PetscScalar mydx, PetscScalar mydy,
                   PetscInt myZ, PetscScalar myicerho,
                   Vec* myHstart, Vec* mybedstart, Vec* myuplift, 
@@ -104,13 +104,13 @@ PetscErrorCode BedDeformLC::settings(const NCConfigVariable &config,
 PetscErrorCode BedDeformLC::alloc() {
   PetscErrorCode  ierr;
   if (settingsDone == PETSC_FALSE) {
-    SETERRQ(1,"BedDeformLC must be set with settings() before alloc()\n");
+    SETERRQ(PETSC_COMM_SELF, 1,"BedDeformLC must be set with settings() before alloc()\n");
   }
   if (allocDone == PETSC_TRUE) {
-    SETERRQ(2,"BedDeformLC already allocated\n");
+    SETERRQ(PETSC_COMM_SELF, 2,"BedDeformLC already allocated\n");
   }
 #if (PISM_HAVE_FFTW==0)
-  SETERRQ(3,"BedDeformLC will not work without FFTW");
+  SETERRQ(PETSC_COMM_SELF, 3,"BedDeformLC will not work without FFTW");
 #endif
 
   ierr = VecDuplicate(*H,&Hdiff); CHKERRQ(ierr);  // allocate working space

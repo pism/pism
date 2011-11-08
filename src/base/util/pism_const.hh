@@ -120,4 +120,19 @@ inline double convert(double value, const char spec1[], const char spec2[]) {
   return value * slope + intercept;
 }
 
+inline PetscErrorCode PISMGlobalMin(PetscReal *local, PetscReal *result, MPI_Comm comm)
+{
+  return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_MIN,comm);
+}
+
+inline PetscErrorCode PISMGlobalMax(PetscReal *local, PetscReal *result, MPI_Comm comm)
+{
+  return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_MAX,comm);
+}
+
+inline PetscErrorCode PISMGlobalSum(PetscReal *local, PetscReal *result, MPI_Comm comm)
+{
+  return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_SUM,comm);
+}
+
 #endif

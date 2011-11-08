@@ -249,7 +249,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   PetscErrorCode  ierr;
 
   if (config.get_flag("do_cold_ice_methods")) {
-    SETERRQ(1,
+    SETERRQ(grid.com, 1,
       "PISM ERROR:  enthalpyAndDrainageStep() called but do_cold_ice_methods==true\n");
   }
 
@@ -312,7 +312,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
     CHKERRQ(ierr);
   } else {
-    SETERRQ(4,"PISM ERROR: surface == PETSC_NULL");
+    SETERRQ(grid.com, 4,"PISM ERROR: surface == PETSC_NULL");
   }
   if (ocean != PETSC_NULL) {
     ierr = ocean->shelf_base_mass_flux(shelfbmassflux);
@@ -320,7 +320,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     ierr = ocean->shelf_base_temperature(shelfbtemp);
         CHKERRQ(ierr);
   } else {
-    SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");
+    SETERRQ(grid.com, 5,"PISM ERROR: ocean == PETSC_NULL");
   }
 
   IceModelVec2S G0 = vWork2d[0];
@@ -329,7 +329,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   if (btu) {
     ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
   } else {
-    SETERRQ(3,"PISM ERROR: PISMBedThermalUnit* btu == PETSC_NULL in enthalpyAndDrainageStep()");
+    SETERRQ(grid.com, 3,"PISM ERROR: PISMBedThermalUnit* btu == PETSC_NULL in enthalpyAndDrainageStep()");
   }
 
   ierr = artm.begin_access(); CHKERRQ(ierr);
@@ -369,7 +369,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                     "ERROR: ks = %d computed at i = %d, j = %d is invalid,"
                     " possibly because of invalid ice thickness.\n",
                     ks, i, j);
-        SETERRQ(1, "invalid ks");
+        SETERRQ(grid.com, 1, "invalid ks");
       }
 #endif
 
@@ -498,7 +498,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                 " with zero pivot position %d; viewing system to m-file ... \n",
             i, j, pivoterr); CHKERRQ(ierr);
           ierr = esys->reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
-          SETERRQ(1,"PISM ERROR in enthalpyDrainageStep()\n");
+          SETERRQ(grid.com, 1,"PISM ERROR in enthalpyDrainageStep()\n");
         }
         if (viewOneColumn && issounding(i,j)) {
           ierr = PetscPrintf(PETSC_COMM_SELF,

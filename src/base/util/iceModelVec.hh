@@ -21,7 +21,7 @@
 
 #include <cstring>
 #include <cstdlib>
-#include <petscda.h>
+#include <petscdmda.h>
 
 #include "NCSpatialVariable.hh"
 #include "pism_const.hh"
@@ -236,7 +236,7 @@ protected:
   IceGrid      *grid;
   int          dof,             //!< number of "degrees of freedom" per grid point
     da_stencil_width;           //!< stencil width supported by the DA
-  DA           da;
+  DM           da;
   bool         localp;          //!< localp == true means "has ghosts"
 
   //! It is a map, because a temporary IceModelVec can be used to view
@@ -249,7 +249,7 @@ protected:
   int access_counter;		// used in begin_access() and end_access()
   int state_counter;            //!< Internal IceModelVec "revision number"
 
-  virtual PetscErrorCode create_2d_da(DA &result, PetscInt da_dof, PetscInt stencil_width);
+  virtual PetscErrorCode create_2d_da(DM &result, PetscInt da_dof, PetscInt stencil_width);
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();

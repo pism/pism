@@ -18,7 +18,7 @@
 
 #include <cmath>
 #include <cstring>
-#include <petscda.h>
+#include <petscdmda.h>
 
 #include <vector>     // STL vector container; sortable; used in test L
 #include <algorithm>  // required by sort(...) in test L
@@ -302,7 +302,7 @@ PetscErrorCode IceCompModel::allocate_flowlaw() {
     //   need to have a tempFromSoftness() procedure as well as the need for the right
     //   flow law to have the errors make sense
     tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
-    if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
+    if (!tgaIce) SETERRQ(grid.com, 1,"IceCompModel requires ThermoGlenArrIce or a derived class");
     if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == PETSC_FALSE) {
       ierr = verbPrintf(1, grid.com,
                         "WARNING: user set -gk; default flow law should be -ice_type arr for IceCompModel\n");
@@ -312,7 +312,7 @@ PetscErrorCode IceCompModel::allocate_flowlaw() {
 
   if (testname == 'V') {
     CustomGlenIce *ice_custom = dynamic_cast<CustomGlenIce*>(ice);
-    if (ice_custom == NULL) SETERRQ(1, "test V requires using CustomGlenIce");
+    if (ice_custom == NULL) SETERRQ(grid.com, 1, "test V requires using CustomGlenIce");
 
     ice_custom->setHardness(1.9e8);
   }
@@ -400,7 +400,7 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   case 'V':
     ierr = test_V_init(); CHKERRQ(ierr);
     break;
-  default:  SETERRQ(1,"Desired test not implemented by IceCompModel.\n");
+  default:  SETERRQ(grid.com, 1,"Desired test not implemented by IceCompModel.\n");
   }
 
   ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
@@ -447,7 +447,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
         case 'H':
           exactH(f,grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
-        default:  SETERRQ(1,"test must be A, B, C, D, E, or H");
+        default:  SETERRQ(grid.com, 1,"test must be A, B, C, D, E, or H");
       }
     }
   }
@@ -489,7 +489,7 @@ PetscErrorCode IceCompModel::initTestL() {
   PetscErrorCode  ierr;
   PetscScalar     A0, T0, **H, **accum, **bed;
 
-  if (testname != 'L')  { SETERRQ(1,"test must be 'L'"); }
+  if (testname != 'L')  { SETERRQ(grid.com, 1,"test must be 'L'"); }
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -591,7 +591,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
         case 'H':
           exactH(f,grid.time->current(),r,&dummy,&accum[i][j]);
           break;
-        default:  SETERRQ(1,"testname must be C, D, or H");
+        default:  SETERRQ(grid.com, 1,"testname must be C, D, or H");
       }
     }
   }
@@ -645,7 +645,7 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
         case 'H':
           exactH(f,grid.time->current(),r,&H[i][j],&accum[i][j]);
           break;
-        default:  SETERRQ(1,"test must be A, B, C, D, or H");
+        default:  SETERRQ(grid.com, 1,"test must be A, B, C, D, or H");
       }
     }
   }
@@ -808,7 +808,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
           Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
         }
         break;
-        default:  SETERRQ(1,"test must be A, B, C, D, E, F, G, H, K, L, or O");
+        default:  SETERRQ(grid.com, 1,"test must be A, B, C, D, E, F, G, H, K, L, or O");
       }
 
       if (Hexact > 0) {
@@ -834,21 +834,21 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
 
   // globalize (find errors over all processors)
   PetscScalar gvol, garea, gdomeH;
-  ierr = PetscGlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&domeHexact, &gdomeHexact, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&areaexact, &gareaexact, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&domeHexact, &gdomeHexact, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&areaexact, &gareaexact, grid.com); CHKERRQ(ierr);
 
-  ierr = PetscGlobalSum(&vol, &gvol, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&vol, &gvol, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
   volerr = PetscAbsReal(gvol - gvolexact);
   areaerr = PetscAbsReal(garea - gareaexact);
 
-  ierr = PetscGlobalMax(&Herr, &gmaxHerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avHerr, &gavHerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&Herr, &gmaxHerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avHerr, &gavHerr, grid.com); CHKERRQ(ierr);
   gavHerr = gavHerr/(grid.Mx*grid.My);
-  ierr = PetscGlobalMax(&etaerr, &gmaxetaerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&etaerr, &gmaxetaerr, grid.com); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
   centerHerr = PetscAbsReal(gdomeH - gdomeHexact);
 
   return 0;
@@ -867,7 +867,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   PISMVector2    **bvel;
 
   if (testname != 'E')
-    SETERRQ(1,"basal velocity errors only computable for test E\n");
+    SETERRQ(grid.com, 1,"basal velocity errors only computable for test E\n");
 
   IceModelVec2V *vel_adv;
   ierr = stress_balance->get_advective_2d_velocity(vel_adv); CHKERRQ(ierr);
@@ -894,11 +894,11 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vel_adv->end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
   const PetscScalar xpeak = 450e3 * cos(25.0*(pi/180.0)),
@@ -936,7 +936,7 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
   case 'V':
     ierr = test_V_set_thickness_bc(); CHKERRQ(ierr);
     break;
-  default:  SETERRQ(1,"only tests CDHFG have comp source update at start time step\n");
+  default:  SETERRQ(grid.com, 1,"only tests CDHFG have comp source update at start time step\n");
   }
 
   return 0;
@@ -994,7 +994,7 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
   case 'L':
     ierr = fillSolnTestL(); CHKERRQ(ierr);
     break;
-  default:  SETERRQ(1,"unknown testname in IceCompModel");
+  default:  SETERRQ(grid.com, 1,"unknown testname in IceCompModel");
   }
 
   return 0;
@@ -1063,7 +1063,7 @@ PetscErrorCode IceCompModel::reportErrors() {
 
   unsigned int start;
   char filename[TEMPORARY_STRING_LENGTH];
-  PetscTruth netcdf_report;
+  PetscBool netcdf_report;
   NCTimeseries err;
   ierr = PetscOptionsGetString(PETSC_NULL, "-report_file", filename,
 			       TEMPORARY_STRING_LENGTH, &netcdf_report); CHKERRQ(ierr);

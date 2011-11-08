@@ -75,10 +75,10 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = w3->end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMin(&locCFLmaxdt, &CFLmaxdt, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMin(&locCFLmaxdt, &CFLmaxdt, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -117,7 +117,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   ierr = vel_advective->end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
   return 0;
 }
 

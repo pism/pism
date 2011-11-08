@@ -139,13 +139,13 @@ PetscErrorCode BlatterStressBalance::init(PISMVars &vars) {
   variables = &vars;
 
   topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (topg == NULL) SETERRQ(1, "bedrock_altitude is not available");
+  if (topg == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
 
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (usurf == NULL) SETERRQ(1, "surface_altitude is not available");
+  if (usurf == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
   tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
-  if (tauc == NULL) SETERRQ(1, "tauc is not available");
+  if (tauc == NULL) SETERRQ(grid.com, 1, "tauc is not available");
 
   return 0;
 }
@@ -182,8 +182,8 @@ PetscErrorCode BlatterStressBalance::update(bool fast) {
 PetscErrorCode BlatterStressBalance::setup() {
   PetscErrorCode ierr;
   PrmNode **parameters;
-  DA da = (DA)dmmg[0]->dm;
-  ierr =  DAGetPrmNodeArray(da, &parameters); CHKERRQ(ierr);
+  DM da = dmmg[0]->dm;
+  ierr =  DMDAGetPrmNodeArray(da, &parameters); CHKERRQ(ierr);
 
   ierr = topg->begin_access(); CHKERRQ(ierr);
   ierr = usurf->begin_access(); CHKERRQ(ierr);
@@ -202,10 +202,10 @@ PetscErrorCode BlatterStressBalance::setup() {
   ierr = usurf->end_access(); CHKERRQ(ierr);
   ierr = tauc->end_access(); CHKERRQ(ierr);
 
-  ierr =  DARestorePrmNodeArray(da, &parameters); CHKERRQ(ierr);
+  ierr = DMDARestorePrmNodeArray(da, &parameters); CHKERRQ(ierr);
 
-  ierr = DAPrmNodeArrayCommBegin(da); CHKERRQ(ierr);
-  ierr = DAPrmNodeArrayCommEnd(da); CHKERRQ(ierr);
+  ierr = DMDAPrmNodeArrayCommBegin(da); CHKERRQ(ierr);
+  ierr = DMDAPrmNodeArrayCommEnd(da); CHKERRQ(ierr);
 
   return 0;
 }
@@ -215,7 +215,7 @@ PetscErrorCode BlatterStressBalance::mesh_to_regular_grid() {
 
   PISMVector2 ***U;
   PetscScalar *u_ij, *v_ij;
-  ierr = DAVecGetArray((DA)dmmg[0]->dm, dmmg[0]->x, &U); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(dmmg[0]->dm, dmmg[0]->x, &U); CHKERRQ(ierr);
 
   ierr = u.begin_access(); CHKERRQ(ierr);
   ierr = v.begin_access(); CHKERRQ(ierr);
@@ -235,7 +235,7 @@ PetscErrorCode BlatterStressBalance::mesh_to_regular_grid() {
   ierr = v.end_access(); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);
 
-  ierr = DAVecRestoreArray((DA)dmmg[0]->dm, dmmg[0]->x, &U); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(dmmg[0]->dm, dmmg[0]->x, &U); CHKERRQ(ierr);
 
   ierr = u.beginGhostComm(); CHKERRQ(ierr);
   ierr = v.beginGhostComm(); CHKERRQ(ierr);
@@ -288,9 +288,9 @@ PetscErrorCode BlatterStressBalance::get_max_3d_velocity(PetscReal &maxu, PetscR
   ierr = v.end_access(); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&my_umax, &maxu, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&my_vmax, &maxv, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&my_wmax, &maxw, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&my_umax, &maxu, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&my_vmax, &maxv, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&my_wmax, &maxw, grid.com); CHKERRQ(ierr);
 
   return 0;
 }
@@ -306,12 +306,12 @@ PetscErrorCode BlatterStressBalance::extend_the_grid(PetscInt old_Mz) {
 
 PetscErrorCode BlatterStressBalance::compute_basal_frictional_heating() {
   PetscErrorCode ierr;
-  SETERRQ(1, "not implemented");
+  SETERRQ(grid.com, 1, "not implemented");
   return 0;
 }
 
 PetscErrorCode BlatterStressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
-  SETERRQ(1, "not implemented");
+  SETERRQ(grid.com, 1, "not implemented");
   return 0;
 }

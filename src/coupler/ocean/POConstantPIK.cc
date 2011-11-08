@@ -47,7 +47,7 @@ PetscErrorCode POConstantPIK::init(PISMVars &vars) {
   }
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (!ice_thickness) { SETERRQ(1, "ERROR: ice thickness is not available"); }
+  if (!ice_thickness) { SETERRQ(grid.com, 1, "ERROR: ice thickness is not available"); }
 
   return 0;
 }

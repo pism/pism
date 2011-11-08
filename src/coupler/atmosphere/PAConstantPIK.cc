@@ -66,10 +66,10 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
   }
 
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (usurf == NULL) SETERRQ(1, "surface_altitude is not available");
+  if (usurf == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
   lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-  if (lat == NULL) SETERRQ(1, "latitude is not available");
+  if (lat == NULL) SETERRQ(grid.com, 1, "latitude is not available");
 
   airtemp_var.init_2d("airtemp", grid);
   airtemp_var.set_string("pism_intent", "diagnostic");

@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include <cmath>
-#include <petscda.h>
+#include <petscdmda.h>
 
 #include "iceModel.hh"
 #include "Mask.hh"
@@ -75,7 +75,7 @@ PetscErrorCode IceModel::findIceBergCandidates() {
   PetscReal sea_level;
   if (ocean != NULL) {
     ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
+  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
 
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
@@ -274,7 +274,7 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vh.end_access(); CHKERRQ(ierr);
   
-  ierr = PetscGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   cumulative_discharge_flux     += discharge_flux     * factor;
 
@@ -312,7 +312,7 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   PetscReal sea_level;
   if (ocean != NULL) {
     ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
+  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
 
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
@@ -457,7 +457,7 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   
-  ierr = PetscGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   cumulative_discharge_flux     += discharge_flux     * factor;
 

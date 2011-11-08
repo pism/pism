@@ -76,10 +76,10 @@ PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
   ierr = verbPrintf(2,grid.com,"  using the regional version of the SIA solver...\n"); CHKERRQ(ierr);
 
   no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
-  if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
+  if (no_model_mask == NULL) SETERRQ(grid.com, 1, "no_model_mask is not available");
 
   usurfstore = dynamic_cast<IceModelVec2S*>(vars.get("usurfstore"));
-  if (usurfstore == NULL) SETERRQ(1, "usurfstore is not available");
+  if (usurfstore == NULL) SETERRQ(grid.com, 1, "usurfstore is not available");
 
   return 0;
 }
@@ -183,13 +183,13 @@ PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
   }
 
   no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
-  if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
+  if (no_model_mask == NULL) SETERRQ(grid.com, 1, "no_model_mask is not available");
 
   usurfstore = dynamic_cast<IceModelVec2S*>(vars.get("usurfstore"));
-  if (usurfstore == NULL) SETERRQ(1, "usurfstore is not available");
+  if (usurfstore == NULL) SETERRQ(grid.com, 1, "usurfstore is not available");
 
   thkstore = dynamic_cast<IceModelVec2S*>(vars.get("thkstore"));
-  if (thkstore == NULL) SETERRQ(1, "thkstore is not available");
+  if (thkstore == NULL) SETERRQ(grid.com, 1, "thkstore is not available");
 
   return 0;
 }
@@ -258,7 +258,7 @@ PetscErrorCode PISMRegionalDefaultYieldStress::init(PISMVars &vars) {
     "  using the regional version with strong till in no_model_mask==1 area ...\n");
     CHKERRQ(ierr);
   no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
-  if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
+  if (no_model_mask == NULL) SETERRQ(grid.com, 1, "no_model_mask is not available");
   return 0;
 }
 

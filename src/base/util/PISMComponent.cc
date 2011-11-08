@@ -30,7 +30,7 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
 					      int &start    //!< "start" to use when reading from filename
 					      ) {
   PetscErrorCode ierr;
-  PetscTruth i_set, boot_file_set;
+  PetscBool i_set, boot_file_set;
 
   // read file names:
   char i_file[PETSC_MAX_PATH_LEN], boot_file_file[PETSC_MAX_PATH_LEN];

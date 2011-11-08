@@ -89,10 +89,10 @@ PetscErrorCode enthSystemCtx::initThisColumn(bool my_ismarginal,
                                              PetscScalar my_lambda,
                                              PetscReal /*ice_thickness*/) {
 #if (PISM_DEBUG==1)
-  if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
+  if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(PETSC_COMM_SELF, 2,
      "setSchemeParamsThisColumn() should only be called after\n"
      "  initAllColumns() in enthSystemCtx"); }
-  if (lambda >= 0.0) {  SETERRQ(3,
+  if (lambda >= 0.0) {  SETERRQ(PETSC_COMM_SELF, 3,
      "setSchemeParamsThisColumn() called twice (?) in enthSystemCtx"); }
 #endif
   ismarginal = my_ismarginal;
@@ -106,7 +106,7 @@ PetscErrorCode enthSystemCtx::initThisColumn(bool my_ismarginal,
 PetscErrorCode enthSystemCtx::setBoundaryValuesThisColumn(
             PetscScalar my_Enth_surface) {
 #if (PISM_DEBUG==1)
-  if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
+  if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(PETSC_COMM_SELF, 2,
      "setBoundaryValuesThisColumn() should only be called after\n"
      "  initAllColumns() in enthSystemCtx"); }
 #endif
@@ -123,9 +123,9 @@ PetscErrorCode enthSystemCtx::viewConstants(
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
   }
 
-  PetscTruth iascii;
-  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
-  if (!iascii) { SETERRQ(1,"Only ASCII viewer for enthSystemCtx::viewConstants()\n"); }
+  PetscBool iascii;
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
+  if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for enthSystemCtx::viewConstants()\n"); }
   
   ierr = PetscViewerASCIIPrintf(viewer,
                    "\n<<VIEWING enthSystemCtx with prefix '%s':\n",prefix.c_str()); CHKERRQ(ierr);
@@ -166,9 +166,9 @@ PetscErrorCode enthSystemCtx::viewConstants(
 
 PetscErrorCode enthSystemCtx::checkReadyToSolve() {
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {
-    SETERRQ(2,  "not ready to solve: need initAllColumns() in enthSystemCtx"); }
+    SETERRQ(PETSC_COMM_SELF, 2,  "not ready to solve: need initAllColumns() in enthSystemCtx"); }
   if (lambda < 0.0) {
-    SETERRQ(3,  "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx"); }
+    SETERRQ(PETSC_COMM_SELF, 3,  "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx"); }
   return 0;
 }
 
@@ -183,7 +183,7 @@ PetscErrorCode enthSystemCtx::setDirichletBasal(PetscScalar Y) {
   PetscErrorCode ierr;
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
-    SETERRQ(1, "setting basal boundary conditions twice in enthSystemCtx");
+    SETERRQ(PETSC_COMM_SELF, 1, "setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
   a0 = 1.0;
@@ -216,7 +216,7 @@ PetscErrorCode enthSystemCtx::setBasalHeatFlux(PetscScalar hf) {
 #if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
-    SETERRQ(1, "setting basal boundary conditions twice in enthSystemCtx");
+    SETERRQ(PETSC_COMM_SELF, 1, "setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
   // extract K from R[0], so this code works even if K=K(T)
@@ -286,7 +286,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
 #if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((gsl_isnan(a0)) || (gsl_isnan(a1)) || (gsl_isnan(b))) {
-    SETERRQ(1, "solveThisColumn() should only be called after\n"
+    SETERRQ(PETSC_COMM_SELF, 1, "solveThisColumn() should only be called after\n"
                "  setting basal boundary condition in enthSystemCtx"); }
 #endif
   // k=0 equation is already established

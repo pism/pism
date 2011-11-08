@@ -37,7 +37,7 @@ PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   if (atmosphere == NULL)
-    SETERRQ(1, "PISMSurfaceModel::init(PISMVars &vars): atmosphere == NULL");
+    SETERRQ(grid.com, 1, "PISMSurfaceModel::init(PISMVars &vars): atmosphere == NULL");
 
   ierr = atmosphere->init(vars); CHKERRQ(ierr);
 
@@ -110,7 +110,7 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   if (atmosphere == NULL)
-    SETERRQ(1, "PISMSurfaceModel::init(PISMVars &vars): atmosphere == NULL");
+    SETERRQ(grid.com, 1, "PISMSurfaceModel::init(PISMVars &vars): atmosphere == NULL");
 
   ierr = atmosphere->init(vars); CHKERRQ(ierr);
 
@@ -379,7 +379,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
     lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
     if (!lat)
-      SETERRQ(10, "ERROR: 'latitude' is not available or is wrong type in dictionary");
+      SETERRQ(grid.com, 10, "ERROR: 'latitude' is not available or is wrong type in dictionary");
   } else
     lat = NULL;
 
@@ -394,10 +394,10 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
     lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
     if (!lon)
-      SETERRQ(11, "ERROR: 'longitude' is not available or is wrong type in dictionary");
+      SETERRQ(grid.com, 11, "ERROR: 'longitude' is not available or is wrong type in dictionary");
     usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
     if (!usurf)
-      SETERRQ(12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
+      SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 
     faustogreve = new FaustoGrevePDDObject(grid, config);
   } else {
@@ -507,9 +507,9 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   }
 
   if (faustogreve != NULL) {
-    if (lat == NULL) { SETERRQ(1,"faustogreve object is allocated BUT lat==NULL"); }
-    if (lon == NULL) { SETERRQ(2,"faustogreve object is allocated BUT lon==NULL"); }
-    if (usurf == NULL) { SETERRQ(3,"faustogreve object is allocated BUT usurf==NULL"); }
+    if (lat == NULL) { SETERRQ(grid.com, 1,"faustogreve object is allocated BUT lat==NULL"); }
+    if (lon == NULL) { SETERRQ(grid.com, 2,"faustogreve object is allocated BUT lon==NULL"); }
+    if (usurf == NULL) { SETERRQ(grid.com, 3,"faustogreve object is allocated BUT usurf==NULL"); }
     ierr = lon->begin_access(); CHKERRQ(ierr);
     ierr = usurf->begin_access(); CHKERRQ(ierr);
     ierr = faustogreve->update_temp_mj(usurf, lat, lon); CHKERRQ(ierr);
@@ -518,7 +518,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   const PetscScalar sigmalapserate = config.get("pdd_std_dev_lapse_lat_rate"),
                     sigmabaselat   = config.get("pdd_std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
-    if (lat == NULL) { SETERRQ(4,"pdd_std_dev_lapse_lat_rate is nonzero BUT lat==NULL"); }
+    if (lat == NULL) { SETERRQ(grid.com, 4,"pdd_std_dev_lapse_lat_rate is nonzero BUT lat==NULL"); }
   }
 
   DegreeDayFactors  ddf = base_ddf;
@@ -583,8 +583,8 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   }
 
   if (faustogreve != NULL) {
-    ierr = lon->end_access(); CHKERRQ(ierr)
-    ierr = usurf->end_access(); CHKERRQ(ierr)
+    ierr = lon->end_access(); CHKERRQ(ierr);
+    ierr = usurf->end_access(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -680,9 +680,9 @@ void PSForceThickness::attach_atmosphere_model(PISMAtmosphereModel *input) {
 PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   PetscErrorCode ierr;
   char fttfile[PETSC_MAX_PATH_LEN] = "";
-  PetscTruth opt_set;
+  PetscBool opt_set;
   PetscScalar fttalpha;
-  PetscTruth  fttalphaSet;
+  PetscBool  fttalphaSet;
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -708,7 +708,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 		    "* Initializing force-to-thickness mass-balance modifier...\n"); CHKERRQ(ierr);
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (!ice_thickness) SETERRQ(1, "ERROR: land_ice_thickness is not available");
+  if (!ice_thickness) SETERRQ(grid.com, 1, "ERROR: land_ice_thickness is not available");
 
   ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr); // name to read by
   ierr = target_thickness.set_attrs( // set attributes for the read stage; see below for reset

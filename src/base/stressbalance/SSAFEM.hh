@@ -41,15 +41,15 @@ class SSAFEM;
  this requirement, and allows for passing the callback on to an honest 
  SSAFEM object. */
 struct SSAFEM_SNESCallbackData {
-  DA           da;
+  DM           da;
   SSAFEM      *ssa;
 };
 
 //! SNES callbacks.  
 /*! These simply forward the call on to the SSAFEM memeber of the SSAFEM_SNESCallbackData */
-PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, 
-                                                      PISMVector2 **, SSAFEM_SNESCallbackData *);
-PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
+PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, 
+                             PISMVector2 **, SSAFEM_SNESCallbackData *);
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
 
 //! Factory function for constructing a new SSAFEM.
 SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
@@ -62,8 +62,8 @@ The SSAFEM duplicates the functionality of SSAFD, using the finite element metho
 */
 class SSAFEM : public SSA
 {
-  friend PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, PISMVector2 **, SSAFEM_SNESCallbackData *);
-  friend PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
+  friend PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, PISMVector2 **, SSAFEM_SNESCallbackData *);
+  friend PetscErrorCode SSAFEJacobian(DMDALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
 public:
   SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
          const NCConfigVariable &c) :
@@ -98,9 +98,9 @@ protected:
 
   virtual PetscErrorCode deallocate_fem();
 
-  virtual PetscErrorCode compute_local_function(DALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg);
+  virtual PetscErrorCode compute_local_function(DMDALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg);
 
-  virtual PetscErrorCode compute_local_jacobian(DALocalInfo *info, const PISMVector2 **xg, Mat J);
+  virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const PISMVector2 **xg, Mat J);
 
   virtual PetscErrorCode solve();
   

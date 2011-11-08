@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009 Ed Bueler
+// Copyright (C) 2007--2009, 2011 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -53,7 +53,7 @@ public:
   BedDeformLC();
   ~BedDeformLC();
   PetscErrorCode settings(const NCConfigVariable &config,
-			  PetscTruth  myinclude_elastic,
+			  PetscBool  myinclude_elastic,
                           PetscInt myMx, PetscInt myMy, PetscScalar mydx, PetscScalar mydy,
                           PetscInt myZ, PetscScalar myicerho,
                           Vec* myHstart, Vec* mybedstart, Vec* myuplift,  // initial state
@@ -65,7 +65,7 @@ public:
   PetscErrorCode step(const PetscScalar dtyear, const PetscScalar yearFromStart);
 
 protected:
-  PetscTruth    include_elastic;
+  PetscBool    include_elastic;
   PetscInt      Mx, My;
   PetscScalar   dx, dy;
   PetscInt      Z;       // factor by which fat FFT domain is larger than 
@@ -77,7 +77,7 @@ protected:
   
 private:
   PetscScalar   standard_gravity;
-  PetscTruth    settingsDone, allocDone;
+  PetscBool    settingsDone, allocDone;
   PetscInt      Nx, Ny,      // fat sizes
                 Nxge, Nyge;  // fat with boundary sizes
   PetscInt      i0_plate,  j0_plate; // indices into fat array for corner of thin

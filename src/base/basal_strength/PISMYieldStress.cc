@@ -98,19 +98,19 @@ PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
   ierr = verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n"); CHKERRQ(ierr);
 
   basal_water_thickness = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
-  if (basal_water_thickness == NULL) SETERRQ(1, "bwat is not available");
+  if (basal_water_thickness == NULL) SETERRQ(grid.com, 1, "bwat is not available");
 
   basal_melt_rate = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
-  if (basal_melt_rate == NULL) SETERRQ(1, "bmelt is not available");
+  if (basal_melt_rate == NULL) SETERRQ(grid.com, 1, "bmelt is not available");
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (ice_thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (ice_thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   bed_topography = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed_topography == NULL) SETERRQ(1, "bedrock_altitude is not available");
+  if (bed_topography == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(1, "mask is not available");
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling the basal till yield stress model", ""); CHKERRQ(ierr);
   {
@@ -408,11 +408,11 @@ PetscErrorCode PISMDefaultYieldStress::topg_to_phi() {
   PetscReal   inarray[5] = {5.0, 15.0, -1000.0, 1000.0, 10.0};
 
   // read comma-separated array of zero to five values
-  PetscTruth  topg_to_phi_set;
+  PetscBool  topg_to_phi_set;
   ierr = PetscOptionsGetRealArray(PETSC_NULL, "-topg_to_phi", inarray, &Nparam, &topg_to_phi_set);
   CHKERRQ(ierr);
   if (topg_to_phi_set != PETSC_TRUE) {
-    SETERRQ(1, "HOW DID I GET HERE? ... ending...\n");
+    SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
   }
 
   if ((Nparam > 5) || (Nparam < 4)) {

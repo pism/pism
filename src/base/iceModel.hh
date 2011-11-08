@@ -256,7 +256,7 @@ protected:
               t_TempAge,  //!< time of last update for enthalpy/temperature
               dt_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
-              CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
+              CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
@@ -275,8 +275,8 @@ protected:
   PetscScalar standard_gravity;
 
   // flags
-  PetscTruth  shelvesDragToo, allowAboveMelting;
-  PetscTruth  repeatRedist, putOnTop;
+  PetscBool  shelvesDragToo, allowAboveMelting;
+  PetscBool  repeatRedist, putOnTop;
   char        adaptReasonFlag;
 
   string      stdout_flags, stdout_ssa;
@@ -380,7 +380,7 @@ protected:
   virtual PetscErrorCode ageStats(PetscScalar ivol, PetscScalar &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(
-              PetscTruth printPrototype, bool tempAndAge,
+              PetscBool printPrototype, bool tempAndAge,
               PetscScalar year, PetscScalar delta_t, 
               PetscScalar volume, PetscScalar area,
               PetscScalar meltfrac, PetscScalar max_diffusivity);

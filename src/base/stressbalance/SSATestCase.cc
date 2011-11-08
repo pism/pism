@@ -213,15 +213,15 @@ PetscErrorCode SSATestCase::report()
   ierr = vel_ssa->end_access(); CHKERRQ(ierr);
 
 
-  ierr = PetscGlobalMax(&exactvelmax, &gexactvelmax,grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&maxuerr, &gmaxuerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avuerr, &gavuerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&exactvelmax, &gexactvelmax,grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxuerr, &gmaxuerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avuerr, &gavuerr, grid.com); CHKERRQ(ierr);
   gavuerr = gavuerr/(grid.Mx*grid.My);
-  ierr = PetscGlobalSum(&avverr, &gavverr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avverr, &gavverr, grid.com); CHKERRQ(ierr);
   gavverr = gavverr/(grid.Mx*grid.My);
-  ierr = PetscGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
   ierr = verbPrintf(1,grid.com, 

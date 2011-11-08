@@ -192,10 +192,10 @@ protected:
     ierr = reference_surface.init(filename); CHKERRQ(ierr);
 
     surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-    if (!surface) SETERRQ(1, "ERROR: 'usurf' is not available or is wrong type in dictionary");
+    if (!surface) SETERRQ(g.com, 1, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 
     thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-    if (!thk) SETERRQ(1, "ERROR: 'ice thickness' is not available or is wrong type in dictionary");
+    if (!thk) SETERRQ(g.com, 1, "ERROR: 'ice thickness' is not available or is wrong type in dictionary");
 
     return 0;
   }

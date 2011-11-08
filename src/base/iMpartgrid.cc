@@ -18,7 +18,7 @@
 
 #include <cmath>
 #include <cstring>
-#include <petscda.h>
+#include <petscdmda.h>
 
 #include "iceModel.hh"
 #include "Mask.hh"
@@ -104,7 +104,7 @@ PetscReal IceModel::get_average_thickness(bool do_redist, planeStar<int> M, plan
   if (m.floating_ice(M.s)) { H_average += H.s; N++; }
 
   if (N == 0) {
-    SETERRQ(1, "N == 0;  call this only if a neighbor is floating!\n");
+    SETERRQ(grid.com, 1, "N == 0;  call this only if a neighbor is floating!\n");
   }
 
   H_average = H_average / N;
@@ -155,7 +155,7 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
   IceModelVec2S vHresidualnew = vWork2d[1];
   ierr = vHresidual.copy_to(vHresidualnew); CHKERRQ(ierr);
 
-  if (ocean == PETSC_NULL) { SETERRQ(1, "PISM ERROR: ocean == PETSC_NULL");  }
+  if (ocean == PETSC_NULL) { SETERRQ(grid.com, 1, "PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal sea_level = 0.0; //FIXME
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
@@ -265,7 +265,7 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
   ierr = vHresidualnew.end_access(); CHKERRQ(ierr);
   
   PetscScalar gHcut; //check, if redistribution should be run once more
-  ierr = PetscGlobalSum(&Hcut, &gHcut, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&Hcut, &gHcut, grid.com); CHKERRQ(ierr);
   putOnTop = PETSC_FALSE;
   if (gHcut > 0.0) {
     repeatRedist = PETSC_TRUE;

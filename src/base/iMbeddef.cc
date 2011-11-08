@@ -66,7 +66,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
 PetscErrorCode IceModel::bed_def_step(bool &bed_changed) {
   PetscErrorCode  ierr;
 
-  if (beddef == NULL) SETERRQ(1, "beddef == NULL");
+  if (beddef == NULL) SETERRQ(grid.com, 1, "beddef == NULL");
 
   double update_interval = config.get("bed_def_interval_years", "years", "seconds");
 

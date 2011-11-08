@@ -44,18 +44,18 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
 
   // initialize pointers to fields the parameterization depends on:
   surfelev = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (!surfelev) SETERRQ(1, "ERROR: surface_altitude is not available");
+  if (!surfelev) SETERRQ(grid.com, 1, "ERROR: surface_altitude is not available");
 
   lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-  if (!lat) SETERRQ(1, "ERROR: latitude is not available");
+  if (!lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
 
   lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-  if (!lon) SETERRQ(1, "ERROR: longitude is not available");
+  if (!lon) SETERRQ(grid.com, 1, "ERROR: longitude is not available");
 
   ierr = PISMOptionsIsSet("-paleo_precip", paleo_precipitation_correction); CHKERRQ(ierr);
 
   if (paleo_precipitation_correction) {
-    PetscTruth dTforcing_set;
+    PetscBool dTforcing_set;
     char dT_file[PETSC_MAX_PATH_LEN];
 
     ierr = PetscOptionsString("-dTforcing", "Specifies the air temperature offsets file",

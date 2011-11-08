@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petscda.h>
+#include <petscdmda.h>
 #include "iceModelVec.hh"
 #include "columnSystem.hh"
 #include "iceModel.hh"
@@ -68,14 +68,14 @@ ageSystemCtx::ageSystemCtx(PetscInt my_Mz, string my_prefix)
 
 PetscErrorCode ageSystemCtx::initAllColumns() {
   // check whether each parameter & pointer got set
-  if (dx <= 0.0) { SETERRQ(2,"un-initialized dx in ageSystemCtx"); }
-  if (dy <= 0.0) { SETERRQ(3,"un-initialized dy in ageSystemCtx"); }
-  if (dtAge <= 0.0) { SETERRQ(4,"un-initialized dtAge in ageSystemCtx"); }
-  if (dzEQ <= 0.0) { SETERRQ(5,"un-initialized dzEQ in ageSystemCtx"); }
-  if (u == NULL) { SETERRQ(6,"un-initialized pointer u in ageSystemCtx"); }
-  if (v == NULL) { SETERRQ(7,"un-initialized pointer v in ageSystemCtx"); }
-  if (w == NULL) { SETERRQ(8,"un-initialized pointer w in ageSystemCtx"); }
-  if (tau3 == NULL) { SETERRQ(9,"un-initialized pointer tau3 in ageSystemCtx"); }
+  if (dx <= 0.0) { SETERRQ(PETSC_COMM_SELF, 2,"un-initialized dx in ageSystemCtx"); }
+  if (dy <= 0.0) { SETERRQ(PETSC_COMM_SELF, 3,"un-initialized dy in ageSystemCtx"); }
+  if (dtAge <= 0.0) { SETERRQ(PETSC_COMM_SELF, 4,"un-initialized dtAge in ageSystemCtx"); }
+  if (dzEQ <= 0.0) { SETERRQ(PETSC_COMM_SELF, 5,"un-initialized dzEQ in ageSystemCtx"); }
+  if (u == NULL) { SETERRQ(PETSC_COMM_SELF, 6,"un-initialized pointer u in ageSystemCtx"); }
+  if (v == NULL) { SETERRQ(PETSC_COMM_SELF, 7,"un-initialized pointer v in ageSystemCtx"); }
+  if (w == NULL) { SETERRQ(PETSC_COMM_SELF, 8,"un-initialized pointer w in ageSystemCtx"); }
+  if (tau3 == NULL) { SETERRQ(PETSC_COMM_SELF, 9,"un-initialized pointer tau3 in ageSystemCtx"); }
   nuEQ = dtAge / dzEQ; // derived constant
   initAllDone = true;
   return 0;
@@ -84,7 +84,7 @@ PetscErrorCode ageSystemCtx::initAllColumns() {
 
 PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
   PetscErrorCode ierr;
-  if (!initAllDone) {  SETERRQ(2,
+  if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
      "solveThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
 
   // set up system: 0 <= k < ks
@@ -227,7 +227,7 @@ PetscErrorCode IceModel::ageStep() {
                 " with zero pivot position %d; viewing system to m-file ... \n",
             i, j, pivoterr); CHKERRQ(ierr);
           ierr = system.reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
-          SETERRQ(1,"PISM ERROR in ageStep()\n");
+          SETERRQ(grid.com, 1,"PISM ERROR in ageStep()\n");
         }
         if (viewOneColumn && issounding(i,j)) {
           ierr = PetscPrintf(PETSC_COMM_SELF,

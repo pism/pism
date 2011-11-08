@@ -22,7 +22,7 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <petscda.h>
+#include <petscdmda.h>
 #include "udunits.h"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in

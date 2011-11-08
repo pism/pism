@@ -37,13 +37,13 @@ typedef struct {
 typedef enum {THIASSEMBLY_TRIDIAGONAL,THIASSEMBLY_FULL} THIAssemblyMode;
 
 PetscErrorCode THICreate(MPI_Comm comm, THI *inthi);
-PetscErrorCode THISetup(MPI_Comm comm, DA pism_da2, PetscReal Lx, PetscReal Ly, THI thi, DMMG **dmmg);
+PetscErrorCode THISetup(MPI_Comm comm, DM pism_da2, PetscReal Lx, PetscReal Ly, THI thi, DMMG **dmmg);
 PetscErrorCode THIDestroy(THI thi);
 
-PetscErrorCode DAGetPrmNodeArray(DA da, PrmNode ***prm);
-PetscErrorCode DARestorePrmNodeArray(DA da, PrmNode ***prm);
+PetscErrorCode DMDAGetPrmNodeArray(DM da, PrmNode ***prm);
+PetscErrorCode DMDARestorePrmNodeArray(DM da, PrmNode ***prm);
 
-PetscErrorCode DAPrmNodeArrayCommBegin(DA da);
-PetscErrorCode DAPrmNodeArrayCommEnd(DA da);
+PetscErrorCode DMDAPrmNodeArrayCommBegin(DM da);
+PetscErrorCode DMDAPrmNodeArrayCommEnd(DM da);
 
 #endif /* _THI_H_ */

@@ -19,7 +19,7 @@
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
 
-#include <petscda.h>
+#include <petscdmda.h>
 
 #include "iceModel.hh"
 #include "PISMIO.hh"
@@ -641,7 +641,7 @@ PetscErrorCode IceModel::allocate_stressbalance() {
         } else if(ssa_method == "fem") {
           my_stress_balance = new SSAFEM(grid, *basal, *ice, *EC, config);
         } else {
-          SETERRQ(1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
+          SETERRQ(grid.com, 1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
         }
       } else {
         my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
@@ -764,11 +764,11 @@ PetscErrorCode IceModel::init_couplers() {
 
   if (surface != PETSC_NULL) {
     ierr = surface->init(variables); CHKERRQ(ierr);
-  } else {  SETERRQ(2,"PISM ERROR: surface == PETSC_NULL");  }
+  } else {  SETERRQ(grid.com, 2,"PISM ERROR: surface == PETSC_NULL");  }
 
   if (ocean != PETSC_NULL) {
     ierr = ocean->init(variables); CHKERRQ(ierr);
-  } else {  SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL");  }
+  } else {  SETERRQ(grid.com, 2,"PISM ERROR: ocean == PETSC_NULL");  }
 
   return 0;
 }

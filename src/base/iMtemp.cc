@@ -41,22 +41,22 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
                     massmelted = dE / L;
 
   if (allowAboveMelting == PETSC_TRUE) {
-    SETERRQ(1,"IceModel::excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
+    SETERRQ(grid.com, 1,"IceModel::excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
   }
   if (*Texcess >= 0.0) {
-    // T is at or above pressure-melting temp, so temp needs to be set to 
+    // T is at or above pressure-melting temp, so temp needs to be set to
     // pressure-melting; a fraction of excess energy is turned into melt water at base
     // note massmelted is POSITIVE!
     const PetscScalar FRACTION_TO_BASE
                          = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
     // note: ice-equiv thickness:
-    *bwat += (FRACTION_TO_BASE * massmelted) / (rho * darea);  
+    *bwat += (FRACTION_TO_BASE * massmelted) / (rho * darea);
     *Texcess = 0.0;
   } else {  // neither Texcess nor bwat needs to change if Texcess < 0.0
     // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
     // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
     if (z > 0.00001) {
-      SETERRQ(1, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
+      SETERRQ(grid.com, 1, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
     }
     if (*bwat > 0.0) {
       const PetscScalar thicknessToFreezeOn = - massmelted / (rho * darea);
@@ -68,7 +68,7 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
         const PetscScalar dTemp = L * (*bwat) / (c * dz);
         *Texcess += dTemp;
       }
-    } 
+    }
     // note: if *bwat == 0 and Texcess < 0.0 then Texcess unmolested; temp will go down
   }
   return 0;
@@ -85,27 +85,27 @@ This method should be kept because it is worth having alternative physics, and
   implementation of the conservation of energy principle.
 
   The conservation of energy equation written in terms of temperature is
-  \f[ \rho c_p(T) \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma,\f] 
+  \f[ \rho c_p(T) \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma,\f]
   where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shallow approximation
   of the full 3D conservation of energy.  Note \f$dT/dt\f$ stands for the material
-  derivative, so advection is included.  Here \f$\rho\f$ is the density of ice, 
+  derivative, so advection is included.  Here \f$\rho\f$ is the density of ice,
   \f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
   strain heating (with SI units of \f$J/(\text{s} \text{m}^3) = \text{W}\,\text{m}^{-3}\f$).
 
   We handle horizontal advection explicitly by first-order upwinding.  We handle
   vertical advection implicitly by centered differencing when possible, and retreat to
   implicit first-order upwinding when necessary.  There is a CFL condition
-  for the horizontal explicit upwinding [\ref MortonMayers].  We report 
+  for the horizontal explicit upwinding [\ref MortonMayers].  We report
   any CFL violations, but they are designed to not occur.
 
   The vertical conduction term is always handled implicitly (%i.e. by backward Euler).
 
     We work from the bottom of the column upward in building the system to solve
     (in the semi-implicit time-stepping scheme).  The excess energy above pressure melting
-    is converted to melt-water, and that a fraction of this melt water is transported to 
+    is converted to melt-water, and that a fraction of this melt water is transported to
     the ice base according to the scheme in excessToFromBasalMeltLayer().
 
-    The method uses equally-spaced calculation but the methods getValColumn(), 
+    The method uses equally-spaced calculation but the methods getValColumn(),
     setValColumn() interpolate back-and-forth from this equally-spaced calculational
     grid to the (usually) non-equally spaced storage grid.
 
@@ -119,11 +119,11 @@ This method should be kept because it is worth having alternative physics, and
   The (older) scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
   still an extreme and rare fjord situation which causes trouble.  For example, it
   occurs in one column of ice in one fjord perhaps only once
-  in a 200ka simulation of the whole sheet, in my (ELB) experience modeling the Greenland 
-  ice sheet.  It causes the discretized advection bulge to give temperatures below that 
+  in a 200ka simulation of the whole sheet, in my (ELB) experience modeling the Greenland
+  ice sheet.  It causes the discretized advection bulge to give temperatures below that
   of the coldest ice anywhere, a continuum impossibility.  So as a final protection
   there is a "bulge limiter" which sets the temperature to the surface temperature of
-  the column minus the bulge maximum (15 K) if it is below that level.  The number of 
+  the column minus the bulge maximum (15 K) if it is below that level.  The number of
   times this occurs is reported as a "BPbulge" percentage.
   */
 PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
@@ -156,7 +156,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     system.ice_k           = ice_k;
     system.ice_c_p         = ice_c;
 
-    PetscScalar *x;  
+    PetscScalar *x;
     x = new PetscScalar[fMz]; // space for solution of system
 
     // this is bulge limit constant in K; is max amount by which ice
@@ -173,7 +173,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     system.Sigma = new PetscScalar[fMz];
     system.T     = new PetscScalar[fMz];
     Tnew         = new PetscScalar[fMz];
-  
+
     // system needs access to T3 for T3.getPlaneStar_fine()
     system.T3 = &T3;
 
@@ -182,17 +182,17 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
     // now get map-plane fields, starting with coupler fields
     PetscScalar  **bwat, **basalMeltRate;
-  
+
     if (surface != PETSC_NULL) {
       ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
     } else {
-      SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
+      SETERRQ(grid.com, 1,"PISM ERROR: surface == PETSC_NULL");
     }
     if (ocean != PETSC_NULL) {
       ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
       ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
     } else {
-      SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
+      SETERRQ(grid.com, 1,"PISM ERROR: ocean == PETSC_NULL");
     }
 
     IceModelVec2S G0 = vWork2d[0];
@@ -201,7 +201,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     if (btu) {
       ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
     } else {
-      SETERRQ(3,"PISM ERROR: PISMBedThermalUnit* btu == PETSC_NULL in temperatureStep()");
+      SETERRQ(grid.com, 3,"PISM ERROR: PISMBedThermalUnit* btu == PETSC_NULL in temperatureStep()");
     }
 
     ierr = artm.begin_access(); CHKERRQ(ierr);
@@ -218,7 +218,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
 
     IceModelVec3 *u3, *v3, *w3, *Sigma3;
-    ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
+    ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
     ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr);
 
     ierr = Rb->begin_access(); CHKERRQ(ierr);
@@ -244,7 +244,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
         // this should *not* be replaced by call to grid.kBelowHeight():
         const PetscInt  ks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
-      
+
         if (ks>0) { // if there are enough points in ice to bother ...
           ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
@@ -256,9 +256,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
           // go through column and find appropriate lambda for BOMBPROOF
           PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
-          for (PetscInt k = 1; k < ks; k++) {   
+          for (PetscInt k = 1; k < ks; k++) {
             const PetscScalar denom = (PetscAbs(system.w[k]) + 0.000001/secpera)
-              * ice_rho * ice_c * fdz;  
+              * ice_rho * ice_c * fdz;
             lambda = PetscMin(lambda, 2.0 * ice_k / denom);
           }
           if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
@@ -268,7 +268,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
                                                  vH(i-1,j),vH(i-1,j-1),vH(i,j-1),vH(i+1,j-1));
           PismMask mask_value = static_cast<PismMask>(vMask.as_int(i,j));
           ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
-          CHKERRQ(ierr);  
+          CHKERRQ(ierr);
 
           // set boundary values for tridiagonal system
           ierr = system.setSurfaceBoundaryValuesThisColumn(artm(i,j)); CHKERRQ(ierr);
@@ -284,7 +284,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
                   " with zero pivot position %d; viewing system to m-file ... \n",
               i, j, pivoterr); CHKERRQ(ierr);
             ierr = system.reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
-            SETERRQ(1,"PISM ERROR in temperatureStep()\n");
+            SETERRQ(grid.com, 1,"PISM ERROR in temperatureStep()\n");
           }
           if (viewOneColumn && issounding(i,j)) {
             ierr = PetscPrintf(grid.com,
@@ -297,13 +297,13 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
         // prepare for melting/refreezing
         PetscScalar bwatnew = bwat[i][j];
-      
+
         // insert solution for generic ice segments
         for (PetscInt k=1; k <= ks; k++) {
           if (allowAboveMelting == PETSC_TRUE) { // in the ice
             Tnew[k] = x[k];
           } else {
-            const PetscScalar 
+            const PetscScalar
               Tpmp = ice->melting_point_temp - ice->beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME task #7297
             if (x[k] > Tpmp) {
               Tnew[k] = Tpmp;
@@ -325,7 +325,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           if (Tnew[k] < artm(i,j) - bulgeMax) {
             Tnew[k] = artm(i,j) - bulgeMax;  bulgeCount++;   }
         }
-      
+
         // insert solution for ice base segment
         if (ks > 0) {
           if (allowAboveMelting == PETSC_TRUE) { // ice/rock interface
@@ -342,7 +342,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             }
             Tnew[0] = Tpmp + Texcess;
             if (Tnew[0] > (Tpmp + 0.00001)) {
-              SETERRQ(1,"updated temperature came out above Tpmp");
+              SETERRQ(grid.com, 1,"updated temperature came out above Tpmp");
             }
           }
           if (Tnew[0] < globalMinAllowedTemp) {
@@ -387,14 +387,14 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           //   *before* limiting bwat.
           basalMeltRate[i][j] = (bwatnew - bwat[i][j]) / dt_TempAge;
           // model loss to undetermined exterior:
-          bwatnew -= bwat_decay_rate * dt_TempAge;  
+          bwatnew -= bwat_decay_rate * dt_TempAge;
           bwat[i][j] = PetscMin(bwat_max, PetscMax(bwatnew, 0.0));
         }
 
-    } 
+    }
   }
-  
-  if (myLowTempCount > maxLowTempCount) { SETERRQ(1,"too many low temps"); }
+
+  if (myLowTempCount > maxLowTempCount) { SETERRQ(grid.com, 1,"too many low temps"); }
 
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
@@ -414,7 +414,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
   ierr = Sigma3->end_access(); CHKERRQ(ierr);
   ierr = T3.end_access(); CHKERRQ(ierr);
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
-  
+
   delete [] x;
   delete [] system.T;  delete [] system.Sigma;
   delete [] system.u;  delete [] system.v;  delete [] system.w;

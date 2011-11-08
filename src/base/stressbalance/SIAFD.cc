@@ -70,23 +70,23 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
                     "* Initializing the SIA stress balance modifier...\n"); CHKERRQ(ierr);
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(1, "mask is not available");
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
   bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
+  if (bed == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   if (config.get_flag("do_age")) {
     age = dynamic_cast<IceModelVec3*>(vars.get("age"));
-    if (age == NULL) SETERRQ(1, "age is not available");
+    if (age == NULL) SETERRQ(grid.com, 1, "age is not available");
   } else {
     age = NULL;
   }
@@ -194,7 +194,7 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
     ierr = surface_gradient_mahaffy(h_x, h_y); CHKERRQ(ierr);
 
   } else {
-    SETERRQ(1, "can't happen");
+    SETERRQ(grid.com, 1, "can't happen");
   }
 
   return 0;
@@ -603,7 +603,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
     ierr = delta[0].end_access(); CHKERRQ(ierr);
   }
 
-  ierr = PetscGlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
 
   delete [] delta_ij;
 
