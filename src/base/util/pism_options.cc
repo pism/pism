@@ -891,18 +891,6 @@ PetscErrorCode set_config_from_options(MPI_Comm com, NCConfigVariable &config) {
   ierr = config.flag_from_option("skip", "do_skip"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("skip_max", "skip_max"); CHKERRQ(ierr);
 
-  // #####
-  // this one needs to go:
-  string skip_arg;
-  ierr = config.scalar_from_option("skip", "skip_max"); CHKERRQ(ierr);
-  ierr = PISMOptionsString("-skip", "", skip_arg, flag); CHKERRQ(ierr);
-  if (flag && skip_arg.size() > 0) {
-    ierr = verbPrintf(2, com,
-                      "PISM WARNING: -skip <number> is deprecated."
-                      " Use -skip to turn on skipping and -skip_max to set the number.\n"); CHKERRQ(ierr);
-  }
-  // #####
-
   // Shortcuts
 
   if (getVerbosityLevel() > 2)  config.set_flag("verbose_pik_messages", true);
