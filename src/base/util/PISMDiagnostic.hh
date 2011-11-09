@@ -63,7 +63,7 @@ public:
   //! \brief Compute a diagnostic quantity and return a pointer to a newly-allocated
   //! IceModelVec. NB: The caller needs to de-allocate it.
   virtual PetscErrorCode compute(IceModelVec* &result) = 0;
-  
+
   //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
   virtual int get_nvars() { return dof; }
 
@@ -90,7 +90,7 @@ public:
 
   //! \brief A method for setting common variable attributes.
   PetscErrorCode set_attrs(string my_long_name,
-                           string my_standard_name, 
+                           string my_standard_name,
                            string my_units,
                            string my_glaciological_units,
                            int N = 0) {
@@ -99,12 +99,12 @@ public:
     if (N >= dof) SETERRQ(grid.com, 1, "invalid N (>= dof)");
 
     vars[N].set_string("pism_intent", "diagnostic");
-    if (my_long_name != "") 
+    if (my_long_name != "")
       vars[N].set_string("long_name", my_long_name);
 
     if (my_standard_name != "")
       vars[N].set_string("standard_name", my_standard_name);
-    
+
     if (my_units != "") {
       ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
     }
@@ -113,7 +113,7 @@ public:
       ierr = vars[N].set_glaciological_units(my_glaciological_units); CHKERRQ(ierr);
     }
 
-    return 0; 
+    return 0;
   }
 protected:
   PISMVars &variables;          //!< dictionary of variables
@@ -151,7 +151,7 @@ public:
   virtual PetscErrorCode save(PetscReal a, PetscReal b) {
     if (ts)
       return ts->interp(a, b);
-      
+
     return 0;
   }
 

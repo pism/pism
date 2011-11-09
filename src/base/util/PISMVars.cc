@@ -63,11 +63,11 @@ void PISMVars::remove(string name) {
   if (v != NULL) {              // the argument is a "short" name
     if (v->has_attr("standard_name")) {
       string std_name = v->string_attr("standard_name");
-      
+
       variables.erase(name);
       standard_names.erase(std_name);
     }
-  } else {          
+  } else {
     v = standard_names[name];
 
     if (v != NULL) {            // the argument is a standard_name
@@ -123,7 +123,7 @@ PetscErrorCode PISMVars::check_for_nan() const {
   set<string>::iterator i = names.begin();
   while (i != names.end()) {
     IceModelVec *var = get(*i);
-    ierr = var->has_nan(); CHKERRQ(ierr); 
+    ierr = var->has_nan(); CHKERRQ(ierr);
     i++;
   }
 

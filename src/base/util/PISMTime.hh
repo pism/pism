@@ -59,9 +59,9 @@ public:
   { reference_date = str; }
 
   //! \brief Advance by delta_t seconds.
-  virtual void step(PetscReal delta_t) 
+  virtual void step(PetscReal delta_t)
   { time_in_seconds += delta_t; }
-  
+
   //! \brief Current time, in seconds.
   virtual PetscReal current()
   { return time_in_seconds; }
