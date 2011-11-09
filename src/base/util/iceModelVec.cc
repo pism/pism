@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2011 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -392,14 +392,14 @@ PetscErrorCode  IceModelVec::set_name(string new_name, int N) {
 }
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec::rename(const string &short_name, const string &long_name, 
-                               const string &standard_name, int N)
+PetscErrorCode IceModelVec::rename(const string &short_name, const string &long_name,
+                                   const string &standard_name, int N)
 {
   if(!short_name.empty()){
-    if (N == 0) name = short_name; 
+    if (N == 0) name = short_name;
     vars[N].short_name = short_name;
   }
-  
+
   if (!long_name.empty()) {
     vars[N].set_string("long_name", long_name);
   }
@@ -409,12 +409,12 @@ PetscErrorCode IceModelVec::rename(const string &short_name, const string &long_
   }
 
   return 0;
-}  
+}
 
 //! Changes the variable's pism_intent.
 PetscErrorCode  IceModelVec::set_intent(string pism_intent, int component)
 {
-  vars[component].set_string("pism_intent", pism_intent);  
+  vars[component].set_string("pism_intent", pism_intent);
   return 0;
 }
 
@@ -939,6 +939,48 @@ void IceModelVec::check_array_indices(int i, int j) {
       (j > grid->ys + grid->ym + ghost_width)) {
     PetscPrintf(grid->com, "ERROR: indices out of range accessing array '%s'. "
                 "It will probably segfault.\n", name.c_str());
+  }
+}
+
+//! \brief Compute parameters for 2D loop computations involving 3
+//! IceModelVecs.
+/*!
+ * Here we assume that z is updated using a local (point-wise) computation
+ * involving x and y.
+ *
+ * "ghosts" is the width of the stencil that can be updated locally.
+ * "scatter" is false if all ghosts can be updated locally.
+ */
+void compute_params(IceModelVec* const x, IceModelVec* const y,
+                    IceModelVec* const z, int &ghosts, bool &scatter) {
+
+  // We have 2^3=8 cases here (x,y,z having or not having ghosts).
+  if (z->has_ghosts() == false) {
+    // z has no ghosts; we can update everything locally
+    // (This covers 4 cases.)
+    ghosts = 0;
+    scatter = false;
+  } else if (x->has_ghosts() == false ||
+             y->has_ghosts() == false) {
+    // z has ghosts, but at least one of x and y does not. we have to scatter
+    // ghosts.
+    // (This covers 3 cases.)
+    ghosts = 0;
+    scatter = true;
+  } else {
+    // all of x, y, z have ghosts
+    // (The remaining 8-th case.)
+    if (z->get_stencil_width() <= x->get_stencil_width() &&
+        z->get_stencil_width() <= y->get_stencil_width()) {
+      // x and y have enough ghosts to update ghosts of z locally
+      ghosts = z->get_stencil_width();
+      scatter = false;
+    } else {
+      // z has ghosts, but at least one of x and y doesn't have a wide enough
+      // stencil
+      ghosts = 0;
+      scatter = true;
+    }
   }
 }
 

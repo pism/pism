@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2011 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -191,9 +191,9 @@ public:
   virtual vector<double>  array_attr(string name, int component = 0);
   virtual PetscErrorCode  set_attrs(string my_pism_intent, string my_long_name,
 				    string my_units, string my_standard_name, int component = 0);
-  virtual PetscErrorCode  rename(const string &short_name, const string &long_name, 
-                                 const string &standard_name, int component=0);
-  virtual PetscErrorCode  set_intent(string pism_intent, int component=0);
+  virtual PetscErrorCode  rename(const string &short_name, const string &long_name,
+                                 const string &standard_name, int component = 0);
+  virtual PetscErrorCode  set_intent(string pism_intent, int component = 0);
   virtual NCSpatialVariable get_metadata(int N);
   virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);
@@ -271,6 +271,8 @@ struct planeStar {
   T ij, e, w, n, s;
 };
 
+class IceModelVec2S;
+
 //! Class for a 2d DA-based Vec.
 class IceModelVec2 : public IceModelVec {
 public:
@@ -284,8 +286,8 @@ public:
   virtual PetscErrorCode regrid(string filename, bool critical, int start = 0);
   virtual PetscErrorCode regrid(string filename, PetscScalar default_value);
   // component-wise access:
-  virtual PetscErrorCode get_component(int n, IceModelVec2 &result);
-  virtual PetscErrorCode set_component(int n, IceModelVec2 &source);
+  virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
+  virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
 protected:
   virtual PetscErrorCode create(IceGrid &my_grid, string my_short_name, bool has_ghosts,
                                 int stencil_width, int dof);
@@ -305,9 +307,17 @@ public:
   virtual PetscErrorCode  create(IceGrid &my_grid, string my_name, bool has_ghosts, int width = 1);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
+  using IceModelVec::copy_to;
+  using IceModelVec::copy_from;
+  virtual PetscErrorCode  copy_to(IceModelVec &destination);
+  virtual PetscErrorCode  copy_from(IceModelVec &source);
   PetscErrorCode  get_array(PetscScalar** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
   virtual PetscErrorCode mask_by(IceModelVec2S &M, PetscScalar fill = 0.0);
+  virtual PetscErrorCode add(PetscScalar alpha, IceModelVec &x);
+  virtual PetscErrorCode add(PetscScalar alpha, IceModelVec &x, IceModelVec &result);
+  virtual PetscErrorCode multiply_by(IceModelVec &x, IceModelVec &result);
+  virtual PetscErrorCode multiply_by(IceModelVec &x);
   virtual PetscErrorCode sum(PetscScalar &result);
   virtual PetscErrorCode min(PetscScalar &result);
   virtual PetscErrorCode max(PetscScalar &result);
@@ -342,7 +352,7 @@ public:
     check_array_indices(i, j-1);
 #endif
     planeStar<PetscScalar> result;
-  
+
     result.ij = operator()(i,j);
     result.e =  operator()(i+1,j);
     result.w =  operator()(i-1,j);
@@ -389,16 +399,76 @@ public:
 //! \brief A class representing a horizontal velocity at a certain grid point.
 class PISMVector2 {
 public:
-  PetscScalar u, v;
+  PISMVector2() : u(0), v(0) {}
+  PISMVector2(PetscScalar a, PetscScalar b) : u(a), v(b) {}
+
   //! Magnitude squared.
-  PetscScalar magnitude_squared() const {
+  inline PetscScalar magnitude_squared() const {
     return u*u + v*v;
   }
   //! Magnitude.
-  PetscScalar magnitude() const {
+  inline PetscScalar magnitude() const {
     return sqrt(magnitude_squared());
   }
+
+  inline PISMVector2& operator=(const PISMVector2 &other) {
+    // NOTE: we don't check for self-assignment because there is no memory
+    // (de-)allocation here.
+    u = other.u;
+    v = other.v;
+    return *this;
+  }
+
+  inline PISMVector2& operator+=(const PISMVector2 &other) {
+    u += other.u;
+    v += other.v;
+    return *this;
+  }
+
+  inline PISMVector2& operator-=(const PISMVector2 &other) {
+    u -= other.u;
+    v -= other.v;
+    return *this;
+  }
+
+  inline PISMVector2& operator*=(const PetscScalar &a) {
+    u *= a;
+    v *= a;
+    return *this;
+  }
+
+  inline PISMVector2& operator/=(const PetscScalar &a) {
+    u /= a;
+    v /= a;
+    return *this;
+  }
+
+  //! \brief Adds two vectors.
+  inline PISMVector2 operator+(const PISMVector2 &other) const {
+    return PISMVector2(u + other.u, v + other.v);
+  }
+
+  //! \brief Substracts two vectors.
+  inline PISMVector2 operator-(const PISMVector2 &other) const {
+    return PISMVector2(u - other.u, v - other.v);
+  }
+
+  //! \brief Scales a vector.
+  inline PISMVector2 operator*(const PetscScalar &a) const {
+    return PISMVector2(u * a, v * a);
+  }
+
+  //! \brief Scales a vector.
+  inline PISMVector2 operator/(const PetscScalar &a) const {
+    return PISMVector2(u / a, v / a);
+  }
+
+  PetscScalar u, v;
 };
+
+inline PISMVector2 operator*(const PetscScalar &a, const PISMVector2 &v1) {
+  return v1 * a;
+}
 
 //! Class for storing and accessing 2D vector fields used in IceModel.
 class IceModelVec2V : public IceModelVec2 {
@@ -411,6 +481,12 @@ public:
   using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, string my_short_name,
 				bool has_ghosts, int stencil_width = 1);
+  using IceModelVec::copy_to;
+  using IceModelVec::copy_from;
+  virtual PetscErrorCode copy_to(IceModelVec &destination);
+  virtual PetscErrorCode copy_from(IceModelVec &source);
+  virtual PetscErrorCode add(PetscScalar alpha, IceModelVec &x);
+  virtual PetscErrorCode add(PetscScalar alpha, IceModelVec &x, IceModelVec &result);
 
   // I/O:
   using IceModelVec2::write;
@@ -432,7 +508,7 @@ public:
     check_array_indices(i, j-1);
 #endif
     planeStar<PISMVector2> result;
-  
+
     result.ij = operator()(i,j);
     result.e =  operator()(i+1,j);
     result.w =  operator()(i-1,j);
@@ -446,10 +522,10 @@ public:
   using IceModelVec2::is_valid;
   virtual bool           is_valid(PetscScalar u, PetscScalar v);
   virtual PetscErrorCode set_name(string name, int component = 0);
-  virtual PetscErrorCode  rename(const string &short_name, const string &long_name, 
-                                 const string &standard_name, int component = 0);
-  virtual PetscErrorCode  rename(const string &short_name, const vector<string> &long_names, 
-                                 const string &standard_name);
+  virtual PetscErrorCode rename(const string &short_name, const string &long_name,
+                                const string &standard_name, int component = 0);
+  virtual PetscErrorCode rename(const string &short_name, const vector<string> &long_names,
+                                const string &standard_name);
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.

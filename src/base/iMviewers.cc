@@ -100,7 +100,7 @@ PetscErrorCode IceModel::update_viewers() {
 
       ierr = v2d->view(v1, v2); CHKERRQ(ierr);
     }
-    
+
     if (de_allocate) delete v;
   }
 
@@ -167,7 +167,7 @@ PetscErrorCode IceModel::init_viewers() {
 			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 
   if (flag)
-    config.set("viewer_size", viewer_size); 
+    config.set("viewer_size", viewer_size);
 
   // map-plane (and surface) viewers:
   ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",

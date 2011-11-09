@@ -216,7 +216,7 @@ protected:
         vLongitude,	//!< Longitude; ghosted to compute cell areas
         vLatitude,	//!< Latitude; ghosted to compute cell areas
         vbed,		//!< bed topography; ghosted
-        vuplift,	//!< bed uplift rate; ghosted to simplify the code computing it
+        vuplift,	//!< bed uplift rate; no ghosts
         vGhf,		//!< geothermal flux; no ghosts
         bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
                         //!< ghosted to be able to compute tauc "redundantly"
@@ -249,7 +249,7 @@ protected:
   IceModelVec3
         T3,		//!< absolute temperature of ice; K (ghosted)
         Enth3,          //!< enthalpy; J / kg (ghosted)
-        tau3;		//!< age of ice; s (ghosted because it is evaluated on the staggered-grid)
+        tau3;		//!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
 
   // parameters
   PetscReal   dt,     //!< mass continuity time step, s

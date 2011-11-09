@@ -72,6 +72,49 @@ PetscErrorCode IceUnitModel::createVecs() {
   return 0;
 }
 
+PetscErrorCode IceUnitModel::test_add_2d() {
+  PetscErrorCode ierr;
+
+  IceModelVec2V v1, v2, v3;
+
+  ierr = v1.create(grid, "v1", false); CHKERRQ(ierr);
+  ierr = v2.create(grid, "v2", true); CHKERRQ(ierr);
+  ierr = v3.create(grid, "v3", true, 2); CHKERRQ(ierr);
+
+  ierr = v1.set(0); CHKERRQ(ierr);
+
+  ierr = v2.set(1); CHKERRQ(ierr);
+
+  ierr = v3.set(2); CHKERRQ(ierr);
+
+  // adding to a global vec, everything is done locally
+  ierr = v1.add(1.0, v2); CHKERRQ(ierr);
+
+  //  v1 = 1;
+  ierr = v1.dump("v1.nc"); CHKERRQ(ierr);
+
+  // adding to a local vec using a global one, have to scatter ghosts
+  ierr = v2.add(1.0, v1); CHKERRQ(ierr);
+
+  // v2 = 2;
+  ierr = v2.dump("v2_1.nc"); CHKERRQ(ierr);
+
+  // adding to a local vec using a different local vec, locally
+  ierr = v2.add(1.0, v3); CHKERRQ(ierr);
+
+  // v2 = 4
+  ierr = v2.dump("v2_2.nc"); CHKERRQ(ierr);
+
+  // adding to a local vec using a different local vec with a narrower stencil,
+  // we have to scatter ghosts
+  ierr = v3.add(1.0, v2); CHKERRQ(ierr);
+
+  // v3 = 6
+  ierr = v3.dump("v3.nc"); CHKERRQ(ierr);
+
+  return 0;
+}
+
 //! Run an unit test.
 PetscErrorCode IceUnitModel::run() {
   PetscErrorCode ierr;
@@ -90,6 +133,11 @@ PetscErrorCode IceUnitModel::run() {
   ierr = PISMOptionsIsSet("-IceModelVec2V", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = test_IceModelVec2V(); CHKERRQ(ierr);
+  }
+
+  ierr = PISMOptionsIsSet("-add_2d", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = test_add_2d(); CHKERRQ(ierr);
   }
 
   ierr = PISMOptionsIsSet("-dof1", flag); CHKERRQ(ierr);

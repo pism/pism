@@ -35,6 +35,7 @@ public:
   PetscErrorCode test_IceModelVec3();
   PetscErrorCode test_IceModelVec2T();
   PetscErrorCode test_IceModelVec2V();
+  PetscErrorCode test_add_2d();
   PetscErrorCode test_dof1comm();
   PetscErrorCode test_dof2comm();
   PetscErrorCode test_pismprof();

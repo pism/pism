@@ -744,7 +744,7 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
   return 0;
 }
 
-PetscErrorCode set_config_from_options(MPI_Comm com, NCConfigVariable &config) {
+PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &config) {
   PetscErrorCode ierr;
   bool flag;
 

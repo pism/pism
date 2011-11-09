@@ -301,7 +301,7 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   // bedrock uplift rate
-  ierr = vuplift.create(grid, "dbdt", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = vuplift.create(grid, "dbdt", false); CHKERRQ(ierr);
   ierr = vuplift.set_attrs("model_state", "bedrock uplift rate",
 			   "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
   ierr = vuplift.set_glaciological_units("m year-1");

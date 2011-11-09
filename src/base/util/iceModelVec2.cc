@@ -24,6 +24,7 @@
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
+#include "iceModelVec_helpers.hh"
 
 // this file contains methods for derived classes IceModelVec2S and IceModelVec2Int
 
@@ -584,7 +585,7 @@ PetscErrorCode IceModelVec2::set_component(int N, Vec source) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::get_component(int n, IceModelVec2 &result) {
+PetscErrorCode IceModelVec2::get_component(int n, IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = IceModelVec2::get_component(n, result.v); CHKERRQ(ierr);
@@ -592,7 +593,7 @@ PetscErrorCode IceModelVec2::get_component(int n, IceModelVec2 &result) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::set_component(int n, IceModelVec2 &source) {
+PetscErrorCode IceModelVec2::set_component(int n, IceModelVec2S &source) {
   PetscErrorCode ierr;
 
   ierr = IceModelVec2::set_component(n, source.v); CHKERRQ(ierr);
@@ -641,6 +642,66 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, string my_name, bool loca
 
   return 0;
 }
+PetscErrorCode IceModelVec2S::add(PetscScalar alpha, IceModelVec &x) {
+  return add_2d<IceModelVec2S>(this, alpha, &x, this);
+}
+
+PetscErrorCode IceModelVec2S::add(PetscScalar alpha, IceModelVec &x, IceModelVec &result) {
+  return add_2d<IceModelVec2S>(this, alpha, &x, &result);
+}
+
+PetscErrorCode IceModelVec2S::copy_to(IceModelVec &destination) {
+  return copy_2d<IceModelVec2S>(this, &destination);
+}
+
+PetscErrorCode IceModelVec2S::copy_from(IceModelVec &source) {
+  return copy_2d<IceModelVec2S>(&source, this);
+}
+
+static PetscErrorCode multiply_2d(IceModelVec2S* const x, IceModelVec2S* const y,
+                                  IceModelVec2S* const z) {
+  PetscErrorCode ierr;
+
+  if (x == NULL || y == NULL || z == NULL) {
+    SETERRQ(PETSC_COMM_SELF, 1, "incompatible arguments");
+  }
+
+  int ghosts = 0;
+  bool scatter = false;
+  compute_params(x, y, z, ghosts, scatter);
+
+  IceGrid *grid = z->get_grid();
+
+  ierr = x->begin_access(); CHKERRQ(ierr);
+  ierr = y->begin_access(); CHKERRQ(ierr);
+  ierr = z->begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid->xs - ghosts; i < grid->xs+grid->xm + ghosts; ++i) {
+    for (PetscInt j = grid->ys - ghosts; j < grid->ys+grid->ym + ghosts; ++j) {
+      (*z)(i, j) = (*x)(i, j) * (*y)(i, j);
+    }
+  }
+  ierr = z->end_access(); CHKERRQ(ierr);
+  ierr = y->end_access(); CHKERRQ(ierr);
+  ierr = x->end_access(); CHKERRQ(ierr);
+
+  if (scatter) {
+    ierr = z->beginGhostComm(); CHKERRQ(ierr);
+    ierr = z->endGhostComm(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec2S::multiply_by(IceModelVec &x, IceModelVec &result) {
+  return multiply_2d(this, dynamic_cast<IceModelVec2S*>(&x),
+                     dynamic_cast<IceModelVec2S*>(&result));
+}
+
+PetscErrorCode IceModelVec2S::multiply_by(IceModelVec &x) {
+  return multiply_2d(this, dynamic_cast<IceModelVec2S*>(&x), this);
+}
+
+
 
 // IceModelVec2Stag
 

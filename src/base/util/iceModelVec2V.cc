@@ -19,6 +19,7 @@
 #include "iceModelVec.hh"
 #include "pism_const.hh"
 #include "IceGrid.hh"
+#include "iceModelVec_helpers.hh"
 
 IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   dof = 2;
@@ -125,7 +126,7 @@ PetscErrorCode IceModelVec2V::rename(const string &short_name, const vector<stri
     name = "vel" + tmp;
 
     vars[0].short_name = "u" + tmp;
-    vars[1].short_name = "v" + tmp;    
+    vars[1].short_name = "v" + tmp;
   }
 
   vars[0].set_string("long_name", long_names[0]);
@@ -137,4 +138,20 @@ PetscErrorCode IceModelVec2V::rename(const string &short_name, const vector<stri
   }
 
   return 0;
-}  
+}
+
+PetscErrorCode IceModelVec2V::add(PetscScalar alpha, IceModelVec &x) {
+  return add_2d<IceModelVec2V>(this, alpha, &x, this);
+}
+
+PetscErrorCode IceModelVec2V::add(PetscScalar alpha, IceModelVec &x, IceModelVec &result) {
+  return add_2d<IceModelVec2V>(this, alpha, &x, &result);
+}
+
+PetscErrorCode IceModelVec2V::copy_to(IceModelVec &destination) {
+  return copy_2d<IceModelVec2V>(this, &destination);
+}
+
+PetscErrorCode IceModelVec2V::copy_from(IceModelVec &source) {
+  return copy_2d<IceModelVec2V>(&source, this);
+}
