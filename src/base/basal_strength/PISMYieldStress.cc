@@ -89,7 +89,8 @@ PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
 {
   PetscErrorCode ierr;
   PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q");
-  bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set;
+  bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set,
+    tauc_to_phi_set;
   string filename;
   int start;
 
@@ -120,7 +121,8 @@ PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
     ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
-
+    ierr = PISMOptionsIsSet("-tauc_to_phi", "Compute tillphi as a function of tauc and the rest of the model state",
+                            tauc_to_phi_set); CHKERRQ(ierr);
     bool scaleSet;
     double slidescale;
     ierr = PISMOptionsReal("-sliding_scale",
@@ -643,3 +645,54 @@ PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
   return 0;
 }
 
+PetscErrorCode PISMDefaultYieldStress::tauc_to_phi() {
+  PetscErrorCode ierr;
+
+  const PetscScalar
+    till_pw_fraction = config.get("till_pw_fraction"),
+    till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
+    bwat_max = config.get("bwat_max"),
+    ice_density = config.get("ice_density"),
+    standard_gravity = config.get("standard_gravity");
+
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = tauc.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
+  ierr = basal_water_thickness->begin_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate->begin_access(); CHKERRQ(ierr);
+  ierr = till_phi.begin_access(); CHKERRQ(ierr);
+
+  MaskQuery m(*mask);
+
+  PetscInt GHOSTS = grid.max_stencil_width;
+  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+
+      if (m.ocean(i, j)) {
+        // no change
+      } else if (m.ice_free(i, j)) {
+        // no change
+      } else { // grounded and there is some ice
+        const PetscScalar
+          p_over = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME task #7297
+          p_w    = basal_water_pressure((*ice_thickness)(i, j),
+                                        (*basal_water_thickness)(i, j),
+                                        (*basal_melt_rate)(i, j),
+                                        till_pw_fraction, bwat_max),
+          N      = p_over - p_w;  // effective pressure on till
+
+        till_phi(i, j) = 180.0/pi * atan((till_c_0 - tauc(i, j)) / N);
+      }
+    }
+  }
+
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = tauc.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness->end_access(); CHKERRQ(ierr);
+  ierr = till_phi.end_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
+  ierr = basal_water_thickness->end_access(); CHKERRQ(ierr);
+
+
+  return 0;
+}
