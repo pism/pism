@@ -94,7 +94,7 @@ public:
 
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 protected:
-  PetscReal sliding_scale;
+  PetscReal standard_gravity, ice_density, till_pw_fraction, bwat_max, sliding_scale;
   IceModelVec2S till_phi, tauc;
   IceModelVec2S *basal_water_thickness, *basal_melt_rate, *ice_thickness,
     *bed_topography;
@@ -109,6 +109,7 @@ protected:
   virtual PetscScalar basal_water_pressure(PetscScalar thk, PetscScalar bwat,
                                            PetscScalar bmr, PetscScalar frac,
                                            PetscScalar bwat_max);
+  virtual PetscScalar effective_pressure_on_till(int i, int j);
 };
 
 class PISMConstantYieldStress : public PISMYieldStress

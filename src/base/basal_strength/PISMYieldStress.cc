@@ -650,8 +650,8 @@ PetscErrorCode PISMDefaultYieldStress::tauc_to_phi() {
 
   const PetscScalar
     till_pw_fraction = config.get("till_pw_fraction"),
-    till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
     bwat_max = config.get("bwat_max"),
+    till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
     ice_density = config.get("ice_density"),
     standard_gravity = config.get("standard_gravity");
 
@@ -696,3 +696,8 @@ PetscErrorCode PISMDefaultYieldStress::tauc_to_phi() {
 
   return 0;
 }
+
+PetscScalar PISMDefaultYieldStress::effective_pressure_on_till(int i, int j) {
+
+}
+
