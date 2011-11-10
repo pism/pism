@@ -168,7 +168,7 @@ echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km), with -skip = $FINESK
 TITLE="SeaRISE Greenland Spinup"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG -title '$TITLE' "
+PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG -title '$TITLE' -acab_cumulative"
 # PIK marine ice dynamics
 PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 100.0"  # parameters preliminary
 
@@ -251,7 +251,7 @@ TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
 EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf"
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,acab_cumulative"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
