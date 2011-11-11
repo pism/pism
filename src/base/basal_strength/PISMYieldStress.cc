@@ -51,6 +51,11 @@ PetscErrorCode PISMDefaultYieldStress::allocate() {
   till_phi.time_independent = true; // in this model; need not be
                                     // time-independent in general
 
+  ierr = tauc.create(grid, "tauc", true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = tauc.set_attrs("diagnostic",
+                        "yield stress for basal till (plastic or pseudo-plastic model)",
+                        "Pa", ""); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -254,50 +259,23 @@ PetscErrorCode PISMDefaultYieldStress::write_variables(set<string> vars, string 
 }
 
 PetscErrorCode PISMDefaultYieldStress::update(PetscReal my_t, PetscReal my_dt) {
+  PetscErrorCode ierr;
+
+  if ((fabs(my_t - t) < 1e-12) &&
+      (fabs(my_dt - dt) < 1e-12))
+    return 0;
+
   t = my_t; dt = my_dt;
   // this model performs a "diagnostic" computation (i.e. without time-stepping)
-  return 0;
-}
 
-//! Update the till yield stress for the pseudo-plastic till SSA model.
-/*!
-Updates based on modeled basal water pressure.  We implement
-formula (2.4) in [\ref SchoofStream], the Mohr-Coulomb criterion:
-    \f[   \tau_c = \mu (\rho g H - p_w), \f]
-where \f$\tau_c\f$ is the till yield stress, \f$\rho g H\f$ is the ice over-burden
-pressure (in the shallow approximation), \f$p_w\f$ is the modeled
-pore (=basal) water pressure, and \f$\mu\f$ is a strength coefficient for the
-mineral till (at least, it is independent of \f$p_w\f$).  The difference
-    \f[   N = \rho g H - p_w   \f]
-is the effective pressure on the till.
-
-We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
-and by expressing the coefficient as the tangent of a till friction angle
-\f$\varphi\f$:
-    \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
-Option  \c -plastic_c0 controls it \f$c_0\f$; see [\ref Paterson] table 8.1
-regarding values.
-
-The major concern with this is the model for basal water pressure \f$p_w\f$.
-See basal_water_pressure().  See also [\ref BBssasliding] for a discussion
-of a complete model using these tools.
-
- */
-PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
-  PetscErrorCode ierr;
 
   bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
 
   const PetscScalar
-    till_pw_fraction = config.get("till_pw_fraction"),
-    till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
-    bwat_max = config.get("bwat_max"),
-    ice_density = config.get("ice_density"),
-    standard_gravity = config.get("standard_gravity"),
     high_tauc = config.get("high_tauc");
 
   ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
   ierr = basal_water_thickness->begin_access(); CHKERRQ(ierr);
   ierr = basal_melt_rate->begin_access(); CHKERRQ(ierr);
@@ -313,33 +291,32 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
 
         if (m.grounded(i, j)) {
           // large yield stress if grounded and -ssa_floating_only is set
-          result(i, j) = high_tauc;
+          tauc(i, j) = high_tauc;
         } else {
-          result(i, j) = 0.0;
+          tauc(i, j) = 0.0;
         }
         continue;
       }
 
       if (m.ocean(i, j)) {
-        result(i, j) = 0.0;
+        tauc(i, j) = 0.0;
       } else if (m.ice_free(i, j)) {
-        result(i, j) = high_tauc;  // large yield stress if grounded and ice-free
+        tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
         const PetscScalar
           p_over = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME task #7297
-          p_w    = basal_water_pressure((*ice_thickness)(i, j),
-                                        (*basal_water_thickness)(i, j),
+          p_w    = basal_water_pressure(p_over, (*basal_water_thickness)(i, j),
                                         (*basal_melt_rate)(i, j),
-                                        till_pw_fraction, bwat_max),
-          N      = p_over - p_w;  // effective pressure on till
+                                        (*ice_thickness)(i, j)),
+          N      = effective_pressure_on_till(p_over, p_w);
 
-        result(i, j) = till_c_0 + N * tan((pi/180.0) * till_phi(i, j));
+        tauc(i, j) = till_c_0 + N * tan((pi/180.0) * till_phi(i, j));
       }
     }
   }
 
   ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = tauc.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = till_phi.end_access(); CHKERRQ(ierr);
   ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
@@ -371,8 +348,41 @@ stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1
 */
   if (sliding_scale > 0.0) {
     const PetscScalar q = config.get("pseudo_plastic_q");
-    result.scale(1.0 / pow(sliding_scale, q));
+    tauc.scale(1.0 / pow(sliding_scale, q));
   }
+
+  return 0;
+}
+
+//! Update the till yield stress for use in the the pseudo-plastic till SSA
+//! model, see IceBasalResistancePlasticLaw.
+/*!
+Updates based on modeled basal water pressure.  We implement
+formula (2.4) in [\ref SchoofStream], the Mohr-Coulomb criterion:
+    \f[   \tau_c = \mu (\rho g H - p_w), \f]
+where \f$\tau_c\f$ is the till yield stress, \f$\rho g H\f$ is the ice over-burden
+pressure (in the shallow approximation), \f$p_w\f$ is the modeled
+pore (=basal) water pressure, and \f$\mu\f$ is a strength coefficient for the
+mineral till (at least, it is independent of \f$p_w\f$).  The difference
+    \f[   N = \rho g H - p_w   \f]
+is the effective pressure on the till.
+
+We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
+and by expressing the coefficient as the tangent of a till friction angle
+\f$\varphi\f$:
+    \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
+Option  \c -plastic_c0 controls it \f$c_0\f$; see [\ref Paterson] table 8.1
+regarding values.
+
+The major concern with this is the model for basal water pressure \f$p_w\f$.
+See basal_water_pressure().  See also [\ref BBssasliding] for a discussion
+of a complete model using these tools.
+
+ */
+PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  ierr = tauc.copy_to(result); CHKERRQ(ierr);
 
   return 0;
 }
@@ -482,9 +492,14 @@ PetscErrorCode PISMDefaultYieldStress::topg_to_phi() {
 }
 
 
-//! \brief Compute modeled pressure in subglacial liquid water using thickness of subglacial water layer.
+//! \brief Compute modeled pressure in subglacial liquid water using thickness
+//! of subglacial water layer.
 /*!
-Inputs are \c bwat, the thickness of basal water, and \c bmr, the basal melt rate.
+Main inputs are \c p_overburden and \c bwat, the thickness of basal water.
+
+It can also use \c bmr, the basal melt rate and \c thk, the ice thickness, in
+modifications of the basic model.
+
 The output is \f$p_w\f$ the basal water pressure.
 
 The basic model is
@@ -532,7 +547,7 @@ If the effective pressure on the subglacial layer is needed, then these lines ar
 recommended for this purpose:
 \verbatim
   p_over = ice->rho * standard_gravity * thk;  // overburden pressure
-  p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, bwat_max);
+  p_eff  = p_over - getBasalWaterPressure(p_over, bwat, bmr, thk);
 \endverbatim
 
 The inequality \c bwat \f$\le\f$ \c bwat_max is required at input, and an
@@ -544,9 +559,8 @@ elevation.  A method using "elevation of the bed at the grounding line",
 as in [\ref LingleBrown1987] is not implementable because that elevation is
 at an unknowable location.  (We are not doing a flow line model!)
  */
-PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscScalar thk, PetscScalar bwat,
-                                                  PetscScalar bmr, PetscScalar frac,
-                                                  PetscScalar bwat_max) {
+PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscReal p_overburden, PetscReal bwat,
+                                                         PetscReal bmr, PetscReal thk) {
   if (bwat > bwat_max + 1.0e-6) {
     PetscPrintf(grid.com,
                 "PISM ERROR:  bwat = %12.8f exceeds bwat_max = %12.8f\n"
@@ -554,16 +568,17 @@ PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscScalar thk, PetscS
     PISMEnd();
   }
 
-  // the model; note 0 <= p_pw <= frac * p_overburden because  0 <= bwat <= bwat_max
-  const PetscScalar p_overburden = p.ice_density * p.standard_gravity * thk; // FIXME task #7297
-  PetscScalar p_pw = frac * (bwat / bwat_max) * p_overburden;
+  // The model: note 0 <= p_pw <= till_pw_fraction * p_overburden because  0 <= bwat <= bwat_max
+  PetscScalar p_pw = till_pw_fraction * (bwat / bwat_max) * p_overburden;
+
+  // The remaining is fiddles.
 
   if (p.usebmr) {
     // add to pressure from instantaneous basal melt rate;
-    //   note  (additional) <= (1.0 - frac) * p_overburden so
+    //   note  (additional) <= (1.0 - till_pw_fraction) * p_overburden so
     //   0 <= p_pw <= p_overburden
     p_pw += ( 1.0 - exp( - PetscMax(0.0,bmr) / p.bmr_scale ) )
-      * (1.0 - frac) * p_overburden;
+      * (1.0 - till_pw_fraction) * p_overburden;
   }
 
   if (p.usethkeff) {
@@ -585,6 +600,14 @@ PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscScalar thk, PetscS
   return p_pw;
 }
 
+//! \brief Computes the effective pressure on till.
+/*!
+ * This is (conceptually) the hydrology model.
+ */
+PetscReal PISMDefaultYieldStress::effective_pressure_on_till(PetscReal p_overburden,
+                                                             PetscReal p_basal_water) {
+  return p_overburden - p_basal_water;
+}
 
 PYS_bwp::PYS_bwp(PISMDefaultYieldStress *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMDefaultYieldStress>(m, g, my_vars) {
@@ -611,8 +634,6 @@ PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
   const PetscScalar
-    alpha     = model->config.get("till_pw_fraction"),
-    wmax      = model->config.get("bwat_max"),
     fillval   = -0.01;
 
   ierr = model->ice_thickness->begin_access(); CHKERRQ(ierr);
@@ -623,10 +644,14 @@ PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscReal thk = (*model->ice_thickness)(i, j);
       if (thk > 0.0) {
-        (*result)(i,j) = model->basal_water_pressure(thk, // FIXME task #7297
+        PetscReal ice_thickness = (*model->ice_thickness)(i, j),
+          // FIXME task #7297
+          p_overburden = ice_thickness * model->ice_density * model->standard_gravity;
+
+        (*result)(i,j) = model->basal_water_pressure(p_overburden,
                                                      (*model->basal_water_thickness)(i,j),
                                                      (*model->basal_melt_rate)(i,j),
-                                                     alpha, wmax);
+                                                     ice_thickness);
       } else { // put negative value below valid range
         (*result)(i,j) = fillval;
       }
@@ -648,13 +673,6 @@ PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
 PetscErrorCode PISMDefaultYieldStress::tauc_to_phi() {
   PetscErrorCode ierr;
 
-  const PetscScalar
-    till_pw_fraction = config.get("till_pw_fraction"),
-    bwat_max = config.get("bwat_max"),
-    till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
-    ice_density = config.get("ice_density"),
-    standard_gravity = config.get("standard_gravity");
-
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
@@ -673,13 +691,15 @@ PetscErrorCode PISMDefaultYieldStress::tauc_to_phi() {
       } else if (m.ice_free(i, j)) {
         // no change
       } else { // grounded and there is some ice
-        const PetscScalar
-          p_over = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME task #7297
-          p_w    = basal_water_pressure((*ice_thickness)(i, j),
-                                        (*basal_water_thickness)(i, j),
-                                        (*basal_melt_rate)(i, j),
-                                        till_pw_fraction, bwat_max),
-          N      = p_over - p_w;  // effective pressure on till
+        const PetscReal
+          p_overburden = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME task #7297
+          p_w = basal_water_pressure(p_overburden,
+                                     (*basal_water_thickness)(i, j),
+                                     (*ice_thickness)(i, j),
+                                     (*basal_melt_rate)(i, j));
+          PetscReal N = effective_pressure_on_till(p_overburden, p_w);
+
+        N = PetscMax(N, 0.01);  // guard against dividing by zero
 
         till_phi(i, j) = 180.0/pi * atan((till_c_0 - tauc(i, j)) / N);
       }
@@ -696,8 +716,3 @@ PetscErrorCode PISMDefaultYieldStress::tauc_to_phi() {
 
   return 0;
 }
-
-PetscScalar PISMDefaultYieldStress::effective_pressure_on_till(int i, int j) {
-
-}
-

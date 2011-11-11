@@ -30,9 +30,7 @@ struct BWPparams {
   PetscReal bmr_scale,
     thkeff_reduce,
     thkeff_H_high,
-    thkeff_H_low,
-    ice_density,
-    standard_gravity;
+    thkeff_H_low;
 };
 
 //! \brief The PISM basal yield stress model interface (virtual base class)
@@ -73,8 +71,11 @@ public:
     p.thkeff_reduce = config.get("thk_eff_reduced");
     p.thkeff_H_high = config.get("thk_eff_H_high");
     p.thkeff_H_low  = config.get("thk_eff_H_low");
-    p.ice_density   = config.get("ice_density");
-    p.standard_gravity = config.get("standard_gravity");
+
+    till_pw_fraction = config.get("till_pw_fraction");
+    ice_density = config.get("ice_density");
+    standard_gravity = config.get("standard_gravity");
+    till_c_0 = config.get("till_c_0", "kPa", "Pa");
   }
 
   virtual ~PISMDefaultYieldStress() {}
@@ -94,7 +95,8 @@ public:
 
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 protected:
-  PetscReal standard_gravity, ice_density, till_pw_fraction, bwat_max, sliding_scale;
+  PetscReal standard_gravity, ice_density,
+    till_pw_fraction, bwat_max, sliding_scale, till_c_0;
   IceModelVec2S till_phi, tauc;
   IceModelVec2S *basal_water_thickness, *basal_melt_rate, *ice_thickness,
     *bed_topography;
@@ -106,10 +108,10 @@ protected:
   virtual PetscErrorCode topg_to_phi();
   virtual PetscErrorCode tauc_to_phi();
   virtual PetscErrorCode regrid();
-  virtual PetscScalar basal_water_pressure(PetscScalar thk, PetscScalar bwat,
-                                           PetscScalar bmr, PetscScalar frac,
-                                           PetscScalar bwat_max);
-  virtual PetscScalar effective_pressure_on_till(int i, int j);
+  virtual PetscReal basal_water_pressure(PetscReal p_overburden, PetscReal bwat,
+                                         PetscReal bmr, PetscReal thk);
+  virtual PetscReal effective_pressure_on_till(PetscReal p_overburden,
+                                               PetscReal b_basal_water);
 };
 
 class PISMConstantYieldStress : public PISMYieldStress
