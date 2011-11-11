@@ -716,7 +716,8 @@ PetscErrorCode NCTool::get_att_double(const int varid, string name,
   if (stat == NC_NOERR) {
     ierr = MPI_Bcast(&result[0], len, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
   } else {
-    SETERRQ(com, 1, "Error reading an attribute.");
+    SETERRQ3(com, 1, "Error reading the %s attribute; (varid %d, NetCDF error %s)",
+             name.c_str(), varid, nc_strerror(stat));
   }
 
   return 0;
