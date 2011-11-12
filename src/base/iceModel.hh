@@ -397,7 +397,7 @@ protected:
   virtual PetscErrorCode compute_ice_area_grounded(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area_floating(PetscScalar &result);
   virtual PetscErrorCode compute_ice_enthalpy(PetscScalar &result);
-  
+
   // see iMtemp.cc
   virtual PetscErrorCode excessToFromBasalMeltLayer(
                       const PetscScalar rho, const PetscScalar c, const PetscScalar L,
