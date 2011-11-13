@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PSStuffAsAnomaly.hh"
+#include "IceGrid.hh"
+#include "PISMTime.hh"
 
 PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   PetscErrorCode ierr;
@@ -25,21 +27,17 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
     ierr = input_model->init(vars); CHKERRQ(ierr);
   }
 
-  // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
   ierr = mass_flux.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_state",
                              "ice-equivalent surface mass balance (accumulation/ablation) rate",
                              "m s-1",
-                             "land_ice_surface_specific_mass_balance"); // CF standard_name
-			CHKERRQ(ierr);
+                             "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
   ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   mass_flux.write_in_glaciological_units = true;
 
   ierr = temp.create(grid, "artm", false); CHKERRQ(ierr);
-  ierr = temp.set_attrs("climate_state",
-			"ice temperature at the ice surface",
-			"K",
-			""); CHKERRQ(ierr);
+  ierr = temp.set_attrs("climate_state", "ice temperature at the ice surface",
+			"K", ""); CHKERRQ(ierr);
 
   // create special variables
   ierr = mass_flux_0.create(grid, "mass_flux_0", false); CHKERRQ(ierr);
@@ -48,24 +46,26 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
 
   ierr = mass_flux_input.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
-                                    "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+                                   "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
   ierr = temp_0.create(grid, "temp_0", false); CHKERRQ(ierr);
   ierr = temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
                           ""); CHKERRQ(ierr);
 
   ierr = temp_input.create(grid, "artm", false); CHKERRQ(ierr);
-  ierr = temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to", "K",
-                              ""); CHKERRQ(ierr);
-
+  ierr = temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
+                              "K", ""); CHKERRQ(ierr);
+  string input_file;
+  bool regrid = false;
+  int start = 0;
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
   if (regrid) {
-    ierr = mass_flux_input.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
-    ierr = temp_input.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = mass_flux_input.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
+    ierr = temp_input.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = mass_flux_input.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
-    ierr = temp_input.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = mass_flux_input.read(input_file, start); CHKERRQ(ierr); // fails if not found!
+    ierr = temp_input.read(input_file, start); CHKERRQ(ierr); // fails if not found!
   }
 
   // get the mass balance and the temperature at the beginning of the run:
@@ -78,77 +78,81 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSStuffAsAnomaly::ice_surface_mass_flux(IceModelVec2S &result) {
+PetscErrorCode PSStuffAsAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
+  if ((fabs(my_t - t) < 1e-12) &&
+      (fabs(my_dt - dt) < 1e-12))
+    return 0;
+
+  t  = my_t;
+  dt = my_dt;
+
   if (input_model != NULL) {
-    ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
+    ierr = input_model->update(t, dt); CHKERRQ(ierr);
+    ierr = input_model->ice_surface_temperature(temp); CHKERRQ(ierr);
+    ierr = input_model->ice_surface_mass_flux(mass_flux); CHKERRQ(ierr);
   }
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = mass_flux.begin_access(); CHKERRQ(ierr);
   ierr = mass_flux_0.begin_access(); CHKERRQ(ierr);
   ierr = mass_flux_input.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i, j) = result(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);
-    }
-  }
-
-  ierr = mass_flux_input.end_access(); CHKERRQ(ierr);
-  ierr = mass_flux_0.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode PSStuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  if (input_model != NULL) {
-    ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
-  }
-
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = temp.begin_access(); CHKERRQ(ierr);
   ierr = temp_0.begin_access(); CHKERRQ(ierr);
   ierr = temp_input.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i, j) = result(i, j) - temp_0(i, j) + temp_input(i, j);
+      mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);
+      temp(i, j) = temp(i, j) - temp_0(i, j) + temp_input(i, j);
     }
   }
 
   ierr = temp_input.end_access(); CHKERRQ(ierr);
   ierr = temp_0.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = temp.end_access(); CHKERRQ(ierr);
+
+  ierr = mass_flux_input.end_access(); CHKERRQ(ierr);
+  ierr = mass_flux_0.end_access(); CHKERRQ(ierr);
+  ierr = mass_flux.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
 
+PetscErrorCode PSStuffAsAnomaly::ice_surface_mass_flux(IceModelVec2S &result) {
+  return mass_flux.copy_to(result);
+}
+
+PetscErrorCode PSStuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) {
+  return temp.copy_to(result);
+}
+
 void PSStuffAsAnomaly::add_vars_to_output(string keyword, set<string> &result) {
   if (keyword != "small") {
-    result.insert("acab");
-    result.insert("artm");
+    result.insert(temp.string_attr("short_name"));
+    result.insert(mass_flux.string_attr("short_name"));
   }
 }
 
 PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "artm")) {
-    ierr = temp.define(nc, nctype); CHKERRQ(ierr); 
+  if (set_contains(vars, temp.string_attr("short_name"))) {
+    ierr = temp.define(nc, nctype); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "acab")) {
+  if (set_contains(vars, mass_flux.string_attr("short_name"))) {
     ierr = mass_flux.define(nc, nctype); CHKERRQ(ierr);
   }
 
   // ensure that no one overwrites these two
-  vars.erase("artm");
-  vars.erase("acab");
+  vars.erase(temp.string_attr("short_name"));
+  vars.erase(mass_flux.string_attr("short_name"));
 
-  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  if (input_model != NULL) {
+    ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -156,19 +160,21 @@ PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const NCTool
 PetscErrorCode PSStuffAsAnomaly::write_variables(set<string> vars, string fname) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "artm")) {
+  if (set_contains(vars, temp.string_attr("short_name"))) {
     ierr = temp.write(fname); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "acab")) {
+  if (set_contains(vars, mass_flux.string_attr("short_name"))) {
     ierr = mass_flux.write(fname); CHKERRQ(ierr);
   }
 
   // ensure that no one overwrites these two
-  vars.erase("artm");
-  vars.erase("acab");
+  vars.erase(temp.string_attr("short_name"));
+  vars.erase(mass_flux.string_attr("short_name"));
 
-  ierr = input_model->write_variables(vars, fname); CHKERRQ(ierr);
+  if (input_model != NULL) {
+    ierr = input_model->write_variables(vars, fname); CHKERRQ(ierr);
+  }
 
   return 0;
 }

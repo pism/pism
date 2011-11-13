@@ -19,11 +19,9 @@
 #ifndef _PSSTUFFASANOMALY_H_
 #define _PSSTUFFASANOMALY_H_
 
-//! \brief
-/*!
- * Applies climate inputs as anomalies relative to acab and artm read from an
- * input file.
- */
+#include "PISMSurface.hh"
+
+//! \brief A surface modifier class applying its input as anomalies.
 class PSStuffAsAnomaly : public PSModifier
 {
 public:
@@ -32,12 +30,13 @@ public:
   virtual ~PSStuffAsAnomaly() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, string fname)
+  virtual PetscErrorCode write_variables(set<string> vars, string fname);
 
 protected:
   IceModelVec2S mass_flux, mass_flux_0, mass_flux_input,

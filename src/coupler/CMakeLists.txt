@@ -16,6 +16,7 @@ add_library (pismboundary
   ./surface/PSDirectAnomalies.cc
   ./surface/PSElevation.cc
   ./surface/PSExternal.cc
+  ./surface/PSStuffAsAnomaly.cc
   ./PASDirectForcing.cc
   ./PASLapseRates.cc
   ./PCFactory.cc
