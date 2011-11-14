@@ -60,6 +60,11 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   int start = 0;
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
+  ierr = verbPrintf(2, grid.com,
+		    "* Initializing the 'as_anomaly' modifier\n"
+                    "  (it applies climate data as anomalies relative to 'artm' and 'acab'\n"
+                    "  read from '%s'.\n", input_file.c_str()); CHKERRQ(ierr);
+
   if (regrid) {
     ierr = mass_flux_input.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
     ierr = temp_input.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
