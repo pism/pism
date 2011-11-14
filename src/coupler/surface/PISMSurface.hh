@@ -242,36 +242,48 @@ public:
   virtual ~PSModifier() {}
 
   virtual void attach_atmosphere_model(PISMAtmosphereModel *in) {
-    input_model->attach_atmosphere_model(in);
+    if (input_model != NULL) {
+      input_model->attach_atmosphere_model(in);
+    }
   }
 
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
+    }
     return 0;
   }
 
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
+    }
     return 0;
   }
 
   virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->ice_surface_liquid_water_fraction(result); CHKERRQ(ierr);
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->ice_surface_liquid_water_fraction(result); CHKERRQ(ierr);
+    }
     return 0;
   }
 
   virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->mass_held_in_surface_layer(result); CHKERRQ(ierr);
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->mass_held_in_surface_layer(result); CHKERRQ(ierr);
+    }
     return 0;
   }
 
   virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->surface_layer_thickness(result); CHKERRQ(ierr);
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->surface_layer_thickness(result); CHKERRQ(ierr);
+    }
     return 0;
   }
 };
@@ -303,9 +315,12 @@ protected:
   IceModelVec2S target_thickness, ftt_mask;
 };
 
-//! \brief A class implementing a constant-in-time surface model for the surface mass balance. Reads data
+//! \brief A class implementing a constant-in-time surface model for the surface mass balance.
+//!
 //! Reads data from a PISM input file.
-//! Ice surface temperature is parameterized as in PISM-PIK, dependent on latitude and surface elevation.
+//!
+//! Ice surface temperature is parameterized as in PISM-PIK, using a latitude
+//! and surface elevation-dependent formula.
 
 class PSConstantPIK : public PISMSurfaceModel {
 public:
@@ -332,7 +347,6 @@ protected:
   string input_file;
   IceModelVec2S acab, artm;
   IceModelVec2S *lat, *usurf;
-
 };
 
 

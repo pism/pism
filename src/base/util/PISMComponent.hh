@@ -202,35 +202,47 @@ public:
     : Model(g, conf), input_model(in) {}
   virtual ~Modifier()
   {
-    delete input_model;
+    if (input_model != NULL) {
+      delete input_model;
+    }
   }
 
   virtual void add_vars_to_output(string keyword, set<string> &result)
   {
-    input_model->add_vars_to_output(keyword, result);
+    if (input_model != NULL) {
+      input_model->add_vars_to_output(keyword, result);
+    }
   }
 
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
                                           nc_type nctype)
   {
-    PetscErrorCode ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
     return 0;
   }
 
   virtual PetscErrorCode write_variables(set<string> vars, string filename)
   {
-    PetscErrorCode ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+    }
     return 0;
   }
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
   {
-    input_model->get_diagnostics(dict);
+    if (input_model != NULL) {
+      input_model->get_diagnostics(dict);
+    }
   }
 
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
   {
-    PetscErrorCode ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+    }
     return 0;
   }
 
@@ -238,7 +250,9 @@ public:
   {
     Model::t = my_t;
     Model::dt = my_dt;
-    PetscErrorCode ierr = input_model->update(my_t, my_dt); CHKERRQ(ierr);
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->update(my_t, my_dt); CHKERRQ(ierr);
+    }
     return 0;
   }
 

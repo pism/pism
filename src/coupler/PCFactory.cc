@@ -33,6 +33,7 @@
 #include "PScalarForcing.hh"
 #include "PODirectForcing.hh"
 #include "PSDirectAnomalies.hh"
+#include "PSStuffAsAnomaly.hh"
 
 // Atmosphere
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -151,6 +152,11 @@ static void create_ps_dTforcing(IceGrid& g, const NCConfigVariable& conf,
   result = new PSdTforcing(g, conf, input);
 }
 
+static void create_ps_stuff_as_anomaly(IceGrid& g, const NCConfigVariable& conf,
+                                       PISMSurfaceModel *input, PSModifier* &result) {
+  result = new PSStuffAsAnomaly(g, conf, input);
+}
+
 static void create_ps_direct_anomalies(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
   result = new PSDirectAnomalies(g, conf);
 }
@@ -168,4 +174,5 @@ void PSFactory::add_standard_types() {
   add_modifier("forcing",    &create_ps_forcing);
   add_modifier("dTforcing",  &create_ps_dTforcing);
   add_modifier("lapse_rate", &create_ps_lapse_rates);
+  add_modifier("as_anomaly", &create_ps_stuff_as_anomaly);
 }
