@@ -228,6 +228,7 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
     ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
     ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
     callback_data.da = SSADA;  callback_data.ssa = this;
+    ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
     ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
     ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
 

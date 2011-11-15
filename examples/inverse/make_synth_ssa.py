@@ -107,7 +107,7 @@ if __name__ == '__main__':
   tauc_true.set_attrs("diagnostic", "value of basal yield stress used to generate synthetic SSA velocities", "Pa", ""); 
   vecs.markForWriting(tauc_true)
 
-  vel_ssa_observed = vecs.vel_ssa_blat
+  vel_ssa_observed = vecs.vel_ssa
   vel_ssa_observed.rename("_ssa_observed","'observed' SSA velocities'","")
   if generate_ssa_observed:
     vecs.markForWriting(vel_ssa_observed)

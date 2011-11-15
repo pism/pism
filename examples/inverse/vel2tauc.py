@@ -294,14 +294,15 @@ if __name__ == "__main__":
   grid = modeldata.grid
 
   vel_ssa_observed = None
-  vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed',stencil_width=1)
-  if PISM.util.fileHasVariable(inv_data_filname,"u_ssa_observed"):
+  vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed',stencil_width=2)
+  if PISM.util.fileHasVariable(inv_data_filename,"u_ssa_observed"):
     vel_ssa_observed.regrid(inv_data_filename,True)
     vecs.add(vel_ssa_observed,writing=saving_inv_data)
   else:
-    if not PISM.util.fileHasVariable(inv_data_filname,"u_surface_observed"):
-      ERROR MESSAGE
-    vel_surface_observed = PISM.util.standard2dVelocityVec(grid,'_surface_observed',stencil_width=1)
+    if not PISM.util.fileHasVariable(inv_data_filename,"u_surface_observed"):
+      verbPrintf(1,com,"Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified." % inv_data_filename)
+      exit()
+    vel_surface_observed = PISM.util.standard2dVelocityVec(grid,'_surface_observed',stencil_width=2)
     vel_surface_observed.regrid(inv_data_filename,True)
     vecs.add(vel_surface_observed,writing=saving_inv_data)
     
@@ -318,8 +319,9 @@ if __name__ == "__main__":
   if use_tauc_prior:
     tauc_prior.regrid(inv_data_filename,True)
   else:
-    if not PISM.util.fileHasVariable(input_filname,"tauc"):
-      ERROR MESSAGE
+    if not PISM.util.fileHasVariable(input_filename,"tauc"):
+      verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
+      exit()
     tauc.regrid(inv_data_filename,True)
     tauc_prior.copy_from(tauc)
   vecs.add(tauc_prior,writing=saving_inv_data)
