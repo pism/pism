@@ -190,6 +190,12 @@ PetscErrorCode PDDMassBalance::getMassFluxesFromPDDs(const DegreeDayFactors &ddf
                                                      PetscScalar &runoff_rate,
                                                      PetscScalar &smb_rate) {
 
+#if (PISM_DEBUG==1)
+  if (dt <= 0) {
+    SETERRQ1(PETSC_COMM_SELF, 1, "dt = %f is not alloved", dt);
+  }
+#endif
+
   if (accumulation < 0.0) {           // weird, but allowed, case
     accumulation_rate = 0.0;
     melt_rate         = accumulation / dt;
