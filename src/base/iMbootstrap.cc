@@ -47,10 +47,26 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
   if (surface != NULL) {
-    ierr = surface->update(grid.time->start(), 0); CHKERRQ(ierr);
+    PetscReal max_dt = 0;
+    bool restrict = false;
+    // FIXME: this will break if a surface model requires contiguous update intervals
+    ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
+
+    if (restrict == false)
+      max_dt = convert(1, "year", "seconds");
+
+    ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
   } else SETERRQ(grid.com, 1, "surface == NULL");
   if (ocean != NULL) {
-    ierr = ocean->update(grid.time->start(), 0); CHKERRQ(ierr);
+    PetscReal max_dt = 0;
+    bool restrict = false;
+    // FIXME: this will break if an ocean model requires contiguous update intervals
+    ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
+
+    if (restrict == false)
+      max_dt = convert(1, "year", "seconds");
+
+    ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
   } else SETERRQ(grid.com, 1, "ocean == NULL");
 
   // Fill 3D fields using heuristics:

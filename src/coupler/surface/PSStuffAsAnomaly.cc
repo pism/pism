@@ -68,13 +68,6 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
     ierr = temp_input.read(input_file, start); CHKERRQ(ierr); // fails if not found!
   }
 
-  // get the mass balance and the temperature at the beginning of the run:
-  if (input_model != NULL) {
-    ierr = input_model->update(grid.time->start(), 0); CHKERRQ(ierr);
-    ierr = input_model->ice_surface_mass_flux(mass_flux_0); CHKERRQ(ierr);
-    ierr = input_model->ice_surface_temperature(temp_0); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
@@ -92,6 +85,14 @@ PetscErrorCode PSStuffAsAnomaly::update(PetscReal my_t, PetscReal my_dt) {
     ierr = input_model->update(t, dt); CHKERRQ(ierr);
     ierr = input_model->ice_surface_temperature(temp); CHKERRQ(ierr);
     ierr = input_model->ice_surface_mass_flux(mass_flux); CHKERRQ(ierr);
+
+    // if we are at the beginning of the run...
+    if (t < grid.time->start() + 1) { // this is goofy, but time-steps are
+                                      // usually longer than 1 second, so it
+                                      // should work
+      ierr = temp.copy_to(temp_0); CHKERRQ(ierr);
+      ierr = mass_flux.copy_to(mass_flux_0); CHKERRQ(ierr);
+    }
   }
 
   ierr = mass_flux.begin_access(); CHKERRQ(ierr);

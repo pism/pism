@@ -178,38 +178,4 @@ public:
   }
 };
 
-//! \brief A class implementing an "atmosphere modifier" model applying forcing data
-//! (anomalies, temperature offsets...) to results of another PISM atmosphere model.
-/*!
-Processes command-line options -anomaly_temp, -anomaly_precip.
-
-The temperature anomaly should be interpreted as a change to the \e air temperature,
-for example at 2m.  An underlying PISMSurfaceModel is in charge of producing an
-actual ice fluid upper surface temperature.  The precipitation anomaly could
-include rain, and again the underlying PISMSurfaceModel is in charge of removing
-rain (if that's the model ...) using (for example) the 2m air temperature.
- */
-class PAForcing : public PAModifier {
-public:
-  PAForcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel *input);
-  virtual ~PAForcing();
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, string filename);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();  
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-protected:
-  IceModelVec2T *temp_anomaly, *precip_anomaly;
-  NCSpatialVariable airtemp_var;
-};
-
-
 #endif	// __PISMAtmosphere_hh

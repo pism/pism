@@ -477,8 +477,23 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    ierr = surface->update(grid.time->start(), 0); CHKERRQ(ierr);
-    ierr = ocean->update(grid.time->start(), 0); CHKERRQ(ierr);
+    PetscReal max_dt = 0;
+    bool restrict = false;
+    // FIXME: this will break if a surface or an ocean model requires
+    // contiguous update intervals
+    ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
+
+    if (restrict == false)
+      max_dt = convert(1, "year", "seconds");
+
+    ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
+
+    ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
+
+    if (restrict == false)
+      max_dt = convert(1, "year", "seconds");
+
+    ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
     ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
     ierr = btu->init(variables); CHKERRQ(ierr);
   }

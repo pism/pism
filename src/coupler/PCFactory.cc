@@ -21,19 +21,17 @@
 // creating corresponding models and stringing them together to get requested
 // data-flow.
 
-#include "PCFactory.hh"
-#include "PSExternal.hh"
 #include "PAEismintGreenland.hh"
-#include "PASeariseGreenland.hh"
 #include "PASDirectForcing.hh"
-#include "PSElevation.hh"
-#include "pism_const.hh"
 #include "PASLapseRates.hh"
-#include "PASDirectForcing.hh"
-#include "PScalarForcing.hh"
+#include "PASeariseGreenland.hh"
+#include "PCFactory.hh"
 #include "PODirectForcing.hh"
-#include "PSDirectAnomalies.hh"
+#include "PSElevation.hh"
+#include "PSExternal.hh"
 #include "PSStuffAsAnomaly.hh"
+#include "PScalarForcing.hh"
+#include "pism_const.hh"
 
 // Atmosphere
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -62,11 +60,6 @@ static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf,
   result = new PALapseRates(g, conf, input);
 }
 
-static void create_pa_anomalies(IceGrid& g, const NCConfigVariable& conf,
-                                PISMAtmosphereModel *input, PAModifier* &result) {
-  result = new PAForcing(g, conf, input);
-}
-
 static void create_pa_dTforcing(IceGrid& g, const NCConfigVariable& conf,
                                 PISMAtmosphereModel *input, PAModifier* &result) {
   result = new PAdTforcing(g, conf, input);
@@ -80,7 +73,6 @@ void PAFactory::add_standard_types() {
   add_model("pik",               &create_pa_constant_pik);
   set_default("constant");
 
-  add_modifier("anomaly",    &create_pa_anomalies);
   add_modifier("dTforcing",    &create_pa_dTforcing);
   add_modifier("lapse_rate", &create_pa_lapse_rates);
 }
@@ -157,10 +149,6 @@ static void create_ps_stuff_as_anomaly(IceGrid& g, const NCConfigVariable& conf,
   result = new PSStuffAsAnomaly(g, conf, input);
 }
 
-static void create_ps_direct_anomalies(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
-  result = new PSDirectAnomalies(g, conf);
-}
-
 void PSFactory::add_standard_types() {
   add_model("constant",      &create_ps_constant);
   add_model("simple",        &create_ps_simple);
@@ -168,7 +156,6 @@ void PSFactory::add_standard_types() {
   add_model("given",         &create_ps_given); 
   add_model("pik",           &create_ps_constant_pik);
   add_model("elevation",     &create_ps_elevation);
-  add_model("given_anomalies", &create_ps_direct_anomalies);
   set_default("simple");
 
   add_modifier("forcing",    &create_ps_forcing);

@@ -3,7 +3,6 @@ add_library (pismboundary
   ./atmosphere/PAConstant.cc
   ./atmosphere/PAConstantPIK.cc
   ./atmosphere/PAEismintGreenland.cc
-  ./atmosphere/PAForcing.cc
   ./atmosphere/PASeariseGreenland.cc
   ./atmosphere/PAYearlyCycle.cc
   ./ocean/PISMOcean.cc
@@ -13,7 +12,6 @@ add_library (pismboundary
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
   ./surface/PSConstantPIK.cc
-  ./surface/PSDirectAnomalies.cc
   ./surface/PSElevation.cc
   ./surface/PSExternal.cc
   ./surface/PSStuffAsAnomaly.cc
