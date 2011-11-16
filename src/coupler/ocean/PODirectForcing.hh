@@ -22,11 +22,11 @@
 #include "PASDirectForcing.hh"
 #include "PISMOcean.hh"
 
-class PODirectForcing : public PDirectForcing<PISMOceanModel>
+class PODirectForcing : public PDirectForcing<POModifier,PISMOceanModel>
 {
 public:
   PODirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PDirectForcing<PISMOceanModel>(g, conf)
+    : PDirectForcing<POModifier,PISMOceanModel>(g, conf, NULL)
   {
     temp_name       = "shelfbtemp";
     mass_flux_name  = "shelfbmassflux";

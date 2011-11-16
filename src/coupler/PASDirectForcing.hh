@@ -29,37 +29,57 @@
 #include "NCTool.hh"
 #include "pism_options.hh"
 
-template <class Model>
+template <class Model, class Input>
 class PDirectForcing : public Model
 {
 public:
-  PDirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : Model(g, conf) {}
+  PDirectForcing(IceGrid &g, const NCConfigVariable &conf, Input *in)
+    : Model(g, conf, in) {}
 
   virtual ~PDirectForcing() {}
 
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
   {
-    PetscReal max_dt = -1;
+    PetscReal mass_flux_max_dt = -1;
 
     // "Periodize" the climate:
     my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
 
     my_dt = temp.max_timestep(my_t);
 
-    max_dt = mass_flux.max_timestep(my_t);
+    mass_flux_max_dt = mass_flux.max_timestep(my_t);
 
     if (my_dt > 0) {
-      if (max_dt > 0)
-        my_dt = PetscMin(max_dt, my_dt);
+      if (mass_flux_max_dt > 0)
+        my_dt = PetscMin(mass_flux_max_dt, my_dt);
     }
-    else my_dt = max_dt;
+    else my_dt = mass_flux_max_dt;
 
     // If the user asked for periodized climate, limit time-steps so that PISM
     // never tries to average data over an interval that begins in one period and
     // ends in the next one.
     if (bc_period > 0.01)
       my_dt = PetscMin(my_dt, bc_period - my_t);
+
+    // my_dt is fully determined (in the case input_model == NULL). Now get
+    // max_dt from an input model:
+
+    if (Model::input_model != NULL) {
+      PetscReal input_dt;
+      bool input_restrict;
+
+      // Note: we use "periodized" t here:
+      PetscErrorCode ierr = Model::input_model->max_timestep(my_t, input_dt, input_restrict); CHKERRQ(ierr);
+
+      if (input_restrict) {
+        if (my_dt > 0)
+          my_dt = PetscMin(input_dt, my_dt);
+        else
+          my_dt = input_dt;
+      }
+      // else my_dt is not changed
+
+    }
 
     if (my_dt > 0)
       restrict = true;
@@ -75,6 +95,10 @@ public:
       result.insert(temp_name);
       result.insert(mass_flux_name);
     }
+
+    if (Model::input_model != NULL) {
+      Model::input_model->add_vars_to_output(keyword, result);
+    }
   }
 
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype)
@@ -82,11 +106,17 @@ public:
     PetscErrorCode ierr;
 
     if (set_contains(vars, temp_name)) {
-      ierr = temp.define(nc, nctype); CHKERRQ(ierr); 
+      ierr = temp.define(nc, nctype); CHKERRQ(ierr);
+      vars.erase(temp_name);
     }
 
     if (set_contains(vars, mass_flux_name)) {
       ierr = mass_flux.define(nc, nctype); CHKERRQ(ierr);
+      vars.erase(mass_flux_name);
+    }
+
+    if (Model::input_model != NULL) {
+      ierr = Model::input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
     return 0;
@@ -98,10 +128,16 @@ public:
 
     if (set_contains(vars, temp_name)) {
       ierr = temp.write(fname.c_str()); CHKERRQ(ierr);
+      vars.erase(temp_name);
     }
 
     if (set_contains(vars, mass_flux_name)) {
       ierr = mass_flux.write(fname.c_str()); CHKERRQ(ierr);
+      vars.erase(mass_flux_name);
+    }
+
+    if (Model::input_model != NULL) {
+      ierr = Model::input_model->write_variables(vars, fname); CHKERRQ(ierr);
     }
 
     return 0;
@@ -119,7 +155,7 @@ protected:
   {
     PetscErrorCode ierr;
     bool bc_file_set, bc_period_set, bc_ref_year_set;
-  
+
     PetscReal bc_period_years = 0,
       bc_reference_year = 0;
 
@@ -212,15 +248,19 @@ protected:
     ierr = temp.update(Model::t, Model::dt); CHKERRQ(ierr);
     ierr = mass_flux.update(Model::t, Model::dt); CHKERRQ(ierr);
 
+    if (Model::input_model != NULL) {
+      ierr = Model::input_model->update(Model::t, Model::dt); CHKERRQ(ierr);
+    }
+
     return 0;
   }
 };
 
-class PSDirectForcing : public PDirectForcing<PISMSurfaceModel>
+class PSDirectForcing : public PDirectForcing<PSModifier,PISMSurfaceModel>
 {
 public:
   PSDirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PDirectForcing<PISMSurfaceModel>(g, conf)
+    : PDirectForcing<PSModifier,PISMSurfaceModel>(g, conf, NULL)
   {
     temp_name = "artm";
     mass_flux_name = "acab";
@@ -238,11 +278,11 @@ public:
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 };
 
-class PADirectForcing : public PDirectForcing<PISMAtmosphereModel>
+class PADirectForcing : public PDirectForcing<PAModifier,PISMAtmosphereModel>
 {
 public:
   PADirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PDirectForcing<PISMAtmosphereModel>(g, conf)
+    : PDirectForcing<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
   {
     temp_name = "artm";
     mass_flux_name  = "precip";
@@ -259,11 +299,23 @@ public:
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
   virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();  
+  virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
 protected:
   vector<PetscReal> ts_mod;
+};
+
+//! \brief
+/*!
+ *
+ */
+class PSAnomaly : public PDirectForcing<PSModifier,PISMSurfaceModel>
+{
+public:
+  PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+    : PDirectForcing<PSModifier,PISMSurfaceModel>(g, conf, in) {}
+  virtual ~PSAnomaly() {}
 };
 
 #endif /* _PASDIRECTFORCING_H_ */
