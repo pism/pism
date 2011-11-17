@@ -406,6 +406,8 @@ double IceModelVec2T::max_timestep(double my_t) {
 
 //! \brief Get the record that is just before my_t.
 PetscErrorCode IceModelVec2T::at_time(double my_t) {
+  PetscErrorCode ierr;
+
   int     last = first + (N - 1);
   double *j,
     *start = &time_bounds[first * 2],
@@ -422,6 +424,18 @@ PetscErrorCode IceModelVec2T::at_time(double my_t) {
   if (i == 0) {
     return get_record(0);         // out of range (on the left)
   }
+
+  int index = ((j - &time_bounds[0]) - 1) / 2;
+
+  ierr = verbPrintf(3, grid->com,
+		    "  IceModelVec2T::at_time(%3.5f years): using %s:%s[%d]"
+                    " (time bounds: [%3.5f years, %3.5f years]).\n",
+                    grid->time->seconds_to_years(my_t),
+                    filename.c_str(),
+                    vars[0].short_name.c_str(),
+                    index,
+                    grid->time->seconds_to_years(*(j-1)),
+                    grid->time->seconds_to_years(*j)); CHKERRQ(ierr);
 
   if (i % 2 == 0) {
     PetscPrintf(grid->com,
@@ -445,14 +459,14 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
   double *p,
     *start = &time_bounds[first * 2],
     *end = &time_bounds[last * 2 + 1];
-  
+
   p = lower_bound(start, end, my_t); // binary search
 
   if (p == end) {
     ierr = get_record(N - 1); CHKERRQ(ierr);
     return 0;
   }
-    
+
   int k = (int)(p - start - 1);
 
   if (k < 0) {
@@ -460,9 +474,21 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
     return 0;
   }
 
+  int index = ((p - &time_bounds[0]) - 1) / 2;
+
+  ierr = verbPrintf(3, grid->com,
+		    "  IceModelVec2T::interp(%3.5f years): using %s:%s[%d,%d]"
+                    " (time bounds: [%3.5f years, %3.5f years]).\n",
+                    grid->time->seconds_to_years(my_t),
+                    filename.c_str(),
+                    vars[0].short_name.c_str(),
+                    index - 1, index,
+                    grid->time->seconds_to_years(*(p-1)),
+                    grid->time->seconds_to_years(*p)); CHKERRQ(ierr);
+
   int m = first + k;
   double lambda = (my_t - time[m]) / (time[m + 1] - time[m]);
-  
+
   PetscScalar **a2, ***a3;
 
   ierr = get_array(a2); CHKERRQ(ierr);
@@ -528,7 +554,7 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double my_t, double my_dt,
   double dt = my_dt / (M - 1);
   for (int k = 0; k < M; k++)
     ts[k] = my_t + k * dt;
-  
+
   ierr = interp(i, j, M, &ts[0], &values[0]); CHKERRQ(ierr);
 
   // trapezoidal rule; uses the fact that all 'small' time intervals used here
