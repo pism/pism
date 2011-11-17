@@ -22,15 +22,19 @@
 // data-flow.
 
 #include "PAEismintGreenland.hh"
-#include "PASDirectForcing.hh"
-#include "PASLapseRates.hh"
+#include "PAGivenClimate.hh"
+#include "PSGivenClimate.hh"
+#include "PALapseRates.hh"
+#include "PSLapseRates.hh"
 #include "PASeariseGreenland.hh"
 #include "PCFactory.hh"
-#include "PODirectForcing.hh"
+#include "POGivenClimate.hh"
 #include "PSElevation.hh"
 #include "PSExternal.hh"
 #include "PSStuffAsAnomaly.hh"
-#include "PScalarForcing.hh"
+#include "PSdTforcing.hh"
+#include "PAdTforcing.hh"
+#include "POdSLforcing.hh"
 #include "pism_const.hh"
 
 // Atmosphere
@@ -43,7 +47,7 @@ static void create_pa_constant_pik(IceGrid& g, const NCConfigVariable& conf, PIS
 }
 
 static void create_pa_given(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
-  result = new PADirectForcing(g, conf);
+  result = new PAGivenClimate(g, conf);
 }
 
 static void create_pa_searise_greenland(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -84,7 +88,7 @@ static void create_po_constant(IceGrid& g, const NCConfigVariable& conf, PISMOce
 }
 
 static void create_po_given(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
-  result = new PODirectForcing(g, conf);
+  result = new POGiven(g, conf);
 }
 
 static void create_po_pik(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
@@ -136,7 +140,7 @@ static void create_ps_lapse_rates(IceGrid& g, const NCConfigVariable& conf,
 }
 
 static void create_ps_given(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
-  result = new PSDirectForcing(g, conf);
+  result = new PSGivenClimate(g, conf);
 }
 
 static void create_ps_dTforcing(IceGrid& g, const NCConfigVariable& conf,

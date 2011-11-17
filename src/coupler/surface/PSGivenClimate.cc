@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,29 +16,31 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PODirectForcing.hh"
+#include "PSGivenClimate.hh"
 #include "IceGrid.hh"
 
-PetscErrorCode PODirectForcing::init(PISMVars &) {
+PetscErrorCode PSGivenClimate::init(PISMVars &) {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(2, grid.com,
-                    "* Initializing the ocean model reading base of the shelf temperature\n"
-                    "  and sub-shelf mass flux from a file...\n"); CHKERRQ(ierr);
+                    "* Initializing the surface model reading temperature at the top of the ice\n"
+                    "  and ice surface mass flux from a file...\n"); CHKERRQ(ierr);
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  ierr = set_vec_parameters("", ""); CHKERRQ(ierr);
+  ierr = set_vec_parameters("", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
   ierr = temp.create(grid, temp_name, false); CHKERRQ(ierr);
   ierr = mass_flux.create(grid, mass_flux_name, false); CHKERRQ(ierr);
 
   ierr = temp.set_attrs("climate_forcing",
-                        "absolute temperature at ice shelf base",
+                        "temperature of the ice at the ice surface but below firn processes",
                         "Kelvin", ""); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing",
-                       "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                       "m s-1", ""); CHKERRQ(ierr);
+                       "ice-equivalent surface mass balance (accumulation/ablation) rate",
+                       "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+  ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  mass_flux.write_in_glaciological_units = true;
 
   ierr = verbPrintf(2,grid.com,
                     "    reading boundary conditions from %s ...\n",
@@ -50,12 +52,12 @@ PetscErrorCode PODirectForcing::init(PISMVars &) {
   return 0;
 }
 
-PetscErrorCode PODirectForcing::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PSGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   if (enable_time_averaging) {
-    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
-    ierr = temp.average(t, dt); CHKERRQ(ierr); 
+    ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
+    ierr = temp.average(t, dt); CHKERRQ(ierr);
   } else {
     ierr = mass_flux.at_time(t); CHKERRQ(ierr);
     ierr = temp.at_time(t); CHKERRQ(ierr);
@@ -64,14 +66,12 @@ PetscErrorCode PODirectForcing::update(PetscReal my_t, PetscReal my_dt) {
   return 0;
 }
 
-PetscErrorCode PODirectForcing::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = temp.copy_to(result); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode PODirectForcing::shelf_base_mass_flux(IceModelVec2S &result) {
+PetscErrorCode PSGivenClimate::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr = mass_flux.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
+PetscErrorCode PSGivenClimate::ice_surface_temperature(IceModelVec2S &result) {
+  PetscErrorCode ierr = temp.copy_to(result); CHKERRQ(ierr);
+  return 0;
+}

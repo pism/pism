@@ -1,3 +1,5 @@
+include_directories (./util)
+
 # Boundary models (surface, atmosphere, ocean).
 add_library (pismboundary
   ./atmosphere/PAConstant.cc
@@ -5,9 +7,13 @@ add_library (pismboundary
   ./atmosphere/PAEismintGreenland.cc
   ./atmosphere/PASeariseGreenland.cc
   ./atmosphere/PAYearlyCycle.cc
+  ./atmosphere/PAGivenClimate.cc
+  ./atmosphere/PALapseRates.cc
+  ./atmosphere/PAdTforcing.cc
   ./ocean/PISMOcean.cc
   ./ocean/POConstantPIK.cc
-  ./ocean/PODirectForcing.cc
+  ./ocean/POGivenClimate.cc
+  ./ocean/POdSLforcing.cc
   ./surface/ebm_driver.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
@@ -15,10 +21,10 @@ add_library (pismboundary
   ./surface/PSElevation.cc
   ./surface/PSExternal.cc
   ./surface/PSStuffAsAnomaly.cc
-  ./PASDirectForcing.cc
-  ./PASLapseRates.cc
+  ./surface/PSGivenClimate.cc
+  ./surface/PSLapseRates.cc
+  ./surface/PSdTforcing.cc
   ./PCFactory.cc
-  ./PScalarForcing.cc
   )
 target_link_libraries (pismboundary pismutil)
 

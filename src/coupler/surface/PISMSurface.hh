@@ -120,7 +120,7 @@ public:
 
 //! \brief A class implementing a constant-in-time surface model.  Reads data
 //! from a PISM input file.
-/*! 
+/*!
 This is model is just as simple as PSSimple, but it assumes results from a
 surface processes model are already known.  But they are treated as constant in
 time and they are read from the input file at the beginning of the PISM run.

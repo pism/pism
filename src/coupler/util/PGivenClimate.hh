@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,27 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Implementation of surface and atmosphere models reading spatially-variable
-// time-dependent B.C. data from a file (-surface given and -atmosphere given).
+#ifndef _PGIVENCLIMATE_H_
+#define _PGIVENCLIMATE_H_
 
-#ifndef _PASDIRECTFORCING_H_
-#define _PASDIRECTFORCING_H_
-
-#include "PISMSurface.hh"
-#include "PISMAtmosphere.hh"
 #include "iceModelVec2T.hh"
 #include "PISMTime.hh"
 #include "NCTool.hh"
 #include "pism_options.hh"
 
 template <class Model, class Input>
-class PDirectForcing : public Model
+class PGivenClimate : public Model
 {
 public:
-  PDirectForcing(IceGrid &g, const NCConfigVariable &conf, Input *in)
+  PGivenClimate(IceGrid &g, const NCConfigVariable &conf, Input *in)
     : Model(g, conf, in) {}
 
-  virtual ~PDirectForcing() {}
+  virtual ~PGivenClimate() {}
 
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
   {
@@ -256,66 +251,4 @@ protected:
   }
 };
 
-class PSDirectForcing : public PDirectForcing<PSModifier,PISMSurfaceModel>
-{
-public:
-  PSDirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PDirectForcing<PSModifier,PISMSurfaceModel>(g, conf, NULL)
-  {
-    temp_name = "artm";
-    mass_flux_name = "acab";
-    option_prefix = "-surface";
-  }
-  virtual ~PSDirectForcing() {}
-
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
-  { delete input; }
-
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-};
-
-class PADirectForcing : public PDirectForcing<PAModifier,PISMAtmosphereModel>
-{
-public:
-  PADirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PDirectForcing<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
-  {
-    temp_name = "artm";
-    mass_flux_name  = "precip";
-    option_prefix = "-atmosphere";
-  }
-
-  virtual ~PADirectForcing() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values);
-protected:
-  vector<PetscReal> ts_mod;
-};
-
-//! \brief
-/*!
- *
- */
-class PSAnomaly : public PDirectForcing<PSModifier,PISMSurfaceModel>
-{
-public:
-  PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-    : PDirectForcing<PSModifier,PISMSurfaceModel>(g, conf, in) {}
-  virtual ~PSAnomaly() {}
-};
-
-#endif /* _PASDIRECTFORCING_H_ */
+#endif /* _PGIVENCLIMATE_H_ */
