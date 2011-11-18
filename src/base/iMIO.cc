@@ -96,10 +96,13 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
 }
 
 //! \brief Write metadata (global attributes, overrides and mapping parameters) to a file.
-PetscErrorCode IceModel::write_metadata(const char *filename) {
+PetscErrorCode IceModel::write_metadata(const char *filename, bool write_mapping) {
   PetscErrorCode ierr;
 
-  ierr = mapping.write(filename); CHKERRQ(ierr);
+  if (write_mapping) {
+    ierr = mapping.write(filename); CHKERRQ(ierr);
+  }
+
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
 
   bool override_used;
@@ -108,7 +111,7 @@ PetscErrorCode IceModel::write_metadata(const char *filename) {
     overrides.update_from(config);
     ierr = overrides.write(filename); CHKERRQ(ierr);
   }
-  
+
   return 0;
 }
 
