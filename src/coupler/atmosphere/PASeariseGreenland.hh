@@ -20,7 +20,8 @@
 #ifndef __PASeariseGreenland_hh
 #define __PASeariseGreenland_hh
 
-#include "PISMAtmosphere.hh"
+#include "PAYearlyCycle.hh"
+#include "Timeseries.hh"
 
 //! \brief A modification of PAYearlyCycle tailored for the
 //! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]

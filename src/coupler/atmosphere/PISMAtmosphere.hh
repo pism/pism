@@ -21,10 +21,7 @@
 #define __PISMAtmosphere_hh
 
 #include "PISMComponent.hh"
-#include "iceModelVec.hh"
-#include "Timeseries.hh"
-#include "iceModelVec2T.hh"
-
+class IceModelVec2S;
 
 ///// PISMAtmosphereModel: models which provide precipitation and temperature
 /////                      to the PISMSurfaceModel below
@@ -43,7 +40,7 @@ public:
 
   virtual PetscErrorCode begin_pointwise_access() = 0;
   virtual PetscErrorCode end_pointwise_access() = 0;
-  
+
   //! \brief Sets a pre-allocated N-element array "values" to the time-series
   //! of near-surface air temperature (degrees Kelvin) at the point i,j on the
   //! grid. Times (in years) are specified in ts. NB! Has to be surrounded by
@@ -53,129 +50,6 @@ public:
   //! \brief Sets result to a snapshot of temperature for the current time.
   //! (For diagnostic purposes.)
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result) = 0;
-};
-
-
-//! \brief A class implementing a constant-in-time atmosphere model. Reads data
-//! from a PISM input file.
-class PAConstant : public PISMAtmosphereModel {
-public:
-  PAConstant(IceGrid &g, const NCConfigVariable &conf)
-    : PISMAtmosphereModel(g, conf) {};
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
-  { t = my_t; dt = my_dt; return 0; } // do nothing
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, string filename);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-protected:
-  string input_file;
-  IceModelVec2S precip, temperature;
-  NCSpatialVariable airtemp_var;
-};
-
-class PAConstantPIK : public PAConstant
-{
-public:
-  PAConstantPIK(IceGrid &g, const NCConfigVariable &conf)
-    : PAConstant(g, conf) {};
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-protected:
-  IceModelVec2S *usurf, *lat;
-};
-
-//! A class containing an incomplete implementation of an atmosphere model
-//! based on a temperature parameterization using mean annual and mean July
-//! (mean summer) temperatures and a cosine yearly cycle. Uses a stored
-//! (constant in time) precipitation field.
-class PAYearlyCycle : public PISMAtmosphereModel {
-public:
-  PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
-    : PISMAtmosphereModel(g, conf) {}
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, string filename);
-  //! This method implements the parameterization.
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-protected:
-  PISMVars *variables;
-  PetscScalar snow_temp_july_day;
-  string reference, precip_filename;
-  IceModelVec2S temp_ma, temp_mj, precip;
-  NCSpatialVariable airtemp_var;
-};
-
-class PAModifier : public Modifier<PISMAtmosphereModel>
-{
-public:
-  PAModifier(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-    : Modifier<PISMAtmosphereModel>(g, conf, in) {}
-  virtual ~PAModifier() {}
-
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result)
-  {
-    if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->mean_precip(result); CHKERRQ(ierr);
-    }
-    return 0;
-  }
-
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result)
-  {
-    if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->mean_annual_temp(result); CHKERRQ(ierr);
-    }
-    return 0;
-  }
-
-  virtual PetscErrorCode begin_pointwise_access()
-  {
-    if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->begin_pointwise_access(); CHKERRQ(ierr);
-    }
-    return 0;
-  }
-
-  virtual PetscErrorCode end_pointwise_access()
-  {
-    if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->end_pointwise_access(); CHKERRQ(ierr);
-    }
-    return 0;
-  }
-  
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values)
-  {
-    if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
-    }
-    return 0;
-  }
-
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result)
-  {
-    if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
-    }
-    return 0;
-  }
 };
 
 #endif	// __PISMAtmosphere_hh

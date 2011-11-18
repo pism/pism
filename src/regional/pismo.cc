@@ -24,15 +24,15 @@ static char help[] =
 #include "IceGrid.hh"
 #include "iceModel.hh"
 
-#include "PCFactory.hh"
-#include "PISMAtmosphere.hh"
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
+#include "PAFactory.hh"
+#include "POFactory.hh"
+#include "PSFactory.hh"
 #include "PISMStressBalance.hh"
 #include "PISMYieldStress.hh"
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "NCTool.hh"
+#include "pism_options.hh"
 
 //! \file pismo.cc A regional (outlet glacier) model form of PISM.
 /*! \file pismo.cc 

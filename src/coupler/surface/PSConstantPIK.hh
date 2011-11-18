@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,18 +16,23 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSELEVATION_H_
-#define _PSELEVATION_H_
+#ifndef _PSCONSTANTPIK_H_
+#define _PSCONSTANTPIK_H_
 
 #include "PISMSurface.hh"
-#include "iceModelVec2T.hh"
+#include "iceModelVec.hh"
 #include "PISMAtmosphere.hh"
 
-//! \brief A class implementing a elevation-dependent temperature and mass balance model.
+//! \brief A class implementing a constant-in-time surface model for the surface mass balance.
+//!
+//! Reads data from a PISM input file.
+//!
+//! Ice surface temperature is parameterized as in PISM-PIK, using a latitude
+//! and surface elevation-dependent formula.
 
-class PSElevation : public PISMSurfaceModel {
+class PSConstantPIK : public PISMSurfaceModel {
 public:
-  PSElevation(IceGrid &g, const NCConfigVariable &conf)
+  PSConstantPIK(IceGrid &g, const NCConfigVariable &conf)
     : PISMSurfaceModel(g, conf)
   {};
 
@@ -47,14 +52,9 @@ public:
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
-  NCSpatialVariable acab, artm;
-  IceModelVec2S *usurf;
-  PetscReal artm_min, artm_max,
-    z_artm_min, z_artm_max,
-    acab_min, acab_max, acab_limit_min, acab_limit_max,
-    z_acab_min, z_ELA, z_acab_max;
-  PetscBool elev_artm_set, elev_acab_set, acab_limits_set;
-
+  string input_file;
+  IceModelVec2S acab, artm;
+  IceModelVec2S *lat, *usurf;
 };
 
-#endif /* _PSELEVATION_H_ */
+#endif /* _PSCONSTANTPIK_H_ */

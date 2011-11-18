@@ -21,6 +21,7 @@
 
 #include "PLapseRates.hh"
 #include "PISMSurface.hh"
+#include "PSModifier.hh"
 
 class PSLapseRates : public PLapseRates<PISMSurfaceModel,PSModifier>
 {

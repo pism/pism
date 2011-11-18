@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,37 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PODIRECTFORCING_H_
-#define _PODIRECTFORCING_H_
+#ifndef _PACONSTANTPIK_H_
+#define _PACONSTANTPIK_H_
 
-#include "PGivenClimate.hh"
-#include "POModifier.hh"
+#include "PAConstant.hh"
 
-class POGiven : public PGivenClimate<POModifier,PISMOceanModel>
+class PAConstantPIK : public PAConstant
 {
 public:
-  POGiven(IceGrid &g, const NCConfigVariable &conf)
-    : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
-  {
-    temp_name       = "shelfbtemp";
-    mass_flux_name  = "shelfbmassflux";
-    option_prefix   = "-ocean_given";
-  }
-
-  virtual ~POGiven() {}
-
+  PAConstantPIK(IceGrid &g, const NCConfigVariable &conf)
+    : PAConstant(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result) {
-    result = sea_level;
-    return 0;
-  }
-
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
-
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
+protected:
+  IceModelVec2S *usurf, *lat;
 };
 
-
-#endif /* _PODIRECTFORCING_H_ */
+#endif /* _PACONSTANTPIK_H_ */

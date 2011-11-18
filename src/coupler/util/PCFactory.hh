@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,18 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Implementation of "surface", "atmosphere" and "ocean" model factories: C++
-// classes processing -surface, -atmosphere and -ocean command-line options,
-// creating corresponding models and stringing them together to get requested
-// data-flow.
+#ifndef _PCFACTORY_H_
+#define _PCFACTORY_H_
 
+#include "pism_const.hh"
+
+#include "IceGrid.hh"
 #include <map>
 
-#include "PISMAtmosphere.hh"
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
-#include "IceGrid.hh"
-#include "pism_options.hh"
+class NCConfigVariable;
 
 template <class Model, class Modifier>
 class PCFactory {
@@ -167,39 +164,4 @@ protected:
   const NCConfigVariable& config;
 };
 
-class PAFactory : public PCFactory<PISMAtmosphereModel,PAModifier> {
-public:
-  PAFactory(IceGrid& g, const NCConfigVariable& conf)
-    : PCFactory<PISMAtmosphereModel,PAModifier>(g, conf)
-  {
-    add_standard_types();
-    option = "atmosphere";
-  }
-  virtual ~PAFactory() {}
-  virtual void add_standard_types();
-};
-
-class PSFactory : public PCFactory<PISMSurfaceModel,PSModifier> {
-public:
-  PSFactory(IceGrid& g, const NCConfigVariable& conf)
-    : PCFactory<PISMSurfaceModel,PSModifier>(g, conf)
-  {
-    add_standard_types();
-    option = "surface";
-  }
-
-  virtual ~PSFactory() {}
-  virtual void add_standard_types();
-};
-
-class POFactory : public PCFactory<PISMOceanModel,POModifier> {
-public:
-  POFactory(IceGrid& g, const NCConfigVariable& conf)
-    : PCFactory<PISMOceanModel,POModifier>(g, conf)
-  {
-    add_standard_types();
-    option = "ocean";
-  }
-  virtual ~POFactory() {}
-  virtual void add_standard_types();
-};
+#endif /* _PCFACTORY_H_ */

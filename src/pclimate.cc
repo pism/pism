@@ -31,11 +31,11 @@ static char help[] =
 #include "LocalInterpCtx.hh"
 #include "PISMIO.hh"
 #include "NCVariable.hh"
+#include "Timeseries.hh"
 
-#include "PCFactory.hh"
-#include "PISMAtmosphere.hh"
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
+#include "PAFactory.hh"
+#include "POFactory.hh"
+#include "PSFactory.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 

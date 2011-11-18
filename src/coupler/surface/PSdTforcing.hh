@@ -21,6 +21,7 @@
 
 #include "PScalarForcing.hh"
 #include "PISMSurface.hh"
+#include "PSModifier.hh"
 
 class PSdTforcing : public PScalarForcing<PISMSurfaceModel,PSModifier>
 {

@@ -16,20 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PODSLFORCING_H_
-#define _PODSLFORCING_H_
+#ifndef _PSFACTORY_H_
+#define _PSFACTORY_H_
 
-#include "PScalarForcing.hh"
-#include "POModifier.hh"
+#include "PSModifier.hh"
 
-class POdSLforcing : public PScalarForcing<PISMOceanModel,POModifier>
-{
+class PSFactory : public PCFactory<PISMSurfaceModel,PSModifier> {
 public:
-  POdSLforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
-  virtual ~POdSLforcing() {}
+  PSFactory(IceGrid& g, const NCConfigVariable& conf)
+    : PCFactory<PISMSurfaceModel,PSModifier>(g, conf)
+  {
+    add_standard_types();
+    option = "surface";
+  }
 
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual ~PSFactory() {}
+  virtual void add_standard_types();
 };
 
-#endif /* _PODSLFORCING_H_ */
+#endif /* _PSFACTORY_H_ */

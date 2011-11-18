@@ -20,6 +20,8 @@
 #define _PSEXTERNAL_H_
 
 #include "PISMSurface.hh"
+#include "iceModelVec.hh"
+#include "PISMAtmosphere.hh"
 
 const int TAG_EBM_RUN     = 1;
 const int TAG_EBM_STOP    = 2;

@@ -19,7 +19,7 @@
 #ifndef _PAGIVEN_H_
 #define _PAGIVEN_H_
 
-#include "PISMAtmosphere.hh"
+#include "PAModifier.hh"
 #include "PGivenClimate.hh"
 
 class PAGivenClimate : public PGivenClimate<PAModifier,PISMAtmosphereModel>

@@ -24,10 +24,10 @@ static char help[] =
 #include "IceGrid.hh"
 #include "iceModel.hh"
 
-#include "PCFactory.hh"
-#include "PISMAtmosphere.hh"
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
+#include "pism_options.hh"
+#include "PAFactory.hh"
+#include "POFactory.hh"
+#include "PSFactory.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

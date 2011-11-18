@@ -20,7 +20,7 @@
 #define _PADTFORCING_H_
 
 #include "PScalarForcing.hh"
-#include "PISMAtmosphere.hh"
+#include "PAModifier.hh"
 
 class PAdTforcing : public PScalarForcing<PISMAtmosphereModel,PAModifier>
 {

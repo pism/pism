@@ -16,33 +16,38 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSSTUFFASANOMALY_H_
-#define _PSSTUFFASANOMALY_H_
+#ifndef _PSFORCETHICKNESS_H_
+#define _PSFORCETHICKNESS_H_
 
-#include "PISMSurface.hh"
 #include "PSModifier.hh"
 #include "iceModelVec.hh"
+#include "NCVariable.hh"
 
-//! \brief A surface modifier class applying its input as anomalies.
-class PSStuffAsAnomaly : public PSModifier
-{
+//! A class implementing a modified surface mass balance which forces
+//! ice thickness to a given target by the end of the run.
+class PSForceThickness : public PSModifier {
 public:
-  PSStuffAsAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
-    : PSModifier(g, conf, input) {}
-  virtual ~PSStuffAsAnomaly() {}
+  PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
+    : PSModifier(g, conf, input)
+  {
+    ice_thickness = NULL;
+    alpha = convert(config.get("force_to_thickness_alpha"),"yr-1","s-1");
+  }
 
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual ~PSForceThickness() {}
+  PetscErrorCode init(PISMVars &vars);
+  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, string fname);
-
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
-  IceModelVec2S mass_flux, mass_flux_0, mass_flux_input,
-    temp, temp_0, temp_input;
+  string input_file;
+  PetscReal alpha;
+  IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
+  IceModelVec2S target_thickness, ftt_mask;
 };
 
-#endif /* _PSSTUFFASANOMALY_H_ */
+#endif /* _PSFORCETHICKNESS_H_ */

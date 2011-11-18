@@ -19,7 +19,7 @@
 #ifndef __PA_EISMINT_Greenland
 #define __PA_EISMINT_Greenland
 
-#include "PISMAtmosphere.hh"
+#include "PAYearlyCycle.hh"
 
 class PA_EISMINT_Greenland : public PAYearlyCycle {
 public:

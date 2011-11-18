@@ -18,8 +18,11 @@
 
 #ifndef _PSGIVEN_H_
 #define _PSGIVEN_H_
+
 #include "PGivenClimate.hh"
 #include "PISMSurface.hh"
+#include "PSModifier.hh"
+#include "PISMAtmosphere.hh"
 
 class PSGivenClimate : public PGivenClimate<PSModifier,PISMSurfaceModel>
 {

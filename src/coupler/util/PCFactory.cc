@@ -21,21 +21,40 @@
 // creating corresponding models and stringing them together to get requested
 // data-flow.
 
+#include "PCFactory.hh"
+#include "PAFactory.hh"
+#include "POFactory.hh"
+#include "PSFactory.hh"
+
+#include "pism_const.hh"
+
+// atmosphere models:
 #include "PAEismintGreenland.hh"
 #include "PAGivenClimate.hh"
-#include "PSGivenClimate.hh"
 #include "PALapseRates.hh"
-#include "PSLapseRates.hh"
 #include "PASeariseGreenland.hh"
-#include "PCFactory.hh"
+#include "PAdTforcing.hh"
+#include "PAConstant.hh"
+#include "PAConstantPIK.hh"
+
+// ocean models:
+#include "POConstant.hh"
+#include "POConstantPIK.hh"
 #include "POGivenClimate.hh"
+#include "POdSLforcing.hh"
+
+// surface models:
 #include "PSElevation.hh"
 #include "PSExternal.hh"
+#include "PSGivenClimate.hh"
+#include "PSLapseRates.hh"
 #include "PSStuffAsAnomaly.hh"
 #include "PSdTforcing.hh"
-#include "PAdTforcing.hh"
-#include "POdSLforcing.hh"
-#include "pism_const.hh"
+#include "PSTemperatureIndex.hh"
+#include "PSSimple.hh"
+#include "PSConstant.hh"
+#include "PSConstantPIK.hh"
+#include "PSForceThickness.hh"
 
 // Atmosphere
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
