@@ -36,6 +36,7 @@
 #include "PAdTforcing.hh"
 #include "PAConstant.hh"
 #include "PAConstantPIK.hh"
+#include "PAAnomaly.hh"
 
 // ocean models:
 #include "POConstant.hh"
@@ -44,6 +45,7 @@
 #include "POdSLforcing.hh"
 
 // surface models:
+#include "PSAnomaly.hh"
 #include "PSElevation.hh"
 #include "PSExternal.hh"
 #include "PSGivenClimate.hh"
@@ -88,6 +90,11 @@ static void create_pa_dTforcing(IceGrid& g, const NCConfigVariable& conf,
   result = new PAdTforcing(g, conf, input);
 }
 
+static void create_pa_anomaly(IceGrid& g, const NCConfigVariable& conf,
+                              PISMAtmosphereModel *input, PAModifier* &result) {
+  result = new PAAnomaly(g, conf, input);
+}
+
 void PAFactory::add_standard_types() {
   add_model("constant",          &create_pa_constant);
   add_model("given",             &create_pa_given);
@@ -96,7 +103,8 @@ void PAFactory::add_standard_types() {
   add_model("pik",               &create_pa_constant_pik);
   set_default("constant");
 
-  add_modifier("dTforcing",    &create_pa_dTforcing);
+  add_modifier("anomaly",    &create_pa_anomaly);
+  add_modifier("dTforcing",  &create_pa_dTforcing);
   add_modifier("lapse_rate", &create_pa_lapse_rates);
 }
 
@@ -172,6 +180,11 @@ static void create_ps_stuff_as_anomaly(IceGrid& g, const NCConfigVariable& conf,
   result = new PSStuffAsAnomaly(g, conf, input);
 }
 
+static void create_ps_anomaly(IceGrid& g, const NCConfigVariable& conf,
+                              PISMSurfaceModel *input, PSModifier* &result) {
+  result = new PSAnomaly(g, conf, input);
+}
+
 void PSFactory::add_standard_types() {
   add_model("constant",      &create_ps_constant);
   add_model("simple",        &create_ps_simple);
@@ -181,8 +194,9 @@ void PSFactory::add_standard_types() {
   add_model("elevation",     &create_ps_elevation);
   set_default("simple");
 
+  add_modifier("anomaly",    &create_ps_anomaly);
   add_modifier("forcing",    &create_ps_forcing);
   add_modifier("dTforcing",  &create_ps_dTforcing);
   add_modifier("lapse_rate", &create_ps_lapse_rates);
-  add_modifier("as_anomaly", &create_ps_stuff_as_anomaly);
+  add_modifier("turn_into_anomaly", &create_ps_stuff_as_anomaly);
 }

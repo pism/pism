@@ -10,6 +10,7 @@ add_library (pismboundary
   ./atmosphere/PAGivenClimate.cc
   ./atmosphere/PALapseRates.cc
   ./atmosphere/PAdTforcing.cc
+  ./atmosphere/PAAnomaly.cc
   ./ocean/POConstant.cc
   ./ocean/POConstantPIK.cc
   ./ocean/POGivenClimate.cc
@@ -28,6 +29,7 @@ add_library (pismboundary
   ./surface/PSTemperatureIndex.cc
   ./surface/PSConstant.cc
   ./surface/PSForceThickness.cc
+  ./surface/PSAnomaly.cc
   ./util/PCFactory.cc
   )
 target_link_libraries (pismboundary pismutil)

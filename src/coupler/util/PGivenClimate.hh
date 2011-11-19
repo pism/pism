@@ -158,13 +158,13 @@ protected:
     bc_period = 0;
     bc_reference_time = 0;
 
-    ierr = PetscOptionsBegin(Model::grid.com, "", "Direct forcing options", ""); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(Model::grid.com, "", "Climate forcing options", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString(option_prefix + "_file",
                                "Specifies a file with boundary conditions",
                                filename, bc_file_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal(option_prefix + "_period",
-                             "Specifies the length of the climate data period",
+                             "Specifies the length of the climate data period (in years)",
                              bc_period_years, bc_period_set); CHKERRQ(ierr);
       ierr = PISMOptionsReal(option_prefix + "_reference_year",
                              "Boundary condition reference year",

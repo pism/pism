@@ -19,12 +19,15 @@
 #ifndef _PAANOMALY_H_
 #define _PAANOMALY_H_
 
+#include "PGivenClimate.hh"
+#include "PAModifier.hh"
+
 //! \brief Reads and uses artm and precip anomalies from a file.
-class PAAnomaly : public PGiven<PAModifier,PISMAtmosphereModel>
+class PAAnomaly : public PGivenClimate<PAModifier,PISMAtmosphereModel>
 {
 public:
-  PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-    : PGiven<PSModifier,PISMSurfaceModel>(g, conf, in)
+  PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+    : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in)
   {
     temp_name = "artm_anomaly";
     mass_flux_name  = "precip_anomaly";
@@ -43,7 +46,7 @@ public:
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
 protected:
-  vector<PetscReal> ts_mod;
+  vector<PetscReal> ts_mod, ts_values;
 };
 
 #endif /* _PAANOMALY_H_ */

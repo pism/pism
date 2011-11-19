@@ -19,18 +19,22 @@
 #ifndef _PSANOMALY_H_
 #define _PSANOMALY_H_
 
+#include "PGivenClimate.hh"
+#include "PSModifier.hh"
+
 //! \brief Reads and uses acab and artm \b anomalies from a file.
-class PSAnomaly : public PGiven<PSModifier,PISMSurfaceModel>
+class PSAnomaly : public PGivenClimate<PSModifier,PISMSurfaceModel>
 {
 public:
   PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-    : PGiven<PSModifier,PISMSurfaceModel>(g, conf, in)
+    : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, in)
   {
     temp_name = "artm_anomaly";
     mass_flux_name  = "acab_anomaly";
     option_prefix = "-surface_anomaly";
   }
   virtual ~PSAnomaly() {}
+
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
