@@ -192,7 +192,7 @@ void PSFactory::add_standard_types() {
   add_model("given",         &create_ps_given); 
   add_model("pik",           &create_ps_constant_pik);
   add_model("elevation",     &create_ps_elevation);
-  set_default("simple");
+  set_default("constant");
 
   add_modifier("anomaly",    &create_ps_anomaly);
   add_modifier("forcing",    &create_ps_forcing);

@@ -19,8 +19,14 @@
 #include "PAAnomaly.hh"
 #include "IceGrid.hh"
 
-PetscErrorCode PAAnomaly::init(PISMVars &/*vars*/) {
+PetscErrorCode PAAnomaly::init(PISMVars &vars) {
   PetscErrorCode ierr;
+
+  if (input_model != NULL) {
+    ierr = input_model->init(vars); CHKERRQ(ierr);
+  } else {
+    SETERRQ(grid.com, 1, "input_model == NULL");
+  }
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the -atmosphere ...,anomaly code...\n"); CHKERRQ(ierr);
@@ -36,6 +42,8 @@ PetscErrorCode PAAnomaly::init(PISMVars &/*vars*/) {
                         "Kelvin", ""); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing", "anomaly of the ice-equivalent precipitation rate",
                              "m s-1", ""); CHKERRQ(ierr);
+  ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  mass_flux.write_in_glaciological_units = true;
 
   ierr = verbPrintf(2, grid.com,
                     "    reading anomalies from %s ...\n",
