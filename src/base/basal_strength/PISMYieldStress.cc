@@ -713,6 +713,5 @@ PetscErrorCode PISMDefaultYieldStress::tauc_to_phi() {
   ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
   ierr = basal_water_thickness->end_access(); CHKERRQ(ierr);
 
-
   return 0;
 }
