@@ -22,18 +22,41 @@
 // data-flow.
 
 #include "PCFactory.hh"
-#include "PSExternal.hh"
-#include "PAEismintGreenland.hh"
-#include "PASeariseGreenland.hh"
-#include "PASDirectForcing.hh"
-#include "PSElevation.hh"
+#include "PAFactory.hh"
+#include "POFactory.hh"
+#include "PSFactory.hh"
+
 #include "pism_const.hh"
-#include "PASLapseRates.hh"
-#include "PASDirectForcing.hh"
-#include "PScalarForcing.hh"
-#include "PODirectForcing.hh"
-#include "PSDirectAnomalies.hh"
+
+// atmosphere models:
+#include "PAEismintGreenland.hh"
+#include "PAGivenClimate.hh"
+#include "PALapseRates.hh"
+#include "PASeariseGreenland.hh"
+#include "PAdTforcing.hh"
+#include "PAConstant.hh"
+#include "PAConstantPIK.hh"
+#include "PAAnomaly.hh"
+
+// ocean models:
+#include "POConstant.hh"
+#include "POConstantPIK.hh"
+#include "POGivenClimate.hh"
+#include "POdSLforcing.hh"
+
+// surface models:
+#include "PSAnomaly.hh"
+#include "PSElevation.hh"
+#include "PSExternal.hh"
+#include "PSGivenClimate.hh"
+#include "PSLapseRates.hh"
 #include "PSStuffAsAnomaly.hh"
+#include "PSdTforcing.hh"
+#include "PSTemperatureIndex.hh"
+#include "PSSimple.hh"
+#include "PSConstant.hh"
+#include "PSConstantPIK.hh"
+#include "PSForceThickness.hh"
 
 // Atmosphere
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -45,7 +68,7 @@ static void create_pa_constant_pik(IceGrid& g, const NCConfigVariable& conf, PIS
 }
 
 static void create_pa_given(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
-  result = new PADirectForcing(g, conf);
+  result = new PAGivenClimate(g, conf);
 }
 
 static void create_pa_searise_greenland(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -62,14 +85,14 @@ static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf,
   result = new PALapseRates(g, conf, input);
 }
 
-static void create_pa_anomalies(IceGrid& g, const NCConfigVariable& conf,
-                                PISMAtmosphereModel *input, PAModifier* &result) {
-  result = new PAForcing(g, conf, input);
-}
-
 static void create_pa_dTforcing(IceGrid& g, const NCConfigVariable& conf,
                                 PISMAtmosphereModel *input, PAModifier* &result) {
   result = new PAdTforcing(g, conf, input);
+}
+
+static void create_pa_anomaly(IceGrid& g, const NCConfigVariable& conf,
+                              PISMAtmosphereModel *input, PAModifier* &result) {
+  result = new PAAnomaly(g, conf, input);
 }
 
 void PAFactory::add_standard_types() {
@@ -80,8 +103,8 @@ void PAFactory::add_standard_types() {
   add_model("pik",               &create_pa_constant_pik);
   set_default("constant");
 
-  add_modifier("anomaly",    &create_pa_anomalies);
-  add_modifier("dTforcing",    &create_pa_dTforcing);
+  add_modifier("anomaly",    &create_pa_anomaly);
+  add_modifier("dTforcing",  &create_pa_dTforcing);
   add_modifier("lapse_rate", &create_pa_lapse_rates);
 }
 
@@ -92,7 +115,7 @@ static void create_po_constant(IceGrid& g, const NCConfigVariable& conf, PISMOce
 }
 
 static void create_po_given(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
-  result = new PODirectForcing(g, conf);
+  result = new POGiven(g, conf);
 }
 
 static void create_po_pik(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
@@ -144,7 +167,7 @@ static void create_ps_lapse_rates(IceGrid& g, const NCConfigVariable& conf,
 }
 
 static void create_ps_given(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
-  result = new PSDirectForcing(g, conf);
+  result = new PSGivenClimate(g, conf);
 }
 
 static void create_ps_dTforcing(IceGrid& g, const NCConfigVariable& conf,
@@ -157,8 +180,9 @@ static void create_ps_stuff_as_anomaly(IceGrid& g, const NCConfigVariable& conf,
   result = new PSStuffAsAnomaly(g, conf, input);
 }
 
-static void create_ps_direct_anomalies(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
-  result = new PSDirectAnomalies(g, conf);
+static void create_ps_anomaly(IceGrid& g, const NCConfigVariable& conf,
+                              PISMSurfaceModel *input, PSModifier* &result) {
+  result = new PSAnomaly(g, conf, input);
 }
 
 void PSFactory::add_standard_types() {
@@ -168,11 +192,11 @@ void PSFactory::add_standard_types() {
   add_model("given",         &create_ps_given); 
   add_model("pik",           &create_ps_constant_pik);
   add_model("elevation",     &create_ps_elevation);
-  add_model("given_anomalies", &create_ps_direct_anomalies);
-  set_default("simple");
+  set_default("constant");
 
+  add_modifier("anomaly",    &create_ps_anomaly);
   add_modifier("forcing",    &create_ps_forcing);
   add_modifier("dTforcing",  &create_ps_dTforcing);
   add_modifier("lapse_rate", &create_ps_lapse_rates);
-  add_modifier("as_anomaly", &create_ps_stuff_as_anomaly);
+  add_modifier("turn_into_anomaly", &create_ps_stuff_as_anomaly);
 }

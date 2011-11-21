@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 PISM Authors
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,35 +16,21 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PSConstantPIK.hh"
-#include "PISMIO.hh"
-#include "PISMVars.hh"
+#include "PSConstant.hh"
 #include "IceGrid.hh"
 
-///// Constant-in-time surface model for accumulation,
-///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
+///// Constant-in-time surface model.
 
-PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
+PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   bool regrid = false;
   int start = -1;
 
-  //variables = &vars;
-
   ierr = verbPrintf(2, grid.com,
-     "* Initializing the constant-in-time surface processes model PSConstantPIK.\n"
-     "  It reads surface mass balance directly from the file and holds them constant.\n"
-     "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
+     "* Initializing the constant-in-time surface processes model PSConstant.\n"
+     "  It reads surface mass balance and ice upper-surface temperature\n"
+     "  directly from the file and holds them constant.\n"
      "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n"); CHKERRQ(ierr);
-
-
-  usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-   if (!usurf) SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
-
-  lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-  if (!lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
-
-
 
   // allocate IceModelVecs for storing temperature and surface mass balance fields
 
@@ -67,24 +53,24 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   // find PISM input file to read data from:
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
-  // read snow precipitation rate from file
+  // read snow precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com,
-    "    reading ice-equivalent surface mass balance rate 'acab' from %s ... \n",
+    "    reading ice-equivalent surface mass balance rate 'acab'\n"
+    "    and ice surface temperature  'artm' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr);
   if (regrid) {
     ierr = acab.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = artm.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = acab.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = artm.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
 
-
-  // parameterizing the ice surface temperature 'artm'
-  ierr = verbPrintf(2, grid.com,"    parameterizing the ice surface temperature 'artm' ... \n"); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {
+PetscErrorCode PSConstant::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "read from " + input_file + "\n";
 
@@ -94,39 +80,23 @@ PetscErrorCode PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
+PetscErrorCode PSConstant::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  string history  = "parmeterized ice surface temperature \n";
+  string history  = "read from " + input_file + "\n";
 
-  ierr = result.begin_access();   CHKERRQ(ierr);
-  ierr = artm.begin_access();   CHKERRQ(ierr);
-  ierr = usurf->begin_access();   CHKERRQ(ierr);
-  ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-
-      result(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
-      artm(i,j)=result(i,j);
-
-    }
-  }
-  ierr = usurf->end_access();   CHKERRQ(ierr);
-  ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access();   CHKERRQ(ierr);
-  ierr = artm.end_access();   CHKERRQ(ierr);
-
+  ierr = artm.copy_to(result); CHKERRQ(ierr);
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;
 }
 
-void PSConstantPIK::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PSConstant::add_vars_to_output(string /*keyword*/, set<string> &result) {
   result.insert("acab");
   result.insert("artm");
   // does not call atmosphere->add_vars_to_output().
 }
 
-PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode PSConstant::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -142,7 +112,7 @@ PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const NCTool &n
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::write_variables(set<string> vars, string filename) {
+PetscErrorCode PSConstant::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "artm")) {

@@ -20,7 +20,7 @@
 // Implementation of the atmosphere model using constant-in-time precipitation
 // and a cosine yearly cycle for near-surface air temperatures.
 
-#include "PISMAtmosphere.hh"
+#include "PAYearlyCycle.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 

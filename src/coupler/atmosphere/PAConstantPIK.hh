@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,26 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSDIRECTANOMALIES_H_
-#define _PSDIRECTANOMALIES_H_
+#ifndef _PACONSTANTPIK_H_
+#define _PACONSTANTPIK_H_
 
-#include "PASDirectForcing.hh"
+#include "PAConstant.hh"
 
-//! \brief This class applies time-dependent 'acab' and 'artm' read from a
-//! -surface_file as anomalies relative to 'acab' and 'artm' read from an input
-//! (-i or -boot_file) file.
-class PSDirectAnomalies : public PSDirectForcing
+class PAConstantPIK : public PAConstant
 {
 public:
-  PSDirectAnomalies(IceGrid &g, const NCConfigVariable &conf)
-    : PSDirectForcing(g, conf) {}
-  virtual ~PSDirectAnomalies() {}
-
+  PAConstantPIK(IceGrid &g, const NCConfigVariable &conf)
+    : PAConstant(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 protected:
-  IceModelVec2S mass_flux_0, mass_flux_input,
-    temp_0, temp_input;
+  IceModelVec2S *usurf, *lat;
 };
 
-#endif /* _PSDIRECTANOMALIES_H_ */
+#endif /* _PACONSTANTPIK_H_ */

@@ -1,5 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
-// Gudfinna Adalgeirsdottir and Andy Aschwanden
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,37 +16,38 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PASeariseGreenland_hh
-#define __PASeariseGreenland_hh
+#ifndef _PAGIVEN_H_
+#define _PAGIVEN_H_
 
-#include "PAYearlyCycle.hh"
-#include "Timeseries.hh"
+#include "PAModifier.hh"
+#include "PGivenClimate.hh"
 
-//! \brief A modification of PAYearlyCycle tailored for the
-//! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
-//! present-day temperature parameterization and stored precipitation data.
-//! Adds the precipitation correction for spin-ups.
-class PA_SeaRISE_Greenland : public PAYearlyCycle {
+class PAGivenClimate : public PGivenClimate<PAModifier,PISMAtmosphereModel>
+{
 public:
-  PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
-    : PAYearlyCycle(g, conf)
+  PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
+    : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
   {
-    paleo_precipitation_correction = false;
-    dTforcing = NULL;
+    temp_name = "artm";
+    mass_flux_name  = "precip";
+    option_prefix = "-atmosphere_given";
   }
 
-  virtual ~PA_SeaRISE_Greenland()
-  {
-    delete dTforcing;
-  }
+  virtual ~PAGivenClimate() {}
+
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+
   virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
+  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+
+  virtual PetscErrorCode begin_pointwise_access();
+  virtual PetscErrorCode end_pointwise_access();
+  virtual PetscErrorCode temp_time_series(int i, int j, int N,
+					  PetscReal *ts, PetscReal *values);
 protected:
-  bool paleo_precipitation_correction;
-  Timeseries *dTforcing;
-  IceModelVec2S *lat, *lon, *surfelev;
+  vector<PetscReal> ts_mod;
 };
 
-
-#endif	// __PASeariseGreenland_hh
+#endif /* _PAGIVEN_H_ */

@@ -24,9 +24,11 @@ static char help[] =
 #include "IceGrid.hh"
 #include "iceModel.hh"
 
-#include "PCFactory.hh"
+#include "POFactory.hh"
 #include "PISMOcean.hh"
 #include "PSExternal.hh"
+#include "pism_const.hh"
+#include "pism_options.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -45,7 +47,7 @@ int main(int argc, char *argv[]) {
 
   if (size == 1) {
     fprintf(stderr, "ERROR: pismebm cannot run on one processor!\n");
-    ierr = MPI_Finalize(); CHKERRQ(ierr); 
+    ierr = MPI_Finalize(); CHKERRQ(ierr);
     exit(1);
   }
 
@@ -63,7 +65,7 @@ int main(int argc, char *argv[]) {
                               MPI_COMM_WORLD, // peer communicator
                               rank == 0 ? 1 : 0, // remote leader (rank in MPI_COMM_WORLD)
                               123, // tag, has to be a "unique" integer
-                              &inter_comm); CHKERRQ(ierr); 
+                              &inter_comm); CHKERRQ(ierr);
 
   // Now this inter_comm can be used to send data from the processor running
   // EBM to other processors (running PISM).
@@ -92,7 +94,7 @@ int main(int argc, char *argv[]) {
                         PISM_Revision); CHKERRQ(ierr);
       ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-      ierr = check_old_option_and_stop(intra_comm, "-boot_from", "-boot_file"); CHKERRQ(ierr); 
+      ierr = check_old_option_and_stop(intra_comm, "-boot_from", "-boot_file"); CHKERRQ(ierr);
 
       bool iset, bfset;
       ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
@@ -134,7 +136,7 @@ int main(int argc, char *argv[]) {
         // The special surface model (does *not* use an atmosphere model)
         surface = new PSExternal(g, config, inter_comm);
       }
-      
+
 
       // An ocean model
       POFactory po(g, config);
@@ -166,7 +168,7 @@ int main(int argc, char *argv[]) {
   ierr = MPI_Comm_free(&intra_comm); CHKERRQ(ierr);
 
   // MPI clean-up
-  ierr = MPI_Finalize(); CHKERRQ(ierr); 
-                        
+  ierr = MPI_Finalize(); CHKERRQ(ierr);
+
   return 0;
 }

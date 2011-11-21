@@ -1,5 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
-// Gudfinna Adalgeirsdottir and Andy Aschwanden
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,9 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Implementation of the constant-in-time ocean model.
-
-#include "PISMOcean.hh"
+#include "POConstant.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"

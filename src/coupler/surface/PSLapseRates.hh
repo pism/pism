@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,23 +16,30 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PA_EISMINT_Greenland
-#define __PA_EISMINT_Greenland
+#ifndef _PSLAPSERATES_H_
+#define _PSLAPSERATES_H_
 
-#include "PAYearlyCycle.hh"
+#include "PLapseRates.hh"
+#include "PISMSurface.hh"
+#include "PSModifier.hh"
 
-class PA_EISMINT_Greenland : public PAYearlyCycle {
+class PSLapseRates : public PLapseRates<PISMSurfaceModel,PSModifier>
+{
 public:
-  PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PA_EISMINT_Greenland() {}
+  PSLapseRates(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+    : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
+  {
+    smb_lapse_rate = 0;
+    option_prefix = "-surface";
+  }
+
+  virtual ~PSLapseRates() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 protected:
-  virtual PetscReal greenhouse_shift(PetscReal my_t, PetscReal my_dt);
-  bool do_greenhouse_warming;
-  PetscReal greenhouse_warming_start_year;
-  IceModelVec2S *lat, *surfelev;
+  PetscReal smb_lapse_rate;
 };
 
-#endif	// __PA_EISMINT_Greenland
+#endif /* _PSLAPSERATES_H_ */

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,11 @@
 #ifndef _PSCALARFORCING_H_
 #define _PSCALARFORCING_H_
 
-#include "PISMSurface.hh"
-#include "PISMAtmosphere.hh"
-#include "PISMOcean.hh"
-#include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "iceModelVec.hh"
+#include "Timeseries.hh"
 #include "pism_options.hh"
+#include "PISMTime.hh"
 
 template<class Model, class Mod>
 class PScalarForcing : public Mod
@@ -89,7 +88,7 @@ protected:
     }
 
     if (offset) {
-      ierr = verbPrintf(2, g.com, 
+      ierr = verbPrintf(2, g.com,
                         "  reading %s data from forcing file %s...\n",
                         offset->short_name.c_str(), filename.c_str());
       CHKERRQ(ierr);
@@ -116,41 +115,5 @@ protected:
 
 };
 
-class PSdTforcing : public PScalarForcing<PISMSurfaceModel,PSModifier>
-{
-public:
-  PSdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
-  virtual ~PSdTforcing() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-};
-
-class PAdTforcing : public PScalarForcing<PISMAtmosphereModel,PAModifier>
-{
-public:
-  PAdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
-  virtual ~PAdTforcing() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
-
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-                                          PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-
-};
-
-class POdSLforcing : public PScalarForcing<PISMOceanModel,POModifier>
-{
-public:
-  POdSLforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
-  virtual ~POdSLforcing() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
-};
 
 #endif /* _PSCALARFORCING_H_ */

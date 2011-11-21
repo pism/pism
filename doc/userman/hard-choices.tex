@@ -63,9 +63,9 @@ Atmosphere and surface models have two ``modifiers'' available; the correspondin
 
   \item \emph{Reading atmosphere boundary conditions from a file} (\texttt{given})
 
-    This atmosphere model is similar to \texttt{constant} in that it uses \texttt{artm} and \texttt{precip} fields given by the user by providing them directly to the surface model. The name of the file PISM will read \texttt{artm} and \texttt{precip} from is specified using the \fileopt{atmosphere_file} option.
+    This atmosphere model is similar to \texttt{constant} in that it uses \texttt{artm} and \texttt{precip} fields given by the user by providing them directly to the surface model. The name of the file PISM will read \texttt{artm} and \texttt{precip} from is specified using the \fileopt{atmosphere_given_file} option.
 
-    A file \texttt{foo.nc} used with \texttt{-atmosphere given -atmosphere_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-atmosphere given} is essentially equivalent to \texttt{-atmosphere constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
+    A file \texttt{foo.nc} used with \texttt{-atmosphere given -atmosphere_given_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-atmosphere given} is essentially equivalent to \texttt{-atmosphere constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
 
     This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{precip}.
 
@@ -84,10 +84,10 @@ Atmosphere and surface models have two ``modifiers'' available; the correspondin
 
  The \texttt{lapse_rate} modifier allows correcting air temperature and precipitation using elevation lapse rates. It uses the following options.
   \begin{itemize}
-  \item \fileopt{atmosphere_file} specifies the file containing the reference surface elevation field (standard name: \texttt{surface_altitude}). This file can contain several surface elevation records to use lapse rate corrections relative to time-dependent surface. If one record is provided, the reference surface elevation is assumed to be time-independent.
-  \item \intextoption{atmosphere_period} gives the period, in model years, to use when interpreting data in the file given with \texttt{-atmosphere_file},
-  \item \intextoption{atmosphere_reference_year} takes the time $T$ in model years. The record for $t$ years in \texttt{-atmosphere_file} is interpreted as corresponding to $t$ years since $T$.
-  \item \intextoption{atmosphere_time_average} enables interpolating (and in some cases, averaging) B.C. data in time.
+  \item \fileopt{atmosphere_given_file} specifies the file containing the reference surface elevation field (standard name: \texttt{surface_altitude}). This file can contain several surface elevation records to use lapse rate corrections relative to time-dependent surface. If one record is provided, the reference surface elevation is assumed to be time-independent.
+  \item \intextoption{atmosphere_given_period} gives the period, in model years, to use when interpreting data in the file given with \texttt{-atmosphere_given_file},
+  \item \intextoption{atmosphere_given_reference_year} takes the time $T$ in model years. The record for $t$ years in \texttt{-atmosphere_given_file} is interpreted as corresponding to $t$ years since $T$.
+  \item \intextoption{atmosphere_given_time_average} enables interpolating (and in some cases, averaging) B.C. data in time.
   \item \intextoption{temp_lapse_rate} gives the temperature lapse rate, in $K/km$. Note that we use the following definition of the temperature lapse rate:
     \begin{displaymath}
       \gamma = -\frac{dT}{dz}.
@@ -112,20 +112,20 @@ Atmosphere and surface models have two ``modifiers'' available; the correspondin
 
   \item \emph{Reading top-surface boundary conditions from a file} (\texttt{given})
 
-    This surface model is similar to \texttt{constant} in that it uses \texttt{artm} and \texttt{acab} fields given by the user by providing them directly to the ice dynamics model. The name of the file PISM will read \texttt{artm} and \texttt{acab} from is specified using the \fileopt{surface_file} option.
+    This surface model is similar to \texttt{constant} in that it uses \texttt{artm} and \texttt{acab} fields given by the user by providing them directly to the ice dynamics model. The name of the file PISM will read \texttt{artm} and \texttt{acab} from is specified using the \fileopt{surface_given_file} option.
 
-    A file \texttt{foo.nc} used with \texttt{-surface given -surface_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-surface given} is essentially equivalent to \texttt{-surface constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
+    A file \texttt{foo.nc} used with \texttt{-surface given -surface_given_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-surface given} is essentially equivalent to \texttt{-surface constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
 
     This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{acab}.
 
-Option \txtopt{surface_period}{years} makes PISM interpret data in \texttt{-surface_file} as periodic. In this case the time in the NetCDF file is understood as the time \emph{from the beginning of a period}, i.e. from the beginning of a year with \texttt{-surface_period 1}, from the beginning of a decade with \texttt{-surface_period 10}, etc.
+Option \txtopt{surface_given_period}{years} makes PISM interpret data in \texttt{-surface_given_file} as periodic. In this case the time in the NetCDF file is understood as the time \emph{from the beginning of a period}, i.e. from the beginning of a year with \texttt{-surface_given_period 1}, from the beginning of a decade with \texttt{-surface_given_period 10}, etc.
 
 For example, to use monthly records and period of 1 year, create a file (say, ``\texttt{foo.nc}'') with 12 records. The variable \texttt{'t'} should contain 0, 1, 2, 3, \dots, 11 and have the units of ``month'' (you can use other units, too). Then, run
 \begin{verbatim}
-$ pimsr -surface given -surface_file foo.nc -surface_period 1
+$ pimsr -surface given -surface_given_file foo.nc -surface_given_period 1
 \end{verbatim}%$
 
-To force PISM using monthly records with longer periods, just add more records to the \texttt{-surface_file}  and change the \texttt{-surface_period} value.
+To force PISM using monthly records with longer periods, just add more records to the \texttt{-surface_given_file}  and change the \texttt{-surface_given_period} value.
 
 \noindent Notes:
 \begin{itemize}
@@ -222,10 +222,10 @@ In this case \texttt{foo.nc} contains fields \texttt{acab} and \texttt{artm}, as
 
   The \texttt{lapse_rate} modifier allows correcting ice-surface temperature and surface mass balance using elevation lapse rates. It uses the following options.
   \begin{itemize}
-  \item \fileopt{surface_file} specifies the file containing the reference surface elevation field (standard name: \texttt{surface_altitude}). This file can contain several surface elevation records to use lapse rate corrections relative to time-dependent surface. If one record is provided, the reference surface elevation is assumed to be time-independent.
-  \item \intextoption{surface_period} gives the period, in model years, to use when interpreting data in the file given with \texttt{-surface_file},
-  \item \intextoption{surface_reference_year} takes the time $T$ in model years. The record for $t$ years in \texttt{-surface_file} is interpreted as corresponding to $t$ years since $T$.
-  \item \intextoption{surface_time_average} enables interpolating (and in some cases, averaging) B.C. data in time.
+  \item \fileopt{surface_given_file} specifies the file containing the reference surface elevation field (standard name: \texttt{surface_altitude}). This file can contain several surface elevation records to use lapse rate corrections relative to time-dependent surface. If one record is provided, the reference surface elevation is assumed to be time-independent.
+  \item \intextoption{surface_given_period} gives the period, in model years, to use when interpreting data in the file given with \texttt{-surface_given_file},
+  \item \intextoption{surface_given_reference_year} takes the time $T$ in model years. The record for $t$ years in \texttt{-surface_given_file} is interpreted as corresponding to $t$ years since $T$.
+  \item \intextoption{surface_given_time_average} enables interpolating (and in some cases, averaging) B.C. data in time.
   \item \intextoption{temp_lapse_rate} gives the temperature lapse rate, in $K/km$. Note that we use the following definition of the temperature lapse rate:
     \begin{displaymath}
       \gamma = -\frac{dT}{dz}.

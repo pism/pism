@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,22 +16,44 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSELEVATION_H_
-#define _PSELEVATION_H_
+#ifndef _PSCONSTANT_H_
+#define _PSCONSTANT_H_
 
 #include "PISMSurface.hh"
-#include "iceModelVec2T.hh"
+#include "iceModelVec.hh"
 #include "PISMAtmosphere.hh"
 
-//! \brief A class implementing a elevation-dependent temperature and mass balance model.
+//! \brief A class implementing a constant-in-time surface model.  Reads data
+//! from a PISM input file.
+/*!
+This is model is just as simple as PSSimple, but it assumes results from a
+surface processes model are already known.  But they are treated as constant in
+time and they are read from the input file at the beginning of the PISM run.
 
-class PSElevation : public PISMSurfaceModel {
+Specifically, these two fields are read from the \c -i or \c -boot_file file:
+  \li \c acab = ice-equivalent surface mass balance
+  \li \c artm = ice fluid upper surface temperature.
+
+This surface model does not use an atmosphere model at all, so the
+\c attach_atmosphere_model() method is null.  Any choice of PISMAtmosphereModel
+made using option \c -atmosphere is ignored.  This may be an advantage in coupler
+code simplicity.
+
+Note that a very minimal coupling of an existing atmosphere and surface processes
+model to the ice dynamics core in PISM could be accomplished by using this
+PSConstant class for relatively short ice dynamics runs, each of which starts by
+reading the latest \c acab and \c artm fields supplied by the atmosphere and
+surface processes model.
+*/
+class PSConstant : public PISMSurfaceModel {
 public:
-  PSElevation(IceGrid &g, const NCConfigVariable &conf)
+  PSConstant(IceGrid &g, const NCConfigVariable &conf)
     : PISMSurfaceModel(g, conf)
   {};
 
   virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  { t = my_t; dt = my_dt; return 0; } // do nothing
   //! This surface model does not use an atmosphere model.
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
   { delete input; }
@@ -39,22 +61,14 @@ public:
   // Does not have an atmosphere model.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
-  { t = my_t; dt = my_dt; return 0; } // do nothing
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
-  NCSpatialVariable acab, artm;
-  IceModelVec2S *usurf;
-  PetscReal artm_min, artm_max,
-    z_artm_min, z_artm_max,
-    acab_min, acab_max, acab_limit_min, acab_limit_max,
-    z_acab_min, z_ELA, z_acab_max;
-  PetscBool elev_artm_set, elev_acab_set, acab_limits_set;
-
+  string input_file;
+  IceModelVec2S acab, artm;
 };
 
-#endif /* _PSELEVATION_H_ */
+#endif /* _PSCONSTANT_H_ */

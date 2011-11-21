@@ -10,6 +10,7 @@ include_directories (
   coupler/atmosphere
   coupler/surface
   coupler/ocean
+  coupler/util
   udunits
   )
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,20 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Implementation of lapse rate corrections for
-// * ice-surface temperature and ice-surface mass balance (-surface ...,lapse_rate) and
-// * near-surface air temperature and precipitation (-atmosphere ...,lapse_rate).
+#ifndef _PLAPSERATES_H_
+#define _PLAPSERATES_H_
 
-#ifndef _PASLAPSERATES_H_
-#define _PASLAPSERATES_H_
-
-#include "PISMSurface.hh"
-#include "PISMAtmosphere.hh"
+#include "IceGrid.hh"
+#include "iceModelVec2T.hh"
+#include "pism_options.hh"
+#include "NCTool.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
-#include "IceGrid.hh"
-#include "NCTool.hh"
-#include "pism_options.hh"
 
 template <class Model, class Mod>
 class PLapseRates : public Mod
@@ -211,7 +206,7 @@ protected:
     ierr = surface->begin_access(); CHKERRQ(ierr);
     ierr = reference_surface.begin_access(); CHKERRQ(ierr);
     ierr = result.begin_access(); CHKERRQ(ierr);
-    
+
     IceGrid &g = Mod::grid;
 
     for (PetscInt   i = g.xs; i < g.xs + g.xm; ++i) {
@@ -230,50 +225,5 @@ protected:
   }
 };
 
-class PSLapseRates : public PLapseRates<PISMSurfaceModel,PSModifier>
-{
-public:
-  PSLapseRates(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-    : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
-  {
-    smb_lapse_rate = 0;
-    option_prefix = "-surface";
-  }
 
-  virtual ~PSLapseRates() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-protected:
-  PetscReal smb_lapse_rate;
-};
-
-class PALapseRates : public PLapseRates<PISMAtmosphereModel,PAModifier>
-{
-public:
-  PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-    : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
-  {
-    precip_lapse_rate = 0;
-    option_prefix = "-atmosphere";
-  }
-
-  virtual ~PALapseRates() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
-
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();
-
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-                                          PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-protected:
-  PetscReal precip_lapse_rate;
-};
-
-#endif /* _PASLAPSERATES_H_ */
+#endif /* _PLAPSERATES_H_ */

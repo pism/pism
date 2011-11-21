@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,23 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PA_EISMINT_Greenland
-#define __PA_EISMINT_Greenland
+#ifndef _PODSLFORCING_H_
+#define _PODSLFORCING_H_
 
-#include "PAYearlyCycle.hh"
+#include "PScalarForcing.hh"
+#include "POModifier.hh"
 
-class PA_EISMINT_Greenland : public PAYearlyCycle {
+class POdSLforcing : public PScalarForcing<PISMOceanModel,POModifier>
+{
 public:
-  PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PA_EISMINT_Greenland() {}
+  POdSLforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
+  virtual ~POdSLforcing() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-protected:
-  virtual PetscReal greenhouse_shift(PetscReal my_t, PetscReal my_dt);
-  bool do_greenhouse_warming;
-  PetscReal greenhouse_warming_start_year;
-  IceModelVec2S *lat, *surfelev;
+  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
 };
 
-#endif	// __PA_EISMINT_Greenland
+#endif /* _PODSLFORCING_H_ */

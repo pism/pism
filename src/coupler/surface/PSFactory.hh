@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,23 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PA_EISMINT_Greenland
-#define __PA_EISMINT_Greenland
+#ifndef _PSFACTORY_H_
+#define _PSFACTORY_H_
 
-#include "PAYearlyCycle.hh"
+#include "PSModifier.hh"
 
-class PA_EISMINT_Greenland : public PAYearlyCycle {
+class PSFactory : public PCFactory<PISMSurfaceModel,PSModifier> {
 public:
-  PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PA_EISMINT_Greenland() {}
+  PSFactory(IceGrid& g, const NCConfigVariable& conf)
+    : PCFactory<PISMSurfaceModel,PSModifier>(g, conf)
+  {
+    add_standard_types();
+    option = "surface";
+  }
 
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-protected:
-  virtual PetscReal greenhouse_shift(PetscReal my_t, PetscReal my_dt);
-  bool do_greenhouse_warming;
-  PetscReal greenhouse_warming_start_year;
-  IceModelVec2S *lat, *surfelev;
+  virtual ~PSFactory() {}
+  virtual void add_standard_types();
 };
 
-#endif	// __PA_EISMINT_Greenland
+#endif /* _PSFACTORY_H_ */

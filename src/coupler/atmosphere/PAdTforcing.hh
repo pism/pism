@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,23 +16,27 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PA_EISMINT_Greenland
-#define __PA_EISMINT_Greenland
+#ifndef _PADTFORCING_H_
+#define _PADTFORCING_H_
 
-#include "PAYearlyCycle.hh"
+#include "PScalarForcing.hh"
+#include "PAModifier.hh"
 
-class PA_EISMINT_Greenland : public PAYearlyCycle {
+class PAdTforcing : public PScalarForcing<PISMAtmosphereModel,PAModifier>
+{
 public:
-  PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PA_EISMINT_Greenland() {}
+  PAdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  virtual ~PAdTforcing() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-protected:
-  virtual PetscReal greenhouse_shift(PetscReal my_t, PetscReal my_dt);
-  bool do_greenhouse_warming;
-  PetscReal greenhouse_warming_start_year;
-  IceModelVec2S *lat, *surfelev;
+
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
+
+  virtual PetscErrorCode temp_time_series(int i, int j, int N,
+                                          PetscReal *ts, PetscReal *values);
+  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+
 };
 
-#endif	// __PA_EISMINT_Greenland
+
+#endif /* _PADTFORCING_H_ */

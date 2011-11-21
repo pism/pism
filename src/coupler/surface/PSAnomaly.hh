@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2011 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,23 +16,30 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PA_EISMINT_Greenland
-#define __PA_EISMINT_Greenland
+#ifndef _PSANOMALY_H_
+#define _PSANOMALY_H_
 
-#include "PAYearlyCycle.hh"
+#include "PGivenClimate.hh"
+#include "PSModifier.hh"
 
-class PA_EISMINT_Greenland : public PAYearlyCycle {
+//! \brief Reads and uses acab and artm \b anomalies from a file.
+class PSAnomaly : public PGivenClimate<PSModifier,PISMSurfaceModel>
+{
 public:
-  PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PA_EISMINT_Greenland() {}
+  PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+    : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, in)
+  {
+    temp_name = "artm_anomaly";
+    mass_flux_name  = "acab_anomaly";
+    option_prefix = "-surface_anomaly";
+  }
+  virtual ~PSAnomaly() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-protected:
-  virtual PetscReal greenhouse_shift(PetscReal my_t, PetscReal my_dt);
-  bool do_greenhouse_warming;
-  PetscReal greenhouse_warming_start_year;
-  IceModelVec2S *lat, *surfelev;
+
+  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 };
 
-#endif	// __PA_EISMINT_Greenland
+#endif /* _PSANOMALY_H_ */

@@ -25,7 +25,7 @@
 #include "Mask.hh"
 #include "flowlaw_factory.hh"
 #include "PISMStressBalance.hh"
-#include "PISMOcean.hh"
+#include "POConstant.hh"
 #include "pism_options.hh"
 
 PetscErrorCode MISMIPBasalResistanceLaw::printInfo(int verbthresh, MPI_Comm com) {

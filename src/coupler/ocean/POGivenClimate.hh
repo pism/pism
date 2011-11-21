@@ -19,21 +19,21 @@
 #ifndef _PODIRECTFORCING_H_
 #define _PODIRECTFORCING_H_
 
-#include "PASDirectForcing.hh"
-#include "PISMOcean.hh"
+#include "PGivenClimate.hh"
+#include "POModifier.hh"
 
-class PODirectForcing : public PDirectForcing<PISMOceanModel>
+class POGiven : public PGivenClimate<POModifier,PISMOceanModel>
 {
 public:
-  PODirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PDirectForcing<PISMOceanModel>(g, conf)
+  POGiven(IceGrid &g, const NCConfigVariable &conf)
+    : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
   {
     temp_name       = "shelfbtemp";
     mass_flux_name  = "shelfbmassflux";
-    option_prefix   = "-ocean";
+    option_prefix   = "-ocean_given";
   }
 
-  virtual ~PODirectForcing() {}
+  virtual ~POGiven() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);

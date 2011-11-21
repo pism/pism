@@ -29,8 +29,8 @@ static char help[] =
 #include "ismip/iceMISMIPModel.hh"
 #include "pism_options.hh"
 
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
+#include "PSDummy.hh"
+#include "POConstant.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
