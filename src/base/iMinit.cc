@@ -33,7 +33,8 @@
 #include "PISMBedDef.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
-#include "PISMYieldStress.hh"
+#include "PISMMohrCoulombYieldStress.hh"
+#include "PISMConstantYieldStress.hh"
 #include "bedrockThermalUnit.hh"
 #include "flowlaw_factory.hh"
 #include "basal_resistance.hh"
@@ -695,11 +696,11 @@ PetscErrorCode IceModel::allocate_basal_yield_stress() {
   if (use_ssa_velocity || do_blatter) {
     bool hold_tauc;
     ierr = PISMOptionsIsSet("-hold_tauc", hold_tauc); CHKERRQ(ierr);
-    
+
     if (hold_tauc) {
       basal_yield_stress = new PISMConstantYieldStress(grid, config);
     } else {
-      basal_yield_stress = new PISMDefaultYieldStress(grid, config);
+      basal_yield_stress = new PISMMohrCoulombYieldStress(grid, config);
     }
   }
 

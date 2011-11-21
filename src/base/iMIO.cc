@@ -33,6 +33,9 @@
 #include "PISMOcean.hh"
 #include "PISMProf.hh"
 #include "pism_options.hh"
+#include "IceGrid.hh"
+#include "PISMTime.hh"
+#include "PISMDiagnostic.hh"
 
 //! Save model state in NetCDF format.
 /*!

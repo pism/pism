@@ -21,6 +21,7 @@
 
 #include "PISMYieldStress.hh"
 #include "iceModelVec.hh"
+#include "IceGrid.hh"
 
 class PISMConstantYieldStress : public PISMYieldStress
 {

@@ -23,7 +23,9 @@
 
 #include "basal_resistance.hh"
 #include "iceEISModel.hh"
-#include "PISMYieldStress.hh"
+#include "PISMMohrCoulombYieldStress.hh"
+
+class DiagnosticTimeseries;
 
 //! Derived class for Plastic till ice Stream with Thermocoupling (PST) experiments.
 /*!
@@ -65,11 +67,11 @@ protected:
      *avdwn0, *avdwn1, *avdwn2, *avdwn3; // downstream speeds; avdwn3 DITTO
 };
 
-class PSTYieldStress : public PISMDefaultYieldStress
+class PSTYieldStress : public PISMMohrCoulombYieldStress
 {
 public:
   PSTYieldStress(IceGrid &g, const NCConfigVariable &conf, int e, string name)
-    : PISMDefaultYieldStress(g, conf),
+    : PISMMohrCoulombYieldStress(g, conf),
       experiment(e), experiment_name(name) {}
   virtual ~PSTYieldStress() {}
 

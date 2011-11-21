@@ -32,7 +32,8 @@
 #include "enthalpyConverter.hh"
 #include "PISMProf.hh"
 #include "pism_options.hh"
-
+#include "IceGrid.hh"
+#include "PISMDiagnostic.hh"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : grid(g), config(conf), overrides(conf_overrides), ice(NULL) {

@@ -20,6 +20,8 @@
 #define _PISMMOHRCOULOMBYIELDSTRESS_H_
 
 #include "PISMDiagnostic.hh"
+#include "PISMYieldStress.hh"
+#include "iceModelVec.hh"
 
 //! Local copy of parameters used by IceModel::getBasalWaterPressure().
 struct BWPparams {
@@ -32,11 +34,11 @@ struct BWPparams {
 };
 
 //! \brief PISM's default basal yield stress model.
-class PISMDefaultYieldStress : public PISMYieldStress
+class PISMMohrCoulombYieldStress : public PISMYieldStress
 {
   friend class PYS_bwp;
 public:
-  PISMDefaultYieldStress(IceGrid &g, const NCConfigVariable &conf)
+  PISMMohrCoulombYieldStress(IceGrid &g, const NCConfigVariable &conf)
     : PISMYieldStress(g, conf)
   {
     sliding_scale = -1.0;
@@ -64,7 +66,7 @@ public:
     till_c_0 = config.get("till_c_0", "kPa", "Pa");
   }
 
-  virtual ~PISMDefaultYieldStress() {}
+  virtual ~PISMMohrCoulombYieldStress() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -101,10 +103,10 @@ protected:
 };
 
 //! \brief Computes basal (pore) water pressure using a highly-simplified model.
-class PYS_bwp : public PISMDiag<PISMDefaultYieldStress>
+class PYS_bwp : public PISMDiag<PISMMohrCoulombYieldStress>
 {
 public:
-  PYS_bwp(PISMDefaultYieldStress *m, IceGrid &g, PISMVars &my_vars);
+  PYS_bwp(PISMMohrCoulombYieldStress *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

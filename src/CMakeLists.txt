@@ -113,7 +113,7 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc
-  base/basal_strength/PISMYieldStress.cc
+  base/basal_strength/PISMMohrCoulombYieldStress.cc
   base/basal_strength/PISMConstantYieldStress.cc
   base/basal_strength/basal_resistance.cc
 )

@@ -29,6 +29,7 @@
 #include "PISMOcean.hh"
 #include "PISMSurface.hh"
 #include "pism_options.hh"
+#include "IceGrid.hh"
 
 //! \file iMoptions.cc Reading runtime options and setting configuration parameters.
 

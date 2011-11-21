@@ -29,7 +29,8 @@ static char help[] =
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "PISMStressBalance.hh"
-#include "PISMYieldStress.hh"
+#include "PISMMohrCoulombYieldStress.hh"
+#include "PISMConstantYieldStress.hh"
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "NCTool.hh"
@@ -235,11 +236,11 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 }
 
 
-class PISMRegionalDefaultYieldStress : public PISMDefaultYieldStress
+class PISMRegionalDefaultYieldStress : public PISMMohrCoulombYieldStress
 {
 public:
   PISMRegionalDefaultYieldStress(IceGrid &g, const NCConfigVariable &conf)
-    : PISMDefaultYieldStress(g, conf) {}
+    : PISMMohrCoulombYieldStress(g, conf) {}
   virtual ~PISMRegionalDefaultYieldStress() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
@@ -252,7 +253,7 @@ PetscErrorCode PISMRegionalDefaultYieldStress::init(PISMVars &vars) {
   PetscErrorCode ierr;
   PetscInt v = getVerbosityLevel(); // turn off second, redundant init message
   ierr = setVerbosityLevel(1); CHKERRQ(ierr);
-  ierr = PISMDefaultYieldStress::init(vars); CHKERRQ(ierr);
+  ierr = PISMMohrCoulombYieldStress::init(vars); CHKERRQ(ierr);
   ierr = setVerbosityLevel(v); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
     "  using the regional version with strong till in no_model_mask==1 area ...\n");
@@ -267,7 +268,7 @@ PetscErrorCode PISMRegionalDefaultYieldStress::basal_material_yield_stress(IceMo
   PetscErrorCode ierr;
   
   // do whatever you normally do
-  ierr = PISMDefaultYieldStress::basal_material_yield_stress(result); CHKERRQ(ierr);
+  ierr = PISMMohrCoulombYieldStress::basal_material_yield_stress(result); CHKERRQ(ierr);
 
   // now set result=tauc to a big value in no_model_strip
   ierr = no_model_mask->begin_access(); CHKERRQ(ierr);

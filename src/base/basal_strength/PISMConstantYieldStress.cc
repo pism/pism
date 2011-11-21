@@ -109,7 +109,7 @@ PetscErrorCode PISMConstantYieldStress::regrid() {
   string regrid_file;
   vector<string> regrid_vars;
 
-  ierr = PetscOptionsBegin(grid.com, "", "PISMDefaultYieldStress regridding options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "PISMMohrCoulombYieldStress regridding options", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsString("-regrid_file", "regridding file name",
                              regrid_file, regrid_file_set); CHKERRQ(ierr);

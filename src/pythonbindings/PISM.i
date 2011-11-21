@@ -40,7 +40,7 @@
 #include "enthalpyConverter.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
-#include "PISMYieldStress.hh"
+#include "PISMMohrCoulombYieldStress.hh"
 #include "pism_options.hh"
 #include "SIAFD.hh"
 %}
@@ -464,8 +464,9 @@ typedef int NormType; // YUCK.
 %include "stressbalance/SSAFD.hh"
 %include "Mask.hh"
 %include "pism_python.hh"
-%template(PISMDiag_PISMDefaultYieldStress) PISMDiag<PISMDefaultYieldStress>;
+%template(PISMDiag_PISMMohrCoulombYieldStress) PISMDiag<PISMMohrCoulombYieldStress>;
 %include "PISMYieldStress.hh"
+%include "PISMMohrCoulombYieldStress.hh"
 
 
 

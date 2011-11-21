@@ -556,7 +556,7 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
 PetscErrorCode PSTYieldStress::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  ierr = PISMDefaultYieldStress::init(vars); CHKERRQ(ierr);
+  ierr = PISMMohrCoulombYieldStress::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,
                     "  setting phi = (till friction angle) for PST exper '%s' ...\n", experiment_name.c_str());
