@@ -20,6 +20,7 @@
 #define _PCFACTORY_H_
 
 #include "pism_const.hh"
+#include "pism_options.hh"
 
 #include "IceGrid.hh"
 #include <map>
@@ -74,7 +75,7 @@ public:
 
     descr =  "Sets up the PISM " + option + " model. Available models: " + model_list +
       " Available modifiers: " + modifier_list;
-  
+
     // Get the command-line option:
     ierr = PISMOptionsStringArray("-" + option, descr, default_type.c_str(), choices, flag); CHKERRQ(ierr);
 
@@ -89,7 +90,7 @@ public:
     // the first element has to be an *actual* model (not a modifier), so we
     // create it:
     vector<string>::iterator j = choices.begin();
-  
+
     F = models[*j];
     if (!F) {
       PetscPrintf(grid.com,
