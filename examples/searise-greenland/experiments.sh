@@ -190,10 +190,9 @@ SRGEXPERCATEGORY=E0
 for climate_scale_factor in 1.0 1.5 2.0; do
 
 
-    # anomaly files
-    AR4PRECIP=ar4_precip_anomaly_scalefactor_${climate_scale_factor}.nc
-    AR4TEMP=ar4_temp_anomaly_scalefactor_${climate_scale_factor}.nc
-    for INPUT in $AR4PRECIP $AR4TEMP; do
+    # anomaly file
+    AR4FILE=ar4_anomaly_scalefactor_${climate_scale_factor}.nc
+    for INPUT in $AR4FILE; do
         if [ -e "$INPUT" ] ; then  # check if file exist
         echo "$SCRIPTNAME INPUT   $INPUT FOUND"
         else
@@ -212,7 +211,7 @@ for climate_scale_factor in 1.0 1.5 2.0; do
     echo "$SCRIPTNAME run ${PISM_SRPREFIX2} with scaled AR4 climate from $STARTTIME to $ENDTIME years w save every year:"
     echo
     cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
-       -anomaly_temp $AR4TEMP -anomaly_precip $AR4PRECIP \
+        -atmosphere_anomaly_file $AR4FILE \
        -extra_file $EXNAME -extra_times $TIMES $expackage \
        -ts_file $TSNAME -ts_times $TSTIMES $tspackage"
     $PISM_DO $cmd
@@ -285,3 +284,34 @@ for melt_rate in 2 20 200; do
   MELTRATE=$(($MELTRATE + 1))
 
 done
+
+
+# #######################################
+# Combo Experiment T1
+# #######################################
+
+CLIMATE=1
+SRGEXPERCATEGORY=T1
+climate_scale_factor=1.0
+melt_rate=20
+sliding_scale_factor=2
+# anomaly files
+AR4FILE=ar4_anomaly_scalefactor_${climate_scale_factor}.nc
+PISM_SRPREFIX2=${INITIALS}_G_D3_C${CLIMATE}_${SRGEXPERCATEGORY}
+OUTNAME=out_y${ENDTIME}_${PISM_SRPREFIX2}.nc
+EXNAME=${PISM_SRPREFIX2}_raw_y${ENDTIME}.nc
+TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX2}.nc
+echo
+echo "$SCRIPTNAME combo run ${PISM_SRPREFIX2} with scaled AR4 climate from $STARTTIME to $ENDTIME years "
+echo "$SCRIPTNAME  and increased subshelf melting and basal sliding, w save every year:"
+echo
+cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+  -atmosphere_anomaly_file $AR4FILE \
+  -shelf_base_melt_rate $melt_rate \
+  -sliding_scale $sliding_scale_factor \
+  -extra_file $EXNAME -extra_times $TIMES $expackage \
+  -ts_file $TSNAME -ts_times $TSTIMES $tspackage"
+$PISM_DO $cmd
+echo
+echo "$SCRIPTNAME  $SRGNAME combo run done; runs ...$PISM_SRPREFIX2... will need post-processing"
+echo
