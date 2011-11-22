@@ -196,6 +196,29 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
 
   ierr = regrid(); CHKERRQ(ierr);
 
+  if (tauc_to_phi_set) {
+    bool flag;
+    ierr = PISMOptionsString("-tauc_to_phi", "Specifies the file tauc will be read from",
+                             tauc_to_phi_file, flag); CHKERRQ(ierr);
+
+    if (tauc_to_phi_file.empty() == false) {
+      // "-tauc_to_phi filename.nc" is given
+      ierr = tauc.regrid(tauc_to_phi_file, true); CHKERRQ(ierr);
+    } else {
+      // "-tauc_to_phi" is given (without a file name); assume that tauc has to
+      // be present in an input file
+      ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+
+      if (bootstrap) {
+        ierr = tauc.read(filename, start); CHKERRQ(ierr);
+      } else {
+        ierr = tauc.regrid(filename, true); CHKERRQ(ierr);
+      }
+    }
+  } else {
+    ierr = tauc.set(0.0); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -258,6 +281,31 @@ PetscErrorCode PISMMohrCoulombYieldStress::write_variables(set<string> vars, str
   return 0;
 }
 
+//! Update the till yield stress for use in the the pseudo-plastic till SSA
+//! model, see IceBasalResistancePlasticLaw.
+/*!
+Updates based on modeled basal water pressure.  We implement
+formula (2.4) in [\ref SchoofStream], the Mohr-Coulomb criterion:
+    \f[   \tau_c = \mu (\rho g H - p_w), \f]
+where \f$\tau_c\f$ is the till yield stress, \f$\rho g H\f$ is the ice over-burden
+pressure (in the shallow approximation), \f$p_w\f$ is the modeled
+pore (=basal) water pressure, and \f$\mu\f$ is a strength coefficient for the
+mineral till (at least, it is independent of \f$p_w\f$).  The difference
+    \f[   N = \rho g H - p_w   \f]
+is the effective pressure on the till.
+
+We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
+and by expressing the coefficient as the tangent of a till friction angle
+\f$\varphi\f$:
+    \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
+Option  \c -plastic_c0 controls it \f$c_0\f$; see [\ref Paterson] table 8.1
+regarding values.
+
+The major concern with this is the model for basal water pressure \f$p_w\f$.
+See basal_water_pressure().  See also [\ref BBssasliding] for a discussion
+of a complete model using these tools.
+
+ */
 PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
@@ -267,7 +315,6 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
 
   t = my_t; dt = my_dt;
   // this model performs a "diagnostic" computation (i.e. without time-stepping)
-
 
   bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
 
@@ -354,39 +401,9 @@ stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1
   return 0;
 }
 
-//! Update the till yield stress for use in the the pseudo-plastic till SSA
-//! model, see IceBasalResistancePlasticLaw.
-/*!
-Updates based on modeled basal water pressure.  We implement
-formula (2.4) in [\ref SchoofStream], the Mohr-Coulomb criterion:
-    \f[   \tau_c = \mu (\rho g H - p_w), \f]
-where \f$\tau_c\f$ is the till yield stress, \f$\rho g H\f$ is the ice over-burden
-pressure (in the shallow approximation), \f$p_w\f$ is the modeled
-pore (=basal) water pressure, and \f$\mu\f$ is a strength coefficient for the
-mineral till (at least, it is independent of \f$p_w\f$).  The difference
-    \f[   N = \rho g H - p_w   \f]
-is the effective pressure on the till.
-
-We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
-and by expressing the coefficient as the tangent of a till friction angle
-\f$\varphi\f$:
-    \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
-Option  \c -plastic_c0 controls it \f$c_0\f$; see [\ref Paterson] table 8.1
-regarding values.
-
-The major concern with this is the model for basal water pressure \f$p_w\f$.
-See basal_water_pressure().  See also [\ref BBssasliding] for a discussion
-of a complete model using these tools.
-
- */
 PetscErrorCode PISMMohrCoulombYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = tauc.copy_to(result); CHKERRQ(ierr);
-
-  return 0;
+  return tauc.copy_to(result);
 }
-
 
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
 /*!
@@ -560,7 +577,7 @@ as in [\ref LingleBrown1987] is not implementable because that elevation is
 at an unknowable location.  (We are not doing a flow line model!)
  */
 PetscScalar PISMMohrCoulombYieldStress::basal_water_pressure(PetscReal p_overburden, PetscReal bwat,
-                                                         PetscReal bmr, PetscReal thk) {
+                                                             PetscReal bmr, PetscReal thk) {
   if (bwat > bwat_max + 1.0e-6) {
     PetscPrintf(grid.com,
                 "PISM ERROR:  bwat = %12.8f exceeds bwat_max = %12.8f\n"
