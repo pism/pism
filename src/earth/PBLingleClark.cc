@@ -30,7 +30,7 @@ PBLingleClark::PBLingleClark(IceGrid &g, const NCConfigVariable &conf)
     PetscPrintf(grid.com, "PBLingleClark::PBLingleClark(...): allocate() failed\n");
     PISMEnd();
   }
-  
+
 }
 
 PBLingleClark::~PBLingleClark() {
@@ -46,7 +46,7 @@ PBLingleClark::~PBLingleClark() {
 
 /* the following is from the PETSc FAQ page:
 
-How do I collect all the values from a parallel PETSc vector into a vector 
+How do I collect all the values from a parallel PETSc vector into a vector
 on the zeroth processor?
 
     * Create the scatter context that will do the communication
@@ -58,9 +58,9 @@ on the zeroth processor?
           o VecScatterDestroy(ctx);
 
 Note that this simply concatenates in the parallel ordering of the vector.
-If you are using a vector from DACreateGlobalVector() you likely want to 
-first call DAGlobalToNaturalBegin/End() to scatter the original vector into 
-the natural ordering in a new global vector before calling 
+If you are using a vector from DACreateGlobalVector() you likely want to
+first call DAGlobalToNaturalBegin/End() to scatter the original vector into
+the natural ordering in a new global vector before calling
 VecScatterBegin/End() to scatter the natural vector onto process 0.
 */
 
@@ -151,6 +151,8 @@ PetscErrorCode PBLingleClark::init(PISMVars &vars) {
 
   ierr = correct_topg(); CHKERRQ(ierr);
 
+  ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
+
   ierr = transfer_to_proc0(thk,    Hstartp0); CHKERRQ(ierr);
   ierr = transfer_to_proc0(topg,   bedstartp0); CHKERRQ(ierr);
   ierr = transfer_to_proc0(uplift, upliftp0); CHKERRQ(ierr);
@@ -205,7 +207,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
     for (unsigned int i = 0; i < regrid_vars.size(); ++i) {
       if (regrid_vars[i] == "topg") {
         ierr = verbPrintf(2, grid.com,
-                          "  Bed elevation correction requested, but -regrid_vars contains topg...\n"); CHKERRQ(ierr); 
+                          "  Bed elevation correction requested, but -regrid_vars contains topg...\n"); CHKERRQ(ierr);
         return 0;
       }
     }
@@ -214,8 +216,8 @@ PetscErrorCode PBLingleClark::correct_topg() {
   ierr = verbPrintf(2, grid.com,
                     "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
                     "  of the bed deformation from '%s'...\n",
-                    boot_filename.c_str(), regrid_filename.c_str()); CHKERRQ(ierr); 
-  
+                    boot_filename.c_str(), regrid_filename.c_str()); CHKERRQ(ierr);
+
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
   int WIDE_STENCIL = grid.max_stencil_width;
   ierr = topg_tmp.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -229,7 +231,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   // After bootstrapping, topg contains the bed elevation field from
   // -boot_file.
 
-  ierr = topg_tmp.add(-1.0, topg_initial); CHKERRQ(ierr); 
+  ierr = topg_tmp.add(-1.0, topg_initial); CHKERRQ(ierr);
   // Now topg_tmp contains the change in bed elevation computed during the run
   // that produced -regrid_file.
 
