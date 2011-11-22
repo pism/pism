@@ -10,6 +10,10 @@
 # to initialize from spinup result foo.nc
 # To turn on marine ice dynamics options, do
 #    "./experiments.sh N foo.nc 1 >& out.experiments &"
+# To turn on flux compensation, do
+#    "./experiments.sh N foo.nc 2 >& out.experiments &"
+# To turn on marine ice dynamics and flux compensation, do
+#    "./experiments.sh N foo.nc 3 >& out.experiments &"
 
 echo
 echo "# ============================================================================="
@@ -37,9 +41,26 @@ if [ $# -gt 1 ] ; then
 fi
 
 PIKOPTIONS="-ocean_kill"
+# coupler settings
+COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd"
+# coupler settings for spin-up (i.e. with forcing)
+COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd"
+
 if [ $3 -eq "1" ] ; then  # PIKOPTIONS
     # PIK marine ice dynamics
     PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 100.0"  # parameters preliminary
+elif [ $3 -eq "2" ] ; then  # FTT
+    # coupler settings
+    COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd,as_anomaly"
+    # coupler settings for spin-up (i.e. with forcing)
+    COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd,as_anomaly"
+elif [ $3 -eq "3" ] ; then  # PIKOPTIONS and FTT
+    # PIK marine ice dynamics
+    PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 100.0"  # parameters preliminary
+    # coupler settings
+    COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd,as_anomaly"
+    # coupler settings for spin-up (i.e. with forcing)
+    COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd,as_anomaly"
 fi
 
 PISM_CONFIG=searise_config.nc
@@ -123,12 +144,6 @@ PISM="${PISM_PREFIX}${PISM_EXEC} -bed_def lc -config_override $PISM_CONFIG $FULL
 echo "$SCRIPTNAME         tillphi = '$TILLPHI'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
 echo "$SCRIPTNAME      executable = '$PISM'"
-
-
-# coupler settings
-COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd"
-# coupler settings for spin-up (i.e. with forcing)
-COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd"
 
 echo
 echo "$SCRIPTNAME control coupler = '$COUPLER_CTRL'"

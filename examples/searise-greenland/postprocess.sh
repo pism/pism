@@ -76,6 +76,7 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   echo "(postprocess.sh)    fixing metadata and names ..."
   ncpdq -O -a time,y,x ${NAME}.nc ${NAME}.nc         # change dimension order
   ncrename -v bwat,bwa ${NAME}.nc                    # fix "bwa" name
+  ncap2 -O -s "time = time/3.15569259747e7; tseries = tseries/3.15569259747e7;" ${NAME}.nc ${NAME}.nc # change units to years
   ncatted -a units,time,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
   ncatted -a units,tseries,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
   ncatted -a bounds,,d,c, ${NAME}.nc                 # remove time bounds; no one cares ...
