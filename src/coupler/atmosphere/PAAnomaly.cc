@@ -125,7 +125,7 @@ PetscErrorCode PAAnomaly::temp_time_series(int i, int j, int N,
   ts_values.reserve(N);
   ierr = temp.interp(i, j, N, ptr, &ts_values[0]); CHKERRQ(ierr);
 
-  for (int k = 0; i < N; ++k)
+  for (int k = 0; k < N; ++k)
     values[k] += ts_values[k];
 
   return 0;
