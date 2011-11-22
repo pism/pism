@@ -81,7 +81,38 @@ PetscErrorCode ageSystemCtx::initAllColumns() {
   return 0;
 }
 
+//! Conservative first-order upwind scheme with implicit in the vertical: one column solve.
+/*!
+The PDE being solved is
+    \f[ \frac{\partial \tau}{\partial t} + \frac{\partial}{\partial x}\left(u \tau\right) + \frac{\partial}{\partial y}\left(v \tau\right) + \frac{\partial}{\partial z}\left(w \tau\right) = 1. \f]
+This PDE has the conservative form identified in the comments on IceModel::ageStep().
 
+Let
+    \f[ \mathcal{U}(x,y_{i+1/2}) = x \, \begin{Bmatrix} y_i, \quad x \ge 0 \\ y_{i+1}, \quad x \le 0 \end{Bmatrix}. \f]
+Note that the two cases agree when \f$x=0\f$, so there is no conflict.  This is
+part of the upwind rule, and \f$x\f$ will be the cell-boundary (finite volume sense)
+value of the velocity.  Our discretization of the PDE uses this upwind notation 
+to build an explicit scheme for the horizontal terms and an implicit scheme for
+the vertical terms, as follows.
+
+Let
+    \f[ A_{i,j,k}^n \approx \tau(x_i,y_j,z_k) \f]
+be the numerical approximation of the exact value on the grid.  The scheme is
+\f{align*}{
+  \frac{A_{ijk}^{n+1} - A_{ijk}^n}{\Delta t} &+ \frac{\mathcal{U}(u_{i+1/2},A_{i+1/2,j,k}^n) - \mathcal{U}(u_{i-1/2},A_{i-1/2,j,k}^n)}{\Delta x} + \frac{\mathcal{U}(v_{j+1/2},A_{i,j+1/2,k}^n) - \mathcal{U}(v_{j-1/2},A_{i,j-1/2,k}^n)}{\Delta y} \\
+    &\qquad \qquad + \frac{\mathcal{U}(w_{k+1/2},A_{i,j,k+1/2}^{n+1}) - \mathcal{U}(w_{k-1/2},A_{i,j,k-1/2}^{n+1})}{\Delta x} = 1.
+  \f}
+Here velocity components \f$u,v,w\f$ are all evaluated at time \f$t_n\f$, so
+\f$u_{i+1/2} = u_{i+1/2,j,k}^n\f$ in more detail, and so on for all the other
+velocity values.  Note that this discrete form
+is manifestly conservative, in that, for example, the same term at \f$u_{i+1/2}\f$
+is used both in updating \f$A_{i,j,k}^{n+1}\f$ and \f$A_{i+1,j,k}^{n+1}\f$.
+
+FIXME:  THE COMMENT ABOVE HAS BEEN UPDATED TO THE 'CONSERVATIVE' FORM, BUT THE
+CODE STILL REFLECTS THE OLD SCHEME.
+
+FIXME:  CARE MUST BE TAKEN TO MAINTAIN CONSERVATISM AT SURFACE.
+ */
 PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
@@ -142,23 +173,33 @@ PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pi
 
 //! Take a semi-implicit time-step for the age equation.
 /*!
-The age equation is\f$d\tau/dt = 1\f$, that is,
+Let \f$\tau(t,x,y,z)\f$ be the age of the ice.  Denote the three-dimensional
+velocity field within the ice fluid as \f$(u,v,w)\f$.  The age equation
+is \f$d\tau/dt = 1\f$, that is, ice may move but it gets one year older in one
+year.  Thus
     \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x}
-        + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
-where \f$\tau(t,x,y,z)\f$ is the age of the ice and \f$(u,v,w)\f$  is the three dimensional
-velocity field.  This equation is purely advective.  And it is hyperbolic.
+        + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1 \f]
+This equation is purely advective and hyperbolic.  The right-hand side is "1" as
+long as age \f$\tau\f$ and time \$t\$ are measured in the same units.
+
+Because the velocity field is incompressible, namely \f$\nabla \cdot (u,v,w) = 0\f$,
+we can rewrite the equation as
+    \f[ \frac{\partial \tau}{\partial t} + \nabla \left( (u,v,w) \tau \right) = 1 \f]
+This equation remains purely advective and hyperbolic in this form, but this rewriting is
+a conservative form for which there is a conservative first-order numerical method.
 
 The boundary condition is that when the ice falls as snow it has age zero.  
-That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, while there is no 
+That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas.  There is no 
 boundary condition elsewhere, as the characteristics go outward in the ablation zone.
-(Some more numerical-analytic attention to this is worthwhile.)
+(FIXME:  Some more numerical care on this boundary condition is worthwhile.)
 
 If the velocity in the bottom cell of ice is upward (\code (w[i][j][0] > 0 \endcode)
 then we also apply an age = 0 boundary condition.  This is the case where ice freezes
 on at the base, either grounded basal ice freezing on stored water in till, or marine basal ice.
 
 The numerical method is first-order upwind but the vertical advection term is computed
-implicitly.  (Thus there is no CFL-type stability condition for that part.)
+implicitly.  Thus there is no CFL-type stability condition for that part.  The CFL is
+only for the horizontal velocity.
 
 We use a finely-spaced, equally-spaced vertical grid in the calculation.  Note that the IceModelVec3 
 methods getValColumn...() and setValColumn..() interpolate back and forth between the grid 
