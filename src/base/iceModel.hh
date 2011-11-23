@@ -298,10 +298,6 @@ protected:
   // see iMage.cc
   virtual PetscErrorCode ageStep();
 
-  // see iMbeddef.cc
-  PetscScalar last_bed_def_update;
-  virtual PetscErrorCode bed_def_step(bool &bed_changed);
-
   // see iMcalving.cc
   virtual PetscErrorCode eigenCalving();
   virtual PetscErrorCode calvingAtThickness();

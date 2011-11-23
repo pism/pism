@@ -90,5 +90,8 @@ PetscErrorCode PBPointwiseIsostasy::update(PetscReal my_t, PetscReal my_dt) {
   ierr =  thk->copy_to(thk_last);  CHKERRQ(ierr);
   ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
 
+  //! Increment the topg state counter. SIAFD relies on this!
+  topg->inc_state_counter();
+
   return 0;
 }

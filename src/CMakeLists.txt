@@ -94,7 +94,6 @@ add_library (pismbase
   base/energy/tempSystem.cc
   base/iMadaptive.cc
   base/iMage.cc
-  base/iMbeddef.cc
   base/iMbootstrap.cc
   base/iMcalving.cc
   base/iMenergy.cc

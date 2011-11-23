@@ -93,7 +93,7 @@ PetscErrorCode PISMBedDef::init(PISMVars &vars) {
 
   // Save the bed elevation at the beginning of the run:
   ierr = topg_initial.copy_from(*topg); CHKERRQ(ierr);
-  
+
   return 0;
 }
 

@@ -255,19 +255,23 @@ PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
   t  = my_t;
   dt = my_dt;
 
+  PetscReal t_final = t + dt;
+
   // Check if it's time to update:
-  PetscScalar dt_beddef = my_t - t_beddef_last; // in seconds
-  if (dt_beddef < convert(config.get("bed_def_interval_years"), "years", "seconds"))
+  PetscReal dt_beddef = t_final - t_beddef_last; // in seconds
+  if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
+       t_final < grid.time->end()) ||
+      dt_beddef < 1e-12)
     return 0;
 
-  t_beddef_last = my_t;
+  t_beddef_last = t_final;
 
   ierr = transfer_to_proc0(thk,  Hp0);   CHKERRQ(ierr);
   ierr = transfer_to_proc0(topg, bedp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {  // only processor zero does the step
     ierr = bdLC.step(dt_beddef, // time step, in seconds
-                     my_t - grid.time->start()); // time since the start of the run, in seconds
+                     t_final - grid.time->start()); // time since the start of the run, in seconds
     CHKERRQ(ierr);
   }
 
@@ -276,6 +280,9 @@ PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
   //! Finally, we need to update bed uplift and topg_last.
   ierr = compute_uplift(dt_beddef); CHKERRQ(ierr);
   ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
+
+  //! Increment the topg state counter. SIAFD relies on this!
+  topg->inc_state_counter();
 
   return 0;
 }
