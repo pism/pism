@@ -179,7 +179,6 @@ int main(int argc, char *argv[]) {
       ierr = bdlc.settings(
                config,
                include_elastic,Mx,My,dx,dy,Z,
-               config.get("ice_density"),
                &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n"); CHKERRQ(ierr);

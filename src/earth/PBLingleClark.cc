@@ -108,12 +108,9 @@ PetscErrorCode PBLingleClark::allocate() {
   ierr = VecDuplicate(Hp0,&upliftp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
-    ierr = bdLC.settings(config,
-			 PETSC_FALSE, // turn off elastic model for now
+    ierr = bdLC.settings(config, PETSC_FALSE, // turn off elastic model for now
 			 grid.Mx, grid.My, grid.dx, grid.dy,
-			 //                       2,                 // use Z = 2 for now
-			 4,                 // use Z = 4 for now; to reduce global drift?
-			 config.get("ice_density"),
+			 4,     // use Z = 4 for now; to reduce global drift?
 			 &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
     CHKERRQ(ierr);
 
