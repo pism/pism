@@ -396,8 +396,8 @@ void BedDeformLC::copy_fftw_output(fftw_complex *output) {
 void BedDeformLC::set_fftw_input(Vec vec_input, PetscReal normalization, int M, int N, int i0, int j0) {
   PetscVecAccessor2D in(vec_input, M, N);
   VecAccessor2D<fftw_complex> input(fftw_input, Nx, Ny, i0, j0);
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < M; ++j) {
+  for (int i = 0; i < M; ++i) {
+    for (int j = 0; j < N; ++j) {
       input(i, j)[0] = in(i, j) * normalization;
       input(i, j)[1] = 0.0;
     }
@@ -408,8 +408,8 @@ void BedDeformLC::set_fftw_input(Vec vec_input, PetscReal normalization, int M, 
 void BedDeformLC::get_fftw_output(Vec output, PetscReal normalization, int M, int N, int i0, int j0) {
   PetscVecAccessor2D out(output, M, N);
   VecAccessor2D<fftw_complex> fftw_out(fftw_output, Nx, Ny, i0, j0);
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < M; ++j) {
+  for (int i = 0; i < M; ++i) {
+    for (int j = 0; j < N; ++j) {
       out(i, j) = fftw_out(i, j)[0] * normalization;
     }
   }
