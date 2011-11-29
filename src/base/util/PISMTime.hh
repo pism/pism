@@ -78,7 +78,12 @@ public:
     if (period <= 0)
       return time;
 
-    return time - floor(time / period) * period;
+    PetscReal tmp = time - floor(time / period) * period;
+
+    if (fabs(tmp - period) < 1)
+      tmp = 0;
+
+    return tmp;
   }
 
   //! \brief Returns the fraction of a year passed since the last beginning of

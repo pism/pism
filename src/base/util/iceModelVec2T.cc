@@ -393,10 +393,10 @@ double IceModelVec2T::max_timestep(double my_t) {
   if (l != time_bounds.end()) {
     PetscReal tmp = *l - my_t;
 
-    if (tmp > 1e-8)
+    if (tmp > 1)                // never take time-steps shorter than 1 second
       return tmp;
-    else if (l + 1 != time.end())
-      return *(l + 1) - *l;
+    else if ((l + 1) != time_bounds.end() && (l + 2) != time_bounds.end())
+      return *(l + 2) - *l;
     else
       return -1;
   } else
