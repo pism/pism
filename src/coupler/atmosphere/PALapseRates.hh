@@ -29,7 +29,7 @@ public:
     : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
   {
     precip_lapse_rate = 0;
-    option_prefix = "-atmosphere";
+    option_prefix = "-atmosphere_lapse_rate";
   }
 
   virtual ~PALapseRates() {}

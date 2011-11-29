@@ -30,7 +30,7 @@ public:
     : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
   {
     smb_lapse_rate = 0;
-    option_prefix = "-surface";
+    option_prefix = "-surface_lapse_rate";
   }
 
   virtual ~PSLapseRates() {}
