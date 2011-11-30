@@ -330,6 +330,8 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
   if (t.size() == 1) {
     time.push_back(b);
     values.push_back(GSL_NAN);
+    time_bounds.push_back(a);
+    time_bounds.push_back(b);
     return 0;
   }
 
@@ -439,3 +441,13 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
 
     return 0;
   }
+
+void DiagnosticTimeseries::reset() {
+  time.clear();
+  values.clear();
+  time_bounds.clear();
+  start = 0;
+  t.clear();
+  v.clear();
+}
+

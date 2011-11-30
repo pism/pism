@@ -135,9 +135,11 @@ PetscErrorCode PSStuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) 
 }
 
 void PSStuffAsAnomaly::add_vars_to_output(string keyword, set<string> &result) {
-  if (keyword != "small") {
-    result.insert(temp.string_attr("short_name"));
-    result.insert(mass_flux.string_attr("short_name"));
+  result.insert(temp.string_attr("short_name"));
+  result.insert(mass_flux.string_attr("short_name"));
+
+  if (input_model != NULL) {
+    input_model->add_vars_to_output(keyword, result);
   }
 }
 

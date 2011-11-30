@@ -119,6 +119,16 @@ PetscErrorCode PISMSurfaceModel::write_variables(set<string> vars, string filena
   return 0;
 }
 
+PetscErrorCode PISMSurfaceModel::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+  PetscErrorCode ierr;
 
+  if (atmosphere != NULL) {
+    ierr = atmosphere->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+  } else {
+    my_dt = -1;
+    restrict = false;
+  }
 
+  return 0;
+}
 

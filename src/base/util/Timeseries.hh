@@ -167,6 +167,7 @@ public:
   PetscErrorCode init(string filename);
   PetscErrorCode append(double V, double a, double b);
   PetscErrorCode interp(double a, double b);
+  void reset();
   PetscErrorCode flush();
 
   size_t buffer_size;
