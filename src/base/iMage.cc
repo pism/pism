@@ -199,31 +199,31 @@ year.  Thus
     \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x}
         + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1 \f]
 This equation is purely advective and hyperbolic.  The right-hand side is "1" as
-long as age \f$\tau\f$ and time \$t\$ are measured in the same units.
-
-Because the velocity field is incompressible, namely \f$\nabla \cdot (u,v,w) = 0\f$,
+long as age \f$\tau\f$ and time \f$t\f$ are measured in the same units.
+Because the velocity field is incompressible, \f$\nabla \cdot (u,v,w) = 0\f$,
 we can rewrite the equation as
     \f[ \frac{\partial \tau}{\partial t} + \nabla \left( (u,v,w) \tau \right) = 1 \f]
-This equation remains purely advective and hyperbolic in this form, but this rewriting is
-a conservative form for which there is a conservative first-order numerical method.
+There is a conservative first-order numerical method; see ageSystemCtx::solveThisColumn().
 
 The boundary condition is that when the ice falls as snow it has age zero.  
 That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas.  There is no 
-boundary condition elsewhere, as the characteristics go outward in the ablation zone.
-(FIXME:  Some more numerical care on this boundary condition is worthwhile.)
+boundary condition elsewhere on the ice upper surface, as the characteristics
+go outward in the ablation zone.  If the velocity in the bottom cell of ice
+is upward (\f$w>0\f$) then we also apply a zero age boundary condition,
+\f$\tau(t,x,y,0) = 0\f$.  This is the case where ice freezes on at the base,
+either grounded basal ice freezing on stored water in till, or marine basal ice.
+(Note that the water that is frozen-on as ice might be quite "old" in the sense
+that its most recent time in the atmosphere was long ago; this comment is
+relevant to any analysis which relates isotope ratios to PISM's modeled age.)
 
-If the velocity in the bottom cell of ice is upward (\code (w[i][j][0] > 0 \endcode)
-then we also apply an age = 0 boundary condition.  This is the case where ice freezes
-on at the base, either grounded basal ice freezing on stored water in till, or marine basal ice.
-
-The numerical method is first-order upwind but the vertical advection term is computed
-implicitly.  Thus there is no CFL-type stability condition for that part.  The CFL is
-only for the horizontal velocity.
-
-We use a finely-spaced, equally-spaced vertical grid in the calculation.  Note that the IceModelVec3 
-methods getValColumn...() and setValColumn..() interpolate back and forth between the grid 
-on which calculation is done and the storage grid.  Thus the storage grid can be either 
-equally spaced or not.
+The numerical method is a conservative form of first-order upwinding, but the
+vertical advection term is computed implicitly.  Thus there is no CFL-type
+stability condition from the vertical velocity; CFL is only for the horizontal
+velocity.  We use a finely-spaced, equally-spaced vertical grid in the
+calculation.  Note that the IceModelVec3 methods getValColumn...() and
+setValColumn..() interpolate back and forth between this fine grid and
+the storage grid.  The storage grid may or may not be equally-spaced.  See
+ageSystemCtx::solveThisColumn() for the actual method.
  */
 PetscErrorCode IceModel::ageStep() {
   PetscErrorCode  ierr;
