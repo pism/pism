@@ -639,7 +639,7 @@ PetscErrorCode SSAFD::solve() {
   PetscErrorCode ierr;
   Mat A = SSAStiffnessMatrix; // solve  A SSAX = SSARHS
   PetscReal   norm, normChange;
-  PetscInt    ksp_iterations, outer_iterations;
+  PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
   stdout_ssa = "";
@@ -713,6 +713,7 @@ PetscErrorCode SSAFD::solve() {
         } else {
           // report on KSP success; the "inner" iteration is done
           ierr = KSPGetIterationNumber(SSAKSP, &ksp_iterations); CHKERRQ(ierr);
+          ksp_iterations_total += ksp_iterations;
           if (getVerbosityLevel() > 2) {
             char tempstr[50] = "";  snprintf(tempstr,50, "S:%d,%d: ", ksp_iterations, reason);
             stdout_ssa += tempstr;
@@ -769,13 +770,15 @@ PetscErrorCode SSAFD::solve() {
   done:
 
   if (getVerbosityLevel() > 2) {
-    char tempstr[50] = "";
-    snprintf(tempstr,50, "... =%5d outer iterations\n", outer_iterations);
+    char tempstr[100] = "";
+    snprintf(tempstr, 100, "... =%5d outer iterations, ~%3.1f KSP iterations each\n",
+             outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
     stdout_ssa += tempstr;
   } else if (getVerbosityLevel() == 2) {
     // at default verbosity, just record last normchange and iterations
-    char tempstr[50] = "";
-    snprintf(tempstr,50, "%5d outer iterations\n", outer_iterations);
+    char tempstr[100] = "";
+    snprintf(tempstr, 100, "%5d outer iterations, ~%3.1f KSP iterations each\n",
+             outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
     stdout_ssa += tempstr;
   }
   if (getVerbosityLevel() >= 2)
@@ -787,11 +790,10 @@ PetscErrorCode SSAFD::solve() {
 
   if (config.get_flag("scalebrutalSet")){
     const PetscScalar sliding_scale_brutalFactor = config.get("sliding_scale_brutal");
-// ierr = verbPrintf(1,grid.com,"\nINFO:Sliding_scale_brutaFactorl=%f\n", sliding_scale_brutalFactor); CHKERRQ(ierr);
-      ierr = velocity.scale(sliding_scale_brutalFactor); CHKERRQ(ierr);
+    ierr = velocity.scale(sliding_scale_brutalFactor); CHKERRQ(ierr);
 
-      ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
-      ierr = velocity.endGhostComm(); CHKERRQ(ierr);
+    ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
+    ierr = velocity.endGhostComm(); CHKERRQ(ierr);
   }
 
   return 0;
