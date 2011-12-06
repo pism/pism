@@ -309,10 +309,17 @@ PetscErrorCode IceModel::write_extras() {
     return 0;
 
   // do we need to save *now*?
-  if ( current_extra < extra_times.size() && grid.time->current() >= extra_times[current_extra] ) {
+  if ( current_extra < extra_times.size() &&
+       (grid.time->current() >= extra_times[current_extra] ||
+        fabs(grid.time->current() - extra_times[current_extra]) < 1) ) {
+    // the condition above is "true" if we passed a requested time or got to
+    // within 1 second from it
+
     saving_after = extra_times[current_extra];
 
-    while (current_extra < extra_times.size() && extra_times[current_extra] <= grid.time->current())
+    while (current_extra < extra_times.size() &&
+           (extra_times[current_extra] <= grid.time->current() ||
+            fabs(grid.time->current() - extra_times[current_extra]) < 1) )
       current_extra++;
   } else {
     // we don't need to save now, so just return
@@ -409,6 +416,18 @@ PetscErrorCode IceModel::extras_max_timestep(double my_t, double& my_dt, bool &r
 
   my_dt = *j - my_t;
   restrict = true;
+
+  // now make sure that we don't end up taking a time-step of less than 1
+  // second long
+  if (my_dt < 1) {
+    if ((j + 1) != extra_times.end()) {
+      my_dt = *(j + 1) - my_t;
+      restrict = true;
+    } else {
+      my_dt = -1;
+      restrict = false;
+    }
+  }
 
   return 0;
 }

@@ -263,12 +263,12 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
 
   // time since the beginning of the year, in seconds
   const PetscScalar tseries = grid.time->mod(my_t, one_year),
-    dtseries = my_dt / ((PetscScalar) Nseries);
+    dtseries = my_dt / ((PetscScalar) (Nseries - 1));
 
   // times for the air temperature time-series, in years:
   vector<PetscScalar> ts(Nseries), T(Nseries);
   for (PetscInt k = 0; k < Nseries; ++k)
-    ts[k] = my_t + k * my_dt / Nseries;
+    ts[k] = my_t + k * dtseries;
 
   if (lat != NULL) {
     ierr = lat->begin_access(); CHKERRQ(ierr);
