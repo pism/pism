@@ -300,7 +300,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
     ierr = verbPrintf(2,grid.com,
                       "S %12.5f: %8.5f %9.4f %12.8f %17.5f\n",
                       year, volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity,
-                      convert(sqrt(gmaxu*gmaxu + gmaxv*gmaxv), "m/s", "m/year")); CHKERRQ(ierr);
+                      convert(gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", "m/year")); CHKERRQ(ierr);
 
     mass_cont_sub_counter = 0;
     mass_cont_sub_dtsum = 0.0;
