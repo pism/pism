@@ -81,9 +81,8 @@ protected:
 class SSBM_Trivial : public SSB_Modifier
 {
 public:
-  SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
-    : SSB_Modifier(g, e, c) {}
-  virtual ~SSBM_Trivial() {}
+  SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c);
+  virtual ~SSBM_Trivial();
 
   virtual PetscErrorCode init(PISMVars &vars);
 

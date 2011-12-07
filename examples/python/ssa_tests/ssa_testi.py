@@ -54,9 +54,7 @@ class testi(PISM.ssa.SSAExactTestCase):
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
-    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
-    ice.setHardness(B_schoof)
-    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
+    self.modeldata.setPhysics(basal,enthalpyconverter)
 
 
   def _initSSACoefficients(self):

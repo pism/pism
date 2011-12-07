@@ -93,6 +93,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 
   config.set_flag("compute_surf_grad_inward_ssa", true); 
   config.set_flag("calving_front_stress_boundary_condition", true); 
+  config.set_string("ssa_flow_law", "custom");
 
   basal = new IceBasalResistancePlasticLaw(
          config.get("plastic_regularization", "1/year", "1/second"),
@@ -101,10 +102,6 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   enthalpyconverter = new EnthalpyConverter(config);
-  ice = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
-  
-  CustomGlenIce *ice_custom = dynamic_cast<CustomGlenIce*>(ice);
-  ice_custom->setHardness(1.9e8);
 
   return 0;
 }
@@ -112,6 +109,12 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
+
+  CustomGlenIce *ice = dynamic_cast<CustomGlenIce*>(ssa->get_flow_law());
+  if (ice == NULL)
+    SETERRQ(grid.com, 1, "Only CustomGlenIce is supported");
+  ice->setHardness(1.9e8);
+
   ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant
   ierr = bed.set(-1000.0); CHKERRQ(ierr); // assures shelf is floating
   ierr = enthalpy.set(528668.35); // arbitrary; corresponds to 263.15 Kelvin at depth=0.

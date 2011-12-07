@@ -20,6 +20,7 @@
 #include "flowlaws.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
+#include "flowlaw_factory.hh"
 
 PetscErrorCode SSB_Modifier::allocate() {
   PetscErrorCode ierr;
@@ -74,6 +75,25 @@ PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
   return 0;
 }
 
+SSBM_Trivial::SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+  : SSB_Modifier(g, e, c)
+{
+  IceFlowLawFactory ice_factory(grid.com, "ssb_trivial_", config, &EC);
+
+  ice_factory.setType(config.get_string("sia_flow_law").c_str());
+
+  ice_factory.setFromOptions();
+  ice_factory.create(&ice);
+}
+
+SSBM_Trivial::~SSBM_Trivial()
+{
+  if (ice != NULL) {
+    delete ice;
+    ice = NULL;
+  }
+}
+
 
 //! \brief Distribute the input velocity throughout the column.
 /*!
@@ -126,7 +146,7 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
 
 //! \brief Compute the volumetric strain heating.
 /*!
- * Uses 
+ * Uses:
  * - delta on the staggered grid, which should be initialized by the update(true) call.
  * - enthalpy
  * - surface gradient on the staggered grid

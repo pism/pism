@@ -73,7 +73,7 @@ PetscErrorCode SSATestCaseJ::initializeSSAModel()
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   enthalpyconverter = new EnthalpyConverter(config);
-  ice = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
+  config.set_string("ssa_flow_law", "custom");
 
   return 0;
 }
@@ -85,10 +85,11 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ierr = bed.set(0.0); CHKERRQ(ierr); // assures shelf is floating
   ierr = ice_mask.set(MASK_FLOATING); CHKERRQ(ierr);
   ierr = enthalpy.set(528668.35);
-        CHKERRQ(ierr); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
+  CHKERRQ(ierr); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
-  double ocean_rho = config.get("sea_water_density");
+  double ocean_rho = config.get("sea_water_density"),
+    ice_rho = config.get("ice_density");
   const PetscScalar nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
   const PetscScalar H0 = 500.0;       /* 500 m typical thickness */
 
@@ -112,7 +113,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
       ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
 
       thickness(i,j) = H;
-      surface(i,j) = (1.0 - ice->rho / ocean_rho) * H; // FIXME task #7297
+      surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME task #7297
 
       // special case at center point: here we set vel_bc at (i,j) by marking
       // this grid point as SHEET and setting vel_bc approriately

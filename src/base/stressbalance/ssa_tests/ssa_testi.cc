@@ -42,7 +42,7 @@ public:
                  PetscMPIInt size, NCConfigVariable &c ): 
                  SSATestCase(com,rank,size,c)
   { };
-  
+
 protected:
   virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
 
@@ -83,9 +83,8 @@ PetscErrorCode SSATestCaseI::initializeSSAModel()
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   enthalpyconverter = new EnthalpyConverter(config);
-  CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
-  glenIce->setHardness(B_schoof);
-  ice = glenIce;
+
+  config.set_string("ssa_flow_law", "custom");
 
   return 0;
 }
@@ -94,12 +93,18 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
   PetscScalar    **ph, **pbed;
-  
+
   ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
   ierr = thickness.set(H0_schoof); CHKERRQ(ierr);
 
+  CustomGlenIce *ice = dynamic_cast<CustomGlenIce*>(ssa->get_flow_law());
+  if (ice == NULL)
+    SETERRQ(grid.com, 1, "Only CustomGlenIce is supported");
+
+  ice->setHardness(B_schoof);
+
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
-  
+
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
   config.set("epsilon_ssafd", 0.0);  // don't use this lower bound

@@ -446,8 +446,11 @@ netcdf pism_config {
     pism_config:sia_sliding_verification_mode = "no";
     pism_config:sia_sliding_verification_mode_doc = "; Enable 'verification mode' of the SIA sliding code.";
 
-    pism_config:sia_flow_law = "pb";
-    pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'hybrid', 'arrwarm'.";
+    pism_config:sia_flow_law = "gpbld";
+    pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+
+    pism_config:ssa_flow_law = "gpbld";
+    pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
     pism_config:enthalpy_cold_bulge_max = 60270.0;
     pism_config:enthalpy_cold_bulge_max_doc = "J kg-1; = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";

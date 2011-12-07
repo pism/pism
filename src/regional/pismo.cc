@@ -159,9 +159,9 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
 class SSAFD_Regional : public SSAFD
 {
 public:
-  SSAFD_Regional(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
-                 const NCConfigVariable &c)
-    : SSAFD(g, b, i, e, c) {}
+  SSAFD_Regional(IceGrid &g, IceBasalResistancePlasticLaw &b,
+                 EnthalpyConverter &e, const NCConfigVariable &c)
+    : SSAFD(g, b, e, c) {}
   virtual ~SSAFD_Regional() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
@@ -208,7 +208,7 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   ierr = thkstore->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar pressure = ice.rho * standard_gravity * (*thkstore)(i,j);
+      PetscScalar pressure = ice->rho * standard_gravity * (*thkstore)(i,j);
       if (pressure <= 0) pressure = 0;
 
       if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
@@ -459,9 +459,9 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   }
 
   if (use_ssa_velocity) {
-    my_stress_balance = new SSAFD_Regional(grid, *basal, *ice, *EC, config);
+    my_stress_balance = new SSAFD_Regional(grid, *basal, *EC, config);
   } else {
-    my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+    my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
   }
   
   // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.

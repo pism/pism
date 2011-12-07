@@ -102,13 +102,7 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
   enthalpyconverter = new EnthalpyConverter(config);
 
   // Use constant hardness
-  CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
-  glenIce->setHardness(B0);
-  glenIce->setExponent(glen_n);
-  // PetscReal velpera = 1000; // m/a
-  // PetscReal length = 1000; // m
-  // glenIce->setSchoofRegularization( velpera, length );
-  ice = glenIce;
+  config.set_string("ssa_flow_law", "custom");
 
   return 0;
 }
@@ -116,7 +110,13 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
 PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
-  
+  CustomGlenIce *ice = dynamic_cast<CustomGlenIce*>(ssa->get_flow_law());
+  if (ice == NULL)
+    SETERRQ(grid.com, 1, "Only CustomGlenIce is supported");
+
+  ice->setHardness(B0);
+  ice->setExponent(glen_n);
+
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
   config.set("epsilon_ssafd", 0.0);
@@ -176,10 +176,11 @@ PetscErrorCode SSATestCasePlug::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
                                               PetscReal /*x*/, PetscReal y,
                                               PetscReal *u, PetscReal *v)
 {
-  PetscScalar earth_grav = config.get("standard_gravity");
-  PetscScalar f = ice->rho * earth_grav * H0* dhdx;
+  PetscScalar earth_grav = config.get("standard_gravity"),
+    ice_rho = config.get("ice_density");
+  PetscScalar f = ice_rho * earth_grav * H0* dhdx;
   PetscScalar ynd = y/L;
-  
+
   *u = 0.5*pow(f,3)*pow(L,4)/pow(B0*H0,3)*(1-pow(ynd,4));
   *v = 0;
   return 0;

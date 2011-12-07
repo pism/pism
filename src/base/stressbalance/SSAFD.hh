@@ -28,9 +28,9 @@ class SSAFD : public SSA
 {
   friend class SSAFD_nuH;
 public:
-  SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+  SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
         const NCConfigVariable &c) :
-    SSA(g,b,i,e,c)
+    SSA(g,b,e,c)
   {
     PetscErrorCode ierr = allocate_fd();
     if (ierr != 0) {
@@ -94,8 +94,8 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
-                  IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
+SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &,
+                   EnthalpyConverter &, const NCConfigVariable &);
 
 //! \brief Reports the nuH (viscosity times thickness) product on the staggered
 //! grid.

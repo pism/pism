@@ -30,15 +30,20 @@
 class SIA_Sliding : public ShallowStressBalance
 {
 public:
-  SIA_Sliding(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
-              const NCConfigVariable &conf)
-    : ShallowStressBalance(g, b, i, e, conf)
+  SIA_Sliding(IceGrid &g, IceBasalResistancePlasticLaw &b,
+              EnthalpyConverter &e, const NCConfigVariable &conf)
+    : ShallowStressBalance(g, b, e, conf)
   {
     verification_mode = false;
     eisII_experiment = "";
     allocate();
   }
-  virtual ~SIA_Sliding() {}
+
+  virtual ~SIA_Sliding()
+  {
+    if (ice != NULL)
+      delete ice;
+  }
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -62,7 +67,7 @@ protected:
   IceModelVec3 *enthalpy;
   IceModelVec2Stag work_2d_stag[2]; // for the surface gradient
   double standard_gravity;
-  
+
   bool verification_mode;
   string eisII_experiment;
 };

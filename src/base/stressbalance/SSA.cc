@@ -22,11 +22,12 @@
 #include "PISMVars.hh"
 #include "PISMProf.hh"
 #include "pism_options.hh"
+#include "flowlaw_factory.hh"
 
 SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
-         IceFlowLaw &i, EnthalpyConverter &e,
+         EnthalpyConverter &e,
          const NCConfigVariable &c)
-  : ShallowStressBalance(g, b, i, e, c)
+  : ShallowStressBalance(g, b, e, c)
 {
   mask = NULL;
   thickness = NULL;
@@ -159,7 +160,16 @@ PetscErrorCode SSA::allocate() {
                       &SSADA); CHKERRQ(ierr);
 
   ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
-  
+
+  {
+    IceFlowLawFactory ice_factory(grid.com, "ssafd_", config, &EC);
+
+    ierr = ice_factory.setType(config.get_string("ssa_flow_law").c_str()); CHKERRQ(ierr);
+
+    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
+    ierr = ice_factory.create(&ice); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -174,7 +184,12 @@ PetscErrorCode SSA::deallocate() {
   if (SSADA != PETSC_NULL) {
     ierr = DMDestroy(&SSADA);CHKERRQ(ierr);
   }
-  
+
+  if (ice != NULL) {
+    delete ice;
+    ice = NULL;
+  }
+
   return 0;
 }
 
@@ -375,7 +390,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   IceModelVec2S &thk = *thickness; // to improve readability (below)
 
-  const PetscScalar n       = ice.exponent(), // frequently n = 3
+  const PetscScalar n       = ice->exponent(), // frequently n = 3
                     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                     invpow  = 1.0 / etapow,  // = 3/8
                     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
@@ -397,7 +412,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = ice.rho * standard_gravity * thk(i,j); // FIXME task #7297
+      const PetscScalar pressure = ice->rho * standard_gravity * thk(i,j); // FIXME task #7297
       if (pressure <= 0.0) {
         result(i,j).u = 0.0;
         result(i,j).v = 0.0;

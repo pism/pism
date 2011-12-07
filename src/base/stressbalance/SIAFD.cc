@@ -26,7 +26,10 @@
 
 SIAFD::~SIAFD() {
   delete bed_smoother;
-  delete ice;
+  if (ice != NULL) {
+    delete ice;
+    ice = NULL;
+  }
 }
 
 //! \brief Allocate the SIAFD module.

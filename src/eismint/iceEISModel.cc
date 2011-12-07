@@ -199,9 +199,9 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
     SSB_Modifier *modifier = new SIAFD(grid, *EC, config);
 
     if (expername == 'G' || expername == 'H') {
-      my_stress_balance = new SIA_Sliding(grid, *basal, *ice, *EC, config);
+      my_stress_balance = new SIA_Sliding(grid, *basal, *EC, config);
     } else {
-      my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+      my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
     }
   
     // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.

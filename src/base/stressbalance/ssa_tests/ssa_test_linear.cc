@@ -91,7 +91,6 @@ PetscErrorCode SSATestCaseExp::initializeSSAModel()
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);
-  ice = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
 
   return 0;
 }

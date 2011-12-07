@@ -95,7 +95,6 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);
-  ice = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
 
   return 0;
 }
@@ -103,7 +102,7 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
 PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
-  
+
   // Force linear rheology
   ssa->strength_extension->set_notional_strength(nu0 * H0);
   ssa->strength_extension->set_min_thickness(0.5*H0);
@@ -115,8 +114,6 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
   ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
   ierr = thickness.set(H0); CHKERRQ(ierr);
   ierr = tauc.set(tauc0); CHKERRQ(ierr);
-  
-
 
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
@@ -163,10 +160,11 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
 PetscErrorCode SSATestCaseConst::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
  PetscReal /*x*/, PetscReal /*y*/, PetscReal *u, PetscReal *v)
 {
-  PetscScalar earth_grav = config.get("standard_gravity");
-  PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
+  PetscScalar earth_grav = config.get("standard_gravity"),
+    tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second"),
+    ice_rho = config.get("ice_density");
   
-  *u = pow(ice->rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
+  *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
   *v = 0;
   return 0;
 }

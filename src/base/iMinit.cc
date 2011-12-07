@@ -651,14 +651,14 @@ PetscErrorCode IceModel::allocate_stressbalance() {
       if (use_ssa_velocity) {
         string ssa_method = config.get_string("ssa_method");
         if( ssa_method == "fd" ) {
-          my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
+          my_stress_balance = new SSAFD(grid, *basal, *EC, config);
         } else if(ssa_method == "fem") {
-          my_stress_balance = new SSAFEM(grid, *basal, *ice, *EC, config);
+          my_stress_balance = new SSAFEM(grid, *basal, *EC, config);
         } else {
           SETERRQ(grid.com, 1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
         }
       } else {
-        my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+        my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
       }
       SSB_Modifier *my_modifier;
       if (do_sia) {

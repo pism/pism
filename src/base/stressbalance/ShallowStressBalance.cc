@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,8 @@ PetscErrorCode ShallowStressBalance::allocate() {
   ierr = D2.set_attrs("internal",
                       "(partial) square of the Frobenius norm of D_{ij}, the combined strain rates",
                       "", ""); CHKERRQ(ierr);
+
+  ice = NULL;
 
   return 0;
 }

@@ -37,10 +37,10 @@ class InvSSAForwardProblem : public SSAFEM
 
 public:
 
-  InvSSAForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, 
+  InvSSAForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
     EnthalpyConverter &e, InvTaucParameterization &tp,
-                 const NCConfigVariable &c) 
-           : SSAFEM(g,b,i,e,c), 
+                 const NCConfigVariable &c)
+           : SSAFEM(g,b,e,c),
              m_KSP(0), m_KSP_B(0), m_MatA(0), m_MatB(0),
              m_VecU(0), m_VecZ2(0),
              m_VecZ(0), m_VecRHS2(0),

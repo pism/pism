@@ -628,7 +628,7 @@ int main(int argc, char *argv[]) {
 
 
     // Create the SSA solver object; we'll need to deallocate it later.
-    SSA *ssa = ssafactory(g, basal, ice, EC, config);
+    SSA *ssa = ssafactory(g, basal, EC, config);
 
     const PetscReal
       DEFAULT_MIN_THICKNESS = 5.0, // meters

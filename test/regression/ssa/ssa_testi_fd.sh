@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # SSAFD verification test I regression test
 
