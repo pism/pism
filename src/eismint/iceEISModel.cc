@@ -196,7 +196,7 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
   if (stress_balance == NULL) {
     ShallowStressBalance *my_stress_balance;
 
-    SSB_Modifier *modifier = new SIAFD(grid, *ice, *EC, config);
+    SSB_Modifier *modifier = new SIAFD(grid, *EC, config);
 
     if (expername == 'G' || expername == 'H') {
       my_stress_balance = new SIA_Sliding(grid, *basal, *ice, *EC, config);

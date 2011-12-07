@@ -662,9 +662,9 @@ PetscErrorCode IceModel::allocate_stressbalance() {
       }
       SSB_Modifier *my_modifier;
       if (do_sia) {
-        my_modifier = new SIAFD(grid, *ice, *EC, config);
+        my_modifier = new SIAFD(grid, *EC, config);
       } else {
-        my_modifier = new SSBM_Trivial(grid, *ice, *EC, config);
+        my_modifier = new SSBM_Trivial(grid, *EC, config);
       }
       // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
       stress_balance = new PISMStressBalance(grid, my_stress_balance,

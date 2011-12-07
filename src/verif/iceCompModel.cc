@@ -286,9 +286,11 @@ PetscErrorCode IceCompModel::allocate_flowlaw() {
   if (testname == 'V') {
     // use CustomGlenIce, which allows easy setting of ice hardness
     ierr = iceFactory.setType(ICE_CUSTOM); CHKERRQ(ierr);
+    config.set_string("sia_flow_law", "custom"); CHKERRQ(ierr);
   } else {
     // Set the default for IceCompModel:
     ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
+    config.set_string("sia_flow_law", "arr"); CHKERRQ(ierr);
   }
 
   ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
@@ -329,7 +331,7 @@ PetscErrorCode IceCompModel::allocate_stressbalance() {
   if (testname == 'E') {
     config.set_flag("sia_sliding_verification_mode", true);
     ShallowStressBalance *ssb = new SIA_Sliding(grid, *basal, *ice, *EC, config);
-    SIAFD *sia = new SIAFD(grid, *ice, *EC, config);
+    SIAFD *sia = new SIAFD(grid, *EC, config);
 
     stress_balance = new PISMStressBalance(grid, ssb, sia, NULL, config);
     ierr = stress_balance->init(variables); CHKERRQ(ierr);

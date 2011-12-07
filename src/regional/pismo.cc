@@ -58,8 +58,8 @@ class.
 class SIAFD_Regional : public SIAFD
 {
 public:
-  SIAFD_Regional(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
-    : SIAFD(g, i, e, c) {}
+  SIAFD_Regional(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+    : SIAFD(g, e, c) {}
   virtual ~SIAFD_Regional() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
@@ -453,9 +453,9 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   ShallowStressBalance *my_stress_balance;
   SSB_Modifier *modifier;
   if (do_sia) {
-    modifier = new SIAFD_Regional(grid, *ice, *EC, config);
+    modifier = new SIAFD_Regional(grid, *EC, config);
   } else {
-    modifier = new SSBM_Trivial(grid, *ice, *EC, config);
+    modifier = new SSBM_Trivial(grid, *EC, config);
   }
 
   if (use_ssa_velocity) {
