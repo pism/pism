@@ -1,4 +1,4 @@
-e#!/bin/bash
+#!/bin/bash
 
 # Copyright (C) 2009-2011 The PISM Authors
 
