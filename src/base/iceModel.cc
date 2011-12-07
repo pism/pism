@@ -67,9 +67,9 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   executable_short_name = "pism"; // drivers typically override this
 
   shelvesDragToo = PETSC_FALSE;
-  
-  // set maximum |u|,|v|,|w| in ice to an (obviously) invalid number
-  gmaxu = gmaxv = gmaxw = -1.0;
+
+  // initializr maximum |u|,|v|,|w| in ice
+  gmaxu = gmaxv = gmaxw = 0;
 
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;
@@ -97,7 +97,7 @@ void IceModel::reset_counters() {
   CFLviolcount = 0;
   dt_TempAge = 0.0;
   dt_from_diffus = dt_from_cfl = 0.0;
-  gmaxu = gmaxv = gmaxw = -1;
+  gmaxu = gmaxv = gmaxw = 0;
   maxdt_temporary = dt = dt_force = 0.0;
   skipCountDown = 0;
 
