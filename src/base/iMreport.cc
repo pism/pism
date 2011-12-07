@@ -262,7 +262,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
 
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-                      "P         YEAR:     ivol     iarea     max_diff    max_2d_abs_vel\n");
+                      "P         YEAR:     ivol     iarea     max_diff       max_hor_vel\n");
     ierr = verbPrintf(2,grid.com,
                       "U        years %skm^3 %skm^2     m^2 s^-1            m/year\n",
                       volscalestr,areascalestr);
