@@ -21,7 +21,8 @@ To install PISM locally (in the PISM source tree), do
   $ cd pism0.4
   $ mkdir build
   $ cd build
-  $ cmake ..     # do 'c' then check that flags are right, then generate
+  $ ccmake ..     # hit 'c' to see initial config, 'c' again to configure,
+                  # and then 'g' to generate once settings look right
   $ make install
 
 You can check that PISM executables can be found by running:
@@ -29,10 +30,6 @@ You can check that PISM executables can be found by running:
   $ which pismr
 
 and this should tell you a directory in which executable "pismr" is found.
-
-You can test the build by running a suite of software/regression tests:
-
-  $ make test
 
 Now run a simplified geometry experiment on 1 processor:
 
@@ -42,6 +39,11 @@ Everything is working if this run goes for 1000 model years and ends with
 "... done with run".  Again but with 2 MPI processes:
 
   $ mpiexec -n 2 pisms
+
+A more thorough test of the build runs a suite of software/regression tests,
+but this requires tools (including python and NCO):
+
+  $ make test
 
 Please see the Installation Manual at www.pism-docs.org for more information on
 the build process.  The PISM User's Manual, also at www.pism-docs.org, will
