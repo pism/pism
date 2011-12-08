@@ -214,7 +214,7 @@ PetscErrorCode SSAFEM::setup()
     Enth_q[q] = new PetscReal[Mz];
   }
 
-  GeometryCalculator gc(sea_level, *ice, config);
+  GeometryCalculator gc(sea_level, config);
 
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
   bool driving_stress_explicit;

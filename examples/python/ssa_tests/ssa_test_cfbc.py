@@ -64,8 +64,8 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
   def _initPhysics(self):
     config = self.config
-    config.set_flag("compute_surf_grad_inward_ssa", True); 
-    config.set_flag("calving_front_stress_boundary_condition", True); 
+    config.set_flag("compute_surf_grad_inward_ssa", True);
+    config.set_flag("calving_front_stress_boundary_condition", True);
 
     basal = PISM.IceBasalResistancePlasticLaw(
            config.get("plastic_regularization", "1/year", "1/second"),
@@ -75,8 +75,8 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
-    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
-    ice.setHardness(1.9e8)
+    config.set_string("ssa_flow_law", "custom")
+    config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")))
     
     self.modeldata.setPhysics(ice,basal,enthalpyconverter)
 

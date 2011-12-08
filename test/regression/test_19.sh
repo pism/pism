@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/bash -x
 
 PISM_PATH=$1
 MPIEXEC=$2
-MPIEXEC_COMMAND=$MPIEXEC -n 2
+MPIEXEC_COMMAND="$MPIEXEC -n 2"
 PISM_SOURCE_DIR=$3
 EXT=""
 if [ $# -ge 4 ] && [ "$4" == "-python" ]

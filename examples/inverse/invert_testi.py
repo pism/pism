@@ -123,14 +123,14 @@ class testi_run(InvSSARun):
          config.get_flag("do_pseudo_plastic_till"),
          config.get("pseudo_plastic_q"),
          config.get("pseudo_plastic_uthreshold") / PISM.secpera);
- 
+
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
-    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
-    ice.setHardness(B_schoof)
-    
-    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
+    config.set_string("ssa_flow_law", "custom")
+    config.set("ice_softness", pow(3.7e8, -config.get("Glen_exponent")))
+
+    self.modeldata.setPhysics(basal,enthalpyconverter)
 
 
   def _initSSACoefficients(self):

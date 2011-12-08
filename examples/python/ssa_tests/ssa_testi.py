@@ -54,6 +54,9 @@ class testi(PISM.ssa.SSAExactTestCase):
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
+    config.set_string("ssa_flow_law", "custom")
+    config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
+
     self.modeldata.setPhysics(basal,enthalpyconverter)
 
 
@@ -72,8 +75,9 @@ class testi(PISM.ssa.SSAExactTestCase):
     self.config.set("epsilon_ssafd", 0.0);  # don't use this lower bound
 
     standard_gravity = self.config.get("standard_gravity");
+    ice_rho = self.config.get("ice_density");
     theta = math.atan(0.001)
-    f = self.modeldata.ice.rho*standard_gravity*H0_schoof*math.tan(theta)
+    f = ice_rho*standard_gravity*H0_schoof*math.tan(theta)
     grid = self.grid
     with PISM.util.Access(comm=[vecs.tauc]):
       for (i,j) in grid.points():

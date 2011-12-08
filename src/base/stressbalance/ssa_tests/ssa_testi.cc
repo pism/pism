@@ -85,6 +85,7 @@ PetscErrorCode SSATestCaseI::initializeSSAModel()
   enthalpyconverter = new EnthalpyConverter(config);
 
   config.set_string("ssa_flow_law", "custom");
+  config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")));
 
   return 0;
 }
@@ -97,12 +98,6 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
   ierr = thickness.set(H0_schoof); CHKERRQ(ierr);
 
-  CustomGlenIce *ice = dynamic_cast<CustomGlenIce*>(ssa->get_flow_law());
-  if (ice == NULL)
-    SETERRQ(grid.com, 1, "Only CustomGlenIce is supported");
-
-  ice->setHardness(B_schoof);
-
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
@@ -113,13 +108,14 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 
   ierr = tauc.get_array(ptauc); CHKERRQ(ierr);
 
-  PetscScalar standard_gravity = config.get("standard_gravity");
+  PetscScalar standard_gravity = config.get("standard_gravity"),
+    ice_rho = config.get("ice_density");
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar y = grid.y[j];
       const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-      const PetscScalar f = ice->rho * standard_gravity * H0_schoof * tan(theta);
+      const PetscScalar f = ice_rho * standard_gravity * H0_schoof * tan(theta);
       ptauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
     }
   }

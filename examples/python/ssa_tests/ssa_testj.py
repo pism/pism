@@ -40,9 +40,10 @@ class testj(PISM.ssa.SSAExactTestCase):
            config.get("pseudo_plastic_uthreshold","1/year","1/second") );
 
     enthalpyconverter = PISM.EnthalpyConverter(config)
-    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter)
 
-    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
+    config.set_string("ssa_flow_law", "custom")
+
+    self.modeldata.setPhysics(basal,enthalpyconverter)
 
 
   def _initSSACoefficients(self):
@@ -58,7 +59,7 @@ class testj(PISM.ssa.SSAExactTestCase):
     vecs.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
     ocean_rho = self.config.get("sea_water_density");
-    ice_rho = self.modeldata.ice.rho
+    ice_rho = self.config.get("ice_density");
     
     # The PISM.utils.Access object ensures that we call beginAccess for each
     # variable in 'vars', and that endAccess is called for each one on exiting

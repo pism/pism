@@ -286,7 +286,8 @@ PetscErrorCode IceCompModel::allocate_flowlaw() {
   if (testname == 'V') {
     // use CustomGlenIce, which allows easy setting of ice hardness
     ierr = iceFactory.setType(ICE_CUSTOM); CHKERRQ(ierr);
-    config.set_string("sia_flow_law", "custom"); CHKERRQ(ierr);
+    config.set_string("ssa_flow_law", "custom"); CHKERRQ(ierr);
+    config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
   } else {
     // Set the default for IceCompModel:
     ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
@@ -310,13 +311,6 @@ PetscErrorCode IceCompModel::allocate_flowlaw() {
                         "WARNING: user set -gk; default flow law should be -ice_type arr for IceCompModel\n");
       CHKERRQ(ierr);
     }
-  }
-
-  if (testname == 'V') {
-    CustomGlenIce *ice_custom = dynamic_cast<CustomGlenIce*>(ice);
-    if (ice_custom == NULL) SETERRQ(grid.com, 1, "test V requires using CustomGlenIce");
-
-    ice_custom->setHardness(1.9e8);
   }
 
   return 0;

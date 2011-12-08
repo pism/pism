@@ -103,19 +103,13 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
 
   // Use constant hardness
   config.set_string("ssa_flow_law", "custom");
-
+  config.set("ice_softness", pow(B0, -glen_n));
   return 0;
 }
 
 PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
-  CustomGlenIce *ice = dynamic_cast<CustomGlenIce*>(ssa->get_flow_law());
-  if (ice == NULL)
-    SETERRQ(grid.com, 1, "Only CustomGlenIce is supported");
-
-  ice->setHardness(B0);
-  ice->setExponent(glen_n);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
@@ -127,7 +121,7 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   // Set constant coefficients.
   ierr = thickness.set(H0); CHKERRQ(ierr);
   ierr = tauc.set(tauc0); CHKERRQ(ierr);
-  
+
 
   // Set boundary conditions (Dirichlet all the way around).
   ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);

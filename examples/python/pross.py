@@ -52,15 +52,17 @@ class pross(PISM.ssa.SSARun):
   def _initPhysics(self):
     secpera = PISM.secpera
     enthalpyconverter = PISM.EnthalpyConverter(config)
-    ice = PISM.CustomGlenIce(self.grid.com,"",config,enthalpyconverter)
-    ice.setHardness(DEFAULT_CONSTANT_HARDNESS_FOR_SSA);
+
+    config.set_string("ssa_flow_law", "custom")
+    config.set("ice_softness", pow(DEFAULT_CONSTANT_HARDNESS_FOR_SSA, -config.get("Glen_exponent")))
+
     basal = PISM.IceBasalResistancePlasticLaw(  config.get("plastic_regularization") / secpera, 
                                            config.get_flag("do_pseudo_plastic_till"),
                                            config.get("pseudo_plastic_q"),
                                            config.get("pseudo_plastic_uthreshold") / secpera)
     basal.printInfo(1,self.grid.com)
-    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
-    
+    self.modeldata.setPhysics(basal,enthalpyconverter)
+
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
     self._allocateBCs(velname='bar',maskname='bcflag')

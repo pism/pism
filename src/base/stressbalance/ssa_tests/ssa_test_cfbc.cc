@@ -103,17 +103,15 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 
   enthalpyconverter = new EnthalpyConverter(config);
 
+  config.set_flag("ssa_flow_law", "custom");
+  config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
+
   return 0;
 }
 
 PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
-
-  CustomGlenIce *ice = dynamic_cast<CustomGlenIce*>(ssa->get_flow_law());
-  if (ice == NULL)
-    SETERRQ(grid.com, 1, "Only CustomGlenIce is supported");
-  ice->setHardness(1.9e8);
 
   ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant
   ierr = bed.set(-1000.0); CHKERRQ(ierr); // assures shelf is floating
@@ -125,13 +123,14 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = ice_mask.begin_access(); CHKERRQ(ierr);
-  
-  double ocean_rho = config.get("sea_water_density");
+
+  double ocean_rho = config.get("sea_water_density"),
+    ice_rho = config.get("ice_density");
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar x = grid.x[i];
-      
+
       if (x <= 0) {
         thickness(i, j) = H_exact(x + grid.Lx);
         ice_mask(i, j)  = MASK_FLOATING;
@@ -140,7 +139,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
         ice_mask(i, j)  = MASK_ICE_FREE_OCEAN;
       }
 
-      surface(i,j) = (1.0 - ice->rho / ocean_rho) * thickness(i, j); // FIXME task #7297
+      surface(i,j) = (1.0 - ice_rho / ocean_rho) * thickness(i, j); // FIXME task #7297
 
       if (i == 0) {
         bc_mask(i, j)  = 1;

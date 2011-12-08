@@ -626,10 +626,6 @@ int main(int argc, char *argv[]) {
                                        config.get("pseudo_plastic_uthreshold") / secpera);
     ierr = basal.printInfo(1,g.com); CHKERRQ(ierr);
 
-
-    // Create the SSA solver object; we'll need to deallocate it later.
-    SSA *ssa = ssafactory(g, basal, EC, config);
-
     const PetscReal
       DEFAULT_MIN_THICKNESS = 5.0, // meters
       DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
@@ -639,9 +635,14 @@ int main(int argc, char *argv[]) {
     // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
     //          30 MPa yr for \bar\nu
 
+    config.set_string("ssa_flow_law", "custom");
+    config.set("ice_softness", pow(DEFAULT_CONSTANT_HARDNESS_FOR_SSA, -config.get("Glen_exponent")));
+
+    // Create the SSA solver object; we'll need to deallocate it later.
+    SSA *ssa = ssafactory(g, basal, EC, config);
+
     ssa->strength_extension->set_min_thickness(DEFAULT_MIN_THICKNESS);
     ssa->strength_extension->set_notional_strength(DEFAULT_nuH);
-    ice.setHardness(DEFAULT_CONSTANT_HARDNESS_FOR_SSA);
 
     ierr = ssa->init(vars); CHKERRQ(ierr);
 
