@@ -282,23 +282,14 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
 PetscErrorCode IceCompModel::allocate_flowlaw() {
   PetscErrorCode ierr;
 
-  IceFlowLawFactory iceFactory(grid.com, NULL, config, EC);
   if (testname == 'V') {
     // use CustomGlenIce, which allows easy setting of ice hardness
-    ierr = iceFactory.setType(ICE_CUSTOM); CHKERRQ(ierr);
     config.set_string("ssa_flow_law", "custom"); CHKERRQ(ierr);
     config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
   } else {
     // Set the default for IceCompModel:
-    ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
     config.set_string("sia_flow_law", "arr"); CHKERRQ(ierr);
   }
-
-  ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
-  ierr = iceFactory.create(&ice); CHKERRQ(ierr);
-
-  // set options specific to this particular ice type:
-  ierr = ice->setFromOptions(); CHKERRQ(ierr);
 
   if (testname != 'V') {
     // check on whether the options (already checked) chose the right IceFlowLaw for verification;
@@ -804,7 +795,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
           Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
         }
         break;
-        default:  SETERRQ(grid.com, 1,"test must be A, B, C, D, E, F, G, H, K, L, or O");
+        default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, E, F, G, H, K, L, or O");
       }
 
       if (Hexact > 0) {

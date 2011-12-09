@@ -145,7 +145,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
       ice_rho   = config.get("ice_density"),
       ice_k     = config.get("ice_thermal_conductivity"),
       ice_c     = config.get("ice_specific_heat_capacity"),
-      L         = config.get("water_latent_heat_fusion");
+      L         = config.get("water_latent_heat_fusion"),
+      melting_point_temp = config.get("water_melting_point_temperature"),
+      beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity");
 
     tempSystemCtx system(fMz, "temperature");
     system.dx              = grid.dx;
@@ -304,7 +306,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             Tnew[k] = x[k];
           } else {
             const PetscScalar
-              Tpmp = ice->melting_point_temp - ice->beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME task #7297
+              Tpmp = melting_point_temp - beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME task #7297
             if (x[k] > Tpmp) {
               Tnew[k] = Tpmp;
               PetscScalar Texcess = x[k] - Tpmp; // always positive
@@ -331,7 +333,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           if (allowAboveMelting == PETSC_TRUE) { // ice/rock interface
             Tnew[0] = x[0];
           } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-            const PetscScalar Tpmp = ice->melting_point_temp - ice->beta_CC_grad * vH(i,j); // FIXME task #7297
+            const PetscScalar Tpmp = melting_point_temp - beta_CC_grad * vH(i,j); // FIXME task #7297
             PetscScalar Texcess = x[0] - Tpmp; // positive or negative
             if (mask.ocean(i,j)) {
               // when floating, only half a segment has had its temperature raised

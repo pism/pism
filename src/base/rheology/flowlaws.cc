@@ -348,7 +348,7 @@ PetscReal HookeIce::softnessParameter_from_temp(PetscReal T_pa) const {
 
 // Hybrid (Goldsby-Kohlstedt / Glen) ice flow law
 
-HybridIce::HybridIce(MPI_Comm c,const char pre[],
+HybridIce::HybridIce(MPI_Comm c, const char pre[],
 		     const NCConfigVariable &config, EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
 

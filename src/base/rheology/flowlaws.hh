@@ -56,7 +56,7 @@ static inline PetscReal secondInvariantDu(const PetscReal Du[])
  */
 class IceFlowLaw {
 public:
-  IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &config,
+  IceFlowLaw(MPI_Comm c, const char pre[], const NCConfigVariable &config,
              EnthalpyConverter *EC);
   virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
@@ -80,12 +80,12 @@ public:
   virtual PetscReal flow_from_enth(PetscReal stress, PetscReal E,
                                    PetscReal pressure, PetscReal grainsize) const;
 
-  // ideally these would be protected or private:
+protected:
   PetscReal rho,          //!< ice density
     beta_CC_grad, //!< Clausius-Clapeyron gradient
     melting_point_temp;  //!< for water, 273.15 K
   EnthalpyConverter *EC;
-protected:
+
   PetscReal softnessParameter_paterson_budd(PetscReal T_pa) const;
 
   PetscReal schoofLen,schoofVel,schoofReg,
@@ -135,14 +135,17 @@ public:
   // This also takes care of hardnessParameter_from_enth
   virtual PetscReal softnessParameter_from_enth(PetscReal enthalpy, PetscReal pressure) const;
 
-  // expose Paterson-Budd softness and hardness formulas
+  virtual PetscReal flow_from_enth(PetscReal stress, PetscReal E,
+                                   PetscReal pressure, PetscReal gs) const;
+
+protected:
+  // FIXME: remove these
   virtual PetscReal softnessParameter_from_temp(PetscReal T_pa) const
   { return softnessParameter_paterson_budd(T_pa); }
+
   virtual PetscReal hardnessParameter_from_temp(PetscReal T_pa) const
   { return pow(softnessParameter_from_temp(T_pa), -1.0/n); }
 
-  virtual PetscReal flow_from_enth(PetscReal stress, PetscReal E,
-                                   PetscReal pressure, PetscReal gs) const;
 
   // create a special temperature-dependent method
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
@@ -156,15 +159,6 @@ public:
                 EnthalpyConverter *my_EC);
   virtual ~CustomGlenIce() {}
 
-  virtual PetscReal softnessParameter_from_enth(PetscReal, PetscReal) const
-  { return softness_A; }
-  virtual PetscReal softnessParameter_from_temp(PetscReal) const
-  { return softness_A; }
-
-  virtual PetscReal hardnessParameter_from_enth(PetscReal, PetscReal) const
-  { return hardness_B; }
-  virtual PetscReal hardnessParameter_from_temp(PetscReal) const
-  { return hardness_B; }
   virtual PetscReal averagedHardness_from_enth(PetscReal, PetscInt,
                                                const PetscReal*, const PetscReal*) const
   { return hardness_B; }
@@ -173,10 +167,24 @@ public:
                                    PetscReal, PetscReal ) const
   { return softness_A * pow(stress,n-1); }
 
+  virtual PetscReal softnessParameter_from_enth(PetscReal, PetscReal) const
+  { return softness_A; }
+
+  virtual PetscReal hardnessParameter_from_enth(PetscReal, PetscReal) const
+  { return hardness_B; }
+
+protected:
+  virtual PetscReal softnessParameter_from_temp(PetscReal) const
+  { return softness_A; }
+
+  virtual PetscReal hardnessParameter_from_temp(PetscReal) const
+  { return hardness_B; }
+
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal,
                                    PetscReal, PetscReal ) const
   { return softness_A * pow(stress,n-1); }
 
+  // FIXME: remove these:
   virtual void setHardness(PetscReal hardness);
   virtual void setSoftness(PetscReal softness);
   virtual void setExponent(PetscReal exponent);
@@ -192,8 +200,9 @@ public:
   HookeIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
            EnthalpyConverter *EC);
   virtual ~HookeIce() {}
-  virtual PetscReal softnessParameter_from_temp(PetscReal T_pa) const;
 protected:
+  virtual PetscReal softnessParameter_from_temp(PetscReal T_pa) const;
+
   PetscReal A_Hooke, Q_Hooke, C_Hooke, K_Hooke, Tr_Hooke; // constants from Hooke (1981)
   // R_Hooke is the ideal_gas_constant.
 };
@@ -205,6 +214,8 @@ public:
                    EnthalpyConverter *my_EC)
     : ThermoGlenIce(c, pre, config, my_EC) {}
   virtual ~ThermoGlenArrIce() {}
+
+protected:
   virtual PetscReal A() const { return A_cold; }
   virtual PetscReal Q() const { return Q_cold; }
 
@@ -230,6 +241,7 @@ public:
     : ThermoGlenArrIce(c, pre, config, my_EC) {}
   virtual ~ThermoGlenArrIceWarm() {}
 
+protected:
   virtual PetscReal A() const { return A_warm; }
   virtual PetscReal Q() const { return Q_warm; }
 };
@@ -253,11 +265,11 @@ class HybridIce : public ThermoGlenIce {
 public:
   HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
             EnthalpyConverter *my_EC);
+protected:
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
-                                     PetscReal pressure, PetscReal gs) const;
+                                   PetscReal pressure, PetscReal gs) const;
   GKparts flowParts(PetscReal stress, PetscReal temp, PetscReal pressure) const;
 
-protected:
   PetscReal  V_act_vol,  d_grain_size,
              //--- diffusional flow ---
              diff_crit_temp, diff_V_m, diff_D_0v, diff_Q_v, diff_D_0b, diff_Q_b, diff_delta,
@@ -271,17 +283,18 @@ protected:
 };
 
 //! Derived class of HybridIce for testing purposes only.
-/*! 
-HybridIceStripped is a simplification of Goldsby-Kohlstedt.  Compare to that used in 
-Peltier et al 2000, which is even simpler.
+/*!
+  HybridIceStripped is a simplification of Goldsby-Kohlstedt. Compare to that
+  used in Peltier et al 2000, which is even simpler.
  */
 class HybridIceStripped : public HybridIce {
 public:
   HybridIceStripped(MPI_Comm c, const char pre[],
                     const NCConfigVariable &config, EnthalpyConverter *my_EC);
-  virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
-                                     PetscReal pressure, PetscReal gs) const;
 protected:
+  virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
+                                   PetscReal pressure, PetscReal gs) const;
+
   PetscReal d_grain_size_stripped;
 };
 

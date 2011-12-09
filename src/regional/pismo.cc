@@ -199,7 +199,8 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
   ierr = SSAFD::compute_driving_stress(result); CHKERRQ(ierr);
 
-  const PetscReal standard_gravity = config.get("standard_gravity");
+  const PetscReal standard_gravity = config.get("standard_gravity"),
+    ice_rho = config.get("ice_density");
   IceModelVec2Int nmm = *no_model_mask;
 
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -208,7 +209,7 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   ierr = thkstore->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar pressure = ice->rho * standard_gravity * (*thkstore)(i,j);
+      PetscScalar pressure = ice_rho * standard_gravity * (*thkstore)(i,j);
       if (pressure <= 0) pressure = 0;
 
       if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
