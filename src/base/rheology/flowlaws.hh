@@ -139,25 +139,23 @@ public:
                                    PetscReal pressure, PetscReal gs) const;
 
 protected:
-  // FIXME: remove these
   virtual PetscReal softnessParameter_from_temp(PetscReal T_pa) const
   { return softnessParameter_paterson_budd(T_pa); }
 
   virtual PetscReal hardnessParameter_from_temp(PetscReal T_pa) const
   { return pow(softnessParameter_from_temp(T_pa), -1.0/n); }
 
-
-  // create a special temperature-dependent method
+  // special temperature-dependent method
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
                                    PetscReal pressure, PetscReal gs) const;
 };
 
 //! Isothermal Glen ice allowing extra customization.
-class CustomGlenIce : public ThermoGlenIce {
+class IsothermalGlenIce : public ThermoGlenIce {
 public:
-  CustomGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
-                EnthalpyConverter *my_EC);
-  virtual ~CustomGlenIce() {}
+  IsothermalGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+                    EnthalpyConverter *my_EC);
+  virtual ~IsothermalGlenIce() {}
 
   virtual PetscReal averagedHardness_from_enth(PetscReal, PetscInt,
                                                const PetscReal*, const PetscReal*) const
@@ -165,7 +163,7 @@ public:
 
   virtual PetscReal flow_from_enth(PetscReal stress, PetscReal,
                                    PetscReal, PetscReal ) const
-  { return softness_A * pow(stress,n-1); }
+  { return softness_A * pow(stress, n-1); }
 
   virtual PetscReal softnessParameter_from_enth(PetscReal, PetscReal) const
   { return softness_A; }
@@ -174,22 +172,10 @@ public:
   { return hardness_B; }
 
 protected:
-  virtual PetscReal softnessParameter_from_temp(PetscReal) const
-  { return softness_A; }
-
-  virtual PetscReal hardnessParameter_from_temp(PetscReal) const
-  { return hardness_B; }
-
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal,
                                    PetscReal, PetscReal ) const
   { return softness_A * pow(stress,n-1); }
 
-  // FIXME: remove these:
-  virtual void setHardness(PetscReal hardness);
-  virtual void setSoftness(PetscReal softness);
-  virtual void setExponent(PetscReal exponent);
-  virtual void setDensity(PetscReal density);
-  virtual void setSchoofRegularization(PetscReal vel_peryear, PetscReal len_km);
 protected:
   PetscReal softness_A, hardness_B;
 };
@@ -215,6 +201,10 @@ public:
     : ThermoGlenIce(c, pre, config, my_EC) {}
   virtual ~ThermoGlenArrIce() {}
 
+  //! Return the temperature T corresponding to a given value A=A(T).
+  PetscReal tempFromSoftness(PetscReal myA) const
+  { return - Q() / (ideal_gas_constant * (log(myA) - log(A()))); }
+
 protected:
   virtual PetscReal A() const { return A_cold; }
   virtual PetscReal Q() const { return Q_cold; }
@@ -223,9 +213,6 @@ protected:
   virtual PetscReal softnessParameter_from_temp(PetscReal T_pa) const
   { return A() * exp(-Q()/(ideal_gas_constant * T_pa)); }
 
-  //! Return the temperature T corresponding to a given value A=A(T).
-  PetscReal tempFromSoftness(PetscReal myA) const
-  { return - Q() / (ideal_gas_constant * (log(myA) - log(A()))); }
 
   // ignores pressure and uses non-pressure-adjusted temperature
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,

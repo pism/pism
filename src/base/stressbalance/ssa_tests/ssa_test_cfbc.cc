@@ -93,7 +93,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 
   config.set_flag("compute_surf_grad_inward_ssa", true); 
   config.set_flag("calving_front_stress_boundary_condition", true); 
-  config.set_string("ssa_flow_law", "custom");
+  config.set_string("ssa_flow_law", "isothermal_glen");
 
   basal = new IceBasalResistancePlasticLaw(
          config.get("plastic_regularization", "1/year", "1/second"),
@@ -103,7 +103,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 
   enthalpyconverter = new EnthalpyConverter(config);
 
-  config.set_flag("ssa_flow_law", "custom");
+  config.set_flag("ssa_flow_law", "isothermal_glen");
   config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
 
   return 0;

@@ -59,9 +59,9 @@ PetscErrorCode IceFlowLawFactory::registerType(const char tname[],
 }
 
 
-static PetscErrorCode create_custom(MPI_Comm comm,const char pre[],
-                                    const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (CustomGlenIce)(comm, pre, config, EC);  return 0;
+static PetscErrorCode create_isothermal_glen(MPI_Comm comm,const char pre[],
+                                             const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (IsothermalGlenIce)(comm, pre, config, EC);  return 0;
 }
 static PetscErrorCode create_pb(MPI_Comm comm,const char pre[],
                                 const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
@@ -97,7 +97,7 @@ PetscErrorCode IceFlowLawFactory::registerAll()
 
   PetscFunctionBegin;
   ierr = PetscMemzero(&type_list,sizeof(type_list));CHKERRQ(ierr);
-  ierr = registerType(ICE_CUSTOM, &create_custom); CHKERRQ(ierr);
+  ierr = registerType(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen); CHKERRQ(ierr);
   ierr = registerType(ICE_PB,     &create_pb);     CHKERRQ(ierr);
   ierr = registerType(ICE_GPBLD,  &create_gpbld);  CHKERRQ(ierr);
   ierr = registerType(ICE_HOOKE,  &create_hooke);  CHKERRQ(ierr);

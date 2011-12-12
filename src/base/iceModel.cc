@@ -35,7 +35,7 @@
 
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
-  : grid(g), config(conf), overrides(conf_overrides), ice(NULL) {
+  : grid(g), config(conf), overrides(conf_overrides) {
 
   if (utIsInit() == 0) {
     if (utInit(NULL) != 0) {
@@ -142,7 +142,6 @@ IceModel::~IceModel() {
   delete basal;
   delete EC;
   delete btu;
-  delete ice;
 
   utTerm(); // Clean up after UDUNITS
 }

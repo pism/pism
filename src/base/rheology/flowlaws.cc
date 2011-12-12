@@ -300,33 +300,13 @@ PetscReal ThermoGlenIce::flow_from_temp(PetscReal stress, PetscReal temp,
   return softnessParameter_from_temp(T_pa) * pow(stress,n-1);
 }
 
-// CustomGlenIce
+// IsothermalGlenIce
 
-CustomGlenIce::CustomGlenIce(MPI_Comm c, const char pre[],
-                             const NCConfigVariable &config, EnthalpyConverter *my_EC)
+IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const char pre[],
+                                     const NCConfigVariable &config, EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
   softness_A = config.get("ice_softness");
   hardness_B = pow(softness_A, -1/n);
-}
-
-void CustomGlenIce::setHardness(PetscReal hardness) {
-  hardness_B = hardness;
-  softness_A = pow(hardness_B,-n);
-}
-
-void CustomGlenIce::setSoftness(PetscReal softness) {
-  softness_A = softness;
-  hardness_B = pow(softness_A, -1/n);
-}
-
-void CustomGlenIce::setExponent(PetscReal new_n) { n = new_n; }
-void CustomGlenIce::setDensity(PetscReal density) { rho = density; }
-
-void CustomGlenIce::setSchoofRegularization(PetscReal vel_peryear,
-                                            PetscReal len_km) {
-  schoofVel = convert(vel_peryear, "m/year", "m/second");
-  schoofLen = convert(len_km, "km", "m");
-  schoofReg = PetscSqr(schoofVel/schoofLen);
 }
 
 // HookeIce

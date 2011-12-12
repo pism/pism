@@ -209,6 +209,8 @@ PetscErrorCode SSAFEM::setup()
                    Mz = grid.Mz;
   PetscErrorCode   ierr;
 
+  PetscReal ice_rho = config.get("ice_density");
+
   for(q=0;q<FEQuadrature::Nq;q++)
   {
     Enth_q[q] = new PetscReal[Mz];
@@ -218,7 +220,7 @@ PetscErrorCode SSAFEM::setup()
 
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
   bool driving_stress_explicit;
-  if( surface != NULL) {
+  if(surface != NULL) {
     driving_stress_explicit = false;
     ierr = surface->get_array(h);CHKERRQ(ierr);
   } else {
@@ -261,8 +263,8 @@ PetscErrorCode SSAFEM::setup()
           feS[q].driving_stress.u = ds_xq[q];
           feS[q].driving_stress.v = ds_yq[q];
         } else {
-          feS[q].driving_stress.u = -ice->rho*earth_grav*Hq[q]*hxq[q];
-          feS[q].driving_stress.v = -ice->rho*earth_grav*Hq[q]*hyq[q];
+          feS[q].driving_stress.u = -ice_rho*earth_grav*Hq[q]*hxq[q];
+          feS[q].driving_stress.v = -ice_rho*earth_grav*Hq[q]*hyq[q];
         }
         // feS[q].hx = hxq[q];
         // feS[q].hy = hyq[q];

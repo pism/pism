@@ -53,7 +53,7 @@ class pross(PISM.ssa.SSARun):
     secpera = PISM.secpera
     enthalpyconverter = PISM.EnthalpyConverter(config)
 
-    config.set_string("ssa_flow_law", "custom")
+    config.set_string("ssa_flow_law", "isothermal_glen")
     config.set("ice_softness", pow(DEFAULT_CONSTANT_HARDNESS_FOR_SSA, -config.get("Glen_exponent")))
 
     basal = PISM.IceBasalResistancePlasticLaw(  config.get("plastic_regularization") / secpera, 

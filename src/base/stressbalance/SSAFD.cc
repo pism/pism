@@ -181,7 +181,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   Mask M;
 
   const double standard_gravity = config.get("standard_gravity"),
-    ocean_rho = config.get("sea_water_density");
+    ocean_rho = config.get("sea_water_density"),
+    ice_rho = config.get("ice_density");
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
@@ -238,32 +239,32 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           if (M.ice_free(M_n)) bPP = 0;
           if (M.ice_free(M_s)) bMM = 0;
 
-          const double ice_pressure = ice->rho * standard_gravity * H_ij,
+          const double ice_pressure = ice_rho * standard_gravity * H_ij,
                        H_ij2        = H_ij*H_ij;
           double ocean_pressure,
                  h_ij = 0.0,
                  tdx  = taud(i,j).u,
                  tdy  = taud(i,j).v;
 
-          if ((*bed)(i,j) < (sea_level - (ice->rho / ocean_rho) * H_ij)) {
+          if ((*bed)(i,j) < (sea_level - (ice_rho / ocean_rho) * H_ij)) {
             //calving front boundary condition for floating shelf
-            ocean_pressure = 0.5 * ice->rho * standard_gravity * (1 - (ice->rho / ocean_rho))*H_ij2;
+            ocean_pressure = 0.5 * ice_rho * standard_gravity * (1 - (ice_rho / ocean_rho))*H_ij2;
             // this is not really the ocean_pressure, but the difference between
             // ocean_pressure and isotrop.normal stresses (=pressure) from within
             // the ice
-            h_ij = (1.0 - ice->rho / ocean_rho) * H_ij;
+            h_ij = (1.0 - ice_rho / ocean_rho) * H_ij;
           } else {
             if( (*bed)(i,j) >= sea_level) {
               // boundary condition for a "cliff" (grounded ice next to
               // ice-free ocean) or grounded margin.
-              ocean_pressure = 0.5 * ice->rho * standard_gravity * H_ij2;
+              ocean_pressure = 0.5 * ice_rho * standard_gravity * H_ij2;
               // this is not 'zero' because the isotrop.normal stresses
               // (=pressure) from within the ice figures on RHS
 	      h_ij = H_ij;
             } else {
               // boundary condition for marine terminating glacier
-              ocean_pressure = 0.5 * ice->rho * standard_gravity *
-                (H_ij2 - (ocean_rho / ice->rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
+              ocean_pressure = 0.5 * ice_rho * standard_gravity *
+                (H_ij2 - (ocean_rho / ice_rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
 	      h_ij = H_ij + (*bed)(i,j) - sea_level;
             }
           }

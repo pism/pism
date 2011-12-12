@@ -84,7 +84,7 @@ PetscErrorCode SSATestCaseI::initializeSSAModel()
 
   enthalpyconverter = new EnthalpyConverter(config);
 
-  config.set_string("ssa_flow_law", "custom");
+  config.set_string("ssa_flow_law", "isothermal_glen");
   config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")));
 
   return 0;

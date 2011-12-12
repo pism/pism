@@ -102,7 +102,7 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
   enthalpyconverter = new EnthalpyConverter(config);
 
   // Use constant hardness
-  config.set_string("ssa_flow_law", "custom");
+  config.set_string("ssa_flow_law", "isothermal_glen");
   config.set("ice_softness", pow(B0, -glen_n));
   return 0;
 }

@@ -242,14 +242,11 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (pismtests software_tests/pismtests.cc software_tests/iMtests.cc)
   target_link_libraries (pismtests pismbase)
 
-  add_executable (flowTable software_tests/flowTable.cc base/rheology/flowlaws.cc)
-  target_link_libraries (flowTable pismutil pismrevision)
-
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil pismrevision)
 
   install (TARGETS
-    ${SIMPLE_EXECS} tryLCbd pismtests flowTable btutest
+    ${SIMPLE_EXECS} tryLCbd pismtests btutest
     RUNTIME DESTINATION ${Pism_BIN_DIR}
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})

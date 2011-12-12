@@ -64,6 +64,9 @@ public:
 
   virtual PetscErrorCode stdout_report(string &result)
   { result = ""; return 0; }
+
+  IceFlowLaw* get_flow_law()
+  { return ice; }
 protected:
   virtual PetscErrorCode allocate();
 

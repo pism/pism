@@ -56,7 +56,7 @@ if PISM.getVerbosityLevel() >3:
 
 if PISM.optionsIsSet("-ssa_glen"):
   B_schoof = 3.7e8;     # Pa s^{1/3}; hardness
-  config.set_string("ssa_flow_law", "custom")
+  config.set_string("ssa_flow_law", "isothermal_glen")
   config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
 else:
   config.set_string("ssa_flow_law", "gpbld")

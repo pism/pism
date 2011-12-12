@@ -54,7 +54,7 @@ class testi(PISM.ssa.SSAExactTestCase):
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
-    config.set_string("ssa_flow_law", "custom")
+    config.set_string("ssa_flow_law", "isothermal_glen")
     config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
 
     self.modeldata.setPhysics(basal,enthalpyconverter)

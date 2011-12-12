@@ -73,7 +73,7 @@ PetscErrorCode SSATestCaseJ::initializeSSAModel()
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   enthalpyconverter = new EnthalpyConverter(config);
-  config.set_string("ssa_flow_law", "custom");
+  config.set_string("ssa_flow_law", "isothermal_glen");
 
   return 0;
 }

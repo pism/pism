@@ -40,7 +40,7 @@
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
 IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides, int mytest)
-  : IceModel(g, conf, conf_overrides), tgaIce(NULL) {
+  : IceModel(g, conf, conf_overrides) {
 
   // note lots of defaults are set by the IceModel constructor
 
@@ -280,28 +280,13 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
 }
 
 PetscErrorCode IceCompModel::allocate_flowlaw() {
-  PetscErrorCode ierr;
 
   if (testname == 'V') {
-    // use CustomGlenIce, which allows easy setting of ice hardness
-    config.set_string("ssa_flow_law", "custom"); CHKERRQ(ierr);
+    config.set_string("ssa_flow_law", "isothermal_glen");
     config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
   } else {
     // Set the default for IceCompModel:
-    config.set_string("sia_flow_law", "arr"); CHKERRQ(ierr);
-  }
-
-  if (testname != 'V') {
-    // check on whether the options (already checked) chose the right IceFlowLaw for verification;
-    //   need to have a tempFromSoftness() procedure as well as the need for the right
-    //   flow law to have the errors make sense
-    tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
-    if (!tgaIce) SETERRQ(grid.com, 1,"IceCompModel requires ThermoGlenArrIce or a derived class");
-    if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == PETSC_FALSE) {
-      ierr = verbPrintf(1, grid.com,
-                        "WARNING: user set -gk; default flow law should be -ice_type arr for IceCompModel\n");
-      CHKERRQ(ierr);
-    }
+    config.set_string("sia_flow_law", "arr");
   }
 
   return 0;
@@ -324,6 +309,20 @@ PetscErrorCode IceCompModel::allocate_stressbalance() {
     ierr = IceModel::allocate_stressbalance(); CHKERRQ(ierr);
   }
 
+  if (testname != 'V') {
+    // check on whether the options (already checked) chose the right
+    // IceFlowLaw for verification (we need to have the right flow law for
+    // errors to make sense)
+
+    IceFlowLaw *ice = stress_balance->get_ssb_modifier()->get_flow_law();
+
+    if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == PETSC_FALSE) {
+      ierr = verbPrintf(1, grid.com,
+                        "WARNING: SIA flow law should be '-sia_ice_type arr' for the selected pismv test.\n");
+      CHKERRQ(ierr);
+    }
+  }
+
   return 0;
 }
 
@@ -332,7 +331,7 @@ PetscErrorCode IceCompModel::allocate_bed_deformation() {
 
   ierr = IceModel::allocate_bed_deformation(); CHKERRQ(ierr);
 
-  f = ice->rho / config.get("lithosphere_density");  // for simple isostasy
+  f = config.get("ice_density") / config.get("lithosphere_density");  // for simple isostasy
 
   string bed_def_model = config.get_string("bed_deformation_model");
 
@@ -399,10 +398,12 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   PetscErrorCode  ierr;
   PetscScalar     A0, T0, **H, **accum, dummy1, dummy2, dummy3;
 
+  ThermoGlenArrIce tgaIce(grid.com, "", config, EC);
+
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = tgaIce->tempFromSoftness(A0);
+  T0 = tgaIce.tempFromSoftness(A0);
   ierr = artm.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
@@ -478,10 +479,12 @@ PetscErrorCode IceCompModel::initTestL() {
 
   if (testname != 'L')  { SETERRQ(grid.com, 1,"test must be 'L'"); }
 
+  ThermoGlenArrIce tgaIce(grid.com, "", config, EC);
+
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = tgaIce->tempFromSoftness(A0);
+  T0 = tgaIce.tempFromSoftness(A0);
   ierr = artm.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
@@ -728,14 +731,21 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
 
   double
     seawater_density = config.get("sea_water_density"),
-    B0 = ice->hardnessParameter_from_enth(0, 0), // enthalpy and pressure do not matter here
-    C = pow(ice->rho * standard_gravity * (1.0 - ice->rho/seawater_density) / (4 * B0), 3),
+    ice_rho = config.get("ice_density"),
+    Glen_n = config.get("Glen_exponent"),
+    // enthalpy and pressure do not matter here
+    B0,
+    C = pow(ice_rho * standard_gravity * (1.0 - ice_rho/seawater_density) / (4 * B0), 3),
     H0 = 600.0, v0 = convert(300.0, "m/year", "m/second"),
     Q0 = H0 * v0;
 
+  if (testname == 'V') {
+    B0 = stress_balance->get_stressbalance()->get_flow_law()->hardnessParameter_from_enth(0, 0);
+  }
+
   // area of grid square in square km:
   const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3;
-  const PetscScalar   m = (2.0 * ice->exponent() + 2.0) / ice->exponent();
+  const PetscScalar   m = (2.0 * Glen_n + 2.0) / Glen_n;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0) {
@@ -1035,8 +1045,8 @@ PetscErrorCode IceCompModel::reportErrors() {
   if (dont_report)
     return 0;
 
-  ThermoGlenArrIce* tgaice = dynamic_cast<ThermoGlenArrIce*>(ice);
-  if (testname != 'V' && !IceFlowLawIsPatersonBuddCold(tgaice, config, EC) &&
+  IceFlowLaw* ice = stress_balance->get_ssb_modifier()->get_flow_law();
+  if (testname != 'V' && !IceFlowLawIsPatersonBuddCold(ice, config, EC) &&
       ((testname == 'F') || (testname == 'G'))) {
     ierr = verbPrintf(1, grid.com,
                       "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"

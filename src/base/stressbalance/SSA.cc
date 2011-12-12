@@ -374,31 +374,31 @@ PetscErrorCode SSA::compute_basal_frictional_heating(IceModelVec2S &result) {
 //! \brief Compute the driving stress.
 /*!
 Computes the driving stress at the base of the ice:
-   \f[ \tau_d = - \rho g H \nabla h \f]
+\f[ \tau_d = - \rho g H \nabla h \f]
 
-If configuration parameter \c surface_gradient_method = \c eta then the surface gradient
-\f$\nabla h\f$ is computed by the gradient of the
-transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$).
-The idea is that this quantity is more regular at ice sheet margins, and so we get a 
-better surface gradient.  When the thickness at a grid point is very small
-(below \c minThickEtaTransform in the procedure), the formula is slightly 
-modified to give a lower driving stress.  The transformation is not used in
-floating ice.
+If configuration parameter \c surface_gradient_method = \c eta then the surface
+gradient \f$\nabla h\f$ is computed by the gradient of the transformed variable
+\f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$). The idea is that
+this quantity is more regular at ice sheet margins, and so we get a better
+surface gradient. When the thickness at a grid point is very small (below \c
+minThickEtaTransform in the procedure), the formula is slightly modified to
+give a lower driving stress. The transformation is not used in floating ice.
  */
 PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   PetscErrorCode ierr;
 
   IceModelVec2S &thk = *thickness; // to improve readability (below)
 
-  const PetscScalar n       = ice->exponent(), // frequently n = 3
-                    etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
-                    invpow  = 1.0 / etapow,  // = 3/8
-                    dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
+  const PetscScalar n = ice->exponent(), // frequently n = 3
+    etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
+    invpow  = 1.0 / etapow,  // = 3/8
+    dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
   const PetscScalar minThickEtaTransform = 5.0; // m
   const PetscScalar dx=grid.dx, dy=grid.dy;
 
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
-  PetscReal standard_gravity = config.get("standard_gravity");
+  PetscReal standard_gravity = config.get("standard_gravity"),
+    ice_rho = config.get("ice_density");
   bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
   ierr =   surface->begin_access();    CHKERRQ(ierr);
@@ -412,7 +412,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = ice->rho * standard_gravity * thk(i,j); // FIXME task #7297
+      const PetscScalar pressure = ice_rho * standard_gravity * thk(i,j); // FIXME task #7297
       if (pressure <= 0.0) {
         result(i,j).u = 0.0;
         result(i,j).v = 0.0;

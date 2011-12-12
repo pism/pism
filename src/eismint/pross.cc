@@ -487,7 +487,7 @@ PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfi
 
   ierr = variables.get("enthalpy")->set(528668.35); CHKERRQ(ierr);
   // arbitrary; corresponds to 263.15 Kelvin at depth=0.
-  // The CustomGlenIce flow law does not use it.
+  // The IsothermalGlenIce flow law does not use it.
 
   // set the surface elevation:
   ierr = set_surface_elevation(variables, config); CHKERRQ(ierr);
@@ -618,7 +618,6 @@ int main(int argc, char *argv[]) {
     ierr = read_input_data(g, vars, config); CHKERRQ(ierr);
 
     EnthalpyConverter EC(config);
-    CustomGlenIce ice(g.com, "", config, &EC);
 
     IceBasalResistancePlasticLaw basal(config.get("plastic_regularization") / secpera, 
                                        config.get_flag("do_pseudo_plastic_till"),
@@ -635,7 +634,7 @@ int main(int argc, char *argv[]) {
     // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
     //          30 MPa yr for \bar\nu
 
-    config.set_string("ssa_flow_law", "custom");
+    config.set_string("ssa_flow_law", "isothermal_glen");
     config.set("ice_softness", pow(DEFAULT_CONSTANT_HARDNESS_FOR_SSA, -config.get("Glen_exponent")));
 
     // Create the SSA solver object; we'll need to deallocate it later.
