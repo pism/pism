@@ -245,7 +245,12 @@ See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 class FEDOFMap
 {
 public:
-  FEDOFMap() {};
+  FEDOFMap()
+  {
+    m_i = m_j = 0;
+    PetscMemzero(m_row, Nk*sizeof(MatStencil));
+    PetscMemzero(m_col, Nk*sizeof(MatStencil));
+  };
   
   virtual ~FEDOFMap() {};
 
