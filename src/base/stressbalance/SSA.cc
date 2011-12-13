@@ -167,7 +167,7 @@ PetscErrorCode SSA::allocate() {
     ierr = ice_factory.setType(config.get_string("ssa_flow_law").c_str()); CHKERRQ(ierr);
 
     ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ierr = ice_factory.create(&ice); CHKERRQ(ierr);
+    ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
   }
 
   return 0;
@@ -185,9 +185,9 @@ PetscErrorCode SSA::deallocate() {
     ierr = DMDestroy(&SSADA);CHKERRQ(ierr);
   }
 
-  if (ice != NULL) {
-    delete ice;
-    ice = NULL;
+  if (flow_law != NULL) {
+    delete flow_law;
+    flow_law = NULL;
   }
 
   return 0;
@@ -389,7 +389,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   IceModelVec2S &thk = *thickness; // to improve readability (below)
 
-  const PetscScalar n = ice->exponent(), // frequently n = 3
+  const PetscScalar n = flow_law->exponent(), // frequently n = 3
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,  // = 3/8
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8

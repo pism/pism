@@ -78,19 +78,19 @@ PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
 SSBM_Trivial::SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
   : SSB_Modifier(g, e, c)
 {
-  IceFlowLawFactory ice_factory(grid.com, "ssb_trivial_", config, &EC);
+  IceFlowLawFactory ice_factory(grid.com, "", config, &EC);
 
   ice_factory.setType(config.get_string("sia_flow_law").c_str());
 
   ice_factory.setFromOptions();
-  ice_factory.create(&ice);
+  ice_factory.create(&flow_law);
 }
 
 SSBM_Trivial::~SSBM_Trivial()
 {
-  if (ice != NULL) {
-    delete ice;
-    ice = NULL;
+  if (flow_law != NULL) {
+    delete flow_law;
+    flow_law = NULL;
   }
 }
 
@@ -156,7 +156,7 @@ PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3
   PetscErrorCode ierr;
   PetscScalar *E, *sigma;
   const PetscReal
-    n_glen  = ice->exponent(),
+    n_glen  = flow_law->exponent(),
     Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
     enhancement_factor = config.get("ssa_enhancement_factor"),
     standard_gravity = config.get("standard_gravity"),
@@ -183,7 +183,7 @@ PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3
           // Account for the enhancement factor.
           //   Note, enhancement factor is not used in SSA anyway.
           //   Should we get rid of it completely?  If not, what is most consistent here?
-            BofT    = ice->hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
+            BofT    = flow_law->hardness_parameter(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
           sigma[k] = 2.0 * BofT * pow((*D2_input)(i,j), Sig_pow);
         }
 

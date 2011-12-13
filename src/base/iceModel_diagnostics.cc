@@ -156,10 +156,10 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   const PetscScalar fillval = -0.01;
   PetscScalar *Eij; // columns of enthalpy values
 
-  IceFlowLaw *ice = model->stress_balance->get_stressbalance()->get_flow_law();
-  if (ice == NULL) {
-    ice = model->stress_balance->get_ssb_modifier()->get_flow_law();
-    if (ice == NULL) {
+  IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->get_flow_law();
+  if (flow_law == NULL) {
+    flow_law = model->stress_balance->get_ssb_modifier()->get_flow_law();
+    if (flow_law == NULL) {
       PetscPrintf(grid.com, "ERROR: Can't compute vertically-averaged hardness: no flow law is used.\n");
       PISMEnd();
     }
@@ -177,8 +177,8 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
       ierr = model->Enth3.getInternalColumn(i,j,&Eij); CHKERRQ(ierr);
       const PetscScalar H = model->vH(i,j);
       if (H > 0.0) {
-        (*result)(i,j) = ice->averagedHardness_from_enth(H, grid.kBelowHeight(H),
-                                                         &grid.zlevels[0], Eij);
+        (*result)(i,j) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
+                                               &grid.zlevels[0], Eij);
       } else { // put negative value below valid range
         (*result)(i,j) = fillval;
       }

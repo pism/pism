@@ -44,8 +44,6 @@ PetscErrorCode ShallowStressBalance::allocate() {
                       "(partial) square of the Frobenius norm of D_{ij}, the combined strain rates",
                       "", ""); CHKERRQ(ierr);
 
-  ice = NULL;
-
   return 0;
 }
 

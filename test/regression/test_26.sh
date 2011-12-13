@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 PISM_PATH=$1
 MPIEXEC=$2

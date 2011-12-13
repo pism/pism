@@ -529,7 +529,7 @@ Several options control the water pressure model:
 If the effective pressure on the subglacial layer is needed, then these lines are
 recommended for this purpose:
 \verbatim
-  p_over = ice->rho * standard_gravity * thk;  // overburden pressure
+  p_over = ice_rho * standard_gravity * thk;  // overburden pressure
   p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, bwat_max);
 \endverbatim
 

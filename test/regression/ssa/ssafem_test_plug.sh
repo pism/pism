@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # SSAFEM plug flow regression test
 

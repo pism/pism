@@ -38,12 +38,12 @@ PetscErrorCode SIA_Sliding::allocate() {
   ierr = work_2d.create(grid, "work_vector_2d", true, WIDE_STENCIL); CHKERRQ(ierr);
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "sia_sliding_", config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
     ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
 
     ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ierr = ice_factory.create(&ice); CHKERRQ(ierr);
+    ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
   }
 
   return 0;
@@ -283,7 +283,7 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
 PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
 
-  const PetscScalar n = ice->exponent(), // presumably 3.0
+  const PetscScalar n = flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);

@@ -25,7 +25,7 @@
 
 static char help[] =
   "Calls IceFlowLaw with various values of arguments and prints results.\n"
-  "Used for software tests.  Tests the flow_from_enth() method but prints\n"
+  "Used for software tests.  Tests the flow() method but prints\n"
   "temperature and liquid fraction as inputs and flow coefficient as output.\n"
   "Thus also tests methods getPressureFromDepth(), getMeltingTemp(), and\n"
   "getEnth() methods of EnthalpyConverter.  Nonetheless a change to the\n"
@@ -51,18 +51,18 @@ int main(int argc, char *argv[]) {
 
     EnthalpyConverter EC(config);
 
-    IceFlowLaw *ice = NULL;
+    IceFlowLaw *flow_law = NULL;
     IceFlowLawFactory ice_factory(com, NULL, config, &EC);
 
-    string flow_law = ICE_GPBLD;
+    string flow_law_name = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type
 
     ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ice_factory.create(&ice);
+    ice_factory.create(&flow_law);
 
     bool dummy;
-    ierr = PISMOptionsString("-flow_law", "Selects the flow law", 
-                             flow_law, dummy); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-flow_law", "Selects the flow law",
+                             flow_law_name, dummy); CHKERRQ(ierr);
 
     double     TpaC[]  = {-30.0, -5.0, 0.0, 0.0},  // pressure-adjusted, deg C
                depth   = 2000.0,
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     double     p       = EC.getPressureFromDepth(depth),
                Tm      = EC.getMeltingTemp(p);
 
-    printf("flow law:   \"%s\"\n", flow_law.c_str());
+    printf("flow law:   \"%s\"\n", flow_law_name.c_str());
     printf("pressure = %9.3e Pa = (hydrostatic at depth %7.2f m)\n",
            p,depth);
     printf("flowtable:\n");
@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
                omega = (j == 3) ? omega0 : 0.0;
 
         double E, flowcoeff;
-        EC.getEnth(T, omega, p, E);  // first arg is 
-        flowcoeff = ice->flow_from_enth(sigma[i], E, p, gs);
+        EC.getEnth(T, omega, p, E);
+        flowcoeff = flow_law->flow(sigma[i], E, p, gs);
 
         printf("    %10.2e   %10.3f  %9.3f = %10.6e\n",
                sigma[i], T, omega, flowcoeff);
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    delete ice;
+    delete flow_law;
   } // end explicit scope
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

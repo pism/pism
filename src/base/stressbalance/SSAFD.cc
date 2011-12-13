@@ -54,7 +54,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
 
-  const PetscScalar power = 1.0 / ice->exponent();
+  const PetscScalar power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
   ierr = hardness.create(grid, "hardness", false); CHKERRQ(ierr);
@@ -952,7 +952,7 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        result(i,j,o) = ice->averagedHardness_from_enth(H, grid.kBelowHeight(H),
+        result(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
                                                        &grid.zlevels[0], E); CHKERRQ(ierr);
       } // o
     }   // j
@@ -1022,8 +1022,8 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar ssa_enhancement_factor = ice->enhancement_factor,
-    n_glen = ice->exponent(),
+  PetscScalar ssa_enhancement_factor = flow_law->enhancement_factor(),
+    n_glen = flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
   const PetscScalar dx = grid.dx, dy = grid.dy;
@@ -1056,7 +1056,7 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
           v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
         }
 
-        result(i,j,o) = H * ice->effectiveViscosity(hardness(i,j,o), u_x, u_y, v_x, v_y);
+        result(i,j,o) = H * flow_law->effective_viscosity(hardness(i,j,o), u_x, u_y, v_x, v_y);
 
         if (! finite(result(i,j,o)) || false) {
           ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));

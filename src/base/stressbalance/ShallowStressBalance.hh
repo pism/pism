@@ -35,7 +35,7 @@ class ShallowStressBalance : public PISMComponent_Diag
 public:
   ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b,
                        EnthalpyConverter &e, const NCConfigVariable &conf)
-    : PISMComponent_Diag(g, conf), basal(b), EC(e)
+    : PISMComponent_Diag(g, conf), basal(b), flow_law(NULL), EC(e)
   {
     vel_bc = NULL; bc_locations = NULL; variables = NULL;
     max_u = max_v = 0.0;
@@ -43,11 +43,7 @@ public:
     allocate();
   }
 
-  virtual ~ShallowStressBalance()
-  {
-    if (ice != NULL)
-      delete ice;
-  }
+  virtual ~ShallowStressBalance() {}
 
   //  initialization and I/O:
 
@@ -56,7 +52,7 @@ public:
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &locations,
                                                  IceModelVec2V &velocities)
-  { 
+  {
     vel_bc = &velocities;
     bc_locations = &locations;
     return 0;
@@ -98,14 +94,14 @@ public:
   { result = ""; return 0; }
 
   IceFlowLaw* get_flow_law()
-  { return ice; }
+  { return flow_law; }
 protected:
   virtual PetscErrorCode allocate();
 
   PetscReal sea_level;
   PISMVars *variables;
   IceBasalResistancePlasticLaw &basal;
-  IceFlowLaw *ice;
+  IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
 
   IceModelVec2V velocity, *vel_bc;

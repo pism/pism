@@ -55,7 +55,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
   feStore = new FEStoreNode[FEQuadrature::Nq*nElements];
 
   // hardav IceModelVec2S is not used (so far).
-  const PetscScalar power = 1.0 / ice->exponent();
+  const PetscScalar power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
   ierr = hardav.create(grid, "hardav", true); CHKERRQ(ierr);
@@ -300,10 +300,10 @@ PetscErrorCode SSAFEM::setup()
         }
       }
 
-      // Now, for each column over a quadrature point, find the averagedHardness.
+      // Now, for each column over a quadrature point, find the averaged_hardness.
       for (q=0; q<FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
-        feS[q].B = ice->averagedHardness_from_enth(feS[q].H, grid.kBelowHeight(feS[q].H),
+        feS[q].B = flow_law->averaged_hardness(feS[q].H, grid.kBelowHeight(feS[q].H),
                                                   &grid.zlevels[0], Enth_q[q]);
       }
     }
@@ -347,7 +347,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
     *nuH = strength_extension->get_notional_strength();
     if (dNuH) *dNuH = 0;
   } else {
-    ice->effectiveViscosity_with_derivative(feS->B, Du, nuH, dNuH);
+    flow_law->effective_viscosity_with_derivative(feS->B, Du, nuH, dNuH);
     *nuH  *= feS->H;
     *nuH += m_epsilon_ssa;
     if (dNuH) *dNuH *= feS->H;

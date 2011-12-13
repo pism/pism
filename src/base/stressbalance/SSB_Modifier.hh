@@ -66,11 +66,11 @@ public:
   { result = ""; return 0; }
 
   IceFlowLaw* get_flow_law()
-  { return ice; }
+  { return flow_law; }
 protected:
   virtual PetscErrorCode allocate();
 
-  IceFlowLaw *ice;
+  IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
   PetscReal D_max, u_max, v_max;
   IceModelVec2Stag diffusive_flux;

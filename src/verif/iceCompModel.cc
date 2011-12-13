@@ -398,7 +398,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   PetscErrorCode  ierr;
   PetscScalar     A0, T0, **H, **accum, dummy1, dummy2, dummy3;
 
-  ThermoGlenArrIce tgaIce(grid.com, "", config, EC);
+  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -479,7 +479,7 @@ PetscErrorCode IceCompModel::initTestL() {
 
   if (testname != 'L')  { SETERRQ(grid.com, 1,"test must be 'L'"); }
 
-  ThermoGlenArrIce tgaIce(grid.com, "", config, EC);
+  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -740,7 +740,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
     Q0 = H0 * v0;
 
   if (testname == 'V') {
-    B0 = stress_balance->get_stressbalance()->get_flow_law()->hardnessParameter_from_enth(0, 0);
+    B0 = stress_balance->get_stressbalance()->get_flow_law()->hardness_parameter(0, 0);
   }
 
   // area of grid square in square km:
@@ -1045,8 +1045,8 @@ PetscErrorCode IceCompModel::reportErrors() {
   if (dont_report)
     return 0;
 
-  IceFlowLaw* ice = stress_balance->get_ssb_modifier()->get_flow_law();
-  if (testname != 'V' && !IceFlowLawIsPatersonBuddCold(ice, config, EC) &&
+  IceFlowLaw* flow_law = stress_balance->get_ssb_modifier()->get_flow_law();
+  if (testname != 'V' && !IceFlowLawIsPatersonBuddCold(flow_law, config, EC) &&
       ((testname == 'F') || (testname == 'G'))) {
     ierr = verbPrintf(1, grid.com,
                       "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
@@ -1107,7 +1107,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = verbPrintf(1,grid.com,
             "geometry  :    prcntVOL        maxH         avH   relmaxETA\n");
             CHKERRQ(ierr);  // no longer reporting centerHerr
-    const PetscScalar   m = (2.0 * ice->exponent() + 2.0) / ice->exponent();
+    const PetscScalar   m = (2.0 * flow_law->exponent() + 2.0) / flow_law->exponent();
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                       100*volerr/volexact, maxHerr, avHerr,
                       maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);

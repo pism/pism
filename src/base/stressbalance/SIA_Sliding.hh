@@ -41,8 +41,10 @@ public:
 
   virtual ~SIA_Sliding()
   {
-    if (ice != NULL)
-      delete ice;
+    if (flow_law != NULL) {
+      delete flow_law;
+      flow_law = NULL;
+    }
   }
 
   virtual PetscErrorCode init(PISMVars &vars);

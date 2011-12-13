@@ -22,24 +22,24 @@
 
 #include "NCVariable.hh"
 
-PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *ice) {
+PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
   static const PetscReal gs[] = {1e-4,1e-3,1e-2,1},s=1e4,E=500000,p=1e6;
-  PetscReal ref = ice->flow_from_enth(s,E,p,gs[0]);
+  PetscReal ref = flow_law->flow(s,E,p,gs[0]);
   for (int i=1; i<4; i++) {
-    if (ice->flow_from_enth(s,E,p,gs[i]) != ref) return PETSC_TRUE;
+    if (flow_law->flow(s,E,p,gs[i]) != ref) return PETSC_TRUE;
   }
   return PETSC_FALSE;
 }
 
 // Rather than make this part of the base class, we just check at some reference values.
-PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *ice, const NCConfigVariable &config,
-                                        EnthalpyConverter *EC) {
+PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const NCConfigVariable &config,
+                                       EnthalpyConverter *EC) {
   static const struct {PetscReal s,E,p,gs;} v[] = {
     {1e3,223,1e6,1e-3},{450000,475000,500000,525000},{5e4,268,5e6,3e-3},{1e5,273,8e6,5e-3}};
   ThermoGlenArrIce cpb(PETSC_COMM_SELF, NULL, config, EC); // This is unmodified cold Paterson-Budd
   for (int i=0; i<4; i++) {
-    const PetscReal left  = ice->flow_from_enth(v[i].s, v[i].E, v[i].p, v[i].gs),
-                    right =  cpb.flow_from_enth(v[i].s, v[i].E, v[i].p, v[i].gs);
+    const PetscReal left  = flow_law->flow(v[i].s, v[i].E, v[i].p, v[i].gs),
+                    right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
     if (PetscAbs((left - right)/left)>1.0e-15) {
       return PETSC_FALSE;
     }
@@ -48,7 +48,7 @@ PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *ice, const NCConfigVariable &
 }
 
 IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &config,
-                       EnthalpyConverter *my_EC) : EC(my_EC), comm(c) {
+                       EnthalpyConverter *my_EC) : EC(my_EC), e(1), comm(c) {
   PetscMemzero(prefix,sizeof(prefix));
   if (pre) PetscStrncpy(prefix,pre,sizeof(prefix));
 
@@ -59,7 +59,8 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &conf
   beta_CC_grad = config.get("beta_CC") * rho * standard_gravity;
   melting_point_temp = config.get("water_melting_point_temperature");
   n            = config.get("Glen_exponent");
-  enhancement_factor = config.get_string(pre + "enhancement_factor");
+  if (strlen(prefix) > 0)
+    e          = config.get(string(prefix) + "enhancement_factor");
 
   A_cold = config.get("Paterson-Budd_A_cold");
   A_warm = config.get("Paterson-Budd_A_warm");
@@ -115,7 +116,7 @@ PetscErrorCode IceFlowLaw::setFromOptions() {
 }
 
 //! Returns viscosity and \b not the nu * H product.
-PetscReal IceFlowLaw::effectiveViscosity(PetscReal hardness,
+PetscReal IceFlowLaw::effective_viscosity(PetscReal hardness,
                                          PetscReal u_x, PetscReal u_y,
                                          PetscReal v_x, PetscReal v_y) const {
   const PetscReal alpha = secondInvariant(u_x, u_y, v_x, v_y);
@@ -124,7 +125,7 @@ PetscReal IceFlowLaw::effectiveViscosity(PetscReal hardness,
 
 //! \brief Computes effective viscosity and its derivative with respect to the
 //! second invariant.
-void IceFlowLaw::effectiveViscosity_with_derivative(PetscReal hardness, const PetscReal Du[],
+void IceFlowLaw::effective_viscosity_with_derivative(PetscReal hardness, const PetscReal Du[],
                                                     PetscReal *nu, PetscReal *dnu) const {
 
   const PetscReal alpha = secondInvariantDu(Du),
@@ -138,7 +139,7 @@ void IceFlowLaw::effectiveViscosity_with_derivative(PetscReal hardness, const Pe
 
 //! Return the softness parameter A(T) for a given temperature T.
 /*! This is not a natural part of all IceFlowLaw instances.   */
-PetscReal IceFlowLaw::softnessParameter_paterson_budd(PetscReal T_pa) const {
+PetscReal IceFlowLaw::softness_parameter_paterson_budd(PetscReal T_pa) const {
   if (T_pa < crit_temp) {
     return A_cold * exp(-Q_cold/(ideal_gas_constant * T_pa));
   }
@@ -146,19 +147,19 @@ PetscReal IceFlowLaw::softnessParameter_paterson_budd(PetscReal T_pa) const {
 }
 
 //! The flow law itself.
-PetscReal IceFlowLaw::flow_from_enth(PetscReal stress, PetscReal enthalpy,
+PetscReal IceFlowLaw::flow(PetscReal stress, PetscReal enthalpy,
                                        PetscReal pressure, PetscReal /* gs */) const {
-  return softnessParameter_from_enth(enthalpy,pressure) * pow(stress,n-1);
+  return softness_parameter(enthalpy,pressure) * pow(stress,n-1);
 }
 
-PetscReal IceFlowLaw::hardnessParameter_from_enth(PetscReal E, PetscReal p) const {
-  return pow(softnessParameter_from_enth(E, p), -1.0/n);
+PetscReal IceFlowLaw::hardness_parameter(PetscReal E, PetscReal p) const {
+  return pow(softness_parameter(E, p), -1.0/n);
 }
 
 //! Computes vertical average of B(E,pressure) ice hardness, namely \f$\bar
-//! B(E,p)\f$. See comment for hardnessParameter().
+//! B(E,p)\f$. See comment for hardness_parameter().
 /*! Note E[0],...,E[kbelowH] must be valid.  */
-PetscReal IceFlowLaw::averagedHardness_from_enth(PetscReal thickness, PetscInt kbelowH,
+PetscReal IceFlowLaw::averaged_hardness(PetscReal thickness, PetscInt kbelowH,
                                                  const PetscReal *zlevels,
                                                  const PetscReal *enthalpy) const {
   PetscReal B = 0;
@@ -168,13 +169,13 @@ PetscReal IceFlowLaw::averagedHardness_from_enth(PetscReal thickness, PetscInt k
     PetscReal
       p0 = EC->getPressureFromDepth(thickness),
       E0 = enthalpy[0],
-      h0 = hardnessParameter_from_enth(E0, p0); // ice hardness at the left endpoint
+      h0 = hardness_parameter(E0, p0); // ice hardness at the left endpoint
 
     for (int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
       const PetscReal
         p1 = EC->getPressureFromDepth(thickness - zlevels[i]), // pressure at the right endpoint
         E1 = enthalpy[i],       // enthalpy at the right endpoint
-        h1 = hardnessParameter_from_enth(E1, p1); // ice hardness at the right endpoint
+        h1 = hardness_parameter(E1, p1); // ice hardness at the right endpoint
 
       // The midpoint rule sans the "1/2":
       B += (zlevels[i] - zlevels[i-1]) * (h0 + h1);
@@ -192,7 +193,7 @@ PetscReal IceFlowLaw::averagedHardness_from_enth(PetscReal thickness, PetscInt k
     depth = thickness - zlevels[kbelowH],
     p = EC->getPressureFromDepth(depth);
 
-  B += depth * hardnessParameter_from_enth(enthalpy[kbelowH], p);
+  B += depth * hardness_parameter(enthalpy[kbelowH], p);
 
   // Now B is an integral of ice hardness; next, compute the average:
   if (thickness > 0)
@@ -247,12 +248,12 @@ the pressure then the softness we compute is
    \f[A = A(T_{pa}(E,p))(1+184\omega).\f]
 The pressure-melting temperature \f$T_{pa}(E,p)\f$ is computed by getPATemp().
  */
-PetscReal GPBLDIce::softnessParameter_from_enth(
+PetscReal GPBLDIce::softness_parameter(
                 PetscReal enthalpy, PetscReal pressure) const {
   PetscErrorCode ierr;
 
   if (EC == NULL) {
-    PetscErrorPrintf("EC is NULL in GPBLDIce::softnessParameter_from_enth()\n");
+    PetscErrorPrintf("EC is NULL in GPBLDIce::softness_parameter()\n");
     endPrintRank();
   }
   PetscReal E_s, E_l;
@@ -262,31 +263,31 @@ PetscReal GPBLDIce::softnessParameter_from_enth(
     ierr = EC->getPATemp(enthalpy,pressure,T_pa);
     if (ierr) {
       PetscErrorPrintf(
-        "getPATemp() returned ierr>0 in GPBLDIce::softnessParameter_from_enth()\n");
+        "getPATemp() returned ierr>0 in GPBLDIce::softness_parameter()\n");
       endPrintRank();
     }
-    return softnessParameter_paterson_budd( T_pa );
+    return softness_parameter_paterson_budd( T_pa );
   } else { // temperate ice
     PetscReal omega;
     ierr = EC->getWaterFraction(enthalpy,pressure,omega);
     // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
     omega = PetscMin(omega,water_frac_observed_limit);
     // next line implements eqn (23) in \ref AschwandenBlatter2009
-    return softnessParameter_paterson_budd(T_0) * (1.0 + water_frac_coeff * omega);
+    return softness_parameter_paterson_budd(T_0) * (1.0 + water_frac_coeff * omega);
   }
 }
 
 // ThermoGlenIce
 
 /*! Converts enthalpy to temperature and uses the Paterson-Budd formula. */
-PetscReal ThermoGlenIce::softnessParameter_from_enth(PetscReal E, PetscReal pressure) const {
+PetscReal ThermoGlenIce::softness_parameter(PetscReal E, PetscReal pressure) const {
   PetscReal T_pa;
   EC->getPATemp(E, pressure, T_pa);
-  return softnessParameter_from_temp(T_pa);
+  return softness_parameter_from_temp(T_pa);
 }
 
 /*! Converts enthalpy to temperature and calls flow_from_temp. */
-PetscReal ThermoGlenIce::flow_from_enth(PetscReal stress, PetscReal E,
+PetscReal ThermoGlenIce::flow(PetscReal stress, PetscReal E,
                                         PetscReal pressure, PetscReal gs) const {
   PetscReal temp;
   EC->getAbsTemp(E, pressure, temp);
@@ -298,7 +299,7 @@ PetscReal ThermoGlenIce::flow_from_temp(PetscReal stress, PetscReal temp,
                                         PetscReal pressure, PetscReal /*gs*/) const {
   // pressure-adjusted temperature:
   const PetscReal T_pa = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
-  return softnessParameter_from_temp(T_pa) * pow(stress,n-1);
+  return softness_parameter_from_temp(T_pa) * pow(stress,n-1);
 }
 
 // IsothermalGlenIce
@@ -322,7 +323,7 @@ HookeIce::HookeIce(MPI_Comm c, const char pre[],
   Tr_Hooke = config.get("Hooke_Tr");
 }
 
-PetscReal HookeIce::softnessParameter_from_temp(PetscReal T_pa) const {
+PetscReal HookeIce::softness_parameter_from_temp(PetscReal T_pa) const {
   return A_Hooke * exp( -Q_Hooke/(ideal_gas_constant * T_pa)
                         + 3.0 * C_Hooke * pow(Tr_Hooke - T_pa, -K_Hooke));
 }
