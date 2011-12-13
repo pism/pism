@@ -50,7 +50,7 @@ IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable 
   bedrock_is_ice_forK = PETSC_FALSE;
 
   // Override some defaults from parent class
-  config.set("enhancement_factor", 1.0);
+  config.set("sia_enhancement_factor", 1.0);
   config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
                                           // parameterization
 

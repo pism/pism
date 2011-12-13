@@ -63,7 +63,7 @@ PetscErrorCode SIAFD::allocate() {
   second_to_kiloyear = convert(1, "second", "1000 years");
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "siafd_", config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
     ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
 
@@ -469,7 +469,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   PetscScalar *delta_ij;
   delta_ij = new PetscScalar[grid.Mz];
 
-  const double enhancement_factor = config.get("enhancement_factor"),
+  const double enhancement_factor = ice->enhancement_factor,
     constant_grain_size = config.get("constant_grain_size"),
     standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
@@ -761,7 +761,7 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
 
   MaskQuery M(*mask);
 
-  double enhancement_factor = config.get("enhancement_factor"),
+  double enhancement_factor = ice->enhancement_factor,
     n_glen  = ice->exponent(),
     Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
     e_to_a_power = pow(enhancement_factor,-1/n_glen);

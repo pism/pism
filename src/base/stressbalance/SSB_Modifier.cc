@@ -158,7 +158,7 @@ PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3
   const PetscReal
     n_glen  = ice->exponent(),
     Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
-    enhancement_factor = config.get("enhancement_factor"),
+    enhancement_factor = config.get("ssa_enhancement_factor"),
     standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
 
@@ -166,7 +166,7 @@ PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = D2_input->begin_access(); CHKERRQ(ierr);
-  
+
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = enthalpy->getInternalColumn(i,j,&E); CHKERRQ(ierr);

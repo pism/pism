@@ -137,8 +137,8 @@ netcdf pism_config {
     pism_config:bootstrapping_tillphi_value_no_var = 15.0;
     pism_config:bootstrapping_tillphi_value_no_var_doc = "degrees; till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip";
 
-    pism_config:enhancement_factor = 1.0;
-    pism_config:enhancement_factor_doc = "; Flow enhancement factor for SIA";
+    pism_config:sia_enhancement_factor = 1.0;
+    pism_config:sia_enhancement_factor_doc = "; Flow enhancement factor for SIA";
 
     pism_config:ssa_enhancement_factor = 1.0;
     pism_config:ssa_enhancement_factor_doc = "; Flow enhancement factor for SSA";

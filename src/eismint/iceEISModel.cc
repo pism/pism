@@ -103,7 +103,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   ierr = set_expername_from_options(); CHKERRQ(ierr);
 
-  config.set("enhancement_factor", 1.0);
+  config.set("sia_enhancement_factor", 1.0);
   config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
                                           // parameterization
   // basal melt does not change computation of mass continuity or vertical velocity:

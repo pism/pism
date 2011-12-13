@@ -59,6 +59,7 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &conf
   beta_CC_grad = config.get("beta_CC") * rho * standard_gravity;
   melting_point_temp = config.get("water_melting_point_temperature");
   n            = config.get("Glen_exponent");
+  enhancement_factor = config.get_string(pre + "enhancement_factor");
 
   A_cold = config.get("Paterson-Budd_A_cold");
   A_warm = config.get("Paterson-Budd_A_warm");

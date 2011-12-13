@@ -81,15 +81,6 @@ PetscErrorCode SSAFD::allocate_fd() {
 
   dump_system_matlab = false;
 
-  {
-    IceFlowLawFactory ice_factory(grid.com, "ssafd_", config, &EC);
-
-    ierr = ice_factory.setType(config.get_string("ssa_flow_law").c_str()); CHKERRQ(ierr);
-
-    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ierr = ice_factory.create(&ice); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
@@ -107,11 +98,6 @@ PetscErrorCode SSAFD::deallocate_fd() {
 
   if (SSARHS != PETSC_NULL) {
     ierr = VecDestroy(&SSARHS); CHKERRQ(ierr);
-  }
-
-  if (ice != NULL) {
-    delete ice;
-    ice = NULL;
   }
 
   return 0;
@@ -1036,7 +1022,7 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar ssa_enhancement_factor = config.get("ssa_enhancement_factor"),
+  PetscScalar ssa_enhancement_factor = ice->enhancement_factor,
     n_glen = ice->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 

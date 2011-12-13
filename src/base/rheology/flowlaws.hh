@@ -94,6 +94,7 @@ protected:
 
   PetscReal standard_gravity,
     ideal_gas_constant,
+    enhancement_factor,
     n;                          // power law exponent
 
   MPI_Comm comm;
