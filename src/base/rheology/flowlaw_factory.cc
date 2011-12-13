@@ -147,16 +147,14 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
   if (flg) {
     ierr = setType(ICE_HYBRID);CHKERRQ(ierr);
   }
-  ierr = PetscOptionsBegin(comm,prefix,"IceFlowLawFactory options","IceFlowLaw");CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(comm, prefix, "IceFlowLawFactory options", "IceFlowLaw");CHKERRQ(ierr);
   {
-    ierr = PetscOptionsList("-ice_type","Ice type","IceFlowLawFactory::setType",
+    ierr = PetscOptionsList("-flow_law","Flow law type","IceFlowLawFactory::setType",
                             type_list,type_name,my_type_name,sizeof(my_type_name),&flg);CHKERRQ(ierr);
     if (flg) {ierr = setType(my_type_name);CHKERRQ(ierr);}
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
 
-//  ierr = PetscPrintf(comm,"IceFlowLawFactory::type_name=%s at end of IceFlowLawFactory::setFromOptions()\n",
-//                     type_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

@@ -318,7 +318,7 @@ PetscErrorCode IceCompModel::allocate_stressbalance() {
 
     if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == PETSC_FALSE) {
       ierr = verbPrintf(1, grid.com,
-                        "WARNING: SIA flow law should be '-sia_ice_type arr' for the selected pismv test.\n");
+                        "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
       CHKERRQ(ierr);
     }
   }
@@ -1049,7 +1049,7 @@ PetscErrorCode IceCompModel::reportErrors() {
   if (testname != 'V' && !IceFlowLawIsPatersonBuddCold(ice, config, EC) &&
       ((testname == 'F') || (testname == 'G'))) {
     ierr = verbPrintf(1, grid.com,
-                      "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
+                      "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
                       "   for reported errors in test %c to be meaningful!\n",
                       testname); CHKERRQ(ierr);
   }
