@@ -21,6 +21,7 @@
 
 #include "PISMSurface.hh"
 #include "localMassBalance.hh"
+#include "NCSpatialVariable.hh"
 
 //! \brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -76,6 +77,8 @@ protected:
                                      //!day factors.
   bool pdd_annualize;
   PetscReal next_pdd_update;
+
+  NCSpatialVariable artm;
 };
 
 #endif /* _PSTEMPERATUREINDEX_H_ */
