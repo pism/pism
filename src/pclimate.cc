@@ -338,7 +338,7 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ(ierr);
 
     // read the config option database:
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     bool override_used;
     ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);

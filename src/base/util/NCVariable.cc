@@ -113,9 +113,13 @@ PetscErrorCode NCSpatialVariable::reset() {
   NCVariable::reset();
 
   time_independent = false;
-  variable_order = "xyz";
   strings["coordinates"] = "lat lon";
   strings["grid_mapping"] = "mapping";
+
+  if (grid)
+    variable_order = grid->config.get_string("output_variable_order");
+  else
+    variable_order = "xyz";
 
   return 0;
 }
@@ -161,10 +165,12 @@ void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_level
   nlevels = PetscMax((int)z_levels.size(), 1); // to make sure we have at least one level
 
   zlevels = z_levels;
-  
+
   dimensions["t"] = grid->config.get_string("time_dimension_name");
   if (nlevels > 1)
     dimensions["z"] = "z";      // default; can be overridden easily
+
+  variable_order = grid->config.get_string("output_variable_order");
 }
 
 void NCSpatialVariable::set_levels(const vector<double> &levels) {

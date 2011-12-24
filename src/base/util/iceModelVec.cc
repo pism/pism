@@ -612,7 +612,6 @@ PetscErrorCode IceModelVec::define(const NCTool &nc, nc_type output_datatype) {
 
   for (int j = 0; j < dof; ++j) {
     vars[j].time_independent = time_independent;
-    vars[j].variable_order = grid->config.get_string("output_variable_order");
     ierr = vars[j].define(nc, dummy, output_datatype, write_in_glaciological_units); CHKERRQ(ierr);
   }
 
@@ -663,7 +662,6 @@ PetscErrorCode IceModelVec::write(string filename, nc_type nctype) {
     SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1");
 
   vars[0].time_independent = time_independent;
-  vars[0].variable_order = grid->config.get_string("output_variable_order");
 
   if (localp) {
     ierr = DMCreateGlobalVector(da, &g); CHKERRQ(ierr);

@@ -741,7 +741,7 @@ int main(int argc, char *argv[]) {
     }
 
     NCConfigVariable config, overrides;
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     // initialize the ice dynamics model
     IceGrid g(com, rank, size, config);

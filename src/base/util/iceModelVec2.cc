@@ -161,7 +161,6 @@ PetscErrorCode IceModelVec2::write(string filename, nc_type nctype) {
 
   for (int j = 0; j < dof; ++j) {
     vars[j].time_independent = time_independent;
-    vars[j].variable_order = grid->config.get_string("output_variable_order");
 
     ierr = IceModelVec2::get_component(j, tmp); CHKERRQ(ierr);
 
@@ -635,7 +634,6 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, string my_name, bool loca
   vars.resize(dof);
   for (int j = 0; j < dof; ++j) {
     vars[j].init_2d(my_name, my_grid);
-    vars[j].variable_order = grid->config.get_string("output_variable_order");
   }
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);

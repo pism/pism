@@ -578,7 +578,7 @@ int main(int argc, char *argv[]) {
     ierr = show_usage_check_req_opts(com, "pross", required, usage.c_str()); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     config.set_flag("use_ssa_velocity", true);
     config.set_flag("use_ssa_when_grounded", false);
