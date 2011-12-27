@@ -430,7 +430,7 @@ typedef int NormType; // YUCK.
 %include "Timeseries.hh"
 %include "iceModelVec.hh"
 %include "PISMVars.hh"
-%include "NCTool.hh"
+%include "NetCDF3Wrapper.hh"
 %include "PISMIO.hh"
 %include "PISMDiagnostic.hh"
 %include "PISMComponent.hh"

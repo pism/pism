@@ -18,7 +18,7 @@
 
 #include <cstring>
 #include <cstdlib>
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
 

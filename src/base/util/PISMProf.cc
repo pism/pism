@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMProf.hh"
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 #include "pism_const.hh"
 
 /// PISMEvent
@@ -141,7 +141,7 @@ void PISMProf::end(int /*index*/) {
 PetscErrorCode PISMProf::save_report(string filename) {
   PetscErrorCode ierr;
   int varid;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
 
   ierr = nc.move_if_exists(filename.c_str()); CHKERRQ(ierr);
 
@@ -184,7 +184,7 @@ PetscErrorCode PISMProf::save_report(string filename) {
 }
 
 //! Save the report corresponding to an event events[index].
-PetscErrorCode PISMProf::save_report(int index, const NCTool &nc, int varid) {
+PetscErrorCode PISMProf::save_report(int index, const NetCDF3Wrapper &nc, int varid) {
   PetscErrorCode ierr;
   const int data_tag = 1;
   MPI_Status mpi_stat;
@@ -216,7 +216,7 @@ PetscErrorCode PISMProf::save_report(int index, const NCTool &nc, int varid) {
 }
 
 //! Find NetCDF variables to save total and CPU times into.
-PetscErrorCode PISMProf::find_variables(NCTool &nc, string name, int &varid) {
+PetscErrorCode PISMProf::find_variables(NetCDF3Wrapper &nc, string name, int &varid) {
   PetscErrorCode ierr;
   bool exists;
 
@@ -229,7 +229,7 @@ PetscErrorCode PISMProf::find_variables(NCTool &nc, string name, int &varid) {
 }
 
 //! Define a NetCDF variable to store a profiling report in.
-PetscErrorCode PISMProf::define_variable(const NCTool &nc, string name, int &varid) {
+PetscErrorCode PISMProf::define_variable(const NetCDF3Wrapper &nc, string name, int &varid) {
   PetscErrorCode ierr;
   int dimids[2];
 
@@ -247,7 +247,7 @@ PetscErrorCode PISMProf::define_variable(const NCTool &nc, string name, int &var
 }
 
 //! Put a text attribute.
-PetscErrorCode PISMProf::put_att_text(const NCTool &nc, int varid,
+PetscErrorCode PISMProf::put_att_text(const NetCDF3Wrapper &nc, int varid,
 				      string name, string text) {
   PetscErrorCode ierr;
 
@@ -274,7 +274,7 @@ PetscErrorCode PISMProf::barrier() {
 }
 
 //! Creates x and y dimensions.
-PetscErrorCode PISMProf::create_dimensions(const NCTool &nc) {
+PetscErrorCode PISMProf::create_dimensions(const NetCDF3Wrapper &nc) {
 
   int stat, dimid;
   if (rank == 0) {

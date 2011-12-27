@@ -371,7 +371,7 @@ int main(int argc, char *argv[]) {
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
     // read data from a PISM input file (including the projection parameters)
-    NCTool nc(grid.com, grid.rank);
+    NetCDF3Wrapper nc(grid.com, grid.rank);
     int last_record;
     bool mapping_exists;
     ierr = nc.open_for_reading(inname.c_str()); CHKERRQ(ierr);

@@ -31,7 +31,7 @@ static char help[] =
 #include "PISMYieldStress.hh"
 #include "SIAFD.hh"
 #include "SSAFD.hh"
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 #include "pism_options.hh"
 
 //! \file pismo.cc A regional (outlet glacier) model form of PISM.
@@ -520,7 +520,7 @@ PetscErrorCode IceRegionalModel::bootstrap_2d(const char *filename) {
 
 PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
-  NCTool nc(grid.com, grid.rank);
+  NetCDF3Wrapper nc(grid.com, grid.rank);
 
   bool no_model_strip_set;
   ierr = PISMOptionsIsSet("-no_model_strip", "No-model strip, in km",

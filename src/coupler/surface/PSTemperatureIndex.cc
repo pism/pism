@@ -400,7 +400,7 @@ void PSTemperatureIndex::add_vars_to_output(string keyword, set<string> &result)
   atmosphere->add_vars_to_output(keyword, result);
 }
 
-PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype) {
   PetscErrorCode ierr;
   int varid;
 

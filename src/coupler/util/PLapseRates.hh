@@ -22,7 +22,7 @@
 #include "IceGrid.hh"
 #include "iceModelVec2T.hh"
 #include "pism_options.hh"
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 
@@ -162,7 +162,7 @@ protected:
     unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
       ref_surface_n_records = 1;
 
-    NCTool nc(g.com, g.rank);
+    NetCDF3Wrapper nc(g.com, g.rank);
     ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
     ierr = nc.get_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);

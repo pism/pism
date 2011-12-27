@@ -606,7 +606,7 @@ PetscErrorCode IceModelVec::read(string filename, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using \c nc.
-PetscErrorCode IceModelVec::define(const NCTool &nc, nc_type output_datatype) {
+PetscErrorCode IceModelVec::define(const NetCDF3Wrapper &nc, nc_type output_datatype) {
   PetscErrorCode ierr;
   int dummy;
 

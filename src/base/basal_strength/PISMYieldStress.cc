@@ -235,7 +235,7 @@ void PISMDefaultYieldStress::get_diagnostics(map<string, PISMDiagnostic*> &dict)
 }
 
 
-PetscErrorCode PISMDefaultYieldStress::define_variables(set<string> vars, const NCTool &nc,
+PetscErrorCode PISMDefaultYieldStress::define_variables(set<string> vars, const NetCDF3Wrapper &nc,
                                                  nc_type nctype) {
   if (set_contains(vars, "tillphi")) {
     PetscErrorCode ierr = till_phi.define(nc, nctype); CHKERRQ(ierr);

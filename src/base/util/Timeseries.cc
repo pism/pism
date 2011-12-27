@@ -20,7 +20,7 @@
 #include <algorithm>
 #include "pism_const.hh"
 #include "IceGrid.hh"
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 
 Timeseries::Timeseries(IceGrid *g, string name, string dimension_name)
 {
@@ -48,7 +48,7 @@ void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r, string name, str
 PetscErrorCode Timeseries::read(const char filename[]) {
   PetscErrorCode ierr;
 
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
   bool exists;
   vector<int> dimids;
   int varid;
@@ -371,7 +371,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
 }
 PetscErrorCode DiagnosticTimeseries::init(string filename) {
   PetscErrorCode ierr;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
@@ -403,7 +403,7 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
   //! Writes data to a file.
   PetscErrorCode DiagnosticTimeseries::flush() {
     PetscErrorCode ierr;
-    NCTool nc(com, rank);
+    NetCDF3Wrapper nc(com, rank);
     unsigned int len = 0;
 
     // return cleanly if this DiagnosticTimeseries object was created but never

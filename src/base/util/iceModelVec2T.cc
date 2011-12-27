@@ -141,7 +141,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  NCTool nc(grid->com, grid->rank);
+  NetCDF3Wrapper nc(grid->com, grid->rank);
   int varid;
   bool exists;
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);

@@ -16,8 +16,8 @@
 // along with Pism; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __NCTool_hh
-#define __NCTool_hh
+#ifndef __NetCDF3Wrapper_hh
+#define __NetCDF3Wrapper_hh
 
 #include <petscsys.h>
 
@@ -59,14 +59,14 @@ int check_err(const int stat, const int line, const char *file);
   classes, such as IceModelVec.
 
   Note: "non-const" methods of this this class are the only ones that can make
-  a particular instance NCTool refer to a different file. In other words,
-  passing "const NCTool &" as an argument ensures that after a call the file is
+  a particular instance NetCDF3Wrapper refer to a different file. In other words,
+  passing "const NetCDF3Wrapper &" as an argument ensures that after a call the file is
   still open.
  */
-class NCTool {
+class NetCDF3Wrapper {
 public:
-  NCTool(MPI_Comm c, PetscMPIInt r);
-  virtual ~NCTool();
+  NetCDF3Wrapper(MPI_Comm c, PetscMPIInt r);
+  virtual ~NetCDF3Wrapper();
   virtual PetscErrorCode open_for_reading(string filename);
   virtual PetscErrorCode open_for_writing(string filename);
   virtual PetscErrorCode move_if_exists(string filename);
@@ -116,5 +116,5 @@ protected:
   mutable bool def_mode;             // note: only processor 0 should use this
 };
 
-#endif // __NCTool_hh
+#endif // __NetCDF3Wrapper_hh
 

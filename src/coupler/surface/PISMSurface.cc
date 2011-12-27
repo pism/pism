@@ -99,7 +99,7 @@ PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode PISMSurfaceModel::define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {

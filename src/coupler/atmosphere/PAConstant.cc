@@ -134,7 +134,7 @@ void PAConstant::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PAConstant::define_variables(set<string> vars, const NCTool &nc,
+PetscErrorCode PAConstant::define_variables(set<string> vars, const NetCDF3Wrapper &nc,
                                             nc_type nctype) {
   PetscErrorCode ierr;
   int varid;

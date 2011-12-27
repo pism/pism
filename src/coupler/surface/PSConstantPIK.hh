@@ -48,7 +48,7 @@ public:
   { t = my_t; dt = my_dt; return 0; } // do nothing
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
+  virtual PetscErrorCode define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:

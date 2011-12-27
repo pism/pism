@@ -379,7 +379,7 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
 /*! Reads \c valid_min, \c valid_max and \c valid_range attributes; if \c
     valid_range is found, sets the pair \c valid_min and \c valid_max instead.
  */
-PetscErrorCode NCVariable::read_valid_range(const NCTool &nc, int varid) {
+PetscErrorCode NCVariable::read_valid_range(const NetCDF3Wrapper &nc, int varid) {
   string input_units_string;
   utUnit input_units;
   vector<double> bounds;
@@ -488,7 +488,7 @@ PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) 
   \li if both valid_min and valid_max are set, then valid_range is written
   instead of the valid_min, valid_max pair.
  */
-PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type nctype,
+PetscErrorCode NCVariable::write_attributes(const NetCDF3Wrapper &nc, int varid, nc_type nctype,
 					    bool write_in_glaciological_units) const {
   int ierr;
 
@@ -668,7 +668,7 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
 }
 
 //! \brief Define dimensions a variable depends on.
-PetscErrorCode NCSpatialVariable::define_dimensions(const NCTool &nc) const {
+PetscErrorCode NCSpatialVariable::define_dimensions(const NetCDF3Wrapper &nc) const {
   PetscErrorCode ierr;
   int x_id = -1, y_id = -1, z_id = -1, dimid;
   string dimname;
@@ -716,7 +716,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const NCTool &nc) const {
 }
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
-PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type nctype,
+PetscErrorCode NCSpatialVariable::define(const NetCDF3Wrapper &nc, int &varid, nc_type nctype,
                                          bool write_in_glaciological_units) const {
   int ierr, i = 0, ndims, dimids[4],
     ncid = nc.get_ncid();
@@ -895,7 +895,7 @@ PetscErrorCode NCConfigVariable::read(string filename) {
   PetscErrorCode ierr;
   bool variable_exists;
   int varid, nattrs;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
 
   strings.clear();
   doubles.clear();
@@ -944,7 +944,7 @@ PetscErrorCode NCConfigVariable::write(string filename) const {
   PetscErrorCode ierr;
   int varid;
   bool variable_exists;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
 
   ierr = nc.open_for_writing(filename); CHKERRQ(ierr);
 
@@ -962,7 +962,7 @@ PetscErrorCode NCConfigVariable::write(string filename) const {
 }
 
 //! Define a configuration NetCDF variable.
-PetscErrorCode NCConfigVariable::define(const NCTool &nc, int &varid, nc_type type,
+PetscErrorCode NCConfigVariable::define(const NetCDF3Wrapper &nc, int &varid, nc_type type,
                                         bool) const {
   int ierr, var_id,
     ncid = nc.get_ncid();
@@ -1066,7 +1066,7 @@ void NCConfigVariable::set_flag(string name, bool value) {
 }
 
 //! Write attributes to a NetCDF variable. All attributes are equal here.
-PetscErrorCode NCConfigVariable::write_attributes(const NCTool &nc, int varid, nc_type nctype,
+PetscErrorCode NCConfigVariable::write_attributes(const NetCDF3Wrapper &nc, int varid, nc_type nctype,
 						  bool /*write_in_glaciological_units*/) const {
   int ierr, ncid;
 
@@ -1293,7 +1293,7 @@ void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
 PetscErrorCode NCTimeseries::read(string filename, vector<double> &data) {
 
   PetscErrorCode ierr;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
   int ncid, varid;
   bool variable_exists;
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
@@ -1372,7 +1372,7 @@ PetscErrorCode NCTimeseries::read(string filename, vector<double> &data) {
 
 PetscErrorCode NCTimeseries::get_bounds_name(string filename, string &result) {
   PetscErrorCode ierr;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
   int varid;
   bool exists;
 
@@ -1414,7 +1414,7 @@ PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
 }
 
 //! Define a NetCDF variable corresponding to a time-series.
-PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid, nc_type nctype,
+PetscErrorCode NCTimeseries::define(const NetCDF3Wrapper &nc, int &varid, nc_type nctype,
                                     bool) const {
   PetscErrorCode ierr;
   int dimid, ncid = nc.get_ncid();
@@ -1447,7 +1447,7 @@ PetscErrorCode NCTimeseries::write(string filename, size_t start,
 				   vector<double> &data, nc_type nctype) {
 
   PetscErrorCode ierr;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
   bool variable_exists = false;
   int varid = -1;
  
@@ -1532,7 +1532,7 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, ut
 PetscErrorCode NCGlobalAttributes::read(string filename) {
   PetscErrorCode ierr;
   int nattrs;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
 
   strings.clear();
   doubles.clear();
@@ -1569,7 +1569,7 @@ PetscErrorCode NCGlobalAttributes::read(string filename) {
 //! Writes global attributes to a file by calling write_attributes().
 PetscErrorCode NCGlobalAttributes::write(string filename) const {
   PetscErrorCode ierr;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
 
   ierr = nc.open_for_writing(filename); CHKERRQ(ierr);
 
@@ -1588,7 +1588,7 @@ void NCGlobalAttributes::set_from_config(const NCConfigVariable &config) {
 
 
 //! Writes global attributes to a file. Prepends the history string.
-PetscErrorCode NCGlobalAttributes::write_attributes(const NCTool &nc, int, nc_type, bool) const {
+PetscErrorCode NCGlobalAttributes::write_attributes(const NetCDF3Wrapper &nc, int, nc_type, bool) const {
   int ierr, ncid;
   string old_history;
 
@@ -1650,7 +1650,7 @@ void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIIn
 
 PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
   PetscErrorCode ierr;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
   int ncid, varid;
   bool variable_exists;
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
@@ -1750,7 +1750,7 @@ PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
 
 PetscErrorCode NCTimeBounds::write(string filename, size_t start, vector<double> &data, nc_type nctype) {
   PetscErrorCode ierr;
-  NCTool nc(com, rank);
+  NetCDF3Wrapper nc(com, rank);
   bool variable_exists = false;
   int varid = -1;
  
@@ -1831,7 +1831,7 @@ PetscErrorCode NCTimeBounds::change_units(vector<double> &data, utUnit *from, ut
 }
 
 
-PetscErrorCode NCTimeBounds::define(const NCTool &nc, int &varid, nc_type nctype, bool) const {
+PetscErrorCode NCTimeBounds::define(const NetCDF3Wrapper &nc, int &varid, nc_type nctype, bool) const {
   PetscErrorCode ierr;
   int dimids[2], ncid = nc.get_ncid();
 

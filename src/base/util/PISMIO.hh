@@ -20,7 +20,7 @@
 #define __PISMIO
 
 #include <petscvec.h>
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 
 class IceGrid;
 class LocalInterpCtx;
@@ -46,12 +46,12 @@ struct grid_info;
   No action is needed to be able to write to an output ("-o") file, a snapshot
   file or the like, though; IceModel has already prepared it.
  */
-class PISMIO : public NCTool {
+class PISMIO : public NetCDF3Wrapper {
 public:
   PISMIO(IceGrid *my_grid);
   virtual ~PISMIO() {}
 
-  using NCTool::open_for_writing;
+  using NetCDF3Wrapper::open_for_writing;
   PetscErrorCode open_for_writing(string filename, bool append,
 				  bool check_dims = false);
   PetscErrorCode get_grid(string filename, string var_name);

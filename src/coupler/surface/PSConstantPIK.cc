@@ -126,7 +126,7 @@ void PSConstantPIK::add_vars_to_output(string /*keyword*/, set<string> &result) 
   // does not call atmosphere->add_vars_to_output().
 }
 
-PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);

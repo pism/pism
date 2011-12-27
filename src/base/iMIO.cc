@@ -336,7 +336,7 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
   */
 PetscErrorCode IceModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
-  NCTool nc(grid.com, grid.rank);
+  NetCDF3Wrapper nc(grid.com, grid.rank);
 
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
                     filename); CHKERRQ(ierr);

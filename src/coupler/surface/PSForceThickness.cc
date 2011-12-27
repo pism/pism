@@ -320,7 +320,7 @@ void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
   result.insert("ftt_target_thk");
 }
 
-PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);

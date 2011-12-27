@@ -21,7 +21,7 @@
 #include <cstdlib>
 #include <petscdmda.h>
 
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 

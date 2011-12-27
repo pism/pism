@@ -19,7 +19,7 @@
 #include <cstring>
 #include "udunits.h"
 #include "pism_const.hh"
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 
 int nc_check(int stat) {
   if (stat)
@@ -36,7 +36,7 @@ int check_err(const int stat, const int line, const char *file) {
   return 0;
 }
 
-NCTool::NCTool(MPI_Comm c, PetscMPIInt r)
+NetCDF3Wrapper::NetCDF3Wrapper(MPI_Comm c, PetscMPIInt r)
   : com(c), rank(r) {
   ncid = -1;
   def_mode = false;
@@ -50,20 +50,20 @@ NCTool::NCTool(MPI_Comm c, PetscMPIInt r)
   }
 }
 
-NCTool::~NCTool() {
+NetCDF3Wrapper::~NetCDF3Wrapper() {
   if (ncid >= 0) {
-    PetscPrintf(com, "NCTool::~NCTool() ncid >= 0.\n");
+    PetscPrintf(com, "NetCDF3Wrapper::~NetCDF3Wrapper() ncid >= 0.\n");
     PISMEnd();
   }
 }
 
 //! Returns ncid corresponding to the current NetCDF file.
-int NCTool::get_ncid() const {
+int NetCDF3Wrapper::get_ncid() const {
   return ncid;
 }
 
 //! Finds a NetCDF dimension by its name.
-PetscErrorCode  NCTool::find_dimension(string short_name, int *dimid, bool &exists) const {
+PetscErrorCode  NetCDF3Wrapper::find_dimension(string short_name, int *dimid, bool &exists) const {
   PetscErrorCode ierr;
   int stat, found = 0, my_dimid;
   if (rank == 0) {
@@ -104,7 +104,7 @@ PetscErrorCode  NCTool::find_dimension(string short_name, int *dimid, bool &exis
   <li> Broadcast the existence flag and the variable ID.
   </ol>
  */
-PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
+PetscErrorCode  NetCDF3Wrapper::find_variable(string short_name, string standard_name,
 				      int *varidp, bool &exists,
 				      bool &found_by_standard_name) const {
   int ierr;
@@ -165,7 +165,7 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 }
 
 //! \brief Find a variable and discard the found_by_standard_name flag.
-PetscErrorCode NCTool::find_variable(string short_name, string standard_name,
+PetscErrorCode NetCDF3Wrapper::find_variable(string short_name, string standard_name,
 				     int *varidp, bool &exists) const {
   bool dummy;
   PetscErrorCode ierr = find_variable(short_name, standard_name, varidp, exists, dummy);
@@ -174,7 +174,7 @@ PetscErrorCode NCTool::find_variable(string short_name, string standard_name,
 }
 				     
 //! \brief Find a variable without specifying its standard name.
-PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists) const {
+PetscErrorCode NetCDF3Wrapper::find_variable(string short_name, int *varid, bool &exists) const {
   return find_variable(short_name, "", varid, exists);
 }
 
@@ -185,7 +185,7 @@ PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists
  */
 
 //! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
-PetscErrorCode NCTool::put_dimension(int varid, const vector<double> &vals) const {
+PetscErrorCode NetCDF3Wrapper::put_dimension(int varid, const vector<double> &vals) const {
   PetscErrorCode ierr;
   int stat;
 
@@ -201,7 +201,7 @@ PetscErrorCode NCTool::put_dimension(int varid, const vector<double> &vals) cons
 /*!
   Appends if overwrite == false (default).
  */
-PetscErrorCode NCTool::write_history(string history, bool overwrite) const {
+PetscErrorCode NetCDF3Wrapper::write_history(string history, bool overwrite) const {
   int stat;
   string old_history, new_history;
 
@@ -233,7 +233,7 @@ PetscErrorCode NCTool::write_history(string history, bool overwrite) const {
     On processor 0 returns true if OK, false otherwise. Always returns true on
     processors other than 0.
  */
-bool NCTool::check_dimension(string name, const int len) const {
+bool NetCDF3Wrapper::check_dimension(string name, const int len) const {
   int stat, dimid;
   size_t dimlen;
 
@@ -262,7 +262,7 @@ bool NCTool::check_dimension(string name, const int len) const {
 /*!
  * Does nothing on processors other than 0.
  */
-PetscErrorCode NCTool::append_time(string dimension_name, PetscReal time) const {
+PetscErrorCode NetCDF3Wrapper::append_time(string dimension_name, PetscReal time) const {
   int stat, t_id;
 
   if (rank != 0) return 0;
@@ -280,7 +280,7 @@ PetscErrorCode NCTool::append_time(string dimension_name, PetscReal time) const 
   return 0;
 }
 
-PetscErrorCode NCTool::append_time_bounds(string name, PetscReal t0, PetscReal t1) const {
+PetscErrorCode NetCDF3Wrapper::append_time_bounds(string name, PetscReal t0, PetscReal t1) const {
   int stat, t_id;
 
   if (rank != 0) return 0;
@@ -304,11 +304,11 @@ PetscErrorCode NCTool::append_time_bounds(string name, PetscReal t0, PetscReal t
 /*!
   Stops if a file does not exist or could not be opened.
  */
-PetscErrorCode NCTool::open_for_reading(string filename) {
+PetscErrorCode NetCDF3Wrapper::open_for_reading(string filename) {
   PetscErrorCode ierr;
   int stat = 0;
 
-  if (ncid >= 0) SETERRQ(com, 1, "NCTool::open_for_reading(): ncid >= 0 at the beginning of the call");
+  if (ncid >= 0) SETERRQ(com, 1, "NetCDF3Wrapper::open_for_reading(): ncid >= 0 at the beginning of the call");
 
   if (rank == 0) {
     stat = nc_open(filename.c_str(), NC_NOWRITE, &ncid);
@@ -326,7 +326,7 @@ PetscErrorCode NCTool::open_for_reading(string filename) {
 }
 
 //! Closes a NetCDF file.
-PetscErrorCode NCTool::close() {
+PetscErrorCode NetCDF3Wrapper::close() {
   PetscErrorCode ierr;
   if (rank == 0) {
     ierr = nc_close(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -337,10 +337,10 @@ PetscErrorCode NCTool::close() {
 }
 
 //! Opens a file for writing if it exists, creates if it does not.
-PetscErrorCode NCTool::open_for_writing(string filename) {
+PetscErrorCode NetCDF3Wrapper::open_for_writing(string filename) {
   int stat;
 
-  if (ncid >= 0) SETERRQ(com, 1, "NCTool::open_for_writing(): ncid >= 0 at the beginning of the call");
+  if (ncid >= 0) SETERRQ(com, 1, "NetCDF3Wrapper::open_for_writing(): ncid >= 0 at the beginning of the call");
 
   if (rank == 0) {
     bool file_exists = false;
@@ -382,7 +382,7 @@ PetscErrorCode NCTool::open_for_writing(string filename) {
 }
 
 //! Finds the length of a dimension. Returns 0 if failed.
-PetscErrorCode NCTool::get_dim_length(string name, unsigned int *len) const {
+PetscErrorCode NetCDF3Wrapper::get_dim_length(string name, unsigned int *len) const {
   int stat, dim_id;
   
   if (rank == 0) {
@@ -402,7 +402,7 @@ PetscErrorCode NCTool::get_dim_length(string name, unsigned int *len) const {
 }
 
 //! \brief Get the number of records in a file.
-PetscErrorCode NCTool::get_nrecords(int &nrecords) const {
+PetscErrorCode NetCDF3Wrapper::get_nrecords(int &nrecords) const {
   PetscErrorCode stat;
 
   int dimid;
@@ -433,7 +433,7 @@ PetscErrorCode NCTool::get_nrecords(int &nrecords) const {
 
   Converts time and distance units to 'seconds' and 'meters', correspondingly.
  */
-PetscErrorCode NCTool::get_dim_limits(string name, double *min, double *max) const {
+PetscErrorCode NetCDF3Wrapper::get_dim_limits(string name, double *min, double *max) const {
   PetscErrorCode ierr;
   unsigned int len = 0;
   int varid = -1;
@@ -540,7 +540,7 @@ PetscErrorCode NCTool::get_dim_limits(string name, double *min, double *max) con
 }
 
 //! \brief Reads a coordinate variable.
-PetscErrorCode NCTool::get_dimension(string name, vector<double> &result) const {
+PetscErrorCode NetCDF3Wrapper::get_dimension(string name, vector<double> &result) const {
   PetscErrorCode ierr;
   unsigned int len = 0;
   int varid = -1;
@@ -639,7 +639,7 @@ PetscErrorCode NCTool::get_dimension(string name, vector<double> &result) const 
 /*!
   Missing and empty attributes are treated the same.
  */
-PetscErrorCode NCTool::get_att_text(const int varid, string name, string &result) const {
+PetscErrorCode NetCDF3Wrapper::get_att_text(const int varid, string name, string &result) const {
   char *str = NULL;
   int ierr, stat, len;
 
@@ -685,7 +685,7 @@ PetscErrorCode NCTool::get_att_text(const int varid, string name, string &result
 }
 
 //! Reads a scalar attribute from a NetCDF file.
-PetscErrorCode NCTool::get_att_double(const int varid, string name,
+PetscErrorCode NetCDF3Wrapper::get_att_double(const int varid, string name,
 				      vector<double> &result) const {
   int ierr, stat, len;
 
@@ -727,7 +727,7 @@ PetscErrorCode NCTool::get_att_double(const int varid, string name,
 /*! Note that this function intentionally ignores the reference date ('years
   since 1-1-1', 'years since 2000-1-1' and 'years' produce the same result).
  */
-PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) const {
+PetscErrorCode NetCDF3Wrapper::get_units(int varid, bool &has_units, utUnit &units) const {
   PetscErrorCode ierr;
   string units_string;
 
@@ -763,7 +763,7 @@ PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) cons
 }
 
 //! Get the number of attributes of a variable.
-PetscErrorCode NCTool::inq_nattrs(int varid, int &N) const {
+PetscErrorCode NetCDF3Wrapper::inq_nattrs(int varid, int &N) const {
   int stat;
 
   if (rank == 0) {
@@ -775,7 +775,7 @@ PetscErrorCode NCTool::inq_nattrs(int varid, int &N) const {
 }
 
 //! Get the attribute type.
-PetscErrorCode NCTool::inq_att_type(int varid, string name, nc_type &result) const {
+PetscErrorCode NetCDF3Wrapper::inq_att_type(int varid, string name, nc_type &result) const {
   int stat, type;
   nc_type tmp;
 
@@ -791,7 +791,7 @@ PetscErrorCode NCTool::inq_att_type(int varid, string name, nc_type &result) con
 }
 
 //! Gets the name of the n-th (counting from 0) attribute of a NetCDF variable.
-PetscErrorCode NCTool::inq_att_name(int varid, int n, string &name) const {
+PetscErrorCode NetCDF3Wrapper::inq_att_name(int varid, int n, string &name) const {
   int stat;
   char tmp[NC_MAX_NAME];
 
@@ -808,7 +808,7 @@ PetscErrorCode NCTool::inq_att_name(int varid, int n, string &name) const {
 /*!
   The length of the result (\c dimids) is the number of dimensions.
  */
-PetscErrorCode NCTool::inq_dimids(int varid, vector<int> &dimids) const {
+PetscErrorCode NetCDF3Wrapper::inq_dimids(int varid, vector<int> &dimids) const {
   int stat;
   int ndims;
 
@@ -834,7 +834,7 @@ PetscErrorCode NCTool::inq_dimids(int varid, vector<int> &dimids) const {
 }
 
 //! Get a name of a dimension by a dimension ID.
-PetscErrorCode NCTool::inq_dimname(int dimid, string &name) const {
+PetscErrorCode NetCDF3Wrapper::inq_dimname(int dimid, string &name) const {
   int stat;
   char tmp[NC_MAX_NAME];
 
@@ -848,7 +848,7 @@ PetscErrorCode NCTool::inq_dimname(int dimid, string &name) const {
 }
 
 //! Get the dimension ID of an unlimited dimension. Sets unlimdimid to -1 if there isn't one.
-PetscErrorCode NCTool::inq_unlimdim(int &unlimdimid) const {
+PetscErrorCode NetCDF3Wrapper::inq_unlimdim(int &unlimdimid) const {
   int stat;
 
   if (rank == 0) {
@@ -860,7 +860,7 @@ PetscErrorCode NCTool::inq_unlimdim(int &unlimdimid) const {
 }
 
 //! Moves \c filename to \c filename~ if \c filename exists.
-PetscErrorCode NCTool::move_if_exists(string filename) {
+PetscErrorCode NetCDF3Wrapper::move_if_exists(string filename) {
   PetscErrorCode ierr;
 
   if (rank != 0)
@@ -891,7 +891,7 @@ PetscErrorCode NCTool::move_if_exists(string filename) {
 
 //! \brief Puts a NetCDF file in define mode if it is not in define mode
 //! already.
-PetscErrorCode NCTool::define_mode() const {
+PetscErrorCode NetCDF3Wrapper::define_mode() const {
   PetscErrorCode ierr;
 
   if (rank != 0) return 0;
@@ -906,7 +906,7 @@ PetscErrorCode NCTool::define_mode() const {
 }
 
 //! \brief Puts a NetCDF file in data mode if it is not in data mode already.
-PetscErrorCode NCTool::data_mode() const {
+PetscErrorCode NetCDF3Wrapper::data_mode() const {
   PetscErrorCode ierr;
 
   if (rank != 0) return 0;
@@ -922,7 +922,7 @@ PetscErrorCode NCTool::data_mode() const {
   return 0;
 }
 
-PetscErrorCode NCTool::set_attrs(int varid, map<string,string> attrs) const {
+PetscErrorCode NetCDF3Wrapper::set_attrs(int varid, map<string,string> attrs) const {
   PetscErrorCode ierr;
 
   if (rank != 0) return 0;
@@ -945,7 +945,7 @@ PetscErrorCode NCTool::set_attrs(int varid, map<string,string> attrs) const {
 
 //! \brief Creates a dimension and the corresponding coordinate variable; sets
 //! string sttributes.
-PetscErrorCode NCTool::create_dimension(string name, int length, map<string,string> attrs,
+PetscErrorCode NetCDF3Wrapper::create_dimension(string name, int length, map<string,string> attrs,
                                         int &dimid, int &varid) const {
   PetscErrorCode ierr;
 
@@ -967,7 +967,7 @@ PetscErrorCode NCTool::create_dimension(string name, int length, map<string,stri
  * "standard_name" attribute, then the "axis" attribute, then the variable
  * name, which can be "x", "X" or starting with "x" or "X" (or "y", etc).
  */
-PetscErrorCode NCTool::inq_dimtype(string name, AxisType &result) const {
+PetscErrorCode NetCDF3Wrapper::inq_dimtype(string name, AxisType &result) const {
   PetscErrorCode ierr;
   double slope, intercept;
   string axis, standard_name, units;
@@ -1058,7 +1058,7 @@ PetscErrorCode NCTool::inq_dimtype(string name, AxisType &result) const {
 }
 
 //! \brief Get the number of records of variable \c varname.
-PetscErrorCode NCTool::get_nrecords(string short_name, string standard_name,
+PetscErrorCode NetCDF3Wrapper::get_nrecords(string short_name, string standard_name,
                                     unsigned int &nrecords) const {
   PetscErrorCode ierr;
 

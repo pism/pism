@@ -40,7 +40,7 @@ public:
 				PetscScalar default_value, Vec v);
   virtual PetscErrorCode to_glaciological_units(Vec v);
 
-  PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype,
+  PetscErrorCode define(const NetCDF3Wrapper &nc, int &varid, nc_type nctype,
                         bool write_in_glaciological_units) const;
 
   mutable map<string,string> dimensions,
@@ -55,7 +55,7 @@ protected:
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
   PetscErrorCode check_range(Vec v);
-  PetscErrorCode define_dimensions(const NCTool &nc) const;
+  PetscErrorCode define_dimensions(const NetCDF3Wrapper &nc) const;
 };
 
 #endif	// __NCSpatialVariable

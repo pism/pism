@@ -34,7 +34,7 @@ add_library (pismutil
   base/util/iceModelVec3.cc
   base/util/iceModelVec2T.cc
   base/util/Mask.cc
-  base/util/NCTool.cc
+  base/util/NetCDF3Wrapper.cc
   base/util/pism_const.cc
   base/util/pism_options.cc
   base/util/pism_default_config.cc
@@ -58,10 +58,10 @@ add_dependencies (pismrevision touch_pism_revision)
 # Add a preprocessor flag if NetCDF-4 output was requested.
 if (Pism_NETCDF4_OUTPUT)
   message (STATUS "PISM will write NetCDF-4 files.")
-  set_source_files_properties (base/util/NCTool.cc
+  set_source_files_properties (base/util/NetCDF3Wrapper.cc
     PROPERTIES COMPILE_FLAGS -DPISM_WRITE_NETCDF4=1)
 else ()
-  set_source_files_properties (base/util/NCTool.cc
+  set_source_files_properties (base/util/NetCDF3Wrapper.cc
     PROPERTIES COMPILE_FLAGS -DPISM_WRITE_NETCDF4=0)
 endif ()
 

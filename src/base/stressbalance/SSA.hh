@@ -157,7 +157,7 @@ public:
   virtual PetscErrorCode stdout_report(string &result);
 
   virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
+  virtual PetscErrorCode define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 
   //! Add pointers to diagnostic quantities to a dictionary.

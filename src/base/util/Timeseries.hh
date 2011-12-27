@@ -115,7 +115,7 @@ protected:
 
   \code
   char seriesname[] = "ser_delta_T.nc";
-  NCTool nc(grid.com, grid.rank);
+  NetCDF3Wrapper nc(grid.com, grid.rank);
   nc.open_for_writing(seriesname, true, false);
   nc.close();
   \endcode

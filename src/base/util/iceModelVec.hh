@@ -26,7 +26,7 @@
 #include "NCSpatialVariable.hh"
 #include "pism_const.hh"
 
-class NCTool;
+class NetCDF3Wrapper;
 class LocalInterpCtx;
 
 //! \brief Abstract class for reading, writing, allocating, and accessing a
@@ -197,7 +197,7 @@ public:
   virtual NCSpatialVariable get_metadata(int N);
   virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);
-  virtual PetscErrorCode  define(const NCTool &nc, nc_type output_datatype);
+  virtual PetscErrorCode  define(const NetCDF3Wrapper &nc, nc_type output_datatype);
   virtual PetscErrorCode  write(string filename);
   virtual PetscErrorCode  write(string filename, nc_type nctype);
   virtual PetscErrorCode  dump(const char filename[]);

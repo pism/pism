@@ -18,7 +18,7 @@
 
 #include <petsc.h>
 #include <petscfix.h>
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 #include "pism_const.hh"
 #include <sstream>
 #include <ctime>

@@ -25,7 +25,7 @@
 #include "PISMTime.hh"
 
 PISMIO::PISMIO(IceGrid *my_grid)
-  : NCTool(my_grid->com, my_grid->rank) {
+  : NetCDF3Wrapper(my_grid->com, my_grid->rank) {
   grid = my_grid;
 
   event_write       = grid->profiler->create("pismio_write", "time spent in PISMIO::put_var()");
@@ -668,7 +668,7 @@ PetscErrorCode PISMIO::open_for_writing(string filename, bool append,
     } // end of if (rank == 0)
   }   // end of if (append == false)
 
-  stat = NCTool::open_for_writing(filename.c_str()); CHKERRQ(stat);
+  stat = NetCDF3Wrapper::open_for_writing(filename.c_str()); CHKERRQ(stat);
 
   // If we don't need to check dimensions, we're done.
   if (!check_dims)

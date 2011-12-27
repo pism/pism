@@ -76,7 +76,7 @@ public:
   }
 
   //! Define NetCDF variables corresponding to a diagnostic quantity.
-  virtual PetscErrorCode define(const NCTool &nc)
+  virtual PetscErrorCode define(const NetCDF3Wrapper &nc)
   {
     PetscErrorCode ierr;
     int dummy;

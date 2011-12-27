@@ -21,7 +21,7 @@
 
 #include "iceModelVec2T.hh"
 #include "PISMTime.hh"
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 #include "pism_options.hh"
 
 template <class Model, class Input>
@@ -96,7 +96,7 @@ public:
     }
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype)
+  virtual PetscErrorCode define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype)
   {
     PetscErrorCode ierr;
 
@@ -197,7 +197,7 @@ protected:
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size"),
       temp_n_records = 1, mass_flux_n_records = 1;
 
-    NCTool nc(Model::grid.com, Model::grid.rank);
+    NetCDF3Wrapper nc(Model::grid.com, Model::grid.rank);
     ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
     ierr = nc.get_nrecords(temp_name, temp_std_name, temp_n_records); CHKERRQ(ierr);
     ierr = nc.get_nrecords(mass_flux_name,  mass_flux_std_name,  mass_flux_n_records);  CHKERRQ(ierr);

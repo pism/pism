@@ -56,7 +56,7 @@ void PISMBedDef::add_vars_to_output(string /*keyword*/, set<string> &result) {
   result.insert("topg_initial");
 }
 
-PetscErrorCode PISMBedDef::define_variables(set<string> vars, const NCTool &nc,
+PetscErrorCode PISMBedDef::define_variables(set<string> vars, const NetCDF3Wrapper &nc,
                                             nc_type nctype) {
   PetscErrorCode ierr;
 

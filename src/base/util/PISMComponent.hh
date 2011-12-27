@@ -42,7 +42,7 @@ class IceGrid;
 class NCConfigVariable;
 class PISMDiagnostic;
 class PISMVars;
-class NCTool;
+class NetCDF3Wrapper;
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
@@ -125,7 +125,7 @@ public:
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/,
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const NetCDF3Wrapper &/*nc*/,
                                           nc_type /*nctype*/)
   { return 0; }
 
@@ -214,7 +214,7 @@ public:
     }
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
+  virtual PetscErrorCode define_variables(set<string> vars, const NetCDF3Wrapper &nc,
                                           nc_type nctype)
   {
     if (input_model != NULL) {

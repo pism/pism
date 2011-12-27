@@ -89,7 +89,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   if (i_set) {
     bool dont_read_initial_guess, u_ssa_found, v_ssa_found;
     int start;
-    NCTool nc(grid.com, grid.rank);
+    NetCDF3Wrapper nc(grid.com, grid.rank);
 
     ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 
@@ -490,7 +490,7 @@ void SSA::add_vars_to_output(string /*keyword*/, set<string> &result) {
 }
 
 
-PetscErrorCode SSA::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode SSA::define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {

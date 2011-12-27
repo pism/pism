@@ -22,7 +22,7 @@
 #include "Timeseries.hh"
 #include "SSA.hh"
 #include "PISMStressBalance.hh"
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 #include "pism_options.hh"
 
 const PetscScalar 
@@ -170,7 +170,7 @@ PetscErrorCode IcePSTexModel::prepare_series() {
   ierr = verbPrintf(2,grid.com, 
     "  will write time series with special PST information to %s ...\n",
     seriesname); CHKERRQ(ierr);
-  NCTool nc(grid.com, grid.rank);
+  NetCDF3Wrapper nc(grid.com, grid.rank);
   ierr = nc.open_for_writing(seriesname); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 

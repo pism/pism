@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 #include <petsc.h>
-#include "NCTool.hh"
+#include "NetCDF3Wrapper.hh"
 
 /// @cond NAMESPACE_BROWSER
 using namespace std;
@@ -84,11 +84,11 @@ protected:
   PetscMPIInt rank, size;
   MPI_Comm com;
 
-  PetscErrorCode save_report(int index, const NCTool &nc, int varid);
-  PetscErrorCode find_variables(NCTool &nc, string name, int &varid);
-  PetscErrorCode define_variable(const NCTool &nc, string name, int &varid);
-  PetscErrorCode put_att_text(const NCTool &nc, int varid, string name, string text);
-  PetscErrorCode create_dimensions(const NCTool &nc);
+  PetscErrorCode save_report(int index, const NetCDF3Wrapper &nc, int varid);
+  PetscErrorCode find_variables(NetCDF3Wrapper &nc, string name, int &varid);
+  PetscErrorCode define_variable(const NetCDF3Wrapper &nc, string name, int &varid);
+  PetscErrorCode put_att_text(const NetCDF3Wrapper &nc, int varid, string name, string text);
+  PetscErrorCode create_dimensions(const NetCDF3Wrapper &nc);
 };
 
 #endif // __PISMProf_hh
