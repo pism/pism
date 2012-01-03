@@ -87,7 +87,6 @@ protected:
   PetscErrorCode save_report(int index, const NetCDF3Wrapper &nc, int varid);
   PetscErrorCode find_variables(NetCDF3Wrapper &nc, string name, int &varid);
   PetscErrorCode define_variable(const NetCDF3Wrapper &nc, string name, int &varid);
-  PetscErrorCode put_att_text(const NetCDF3Wrapper &nc, int varid, string name, string text);
   PetscErrorCode create_dimensions(const NetCDF3Wrapper &nc);
 };
 

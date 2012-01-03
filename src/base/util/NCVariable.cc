@@ -492,10 +492,6 @@ PetscErrorCode NCVariable::write_attributes(const NetCDF3Wrapper &nc, int varid,
 					    bool write_in_glaciological_units) const {
   int ierr;
 
-  if (rank != 0) return 0;
-
-  int ncid = nc.get_ncid();
-
   ierr = nc.define_mode(); CHKERRQ(ierr);
 
   // units, valid_min, valid_max and valid_range need special treatment:
@@ -504,13 +500,12 @@ PetscErrorCode NCVariable::write_attributes(const NetCDF3Wrapper &nc, int varid,
 
     if (write_in_glaciological_units)
       output_units = get_string("glaciological_units");
-    ierr = nc_put_att_text(ncid, varid,
-			   "units",
-			   output_units.size(), output_units.c_str());
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+    ierr = nc.put_att_text(varid, "units", output_units); CHKERRQ(ierr);
   }
 
-  double bounds[2], fill_value = 0.0;
+  vector<double> bounds(2);
+  double fill_value = 0.0;
 
   if (has("_FillValue")) {
     fill_value = get("_FillValue");
@@ -532,34 +527,28 @@ PetscErrorCode NCVariable::write_attributes(const NetCDF3Wrapper &nc, int varid,
   }
 
   if (has("_FillValue")) {
-    ierr = nc_put_att_double(ncid, varid, "_FillValue", nctype, 1, &fill_value);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_double(varid, "_FillValue", nctype, fill_value); CHKERRQ(ierr);
   }
 
   if (has("valid_min") && has("valid_max")) {
-    ierr = nc_put_att_double(ncid, varid, "valid_range", nctype, 2, bounds);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_double(varid, "valid_range", nctype, bounds);
   } else if (has("valid_min")) {
-    ierr = nc_put_att_double(ncid, varid, "valid_min", nctype, 1, &bounds[0]);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_double(varid, "valid_min",   nctype, bounds[0]);
   } else if (has("valid_max")) {
-    ierr = nc_put_att_double(ncid, varid, "valid_max", nctype, 1, &bounds[1]);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_double(varid, "valid_max",   nctype, bounds[1]);
   }
+
+  CHKERRQ(ierr);
 
   // Write text attributes:
   map<string, string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
-    string name  = i->first;
-    string value = i->second;
+    string name  = i->first, value = i->second;
 
-    if (name == "units" ||
-	name == "glaciological_units" ||
-	value.empty())
+    if (name == "units" || name == "glaciological_units" || value.empty())
       continue;
 
-    ierr = nc_put_att_text(ncid, varid, name.c_str(), value.size(), value.c_str()); 
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_text(varid, name, value); CHKERRQ(ierr);
   }
 
   // Write double attributes:
@@ -575,8 +564,7 @@ PetscErrorCode NCVariable::write_attributes(const NetCDF3Wrapper &nc, int varid,
 	values.empty())
       continue;
 
-    ierr = nc_put_att_double(ncid, varid, name.c_str(), nctype, values.size(), &values[0]);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_double(varid, name, nctype, values); CHKERRQ(ierr);
   }
 
   return 0;
@@ -1070,22 +1058,15 @@ PetscErrorCode NCConfigVariable::write_attributes(const NetCDF3Wrapper &nc, int 
 						  bool /*write_in_glaciological_units*/) const {
   int ierr, ncid;
 
-  if (rank != 0) return 0;
-
-  ncid = nc.get_ncid();
-
-  ierr = nc.define_mode(); CHKERRQ(ierr); 
-
   // Write text attributes:
   map<string, string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
-    string name  = i->first;
-    string value = i->second;
+    string name  = i->first,
+      value = i->second;
 
     if (value.empty()) continue;
 
-    ierr = nc_put_att_text(ncid, varid, name.c_str(), value.size(), value.c_str()); 
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_text(varid, name, value); CHKERRQ(ierr);
   }
 
   // Write double attributes:
@@ -1096,8 +1077,7 @@ PetscErrorCode NCConfigVariable::write_attributes(const NetCDF3Wrapper &nc, int 
 
     if (values.empty()) continue;
 
-    ierr = nc_put_att_double(ncid, varid, name.c_str(), nctype, values.size(), &values[0]);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_double(varid, name, nctype, values); CHKERRQ(ierr);
   }
 
   return 0;
@@ -1592,30 +1572,22 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const NetCDF3Wrapper &nc, in
   int ierr, ncid;
   string old_history;
 
-  ierr = nc.get_att_text(NC_GLOBAL, "history", old_history);
-  CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-
-  if (rank != 0) return 0;
-
-  ncid = nc.get_ncid();
-
-  ierr = nc.define_mode(); CHKERRQ(ierr); 
+  ierr = nc.get_att_text(NC_GLOBAL, "history", old_history); CHKERRQ(ierr);
 
   // Write text attributes:
   map<string, string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
-    string name  = i->first;
-    string value = i->second;
+    string name  = i->first,
+      value = i->second;
 
     if (value.empty()) continue;
 
     if (name == "history") {
       // prepend:
       value = value + old_history;
-    }      
+    }
 
-    ierr = nc_put_att_text(ncid, NC_GLOBAL, name.c_str(), value.size(), value.c_str()); 
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_text(NC_GLOBAL, name, value); CHKERRQ(ierr);
   }
 
   // Write double attributes:
@@ -1626,8 +1598,7 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const NetCDF3Wrapper &nc, in
 
     if (values.empty()) continue;
 
-    ierr = nc_put_att_double(ncid, NC_GLOBAL, name.c_str(), NC_DOUBLE, values.size(), &values[0]);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.put_att_double(NC_GLOBAL, name, NC_DOUBLE, values); CHKERRQ(ierr);
   }
 
   return 0;
@@ -1636,7 +1607,6 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const NetCDF3Wrapper &nc, in
 //! Prepends \c message to the history string.
 void NCGlobalAttributes::prepend_history(string message) {
   strings["history"] = message + strings["history"];
-
 }
 
 

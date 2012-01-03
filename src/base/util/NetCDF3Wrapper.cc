@@ -57,20 +57,19 @@ NetCDF3Wrapper::~NetCDF3Wrapper() {
   }
 }
 
-//! Returns ncid corresponding to the current NetCDF file.
-int NetCDF3Wrapper::get_ncid() const {
-  return ncid;
-}
-
 //! Finds a NetCDF dimension by its name.
 PetscErrorCode  NetCDF3Wrapper::find_dimension(string short_name, int *dimid, bool &exists) const {
   PetscErrorCode ierr;
   int stat, found = 0, my_dimid;
+
   if (rank == 0) {
     stat = nc_inq_dimid(ncid, short_name.c_str(), &my_dimid);
     if (stat == NC_NOERR)
       found = 1;
   }
+
+  ierr = MPI_Barrier(com); CHKERRQ(ierr);
+
   ierr = MPI_Bcast(&found, 1, MPI_INT, 0, com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&my_dimid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
@@ -105,8 +104,8 @@ PetscErrorCode  NetCDF3Wrapper::find_dimension(string short_name, int *dimid, bo
   </ol>
  */
 PetscErrorCode  NetCDF3Wrapper::find_variable(string short_name, string standard_name,
-				      int *varidp, bool &exists,
-				      bool &found_by_standard_name) const {
+                                              int *varidp, bool &exists,
+                                              bool &found_by_standard_name) const {
   int ierr;
   int stat, found = 0, my_varid = -1, nvars;
   bool standard_name_match = false;
@@ -166,13 +165,13 @@ PetscErrorCode  NetCDF3Wrapper::find_variable(string short_name, string standard
 
 //! \brief Find a variable and discard the found_by_standard_name flag.
 PetscErrorCode NetCDF3Wrapper::find_variable(string short_name, string standard_name,
-				     int *varidp, bool &exists) const {
+                                             int *varidp, bool &exists) const {
   bool dummy;
   PetscErrorCode ierr = find_variable(short_name, standard_name, varidp, exists, dummy);
   CHKERRQ(ierr);
   return 0;
 }
-				     
+
 //! \brief Find a variable without specifying its standard name.
 PetscErrorCode NetCDF3Wrapper::find_variable(string short_name, int *varid, bool &exists) const {
   return find_variable(short_name, "", varid, exists);
@@ -191,7 +190,7 @@ PetscErrorCode NetCDF3Wrapper::put_dimension(int varid, const vector<double> &va
 
   if (rank != 0) return 0;
 
-  ierr = data_mode(); CHKERRQ(ierr); 
+  ierr = data_mode(); CHKERRQ(ierr);
 
   stat = nc_put_var_double(ncid, varid, &vals[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   return 0;
@@ -215,13 +214,7 @@ PetscErrorCode NetCDF3Wrapper::write_history(string history, bool overwrite) con
   }
 
   // Write it:
-  if (rank == 0) {
-    stat = define_mode(); CHKERRQ(stat); 
-    
-    stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
-			   new_history.size(), new_history.c_str());
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
+  stat = put_att_text(NC_GLOBAL, "history", new_history); CHKERRQ(stat);
 
   return 0;
 }
@@ -321,7 +314,7 @@ PetscErrorCode NetCDF3Wrapper::open_for_reading(string filename) {
 		       filename.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
-  
+
   return 0;
 }
 
@@ -331,6 +324,8 @@ PetscErrorCode NetCDF3Wrapper::close() {
   if (rank == 0) {
     ierr = nc_close(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
+  ierr = MPI_Barrier(com); CHKERRQ(ierr);
+
   ncid = -1;			// make it invalid
   def_mode = false;
   return 0;
@@ -723,6 +718,52 @@ PetscErrorCode NetCDF3Wrapper::get_att_double(const int varid, string name,
   return 0;
 }
 
+//! \brief Puts a NetCDF text attribute.
+/*!
+ * Collective; uses the value on processor zero.
+ */
+PetscErrorCode NetCDF3Wrapper::put_att_text(int varid, string name, string value) const {
+  int stat;
+
+  stat = define_mode(); CHKERRQ(stat);
+
+  if (rank == 0) {
+    stat = nc_put_att_text(ncid, varid, name.c_str(), value.size(), value.c_str());
+  }
+  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+
+  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  return 0;
+}
+
+//! \brief Puts a NetCDF double attribute.
+/*!
+ * Collective; uses the value on processor zero.
+ */
+PetscErrorCode NetCDF3Wrapper::put_att_double(int varid, string name, nc_type nctype,
+                                              vector<double> values) const {
+  int stat;
+
+  stat = define_mode(); CHKERRQ(stat);
+
+  if (rank == 0) {
+    stat = nc_put_att_double(ncid, varid, name.c_str(), nctype, values.size(), &values[0]);
+  }
+  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+
+  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  return 0;
+}
+
+PetscErrorCode NetCDF3Wrapper::put_att_double(int varid, string name, nc_type nctype, double value) const {
+  vector<double> values(1);
+  values[0] = value;
+
+  return put_att_double(varid, name, nctype, values);
+}
+
 //! Get variable's units information from a NetCDF file.
 /*! Note that this function intentionally ignores the reference date ('years
   since 1-1-1', 'years since 2000-1-1' and 'years' produce the same result).
@@ -925,8 +966,6 @@ PetscErrorCode NetCDF3Wrapper::data_mode() const {
 PetscErrorCode NetCDF3Wrapper::set_attrs(int varid, map<string,string> attrs) const {
   PetscErrorCode ierr;
 
-  if (rank != 0) return 0;
-
   ierr = define_mode(); CHKERRQ(ierr);
 
   map<string,string>::iterator j = attrs.begin();
@@ -934,8 +973,7 @@ PetscErrorCode NetCDF3Wrapper::set_attrs(int varid, map<string,string> attrs) co
     string name = j->first,
       value = j->second;
 
-    ierr = nc_put_att_text(ncid, varid, name.c_str(), value.size(), value.c_str());
-    check_err(ierr,__LINE__,__FILE__);
+    ierr = put_att_text(varid, name, value); CHKERRQ(ierr);
 
     ++j;
   }
@@ -946,15 +984,18 @@ PetscErrorCode NetCDF3Wrapper::set_attrs(int varid, map<string,string> attrs) co
 //! \brief Creates a dimension and the corresponding coordinate variable; sets
 //! string sttributes.
 PetscErrorCode NetCDF3Wrapper::create_dimension(string name, int length, map<string,string> attrs,
-                                        int &dimid, int &varid) const {
-  PetscErrorCode ierr;
-
-  if (rank != 0) return 0;
+                                                int &dimid, int &varid) const {
+  int ierr;
 
   ierr = define_mode(); CHKERRQ(ierr);
 
-  ierr = nc_def_dim(ncid, name.c_str(), length, &dimid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  ierr = nc_def_var(ncid, name.c_str(), NC_DOUBLE, 1, &dimid, &varid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  if (rank == 0) {
+    ierr = nc_def_dim(ncid, name.c_str(), length, &dimid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc_def_var(ncid, name.c_str(), NC_DOUBLE, 1, &dimid, &varid);
+  }
+  MPI_Bcast(&ierr, 1, MPI_INT, 0, com);
+
+  CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   ierr = set_attrs(varid, attrs); CHKERRQ(ierr);
 

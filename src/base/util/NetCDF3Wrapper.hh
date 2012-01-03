@@ -67,17 +67,59 @@ class NetCDF3Wrapper {
 public:
   NetCDF3Wrapper(MPI_Comm c, PetscMPIInt r);
   virtual ~NetCDF3Wrapper();
+
+  // wrappers of NetCDF C API without any extra functionality
+  virtual PetscErrorCode open(string path, int mode);
+  virtual PetscErrorCode close();
+
+  // inq_dim...
+  virtual PetscErrorCode inq_unlimdim(int &unlimdimid) const;
+  virtual PetscErrorCode inq_dimname(int dimid, string &name) const;
+  virtual PetscErrorCode inq_dimtype(string name, AxisType &result) const;
+  virtual PetscErrorCode inq_dimids(int varid, vector<int> &dimids) const;
+
+  virtual PetscErrorCode inq_dimid(string name, int *dimid) const;
+  virtual PetscErrorCode inq_varid(string name, int *varid) const;
+  virtual PetscErrorCode inq_dimlen(string name, int *len) const;
+
+  virtual PetscErrorCode inq_nvars() const;
+
+  // inq_att...
+  virtual PetscErrorCode inq_nattrs(int varid, int &N) const;
+  virtual PetscErrorCode inq_att_name(int varid, int n, string &name) const;
+  virtual PetscErrorCode inq_att_type(int varid, string name, nc_type &typep) const;
+
+  // {get,put}_att_text
+  virtual PetscErrorCode get_att_text(int varid, string name, string &result) const;
+  virtual PetscErrorCode put_att_text(int varid, string name, string value) const;
+
+  // {get,put}_att_double
+  virtual PetscErrorCode get_att_double(int varid, string name, vector<double> &result) const;
+  virtual PetscErrorCode put_att_double(int varid, string name, nc_type nctype, vector<double> values) const;
+  virtual PetscErrorCode put_att_double(int varid, string name, nc_type nctype, double value) const;
+
+  virtual PetscErrorCode put_var_double(int varid, vector<double> data) const;
+  virtual PetscErrorCode put_var1_double(
+
+  // nc_redef, nc_enddef
+  virtual PetscErrorCode define_mode() const;
+  virtual PetscErrorCode data_mode() const;
+
+  // other methods; these should *never* use NetCDF C API directly
   virtual PetscErrorCode open_for_reading(string filename);
   virtual PetscErrorCode open_for_writing(string filename);
   virtual PetscErrorCode move_if_exists(string filename);
-  virtual PetscErrorCode close();
 
   virtual PetscErrorCode find_variable(string short_name, string standard_name,
-			       int *varid, bool &exists, bool &found_by_standard_name) const;
+                                       int *varid, bool &exists, bool &found_by_standard_name) const;
+
   virtual PetscErrorCode find_variable(string short_name, string standard_name,
-			       int *varid, bool &exists) const;
+                                       int *varid, bool &exists) const;
+
   virtual PetscErrorCode find_variable(string short_name, int *varid, bool &exists) const;
+
   virtual PetscErrorCode find_dimension(string short_name, int *dimid, bool &exists) const;
+
   virtual PetscErrorCode append_time(string name, PetscReal time) const;
   virtual PetscErrorCode append_time_bounds(string name, PetscReal t0, PetscReal t1) const;
   virtual PetscErrorCode write_history(string history, bool overwrite = false) const;
@@ -89,15 +131,6 @@ public:
   virtual PetscErrorCode get_dimension(string name, vector<double> &result) const;
   virtual PetscErrorCode put_dimension(int varid, const vector<double> &vals) const;
 
-  virtual PetscErrorCode inq_unlimdim(int &unlimdimid) const;
-  virtual PetscErrorCode inq_dimname(int dimid, string &name) const;
-  virtual PetscErrorCode inq_dimtype(string name, AxisType &result) const;
-  virtual PetscErrorCode inq_dimids(int varid, vector<int> &dimids) const;
-  virtual PetscErrorCode inq_nattrs(int varid, int &N) const;
-  virtual PetscErrorCode inq_att_name(int varid, int n, string &name) const;
-  virtual PetscErrorCode inq_att_type(int varid, string name, nc_type &typep) const;
-  virtual PetscErrorCode get_att_text(int varid, string name, string &result) const;
-  virtual PetscErrorCode get_att_double(int varid, string name, vector<double> &result) const;
   virtual PetscErrorCode get_units(int varid, bool &has_units, utUnit &units) const;
   virtual PetscErrorCode get_nrecords(int &nrecords) const;
   virtual PetscErrorCode get_nrecords(string short_name, string std_name,
@@ -105,10 +138,6 @@ public:
   virtual PetscErrorCode set_attrs(int varid, map<string,string> attrs) const;
   virtual PetscErrorCode create_dimension(string name, int length, map<string,string> attrs,
                                           int &dimid, int &varid) const;
-
-  virtual int get_ncid() const;
-  virtual PetscErrorCode define_mode() const;
-  virtual PetscErrorCode data_mode() const;
 protected:
   int ncid;
   MPI_Comm com;

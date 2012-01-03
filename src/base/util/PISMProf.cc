@@ -174,9 +174,9 @@ PetscErrorCode PISMProf::save_report(string filename) {
       parent = events[parent_index].name;
     string descr = events[j].description;
 
-    ierr = put_att_text(nc, varid, "units", events[j].units); CHKERRQ(ierr); 
-    ierr = put_att_text(nc, varid, "parent", parent); CHKERRQ(ierr); 
-    ierr = put_att_text(nc, varid, "long_name", descr); CHKERRQ(ierr);
+    ierr = nc.put_att_text(varid, "units", events[j].units); CHKERRQ(ierr); 
+    ierr = nc.put_att_text(varid, "parent", parent); CHKERRQ(ierr); 
+    ierr = nc.put_att_text(varid, "long_name", descr); CHKERRQ(ierr);
   }
 
   ierr = nc.close();
@@ -239,24 +239,8 @@ PetscErrorCode PISMProf::define_variable(const NetCDF3Wrapper &nc, string name, 
 
   ierr = nc_inq_dimid(nc.get_ncid(), "y", &dimids[0]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   ierr = nc_inq_dimid(nc.get_ncid(), "x", &dimids[1]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  
+
   ierr = nc_def_var(nc.get_ncid(), name.c_str(), NC_DOUBLE, 2, dimids, &varid);
-  CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-
-  return 0;
-}
-
-//! Put a text attribute.
-PetscErrorCode PISMProf::put_att_text(const NetCDF3Wrapper &nc, int varid,
-				      string name, string text) {
-  PetscErrorCode ierr;
-
-  if (rank != 0) return 0;
-
-  ierr = nc.define_mode(); CHKERRQ(ierr); 
-
-  ierr = nc_put_att_text(nc.get_ncid(), varid,
-                         name.c_str(), text.size(), text.c_str());
   CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   return 0;

@@ -707,9 +707,7 @@ PetscErrorCode PISMIO::create_dimensions() const {
   int ierr, dimid, varid;
   map<string,string> attrs;
 
-  if (grid == NULL) SETERRQ(com, 1, "PISMIO::create_dimensions(...): grid == NULL");
-  
-  if (grid->rank != 0) return 0;
+  if (grid == NULL) SETERRQ(com, 1, "grid == NULL");
 
   // define dimensions and coordinate variables:
 
@@ -718,6 +716,7 @@ PetscErrorCode PISMIO::create_dimensions() const {
   attrs["calendar"]  = grid->config.get_string("calendar");
   attrs["units"]     = grid->time->units();
   attrs["axis"]      = "T";
+
   ierr = create_dimension(grid->config.get_string("time_dimension_name"),
                           NC_UNLIMITED, attrs, dimid, varid); CHKERRQ(ierr);
 
