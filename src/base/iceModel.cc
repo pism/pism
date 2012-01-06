@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -523,19 +523,21 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
       maxdt_temporary = extras_dt;
   }
 
-  grid.profiler->begin(event_beddef);
-
   //! \li compute the bed deformation, which only depends on current thickness
   //! and bed elevation
   if (beddef) {
-    bool bed_changed;
-    ierr = bed_def_step(bed_changed); CHKERRQ(ierr);
-    if (bed_changed) {
+    grid.profiler->begin(event_beddef);
+    int topg_state_counter = vbed.get_state_counter();
+
+    ierr = beddef->update(grid.year, convert(dt, "seconds", "years")); CHKERRQ(ierr);
+
+    if (vbed.get_state_counter() != topg_state_counter) {
       stdout_flags += "b";
-    } else stdout_flags += "$";
-  } else stdout_flags += " ";
-  
-  grid.profiler->end(event_beddef);
+      ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+    } else
+      stdout_flags += " ";
+    grid.profiler->end(event_beddef);
+  }
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (basal_yield_stress) {
