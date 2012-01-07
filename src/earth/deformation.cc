@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011 Ed Bueler
+// Copyright (C) 2004-2009, 2011, 2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -247,10 +247,21 @@ PetscErrorCode BedDeformLC::uplift_init() {
     }
   }
 
+  PetscScalar av = 0.0;
+  for (PetscInt i=0; i < Nx; i++) {
+    av += pla[i][0];
+  }
+  for (PetscInt j=0; j < Ny; j++) {
+    av += pla[0][j];
+  }
+  av = av / ((PetscScalar) (Nx + Ny));
+
   ierr = VecRestoreArray2d(*uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
   ierr = VecRestoreArray2d(plateoffset, Nx, Ny, 0, 0, &pla); CHKERRQ(ierr);
   ierr = VecRestoreArray2d(vleft, Nx, Ny, 0, 0, &lft); CHKERRQ(ierr);
   ierr = VecRestoreArray2d(vright, Nx, Ny, 0, 0, &rgt); CHKERRQ(ierr);
+
+  ierr = VecShift(plateoffset, -av); CHKERRQ(ierr);
 
   ierr = VecCopy(plateoffset,platefat); CHKERRQ(ierr);
 #endif

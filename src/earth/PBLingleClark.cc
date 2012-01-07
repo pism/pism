@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -256,9 +256,13 @@ PetscErrorCode PBLingleClark::update(PetscReal t_years, PetscReal dt_years) {
   t  = t_years;
   dt = dt_years;
 
+  PetscReal t_final = t + dt;
+
   // Check if it's time to update:
-  PetscScalar dt_beddef = t_years - t_beddef_last;
-  if (dt_beddef < config.get("bed_def_interval_years"))
+  PetscScalar dt_beddef = t_final - t_beddef_last;
+  if ((dt_beddef < config.get("bed_def_interval_years") &&
+       t_final < grid.end_year) ||
+      dt_beddef < 1e-12)
     return 0;
 
   t_beddef_last = t_years;
@@ -267,7 +271,7 @@ PetscErrorCode PBLingleClark::update(PetscReal t_years, PetscReal dt_years) {
   ierr = transfer_to_proc0(topg, bedp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {  // only processor zero does the step
-    ierr = bdLC.step(dt_beddef, t_years - grid.start_year); CHKERRQ(ierr);
+    ierr = bdLC.step(dt_beddef, t_final - grid.start_year); CHKERRQ(ierr);
   }
 
   ierr = transfer_from_proc0(bedp0, topg); CHKERRQ(ierr);
@@ -275,6 +279,9 @@ PetscErrorCode PBLingleClark::update(PetscReal t_years, PetscReal dt_years) {
   //! Finally, we need to update bed uplift and topg_last.
   ierr = compute_uplift(dt_beddef); CHKERRQ(ierr);
   ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
+
+  //! Increment the topg state counter. SIAFD relies on this!
+  topg->inc_state_counter();
 
   return 0;
 }
