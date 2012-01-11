@@ -404,7 +404,7 @@ PetscErrorCode NCVariable::read_valid_range(const PIO &nc) {
   // a) they are absent :-) b) they are invalid c) they are not compatible with
   // internal units.
   ierr = nc.get_att_text(short_name, "units", input_units_string); CHKERRQ(ierr);
-  if (input_units_string != "") {
+  if (input_units_string.empty() == false) {
     ierr = utScan(input_units_string.c_str(), &input_units);
     if (ierr != 0)
       utCopy(&units, &input_units);
@@ -686,7 +686,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
 
   // z
   dimname = dimensions["z"];
-  if (dimname != "") {
+  if (dimname.empty() == false) {
     ierr = nc.inq_dim(dimname, exists); CHKERRQ(ierr);
     if (!exists) {
       ierr = nc.def_dim(dimname, nlevels, z_attrs); CHKERRQ(ierr); 
@@ -735,7 +735,7 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, nc_type nctype,
     dims.push_back(x);
   }
 
-  if (z != "") {
+  if (z.empty() == false) {
     dims.push_back(z);
   }
 
@@ -1315,7 +1315,7 @@ PetscErrorCode NCTimeseries::get_bounds_name(string filename, string &result) {
   if (exists) {
     ierr = nc.get_att_text(short_name, "bounds", result); CHKERRQ(ierr);
   } else {
-    result = "";
+    result.clear();
   }
   ierr = nc.close(); CHKERRQ(ierr);
 

@@ -94,7 +94,7 @@ int PISMNCFile::close() {
   MPI_Bcast(&ncid, 1, MPI_INT, 0, com);
   MPI_Bcast(&stat, 1, MPI_INT, 0, com);
 
-  filename = "";
+  filename.clear();
 
   return stat;
 }
@@ -626,7 +626,7 @@ int PISMNCFile::get_att_text(string variable_name, string att_name, string &resu
 
   // Allocate some memory or set result to NULL and return:
   if (len == 0) {
-    result = "";
+    result.clear();
     return 0;
   }
   str = new char[len + 1];

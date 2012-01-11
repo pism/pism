@@ -85,6 +85,8 @@ PetscErrorCode PIO::open(string filename, int mode, bool append) {
       PISMEnd();
     }
 
+    int old_fill;
+    ierr = nc->set_fill(NC_NOFILL, old_fill); CHKERRQ(ierr);
   } else {
 
     ierr = nc->open(filename, mode);
@@ -98,6 +100,8 @@ PetscErrorCode PIO::open(string filename, int mode, bool append) {
       }
     }
 
+    int old_fill;
+    ierr = nc->set_fill(NC_NOFILL, old_fill); CHKERRQ(ierr);
 
   }
 
@@ -187,7 +191,7 @@ PetscErrorCode PIO::inq_var(string short_name, string std_name, bool &exists,
 
   exists = false;
 
-  if (std_name != "") {
+  if (std_name.empty() == false) {
     int nvars;
 
     ierr = nc->inq_nvars(nvars); CHKERRQ(ierr);
@@ -217,7 +221,7 @@ PetscErrorCode PIO::inq_var(string short_name, string std_name, bool &exists,
       }
 
     } // end of the for loop
-  } // end of if (std_name != "")
+  } // end of if (std_name.empty() == false)
 
   if (exists == false) {
     ierr = nc->inq_varid(short_name, exists); CHKERRQ(ierr);
@@ -225,7 +229,7 @@ PetscErrorCode PIO::inq_var(string short_name, string std_name, bool &exists,
     if (exists == true)
       result = short_name;
     else
-      result = "";
+      result.clear();
 
     found_by_standard_name = false;
   }
@@ -280,9 +284,8 @@ PetscErrorCode PIO::inq_dimlen(string name, unsigned int &result) const {
  */
 PetscErrorCode PIO::inq_dimtype(string name, AxisType &result) const {
   PetscErrorCode ierr;
-  double slope, intercept;
   string axis, standard_name, units;
-  utUnit tmp_units, ut_units;
+  utUnit ut_units;
   bool exists;
 
   ierr = nc->inq_varid(name, exists); CHKERRQ(ierr);
@@ -296,9 +299,6 @@ PetscErrorCode PIO::inq_dimtype(string name, AxisType &result) const {
   ierr = nc->get_att_text(name, "standard_name", standard_name); CHKERRQ(ierr);
   ierr = nc->get_att_text(name, "units", units); CHKERRQ(ierr);
 
-  // check the units attribute:
-  bool has_time_units = false;
-
   // check if it has units compatible with "seconds":
   ierr = utScan(units.c_str(), &ut_units);
   if (ierr != 0) {
@@ -307,11 +307,7 @@ PetscErrorCode PIO::inq_dimtype(string name, AxisType &result) const {
     PISMEnd();
   }
 
-  utScan("seconds", &tmp_units);
-  ierr = utConvert(&ut_units, &tmp_units, &slope, &intercept);
-  if (ierr == 0) has_time_units = true;
-
-  if (has_time_units) {
+  if (utIsTime(&ut_units) == 1) {
     result = T_AXIS;
     return 0;
   }

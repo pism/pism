@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -489,7 +489,7 @@ PetscErrorCode PISMOptionsString(string option, string text,
   if (is_set) {
     if (strlen(tmp) == 0) {
       if (allow_empty_arg)
-        result = "";
+        result.clear();
       else {
         ierr = PetscPrintf(PETSC_COMM_WORLD,
                            "ERROR: command line option '%s' requires an argument.\n",

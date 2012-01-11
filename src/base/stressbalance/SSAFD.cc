@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2012 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -642,7 +642,7 @@ PetscErrorCode SSAFD::solve() {
   PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
-  stdout_ssa = "";
+  stdout_ssa.clear();
 
   PetscReal ssaRelativeTolerance = config.get("ssafd_relative_convergence"),
             epsilon              = config.get("epsilon_ssafd");
@@ -743,7 +743,7 @@ PetscErrorCode SSAFD::solve() {
       if (getVerbosityLevel() > 2) { // assume that high verbosity shows interest
                                      //   in immediate feedback about SSA iterations
         ierr = verbPrintf(2,grid.com, stdout_ssa.c_str()); CHKERRQ(ierr);
-        stdout_ssa = "";
+        stdout_ssa.clear();
       }
 
       outer_iterations = k + 1;
