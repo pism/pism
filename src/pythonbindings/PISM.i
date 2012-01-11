@@ -1,4 +1,4 @@
-// Copyright (C) 2011 David Maxwell
+// Copyright (C) 2011, 2012 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 // draws in all the other needed includes as well. See the end of this file for the list
 // of PISM headers being wrapped.
 
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "Timeseries.hh"
 #include "exactTestsIJ.h"
 #include "stressbalance/SSAFEM.hh"
@@ -430,8 +430,7 @@ typedef int NormType; // YUCK.
 %include "Timeseries.hh"
 %include "iceModelVec.hh"
 %include "PISMVars.hh"
-%include "NetCDF3Wrapper.hh"
-%include "PISMIO.hh"
+%include "PIO.hh"
 %include "PISMDiagnostic.hh"
 %include "PISMComponent.hh"
 %include "basal_resistance.hh"

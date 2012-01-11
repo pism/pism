@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -108,7 +108,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype);  
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, nc_type nctype);  
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 
   virtual PetscErrorCode max_timestep(PetscReal /*my_t*/, PetscReal &my_dt, bool &restrict);

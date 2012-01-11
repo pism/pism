@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include "Timeseries.hh"
 #include "SSA.hh"
 #include "PISMStressBalance.hh"
-#include "NetCDF3Wrapper.hh"
+#include "PIO.hh"
 #include "pism_options.hh"
 
 const PetscScalar 
@@ -170,8 +170,8 @@ PetscErrorCode IcePSTexModel::prepare_series() {
   ierr = verbPrintf(2,grid.com, 
     "  will write time series with special PST information to %s ...\n",
     seriesname); CHKERRQ(ierr);
-  NetCDF3Wrapper nc(grid.com, grid.rank);
-  ierr = nc.open_for_writing(seriesname); CHKERRQ(ierr);
+  PIO nc(grid.com, grid.rank, "netcdf3");
+  ierr = nc.open(seriesname, NC_WRITE); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // set-up each scalar time series
@@ -352,21 +352,21 @@ PetscErrorCode IcePSTexModel::allocate_stressbalance() {
   return 0;
 }
 
-PetscErrorCode IcePSTexModel::initFromFile(const char *fname) {
+PetscErrorCode IcePSTexModel::initFromFile(string fname) {
   PetscErrorCode      ierr;
 
   ierr = IceEISModel::initFromFile(fname); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, 
-    "starting PST (Plastic till Stream w Thermocoupling) experiment %s from file  %s ...\n",
-    exper_chosen_name, fname); CHKERRQ(ierr);
+                    "starting PST (Plastic till Stream w Thermocoupling) experiment %s from file  %s ...\n",
+                    exper_chosen_name, fname.c_str()); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com,
-    "  values of mask and phi = (till friction angle) in file will be ignored ...\n");
-    CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "  values of mask and phi = (till friction angle) in file will be ignored ...\n");
+  CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, 
-    "  bed topography from file is kept ...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "  bed topography from file is kept ...\n"); CHKERRQ(ierr);
 
   return 0;
 }

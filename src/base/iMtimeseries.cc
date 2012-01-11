@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Constantine Khroulev
+// Copyright (C) 2009-2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #include <algorithm>
 
 #include "iceModel.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMStressBalance.hh"
 #include "PISMDiagnostic.hh"
 #include "PISMTime.hh"
@@ -104,11 +104,11 @@ PetscErrorCode IceModel::init_timeseries() {
   }
 
 
-  PISMIO nc(&grid);
-  ierr = nc.open_for_writing(ts_filename.c_str(), (append==PETSC_TRUE), false); CHKERRQ(ierr);
+  PIO nc(grid.com, grid.rank, "netcdf3");
+  ierr = nc.open(ts_filename, NC_WRITE, append); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write_metadata(ts_filename.c_str(), false); CHKERRQ(ierr);
+  ierr = write_metadata(ts_filename, false); CHKERRQ(ierr);
 
   // set the output file:
   map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
@@ -296,7 +296,7 @@ PetscErrorCode IceModel::init_extras() {
 //! Write spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::write_extras() {
   PetscErrorCode ierr;
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, "netcdf3");
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
 				 // value is never used, because saving_after
 				 // is only used if save_now == true, and in
@@ -367,7 +367,10 @@ PetscErrorCode IceModel::write_extras() {
     ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
 
     // Prepare the file:
-    ierr = nc.open_for_writing(filename, (append==PETSC_TRUE), true); CHKERRQ(ierr); // check_dims == true
+    ierr = nc.open(filename, NC_WRITE, append); CHKERRQ(ierr);
+    ierr = nc.def_time(config.get_string("time_dimension_name"),
+                       config.get_string("calendar"),
+                       grid.time->units()); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = write_metadata(filename); CHKERRQ(ierr); 
@@ -375,15 +378,14 @@ PetscErrorCode IceModel::write_extras() {
     extra_file_is_ready = true;
   }
 
-  ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
-  // append == true, check_dims == true
+  ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"),
                         grid.time->current()); CHKERRQ(ierr);
-  ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
+  ierr = nc.append_history(tmp); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write_variables(filename, extra_vars, NC_FLOAT);  CHKERRQ(ierr);
-    
+
   return 0;
 }
 

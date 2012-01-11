@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include "iceModelVec2T.hh"
 #include "PISMTime.hh"
-#include "NetCDF3Wrapper.hh"
+#include "PIO.hh"
 #include "pism_options.hh"
 
 template <class Model, class Input>
@@ -96,7 +96,7 @@ public:
     }
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype)
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, nc_type nctype)
   {
     PetscErrorCode ierr;
 
@@ -197,10 +197,10 @@ protected:
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size"),
       temp_n_records = 1, mass_flux_n_records = 1;
 
-    NetCDF3Wrapper nc(Model::grid.com, Model::grid.rank);
-    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-    ierr = nc.get_nrecords(temp_name, temp_std_name, temp_n_records); CHKERRQ(ierr);
-    ierr = nc.get_nrecords(mass_flux_name,  mass_flux_std_name,  mass_flux_n_records);  CHKERRQ(ierr);
+    PIO nc(Model::grid.com, Model::grid.rank, "netcdf3");
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_nrecords(temp_name, temp_std_name, temp_n_records); CHKERRQ(ierr);
+    ierr = nc.inq_nrecords(mass_flux_name,  mass_flux_std_name,  mass_flux_n_records);  CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
     temp_n_records = PetscMin(temp_n_records, buffer_size);

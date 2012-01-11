@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2011 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2012 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include "pism_const.hh"
 #include "iceModelVec.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
@@ -486,11 +486,11 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* &lic) {
   PetscErrorCode ierr;
 
-  PISMIO nc(grid);
+  PIO nc(grid->com, grid->rank, "netcdf3");
   vector<double> zlevs, zblevs;
   grid_info gi;
-  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_grid_info(vars[0].short_name, gi);
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_grid_info(vars[0].short_name, gi);
 
   if (ierr == 1) {              // no such variable
     lic = NULL;
@@ -606,13 +606,12 @@ PetscErrorCode IceModelVec::read(string filename, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using \c nc.
-PetscErrorCode IceModelVec::define(const NetCDF3Wrapper &nc, nc_type output_datatype) {
+PetscErrorCode IceModelVec::define(const PIO &nc, nc_type output_datatype) {
   PetscErrorCode ierr;
-  int dummy;
 
   for (int j = 0; j < dof; ++j) {
     vars[j].time_independent = time_independent;
-    ierr = vars[j].define(nc, dummy, output_datatype, write_in_glaciological_units); CHKERRQ(ierr);
+    ierr = vars[j].define(nc, output_datatype, write_in_glaciological_units); CHKERRQ(ierr);
   }
 
   return 0;
@@ -681,10 +680,13 @@ PetscErrorCode IceModelVec::write(string filename, nc_type nctype) {
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 PetscErrorCode IceModelVec::dump(const char filename[]) {
   PetscErrorCode ierr;
-  PISMIO nc(grid);
+  PIO nc(grid->com, grid->rank, "netcdf3");
 
   // append = false, check_dimensions = true
-  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.def_time(grid->config.get_string("time_dimension_name"),
+                     grid->config.get_string("calendar"),
+                     grid->time->units()); CHKERRQ(ierr);
   ierr = nc.append_time(grid->config.get_string("time_dimension_name"),
                         grid->time->current()); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);

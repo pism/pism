@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Constantine Khroulev
+// Copyright (C) 2009--2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,8 +40,8 @@ public:
 				PetscScalar default_value, Vec v);
   virtual PetscErrorCode to_glaciological_units(Vec v);
 
-  PetscErrorCode define(const NetCDF3Wrapper &nc, int &varid, nc_type nctype,
-                        bool write_in_glaciological_units) const;
+  PetscErrorCode define(const PIO &nc, nc_type nctype,
+                        bool write_in_glaciological_units);
 
   mutable map<string,string> dimensions,
     x_attrs, y_attrs, z_attrs;
@@ -55,7 +55,7 @@ protected:
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
   PetscErrorCode check_range(Vec v);
-  PetscErrorCode define_dimensions(const NetCDF3Wrapper &nc) const;
+  PetscErrorCode define_dimensions(const PIO &nc);
 };
 
 #endif	// __NCSpatialVariable

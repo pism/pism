@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2012 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSATestCase.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
@@ -252,8 +252,11 @@ PetscErrorCode SSATestCase::write(const string &filename)
   PetscErrorCode ierr;
 
   // Write results to an output file:
-  PISMIO pio(&grid);
-  ierr = pio.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  PIO pio(grid.com, grid.rank, "netcdf3");
+  ierr = pio.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = pio.def_time(config.get_string("time_dimension_name"),
+                      config.get_string("calendar"),
+                      grid.time->units()); CHKERRQ(ierr);
   ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
   ierr = pio.close(); CHKERRQ(ierr);
 

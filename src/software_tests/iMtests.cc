@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,10 +20,11 @@
 #include <petscdmda.h>
 #include "iMtests.hh"
 #include "iceModelVec2T.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMProf.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include "PISMTime.hh"
 
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {
@@ -160,7 +161,7 @@ PetscErrorCode IceUnitModel::run() {
 }
 
 //! Write output files.
-PetscErrorCode IceUnitModel::writeFiles(const char*) {
+PetscErrorCode IceUnitModel::writeFiles(string) {
   // We don't write anything by default.
   return 0;
 }
@@ -227,21 +228,24 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
 
 PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   PetscErrorCode ierr;
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, "netcdf3");
   IceModelVec2T v;
   char filename[] = "test_IceModelVec2T.nc";
 
   // create a file to regrid from (that will have grid parameters compatible
   // with the current grid):
-  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  // append == false, check_dims == true
+  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
-  
+
   double t = 0, t_max = 50, my_dt = 0.35;
   while (t < t_max) {
-    ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
+    ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
+    ierr = nc.def_time(config.get_string("time_dimension_name"),
+                       config.get_string("calendar"),
+                       grid.time->units()); CHKERRQ(ierr);
     ierr = nc.append_time(config.get_string("time_dimension_name"), t); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
@@ -297,12 +301,16 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 
   T = T + max_dt / 2.0;
 
-  ierr = nc.open_for_writing(output, false, true); CHKERRQ(ierr);
+  ierr = nc.open(output, NC_WRITE); CHKERRQ(ierr);
   // append == false, check_dims == true
+  ierr = nc.close(); CHKERRQ(ierr);
+
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = nc.def_time(config.get_string("time_dimension_name"),
+                     config.get_string("calendar"),
+                     grid.time->units()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), T); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = v.update(T, 0); CHKERRQ(ierr);
   ierr = v.interp(T); CHKERRQ(ierr);
@@ -328,7 +336,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   PetscErrorCode ierr;
 
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, "netcdf3");
   IceModelVec2V velocity;
 
   ierr = velocity.create(grid, "bar", true); CHKERRQ(ierr);
@@ -363,12 +371,15 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   char filename[] = "test_IceModelVec2V.nc";
   // create a file to regrid from (that will have grid parameters compatible
   // with the current grid):
-  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  // append == false, check_dims == true
-  ierr = mapping.write(filename); CHKERRQ(ierr);
-  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.def_time(config.get_string("time_dimension_name"),
+                     config.get_string("calendar"),
+                     grid.time->units()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = mapping.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(filename); CHKERRQ(ierr);
 
   ierr = velocity.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 

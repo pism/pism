@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -138,11 +138,12 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 
   // build and put string into global attribute "history"
   char str[TEMPORARY_STRING_LENGTH];
+  PetscMemzero(str, TEMPORARY_STRING_LENGTH);
   snprintf(str, sizeof(str), 
     "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour, PETSc MFlops = %.2f.",
     wall_clock_hours, proc_hours, mypph, flops * 1.0e-6);
   ierr = stampHistory(str); CHKERRQ(ierr);
-  
+
   return 0;
 }
 

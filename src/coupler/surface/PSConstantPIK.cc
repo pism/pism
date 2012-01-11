@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 PISM Authors
+// Copyright (C) 2008-2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PSConstantPIK.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
@@ -126,7 +126,7 @@ void PSConstantPIK::add_vars_to_output(string /*keyword*/, set<string> &result) 
   // does not call atmosphere->add_vars_to_output().
 }
 
-PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype) {
+PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);

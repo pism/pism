@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -47,7 +47,7 @@ public:
   // provide default re-implementations of these parent's methods:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
-  virtual PetscErrorCode define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
 protected:

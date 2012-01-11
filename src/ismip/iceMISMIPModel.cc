@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,10 +31,10 @@
 PetscErrorCode MISMIPBasalResistanceLaw::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
   if (m_MISMIP == 1.0) {
-    ierr = verbPrintf(verbthresh, com, 
+    ierr = verbPrintf(verbthresh, com,
       "Using MISMIP sliding w  tau_b = - C u,  C=%5.4e.\n", C_MISMIP); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(verbthresh, com, 
+    ierr = verbPrintf(verbthresh, com,
       "Using MISMIP sliding w  tau_b = - C (|u|^2 + eps^2)^{(m-1)/2} u,\n"
       "   m=%5.4f, C=%5.4e, and eps = %5.4f m/a.\n",
       m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
@@ -54,7 +54,7 @@ PetscScalar MISMIPBasalResistanceLaw::drag(PetscScalar /*tauc*/,
   }
 }
 
-IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides) : 
+IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides) :
   IceModel(g, conf, conf_overrides) {
 
   // following flag must be here in constructor because IceModel::createVecs()
@@ -63,7 +63,7 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVaria
   // non-polythermal methods; can be overridden by the command-line option -no_cold:
   config.set_flag("do_cold_ice_methods", true);
 
-  config.set("default_till_phi", 0); 
+  config.set("default_till_phi", 0);
 
   // some are the defaults, while some are merely in a valid range;
   //   see IceMISMIPModel::setFromOptions() for decent values
@@ -123,7 +123,7 @@ PetscErrorCode IceMISMIPModel::set_grid_from_options() {
   grid.Lx = L;
   grid.Ly = 1000.0;
   grid.periodicity = Y_PERIODIC;
-  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr); 
+  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   const PetscScalar   Ly_desired = (grid.dx * grid.My) / 2.0;
   grid.Ly = Ly_desired;
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
@@ -137,7 +137,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 
   // from Table 5
   const PetscScalar timeexper3a[14] = {0.0, // zero position not used
-                        3.0e4, 1.5e4, 1.5e4, 
+                        3.0e4, 1.5e4, 1.5e4,
                         1.5e4, 1.5e4, 3.0e4,
                         3.0e4, 1.5e4, 1.5e4,
                         3.0e4, 3.0e4, 3.0e4,
@@ -153,7 +153,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   // read major option    -mismip [1a|1b|2a|2b|3a|3b]
   char Ee[PETSC_MAX_PATH_LEN];
   strcpy(Ee,"");
-  ierr = PetscOptionsGetString(PETSC_NULL, "-mismip", Ee, PETSC_MAX_PATH_LEN, PETSC_NULL); 
+  ierr = PetscOptionsGetString(PETSC_NULL, "-mismip", Ee, PETSC_MAX_PATH_LEN, PETSC_NULL);
             CHKERRQ(ierr);
   if (strlen(Ee) != 2) {
     ierr = PetscPrintf(grid.com,
@@ -269,20 +269,20 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
 
   // determine gridmode from Mx
-  if (grid.Mx == 151) 
+  if (grid.Mx == 151)
     gridmode = 1;
-  else if (grid.Mx == 1501) 
+  else if (grid.Mx == 1501)
     gridmode = 2;
   else
     gridmode = 3;
 
   // models 1 vs 2
   if (modelnum == 1) {
-    config.set_flag("do_sia", false); 
+    config.set_flag("do_sia", false);
   } else if (modelnum == 2) {
     config.set_flag("do_sia", true);
   } else {
-    SETERRQ(grid.com, 98, "how did I get here?");    
+    SETERRQ(grid.com, 98, "how did I get here?");
   }
 
   // see Table 3
@@ -296,7 +296,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     SETERRQ(grid.com, 99, "how did I get here?");
   }
   regularize_MISMIP = 0.01 / secpera;
-  
+
   return 0;
 }
 
@@ -304,7 +304,7 @@ PetscErrorCode IceMISMIPModel::grid_setup() {
   PetscErrorCode ierr = IceModel::grid_setup(); CHKERRQ(ierr);
 
   ierr =  set_time_from_options(); CHKERRQ(ierr);
-  
+
   return 0;
 }
 
@@ -408,7 +408,7 @@ PetscErrorCode IceMISMIPModel::allocate_flowlaw() {
                       "         Details on your chosen ice follow\n"); CHKERRQ(ierr);
     // ierr = ice->printInfo(2);CHKERRQ(ierr);
   }
-  
+
   return 0;
 }
 
@@ -431,32 +431,32 @@ PetscErrorCode IceMISMIPModel::allocate_stressbalance() {
   const PetscReal
     MIN_THICKNESS = 5.0,                       // meters
     DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-    DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3),  // typical strain rate is 100 m/yr per 
+    DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3),  // typical strain rate is 100 m/yr per
     DEFAULT_nuH = MIN_THICKNESS * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
                        / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
   // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
   //          30 MPa yr for \bar\nu
   ssa->strength_extension->set_min_thickness(MIN_THICKNESS); // m
   ssa->strength_extension->set_notional_strength(DEFAULT_nuH);
-  
+
   return 0;
 }
 
 
-PetscErrorCode IceMISMIPModel::initFromFile(const char *fname) {
+PetscErrorCode IceMISMIPModel::initFromFile(string fname) {
   PetscErrorCode ierr;
 
   ierr = IceModel::initFromFile(fname); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, 
-    "starting MISMIP experiment from file  %s:\n"
-    "  model %d, experiment %d%c, grid mode %d, step %d", 
-    fname,modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "starting MISMIP experiment from file  %s:\n"
+                    "  model %d, experiment %d%c, grid mode %d, step %d",
+                    fname.c_str(), modelnum, exper, sliding, gridmode, stepindex); CHKERRQ(ierr);
   CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
   if (cgi) {
-    ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",cgi->softnessParameter_from_temp(273.15)); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, " (A=%5.4e)\n", cgi->softnessParameter_from_temp(273.15)); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2,grid.com," (WARNING: SOFTNESS A UNKNOWN!)\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, " (WARNING: SOFTNESS A UNKNOWN!)\n"); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -474,8 +474,8 @@ PetscErrorCode IceMISMIPModel::createVecs() {
 PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(2,grid.com, 
-      "initializing MISMIP model %d, experiment %d%c, grid mode %d, step %d", 
+  ierr = verbPrintf(2,grid.com,
+      "initializing MISMIP model %d, experiment %d%c, grid mode %d, step %d",
       modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
   CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
   if (cgi) {
@@ -523,7 +523,7 @@ PetscErrorCode IceMISMIPModel::init_couplers() {
   } else {
     SETERRQ(grid.com, 2,"PISM ERROR: ocean == PETSC_NULL");
   }
-  
+
   return 0;
 }
 
@@ -556,7 +556,7 @@ PetscErrorCode IceMISMIPModel::misc_setup() {
        "  and files %s_ss, %s_f at end of run if\n"
        "  steady state achieved.\n",
        mprefix,oname,mprefix,mprefix); CHKERRQ(ierr);
-  
+
   // create ABC1_..._t file for every 50 year results
   strcpy(tfilename,mprefix);
   strcat(tfilename,"_t");
@@ -577,7 +577,7 @@ PetscErrorCode IceMISMIPModel::setBed() {
   ierr = vbed.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-    
+
       const PetscScalar ifrom0 =
                static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
       const PetscScalar x = grid.dx * ifrom0;
@@ -613,7 +613,7 @@ PetscErrorCode IceMISMIPModel::init_ocean_kill() {
   ierr = ocean_kill_mask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-    
+
       const PetscScalar ifrom0 =
                static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
       const PetscScalar x = grid.dx * ifrom0;
@@ -654,7 +654,7 @@ PetscErrorCode IceMISMIPModel::calving() {
       if (mask.ocean(i,j)) {
         if (vH(i,j) < calving_thk_min) {
           vH(i,j) = 0.0;
-        } else if ( (vH(i,j) == 0.0) && 
+        } else if ( (vH(i,j) == 0.0) &&
                     ((vH(i-1,j) > calving_thk_max) || (vH(i+1,j) > calving_thk_max)) ) {
           vH(i,j) = (calving_thk_min + calving_thk_max) / 2.0;
         }
@@ -703,28 +703,28 @@ PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
   // report on why we stopped, both stdout and stamp in output NetCDF file
   char str[TEMPORARY_STRING_LENGTH];
   if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {
-    snprintf(str, sizeof(str), 
+    snprintf(str, sizeof(str),
        "MISMIP steady state thickness criterion (max|dHdt| < %.2e m/yr) satisfied.\n",
        dHdtnorm_atol);
     ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
-    stampHistory(str); 
+    stampHistory(str);
   }
   if (PetscAbs(mstats.dxgdt) * secpera < dxgdt_atol) {
-    snprintf(str, sizeof(str), 
+    snprintf(str, sizeof(str),
        "MISMIP steady state grounding line movement criterion (|dxgdt| < %.2e m/yr) satisfied.\n",
        dxgdt_atol);
     ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
-    stampHistory(str); 
+    stampHistory(str);
   }
   if (   (rstats.dHdtnorm * secpera >= dHdtnorm_atol)
       || (PetscAbs(mstats.dxgdt) * secpera >= dxgdt_atol) ) {
     snprintf(str, sizeof(str),
        "WARNING: one of the MISMIP steady state criteria NOT achieved.\n");
     ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
-    stampHistory(str); 
+    stampHistory(str);
   }
 
-  snprintf(str, sizeof(str), 
+  snprintf(str, sizeof(str),
        "Stopping.  Completed timestep year=%.3f.  Writing MISMIP files.\n",
            grid.time->year());
   ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
@@ -736,10 +736,10 @@ PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
   // write ASCII file ABC1_1b_M1_A1_ss and ABC1_1b_M1_A1_f;
   char  ssfilename[PETSC_MAX_PATH_LEN], ffilename[PETSC_MAX_PATH_LEN];
   strcpy(ssfilename,mprefix);
-  strcat(ssfilename,"_ss");    
+  strcat(ssfilename,"_ss");
   strcpy(ffilename,mprefix);
-  strcat(ffilename,"_f");    
-  ierr = verbPrintf(2, grid.com, 
+  strcat(ffilename,"_f");
+  ierr = verbPrintf(2, grid.com,
           "IceMISMIPModel:  writing files %s and %s",
           ssfilename, ffilename); CHKERRQ(ierr);
   ierr = writeMISMIPasciiFile('s',ssfilename); CHKERRQ(ierr);
@@ -748,7 +748,7 @@ PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
   if (writeExtras == PETSC_TRUE) {
     char  efilename[PETSC_MAX_PATH_LEN];
     strcpy(efilename,mprefix);
-    strcat(efilename,"_extras");    
+    strcat(efilename,"_extras");
     ierr = verbPrintf(2, grid.com, " and %s", efilename); CHKERRQ(ierr);
     ierr = writeMISMIPasciiFile('e',efilename); CHKERRQ(ierr);
   }
@@ -823,12 +823,12 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   ierr =   vH.begin_access(); CHKERRQ(ierr);
   ierr = vbed.begin_access(); CHKERRQ(ierr);
   ierr =    q.begin_access(); CHKERRQ(ierr);
-  
+
   mstats.x1 = rstats.xg;
   mstats.x2 = rstats.xg - grid.dx;
   mstats.x3 = rstats.xg + grid.dx;
-  
-  PetscScalar myh2 = 0.0, myh3 = 0.0, myb1 = -1e6, myb2 = -1e6, myb3 = -1e6, 
+
+  PetscScalar myh2 = 0.0, myh3 = 0.0, myb1 = -1e6, myb2 = -1e6, myb3 = -1e6,
               myq1 = -1e20, myq2 = -1e20, myq3 = -1e20;
   const int ig = (int)floor(rstats.ig + 0.1);
 
@@ -873,7 +873,7 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   const PetscScalar dqdx = (mstats.q1 - mstats.q2) / (mstats.x1 - mstats.x2),
                     dhdx = (mstats.h1 - mstats.h2) / (mstats.x1 - mstats.x2),
                     dbdx = (mstats.b1 - mstats.b2) / (mstats.x1 - mstats.x2);
-  mstats.dxgdt = ((0.3/secpera) - dqdx) / (dhdx - (ocean_rho/ice->rho) * dbdx);  
+  mstats.dxgdt = ((0.3/secpera) - dqdx) / (dhdx - (ocean_rho/ice->rho) * dbdx);
   return 0;
 }
 
@@ -881,7 +881,7 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
 PetscErrorCode IceMISMIPModel::getRoutineStats() {
   PetscErrorCode  ierr;
 
-  // these are in MKS; sans "g" are local to the processor; with "g" are global 
+  // these are in MKS; sans "g" are local to the processor; with "g" are global
   //   across all processors; we only evaluate for x > 0
   PetscScalar     maxubar = 0.0, avubargrounded = 0.0, avubarfloating = 0.0, ig = 0.0,
                   Ngrounded = 0.0, Nfloating = 0.0;
@@ -905,7 +905,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
       // grounding line xg is largest  x  so that  mask(i,j) != FLOATING
       //       and mask(i+1,j) == FLOATING
-      if ( (ifrom0 > 0.0) && (vH(i,j) > 0.0) 
+      if ( (ifrom0 > 0.0) && (vH(i,j) > 0.0)
            && mask.grounded(i,j)
 	   && mask.ocean(i+1,j) ) {
         ig = PetscMax(ig,static_cast<PetscScalar>(i));
@@ -918,7 +918,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
           avubargrounded += (*vel_bar)(i,j).u;
         } else {
           Nfloating += 1.0;
-          avubarfloating += (*vel_bar)(i,j).u;        
+          avubarfloating += (*vel_bar)(i,j).u;
         }
       }
 
@@ -931,24 +931,24 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
   ierr = PISMGlobalMax(&ig, &gig, grid.com); CHKERRQ(ierr);
   rstats.ig = gig;
-  
+
   const PetscScalar gigfrom0 =
           gig - static_cast<PetscScalar>(grid.Mx - 1)/2.0;
   rstats.xg = gigfrom0 * grid.dx;
-  
+
   PetscScalar myhxg = 0.0;
   if ( (gig >= grid.xs) && (gig < grid.xs + grid.xm)  &&
        (0   >= grid.ys) && (0   < grid.ys + grid.ym) ) {  // if (gig,0) is in ownership
     myhxg = vH(static_cast<int>(gig),0); // i.e. hxg = vH(gig,0)
   } else {
     myhxg = 0.0;
-  } 
+  }
   ierr = PISMGlobalMax(&myhxg, &rstats.hxg, grid.com); CHKERRQ(ierr);
 
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalMax(&maxubar, &rstats.maxubar, grid.com); CHKERRQ(ierr);
-    
+
   ierr = PISMGlobalSum(&Ngrounded, &rstats.Ngrounded, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalSum(&avubargrounded, &gavubargrounded, grid.com); CHKERRQ(ierr);
   if (rstats.Ngrounded > 0)   gavubargrounded = gavubargrounded / rstats.Ngrounded;
@@ -981,7 +981,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
 PetscErrorCode IceMISMIPModel::summaryPrintLine(
      PetscBool printPrototype,  bool /*tempAndAge*/,
-     PetscScalar year,  PetscScalar /*dt*/, 
+     PetscScalar year,  PetscScalar /*dt*/,
      PetscScalar volume,  PetscScalar /*area_kmsquare*/,
      PetscScalar /*meltfrac*/,  PetscScalar H0,  PetscScalar /*T0*/) {
 
@@ -1032,14 +1032,14 @@ is computed as in MISMIP description, and finite differences.
     ierr = getRoutineStats(); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
       "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %8.2e %5d %5d\n",
-      year, volume/(1.0e6*1.0e9), 
-      H0, rstats.xg / 1000.0, rstats.hxg, rstats.maxubar * secpera, 
+      year, volume/(1.0e6*1.0e9),
+      H0, rstats.xg / 1000.0, rstats.hxg, rstats.maxubar * secpera,
       rstats.avubarG * secpera, rstats.avubarF * secpera,
       rstats.dHdtnorm * secpera, int(rstats.Ngrounded), int(rstats.Nfloating)); CHKERRQ(ierr);
     if (fabs(fmod(year, 50.0)) < 1.0e-6) {
       // write another line to ASCII file ABC1_1b_M1_A1_t; also write to stdout
       //   (given some verbosity level); note modest code redundancy
-      ierr = verbPrintf(2, grid.com, 
+      ierr = verbPrintf(2, grid.com,
              "[IceMISMIPModel:  adding t=%10.3f line to file %s;\n",
              year,tfilename); CHKERRQ(ierr);
       ierr = getMISMIPStats(); CHKERRQ(ierr);
@@ -1069,7 +1069,7 @@ is computed as in MISMIP description, and finite differences.
       ierr = verbPrintf(2,grid.com,
         "   d(xg)/dt = %10.2f m/yr by MISMIP computation ]\n",
         mstats.dxgdt * secpera); CHKERRQ(ierr);
-      
+
       // now check if MISMIP steady state criteria are achieved:
       if ((rstats.dHdtnorm * secpera < dHdtnorm_atol) && (PetscAbs(mstats.dxgdt) * secpera < dxgdt_atol)) {
         // set the IceModel time to the current time; causes immediate stop

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "PSForceThickness.hh"
 #include "IceGrid.hh"
 #include "PISMVars.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 
 ///// "Force-to-thickness" mechanism
 
@@ -94,10 +94,10 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   // fttfile now contains name of -force_to_thk file; now check
   // it is really there; and regrid the target thickness
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, "netcdf3");
   bool mask_exists = false;
-  ierr = nc.open_for_reading(fttfile); CHKERRQ(ierr);
-  ierr = nc.find_variable("ftt_mask", NULL, mask_exists); CHKERRQ(ierr);
+  ierr = nc.open(fttfile, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_var("ftt_mask", mask_exists); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
@@ -320,7 +320,7 @@ void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
   result.insert("ftt_target_thk");
 }
 
-PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype) {
+PetscErrorCode PSForceThickness::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);

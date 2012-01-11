@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,7 +56,7 @@ void PISMBedDef::add_vars_to_output(string /*keyword*/, set<string> &result) {
   result.insert("topg_initial");
 }
 
-PetscErrorCode PISMBedDef::define_variables(set<string> vars, const NetCDF3Wrapper &nc,
+PetscErrorCode PISMBedDef::define_variables(set<string> vars, const PIO &nc,
                                             nc_type nctype) {
   PetscErrorCode ierr;
 

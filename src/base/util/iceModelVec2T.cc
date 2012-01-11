@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Constantine Khroulev
+// Copyright (C) 2009--2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <petsc.h>
 #include <algorithm>
 #include "iceModelVec2T.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "pism_const.hh"
 #include "PISMTime.hh"
 #include "LocalInterpCtx.hh"
@@ -141,12 +141,12 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  NetCDF3Wrapper nc(grid->com, grid->rank);
-  int varid;
-  bool exists;
-  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-  ierr = nc.find_variable(vars[0].short_name, vars[0].get_string("standard_name"),
-                          &varid, exists); CHKERRQ(ierr);
+  PIO nc(grid->com, grid->rank, "netcdf3");
+  string name_found;
+  bool exists, found_by_standard_name;
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
+                    exists, name_found, found_by_standard_name); CHKERRQ(ierr);
   if (!exists) {
     PetscPrintf(grid->com, "PISM ERROR: can't find %s (%s) in %s.\n",
                 vars[0].get_string("long_name").c_str(), vars[0].short_name.c_str(),
@@ -155,14 +155,15 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   }
 
   // find the time dimension:
-  vector<int> dimids;
-  ierr = nc.inq_dimids(varid, dimids); CHKERRQ(ierr);
+  vector<string> dims;
+  ierr = nc.inq_vardims(name_found, dims); CHKERRQ(ierr);
   
   string dimname = "";
   bool time_found = false;
-  for (unsigned int i = 0; i < dimids.size(); ++i) {
+  for (unsigned int i = 0; i < dims.size(); ++i) {
     AxisType dimtype;
-    ierr = nc.inq_dimname(dimids[i], dimname); CHKERRQ(ierr);
+    dimname = dims[i];
+
     ierr = nc.inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
 
     if (dimtype == T_AXIS) {
@@ -177,11 +178,11 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     NCTimeseries time_dimension;
     time_dimension.init(dimname, dimname, grid->com, grid->rank);
     ierr = time_dimension.set_units("seconds"); CHKERRQ(ierr);
-    ierr = time_dimension.read(filename.c_str(), time); CHKERRQ(ierr);
+    ierr = time_dimension.read(filename, time); CHKERRQ(ierr);
 
     string bounds_name;
     ierr = time_dimension.get_bounds_name(filename, bounds_name);
-    
+
     if (!bounds_name.empty()) {
       // read time bounds data from a file
       NCTimeBounds tb;

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMProf.hh"
-#include "NetCDF3Wrapper.hh"
+#include "PISMNCFile.hh"
 #include "pism_const.hh"
 
 /// PISMEvent
@@ -71,7 +71,7 @@ void PISMProf::set_grid_size(int n) {
 int PISMProf::create(string name, string description) {
   PISMEvent tmp;
   int index = get(name);
-  
+
   if (index != -1)
     return index;
 
@@ -89,11 +89,11 @@ int PISMProf::create(string name, string description) {
  * Returns -1 if an event was not found.
  */
 int PISMProf::get(string name) {
-  
+
   for (unsigned int i = 0; i < events.size(); ++i)
     if (events[i].name == name)
       return i;
-  
+
   return -1;
 }
 
@@ -130,9 +130,6 @@ void PISMProf::end(int /*index*/) {
 
   event.total_time += (time - event.start_time);
 
-  // fprintf(stderr, "Rank %d: End   '%s' (%3.9f s lapsed)\n", rank,
-  // 	  events[current_event].description.c_str(), event.total_time);
-
   current_event = event.parent;
 }
 #endif
@@ -140,14 +137,12 @@ void PISMProf::end(int /*index*/) {
 //! Save a profiling report to a file.
 PetscErrorCode PISMProf::save_report(string filename) {
   PetscErrorCode ierr;
-  int varid;
-  NetCDF3Wrapper nc(com, rank);
+  PISMNCFile nc(com, rank);
 
-  ierr = nc.move_if_exists(filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
 
-  ierr = nc.open_for_writing(filename.c_str()); CHKERRQ(ierr);
-
-  ierr = create_dimensions(nc); CHKERRQ(ierr); 
+  ierr = nc.def_dim("x", Nx); CHKERRQ(ierr);
+  ierr = nc.def_dim("y", Ny); CHKERRQ(ierr);
 
   for (unsigned int j = 0; j < events.size(); ++j) {
     string &name = events[j].name;
@@ -162,86 +157,58 @@ PetscErrorCode PISMProf::save_report(string filename) {
     if (time < 1e-3)
       continue;
 
-    ierr = find_variables(nc, name, varid); CHKERRQ(ierr);
-
-    ierr = save_report(j, nc, varid); CHKERRQ(ierr);
-
-    int parent_index = events[j].parent;
-    string parent;
-    if (parent_index == -1)
-      parent = "root";
-    else
-      parent = events[parent_index].name;
-    string descr = events[j].description;
-
-    ierr = nc.put_att_text(varid, "units", events[j].units); CHKERRQ(ierr); 
-    ierr = nc.put_att_text(varid, "parent", parent); CHKERRQ(ierr); 
-    ierr = nc.put_att_text(varid, "long_name", descr); CHKERRQ(ierr);
+    ierr = save_report(j, nc, name); CHKERRQ(ierr);
   }
 
-  ierr = nc.close();
+  ierr = nc.close(); CHKERRQ(ierr);
+
   return 0;
 }
 
 //! Save the report corresponding to an event events[index].
-PetscErrorCode PISMProf::save_report(int index, const NetCDF3Wrapper &nc, int varid) {
+PetscErrorCode PISMProf::save_report(int index, const PISMNCFile &nc, string variable_name) {
   PetscErrorCode ierr;
-  const int data_tag = 1;
-  MPI_Status mpi_stat;
   double data[1];
-  size_t start[2];
+  vector<unsigned int> start(2), count(2), imap(2);
+
+  ierr = define_variable(nc, variable_name); CHKERRQ(ierr);
+
+  int parent_index = events[index].parent;
+  string descr = events[index].description,
+    parent = parent_index == -1 ? "root" : events[parent_index].name;
+
+  ierr = nc.put_att_text(variable_name, "units",     events[index].units); CHKERRQ(ierr); 
+  ierr = nc.put_att_text(variable_name, "parent",    parent); CHKERRQ(ierr); 
+  ierr = nc.put_att_text(variable_name, "long_name", descr); CHKERRQ(ierr);
 
   data[0] = events[index].total_time;
 
-  ierr = nc.data_mode(); CHKERRQ(ierr);
+  start[0] = rank % (Ny);
+  start[1] = rank / (Ny);
 
-  if (rank == 0) { // on processor 0: receive messages from every other
-    for (int proc = 0; proc < size; proc++) {
-      if (proc != 0) {
-	MPI_Recv(data, 1, MPI_DOUBLE, proc, data_tag, com, &mpi_stat);
-      }
+  count[0] = 1;  count[1] = 1;
+  imap[0]  = Nx; imap[1]  = 1;
 
-      start[0] = proc % (Ny);
-      start[1] = proc / (Ny);
-
-      ierr = nc_put_var1_double(nc.get_ncid(), varid, start, &data[0]);
-      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-
-    }
-  } else {  // all other processors: send data to processor 0
-    MPI_Send(data, 1, MPI_DOUBLE, 0, data_tag, com);
-  }
-
-  return 0;
-}
-
-//! Find NetCDF variables to save total and CPU times into.
-PetscErrorCode PISMProf::find_variables(NetCDF3Wrapper &nc, string name, int &varid) {
-  PetscErrorCode ierr;
-  bool exists;
-
-  ierr = nc.find_variable(name, &varid, exists); CHKERRQ(ierr); 
-  if (!exists) {
-    ierr = define_variable(nc, name, varid); CHKERRQ(ierr); 
-  }
+  ierr = nc.enddef(); CHKERRQ(ierr);
+  ierr = nc.put_varm_double(variable_name, start, count, imap, data); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! Define a NetCDF variable to store a profiling report in.
-PetscErrorCode PISMProf::define_variable(const NetCDF3Wrapper &nc, string name, int &varid) {
+PetscErrorCode PISMProf::define_variable(const PISMNCFile &nc, string name) {
   PetscErrorCode ierr;
-  int dimids[2];
+  vector<string> dims;
+  bool exists = false;
 
-  if (rank != 0) return 0;
+  ierr = nc.inq_varid(name, exists); CHKERRQ(ierr);
 
-  ierr = nc.define_mode(); CHKERRQ(ierr);
+  if (exists)
+    return 0;
 
-  ierr = nc_inq_dimid(nc.get_ncid(), "y", &dimids[0]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  ierr = nc_inq_dimid(nc.get_ncid(), "x", &dimids[1]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  dims.push_back("y"); dims.push_back("x");
 
-  ierr = nc_def_var(nc.get_ncid(), name.c_str(), NC_DOUBLE, 2, dimids, &varid);
-  CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc.def_var(name, NC_DOUBLE, dims); CHKERRQ(ierr);
 
   return 0;
 }
@@ -253,21 +220,6 @@ PetscErrorCode PISMProf::barrier() {
   PetscErrorCode ierr;
   ierr = MPI_Barrier(com); CHKERRQ(ierr);
 #endif
-
-  return 0;
-}
-
-//! Creates x and y dimensions.
-PetscErrorCode PISMProf::create_dimensions(const NetCDF3Wrapper &nc) {
-
-  int stat, dimid;
-  if (rank == 0) {
-
-    stat = nc.define_mode(); CHKERRQ(stat); 
-
-    stat = nc_def_dim(nc.get_ncid(), "x", Nx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_def_dim(nc.get_ncid(), "y", Ny, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
 
   return 0;
 }

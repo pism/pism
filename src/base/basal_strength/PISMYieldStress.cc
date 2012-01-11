@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -235,7 +235,7 @@ void PISMDefaultYieldStress::get_diagnostics(map<string, PISMDiagnostic*> &dict)
 }
 
 
-PetscErrorCode PISMDefaultYieldStress::define_variables(set<string> vars, const NetCDF3Wrapper &nc,
+PetscErrorCode PISMDefaultYieldStress::define_variables(set<string> vars, const PIO &nc,
                                                  nc_type nctype) {
   if (set_contains(vars, "tillphi")) {
     PetscErrorCode ierr = till_phi.define(nc, nctype); CHKERRQ(ierr);

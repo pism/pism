@@ -23,7 +23,6 @@ add_library (pismutil
   base/util/IceGrid.cc
   base/util/NCVariable.cc
   base/util/PISMComponent.cc
-  base/util/PISMIO.cc
   base/util/PISMProf.cc
   base/util/PISMVars.cc
   base/util/Timeseries.cc
@@ -34,11 +33,12 @@ add_library (pismutil
   base/util/iceModelVec3.cc
   base/util/iceModelVec2T.cc
   base/util/Mask.cc
-  base/util/NetCDF3Wrapper.cc
   base/util/pism_const.cc
   base/util/pism_options.cc
   base/util/pism_default_config.cc
   base/util/PISMTime.cc
+  base/util/PISMNCFile.cc
+  base/util/PIO.cc
   base/varcEnthalpyConverter.cc
   )
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
@@ -54,27 +54,6 @@ set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
 add_library (pismrevision STATIC base/pism_revision.cc)
 add_dependencies (pismrevision touch_pism_revision)
-
-# Add a preprocessor flag if NetCDF-4 output was requested.
-if (Pism_NETCDF4_OUTPUT)
-  message (STATUS "PISM will write NetCDF-4 files.")
-  set_source_files_properties (base/util/NetCDF3Wrapper.cc
-    PROPERTIES COMPILE_FLAGS -DPISM_WRITE_NETCDF4=1)
-else ()
-  set_source_files_properties (base/util/NetCDF3Wrapper.cc
-    PROPERTIES COMPILE_FLAGS -DPISM_WRITE_NETCDF4=0)
-endif ()
-
-if (Pism_NETCDF4_COMPRESS)
-  message (STATUS "PISM will use NetCDF-4 variable compression.")
-  set (NCVariable_flags "-DPISM_WRITE_COMPRESSED_NETCDF4=1")
-else ()
-  set (NCVariable_flags "-DPISM_WRITE_COMPRESSED_NETCDF4=0")
-endif ()
-
-set_source_files_properties (base/util/NCVariable.cc
-  PROPERTIES COMPILE_FLAGS ${NCVariable_flags})
-
 
 # Flow laws.
 add_library (pismflowlaws

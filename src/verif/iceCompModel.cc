@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@
 #include "flowlaw_factory.hh"
 #include "PISMStressBalance.hh"
 #include "enthalpyConverter.hh"
-#include "NetCDF3Wrapper.hh"
+#include "PIO.hh"
 #include "pism_options.hh"
 
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
@@ -1073,10 +1073,10 @@ PetscErrorCode IceCompModel::reportErrors() {
     CHKERRQ(ierr);
 
     // Find the number of records in this file:
-    NetCDF3Wrapper nc(grid.com, grid.rank);
+    PIO nc(grid.com, grid.rank, "netcdf3");
     // append = true; check_dims = false
-    ierr = nc.open_for_writing(filename); CHKERRQ(ierr);
-    ierr = nc.get_dim_length("N", &start); CHKERRQ(ierr);
+    ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+    ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = global_attributes.write(filename); CHKERRQ(ierr);

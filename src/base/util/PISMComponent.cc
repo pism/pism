@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMComponent.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "IceGrid.hh"
 #include "pism_const.hh"
 
@@ -50,10 +50,10 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
     filename = boot_file_file;
   }
 
-  PISMIO nc(&grid);
-  int last_record;
-  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
+  PIO nc(grid.com, grid.rank, "netcdf3");
+  unsigned int last_record;
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);
   last_record -= 1;
   ierr = nc.close(); CHKERRQ(ierr);
 

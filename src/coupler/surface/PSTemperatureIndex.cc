@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -400,14 +400,13 @@ void PSTemperatureIndex::add_vars_to_output(string keyword, set<string> &result)
   atmosphere->add_vars_to_output(keyword, result);
 }
 
-PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const NetCDF3Wrapper &nc, nc_type nctype) {
+PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
   PetscErrorCode ierr;
-  int varid;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, "artm")) {
-    ierr = artm.define(nc, varid, nctype, true); CHKERRQ(ierr);
+    ierr = artm.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "acab")) {
