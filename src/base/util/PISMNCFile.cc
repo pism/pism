@@ -36,6 +36,8 @@ PISMNCFile::~PISMNCFile() {
   if (ncid >= 0) {
     if (rank == 0) {
       nc_close(ncid);
+      fprintf(stderr, "PISMNCFile::~PISMNCFile: NetCDF file %s is still open\n",
+              filename.c_str());
     }
     ncid = -1;
   }
@@ -143,7 +145,7 @@ int PISMNCFile::def_dim(string name, size_t length) const {
 
   if (rank == 0) {
     int dimid;
-    stat = nc_def_dim(ncid, name.c_str(), length, &dimid);
+    stat = nc_def_dim(ncid, name.c_str(), length, &dimid); check(stat);
   }
 
   MPI_Barrier(com);
@@ -199,7 +201,7 @@ int PISMNCFile::inq_dimlen(string dimension_name, unsigned int &result) const {
 int PISMNCFile::inq_unlimdim(string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
-  memset(name, 0, NC_MAX_NAME);
+  memset(dimname, 0, NC_MAX_NAME);
 
   if (rank == 0) {
     int dimid;
@@ -468,7 +470,7 @@ int PISMNCFile::inq_vardimid(string variable_name, vector<string> &result) const
     }
 
     MPI_Barrier(com);
-    MPI_Bcast(name, NC_MAX_NAME, MPI_INT, 0, com);
+    MPI_Bcast(name, NC_MAX_NAME, MPI_CHAR, 0, com);
 
     result[k] = name;
   }
@@ -524,7 +526,7 @@ int PISMNCFile::inq_varid(string variable_name, bool &exists) const {
 int PISMNCFile::inq_varname(unsigned int j, string &result) const {
   int stat;
   char varname[NC_MAX_NAME];
-  memset(name, 0, NC_MAX_NAME);
+  memset(varname, 0, NC_MAX_NAME);
 
   if (rank == 0) {
     stat = nc_inq_varname(ncid, j, varname); check(stat);
@@ -559,12 +561,16 @@ int PISMNCFile::get_att_double(string variable_name, string att_name, vector<dou
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
     }
 
-    stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen); check(stat);
+    stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
 
     if (stat == NC_NOERR)
       len = static_cast<int>(attlen);
-    else
+    else if (stat == NC_ENOTATT)
       len = 0;
+    else {
+      check(stat);
+      len = 0;
+    }
   }
   MPI_Bcast(&len, 1, MPI_INT, 0, com);
 
@@ -637,7 +643,7 @@ int PISMNCFile::get_att_text(string variable_name, string att_name, string &resu
 
   // On success, broadcast the string. On error, set str to "".
   if (stat == NC_NOERR) {
-    MPI_Bcast(str, len, MPI_CHAR, 0, com);
+    MPI_Bcast(str, len + 1, MPI_CHAR, 0, com);
   } else {
     strcpy(str, "");
   }
@@ -703,7 +709,7 @@ int PISMNCFile::put_att_text(string variable_name, string att_name, string value
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
     }
 
-    stat = nc_put_att_text(ncid, varid, att_name.c_str(), value.size(), value.c_str());
+    stat = nc_put_att_text(ncid, varid, att_name.c_str(), value.size(), value.c_str()); check(stat);
   }
 
   MPI_Barrier(com);

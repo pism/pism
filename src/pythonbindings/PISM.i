@@ -396,6 +396,8 @@ typedef int NormType; // YUCK.
 #define	NC_UINT64 	11	/* unsigned 8-byte int */
 #define	NC_STRING 	12	/* string */
 
+#define NC_NOWRITE	0	/* default is read only */
+#define NC_WRITE    	0x0001	/* read & write */
 
 
 // Tell SWIG that the following variables are truly constant

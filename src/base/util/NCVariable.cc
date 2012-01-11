@@ -1765,7 +1765,7 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, nc_type nctype, bool) {
   ierr = nc.inq_dim(bounds_name, exists); CHKERRQ(ierr);
   if (exists == false) {
     map<string,string> tmp;
-    ierr = nc.def_dim(bounds_name, NC_UNLIMITED, tmp); CHKERRQ(ierr);
+    ierr = nc.def_dim(bounds_name, 2, tmp); CHKERRQ(ierr);
   }
 
   dims.push_back(dimension_name);

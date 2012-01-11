@@ -256,8 +256,21 @@ PetscErrorCode PIO::inq_dim(string name, bool &exists) const {
 }
 
 //! \brief Get the length of a dimension.
+/*!
+ * Sets result to 0 if a dimension does not exist.
+ */
 PetscErrorCode PIO::inq_dimlen(string name, unsigned int &result) const {
-  PetscErrorCode ierr = nc->inq_dimlen(name, result); CHKERRQ(ierr);
+  bool exists = false;
+  PetscErrorCode ierr;
+
+  ierr = nc->inq_dimid(name, exists); CHKERRQ(ierr);
+
+  if (exists == true) {
+    ierr = nc->inq_dimlen(name, result); CHKERRQ(ierr);
+  } else {
+    result = 0;
+  }
+
   return 0;
 }
 

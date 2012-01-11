@@ -54,6 +54,8 @@ enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
  * - This class does not and should not use any PETSc API calls.
  * - This wrapper provides access to a very small portion of the NetCDF C API.
  *   (Only calls used in PISM.) This is intentional.
+ * - Methods of this class should do what corresponding NetCDF C API calls do,
+ *   no more and no less.
  */
 class PISMNCFile
 {
