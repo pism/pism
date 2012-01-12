@@ -19,6 +19,8 @@
 #ifndef _PISMNCWRAPPER_H_
 #define _PISMNCWRAPPER_H_
 
+#include <cstring>
+#include <cstdio>
 #include <string>
 #include <vector>
 #include <mpi.h>
