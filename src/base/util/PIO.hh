@@ -27,6 +27,8 @@
 #include <vector>
 #include <string>
 
+enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
+
 struct grid_info;
 class LocalInterpCtx;
 class IceGrid;
@@ -87,9 +89,9 @@ public:
                                     vector<double> &result) const;
 
   virtual PetscErrorCode put_1d_var(string name, unsigned int start, unsigned int count,
-                                    vector<double> &data) const;
+                                    const vector<double> &data) const;
 
-  virtual PetscErrorCode put_dim(string name, vector<double> &data) const;
+  virtual PetscErrorCode put_dim(string name, const vector<double> &data) const;
 
   virtual PetscErrorCode append_time(string var_name, double value) const;
 
@@ -104,7 +106,7 @@ public:
   virtual PetscErrorCode inq_atttype(string var_name, string att_name, nc_type &result) const;
 
   virtual PetscErrorCode put_att_double(string var_name, string att_name, nc_type nctype,
-                                        vector<double> values) const;
+                                        const vector<double> values) const;
 
   virtual PetscErrorCode put_att_double(string var_name, string att_name, nc_type nctype,
                                         double value) const;
@@ -131,7 +133,7 @@ public:
   virtual int put_varm_double(string variable_name,
                               vector<unsigned int> start,
                               vector<unsigned int> count,
-                              vector<unsigned int> imap, double *op) const;
+                              vector<unsigned int> imap, const double *op) const;
 
 protected:
   MPI_Comm com;

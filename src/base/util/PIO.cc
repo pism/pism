@@ -587,7 +587,7 @@ PetscErrorCode PIO::get_1d_var(string name, unsigned int s, unsigned int c,
 
 
 PetscErrorCode PIO::put_1d_var(string name, unsigned int s, unsigned int c,
-                               vector<double> &data) const {
+                               const vector<double> &data) const {
   PetscErrorCode ierr;
   vector<unsigned int> start(1), count(1), imap(1);
 
@@ -618,7 +618,7 @@ PetscErrorCode PIO::get_dim(string name, vector<double> &data) const {
 }
 
 //! \brief Write dimension data (a coordinate variable).
-PetscErrorCode PIO::put_dim(string name, vector<double> &data) const {
+PetscErrorCode PIO::put_dim(string name, const vector<double> &data) const {
   PetscErrorCode ierr = this->put_1d_var(name, 0,
                                          (unsigned int)data.size(), data); CHKERRQ(ierr);
   return 0;
@@ -886,18 +886,21 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out, Loc
 
   vector<double> &zlevels_in = lic->zlevels;
   unsigned int nlevels = (int)zlevels_out.size();
-  double *buffer = lic->a;
+  double *input_array = lic->a;
 
+  // array sizes for mapping from logical to "flat" indices
   int y_count = lic->count[Y],
     z_count = lic->count[Z];
 
   // We'll work with the raw storage here so that the array we are filling is
-  // indexed the same way as the buffer we are pulling from (buffer)
-  PetscScalar *vec_a;
-  ierr = VecGetArray(g, &vec_a); CHKERRQ(ierr);
+  // indexed the same way as the buffer we are pulling from (input_array)
+  PetscScalar *output_array;
+  ierr = VecGetArray(g, &output_array); CHKERRQ(ierr);
 
   for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
     for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
+
+      const int i0 = i - grid->xs, j0 = j - grid->ys;
 
       for (unsigned int k = 0; k < nlevels; k++) {
         // location (x,y,z) is in target computational domain
@@ -906,10 +909,10 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out, Loc
 
         // Indices of neighboring points.
         const int
-          Im = lic->x_left[i  - grid->xs],
-          Ip = lic->x_right[i - grid->xs],
-          Jm = lic->y_left[j  - grid->ys],
-          Jp = lic->y_right[j - grid->ys];
+          Im = lic->x_left[i0],
+          Ip = lic->x_right[i0],
+          Jm = lic->y_left[j0],
+          Jp = lic->y_right[j0];
 
         double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
 
@@ -918,7 +921,7 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out, Loc
           const int kc = k_below(z, zlevels_in);
 
           // We pretend that there are always 8 neighbors (4 in the map plane,
-          // 2 vertical levels). And compute the indices into the buffer for
+          // 2 vertical levels). And compute the indices into the input_array for
           // those neighbors.
           const int mmm = (Im * y_count + Jm) * z_count + kc;
           const int mmp = (Im * y_count + Jm) * z_count + kc + 1;
@@ -941,38 +944,38 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out, Loc
           const double kk = (z - zkc) / dz;
 
           // linear interpolation in the z-direction
-          a_mm = buffer[mmm] * (1.0 - kk) + buffer[mmp] * kk;
-          a_mp = buffer[mpm] * (1.0 - kk) + buffer[mpp] * kk;
-          a_pm = buffer[pmm] * (1.0 - kk) + buffer[pmp] * kk;
-          a_pp = buffer[ppm] * (1.0 - kk) + buffer[ppp] * kk;
+          a_mm = input_array[mmm] * (1.0 - kk) + input_array[mmp] * kk;
+          a_mp = input_array[mpm] * (1.0 - kk) + input_array[mpp] * kk;
+          a_pm = input_array[pmm] * (1.0 - kk) + input_array[pmp] * kk;
+          a_pp = input_array[ppm] * (1.0 - kk) + input_array[ppp] * kk;
         } else {
           // we don't need to interpolate vertically for the 2-D case
-          a_mm = buffer[Im * y_count + Jm];
-          a_mp = buffer[Im * y_count + Jp];
-          a_pm = buffer[Ip * y_count + Jm];
-          a_pp = buffer[Ip * y_count + Jp];
+          a_mm = input_array[Im * y_count + Jm];
+          a_mp = input_array[Im * y_count + Jp];
+          a_pm = input_array[Ip * y_count + Jm];
+          a_pp = input_array[Ip * y_count + Jp];
         }
 
         // interpolation coefficient in the y direction
-        const double jj = lic->y_alpha[j - grid->ys];
+        const double jj = lic->y_alpha[j0];
 
         // interpolate in y direction
         const double a_m = a_mm * (1.0 - jj) + a_mp * jj;
         const double a_p = a_pm * (1.0 - jj) + a_pp * jj;
 
         // interpolation coefficient in the x direction
-        const double ii = lic->x_alpha[i - grid->xs];
+        const double ii = lic->x_alpha[i0];
 
-        int index = ((i - grid->xs) * grid->ym + (j - grid->ys)) * nlevels + k;
+        int index = (i0 * grid->ym + j0) * nlevels + k;
 
         // index into the new array and interpolate in x direction
-        vec_a[index] = a_m * (1.0 - ii) + a_p * ii;
+        output_array[index] = a_m * (1.0 - ii) + a_p * ii;
         // done with the point at (x,y,z)
       }
     }
   }
 
-  ierr = VecRestoreArray(g, &vec_a); CHKERRQ(ierr);
+  ierr = VecRestoreArray(g, &output_array); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1087,7 +1090,7 @@ int PIO::get_varm_double(string variable_name,
 int PIO::put_varm_double(string variable_name,
                          vector<unsigned int> start,
                          vector<unsigned int> count,
-                         vector<unsigned int> imap, double *op) const {
+                         vector<unsigned int> imap, const double *op) const {
   PetscErrorCode ierr;
 
   ierr = nc->enddef(); CHKERRQ(ierr);

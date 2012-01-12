@@ -1396,7 +1396,9 @@ PetscErrorCode NCTimeseries::write(string filename, size_t start,
   // convert to glaciological units:
   ierr = change_units(data, &units, &glaciological_units); CHKERRQ(ierr);
 
-  ierr = nc.put_1d_var(short_name, start, data.size(), data); CHKERRQ(ierr);
+  ierr = nc.put_1d_var(short_name,
+		       static_cast<unsigned int>(start),
+		       static_cast<unsigned int>(data.size()), data); CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -1685,11 +1687,11 @@ PetscErrorCode NCTimeBounds::write(string filename, size_t s, vector<double> &da
   ierr = nc.enddef(); CHKERRQ(ierr);
 
   vector<unsigned int> start(2), count(2), imap(2);
-  start[0] = s;
+  start[0] = static_cast<unsigned int>(s);
   start[1] = 0;
-  count[0] = data.size() / 2;
+  count[0] = static_cast<unsigned int>(data.size()) / 2;
   count[1] = 2;
-  imap[0]  = data.size();
+  imap[0]  = static_cast<unsigned int>(data.size());
   imap[1]  = 1;
 
   ierr = nc.put_varm_double(short_name, start, count, imap, &data[0]); CHKERRQ(ierr);

@@ -426,7 +426,7 @@ PetscErrorCode IceModelVec2T::at_time(double my_t) {
     return get_record(0);         // out of range (on the left)
   }
 
-  int index = ((j - &time_bounds[0]) - 1) / 2;
+  long int index = ((j - &time_bounds[0]) - 1) / 2;
 
   ierr = verbPrintf(3, grid->com,
 		    "  IceModelVec2T::at_time(%3.5f years): using %s:%s[%d]"
@@ -475,7 +475,7 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
     return 0;
   }
 
-  int index = ((p - &time_bounds[0]) - 1) / 2;
+  long int index = ((p - &time_bounds[0]) - 1) / 2;
 
   ierr = verbPrintf(3, grid->com,
 		    "  IceModelVec2T::interp(%3.5f years): using %s:%s[%d,%d]"

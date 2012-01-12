@@ -18,13 +18,8 @@
 
 #include "PISMNCFile.hh"
 
-// The following is a stupid kludge necessary to make NetCDF 4.x work in
-// serial mode in an MPI program:
-#ifndef MPI_INCLUDED
-#define MPI_INCLUDED 1
-#endif
-#include <netcdf.h>		// nc_type
-// Note: as far as I (CK) can tell, MPI_INCLUDED is a MPICH invention.
+#include <cstring>              // memset
+#include <cstdio>               // stderr
 
 PISMNCFile::PISMNCFile(MPI_Comm c, int r)
   : rank(r), com(c) {
@@ -238,7 +233,8 @@ int PISMNCFile::def_var(string name, nc_type nctype, vector<string> dims) const 
       dimids.push_back(dimid);
     }
 
-    stat = nc_def_var(ncid, name.c_str(), nctype, dims.size(), &dimids[0], &varid); check(stat);
+    stat = nc_def_var(ncid, name.c_str(), nctype,
+		      static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
   }
 
   MPI_Barrier(com);
@@ -257,7 +253,7 @@ int PISMNCFile::get_varm_double(string variable_name,
     data_tag =  3,
     imap_tag =  4,
     chunk_size_tag = 5;
-  int stat = 0, com_size, ndims = start.size();
+  int stat = 0, com_size, ndims = static_cast<int>(start.size());
   double *processor_0_buffer = NULL;
   MPI_Status mpi_stat;
   unsigned int local_chunk_size = 1,
@@ -339,15 +335,15 @@ int PISMNCFile::get_varm_double(string variable_name,
 
 //! \brief Put variable data (mapped).
 int PISMNCFile::put_varm_double(string variable_name,
-                              vector<unsigned int> start,
-                              vector<unsigned int> count,
-                              vector<unsigned int> imap, double *op) const {
+				vector<unsigned int> start,
+				vector<unsigned int> count,
+				vector<unsigned int> imap, const double *op) const {
   const int start_tag = 1,
     count_tag = 2,
     data_tag =  3,
     imap_tag =  4,
     chunk_size_tag = 5;
-  int stat = 0, com_size, ndims = start.size();
+  int stat = 0, com_size = 0, ndims = static_cast<int>(start.size());
   double *processor_0_buffer = NULL;
   MPI_Status mpi_stat;
   unsigned int local_chunk_size = 1,
@@ -416,7 +412,7 @@ int PISMNCFile::put_varm_double(string variable_name,
     MPI_Send(&imap[0],           ndims, MPI_UNSIGNED, 0, imap_tag,       com);
     MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, com);
 
-    MPI_Send(op, local_chunk_size, MPI_DOUBLE, 0, data_tag, com);
+    MPI_Send(const_cast<double*>(op), local_chunk_size, MPI_DOUBLE, 0, data_tag, com);
   }
 
   return stat;
@@ -753,7 +749,7 @@ int PISMNCFile::inq_attname(string variable_name, unsigned int n, string &result
  * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int PISMNCFile::inq_atttype(string variable_name, string att_name, nc_type &result) const {
-  int stat, nctype;
+  int stat, tmp;
 
   if (rank == 0) {
     int varid = -1;
@@ -764,12 +760,15 @@ int PISMNCFile::inq_atttype(string variable_name, string att_name, nc_type &resu
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
     }
 
+    // In NetCDF 3.6.x nc_type is an enum; in 4.x it is 'typedef int'.
+    nc_type nctype;
     stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &nctype); check(stat);
+    tmp = static_cast<int>(nctype);
   }
   MPI_Barrier(com);
-  MPI_Bcast(&nctype, 1, MPI_INT, 0, com);
+  MPI_Bcast(&tmp, 1, MPI_INT, 0, com);
 
-  result = nctype;
+  result = static_cast<nc_type>(tmp);
 
   return 0;
 }

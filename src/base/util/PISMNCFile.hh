@@ -19,8 +19,6 @@
 #ifndef _PISMNCWRAPPER_H_
 #define _PISMNCWRAPPER_H_
 
-#include <cstring>
-#include <cstdio>
 #include <string>
 #include <vector>
 #include <mpi.h>
@@ -37,8 +35,6 @@
 /// @cond NAMESPACE_BROWSER
 using namespace std;
 /// @endcond
-
-enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
 //! \brief The PISM wrapper for a subset of the NetCDF C API.
 /*!
@@ -97,7 +93,7 @@ public:
   int put_varm_double(string variable_name,
                       vector<unsigned int> start,
                       vector<unsigned int> count,
-                      vector<unsigned int> imap, double *op) const;
+                      vector<unsigned int> imap, const double *op) const;
 
   int inq_nvars(int &result) const;
 
