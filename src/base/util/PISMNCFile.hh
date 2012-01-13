@@ -62,66 +62,66 @@ public:
   virtual ~PISMNCFile();
 
   // open/create/close
-  int open(string filename, int mode);
+  int open(string filename, int mode) = 0;
 
-  int create(string filename, int mode);
+  int create(string filename, int mode) = 0;
 
-  int close();
+  int close() = 0;
 
   // redef/enddef
-  int enddef() const;
+  int enddef() const = 0;
 
-  int redef() const;
+  int redef() const = 0;
 
   // dim
-  int def_dim(string name, size_t length) const;
+  int def_dim(string name, size_t length) const = 0;
 
-  int inq_dimid(string dimension_name, bool &exists) const;
+  int inq_dimid(string dimension_name, bool &exists) const = 0;
 
-  int inq_dimlen(string dimension_name, unsigned int &result) const;
+  int inq_dimlen(string dimension_name, unsigned int &result) const = 0;
 
-  int inq_unlimdim(string &result) const;
+  int inq_unlimdim(string &result) const = 0;
 
   // var
-  int def_var(string name, nc_type nctype, vector<string> dims) const;
+  int def_var(string name, nc_type nctype, vector<string> dims) const = 0;
 
   int get_varm_double(string variable_name,
                       vector<unsigned int> start,
                       vector<unsigned int> count,
-                      vector<unsigned int> imap, double *ip) const;
+                      vector<unsigned int> imap, double *ip) const = 0;
 
   int put_varm_double(string variable_name,
                       vector<unsigned int> start,
                       vector<unsigned int> count,
-                      vector<unsigned int> imap, const double *op) const;
+                      vector<unsigned int> imap, const double *op) const = 0;
 
-  int inq_nvars(int &result) const;
+  int inq_nvars(int &result) const = 0;
 
-  int inq_vardimid(string variable_name, vector<string> &result) const;
+  int inq_vardimid(string variable_name, vector<string> &result) const = 0;
 
-  int inq_varnatts(string variable_name, int &result) const;
+  int inq_varnatts(string variable_name, int &result) const = 0;
 
-  int inq_varid(string variable_name, bool &exists) const;
+  int inq_varid(string variable_name, bool &exists) const = 0;
 
-  int inq_varname(unsigned int j, string &result) const;
+  int inq_varname(unsigned int j, string &result) const = 0;
 
   // att
-  int get_att_double(string variable_name, string att_name, vector<double> &result) const;
+  int get_att_double(string variable_name, string att_name, vector<double> &result) const = 0;
 
-  int get_att_text(string variable_name, string att_name, string &result) const;
+  int get_att_text(string variable_name, string att_name, string &result) const = 0;
 
-  int put_att_double(string variable_name, string att_name, nc_type xtype, vector<double> &data) const;
+  int put_att_double(string variable_name, string att_name, nc_type xtype, vector<double> &data) const = 0;
 
   int put_att_double(string variable_name, string att_name, nc_type xtype, double value) const;
 
-  int put_att_text(string variable_name, string att_name, string value) const;
+  int put_att_text(string variable_name, string att_name, string value) const = 0;
 
-  int inq_attname(string variable_name, unsigned int n, string &result) const;
+  int inq_attname(string variable_name, unsigned int n, string &result) const = 0;
 
-  int inq_atttype(string variable_name, string att_name, nc_type &result) const;
+  int inq_atttype(string variable_name, string att_name, nc_type &result) const = 0;
 
   // misc
-  int set_fill(int fillmode, int &old_modep) const;
+  int set_fill(int fillmode, int &old_modep) const = 0;
 
   string get_filename() const;
 

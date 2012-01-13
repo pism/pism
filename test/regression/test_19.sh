@@ -1,4 +1,4 @@
-#!/bin/bash -x -e
+#!/bin/bash
 
 PISM_PATH=$1
 MPIEXEC=$2
@@ -11,6 +11,9 @@ then
   PISM_PATH="${PISM_SOURCE_DIR}/examples/python/"
   EXT=".py"
 fi
+
+set -e
+set -x
 
 # Test name:
 echo "Test #19: EISMINT-Ross experiment regression."
