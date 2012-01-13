@@ -62,66 +62,66 @@ public:
   virtual ~PISMNCFile();
 
   // open/create/close
-  int open(string filename, int mode) = 0;
+  virtual int open(string filename, int mode) = 0;
 
-  int create(string filename, int mode) = 0;
+  virtual int create(string filename, int mode) = 0;
 
-  int close() = 0;
+  virtual int close() = 0;
 
   // redef/enddef
-  int enddef() const = 0;
+  virtual int enddef() const = 0;
 
-  int redef() const = 0;
+  virtual int redef() const = 0;
 
   // dim
-  int def_dim(string name, size_t length) const = 0;
+  virtual int def_dim(string name, size_t length) const = 0;
 
-  int inq_dimid(string dimension_name, bool &exists) const = 0;
+  virtual int inq_dimid(string dimension_name, bool &exists) const = 0;
 
-  int inq_dimlen(string dimension_name, unsigned int &result) const = 0;
+  virtual int inq_dimlen(string dimension_name, unsigned int &result) const = 0;
 
-  int inq_unlimdim(string &result) const = 0;
+  virtual int inq_unlimdim(string &result) const = 0;
 
   // var
-  int def_var(string name, nc_type nctype, vector<string> dims) const = 0;
+  virtual int def_var(string name, nc_type nctype, vector<string> dims) const = 0;
 
-  int get_varm_double(string variable_name,
-                      vector<unsigned int> start,
-                      vector<unsigned int> count,
-                      vector<unsigned int> imap, double *ip) const = 0;
+  virtual int get_varm_double(string variable_name,
+                              vector<unsigned int> start,
+                              vector<unsigned int> count,
+                              vector<unsigned int> imap, double *ip) const = 0;
 
-  int put_varm_double(string variable_name,
-                      vector<unsigned int> start,
-                      vector<unsigned int> count,
-                      vector<unsigned int> imap, const double *op) const = 0;
+  virtual int put_varm_double(string variable_name,
+                              vector<unsigned int> start,
+                              vector<unsigned int> count,
+                              vector<unsigned int> imap, const double *op) const = 0;
 
-  int inq_nvars(int &result) const = 0;
+  virtual int inq_nvars(int &result) const = 0;
 
-  int inq_vardimid(string variable_name, vector<string> &result) const = 0;
+  virtual int inq_vardimid(string variable_name, vector<string> &result) const = 0;
 
-  int inq_varnatts(string variable_name, int &result) const = 0;
+  virtual int inq_varnatts(string variable_name, int &result) const = 0;
 
-  int inq_varid(string variable_name, bool &exists) const = 0;
+  virtual int inq_varid(string variable_name, bool &exists) const = 0;
 
-  int inq_varname(unsigned int j, string &result) const = 0;
+  virtual int inq_varname(unsigned int j, string &result) const = 0;
 
   // att
-  int get_att_double(string variable_name, string att_name, vector<double> &result) const = 0;
+  virtual int get_att_double(string variable_name, string att_name, vector<double> &result) const = 0;
 
-  int get_att_text(string variable_name, string att_name, string &result) const = 0;
+  virtual int get_att_text(string variable_name, string att_name, string &result) const = 0;
 
-  int put_att_double(string variable_name, string att_name, nc_type xtype, vector<double> &data) const = 0;
+  virtual int put_att_double(string variable_name, string att_name, nc_type xtype, vector<double> &data) const = 0;
 
-  int put_att_double(string variable_name, string att_name, nc_type xtype, double value) const;
+  virtual int put_att_double(string variable_name, string att_name, nc_type xtype, double value) const;
 
-  int put_att_text(string variable_name, string att_name, string value) const = 0;
+  virtual int put_att_text(string variable_name, string att_name, string value) const = 0;
 
-  int inq_attname(string variable_name, unsigned int n, string &result) const = 0;
+  virtual int inq_attname(string variable_name, unsigned int n, string &result) const = 0;
 
-  int inq_atttype(string variable_name, string att_name, nc_type &result) const = 0;
+  virtual int inq_atttype(string variable_name, string att_name, nc_type &result) const = 0;
 
   // misc
-  int set_fill(int fillmode, int &old_modep) const = 0;
+  virtual int set_fill(int fillmode, int &old_modep) const = 0;
 
   string get_filename() const;
 

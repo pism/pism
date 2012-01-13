@@ -19,19 +19,25 @@
 #ifndef _PIO_H_
 #define _PIO_H_
 
-#include "PISMNCFile.hh"
 #include "udunits.h"
 
 #include <petscvec.h>
 #include <map>
 #include <vector>
 #include <string>
+#include <netcdf.h>
+
+// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
+/// @cond NAMESPACE_BROWSER
+using namespace std;
+/// @endcond
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
 struct grid_info;
 class LocalInterpCtx;
 class IceGrid;
+class PISMNCFile;
 
 //! \brief High-level PISM I/O class.
 /*!

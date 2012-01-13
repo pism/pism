@@ -24,6 +24,8 @@
 #include "LocalInterpCtx.hh"
 #include "NCVariable.hh"
 #include "PISMTime.hh"
+#include "PISMNC3File.hh"
+#include "PISMNC4File.hh"
 
 PIO::PIO(MPI_Comm c, int r, string mode) {
   com = c;
@@ -39,10 +41,18 @@ PIO::PIO(MPI_Comm c, int r, string mode) {
   }
 
   if (mode == "netcdf3") {
-    nc = new PISMNCFile(com, rank);
-  } else {
+    nc = new PISMNC3File(com, rank);
+  }
+#if (PISM_PARALLEL_NETCDF==1)
+  else if (mode == "netcdf4_parallel") {
+    nc = new PISMNC4File(com, rank);
+  }
+#endif
+  else {
     nc = NULL;
-    // FIXME: implement the NetCDF-4 (parallel) version
+    PetscPrintf(com, "PISM ERROR: output format '%s' is not supported.\n",
+                mode.c_str());
+    PISMEnd();
   }
 }
 

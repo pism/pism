@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMProf.hh"
-#include "PISMNCFile.hh"
+#include "PISMNC3File.hh"
 #include "pism_const.hh"
 
 /// PISMEvent
@@ -137,7 +137,7 @@ void PISMProf::end(int /*index*/) {
 //! Save a profiling report to a file.
 PetscErrorCode PISMProf::save_report(string filename) {
   PetscErrorCode ierr;
-  PISMNCFile nc(com, rank);
+  PISMNC3File nc(com, rank);
 
   ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
 

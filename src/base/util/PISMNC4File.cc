@@ -17,7 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMNC4File.hh"
+
+#if (PISM_PARALLEL_NETCDF==1)
 #include <netcdf_par.h>
+#endif
 
 PISMNC4File::PISMNC4File(MPI_Comm c, int r)
   : PISMNCFile(c, r) {
@@ -31,37 +34,47 @@ PISMNC4File::~PISMNC4File() {
 // open/create/close
 
 int PISMNC4File::open(string fname, int mode) {
+  MPI_Info info;
 
   filename = fname;
 
-  int ierr = nc_open_par(filename.c_str(), mode, &ncid); check(ierr);
+#if (PISM_PARALLEL_NETCDF==1)
+  int stat = nc_open_par(filename.c_str(), mode, com, info, &ncid); check(stat);
+#else
+  return -1;
+#endif
 
   define_mode = false;
 
-  return ierr;
+  return stat;
 }
 
 int PISMNC4File::create(string fname, int mode) {
+  MPI_Info info;
 
   filename = fname;
 
-  int ierr = nc_create_par(filename.c_str(), mode, &ncid); check(ierr);
+#if (PISM_PARALLEL_NETCDF==1)
+  int stat = nc_create_par(filename.c_str(), mode, com, info, &ncid); check(stat);
+#else
+  return -1;
+#endif
 
   define_mode = true;
 
-  return ierr;
+  return stat;
 }
 
 int PISMNC4File::close() {
-  int ierr;
+  int stat;
 
-  ierr = nc_close(ncid); check(ierr);
+  stat = nc_close(ncid); check(stat);
 
   ncid = -1;
 
   filename.clear();
 
-  return ierr;
+  return stat;
 }
 
 // redef/enddef
@@ -70,11 +83,11 @@ int PISMNC4File::enddef() const {
   if (define_mode == false)
     return 0;
 
-  int ierr = nc_enddef(ncid); check(ierr);
+  int stat = nc_enddef(ncid); check(stat);
 
   define_mode = false;
 
-  return ierr;
+  return stat;
 }
 
 int PISMNC4File::redef() const {
@@ -82,28 +95,28 @@ int PISMNC4File::redef() const {
   if (define_mode == true)
     return 0;
 
-  int ierr = nc_redef(ncid); check(ierr);
+  int stat = nc_redef(ncid); check(stat);
 
   define_mode = true;
 
-  return ierr;
+  return stat;
 }
 
 // dim
 int PISMNC4File::def_dim(string name, size_t length) const {
-  int dimid = 0, ierr;
+  int dimid = 0, stat;
 
-  ierr = nc_def_dim(ncid, name.c_str(), length, &dimid); check(ierr);
+  stat = nc_def_dim(ncid, name.c_str(), length, &dimid); check(stat);
 
-  return ierr;
+  return stat;
 }
 
 int PISMNC4File::inq_dimid(string dimension_name, bool &exists) const {
-  int tmp, ierr;
+  int tmp, stat;
 
-  ierr = nc_inq_dimid(ncid, dimension_name.c_str(), &tmp);
+  stat = nc_inq_dimid(ncid, dimension_name.c_str(), &tmp);
 
-  if (ierr == NC_NOERR) {
+  if (stat == NC_NOERR) {
     exists = true;
   } else {
     exists = false;
@@ -113,61 +126,63 @@ int PISMNC4File::inq_dimid(string dimension_name, bool &exists) const {
 }
 
 int PISMNC4File::inq_dimlen(string dimension_name, unsigned int &result) const {
-  int ierr;
+  int stat, dimid = -1;
   size_t len;
 
-  ierr = nc_inq_dimlen(ncid, dimension_name.c_str(), &len); check(ierr);
+  stat = nc_inq_dimid(ncid, dimension_name.c_str(), &dimid);
+
+  stat = nc_inq_dimlen(ncid, dimid, &len); check(stat);
 
   result = static_cast<unsigned int>(len);
 
-  return ierr;
+  return stat;
 }
 
 int PISMNC4File::inq_unlimdim(string &result) const {
-  int ierr, dimid;
+  int stat, dimid;
   char dimname[NC_MAX_NAME];
 
-  ierr = nc_inq_unlimdim(ncid, &dimid); check(ierr);
+  stat = nc_inq_unlimdim(ncid, &dimid); check(stat);
 
   if (dimid == -1) {
     result.clear();
   } else {
-    ierr = nc_inq_dimname(ncid, dimid, dimname); check(ierr);
+    stat = nc_inq_dimname(ncid, dimid, dimname); check(stat);
 
     result = dimname;
   }
 
-  return ierr;
+  return stat;
 }
 
 // var
 int PISMNC4File::def_var(string name, nc_type nctype, vector<string> dims) const {
   vector<int> dimids;
-  int ierr, varid;
+  int stat, varid;
 
   vector<string>::iterator j;
   for (j = dims.begin(); j != dims.end(); ++j) {
     int dimid;
-    ierr = nc_inq_dimid(ncid, j->c_str(), &dimid); check(ierr);
+    stat = nc_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
     dimids.push_back(dimid);
   }
 
-  ierr = nc_def_var(ncid, name.c_str(), nctype,
-                    static_cast<int>(dims.size()), &dimids[0], &varid); check(ierr);
+  stat = nc_def_var(ncid, name.c_str(), nctype,
+                    static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
 
-  return ierr;
+  return stat;
 }
 
 int PISMNC4File::get_varm_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
                                  vector<unsigned int> imap, double *ip) const {
-  int ierr, varid, ndims = static_cast<int>(start.size());
+  int stat, varid, ndims = static_cast<int>(start.size());
 
   vector<size_t> nc_start(ndims), nc_count(ndims);
   vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
 
-  ierr = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(ierr);
+  stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
 
   for (int j = 0; j < ndims; ++j) {
     nc_start[j] = start[j];
@@ -176,23 +191,23 @@ int PISMNC4File::get_varm_double(string variable_name,
     nc_stride[j] = 1;
   }
 
-  ierr = nc_get_varm_double(ncid, varid,
+  stat = nc_get_varm_double(ncid, varid,
                             &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                            ip); check(ierr);
+                            ip); check(stat);
 
-  return ierr;
+  return stat;
 }
 
 int PISMNC4File::put_varm_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
                                  vector<unsigned int> imap, const double *op) const {
-  int ierr, varid, ndims = static_cast<int>(start.size());
+  int stat, varid, ndims = static_cast<int>(start.size());
 
   vector<size_t> nc_start(ndims), nc_count(ndims);
   vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
 
-  ierr = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(ierr);
+  stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
 
   for (int j = 0; j < ndims; ++j) {
     nc_start[j] = start[j];
@@ -201,19 +216,19 @@ int PISMNC4File::put_varm_double(string variable_name,
     nc_stride[j] = 1;
   }
 
-  ierr = nc_put_varm_double(ncid, varid,
+  stat = nc_put_varm_double(ncid, varid,
                             &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                            op); check(ierr);
+                            op); check(stat);
 
-  return ierr;
+  return stat;
 }
 
 int PISMNC4File::inq_nvars(int &result) const {
-  int ierr;
+  int stat;
 
-  ierr = nc_inq_nvars(ncid, &result); check(ierr);
+  stat = nc_inq_nvars(ncid, &result); check(stat);
 
-  return ierr;
+  return stat;
 }
 
 int PISMNC4File::inq_vardimid(string variable_name, vector<string> &result) const {
@@ -393,7 +408,7 @@ int PISMNC4File::put_att_double(string variable_name, string att_name, nc_type x
   }
 
   stat = nc_put_att_double(ncid, varid, att_name.c_str(),
-                           nctype, data.size(), &data[0]); check(stat);
+                           xtype, data.size(), &data[0]); check(stat);
 
   return stat;
 }

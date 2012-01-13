@@ -14,6 +14,9 @@ include_directories (
   udunits
   )
 
+# Try to find netcdf_par.h
+find_file(NETCDF_PAR netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
+
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
 # all over the place).
@@ -38,11 +41,21 @@ add_library (pismutil
   base/util/pism_default_config.cc
   base/util/PISMTime.cc
   base/util/PISMNCFile.cc
+  base/util/PISMNC3File.cc
+  base/util/PISMNC4File.cc
   base/util/PIO.cc
   base/varcEnthalpyConverter.cc
   )
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)
+
+if (NETCDF_PAR)
+set_source_files_properties (base/util/PISMNC4File.cc base/util/PIO.cc
+  PROPERTIES COMPILE_FLAGS -DPISM_PARALLEL_NETCDF=1)
+else()
+set_source_files_properties (base/util/PISMNC4File.cc base/util/PIO.cc
+  PROPERTIES COMPILE_FLAGS -DPISM_PARALLEL_NETCDF=0)
+endif()
 
 add_custom_target (touch_pism_revision
   COMMAND ${CMAKE_COMMAND} -E touch pism_revision.cc
