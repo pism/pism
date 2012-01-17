@@ -19,7 +19,9 @@
 #include "PISMNC4File.hh"
 
 #if (PISM_PARALLEL_NETCDF==1)
+extern "C" {
 #include <netcdf_par.h>
+}
 #endif
 
 #include <cstring>		// memset
