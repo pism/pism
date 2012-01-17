@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 The PISM Authors
+# Copyright (C) 2009-2012 The PISM Authors
 #
 # This script should produce a file which conforms to SeaRISE output format at
 #    http://websrv.cs.umt.edu/isis/index.php/Output_Format
@@ -44,7 +44,8 @@ fi
 for NAME in "${MODEL}_G_D3_C1_E0" \
             "${MODEL}_G_D3_C2_E0" "${MODEL}_G_D3_C3_E0" "${MODEL}_G_D3_C4_E0" \
             "${MODEL}_G_D3_C1_S1" "${MODEL}_G_D3_C1_S2" "${MODEL}_G_D3_C1_S3" \
-            "${MODEL}_G_D3_C1_M1" "${MODEL}_G_D3_C1_M2" "${MODEL}_G_D3_C1_M3"; do
+            "${MODEL}_G_D3_C1_M1" "${MODEL}_G_D3_C1_M2" "${MODEL}_G_D3_C1_M3" \
+            "${MODEL}_G_D3_C1_T1" ; do
 
   echo "(postprocess.sh)  working on deliverable $NAME.nc ..."
 
@@ -52,7 +53,7 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   # create draft of deliverable file:
   ncks -O ${NAME}_raw_y*.nc -o ${NAME}_full.nc
   # calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
-  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}' ${NAME}_full.nc ${NAME}_full.nc
+  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7;}' ${NAME}_full.nc ${NAME}_full.nc
   # adjust meta data for new fields
   ncatted -a units,acab,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
       -a long_name,acab,o,c,"surface mass balance" \
@@ -76,7 +77,7 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   echo "(postprocess.sh)    fixing metadata and names ..."
   ncpdq -O -a time,y,x ${NAME}.nc ${NAME}.nc         # change dimension order
   ncrename -v bwat,bwa ${NAME}.nc                    # fix "bwa" name
-  ncap2 -O -s "time = time/3.15569259747e7; tseries = tseries/3.15569259747e7;" ${NAME}.nc ${NAME}.nc # change units to years
+  ncap2 -O -s "time = time*3.15569259747e7; tseries = tseries *3.15569259747e7;" ${NAME}.nc ${NAME}.nc # change units to years
   ncatted -a units,time,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
   ncatted -a units,tseries,m,c,"years since 2004-1-1 0:0:0" ${NAME}.nc
   ncatted -a bounds,,d,c, ${NAME}.nc                 # remove time bounds; no one cares ...
