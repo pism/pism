@@ -39,7 +39,7 @@ int PISMNC4File::open(string fname, int mode) {
   filename = fname;
 
 #if (PISM_PARALLEL_NETCDF==1)
-  int stat = nc_open_par(filename.c_str(), mode, com, info, &ncid); check(stat);
+  int stat = nc_open_par(filename.c_str(), mode|NC_MPIIO, com, info, &ncid); check(stat);
 #else
   return -1;
 #endif
@@ -55,7 +55,7 @@ int PISMNC4File::create(string fname, int mode) {
   filename = fname;
 
 #if (PISM_PARALLEL_NETCDF==1)
-  int stat = nc_create_par(filename.c_str(), mode, com, info, &ncid); check(stat);
+  int stat = nc_create_par(filename.c_str(), mode|NC_MPIIO, com, info, &ncid); check(stat);
 #else
   return -1;
 #endif
