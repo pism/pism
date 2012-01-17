@@ -76,6 +76,7 @@ public:
 
   int get_att_text(string variable_name, string att_name, string &result) const;
 
+  using PISMNCFile::put_att_double;
   int put_att_double(string variable_name, string att_name, nc_type xtype, vector<double> &data) const;
 
   int put_att_text(string variable_name, string att_name, string value) const;

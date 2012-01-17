@@ -82,13 +82,6 @@ mark_as_advanced (PISM_SHARED_LIBRARY_LINK_C_FLAGS PISM_SHARED_LIBRARY_LINK_CXX_
 
 
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
-option (Pism_NETCDF4_OUTPUT        "Turn this on to make PISM produce NetCDF-4 files" OFF)
-option (Pism_NETCDF4_COMPRESS     "Tirn this on to make PISM produce compressed NetCDF-4 files" OFF)
-
-if (Pism_NETCDF4_COMPRESS AND NOT Pism_NETCDF4_OUTPUT)
-  set (Pism_NETCDF4_OUTPUT ON CACHE BOOL "Write NetCDF-4-format PISM output files" FORCE)
-  message (STATUS "Turning 'on' Pism_WRITE_NETCDF4 to enable writing compressed NetCDF-4 files.")
-endif ()
 
 set (Pism_BIN_DIR "bin")
 set (Pism_LIB_DIR "lib/pism")

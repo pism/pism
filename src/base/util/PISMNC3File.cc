@@ -19,6 +19,7 @@
 #include "PISMNC3File.hh"
 
 #include <cstring>              // memset
+#include <cstdio>		// stderr, fprintf
 
 PISMNC3File::PISMNC3File(MPI_Comm c, int r)
   : PISMNCFile(c, r) {

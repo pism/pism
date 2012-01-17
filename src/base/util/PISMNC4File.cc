@@ -22,6 +22,9 @@
 #include <netcdf_par.h>
 #endif
 
+#include <cstring>		// memset
+#include <cstdio>		// stderr, fprintf
+
 PISMNC4File::PISMNC4File(MPI_Comm c, int r)
   : PISMNCFile(c, r) {
   // empty
@@ -34,7 +37,7 @@ PISMNC4File::~PISMNC4File() {
 // open/create/close
 
 int PISMNC4File::open(string fname, int mode) {
-  MPI_Info info;
+  MPI_Info info = MPI_INFO_NULL;
 
   filename = fname;
 
@@ -50,7 +53,7 @@ int PISMNC4File::open(string fname, int mode) {
 }
 
 int PISMNC4File::create(string fname, int mode) {
-  MPI_Info info;
+  MPI_Info info = MPI_INFO_NULL;
 
   filename = fname;
 
@@ -450,7 +453,7 @@ int PISMNC4File::inq_attname(string variable_name, unsigned int n, string &resul
 }
 
 int PISMNC4File::inq_atttype(string variable_name, string att_name, nc_type &result) const {
-  int stat, tmp, varid = -1;
+  int stat, varid = -1;
 
   if (variable_name == "NC_GLOBAL") {
     varid = NC_GLOBAL;

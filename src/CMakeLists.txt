@@ -14,8 +14,10 @@ include_directories (
   udunits
   )
 
-# Try to find netcdf_par.h
+# Try to find netcdf_par.h. We assume that NetCDF was compiled with
+# parallel I/O if this header is present.
 find_file(NETCDF_PAR netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
+mark_as_advanced(NETCDF_PAR)
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
