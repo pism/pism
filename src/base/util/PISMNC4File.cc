@@ -54,13 +54,15 @@ int PISMNC4File::open(string fname, int mode) {
   return stat;
 }
 
-int PISMNC4File::create(string fname, int mode) {
+int PISMNC4File::create(string fname) {
   MPI_Info info = MPI_INFO_NULL;
 
   filename = fname;
 
 #if (PISM_PARALLEL_NETCDF==1)
-  int stat = nc_create_par(filename.c_str(), mode|NC_MPIIO, com, info, &ncid); check(stat);
+  int stat = nc_create_par(filename.c_str(),
+                           NC_NETCDF4 | NC_MPIIO,
+                           com, info, &ncid); check(stat);
 #else
   return -1;
 #endif
@@ -231,6 +233,8 @@ int PISMNC4File::put_varm_double(string variable_name,
     nc_imap[j]  = imap[j];
     nc_stride[j] = 1;
   }
+
+  stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
 
   stat = nc_put_varm_double(ncid, varid,
                             &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],

@@ -64,7 +64,7 @@ public:
   // open/create/close
   virtual int open(string filename, int mode) = 0;
 
-  virtual int create(string filename, int mode) = 0;
+  virtual int create(string filename) = 0;
 
   virtual int close() = 0;
 

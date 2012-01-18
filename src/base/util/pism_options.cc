@@ -878,6 +878,9 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.keyword_from_option("o_order", "output_variable_order",
                                     "xyz,yxz,zyx"); CHKERRQ(ierr);
 
+  ierr = config.keyword_from_option("io_format", "io_format",
+                                    "netcdf3,netcdf4_parallel"); CHKERRQ(ierr);
+
   ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
                                    "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);
 

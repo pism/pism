@@ -56,13 +56,13 @@ int PISMNC3File::open(string fname, int mode) {
 }
 
 //! \brief Create a NetCDF file.
-int PISMNC3File::create(string fname, int mode) {
+int PISMNC3File::create(string fname) {
   int stat;
 
   filename = fname;
 
   if (rank == 0) {
-    stat = nc_create(filename.c_str(), mode, &ncid);
+    stat = nc_create(filename.c_str(), NC_64BIT_OFFSET, &ncid);
   }
 
   MPI_Barrier(com);

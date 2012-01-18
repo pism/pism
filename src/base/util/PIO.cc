@@ -89,7 +89,7 @@ PetscErrorCode PIO::open(string filename, int mode, bool append) {
   if (append == false) {
     ierr = move_if_exists(filename); CHKERRQ(ierr);
 
-    ierr = nc->create(filename, mode);
+    ierr = nc->create(filename);
     if (ierr != 0) {
       PetscPrintf(com, "PISM ERROR: Can't create '%s'. Exiting...\n", filename.c_str());
       PISMEnd();

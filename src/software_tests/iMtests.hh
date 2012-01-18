@@ -39,6 +39,7 @@ public:
   PetscErrorCode test_dof1comm();
   PetscErrorCode test_dof2comm();
   PetscErrorCode test_pismprof();
+  PetscErrorCode test_2d_output();
 };
 
 #endif // 

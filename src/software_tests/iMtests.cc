@@ -121,6 +121,11 @@ PetscErrorCode IceUnitModel::run() {
   PetscErrorCode ierr;
   bool flag;
 
+  ierr = PISMOptionsIsSet("-output", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = test_2d_output(); CHKERRQ(ierr);
+  }
+
   ierr = PISMOptionsIsSet("-IceModelVec3", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = test_IceModelVec3(); CHKERRQ(ierr);
@@ -222,6 +227,34 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
 
   delete[] values_in;
   delete[] values_out;
+
+  return 0;
+}
+
+PetscErrorCode IceUnitModel::test_2d_output() {
+  PetscErrorCode ierr;
+
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+  string filename = "test_2d_output.nc";
+
+  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.def_time(config.get_string("time_dimension_name"),
+                     config.get_string("calendar"),
+                     grid.time->units()); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
+  ierr = nc.close();
+
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      vH(i,j) = PetscAbs(grid.x[i] + grid.y[j]);
+    }
+  }
+
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = vH.write(filename); CHKERRQ(ierr);
 
   return 0;
 }

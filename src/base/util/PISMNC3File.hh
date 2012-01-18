@@ -30,7 +30,7 @@ public:
   // open/create/close
   int open(string filename, int mode);
 
-  int create(string filename, int mode);
+  int create(string filename);
 
   int close();
 
