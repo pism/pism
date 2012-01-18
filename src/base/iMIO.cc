@@ -118,7 +118,7 @@ PetscErrorCode IceModel::write_metadata(string filename, bool write_mapping) {
 
 PetscErrorCode IceModel::dumpToFile(string filename) {
   PetscErrorCode ierr;
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
 
   // Prepare the file
   string time_name = config.get_string("time_dimension_name");
@@ -145,7 +145,7 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
 
   // Define all the variables:
   {
-    PIO nc(grid.com, grid.rank, "netcdf3");
+    PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
     ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
 
     set<string>::iterator i = vars.begin();
@@ -336,7 +336,7 @@ PetscErrorCode IceModel::write_model_state(string filename) {
   */
 PetscErrorCode IceModel::initFromFile(string filename) {
   PetscErrorCode  ierr;
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
 
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
                     filename.c_str()); CHKERRQ(ierr);
@@ -639,7 +639,7 @@ PetscErrorCode IceModel::init_snapshots() {
   //! Writes a snapshot of the model state (if necessary)
   PetscErrorCode IceModel::write_snapshot() {
     PetscErrorCode ierr;
-    PIO nc(grid.com, grid.rank, "netcdf3");
+    PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
     double saving_after = -1.0e30; // initialize to avoid compiler warning; this
     // value is never used, because saving_after
     // is only used if save_now == true, and in
@@ -749,7 +749,7 @@ PetscErrorCode IceModel::init_snapshots() {
 PetscErrorCode IceModel::write_backup() {
   PetscErrorCode ierr;
   double wall_clock_hours;
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
 
   if (grid.rank == 0) {
     PetscLogDouble current_time;

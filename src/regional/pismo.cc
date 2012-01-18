@@ -520,7 +520,7 @@ PetscErrorCode IceRegionalModel::bootstrap_2d(string filename) {
 
 PetscErrorCode IceRegionalModel::initFromFile(string filename) {
   PetscErrorCode  ierr;
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
 
   bool no_model_strip_set;
   ierr = PISMOptionsIsSet("-no_model_strip", "No-model strip, in km",

@@ -167,13 +167,24 @@ int PISMNC4File::def_var(string name, nc_type nctype, vector<string> dims) const
 
   vector<string>::iterator j;
   for (j = dims.begin(); j != dims.end(); ++j) {
-    int dimid;
+    int dimid = -1;
     stat = nc_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
     dimids.push_back(dimid);
   }
 
   stat = nc_def_var(ncid, name.c_str(), nctype,
                     static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
+
+#if (PISM_DEBUG==1)
+  if (stat != NC_NOERR) {
+    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", filename.c_str(),
+            name.c_str());
+    for (unsigned int k = 0; k < dims.size(); ++k) {
+      fprintf(stderr, "%s(%d), ", dims[k].c_str(), dimids[k]);
+    }
+    fprintf(stderr, "\n");
+  }
+#endif
 
   return stat;
 }
@@ -258,9 +269,7 @@ int PISMNC4File::inq_vardimid(string variable_name, vector<string> &result) cons
     char name[NC_MAX_NAME];
     memset(name, 0, NC_MAX_NAME);
 
-    if (rank == 0) {
-      stat = nc_inq_dimname(ncid, dimids[k], name); check(stat);
-    }
+    stat = nc_inq_dimname(ncid, dimids[k], name); check(stat);
 
     result[k] = name;
   }

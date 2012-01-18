@@ -20,6 +20,7 @@
 #include "PIO.hh"
 #include "IceGrid.hh"
 #include "pism_const.hh"
+#include "NCVariable.hh"
 
 //! Finds PISM's input (-i or -boot_file) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file
@@ -50,7 +51,7 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
     filename = boot_file_file;
   }
 
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
   unsigned int last_record;
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);

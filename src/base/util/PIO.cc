@@ -99,16 +99,7 @@ PetscErrorCode PIO::open(string filename, int mode, bool append) {
     ierr = nc->set_fill(NC_NOFILL, old_fill); CHKERRQ(ierr);
   } else {
 
-    ierr = nc->open(filename, mode);
-    if (ierr != 0) {
-
-      ierr = nc->create(filename, mode);
-
-      if (ierr != 0) {
-        PetscPrintf(com, "PISM ERROR: Can't open or create '%s'. Exiting...\n", filename.c_str());
-        PISMEnd();
-      }
-    }
+    ierr = nc->open(filename, mode); CHKERRQ(ierr);
 
     int old_fill;
     ierr = nc->set_fill(NC_NOFILL, old_fill); CHKERRQ(ierr);
@@ -565,6 +556,8 @@ PetscErrorCode PIO::def_dim(string name, long int length, map<string,string> att
 
     ierr = nc->put_att_text(name, att_name, att_value); CHKERRQ(ierr);
   }
+
+  ierr = nc->enddef(); CHKERRQ(ierr);
 
   return 0;
 }

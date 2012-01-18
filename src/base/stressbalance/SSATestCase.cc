@@ -252,7 +252,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
   PetscErrorCode ierr;
 
   // Write results to an output file:
-  PIO pio(grid.com, grid.rank, "netcdf3");
+  PIO pio(grid.com, grid.rank, grid.config.get_string("io_format"));
   ierr = pio.open(filename, NC_WRITE); CHKERRQ(ierr);
   ierr = pio.def_time(config.get_string("time_dimension_name"),
                       config.get_string("calendar"),

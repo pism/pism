@@ -43,7 +43,7 @@ static char help[] =
 static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
 
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_grid("land_ice_thickness", &grid); CHKERRQ(ierr);
@@ -188,7 +188,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   MPI_Comm com = grid->com;
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, "netcdf3");
+  PIO nc(grid->com, grid->rank, grid->config.get_string("io_format"));
   NCGlobalAttributes global_attrs;
   IceModelVec2S *usurf, *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
 
@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
     // read data from a PISM input file (including the projection parameters)
-    PIO nc(grid.com, grid.rank, "netcdf3");
+    PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
     unsigned int last_record;
     bool mapping_exists;
 

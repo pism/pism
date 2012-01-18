@@ -272,7 +272,7 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
       os_ncfile << savefile << index << ".nc";
       std::string ncfile = os_ncfile.str();
 
-      PIO pio(grid.com, grid.rank, "netcdf3");
+      PIO pio(grid.com, grid.rank, grid.config.get_string("io_format"));
       pio.open(ncfile, NC_WRITE);
       pio.def_time(grid.config.get_string("time_dimension_name"),
                    grid.config.get_string("calendar"),

@@ -32,7 +32,7 @@ static char help[] =
 static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
 
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_grid("bedrock_altitude", &grid); CHKERRQ(ierr);
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     ierr = blatter.update(false); CHKERRQ(ierr);
 
     // Write results to an output file:
-    PIO pio(grid.com, grid.rank, "netcdf3");
+    PIO pio(grid.com, grid.rank, grid.config.get_string("io_format"));
 
     ierr = pio.open(output_file, NC_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(config.get_string("time_dimension_name"),

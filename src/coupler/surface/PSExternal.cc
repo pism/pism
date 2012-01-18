@@ -234,7 +234,7 @@ PetscErrorCode PSExternal::update_acab() {
 //! Write fields that a model PISM is coupled to needs. Default: usurf and topg.
 PetscErrorCode PSExternal::write_coupling_fields() {
   PetscErrorCode ierr;
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
 
   ierr = nc.open(ebm_input, NC_WRITE); CHKERRQ(ierr);
 

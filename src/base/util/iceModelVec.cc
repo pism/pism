@@ -486,7 +486,7 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* &lic) {
   PetscErrorCode ierr;
 
-  PIO nc(grid->com, grid->rank, "netcdf3");
+  PIO nc(grid->com, grid->rank, grid->config.get_string("io_format"));
   vector<double> zlevs, zblevs;
   grid_info gi;
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
@@ -680,7 +680,7 @@ PetscErrorCode IceModelVec::write(string filename, nc_type nctype) {
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 PetscErrorCode IceModelVec::dump(const char filename[]) {
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, "netcdf3");
+  PIO nc(grid->com, grid->rank, grid->config.get_string("io_format"));
 
   // append = false, check_dimensions = true
   ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);

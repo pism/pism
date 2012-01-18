@@ -115,7 +115,7 @@ protected:
 
   \code
   char seriesname[] = "ser_delta_T.nc";
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
   nc.open_for_writing(seriesname, true, false);
   nc.close();
   \endcode

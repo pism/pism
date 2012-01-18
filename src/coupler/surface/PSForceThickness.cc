@@ -94,7 +94,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   // fttfile now contains name of -force_to_thk file; now check
   // it is really there; and regrid the target thickness
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
   bool mask_exists = false;
   ierr = nc.open(fttfile, NC_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var("ftt_mask", mask_exists); CHKERRQ(ierr);
