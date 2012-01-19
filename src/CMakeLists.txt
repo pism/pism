@@ -242,6 +242,11 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil pismrevision)
 
+  if (NETCDF_PAR)
+    add_executable (netcdf_parallel software_tests/netcdf_parallel.cc)
+    target_link_libraries (netcdf_parallel ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
+  endif()
+
   install (TARGETS
     ${SIMPLE_EXECS} tryLCbd pismtests flowTable btutest
     RUNTIME DESTINATION ${Pism_BIN_DIR}
