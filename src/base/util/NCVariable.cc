@@ -1650,14 +1650,14 @@ PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
     PISMEnd();
   }
 
-  ierr = nc.inq_units(short_name, input_has_units, input_units); CHKERRQ(ierr);
+  ierr = nc.inq_units(dimension_name, input_has_units, input_units); CHKERRQ(ierr);
 
   if ( has("units") && (!input_has_units) ) {
     string &units_string = strings["units"];
     ierr = verbPrintf(2, com,
 		      "PISM WARNING: Variable '%s' does not have the units attribute.\n"
 		      "              Assuming that it is in '%s'.\n",
-		      short_name.c_str(),
+		      dimension_name.c_str(),
 		      units_string.c_str()); CHKERRQ(ierr);
     utCopy(&units, &input_units);
   }

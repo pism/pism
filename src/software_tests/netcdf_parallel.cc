@@ -74,7 +74,7 @@ int main(int argc, char **argv)
   for (i=mpi_rank*QTR_DATA; i<(mpi_rank+1)*QTR_DATA; i++)
     data[i] = mpi_rank;
 
-  // stat = nc_var_par_access(ncid, v1id, NC_COLLECTIVE); CHKERRQ(stat);
+  stat = nc_var_par_access(ncid, v1id, NC_COLLECTIVE); CHKERRQ(stat);
 
   /* Write slabs of phony data. */
   stat = nc_put_vara_int(ncid, v1id, start, count,

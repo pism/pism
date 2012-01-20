@@ -62,7 +62,7 @@ int PISMNC3File::create(string fname) {
   filename = fname;
 
   if (rank == 0) {
-    stat = nc_create(filename.c_str(), NC_64BIT_OFFSET, &ncid);
+    stat = nc_create(filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &ncid);
   }
 
   MPI_Barrier(com);
