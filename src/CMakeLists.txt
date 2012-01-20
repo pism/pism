@@ -245,6 +245,9 @@ if (Pism_BUILD_EXTRA_EXECS)
   if (NETCDF_PAR)
     add_executable (netcdf_parallel software_tests/netcdf_parallel.cc)
     target_link_libraries (netcdf_parallel ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
+
+    add_executable (netcdf_parallel_3d software_tests/netcdf_parallel_3d.c)
+    target_link_libraries (netcdf_parallel_3d ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
   endif()
 
   install (TARGETS

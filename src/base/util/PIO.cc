@@ -99,7 +99,12 @@ PetscErrorCode PIO::open(string filename, int mode, bool append) {
     ierr = nc->set_fill(NC_NOFILL, old_fill); CHKERRQ(ierr);
   } else {
 
-    ierr = nc->open(filename, mode); CHKERRQ(ierr);
+    ierr = nc->open(filename, mode);
+
+    if (ierr != 0) {
+      PetscPrintf(com, "PISM ERROR: Can't open '%s' (rank = %d). Exiting...\n", filename.c_str(), rank);
+      PISMEnd();
+    }
 
     int old_fill;
     ierr = nc->set_fill(NC_NOFILL, old_fill); CHKERRQ(ierr);
@@ -801,6 +806,11 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, string var_name, unsigned int z_count
   unsigned int t;
   ierr = nc->inq_dimlen(grid->config.get_string("time_dimension_name"), t); CHKERRQ(ierr);
 
+#if (PISM_DEBUG==1)
+  if (t < 1)
+    fprintf(stderr, "time dimension length (%d) is less than 1!\n", t);
+#endif
+
   vector<unsigned int> start, count, imap;
   ierr = compute_start_and_count(var_name,
                                  t - 1,
@@ -1051,7 +1061,7 @@ PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
     case T_AXIS:
       start[j] = t_start;
       count[j] = 1;             // t_count is always 1
-      imap[j]  = 1; // this value does not matter because we never read more than 1 record
+      imap[j]  = x_count * y_count * z_count;
       break;
     case X_AXIS:
       start[j] = x_start;
@@ -1069,10 +1079,17 @@ PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
       imap[j]  = 1;
       break;
     default:
-      start[j] = 0;
-      count[j] = 1;
-      imap[j]  = 1;             // is this right?
+      {
+        SETERRQ(com, 1, "dimtype is not one of T_AXIS, X_AXIS, Y_AXIS, Z_AXIS");
+      }
     }
+
+#if (PISM_DEBUG==1)
+    fprintf(stderr, "[%d] var=%s start[%d]=%d count[%d]=%d imap[%d]=%d\n",
+            rank, short_name.c_str(),
+            j, start[j], j, count[j], j, imap[j]);
+#endif
+
   }
 
   return 0;

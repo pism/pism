@@ -123,7 +123,7 @@ PetscErrorCode IceUnitModel::run() {
 
   ierr = PISMOptionsIsSet("-output", flag); CHKERRQ(ierr);
   if (flag) {
-    ierr = test_2d_output(); CHKERRQ(ierr);
+    ierr = test_output(); CHKERRQ(ierr);
   }
 
   ierr = PISMOptionsIsSet("-IceModelVec3", flag); CHKERRQ(ierr);
@@ -231,11 +231,12 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
   return 0;
 }
 
-PetscErrorCode IceUnitModel::test_2d_output() {
+PetscErrorCode IceUnitModel::test_output() {
   PetscErrorCode ierr;
+  PetscScalar *E;
 
   PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
-  string filename = "test_2d_output.nc";
+  string filename = "test_output.nc";
 
   ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
@@ -245,16 +246,34 @@ PetscErrorCode IceUnitModel::test_2d_output() {
   ierr = nc.close();
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      vH(i,j) = PetscAbs(grid.x[i] + grid.y[j]);
+      vH(i,j) = grid.rank;
+
+      ierr = Enth3.getInternalColumn(i, j, &E); CHKERRQ(ierr);
+
+      for (int k = 0; k < grid.Mz; ++k) {
+        E[k] = PetscAbs(grid.x[i] + grid.y[j]) + grid.zlevels[k];
+      }
     }
   }
 
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = vH.write(filename); CHKERRQ(ierr);
+  bool no_2d = false, no_3d = false;
+  ierr = PISMOptionsIsSet("-no_2d", no_2d); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-no_3d", no_3d); CHKERRQ(ierr);
+
+  if (no_2d == false) {
+    ierr = vH.write(filename); CHKERRQ(ierr);
+  }
+
+  if (no_3d == false) {
+    ierr = Enth3.write(filename); CHKERRQ(ierr);
+  }
 
   return 0;
 }
