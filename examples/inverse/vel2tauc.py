@@ -28,7 +28,7 @@ import os, math
 
 import PISM
 
-from pismssaforward import InvSSARun, SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
+from pismssaforward import SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
 tauc_params, LinearPlotListener, PlotListener, pism_print_logger, pism_pause, pauseListener, \
 CaptureLogger
 from linalg_pism import PISMLocalVector as PLV
@@ -41,7 +41,6 @@ siple.reporting.set_pause_callback(pism_pause)
 default_ssa_l2_coeff = 1.
 default_ssa_h1_coeff = 0.
 default_rms_error = 100
-
 
 
 class Vel2Tauc(PISM.ssa.SSAFromBootFile):
@@ -216,8 +215,6 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
 
     pp.ion()
     pp.show()
-  
-  
 
 
 ## Main code starts here
@@ -300,7 +297,7 @@ if __name__ == "__main__":
     vecs.add(vel_ssa_observed,writing=saving_inv_data)
   else:
     if not PISM.util.fileHasVariable(inv_data_filename,"u_surface_observed"):
-      verbPrintf(1,com,"Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified." % inv_data_filename)
+      PISM.verbPrintf(1,context.com,"Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
       exit()
     vel_surface_observed = PISM.util.standard2dVelocityVec(grid,'_surface_observed',stencil_width=2)
     vel_surface_observed.regrid(inv_data_filename,True)

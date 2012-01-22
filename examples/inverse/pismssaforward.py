@@ -250,6 +250,20 @@ class SSAForwardProblem(NonlinearForwardProblem):
     """Constructs a brand new vector from the range vector space"""
     v = PISM.IceModelVec2V()
     v.create(self.grid,"",True,WIDE_STENCIL)
+
+    # Add appropriate meta data.
+    intent = "?inverse?" # FIXME
+    desc = "SSA velocity computed by inversion"
+    v.set_attrs(intent, "%s%s" %("X-component of the ",desc), "m s-1", "", 0);
+    v.set_attrs(intent, "%s%s" %("Y-component of the ",desc), "m s-1", "", 1);
+    v.set_glaciological_units("m year-1");
+    v.write_in_glaciological_units = True
+    huge_vel = 1e6/PISM.secpera;
+    attrs = [ ("valid_min", -huge_vel), ("valid_max", huge_vel), ("_FillValue", 2*huge_vel) ]
+    for a in attrs: 
+      for component in range(2):
+        v.set_attr(a[0],a[1],component)
+
     return PISMLocalVector(v)
 
   def domainVector(self):
@@ -391,6 +405,7 @@ class InvertSSAIGN(InvertIGN):
 
     tauc = x.core()
     u = y.core()
+
     return (tauc,u)
 
   def solve(self,x,y,deltaLInf):
