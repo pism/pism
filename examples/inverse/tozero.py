@@ -16,7 +16,7 @@ class ToProcZero:
     elif dof == 2:
       da = grid.da2
       self.da = PETSc.DA().create(dim=da.dim,dof=2,sizes=da.sizes,
-      proc_sizes=da.proc_sizes,periodic_type=da.periodic_type,
+      proc_sizes=da.proc_sizes,boundary_type=da.boundary_type,
       stencil_width =da.stencil_width,comm=grid.com)
       self.owns_da = True
     else:
