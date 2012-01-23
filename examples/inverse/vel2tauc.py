@@ -127,7 +127,7 @@ class Vel2TaucPlotListener(PlotListener):
     
     self.figure =None
     
-  def iteration(self,solver,count,x,Fx,y,d,r,*args):      
+  def iteration(self,inverse_solver,count,x,Fx,y,d,r,*args):      
     import matplotlib.pyplot as pp
 
     if self.figure is None:
@@ -135,7 +135,8 @@ class Vel2TaucPlotListener(PlotListener):
     else:
       pp.figure(self.figure.number)
 
-    l2_weight=self.tz_scalar.communicate(solver.forward_problem.solver.vel_misfit_weight)
+    vecs = inverse_solver.forward_problem.ssarun.modeldata.vecs;
+    l2_weight=self.tz_scalar.communicate(vecs.vel_misfit_weight)
 
     pp.clf()
     
@@ -175,7 +176,7 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
 
     self.figure =None
 
-  def iteration(self,solver,count,x,y,d,r,*args):      
+  def iteration(self,inverse_solver,count,x,y,d,r,*args):      
     import matplotlib.pyplot as pp
 
     if self.figure is None:
@@ -183,7 +184,8 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
     else:
       pp.figure(self.figure.number)
 
-    l2_weight=self.tz_scalar.communicate(solver.forward_problem.solver.vel_misfit_weight)
+    vecs = inverse_solver.forward_problem.ssarun.modeldata.vecs;
+    l2_weight=self.tz_scalar.communicate(vecs.vel_misfit_weight)
 
     pp.clf()
 
@@ -319,7 +321,7 @@ if __name__ == "__main__":
     if not PISM.util.fileHasVariable(input_filename,"tauc"):
       verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
       exit()
-    tauc.regrid(inv_data_filename,True)
+    tauc.regrid(input_filename,True)
     tauc_prior.copy_from(tauc)
   vecs.add(tauc_prior,writing=saving_inv_data)
 
