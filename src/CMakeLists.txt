@@ -248,6 +248,12 @@ if (Pism_BUILD_EXTRA_EXECS)
 
     add_executable (netcdf_parallel_3d software_tests/netcdf_parallel_3d.c)
     target_link_libraries (netcdf_parallel_3d ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
+
+    add_executable (pismncfile_test software_tests/pismncfile_test.cc
+      base/util/PISMNCFile.cc
+      base/util/PISMNC3File.cc
+      base/util/PISMNC4File.cc)
+    target_link_libraries (pismncfile_test ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
   endif()
 
   install (TARGETS
