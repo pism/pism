@@ -268,10 +268,12 @@ PetscErrorCode IceUnitModel::test_output() {
   ierr = PISMOptionsIsSet("-no_3d", no_3d); CHKERRQ(ierr);
 
   if (no_2d == false) {
+    vH.time_independent = true;
     ierr = vH.write(filename); CHKERRQ(ierr);
   }
 
   if (no_3d == false) {
+    Enth3.time_independent = true;
     ierr = Enth3.write(filename); CHKERRQ(ierr);
   }
 
