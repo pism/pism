@@ -21,8 +21,8 @@
 
 #include <petscvec.h>
 #include "NCTool.hh"
+#include "IceGrid.hh"  // Needed for Periodicity enum declaration.
 
-class IceGrid;
 class LocalInterpCtx;
 struct grid_info;
 
@@ -54,7 +54,8 @@ public:
   using NCTool::open_for_writing;
   PetscErrorCode open_for_writing(string filename, bool append,
 				  bool check_dims = false);
-  PetscErrorCode get_grid(string filename, string var_name);
+  PetscErrorCode get_grid(string filename, string var_name,
+                          Periodicity periodicity);
   PetscErrorCode create_dimensions() const;
 
   PetscErrorCode get_grid_info(string name, grid_info &g) const;

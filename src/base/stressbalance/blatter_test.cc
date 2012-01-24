@@ -32,7 +32,7 @@ static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
   PISMIO nc(&grid);
-  ierr = nc.get_grid(filename, "bedrock_altitude"); CHKERRQ(ierr);
+  ierr = nc.get_grid(filename, "bedrock_altitude", NOT_PERIODIC); CHKERRQ(ierr);
 
   grid.compute_nprocs();
   grid.compute_ownership_ranges();

@@ -310,7 +310,7 @@ PetscErrorCode IceModel::grid_setup() {
     names.push_back("enthalpy");
     names.push_back("temp");
     for (unsigned int i = 0; i < names.size(); ++i) {
-      ierr = nc.get_grid(filename, names[i]);
+      ierr = nc.get_grid(filename, names[i], NOT_PERIODIC);
       if (ierr == 0) break;
     }
 

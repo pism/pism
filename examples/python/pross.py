@@ -46,7 +46,33 @@ class pross(PISM.ssa.SSARun):
 
   def _initGrid(self):
     self.grid = PISM.Context().newgrid()
-    PISM.util.init_grid2d_from_file(self.grid,self.boot_file,self.Mx,self.My)
+    grid = self.grid
+    
+    pio = PISM.PISMIO(grid)
+    pio.open_for_reading(self.boot_file)
+    grid_info = PISM.grid_info(); pio.get_grid_info( "land_ice_thickness", grid_info )
+    pio.close()
+
+    grid.Mx = grid_info.x_len;
+    grid.My = grid_info.y_len;
+    grid.Mz = 2;
+    grid.x0 = (grid_info.x_max+grid_info.x_min)/2.;
+    grid.y0 = (grid_info.y_max+grid_info.y_min)/2.;
+    grid.Lx = (grid_info.x_max-grid_info.x_min)/2.;
+    grid.Ly = (grid_info.x_max-grid_info.x_min)/2.;
+
+    if not self.Mx is None:
+      grid.Mx = self.Mx
+    if not self.My is None:
+      grid.My = self.My
+
+    grid.compute_nprocs();
+    grid.compute_ownership_ranges();
+    grid.compute_horizontal_spacing();
+    grid.compute_vertical_levels();
+    grid.createDA()
+
+
     self.grid.printInfo(1)
 
   def _initPhysics(self):
