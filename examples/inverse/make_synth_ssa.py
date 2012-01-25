@@ -127,7 +127,7 @@ if __name__ == '__main__':
 
   pio = PISM.PISMIO(grid)
   pio.open_for_writing(output_file_name,False,True)
-  pio.append_time(grid.config.get_string("time_dimension_name"),0.0)
+  pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
   pio.close()
 
   vecs.write(output_file_name)

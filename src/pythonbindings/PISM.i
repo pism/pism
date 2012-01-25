@@ -26,6 +26,7 @@
 // of PISM headers being wrapped.
 
 #include "PISMIO.hh"
+#include "PISMTime.hh"
 #include "Timeseries.hh"
 #include "exactTestsIJ.h"
 #include "stressbalance/SSAFEM.hh"
@@ -466,6 +467,7 @@ typedef int NormType; // YUCK.
 %include "pism_python.hh"
 %template(PISMDiag_PISMDefaultYieldStress) PISMDiag<PISMDefaultYieldStress>;
 %include "PISMYieldStress.hh"
+%include "PISMTime.hh"
 
 
 

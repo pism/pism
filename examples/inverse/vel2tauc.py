@@ -118,6 +118,18 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
       # Save time & command line
       PISM.util.writeProvenance(filename)
 
+class ZetaSaver:
+  """Iteration listener used to save a copy of the current value
+  of zeta (i.e. parameterized tauc) at each iteration during an inversion."""
+  def __init__(self,output_filename):
+    self.output_filename = output_filename
+
+  def __call__(self,inverse_solver,count,x,y,d,r,*args):
+    zeta = x.core()
+    # The solver doesn't care what the name of zeta is, and we
+    # want it called 'zeta_inv' in the output file, so we rename it.
+    zeta.rename('zeta_inv', 'last iteration of parameterized basal yeild stress computed by inversion','')
+    zeta.write(self.output_filename)
 
 class Vel2TaucPlotListener(PlotListener):
   def __init__(self,grid,Vmax):
@@ -344,15 +356,17 @@ if __name__ == "__main__":
 
 
   # Convert tauc guess to zeta guess
+
+  zeta = PISM.IceModelVec2S();
+  zeta.create(grid, "zeta_inv", True, PISM.util.WIDE_STENCIL)
   if config.get_string('inv_ssa_tauc_param')=='ident':
-    tauc.copy_from(tauc_prior)
-    zeta = tauc
+    zeta.copy_from(tauc_prior)
   else:
-    zeta = PISM.IceModelVec2S();
-    zeta.create(grid, "zeta", True, PISM.util.WIDE_STENCIL)
     with PISM.util.Access(nocomm=tauc_prior,comm=zeta):
       for (i,j) in grid.points():
         zeta[i,j] = tauc_param.fromTauc(tauc_prior[i,j])
+  vecs.add(zeta,writing=True) # Ensure that the last value of zeta will
+                              # be written out
 
   if test_adjoint:
     d = PLV(pismssaforward.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL))
@@ -390,12 +404,23 @@ if __name__ == "__main__":
   if do_pause:
     solver.addIterationListener(pauseListener)
 
+  # Prep the output file from
+  # the grid so that we can save data to it during the runs.
+  if not append_mode:
+    pio = PISM.PISMIO(grid)
+    pio.open_for_writing(output_filename,False,True)
+    pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
+    pio.close()
+  
+  # Attach a listener that saves zeta during the run
+  solver.addIterationListener(ZetaSaver(output_filename))
+
   rms_error /= PISM.secpera # m/s
   (zeta,u) = solver.solve(zeta,vel_ssa_observed,rms_error)
 
   # Convert back from zeta to tauc
   if config.get_string('inv_ssa_tauc_param')=='ident':
-    tauc = zeta
+    tauc.copy_from(zeta)
   else:
     with PISM.util.Access(nocomm=zeta,comm=tauc):
       for (i,j) in grid.points():
