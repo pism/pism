@@ -22,7 +22,6 @@ import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import numpy as np
-import tozero
 import siple
 import os, math
 
@@ -124,10 +123,20 @@ class Vel2TaucPlotListener(PlotListener):
   def __init__(self,grid,Vmax):
     PlotListener.__init__(self,grid)
     self.Vmax = Vmax
-    
+    self.rank = grid.rank
+    self.l2_weight = None
+    self.l2_weight_init = False
     self.figure =None
-    
+
+  def __call__(self,inverse_solver,count,x,y,d,r,*args):
+    if self.l2_weight_init == False:
+      vecs = inverse_solver.forward_problem.ssarun.modeldata.vecs;
+      self.l2_weight=self.tz_scalar.communicate(vecs.vel_misfit_weight)
+      self.l2_weight_init = True
+    PlotListener.__call__(self,solver,count,x,y,d,r,*args)
+
   def iteration(self,inverse_solver,count,x,Fx,y,d,r,*args):      
+
     import matplotlib.pyplot as pp
 
     if self.figure is None:
@@ -135,8 +144,7 @@ class Vel2TaucPlotListener(PlotListener):
     else:
       pp.figure(self.figure.number)
 
-    vecs = inverse_solver.forward_problem.ssarun.modeldata.vecs;
-    l2_weight=self.tz_scalar.communicate(vecs.vel_misfit_weight)
+    l2_weight=self.l2_weight
 
     pp.clf()
     
@@ -149,7 +157,7 @@ class Vel2TaucPlotListener(PlotListener):
     pp.colorbar()
     pp.title('ru')
     pp.jet()
-
+    
     pp.subplot(1,3,2)
     ry = l2_weight*r[1,:,:]
     ry = np.maximum(ry,-V)
@@ -158,7 +166,7 @@ class Vel2TaucPlotListener(PlotListener):
     pp.colorbar()
     pp.title('rv')
     pp.jet()
-
+    
     d *= -1
     pp.subplot(1,3,3)      
     pp.imshow(d,origin='lower')
@@ -173,8 +181,18 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
   def __init__(self,grid,Vmax):
     LinearPlotListener.__init__(self,grid)
     self.Vmax = Vmax
-
+    self.l2_weight = None
+    self.l2_weight_init = False
     self.figure =None
+
+  def __call__(self,inverse_solver,count,x,y,d,r,*args):
+    # On the first go-around, extract the l2_weight vector onto 
+    # processor zero.
+    if self.l2_weight_init == False:
+      vecs = inverse_solver.forward_problem.ssarun.modeldata.vecs;
+      self.l2_weight=self.tz_scalar.communicate(vecs.vel_misfit_weight)
+      self.l2_init = True
+    LinearPlotListener.__call__(self,solver,count,x,y,d,r,*args)
 
   def iteration(self,inverse_solver,count,x,y,d,r,*args):      
     import matplotlib.pyplot as pp
@@ -184,11 +202,10 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
     else:
       pp.figure(self.figure.number)
 
-    vecs = inverse_solver.forward_problem.ssarun.modeldata.vecs;
-    l2_weight=self.tz_scalar.communicate(vecs.vel_misfit_weight)
+    l2_weight=self.l2_weight
 
     pp.clf()
-
+    
     V = self.Vmax
     pp.subplot(1,3,1)
     rx = l2_weight*r[0,:,:]
@@ -198,7 +215,7 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
     pp.colorbar()
     pp.title('ru')
     pp.jet()
-
+    
     pp.subplot(1,3,2)
     ry = l2_weight*r[1,:,:]
     ry = np.maximum(ry,-V)
@@ -207,14 +224,14 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
     pp.colorbar()
     pp.title('rv')
     pp.jet()
-
+    
     d *= -1
     pp.subplot(1,3,3)      
     pp.imshow(d,origin='lower')
     pp.colorbar()
     pp.jet()
     pp.title('-d')
-
+    
     pp.ion()
     pp.show()
 
