@@ -4,7 +4,7 @@ from siple.gradient.forward import NonlinearForwardProblem
 from siple.gradient.nonlinear import InvertNLCG, InvertIGN
 from siple.reporting import msg
 import siple
-
+import time
 
 from linalg_pism import PISMLocalVector
 from math import sqrt
@@ -35,24 +35,38 @@ class CaptureLogger:
 
 class CarefulCaptureLogger:
   def __init__(self,filename):
+    self.com = PISM.Context().com
+    self.rank = PISM.Context().rank
+    self.log = ""
     if PISM.Context().rank == 0:
       self.filename = filename
+      d = PISM.netCDF.Dataset(self.filename,'a')
+      if 'siple_log' in d.ncattrs():
+        self.log = d.siple_log
+      d.close()
     else:
       self.filename = None
+    self.com.barrier()
     siple.reporting.add_logger(self)
-  
+
   def __call__(self,message,severity):
-    if not self.filename is None:
-      d = PISM.netCDf.Dataset(self.filename,'a')
+    if self.rank == 0:
       timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-      if 'siple_log' in d.ncattrs():
-        d.siple_log = "%s\n%s: %s" % (d.siple_log,timestamp,message)
-      else:
-        d.siple_log = "%s: %s" % (timestamp, message)
+      self.log = "%s\n%s: %s" % (self.log,timestamp,message)
+      d = PISM.netCDF.Dataset(self.filename,'a')
+      d.siple_log = self.log
       d.close()
     self.com.barrier()
 
-
+  def write(self,output_filename):
+    if self.rank == 0:
+      d = PISM.netCDF.Dataset(output_filename,'a')
+      if 'siple_log' in d.ncattrs():
+        d.siple_log = self.log + "\n" + d.siple_log
+      else:
+        d.siple_log = self.log
+      d.close()
+    self.com.barrier()
 
 def pism_print_logger(message,severity):
   verb = severity

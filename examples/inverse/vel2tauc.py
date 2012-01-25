@@ -29,7 +29,7 @@ import PISM
 
 from pismssaforward import SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
 tauc_params, LinearPlotListener, PlotListener, pism_print_logger, pism_pause, pauseListener, \
-CaptureLogger
+CaptureLogger, CarefulCaptureLogger
 from linalg_pism import PISMLocalVector as PLV
 import pismssaforward
 
@@ -115,16 +115,13 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
       self.modeldata.vecs.write(filename)
       pio.close()
 
-      # Save time & command line
-      PISM.util.writeProvenance(filename)
-
 class ZetaSaver:
   """Iteration listener used to save a copy of the current value
   of zeta (i.e. parameterized tauc) at each iteration during an inversion."""
   def __init__(self,output_filename):
     self.output_filename = output_filename
 
-  def __call__(self,inverse_solver,count,x,y,d,r,*args):
+  def __call__(self,inverse_solver,count,x,Fx,y,r):
     zeta = x.core()
     # The solver doesn't care what the name of zeta is, and we
     # want it called 'zeta_inv' in the output file, so we rename it.
@@ -252,6 +249,7 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
 if __name__ == "__main__":
   context = PISM.Context()
   config = context.config
+  com = context.com
   PISM.set_abort_on_sigint(True)
 
   usage = \
@@ -294,6 +292,7 @@ if __name__ == "__main__":
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
+    do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
     use_tauc_prior = PISM.optionsFlag("-use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
@@ -315,11 +314,17 @@ if __name__ == "__main__":
 
   forward_problem = SSAForwardProblem(vel2tauc)
 
-  grid = vel2tauc.grid
-
   modeldata = vel2tauc.modeldata
   vecs = modeldata.vecs
   grid = modeldata.grid
+
+  if test_adjoint:
+    d = PLV(pismssaforward.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL))
+    r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
+    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
+    siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
+    exit(0)
+
 
   vel_ssa_observed = None
   vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed',stencil_width=2)
@@ -329,7 +334,7 @@ if __name__ == "__main__":
   else:
     if not PISM.util.fileHasVariable(inv_data_filename,"u_surface_observed"):
       PISM.verbPrintf(1,context.com,"Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
-      exit()
+      exit(1)
     vel_surface_observed = PISM.util.standard2dVelocityVec(grid,'_surface_observed',stencil_width=2)
     vel_surface_observed.regrid(inv_data_filename,True)
     vecs.add(vel_surface_observed,writing=saving_inv_data)
@@ -340,47 +345,75 @@ if __name__ == "__main__":
     vel_ssa_observed.add(-1,vel_sia_observed)
     vecs.add(vel_ssa_observed,writing=True)
 
-  # Determine the prior guess for tauc: either the tauc from the input
-  # file, or if -using-tauc-prior the tauc_prior from the inv_datafile
+  # Determine the prior guess for tauc. This can be one of 
+  # a) tauc from the input file (default)
+  # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
   tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
   tauc = PISM.util.standardYieldStressVec(grid)
   if use_tauc_prior:
     tauc_prior.regrid(inv_data_filename,True)
   else:
     if not PISM.util.fileHasVariable(input_filename,"tauc"):
-      verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
-      exit()
+      PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
+      exit(1)
     tauc.regrid(input_filename,True)
     tauc_prior.copy_from(tauc)
   vecs.add(tauc_prior,writing=saving_inv_data)
 
-
-  # Convert tauc guess to zeta guess
-
+  # Determine the initical guess for zeta.  If we are not
+  # restarting, we convert tauc_prior to zeta.  If we are restarting,
+  # we load in zeta from the output file.
   zeta = PISM.IceModelVec2S();
   zeta.create(grid, "zeta_inv", True, PISM.util.WIDE_STENCIL)
-  if config.get_string('inv_ssa_tauc_param')=='ident':
-    zeta.copy_from(tauc_prior)
+  if do_restart:
+    # Just to be sure, verify that we have a 'zeta_inv' in the output file.
+    if not PISM.util.fileHasVariable(output_filename,'zeta_inv'):
+      PISM.verbPrintf(1,com,"Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
+      exit(1)
+    zeta.regrid(output_filename,True)
   else:
-    with PISM.util.Access(nocomm=tauc_prior,comm=zeta):
-      for (i,j) in grid.points():
-        zeta[i,j] = tauc_param.fromTauc(tauc_prior[i,j])
+    if config.get_string('inv_ssa_tauc_param')=='ident':
+      zeta.copy_from(tauc_prior)
+    else:
+      with PISM.util.Access(nocomm=tauc_prior,comm=zeta):
+        for (i,j) in grid.points():
+          zeta[i,j] = tauc_param.fromTauc(tauc_prior[i,j])
   vecs.add(zeta,writing=True) # Ensure that the last value of zeta will
                               # be written out
 
-  if test_adjoint:
-    d = PLV(pismssaforward.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL))
-    r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
-    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
-    siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
-    exit(0)
+  # We establish a logger which will save siple logging messages.  If we 
+  # are restarting, and not in append mode, we need to
+  # construct the logger now so that it can extract any prior siple_logs
+  # from the old output file before we clobber it. 
+  logger = None
 
-  # Determine the inversion algorithm, and set up its arguments.
+  # Prep the output file from the grid so that we can save zeta to it during the runs.
+  if not append_mode:
+    if do_restart:
+      logger = CarefulCaptureLogger(output_filename);
+      
+    pio = PISM.PISMIO(grid)
+    pio.open_for_writing(output_filename,False,True)
+    pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
+    pio.close()
+  zeta.write(output_filename)
+
+  # Log the command line to the output file now so that we have a record of
+  # what was attempted
+  PISM.util.writeProvenance(output_filename)    
+
+  # If we haven't set up the aforementioned logger yet, it's safe to do so now.
+  if logger is None: logger = CarefulCaptureLogger(output_filename);
+
+
+
+  # Determine the inversion algorithm, and set up its arguments, and construct
+  # the solver
   if method == "ign":
     Solver = InvertSSAIGN
   else:
     Solver = InvertSSANLCG
-
+    
   params=Solver.defaultParameters()
   if method == "sd":
     params.steepest_descent = True
@@ -393,28 +426,26 @@ if __name__ == "__main__":
     params.linesearch.verbose = True
   params.verbose   = True
   params.deriv_eps = 0.
-
-  # Run the inversion
-  logger = CaptureLogger();
   solver=Solver(forward_problem,params=params)  
+
+  
+  # Attach various iteration listeners to the solver as needed for:
+  # Plotting
   if do_plotting:
     solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax))
     if method=='ign':
       solver.addLinearIterationListener(Vel2TaucLinPlotListener(grid,Vmax))
+  # Pausing
   if do_pause:
-    solver.addIterationListener(pauseListener)
+    solver.addIterationListener(pauseListener)            
+  # Saving the current iteration
+  solver.addXUpdateListener(ZetaSaver(output_filename)) 
 
-  # Prep the output file from
-  # the grid so that we can save data to it during the runs.
-  if not append_mode:
-    pio = PISM.PISMIO(grid)
-    pio.open_for_writing(output_filename,False,True)
-    pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
-    pio.close()
-  
-  # Attach a listener that saves zeta during the run
-  solver.addIterationListener(ZetaSaver(output_filename))
-
+  # Run the inverse solver!
+  if do_restart:
+    siple.reporting.msg('************** Restarting inversion. ****************')
+  else:
+    siple.reporting.msg('============== Starting inversion. ==================')  
   rms_error /= PISM.secpera # m/s
   (zeta,u) = solver.solve(zeta,vel_ssa_observed,rms_error)
 
@@ -436,5 +467,7 @@ if __name__ == "__main__":
 
   # Write solution out to netcdf file
   vel2tauc.write(output_filename,append=append_mode)
-
-  logger.write(output_filename)
+  # If we're not in append mode, the previous command just nuked
+  # the output file.  So we rewrite the siple log.
+  if not append_mode:
+    logger.write(output_filename)
