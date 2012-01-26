@@ -578,17 +578,16 @@ PetscErrorCode PIO::def_var(string name, nc_type nctype, vector<string> dims) co
 PetscErrorCode PIO::get_1d_var(string name, unsigned int s, unsigned int c,
                                vector<double> &result) const {
   PetscErrorCode ierr;
-  vector<unsigned int> start(1), count(1), imap(1);
+  vector<unsigned int> start(1), count(1);
 
   result.resize(c);
 
   start[0] = s;
   count[0] = c;
-  imap[0]  = 1;
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  ierr = nc->get_varm_double(name, start, count, imap, &result[0]); CHKERRQ(ierr);
+  ierr = nc->get_vara_double(name, start, count, &result[0]); CHKERRQ(ierr);
 
   return 0;
 }
@@ -597,15 +596,14 @@ PetscErrorCode PIO::get_1d_var(string name, unsigned int s, unsigned int c,
 PetscErrorCode PIO::put_1d_var(string name, unsigned int s, unsigned int c,
                                const vector<double> &data) const {
   PetscErrorCode ierr;
-  vector<unsigned int> start(1), count(1), imap(1);
+  vector<unsigned int> start(1), count(1);
 
   start[0] = s;
   count[0] = c;
-  imap[0]  = 1;
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  ierr = nc->put_varm_double(name, start, count, imap, &data[0]); CHKERRQ(ierr);
+  ierr = nc->put_vara_double(name, start, count, &data[0]); CHKERRQ(ierr);
 
   return 0;
 }
@@ -657,18 +655,17 @@ PetscErrorCode PIO::def_time(string name, string calendar, string units) const {
 PetscErrorCode PIO::append_time(string name, double value) const {
   PetscErrorCode ierr;
 
-  vector<unsigned int> start(1), count(1), imap(1);
+  vector<unsigned int> start(1), count(1);
   unsigned int dim_length = 0;
 
   ierr = nc->inq_dimlen(name, dim_length); CHKERRQ(ierr);
 
   start[0] = dim_length;
   count[0] = 1;
-  imap[0]  = 1;
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  ierr = nc->put_varm_double(name, start, count, imap, &value); CHKERRQ(ierr);
+  ierr = nc->put_vara_double(name, start, count, &value); CHKERRQ(ierr);
 
   return 0;
 }
@@ -766,6 +763,8 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, string var_name, unsigned int z_count
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
 
+  // We always use "mapped" I/O here, because we don't know where the input
+  // file came from.
   ierr = nc->get_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
 
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
@@ -824,16 +823,12 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, string var_name, unsigned int z_count
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
 
-  // FIXME: this is work-around. NetCDF 4.1.3 (and earlier, I suppose) seems to
-  // have a bug that makes nc_put_varm_double hang in collective parallel I/O
-  // mode. IceModel will only allow parallel I/O with output_variable_order ==
-  // "xyz"; here we call nc_put_vara_double, which will work.
-  // It is still possible to set io_format to "netcdf4_parallel" and use orders
-  // other than "xyz". It will probably hang, though, so we will not do that in
-  // PISM.
   if (grid->config.get_string("output_variable_order") == "xyz") {
+    // Use the faster and safer (avoids a NetCDF bug) call if the aray storage
+    // orders in the memory and in NetCDF files are the same.
     ierr = nc->put_vara_double(var_name, start, count, (double*)a_petsc); CHKERRQ(ierr);
   } else {
+    // Revert to "mapped" I/O otherwise.
     ierr = nc->put_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
   }
 
@@ -867,6 +862,8 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, string var_name,
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
+  // We always use "mapped" I/O here, because we don't know where the input
+  // file came from.
   ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
 
   ierr = regrid(grid, zlevels_out, lic, g);
@@ -1104,6 +1101,29 @@ PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
   }
 
   return 0;
+}
+
+int PIO::get_vara_double(string variable_name,
+                         vector<unsigned int> start,
+                         vector<unsigned int> count,
+                         double *ip) const {
+  PetscErrorCode ierr;
+
+  ierr = nc->enddef(); CHKERRQ(ierr);
+
+  return nc->get_vara_double(variable_name, start, count, ip);
+}
+
+
+int PIO::put_vara_double(string variable_name,
+                         vector<unsigned int> start,
+                         vector<unsigned int> count,
+                         const double *op) const {
+  PetscErrorCode ierr;
+
+  ierr = nc->enddef(); CHKERRQ(ierr);
+
+  return nc->put_vara_double(variable_name, start, count, op);
 }
 
 int PIO::get_varm_double(string variable_name,

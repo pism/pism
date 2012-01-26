@@ -1627,15 +1627,13 @@ PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
 
   ierr = nc.enddef(); CHKERRQ(ierr);
 
-  vector<unsigned int> start(2), count(2), imap(2);
+  vector<unsigned int> start(2), count(2);
   start[0] = 0;
   start[1] = 0;
   count[0] = length;
   count[1] = 2;
-  imap[0]  = length;
-  imap[1]  = 1;
 
-  ierr = nc.get_varm_double(short_name, start, count, imap, &data[0]); CHKERRQ(ierr);
+  ierr = nc.get_vara_double(short_name, start, count, &data[0]); CHKERRQ(ierr);
 
   // Find the corresponding 'time' variable. (We get units from the 'time'
   // variable, because according to CF-1.5 section 7.1 a "boundary variable"
@@ -1686,15 +1684,13 @@ PetscErrorCode NCTimeBounds::write(string filename, size_t s, vector<double> &da
 
   ierr = nc.enddef(); CHKERRQ(ierr);
 
-  vector<unsigned int> start(2), count(2), imap(2);
+  vector<unsigned int> start(2), count(2);
   start[0] = static_cast<unsigned int>(s);
   start[1] = 0;
   count[0] = static_cast<unsigned int>(data.size()) / 2;
   count[1] = 2;
-  imap[0]  = static_cast<unsigned int>(data.size());
-  imap[1]  = 1;
 
-  ierr = nc.put_varm_double(short_name, start, count, imap, &data[0]); CHKERRQ(ierr);
+  ierr = nc.put_vara_double(short_name, start, count, &data[0]); CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
 

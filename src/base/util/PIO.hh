@@ -131,6 +131,16 @@ public:
   virtual PetscErrorCode regrid_vec(IceGrid *grid, string var_name,
                                     const vector<double> &zlevels_out, LocalInterpCtx *lic, Vec g) const;
 
+  virtual int get_vara_double(string variable_name,
+                              vector<unsigned int> start,
+                              vector<unsigned int> count,
+                              double *ip) const;
+
+  virtual int put_vara_double(string variable_name,
+                              vector<unsigned int> start,
+                              vector<unsigned int> count,
+                              const double *op) const;
+
   virtual int get_varm_double(string variable_name,
                               vector<unsigned int> start,
                               vector<unsigned int> count,

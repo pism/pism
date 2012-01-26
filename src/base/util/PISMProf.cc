@@ -169,7 +169,7 @@ PetscErrorCode PISMProf::save_report(string filename) {
 PetscErrorCode PISMProf::save_report(int index, const PISMNCFile &nc, string variable_name) {
   PetscErrorCode ierr;
   double data[1];
-  vector<unsigned int> start(2), count(2), imap(2);
+  vector<unsigned int> start(2), count(2);
 
   ierr = define_variable(nc, variable_name); CHKERRQ(ierr);
 
@@ -187,10 +187,9 @@ PetscErrorCode PISMProf::save_report(int index, const PISMNCFile &nc, string var
   start[1] = rank / (Ny);
 
   count[0] = 1;  count[1] = 1;
-  imap[0]  = Nx; imap[1]  = 1;
 
   ierr = nc.enddef(); CHKERRQ(ierr);
-  ierr = nc.put_varm_double(variable_name, start, count, imap, data); CHKERRQ(ierr);
+  ierr = nc.put_vara_double(variable_name, start, count, data); CHKERRQ(ierr);
 
   return 0;
 }
