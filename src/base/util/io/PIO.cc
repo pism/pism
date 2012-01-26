@@ -1119,10 +1119,10 @@ PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
   return 0;
 }
 
-int PIO::get_vara_double(string variable_name,
-                         vector<unsigned int> start,
-                         vector<unsigned int> count,
-                         double *ip) const {
+PetscErrorCode PIO::get_vara_double(string variable_name,
+                                    vector<unsigned int> start,
+                                    vector<unsigned int> count,
+                                    double *ip) const {
   PetscErrorCode ierr;
 
   ierr = nc->enddef(); CHKERRQ(ierr);
@@ -1131,10 +1131,10 @@ int PIO::get_vara_double(string variable_name,
 }
 
 
-int PIO::put_vara_double(string variable_name,
-                         vector<unsigned int> start,
-                         vector<unsigned int> count,
-                         const double *op) const {
+PetscErrorCode PIO::put_vara_double(string variable_name,
+                                    vector<unsigned int> start,
+                                    vector<unsigned int> count,
+                                    const double *op) const {
   PetscErrorCode ierr;
 
   ierr = nc->enddef(); CHKERRQ(ierr);
@@ -1142,10 +1142,10 @@ int PIO::put_vara_double(string variable_name,
   return nc->put_vara_double(variable_name, start, count, op);
 }
 
-int PIO::get_varm_double(string variable_name,
-                         vector<unsigned int> start,
-                         vector<unsigned int> count,
-                         vector<unsigned int> imap, double *ip) const {
+PetscErrorCode PIO::get_varm_double(string variable_name,
+                                    vector<unsigned int> start,
+                                    vector<unsigned int> count,
+                                    vector<unsigned int> imap, double *ip) const {
   PetscErrorCode ierr;
 
   ierr = nc->enddef(); CHKERRQ(ierr);
@@ -1154,10 +1154,10 @@ int PIO::get_varm_double(string variable_name,
 }
 
 
-int PIO::put_varm_double(string variable_name,
-                         vector<unsigned int> start,
-                         vector<unsigned int> count,
-                         vector<unsigned int> imap, const double *op) const {
+PetscErrorCode PIO::put_varm_double(string variable_name,
+                                    vector<unsigned int> start,
+                                    vector<unsigned int> count,
+                                    vector<unsigned int> imap, const double *op) const {
   PetscErrorCode ierr;
 
   ierr = nc->enddef(); CHKERRQ(ierr);

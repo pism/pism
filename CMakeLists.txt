@@ -196,6 +196,13 @@ if (Pism_GPROF_FLAGS)
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 endif ()
 
+# Try to find netcdf_par.h. We assume that NetCDF was compiled with
+# parallel I/O if this header is present.
+find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
+mark_as_advanced(NETCDF_PAR_H)
+if (NETCDF_PAR_H)
+  option (Pism_USE_PARALLEL_NETCDF "Enables parallel NetCDF I/O."          ON)
+endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
   find_package(Python REQUIRED)

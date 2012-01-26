@@ -101,7 +101,9 @@ int PISMNC3File::enddef() const {
     return 0;
 
   if (rank == 0) {
-    stat = nc_enddef(ncid);
+    //! 50000 (below) means that we allocate ~50Kb for metadata in NetCDF files
+    //! created by PISM.
+    stat = nc__enddef(ncid, 50000, 4, 0, 4); check(stat);
   }
 
   MPI_Barrier(com);
@@ -287,9 +289,11 @@ int PISMNC3File::get_var_double(string variable_name,
       fprintf(stderr, "start and count arrays have to have the same size\n");
       return NC_EINVAL;           // invalid argument error code
     }
-    imap.resize(ndims);
   }
 #endif
+
+  if (mapped == false)
+    imap.resize(ndims);
 
   // get the size of the communicator
   MPI_Comm_size(com, &com_size);
@@ -417,9 +421,11 @@ int PISMNC3File::put_var_double(string variable_name,
       fprintf(stderr, "start and count arrays have to have the same size\n");
       return NC_EINVAL;           // invalid argument error code
     }
-    imap.resize(ndims);
   }
 #endif
+
+  if (mapped == false)
+    imap.resize(ndims);
 
   // get the size of the communicator
   MPI_Comm_size(com, &com_size);

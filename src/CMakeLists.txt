@@ -2,6 +2,7 @@ include_directories (
   base
   base/stressbalance
   base/util
+  base/util/io
   base/energy
   base/rheology
   base/basal_strength
@@ -14,49 +15,46 @@ include_directories (
   udunits
   )
 
-# Try to find netcdf_par.h. We assume that NetCDF was compiled with
-# parallel I/O if this header is present.
-find_file(NETCDF_PAR netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
-mark_as_advanced(NETCDF_PAR)
-
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
 # all over the place).
 add_library (pismutil
   base/enthalpyConverter.cc
-  base/util/LocalInterpCtx.cc
   base/util/IceGrid.cc
+  base/util/IceGrid.cc
+  base/util/Mask.cc
   base/util/NCVariable.cc
   base/util/PISMComponent.cc
   base/util/PISMProf.cc
+  base/util/PISMTime.cc
   base/util/PISMVars.cc
   base/util/Timeseries.cc
-  base/util/IceGrid.cc
   base/util/iceModelVec.cc
   base/util/iceModelVec2.cc
+  base/util/iceModelVec2T.cc
   base/util/iceModelVec2V.cc
   base/util/iceModelVec3.cc
-  base/util/iceModelVec2T.cc
-  base/util/Mask.cc
+  base/util/io/LocalInterpCtx.cc
+  base/util/io/PIO.cc
+  base/util/io/PISMNC3File.cc
+  base/util/io/PISMNC4File.cc
+  base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
-  base/util/pism_options.cc
   base/util/pism_default_config.cc
-  base/util/PISMTime.cc
-  base/util/PISMNCFile.cc
-  base/util/PISMNC3File.cc
-  base/util/PISMNC4File.cc
-  base/util/PIO.cc
+  base/util/pism_options.cc
   base/varcEnthalpyConverter.cc
   )
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)
 
-if (NETCDF_PAR)
-set_source_files_properties (base/util/PISMNC4File.cc base/util/PIO.cc
-  PROPERTIES COMPILE_FLAGS -DPISM_PARALLEL_NETCDF=1)
+if (Pism_USE_PARALLEL_NETCDF)
+  set_source_files_properties (base/util/io/PISMNC4File.cc base/util/io/PIO.cc
+    PROPERTIES COMPILE_FLAGS
+    "-DPISM_PARALLEL_NETCDF=1")
 else()
-set_source_files_properties (base/util/PISMNC4File.cc base/util/PIO.cc
-  PROPERTIES COMPILE_FLAGS -DPISM_PARALLEL_NETCDF=0)
+  set_source_files_properties (base/util/io/PISMNC4File.cc base/util/io/PIO.cc
+    PROPERTIES COMPILE_FLAGS
+    "-DPISM_PARALLEL_NETCDF=0 -Wno-unused")
 endif()
 
 add_custom_target (touch_pism_revision
@@ -253,9 +251,9 @@ if (Pism_BUILD_EXTRA_EXECS)
     target_link_libraries (netcdf_parallel_3d ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
 
     add_executable (pismncfile_test software_tests/pismncfile_test.cc
-      base/util/PISMNCFile.cc
-      base/util/PISMNC3File.cc
-      base/util/PISMNC4File.cc)
+      base/util/io/PISMNCFile.cc
+      base/util/io/PISMNC3File.cc
+      base/util/io/PISMNC4File.cc)
     target_link_libraries (pismncfile_test ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
   endif()
 

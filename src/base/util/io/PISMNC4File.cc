@@ -39,37 +39,38 @@ PISMNC4File::~PISMNC4File() {
 // open/create/close
 
 int PISMNC4File::open(string fname, int mode) {
+#if (PISM_PARALLEL_NETCDF==1)
   MPI_Info info = MPI_INFO_NULL;
+  int stat;
+
+  stat = nc_open_par(filename.c_str(), mode|NC_MPIIO, com, info, &ncid); check(stat);
 
   filename = fname;
-
-#if (PISM_PARALLEL_NETCDF==1)
-  int stat = nc_open_par(filename.c_str(), mode|NC_MPIIO, com, info, &ncid); check(stat);
-#else
-  return -1;
-#endif
 
   define_mode = false;
 
   return stat;
-}
-
-int PISMNC4File::create(string fname) {
-  MPI_Info info = MPI_INFO_NULL;
-
-  filename = fname;
-
-#if (PISM_PARALLEL_NETCDF==1)
-  int stat = nc_create_par(filename.c_str(),
-                           NC_NETCDF4 | NC_MPIIO,
-                           com, info, &ncid); check(stat);
 #else
   return -1;
 #endif
+}
 
+int PISMNC4File::create(string fname) {
+#if (PISM_PARALLEL_NETCDF==1)
+  MPI_Info info = MPI_INFO_NULL;
+  int stat;
+
+  filename = fname;
+
+  stat = nc_create_par(filename.c_str(),
+                       NC_NETCDF4 | NC_MPIIO,
+                       com, info, &ncid); check(stat);
   define_mode = true;
 
   return stat;
+#else
+  return -1;
+#endif
 }
 
 int PISMNC4File::close() {
@@ -227,9 +228,11 @@ int PISMNC4File::get_var_double(string variable_name,
       fprintf(stderr, "start and count arrays have to have the same size\n");
       return NC_EINVAL;           // invalid argument error code
     }
-    imap.resize(ndims);
   }
 #endif
+
+  if (mapped == false)
+    imap.resize(ndims);
 
   vector<size_t> nc_start(ndims), nc_count(ndims);
   vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
@@ -302,9 +305,11 @@ int PISMNC4File::put_var_double(string variable_name,
       fprintf(stderr, "start and count arrays have to have the same size\n");
       return NC_EINVAL;           // invalid argument error code
     }
-    imap.resize(ndims);
   }
 #endif
+
+  if (mapped == false)
+    imap.resize(ndims);
 
   vector<size_t> nc_start(ndims), nc_count(ndims);
   vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);

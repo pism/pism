@@ -133,25 +133,25 @@ public:
   virtual PetscErrorCode regrid_vec(IceGrid *grid, string var_name,
                                     const vector<double> &zlevels_out, LocalInterpCtx *lic, Vec g) const;
 
-  virtual int get_vara_double(string variable_name,
-                              vector<unsigned int> start,
-                              vector<unsigned int> count,
-                              double *ip) const;
+  virtual PetscErrorCode get_vara_double(string variable_name,
+                                         vector<unsigned int> start,
+                                         vector<unsigned int> count,
+                                         double *ip) const;
 
-  virtual int put_vara_double(string variable_name,
-                              vector<unsigned int> start,
-                              vector<unsigned int> count,
-                              const double *op) const;
+  virtual PetscErrorCode put_vara_double(string variable_name,
+                                         vector<unsigned int> start,
+                                         vector<unsigned int> count,
+                                         const double *op) const;
 
-  virtual int get_varm_double(string variable_name,
-                              vector<unsigned int> start,
-                              vector<unsigned int> count,
-                              vector<unsigned int> imap, double *ip) const;
+  virtual PetscErrorCode get_varm_double(string variable_name,
+                                         vector<unsigned int> start,
+                                         vector<unsigned int> count,
+                                         vector<unsigned int> imap, double *ip) const;
 
-  virtual int put_varm_double(string variable_name,
-                              vector<unsigned int> start,
-                              vector<unsigned int> count,
-                              vector<unsigned int> imap, const double *op) const;
+  virtual PetscErrorCode put_varm_double(string variable_name,
+                                         vector<unsigned int> start,
+                                         vector<unsigned int> count,
+                                         vector<unsigned int> imap, const double *op) const;
 
 protected:
   MPI_Comm com;
