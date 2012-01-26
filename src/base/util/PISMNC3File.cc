@@ -241,11 +241,29 @@ int PISMNC3File::def_var(string name, nc_type nctype, vector<string> dims) const
   return stat;
 }
 
-//! \brief Get variable data (mapped).
 int PISMNC3File::get_varm_double(string variable_name,
+                                 vector<unsigned int> start,
+                                 vector<unsigned int> count,
+                                 vector<unsigned int> imap, double *op) const {
+  return this->get_var_double(variable_name,
+                              start, count, imap, op, true);
+}
+
+int PISMNC3File::get_vara_double(string variable_name,
+                                 vector<unsigned int> start,
+                                 vector<unsigned int> count,
+                                 double *op) const {
+  vector<unsigned int> dummy;
+  return this->get_var_double(variable_name,
+                              start, count, dummy, op, false);
+}
+
+//! \brief Get variable data.
+int PISMNC3File::get_var_double(string variable_name,
                                 vector<unsigned int> start,
                                 vector<unsigned int> count,
-                                vector<unsigned int> imap, double *ip) const {
+                                vector<unsigned int> imap, double *ip,
+                                bool mapped) const {
   const int start_tag = 1,
     count_tag = 2,
     data_tag =  3,
@@ -256,6 +274,22 @@ int PISMNC3File::get_varm_double(string variable_name,
   MPI_Status mpi_stat;
   unsigned int local_chunk_size = 1,
     processor_0_chunk_size = 0;
+
+#if (PISM_DEBUG==1)
+  if (mapped) {
+    if (start.size() != count.size() ||
+        start.size() != imap.size()) {
+      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+  } else {
+    if (start.size() != count.size()) {
+      fprintf(stderr, "start and count arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+    imap.resize(ndims);
+  }
+#endif
 
   // get the size of the communicator
   MPI_Comm_size(com, &com_size);
@@ -306,8 +340,13 @@ int PISMNC3File::get_varm_double(string variable_name,
                                 // stride == NULL case.
       }
 
-      stat = nc_get_varm_double(ncid, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                processor_0_buffer); check(stat);
+      if (mapped) {
+        stat = nc_get_varm_double(ncid, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+                                  processor_0_buffer); check(stat);
+      } else {
+        stat = nc_get_vara_double(ncid, varid, &nc_start[0], &nc_count[0],
+                                  processor_0_buffer); check(stat);
+      }
 
       if (r != 0) {
         MPI_Send(processor_0_buffer, local_chunk_size, MPI_DOUBLE, r, data_tag, com);
@@ -331,11 +370,30 @@ int PISMNC3File::get_varm_double(string variable_name,
   return stat;
 }
 
-//! \brief Put variable data (mapped).
 int PISMNC3File::put_varm_double(string variable_name,
+                                 vector<unsigned int> start,
+                                 vector<unsigned int> count,
+                                 vector<unsigned int> imap, const double *op) const {
+  return this->put_var_double(variable_name,
+                              start, count, imap, op, true);
+}
+
+int PISMNC3File::put_vara_double(string variable_name,
+                                 vector<unsigned int> start,
+                                 vector<unsigned int> count,
+                                 const double *op) const {
+  vector<unsigned int> dummy;
+  return this->put_var_double(variable_name,
+                              start, count, dummy, op, false);
+}
+
+
+//! \brief Put variable data (mapped).
+int PISMNC3File::put_var_double(string variable_name,
 				vector<unsigned int> start,
 				vector<unsigned int> count,
-				vector<unsigned int> imap, const double *op) const {
+				vector<unsigned int> imap, const double *op,
+                                bool mapped) const {
   const int start_tag = 1,
     count_tag = 2,
     data_tag =  3,
@@ -346,6 +404,22 @@ int PISMNC3File::put_varm_double(string variable_name,
   MPI_Status mpi_stat;
   unsigned int local_chunk_size = 1,
     processor_0_chunk_size = 0;
+
+#if (PISM_DEBUG==1)
+  if (mapped) {
+    if (start.size() != count.size() ||
+        start.size() != imap.size()) {
+      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+  } else {
+    if (start.size() != count.size()) {
+      fprintf(stderr, "start and count arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+    imap.resize(ndims);
+  }
+#endif
 
   // get the size of the communicator
   MPI_Comm_size(com, &com_size);
@@ -398,9 +472,13 @@ int PISMNC3File::put_varm_double(string variable_name,
                                 // stride == NULL case.
       }
 
-
-      stat = nc_put_varm_double(ncid, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                processor_0_buffer); check(stat);
+      if (mapped) {
+        stat = nc_put_varm_double(ncid, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+                                  processor_0_buffer); check(stat);
+      } else {
+        stat = nc_put_vara_double(ncid, varid, &nc_start[0], &nc_count[0],
+                                  processor_0_buffer); check(stat);
+      }
     } // end of the for loop
 
     delete[] processor_0_buffer;

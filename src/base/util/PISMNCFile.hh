@@ -85,6 +85,16 @@ public:
   // var
   virtual int def_var(string name, nc_type nctype, vector<string> dims) const = 0;
 
+  virtual int get_vara_double(string variable_name,
+                              vector<unsigned int> start,
+                              vector<unsigned int> count,
+                              double *ip) const = 0;
+
+  virtual int put_vara_double(string variable_name,
+                              vector<unsigned int> start,
+                              vector<unsigned int> count,
+                              const double *op) const = 0;
+
   virtual int get_varm_double(string variable_name,
                               vector<unsigned int> start,
                               vector<unsigned int> count,

@@ -194,33 +194,42 @@ int PISMNC4File::def_var(string name, nc_type nctype, vector<string> dims) const
 int PISMNC4File::get_varm_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 vector<unsigned int> imap, double *ip) const {
-  int stat, varid, ndims = static_cast<int>(start.size());
-
-  vector<size_t> nc_start(ndims), nc_count(ndims);
-  vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
-
-  stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
-
-  for (int j = 0; j < ndims; ++j) {
-    nc_start[j] = start[j];
-    nc_count[j] = count[j];
-    nc_imap[j]  = imap[j];
-    nc_stride[j] = 1;
-  }
-
-  stat = nc_get_varm_double(ncid, varid,
-                            &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                            ip); check(stat);
-
-  return stat;
+                                 vector<unsigned int> imap, double *op) const {
+  return this->get_var_double(variable_name,
+                              start, count, imap, op, true);
 }
 
-int PISMNC4File::put_varm_double(string variable_name,
+int PISMNC4File::get_vara_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 vector<unsigned int> imap, const double *op) const {
+                                 double *op) const {
+  vector<unsigned int> dummy;
+  return this->get_var_double(variable_name,
+                              start, count, dummy, op, false);
+}
+
+int PISMNC4File::get_var_double(string variable_name,
+                                vector<unsigned int> start,
+                                vector<unsigned int> count,
+                                vector<unsigned int> imap, double *ip,
+                                bool mapped) const {
   int stat, varid, ndims = static_cast<int>(start.size());
+
+#if (PISM_DEBUG==1)
+  if (mapped) {
+    if (start.size() != count.size() ||
+        start.size() != imap.size()) {
+      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+  } else {
+    if (start.size() != count.size()) {
+      fprintf(stderr, "start and count arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+    imap.resize(ndims);
+  }
+#endif
 
   vector<size_t> nc_start(ndims), nc_count(ndims);
   vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
@@ -236,9 +245,82 @@ int PISMNC4File::put_varm_double(string variable_name,
 
   stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
 
-  stat = nc_put_varm_double(ncid, varid,
-                            &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                            op); check(stat);
+  if (mapped) {
+    stat = nc_get_varm_double(ncid, varid,
+                              &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+                              ip); check(stat);
+  } else {
+    stat = nc_get_vara_double(ncid, varid,
+                              &nc_start[0], &nc_count[0],
+                              ip); check(stat);
+  }
+
+  return stat;
+}
+
+int PISMNC4File::put_varm_double(string variable_name,
+                                 vector<unsigned int> start,
+                                 vector<unsigned int> count,
+                                 vector<unsigned int> imap, const double *op) const {
+  return this->put_var_double(variable_name,
+                              start, count, imap, op, true);
+}
+
+int PISMNC4File::put_vara_double(string variable_name,
+                                 vector<unsigned int> start,
+                                 vector<unsigned int> count,
+                                 const double *op) const {
+  vector<unsigned int> dummy;
+  return this->put_var_double(variable_name,
+                              start, count, dummy, op, false);
+}
+
+int PISMNC4File::put_var_double(string variable_name,
+                                vector<unsigned int> start,
+                                vector<unsigned int> count,
+                                vector<unsigned int> imap, const double *op,
+                                bool mapped) const {
+  int stat, varid, ndims = static_cast<int>(start.size());
+
+#if (PISM_DEBUG==1)
+  if (mapped) {
+    if (start.size() != count.size() ||
+        start.size() != imap.size()) {
+      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+  } else {
+    if (start.size() != count.size()) {
+      fprintf(stderr, "start and count arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+    imap.resize(ndims);
+  }
+#endif
+
+  vector<size_t> nc_start(ndims), nc_count(ndims);
+  vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
+
+  stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+
+  for (int j = 0; j < ndims; ++j) {
+    nc_start[j] = start[j];
+    nc_count[j] = count[j];
+    nc_imap[j]  = imap[j];
+    nc_stride[j] = 1;
+  }
+
+  stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
+
+  if (mapped) {
+    stat = nc_put_varm_double(ncid, varid,
+                              &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+                              op); check(stat);
+  } else {
+    stat = nc_put_vara_double(ncid, varid,
+                              &nc_start[0], &nc_count[0],
+                              op); check(stat);
+  }
 
   return stat;
 }

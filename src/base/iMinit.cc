@@ -840,6 +840,17 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
 
+  // Make sure that we use the output_variable_order that works with NetCDF-4
+  // parallel I/O. (For two reasons: it is faster and it will probably hang if
+  // it is not "xyz".)
+
+  if (config.get_string("io_format") == "netcdf4_parallel" &&
+      config.get_string("output_variable_order") != "xyz") {
+    PetscPrintf(grid.com,
+                "PISM ERROR: due to a bug in NetCDF -io_format netcdf4_parallel requires -o_order xyz.\n");
+    PISMEnd();
+  }
+
   event_step      = grid.profiler->create("step",     "time spent doing time-stepping");
   event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");
 

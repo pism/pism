@@ -824,7 +824,18 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, string var_name, unsigned int z_count
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
 
-  ierr = nc->put_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
+  // FIXME: this is work-around. NetCDF 4.1.3 (and earlier, I suppose) seems to
+  // have a bug that makes nc_put_varm_double hang in collective parallel I/O
+  // mode. IceModel will only allow parallel I/O with output_variable_order ==
+  // "xyz"; here we call nc_put_vara_double, which will work.
+  // It is still possible to set io_format to "netcdf4_parallel" and use orders
+  // other than "xyz". It will probably hang, though, so we will not do that in
+  // PISM.
+  if (grid->config.get_string("output_variable_order") == "xyz") {
+    ierr = nc->put_vara_double(var_name, start, count, (double*)a_petsc); CHKERRQ(ierr);
+  } else {
+    ierr = nc->put_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
+  }
 
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
 
@@ -1084,11 +1095,11 @@ PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
       }
     }
 
-#if (PISM_DEBUG==1)
-    fprintf(stderr, "[%d] var=%s start[%d]=%d count[%d]=%d imap[%d]=%d\n",
-            rank, short_name.c_str(),
-            j, start[j], j, count[j], j, imap[j]);
-#endif
+// #if (PISM_DEBUG==1)
+//     fprintf(stderr, "[%d] var=%s start[%d]=%d count[%d]=%d imap[%d]=%d\n",
+//             rank, short_name.c_str(),
+//             j, start[j], j, count[j], j, imap[j]);
+// #endif
 
   }
 

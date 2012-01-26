@@ -51,6 +51,16 @@ public:
   // var
   int def_var(string name, nc_type nctype, vector<string> dims) const;
 
+  int get_vara_double(string variable_name,
+                      vector<unsigned int> start,
+                      vector<unsigned int> count,
+                      double *ip) const;
+
+  int put_vara_double(string variable_name,
+                      vector<unsigned int> start,
+                      vector<unsigned int> count,
+                      const double *op) const;
+
   int get_varm_double(string variable_name,
                       vector<unsigned int> start,
                       vector<unsigned int> count,
@@ -87,6 +97,19 @@ public:
 
   // misc
   int set_fill(int fillmode, int &old_modep) const;
+
+private:
+  int get_var_double(string variable_name,
+                     vector<unsigned int> start,
+                     vector<unsigned int> count,
+                     vector<unsigned int> imap, double *ip,
+                     bool mapped) const;
+
+  int put_var_double(string variable_name,
+                     vector<unsigned int> start,
+                     vector<unsigned int> count,
+                     vector<unsigned int> imap, const double *op,
+                     bool mapped) const;
 };
 
 #endif /* _PISMNC3FILE_H_ */
