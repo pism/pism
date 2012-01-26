@@ -313,7 +313,7 @@ PetscErrorCode IceModel::grid_setup() {
     ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
 
     for (unsigned int i = 0; i < names.size(); ++i) {
-      ierr = nc.inq_grid(names[i], &grid);
+      ierr = nc.inq_grid(names[i], &grid, NOT_PERIODIC);
       if (ierr == 0) break;
     }
 

@@ -393,7 +393,7 @@ PetscErrorCode PIO::inq_dim_limits(string name, double *min, double *max) const 
 
 
 //! \brief Sets grid parameters using data read from the file.
-PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid) const {
+PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid, Periodicity periodicity) const {
   PetscErrorCode ierr;
 
   if (grid == NULL)
@@ -423,12 +423,28 @@ PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid) const {
 
   grid->Mx = input.x_len;
   grid->My = input.y_len;
-  // NB: We don't try to deduce periodicity from an input file.
-  //  grid->periodicity = NONE; 
-  grid->x0 = (input.x_max + input.x_min) / 2.0;
-  grid->y0 = (input.y_max + input.y_min) / 2.0;
-  grid->Lx = (input.x_max - input.x_min) / 2.0;
-  grid->Ly = (input.y_max - input.y_min) / 2.0;
+
+  grid->periodicity = periodicity;
+
+  // The grid dimensions Lx/Ly are computed differently depending on the grid's
+  // periodicity. For x-periodic grids, e.g., the length Lx is a little longer
+  // than the difference between the maximum and minimum x-coordinates.
+  PetscReal x_max = input.x_max, x_min = input.x_min;
+  if (periodicity & X_PERIODIC) {
+    PetscReal dx = (x_max-x_min)/(grid->Mx-1);
+    x_max += dx;
+  }
+
+  PetscReal y_max = input.y_max, y_min = input.y_min;
+  if (periodicity & Y_PERIODIC) {
+    PetscReal dy = (y_max-y_min)/(grid->My-1);
+    y_max += dy;
+  }
+
+  grid->x0 = (x_max + x_min) / 2.0;
+  grid->y0 = (y_max + y_min) / 2.0;
+  grid->Lx = (x_max - x_min) / 2.0;
+  grid->Ly = (y_max - y_min) / 2.0;
 
   grid->time->set_start(input.time);
   ierr = grid->time->init(); CHKERRQ(ierr); // re-initialize to take the new start time into account

@@ -35,7 +35,7 @@ static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
   PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
 
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
-  ierr = nc.inq_grid("bedrock_altitude", &grid); CHKERRQ(ierr);
+  ierr = nc.inq_grid("bedrock_altitude", &grid, NOT_PERIODIC); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   grid.compute_nprocs();

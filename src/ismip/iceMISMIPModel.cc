@@ -626,10 +626,6 @@ PetscErrorCode IceMISMIPModel::init_ocean_kill() {
     }
   }
   ierr = ocean_kill_mask.end_access(); CHKERRQ(ierr);
-
-  // communicate it
-  ierr = ocean_kill_mask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = ocean_kill_mask.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 

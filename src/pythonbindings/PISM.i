@@ -467,6 +467,7 @@ typedef int NormType; // YUCK.
 %include "pism_python.hh"
 %template(PISMDiag_PISMDefaultYieldStress) PISMDiag<PISMDefaultYieldStress>;
 %include "PISMYieldStress.hh"
+%include "PISMTime.hh"
 
 
 

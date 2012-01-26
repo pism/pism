@@ -486,7 +486,7 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* &lic) {
   PetscErrorCode ierr;
 
-  PIO nc(grid->com, grid->rank, grid->config.get_string("io_format"));
+  PIO nc(grid->com, grid->rank, "netcdf3");
   vector<double> zlevs, zblevs;
   grid_info gi;
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);

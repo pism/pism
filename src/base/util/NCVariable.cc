@@ -1777,6 +1777,8 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, nc_type nctype, bool) {
   dims.push_back(dimension_name);
   dims.push_back(bounds_name);
 
+  ierr = nc.redef(); CHKERRQ(ierr);
+
   ierr = nc.def_var(short_name, nctype, dims); CHKERRQ(ierr);
 
   ierr = write_attributes(nc, nctype, true);

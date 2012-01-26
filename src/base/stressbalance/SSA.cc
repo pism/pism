@@ -260,6 +260,9 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   ierr = result_e1.begin_access(); CHKERRQ(ierr);
   ierr = result_e2.begin_access(); CHKERRQ(ierr);
 
+	Mask M;
+	ierr = mask->begin_access(); CHKERRQ(ierr);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -269,6 +272,12 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         continue;
       }
 
+			const PetscInt M_ij = mask->as_int(i,j),
+			M_e = mask->as_int(i + 1,j),
+      M_w = mask->as_int(i - 1,j),
+      M_n = mask->as_int(i,j + 1),
+      M_s = mask->as_int(i,j - 1);
+
       //centered difference scheme; strain in units s-1
       PetscScalar
         u_x = (velocity(i+1,j).u - velocity(i-1,j).u) / (2 * dx),
@@ -276,20 +285,23 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         v_x = (velocity(i+1,j).v - velocity(i-1,j).v) / (2 * dx),
         v_y = (velocity(i,j+1).v - velocity(i,j-1).v) / (2 * dy);
 
+			if ( M.floating_ice(M_ij)) {
+
       //inward scheme at the ice-shelf front
-      if (H(i+1,j)==0.0) {
+			//SSA velocity exist where mask is floating, but not in the new full grid cells along the front
+			if (M.ice_free(M_e)) {
         u_x = (velocity(i,j).u - velocity(i-1,j).u) / dx;
         v_x = (velocity(i,j).v - velocity(i-1,j).v) / dx;
       }
-      if (H(i-1,j)==0.0) {
+      if (M.ice_free(M_w)) {
         u_x = (velocity(i+1,j).u - velocity(i,j).u) / dx;
         v_x = (velocity(i+1,j).v - velocity(i,j).v) / dx;
       }
-      if (H(i-1,j)==0.0) {
+      if (M.ice_free(M_n)) {
         u_y = (velocity(i,j).u - velocity(i,j-1).u) / dy;
         v_y = (velocity(i,j).v - velocity(i,j-1).v) / dy;
       }
-      if (H(i-1,j)==0.0) {
+      if (M.ice_free(M_s)) {
         u_y = (velocity(i,j+1).u - velocity(i,j).u) / dy;
         v_y = (velocity(i,j+1).v - velocity(i,j).v) / dy;
       }
@@ -310,7 +322,7 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
       result_e1(i,j) = A + q;
       result_e2(i,j) = A - q; // q >= 0 so e1 >= e2
-
+}
     } // j
   }   // i
 
@@ -318,6 +330,8 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   ierr = H.end_access(); CHKERRQ(ierr);
   ierr = result_e1.end_access(); CHKERRQ(ierr);
   ierr = result_e2.end_access(); CHKERRQ(ierr);
+
+	ierr = mask->end_access(); CHKERRQ(ierr);
   return 0;
 }
 

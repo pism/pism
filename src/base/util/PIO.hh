@@ -27,6 +27,9 @@
 #include <string>
 #include <netcdf.h>
 
+#include "IceGrid.hh"           // Needed for Periodicity enum declaration.
+
+
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
 using namespace std;
@@ -36,7 +39,6 @@ enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
 struct grid_info;
 class LocalInterpCtx;
-class IceGrid;
 class PISMNCFile;
 
 //! \brief High-level PISM I/O class.
@@ -79,7 +81,7 @@ public:
 
   virtual PetscErrorCode inq_dim_limits(string name, double *min, double *max) const;
 
-  virtual PetscErrorCode inq_grid(string var_name, IceGrid *grid) const;
+  virtual PetscErrorCode inq_grid(string var_name, IceGrid *grid, Periodicity periodicity) const;
 
   virtual PetscErrorCode inq_units(string name, bool &has_units, utUnit &units) const;
 

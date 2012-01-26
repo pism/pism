@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 The PISM Authors
+# Copyright (C) 2009-2012 The PISM Authors
 
 # PISM SeaRISE Greenland experiments
 
@@ -42,25 +42,25 @@ fi
 
 PIKOPTIONS="-ocean_kill"
 # coupler settings
-COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd"
+COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd -pdd_annualize"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd"
+COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd -pdd_annualize"
 
 if [ $3 -eq "1" ] ; then  # PIKOPTIONS
     # PIK marine ice dynamics
     PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 100.0"  # parameters preliminary
 elif [ $3 -eq "2" ] ; then  # FTT
     # coupler settings
-    COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd,turn_into_anomaly"
+    COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd,turn_into_anomaly -pdd_annualize"
     # coupler settings for spin-up (i.e. with forcing)
-    COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd,turn_into_anomaly"
+    COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd,turn_into_anomaly -pdd_annualize"
 elif [ $3 -eq "3" ] ; then  # PIKOPTIONS and FTT
     # PIK marine ice dynamics
     PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 100.0"  # parameters preliminary
     # coupler settings
-    COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd,turn_into_anomaly"
+    COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd,turn_into_anomaly -pdd_annualize"
     # coupler settings for spin-up (i.e. with forcing)
-    COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd,turn_into_anomaly"
+    COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd,turn_into_anomaly -pdd_annualize"
 fi
 
 PISM_CONFIG=searise_config.nc

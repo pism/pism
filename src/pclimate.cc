@@ -46,7 +46,7 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
 
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
-  ierr = nc.inq_grid("land_ice_thickness", &grid); CHKERRQ(ierr);
+  ierr = nc.inq_grid("land_ice_thickness", &grid, NOT_PERIODIC); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   grid.compute_nprocs();
