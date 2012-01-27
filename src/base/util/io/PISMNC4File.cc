@@ -253,16 +253,18 @@ int PISMNC4File::get_var_double(string variable_name,
     // Use independent parallel access mode because it works. It would be
     // better to use collective mode, but I/O performance is ruined by
     // "mapping" anyway.
+#if (PISM_PARALLEL_NETCDF==1)
     stat = nc_var_par_access(ncid, varid, NC_INDEPENDENT); check(stat);
-
+#endif
     stat = nc_get_varm_double(ncid, varid,
                               &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                               ip); check(stat);
   } else {
     // Use collective parallel access mode because it is faster (and because it
     // works in this case).
+#if (PISM_PARALLEL_NETCDF==1)
     stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
-
+#endif
     stat = nc_get_vara_double(ncid, varid,
                               &nc_start[0], &nc_count[0],
                               ip); check(stat);
@@ -325,22 +327,22 @@ int PISMNC4File::put_var_double(string variable_name,
     nc_stride[j] = 1;
   }
 
-  stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
-
   if (mapped) {
     // Use independent parallel access mode because it works. It would be
     // better to use collective mode, but I/O performance is ruined by
     // "mapping" anyway.
+#if (PISM_PARALLEL_NETCDF==1)
     stat = nc_var_par_access(ncid, varid, NC_INDEPENDENT); check(stat);
-
+#endif
     stat = nc_put_varm_double(ncid, varid,
                               &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                               op); check(stat);
   } else {
     // Use collective parallel access mode because it is faster (and because it
     // works in this case).
+#if (PISM_PARALLEL_NETCDF==1)
     stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
-
+#endif
     stat = nc_put_vara_double(ncid, varid,
                               &nc_start[0], &nc_count[0],
                               op); check(stat);
