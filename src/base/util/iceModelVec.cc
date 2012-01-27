@@ -680,7 +680,7 @@ PetscErrorCode IceModelVec::write(string filename, nc_type nctype) {
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 PetscErrorCode IceModelVec::dump(const char filename[]) {
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, grid->config.get_string("io_format"));
+  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
 
   // append = false, check_dimensions = true
   ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);

@@ -192,7 +192,7 @@ void NCSpatialVariable::set_levels(const vector<double> &levels) {
  */
 PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v) {
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, grid->config.get_string("io_format"));
+  PIO nc(grid->com, grid->rank, "netcdf3");
 
   if (grid == NULL)
     SETERRQ(com, 1, "NCVariable::read: grid is NULL.");
@@ -251,7 +251,7 @@ PetscErrorCode NCSpatialVariable::write(string filename, nc_type nctype,
 					bool write_in_glaciological_units, Vec v) {
   PetscErrorCode ierr;
   bool exists;
-  PIO nc(grid->com, grid->rank, grid->config.get_string("io_format"));
+  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
 
   // FIXME: move the file aside if it is present already
   ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
@@ -293,7 +293,7 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
 					 Vec v) {
   bool exists;
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, grid->config.get_string("io_format"));
+  PIO nc(grid->com, grid->rank, "netcdf3");
 
   if (grid == NULL)
     SETERRQ(com, 1, "NCVariable::regrid: grid is NULL.");

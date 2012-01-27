@@ -197,7 +197,7 @@ protected:
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size"),
       temp_n_records = 1, mass_flux_n_records = 1;
 
-    PIO nc(Model::grid.com, Model::grid.rank, Model::grid.config.get_string("io_format"));
+    PIO nc(Model::grid.com, Model::grid.rank, "netcdf3");
     ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_nrecords(temp_name, temp_std_name, temp_n_records); CHKERRQ(ierr);
     ierr = nc.inq_nrecords(mass_flux_name,  mass_flux_std_name,  mass_flux_n_records);  CHKERRQ(ierr);

@@ -141,7 +141,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(grid->com, grid->rank, grid->config.get_string("io_format"));
+  PIO nc(grid->com, grid->rank, "netcdf3");
   string name_found;
   bool exists, found_by_standard_name;
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);

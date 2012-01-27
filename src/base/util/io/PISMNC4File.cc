@@ -43,9 +43,11 @@ int PISMNC4File::open(string fname, int mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  stat = nc_open_par(filename.c_str(), mode|NC_MPIIO, com, info, &ncid); check(stat);
-
   filename = fname;
+
+  stat = nc_open_par(filename.c_str(),
+                     mode | NC_MPIIO,
+                     com, info, &ncid); check(stat);
 
   define_mode = false;
 

@@ -165,7 +165,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
     topg_exists, topg_initial_exists, regrid_vars_set;
   string boot_filename, regrid_filename;
-  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+  PIO nc(grid.com, grid.rank, "netcdf3");
 
   ierr = PISMOptionsIsSet("-regrid_bed_special",
                           "Correct topg when switching to a different grid",

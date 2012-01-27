@@ -396,7 +396,7 @@ PetscErrorCode deallocate_vars(PISMVars &variables) {
 PetscErrorCode grid_setup(IceGrid &grid) {
   PetscErrorCode ierr;
   string filename;
-  PIO pio(grid.com, grid.rank, grid.config.get_string("io_format"));
+  PIO pio(grid.com, grid.rank, "netcdf3");
   grid_info input;
 
   ierr = PetscOptionsBegin(grid.com, "", "PROSS Grid options", ""); CHKERRQ(ierr);
@@ -464,7 +464,7 @@ PetscErrorCode set_surface_elevation(PISMVars &vars, const NCConfigVariable &con
 PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfigVariable &config) {
   PetscErrorCode ierr;
   set<string> vars = variables.keys();
-  PIO pio(grid.com, grid.rank, grid.config.get_string("io_format"));
+  PIO pio(grid.com, grid.rank, "netcdf3");
   grid_info g;
   string filename;
 
@@ -513,7 +513,7 @@ PetscErrorCode write_results(ShallowStressBalance &ssa,
   ierr = verbPrintf(2,grid.com,"writing pross results to file '%s' ...\n",
                     filename.c_str()); CHKERRQ(ierr);
 
-  PIO pio(grid.com, grid.rank, grid.config.get_string("io_format"));
+  PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
 
   ierr = pio.open(filename, NC_WRITE); CHKERRQ(ierr);
   ierr = pio.def_time(grid.config.get_string("time_dimension_name"),

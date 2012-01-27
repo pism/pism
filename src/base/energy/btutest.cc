@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
     set<string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
 
-    PIO pio(grid.com, grid.rank, grid.config.get_string("io_format"));
+    PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
 
     string time_name = config.get_string("time_dimension_name");
     ierr = pio.open(outname, NC_WRITE); CHKERRQ(ierr);

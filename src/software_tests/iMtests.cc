@@ -235,7 +235,7 @@ PetscErrorCode IceUnitModel::test_output() {
   PetscErrorCode ierr;
   PetscScalar *E;
 
-  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   string filename = "test_output.nc";
 
   ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
@@ -282,7 +282,7 @@ PetscErrorCode IceUnitModel::test_output() {
 
 PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   PetscErrorCode ierr;
-  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   IceModelVec2T v;
   char filename[] = "test_IceModelVec2T.nc";
 
@@ -390,7 +390,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   PetscErrorCode ierr;
 
-  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   IceModelVec2V velocity;
 
   ierr = velocity.create(grid, "bar", true); CHKERRQ(ierr);

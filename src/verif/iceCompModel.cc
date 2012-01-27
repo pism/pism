@@ -1073,9 +1073,8 @@ PetscErrorCode IceCompModel::reportErrors() {
     CHKERRQ(ierr);
 
     // Find the number of records in this file:
-    PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
-    // append = true; check_dims = false
-    ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+    PIO nc(grid.com, grid.rank, "netcdf3");
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 

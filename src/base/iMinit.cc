@@ -68,7 +68,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // overridden later, in IceModel::set_grid_from_options()).
 
   // Determine the grid extent from a bootstrapping file:
-  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   bool x_dim_exists, y_dim_exists, t_exists;
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
 
@@ -273,7 +273,7 @@ PetscErrorCode IceModel::grid_setup() {
 			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+    PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
     string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output
@@ -844,10 +844,10 @@ PetscErrorCode IceModel::misc_setup() {
   // parallel I/O. (For two reasons: it is faster and it will probably hang if
   // it is not "xyz".)
 
-  if (config.get_string("io_format") == "netcdf4_parallel" &&
+  if (config.get_string("output_format") == "netcdf4_parallel" &&
       config.get_string("output_variable_order") != "xyz") {
     PetscPrintf(grid.com,
-                "PISM ERROR: due to a bug in NetCDF -io_format netcdf4_parallel requires -o_order xyz.\n");
+                "PISM ERROR: -o_format netcdf4_parallel requires -o_order xyz.\n");
     PISMEnd();
   }
 

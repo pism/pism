@@ -171,7 +171,7 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   if (i_set) {
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
-    PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+    PIO nc(grid.com, grid.rank, "netcdf3");
 
     ierr = nc.open(input_file, NC_NOWRITE); CHKERRQ(ierr);
     

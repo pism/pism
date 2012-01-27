@@ -102,7 +102,7 @@ class LocalInterpCtx;
 
  If you need to "prepare" a file, do:
  \code
- PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+ PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
 
  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
  ierr = nc.def_time(config.get_string("time_dimension_name"),

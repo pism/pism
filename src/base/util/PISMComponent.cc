@@ -51,7 +51,7 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
     filename = boot_file_file;
   }
 
-  PIO nc(grid.com, grid.rank, grid.config.get_string("io_format"));
+  PIO nc(grid.com, grid.rank, "netcdf3");
   unsigned int last_record;
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);

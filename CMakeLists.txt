@@ -34,6 +34,18 @@ if (NOT Pism_MANUAL_BUILD)
 
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
+
+  # Try to find netcdf_par.h. We assume that NetCDF was compiled with
+  # parallel I/O if this header is present.
+  find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
+  mark_as_advanced(NETCDF_PAR_H)
+  if (NETCDF_PAR_H)
+    message(STATUS "Note: Selected NetCDF library supports parallel I/O")
+    option (Pism_USE_PARALLEL_NETCDF "Enables parallel NetCDF I/O." ON)
+  else()
+    message(STATUS "Note: Selected NetCDF library does not support parallel I/O")
+  endif()
+
   # use the PETSc compiler as a hint when looking for an MPI compiler
   set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
   find_package (MPI REQUIRED)
@@ -196,13 +208,6 @@ if (Pism_GPROF_FLAGS)
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 endif ()
 
-# Try to find netcdf_par.h. We assume that NetCDF was compiled with
-# parallel I/O if this header is present.
-find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
-mark_as_advanced(NETCDF_PAR_H)
-if (NETCDF_PAR_H)
-  option (Pism_USE_PARALLEL_NETCDF "Enables parallel NetCDF I/O."          ON)
-endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
   find_package(Python REQUIRED)
