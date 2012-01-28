@@ -58,16 +58,16 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
     from numpy import squeeze, isnan, ma
 
     try:
-        var1 = squeeze(nc1.variables[name][:])
+        var1 = ma.array(squeeze(nc1.variables[name][:]))
     except:
         usagefailure("ERROR: VARIABLE '%s' NOT FOUND IN FILE 1" % name)
     try:
-        var2 = squeeze(nc2.variables[name][:])
+        var2 = ma.array(squeeze(nc2.variables[name][:]))
     except:
         usagefailure("ERROR: VARIABLE '%s' NOT FOUND IN FILE 2" % name)
 
     try:
-        mask = isnan(var1) | isnan(var2)
+        mask = var1.mask | var2.mask
     except:
         usagefailure("ERROR: VARIABLE '%s' OF INCOMPATIBLE SHAPES (?) IN FILES" % name)
 

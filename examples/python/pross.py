@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -48,9 +48,10 @@ class pross(PISM.ssa.SSARun):
     self.grid = PISM.Context().newgrid()
     grid = self.grid
     
-    pio = PISM.PISMIO(grid)
-    pio.open_for_reading(self.boot_file)
-    grid_info = PISM.grid_info(); pio.get_grid_info( "land_ice_thickness", grid_info )
+    pio = PISM.PIO(grid.com, grid.rank, "netcdf3")
+    pio.open(self.boot_file, PISM.NC_NOWRITE)
+    grid_info = PISM.grid_info();
+    pio.inq_grid_info( "land_ice_thickness", grid_info)
     pio.close()
 
     grid.Mx = grid_info.x_len;

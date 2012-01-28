@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,7 +64,7 @@ void PISMConstantYieldStress::add_vars_to_output(string /*keyword*/, set<string>
 }
 
 
-PetscErrorCode PISMConstantYieldStress::define_variables(set<string> vars, const NCTool &nc,
+PetscErrorCode PISMConstantYieldStress::define_variables(set<string> vars, const PIO &nc,
                                                          nc_type nctype) {
   if (set_contains(vars, "tauc")) {
     PetscErrorCode ierr = tauc.define(nc, nctype); CHKERRQ(ierr);

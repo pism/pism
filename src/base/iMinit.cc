@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include <petscdmda.h>
 
 #include "iceModel.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
@@ -68,13 +68,13 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // overridden later, in IceModel::set_grid_from_options()).
 
   // Determine the grid extent from a bootstrapping file:
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   bool x_dim_exists, y_dim_exists, t_exists;
-  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
 
-  ierr = nc.find_dimension("x", NULL, x_dim_exists); CHKERRQ(ierr);
-  ierr = nc.find_dimension("y", NULL, y_dim_exists); CHKERRQ(ierr);
-  ierr = nc.find_variable(config.get_string("time_dimension_name"), NULL, t_exists); CHKERRQ(ierr);
+  ierr = nc.inq_dim("x", x_dim_exists); CHKERRQ(ierr);
+  ierr = nc.inq_dim("y", y_dim_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var(config.get_string("time_dimension_name"), t_exists); CHKERRQ(ierr);
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
@@ -85,7 +85,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   names.push_back("thk");
   names.push_back("topg");
   for (unsigned int i = 0; i < names.size(); ++i) {
-    ierr = nc.get_grid_info(names[i], input);
+    ierr = nc.inq_grid_info(names[i], input);
     if (ierr == 0) break;
   }
 
@@ -96,9 +96,9 @@ PetscErrorCode IceModel::set_grid_defaults() {
   }
 
   bool mapping_exists;
-  ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
   if (mapping_exists) {
-    ierr = mapping.read(filename.c_str()); CHKERRQ(ierr);
+    ierr = mapping.read(filename); CHKERRQ(ierr);
     ierr = mapping.print(); CHKERRQ(ierr);
   }
 
@@ -273,18 +273,18 @@ PetscErrorCode IceModel::grid_setup() {
 			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    PISMIO nc(&grid);
+    PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
     string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
-    ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-    ierr = nc.get_att_text(NC_GLOBAL, "source", source); CHKERRQ(ierr);
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.get_att_text("NC_GLOBAL", "source", source); CHKERRQ(ierr);
 
     bool mapping_exists;
-    ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
+    ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
     if (mapping_exists) {
-      ierr = mapping.read(filename.c_str()); CHKERRQ(ierr);
+      ierr = mapping.read(filename); CHKERRQ(ierr);
       ierr = mapping.print(); CHKERRQ(ierr);
     }
 
@@ -309,16 +309,24 @@ PetscErrorCode IceModel::grid_setup() {
     vector<string> names;
     names.push_back("enthalpy");
     names.push_back("temp");
+
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+
     for (unsigned int i = 0; i < names.size(); ++i) {
-      ierr = nc.get_grid(filename, names[i], NOT_PERIODIC);
+      ierr = nc.inq_grid(names[i], &grid, NOT_PERIODIC);
       if (ierr == 0) break;
     }
 
     if (ierr != 0) {
       PetscPrintf(grid.com, "PISM ERROR: file %s has neither enthalpy nor temperature in it!\n",
                   filename.c_str()); CHKERRQ(ierr);
+
+      ierr = nc.close(); CHKERRQ(ierr);
+
       PISMEnd();
     }
+
+    ierr = nc.close(); CHKERRQ(ierr);
 
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
@@ -831,6 +839,17 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_timeseries(); CHKERRQ(ierr);
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
+
+  // Make sure that we use the output_variable_order that works with NetCDF-4
+  // parallel I/O. (For two reasons: it is faster and it will probably hang if
+  // it is not "xyz".)
+
+  if (config.get_string("output_format") == "netcdf4_parallel" &&
+      config.get_string("output_variable_order") != "xyz") {
+    PetscPrintf(grid.com,
+                "PISM ERROR: -o_format netcdf4_parallel requires -o_order xyz.\n");
+    PISMEnd();
+  }
 
   event_step      = grid.profiler->create("step",     "time spent doing time-stepping");
   event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");

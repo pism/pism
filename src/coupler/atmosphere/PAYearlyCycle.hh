@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,7 @@ public:
     : PISMAtmosphereModel(g, conf) {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   //! This method implements the parameterization.
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;

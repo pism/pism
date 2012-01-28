@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -62,7 +62,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 

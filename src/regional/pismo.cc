@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,7 @@ static char help[] =
 #include "PISMYieldStress.hh"
 #include "SIAFD.hh"
 #include "SSAFD.hh"
-#include "NCTool.hh"
+#include "PIO.hh"
 #include "pism_options.hh"
 
 //! \file pismo.cc A regional (outlet glacier) model form of PISM.
@@ -293,8 +293,8 @@ public:
      : IceModel(g,c,o) {};
 protected:
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode bootstrap_2d(const char *filename);
-  virtual PetscErrorCode initFromFile(const char *filename);
+  virtual PetscErrorCode bootstrap_2d(string filename);
+  virtual PetscErrorCode initFromFile(string filename);
   virtual PetscErrorCode model_state_setup();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode allocate_stressbalance();
@@ -309,7 +309,7 @@ protected:
                                                  PetscScalar* bulgeCount);
   virtual PetscErrorCode setFromOptions();
 private:
-  IceModelVec2Int no_model_mask;    
+  IceModelVec2Int no_model_mask;
   IceModelVec2S   usurfstore, thkstore;
   IceModelVec2S   bmr_stored;
   PetscErrorCode  set_no_model_strip(PetscReal stripwidth);
@@ -506,7 +506,7 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
 }
 
 
-PetscErrorCode IceRegionalModel::bootstrap_2d(const char *filename) {
+PetscErrorCode IceRegionalModel::bootstrap_2d(string filename) {
   PetscErrorCode ierr;
 
   ierr = IceModel::bootstrap_2d(filename); CHKERRQ(ierr);
@@ -518,9 +518,9 @@ PetscErrorCode IceRegionalModel::bootstrap_2d(const char *filename) {
 }
 
 
-PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
+PetscErrorCode IceRegionalModel::initFromFile(string filename) {
   PetscErrorCode  ierr;
-  NCTool nc(grid.com, grid.rank);
+  PIO nc(grid.com, grid.rank, "netcdf3");
 
   bool no_model_strip_set;
   ierr = PISMOptionsIsSet("-no_model_strip", "No-model strip, in km",
@@ -531,25 +531,26 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   }
 
   ierr = verbPrintf(2, grid.com,
-     "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
-     filename); CHKERRQ(ierr);
+                    "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
+                    filename.c_str()); CHKERRQ(ierr);
 
-  ierr =  nc.open_for_reading(filename); CHKERRQ(ierr);
 
   // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
   // The user is probably using -regrid_file to bring in SSA B.C. data.
   if (config.get_flag("ssa_dirichlet_bc")) {
     bool u_ssa_exists, v_ssa_exists;
 
-    ierr = nc.find_variable("u_ssa_bc", NULL, u_ssa_exists); CHKERRQ(ierr);
-    ierr = nc.find_variable("v_ssa_bc", NULL, v_ssa_exists); CHKERRQ(ierr);
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_var("u_ssa_bc", u_ssa_exists); CHKERRQ(ierr);
+    ierr = nc.inq_var("v_ssa_bc", v_ssa_exists); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
 
     if (! (u_ssa_exists && v_ssa_exists)) {
       ierr = vBCvel.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
       ierr = verbPrintf(2, grid.com,
                         "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
                         "              This may be overridden by the -regrid_file option.\n",
-                        filename); CHKERRQ(ierr);
+                        filename.c_str()); CHKERRQ(ierr);
 
       ierr = vBCvel.set(0.0); CHKERRQ(ierr);
     }
@@ -572,8 +573,6 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
     ierr = thkstore.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
     ierr = usurfstore.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   }
-
-  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2012 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "iceModel.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "enthalpyConverter.hh"
@@ -32,7 +32,7 @@ This procedure is called by the base class when option <tt>-boot_file</tt> is us
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
-PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
+PetscErrorCode IceModel::bootstrapFromFile(string filename) {
   PetscErrorCode  ierr;
 
   // Bootstrap 2D fields:
@@ -74,19 +74,19 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   ierr = regrid(3); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename.c_str()); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
+PetscErrorCode IceModel::bootstrap_2d(string filename) {
   PetscErrorCode ierr;
 
-  PISMIO nc(&grid);
-  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+  PIO nc(grid.com, grid.rank, "netcdf3");
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
-		    "bootstrapping by PISM default method from file %s\n",filename); CHKERRQ(ierr);
+		    "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
 
   // report on resulting computational box, rescale grid, actually create a
   // local interpolation context
@@ -99,15 +99,17 @@ PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
                     (grid.y0 - grid.Ly)/1000.0,
                     (grid.y0 + grid.Ly)/1000.0,
                     grid.Lz); 
-         CHKERRQ(ierr);
+  CHKERRQ(ierr);
 
-  bool hExists=false, maskExists=false;
-  ierr = nc.find_variable("usurf", "surface_altitude", NULL,  hExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("mask", NULL, maskExists); CHKERRQ(ierr);
+  string usurf_name;
+  bool hExists=false, maskExists=false, usurf_found_by_std_name;
+  ierr = nc.inq_var("usurf", "surface_altitude", hExists, usurf_name, usurf_found_by_std_name); CHKERRQ(ierr);
+  ierr = nc.inq_var("mask", maskExists); CHKERRQ(ierr);
 
-  bool lonExists=false, latExists=false;
-  ierr = nc.find_variable("lon", "longitude", NULL,  lonExists); CHKERRQ(ierr);
-  ierr = nc.find_variable("lat", "latitude",  NULL,  latExists); CHKERRQ(ierr);
+  string lon_name, lat_name;
+  bool lonExists=false, latExists=false, lon_found_by_std_name, lat_found_by_std_name;
+  ierr = nc.inq_var("lon", "longitude", lonExists, lon_name, lon_found_by_std_name); CHKERRQ(ierr);
+  ierr = nc.inq_var("lat", "latitude",  latExists, lat_name, lat_found_by_std_name); CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
 

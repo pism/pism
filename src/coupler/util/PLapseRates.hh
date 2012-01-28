@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include "IceGrid.hh"
 #include "iceModelVec2T.hh"
 #include "pism_options.hh"
-#include "NCTool.hh"
+#include "PIO.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 
@@ -162,9 +162,9 @@ protected:
     unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
       ref_surface_n_records = 1;
 
-    NCTool nc(g.com, g.rank);
-    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-    ierr = nc.get_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
+    PIO nc(g.com, g.rank, "netcdf3");
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
     ref_surface_n_records = PetscMin(ref_surface_n_records, buffer_size);

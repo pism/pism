@@ -571,6 +571,9 @@ netcdf pism_config {
    pism_config:correct_cell_areas = "yes";
    pism_config:correct_cell_areas_doc = "Compute corrected cell areas using WGS84 datum (for ice area and volume computations).";
 
+   pism_config:output_format = "netcdf3";
+   pism_config:output_format_doc = "The I/O format used for spatial fields; allowed values are 'netcdf3' (the default) and 'netcd4_parallel' (available if PISM was built against NetCDF with parallel I/O enabled).";
+
    pism_config:output_variable_order = "xyz";
    pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 

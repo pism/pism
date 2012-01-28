@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2012 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "PISMVars.hh"
 #include "PISMProf.hh"
 #include "pism_options.hh"
+#include "PIO.hh"
 
 SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
          IceFlowLaw &i, EnthalpyConverter &e,
@@ -88,15 +89,15 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 
   if (i_set) {
     bool dont_read_initial_guess, u_ssa_found, v_ssa_found;
-    int start;
-    NCTool nc(grid.com, grid.rank);
+    unsigned int start;
+    PIO nc(grid.com, grid.rank, "netcdf3");
 
     ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 
-    ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-    ierr = nc.find_variable("u_ssa", NULL, u_ssa_found); CHKERRQ(ierr); 
-    ierr = nc.find_variable("v_ssa", NULL, v_ssa_found); CHKERRQ(ierr); 
-    ierr = nc.get_nrecords(start); CHKERRQ(ierr);
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_var("u_ssa", u_ssa_found); CHKERRQ(ierr); 
+    ierr = nc.inq_var("v_ssa", v_ssa_found); CHKERRQ(ierr); 
+    ierr = nc.inq_nrecords(start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr); 
     start -= 1;
 
@@ -504,7 +505,7 @@ void SSA::add_vars_to_output(string /*keyword*/, set<string> &result) {
 }
 
 
-PetscErrorCode SSA::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {

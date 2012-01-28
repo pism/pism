@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ static char help[] =
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "NCVariable.hh"
 #include "Timeseries.hh"
 
@@ -43,11 +43,15 @@ static char help[] =
 static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
-  PISMIO nc(&grid);
-  ierr = nc.get_grid(filename, "land_ice_thickness",NOT_PERIODIC); CHKERRQ(ierr);
+  PIO nc(grid.com, grid.rank, "netcdf3");
+
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_grid("land_ice_thickness", &grid, NOT_PERIODIC); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
-  ierr = grid.createDA(); CHKERRQ(ierr);  
+  ierr = grid.createDA(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -136,7 +140,7 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   return 0;
 }
 
-static PetscErrorCode readIceInfoFromFile(const char *filename, int start,
+static PetscErrorCode readIceInfoFromFile(string filename, int start,
                                           PISMVars &variables) {
   PetscErrorCode ierr;
   // Get the names of all the variables allocated earlier:
@@ -184,7 +188,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   MPI_Comm com = grid->com;
   PetscErrorCode ierr;
-  PISMIO nc(grid);
+  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
   NCGlobalAttributes global_attrs;
   IceModelVec2S *usurf, *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
 
@@ -212,7 +216,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   global_attrs.prepend_history(history);
 
-  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
   // append == false, check_dims == true
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -244,11 +248,14 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   // write the states
   for (PetscInt k = 0; k < NN; k++) {
     // use original dt to get correct subinterval starts:
-    const PetscReal time = time_start + k * dt; 
-    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr); // append=true,check_dims=false
+    const PetscReal time = time_start + k * dt;
+    ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr); // append=true,check_dims=false
+    ierr = nc.def_time(grid->config.get_string("time_dimension_name"),
+                       grid->config.get_string("calendar"),
+                       grid->time->units()); CHKERRQ(ierr);
     ierr = nc.append_time(grid->config.get_string("time_dimension_name"),
                           time); CHKERRQ(ierr);
-    
+
     PetscScalar dt_update = PetscMin(use_dt, time_end - time);
 
     char timestr[TEMPORARY_STRING_LENGTH];
@@ -259,7 +266,8 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
     ierr = verbPrintf(3,com,"\n%s writing result to %s ..",timestr,filename); CHKERRQ(ierr);
     strncat(timestr,"\n",1);
-    ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
+
+    ierr = nc.append_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = usurf->write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -371,25 +379,27 @@ int main(int argc, char *argv[]) {
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
     // read data from a PISM input file (including the projection parameters)
-    NCTool nc(grid.com, grid.rank);
-    int last_record;
+    PIO nc(grid.com, grid.rank, "netcdf3");
+    unsigned int last_record;
     bool mapping_exists;
-    ierr = nc.open_for_reading(inname.c_str()); CHKERRQ(ierr);
-    ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
-    ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
+
+    ierr = nc.open(inname, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
+    ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
+
     if (mapping_exists) {
-      ierr = mapping.read(inname.c_str()); CHKERRQ(ierr);
+      ierr = mapping.read(inname); CHKERRQ(ierr);
       ierr = mapping.print(); CHKERRQ(ierr);
     }
     last_record -= 1;
 
-    ierr = verbPrintf(2,com, 
-             "  reading fields lat,lon,mask,thk,topg,usurf from NetCDF file %s\n"
-             "    to fill fields in PISMVars ...\n",
+    ierr = verbPrintf(2,com,
+                      "  reading fields lat,lon,mask,thk,topg,usurf from NetCDF file %s\n"
+                      "    to fill fields in PISMVars ...\n",
 		      inname.c_str()); CHKERRQ(ierr);
 
-    ierr = readIceInfoFromFile(inname.c_str(), last_record, variables); CHKERRQ(ierr);
+    ierr = readIceInfoFromFile(inname, last_record, variables); CHKERRQ(ierr);
 
     // Initialize boundary models:
     PAFactory pa(grid, config);
@@ -437,7 +447,7 @@ int main(int argc, char *argv[]) {
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "done.\n"); CHKERRQ(ierr);
-    
+
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

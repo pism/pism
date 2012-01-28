@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -489,7 +489,7 @@ PetscErrorCode PISMOptionsString(string option, string text,
   if (is_set) {
     if (strlen(tmp) == 0) {
       if (allow_empty_arg)
-        result = "";
+        result.clear();
       else {
         ierr = PetscPrintf(PETSC_COMM_WORLD,
                            "ERROR: command line option '%s' requires an argument.\n",
@@ -877,6 +877,9 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   ierr = config.keyword_from_option("o_order", "output_variable_order",
                                     "xyz,yxz,zyx"); CHKERRQ(ierr);
+
+  ierr = config.keyword_from_option("o_format", "output_format",
+                                    "netcdf3,netcdf4_parallel"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
                                    "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);

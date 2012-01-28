@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Constantine Khroulev
+// Copyright (C) 2009--2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@
 #include <netcdf.h>		// nc_type
 // Note: as far as I (CK) can tell, MPI_INCLUDED is a MPICH invention.
 
-class NCTool;
+class PIO;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -91,12 +91,12 @@ public:
    */
   map<string, vector<double> > doubles; //!< scalar and array attributes
 
-  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype,
-                                bool write_in_glaciological_units = true) const = 0;
+  virtual PetscErrorCode define(const PIO &nc, nc_type nctype,
+                                bool write_in_glaciological_units = true) = 0;
 protected:
-  virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,
+  virtual PetscErrorCode write_attributes(const PIO &nc, nc_type nctype,
 					  bool write_in_glaciological_units) const;
-  virtual PetscErrorCode read_valid_range(const NCTool &nc, int varid);
+  virtual PetscErrorCode read_valid_range(const PIO &nc);
   MPI_Comm com;
   PetscMPIInt rank;
   map<string, string> strings;  //!< string and boolean attributes
@@ -112,7 +112,7 @@ public:
   virtual PetscErrorCode print(PetscInt verbosity_threshhold) const;
   virtual PetscErrorCode print() const { print(4); return 0; };
   virtual PetscErrorCode read(string filename);
-  virtual PetscErrorCode write(string filename) const;
+  virtual PetscErrorCode write(string filename);
   virtual string get_config_filename() const;
   virtual double get(string) const;
   virtual double get(string name, string u1, string u2) const;
@@ -126,12 +126,12 @@ public:
   virtual void import_from(const NCConfigVariable &other);
   virtual void update_from(const NCConfigVariable &other);
 
-  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool 
-                                write_in_glaciological_units = true) const;
+  virtual PetscErrorCode define(const PIO &nc, nc_type nctype,
+                                bool write_in_glaciological_units = true);
 protected:
   string config_filename;       //!< \brief the name of the file this config database
                                 //!< was initialized from 
-  virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,
+  virtual PetscErrorCode write_attributes(const PIO &nc, nc_type nctype,
 					  bool write_in_glaciological_units) const;
 };
 
@@ -142,11 +142,11 @@ protected:
 class NCGlobalAttributes : public NCConfigVariable {
 public:
   virtual PetscErrorCode read(string filename);
-  virtual PetscErrorCode write(string filename) const;
+  virtual PetscErrorCode write(string filename);
   virtual void prepend_history(string message);
   virtual void set_from_config(const NCConfigVariable &input);
 protected:
-  virtual PetscErrorCode write_attributes(const NCTool &nc, int, nc_type, bool) const;
+  virtual PetscErrorCode write_attributes(const PIO &nc, nc_type, bool) const;
 };
 
 //! An internal class for reading, writing and converting time-series.
@@ -161,7 +161,7 @@ public:
   virtual PetscErrorCode get_bounds_name(string filename, string &result);
   virtual PetscErrorCode report_range(vector<double> &data);
 
-  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
+  virtual PetscErrorCode define(const PIO &nc, nc_type nctype, bool);
 };
 
 class NCTimeBounds : public NCVariable
@@ -173,7 +173,7 @@ public:
   virtual PetscErrorCode write(string filename, size_t start, double a, double b, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
 
-  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
+  virtual PetscErrorCode define(const PIO &nc, nc_type nctype, bool);
 protected:
   string dimension_name, bounds_name;
 };

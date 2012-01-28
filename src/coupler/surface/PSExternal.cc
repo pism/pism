@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #include <time.h>
 
 #include "PSExternal.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
@@ -234,29 +234,30 @@ PetscErrorCode PSExternal::update_acab() {
 //! Write fields that a model PISM is coupled to needs. Default: usurf and topg.
 PetscErrorCode PSExternal::write_coupling_fields() {
   PetscErrorCode ierr;
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
 
-  ierr = nc.open_for_writing(ebm_input, true, false); CHKERRQ(ierr);
-  // "append" (i.e. do not move the file aside) and do not check dimensions.
+  ierr = nc.open(ebm_input, NC_WRITE); CHKERRQ(ierr);
 
   // Determine if the file is empty; if it is, create dimenstions and
   // dimensional variables, otherwise overwrite the time stored in the time
   // variable.
   unsigned int t_len;
-  ierr = nc.get_dim_length(config.get_string("time_dimension_name"), &t_len); CHKERRQ(ierr);
+  ierr = nc.inq_dimlen(config.get_string("time_dimension_name"), t_len); CHKERRQ(ierr);
+
+  string t_name = config.get_string("time_dimension_name"),
+    t_calendar = config.get_string("calendar"),
+    t_units = grid.time->units();
 
   if (t_len == 0) {
-    ierr = nc.create_dimensions(); CHKERRQ(ierr);
-    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
+    ierr = nc.def_time(t_name, t_calendar, t_units); CHKERRQ(ierr);
+    ierr = nc.append_time(t_name, grid.time->current()); CHKERRQ(ierr);
   } else {
-    int t_varid;
     bool t_exists;
-    ierr = nc.find_variable(config.get_string("time_dimension_name"),
-                            &t_varid, t_exists); CHKERRQ(ierr);
-    
+    ierr = nc.inq_var(t_name, t_exists); CHKERRQ(ierr);
+
     vector<double> time(1);
     time[0] = grid.time->current();
-    ierr = nc.put_dimension(t_varid, time); CHKERRQ(ierr);
+    ierr = nc.put_dim(t_name, time); CHKERRQ(ierr);
   }
 
   // define
@@ -363,7 +364,7 @@ void PSExternal::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PSExternal::define_variables(set<string> vars, const NCTool &nc,
+PetscErrorCode PSExternal::define_variables(set<string> vars, const PIO &nc,
                                             nc_type nctype) {
   PetscErrorCode ierr;
 

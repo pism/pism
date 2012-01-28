@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,7 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode allocate_basal_yield_stress();
   virtual PetscErrorCode allocate_stressbalance();
-  virtual PetscErrorCode initFromFile(const char *fname);
+  virtual PetscErrorCode initFromFile(string fname);
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode additionalAtEndTimestep();
 

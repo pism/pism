@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -485,7 +485,7 @@ PetscErrorCode IceModel::deallocate_internal_objects() {
   return 0;
 }
 
-PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
+PetscErrorCode IceModel::setExecName(string my_executable_short_name) {
   executable_short_name = my_executable_short_name;
   return 0;
 }

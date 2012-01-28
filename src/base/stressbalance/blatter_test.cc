@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,18 +21,22 @@ static char help[] =
 
 #include "BlatterStressBalance.hh"
 #include "IceGrid.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMVars.hh"
 #include "flowlaws.hh"
 #include "enthalpyConverter.hh"
 #include "basal_resistance.hh"
 #include "pism_options.hh"
+#include "PISMTime.hh"
 
 static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
-  PISMIO nc(&grid);
-  ierr = nc.get_grid(filename, "bedrock_altitude", NOT_PERIODIC); CHKERRQ(ierr);
+  PIO nc(grid.com, grid.rank, "netcdf3");
+
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_grid("bedrock_altitude", &grid, NOT_PERIODIC); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
@@ -191,9 +195,12 @@ int main(int argc, char *argv[]) {
     ierr = blatter.update(false); CHKERRQ(ierr);
 
     // Write results to an output file:
-    PISMIO pio(&grid);
+    PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
 
-    ierr = pio.open_for_writing(output_file, false, true); CHKERRQ(ierr);
+    ierr = pio.open(output_file, NC_WRITE); CHKERRQ(ierr);
+    ierr = pio.def_time(config.get_string("time_dimension_name"),
+                        config.get_string("calendar"),
+                        grid.time->units()); CHKERRQ(ierr);
     ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0);
     ierr = pio.close(); CHKERRQ(ierr);
 
