@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -86,7 +86,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   time = new PISMTime(com, config);
   // time->init() will be called later (in IceModel::set_grid_defaults() or
-  // PISMIO::get_grid()).
+  // PIO::get_grid()).
 }
 
 
@@ -95,6 +95,7 @@ IceGrid::~IceGrid() {
     DMDestroy(&da2);
   }
 
+  delete time;
   delete profiler;
 }
 

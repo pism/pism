@@ -107,7 +107,7 @@ if __name__ == '__main__':
   tauc_true.set_attrs("diagnostic", "value of basal yield stress used to generate synthetic SSA velocities", "Pa", ""); 
   vecs.markForWriting(tauc_true)
 
-  vel_ssa_observed = vecs.vel_ssa_blat
+  vel_ssa_observed = vecs.vel_ssa
   vel_ssa_observed.rename("_ssa_observed","'observed' SSA velocities'","")
   if generate_ssa_observed:
     vecs.markForWriting(vel_ssa_observed)
@@ -127,7 +127,7 @@ if __name__ == '__main__':
 
   pio = PISM.PISMIO(grid)
   pio.open_for_writing(output_file_name,False,True)
-  pio.append_time(grid.config.get_string("time_dimension_name"),0.0)
+  pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
   pio.close()
 
   vecs.write(output_file_name)

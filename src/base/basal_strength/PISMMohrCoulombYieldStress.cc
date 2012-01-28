@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2004--2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -265,7 +265,7 @@ void PISMMohrCoulombYieldStress::get_diagnostics(map<string, PISMDiagnostic*> &d
 }
 
 
-PetscErrorCode PISMMohrCoulombYieldStress::define_variables(set<string> vars, const NCTool &nc,
+PetscErrorCode PISMMohrCoulombYieldStress::define_variables(set<string> vars, const PIO &nc,
                                                  nc_type nctype) {
   if (set_contains(vars, "tillphi")) {
     PetscErrorCode ierr = till_phi.define(nc, nctype); CHKERRQ(ierr);

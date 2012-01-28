@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -17,7 +17,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PISMOcean.hh"
+#include "POConstantPIK.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
@@ -150,17 +150,16 @@ void POConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode POConstantPIK::define_variables(set<string> vars, const NCTool &nc,
+PetscErrorCode POConstantPIK::define_variables(set<string> vars, const PIO &nc,
                                             nc_type nctype) {
   PetscErrorCode ierr;
-  int varid;
 
   if (set_contains(vars, "shelfbtemp")) {
-    ierr = shelfbtemp.define(nc, varid, nctype, true); CHKERRQ(ierr);
+    ierr = shelfbtemp.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    ierr = shelfbmassflux.define(nc, varid, nctype, true); CHKERRQ(ierr);
+    ierr = shelfbmassflux.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   return 0;

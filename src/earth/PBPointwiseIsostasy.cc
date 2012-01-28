@@ -18,6 +18,7 @@
 
 #include "PISMBedDef.hh"
 #include "IceGrid.hh"
+#include "PISMTime.hh"
 
 PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const NCConfigVariable &conf)
   : PISMBedDef(g, conf) {
@@ -33,9 +34,8 @@ PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const NCConfigVariable &con
 
 PetscErrorCode PBPointwiseIsostasy::allocate() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
-  ierr = thk_last.create(grid, "thk_last", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = thk_last.create(grid, "thk_last", true, grid.max_stencil_width); CHKERRQ(ierr);
 
   return 0;
 }
@@ -57,7 +57,6 @@ PetscErrorCode PBPointwiseIsostasy::init(PISMVars &vars) {
 //! Updates the pointwise isostasy model.
 PetscErrorCode PBPointwiseIsostasy::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
-
   if ((fabs(my_t - t)   < 1e-12) &&
       (fabs(my_dt - dt) < 1e-12))
     return 0;
@@ -65,12 +64,16 @@ PetscErrorCode PBPointwiseIsostasy::update(PetscReal my_t, PetscReal my_dt) {
   t  = my_t;
   dt = my_dt;
 
+  PetscReal t_final = t + dt;
+
   // Check if it's time to update:
-  PetscScalar dt_beddef = my_t - t_beddef_last;
-  if (dt_beddef < convert(config.get("bed_def_interval_years"), "years", "seconds"))
+  PetscReal dt_beddef = t_final - t_beddef_last; // in seconds
+  if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
+       t_final < grid.time->end()) ||
+      dt_beddef < 1e-12)
     return 0;
 
-  t_beddef_last = my_t;
+  t_beddef_last = t_final;
 
   const PetscScalar lithosphere_density = config.get("lithosphere_density"),
     ice_density = config.get("ice_density"),
@@ -89,6 +92,9 @@ PetscErrorCode PBPointwiseIsostasy::update(PetscReal my_t, PetscReal my_dt) {
 
   ierr =  thk->copy_to(thk_last);  CHKERRQ(ierr);
   ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
+
+  //! Increment the topg state counter. SIAFD relies on this!
+  topg->inc_state_counter();
 
   return 0;
 }

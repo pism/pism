@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Constantine Khroulev
+// Copyright (C) 2009-2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #include <algorithm>
 
 #include "iceModel.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMStressBalance.hh"
 #include "PISMDiagnostic.hh"
 #include "PISMTime.hh"
@@ -63,7 +63,7 @@ PetscErrorCode IceModel::init_timeseries() {
     save_ts = false;
     return 0;
   }
-  
+
   save_ts = true;
 
   ierr = parse_times(grid.com, config, times, ts_times);
@@ -96,7 +96,7 @@ PetscErrorCode IceModel::init_timeseries() {
   } else {
     var_name = config.get_string("ts_default_variables");
     istringstream arg(var_name);
-  
+
     while (getline(arg, var_name, ' ')) {
       if (!var_name.empty()) // this ignores multiple spaces separating variable names
 	ts_vars.insert(var_name);
@@ -104,9 +104,11 @@ PetscErrorCode IceModel::init_timeseries() {
   }
 
 
-  PISMIO nc(&grid);
-  ierr = nc.open_for_writing(ts_filename.c_str(), (append==PETSC_TRUE), false); CHKERRQ(ierr);
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  ierr = nc.open(ts_filename, NC_WRITE, append); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = write_metadata(ts_filename, false); CHKERRQ(ierr);
 
   // set the output file:
   map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
@@ -193,7 +195,7 @@ PetscErrorCode IceModel::init_extras() {
 
     ierr = PISMOptionsString("-extra_times", "Specifies times to save at",
 			     times, times_set); CHKERRQ(ierr);
-			     
+
     ierr = PISMOptionsString("-extra_vars", "Spacifies a comma-separated list of variables to save",
 			     vars, save_vars); CHKERRQ(ierr);
 
@@ -235,7 +237,7 @@ PetscErrorCode IceModel::init_extras() {
 		      extra_filename.c_str());
     CHKERRQ(ierr);
   }
-  
+
   if (split) {
     ierr = verbPrintf(2, grid.com, "saving spatial time-series to '%s+year.nc'; ",
 		      extra_filename.c_str()); CHKERRQ(ierr);
@@ -269,7 +271,7 @@ PetscErrorCode IceModel::init_extras() {
     set<string>::iterator i = vars_set.begin();
     while (i != vars_set.end()) {
       IceModelVec *var = variables.get(*i);
-      
+
       string intent = var->string_attr("pism_intent");
       if ((intent == "model_state") ||
           (intent == "mapping") ||
@@ -294,7 +296,7 @@ PetscErrorCode IceModel::init_extras() {
 //! Write spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::write_extras() {
   PetscErrorCode ierr;
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
 				 // value is never used, because saving_after
 				 // is only used if save_now == true, and in
@@ -307,10 +309,17 @@ PetscErrorCode IceModel::write_extras() {
     return 0;
 
   // do we need to save *now*?
-  if ( current_extra < extra_times.size() && grid.time->current() >= extra_times[current_extra] ) {
+  if ( current_extra < extra_times.size() &&
+       (grid.time->current() >= extra_times[current_extra] ||
+        fabs(grid.time->current() - extra_times[current_extra]) < 1) ) {
+    // the condition above is "true" if we passed a requested time or got to
+    // within 1 second from it
+
     saving_after = extra_times[current_extra];
 
-    while (current_extra < extra_times.size() && extra_times[current_extra] <= grid.time->current())
+    while (current_extra < extra_times.size() &&
+           (extra_times[current_extra] <= grid.time->current() ||
+            fabs(grid.time->current() - extra_times[current_extra]) < 1) )
       current_extra++;
   } else {
     // we don't need to save now, so just return
@@ -320,13 +329,13 @@ PetscErrorCode IceModel::write_extras() {
   if (saving_after < grid.time->start()) {
     // Suppose a user tells PISM to write data at times 0:1000:10000. Suppose
     // also that PISM writes a backup file at year 2500 and gets stopped.
-    // 
+    //
     // When restarted, PISM will decide that it's time to write data for time
     // 2000, but
     // * that record was written already and
     // * PISM will end up writing at year 2500, producing a file containing one
     //   more record than necessary.
-    // 
+    //
     // This check makes sure that this never happens.
     return 0;
   }
@@ -358,23 +367,25 @@ PetscErrorCode IceModel::write_extras() {
     ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
 
     // Prepare the file:
-    ierr = nc.open_for_writing(filename, (append==PETSC_TRUE), true); CHKERRQ(ierr); // check_dims == true
+    ierr = nc.open(filename, NC_WRITE, append); CHKERRQ(ierr);
+    ierr = nc.def_time(config.get_string("time_dimension_name"),
+                       config.get_string("calendar"),
+                       grid.time->units()); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = write_metadata(filename); CHKERRQ(ierr); 
 
     extra_file_is_ready = true;
   }
-    
-  ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
-  // append == true, check_dims == true
+
+  ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"),
                         grid.time->current()); CHKERRQ(ierr);
-  ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
+  ierr = nc.append_history(tmp); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write_variables(filename, extra_vars, NC_FLOAT);  CHKERRQ(ierr);
-    
+
   return 0;
 }
 
@@ -407,6 +418,18 @@ PetscErrorCode IceModel::extras_max_timestep(double my_t, double& my_dt, bool &r
 
   my_dt = *j - my_t;
   restrict = true;
+
+  // now make sure that we don't end up taking a time-step of less than 1
+  // second long
+  if (my_dt < 1) {
+    if ((j + 1) != extra_times.end()) {
+      my_dt = *(j + 1) - my_t;
+      restrict = true;
+    } else {
+      my_dt = -1;
+      restrict = false;
+    }
+  }
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include <petscdmda.h>
 
 #include "iceModel.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
@@ -54,7 +54,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   grid_info input;
 
   // Get the bootstrapping file name:
-  
+
   ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
 			   filename, boot_file_set); CHKERRQ(ierr);
 
@@ -69,13 +69,13 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // overridden later, in IceModel::set_grid_from_options()).
 
   // Determine the grid extent from a bootstrapping file:
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   bool x_dim_exists, y_dim_exists, t_exists;
-  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
 
-  ierr = nc.find_dimension("x", NULL, x_dim_exists); CHKERRQ(ierr);
-  ierr = nc.find_dimension("y", NULL, y_dim_exists); CHKERRQ(ierr);
-  ierr = nc.find_variable(config.get_string("time_dimension_name"), NULL, t_exists); CHKERRQ(ierr);
+  ierr = nc.inq_dim("x", x_dim_exists); CHKERRQ(ierr);
+  ierr = nc.inq_dim("y", y_dim_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var(config.get_string("time_dimension_name"), t_exists); CHKERRQ(ierr);
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
@@ -86,7 +86,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   names.push_back("thk");
   names.push_back("topg");
   for (unsigned int i = 0; i < names.size(); ++i) {
-    ierr = nc.get_grid_info(names[i], input);
+    ierr = nc.inq_grid_info(names[i], input);
     if (ierr == 0) break;
   }
 
@@ -97,9 +97,9 @@ PetscErrorCode IceModel::set_grid_defaults() {
   }
 
   bool mapping_exists;
-  ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
   if (mapping_exists) {
-    ierr = mapping.read(filename.c_str()); CHKERRQ(ierr);
+    ierr = mapping.read(filename); CHKERRQ(ierr);
     ierr = mapping.print(); CHKERRQ(ierr);
   }
 
@@ -117,7 +117,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   if (!ys_set) {
     if (t_exists) {
       grid.time->set_start(input.time);
-      ierr = verbPrintf(2, grid.com, 
+      ierr = verbPrintf(2, grid.com,
   		      "  time t = %5.4f years found; setting current year\n",
                         grid.time->year()); CHKERRQ(ierr);
     }
@@ -192,7 +192,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   // Determine the vertical grid spacing in the ice:
   ierr = PISMOptionsList(grid.com, "-z_spacing", "Vertical spacing in the ice.",
 			 z_spacing_choices, "quadratic", keyword, z_spacing_set); CHKERRQ(ierr);
-			 
+
   if (keyword == "quadratic") {
     grid.ice_vertical_spacing = QUADRATIC;
   } else {
@@ -274,18 +274,18 @@ PetscErrorCode IceModel::grid_setup() {
 			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    PISMIO nc(&grid);
+    PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
     string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
-    ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-    ierr = nc.get_att_text(NC_GLOBAL, "source", source); CHKERRQ(ierr);
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.get_att_text("NC_GLOBAL", "source", source); CHKERRQ(ierr);
 
     bool mapping_exists;
-    ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
+    ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
     if (mapping_exists) {
-      ierr = mapping.read(filename.c_str()); CHKERRQ(ierr);
+      ierr = mapping.read(filename); CHKERRQ(ierr);
       ierr = mapping.print(); CHKERRQ(ierr);
     }
 
@@ -310,16 +310,24 @@ PetscErrorCode IceModel::grid_setup() {
     vector<string> names;
     names.push_back("enthalpy");
     names.push_back("temp");
+
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+
     for (unsigned int i = 0; i < names.size(); ++i) {
-      ierr = nc.get_grid(filename, names[i]);
+      ierr = nc.inq_grid(names[i], &grid, NOT_PERIODIC);
       if (ierr == 0) break;
     }
 
     if (ierr != 0) {
       PetscPrintf(grid.com, "PISM ERROR: file %s has neither enthalpy nor temperature in it!\n",
                   filename.c_str()); CHKERRQ(ierr);
+
+      ierr = nc.close(); CHKERRQ(ierr);
+
       PISMEnd();
     }
+
+    ierr = nc.close(); CHKERRQ(ierr);
 
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
@@ -433,7 +441,7 @@ PetscErrorCode IceModel::grid_setup() {
 //! Sets the starting values of model state variables.
 /*!
   There are two cases:
-  
+
   1) Initializing from a PISM output file.
 
   2) Setting the values using command-line options only (verification and
@@ -455,7 +463,7 @@ PetscErrorCode IceModel::model_state_setup() {
   PetscErrorCode ierr;
   bool i_set;
   string filename;
-  
+
   // Check if we are initializing from a PISM output file:
   ierr = PISMOptionsString("-i", "Specifies a PISM input file",
 			   filename, i_set); CHKERRQ(ierr);
@@ -474,12 +482,26 @@ PetscErrorCode IceModel::model_state_setup() {
   // the regrid() call.
   if (beddef) {
     ierr = beddef->init(variables); CHKERRQ(ierr);
-    last_bed_def_update = grid.time->start();
   }
 
   if (btu) {
-    ierr = surface->update(grid.time->start(), 0); CHKERRQ(ierr);
-    ierr = ocean->update(grid.time->start(), 0); CHKERRQ(ierr);
+    PetscReal max_dt = 0;
+    bool restrict = false;
+    // FIXME: this will break if a surface or an ocean model requires
+    // contiguous update intervals
+    ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
+
+    if (restrict == false)
+      max_dt = convert(1, "year", "seconds");
+
+    ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
+
+    ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
+
+    if (restrict == false)
+      max_dt = convert(1, "year", "seconds");
+
+    ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
     ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
     ierr = btu->init(variables); CHKERRQ(ierr);
   }
@@ -531,14 +553,14 @@ PetscErrorCode IceModel::set_vars_from_options() {
 
   ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
 			   filename, boot_file_set); CHKERRQ(ierr);
-  
+
   if (boot_file_set) {
     ierr = bootstrapFromFile(filename.c_str()); CHKERRQ(ierr);
   } else {
     ierr = PetscPrintf(grid.com, "PISM ERROR: No input file specified.\n"); CHKERRQ(ierr);
     PISMEnd();
   }
-  
+
   return 0;
 }
 
@@ -720,7 +742,7 @@ PetscErrorCode IceModel::allocate_basal_resistance_law() {
     plastic_regularization = config.get("plastic_regularization", "1/year", "1/second");
 
   basal = new IceBasalResistancePlasticLaw(plastic_regularization,
-                                           do_pseudo_plastic_till, 
+                                           do_pseudo_plastic_till,
                                            pseudo_plastic_q,
                                            pseudo_plastic_uthreshold);
 
@@ -794,7 +816,7 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   // 3d work vectors
   ierr = vWork3d.create(grid,"work_vector_3d",false); CHKERRQ(ierr);
   ierr = vWork3d.set_attrs(
-           "internal", 
+           "internal",
            "e.g. new values of temperature or age or enthalpy during time step",
            "", ""); CHKERRQ(ierr);
 
@@ -812,12 +834,23 @@ PetscErrorCode IceModel::misc_setup() {
 			 "medium", output_vars); CHKERRQ(ierr);
 
   ierr = init_ocean_kill(); CHKERRQ(ierr);
-  ierr = init_diagnostics(); CHKERRQ(ierr); 
+  ierr = init_diagnostics(); CHKERRQ(ierr);
   ierr = init_snapshots(); CHKERRQ(ierr);
   ierr = init_backups(); CHKERRQ(ierr);
   ierr = init_timeseries(); CHKERRQ(ierr);
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
+
+  // Make sure that we use the output_variable_order that works with NetCDF-4
+  // parallel I/O. (For two reasons: it is faster and it will probably hang if
+  // it is not "xyz".)
+
+  if (config.get_string("output_format") == "netcdf4_parallel" &&
+      config.get_string("output_variable_order") != "xyz") {
+    PetscPrintf(grid.com,
+                "PISM ERROR: -o_format netcdf4_parallel requires -o_order xyz.\n");
+    PISMEnd();
+  }
 
   event_step      = grid.profiler->create("step",     "time spent doing time-stepping");
   event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");
@@ -869,7 +902,7 @@ PetscErrorCode IceModel::init_ocean_kill() {
     ierr = thickness.set_attrs("temporary", "land ice thickness",
                                "m", "land_ice_thickness"); CHKERRQ(ierr);
     ierr = thickness.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  
+
     ierr = thickness.regrid(filename, true); CHKERRQ(ierr);
 
     tmp = &thickness;
@@ -878,7 +911,7 @@ PetscErrorCode IceModel::init_ocean_kill() {
   ierr = ocean_kill_mask.begin_access(); CHKERRQ(ierr);
   ierr = tmp->begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-    
+
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if ((*tmp)(i, j) > 0 || m.grounded(i, j) )
@@ -887,10 +920,51 @@ PetscErrorCode IceModel::init_ocean_kill() {
         ocean_kill_mask(i, j) = 1;
     }
   }
-    
+
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = tmp->end_access(); CHKERRQ(ierr);
   ierr = ocean_kill_mask.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModel::allocate_bed_deformation() {
+  PetscErrorCode ierr;
+  string model = config.get_string("bed_deformation_model");
+  set<string> choices;
+
+  ierr = check_old_option_and_stop(grid.com, "-bed_def_iso", "-bed_def"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(grid.com, "-bed_def_lc",  "-bed_def"); CHKERRQ(ierr);
+
+  choices.insert("none");
+  choices.insert("iso");
+#if (PISM_HAVE_FFTW==1)
+  choices.insert("lc");
+#endif
+
+  ierr = PetscOptionsBegin(grid.com, "", "Bed deformation model", ""); CHKERRQ(ierr);
+  {
+    bool dummy;
+    ierr = PISMOptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
+			 choices, model, model, dummy); CHKERRQ(ierr);
+
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if (model == "none")
+    return 0;
+
+  if ((model == "iso") && (beddef == NULL)) {
+    beddef = new PBPointwiseIsostasy(grid, config);
+    return 0;
+  }
+
+#if (PISM_HAVE_FFTW==1)
+  if ((model == "lc") && (beddef == NULL)) {
+    beddef = new PBLingleClark(grid, config);
+    return 0;
+  }
+#endif
 
   return 0;
 }

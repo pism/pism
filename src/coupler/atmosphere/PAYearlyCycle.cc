@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -20,7 +20,7 @@
 // Implementation of the atmosphere model using constant-in-time precipitation
 // and a cosine yearly cycle for near-surface air temperatures.
 
-#include "PISMAtmosphere.hh"
+#include "PAYearlyCycle.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 
@@ -93,12 +93,11 @@ void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
   PetscErrorCode ierr;
-  int varid;
 
   if (set_contains(vars, "airtemp")) {
-    ierr = airtemp_var.define(nc, varid, nctype, false); CHKERRQ(ierr);
+    ierr = airtemp_var.define(nc, nctype, false); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "airtemp_ma")) {

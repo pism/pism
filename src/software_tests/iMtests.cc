@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,10 +20,11 @@
 #include <petscdmda.h>
 #include "iMtests.hh"
 #include "iceModelVec2T.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMProf.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include "PISMTime.hh"
 
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {
@@ -120,6 +121,11 @@ PetscErrorCode IceUnitModel::run() {
   PetscErrorCode ierr;
   bool flag;
 
+  ierr = PISMOptionsIsSet("-output", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = test_output(); CHKERRQ(ierr);
+  }
+
   ierr = PISMOptionsIsSet("-IceModelVec3", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = test_IceModelVec3(); CHKERRQ(ierr);
@@ -160,7 +166,7 @@ PetscErrorCode IceUnitModel::run() {
 }
 
 //! Write output files.
-PetscErrorCode IceUnitModel::writeFiles(const char*) {
+PetscErrorCode IceUnitModel::writeFiles(string) {
   // We don't write anything by default.
   return 0;
 }
@@ -225,23 +231,75 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
   return 0;
 }
 
+PetscErrorCode IceUnitModel::test_output() {
+  PetscErrorCode ierr;
+  PetscScalar *E;
+
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  string filename = "test_output.nc";
+
+  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.def_time(config.get_string("time_dimension_name"),
+                     config.get_string("calendar"),
+                     grid.time->units()); CHKERRQ(ierr);
+  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
+  ierr = nc.close();
+
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      vH(i,j) = grid.rank;
+
+      ierr = Enth3.getInternalColumn(i, j, &E); CHKERRQ(ierr);
+
+      for (int k = 0; k < grid.Mz; ++k) {
+        E[k] = PetscAbs(grid.x[i] + grid.y[j]) + grid.zlevels[k];
+      }
+    }
+  }
+
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  bool no_2d = false, no_3d = false;
+  ierr = PISMOptionsIsSet("-no_2d", no_2d); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-no_3d", no_3d); CHKERRQ(ierr);
+
+  if (no_2d == false) {
+    vH.time_independent = true;
+    ierr = vH.write(filename); CHKERRQ(ierr);
+  }
+
+  if (no_3d == false) {
+    Enth3.time_independent = true;
+    ierr = Enth3.write(filename); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   PetscErrorCode ierr;
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   IceModelVec2T v;
   char filename[] = "test_IceModelVec2T.nc";
 
   // create a file to regrid from (that will have grid parameters compatible
   // with the current grid):
-  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  // append == false, check_dims == true
+  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
-  
+
   double t = 0, t_max = 50, my_dt = 0.35;
   while (t < t_max) {
-    ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
+    ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
+    ierr = nc.def_time(config.get_string("time_dimension_name"),
+                       config.get_string("calendar"),
+                       grid.time->units()); CHKERRQ(ierr);
     ierr = nc.append_time(config.get_string("time_dimension_name"), t); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
@@ -297,12 +355,16 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 
   T = T + max_dt / 2.0;
 
-  ierr = nc.open_for_writing(output, false, true); CHKERRQ(ierr);
+  ierr = nc.open(output, NC_WRITE); CHKERRQ(ierr);
   // append == false, check_dims == true
+  ierr = nc.close(); CHKERRQ(ierr);
+
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = nc.def_time(config.get_string("time_dimension_name"),
+                     config.get_string("calendar"),
+                     grid.time->units()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), T); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = v.update(T, 0); CHKERRQ(ierr);
   ierr = v.interp(T); CHKERRQ(ierr);
@@ -328,7 +390,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   PetscErrorCode ierr;
 
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   IceModelVec2V velocity;
 
   ierr = velocity.create(grid, "bar", true); CHKERRQ(ierr);
@@ -363,12 +425,15 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   char filename[] = "test_IceModelVec2V.nc";
   // create a file to regrid from (that will have grid parameters compatible
   // with the current grid):
-  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  // append == false, check_dims == true
-  ierr = mapping.write(filename); CHKERRQ(ierr);
-  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.def_time(config.get_string("time_dimension_name"),
+                     config.get_string("calendar"),
+                     grid.time->units()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = mapping.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(filename); CHKERRQ(ierr);
 
   ierr = velocity.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 

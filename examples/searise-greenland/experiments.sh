@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 The PISM Authors
+# Copyright (C) 2009-2012 The PISM Authors
 
 # PISM SeaRISE Greenland experiments
 
@@ -10,6 +10,10 @@
 # to initialize from spinup result foo.nc
 # To turn on marine ice dynamics options, do
 #    "./experiments.sh N foo.nc 1 >& out.experiments &"
+# To turn on flux compensation, do
+#    "./experiments.sh N foo.nc 2 >& out.experiments &"
+# To turn on marine ice dynamics and flux compensation, do
+#    "./experiments.sh N foo.nc 3 >& out.experiments &"
 
 echo
 echo "# ============================================================================="
@@ -37,9 +41,26 @@ if [ $# -gt 1 ] ; then
 fi
 
 PIKOPTIONS="-ocean_kill"
+# coupler settings
+COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd -pdd_annualize"
+# coupler settings for spin-up (i.e. with forcing)
+COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd -pdd_annualize"
+
 if [ $3 -eq "1" ] ; then  # PIKOPTIONS
     # PIK marine ice dynamics
     PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 100.0"  # parameters preliminary
+elif [ $3 -eq "2" ] ; then  # FTT
+    # coupler settings
+    COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd,turn_into_anomaly -pdd_annualize"
+    # coupler settings for spin-up (i.e. with forcing)
+    COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd,turn_into_anomaly -pdd_annualize"
+elif [ $3 -eq "3" ] ; then  # PIKOPTIONS and FTT
+    # PIK marine ice dynamics
+    PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 100.0"  # parameters preliminary
+    # coupler settings
+    COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd,turn_into_anomaly -pdd_annualize"
+    # coupler settings for spin-up (i.e. with forcing)
+    COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd,turn_into_anomaly -pdd_annualize"
 fi
 
 PISM_CONFIG=searise_config.nc
@@ -124,12 +145,6 @@ echo "$SCRIPTNAME         tillphi = '$TILLPHI'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
 echo "$SCRIPTNAME      executable = '$PISM'"
 
-
-# coupler settings
-COUPLER_CTRL="-ocean constant -atmosphere searise_greenland -surface pdd"
-# coupler settings for spin-up (i.e. with forcing)
-COUPLER_AR4="-ocean constant -atmosphere searise_greenland,anomaly -surface pdd"
-
 echo
 echo "$SCRIPTNAME control coupler = '$COUPLER_CTRL'"
 echo "$SCRIPTNAME     AR4 coupler = '$COUPLER_AR4'"
@@ -175,10 +190,9 @@ SRGEXPERCATEGORY=E0
 for climate_scale_factor in 1.0 1.5 2.0; do
 
 
-    # anomaly files
-    AR4PRECIP=ar4_precip_anomaly_scalefactor_${climate_scale_factor}.nc
-    AR4TEMP=ar4_temp_anomaly_scalefactor_${climate_scale_factor}.nc
-    for INPUT in $AR4PRECIP $AR4TEMP; do
+    # anomaly file
+    AR4FILE=ar4_anomaly_scalefactor_${climate_scale_factor}.nc
+    for INPUT in $AR4FILE; do
         if [ -e "$INPUT" ] ; then  # check if file exist
         echo "$SCRIPTNAME INPUT   $INPUT FOUND"
         else
@@ -197,7 +211,7 @@ for climate_scale_factor in 1.0 1.5 2.0; do
     echo "$SCRIPTNAME run ${PISM_SRPREFIX2} with scaled AR4 climate from $STARTTIME to $ENDTIME years w save every year:"
     echo
     cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
-       -anomaly_temp $AR4TEMP -anomaly_precip $AR4PRECIP \
+        -atmosphere_anomaly_file $AR4FILE \
        -extra_file $EXNAME -extra_times $TIMES $expackage \
        -ts_file $TSNAME -ts_times $TSTIMES $tspackage"
     $PISM_DO $cmd
@@ -270,3 +284,34 @@ for melt_rate in 2 20 200; do
   MELTRATE=$(($MELTRATE + 1))
 
 done
+
+
+# #######################################
+# Combo Experiment T1
+# #######################################
+
+CLIMATE=1
+SRGEXPERCATEGORY=T1
+climate_scale_factor=1.0
+melt_rate=20
+sliding_scale_factor=2
+# anomaly files
+AR4FILE=ar4_anomaly_scalefactor_${climate_scale_factor}.nc
+PISM_SRPREFIX2=${INITIALS}_G_D3_C${CLIMATE}_${SRGEXPERCATEGORY}
+OUTNAME=out_y${ENDTIME}_${PISM_SRPREFIX2}.nc
+EXNAME=${PISM_SRPREFIX2}_raw_y${ENDTIME}.nc
+TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX2}.nc
+echo
+echo "$SCRIPTNAME combo run ${PISM_SRPREFIX2} with scaled AR4 climate from $STARTTIME to $ENDTIME years "
+echo "$SCRIPTNAME  and increased subshelf melting and basal sliding, w save every year:"
+echo
+cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+  -atmosphere_anomaly_file $AR4FILE \
+  -shelf_base_melt_rate $melt_rate \
+  -sliding_scale $sliding_scale_factor \
+  -extra_file $EXNAME -extra_times $TIMES $expackage \
+  -ts_file $TSNAME -ts_times $TSTIMES $tspackage"
+$PISM_DO $cmd
+echo
+echo "$SCRIPTNAME  $SRGNAME combo run done; runs ...$PISM_SRPREFIX2... will need post-processing"
+echo

@@ -202,7 +202,8 @@ const PetscInt FEDOFMap::kJOffset[4] = {0,0,1,1};
 
 
 FEQuadrature::FEQuadrature()
-{  
+{
+  PetscMemzero(m_tmpScalar, Nk*sizeof(PetscReal));
 }
 
 //! Obtain the weights \f$w_q\f$ for quadrature.

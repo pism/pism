@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -86,7 +86,7 @@ public:
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode grid_setup();
   virtual PetscErrorCode set_time_from_options();
-  virtual PetscErrorCode initFromFile(const char *);
+  virtual PetscErrorCode initFromFile(string);
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode misc_setup();
 

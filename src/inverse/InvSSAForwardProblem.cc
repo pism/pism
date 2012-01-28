@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2012 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include "PISMVars.hh"
 #include <unistd.h> // for 'access'
 #include <sstream>
-#include "PISMIO.hh"
+#include "PIO.hh"
 
 /*! \brief Allocate PETSC structures needed for solving the various linearized
 problems associated with the forward problem. */
@@ -228,6 +228,7 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
     ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
     ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
     callback_data.da = SSADA;  callback_data.ssa = this;
+    ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
     ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
     ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
 
@@ -270,30 +271,32 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
       std::ostringstream os_ncfile;
       os_ncfile << savefile << index << ".nc";
       std::string ncfile = os_ncfile.str();
-      const char * c_ncfile = ncfile.c_str();
 
-      PISMIO pio(&grid);
-      pio.open_for_writing(c_ncfile,false,true);
+      PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
+      pio.open(ncfile, NC_WRITE);
+      pio.def_time(grid.config.get_string("time_dimension_name"),
+                   grid.config.get_string("calendar"),
+                   grid.time->units());
       pio.append_time(grid.config.get_string("time_dimension_name"),0.0);
       pio.close();
 
-      mask->write(c_ncfile);
-      thickness->write(c_ncfile);
-      bed->write(c_ncfile);
-      tauc->write(c_ncfile);
-      enthalpy->write(c_ncfile);
+      mask->write(ncfile);
+      thickness->write(ncfile);
+      bed->write(ncfile);
+      tauc->write(ncfile);
+      enthalpy->write(ncfile);
 
       if(surface != NULL)
       {
-        surface->write(c_ncfile);
+        surface->write(ncfile);
       }
       if(driving_stress_x != NULL)
       {
-        driving_stress_x->write(c_ncfile);
+        driving_stress_x->write(ncfile);
       }
       if(driving_stress_y != NULL)
       {
-        driving_stress_y->write(c_ncfile);
+        driving_stress_y->write(ncfile);
       }
 
 

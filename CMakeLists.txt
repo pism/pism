@@ -34,6 +34,18 @@ if (NOT Pism_MANUAL_BUILD)
 
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
+
+  # Try to find netcdf_par.h. We assume that NetCDF was compiled with
+  # parallel I/O if this header is present.
+  find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
+  mark_as_advanced(NETCDF_PAR_H)
+  if (NETCDF_PAR_H)
+    message(STATUS "Note: Selected NetCDF library supports parallel I/O")
+    option (Pism_USE_PARALLEL_NETCDF "Enables parallel NetCDF I/O." ON)
+  else()
+    message(STATUS "Note: Selected NetCDF library does not support parallel I/O")
+  endif()
+
   # use the PETSc compiler as a hint when looking for an MPI compiler
   set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
   find_package (MPI REQUIRED)
@@ -82,13 +94,6 @@ mark_as_advanced (PISM_SHARED_LIBRARY_LINK_C_FLAGS PISM_SHARED_LIBRARY_LINK_CXX_
 
 
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
-option (Pism_NETCDF4_OUTPUT        "Turn this on to make PISM produce NetCDF-4 files" OFF)
-option (Pism_NETCDF4_COMPRESS     "Tirn this on to make PISM produce compressed NetCDF-4 files" OFF)
-
-if (Pism_NETCDF4_COMPRESS AND NOT Pism_NETCDF4_OUTPUT)
-  set (Pism_NETCDF4_OUTPUT ON CACHE BOOL "Write NetCDF-4-format PISM output files" FORCE)
-  message (STATUS "Turning 'on' Pism_WRITE_NETCDF4 to enable writing compressed NetCDF-4 files.")
-endif ()
 
 set (Pism_BIN_DIR "bin")
 set (Pism_LIB_DIR "lib/pism")
@@ -189,7 +194,7 @@ file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_c
 #add_definitions (-DPISM_REVISION=\\\"${Pism_REVISION}\\\")
 
 if (Pism_PEDANTIC_WARNINGS)
-  set (DEFAULT_PEDANTIC_CFLAGS "-pedantic -Wall -Wextra -Wundef -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wconversion -Wsign-compare -Wno-redundant-decls -Winline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time")
+  set (DEFAULT_PEDANTIC_CFLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wconversion -Wsign-compare -Wno-redundant-decls -Winline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time")
   set (DEFAULT_PEDANTIC_CXXFLAGS "${DEFAULT_PEDANTIC_CFLAGS} -Woverloaded-virtual")
   set (PEDANTIC_CFLAGS ${DEFAULT_PEDANTIC_CFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings")
   set (PEDANTIC_CXXFLAGS ${DEFAULT_PEDANTIC_CXXFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings for C++")

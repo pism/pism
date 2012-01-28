@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2011 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2012 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ static char help[] =
 #include "iceModelVec.hh"
 #include "flowlaws.hh" // IceFlowLaw
 #include "basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "NCVariable.hh"
 #include "SSAFEM.hh"
 #include "SSAFD.hh"

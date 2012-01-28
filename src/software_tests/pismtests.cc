@@ -22,8 +22,8 @@ static char help[] = "Driver for PISM software unit tests.\n";
 #include "IceGrid.hh"
 #include "iMtests.hh"
 
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
+#include "PSDummy.hh"
+#include "POConstant.hh"
 #include "pism_options.hh"
 
 int main(int argc, char *argv[]) {

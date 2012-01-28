@@ -81,7 +81,57 @@ PetscErrorCode ageSystemCtx::initAllColumns() {
   return 0;
 }
 
+//! Conservative first-order upwind scheme with implicit in the vertical: one column solve.
+/*!
+The PDE being solved is
+    \f[ \frac{\partial \tau}{\partial t} + \frac{\partial}{\partial x}\left(u \tau\right) + \frac{\partial}{\partial y}\left(v \tau\right) + \frac{\partial}{\partial z}\left(w \tau\right) = 1. \f]
+This PDE has the conservative form identified in the comments on IceModel::ageStep().
 
+Let
+    \f[ \mathcal{U}(x,y_{i+1/2}) = x \, \begin{Bmatrix} y_i, \quad x \ge 0 \\ y_{i+1}, \quad x \le 0 \end{Bmatrix}. \f]
+Note that the two cases agree when \f$x=0\f$, so there is no conflict.  This is
+part of the upwind rule, and \f$x\f$ will be the cell-boundary (finite volume sense)
+value of the velocity.  Our discretization of the PDE uses this upwind notation 
+to build an explicit scheme for the horizontal terms and an implicit scheme for
+the vertical terms, as follows.
+
+Let
+    \f[ A_{i,j,k}^n \approx \tau(x_i,y_j,z_k) \f]
+be the numerical approximation of the exact value on the grid.  The scheme is
+\f{align*}{
+  \frac{A_{ijk}^{n+1} - A_{ijk}^n}{\Delta t} &+ \frac{\mathcal{U}(u_{i+1/2},A_{i+1/2,j,k}^n) - \mathcal{U}(u_{i-1/2},A_{i-1/2,j,k}^n)}{\Delta x} + \frac{\mathcal{U}(v_{j+1/2},A_{i,j+1/2,k}^n) - \mathcal{U}(v_{j-1/2},A_{i,j-1/2,k}^n)}{\Delta y} \\
+    &\qquad \qquad + \frac{\mathcal{U}(w_{k+1/2},A_{i,j,k+1/2}^{n+1}) - \mathcal{U}(w_{k-1/2},A_{i,j,k-1/2}^{n+1})}{\Delta z} = 1.
+  \f}
+Here velocity components \f$u,v,w\f$ are all evaluated at time \f$t_n\f$, so
+\f$u_{i+1/2} = u_{i+1/2,j,k}^n\f$ in more detail, and so on for all the other
+velocity values.  Note that this discrete form
+is manifestly conservative, in that, for example, the same term at \f$u_{i+1/2}\f$
+is used both in updating \f$A_{i,j,k}^{n+1}\f$ and \f$A_{i+1,j,k}^{n+1}\f$.
+
+Rewritten as a system of equations in the vertical index, let
+   \f[ \Phi_k = \Delta t - \frac{\Delta t}{\Delta x} \left[\mathcal{U}(u_{i+1/2},A_{i+1/2,j,k}^n) - \mathcal{U}(u_{i-1/2},A_{i-1/2,j,k}^n)\right] - \frac{\Delta t}{\Delta y} \left[\mathcal{U}(v_{j+1/2},A_{i,j+1/2,k}^n) - \mathcal{U}(v_{j-1/2},A_{i,j-1/2,k}^n)\right]. \f]
+Let \f$\nu = \Delta t / \Delta z\f$ and for slight simplification denote \f$w_\pm = w_{k\pm 1/2}\f$.  The equation determining the unknown
+new age values in the column, denoted \f$a_k = A_{i,j,k}^{n+1}\f$, is
+   \f[ a_k + \nu \left[\mathcal{U}(w_+,a_{k+1/2}) - \mathcal{U}(w_-,a_{k-1/2})\right] = A_{ijk}^n + \Phi_k. \f]
+This is perhaps easiest to understand as four cases:
+\f{align*}{
+w_+\ge 0, w_-\ge 0:  && (-\nu w_-) a_{k-1} + (1 + \nu w_+) a_k + (0) a_{k+1} &= A_{ijk}^n + \Phi_k, \\
+w_+\ge 0, w_- < 0:   && (0) a_{k-1} + (1 + \nu w_+ - \nu w_-) a_k + (0) a_{k+1} &= A_{ijk}^n + \Phi_k, \\
+w_+ < 0,  w_-\ge 0:  && (-\nu w_-) a_{k-1} + (1) a_k + (+\nu w_+) a_{k+1} &= A_{ijk}^n + \Phi_k, \\
+w_+ < 0,  w_- < 0:   && (0) a_{k-1} + (1 - \nu w_-) a_k + (+\nu w_+) a_{k+1} &= A_{ijk}^n + \Phi_k.
+ \f}
+These equation form a tridiagonal system, i.e. the bandwidth does not exceed three.
+In every case the on-diagonal coefficient is greater than or equal to one,
+while the off-diagonal coefficients are always negative.  The coefficients
+approximately sum to one in each case, but only up to errors of size \f$O(\Delta z)\f$.
+These facts APPARENTLY imply that the method has a maximum principle \ref MortonMayers.
+
+
+FIXME:  THE COMMENT ABOVE HAS BEEN UPDATED TO THE 'CONSERVATIVE' FORM, BUT THE
+CODE STILL REFLECTS THE OLD SCHEME.
+
+FIXME:  CARE MUST BE TAKEN TO MAINTAIN CONSERVATISM AT SURFACE.
+ */
 PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
@@ -142,28 +192,38 @@ PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pi
 
 //! Take a semi-implicit time-step for the age equation.
 /*!
-The age equation is\f$d\tau/dt = 1\f$, that is,
+Let \f$\tau(t,x,y,z)\f$ be the age of the ice.  Denote the three-dimensional
+velocity field within the ice fluid as \f$(u,v,w)\f$.  The age equation
+is \f$d\tau/dt = 1\f$, that is, ice may move but it gets one year older in one
+year.  Thus
     \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x}
-        + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
-where \f$\tau(t,x,y,z)\f$ is the age of the ice and \f$(u,v,w)\f$  is the three dimensional
-velocity field.  This equation is purely advective.  And it is hyperbolic.
+        + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1 \f]
+This equation is purely advective and hyperbolic.  The right-hand side is "1" as
+long as age \f$\tau\f$ and time \f$t\f$ are measured in the same units.
+Because the velocity field is incompressible, \f$\nabla \cdot (u,v,w) = 0\f$,
+we can rewrite the equation as
+    \f[ \frac{\partial \tau}{\partial t} + \nabla \left( (u,v,w) \tau \right) = 1 \f]
+There is a conservative first-order numerical method; see ageSystemCtx::solveThisColumn().
 
 The boundary condition is that when the ice falls as snow it has age zero.  
-That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, while there is no 
-boundary condition elsewhere, as the characteristics go outward in the ablation zone.
-(Some more numerical-analytic attention to this is worthwhile.)
+That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas.  There is no 
+boundary condition elsewhere on the ice upper surface, as the characteristics
+go outward in the ablation zone.  If the velocity in the bottom cell of ice
+is upward (\f$w>0\f$) then we also apply a zero age boundary condition,
+\f$\tau(t,x,y,0) = 0\f$.  This is the case where ice freezes on at the base,
+either grounded basal ice freezing on stored water in till, or marine basal ice.
+(Note that the water that is frozen-on as ice might be quite "old" in the sense
+that its most recent time in the atmosphere was long ago; this comment is
+relevant to any analysis which relates isotope ratios to PISM's modeled age.)
 
-If the velocity in the bottom cell of ice is upward (\code (w[i][j][0] > 0 \endcode)
-then we also apply an age = 0 boundary condition.  This is the case where ice freezes
-on at the base, either grounded basal ice freezing on stored water in till, or marine basal ice.
-
-The numerical method is first-order upwind but the vertical advection term is computed
-implicitly.  (Thus there is no CFL-type stability condition for that part.)
-
-We use a finely-spaced, equally-spaced vertical grid in the calculation.  Note that the IceModelVec3 
-methods getValColumn...() and setValColumn..() interpolate back and forth between the grid 
-on which calculation is done and the storage grid.  Thus the storage grid can be either 
-equally spaced or not.
+The numerical method is a conservative form of first-order upwinding, but the
+vertical advection term is computed implicitly.  Thus there is no CFL-type
+stability condition from the vertical velocity; CFL is only for the horizontal
+velocity.  We use a finely-spaced, equally-spaced vertical grid in the
+calculation.  Note that the IceModelVec3 methods getValColumn...() and
+setValColumn..() interpolate back and forth between this fine grid and
+the storage grid.  The storage grid may or may not be equally-spaced.  See
+ageSystemCtx::solveThisColumn() for the actual method.
  */
 PetscErrorCode IceModel::ageStep() {
   PetscErrorCode  ierr;

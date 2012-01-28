@@ -97,7 +97,9 @@ class test_plug(PISM.ssa.SSAExactTestCase):
 
     #// The finite difference code uses the following flag to treat the non-periodic grid correctly.
     # self.config.set_flag("compute_surf_grad_inward_ssa", True);
-    # self.config.set("epsilon_ssafd", 0.0);
+
+    # SSAFEM uses this (even though it has "ssafd" in its name)
+    self.config.set("epsilon_ssafd", 0.0);
 
   def exactSolution(self,i,j,x,y):
     earth_grav = self.config.get("standard_gravity");

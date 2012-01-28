@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@ static char help[] =
 #include "pism_options.hh"
 #include "iceModelVec.hh"
 #include "flowlaws.hh" // IceFlowLaw
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "NCVariable.hh"
 #include "PISMStressBalance.hh"
 #include "SIAFD.hh"
@@ -471,21 +471,24 @@ int main(int argc, char *argv[]) {
                         &vH, u_sia, v_sia, w_sia, sigma); CHKERRQ(ierr);
 
     // Write results to an output file:
-    PISMIO pio(&grid);
+    PIO pio(grid.com, grid.rank, "netcdf3");
 
-    ierr = pio.open_for_writing(output_file, false, true); CHKERRQ(ierr);
+    ierr = pio.open(output_file, NC_WRITE); CHKERRQ(ierr);
+    ierr = pio.def_time(config.get_string("time_dimension_name"),
+                        config.get_string("calendar"),
+                        grid.time->units()); CHKERRQ(ierr);
     ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0);
-    ierr = pio.close(); CHKERRQ(ierr); 
+    ierr = pio.close(); CHKERRQ(ierr);
 
-    ierr = vh.write(output_file.c_str()); CHKERRQ(ierr);
-    ierr = vH.write(output_file.c_str()); CHKERRQ(ierr);
-    ierr = vMask.write(output_file.c_str()); CHKERRQ(ierr);
-    ierr = vbed.write(output_file.c_str()); CHKERRQ(ierr);
-    // ierr = enthalpy.write(output_file.c_str()); CHKERRQ(ierr);
-    ierr = u_sia->write(output_file.c_str()); CHKERRQ(ierr);
-    ierr = v_sia->write(output_file.c_str()); CHKERRQ(ierr);
-    ierr = w_sia->write(output_file.c_str()); CHKERRQ(ierr);
-    ierr = sigma->write(output_file.c_str()); CHKERRQ(ierr);
+    ierr = vh.write(output_file); CHKERRQ(ierr);
+    ierr = vH.write(output_file); CHKERRQ(ierr);
+    ierr = vMask.write(output_file); CHKERRQ(ierr);
+    ierr = vbed.write(output_file); CHKERRQ(ierr);
+    // ierr = enthalpy.write(output_file); CHKERRQ(ierr);
+    ierr = u_sia->write(output_file); CHKERRQ(ierr);
+    ierr = v_sia->write(output_file); CHKERRQ(ierr);
+    ierr = w_sia->write(output_file); CHKERRQ(ierr);
+    ierr = sigma->write(output_file); CHKERRQ(ierr);
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

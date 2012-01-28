@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #if (PISM_HAVE_FFTW==1)
 
 #include "PISMBedDef.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
@@ -31,7 +31,7 @@ PBLingleClark::PBLingleClark(IceGrid &g, const NCConfigVariable &conf)
     PetscPrintf(grid.com, "PBLingleClark::PBLingleClark(...): allocate() failed\n");
     PISMEnd();
   }
-  
+
 }
 
 PBLingleClark::~PBLingleClark() {
@@ -45,7 +45,7 @@ PBLingleClark::~PBLingleClark() {
 
 /* the following is from the PETSc FAQ page:
 
-How do I collect all the values from a parallel PETSc vector into a vector 
+How do I collect all the values from a parallel PETSc vector into a vector
 on the zeroth processor?
 
     * Create the scatter context that will do the communication
@@ -57,9 +57,9 @@ on the zeroth processor?
           o VecScatterDestroy(ctx);
 
 Note that this simply concatenates in the parallel ordering of the vector.
-If you are using a vector from DACreateGlobalVector() you likely want to 
-first call DAGlobalToNaturalBegin/End() to scatter the original vector into 
-the natural ordering in a new global vector before calling 
+If you are using a vector from DACreateGlobalVector() you likely want to
+first call DAGlobalToNaturalBegin/End() to scatter the original vector into
+the natural ordering in a new global vector before calling
 VecScatterBegin/End() to scatter the natural vector onto process 0.
 */
 
@@ -108,12 +108,9 @@ PetscErrorCode PBLingleClark::allocate() {
   ierr = VecDuplicate(Hp0,&upliftp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
-    ierr = bdLC.settings(config,
-			 PETSC_FALSE, // turn off elastic model for now
+    ierr = bdLC.settings(config, PETSC_FALSE, // turn off elastic model for now
 			 grid.Mx, grid.My, grid.dx, grid.dy,
-			 //                       2,                 // use Z = 2 for now
-			 4,                 // use Z = 4 for now; to reduce global drift?
-			 config.get("ice_density"),
+			 4,     // use Z = 4 for now; to reduce global drift?
 			 &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
     CHKERRQ(ierr);
 
@@ -150,6 +147,8 @@ PetscErrorCode PBLingleClark::init(PISMVars &vars) {
 
   ierr = correct_topg(); CHKERRQ(ierr);
 
+  ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
+
   ierr = transfer_to_proc0(thk,    Hstartp0); CHKERRQ(ierr);
   ierr = transfer_to_proc0(topg,   bedstartp0); CHKERRQ(ierr);
   ierr = transfer_to_proc0(uplift, upliftp0); CHKERRQ(ierr);
@@ -166,7 +165,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
     topg_exists, topg_initial_exists, regrid_vars_set;
   string boot_filename, regrid_filename;
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, "netcdf3");
 
   ierr = PISMOptionsIsSet("-regrid_bed_special",
                           "Correct topg when switching to a different grid",
@@ -184,10 +183,10 @@ PetscErrorCode PBLingleClark::correct_topg() {
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
   if (! (regrid_file_set && boot_file_set) ) return 0;
 
-  ierr = nc.open_for_reading(regrid_filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.open(regrid_filename, NC_NOWRITE); CHKERRQ(ierr);
 
-  ierr = nc.find_variable("topg_initial", NULL, topg_initial_exists); CHKERRQ(ierr);
-  ierr = nc.find_variable("topg", NULL, topg_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("topg_initial", topg_initial_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("topg", topg_exists); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Stop if the regridding file does not have both topg and topg_initial.
@@ -204,7 +203,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
     for (unsigned int i = 0; i < regrid_vars.size(); ++i) {
       if (regrid_vars[i] == "topg") {
         ierr = verbPrintf(2, grid.com,
-                          "  Bed elevation correction requested, but -regrid_vars contains topg...\n"); CHKERRQ(ierr); 
+                          "  Bed elevation correction requested, but -regrid_vars contains topg...\n"); CHKERRQ(ierr);
         return 0;
       }
     }
@@ -213,8 +212,8 @@ PetscErrorCode PBLingleClark::correct_topg() {
   ierr = verbPrintf(2, grid.com,
                     "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
                     "  of the bed deformation from '%s'...\n",
-                    boot_filename.c_str(), regrid_filename.c_str()); CHKERRQ(ierr); 
-  
+                    boot_filename.c_str(), regrid_filename.c_str()); CHKERRQ(ierr);
+
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
   int WIDE_STENCIL = grid.max_stencil_width;
   ierr = topg_tmp.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -228,7 +227,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   // After bootstrapping, topg contains the bed elevation field from
   // -boot_file.
 
-  ierr = topg_tmp.add(-1.0, topg_initial); CHKERRQ(ierr); 
+  ierr = topg_tmp.add(-1.0, topg_initial); CHKERRQ(ierr);
   // Now topg_tmp contains the change in bed elevation computed during the run
   // that produced -regrid_file.
 
@@ -253,19 +252,23 @@ PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
   t  = my_t;
   dt = my_dt;
 
+  PetscReal t_final = t + dt;
+
   // Check if it's time to update:
-  PetscScalar dt_beddef = my_t - t_beddef_last; // in seconds
-  if (dt_beddef < convert(config.get("bed_def_interval_years"), "years", "seconds"))
+  PetscReal dt_beddef = t_final - t_beddef_last; // in seconds
+  if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
+       t_final < grid.time->end()) ||
+      dt_beddef < 1e-12)
     return 0;
 
-  t_beddef_last = my_t;
+  t_beddef_last = t_final;
 
   ierr = transfer_to_proc0(thk,  Hp0);   CHKERRQ(ierr);
   ierr = transfer_to_proc0(topg, bedp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {  // only processor zero does the step
     ierr = bdLC.step(dt_beddef, // time step, in seconds
-                     my_t - grid.time->start()); // time since the start of the run, in seconds
+                     t_final - grid.time->start()); // time since the start of the run, in seconds
     CHKERRQ(ierr);
   }
 
@@ -274,6 +277,9 @@ PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
   //! Finally, we need to update bed uplift and topg_last.
   ierr = compute_uplift(dt_beddef); CHKERRQ(ierr);
   ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
+
+  //! Increment the topg state counter. SIAFD relies on this!
+  topg->inc_state_counter();
 
   return 0;
 }

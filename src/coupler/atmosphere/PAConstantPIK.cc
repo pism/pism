@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PISMAtmosphere.hh"
+#include "PAConstantPIK.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 

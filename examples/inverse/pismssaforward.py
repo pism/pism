@@ -4,7 +4,7 @@ from siple.gradient.forward import NonlinearForwardProblem
 from siple.gradient.nonlinear import InvertNLCG, InvertIGN
 from siple.reporting import msg
 import siple
-
+import time
 
 from linalg_pism import PISMLocalVector
 from math import sqrt
@@ -35,24 +35,38 @@ class CaptureLogger:
 
 class CarefulCaptureLogger:
   def __init__(self,filename):
+    self.com = PISM.Context().com
+    self.rank = PISM.Context().rank
+    self.log = ""
     if PISM.Context().rank == 0:
       self.filename = filename
+      d = PISM.netCDF.Dataset(self.filename,'a')
+      if 'siple_log' in d.ncattrs():
+        self.log = d.siple_log
+      d.close()
     else:
       self.filename = None
+    self.com.barrier()
     siple.reporting.add_logger(self)
-  
+
   def __call__(self,message,severity):
-    if not self.filename is None:
-      d = PISM.netCDf.Dataset(self.filename,'a')
+    if self.rank == 0:
       timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-      if 'siple_log' in d.ncattrs():
-        d.siple_log = "%s\n%s: %s" % (d.siple_log,timestamp,message)
-      else:
-        d.siple_log = "%s: %s" % (timestamp, message)
+      self.log = "%s\n%s: %s" % (self.log,timestamp,message)
+      d = PISM.netCDF.Dataset(self.filename,'a')
+      d.siple_log = self.log
       d.close()
     self.com.barrier()
 
-
+  def write(self,output_filename):
+    if self.rank == 0:
+      d = PISM.netCDF.Dataset(output_filename,'a')
+      if 'siple_log' in d.ncattrs():
+        d.siple_log = self.log + "\n" + d.siple_log
+      else:
+        d.siple_log = self.log
+      d.close()
+    self.com.barrier()
 
 def pism_print_logger(message,severity):
   verb = severity
@@ -250,6 +264,20 @@ class SSAForwardProblem(NonlinearForwardProblem):
     """Constructs a brand new vector from the range vector space"""
     v = PISM.IceModelVec2V()
     v.create(self.grid,"",True,WIDE_STENCIL)
+
+    # Add appropriate meta data.
+    intent = "?inverse?" # FIXME
+    desc = "SSA velocity computed by inversion"
+    v.set_attrs(intent, "%s%s" %("X-component of the ",desc), "m s-1", "", 0);
+    v.set_attrs(intent, "%s%s" %("Y-component of the ",desc), "m s-1", "", 1);
+    v.set_glaciological_units("m year-1");
+    v.write_in_glaciological_units = True
+    huge_vel = 1e6/PISM.secpera;
+    attrs = [ ("valid_min", -huge_vel), ("valid_max", huge_vel), ("_FillValue", 2*huge_vel) ]
+    for a in attrs: 
+      for component in range(2):
+        v.set_attr(a[0],a[1],component)
+
     return PISMLocalVector(v)
 
   def domainVector(self):
@@ -391,6 +419,7 @@ class InvertSSAIGN(InvertIGN):
 
     tauc = x.core()
     u = y.core()
+
     return (tauc,u)
 
   def solve(self,x,y,deltaLInf):
@@ -401,9 +430,8 @@ class InvertSSAIGN(InvertIGN):
 
 class LinearPlotListener:  
   def __init__(self,grid):
-    import tozero
-    self.tz_scalar = tozero.ToProcZero(grid,dof=1)
-    self.tz_vector = tozero.ToProcZero(grid,dof=2)
+    self.tz_scalar = PISM.toproczero.ToProcZero(grid,dof=1)
+    self.tz_vector = PISM.toproczero.ToProcZero(grid,dof=2)
 
   def __call__(self,solver,count,x,y,d,r,*args):
     from matplotlib import pyplot as pp
@@ -419,12 +447,18 @@ class LinearPlotListener:
 
       self.iteration(solver,count,x,y,d,r,*args)
 
+  def iteration(self,solver,count,x,y,d,r,*args):
+    # Subclasses should implement this method to do 
+    # the plotting. This method will only be called on
+    # processor zero, and the arguments will all be numpy
+    # vectors already copied to proc 0.
+    raise NotImplementedError()
+
 class PlotListener:  
   def __init__(self,grid):
-    import tozero
-    self.tz_scalar = tozero.ToProcZero(grid,dof=1)
-    self.tz_vector = tozero.ToProcZero(grid,dof=2)
-  
+    self.tz_scalar = PISM.toproczero.ToProcZero(grid,dof=1)
+    self.tz_vector = PISM.toproczero.ToProcZero(grid,dof=2)
+
   def __call__(self,solver,count,x,Fx,y,d,r,*args):
     from matplotlib import pyplot as pp
     import siple
@@ -434,55 +468,18 @@ class PlotListener:
     y = self.tz_vector.communicate(y.core())
     Fx = self.tz_vector.communicate(Fx.core())
 
-    if not d is None:
+    if x is not None:
       r *= PISM.secpera
       y *= PISM.secpera
 
       self.iteration(solver,count,x,Fx,y,d,r,*args)
 
   def iteration(self,solver,count,x,Fx,y,d,r,*args):      
-    import matplotlib.pyplot as pp
-    pp.clf()
-    pp.subplot(2,3,1)
-    pp.imshow(y[0,:,:],origin='lower')
-    pp.colorbar()
-    pp.title('yu')
-    pp.jet()
-
-    pp.subplot(2,3,4)
-    pp.imshow(y[1,:,:],origin='lower')
-    pp.colorbar()
-    pp.title('yv')
-    pp.jet()
-
-    
-    pp.subplot(2,3,2)
-    pp.imshow(r[0,:,:],origin='lower')
-    pp.colorbar()
-    pp.title('ru')
-    pp.jet()
-
-    pp.subplot(2,3,5)
-    pp.imshow(r[1,:,:],origin='lower')
-    pp.colorbar()
-    pp.title('rv')
-    pp.jet()
-
-    d *= -1
-    pp.subplot(2,3,3)      
-    pp.imshow(d,origin='lower')
-    pp.colorbar()
-    pp.jet()
-    pp.title('-d')
-    
-    pp.subplot(2,3,6)      
-    pp.imshow(x,origin='lower')
-    pp.colorbar()
-    pp.title('zeta')
-    pp.jet()
-
-    pp.ion()
-    pp.show()
+    # Subclasses should implement this method to do 
+    # the plotting. This method will only be called on
+    # processor zero, and the arguments will all be numpy
+    # vectors already copied to proc 0.
+    raise NotImplementedError()
 
 def pauseListener(*args):
     import siple

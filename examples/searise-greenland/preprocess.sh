@@ -80,15 +80,17 @@ wget -nc ${URL}/$TEMP
 echo "  ... done."
 echo
 
+ANOMALY=ar4_anomaly
 echo -n "creating scaled anomaly files ... "
-ncks -O $PRECIP ar4_precip_anomaly_scalefactor_1.0.nc
-ncks -O $TEMP ar4_temp_anomaly_scalefactor_1.0.nc
+ncks -O $PRECIP ${ANOMALY}.nc
+ncks -A $TEMP ${ANOMALY}.nc
+ncrename -O -v temp_anomaly,artm_anomaly ${ANOMALY}.nc
 
-ncap2 -O -s "precip_anomaly = 1.5 * precip_anomaly" $PRECIP ar4_precip_anomaly_scalefactor_1.5.nc
-ncap2 -O -s "precip_anomaly = 2.0 * precip_anomaly" $PRECIP ar4_precip_anomaly_scalefactor_2.0.nc
+ncks -O ${ANOMALY}.nc ${ANOMALY}_scalefactor_1.0.nc
 
-ncap2 -O -s "temp_anomaly = 1.5 * temp_anomaly" $TEMP ar4_temp_anomaly_scalefactor_1.5.nc
-ncap2 -O -s "temp_anomaly = 2.0 * temp_anomaly" $TEMP ar4_temp_anomaly_scalefactor_2.0.nc
+ncap2 -O -s "precip_anomaly = 1.5 * precip_anomaly; artm_anomaly = 1.5 * artm_anomaly" ${ANOMALY}.nc ${ANOMALY}_scalefactor_1.5.nc
+ncap2 -O -s "precip_anomaly = 2.0 * precip_anomaly; artm_anomaly = 2.0 * artm_anomaly" ${ANOMALY}.nc ${ANOMALY}_scalefactor_2.0.nc
+
 echo "done."
 echo
 

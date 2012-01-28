@@ -29,8 +29,8 @@ static char help[] =
 #include "ismip/iceMISMIPModel.hh"
 #include "pism_options.hh"
 
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
+#include "PSDummy.hh"
+#include "POConstant.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     bool EISIIchosen, PSTexchosen, MISMIPchosen;
     /* This option determines the single character name of EISMINT II experiments:

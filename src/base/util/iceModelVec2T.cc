@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Constantine Khroulev
+// Copyright (C) 2009--2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <petsc.h>
 #include <algorithm>
 #include "iceModelVec2T.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "pism_const.hh"
 #include "PISMTime.hh"
 #include "LocalInterpCtx.hh"
@@ -141,12 +141,12 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  NCTool nc(grid->com, grid->rank);
-  int varid;
-  bool exists;
-  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-  ierr = nc.find_variable(vars[0].short_name, vars[0].get_string("standard_name"),
-                          &varid, exists); CHKERRQ(ierr);
+  PIO nc(grid->com, grid->rank, "netcdf3");
+  string name_found;
+  bool exists, found_by_standard_name;
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
+                    exists, name_found, found_by_standard_name); CHKERRQ(ierr);
   if (!exists) {
     PetscPrintf(grid->com, "PISM ERROR: can't find %s (%s) in %s.\n",
                 vars[0].get_string("long_name").c_str(), vars[0].short_name.c_str(),
@@ -155,14 +155,15 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   }
 
   // find the time dimension:
-  vector<int> dimids;
-  ierr = nc.inq_dimids(varid, dimids); CHKERRQ(ierr);
+  vector<string> dims;
+  ierr = nc.inq_vardims(name_found, dims); CHKERRQ(ierr);
   
   string dimname = "";
   bool time_found = false;
-  for (unsigned int i = 0; i < dimids.size(); ++i) {
+  for (unsigned int i = 0; i < dims.size(); ++i) {
     AxisType dimtype;
-    ierr = nc.inq_dimname(dimids[i], dimname); CHKERRQ(ierr);
+    dimname = dims[i];
+
     ierr = nc.inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
 
     if (dimtype == T_AXIS) {
@@ -177,11 +178,11 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     NCTimeseries time_dimension;
     time_dimension.init(dimname, dimname, grid->com, grid->rank);
     ierr = time_dimension.set_units("seconds"); CHKERRQ(ierr);
-    ierr = time_dimension.read(filename.c_str(), time); CHKERRQ(ierr);
+    ierr = time_dimension.read(filename, time); CHKERRQ(ierr);
 
     string bounds_name;
     ierr = time_dimension.get_bounds_name(filename, bounds_name);
-    
+
     if (!bounds_name.empty()) {
       // read time bounds data from a file
       NCTimeBounds tb;
@@ -393,10 +394,10 @@ double IceModelVec2T::max_timestep(double my_t) {
   if (l != time_bounds.end()) {
     PetscReal tmp = *l - my_t;
 
-    if (tmp > 1e-8)
+    if (tmp > 1)                // never take time-steps shorter than 1 second
       return tmp;
-    else if (l + 1 != time.end())
-      return *(l + 1) - *l;
+    else if ((l + 1) != time_bounds.end() && (l + 2) != time_bounds.end())
+      return *(l + 2) - *l;
     else
       return -1;
   } else
@@ -406,6 +407,8 @@ double IceModelVec2T::max_timestep(double my_t) {
 
 //! \brief Get the record that is just before my_t.
 PetscErrorCode IceModelVec2T::at_time(double my_t) {
+  PetscErrorCode ierr;
+
   int     last = first + (N - 1);
   double *j,
     *start = &time_bounds[first * 2],
@@ -422,6 +425,18 @@ PetscErrorCode IceModelVec2T::at_time(double my_t) {
   if (i == 0) {
     return get_record(0);         // out of range (on the left)
   }
+
+  long int index = ((j - &time_bounds[0]) - 1) / 2;
+
+  ierr = verbPrintf(3, grid->com,
+		    "  IceModelVec2T::at_time(%3.5f years): using %s:%s[%d]"
+                    " (time bounds: [%3.5f years, %3.5f years]).\n",
+                    grid->time->seconds_to_years(my_t),
+                    filename.c_str(),
+                    vars[0].short_name.c_str(),
+                    index,
+                    grid->time->seconds_to_years(*(j-1)),
+                    grid->time->seconds_to_years(*j)); CHKERRQ(ierr);
 
   if (i % 2 == 0) {
     PetscPrintf(grid->com,
@@ -445,14 +460,14 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
   double *p,
     *start = &time_bounds[first * 2],
     *end = &time_bounds[last * 2 + 1];
-  
+
   p = lower_bound(start, end, my_t); // binary search
 
   if (p == end) {
     ierr = get_record(N - 1); CHKERRQ(ierr);
     return 0;
   }
-    
+
   int k = (int)(p - start - 1);
 
   if (k < 0) {
@@ -460,9 +475,21 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
     return 0;
   }
 
+  long int index = ((p - &time_bounds[0]) - 1) / 2;
+
+  ierr = verbPrintf(3, grid->com,
+		    "  IceModelVec2T::interp(%3.5f years): using %s:%s[%d,%d]"
+                    " (time bounds: [%3.5f years, %3.5f years]).\n",
+                    grid->time->seconds_to_years(my_t),
+                    filename.c_str(),
+                    vars[0].short_name.c_str(),
+                    index - 1, index,
+                    grid->time->seconds_to_years(*(p-1)),
+                    grid->time->seconds_to_years(*p)); CHKERRQ(ierr);
+
   int m = first + k;
   double lambda = (my_t - time[m]) / (time[m + 1] - time[m]);
-  
+
   PetscScalar **a2, ***a3;
 
   ierr = get_array(a2); CHKERRQ(ierr);
@@ -528,7 +555,7 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double my_t, double my_dt,
   double dt = my_dt / (M - 1);
   for (int k = 0; k < M; k++)
     ts[k] = my_t + k * dt;
-  
+
   ierr = interp(i, j, M, &ts[0], &values[0]); CHKERRQ(ierr);
 
   // trapezoidal rule; uses the fact that all 'small' time intervals used here

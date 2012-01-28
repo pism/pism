@@ -62,10 +62,10 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
         maxu = PetscMax(maxu,absu);
         maxv = PetscMax(maxv,absv);
         // make sure the denominator below is positive:
-        PetscScalar tempdenom = (0.001/secpera) / (grid.dx + grid.dy);  
+        PetscScalar tempdenom = (0.001/secpera) / (grid.dx + grid.dy);
         tempdenom += PetscAbs(absu/grid.dx) + PetscAbs(absv/grid.dy);
         locCFLmaxdt = PetscMin(locCFLmaxdt,1.0 / tempdenom); 
-        maxw = PetscMax(maxw, PetscAbs(w[k]));        
+        maxw = PetscMax(maxw, PetscAbs(w[k]));
       }
     }
   }

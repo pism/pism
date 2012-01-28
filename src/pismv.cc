@@ -29,8 +29,8 @@ static char help[] =
 #include "IceGrid.hh"
 #include "verif/iceCompModel.hh"
 
-#include "PISMSurface.hh"
-#include "PISMOcean.hh"
+#include "PSDummy.hh"
+#include "POConstant.hh"
 #include "pism_options.hh"
 
 // a wrapper that seems to be necessary to make std::transform below work
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
         ); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     config.set_flag("use_eta_transformation", false);
 

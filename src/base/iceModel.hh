@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -152,12 +152,12 @@ public:
   PetscErrorCode init();
   virtual PetscErrorCode run();
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
-  virtual PetscErrorCode setExecName(const char *my_executable_short_name);
+  virtual PetscErrorCode setExecName(string my_executable_short_name);
   virtual void reset_counters();
 
   // see iMbootstrap.cc 
-  virtual PetscErrorCode bootstrapFromFile(const char *fname);
-  virtual PetscErrorCode bootstrap_2d(const char *fname);
+  virtual PetscErrorCode bootstrapFromFile(string fname);
+  virtual PetscErrorCode bootstrap_2d(string fname);
   virtual PetscErrorCode bootstrap_3d();
   virtual PetscErrorCode putTempAtDepth();
 
@@ -175,11 +175,11 @@ public:
   virtual PetscErrorCode compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
-  virtual PetscErrorCode initFromFile(const char *);
-  virtual PetscErrorCode writeFiles(const char* default_filename);
-  virtual PetscErrorCode write_model_state(const char *filename);
-  virtual PetscErrorCode write_metadata(const char *filename);
-  virtual PetscErrorCode write_variables(const char* filename, set<string> vars,
+  virtual PetscErrorCode initFromFile(string);
+  virtual PetscErrorCode writeFiles(string default_filename);
+  virtual PetscErrorCode write_model_state(string filename);
+  virtual PetscErrorCode write_metadata(string filename, bool write_mapping = true);
+  virtual PetscErrorCode write_variables(string filename, set<string> vars,
 					 nc_type nctype);
 protected:
 
@@ -298,10 +298,6 @@ protected:
   // see iMage.cc
   virtual PetscErrorCode ageStep();
 
-  // see iMbeddef.cc
-  PetscScalar last_bed_def_update;
-  virtual PetscErrorCode bed_def_step(bool &bed_changed);
-
   // see iMcalving.cc
   virtual PetscErrorCode eigenCalving();
   virtual PetscErrorCode calvingAtThickness();
@@ -359,7 +355,7 @@ protected:
   virtual PetscErrorCode killEasyIceBergs();       // FIXME: do we want this one to happen even if eigencalving does not happen?  should we be calling this one before any time that principal values need to be computed?
 
   // see iMIO.cc
-  virtual PetscErrorCode dumpToFile(const char *filename);
+  virtual PetscErrorCode dumpToFile(string filename);
   virtual PetscErrorCode regrid(int dimensions);
   virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
 
@@ -397,7 +393,7 @@ protected:
   virtual PetscErrorCode compute_ice_area_grounded(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area_floating(PetscScalar &result);
   virtual PetscErrorCode compute_ice_enthalpy(PetscScalar &result);
-  
+
   // see iMtemp.cc
   virtual PetscErrorCode excessToFromBasalMeltLayer(
                       const PetscScalar rho, const PetscScalar c, const PetscScalar L,

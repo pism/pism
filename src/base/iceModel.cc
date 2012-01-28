@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -68,9 +68,9 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   executable_short_name = "pism"; // drivers typically override this
 
   shelvesDragToo = PETSC_FALSE;
-  
-  // set maximum |u|,|v|,|w| in ice to an (obviously) invalid number
-  gmaxu = gmaxv = gmaxw = -1.0;
+
+  // initializr maximum |u|,|v|,|w| in ice
+  gmaxu = gmaxv = gmaxw = 0;
 
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;
@@ -98,7 +98,7 @@ void IceModel::reset_counters() {
   CFLviolcount = 0;
   dt_TempAge = 0.0;
   dt_from_diffus = dt_from_cfl = 0.0;
-  gmaxu = gmaxv = gmaxw = -1;
+  gmaxu = gmaxv = gmaxw = 0;
   maxdt_temporary = dt = dt_force = 0.0;
   skipCountDown = 0;
 
@@ -486,7 +486,7 @@ PetscErrorCode IceModel::deallocate_internal_objects() {
   return 0;
 }
 
-PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
+PetscErrorCode IceModel::setExecName(string my_executable_short_name) {
   executable_short_name = my_executable_short_name;
   return 0;
 }
@@ -546,20 +546,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
       maxdt_temporary = extras_dt;
   }
 
-  grid.profiler->begin(event_beddef);
-
-  //! \li compute the bed deformation, which only depends on current thickness
-  //! and bed elevation
-  if (beddef) {
-    bool bed_changed;
-    ierr = bed_def_step(bed_changed); CHKERRQ(ierr);
-    if (bed_changed) {
-      stdout_flags += "b";
-    } else stdout_flags += "$";
-  } else stdout_flags += " ";
-  
-  grid.profiler->end(event_beddef);
-
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
   //! horizontal velocity is updated; see velocity()
@@ -578,7 +564,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = basal_yield_stress->basal_material_yield_stress(vtauc); CHKERRQ(ierr);
     stdout_flags += "y";
   } else stdout_flags += "$";
-  
+
   grid.profiler->begin(event_velocity);
 
   ierr = stress_balance->update(updateAtDepth == false); CHKERRQ(ierr); 
@@ -591,7 +577,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   stdout_flags += sb_stdout;
 
   stdout_flags += (updateAtDepth ? "v" : "V");
-   
+
   // communication here for global max; sets CFLmaxdt2D
   ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);   
 
@@ -615,7 +601,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   // "-skip" mechanism
 
   grid.profiler->begin(event_age);
-  
+
   //! \li update the age of the ice (if appropriate)
   if (do_age && updateAtDepth) {
     ierr = ageStep(); CHKERRQ(ierr);
@@ -625,8 +611,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
 
   grid.profiler->end(event_age);
-  
-  
+
   grid.profiler->begin(event_energy);
 
   //! \li update the enthalpy (or temperature) field according to the conservation of
@@ -638,7 +623,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   } else {
     stdout_flags += "$";
   }
-  
+
   grid.profiler->end(event_energy);
 
   // finally, diffuse the stored basal water once per energy step, if it is requested
@@ -672,8 +657,24 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   } else {
     stdout_flags += "$";
   }
-  
+
   grid.profiler->end(event_mass);
+
+  //! \li compute the bed deformation, which only depends on current thickness
+  //! and bed elevation
+  if (beddef) {
+    grid.profiler->begin(event_beddef);
+    int topg_state_counter = vbed.get_state_counter();
+
+    ierr = beddef->update(grid.time->current(), dt); CHKERRQ(ierr);
+
+    if (vbed.get_state_counter() != topg_state_counter) {
+      stdout_flags += "b";
+      ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+    } else
+      stdout_flags += " ";
+    grid.profiler->end(event_beddef);
+  }
 
   //! \li call additionalAtEndTimestep() to let derived classes do more
   ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
@@ -727,14 +728,14 @@ PetscErrorCode IceModel::run() {
   dt_TempAge = 0.0;
   dt = 0.0;
   PetscReal run_end = grid.time->end();
-  
+
   // FIXME:  In the case of derived class diagnostic time series this fixed
   //         step-length can be problematic.  The fix may have to be in the derived class.
   //         The problem is that unless the derived class fully reinitializes its
   //         time series then there can be a request for an interpolation on [A,B]
   //         where A>B.  See IcePSTexModel.
   grid.time->set_end(grid.time->start() + 1); // run for 1 second
-  
+
   ierr = step(do_mass_conserve, do_energy, do_age, do_skip); CHKERRQ(ierr);
 
   // print verbose messages according to user-set verbosity
@@ -772,13 +773,13 @@ PetscErrorCode IceModel::run() {
   // IceModel::step calls grid.time->step(dt), ensuring that this while loop
   // will terminate
   while (grid.time->current() < grid.time->end()) {
-    
+
     stdout_flags.erase();  // clear it out
     dt_force = -1.0;
     maxdt_temporary = -1.0;
 
     ierr = step(do_mass_conserve, do_energy, do_age, do_skip); CHKERRQ(ierr);
-    
+
     // report a summary for major steps or the last one
     bool updateAtDepth = (skipCountDown == 0);
     bool tempAgeStep = ( updateAtDepth && ((do_energy) || (do_age)) );

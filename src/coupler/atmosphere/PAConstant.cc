@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -22,6 +22,7 @@
 
 #include "PISMAtmosphere.hh"
 #include "IceGrid.hh"
+#include "PAConstant.hh"
 
 PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
@@ -133,13 +134,12 @@ void PAConstant::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PAConstant::define_variables(set<string> vars, const NCTool &nc,
+PetscErrorCode PAConstant::define_variables(set<string> vars, const PIO &nc,
                                             nc_type nctype) {
   PetscErrorCode ierr;
-  int varid;
 
   if (set_contains(vars, "airtemp")) {
-    ierr = airtemp_var.define(nc, varid, nctype, false); CHKERRQ(ierr);
+    ierr = airtemp_var.define(nc, nctype, false); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "precip")) {
