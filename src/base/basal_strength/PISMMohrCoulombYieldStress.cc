@@ -197,6 +197,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
   ierr = regrid(); CHKERRQ(ierr);
 
   if (tauc_to_phi_set) {
+    string tauc_to_phi_file;
     bool flag;
     ierr = PISMOptionsString("-tauc_to_phi", "Specifies the file tauc will be read from",
                              tauc_to_phi_file, flag); CHKERRQ(ierr);
@@ -209,12 +210,28 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
       // be present in an input file
       ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
 
-      if (bootstrap) {
+      if (bootstrap == false) {
         ierr = tauc.read(filename, start); CHKERRQ(ierr);
       } else {
         ierr = tauc.regrid(filename, true); CHKERRQ(ierr);
       }
     }
+
+    // At this point tauc is initialized in one of the following ways:
+    // - from a -tauc_to_phi file
+    // - from an input (or bootstrapping) file if -tauc_to_phi did not have an
+    //  argument
+    //
+    // In addition to this, till_phi is initialized
+    // - from an input file or
+    // - using the -plastic_phi option
+    // - using the topg_to_phi option
+    //
+    // Now tauc_to_phi() will correct till_phi at all locations where grounded
+    // ice is present:
+
+    ierr = tauc_to_phi(); CHKERRQ(ierr);
+
   } else {
     ierr = tauc.set(0.0); CHKERRQ(ierr);
   }

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -74,7 +74,7 @@ public:
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           nc_type nctype);
 
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
