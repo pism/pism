@@ -15,7 +15,7 @@ macro(pism_test name script)
 endmacro()
 
 macro(pism_python_test name script)
-  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python)
+  add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR} -python ${PYTHON_EXECUTABLE})
 endmacro()
 
 # Tests themselves:

@@ -4,10 +4,13 @@
 
 PISM_PATH=$1
 MPIEXEC=$2
+MPIEXEC_COMMAND="$MPIEXEC -n 2"
 PISM_SOURCE_DIR=$3
 EXT=""
 if [ $# -ge 4 ] && [ "$4" == "-python" ]
 then
+  PYTHONEXEC=$5
+  MPIEXEC_COMMAND="$MPIEXEC_COMMAND $PYTHONEXEC"
   PYTHONPATH=${PISM_PATH}
   PISM_PATH=${PISM_SOURCE_DIR}/examples/python/ssa_tests
   EXT=".py"
@@ -23,8 +26,8 @@ set -e
 OPTS="-verbose 1 -ssa_method fem -o foo.nc"
 
 # do stuff
-$PISM_PATH/ssa_test_plug${EXT} -Mx 22 -My 31 $OPTS > test-out.txt
-$PISM_PATH/ssa_test_plug${EXT} -Mx 61 -My 61 $OPTS >> test-out.txt
+$MPIEXEC_COMMAND $PISM_PATH/ssa_test_plug${EXT} -Mx 22 -My 31 $OPTS > test-out.txt
+$MPIEXEC_COMMAND $PISM_PATH/ssa_test_plug${EXT} -Mx 61 -My 61 $OPTS >> test-out.txt
 
 set +e
 
