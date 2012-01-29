@@ -598,7 +598,7 @@ PetscScalar PISMMohrCoulombYieldStress::basal_water_pressure(PetscReal p_overbur
   if (bwat > bwat_max + 1.0e-6) {
     PetscPrintf(grid.com,
                 "PISM ERROR:  bwat = %12.8f exceeds bwat_max = %12.8f\n"
-                "  in IceModel::getBasalWaterPressure()\n",bwat,bwat_max);
+                "  in PISMMohrCoulombYieldStress::basal_water_pressure()\n",bwat,bwat_max);
     PISMEnd();
   }
 

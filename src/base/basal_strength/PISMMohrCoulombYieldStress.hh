@@ -23,7 +23,7 @@
 #include "PISMYieldStress.hh"
 #include "iceModelVec.hh"
 
-//! Local copy of parameters used by IceModel::getBasalWaterPressure().
+//! Parameters used by the basal water pressure model.
 struct BWPparams {
   bool usebmr,
     usethkeff;
