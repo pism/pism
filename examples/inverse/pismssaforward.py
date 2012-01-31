@@ -109,7 +109,7 @@ def randVectorV(grid,scale,stencil_width=None):
   shape=(grid.xm,grid.ym)
   r_u = np.random.normal(scale=scale,size=shape)
   r_v = np.random.normal(scale=scale,size=shape)
-  with PISM.util.Access(nocomm=rv):
+  with PISM.util.Access(comm=rv):
     for (i,j) in grid.points():
       rv[i,j].u = r_u[i-grid.xs,j-grid.ys]
       rv[i,j].v = r_v[i-grid.xs,j-grid.ys]
@@ -199,7 +199,7 @@ class SSAForwardProblem(NonlinearForwardProblem):
     #   self.solver.set_initial_velocity_guess(guess)
     if out is None:
       out = self.rangeVector()
-    self.ssa.set_tauc(x.core())
+    self.ssa.set_zeta(x.core())
     self.ssa.solveF(out.core())
     return out
 
@@ -233,7 +233,7 @@ class SSAForwardProblem(NonlinearForwardProblem):
 
     Nonlinear problems often make use of an initial guess; this can be provided in 'guess'.
     """
-    self.ssa.set_tauc(x.core())
+    self.ssa.set_zeta(x.core())
 
   def evalFandLinearize(self,x,out=None,guess=None):
     """
@@ -468,11 +468,20 @@ class PlotListener:
     y = self.tz_vector.communicate(y.core())
     Fx = self.tz_vector.communicate(Fx.core())
 
+    arg_extra = args[0].core()
+    dof = arg_extra.get_dof()
+    if dof == 1:
+      arg_extra = self.tz_scalar.communicate(arg_extra)
+    elif dof == 2:
+      arg_extra = self.tz_vector.communicate(arg_extra)
+      if arg_extra is not None:
+        arg_extra *= PISM.secpera
+
     if x is not None:
       r *= PISM.secpera
       y *= PISM.secpera
 
-      self.iteration(solver,count,x,Fx,y,d,r,*args)
+      self.iteration(solver,count,x,Fx,y,d,r,arg_extra)
 
   def iteration(self,solver,count,x,Fx,y,d,r,*args):      
     # Subclasses should implement this method to do 

@@ -29,7 +29,7 @@ tauc_prior_scale = 0.2
 tauc_prior_const = None
 
 
-def addGroundedIceMisfitWeight(modeldata):
+def groundedIceMisfitWeight(modeldata):
   grid = modeldata.grid
   weight = PISM.util.standardVelocityMisfitWeight(grid)
   mask = modeldata.vecs.ice_mask
@@ -39,7 +39,25 @@ def addGroundedIceMisfitWeight(modeldata):
     for (i,j) in grid.points():
       if mask[i,j] == grounded:
         weight[i,j] = 1
-  modeldata.vecs.add(weight,writing=True)    
+  return weight
+
+
+def fastIceMisfitWeight(modeldata,threshold):
+  grid = modeldata.grid
+  weight = PISM.util.standardVelocityMisfitWeight(grid)
+  mask    = modeldata.vecs.ice_mask
+  vel_ssa = modeldata.vecs.vel_ssa
+  threshold = threshold*threshold
+  with PISM.util.Access(comm=weight,nocomm=[vel_ssa,mask]):
+    weight.set(0.)
+    grounded = PISM.MASK_GROUNDED
+    for (i,j) in grid.points():
+      u=vel_ssa[i,j].u; v=vel_ssa[i,j].v
+      if mask[i,j] == grounded:
+        if u*u+v*v > threshold:
+          weight[i,j] = 1
+  return weight
+
 
 # The main code for a run follows:
 if __name__ == '__main__':
@@ -72,6 +90,8 @@ if __name__ == '__main__':
     tauc_prior_scale = PISM.optionsReal("-tauc_prior_scale","initial guess for tauc to be this factor of the true value",default=tauc_prior_scale)
     tauc_prior_const = PISM.optionsReal("-tauc_prior_const","initial guess for tauc to be this constant",default=tauc_prior_const)
     noise = PISM.optionsReal("-rms_noise","pointwise rms noise to add (in m/a)",default=None)
+    misfit_weight_type = PISM.optionsList(context.com,"-misfit_type","Choice of misfit weight function",["grounded","fast"],"grounded")
+    fast_ice_speed = PISM.optionsReal("-fast_ice_speed","Threshold in m/a for determining if ice is fast", 500.)
     generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed","generate observed SSA velocities",default=False)
 
   config.set_string("ssa_method","fem")
@@ -89,9 +109,6 @@ if __name__ == '__main__':
   modeldata = ssa_run.modeldata
   grid = modeldata.grid
   vecs = modeldata.vecs
-
-  # Add the misfit weight.
-  addGroundedIceMisfitWeight(modeldata)
 
   # Generate a prior guess for tauc
   tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior',desc="initial guess for (pseudo-plastic) basal yield stress in an inversion")
@@ -120,6 +137,13 @@ if __name__ == '__main__':
     vel_surface_observed.add(1.,vel_ssa_observed)
     vecs.markForWriting(vel_surface_observed)
     final_velocity = vel_surface_observed
+
+  # Add the misfit weight.
+  if misfit_weight_type == "fast":
+    misfit_weight = fastIceMisfitWeight(modeldata,fast_ice_speed / PISM.secpera)
+  else:
+    misfit_weight = groundedIceMisfitWeight(modeldata)
+  modeldata.vecs.add(misfit_weight,writing=True)    
 
   if not noise is None:
     u_noise = pismssaforward.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())

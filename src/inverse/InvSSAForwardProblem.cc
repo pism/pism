@@ -115,12 +115,12 @@ PetscErrorCode InvSSAForwardProblem::allocate_store()
   // elements we need to access. We use it to determine the
   // size our per-quadrature point storage.
   PetscInt nElements = element_index.element_count();
-  m_dtauc_dp_store = new PetscReal[FEQuadrature::Nq*nElements];
+  m_dtauc_dzeta_store = new PetscReal[FEQuadrature::Nq*nElements];
   return 0;
 }
 
 PetscErrorCode InvSSAForwardProblem::deallocate_store(){
-  delete [] m_dtauc_dp_store;
+  delete [] m_dtauc_dzeta_store;
   return 0;
 }
 
@@ -158,32 +158,30 @@ PetscErrorCode InvSSAForwardProblem::setup_vars()
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem::set_tauc(IceModelVec2S &new_tauc )
+PetscErrorCode InvSSAForwardProblem::set_zeta(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
   PetscInt i,j,q;
 
 
-  //FIXME: This is temporarily here for debugging.
-  tauc->copy_from(new_tauc);
-
-  PetscReal **tauc_array;
-  ierr = new_tauc.get_array(tauc_array);CHKERRQ(ierr);
+  PetscReal **zeta_array;
+  ierr = new_zeta.get_array(zeta_array);CHKERRQ(ierr);
   PetscInt xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys;j<ys+ym; j++) {
-      PetscReal taucq[FEQuadrature::Nq];
-      quadrature.computeTrialFunctionValues(i,j,dofmap,tauc_array,taucq);
+      PetscReal zetaq[FEQuadrature::Nq];
+
+      quadrature.computeTrialFunctionValues(i,j,dofmap,zeta_array,zetaq);
       const PetscInt ij = element_index.flatten(i,j);
       FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq];
-      PetscReal *dtauc_dp = m_dtauc_dp_store + ij*FEQuadrature::Nq;
+      PetscReal *dtauc_dzeta = m_dtauc_dzeta_store + ij*FEQuadrature::Nq;
       for (q=0; q<4; q++) {
-        m_tauc_param.toTauc(taucq[q],&(feS[q].tauc),dtauc_dp+q);
+        m_tauc_param.toTauc(zetaq[q],&(feS[q].tauc),dtauc_dzeta+q);
       }
     }
   }
-  ierr = new_tauc.end_access();CHKERRQ(ierr);
+  ierr = new_zeta.end_access();CHKERRQ(ierr);
 
   m_reassemble_T_matrix_needed = true;
   m_forward_F_needed = true;
@@ -496,6 +494,17 @@ PetscErrorCode InvSSAForwardProblem::assemble_DomainNorm_matrix()
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
 
+  // Flag at each local node that determines if this value of zeta is unchanging.
+  PetscReal **zeta_fixed_mask;
+  PetscReal local_zeta_fixed_mask[FEQuadrature::Nk];
+  for(int k=0; k<FEQuadrature::Nk;k++) {
+    local_zeta_fixed_mask[k] = 0.;
+  }
+  // Start access of Dirichlet data, if present.
+  if (m_zeta_fixed_locations ) {
+    ierr = m_zeta_fixed_locations->get_array(zeta_fixed_mask);CHKERRQ(ierr);
+  }
+
   PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
   PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
 
@@ -512,21 +521,46 @@ PetscErrorCode InvSSAForwardProblem::assemble_DomainNorm_matrix()
       // Initialize the map from global to local degrees of freedom for this element.
       dofmap.reset(i,j,grid);
 
+      // These values now need to be adjusted if some nodes in the element have
+      // Dirichlet data.
+      if(m_zeta_fixed_locations) {
+        dofmap.extractLocalDOFs(i,j,zeta_fixed_mask,local_zeta_fixed_mask);
+      }
+
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K,sizeof(K));CHKERRQ(ierr);
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
         for (PetscInt k=0; k<4; k++) {   // Test functions
           for (PetscInt l=0; l<4; l++) { // Trial functions
-            const FEFunctionGerm &test_qk=test[q][k];
-            const FEFunctionGerm &test_ql=test[q][l];
-            K[k][l]     += JxW[q]*(cL2*test_qk.val*test_ql.val
-            +  cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy) );
+            if( (local_zeta_fixed_mask[k]==0.) && (local_zeta_fixed_mask[l]==0.) ) {
+              const FEFunctionGerm &test_qk=test[q][k];
+              const FEFunctionGerm &test_ql=test[q][l];
+              K[k][l]     += JxW[q]*(cL2*test_qk.val*test_ql.val
+              +  cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy) );
+            } // zeta fixed
           } // l
         } // k
       } // q
       ierr = dofmap.addLocalJacobianBlock(&K[0][0],m_MatB);
     } // j
   } // i
+
+  // Until now, the rows and columns corresponding to fixed zeta values have not been set.  We now
+  // put an identity block in for these unknowns.  
+  if (m_zeta_fixed_locations) {
+    for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+        if (m_zeta_fixed_locations->as_int(i,j) == 1) {
+          const PetscReal ident[4] = {dirichletScale,0,0,dirichletScale};
+          MatStencil row;
+          // FIXME: Transpose shows up here!
+          row.j = i; row.i = j;
+          ierr = MatSetValuesBlockedStencil(m_MatB,1,&row,1,&row,ident,ADD_VALUES);CHKERRQ(ierr);
+        }
+      }
+    }
+    ierr = m_zeta_fixed_locations->end_access(); CHKERRQ(ierr);
+  }
 
   ierr = MatAssemblyBegin(m_MatB,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(m_MatB,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -599,6 +633,17 @@ PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, 
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
 
+  // Flag at each local node that determines if this value of zeta is unchanging.
+  PetscReal **zeta_fixed_mask;
+  PetscReal local_zeta_fixed_mask[FEQuadrature::Nk];
+  for(int k=0; k<FEQuadrature::Nk;k++) {
+    local_zeta_fixed_mask[k] = 0.;
+  }
+  // Start access of Dirichlet data, if present.
+  if (m_zeta_fixed_locations ) {
+    ierr = m_zeta_fixed_locations->get_array(zeta_fixed_mask);CHKERRQ(ierr);
+  }
+
   PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
   PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
 
@@ -607,13 +652,37 @@ PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, 
            ys = element_index.lys, ym = element_index.lym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-      quadrature.computeTrialFunctionValues(i,j,dofmap,A,a,ax,ay);
-      quadrature.computeTrialFunctionValues(i,j,dofmap,B,b,bx,by);
+
+
+      // Storage for element-local solution and residuals.
+      PetscReal     a_local[FEQuadrature::Nk], b_local[FEQuadrature::Nk];
+
+      // Obtain the value of the solution at the nodes adjacent to the element.
+      dofmap.extractLocalDOFs(i,j,A,a_local);
+      dofmap.extractLocalDOFs(i,j,B,b_local);
+      if(m_zeta_fixed_locations) {
+        dofmap.extractLocalDOFs(i,j,zeta_fixed_mask,local_zeta_fixed_mask);
+        for (PetscInt k=0; k<FEQuadrature::Nq; k++) {
+          if (PismIntMask(local_zeta_fixed_mask[k]) != 0) { // Dirichlet node
+            a_local[k] = 0;
+            b_local[k] = 0;
+          }
+        }
+      }
+      // Compute the solution values and symmetric gradient at the quadrature points.
+      quadrature.computeTrialFunctionValues(a_local,a,ax,ay);
+      quadrature.computeTrialFunctionValues(b_local,b,bx,by);
+
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
         IP += JxW[q]*(cL2*a[q]*b[q]+ cH1*(ax[q]*bx[q]+ay[q]*by[q]));
       } // q
     } // j
   } // i
+
+  // End access of Dirichlet data, if present.
+  if (m_zeta_fixed_locations ) {
+    ierr = m_zeta_fixed_locations->end_access(); CHKERRQ(ierr);
+  }
 
   ierr = PISMGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
   return 0;
@@ -800,8 +869,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_T_rhs( PISMVector2 **gvel, PetscRe
         PetscReal dbeta_dp = 0;
         if( M.grounded_ice(feS->mask) ) {
           PetscReal dbeta_dtauc = basal.drag(dtauc[q],u[q].u,u[q].v);
-          PetscReal dtauc_dp = m_dtauc_dp_store[ij*FEQuadrature::Nq+q];
-          dbeta_dp = dbeta_dtauc*dtauc_dp;
+          PetscReal dtauc_dzeta = m_dtauc_dzeta_store[ij*FEQuadrature::Nq+q];
+          dbeta_dp = dbeta_dtauc*dtauc_dzeta;
         }
 
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
@@ -1014,8 +1083,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarB_rhs( PISMVector2 **Z,
         PetscReal notquitebeta = 0;
         if( M.grounded_ice(feS->mask) ) {
           notquitebeta = basal.drag(1.,u[q].u,u[q].v);
-          PetscReal dtauc_dp = m_dtauc_dp_store[ij*FEQuadrature::Nq+q];
-          notquitebeta*=dtauc_dp;
+          PetscReal dtauc_dzeta = m_dtauc_dzeta_store[ij*FEQuadrature::Nq+q];
+          notquitebeta*=dtauc_dzeta;
         }
 
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
@@ -1027,6 +1096,22 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarB_rhs( PISMVector2 **Z,
       dofmap.addLocalResidualBlock(y,RHS);
     } // j-loop
   } // i-loop
+
+  // In fact we want the right-hand side to be zeros in locations where zeta
+  // is fixed. So we adjust the right-hand side now.
+  if (m_zeta_fixed_locations) {
+    // Enforce Dirichlet conditions strongly
+    PetscErrorCode ierr = m_zeta_fixed_locations->begin_access();CHKERRQ(ierr);
+    for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+        if (m_zeta_fixed_locations->as_int(i,j) == 1) {
+          RHS[i][j] = 0;
+        }
+      }
+    }
+    ierr = m_zeta_fixed_locations->end_access();CHKERRQ(ierr);
+  }
+
   return 0;
 
 }

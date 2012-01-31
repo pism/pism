@@ -47,6 +47,11 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
     PISM.ssa.SSAFromBootFile.__init__(self,input_filename)
     self.inv_data_filename = inv_data_filename
 
+  def _setFromOptions(self):
+    PISM.ssa.SSAFromBootFile._setFromOptions(self)
+    for o in PISM.OptionsGroup(PISM.Context().com,"","Vel2Tauc"):
+      self.using_zeta_fixed_mask = PISM.optionsFlag("-use_zeta_fixed_mask","Keep tauc constant except where grounded ice is present",default=False)
+
   def setup(self):
 
     PISM.ssa.SSAFromBootFile.setup(self)
@@ -61,6 +66,9 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
 
     if vecs.has('vel_bc'):
       self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
+
+    if vecs.has('zeta_fixed_mask') and self.using_zeta_fixed_mask:
+      self.ssa.set_zeta_fixed_locations(vecs.zeta_fixed_mask)
 
     # FIXME: Fix this lousy name
     self.ssa.setup_vars()
@@ -92,7 +100,22 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
     vecs.add( PISM.util.standardVelocityMisfitWeight(self.grid) )
     weight = vecs.vel_misfit_weight
     weight.regrid(self.inv_data_filename,True)
-
+    
+    zeta_fixed_mask = PISM.IceModelVec2Int()
+    zeta_fixed_mask.create(self.grid, 'zeta_fixed_mask', True, self.grid.max_stencil_width);
+    zeta_fixed_mask.set_attrs("model_state", "tauc_unchanging integer mask", "", "");
+    mask_values=[0,1]
+    zeta_fixed_mask.set_attr("flag_values", mask_values);
+    zeta_fixed_mask.set_attr("flag_meanings","tauc_changable tauc_unchangeable");
+    zeta_fixed_mask.output_data_type = PISM.NC_BYTE;
+    
+    zeta_fixed_mask.set(1);
+    with PISM.util.Access(comm=zeta_fixed_mask,nocomm=mask):
+      mq = PISM.MaskQuery(mask)
+      for (i,j) in self.grid.points():
+        if mq.grounded_ice(i,j):
+          zeta_fixed_mask[i,j] = 0;
+    vecs.add(zeta_fixed_mask)
 
   def _constructSSA(self):
     md = self.modeldata
@@ -129,13 +152,14 @@ class ZetaSaver:
     zeta.write(self.output_filename)
 
 class Vel2TaucPlotListener(PlotListener):
-  def __init__(self,grid,Vmax):
+  def __init__(self,grid,Vmax,method):
     PlotListener.__init__(self,grid)
     self.Vmax = Vmax
     self.rank = grid.rank
     self.l2_weight = None
     self.l2_weight_init = False
     self.figure =None
+    self.method = method
 
   def __call__(self,inverse_solver,count,x,y,d,r,*args):
     if self.l2_weight_init == False:
@@ -144,7 +168,7 @@ class Vel2TaucPlotListener(PlotListener):
       self.l2_weight_init = True
     PlotListener.__call__(self,solver,count,x,y,d,r,*args)
 
-  def iteration(self,inverse_solver,count,x,Fx,y,d,r,*args):      
+  def iteration(self,inverse_solver,count,x,Fx,y,d,r,arg_extra,*args):      
 
     import matplotlib.pyplot as pp
 
@@ -158,30 +182,61 @@ class Vel2TaucPlotListener(PlotListener):
     pp.clf()
     
     V = self.Vmax
-    pp.subplot(1,3,1)
+
+    pp.subplot(2,3,1)
     rx = l2_weight*r[0,:,:]
     rx = np.maximum(rx,-V)
     rx = np.minimum(rx,V)
     pp.imshow(rx,origin='lower')
     pp.colorbar()
-    pp.title('ru')
+    pp.title('r_x')
     pp.jet()
-    
-    pp.subplot(1,3,2)
+
+    pp.subplot(2,3,4)
     ry = l2_weight*r[1,:,:]
     ry = np.maximum(ry,-V)
     ry = np.minimum(ry,V)
     pp.imshow(ry,origin='lower')
     pp.colorbar()
-    pp.title('rv')
+    pp.title('r_y')
     pp.jet()
     
+    
+    if self.method == 'ign':
+      Td = arg_extra
+      pp.subplot(2,3,2)
+      Tdx = Td[0,:,:]
+      pp.imshow(Tdx,origin='lower')
+      pp.colorbar()
+      pp.title('Td_x')
+      pp.jet()
+
+      pp.subplot(2,3,5)
+      Tdy = Td[1,:,:]
+      pp.imshow(Tdy,origin='lower')
+      pp.colorbar()
+      pp.title('Td_y')
+      pp.jet()
+    else:
+      TStarR = arg_extra
+      pp.subplot(2,3,2)
+      pp.imshow(TStarR,origin='lower')
+      pp.colorbar()
+      pp.title('TStarR')
+      pp.jet()
+
     d *= -1
-    pp.subplot(1,3,3)      
+    pp.subplot(2,3,3)      
     pp.imshow(d,origin='lower')
     pp.colorbar()
     pp.jet()
     pp.title('-d')
+
+    pp.subplot(2,3,6)      
+    pp.imshow(x,origin='lower')
+    pp.colorbar()
+    pp.jet()
+    pp.title('zeta')
     
     pp.ion()
     pp.show()
@@ -260,22 +315,26 @@ if __name__ == "__main__":
       * -i is required
     """
 
-  # FIXME:  Required should be -i or -a
-  # PISM.show_usage_check_req_opts(context.com,"ssa_forward",["-i"],usage)
-  
   append_mode = False
+  PISM.setVerbosityLevel(1)
   for o in PISM.OptionsGroup(context.com,"","vel2tauc"):
     input_filename = PISM.optionsString("-i","input file")
     append_filename = PISM.optionsString("-a","append file",default=None)
     output_filename = PISM.optionsString("-o","output file",default=None)
 
-    if (not input_filename is None) and (not append_filename is None):
-      raise RuntimeError("Only one of -i/-a is allowed.")
+    if (input_filename is None) and (append_filename is None):
+      PISM.verbPrintf(1,com,"\nError: No input file specified. Use one of -i [file.nc] or -a [file.nc].\n")
+      PISM.PISMEndQuiet()
 
-    if (not output_filename is None) and (not append_filename is None):
-      raise RuntimeError("Only one of -a/-o is allowed.")
+    if (input_filename is not None) and (append_filename is not None):
+      PISM.verbPrintf(1,com,"\nError: Only one of -i/-a is allowed.\n")
+      PISM.PISMEndQuiet()
 
-    if not(append_filename is None):
+    if (output_filename is not None) and (append_filename is not None):
+      PISM.verbPrintf(1,com,"\nError: Only one of -a/-o is allowed.\n")
+      PISM.PISMEndQuiet()
+
+    if append_filename is not None:
       input_filename = append_filename
       output_filename = append_filename
       append_mode = True
@@ -318,13 +377,58 @@ if __name__ == "__main__":
   vecs = modeldata.vecs
   grid = modeldata.grid
 
+  # Determine the prior guess for tauc. This can be one of 
+  # a) tauc from the input file (default)
+  # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
+  tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
+  tauc = PISM.util.standardYieldStressVec(grid)
+  if use_tauc_prior:
+    tauc_prior.regrid(inv_data_filename,True)
+  else:
+    if not PISM.util.fileHasVariable(input_filename,"tauc"):
+      PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
+      exit(1)
+    tauc.regrid(input_filename,True)
+    tauc_prior.copy_from(tauc)
+  vecs.add(tauc_prior,writing=saving_inv_data)
+
+
+  # Determine the initial guess for zeta.  If we are not
+  # restarting, we convert tauc_prior to zeta.  If we are restarting,
+  # we load in zeta from the output file.
+  zeta = PISM.IceModelVec2S();
+  zeta.create(grid, "zeta_inv", True, PISM.util.WIDE_STENCIL)
+  if do_restart:
+    # Just to be sure, verify that we have a 'zeta_inv' in the output file.
+    if not PISM.util.fileHasVariable(output_filename,'zeta_inv'):
+      PISM.verbPrintf(1,com,"Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
+      exit(1)
+    zeta.regrid(output_filename,True)
+  else:
+    if config.get_string('inv_ssa_tauc_param')=='ident':
+      zeta.copy_from(tauc_prior)
+    else:
+      with PISM.util.Access(nocomm=tauc_prior,comm=zeta):
+        for (i,j) in grid.points():
+          zeta[i,j] = tauc_param.fromTauc(tauc_prior[i,j])
+  vecs.add(zeta,writing=True) # Ensure that the last value of zeta will
+                              # be written out
+
+
   if test_adjoint:
-    d = PLV(pismssaforward.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL))
+    d = pismssaforward.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL)
+    # If we're fixing some tauc values, we need to ensure that we don't
+    # move in a direction 'd' that changes those values in this test.
+    if vel2tauc.using_zeta_fixed_mask:
+      zeta_fixed_mask = vecs.zeta_fixed_mask
+      with PISM.util.Access(comm=d, nocomm=zeta_fixed_mask):
+        for (i,j) in grid.points():
+          if zeta_fixed_mask[i,j] != 0:
+            d[i,j] = 0;
     r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
-    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
+    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),r,3)
     siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
     exit(0)
-
 
   vel_ssa_observed = None
   vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed',stencil_width=2)
@@ -345,41 +449,6 @@ if __name__ == "__main__":
     vel_ssa_observed.add(-1,vel_sia_observed)
     vecs.add(vel_ssa_observed,writing=True)
 
-  # Determine the prior guess for tauc. This can be one of 
-  # a) tauc from the input file (default)
-  # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
-  tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
-  tauc = PISM.util.standardYieldStressVec(grid)
-  if use_tauc_prior:
-    tauc_prior.regrid(inv_data_filename,True)
-  else:
-    if not PISM.util.fileHasVariable(input_filename,"tauc"):
-      PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
-      exit(1)
-    tauc.regrid(input_filename,True)
-    tauc_prior.copy_from(tauc)
-  vecs.add(tauc_prior,writing=saving_inv_data)
-
-  # Determine the initical guess for zeta.  If we are not
-  # restarting, we convert tauc_prior to zeta.  If we are restarting,
-  # we load in zeta from the output file.
-  zeta = PISM.IceModelVec2S();
-  zeta.create(grid, "zeta_inv", True, PISM.util.WIDE_STENCIL)
-  if do_restart:
-    # Just to be sure, verify that we have a 'zeta_inv' in the output file.
-    if not PISM.util.fileHasVariable(output_filename,'zeta_inv'):
-      PISM.verbPrintf(1,com,"Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
-      exit(1)
-    zeta.regrid(output_filename,True)
-  else:
-    if config.get_string('inv_ssa_tauc_param')=='ident':
-      zeta.copy_from(tauc_prior)
-    else:
-      with PISM.util.Access(nocomm=tauc_prior,comm=zeta):
-        for (i,j) in grid.points():
-          zeta[i,j] = tauc_param.fromTauc(tauc_prior[i,j])
-  vecs.add(zeta,writing=True) # Ensure that the last value of zeta will
-                              # be written out
 
   # We establish a logger which will save siple logging messages.  If we 
   # are restarting, and not in append mode, we need to
@@ -432,7 +501,7 @@ if __name__ == "__main__":
   # Attach various iteration listeners to the solver as needed for:
   # Plotting
   if do_plotting:
-    solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax))
+    solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax,method))
     if method=='ign':
       solver.addLinearIterationListener(Vel2TaucLinPlotListener(grid,Vmax))
   # Pausing
