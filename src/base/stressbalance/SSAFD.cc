@@ -400,6 +400,16 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
 
+  // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
+  bool nuBedrockSet=config.get_flag("nuBedrockSet");
+  if (nuBedrockSet) {
+    ierr =    thickness->begin_access();  CHKERRQ(ierr);
+    ierr =    bed->begin_access();        CHKERRQ(ierr);
+    ierr =    surface->begin_access();    CHKERRQ(ierr);
+  }
+  PetscScalar nuBedrock=config.get("nuBedrock");
+  PetscScalar HminFrozen=0.0;
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -415,10 +425,37 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
        *  c_w     c_e
        *      c_s
        */
-      const PetscScalar c_w = nuH(i-1,j,0);
-      const PetscScalar c_e = nuH(i,j,0);
-      const PetscScalar c_s = nuH(i,j-1,1);
-      const PetscScalar c_n = nuH(i,j,1);
+      // const
+      PetscScalar c_w = nuH(i-1,j,0);
+      PetscScalar c_e = nuH(i,j,0);
+      PetscScalar c_s = nuH(i,j-1,1);
+      PetscScalar c_n = nuH(i,j,1);
+
+      if (nuBedrockSet){
+       // if option is set, the viscosity at ice-bedrock boundary layer will
+       // be prescribed and is a temperature-independent free (user determined) parameter
+
+	// direct neighbors
+	PetscInt  M_e = mask->as_int(i + 1,j),
+	          M_w = mask->as_int(i - 1,j),
+	          M_n = mask->as_int(i,j + 1),
+		  M_s = mask->as_int(i,j - 1);
+
+        if ((*thickness)(i,j) > HminFrozen) {  
+	  if ((*bed)(i-1,j) > (*surface)(i,j) && M.ice_free_land(M_w)) {
+	    c_w = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));	    
+	  }
+	  if ((*bed)(i+1,j) > (*surface)(i,j) && M.ice_free_land(M_e)) {
+	   c_e = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+	  }
+	  if ((*bed)(i,j+1) > (*surface)(i,j) && M.ice_free_land(M_n)) {
+	    c_n = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i,j+1));
+  	  }
+	  if ((*bed)(i,j-1) > (*surface)(i,j) && M.ice_free_land(M_s)) {
+	    c_s = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+	  }
+        }
+      }
 
       // We use DAGetMatrix to obtain the SSA matrix, which means that all 18
       // non-zeros get allocated, even though we use only 13 (or 14). The
@@ -571,6 +608,12 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = vel.end_access(); CHKERRQ(ierr);
   ierr = tauc->end_access(); CHKERRQ(ierr);
   ierr = nuH.end_access(); CHKERRQ(ierr);
+
+  if (nuBedrockSet) {
+  	ierr =    thickness->end_access();    CHKERRQ(ierr);
+  	ierr =  		bed->end_access();  CHKERRQ(ierr);
+  	ierr =    	surface->end_access();    CHKERRQ(ierr);
+  }
 
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

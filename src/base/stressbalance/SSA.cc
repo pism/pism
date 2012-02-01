@@ -245,8 +245,6 @@ the magnitudes, and either principal strain rate could be negative or positive.
 
 Result can be used in a calving law, for example in eigencalving (PIK).
 
-FIXME:  makes decisions based on thickness that might better use mask?
-
 FIXME:  need to answer: strain rates will be derived from SSA velocities. Is there ghost communication needed?
 */
 PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
@@ -272,11 +270,11 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         continue;
       }
 
-			const PetscInt M_ij = mask->as_int(i,j),
-			M_e = mask->as_int(i + 1,j),
-      M_w = mask->as_int(i - 1,j),
-      M_n = mask->as_int(i,j + 1),
-      M_s = mask->as_int(i,j - 1);
+      const PetscInt M_ij = mask->as_int(i,j),
+                     M_e = mask->as_int(i + 1,j),
+                     M_w = mask->as_int(i - 1,j),
+                     M_n = mask->as_int(i,j + 1),
+                     M_s = mask->as_int(i,j - 1);
 
       //centered difference scheme; strain in units s-1
       PetscScalar
@@ -285,11 +283,12 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         v_x = (velocity(i+1,j).v - velocity(i-1,j).v) / (2 * dx),
         v_y = (velocity(i,j+1).v - velocity(i,j-1).v) / (2 * dy);
 
-			if ( M.floating_ice(M_ij)) {
 
-      //inward scheme at the ice-shelf front
-			//SSA velocity exist where mask is floating, but not in the new full grid cells along the front
-			if (M.ice_free(M_e)) {
+
+      //inward scheme at the ice-shelf
+      //SSA velocity exists depending on mask (newly filled grid cells are not taken into account)
+
+      if (M.ice_free(M_e)) {
         u_x = (velocity(i,j).u - velocity(i-1,j).u) / dx;
         v_x = (velocity(i,j).v - velocity(i-1,j).v) / dx;
       }
@@ -307,11 +306,11 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
       }
 
       // ice nose case
-      if (H(i,j-1)==0.0 && H(i,j+1)==0.0) {
+      if (M.ice_free(M_s) && M.ice_free(M_n)) {
         u_y = 0.0;
         v_y = 0.0;
       }
-      if (H(i+1,j)==0.0 && H(i-1,j)==0.0) {
+      if (M.ice_free(M_e) && M.ice_free(M_w)) {
         u_x = 0.0;
         v_x = 0.0;
       }
@@ -322,7 +321,7 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
       result_e1(i,j) = A + q;
       result_e2(i,j) = A - q; // q >= 0 so e1 >= e2
-}
+
     } // j
   }   // i
 
@@ -440,6 +439,30 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             h_x = surface->diff_x(i,j);
             h_y = surface->diff_y(i,j);
           }
+
+	  // for floating shear margin we calculate inward scheme along ice free bedrock
+	  bool ShearMarginE = (thk(i+1,j)<1.0 && (*bed)(i+1,j)>0.0),
+ 	       ShearMarginW = (thk(i-1,j)<1.0 && (*bed)(i-1,j)>0.0),
+	       ShearMarginN = (thk(i,j+1)<1.0 && (*bed)(i,j+1)>0.0),
+	       ShearMarginS = (thk(i,j-1)<1.0 && (*bed)(i,j-1)>0.0);
+
+	  bool shearMargin = (ShearMarginE || ShearMarginW || ShearMarginN || ShearMarginS);
+
+	  if (shearMargin) {	
+	    if (ShearMarginE && !ShearMarginW)
+	      h_x = ((*surface)(i,j) - (*surface)(i-1,j)) / grid.dx;
+	    else if (ShearMarginW && !ShearMarginE)
+	      h_x = ((*surface)(i+1,j) - (*surface)(i,j)) / grid.dx;
+	    else if (ShearMarginW && ShearMarginE)
+	      h_x = 0.0;
+		
+	    if (ShearMarginN && !ShearMarginS)
+	      h_y = ((*surface)(i,j) - (*surface)(i,j-1)) / grid.dy;
+	    else if (ShearMarginS && !ShearMarginN)
+	      h_y = ((*surface)(i,j+1) - (*surface)(i,j)) / grid.dy;
+	    else if (ShearMarginN && ShearMarginS)
+	      h_y = 0.0;
+	  }
         }
 
         result(i,j).u = - pressure * h_x;
