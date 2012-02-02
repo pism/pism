@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 David Maxwell
+# Copyright (C) 2011, 2012 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -461,8 +461,10 @@ if __name__ == "__main__":
     if do_restart:
       logger = CarefulCaptureLogger(output_filename);
       
-    pio = PISM.PISMIO(grid)
-    pio.open_for_writing(output_filename,False,True)
+    pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+    pio.open(output_filename,PISM.NC_WRITE,False)
+    pio.def_time(grid.config.get_string("time_dimension_name"),
+                 config.get_string("calendar"), grid.time.units())
     pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
     pio.close()
   zeta.write(output_filename)
