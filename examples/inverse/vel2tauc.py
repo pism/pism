@@ -22,16 +22,16 @@ import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import numpy as np
-import siple
 import os, math
 
 import PISM
-
-from pismssaforward import SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
-tauc_params, LinearPlotListener, PlotListener, pism_print_logger, pism_pause, pauseListener, \
+from PISM.invert_ssa import SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
+tauc_params, LinearPlotListener, PlotListener 
+from PISM.sipletools import pism_print_logger, pism_pause, pauseListener, \
 CaptureLogger, CarefulCaptureLogger
-from linalg_pism import PISMLocalVector as PLV
-import pismssaforward
+from PISM.sipletools import PISMLocalVector as PLV
+
+import siple
 
 siple.reporting.clear_loggers()
 siple.reporting.add_logger(pism_print_logger)
@@ -187,7 +187,7 @@ class Vel2TaucPlotListener(PlotListener):
     rx = l2_weight*r[0,:,:]
     rx = np.maximum(rx,-V)
     rx = np.minimum(rx,V)
-    pp.imshow(rx,origin='lower')
+    pp.imshow(rx,origin='lower',interpolation='nearest')
     pp.colorbar()
     pp.title('r_x')
     pp.jet()
@@ -196,7 +196,7 @@ class Vel2TaucPlotListener(PlotListener):
     ry = l2_weight*r[1,:,:]
     ry = np.maximum(ry,-V)
     ry = np.minimum(ry,V)
-    pp.imshow(ry,origin='lower')
+    pp.imshow(ry,origin='lower',interpolation='nearest')
     pp.colorbar()
     pp.title('r_y')
     pp.jet()
@@ -206,34 +206,34 @@ class Vel2TaucPlotListener(PlotListener):
       Td = arg_extra
       pp.subplot(2,3,2)
       Tdx = Td[0,:,:]
-      pp.imshow(Tdx,origin='lower')
+      pp.imshow(Tdx,origin='lower',interpolation='nearest')
       pp.colorbar()
       pp.title('Td_x')
       pp.jet()
 
       pp.subplot(2,3,5)
       Tdy = Td[1,:,:]
-      pp.imshow(Tdy,origin='lower')
+      pp.imshow(Tdy,origin='lower',interpolation='nearest')
       pp.colorbar()
       pp.title('Td_y')
       pp.jet()
     else:
       TStarR = arg_extra
       pp.subplot(2,3,2)
-      pp.imshow(TStarR,origin='lower')
+      pp.imshow(TStarR,origin='lower',interpolation='nearest')
       pp.colorbar()
       pp.title('TStarR')
       pp.jet()
 
     d *= -1
     pp.subplot(2,3,3)      
-    pp.imshow(d,origin='lower')
+    pp.imshow(d,origin='lower',interpolation='nearest')
     pp.colorbar()
     pp.jet()
     pp.title('-d')
 
     pp.subplot(2,3,6)      
-    pp.imshow(x,origin='lower')
+    pp.imshow(x,origin='lower',interpolation='nearest')
     pp.colorbar()
     pp.jet()
     pp.title('zeta')
@@ -275,7 +275,7 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
     rx = l2_weight*r[0,:,:]
     rx = np.maximum(rx,-V)
     rx = np.minimum(rx,V)
-    pp.imshow(rx,origin='lower')
+    pp.imshow(rx,origin='lower',interpolation='nearest')
     pp.colorbar()
     pp.title('ru')
     pp.jet()
@@ -284,14 +284,14 @@ class Vel2TaucLinPlotListener(LinearPlotListener):
     ry = l2_weight*r[1,:,:]
     ry = np.maximum(ry,-V)
     ry = np.minimum(ry,V)
-    pp.imshow(ry,origin='lower')
+    pp.imshow(ry,origin='lower',interpolation='nearest')
     pp.colorbar()
     pp.title('rv')
     pp.jet()
     
     d *= -1
     pp.subplot(1,3,3)      
-    pp.imshow(d,origin='lower')
+    pp.imshow(d,origin='lower',interpolation='nearest')
     pp.colorbar()
     pp.jet()
     pp.title('-d')
@@ -416,7 +416,7 @@ if __name__ == "__main__":
 
 
   if test_adjoint:
-    d = pismssaforward.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL)
+    d = PISM.sipletools.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL)
     # If we're fixing some tauc values, we need to ensure that we don't
     # move in a direction 'd' that changes those values in this test.
     if vel2tauc.using_zeta_fixed_mask:
@@ -425,7 +425,7 @@ if __name__ == "__main__":
         for (i,j) in grid.points():
           if zeta_fixed_mask[i,j] != 0:
             d[i,j] = 0;
-    r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
+    r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
     (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),r,3)
     siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
     exit(0)
@@ -443,7 +443,7 @@ if __name__ == "__main__":
     vel_surface_observed.regrid(inv_data_filename,True)
     vecs.add(vel_surface_observed,writing=saving_inv_data)
     
-    vel_sia_observed = pismssaforward.computeSIASurfaceVelocities(modeldata)
+    vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata)
     vel_sia_observed.rename('_sia_observed',"'observed' SIA velocities'","")
     vel_ssa_observed.copy_from(vel_surface_observed)
     vel_ssa_observed.add(-1,vel_sia_observed)
@@ -464,7 +464,7 @@ if __name__ == "__main__":
     pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
     pio.open(output_filename,PISM.NC_WRITE,False)
     pio.def_time(grid.config.get_string("time_dimension_name"),
-                 config.get_string("calendar"), grid.time.units())
+                 grid.config.get_string("calendar"), grid.time.units())
     pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
     pio.close()
   zeta.write(output_filename)

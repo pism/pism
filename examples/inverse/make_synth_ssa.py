@@ -23,7 +23,6 @@ import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import PISM, time, math
-import pismssaforward
 
 tauc_prior_scale = 0.2
 tauc_prior_const = None
@@ -130,7 +129,7 @@ if __name__ == '__main__':
     vecs.markForWriting(vel_ssa_observed)
     final_velocity = vel_ssa_observed
   else:
-    vel_sia_observed = pismssaforward.computeSIASurfaceVelocities(modeldata)
+    vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata)
     vel_ssa_observed.rename("_sia_observed","'observed' SIA velocities'","")
     vel_surface_observed = PISM.util.standard2dVelocityVec(grid,"_surface_observed","observed surface velocities",stencil_width=1)
     vel_surface_observed.copy_from(vel_sia_observed)
@@ -146,13 +145,13 @@ if __name__ == '__main__':
   modeldata.vecs.add(misfit_weight,writing=True)    
 
   if not noise is None:
-    u_noise = pismssaforward.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
+    u_noise = PISM.sipletools.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
     final_velocity.add(1./PISM.secpera,u_noise)
 
   pio = PISM.PIO(grid.com, grid.rank, "netcdf3")
   pio.open(output_file_name, PISM.NC_WRITE)
   pio.def_time(grid.config.get_string("time_dimension_name"),
-               config.get_string("calendar"), grid.time.units())
+               grid.config.get_string("calendar"), grid.time.units())
   pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
   pio.close()
 

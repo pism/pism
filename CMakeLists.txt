@@ -264,6 +264,13 @@ install (PROGRAMS
   util/pism_config_editor.py
   DESTINATION ${Pism_BIN_DIR})
 
+# Install some python-based pieces of PISM
+install (PROGRAMS
+  examples/python/ssa_forward.py
+  examples/inverse/make_synth_ssa.py
+  examples/inverse/vel2tauc.py
+  DESTINATION ${Pism_BIN_DIR} )
+
 if (Pism_BUILD_DOCS)
   add_subdirectory (doc)
 else ()

@@ -22,16 +22,15 @@ import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import numpy as np
-import tozero
 import siple
 
 import PISM
 from PISM import util
 
-from pismssaforward import InvSSARun, SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
-tauc_params, PlotListener, pism_print_logger, pism_pause, pauseListener
-from linalg_pism import PISMLocalVector as PLV
-import pismssaforward
+from PISM.invert_ssa import InvSSARun, SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
+tauc_params, PlotListener 
+from PISM.sipletools import pism_print_logger, pism_pause, pauseListener
+from PISM.sipletools import PISMLocalVector as PLV
 
 siple.reporting.clear_loggers()
 siple.reporting.add_logger(pism_print_logger)
@@ -254,8 +253,8 @@ if __name__ == "__main__":
 
 
   if test_adjoint:
-    d = PLV(pismssaforward.randVectorS(grid,1e5))
-    r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera))
+    d = PLV(PISM.sipletools.randVectorS(grid,1e5))
+    r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera))
     (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
     siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
     exit(0)
@@ -309,7 +308,7 @@ if __name__ == "__main__":
   u.write(output_file)
 
   # Draw a pretty picture
-  tz = tozero.ToProcZero(grid)
+  tz = PISM.toproczero.ToProcZero(grid)
   tauc_a = tz.communicate(tauc)
   tauc_true = tz.communicate(tauc_true)
   if do_final_plot and (not tauc_a is None):
