@@ -177,6 +177,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   ierr = taud.begin_access(); CHKERRQ(ierr);
   ierr = DMDAVecGetArray(SSADA, rhs, &rhs_uv); CHKERRQ(ierr);
 
+  bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
   if (vel_bc && bc_locations) {
     ierr = vel_bc->begin_access(); CHKERRQ(ierr);
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
@@ -218,10 +219,17 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         if (is_marginal(i, j)) {
           PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
           // direct neighbors
-          if (M.ice_free(M_e)) aPP = 0;
-          if (M.ice_free(M_w)) aMM = 0;
-          if (M.ice_free(M_n)) bPP = 0;
-          if (M.ice_free(M_s)) bMM = 0;
+	  if (bedrock_boundary) {
+            if (M.ice_free_ocean(M_e)) aPP = 0;
+            if (M.ice_free_ocean(M_w)) aMM = 0;
+            if (M.ice_free_ocean(M_n)) bPP = 0;
+            if (M.ice_free_ocean(M_s)) bMM = 0;}
+	  else {
+            if (M.ice_free(M_e)) aPP = 0;
+            if (M.ice_free(M_w)) aMM = 0;
+            if (M.ice_free(M_n)) bPP = 0;
+            if (M.ice_free(M_s)) bMM = 0;
+          }
 
           const double ice_pressure = ice.rho * standard_gravity * H_ij,
                        H_ij2        = H_ij*H_ij;
@@ -236,7 +244,15 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             // this is not really the ocean_pressure, but the difference between
             // ocean_pressure and isotrop.normal stresses (=pressure) from within
             // the ice
-            h_ij = (1.0 - ice.rho / ocean_rho) * H_ij;
+	    h_ij = (1.0 - ice.rho / ocean_rho) * H_ij;
+						
+	    // what is the force balance of an iceshelf facing a bedrock wall?! 
+	    // this is not relevant as long as we ask only for ice_free_ocean neighbors
+	    //if ((aPP==0 && (*bed)(i+1,j)>h_ij) || (aMM==0 && (*bed)(i-1,j)>h_ij) ||
+	    //    (bPP==0 && (*bed)(i,j+1)>h_ij) || (bMM==0 && (*bed)(i,j-1)>h_ij)){
+	    //  ocean_pressure = 0.0; 
+	    //}
+
           } else {
             if( (*bed)(i,j) >= sea_level) {
               // boundary condition for a "cliff" (grounded ice next to
@@ -396,6 +412,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   Mask M;
 
+  const bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
   if (vel_bc && bc_locations) {
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
@@ -494,21 +511,40 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         if (is_marginal(i, j)) {
           // If at least one of the following four conditions is "true", we're
           // at a CFBC location.
-          if (M.ice_free(M_e)) aPP = 0;
-          if (M.ice_free(M_w)) aMM = 0;
-          if (M.ice_free(M_n)) bPP = 0;
-          if (M.ice_free(M_s)) bMM = 0;
+	  if (bedrock_boundary) {
 
-          // decide whether to use centered or one-sided differences
-          if (M.ice_free(M_n) || M.ice_free(M_ne)) aPn = 0;
-          if (M.ice_free(M_e) || M.ice_free(M_ne)) bPe = 0;
-          if (M.ice_free(M_e) || M.ice_free(M_se)) bMe = 0;
-          if (M.ice_free(M_s) || M.ice_free(M_se)) aPs = 0;
-          if (M.ice_free(M_s) || M.ice_free(M_sw)) aMs = 0;
-          if (M.ice_free(M_w) || M.ice_free(M_sw)) bMw = 0;
-          if (M.ice_free(M_w) || M.ice_free(M_nw)) bPw = 0;
-          if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;
-        }
+            if (M.ice_free_ocean(M_e)) aPP = 0;
+            if (M.ice_free_ocean(M_w)) aMM = 0;
+            if (M.ice_free_ocean(M_n)) bPP = 0;
+            if (M.ice_free_ocean(M_s)) bMM = 0;
+          
+            // decide whether to use centered or one-sided differences
+            if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_ne)) aPn = 0;
+            if (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_ne)) bPe = 0;
+            if (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_se)) bMe = 0;
+            if (M.ice_free_ocean(M_s) || M.ice_free_ocean(M_se)) aPs = 0;
+            if (M.ice_free_ocean(M_s) || M.ice_free_ocean(M_sw)) aMs = 0;
+            if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_sw)) bMw = 0;
+            if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_nw)) bPw = 0;
+            if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_nw)) aMn = 0;}
+
+	  else {
+
+            if (M.ice_free(M_e)) aPP = 0;
+            if (M.ice_free(M_w)) aMM = 0;
+            if (M.ice_free(M_n)) bPP = 0;
+            if (M.ice_free(M_s)) bMM = 0;
+
+            // decide whether to use centered or one-sided differences
+            if (M.ice_free(M_n) || M.ice_free(M_ne)) aPn = 0;
+            if (M.ice_free(M_e) || M.ice_free(M_ne)) bPe = 0;
+            if (M.ice_free(M_e) || M.ice_free(M_se)) bMe = 0;
+            if (M.ice_free(M_s) || M.ice_free(M_se)) aPs = 0;
+            if (M.ice_free(M_s) || M.ice_free(M_sw)) aMs = 0;
+            if (M.ice_free(M_w) || M.ice_free(M_sw)) bMw = 0;
+            if (M.ice_free(M_w) || M.ice_free(M_nw)) bPw = 0;
+            if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;				}
+           }
       } // end of "if (use_cfbc)"
 
       /* begin Maxima-generated code */
@@ -1198,6 +1234,9 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
  * consistent.
  */
 bool SSAFD::is_marginal(int i, int j) {
+	
+  bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+	
   const PetscInt M_ij = mask->as_int(i,j),
     // direct neighbors
     M_e = mask->as_int(i + 1,j),
@@ -1212,9 +1251,15 @@ bool SSAFD::is_marginal(int i, int j) {
 
   Mask M;
 
-  return (!M.ice_free(M_ij)) &&
-    (M.ice_free(M_e) || M.ice_free(M_w) || M.ice_free(M_n) || M.ice_free(M_s) ||
-     M.ice_free(M_ne) || M.ice_free(M_se) || M.ice_free(M_nw) || M.ice_free(M_sw));
+  if (bedrock_boundary) {
+    return (!M.ice_free(M_ij)) &&
+     (M.ice_free(M_e) || M.ice_free(M_w) || M.ice_free(M_n) || M.ice_free(M_s) ||
+      M.ice_free(M_ne) || M.ice_free(M_se) || M.ice_free(M_nw) || M.ice_free(M_sw));}
+  else {
+    return (!M.ice_free(M_ij)) &&
+      (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_w) || M.ice_free_ocean(M_n) || M.ice_free_ocean(M_s) ||
+       M.ice_free_ocean(M_ne) || M.ice_free_ocean(M_se) || M.ice_free_ocean(M_nw) || M.ice_free_ocean(M_sw));
+  }
 }
 
 SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g, PISMVars &my_vars)

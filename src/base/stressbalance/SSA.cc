@@ -442,13 +442,15 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
 	  // for floating shear margin we calculate inward scheme along ice free bedrock
 	  bool ShearMarginE = (thk(i+1,j)<1.0 && (*bed)(i+1,j)>0.0),
- 	       ShearMarginW = (thk(i-1,j)<1.0 && (*bed)(i-1,j)>0.0),
+	       ShearMarginW = (thk(i-1,j)<1.0 && (*bed)(i-1,j)>0.0),
 	       ShearMarginN = (thk(i,j+1)<1.0 && (*bed)(i,j+1)>0.0),
 	       ShearMarginS = (thk(i,j-1)<1.0 && (*bed)(i,j-1)>0.0);
-
+	
 	  bool shearMargin = (ShearMarginE || ShearMarginW || ShearMarginN || ShearMarginS);
-
+	
+	
 	  if (shearMargin) {	
+		
 	    if (ShearMarginE && !ShearMarginW)
 	      h_x = ((*surface)(i,j) - (*surface)(i-1,j)) / grid.dx;
 	    else if (ShearMarginW && !ShearMarginE)
