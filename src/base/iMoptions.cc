@@ -97,6 +97,9 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("nuBedrock", "nuBedrock"); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-nuBedrock", flag);  CHKERRQ(ierr);
   if (flag)  config.set_flag("nuBedrockSet", true);
+  
+
+  ierr = config.flag_from_option("cfl_eigencalving", "cfl_eigencalving"); CHKERRQ(ierr);
 
 
   // implements an option e.g. described in \ref Greve that is the

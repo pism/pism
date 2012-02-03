@@ -67,6 +67,9 @@ netcdf pism_config {
     pism_config:do_eigen_calving = "false";
     pism_config:do_eigen_calving_doc = "calculate strain rates and related calving rate";
 
+    pism_config:cfl_eigencalving = "false";
+    pism_config:cfl_eigencalving_doc = "apply CFL criterion for eigen-calving rate front retreat";
+
     pism_config:do_thickness_calving = "false";
     pism_config:do_thickness_calving_doc = "ad hoc calving at certain threshold for terminal ice thickness";
 

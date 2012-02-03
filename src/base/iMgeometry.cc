@@ -523,8 +523,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // FIXME: calving should be applied *before* the redistribution part!
   if (config.get_flag("do_eigen_calving") && config.get_flag("use_ssa_velocity")) {
-    ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
-    ierr = eigenCalving(); CHKERRQ(ierr);
+     bool dteigencalving = config.get_flag("cfl_eigencalving");
+     if (!dteigencalving){ // calculation of strain rates has been done in iMadaptive.cc already
+       ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
+     }
+     ierr = eigenCalving(); CHKERRQ(ierr);
   }
 
   if (config.get_flag("do_thickness_calving") && config.get_flag("part_grid")) {

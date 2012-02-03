@@ -866,8 +866,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("thickness_calving", "do_thickness_calving"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("calving_at_thickness", "calving_at_thickness"); CHKERRQ(ierr);
 
+  //ierr = config.flag_from_option("eigen_calving", "do_eigen_calving"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("eigen_calving_K", "eigen_calving_K"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("eigen_calving", "do_eigen_calving"); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-eigen_calving_K", flag);  CHKERRQ(ierr);
+  if (flag)  config.set_flag("do_eigen_calving", true);
 
   ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
 
