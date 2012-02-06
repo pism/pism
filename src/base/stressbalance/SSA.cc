@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2012 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -271,11 +271,11 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         u_x = (velocity(i+1,j).u - velocity(i,j).u) / dx;
         v_x = (velocity(i+1,j).v - velocity(i,j).v) / dx;
       }
-      if (H(i-1,j)==0.0) {
+      if (H(i,j+1)==0.0) {
         u_y = (velocity(i,j).u - velocity(i,j-1).u) / dy;
         v_y = (velocity(i,j).v - velocity(i,j-1).v) / dy;
       }
-      if (H(i-1,j)==0.0) {
+      if (H(i,j-1)==0.0) {
         u_y = (velocity(i,j+1).u - velocity(i,j).u) / dy;
         v_y = (velocity(i,j+1).v - velocity(i,j).v) / dy;
       }
