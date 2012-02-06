@@ -361,7 +361,7 @@ int PISMNC3File::get_var_double(string variable_name,
 
     } // end of the for loop
 
-    delete processor_0_buffer;
+    delete[] processor_0_buffer;
   } else {
     MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      com);
     MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      com);
