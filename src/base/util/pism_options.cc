@@ -783,6 +783,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("count_steps", "count_time_steps"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);
 
+	// evaluates the adaptive timestep based on a CFL criterion with respect to the eigenCalving rate
+  ierr = config.flag_from_option("cfl_eigencalving", "cfl_eigencalving"); CHKERRQ(ierr);
+
+
   // SIA
   ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
 
@@ -810,7 +814,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("cfbc", "calving_front_stress_boundary_condition"); CHKERRQ(ierr);
   ierr = config.flag_from_option("brutal_sliding", "scalebrutalSet"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr);  
+  ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr); 
+ 
 
   // Basal strength
 
@@ -854,6 +859,11 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("nuBedrock", "nuBedrock"); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-nuBedrock", flag);  CHKERRQ(ierr);
+  if (flag)  config.set_flag("nuBedrockSet", true);
+
+
   // Calving
 
   // whether or not to kill ice at locations that were ice-free at
@@ -866,10 +876,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("thickness_calving", "do_thickness_calving"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("calving_at_thickness", "calving_at_thickness"); CHKERRQ(ierr);
 
-  //ierr = config.flag_from_option("eigen_calving", "do_eigen_calving"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("eigen_calving_K", "eigen_calving_K"); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-eigen_calving_K", flag);  CHKERRQ(ierr);
-  if (flag)  config.set_flag("do_eigen_calving", true);
+  ierr = config.flag_from_option("eigen_calving", "do_eigen_calving"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
 
