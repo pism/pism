@@ -121,7 +121,6 @@ PetscErrorCode IceModel::eigenCalving() {
         if (N > 0)
           H_average /= N;
 
-        if ( mask.floating_ice(i + offset, j) ){
           eigen1 += vPrinStrain1(i + offset, j);
           eigen2 += vPrinStrain2(i + offset, j);
           M += 1;
