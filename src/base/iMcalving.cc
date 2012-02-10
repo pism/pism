@@ -370,22 +370,22 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
 	  PetscScalar calvrateHorizontal = 0.0,
                       eigenCalvOffset = 0.0; 
 
-	  if ( mask.floating_ice(i + offset, j)){
+	  if ( mask.floating_ice(i + offset, j) && !mask.ice_margin(i + offset, j)) {
 	    eigen1 += vPrinStrain1(i + offset, j);
 	    eigen2 += vPrinStrain2(i + offset, j);
 	    M += 1;
           }
-	  if ( mask.floating_ice(i - offset, j)){
+	  if ( mask.floating_ice(i - offset, j) && !mask.ice_margin(i - offset, j)){
 	    eigen1 += vPrinStrain1(i - offset, j);
 	    eigen2 += vPrinStrain2(i - offset, j);
 	    M += 1;
           }
-	  if ( mask.floating_ice(i, j + offset)){
+	  if ( mask.floating_ice(i, j + offset) && !mask.ice_margin(i , j + offset)){
 	    eigen1 += vPrinStrain1(i, j + offset);
 	    eigen2 += vPrinStrain2(i, j + offset);
 	    M += 1;
           }
-	  if ( mask.floating_ice(i, j - offset)){
+	  if ( mask.floating_ice(i, j - offset) && !mask.ice_margin(i , j - offset)){
 	    eigen1 += vPrinStrain1(i, j - offset);
 	    eigen2 += vPrinStrain2(i, j - offset);
 	    M += 1;
@@ -400,7 +400,7 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
             calvrateHorizontal = eigenCalvFactor * eigen1 * (eigen2 - eigenCalvOffset);
 	    my_cratecounter+=1.0;
 	    my_meancalvrate+=calvrateHorizontal;
-	    if ( my_maxCalvingRate > calvrateHorizontal) {
+	    if ( my_maxCalvingRate < calvrateHorizontal) {
 	      i0=i;
 	      j0=j;
 	    }
@@ -427,8 +427,7 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
   dt_from_eigencalving = 1.0/denom;
  
   ierr = verbPrintf(2, grid.com, "!!!!! c_rate = %.0f m/a ( dt=%.5f a ) at point %d, %d with mean_c=%.0f m/a over %.0f cells \n",maxCalvingRate*secpera,dt_from_eigencalving/secpera,i0,j0,meancalvrate*secpera,cratecounter);    CHKERRQ(ierr);
-	
-  //if (dt_from_eigencalving<=dt_from_eigencalving_min) 
+	 
   dt_from_eigencalving = PetscMax(dt_from_eigencalving,dt_from_eigencalving_min);
 	
   return 0;

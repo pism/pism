@@ -157,6 +157,14 @@ public:
       (grounded_ice(i + 1, j) || grounded_ice(i - 1, j) || grounded_ice(i, j + 1) || grounded_ice(i, j - 1));
   }
 
+ //! \brief belongs to margin of an ice shelf but has ice free land neighbor.
+  inline bool floating_ice_next_to_icefree_land(int i, int j)
+  {
+    return floating_ice(i, j) &&
+      (ice_free_land(i + 1, j) || ice_free_land(i - 1, j) || ice_free_land(i, j + 1) || ice_free_land(i, j - 1));
+  }
+
+
   inline PetscErrorCode fill_where_grounded(IceModelVec2S &result, const PetscScalar fillval) {
     PetscErrorCode ierr;
 
