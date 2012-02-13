@@ -210,7 +210,7 @@ PetscErrorCode IceModel::eigenCalving() {
         if(vHref(i, j) < 0.0) { // i.e. terminal floating ice grid cell has calved off completely.
           // We do not account for further calving ice-inwards!
           // Alternatively CFL criterion for time stepping could be adjusted to maximum of calving rate.
-           ierr = verbPrintf(2, grid.com, "!!!!! calving front would even retreat further at point %d, %d with volume %.2f \n",-vHref(i, j));    CHKERRQ(ierr);
+          // ierr = verbPrintf(2, grid.com, "!!!!! calving front would even retreat further at point %d, %d with volume %.2f \n",i,j,-vHref(i, j));    CHKERRQ(ierr);
           vHref(i, j) = 0.0;
         }
       }
