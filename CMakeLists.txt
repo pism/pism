@@ -22,7 +22,7 @@ if (NOT Pism_MANUAL_BUILD)
   if (NOT PETSC_FOUND)
     get_filename_component(pcc ${PETSC_COMPILER} REALPATH)
     get_filename_component(cc ${CMAKE_C_COMPILER} REALPATH)
-    if (NOT (${pcc} STREQUAL ${cc}))
+    if (NOT ${pcc} STREQUAL ${cc})
       message(WARNING "PETSC_COMPILER does not match CMAKE_C_COMPILER\n"
 	"  PETSC_COMPILER=${PETSC_COMPILER}\n"
 	"  CMAKE_C_COMPILER=${CMAKE_C_COMPILER}\n"
