@@ -229,6 +229,12 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   // grounded_dragging_floating integer mask
+  if(config.get_flag("do_eigen_calving")) {
+    ierr = vMask.create(grid, "mask", true, 3); CHKERRQ(ierr); 
+    // The wider stencil is needed for parallel calculation in iMcalving.cc when asking for mask values at the front (offset+1)
+  } else {
+    ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
+  }
   ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vMask.set_attrs("diagnostic", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
