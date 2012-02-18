@@ -235,7 +235,6 @@ PetscErrorCode IceModel::createVecs() {
   } else {
     ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
   }
-  ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vMask.set_attrs("diagnostic", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
   vector<double> mask_values(4);
