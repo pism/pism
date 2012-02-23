@@ -88,3 +88,4 @@ PetscErrorCode InvTaucParamLinear::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
   *OUTPUT = tauc/m_scale;
   return 0;
 }
+
