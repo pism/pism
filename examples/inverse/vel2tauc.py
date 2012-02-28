@@ -42,27 +42,23 @@ default_ssa_h1_coeff = 0.
 default_rms_error = 100
 
 
-class Vel2Tauc(PISM.ssa.SSAFromBootFile):
+class Vel2Tauc(PISM.ssa.SSAFromInputFile):
   def __init__(self,input_filename,inv_data_filename):
-    PISM.ssa.SSAFromBootFile.__init__(self,input_filename)
+    PISM.ssa.SSAFromInputFile.__init__(self,input_filename)
     self.inv_data_filename = inv_data_filename
 
   def _setFromOptions(self):
-    PISM.ssa.SSAFromBootFile._setFromOptions(self)
+    PISM.ssa.SSAFromInputFile._setFromOptions(self)
     for o in PISM.OptionsGroup(PISM.Context().com,"","Vel2Tauc"):
       self.using_zeta_fixed_mask = PISM.optionsFlag("-use_zeta_fixed_mask","Keep tauc constant except where grounded ice is present",default=False)
 
   def setup(self):
 
-    PISM.ssa.SSAFromBootFile.setup(self)
+    PISM.ssa.SSAFromInputFile.setup(self)
 
     vecs = self.modeldata.vecs
 
-    # The SSA instance will not keep a reference to pismVars; it only uses it to extract
-    # its desired variables.  So it is safe to pass it pismVars and then let pismVars
-    # go out of scope at the end of this method.
-
-    self.ssa.init(vecs.asPISMVars())
+    self.ssa.init(vecs.asPISMVars(translate={'bc_mask':'bcflag'}))
 
     if vecs.has('vel_bc'):
       self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
@@ -97,6 +93,32 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
     gc = PISM.GeometryCalculator(sea_level,self.modeldata.ice,self.config)
     gc.compute(bed,thickness,mask,surface)
 
+    # For a regional run we'll need no_model_mask
+    if self.is_regional:
+      vecs.add( PISM.util.standardNoModelMask(self.grid), 'no_model_mask' )
+      vecs.no_model_mask.regrid(self.boot_file,True)
+
+    if self.config.get_flag('ssa_dirichlet_bc'):
+      vecs.add( PISM.util.standard2dVelocityVec( self.grid, name='_ssa_bc', desc='SSA velocity boundary condition',intent='intent' ), "vel_ssa_bc" )
+      has_u_ssa_bc = PISM.util.fileHasVariable(self.boot_file,'u_ssa_bc');
+      has_v_ssa_bc = PISM.util.fileHasVariable(self.boot_file,'v_ssa_bc');
+      if (not has_u_ssa_bc) or (not has_v_ssa_bc):
+        PISM.verbPrintf(2,grid.com, "Input file '%s' missing Dirichlet boundary data u/v_ssa_bc; using zero default instead." % self.boot_file)
+        vecs.vel_ssa_bc.set(0.)
+      else:
+        vecs.vel_ssa_bc.regrid(self.boot_file,True)
+
+      if self.is_regional:
+        vecs.add( vecs.no_model_mask, 'bc_mask')
+      else:
+        vecs.add( PISM.util.standardBCMask( self.grid ), 'bc_mask' )
+        bc_mask_name = vecs.bc_mask.string_attr("name")
+        if PISM.util.fileHasVariable(self.boot_file,bc_mask_name):
+          vecs.bc_mask.regrid(self.boot_file,True)          
+        else:
+          PISM.verbPrintf(2,grid.com,"Input file '%s' missing Dirichlet location mask '%s'.  Default to no Dirichlet locations." %(self.boot_file,bc_mask_name))
+          vecs.bc_mask.set(0)
+
     vecs.add( PISM.util.standardVelocityMisfitWeight(self.grid) )
     weight = vecs.vel_misfit_weight
     weight.regrid(self.inv_data_filename,True)
@@ -127,7 +149,7 @@ class Vel2Tauc(PISM.ssa.SSAFromBootFile):
 
   def write(self,filename,append=False):
     if not append:
-      PISM.ssa.SSAFromBootFile.write(self,filename)
+      PISM.ssa.SSAFromInputFile.write(self,filename)
     else:
       grid = self.grid
       vecs = self.modeldata.vecs
@@ -240,6 +262,33 @@ class Vel2TaucPlotListener(PlotListener):
     
     pp.ion()
     pp.show()
+
+class MonitorAdjoint:
+  def __init__(self):
+    self.Td = None
+    self.TStarR = None
+
+  def __call__(self,inverse_solver,count,x,Fx,y,d,r,*args):
+    fp = inverse_solver.forward_problem
+    self.Td=fp.T(d,self.Td)
+    self.TStarR=forward_problem.TStar(r,out=self.TStarR)
+    ip1 = fp.domainIP(d,self.TStarR)
+    ip2 = fp.rangeIP(self.Td,r)
+    siple.reporting.msg("adjoint test: <Td,r>=%g <d,T^*r>=%g (percent error %g)",ip1,ip2,(abs(ip1-ip2))/max(abs(ip1),abs(ip2)))
+
+class MonitorAdjointLin:
+  def __init__(self):
+    self.Td = None
+    self.TStarR = None
+
+  def __call__(self,inverse_solver,count,x,y,d,r,*args):
+    fp = inverse_solver.forward_problem
+    self.Td=fp.T(d,self.Td)
+    self.TStarR=forward_problem.TStar(r,out=self.TStarR)
+    ip1 = fp.domainIP(d,self.TStarR)
+    ip2 = fp.rangeIP(self.Td,r)
+    siple.reporting.msg("adjoint test: <Td,r>=%g <d,T^*r>=%g (percent error %g)",ip1,ip2,(abs(ip1-ip2))/max(abs(ip1),abs(ip2)))
+
 
 class Vel2TaucLinPlotListener(LinearPlotListener):
   def __init__(self,grid,Vmax):
@@ -355,7 +404,7 @@ if __name__ == "__main__":
     use_tauc_prior = PISM.optionsFlag("-use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
-
+    monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
   if output_filename is None:
     output_filename = "vel2tauc_"+os.path.basename(input_filename)    
 
@@ -506,6 +555,10 @@ if __name__ == "__main__":
     solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax,method))
     if method=='ign':
       solver.addLinearIterationListener(Vel2TaucLinPlotListener(grid,Vmax))
+  if monitor_adjoint:
+    solver.addIterationListener(MonitorAdjoint())
+    if method=='ign':
+      solver.addLinearIterationListener(MonitorAdjointLin())
   # Pausing
   if do_pause:
     solver.addIterationListener(pauseListener)            

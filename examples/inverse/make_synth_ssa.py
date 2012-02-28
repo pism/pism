@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
   config.set_string("ssa_method","fem")
   
-  ssa_run = PISM.ssa.SSAFromBootFile(input_file_name)
+  ssa_run = PISM.ssa.SSAFromInputFile(input_file_name)
 
   ssa_run.setup()
 
