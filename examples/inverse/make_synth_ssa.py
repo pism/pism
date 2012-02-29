@@ -92,6 +92,7 @@ if __name__ == '__main__':
     misfit_weight_type = PISM.optionsList(context.com,"-misfit_type","Choice of misfit weight function",["grounded","fast"],"grounded")
     fast_ice_speed = PISM.optionsReal("-fast_ice_speed","Threshold in m/a for determining if ice is fast", 500.)
     generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed","generate observed SSA velocities",default=False)
+    is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
 
   config.set_string("ssa_method","fem")
   
@@ -129,7 +130,10 @@ if __name__ == '__main__':
     vecs.markForWriting(vel_ssa_observed)
     final_velocity = vel_ssa_observed
   else:
-    vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata)
+    sia_solver = PISM.SIAFD
+    if is_regional:
+      sia_solver = PISM.SIAFD_Regional
+    vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata,sia_solver)
     vel_ssa_observed.rename("_sia_observed","'observed' SIA velocities'","")
     vel_surface_observed = PISM.util.standard2dVelocityVec(grid,"_surface_observed","observed surface velocities",stencil_width=1)
     vel_surface_observed.copy_from(vel_sia_observed)

@@ -59,7 +59,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
     include_directories (../verif/tests/ . ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDES})
     
-    set(PISM_PYTHON_BINDING_LIBRARIES "pismbase" "pismutil" "pismflowlaws" "pismverif" "pismstressbalance"  "pisminverse" )
+    set(PISM_PYTHON_BINDING_LIBRARIES "pismbase" "pismutil" "pismflowlaws" "pismverif" "pismstressbalance"  "pisminverse" "pismregional" )
 
     # Get module dependencies:
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)

@@ -43,6 +43,7 @@
 #include "PISMYieldStress.hh"
 #include "pism_options.hh"
 #include "SIAFD.hh"
+#include "regional/regional.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -468,7 +469,8 @@ typedef int NormType; // YUCK.
 %template(PISMDiag_PISMDefaultYieldStress) PISMDiag<PISMDefaultYieldStress>;
 %include "PISMYieldStress.hh"
 %include "PISMTime.hh"
-
+%feature("notabstract") SIAFD_Regional;
+%include "regional/regional.hh"
 
 
 

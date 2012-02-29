@@ -58,7 +58,7 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
 
     vecs = self.modeldata.vecs
 
-    self.ssa.init(vecs.asPISMVars(translate={'bc_mask':'bcflag'}))
+    self.ssa.init(vecs.asPISMVars())
 
     if vecs.has('vel_bc'):
       self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
@@ -93,10 +93,11 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
     gc = PISM.GeometryCalculator(sea_level,self.modeldata.ice,self.config)
     gc.compute(bed,thickness,mask,surface)
 
-    # For a regional run we'll need no_model_mask
     if self.is_regional:
       vecs.add( PISM.util.standardNoModelMask(self.grid), 'no_model_mask' )
       vecs.no_model_mask.regrid(self.boot_file,True)
+      vecs.add( vecs.surface, 'usurfstore')
+      vecs.setPISMVarsName('usurfstore','usurfstore')
 
     if self.config.get_flag('ssa_dirichlet_bc'):
       vecs.add( PISM.util.standard2dVelocityVec( self.grid, name='_ssa_bc', desc='SSA velocity boundary condition',intent='intent' ), "vel_ssa_bc" )
@@ -118,6 +119,11 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
         else:
           PISM.verbPrintf(2,grid.com,"Input file '%s' missing Dirichlet location mask '%s'.  Default to no Dirichlet locations." %(self.boot_file,bc_mask_name))
           vecs.bc_mask.set(0)
+      # We call this variable 'bc_mask' in the python code, it is called
+      # 'bcflag' when passed between pism components, and it has yet
+      # another name when written out to a file.  Anyway, we flag its
+      # export to PISMVars name here.
+      vecs.setPISMVarsName('bc_mask','bcflag')
 
     vecs.add( PISM.util.standardVelocityMisfitWeight(self.grid) )
     weight = vecs.vel_misfit_weight
@@ -405,6 +411,8 @@ if __name__ == "__main__":
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
     monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
+    is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
+    
   if output_filename is None:
     output_filename = "vel2tauc_"+os.path.basename(input_filename)    
 
@@ -492,7 +500,10 @@ if __name__ == "__main__":
     vel_surface_observed.regrid(inv_data_filename,True)
     vecs.add(vel_surface_observed,writing=saving_inv_data)
     
-    vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata)
+    sia_solver=PISM.SIAFD
+    if is_regional:
+      sia_solver=PISM.SIAFD_Regional
+    vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata,sia_solver)
     vel_sia_observed.rename('_sia_observed',"'observed' SIA velocities'","")
     vel_ssa_observed.copy_from(vel_surface_observed)
     vel_ssa_observed.add(-1,vel_sia_observed)
