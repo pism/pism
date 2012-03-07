@@ -98,6 +98,10 @@ if (Pism_BUILD_DEBIAN_PACKAGE)
   pism_build_debian_package()
 endif ()
 
+if (Pism_USE_STATIC_LIBS_ONLY)
+  pism_strictly_static()
+endif ()
+
 # Deal with build types
 set (Pism_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
 # Force the default cache entry to obey Pism_BUILD_TYPE
