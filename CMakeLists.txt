@@ -1,7 +1,7 @@
 project (Pism)
 set (Pism_BRANCH "development")
 
-cmake_minimum_required (VERSION 2.6.2)
+cmake_minimum_required (VERSION 2.8.5)
 
 # Put executables in the build directory:
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
@@ -49,7 +49,7 @@ if (NOT Pism_MANUAL_BUILD)
   endif()
 
   # use the PETSc compiler as a hint when looking for an MPI compiler
-  set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
+  set (MPI_C_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
   find_package (MPI REQUIRED)
   # optional
   find_package (FFTW)
@@ -59,7 +59,7 @@ else ()
   set (PETSC_INCLUDES "EDIT_THIS" CACHE STRING "PETSc include directories (semicolon-separated list)")
   set (GSL_INCLUDES   "EDIT_THIS" CACHE STRING "GSL include directories (semicolon-separated list)")
   set (NETCDF_INCLUDES "EDIT_THIS" CACHE STRING "NetCDF include directories (semicolon-separated list)")
-  set (MPI_INCLUDE_PATH "EDIT_THIS" CACHE STRING "MPI include directories (semicolon-separated list)")
+  set (MPI_C_INCLUDE_PATH "EDIT_THIS" CACHE STRING "MPI include directories (semicolon-separated list)")
   # optional:
   set (FFTW_INCLUDES "EDIT_THIS" CACHE STRING "FFTW include directories (semicolon-separated list)")
   set (FFTW_FOUND "OFF" CACHE BOOL "Set to 'ON' to build with FFTW3.")
@@ -69,7 +69,7 @@ else ()
   set (PETSC_LIBRARIES "EDIT_THIS" CACHE STRING "PETSc libraries (semicolon-separated list)")
   set (GSL_LIBRARIES "EDIT_THIS" CACHE STRING "GSL libraries (semicolon-separated list)")
   set (NETCDF_LIBRARIES "EDIT_THIS" CACHE STRING "NetCDF libraries (semicolon-separated list)")
-  set (MPI_LIBRARIES "EDIT_THIS" CACHE STRING "MPI libraries (semicolon-separated list)")
+  set (MPI_C_LIBRARIES "EDIT_THIS" CACHE STRING "MPI libraries (semicolon-separated list)")
   # optional
   set (FFTW_LIBRARIES "EDIT_THIS" CACHE STRING "FFTW libraries (semicolon-separated list)")
   set (PROJ4_LIBRARIES "EDIT_THIS" CACHE STRING "proj.4 libraries (semicolon-separated list)")
@@ -161,8 +161,9 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     CACHE PATH "Python extension module installation directory." FORCE)
 endif ()
 
-include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_INCLUDE_PATH} ${FFTW_INCLUDES})
-set (Pism_EXTERNAL_LIBS ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
+include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH} ${FFTW_INCLUDES})
+set (Pism_EXTERNAL_LIBS
+  ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
 
 # Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)
