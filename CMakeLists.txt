@@ -15,6 +15,7 @@ endif()
 
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
+include ("CMake/PISM_CMake_macros.cmake")
 
 if (NOT Pism_MANUAL_BUILD)
 
@@ -23,7 +24,8 @@ if (NOT Pism_MANUAL_BUILD)
     get_filename_component(pcc ${PETSC_COMPILER} REALPATH)
     get_filename_component(cc ${CMAKE_C_COMPILER} REALPATH)
     if (NOT ${pcc} STREQUAL ${cc})
-      message(WARNING "PETSC_COMPILER does not match CMAKE_C_COMPILER\n"
+      message(WARNING
+        "PETSC_COMPILER does not match CMAKE_C_COMPILER\n"
 	"  PETSC_COMPILER=${PETSC_COMPILER}\n"
 	"  CMAKE_C_COMPILER=${CMAKE_C_COMPILER}\n"
 	"Try running \n"
@@ -82,52 +84,18 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                    
 option (Pism_BUILD_PYTHON_BINDINGS "Build (experimental) python bindings" OFF)
 
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
-option (Pism_RESET_LINKER_FLAGS
-  "Set linker flags using CMake variables PISM_SHARED_LIBRARY_LINK_C_FLAGS and PISM_SHARED_LIBRARY_LINK_CXX_FLAGS")
-
-set (PISM_SHARED_LIBRARY_LINK_C_FLAGS "" CACHE STRING
-  "Sets CMAKE_SHARED_LIBRARY_LINK_C_FLAGS to this if Pism_RESET_LINKER_FLAGS is ON")
-set (PISM_SHARED_LIBRARY_LINK_CXX_FLAGS "" CACHE STRING
-  "Sets CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS to this if Pism_RESET_LINKER_FLAGS is ON")
-mark_as_advanced (PISM_SHARED_LIBRARY_LINK_C_FLAGS PISM_SHARED_LIBRARY_LINK_CXX_FLAGS
-  Pism_ADD_FPIC Pism_RESET_LINKER_FLAGS)
-
-
+option (Pism_USE_STATIC_LIBS_ONLY "Set CMake flags to ensure that everything is linked statically")
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
 
 set (Pism_BIN_DIR "bin")
 set (Pism_LIB_DIR "lib/pism")
 set (Pism_DOC_DIR "share/doc/pism")
 
+# Use rpath by default; this has to go first, because rpath settings may be overridden later.
+pism_use_rpath()
+
 if (Pism_BUILD_DEBIAN_PACKAGE)
-  set (Pism_BUILD_TYPE "Release" CACHE STRING "PISM build type" FORCE)
-  set (CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "Install prefix" FORCE)
-  set (Pism_BUILD_DOCS OFF CACHE BOOL "Build PISM documentation" FORCE)
-  set (Pism_BUILD_BROWSER OFF CACHE BOOL "Build PISM source code browsers" FORCE)
-  set (Pism_BUILD_EXTRA_EXECS OFF CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
-
-  # RPATH handling
-  set (CMAKE_SKIP_BUILD_RPATH TRUE)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
-  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
-else ()
-
-  ## Use full RPATH, with this setting Pism libraries cannot be moved after installation
-  ## but the correct libraries will always be found regardless of LD_LIBRARY_PATH
-  ## in use, i.e. don't skip the full RPATH for the build tree
-  set (CMAKE_SKIP_BUILD_RPATH FALSE)
-  # when building, don't use the install RPATH already
-  # (but later on when installing)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
-  # the RPATH to be used when installing
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
-  # add the automatically determined parts of the RPATH
-  # which point to directories outside the build tree to the install RPATH
-  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-  # Mac OS X install_name fix:
-  set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
+  pism_build_debian_package()
 endif ()
 
 # Deal with build types
@@ -136,8 +104,8 @@ set (Pism_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options a
 set (CMAKE_BUILD_TYPE ${Pism_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None (CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
 mark_as_advanced (CMAKE_BUILD_TYPE) # hide the default entry
 if (Pism_BUILD_TYPE MATCHES "Debug")
-  option (Pism_DEBUG              "Enables extra checks in the code."          OFF)
-  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings."            OFF)
+  option (Pism_DEBUG              "Enables extra checks in the code."          ON)
+  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings."            ON)
   option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF)
 endif (Pism_BUILD_TYPE MATCHES "Debug")
 
@@ -158,29 +126,8 @@ if (Pism_ADD_FPIC)
   endif()
 endif ()
 
-# This resets linker options.
-if (Pism_RESET_LINKER_FLAGS)
-  SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS ${PISM_SHARED_LIBRARY_LINK_C_FLAGS})
-  SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS ${PISM_SHARED_LIBRARY_LINK_CXX_FLAGS})
-endif()
-
 # Set Pism_REVISION
-# Git
-if (EXISTS ${Pism_SOURCE_DIR}/.git)
-  find_program (GIT git DOC "Git executable")
-  mark_as_advanced(GIT)
-  execute_process (COMMAND ${GIT} describe --always --match v?.?
-    WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-    OUTPUT_VARIABLE Pism_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif (EXISTS ${Pism_SOURCE_DIR}/.git)
-
-# Otherwise...
-if (NOT Pism_VERSION)
-  set (Pism_VERSION "unknown")
-endif (NOT Pism_VERSION)
-
-set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION}")
+pism_set_revision_tag()
 
 # set Pism_DEFAULT_CONFIG_FILE
 if (NOT Pism_DEFAULT_CONFIG_FILE)
@@ -188,19 +135,8 @@ if (NOT Pism_DEFAULT_CONFIG_FILE)
 endif ()
 file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
-# We could set this here, but it forces a full recompile if the version
-# changes, hence we'll define PISM_REVISION only for src/base/iMutil.cc
-# (see src/CMakeLists.txt)
-#add_definitions (-DPISM_REVISION=\\\"${Pism_REVISION}\\\")
-
 if (Pism_PEDANTIC_WARNINGS)
-  set (DEFAULT_PEDANTIC_CFLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wconversion -Wsign-compare -Wno-redundant-decls -Winline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time")
-  set (DEFAULT_PEDANTIC_CXXFLAGS "${DEFAULT_PEDANTIC_CFLAGS} -Woverloaded-virtual")
-  set (PEDANTIC_CFLAGS ${DEFAULT_PEDANTIC_CFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings")
-  set (PEDANTIC_CXXFLAGS ${DEFAULT_PEDANTIC_CXXFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings for C++")
-  mark_as_advanced (PEDANTIC_CFLAGS PEDANTIC_CXXFLAGS)
-  set (CMAKE_C_FLAGS_DEBUG "-g ${PEDANTIC_CFLAGS}")
-  set (CMAKE_CXX_FLAGS_DEBUG "-g ${PEDANTIC_CXXFLAGS}")
+  pism_set_pedantic_flags()
 endif (Pism_PEDANTIC_WARNINGS)
 
 if (Pism_GPROF_FLAGS)
