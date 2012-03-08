@@ -46,6 +46,7 @@ public:
              m_VecZ(0), m_VecRHS2(0),
              m_VecV(0), m_VecRHS(0),
              m_misfit_weight(NULL),
+             m_zeta_fixed_locations(NULL),
              m_tauc_param(tp),
              m_reassemble_T_matrix_needed(true),
              m_forward_F_needed(true)
@@ -72,7 +73,13 @@ public:
 
   PetscErrorCode set_initial_velocity_guess(IceModelVec2V &v);
 
-  PetscErrorCode set_tauc(IceModelVec2S &tauc );
+  virtual PetscErrorCode set_zeta_fixed_locations(IceModelVec2Int &locations)
+  { 
+    m_zeta_fixed_locations = &locations;
+    return 0;
+  }
+
+  PetscErrorCode set_zeta(IceModelVec2S &zeta );
 
   PetscErrorCode setup_vars();
 
@@ -131,9 +138,12 @@ protected:
   // Optional weight for a weighted L2 norm in the range.
   IceModelVec2S *m_misfit_weight;
 
-  // Store for values of dtauc_dxi at the quad points.
+  // Locations where zeta is not allowed to change.
+  IceModelVec2Int *m_zeta_fixed_locations;
+
+  // Store for values of dtauc_dzeta at the quad points.
   
-  PetscReal *m_dtauc_dp_store;
+  PetscReal *m_dtauc_dzeta_store;
 
   PetscReal m_range_l2_area;
 

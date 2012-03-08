@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 #include <cstdlib>
 #include <petscdmda.h>
 
-#include "NCTool.hh"
+#include "PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 

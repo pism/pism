@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## Copyright (C) 2011 The PISM Authors
+## Copyright (C) 2011-2012 The PISM Authors
 
 ## script to generate figure: results from SeaRISE experiments
 ## usage:  if UAFX_G_D3_C?_??.nc are result NetCDF files then do
@@ -33,10 +33,10 @@ t_a = options.t_a
 t_e = options.t_e
 
 # first name in this list is CONTROL
-NCNAMES = [model + "_G_D3_C1_E0.nc",model + "_G_D3_C2_E0.nc",model + "_G_D3_C3_E0.nc",model + "_G_D3_C4_E0.nc",model + "_G_D3_C1_S1.nc",model + "_G_D3_C1_S2.nc",model + "_G_D3_C1_S3.nc",model + "_G_D3_C1_M1.nc",model + "_G_D3_C1_M2.nc",model + "_G_D3_C1_M3.nc"]
+NCNAMES = [model + "_G_D3_C1_E0.nc",model + "_G_D3_C2_E0.nc",model + "_G_D3_C3_E0.nc",model + "_G_D3_C4_E0.nc",model + "_G_D3_C1_S1.nc",model + "_G_D3_C1_S2.nc",model + "_G_D3_C1_S3.nc",model + "_G_D3_C1_M1.nc",model + "_G_D3_C1_M2.nc",model + "_G_D3_C1_M3.nc",model + "_G_D3_C1_T1.nc"]
 
 # labels
-labels = ["AR4 A1B","AR4 A1B 1.5x","AR4 A1B 2x","2x basal sliding","2.5x basal sliding","3x basal sliding","2 m/a bmr","20 m/a bmr","200 m/a bmr"]
+labels = ["AR4 A1B","AR4 A1B 1.5x","AR4 A1B 2x","2x basal sliding","2.5x basal sliding","3x basal sliding","2 m/a bmr","20 m/a bmr","200 m/a bmr","AR4 A1B + 2x sliding"]
 # line colors
 colors = ['#984EA3', # violet
           '#984EA3', # violet
@@ -46,9 +46,10 @@ colors = ['#984EA3', # violet
           '#FF7F00', # orange
           '#377EB8', # light blue
           '#377EB8', # light blue
-          '#377EB8'] # light blue
+          '#377EB8', # light blue
+          '#4DAF4A'] # green
 
-dashes = ['-','--','-.','-','--','-.','-','--','-.']
+dashes = ['-','--','-.','-','--','-.','-','--','-.','-']
 
 print "control run name is " + NCNAMES[0]
 
@@ -103,7 +104,8 @@ colors = ['#984EA3', # violet
           '#FF7F00', # orange
           '#084594', # dark blue
           '#084594', # dark blue
-          '#084594'] # dark blue
+          '#084594', # dark blue
+          '#4DAF4A'] # green
 
 # print plot with white background
 fig = plt.figure()

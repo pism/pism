@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ class PISMProf;
 class NCConfigVariable;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
-typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
@@ -67,8 +67,8 @@ typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodi
   The typical code performing a point-wise computation will look like
 
   \code
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
     // compute something at i,j
     }
   }
@@ -93,8 +93,8 @@ typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodi
 
   \code
   int GHOSTS = 1;
-  for (PetscInt i=grid.xs - GHOSTS; i<grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j=grid.ys - GHOSTS; j<grid.ys+grid.ym + GHOSTS; ++j) {
+  for (int i=grid.xs - GHOSTS; i<grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j=grid.ys - GHOSTS; j<grid.ys+grid.ym + GHOSTS; ++j) {
     // compute something at i,j
     }
   }
@@ -109,13 +109,13 @@ public:
   PetscErrorCode report_parameters();
 
   PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
-  PetscErrorCode createDA(PetscInt procs_x, PetscInt procs_y,
-			  PetscInt* &lx, PetscInt* &ly);
+  PetscErrorCode createDA(int procs_x, int procs_y,
+			  int* &lx, int* &ly);
   PetscErrorCode set_vertical_levels(vector<double> z_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
   void compute_point_neighbors(PetscReal x, PetscReal y,
-                               PetscInt &i, PetscInt &j);
+                               int &i, int &j);
   vector<PetscReal> compute_interp_weights(PetscReal x, PetscReal y);
 
   void check_parameters();
@@ -125,16 +125,16 @@ public:
   PetscErrorCode compute_viewer_size(int target, int &x, int &y);
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
-  PetscInt       kBelowHeight(PetscScalar height);
-  PetscErrorCode create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer);
-  PetscReal      radius(PetscInt i, PetscInt j);
+  int       kBelowHeight(PetscScalar height);
+  PetscErrorCode create_viewer(int viewer_size, string title, PetscViewer &viewer);
+  PetscReal      radius(int i, int j);
 
   const NCConfigVariable &config;
   MPI_Comm    com;
   PetscMPIInt rank, size;
   DM          da2;
 
-  PetscInt    xs,               //!< starting x-index of a processor sub-domain
+  int    xs,               //!< starting x-index of a processor sub-domain
     xm,                         //!< number of grid points (in the x-direction) in a processor sub-domain
     ys,                         //!< starting y-index of a processor sub-domain
     ym; //!< number of grid points (in the y-direction) in a processor sub-domain
@@ -147,7 +147,7 @@ public:
   // Fine vertical grid and the interpolation setup:
   vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
   PetscReal   dz_fine;                    //!< spacing of the fine vertical grid
-  PetscInt    Mz_fine;          //!< number of levels of the fine vertical grid in the ice
+  int    Mz_fine;          //!< number of levels of the fine vertical grid in the ice
 
   // Array ice_storage2fine contains indices of the ice storage vertical grid
   // that are just below a level of the fine grid. I.e. ice_storage2fine[k] is
@@ -166,10 +166,10 @@ public:
   PetscScalar Lx, //!< half width of the ice model grid in x-direction (m)
     Ly; //!< half width of the ice model grid in y-direction (m)
 
-  PetscInt    Mx, //!< number of grid points in the x-direction
+  int    Mx, //!< number of grid points in the x-direction
     My; //!< number of grid points in the y-direction
 
-  PetscInt    Nx, //!< number of processors in the x-direction
+  int    Nx, //!< number of processors in the x-direction
     Ny; //!< number of processors in the y-direction
 
   vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
@@ -180,11 +180,11 @@ public:
 
   PetscScalar Lz;      //!< extent of the ice in z-direction (m)
 
-  PetscInt    Mz; //!< number of grid points in z-direction in the ice
+  int    Mz; //!< number of grid points in z-direction in the ice
 
-  PetscInt initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
+  int initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
 
-  PetscInt max_stencil_width;   //!< \brief maximum stencil width supported by
+  int max_stencil_width;   //!< \brief maximum stencil width supported by
                                 //!< the DA in this IceGrid object
 
   PISMProf *profiler;           //!< PISM profiler object; allows tracking how long a computation takes

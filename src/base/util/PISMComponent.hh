@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@ class IceGrid;
 class NCConfigVariable;
 class PISMDiagnostic;
 class PISMVars;
-class NCTool;
+class PIO;
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
@@ -125,7 +125,7 @@ public:
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/,
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
                                           nc_type /*nctype*/)
   { return 0; }
 
@@ -214,7 +214,7 @@ public:
     }
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           nc_type nctype)
   {
     if (input_model != NULL) {

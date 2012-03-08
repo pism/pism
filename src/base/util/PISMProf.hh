@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 #include <petsc.h>
-#include "NCTool.hh"
+#include "PISMNCFile.hh"
 
 /// @cond NAMESPACE_BROWSER
 using namespace std;
@@ -84,11 +84,10 @@ protected:
   PetscMPIInt rank, size;
   MPI_Comm com;
 
-  PetscErrorCode save_report(int index, const NCTool &nc, int varid);
-  PetscErrorCode find_variables(NCTool &nc, string name, int &varid);
-  PetscErrorCode define_variable(const NCTool &nc, string name, int &varid);
-  PetscErrorCode put_att_text(const NCTool &nc, int varid, string name, string text);
-  PetscErrorCode create_dimensions(const NCTool &nc);
+  PetscErrorCode save_report(int index, const PISMNCFile &nc, string name);
+  PetscErrorCode find_variables(PISMNCFile &nc, string name, bool &exists);
+  PetscErrorCode define_variable(const PISMNCFile &nc, string name);
+  PetscErrorCode create_dimensions(const PISMNCFile &nc);
 };
 
 #endif // __PISMProf_hh

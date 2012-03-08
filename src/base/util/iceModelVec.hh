@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2011 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2012 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 #include "NCSpatialVariable.hh"
 #include "pism_const.hh"
 
-class NCTool;
+class PIO;
 class LocalInterpCtx;
 
 //! \brief Abstract class for reading, writing, allocating, and accessing a
@@ -102,10 +102,13 @@ class LocalInterpCtx;
 
  If you need to "prepare" a file, do:
  \code
- PISMIO nc(&grid);
+ PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
 
- ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
- ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+ ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+ ierr = nc.def_time(config.get_string("time_dimension_name"),
+                    config.get_string("calendar"),
+                    grid.time->units()); CHKERRQ(ierr);
+ ierr = nc.append_time(grid.time->current()); CHKERRQ(ierr);
  ierr = nc.close(); CHKERRQ(ierr);
  \endcode
 
@@ -197,7 +200,7 @@ public:
   virtual NCSpatialVariable get_metadata(int N);
   virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);
-  virtual PetscErrorCode  define(const NCTool &nc, nc_type output_datatype);
+  virtual PetscErrorCode  define(const PIO &nc, nc_type output_datatype);
   virtual PetscErrorCode  write(string filename);
   virtual PetscErrorCode  write(string filename, nc_type nctype);
   virtual PetscErrorCode  dump(const char filename[]);

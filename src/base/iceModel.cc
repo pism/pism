@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -228,7 +228,12 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   // grounded_dragging_floating integer mask
-  ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
+  if(config.get_flag("do_eigen_calving")) {
+    ierr = vMask.create(grid, "mask", true, 3); CHKERRQ(ierr); 
+    // The wider stencil is needed for parallel calculation in iMcalving.cc when asking for mask values at the front (offset+1)
+  } else {
+    ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
+  }
   ierr = vMask.set_attrs("diagnostic", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
   vector<double> mask_values(4);
@@ -484,7 +489,7 @@ PetscErrorCode IceModel::deallocate_internal_objects() {
   return 0;
 }
 
-PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
+PetscErrorCode IceModel::setExecName(string my_executable_short_name) {
   executable_short_name = my_executable_short_name;
   return 0;
 }

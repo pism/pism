@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Constantine Khroulev
+// Copyright (C) 2009--2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #include <algorithm>
 #include "pism_const.hh"
 #include "IceGrid.hh"
-#include "NCTool.hh"
+#include "PIO.hh"
 
 Timeseries::Timeseries(IceGrid *g, string name, string dimension_name)
 {
@@ -48,13 +48,15 @@ void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r, string name, str
 PetscErrorCode Timeseries::read(const char filename[]) {
   PetscErrorCode ierr;
 
-  NCTool nc(com, rank);
-  bool exists;
-  vector<int> dimids;
-  int varid;
-  string time_name, standard_name = var.get_string("standard_name");
-  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-  ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
+  PIO nc(com, rank, "netcdf3");
+  bool exists, found_by_standard_name;
+  vector<string> dims;
+  string time_name, standard_name = var.get_string("standard_name"),
+    name_found;
+
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_var(short_name, standard_name,
+                    exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
   if (!exists) {
     ierr = PetscPrintf(com,
@@ -64,17 +66,17 @@ PetscErrorCode Timeseries::read(const char filename[]) {
     PISMEnd();
   }
 
-  ierr = nc.inq_dimids(varid, dimids); CHKERRQ(ierr);
+  ierr = nc.inq_vardims(name_found, dims); CHKERRQ(ierr);
 
-  if (dimids.size() != 1) {
+  if (dims.size() != 1) {
     ierr = PetscPrintf(com,
 		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
 		       "            but a time-series variable can only depend on 1 dimension.\n",
-		       short_name.c_str(), filename, dimids.size()); CHKERRQ(ierr);
+		       short_name.c_str(), filename, dims.size()); CHKERRQ(ierr);
     PISMEnd();
   }
 
-  ierr = nc.inq_dimname(dimids[0], time_name); CHKERRQ(ierr);
+  time_name = dims[0];
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -371,7 +373,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
 }
 PetscErrorCode DiagnosticTimeseries::init(string filename) {
   PetscErrorCode ierr;
-  NCTool nc(com, rank);
+  PIO nc(com, rank, "netcdf3");
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
@@ -388,8 +390,8 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
   ierr = MPI_Bcast(&file_exists, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
   if (file_exists == 1) {
-    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-    ierr = nc.get_dim_length(dimension.short_name.c_str(), &len); CHKERRQ(ierr);
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_dimlen(dimension.short_name, len); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
   }
 
@@ -403,7 +405,7 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
   //! Writes data to a file.
   PetscErrorCode DiagnosticTimeseries::flush() {
     PetscErrorCode ierr;
-    NCTool nc(com, rank);
+    PIO nc(com, rank, "netcdf3");
     unsigned int len = 0;
 
     // return cleanly if this DiagnosticTimeseries object was created but never
@@ -414,12 +416,12 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
     if (time.empty())
       return 0;
 
-    ierr = nc.open_for_reading(output_filename.c_str()); CHKERRQ(ierr);
-    ierr = nc.get_dim_length(dimension.short_name.c_str(), &len); CHKERRQ(ierr);
+    ierr = nc.open(output_filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_dimlen(dimension.short_name, len); CHKERRQ(ierr);
 
     if (len > 0) {
       double last_time;
-      ierr = nc.get_dim_limits(dimension.dimension_name, NULL, &last_time); CHKERRQ(ierr);
+      ierr = nc.inq_dim_limits(dimension.dimension_name, NULL, &last_time); CHKERRQ(ierr);
       if (last_time < time.front()) {
         start = len;
       }

@@ -4,10 +4,13 @@
 
 PISM_PATH=$1
 MPIEXEC=$2
+MPIEXEC_COMMAND="$MPIEXEC -n 2"
 PISM_SOURCE_DIR=$3
 EXT=""
 if [ $# -ge 4 ] && [ "$4" == "-python" ]
 then
+  PYTHONEXEC=$5
+  MPIEXEC_COMMAND="$MPIEXEC_COMMAND $PYTHONEXEC"
   PYTHONPATH=${PISM_PATH}
   PISM_PATH=${PISM_SOURCE_DIR}/examples/python/ssa_tests
   EXT=".py"
@@ -23,8 +26,8 @@ set -e
 OPTS="-verbose 1 -ssa_method fd -o foo.nc"
 
 # do stuff
-$PISM_PATH/ssa_testj${EXT} -Mx 61 -My 61 $OPTS > test-J-out.txt
-$PISM_PATH/ssa_testj${EXT} -Mx 121 -My 121 $OPTS >> test-J-out.txt
+$MPIEXEC_COMMAND $PISM_PATH/ssa_testj${EXT} -Mx 61 -My 61 $OPTS > test-J-out.txt
+$MPIEXEC_COMMAND $PISM_PATH/ssa_testj${EXT} -Mx 121 -My 121 $OPTS >> test-J-out.txt
 
 set +e
 
@@ -32,11 +35,11 @@ set +e
 diff test-J-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.1825      0.05477    0.1750    0.0615    0.0931    0.0265
+                0.2699      0.10496    0.1903    0.2128    0.0949    0.1578
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.1331      0.04919    0.1314    0.0397    0.0850    0.0245
+                0.1410      0.05888    0.1067    0.1011    0.0631    0.0832
 NUM ERRORS DONE
 END-OF-OUTPUT
 

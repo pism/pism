@@ -50,10 +50,10 @@ if __name__ == '__main__':
   PISM.show_usage_check_req_opts(com,"ssa_forward",["-i"],usage)
 
   for o in PISM.OptionsGroup(com,"","SSA Forward"):
-    boot_file = PISM.optionsString("-i","file to bootstrap from")
+    boot_file = PISM.optionsString("-i","input file with PISM model data")
     output_file = PISM.optionsString("-o","output file",default="ssa_forward.nc")
 
-  ssa_run = PISM.ssa.SSAFromBootFile(boot_file)
+  ssa_run = PISM.ssa.SSAFromInputFile(boot_file)
 
   ssa_run.setup()
 

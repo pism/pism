@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include <petsc.h>
 #include <petscfix.h>
-#include "NCTool.hh"
+#include "PIO.hh"
 #include "pism_const.hh"
 #include <sstream>
 #include <ctime>

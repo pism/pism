@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -76,13 +76,12 @@ public:
   }
 
   //! Define NetCDF variables corresponding to a diagnostic quantity.
-  virtual PetscErrorCode define(const NCTool &nc)
+  virtual PetscErrorCode define(const PIO &nc)
   {
     PetscErrorCode ierr;
-    int dummy;
 
     for (int j = 0; j < dof; ++j) {
-      ierr = vars[j].define(nc, dummy, output_datatype, true); CHKERRQ(ierr);
+      ierr = vars[j].define(nc, output_datatype, true); CHKERRQ(ierr);
     }
 
     return 0;

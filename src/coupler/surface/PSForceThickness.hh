@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ public:
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
   virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   string input_file;

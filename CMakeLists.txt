@@ -1,7 +1,7 @@
 project (Pism)
 set (Pism_BRANCH "development")
 
-cmake_minimum_required (VERSION 2.6.2)
+cmake_minimum_required (VERSION 2.8.5)
 
 # Put executables in the build directory:
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
@@ -15,6 +15,7 @@ endif()
 
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
+include ("CMake/PISM_CMake_macros.cmake")
 
 if (NOT Pism_MANUAL_BUILD)
 
@@ -22,8 +23,9 @@ if (NOT Pism_MANUAL_BUILD)
   if (NOT PETSC_FOUND)
     get_filename_component(pcc ${PETSC_COMPILER} REALPATH)
     get_filename_component(cc ${CMAKE_C_COMPILER} REALPATH)
-    if (NOT (${pcc} STREQUAL ${cc}))
-      message(WARNING "PETSC_COMPILER does not match CMAKE_C_COMPILER\n"
+    if (NOT ${pcc} STREQUAL ${cc})
+      message(WARNING
+        "PETSC_COMPILER does not match CMAKE_C_COMPILER\n"
 	"  PETSC_COMPILER=${PETSC_COMPILER}\n"
 	"  CMAKE_C_COMPILER=${CMAKE_C_COMPILER}\n"
 	"Try running \n"
@@ -34,8 +36,20 @@ if (NOT Pism_MANUAL_BUILD)
 
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
+
+  # Try to find netcdf_par.h. We assume that NetCDF was compiled with
+  # parallel I/O if this header is present.
+  find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
+  mark_as_advanced(NETCDF_PAR_H)
+  if (NETCDF_PAR_H)
+    message(STATUS "Note: Selected NetCDF library supports parallel I/O")
+    option (Pism_USE_PARALLEL_NETCDF "Enables parallel NetCDF I/O." ON)
+  else()
+    message(STATUS "Note: Selected NetCDF library does not support parallel I/O")
+  endif()
+
   # use the PETSc compiler as a hint when looking for an MPI compiler
-  set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
+  set (MPI_C_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
   find_package (MPI REQUIRED)
   # optional
   find_package (FFTW)
@@ -45,7 +59,7 @@ else ()
   set (PETSC_INCLUDES "EDIT_THIS" CACHE STRING "PETSc include directories (semicolon-separated list)")
   set (GSL_INCLUDES   "EDIT_THIS" CACHE STRING "GSL include directories (semicolon-separated list)")
   set (NETCDF_INCLUDES "EDIT_THIS" CACHE STRING "NetCDF include directories (semicolon-separated list)")
-  set (MPI_INCLUDE_PATH "EDIT_THIS" CACHE STRING "MPI include directories (semicolon-separated list)")
+  set (MPI_C_INCLUDE_PATH "EDIT_THIS" CACHE STRING "MPI include directories (semicolon-separated list)")
   # optional:
   set (FFTW_INCLUDES "EDIT_THIS" CACHE STRING "FFTW include directories (semicolon-separated list)")
   set (FFTW_FOUND "OFF" CACHE BOOL "Set to 'ON' to build with FFTW3.")
@@ -55,7 +69,7 @@ else ()
   set (PETSC_LIBRARIES "EDIT_THIS" CACHE STRING "PETSc libraries (semicolon-separated list)")
   set (GSL_LIBRARIES "EDIT_THIS" CACHE STRING "GSL libraries (semicolon-separated list)")
   set (NETCDF_LIBRARIES "EDIT_THIS" CACHE STRING "NetCDF libraries (semicolon-separated list)")
-  set (MPI_LIBRARIES "EDIT_THIS" CACHE STRING "MPI libraries (semicolon-separated list)")
+  set (MPI_C_LIBRARIES "EDIT_THIS" CACHE STRING "MPI libraries (semicolon-separated list)")
   # optional
   set (FFTW_LIBRARIES "EDIT_THIS" CACHE STRING "FFTW libraries (semicolon-separated list)")
   set (PROJ4_LIBRARIES "EDIT_THIS" CACHE STRING "proj.4 libraries (semicolon-separated list)")
@@ -70,59 +84,22 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                    
 option (Pism_BUILD_PYTHON_BINDINGS "Build (experimental) python bindings" OFF)
 
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
-option (Pism_RESET_LINKER_FLAGS
-  "Set linker flags using CMake variables PISM_SHARED_LIBRARY_LINK_C_FLAGS and PISM_SHARED_LIBRARY_LINK_CXX_FLAGS")
-
-set (PISM_SHARED_LIBRARY_LINK_C_FLAGS "" CACHE STRING
-  "Sets CMAKE_SHARED_LIBRARY_LINK_C_FLAGS to this if Pism_RESET_LINKER_FLAGS is ON")
-set (PISM_SHARED_LIBRARY_LINK_CXX_FLAGS "" CACHE STRING
-  "Sets CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS to this if Pism_RESET_LINKER_FLAGS is ON")
-mark_as_advanced (PISM_SHARED_LIBRARY_LINK_C_FLAGS PISM_SHARED_LIBRARY_LINK_CXX_FLAGS
-  Pism_ADD_FPIC Pism_RESET_LINKER_FLAGS)
-
-
+option (Pism_USE_STATIC_LIBS_ONLY "Set CMake flags to ensure that everything is linked statically")
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
-option (Pism_NETCDF4_OUTPUT        "Turn this on to make PISM produce NetCDF-4 files" OFF)
-option (Pism_NETCDF4_COMPRESS     "Tirn this on to make PISM produce compressed NetCDF-4 files" OFF)
-
-if (Pism_NETCDF4_COMPRESS AND NOT Pism_NETCDF4_OUTPUT)
-  set (Pism_NETCDF4_OUTPUT ON CACHE BOOL "Write NetCDF-4-format PISM output files" FORCE)
-  message (STATUS "Turning 'on' Pism_WRITE_NETCDF4 to enable writing compressed NetCDF-4 files.")
-endif ()
 
 set (Pism_BIN_DIR "bin")
 set (Pism_LIB_DIR "lib/pism")
 set (Pism_DOC_DIR "share/doc/pism")
 
+# Use rpath by default; this has to go first, because rpath settings may be overridden later.
+pism_use_rpath()
+
 if (Pism_BUILD_DEBIAN_PACKAGE)
-  set (Pism_BUILD_TYPE "Release" CACHE STRING "PISM build type" FORCE)
-  set (CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "Install prefix" FORCE)
-  set (Pism_BUILD_DOCS OFF CACHE BOOL "Build PISM documentation" FORCE)
-  set (Pism_BUILD_BROWSER OFF CACHE BOOL "Build PISM source code browsers" FORCE)
-  set (Pism_BUILD_EXTRA_EXECS OFF CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
+  pism_build_debian_package()
+endif ()
 
-  # RPATH handling
-  set (CMAKE_SKIP_BUILD_RPATH TRUE)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
-  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
-else ()
-
-  ## Use full RPATH, with this setting Pism libraries cannot be moved after installation
-  ## but the correct libraries will always be found regardless of LD_LIBRARY_PATH
-  ## in use, i.e. don't skip the full RPATH for the build tree
-  set (CMAKE_SKIP_BUILD_RPATH FALSE)
-  # when building, don't use the install RPATH already
-  # (but later on when installing)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
-  # the RPATH to be used when installing
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
-  # add the automatically determined parts of the RPATH
-  # which point to directories outside the build tree to the install RPATH
-  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-  # Mac OS X install_name fix:
-  set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
+if (Pism_USE_STATIC_LIBS_ONLY)
+  pism_strictly_static()
 endif ()
 
 # Deal with build types
@@ -131,8 +108,9 @@ set (Pism_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options a
 set (CMAKE_BUILD_TYPE ${Pism_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None (CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
 mark_as_advanced (CMAKE_BUILD_TYPE) # hide the default entry
 if (Pism_BUILD_TYPE MATCHES "Debug")
-  option (Pism_DEBUG              "Enables extra checks in the code."          OFF)
-  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings."            OFF)
+  set (Pism_BUILD_EXTRA_EXECS ON CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
+  option (Pism_DEBUG              "Enables extra checks in the code."          ON)
+  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings."            ON)
   option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF)
 endif (Pism_BUILD_TYPE MATCHES "Debug")
 
@@ -153,29 +131,8 @@ if (Pism_ADD_FPIC)
   endif()
 endif ()
 
-# This resets linker options.
-if (Pism_RESET_LINKER_FLAGS)
-  SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS ${PISM_SHARED_LIBRARY_LINK_C_FLAGS})
-  SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS ${PISM_SHARED_LIBRARY_LINK_CXX_FLAGS})
-endif()
-
 # Set Pism_REVISION
-# Git
-if (EXISTS ${Pism_SOURCE_DIR}/.git)
-  find_program (GIT git DOC "Git executable")
-  mark_as_advanced(GIT)
-  execute_process (COMMAND ${GIT} describe --always --match v?.?
-    WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-    OUTPUT_VARIABLE Pism_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif (EXISTS ${Pism_SOURCE_DIR}/.git)
-
-# Otherwise...
-if (NOT Pism_VERSION)
-  set (Pism_VERSION "unknown")
-endif (NOT Pism_VERSION)
-
-set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION}")
+pism_set_revision_tag()
 
 # set Pism_DEFAULT_CONFIG_FILE
 if (NOT Pism_DEFAULT_CONFIG_FILE)
@@ -183,19 +140,8 @@ if (NOT Pism_DEFAULT_CONFIG_FILE)
 endif ()
 file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
-# We could set this here, but it forces a full recompile if the version
-# changes, hence we'll define PISM_REVISION only for src/base/iMutil.cc
-# (see src/CMakeLists.txt)
-#add_definitions (-DPISM_REVISION=\\\"${Pism_REVISION}\\\")
-
 if (Pism_PEDANTIC_WARNINGS)
-  set (DEFAULT_PEDANTIC_CFLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wconversion -Wsign-compare -Wno-redundant-decls -Winline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time")
-  set (DEFAULT_PEDANTIC_CXXFLAGS "${DEFAULT_PEDANTIC_CFLAGS} -Woverloaded-virtual")
-  set (PEDANTIC_CFLAGS ${DEFAULT_PEDANTIC_CFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings")
-  set (PEDANTIC_CXXFLAGS ${DEFAULT_PEDANTIC_CXXFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings for C++")
-  mark_as_advanced (PEDANTIC_CFLAGS PEDANTIC_CXXFLAGS)
-  set (CMAKE_C_FLAGS_DEBUG "-g ${PEDANTIC_CFLAGS}")
-  set (CMAKE_CXX_FLAGS_DEBUG "-g ${PEDANTIC_CXXFLAGS}")
+  pism_set_pedantic_flags()
 endif (Pism_PEDANTIC_WARNINGS)
 
 if (Pism_GPROF_FLAGS)
@@ -219,8 +165,9 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     CACHE PATH "Python extension module installation directory." FORCE)
 endif ()
 
-include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_INCLUDE_PATH} ${FFTW_INCLUDES})
-set (Pism_EXTERNAL_LIBS ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
+include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH} ${FFTW_INCLUDES})
+set (Pism_EXTERNAL_LIBS
+  ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
 
 # Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)
@@ -258,6 +205,13 @@ install (PROGRAMS
   util/nccmp.py
   util/pism_config_editor.py
   DESTINATION ${Pism_BIN_DIR})
+
+# Install some python-based pieces of PISM
+install (PROGRAMS
+  examples/python/ssa_forward.py
+  examples/inverse/make_synth_ssa.py
+  examples/inverse/vel2tauc.py
+  DESTINATION ${Pism_BIN_DIR} )
 
 if (Pism_BUILD_DOCS)
   add_subdirectory (doc)

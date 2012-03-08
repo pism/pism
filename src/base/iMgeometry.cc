@@ -343,8 +343,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // decide whether to apply Albrecht et al 2011 subgrid-scale parameterization (-part_grid)
 
       // case where we apply -part_grid
-      //if (do_part_grid && mask.next_to_floating_ice(i, j) && !mask.next_to_grounded_ice(i, j)) {
-      if (do_part_grid && mask.next_to_floating_ice(i, j)) {
+      // applies for ice flux from floating ice shelf to open ocean only
+      if (do_part_grid && mask.next_to_floating_ice(i, j) && mask.ocean(i, j)) {
         vHref(i, j) -= divQ * dt;
         if (vHref(i, j) < 0.0) { 
           my_nonneg_rule_flux += ( - vHref(i, j));
@@ -523,8 +523,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // FIXME: calving should be applied *before* the redistribution part!
   if (config.get_flag("do_eigen_calving") && config.get_flag("use_ssa_velocity")) {
-    ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
-    ierr = eigenCalving(); CHKERRQ(ierr);
+     bool dteigencalving = config.get_flag("cfl_eigencalving");
+     if (!dteigencalving){ // calculation of strain rates has been done in iMadaptive.cc already
+       ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
+     }
+     ierr = eigenCalving(); CHKERRQ(ierr);
   }
 
   if (config.get_flag("do_thickness_calving") && config.get_flag("part_grid")) {

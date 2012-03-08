@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 
 #include "PISMSurface.hh"
 #include "localMassBalance.hh"
+#include "NCSpatialVariable.hh"
 
 //! \brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -52,7 +53,7 @@ public:
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);  
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, nc_type nctype);  
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   virtual PetscErrorCode update_internal(PetscReal my_t, PetscReal my_dt);
@@ -76,6 +77,8 @@ protected:
                                      //!day factors.
   bool pdd_annualize;
   PetscReal next_pdd_update;
+
+  NCSpatialVariable artm;
 };
 
 #endif /* _PSTEMPERATUREINDEX_H_ */

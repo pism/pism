@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@ static char help[] =
 
 #include "pism_options.hh"
 #include "IceGrid.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "NCVariable.hh"
 #include "bedrockThermalUnit.hh"
 #include "PISMTime.hh"
@@ -282,11 +282,13 @@ int main(int argc, char *argv[]) {
     set<string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
 
-    PISMIO pio(&grid);
+    PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
 
-    ierr = pio.open_for_writing(outname, false, true); CHKERRQ(ierr);
-    // append == true and check_dims == true
-    ierr = pio.append_time(config.get_string("time_dimension_name"), grid.time->end()); CHKERRQ(ierr);
+    string time_name = config.get_string("time_dimension_name");
+    ierr = pio.open(outname, NC_WRITE); CHKERRQ(ierr);
+    ierr = pio.def_time(time_name, config.get_string("calendar"),
+                        grid.time->units()); CHKERRQ(ierr);
+    ierr = pio.append_time(time_name, grid.time->end()); CHKERRQ(ierr);
     ierr = btu.define_variables(vars, pio, NC_DOUBLE); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
 

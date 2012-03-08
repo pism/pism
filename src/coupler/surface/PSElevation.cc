@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PSElevation.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
@@ -229,18 +229,17 @@ void PSElevation::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PSElevation::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode PSElevation::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
   PetscErrorCode ierr;
-  int varid;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, "artm")) {
-    ierr = artm.define(nc, varid, nctype, true); CHKERRQ(ierr);
+    ierr = artm.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "acab")) {
-    ierr = acab.define(nc, varid, nctype, true); CHKERRQ(ierr);
+    ierr = acab.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   return 0;

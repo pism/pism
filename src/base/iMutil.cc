@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -123,8 +123,11 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   PetscLogDouble current_time;
   PetscReal wall_clock_hours, proc_hours, mypph;
   ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+
   wall_clock_hours = (current_time - start_time) / 3600.0;
+
   proc_hours = grid.size * wall_clock_hours;
+
   // MYPPH stands for "model years per processor hour"
   mypph = (grid.time->year() - grid.time->start_year()) / proc_hours;
 
@@ -134,15 +137,17 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   MPI_Datatype mpi_type;
   ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
   ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
-  MPI_Reduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, 0, grid.com);
+  MPI_Allreduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, grid.com);
 
   // build and put string into global attribute "history"
   char str[TEMPORARY_STRING_LENGTH];
-  snprintf(str, sizeof(str), 
+
+  snprintf(str, TEMPORARY_STRING_LENGTH,
     "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour, PETSc MFlops = %.2f.",
     wall_clock_hours, proc_hours, mypph, flops * 1.0e-6);
+
   ierr = stampHistory(str); CHKERRQ(ierr);
-  
+
   return 0;
 }
 

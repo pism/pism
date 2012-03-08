@@ -67,6 +67,9 @@ netcdf pism_config {
     pism_config:do_eigen_calving = "false";
     pism_config:do_eigen_calving_doc = "calculate strain rates and related calving rate";
 
+    pism_config:cfl_eigencalving = "false";
+    pism_config:cfl_eigencalving_doc = "apply CFL criterion for eigen-calving rate front retreat";
+
     pism_config:do_thickness_calving = "false";
     pism_config:do_thickness_calving_doc = "ad hoc calving at certain threshold for terminal ice thickness";
 
@@ -113,6 +116,9 @@ netcdf pism_config {
 
     pism_config:use_temperature_dependent_thermal_conductivity = "no";
     pism_config:use_temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [\\ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice_thermal_conductivity.";
+
+    pism_config:nuBedrockSet = "false";
+    pism_config:nuBedrockSet_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
 
     // parameters:
 
@@ -259,6 +265,10 @@ netcdf pism_config {
 
     pism_config:calving_at_thickness = 50.0;
     pism_config:calving_at_thickness_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
+
+    pism_config:nuBedrock = 5.0e15;
+    pism_config:nuBedrock_doc = "Pa s; Staggered Viscosity used as side friction parameterization.";
+ 
 
 
     // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
@@ -576,6 +586,9 @@ netcdf pism_config {
 
    pism_config:correct_cell_areas = "yes";
    pism_config:correct_cell_areas_doc = "Compute corrected cell areas using WGS84 datum (for ice area and volume computations).";
+
+   pism_config:output_format = "netcdf3";
+   pism_config:output_format_doc = "The I/O format used for spatial fields; allowed values are 'netcdf3' (the default) and 'netcd4_parallel' (available if PISM was built against NetCDF with parallel I/O enabled).";
 
    pism_config:output_variable_order = "xyz";
    pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -19,7 +19,7 @@
 
 #include "PISMSurface.hh"
 #include "PISMAtmosphere.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
@@ -99,7 +99,7 @@ PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode PISMSurfaceModel::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {

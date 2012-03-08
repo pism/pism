@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
         ); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     config.set_flag("use_eta_transformation", false);
 

@@ -232,9 +232,11 @@ tillphi2.set(0.)
 basal_till.updateTillPhi_algebraic(ice_mask, thickness, bwat, bmr, tauc, tillphi2, tillphi_prev=tillphi)
 
 
-pio = PISM.PISMIO(grid)
-pio.open_for_writing(output_file,False,True)
-pio.append_time(grid.config.get_string("time_dimension_name"),0.0)
+pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+pio.open(output_file,PISM.NC_WRITE,False)
+pio.def_time(grid.config.get_string("time_dimension_name"),
+             grid.config.get_string("calendar"), grid.time.units())
+pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
 pio.close()
 
 # Save time & command line

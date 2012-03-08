@@ -24,7 +24,7 @@ from petsc4py import PETSc
 import PISM
 
 context = PISM.Context()
-config = context.config()
+config = context.config
 
 PISM.set_abort_on_sigint(True)
 
@@ -95,9 +95,11 @@ U_s.set_component(0,tmp)
 v.getSurfaceValues(tmp,thickness)
 U_s.set_component(1,tmp)
 
-pio = PISM.PISMIO(grid)
-pio.open_for_writing(output_file,False,True)
-pio.append_time(grid.config.get_string("time_dimension_name"),0.0)
+pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+pio.open(output_file,PISM.NC_WRITE,False)
+pio.def_time(grid.config.get_string("time_dimension_name"),
+             grid.config.get_string("calendar"), grid.time.units())
+pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
 pio.close()
 
 # Save time & command line

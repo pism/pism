@@ -1,4 +1,4 @@
-// Copyright (C) 2011 David Maxwell
+// Copyright (C) 2011, 2012 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 // draws in all the other needed includes as well. See the end of this file for the list
 // of PISM headers being wrapped.
 
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "Timeseries.hh"
 #include "exactTestsIJ.h"
 #include "stressbalance/SSAFEM.hh"
@@ -43,6 +43,7 @@
 #include "PISMYieldStress.hh"
 #include "pism_options.hh"
 #include "SIAFD.hh"
+#include "regional/regional.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -396,6 +397,8 @@ typedef int NormType; // YUCK.
 #define	NC_UINT64 	11	/* unsigned 8-byte int */
 #define	NC_STRING 	12	/* string */
 
+#define NC_NOWRITE	0	/* default is read only */
+#define NC_WRITE    	0x0001	/* read & write */
 
 
 // Tell SWIG that the following variables are truly constant
@@ -430,8 +433,7 @@ typedef int NormType; // YUCK.
 %include "Timeseries.hh"
 %include "iceModelVec.hh"
 %include "PISMVars.hh"
-%include "NCTool.hh"
-%include "PISMIO.hh"
+%include "PIO.hh"
 %include "PISMDiagnostic.hh"
 %include "PISMComponent.hh"
 %include "basal_resistance.hh"
@@ -466,7 +468,9 @@ typedef int NormType; // YUCK.
 %include "pism_python.hh"
 %template(PISMDiag_PISMDefaultYieldStress) PISMDiag<PISMDefaultYieldStress>;
 %include "PISMYieldStress.hh"
-
+%include "PISMTime.hh"
+%feature("notabstract") SIAFD_Regional;
+%include "regional/regional.hh"
 
 
 

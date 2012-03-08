@@ -7,11 +7,15 @@ PISM_SOURCE_DIR=$3
 EXT=""
 if [ $# -ge 4 ] && [ "$4" == "-python" ]
 then
-  MPIEXEC_COMMAND=""
+  PYTHONEXEC=$5
+  MPIEXEC_COMMAND="$MPIEXEC_COMMAND $PYTHONEXEC"
   PYTHONPATH=${PISM_PATH}
   PISM_PATH="${PISM_SOURCE_DIR}/examples/python/"
   EXT=".py"
 fi
+
+set -e
+set -x
 
 # Test name:
 echo "Test #19: EISMINT-Ross experiment regression."
@@ -25,10 +29,6 @@ cp $PISM_SOURCE_DIR/examples/eisross/test/riggs.nc.gz .
 gunzip ross.nc.gz
 gunzip riggs.nc.gz
 
-# FIXME: for some reason on my machine 
-# "mpiexec -n 2 python -c 'import petsc4py'" succeeds and
-# "`which mpiexec` -n 2 python -c 'import petsc4py'" fails.
-# So for now we just run the Python version of pross on one processor.
 $MPIEXEC_COMMAND $PISM_PATH/pross${EXT} -boot_file ross.nc -Mx 147 -My 147 -riggs riggs.nc -o rossComputed.nc > ross.txt
 
 /usr/bin/env python <<EOF

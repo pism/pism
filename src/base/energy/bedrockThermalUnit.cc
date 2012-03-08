@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "bedrockThermalUnit.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMVars.hh"
 #include "LocalInterpCtx.hh"
 #include "IceGrid.hh"
@@ -171,15 +171,15 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   if (i_set) {
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
-    PISMIO nc(&grid);
+    PIO nc(grid.com, grid.rank, "netcdf3");
 
-    ierr = nc.open_for_reading(input_file); CHKERRQ(ierr);
+    ierr = nc.open(input_file, NC_NOWRITE); CHKERRQ(ierr);
     
     bool exists;
-    ierr = nc.find_variable("litho_temp", NULL, exists); CHKERRQ(ierr);
+    ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
 
     if (exists) {
-      ierr = nc.get_grid_info("litho_temp", g); CHKERRQ(ierr);
+      ierr = nc.inq_grid_info("litho_temp", g); CHKERRQ(ierr);
 
       Mbz = g.z_len;
       Lbz = - g.z_min;
@@ -187,7 +187,7 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
       ierr = allocate(Mbz, Lbz); CHKERRQ(ierr);
 
       int last_record = g.t_len - 1;
-      ierr = temp.read(input_file.c_str(), last_record); CHKERRQ(ierr);
+      ierr = temp.read(input_file, last_record); CHKERRQ(ierr);
     } else {
       Mbz = 1;
       Lbz = 0;
@@ -234,7 +234,7 @@ void PISMBedThermalUnit::add_vars_to_output(string /*keyword*/, set<string> &res
 }
 
 PetscErrorCode PISMBedThermalUnit::define_variables(
-                         set<string> vars, const NCTool &nc, nc_type nctype) {
+                         set<string> vars, const PIO &nc, nc_type nctype) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.string_attr("short_name"))) {

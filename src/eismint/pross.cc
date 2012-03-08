@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <petsc.h>
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "Timeseries.hh"
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
@@ -396,7 +396,7 @@ PetscErrorCode deallocate_vars(PISMVars &variables) {
 PetscErrorCode grid_setup(IceGrid &grid) {
   PetscErrorCode ierr;
   string filename;
-  PISMIO pio(&grid);
+  PIO pio(grid.com, grid.rank, "netcdf3");
   grid_info input;
 
   ierr = PetscOptionsBegin(grid.com, "", "PROSS Grid options", ""); CHKERRQ(ierr);
@@ -409,12 +409,14 @@ PetscErrorCode grid_setup(IceGrid &grid) {
       PISMEnd();
     }
 
-    ierr = pio.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-    ierr = pio.get_grid_info("land_ice_thickness", input); CHKERRQ(ierr);
+    ierr = pio.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = pio.inq_grid_info("land_ice_thickness", input); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
+
     grid.Mx = input.x_len;
     grid.My = input.y_len;
     grid.Mz = 2;
+
     // Set the grid center and horizontal extent:
     grid.x0 = (input.x_max + input.x_min) / 2.0;
     grid.y0 = (input.y_max + input.y_min) / 2.0;
@@ -462,7 +464,7 @@ PetscErrorCode set_surface_elevation(PISMVars &vars, const NCConfigVariable &con
 PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfigVariable &config) {
   PetscErrorCode ierr;
   set<string> vars = variables.keys();
-  PISMIO pio(&grid);
+  PIO pio(grid.com, grid.rank, "netcdf3");
   grid_info g;
   string filename;
 
@@ -511,9 +513,12 @@ PetscErrorCode write_results(ShallowStressBalance &ssa,
   ierr = verbPrintf(2,grid.com,"writing pross results to file '%s' ...\n",
                     filename.c_str()); CHKERRQ(ierr);
 
-  PISMIO pio(&grid);
+  PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
 
-  ierr = pio.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  ierr = pio.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = pio.def_time(grid.config.get_string("time_dimension_name"),
+                      grid.config.get_string("calendar"),
+                      grid.time->units()); CHKERRQ(ierr);
   ierr = pio.append_time(grid.config.get_string("time_dimension_name"), 0.0);
   ierr = pio.close(); CHKERRQ(ierr);
 
@@ -542,7 +547,7 @@ PetscErrorCode write_results(ShallowStressBalance &ssa,
   ierr = vel_ssa->magnitude(cbar); CHKERRQ(ierr);
 
   ierr = cbar.write(filename.c_str()); CHKERRQ(ierr);
-  
+
   return 0;
 }
 
@@ -578,7 +583,7 @@ int main(int argc, char *argv[]) {
     ierr = show_usage_check_req_opts(com, "pross", required, usage.c_str()); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     config.set_flag("use_ssa_velocity", true);
     config.set_flag("use_ssa_when_grounded", false);

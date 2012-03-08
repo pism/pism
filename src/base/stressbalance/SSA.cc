@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2012 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 #include "PISMProf.hh"
 #include "pism_options.hh"
 #include "flowlaw_factory.hh"
+#include "PIO.hh"
 
 SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
          EnthalpyConverter &e,
@@ -89,15 +90,15 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 
   if (i_set) {
     bool dont_read_initial_guess, u_ssa_found, v_ssa_found;
-    int start;
-    NCTool nc(grid.com, grid.rank);
+    unsigned int start;
+    PIO nc(grid.com, grid.rank, "netcdf3");
 
     ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 
-    ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-    ierr = nc.find_variable("u_ssa", NULL, u_ssa_found); CHKERRQ(ierr); 
-    ierr = nc.find_variable("v_ssa", NULL, v_ssa_found); CHKERRQ(ierr); 
-    ierr = nc.get_nrecords(start); CHKERRQ(ierr);
+    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_var("u_ssa", u_ssa_found); CHKERRQ(ierr); 
+    ierr = nc.inq_var("v_ssa", v_ssa_found); CHKERRQ(ierr); 
+    ierr = nc.inq_nrecords(start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr); 
     start -= 1;
 
@@ -259,8 +260,6 @@ the magnitudes, and either principal strain rate could be negative or positive.
 
 Result can be used in a calving law, for example in eigencalving (PIK).
 
-FIXME:  makes decisions based on thickness that might better use mask?
-
 FIXME:  need to answer: strain rates will be derived from SSA velocities. Is there ghost communication needed?
 */
 PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
@@ -274,6 +273,9 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   ierr = result_e1.begin_access(); CHKERRQ(ierr);
   ierr = result_e2.begin_access(); CHKERRQ(ierr);
 
+	Mask M;
+	ierr = mask->begin_access(); CHKERRQ(ierr);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -283,6 +285,12 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         continue;
       }
 
+      const PetscInt M_ij = mask->as_int(i,j),
+                     M_e = mask->as_int(i + 1,j),
+                     M_w = mask->as_int(i - 1,j),
+                     M_n = mask->as_int(i,j + 1),
+                     M_s = mask->as_int(i,j - 1);
+
       //centered difference scheme; strain in units s-1
       PetscScalar
         u_x = (velocity(i+1,j).u - velocity(i-1,j).u) / (2 * dx),
@@ -290,30 +298,34 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         v_x = (velocity(i+1,j).v - velocity(i-1,j).v) / (2 * dx),
         v_y = (velocity(i,j+1).v - velocity(i,j-1).v) / (2 * dy);
 
-      //inward scheme at the ice-shelf front
-      if (H(i+1,j)==0.0) {
+
+
+      //inward scheme at the ice-shelf
+      //SSA velocity exists depending on mask (newly filled grid cells are not taken into account)
+
+      if (M.ice_free(M_e)) {
         u_x = (velocity(i,j).u - velocity(i-1,j).u) / dx;
         v_x = (velocity(i,j).v - velocity(i-1,j).v) / dx;
       }
-      if (H(i-1,j)==0.0) {
+      if (M.ice_free(M_w)) {
         u_x = (velocity(i+1,j).u - velocity(i,j).u) / dx;
         v_x = (velocity(i+1,j).v - velocity(i,j).v) / dx;
       }
-      if (H(i-1,j)==0.0) {
+      if (M.ice_free(M_n)) {
         u_y = (velocity(i,j).u - velocity(i,j-1).u) / dy;
         v_y = (velocity(i,j).v - velocity(i,j-1).v) / dy;
       }
-      if (H(i-1,j)==0.0) {
+      if (M.ice_free(M_s)) {
         u_y = (velocity(i,j+1).u - velocity(i,j).u) / dy;
         v_y = (velocity(i,j+1).v - velocity(i,j).v) / dy;
       }
 
       // ice nose case
-      if (H(i,j-1)==0.0 && H(i,j+1)==0.0) {
+      if (M.ice_free(M_s) && M.ice_free(M_n)) {
         u_y = 0.0;
         v_y = 0.0;
       }
-      if (H(i+1,j)==0.0 && H(i-1,j)==0.0) {
+      if (M.ice_free(M_e) && M.ice_free(M_w)) {
         u_x = 0.0;
         v_x = 0.0;
       }
@@ -332,6 +344,8 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   ierr = H.end_access(); CHKERRQ(ierr);
   ierr = result_e1.end_access(); CHKERRQ(ierr);
   ierr = result_e2.end_access(); CHKERRQ(ierr);
+
+	ierr = mask->end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -440,6 +454,32 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             h_x = surface->diff_x(i,j);
             h_y = surface->diff_y(i,j);
           }
+
+	  // for floating shear margin we calculate inward scheme along ice free bedrock
+	  bool ShearMarginE = (thk(i+1,j)<1.0 && (*bed)(i+1,j)>0.0),
+	       ShearMarginW = (thk(i-1,j)<1.0 && (*bed)(i-1,j)>0.0),
+	       ShearMarginN = (thk(i,j+1)<1.0 && (*bed)(i,j+1)>0.0),
+	       ShearMarginS = (thk(i,j-1)<1.0 && (*bed)(i,j-1)>0.0);
+	
+	  bool shearMargin = (ShearMarginE || ShearMarginW || ShearMarginN || ShearMarginS);
+	
+	
+	  if (shearMargin) {	
+		
+	    if (ShearMarginE && !ShearMarginW)
+	      h_x = ((*surface)(i,j) - (*surface)(i-1,j)) / grid.dx;
+	    else if (ShearMarginW && !ShearMarginE)
+	      h_x = ((*surface)(i+1,j) - (*surface)(i,j)) / grid.dx;
+	    else if (ShearMarginW && ShearMarginE)
+	      h_x = 0.0;
+		
+	    if (ShearMarginN && !ShearMarginS)
+	      h_y = ((*surface)(i,j) - (*surface)(i,j-1)) / grid.dy;
+	    else if (ShearMarginS && !ShearMarginN)
+	      h_y = ((*surface)(i,j+1) - (*surface)(i,j)) / grid.dy;
+	    else if (ShearMarginN && ShearMarginS)
+	      h_y = 0.0;
+	  }
         }
 
         result(i,j).u = - pressure * h_x;
@@ -505,7 +545,7 @@ void SSA::add_vars_to_output(string /*keyword*/, set<string> &result) {
 }
 
 
-PetscErrorCode SSA::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {

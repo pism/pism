@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ public:
   PetscErrorCode set_grid_defaults();
   PetscErrorCode set_vars_from_options();
   PetscErrorCode run();
-  PetscErrorCode writeFiles(const char* filename);
+  PetscErrorCode writeFiles(string filename);
   PetscErrorCode createVecs();
   PetscErrorCode model_state_setup();
 
@@ -39,6 +39,7 @@ public:
   PetscErrorCode test_dof1comm();
   PetscErrorCode test_dof2comm();
   PetscErrorCode test_pismprof();
+  PetscErrorCode test_output();
 };
 
 #endif // 

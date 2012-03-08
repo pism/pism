@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -115,7 +115,7 @@ protected:
 
   \code
   char seriesname[] = "ser_delta_T.nc";
-  NCTool nc(grid.com, grid.rank);
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   nc.open_for_writing(seriesname, true, false);
   nc.close();
   \endcode

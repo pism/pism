@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #if (PISM_HAVE_FFTW==1)
 
 #include "PISMBedDef.hh"
-#include "PISMIO.hh"
+#include "PIO.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
@@ -165,7 +165,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
     topg_exists, topg_initial_exists, regrid_vars_set;
   string boot_filename, regrid_filename;
-  PISMIO nc(&grid);
+  PIO nc(grid.com, grid.rank, "netcdf3");
 
   ierr = PISMOptionsIsSet("-regrid_bed_special",
                           "Correct topg when switching to a different grid",
@@ -183,10 +183,10 @@ PetscErrorCode PBLingleClark::correct_topg() {
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
   if (! (regrid_file_set && boot_file_set) ) return 0;
 
-  ierr = nc.open_for_reading(regrid_filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.open(regrid_filename, NC_NOWRITE); CHKERRQ(ierr);
 
-  ierr = nc.find_variable("topg_initial", NULL, topg_initial_exists); CHKERRQ(ierr);
-  ierr = nc.find_variable("topg", NULL, topg_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("topg_initial", topg_initial_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("topg", topg_exists); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Stop if the regridding file does not have both topg and topg_initial.

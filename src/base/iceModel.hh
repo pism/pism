@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -152,12 +152,12 @@ public:
   PetscErrorCode init();
   virtual PetscErrorCode run();
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
-  virtual PetscErrorCode setExecName(const char *my_executable_short_name);
+  virtual PetscErrorCode setExecName(string my_executable_short_name);
   virtual void reset_counters();
 
   // see iMbootstrap.cc 
-  virtual PetscErrorCode bootstrapFromFile(const char *fname);
-  virtual PetscErrorCode bootstrap_2d(const char *fname);
+  virtual PetscErrorCode bootstrapFromFile(string fname);
+  virtual PetscErrorCode bootstrap_2d(string fname);
   virtual PetscErrorCode bootstrap_3d();
   virtual PetscErrorCode putTempAtDepth();
 
@@ -175,11 +175,11 @@ public:
   virtual PetscErrorCode compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
-  virtual PetscErrorCode initFromFile(const char *);
-  virtual PetscErrorCode writeFiles(const char* default_filename);
-  virtual PetscErrorCode write_model_state(const char *filename);
-  virtual PetscErrorCode write_metadata(const char *filename, bool write_mapping = true);
-  virtual PetscErrorCode write_variables(const char* filename, set<string> vars,
+  virtual PetscErrorCode initFromFile(string);
+  virtual PetscErrorCode writeFiles(string default_filename);
+  virtual PetscErrorCode write_model_state(string filename);
+  virtual PetscErrorCode write_metadata(string filename, bool write_mapping = true);
+  virtual PetscErrorCode write_variables(string filename, set<string> vars,
 					 nc_type nctype);
 protected:
 
@@ -255,7 +255,7 @@ protected:
               dt_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
-              dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
+              dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, dt_from_eigencalving,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     cumulative_basal_ice_flux,
@@ -299,6 +299,7 @@ protected:
   // see iMcalving.cc
   virtual PetscErrorCode eigenCalving();
   virtual PetscErrorCode calvingAtThickness();
+  virtual PetscErrorCode dt_from_eigenCalving();
 
   // see iMenergy.cc
   virtual PetscErrorCode energyStep();
@@ -353,7 +354,7 @@ protected:
   virtual PetscErrorCode killEasyIceBergs();       // FIXME: do we want this one to happen even if eigencalving does not happen?  should we be calling this one before any time that principal values need to be computed?
 
   // see iMIO.cc
-  virtual PetscErrorCode dumpToFile(const char *filename);
+  virtual PetscErrorCode dumpToFile(string filename);
   virtual PetscErrorCode regrid(int dimensions);
   virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
 
