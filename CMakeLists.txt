@@ -1,7 +1,13 @@
 project (Pism)
+cmake_minimum_required (VERSION 2.8.5)
+include ("CMake/PISM_CMake_macros.cmake")
+list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
+
 set (Pism_BRANCH "development")
 
-cmake_minimum_required (VERSION 2.8.5)
+# Set Pism_REVISION_TAG
+pism_set_revision_tag()
+message(STATUS "Configuring PISM version '${Pism_REVISION_TAG}'")
 
 # Put executables in the build directory:
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
@@ -12,10 +18,6 @@ if (INSTALL_PREFIX_LENGTH)
   set (CMAKE_INSTALL_PREFIX $ENV{PISM_INSTALL_PREFIX} CACHE PATH "PISM install prefix" FORCE)
   message (STATUS "Setting PISM install prefix to ${CMAKE_INSTALL_PREFIX}.")
 endif()
-
-list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
-
-include ("CMake/PISM_CMake_macros.cmake")
 
 if (NOT Pism_MANUAL_BUILD)
 
@@ -51,6 +53,8 @@ if (NOT Pism_MANUAL_BUILD)
   # use the PETSc compiler as a hint when looking for an MPI compiler
   set (MPI_C_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
   find_package (MPI REQUIRED)
+  # FindMPI.cmake uses GetPrerequisites.cmake, which sets file_cmd
+  mark_as_advanced(file_cmd MPI_LIBRARY MPI_EXTRA_LIBRARY)
   # optional
   find_package (FFTW)
   find_package (PROJ4)
@@ -84,7 +88,7 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                    
 option (Pism_BUILD_PYTHON_BINDINGS "Build (experimental) python bindings" OFF)
 
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
-option (Pism_USE_STATIC_LIBS_ONLY "Set CMake flags to ensure that everything is linked statically")
+option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
 
 set (Pism_BIN_DIR "bin")
@@ -98,7 +102,7 @@ if (Pism_BUILD_DEBIAN_PACKAGE)
   pism_build_debian_package()
 endif ()
 
-if (Pism_USE_STATIC_LIBS_ONLY)
+if (Pism_LINK_STATICALLY)
   pism_strictly_static()
 endif ()
 
@@ -130,9 +134,6 @@ if (Pism_ADD_FPIC)
     set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
   endif()
 endif ()
-
-# Set Pism_REVISION
-pism_set_revision_tag()
 
 # set Pism_DEFAULT_CONFIG_FILE
 if (NOT Pism_DEFAULT_CONFIG_FILE)
