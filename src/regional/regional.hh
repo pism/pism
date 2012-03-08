@@ -44,8 +44,8 @@
 class SIAFD_Regional : public SIAFD
 {
 public:
-  SIAFD_Regional(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
-    : SIAFD(g, i, e, c) {}
+  SIAFD_Regional(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+    : SIAFD(g, e, c) {}
   virtual ~SIAFD_Regional() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
@@ -59,9 +59,9 @@ protected:
 class SSAFD_Regional : public SSAFD
 {
 public:
-  SSAFD_Regional(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+  SSAFD_Regional(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
                  const NCConfigVariable &c)
-    : SSAFD(g, b, i, e, c) {}
+    : SSAFD(g, b, e, c) {}
   virtual ~SSAFD_Regional() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
