@@ -1,5 +1,5 @@
 project (Pism)
-cmake_minimum_required (VERSION 2.8.5)
+cmake_minimum_required (VERSION 2.8.0) # 2.8.0 is almost 3 years old, so this should be OK
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
@@ -51,8 +51,22 @@ if (NOT Pism_MANUAL_BUILD)
   endif()
 
   # use the PETSc compiler as a hint when looking for an MPI compiler
-  set (MPI_C_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
-  find_package (MPI REQUIRED)
+
+  # FindMPI.cmake changed between 2.8.4 and 2.8.5, so we try to support both...
+  if (${CMAKE_VERSION} VERSION_LESS "2.8.5")
+    set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
+    find_package (MPI REQUIRED)
+
+    set (MPI_C_INCLUDE_PATH "${MPI_INCLUDE_PATH}" CACHE STRING "MPI include directories (semicolon-separated list)")
+    set (MPI_C_LIBRARIES "${MPI_LIBRARY};${MPI_EXTRA_LIBRARY}" CACHE STRING "MPI libraries (semicolon-separated list)")
+    mark_as_advanced(MPI_C_INCLUDE_PATH MPI_C_LIBRARIES)
+    message (STATUS
+      "Note: Please upgrade CMake to version 2.8.5 or later if the build fails with undefined symbols related to MPI.")
+  else ()
+    set (MPI_C_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
+    find_package (MPI REQUIRED)
+  endif()
+
   # FindMPI.cmake uses GetPrerequisites.cmake, which sets file_cmd
   mark_as_advanced(file_cmd MPI_LIBRARY MPI_EXTRA_LIBRARY)
   # optional
