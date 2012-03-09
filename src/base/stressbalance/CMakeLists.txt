@@ -13,6 +13,7 @@ add_library (pismstressbalance
   SSAFD.cc
   SSAFEM.cc  
   FETools.cc
+  FEEvaluator.cc
   SSATestCase.cc
   SIA_Sliding.cc
   BlatterStressBalance.cc

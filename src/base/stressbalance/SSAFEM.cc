@@ -348,8 +348,11 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
   } else {
     ice.effectiveViscosity_with_derivative(feS->B, Du, nuH, dNuH);
     *nuH  *= feS->H;
-    *nuH += m_epsilon_ssa;
     if (dNuH) *dNuH *= feS->H;
+    if(*nuH < m_epsilon_ssa) {
+      *nuH = m_epsilon_ssa;
+      if (dNuH) *dNuH =0;
+    }
   }
   *nuH  *=  2;
   if (dNuH) *dNuH *= 2;
@@ -357,7 +360,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
   if( M.grounded_ice(feS->mask) )
   {
     basal.dragWithDerivative(feS->tauc,u->u,u->v,beta,dbeta);
-  } else {
+  } else {  
     *beta = 0;
     if( M.ice_free_land(feS->mask) )
     {
