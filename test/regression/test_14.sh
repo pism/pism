@@ -1,7 +1,9 @@
-#!/bin/bash -x
+#!/bin/bash
 
 PISM_PATH=$1
 MPIEXEC=$2
+
+set -x
 
 # Test name:
 echo "Test #14: verif test E regression: isothermal SIA with sliding."
