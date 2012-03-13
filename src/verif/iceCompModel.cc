@@ -734,13 +734,13 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
     ice_rho = config.get("ice_density"),
     Glen_n = config.get("Glen_exponent"),
     // enthalpy and pressure do not matter here
-    B0,
-    C = pow(ice_rho * standard_gravity * (1.0 - ice_rho/seawater_density) / (4 * B0), 3),
+    B0, C,
     H0 = 600.0, v0 = convert(300.0, "m/year", "m/second"),
     Q0 = H0 * v0;
 
   if (testname == 'V') {
     B0 = stress_balance->get_stressbalance()->get_flow_law()->hardness_parameter(0, 0);
+    C = pow(ice_rho * standard_gravity * (1.0 - ice_rho/seawater_density) / (4 * B0), 3);
   }
 
   // area of grid square in square km:

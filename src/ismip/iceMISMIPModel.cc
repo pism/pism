@@ -340,7 +340,7 @@ PetscErrorCode IceMISMIPModel::allocate_flowlaw() {
   PetscErrorCode ierr;
 
   if (config.get_flag("do_cold_ice_methods") == true) {
-    config.set_flag("ssa_flow_law", "isothermal_glen");
+    config.set_string("ssa_flow_law", "isothermal_glen");
   } else {
     ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
   }
@@ -440,7 +440,7 @@ PetscErrorCode IceMISMIPModel::initFromFile(string fname) {
   ierr = verbPrintf(2,grid.com,
                     "starting MISMIP experiment from file  %s:\n"
                     "  model %d, experiment %d%c, grid mode %d, step %d",
-                    fname,modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
+                    fname.c_str(),modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",config.get("ice_softness")); CHKERRQ(ierr);
 

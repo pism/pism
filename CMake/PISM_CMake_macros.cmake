@@ -29,11 +29,12 @@ endmacro(pism_dont_use_rpath)
 
 # Set CMake variables to ensure that everything is static
 macro(pism_strictly_static)
+  set (CMAKE_SKIP_RPATH ON CACHE BOOL "Disable RPATH completely")
   set (CMAKE_FIND_LIBRARY_SUFFIXES .a)
   set (BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared Pism libraries" FORCE)
-  SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
-  SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
-  set_property(GLOBAL PROPERTY LINK_SEARCH_END_STATIC 1)
+  SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "") # get rid of -rdynamic
+  SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "") # ditto
+  set_property(GLOBAL PROPERTY LINK_SEARCH_END_STATIC 1) # get rid of -Bdynamic
 
   pism_dont_use_rpath()
 endmacro(pism_strictly_static)
@@ -50,17 +51,40 @@ macro(pism_build_debian_package)
   pism_dont_use_rpath()
 endmacro(pism_build_debian_package)
 
+# Set the revision tag if PISM was checked out using Git.
+macro(pism_set_revision_tag_git)
+  if (NOT Pism_VERSION)
+    if (EXISTS ${Pism_SOURCE_DIR}/.git)
+      find_program (GIT_EXECUTABLE git DOC "Git executable")
+      mark_as_advanced(GIT_EXECUTABLE)
+      execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v?.?
+        WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+        OUTPUT_VARIABLE Pism_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif (EXISTS ${Pism_SOURCE_DIR}/.git)
+  endif(NOT Pism_VERSION)
+endmacro(pism_set_revision_tag_git)
+
+# Set the revision tag if PISM was checked out using Subversion.
+macro(pism_set_revision_tag_svn)
+  if (NOT Pism_VERSION)
+    if (EXISTS ${Pism_SOURCE_DIR}/.svn)
+      find_package(Subversion)
+      if (SUBVERSION_FOUND)
+        Subversion_WC_INFO(${Pism_SOURCE_DIR}/src "Pism")
+        set(Pism_VERSION "${Pism_WC_LAST_CHANGED_DATE}")
+      endif(SUBVERSION_FOUND)
+    endif(EXISTS ${Pism_SOURCE_DIR}/.svn)
+  endif(NOT Pism_VERSION)
+endmacro(pism_set_revision_tag_svn)
+
 # Set the PISM revision tag
 macro(pism_set_revision_tag)
   # Git
-  if (EXISTS ${Pism_SOURCE_DIR}/.git)
-    find_program (GIT_EXECUTABLE git DOC "Git executable")
-    mark_as_advanced(GIT_EXECUTABLE)
-    execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v?.?
-      WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-      OUTPUT_VARIABLE Pism_VERSION
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-  endif (EXISTS ${Pism_SOURCE_DIR}/.git)
+  pism_set_revision_tag_git()
+
+  # Subversion
+  pism_set_revision_tag_svn()
 
   # Otherwise...
   if (NOT Pism_VERSION)
@@ -72,7 +96,7 @@ endmacro(pism_set_revision_tag)
 
 # Set pedantic compiler flags
 macro(pism_set_pedantic_flags)
-  set (DEFAULT_PEDANTIC_CFLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wconversion -Wsign-compare -Wno-redundant-decls -Winline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time")
+  set (DEFAULT_PEDANTIC_CFLAGS "-pedantic -Wall -Wextra -Wno-cast-qual -Wundef -Wshadow -Wpointer-arith -Wno-cast-align -Wwrite-strings -Wno-conversion -Wsign-compare -Wno-redundant-decls -Winline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wstrict-aliasing -funit-at-a-time")
   set (DEFAULT_PEDANTIC_CXXFLAGS "${DEFAULT_PEDANTIC_CFLAGS} -Woverloaded-virtual")
   set (PEDANTIC_CFLAGS ${DEFAULT_PEDANTIC_CFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings")
   set (PEDANTIC_CXXFLAGS ${DEFAULT_PEDANTIC_CXXFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings for C++")

@@ -273,8 +273,8 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   ierr = result_e1.begin_access(); CHKERRQ(ierr);
   ierr = result_e2.begin_access(); CHKERRQ(ierr);
 
-	Mask M;
-	ierr = mask->begin_access(); CHKERRQ(ierr);
+  Mask M;
+  ierr = mask->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -285,11 +285,11 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         continue;
       }
 
-      const PetscInt M_ij = mask->as_int(i,j),
-                     M_e = mask->as_int(i + 1,j),
-                     M_w = mask->as_int(i - 1,j),
-                     M_n = mask->as_int(i,j + 1),
-                     M_s = mask->as_int(i,j - 1);
+      const PetscInt
+        M_e = mask->as_int(i + 1,j),
+        M_w = mask->as_int(i - 1,j),
+        M_n = mask->as_int(i,j + 1),
+        M_s = mask->as_int(i,j - 1);
 
       //centered difference scheme; strain in units s-1
       PetscScalar
@@ -345,7 +345,7 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   ierr = result_e1.end_access(); CHKERRQ(ierr);
   ierr = result_e2.end_access(); CHKERRQ(ierr);
 
-	ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
   return 0;
 }
 
