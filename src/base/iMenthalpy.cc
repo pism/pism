@@ -447,11 +447,14 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
               const PetscScalar Kbasal = esys->k_from_T(Tbasal) / EC->c_from_T(Tbasal);
               hf_up = - Kbasal * (esys->Enth[1] - esys->Enth[0]) / fdz;
             }
+
             // compute basal melt rate from flux balance; vbmr = - Mb / rho in
             //   efgis paper; after we compute it we make sure there is no
             //   refreeze if there is no available basal water
-            vbmr(i,j) = ( (*Rb)(i,j) + G0(i,j) - hf_up ) / (ice->rho * L);
-            if ((vbwat(i,j) <= 0) && (vbmr(i,j) < 0))    vbmr(i,j) = 0.0;
+            vbmr(i,j) = ( (*Rb)(i,j) + G0(i,j) - hf_up ) / (ice_rho * L);
+
+            if ((vbwat(i,j) <= 0) && (vbmr(i,j) < 0))
+              vbmr(i,j) = 0.0;
           }
         }
 

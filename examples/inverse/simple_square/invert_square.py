@@ -2,14 +2,13 @@ import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import numpy as np
-import tozero
 import siple
 
 import PISM
 from PISM import util
 
-from pismssaforward import SSAForwardProblem, InvSSARun, tauc_params, InvertSSANLCG, InvertSSAIGN
-from linalg_pism import PISMLocalVector as PLV
+from PISM.invert_ssa import SSAForwardProblem, InvSSARun, tauc_params, InvertSSANLCG, InvertSSAIGN
+from PISM.sipletools import PISMLocalVector as PLV
 
 # siple.reporting.clear_loggers()
 # siple.reporting.add_logger(pism_print_logger)

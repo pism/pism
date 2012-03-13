@@ -361,7 +361,7 @@ int PISMNC3File::get_var_double(string variable_name,
 
     } // end of the for loop
 
-    delete processor_0_buffer;
+    delete[] processor_0_buffer;
   } else {
     MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      com);
     MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      com);
@@ -485,6 +485,23 @@ int PISMNC3File::put_var_double(string variable_name,
         stat = nc_put_vara_double(ncid, varid, &nc_start[0], &nc_count[0],
                                   processor_0_buffer); check(stat);
       }
+
+      if (stat != NC_NOERR) {
+        fprintf(stderr, "NetCDF call nc_put_var?_double failed with return code %d, '%s'\n",
+                stat, nc_strerror(stat));
+        fprintf(stderr, "while writing '%s' to '%s'\n",
+                variable_name.c_str(), filename.c_str());
+
+        for (int k = 0; k < ndims; ++k)
+          fprintf(stderr, "start[%d] = %d\n", k, start[k]);
+
+        for (int k = 0; k < ndims; ++k)
+          fprintf(stderr, "count[%d] = %d\n", k, count[k]);
+
+        for (int k = 0; k < ndims; ++k)
+          fprintf(stderr, "imap[%d] = %d\n", k, imap[k]);
+      }
+
     } // end of the for loop
 
     delete[] processor_0_buffer;

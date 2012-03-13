@@ -103,7 +103,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   ierr = set_expername_from_options(); CHKERRQ(ierr);
 
-  config.set("enhancement_factor", 1.0);
+  config.set("sia_enhancement_factor", 1.0);
   config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
                                           // parameterization
   // basal melt does not change computation of mass continuity or vertical velocity:
@@ -196,12 +196,12 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
   if (stress_balance == NULL) {
     ShallowStressBalance *my_stress_balance;
 
-    SSB_Modifier *modifier = new SIAFD(grid, *ice, *EC, config);
+    SSB_Modifier *modifier = new SIAFD(grid, *EC, config);
 
     if (expername == 'G' || expername == 'H') {
-      my_stress_balance = new SIA_Sliding(grid, *basal, *ice, *EC, config);
+      my_stress_balance = new SIA_Sliding(grid, *basal, *EC, config);
     } else {
-      my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+      my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
     }
   
     // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.

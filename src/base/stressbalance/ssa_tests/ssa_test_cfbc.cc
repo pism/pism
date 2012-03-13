@@ -93,6 +93,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 
   config.set_flag("compute_surf_grad_inward_ssa", true); 
   config.set_flag("calving_front_stress_boundary_condition", true); 
+  config.set_string("ssa_flow_law", "isothermal_glen");
 
   basal = new IceBasalResistancePlasticLaw(
          config.get("plastic_regularization", "1/year", "1/second"),
@@ -101,10 +102,9 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   enthalpyconverter = new EnthalpyConverter(config);
-  ice = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
-  
-  CustomGlenIce *ice_custom = dynamic_cast<CustomGlenIce*>(ice);
-  ice_custom->setHardness(1.9e8);
+
+  config.set_flag("ssa_flow_law", "isothermal_glen");
+  config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
 
   return 0;
 }
@@ -112,6 +112,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
+
   ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant
   ierr = bed.set(-1000.0); CHKERRQ(ierr); // assures shelf is floating
   ierr = enthalpy.set(528668.35); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
@@ -122,13 +123,14 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = ice_mask.begin_access(); CHKERRQ(ierr);
-  
-  double ocean_rho = config.get("sea_water_density");
+
+  double ocean_rho = config.get("sea_water_density"),
+    ice_rho = config.get("ice_density");
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar x = grid.x[i];
-      
+
       if (x <= 0) {
         thickness(i, j) = H_exact(x + grid.Lx);
         ice_mask(i, j)  = MASK_FLOATING;
@@ -137,7 +139,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
         ice_mask(i, j)  = MASK_ICE_FREE_OCEAN;
       }
 
-      surface(i,j) = (1.0 - ice->rho / ocean_rho) * thickness(i, j); // FIXME task #7297
+      surface(i,j) = (1.0 - ice_rho / ocean_rho) * thickness(i, j); // FIXME task #7297
 
       if (i == 0) {
         bc_mask(i, j)  = 1;

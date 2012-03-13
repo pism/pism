@@ -217,6 +217,16 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
     }
 
+    bool dteigencalving = config.get_flag("cfl_eigencalving");
+    if (dteigencalving) {
+      ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
+      ierr = dt_from_eigenCalving(); CHKERRQ(ierr);
+      if (dt_from_eigencalving < dt) {
+        dt = dt_from_eigencalving;
+        adaptReasonFlag = 'k';
+      }
+    }
+
     if ((maxdt_temporary > 0.0) && (maxdt_temporary < dt)) {
       dt = maxdt_temporary;
       adaptReasonFlag = 't';

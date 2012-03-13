@@ -43,6 +43,8 @@
 #include "PISMMohrCoulombYieldStress.hh"
 #include "pism_options.hh"
 #include "SIAFD.hh"
+#include "regional/regional.hh"
+#include "FEEvaluator.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -469,8 +471,9 @@ typedef int NormType; // YUCK.
 %include "PISMYieldStress.hh"
 %include "PISMMohrCoulombYieldStress.hh"
 %include "PISMTime.hh"
-
-
+%feature("notabstract") SIAFD_Regional;
+%include "regional/regional.hh"
+%include "FEEvaluator.hh"
 
 
 // Tell SWIG that input arguments of type double * are to be treated as return values,

@@ -21,7 +21,7 @@
 
 #include "flowlaws.hh"
 
-#define ICE_CUSTOM  "custom"        /* Plain isothermal Glen with customizable parameters */
+#define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
 #define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
 #define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (PolyThermalGPBLDIce) */
 #define ICE_HOOKE   "hooke"         /* Hooke (ThermoGlenIceHooke) */

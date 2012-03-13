@@ -61,12 +61,12 @@ PetscErrorCode IceModel::cell_interface_velocities(bool do_part_grid,
     vel.n = 0.5 * (vreg.ij.v + vreg.n.v);
     vel.s = 0.5 * (vreg.s.v + vreg.ij.v);
   } else if (M.ice_margin(i, j)) {
-    // on floating or grounded ice, but next to a ice-free grid cell
+    // on floating or grounded ice, but next to a ice-free grid cell 
     vel.e = (M.ice_free(i + 1, j) ? vreg.ij.u : 0.5 * (vreg.ij.u + vreg.e.u));
     vel.w = (M.ice_free(i - 1, j) ? vreg.ij.u : 0.5 * (vreg.w.u + vreg.ij.u));
     vel.n = (M.ice_free(i, j + 1) ? vreg.ij.v : 0.5 * (vreg.ij.v + vreg.n.v));
     vel.s = (M.ice_free(i, j - 1) ? vreg.ij.v : 0.5 * (vreg.s.v + vreg.ij.v));
-  } else if (M.next_to_floating_ice(i, j)) {
+  } else if (M.next_to_ice(i, j)){
     // on an ice-free (or partially filled) cell next to an icy grid cell
     vel.e = (M.icy(i + 1, j) ? vreg.e.u : 0.0);
     vel.w = (M.icy(i - 1, j) ? vreg.w.u : 0.0);
@@ -78,6 +78,20 @@ PetscErrorCode IceModel::cell_interface_velocities(bool do_part_grid,
     vel.w = 0.0;
     vel.n = 0.0;
     vel.s = 0.0;
+  }
+
+  // specific case of the boundary of a floating ice shelf confined in a bay of ice free land
+  if  (M.floating_ice_next_to_icefree_land(i, j)) {
+    //avoid ice flux from the shelf onto the ice free land (better would be: ask for bed(i+1,j)>h(i,j))
+    if (M.ice_free_land(i + 1, j)) vel.e = 0.0 ;
+    if (M.ice_free_land(i - 1, j)) vel.w = 0.0 ;
+    if (M.ice_free_land(i ,j + 1)) vel.n = 0.0 ;   
+    if (M.ice_free_land(i ,j - 1)) vel.s = 0.0 ;
+  } else if (M.ice_free_land(i, j) && M.next_to_floating_ice(i, j)) {
+    if (M.floating_ice(i + 1, j)) vel.e = 0.0 ;
+    if (M.floating_ice(i - 1, j)) vel.w = 0.0 ;
+    if (M.floating_ice(i ,j + 1)) vel.n = 0.0 ;   
+    if (M.floating_ice(i ,j - 1)) vel.s = 0.0 ;
   }
 
   return 0;

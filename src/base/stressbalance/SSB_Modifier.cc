@@ -20,6 +20,7 @@
 #include "flowlaws.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
+#include "flowlaw_factory.hh"
 
 PetscErrorCode SSB_Modifier::allocate() {
   PetscErrorCode ierr;
@@ -74,6 +75,25 @@ PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
   return 0;
 }
 
+SSBM_Trivial::SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+  : SSB_Modifier(g, e, c)
+{
+  IceFlowLawFactory ice_factory(grid.com, "", config, &EC);
+
+  ice_factory.setType(config.get_string("sia_flow_law").c_str());
+
+  ice_factory.setFromOptions();
+  ice_factory.create(&flow_law);
+}
+
+SSBM_Trivial::~SSBM_Trivial()
+{
+  if (flow_law != NULL) {
+    delete flow_law;
+    flow_law = NULL;
+  }
+}
+
 
 //! \brief Distribute the input velocity throughout the column.
 /*!
@@ -126,7 +146,7 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
 
 //! \brief Compute the volumetric strain heating.
 /*!
- * Uses 
+ * Uses:
  * - delta on the staggered grid, which should be initialized by the update(true) call.
  * - enthalpy
  * - surface gradient on the staggered grid
@@ -136,16 +156,17 @@ PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3
   PetscErrorCode ierr;
   PetscScalar *E, *sigma;
   const PetscReal
-    n_glen  = ice.exponent(),
+    n_glen  = flow_law->exponent(),
     Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
-    enhancement_factor = config.get("enhancement_factor"),
-    standard_gravity = config.get("standard_gravity");
+    enhancement_factor = config.get("ssa_enhancement_factor"),
+    standard_gravity = config.get("standard_gravity"),
+    ice_rho = config.get("ice_density");
 
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = D2_input->begin_access(); CHKERRQ(ierr);
-  
+
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = enthalpy->getInternalColumn(i,j,&E); CHKERRQ(ierr);
@@ -158,11 +179,11 @@ PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3
           // Use hydrostatic pressure; presumably this is not quite right in context
           //   of shelves and streams; here we hard-wire the Glen law
           PetscReal depth = thk - grid.zlevels[k],
-            pressure = ice.rho * standard_gravity * depth, // FIXME task #7297
+            pressure = ice_rho * standard_gravity * depth, // FIXME task #7297
           // Account for the enhancement factor.
           //   Note, enhancement factor is not used in SSA anyway.
           //   Should we get rid of it completely?  If not, what is most consistent here?
-            BofT    = ice.hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
+            BofT    = flow_law->hardness_parameter(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
           sigma[k] = 2.0 * BofT * pow((*D2_input)(i,j), Sig_pow);
         }
 

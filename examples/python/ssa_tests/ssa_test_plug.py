@@ -55,11 +55,11 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
     #// Use constant hardness
-    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
-    ice.setHardness(B0);
-    ice.setExponent(glen_n);
+    config.set_string("ssa_flow_law", "isothermal_glen")
+    config.set("ice_softness", pow(B0, -glen_n))
+    config.set("Glen_exponent", glen_n)
 
-    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
+    self.modeldata.setPhysics(basal,enthalpyconverter)
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
@@ -102,8 +102,9 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     self.config.set("epsilon_ssafd", 0.0);
 
   def exactSolution(self,i,j,x,y):
-    earth_grav = self.config.get("standard_gravity");
-    f = self.modeldata.ice.rho * earth_grav * H0* dhdx;
+    earth_grav = self.config.get("standard_gravity")
+    ice_rho = self.config.get("ice_density")
+    f = ice_rho * earth_grav * H0* dhdx;
     ynd = y/L
   
     u = 0.5*(f**3)*(L**4)/((B0*H0)**3)*(1-ynd**4);

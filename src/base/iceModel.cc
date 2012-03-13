@@ -36,7 +36,7 @@
 #include "PISMDiagnostic.hh"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
-  : grid(g), config(conf), overrides(conf_overrides), ice(NULL) {
+  : grid(g), config(conf), overrides(conf_overrides) {
 
   if (utIsInit() == 0) {
     if (utInit(NULL) != 0) {
@@ -143,7 +143,6 @@ IceModel::~IceModel() {
   delete basal;
   delete EC;
   delete btu;
-  delete ice;
 
   utTerm(); // Clean up after UDUNITS
 }
@@ -230,7 +229,12 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   // grounded_dragging_floating integer mask
-  ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
+  if(config.get_flag("do_eigen_calving")) {
+    ierr = vMask.create(grid, "mask", true, 3); CHKERRQ(ierr); 
+    // The wider stencil is needed for parallel calculation in iMcalving.cc when asking for mask values at the front (offset+1)
+  } else {
+    ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
+  }
   ierr = vMask.set_attrs("diagnostic", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
   vector<double> mask_values(4);

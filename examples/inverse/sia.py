@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 David Maxwell
+# Copyright (C) 2011, 2012 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -24,7 +24,7 @@ from petsc4py import PETSc
 import PISM
 
 context = PISM.Context()
-config = context.config()
+config = context.config
 
 PISM.set_abort_on_sigint(True)
 
@@ -55,12 +55,11 @@ if PISM.getVerbosityLevel() >3:
   enthalpyconverter.viewConstants(PETSc.Viewer.STDOUT())
 
 if PISM.optionsIsSet("-ssa_glen"):
-  ice = PISM.CustomGlenIce(com,"",config,enthalpyconverter)
-  B_schoof = 3.7e8;     # Pa s^{1/3}; hardness 
-  ice.setHardness(B_schoof)
+  B_schoof = 3.7e8;     # Pa s^{1/3}; hardness
+  config.set_string("ssa_flow_law", "isothermal_glen")
+  config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
 else:
-  ice =  PISM.GPBLDIce(grid.com, "", config,enthalpyconverter)
-ice.setFromOptions()
+  config.set_string("ssa_flow_law", "gpbld")
 
 surface    = PISM.util.standardIceSurfaceVec( grid )
 thickness  = PISM.util.standardIceThicknessVec( grid )
@@ -74,7 +73,7 @@ for var in v:
   var.regrid(bootfile,True)
   pv.add(var)
 
-sia = PISM.SIAFD(grid,ice,enthalpyconverter,config)
+sia = PISM.SIAFD(grid, enthalpyconverter, config)
 sia.init(pv)
 
 zero_sliding = PISM.IceModelVec2V()
@@ -96,8 +95,10 @@ U_s.set_component(0,tmp)
 v.getSurfaceValues(tmp,thickness)
 U_s.set_component(1,tmp)
 
-pio = PISM.PISMIO(grid)
-pio.open_for_writing(output_file,False,True)
+pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+pio.open(output_file,PISM.NC_WRITE,False)
+pio.def_time(grid.config.get_string("time_dimension_name"),
+             grid.config.get_string("calendar"), grid.time.units())
 pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
 pio.close()
 

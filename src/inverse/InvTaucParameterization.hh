@@ -123,3 +123,4 @@ extern InvTaucParamSquare g_InvTaucParamSquare;
 extern InvTaucParamExp g_InvTaucParamExp;
 
 #endif //_INVTAUCPARAM_H_
+

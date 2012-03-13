@@ -56,7 +56,6 @@ public:
 
 protected:
   // related to all (or most) tests
-  ThermoGlenArrIce *tgaIce;
   PetscBool   exactOnly;
   int          testname;
   virtual PetscErrorCode additionalAtStartTimestep();

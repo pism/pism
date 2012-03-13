@@ -162,9 +162,6 @@ set_target_properties(pismudunits
 # Main executables:
 add_executable (pismr pismr.cc)
 
-# Outlet glacier 
-add_executable (pismo regional/pismo.cc)
-
 # Simplified geometry
 add_executable (pisms pisms.cc 
   eismint/iceEISModel.cc
@@ -174,7 +171,7 @@ add_executable (pisms pisms.cc
 add_executable (pismebm coupler/surface/ebm_driver.cc pismebm.cc)
 
 # All of the following are linked against pismbase
-foreach (EXEC pismr pismo pisms pismebm)
+foreach (EXEC pismr pisms pismebm)
   target_link_libraries (${EXEC} pismbase)
 endforeach (EXEC)
 
@@ -196,7 +193,7 @@ add_custom_command (OUTPUT pism_config.nc
 add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
-  pismr pismo pisms pismv pclimate pismebm ## executables
+  pismr pisms pismv pclimate pismebm ## executables
   pismutil pismverif pismbase pismflowlaws pismearth pismudunits # libraries
   RUNTIME DESTINATION ${Pism_BIN_DIR}
   LIBRARY DESTINATION ${Pism_LIB_DIR}
@@ -234,9 +231,6 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (pismtests software_tests/pismtests.cc software_tests/iMtests.cc)
   target_link_libraries (pismtests pismbase)
 
-  add_executable (flowTable software_tests/flowTable.cc base/rheology/flowlaws.cc)
-  target_link_libraries (flowTable pismutil pismrevision)
-
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil pismrevision)
 
@@ -258,7 +252,7 @@ if (Pism_BUILD_EXTRA_EXECS)
   endif()
 
   install (TARGETS
-    ${SIMPLE_EXECS} tryLCbd pismtests flowTable btutest
+    ${SIMPLE_EXECS} tryLCbd pismtests btutest
     RUNTIME DESTINATION ${Pism_BIN_DIR}
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
@@ -267,5 +261,6 @@ endif (Pism_BUILD_EXTRA_EXECS)
 add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (eismint)
+add_subdirectory (regional)
 add_subdirectory (inverse)
 add_subdirectory (pythonbindings)

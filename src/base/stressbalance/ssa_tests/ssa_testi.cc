@@ -42,7 +42,7 @@ public:
                  PetscMPIInt size, NCConfigVariable &c ): 
                  SSATestCase(com,rank,size,c)
   { };
-  
+
 protected:
   virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
 
@@ -83,9 +83,9 @@ PetscErrorCode SSATestCaseI::initializeSSAModel()
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   enthalpyconverter = new EnthalpyConverter(config);
-  CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config, enthalpyconverter);
-  glenIce->setHardness(B_schoof);
-  ice = glenIce;
+
+  config.set_string("ssa_flow_law", "isothermal_glen");
+  config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")));
 
   return 0;
 }
@@ -94,12 +94,12 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
   PetscScalar    **ph, **pbed;
-  
+
   ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
   ierr = thickness.set(H0_schoof); CHKERRQ(ierr);
 
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
-  
+
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
   config.set("epsilon_ssafd", 0.0);  // don't use this lower bound
@@ -108,13 +108,14 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 
   ierr = tauc.get_array(ptauc); CHKERRQ(ierr);
 
-  PetscScalar standard_gravity = config.get("standard_gravity");
+  PetscScalar standard_gravity = config.get("standard_gravity"),
+    ice_rho = config.get("ice_density");
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar y = grid.y[j];
       const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-      const PetscScalar f = ice->rho * standard_gravity * H0_schoof * tan(theta);
+      const PetscScalar f = ice_rho * standard_gravity * H0_schoof * tan(theta);
       ptauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
     }
   }

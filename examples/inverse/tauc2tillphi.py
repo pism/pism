@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 David Maxwell
+# Copyright (C) 2011, 2012 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -168,19 +168,19 @@ class BasalTillStrength:
 
 
 context = PISM.Context()
-config = context.config()
+config = context.config
 
 PISM.set_abort_on_sigint(True)
 
 usage = \
-"""  sia.py -i IN.nc [-o file.nc]
+"""  %s -i IN.nc [-o file.nc]
   where:
     -i      IN.nc is input file in NetCDF format: contains PISM-written model state
   notes:
     * -i is required
-  """
+""" % (sys.argv[0])
 
-PISM.show_usage_check_req_opts(context.com,"sia.py",["-i"],usage)
+PISM.show_usage_check_req_opts(context.com, sys.argv[0], ["-i"], usage)
 
 for o in PISM.OptionsGroup(context.com,"","tauc2tillphi"):
   bootfile = PISM.optionsString("-i","input file")
@@ -198,12 +198,11 @@ if PISM.getVerbosityLevel() >3:
   enthalpyconverter.viewConstants(PETSc.Viewer.STDOUT())
 
 if PISM.optionsIsSet("-ssa_glen"):
-  ice = PISM.CustomGlenIce(com,"",config,enthalpyconverter)
-  B_schoof = 3.7e8;     # Pa s^{1/3}; hardness 
-  ice.setHardness(B_schoof)
+  B_schoof = 3.7e8;     # Pa s^{1/3}; hardness
+  config.set_string("ssa_flow_law", "isothermal_glen")
+  config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
 else:
-  ice =  PISM.GPBLDIce(grid.com, "", config,enthalpyconverter)
-ice.setFromOptions()
+  config.set_string("ssa_flow_law", "gpbld")
 
 surface    = PISM.util.standardIceSurfaceVec( grid )
 thickness  = PISM.util.standardIceThicknessVec( grid )
@@ -224,8 +223,8 @@ for v in [bmr,tillphi,bwat]:
   v.regrid(bootfile,True)
 
 standard_gravity = config.get("standard_gravity")
-ice_rho = ice.rho
-basal_till = BasalTillStrength(grid,ice_rho,standard_gravity)
+ice_rho = config.get("ice_density")
+basal_till = BasalTillStrength(grid, ice_rho, standard_gravity)
 
 basal_till.updateYieldStress(ice_mask, thickness, bwat, bmr, tillphi,tauc)
 tillphi2 = PISM.util.standardTillPhiVec(grid,name="tillphi_2")
@@ -233,8 +232,10 @@ tillphi2.set(0.)
 basal_till.updateTillPhi_algebraic(ice_mask, thickness, bwat, bmr, tauc, tillphi2, tillphi_prev=tillphi)
 
 
-pio = PISM.PISMIO(grid)
-pio.open_for_writing(output_file,False,True)
+pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+pio.open(output_file,PISM.NC_WRITE,False)
+pio.def_time(grid.config.get_string("time_dimension_name"),
+             grid.config.get_string("calendar"), grid.time.units())
 pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
 pio.close()
 

@@ -229,42 +229,52 @@ PetscErrorCode IceModel::bootstrap_3d() {
 
 //! Create a temperature field within ice and bedrock from given surface temperature and geothermal flux maps.
 /*!
-In bootstrapping we need to guess about the temperature within the ice and bedrock if surface temperature
-and geothermal flux maps are given.  This rule is heuristic but seems to work well anyway.  Full 
-bootstrapping will start from the temperature computed by this procedure and then run for a long time 
-(e.g. \f$10^5\f$ years), with fixed geometry, to get closer to thermomechanically coupled equilibrium.
-See the part of the <i>User's Manual</i> on EISMINT-Greenland.
+In bootstrapping we need to guess about the temperature within the ice and
+bedrock if surface temperature and geothermal flux maps are given. This rule is
+heuristic but seems to work well anyway. Full bootstrapping will start from the
+temperature computed by this procedure and then run for a long time (e.g.
+\f$10^5\f$ years), with fixed geometry, to get closer to thermomechanically
+coupled equilibrium. See the part of the <i>User's Manual</i> on
+EISMINT-Greenland.
 
-Consider a horizontal grid point <tt>i,j</tt>.  Suppose the surface temperature \f$T_s\f$ and the geothermal
-flux \f$g\f$ are given at that grid point.  Within the corresponding column, denote the temperature
-by \f$T(z)\f$ for some elevation \f$z\f$ above the base of the ice.  (Note ice corresponds to \f$z>0\f$ while
-bedrock has \f$z<0\f$.)  Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice (at \f$z=H\f$).  
+Consider a horizontal grid point <tt>i,j</tt>. Suppose the surface temperature
+\f$T_s\f$ and the geothermal flux \f$g\f$ are given at that grid point. Within
+the corresponding column, denote the temperature by \f$T(z)\f$ for some
+elevation \f$z\f$ above the base of the ice. (Note ice corresponds to \f$z>0\f$
+while bedrock has \f$z<0\f$.) Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is
+above the top of the ice (at \f$z=H\f$).
 
 Within the ice, set
-	\f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
+\f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
 where \f$\alpha,\beta\f$ are chosen so that
-	\f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
+\f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
 and 
-   \f[\frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
-The point of the second condition is our observation that, in observed ice, the rate of decrease 
-in ice temperature with elevation is significantly decreased at only one quarter of the ice thickness above 
-the base.  
+\f[\frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
 
-The temperature within the ice is not allowed to exceed the pressure-melting temperature.
+The point of the second condition is our observation that, in observed ice, the
+rate of decrease in ice temperature with elevation is significantly decreased
+at only one quarter of the ice thickness above the base.
 
-Note that the above heuristic rule for ice determines \f$T(0)\f$.  Within the bedrock our rule is that 
-the rate of change with depth is exactly the geothermal flux:
-   \f[T(z) = T(0) - \frac{g}{k_r} z.\f]
-Note that \f$z\f$ here is negative, so the temperature increases as one goes down into the bed.
+The temperature within the ice is not allowed to exceed the pressure-melting
+temperature.
+
+Note that the above heuristic rule for ice determines \f$T(0)\f$. Within the
+bedrock our rule is that the rate of change with depth is exactly the
+geothermal flux:
+\f[T(z) = T(0) - \frac{g}{k_r} z.\f]
+Note that \f$z\f$ here is negative, so the temperature increases as one goes
+down into the bed.
 
 FIXME task #7297
- */
+*/
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
 
   PetscScalar *T = new PetscScalar[grid.Mz];
   const bool do_cold = config.get_flag("do_cold_ice_methods");
-  const PetscScalar ice_k = config.get("ice_thermal_conductivity");
+  const PetscScalar ice_k = config.get("ice_thermal_conductivity"),
+    melting_point_temp = config.get("water_melting_point_temperature"),
+    beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity");
 
   if (surface != NULL) {
     ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
@@ -295,7 +305,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       const PetscScalar alpha = (g / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
       for (PetscInt k = 0; k < ks; k++) {
         const PetscScalar depth = HH - grid.zlevels[k];
-        const PetscScalar Tpmp = ice->melting_point_temp - ice->beta_CC_grad * depth;
+        const PetscScalar Tpmp = melting_point_temp - beta_CC_grad * depth;
         const PetscScalar d2 = depth * depth;
 
         T[k] = PetscMin(Tpmp,artm(i,j) + alpha * d2 + beta * d2 * d2);

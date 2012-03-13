@@ -3,6 +3,8 @@
 PISM_PATH=$1
 MPIEXEC=$2
 
+set -x
+
 # Test name:
 echo "Test #26: Cold part of Paterson-Budd flow law regression."
 # The list of files to delete when done.
@@ -10,7 +12,7 @@ files="flowtable.txt diff.txt"
 
 rm -f $files
 
-$PISM_PATH/flowlaw_test -ice_type arr > flowtable.txt
+$PISM_PATH/flowlaw_test -flow_law arr > flowtable.txt
 # compare results
 diff flowtable.txt - > diff.txt <<END-OF-OUTPUT
 flow law:   "arr"

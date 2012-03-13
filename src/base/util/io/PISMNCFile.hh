@@ -19,9 +19,9 @@
 #ifndef _PISMNCWRAPPER_H_
 #define _PISMNCWRAPPER_H_
 
+#include <mpi.h>
 #include <string>
 #include <vector>
-#include <mpi.h>
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:

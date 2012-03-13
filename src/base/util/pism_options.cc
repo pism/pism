@@ -783,13 +783,18 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("count_steps", "count_time_steps"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);
 
+	// evaluates the adaptive timestep based on a CFL criterion with respect to the eigenCalving rate
+  ierr = config.flag_from_option("cfl_eigencalving", "cfl_eigencalving"); CHKERRQ(ierr);
+
+
   // SIA
   ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("gradient", "surface_gradient_method",
                                     "eta,haseloff,mahaffy"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("sia_e", "sia_enhancement_factor"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_e", "ssa_enhancement_factor"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("e_age_coupling", "do_e_age_coupling"); CHKERRQ(ierr);
 
@@ -804,13 +809,13 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssafd"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssafd"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("e_ssa", "ssa_enhancement_factor"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("ssa_dirichlet_bc", "ssa_dirichlet_bc"); CHKERRQ(ierr);
   ierr = config.flag_from_option("cfbc", "calving_front_stress_boundary_condition"); CHKERRQ(ierr);
   ierr = config.flag_from_option("brutal_sliding", "scalebrutalSet"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr);  
+  ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr); 
+ 
 
   // Basal strength
 
@@ -853,6 +858,11 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("nuBedrock", "nuBedrock"); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-nuBedrock", flag);  CHKERRQ(ierr);
+  if (flag)  config.set_flag("nuBedrockSet", true);
+
 
   // Calving
 

@@ -25,6 +25,12 @@
 #include <map>
 #include <vector>
 #include <string>
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
 #include <netcdf.h>
 
 #include "IceGrid.hh"           // Needed for Periodicity enum declaration.
@@ -37,7 +43,7 @@ using namespace std;
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
-struct grid_info;
+class grid_info;
 class LocalInterpCtx;
 class PISMNCFile;
 

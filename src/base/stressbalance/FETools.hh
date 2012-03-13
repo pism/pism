@@ -335,8 +335,6 @@ public:
     return (i-xs)*ym+(j-ys);
   }
   
-  bool is_local_element(PetscInt i, PetscInt j, const IceGrid &g);
-  
   PetscInt xs, //!< x-coordinate of the first element to loop over.
            xm, //!< total number of elements to loop over in the x-direction.
            ys, //!< y-coordinate of the first element to loop over.

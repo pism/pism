@@ -320,7 +320,7 @@ PetscErrorCode IceModel::grid_setup() {
 
     if (ierr != 0) {
       PetscPrintf(grid.com, "PISM ERROR: file %s has neither enthalpy nor temperature in it!\n",
-                  filename.c_str()); CHKERRQ(ierr);
+                  filename.c_str());
 
       ierr = nc.close(); CHKERRQ(ierr);
 
@@ -567,11 +567,9 @@ PetscErrorCode IceModel::set_vars_from_options() {
 //! \brief Decide which ice flow law to use.
 PetscErrorCode IceModel::allocate_flowlaw() {
   PetscErrorCode ierr;
+  string sia_flow_law = config.get_string("sia_flow_law"),
+    ssa_flow_law = config.get_string("ssa_flow_law");
 
-  if (ice != NULL)
-    return 0;
-
-  // Initialize the IceFlowLaw object:
   if (config.get_flag("do_cold_ice_methods") == false) {
     ierr = verbPrintf(2, grid.com,
                       "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
@@ -579,40 +577,34 @@ PetscErrorCode IceModel::allocate_flowlaw() {
                       "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
 
     // new flowlaw which has dependence on enthalpy, not temperature
-    ice = new GPBLDIce(grid.com, "", config, EC);
+    sia_flow_law = "gpbld";
+    ssa_flow_law = "gpbld";
   } else {
     ierr = verbPrintf(2, grid.com,
                       "  doing cold ice methods ...\n"); CHKERRQ(ierr);
 
-
-    // FIXME:  the semantics of IceFlowLaw should be cleared up; lots of PISM
-    //   (e.g. verification and EISMINT II and EISMINT-Greenland) are cold,
-    //   but the really important cases (e.g. SeaRISE-Greenland) are polythermal
-    // in cold case we may have various IceFlowLaw s, e.g. set by derived classes
-
-    IceFlowLawFactory iceFactory(grid.com, NULL, config, EC);
-    // Default ice type:
-    iceFactory.setType(ICE_PB);
+    sia_flow_law = "pb";
+    ssa_flow_law = "pb";
 
     bool flag;
     ierr = PISMOptionsIsSet("-gk", flag); CHKERRQ(ierr);
     if (flag) {
-      ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
+      sia_flow_law = "hybrid";
+      ssa_flow_law = "hybrid";
     }
 
     // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice;
     ierr = PISMOptionsIsSet("-gk_age", flag); CHKERRQ(ierr);
     if (flag) {
+      sia_flow_law = "hybrid";
+      ssa_flow_law = "hybrid";
       config.set_flag("compute_grain_size_using_age", true);
-      ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
     }
 
-    ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
-    ierr = iceFactory.create(&ice); CHKERRQ(ierr);
   }
 
-  // set options specific to this particular ice type:
-  ierr = ice->setFromOptions(); CHKERRQ(ierr);
+  config.set_string("sia_flow_law", sia_flow_law);
+  config.set_string("ssa_flow_law", ssa_flow_law);
 
   return 0;
 }
@@ -660,20 +652,20 @@ PetscErrorCode IceModel::allocate_stressbalance() {
       if (use_ssa_velocity) {
         string ssa_method = config.get_string("ssa_method");
         if( ssa_method == "fd" ) {
-          my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
+          my_stress_balance = new SSAFD(grid, *basal, *EC, config);
         } else if(ssa_method == "fem") {
-          my_stress_balance = new SSAFEM(grid, *basal, *ice, *EC, config);
+          my_stress_balance = new SSAFEM(grid, *basal, *EC, config);
         } else {
           SETERRQ(grid.com, 1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
         }
       } else {
-        my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+        my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
       }
       SSB_Modifier *my_modifier;
       if (do_sia) {
-        my_modifier = new SIAFD(grid, *ice, *EC, config);
+        my_modifier = new SIAFD(grid, *EC, config);
       } else {
-        my_modifier = new SSBM_Trivial(grid, *ice, *EC, config);
+        my_modifier = new SSBM_Trivial(grid, *EC, config);
       }
       // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
       stress_balance = new PISMStressBalance(grid, my_stress_balance,

@@ -64,6 +64,7 @@ public:
     ice_density = config.get("ice_density");
     standard_gravity = config.get("standard_gravity");
     till_c_0 = config.get("till_c_0", "kPa", "Pa");
+    bwat_max = config.get("bwat_max");
   }
 
   virtual ~PISMMohrCoulombYieldStress() {}

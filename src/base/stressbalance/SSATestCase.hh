@@ -22,7 +22,6 @@
 #include "SSA.hh"
 #include "enthalpyConverter.hh"
 #include "basal_resistance.hh"
-#include "flowlaws.hh"
 #include "PISMVars.hh"
 
 //! Helper function for initializing a grid with the given dimensions and periodicity.
@@ -61,14 +60,13 @@ public:
   SSATestCase( MPI_Comm com, PetscMPIInt rank, 
                PetscMPIInt size, NCConfigVariable &c ): 
                   config(c), grid(com,rank,size,config), 
-                  basal(0), ice(0), enthalpyconverter(0), ssa(0),
+                  basal(0), enthalpyconverter(0), ssa(0),
                   report_velocity_scale(secpera)
   {  };
 
   virtual ~SSATestCase()
   {
     delete basal;
-    delete ice;
     delete enthalpyconverter;
     delete ssa;
   }
@@ -97,7 +95,7 @@ protected:
 
   //! Return the value of the exact solution at grid index (i,j) or equivalently
   //! at coordinates (x,y).
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
+  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
     PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
 
   NCConfigVariable &config;
@@ -105,7 +103,6 @@ protected:
 
   // SSA model variables.
   IceBasalResistancePlasticLaw *basal;
-  IceFlowLaw *ice; 
   EnthalpyConverter *enthalpyconverter;
 
   // SSA coefficient variables.
@@ -118,7 +115,6 @@ protected:
   SSA *ssa;
 
   // Scale for converting velocities from their units during computation to human friendly units.
-  
   PetscScalar report_velocity_scale;
 
 };

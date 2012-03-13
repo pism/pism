@@ -7,6 +7,8 @@ PISM_SOURCE_DIR=$3
 EXT=""
 if [ $# -ge 4 ] && [ "$4" == "-python" ]
 then
+  PYTHONEXEC=$5
+  MPIEXEC_COMMAND="$MPIEXEC_COMMAND $PYTHONEXEC"
   PYTHONPATH=${PISM_PATH}
   PISM_PATH="${PISM_SOURCE_DIR}/examples/python/"
   EXT=".py"

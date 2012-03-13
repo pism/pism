@@ -67,6 +67,9 @@ netcdf pism_config {
     pism_config:do_eigen_calving = "false";
     pism_config:do_eigen_calving_doc = "calculate strain rates and related calving rate";
 
+    pism_config:cfl_eigencalving = "false";
+    pism_config:cfl_eigencalving_doc = "apply CFL criterion for eigen-calving rate front retreat";
+
     pism_config:do_thickness_calving = "false";
     pism_config:do_thickness_calving_doc = "ad hoc calving at certain threshold for terminal ice thickness";
 
@@ -114,6 +117,9 @@ netcdf pism_config {
     pism_config:use_temperature_dependent_thermal_conductivity = "no";
     pism_config:use_temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [\\ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice_thermal_conductivity.";
 
+    pism_config:nuBedrockSet = "false";
+    pism_config:nuBedrockSet_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
+
     // parameters:
 
     pism_config:bootstrapping_H_value_no_var = 0.0;
@@ -137,8 +143,8 @@ netcdf pism_config {
     pism_config:bootstrapping_tillphi_value_no_var = 15.0;
     pism_config:bootstrapping_tillphi_value_no_var_doc = "degrees; till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip";
 
-    pism_config:enhancement_factor = 1.0;
-    pism_config:enhancement_factor_doc = "; Flow enhancement factor for SIA";
+    pism_config:sia_enhancement_factor = 1.0;
+    pism_config:sia_enhancement_factor_doc = "; Flow enhancement factor for SIA";
 
     pism_config:ssa_enhancement_factor = 1.0;
     pism_config:ssa_enhancement_factor_doc = "; Flow enhancement factor for SSA";
@@ -237,7 +243,7 @@ netcdf pism_config {
     pism_config:thk_eff_reduced_doc = "; factor by which basal water pressure is reduced by thickness effect";
 
     pism_config:mu_sliding = 0.0;
-    pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. <i>This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.</i>  See Appendix B of \\ref BBssasliding for the dangers in this mechanism.";
+    pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. <i>This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.</i>  See Appendix B of [\\ref BBssasliding] for the dangers in this mechanism.";
 
     pism_config:bed_def_interval_years = 10.0;
     pism_config:bed_def_interval_years_doc = "years; Interval between bed deformation updates";
@@ -259,6 +265,10 @@ netcdf pism_config {
 
     pism_config:calving_at_thickness = 50.0;
     pism_config:calving_at_thickness_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
+
+    pism_config:nuBedrock = 5.0e15;
+    pism_config:nuBedrock_doc = "Pa s; Staggered Viscosity used as side friction parameterization.";
+ 
 
 
     // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
@@ -405,7 +415,7 @@ netcdf pism_config {
     pism_config:Glen_exponent_doc = "; Glen exponent in ice flow law";
 
     pism_config:ice_softness = 4e-25;
-    pism_config:ice_softness_doc = "Pa-3 s-1; ice softness used by CustomGlenIce";
+    pism_config:ice_softness_doc = "Pa-3 s-1; ice softness used by IsothermalGlenIce";
 
     pism_config:Hooke_A = 4.42165e-9;
     pism_config:Hooke_A_doc = "s-1 Pa-3; A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa. See [\\ref Hooke]";
@@ -444,7 +454,13 @@ netcdf pism_config {
     pism_config:Paterson-Budd_critical_temperature_doc = "Kelvin; Paterson-Budd critical temperature, see [\\ref PatersonBudd]";
 
     pism_config:sia_sliding_verification_mode = "no";
-    pism_config:sia_slidingverification_mode_doc = "; Enable 'verification mode' of the SIA sliding code.";
+    pism_config:sia_sliding_verification_mode_doc = "; Enable 'verification mode' of the SIA sliding code.";
+
+    pism_config:sia_flow_law = "gpbld";
+    pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+
+    pism_config:ssa_flow_law = "gpbld";
+    pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
     pism_config:enthalpy_cold_bulge_max = 60270.0;
     pism_config:enthalpy_cold_bulge_max_doc = "J kg-1; = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";

@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -246,7 +246,7 @@ PetscErrorCode BlatterStressBalance::mesh_to_regular_grid() {
 }
 
 
-PetscErrorCode BlatterStressBalance::get_max_2d_velocity(PetscReal &maxu, PetscReal &maxv) {
+PetscErrorCode BlatterStressBalance::get_max_2d_velocity(PetscReal &/*maxu*/, PetscReal &/*maxv*/) {
   // compute in mesh_to_regular_grid()
   return 0;
 }
@@ -305,13 +305,11 @@ PetscErrorCode BlatterStressBalance::extend_the_grid(PetscInt old_Mz) {
 }
 
 PetscErrorCode BlatterStressBalance::compute_basal_frictional_heating() {
-  PetscErrorCode ierr;
   SETERRQ(grid.com, 1, "not implemented");
   return 0;
 }
 
 PetscErrorCode BlatterStressBalance::compute_volumetric_strain_heating() {
-  PetscErrorCode ierr;
   SETERRQ(grid.com, 1, "not implemented");
   return 0;
 }

@@ -59,9 +59,9 @@ PetscErrorCode IceFlowLawFactory::registerType(const char tname[],
 }
 
 
-static PetscErrorCode create_custom(MPI_Comm comm,const char pre[],
-                                    const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (CustomGlenIce)(comm, pre, config, EC);  return 0;
+static PetscErrorCode create_isothermal_glen(MPI_Comm comm,const char pre[],
+                                             const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (IsothermalGlenIce)(comm, pre, config, EC);  return 0;
 }
 static PetscErrorCode create_pb(MPI_Comm comm,const char pre[],
                                 const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
@@ -97,7 +97,7 @@ PetscErrorCode IceFlowLawFactory::registerAll()
 
   PetscFunctionBegin;
   ierr = PetscMemzero(&type_list,sizeof(type_list));CHKERRQ(ierr);
-  ierr = registerType(ICE_CUSTOM, &create_custom); CHKERRQ(ierr);
+  ierr = registerType(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen); CHKERRQ(ierr);
   ierr = registerType(ICE_PB,     &create_pb);     CHKERRQ(ierr);
   ierr = registerType(ICE_GPBLD,  &create_gpbld);  CHKERRQ(ierr);
   ierr = registerType(ICE_HOOKE,  &create_hooke);  CHKERRQ(ierr);
@@ -147,16 +147,14 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
   if (flg) {
     ierr = setType(ICE_HYBRID);CHKERRQ(ierr);
   }
-  ierr = PetscOptionsBegin(comm,prefix,"IceFlowLawFactory options","IceFlowLaw");CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(comm, prefix, "IceFlowLawFactory options", "IceFlowLaw");CHKERRQ(ierr);
   {
-    ierr = PetscOptionsList("-ice_type","Ice type","IceFlowLawFactory::setType",
+    ierr = PetscOptionsList("-flow_law","Flow law type","IceFlowLawFactory::setType",
                             type_list,type_name,my_type_name,sizeof(my_type_name),&flg);CHKERRQ(ierr);
     if (flg) {ierr = setType(my_type_name);CHKERRQ(ierr);}
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
 
-//  ierr = PetscPrintf(comm,"IceFlowLawFactory::type_name=%s at end of IceFlowLawFactory::setFromOptions()\n",
-//                     type_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
