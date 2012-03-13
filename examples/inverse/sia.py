@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 David Maxwell
+# Copyright (C) 2011, 2012 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -73,7 +73,7 @@ for var in v:
   var.regrid(bootfile,True)
   pv.add(var)
 
-sia = PISM.SIAFD(grid,ice,enthalpyconverter,config)
+sia = PISM.SIAFD(grid, enthalpyconverter, config)
 sia.init(pv)
 
 zero_sliding = PISM.IceModelVec2V()

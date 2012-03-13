@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 David Maxwell
+# Copyright (C) 2011, 2012 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -168,19 +168,19 @@ class BasalTillStrength:
 
 
 context = PISM.Context()
-config = context.config()
+config = context.config
 
 PISM.set_abort_on_sigint(True)
 
 usage = \
-"""  sia.py -i IN.nc [-o file.nc]
+"""  %s -i IN.nc [-o file.nc]
   where:
     -i      IN.nc is input file in NetCDF format: contains PISM-written model state
   notes:
     * -i is required
-  """
+""" % (sys.argv[0])
 
-PISM.show_usage_check_req_opts(context.com,"sia.py",["-i"],usage)
+PISM.show_usage_check_req_opts(context.com, sys.argv[0], ["-i"], usage)
 
 for o in PISM.OptionsGroup(context.com,"","tauc2tillphi"):
   bootfile = PISM.optionsString("-i","input file")
@@ -223,8 +223,8 @@ for v in [bmr,tillphi,bwat]:
   v.regrid(bootfile,True)
 
 standard_gravity = config.get("standard_gravity")
-ice_rho = ice.rho
-basal_till = BasalTillStrength(grid,ice_rho,standard_gravity)
+ice_rho = config.get("ice_density")
+basal_till = BasalTillStrength(grid, ice_rho, standard_gravity)
 
 basal_till.updateYieldStress(ice_mask, thickness, bwat, bmr, tillphi,tauc)
 tillphi2 = PISM.util.standardTillPhiVec(grid,name="tillphi_2")
