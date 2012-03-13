@@ -128,10 +128,10 @@ PetscErrorCode SSATestCase::init(PetscInt Mx, PetscInt My, SSAFactory ssafactory
   ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssafd"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssafd"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence"); CHKERRQ(ierr);
-  
+
   // Subclass builds grid.
   ierr = initializeGrid(Mx,My);
-  
+
   // Subclass builds ice flow law, basal resistance, etc.
   ierr = initializeSSAModel(); CHKERRQ(ierr);
 
@@ -139,7 +139,7 @@ PetscErrorCode SSATestCase::init(PetscInt Mx, PetscInt My, SSAFactory ssafactory
   ierr = buildSSACoefficients(); CHKERRQ(ierr);
 
   // Allocate the actual SSA solver.
-  ssa = ssafactory(grid, *basal, *ice, *enthalpyconverter, config);
+  ssa = ssafactory(grid, *basal, *enthalpyconverter, config);
   ierr = ssa->init(vars); CHKERRQ(ierr); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.

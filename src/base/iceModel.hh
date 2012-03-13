@@ -190,8 +190,6 @@ protected:
     &overrides;			 //!< flags and parameters overriding config, see -config_override
   NCGlobalAttributes    global_attributes;
 
-  IceFlowLaw            *ice;
-
   PISMYieldStress *basal_yield_stress;
   IceBasalResistancePlasticLaw *basal;
 

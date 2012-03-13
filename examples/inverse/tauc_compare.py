@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 try:
   import netCDF4 as netCDF
 except:
@@ -25,7 +27,12 @@ parser.add_option("-e","--tauc_error_cap",type='float',default=0.2,
 
 (options, args) = parser.parse_args()
 
-ds = netCDF.Dataset(options.input_file)
+try:
+  ds = netCDF.Dataset(options.input_file)
+except:
+    print('ERROR: option -i is required')
+    parser.print_help()
+    exit(0)
 
 tauc = ds.variables['tauc'][...].squeeze()
 tauc_true = ds.variables['tauc_true'][...].squeeze()

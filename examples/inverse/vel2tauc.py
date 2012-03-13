@@ -73,7 +73,7 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
       md = self.modeldata
       tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
       self.tauc_param = tauc_params[tauc_param_type]
-      return PISM.InvSSAForwardProblem(md.grid,md.basal,md.ice,md.enthalpyconverter,self.tauc_param,self.config)
+      return PISM.InvSSAForwardProblem(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
@@ -90,7 +90,7 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
   
     # variables mask and surface are computed from the geometry previously read
     sea_level = 0 # FIXME setFromOption?
-    gc = PISM.GeometryCalculator(sea_level,self.modeldata.ice,self.config)
+    gc = PISM.GeometryCalculator(sea_level, self.config)
     gc.compute(bed,thickness,mask,surface)
 
     if self.is_regional:
@@ -150,7 +150,7 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
     vecs  = self.modeldata.vecs
     tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
     self.tauc_param = tauc_params[tauc_param_type]
-    return PISM.InvSSAForwardProblem(md.grid,md.basal,md.ice,md.enthalpyconverter,self.tauc_param,self.config)
+    return PISM.InvSSAForwardProblem(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
 
 
   def write(self,filename,append=False):

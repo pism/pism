@@ -22,6 +22,7 @@
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
+#include "flowlaws.hh"
 
 class PISMVars;
 class IceFlowLaw;
@@ -32,10 +33,9 @@ class IceBasalResistancePlasticLaw;
 class ShallowStressBalance : public PISMComponent_Diag
 {
 public:
-  ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b, 
-                       IceFlowLaw &i, EnthalpyConverter &e,
-                       const NCConfigVariable &conf)
-    : PISMComponent_Diag(g, conf), basal(b), ice(i), EC(e)
+  ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b,
+                       EnthalpyConverter &e, const NCConfigVariable &conf)
+    : PISMComponent_Diag(g, conf), basal(b), flow_law(NULL), EC(e)
   {
     vel_bc = NULL; bc_locations = NULL; variables = NULL;
     max_u = max_v = 0.0;
@@ -52,7 +52,7 @@ public:
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &locations,
                                                  IceModelVec2V &velocities)
-  { 
+  {
     vel_bc = &velocities;
     bc_locations = &locations;
     return 0;
@@ -93,13 +93,15 @@ public:
   virtual PetscErrorCode stdout_report(string &result)
   { result = ""; return 0; }
 
+  IceFlowLaw* get_flow_law()
+  { return flow_law; }
 protected:
   virtual PetscErrorCode allocate();
 
   PetscReal sea_level;
   PISMVars *variables;
   IceBasalResistancePlasticLaw &basal;
-  IceFlowLaw &ice;
+  IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
 
   IceModelVec2V velocity, *vel_bc;
@@ -119,9 +121,8 @@ class SSB_Trivial : public ShallowStressBalance
 {
 public:
   SSB_Trivial(IceGrid &g, IceBasalResistancePlasticLaw &b,
-              IceFlowLaw &i, EnthalpyConverter &e,
-              const NCConfigVariable &conf)
-    : ShallowStressBalance(g, b, i, e, conf) {}
+              EnthalpyConverter &e, const NCConfigVariable &conf)
+    : ShallowStressBalance(g, b, e, conf) {}
   virtual ~SSB_Trivial() {}
   virtual PetscErrorCode update(bool fast);
 };

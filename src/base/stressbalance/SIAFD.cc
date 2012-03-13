@@ -22,9 +22,14 @@
 #include "enthalpyConverter.hh"
 #include "PISMVars.hh"
 #include "PISMProf.hh"
+#include "flowlaw_factory.hh"
 
 SIAFD::~SIAFD() {
   delete bed_smoother;
+  if (flow_law != NULL) {
+    delete flow_law;
+    flow_law = NULL;
+  }
 }
 
 //! \brief Allocate the SIAFD module.
@@ -56,6 +61,15 @@ PetscErrorCode SIAFD::allocate() {
   bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
 
   second_to_kiloyear = convert(1, "second", "1000 years");
+
+  {
+    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
+
+    ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
+
+    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
+    ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -204,7 +218,7 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
 PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
 
-  const PetscScalar n = ice.exponent(), // presumably 3.0
+  const PetscScalar n = flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
@@ -455,21 +469,22 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   PetscScalar *delta_ij;
   delta_ij = new PetscScalar[grid.Mz];
 
-  const double enhancement_factor = config.get("enhancement_factor"),
+  const double enhancement_factor = flow_law->enhancement_factor(),
     constant_grain_size = config.get("constant_grain_size"),
-    standard_gravity = config.get("standard_gravity");
+    standard_gravity = config.get("standard_gravity"),
+    ice_rho = config.get("ice_density");
 
   bool compute_grain_size_using_age = config.get_flag("compute_grain_size_using_age");
 
   // some flow laws use grainsize, and even need age to update grainsize
   if (compute_grain_size_using_age && (!config.get_flag("do_age"))) {
     PetscPrintf(grid.com,
-                "PISM ERROR in IceModel::velocitySIAStaggered(): do_age not set but\n"
+                "PISM ERROR in SIAFD::compute_diffusive_flux(): do_age not set but\n"
                 "age is needed for grain-size-based flow law ...  ENDING! ...\n\n");
     PISMEnd();
   }
 
-  const bool use_age = (IceFlowLawUsesGrainSize(&ice) &&
+  const bool use_age = (IceFlowLawUsesGrainSize(flow_law) &&
                         compute_grain_size_using_age &&
                         config.get_flag("do_age"));
 
@@ -544,7 +559,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
           PetscReal depth = thk - grid.zlevels[k]; // FIXME task #7297
           // pressure added by the ice (i.e. pressure difference between the
           // current level and the top of the column)
-          const PetscScalar pressure = ice.rho * standard_gravity * depth;
+          const PetscScalar pressure = ice_rho * standard_gravity * depth;
 
           PetscScalar flow, grainsize = constant_grain_size;
           if (use_age) {
@@ -553,7 +568,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
           // If the flow law does not use grain size, it will just ignore it,
           // no harm there
           PetscScalar E = 0.5 * (E_ij[k] + E_offset[k]);
-          flow = ice.flow_from_enth(alpha * pressure, E, pressure, grainsize);
+          flow = flow_law->flow(alpha * pressure, E, pressure, grainsize);
 
           delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 
@@ -746,8 +761,8 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
 
   MaskQuery M(*mask);
 
-  double enhancement_factor = config.get("enhancement_factor"),
-    n_glen  = ice.exponent(),
+  double enhancement_factor = flow_law->enhancement_factor(),
+    n_glen  = flow_law->exponent(),
     Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
     e_to_a_power = pow(enhancement_factor,-1/n_glen);
 
@@ -776,7 +791,7 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
           PetscReal pressure = EC.getPressureFromDepth(depth);
 
           PetscReal sigma_sia = delta_ij[k] * alpha_squared * pressure,
-            BofT = ice.hardnessParameter_from_enth(E[k], pressure) * e_to_a_power,
+            BofT = flow_law->hardness_parameter(E[k], pressure) * e_to_a_power,
             D2_ssa = (*D2_input)(i,j);
 
           if (M.grounded_ice(i, j)) {

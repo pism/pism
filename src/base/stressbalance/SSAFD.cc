@@ -20,12 +20,12 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "pism_options.hh"
+#include "flowlaw_factory.hh"
 
 SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                IceFlowLaw &i, EnthalpyConverter &ec,
-                const NCConfigVariable &c)
+                  EnthalpyConverter &ec, const NCConfigVariable &c)
 {
-  return new SSAFD(g,b,i,ec,c);
+  return new SSAFD(g,b,ec,c);
 }
 
 
@@ -54,7 +54,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
 
-  const PetscScalar power = 1.0 / ice.exponent();
+  const PetscScalar power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
   ierr = hardness.create(grid, "hardness", false); CHKERRQ(ierr);
@@ -80,6 +80,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   nuh_viewer = PETSC_NULL;
 
   dump_system_matlab = false;
+
   return 0;
 }
 
@@ -166,7 +167,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   Mask M;
 
   const double standard_gravity = config.get("standard_gravity"),
-    ocean_rho = config.get("sea_water_density");
+    ocean_rho = config.get("sea_water_density"),
+    ice_rho = config.get("ice_density");
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
@@ -231,20 +233,20 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             if (M.ice_free(M_s)) bMM = 0;
           }
 
-          const double ice_pressure = ice.rho * standard_gravity * H_ij,
+          const double ice_pressure = ice_rho * standard_gravity * H_ij,
                        H_ij2        = H_ij*H_ij;
           double ocean_pressure,
                  h_ij = 0.0,
                  tdx  = taud(i,j).u,
                  tdy  = taud(i,j).v;
 
-          if ((*bed)(i,j) < (sea_level - (ice.rho / ocean_rho) * H_ij)) {
+          if ((*bed)(i,j) < (sea_level - (ice_rho / ocean_rho) * H_ij)) {
             //calving front boundary condition for floating shelf
-            ocean_pressure = 0.5 * ice.rho * standard_gravity * (1 - (ice.rho / ocean_rho))*H_ij2;
+            ocean_pressure = 0.5 * ice_rho * standard_gravity * (1 - (ice_rho / ocean_rho))*H_ij2;
             // this is not really the ocean_pressure, but the difference between
             // ocean_pressure and isotrop.normal stresses (=pressure) from within
             // the ice
-	    h_ij = (1.0 - ice.rho / ocean_rho) * H_ij;
+	    h_ij = (1.0 - ice_rho / ocean_rho) * H_ij;
 						
 	    // what is the force balance of an iceshelf facing a bedrock wall?! 
 	    // this is not relevant as long as we ask only for ice_free_ocean neighbors
@@ -257,14 +259,14 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             if( (*bed)(i,j) >= sea_level) {
               // boundary condition for a "cliff" (grounded ice next to
               // ice-free ocean) or grounded margin.
-              ocean_pressure = 0.5 * ice.rho * standard_gravity * H_ij2;
+              ocean_pressure = 0.5 * ice_rho * standard_gravity * H_ij2;
               // this is not 'zero' because the isotrop.normal stresses
               // (=pressure) from within the ice figures on RHS
 	      h_ij = H_ij;
             } else {
               // boundary condition for marine terminating glacier
-              ocean_pressure = 0.5 * ice.rho * standard_gravity *
-                (H_ij2 - (ocean_rho / ice.rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
+              ocean_pressure = 0.5 * ice_rho * standard_gravity *
+                (H_ij2 - (ocean_rho / ice_rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
 	      h_ij = H_ij + (*bed)(i,j) - sea_level;
             }
           }
@@ -1029,7 +1031,7 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        result(i,j,o) = ice.averagedHardness_from_enth(H, grid.kBelowHeight(H),
+        result(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
                                                        &grid.zlevels[0], E); CHKERRQ(ierr);
       } // o
     }   // j
@@ -1099,8 +1101,8 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar ssa_enhancement_factor = config.get("ssa_enhancement_factor"),
-    n_glen = ice.exponent(),
+  PetscScalar ssa_enhancement_factor = flow_law->enhancement_factor(),
+    n_glen = flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
   const PetscScalar dx = grid.dx, dy = grid.dy;
@@ -1133,7 +1135,7 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
           v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
         }
 
-        result(i,j,o) = H * ice.effectiveViscosity(hardness(i,j,o), u_x, u_y, v_x, v_y);
+        result(i,j,o) = H * flow_law->effective_viscosity(hardness(i,j,o), u_x, u_y, v_x, v_y);
 
         if (! finite(result(i,j,o)) || false) {
           ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));

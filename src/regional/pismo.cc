@@ -53,8 +53,6 @@ the modeled outlet glacier.  See the PSForceThickness surface model modifier
 class.
  */
 
-
-
 //! \brief A version of the PISM core class (IceModel) which knows about the
 //! no_model_mask and its semantics.
 class IceRegionalModel : public IceModel {
@@ -223,15 +221,15 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   ShallowStressBalance *my_stress_balance;
   SSB_Modifier *modifier;
   if (do_sia) {
-    modifier = new SIAFD_Regional(grid, *ice, *EC, config);
+    modifier = new SIAFD_Regional(grid, *EC, config);
   } else {
-    modifier = new SSBM_Trivial(grid, *ice, *EC, config);
+    modifier = new SSBM_Trivial(grid, *EC, config);
   }
 
   if (use_ssa_velocity) {
-    my_stress_balance = new SSAFD_Regional(grid, *basal, *ice, *EC, config);
+    my_stress_balance = new SSAFD_Regional(grid, *basal, *EC, config);
   } else {
-    my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+    my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
   }
   
   // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.

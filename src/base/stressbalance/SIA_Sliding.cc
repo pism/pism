@@ -20,6 +20,7 @@
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
 #include "PISMVars.hh"
+#include "flowlaw_factory.hh"
 
 PetscErrorCode SIA_Sliding::allocate() {
   PetscErrorCode ierr;
@@ -35,6 +36,15 @@ PetscErrorCode SIA_Sliding::allocate() {
   }
 
   ierr = work_2d.create(grid, "work_vector_2d", true, WIDE_STENCIL); CHKERRQ(ierr);
+
+  {
+    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
+
+    ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
+
+    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
+    ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -89,8 +99,9 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
 
   ierr = D2.set(0.0); CHKERRQ(ierr);
 
-  double mu_sliding = config.get("mu_sliding");
-  double minimum_temperature_for_sliding = config.get("minimum_temperature_for_sliding");
+  double mu_sliding = config.get("mu_sliding"),
+    minimum_temperature_for_sliding = config.get("minimum_temperature_for_sliding"),
+    ice_rho = config.get("ice_density");
 
   MaskQuery m(*mask);
 
@@ -136,7 +147,7 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
         // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
         // in ice streams this result will be *overwritten* by
         //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-        const PetscScalar P = ice.rho * standard_gravity * H;
+        const PetscScalar P = ice_rho * standard_gravity * H;
         basal_frictional_heating(i,j) = - (P * myhx) * velocity(i,j).u - (P * myhy) * velocity(i,j).v;
       }
     }
@@ -185,6 +196,8 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
                                           PetscScalar H, PetscScalar T,
                                           PetscScalar /*alpha*/, PetscScalar mu,
                                           PetscScalar min_T) const {
+  PetscReal ice_rho = config.get("ice_density"),
+    beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity");
 
   if (verification_mode) {
     // test 'E' mode
@@ -205,7 +218,7 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
       const PetscScalar mu_max = 2.5e-11; /* Pa^-1 m s^-1; max sliding coeff */
       PetscScalar muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot)
         * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
-      return muE * ice.rho * standard_gravity * H;
+      return muE * ice_rho * standard_gravity * H;
     } else
       return 0.0;
   }
@@ -216,10 +229,10 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
     EC.getEnthPermissive(T, 0.0, pressure, E);
 
     if (eisII_experiment == "G") {
-      return Bfactor * ice.rho * standard_gravity * H;
+      return Bfactor * ice_rho * standard_gravity * H;
     } else if (eisII_experiment == "H") {
       if (EC.isTemperate(E, pressure)) {
-        return Bfactor * ice.rho * standard_gravity * H; // ditto case G
+        return Bfactor * ice_rho * standard_gravity * H; // ditto case G
       } else {
         return 0.0;
       }
@@ -228,8 +241,8 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
   }
 
   // the "usual" case:
-  if (T + ice.beta_CC_grad * H > min_T) {
-    const PetscScalar p_over = ice.rho * standard_gravity * H;
+  if (T + beta_CC_grad * H > min_T) {
+    const PetscScalar p_over = ice_rho * standard_gravity * H;
     return mu * p_over;
   } else {
     return 0;
@@ -270,7 +283,7 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
 PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
 
-  const PetscScalar n = ice.exponent(), // presumably 3.0
+  const PetscScalar n = flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);

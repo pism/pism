@@ -22,10 +22,9 @@
 #include "basal_resistance.hh"
 
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                IceFlowLaw &i, EnthalpyConverter &ec,
-                const NCConfigVariable &c)
+                   EnthalpyConverter &ec, const NCConfigVariable &c)
 {
-  return new SSAFEM(g,b,i,ec,c);
+  return new SSAFEM(g,b,ec,c);
 }
 
 //! \brief Allocating SSAFEM-specific objects; called by the constructor.
@@ -56,7 +55,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
   feStore = new FEStoreNode[FEQuadrature::Nq*nElements];
 
   // hardav IceModelVec2S is not used (so far).
-  const PetscScalar power = 1.0 / ice.exponent();
+  const PetscScalar power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
   ierr = hardav.create(grid, "hardav", true); CHKERRQ(ierr);
@@ -210,16 +209,18 @@ PetscErrorCode SSAFEM::setup()
                    Mz = grid.Mz;
   PetscErrorCode   ierr;
 
+  PetscReal ice_rho = config.get("ice_density");
+
   for(q=0;q<FEQuadrature::Nq;q++)
   {
     Enth_q[q] = new PetscReal[Mz];
   }
 
-  GeometryCalculator gc(sea_level, ice, config);
+  GeometryCalculator gc(sea_level, config);
 
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
   bool driving_stress_explicit;
-  if( surface != NULL) {
+  if(surface != NULL) {
     driving_stress_explicit = false;
     ierr = surface->get_array(h);CHKERRQ(ierr);
   } else {
@@ -262,8 +263,8 @@ PetscErrorCode SSAFEM::setup()
           feS[q].driving_stress.u = ds_xq[q];
           feS[q].driving_stress.v = ds_yq[q];
         } else {
-          feS[q].driving_stress.u = -ice.rho*earth_grav*Hq[q]*hxq[q];
-          feS[q].driving_stress.v = -ice.rho*earth_grav*Hq[q]*hyq[q];
+          feS[q].driving_stress.u = -ice_rho*earth_grav*Hq[q]*hxq[q];
+          feS[q].driving_stress.v = -ice_rho*earth_grav*Hq[q]*hyq[q];
         }
         // feS[q].hx = hxq[q];
         // feS[q].hy = hyq[q];
@@ -299,10 +300,10 @@ PetscErrorCode SSAFEM::setup()
         }
       }
 
-      // Now, for each column over a quadrature point, find the averagedHardness.
+      // Now, for each column over a quadrature point, find the averaged_hardness.
       for (q=0; q<FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
-        feS[q].B = ice.averagedHardness_from_enth(feS[q].H, grid.kBelowHeight(feS[q].H),
+        feS[q].B = flow_law->averaged_hardness(feS[q].H, grid.kBelowHeight(feS[q].H),
                                                   &grid.zlevels[0], Enth_q[q]);
       }
     }
@@ -346,7 +347,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
     *nuH = strength_extension->get_notional_strength();
     if (dNuH) *dNuH = 0;
   } else {
-    ice.effectiveViscosity_with_derivative(feS->B, Du, nuH, dNuH);
+    flow_law->effective_viscosity_with_derivative(feS->B, Du, nuH, dNuH);
     *nuH  *= feS->H;
     if (dNuH) *dNuH *= feS->H;
     if(*nuH < m_epsilon_ssa) {

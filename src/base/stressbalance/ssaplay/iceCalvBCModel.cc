@@ -289,7 +289,8 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(Vec rhs) {
   PetscScalar  **h, **H, **taudx, **taudy,
                **cfmask, **ncf[2];
 
-  double ocean_rho = config.get("sea_water_density");
+  double ocean_rho = config.get("sea_water_density"),
+    ice_rho = config.get("ice_density");
 
   // first, find and store normal direction to calving front;
   //   used in forming both rhs and A; also get access to it here
@@ -297,7 +298,7 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(Vec rhs) {
   ierr = vsmoothCFmask.get_array(cfmask); CHKERRQ(ierr);
   ierr = vnCF[0].get_array(ncf[0]); CHKERRQ(ierr);
   ierr = vnCF[1].get_array(ncf[1]); CHKERRQ(ierr);
-  const PetscScalar Gamma = 0.5 * (1.0 - ice->rho / ocean_rho) * ice->rho * standard_gravity;
+  const PetscScalar Gamma = 0.5 * (1.0 - ice_rho / ocean_rho) * ice_rho * standard_gravity;
 
   // clear right-hand side
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);

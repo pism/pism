@@ -47,10 +47,10 @@ public:
 class GeometryCalculator
 {
 public:
-  GeometryCalculator(PetscReal seaLevel, const IceFlowLaw &ice, const NCConfigVariable &config)
+  GeometryCalculator(PetscReal seaLevel, const NCConfigVariable &config)
   {
     sea_level = seaLevel;
-    alpha = 1 - ice.rho / config.get("sea_water_density");
+    alpha = 1 - config.get("ice_density") / config.get("sea_water_density");
     is_dry_simulation = config.get_flag("is_dry_simulation");
   }
 

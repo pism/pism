@@ -53,6 +53,8 @@ int PISMNC4File::open(string fname, int mode) {
 
   return stat;
 #else
+  (void) fname;
+  (void) mode;
   return -1;
 #endif
 }
@@ -71,6 +73,7 @@ int PISMNC4File::create(string fname) {
 
   return stat;
 #else
+  (void) fname;
   return -1;
 #endif
 }

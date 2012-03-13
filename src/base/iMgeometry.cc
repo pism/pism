@@ -62,7 +62,7 @@ PetscErrorCode IceModel::update_mask() {
   PetscReal sea_level;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
-  GeometryCalculator gc(sea_level, *ice, config);
+  GeometryCalculator gc(sea_level, config);
   MaskQuery mask(vMask);
 
   ierr =    vH.begin_access();    CHKERRQ(ierr);
@@ -92,7 +92,7 @@ PetscErrorCode IceModel::update_surface_elevation() {
   PetscReal sea_level;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
-  GeometryCalculator gc(sea_level, *ice, config);
+  GeometryCalculator gc(sea_level, config);
 
   ierr =    vh.begin_access();    CHKERRQ(ierr);
   ierr =    vH.begin_access();    CHKERRQ(ierr);

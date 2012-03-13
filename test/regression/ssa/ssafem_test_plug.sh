@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # SSAFEM plug flow regression test
 
@@ -22,6 +22,7 @@ files="foo.nc foo.nc~ test-out.txt"
 rm -f $files
 
 set -e
+set -x
 
 OPTS="-verbose 1 -ssa_method fem -o foo.nc"
 

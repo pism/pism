@@ -52,8 +52,8 @@ PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **,
 PetscErrorCode SSAFEJacobian(DMDALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
 
 //! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
-                  IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
+SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &,
+                    EnthalpyConverter &, const NCConfigVariable &);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
@@ -65,9 +65,9 @@ class SSAFEM : public SSA
   friend PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, PISMVector2 **, SSAFEM_SNESCallbackData *);
   friend PetscErrorCode SSAFEJacobian(DMDALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
 public:
-  SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
-         const NCConfigVariable &c) :
-    SSA(g,b,i,e,c), element_index(g)
+  SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b,
+         EnthalpyConverter &e, const NCConfigVariable &c)
+    : SSA(g,b,e,c), element_index(g)
   {
     quadrature.init(grid);
     PetscErrorCode ierr = allocate_fem();

@@ -387,8 +387,8 @@ finite-element function on element (\a i,\a j) with global degrees of freedom \a
 Each entry of \a Dv is an array of three numbers: 
 \f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]\f].
 */
-void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof,                                              
-                                             PISMVector2 const*const*xg, PISMVector2 *vals, PetscReal (*Dv)[3] )
+void FEQuadrature::computeTrialFunctionValues(PetscInt i, PetscInt j, const FEDOFMap &dof,
+                                              PISMVector2 const*const* xg, PISMVector2 *vals, PetscReal (*Dv)[3] )
 {
   dof.extractLocalDOFs(i,j,xg,m_tmpVector);
   computeTrialFunctionValues(m_tmpVector,vals,Dv);
@@ -407,10 +407,10 @@ const PetscReal FEQuadrature::quadWeights[FEQuadrature::Nq]  = {1,1,1,1};
 
 
 //! Legacy code that needs to vanish. \todo Make it go away.
-PetscBool Floating(const IceFlowLaw &ice, PetscScalar ocean_rho,
-                           PetscReal H, PetscReal bed)
+PetscBool Floating(PetscReal ice_rho, PetscReal ocean_rho,
+                   PetscReal H, PetscReal bed)
 {
-  return ice.rho*H + ocean_rho*bed < 0 ? PETSC_TRUE : PETSC_FALSE;
+  return ice_rho*H + ocean_rho*bed < 0 ? PETSC_TRUE : PETSC_FALSE;
 }
 
 

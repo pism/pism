@@ -441,8 +441,8 @@ int main(int argc, char *argv[]) {
     // We use SIA_Nonsliding and not SIAFD here because we need the z-component
     // of the ice velocity, which is computed using incompressibility of ice in
     // PISMStressBalance::compute_vertical_velocity().
-    SIAFD *sia = new SIAFD(grid, ice, EC, config);
-    SSB_Trivial *trivial_stress_balance = new SSB_Trivial(grid, basal, ice, EC, config);
+    SIAFD *sia = new SIAFD(grid, EC, config);
+    SSB_Trivial *trivial_stress_balance = new SSB_Trivial(grid, basal, EC, config);
 
     PISMStressBalance stress_balance(grid,
                                      trivial_stress_balance, sia,

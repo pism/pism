@@ -26,7 +26,8 @@
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "enthalpyConverter.hh"
-
+#include "ShallowStressBalance.hh"
+#include "SSB_Modifier.hh"
 
 PetscErrorCode IceModel::init_diagnostics() {
 
@@ -138,7 +139,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   vars[0].init_2d("hardav", grid);
 
-  const PetscScalar power = 1.0 / model->ice->exponent();
+  const PetscScalar power = 1.0 / model->config.get("Glen_exponent");
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
 
@@ -155,6 +156,15 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   const PetscScalar fillval = -0.01;
   PetscScalar *Eij; // columns of enthalpy values
 
+  IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->get_flow_law();
+  if (flow_law == NULL) {
+    flow_law = model->stress_balance->get_ssb_modifier()->get_flow_law();
+    if (flow_law == NULL) {
+      PetscPrintf(grid.com, "ERROR: Can't compute vertically-averaged hardness: no flow law is used.\n");
+      PISMEnd();
+    }
+  }
+
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "hardav", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
@@ -167,8 +177,8 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
       ierr = model->Enth3.getInternalColumn(i,j,&Eij); CHKERRQ(ierr);
       const PetscScalar H = model->vH(i,j);
       if (H > 0.0) {
-        (*result)(i,j) = model->ice->averagedHardness_from_enth(H, grid.kBelowHeight(H),
-                                                                &grid.zlevels[0], Eij);
+        (*result)(i,j) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
+                                               &grid.zlevels[0], Eij);
       } else { // put negative value below valid range
         (*result)(i,j) = fillval;
       }

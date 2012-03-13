@@ -45,8 +45,10 @@ class test_linear(PISM.ssa.SSAExactTestCase):
            config.get("pseudo_plastic_uthreshold","1/year","1/second"));
 
     enthalpyconverter = PISM.EnthalpyConverter(config)
-    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter)
-    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
+
+    config.set_string("ssa_flow_law", "isothermal_glen")
+
+    self.modeldata.setPhysics(basal,enthalpyconverter)
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()

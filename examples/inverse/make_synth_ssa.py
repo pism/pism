@@ -69,18 +69,18 @@ if __name__ == '__main__':
   PISM.verbPrintf(2,PISM.Context().com,"SSA forward model.\n")
   PISM.stop_on_version_option()
   usage = \
-"""  ssa_forward.py -i IN.nc -Mx number -My number [-o file.nc]
+"""  %s -i IN.nc -Mx number -My number [-o file.nc]
   or (at python prompt)
-    run ssa_forward -i IN.nc -Mx number -My number [-o file.nc]
+    run %s -i IN.nc -Mx number -My number [-o file.nc]
   where:
     -i      IN.nc is input file in NetCDF format: contains PISM-written model state
     -Mx     number of grid points in the x direction
     -My     number of grid points in the y direction
   notes:
     * -i is required
-  """
+  """ % (sys.argv[0], sys.argv[0])
 
-  PISM.show_usage_check_req_opts(com,"ssa_forward",["-i"],usage)
+  PISM.show_usage_check_req_opts(com, sys.argv[0], ["-i"], usage)
 
   config = context.config
   for o in PISM.OptionsGroup(com,"","SSA Forward"):

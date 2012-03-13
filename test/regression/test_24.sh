@@ -10,7 +10,7 @@ files="flowtable.txt diff.txt"
 
 rm -f $files
 
-$PISM_PATH/flowlaw_test -ice_type hooke > flowtable.txt
+$PISM_PATH/flowlaw_test -flow_law hooke > flowtable.txt
 # compare results
 diff flowtable.txt - > diff.txt <<END-OF-OUTPUT
 flow law:   "hooke"

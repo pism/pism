@@ -340,17 +340,10 @@ PetscErrorCode IceMISMIPModel::allocate_flowlaw() {
   PetscErrorCode ierr;
 
   if (config.get_flag("do_cold_ice_methods") == true) {
-    IceFlowLawFactory iceFactory(grid.com, NULL, config, EC);
-    iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice density, hardness, etc.
-
-    ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
-    ierr = iceFactory.create(&ice); CHKERRQ(ierr);
+    config.set_string("ssa_flow_law", "isothermal_glen");
   } else {
     ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
   }
-
-  // set options specific to this particular ice type:
-  ierr = ice->setFromOptions(); CHKERRQ(ierr);
 
   // from Table 4
   const PetscScalar Aexper1or2[10] = {0.0, // zero position not used
@@ -374,40 +367,36 @@ PetscErrorCode IceMISMIPModel::allocate_flowlaw() {
                         6.0e-25, 8.0e-25, 1.0e-24,
                         1.2e-24, 1.4e-24, 1.6e-24};   //  15th VALUE LABELED AS 16 IN Table 6 !?
 
-  CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
-  if (cgi) {
-    // following values are from MISMIP spec:
-    cgi->setDensity(900.0);
-    cgi->setExponent(3);
+  config.set("ice_density", 900.0);
+  config.set("Glen_exponent", 3);
 
-    // exper and stepindex range checking was done in setFromOptions
-    if ((exper == 1) || (exper == 2)) {
-      cgi->setSoftness(Aexper1or2[stepindex]);
-    } else if (exper == 3) {
-      if (sliding == 'a') {
-        cgi->setSoftness(Aexper3a[stepindex]);
-      } else if (sliding == 'b') {
-        cgi->setSoftness(Aexper3b[stepindex]);
-      } else {
+  // exper and stepindex range checking was done in setFromOptions
+  PetscReal ice_softness = config.get("ice_softness");
+
+  switch (exper) {
+  case 1:
+  case 2:
+    ice_softness = Aexper1or2[stepindex];
+    break;
+  case 3:
+    {
+      switch (sliding) {
+      case 'a':
+        ice_softness = Aexper3a[stepindex];
+        break;
+      case 'b':
+        ice_softness = Aexper3b[stepindex];
+        break;
+      default:
         SETERRQ(grid.com, 99, "how did I get here?");
       }
-    } else {
-      SETERRQ(grid.com, 99, "how did I get here?");
+      break;
     }
-
-    // if needed, get B_MISMIP  by  cgi->hardnessParameter(273.15)
+  default:
+      SETERRQ(grid.com, 99, "how did I get here?");
   }
 
-  // ierr = ice->printInfo(1);CHKERRQ(ierr); // DEBUG
-
-  ierr = ice->setFromOptions();CHKERRQ(ierr);
-  if (!cgi) {
-    ierr = verbPrintf(2,grid.com,
-                      "WARNING: Not using CustomGlenIce so cannot set hardness defaults\n"
-                      "         (Perhaps you chose something else with -ice_type xxx)\n"
-                      "         Details on your chosen ice follow\n"); CHKERRQ(ierr);
-    // ierr = ice->printInfo(2);CHKERRQ(ierr);
-  }
+  config.set("ice_softness", ice_softness);
 
   return 0;
 }
@@ -448,16 +437,13 @@ PetscErrorCode IceMISMIPModel::initFromFile(string fname) {
 
   ierr = IceModel::initFromFile(fname); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com,
+  ierr = verbPrintf(2,grid.com,
                     "starting MISMIP experiment from file  %s:\n"
                     "  model %d, experiment %d%c, grid mode %d, step %d",
-                    fname.c_str(), modelnum, exper, sliding, gridmode, stepindex); CHKERRQ(ierr);
-  CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
-  if (cgi) {
-    ierr = verbPrintf(2, grid.com, " (A=%5.4e)\n", cgi->softnessParameter_from_temp(273.15)); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com, " (WARNING: SOFTNESS A UNKNOWN!)\n"); CHKERRQ(ierr);
-  }
+                    fname.c_str(),modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",config.get("ice_softness")); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -477,26 +463,22 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   ierr = verbPrintf(2,grid.com,
       "initializing MISMIP model %d, experiment %d%c, grid mode %d, step %d",
       modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
-  CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
-  if (cgi) {
-    ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",cgi->softnessParameter_from_temp(273.15)); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com," (WARNING: SOFTNESS A UNKNOWN!)\n"); CHKERRQ(ierr);
-  }
+
+  ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n", config.get("ice_softness")); CHKERRQ(ierr);
 
   // all of these relate to models which need to be turned off ...
   ierr = vbwat.set(0.0); CHKERRQ(ierr);
   // none use Goldsby-Kohlstedt or do age calc
 
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
-  ierr =  T3.set(ice->melting_point_temp); CHKERRQ(ierr);
+  ierr =  T3.set(config.get("water_melting_point_temperature")); CHKERRQ(ierr);
 
   ierr = vH.set(initialthickness); CHKERRQ(ierr);
 
   ierr = vbmr.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.0); CHKERRQ(ierr);
 
-  ierr = artm.set(ice->melting_point_temp); CHKERRQ(ierr);
+  ierr = artm.set(config.get("water_melting_point_temperature")); CHKERRQ(ierr);
   ierr = acab.set(convert(0.3, "m/year", "m/s")); CHKERRQ(ierr);
 
   ierr = setBed(); CHKERRQ(ierr);
@@ -865,11 +847,12 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   //   d xg            a - dq/dx
   //   ---- = -----------------------------
   //    dt     dh/dx - (rhow/rhoi) (db/dx)
-  double ocean_rho = config.get("sea_water_density");
+  double ocean_rho = config.get("sea_water_density"),
+    ice_rho = config.get("ice_density");
   const PetscScalar dqdx = (mstats.q1 - mstats.q2) / (mstats.x1 - mstats.x2),
                     dhdx = (mstats.h1 - mstats.h2) / (mstats.x1 - mstats.x2),
                     dbdx = (mstats.b1 - mstats.b2) / (mstats.x1 - mstats.x2);
-  mstats.dxgdt = ((0.3/secpera) - dqdx) / (dhdx - (ocean_rho/ice->rho) * dbdx);
+  mstats.dxgdt = ((0.3/secpera) - dqdx) / (dhdx - (ocean_rho/ice_rho) * dbdx);
   return 0;
 }
 

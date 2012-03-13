@@ -22,6 +22,7 @@ files="foo.nc foo.nc~ test-I-out.txt"
 rm -f $files
 
 set -e
+set -x
 
 OPTS="-verbose 1 -ssa_method fd -o foo.nc -ssa_rtol 5e-07 -ksp_rtol 1e-12 -Mx 5"
 

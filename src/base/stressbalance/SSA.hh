@@ -96,8 +96,8 @@ all the arguments of an SSA constructor and returns a newly constructed instance
 Subclasses of SSA should provide an associated function pointer matching the
 SSAFactory typedef */
 class SSA;
-typedef SSA * (*SSAFactory)(IceGrid &, IceBasalResistancePlasticLaw &, 
-              IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
+typedef SSA * (*SSAFactory)(IceGrid &, IceBasalResistancePlasticLaw &,
+                            EnthalpyConverter &, const NCConfigVariable &);
 
 
 //! PISM's SSA solver.
@@ -134,8 +134,8 @@ class SSA : public ShallowStressBalance
 {
   friend class SSA_taud;
 public:
-  SSA(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
-        const NCConfigVariable &c);
+  SSA(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
+      const NCConfigVariable &c);
 
   SSAStrengthExtension *strength_extension;
 

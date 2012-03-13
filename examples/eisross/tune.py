@@ -2,6 +2,10 @@
 
 ## ELB 8/6/07; 11/17/07
 
+# FIXME (CK, Dec 12, 2011): This script is out of date. 'ice_type custom' is
+# gone and so is the -ice_custom_hardness option. We need to use
+# -config_override for parameter studies like this one.
+
 import sys
 import getopt
 import time
@@ -33,7 +37,7 @@ for hard in [1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2]:
      rossdo += 'mpiexec -n ' + str(nproc) + ' '
    rossdo += 'pross -boot_file ross.nc -ssaBC ross.nc -riggs riggs.nc'
    rossdo += ' -ksp_rtol ' + str(KSPRTOL) + ' -ssa_rtol ' + str(MVRTOL) 
-   rossdo += ' -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa -ice_type custom -ice_custom_hardness ' + str(hard) + 'e8'
+   rossdo += ' -Mx 147 -My 147 -Lz 1000 -Mz 3 -ssa -flow_law isothermal_glen -ice_custom_hardness ' + str(hard) + 'e8'
    print 'trying \"' + rossdo + '\"'
    try:
       lasttime = time.time()

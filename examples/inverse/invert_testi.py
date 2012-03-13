@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 David Maxwell
+# Copyright (C) 2011, 2012 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -95,9 +95,11 @@ ssa_h1_coeff = 0.
 tauc_guess_scale = 0.2
 tauc_guess_const = None
 
-def testi_tauc(grid,ice,tauc):
+def testi_tauc(grid, tauc):
   standard_gravity = grid.config.get("standard_gravity");
-  f = ice.rho*standard_gravity*H0_schoof*slope
+  ice_density = grid.config.get("ice_density");
+  f = ice_density * standard_gravity * H0_schoof * slope
+
   with PISM.util.Access(comm=tauc):
     for (i,j) in grid.points():
       y=grid.y[j]
@@ -122,14 +124,14 @@ class testi_run(InvSSARun):
          config.get_flag("do_pseudo_plastic_till"),
          config.get("pseudo_plastic_q"),
          config.get("pseudo_plastic_uthreshold") / PISM.secpera);
- 
+
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
-    ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
-    ice.setHardness(B_schoof)
-    
-    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
+    config.set_string("ssa_flow_law", "isothermal_glen")
+    config.set("ice_softness", pow(3.7e8, -config.get("Glen_exponent")))
+
+    self.modeldata.setPhysics(basal,enthalpyconverter)
 
 
   def _initSSACoefficients(self):
@@ -150,11 +152,13 @@ class testi_run(InvSSARun):
     vecs.ice_mask.set(PISM.MASK_GROUNDED)
     vecs.bed.set(0.)
 
-    testi_tauc(self.modeldata.grid,self.modeldata.ice,vecs.tauc)
+    testi_tauc(self.modeldata.grid, vecs.tauc)
 
     grid = self.grid
     standard_gravity = grid.config.get("standard_gravity");
-    f = self.modeldata.ice.rho*standard_gravity*H0_schoof*slope
+    ice_density = grid.config.get("ice_density");
+    f = ice_density * standard_gravity * H0_schoof * slope
+
     vecs.ssa_driving_stress_y.set(0)
     vecs.ssa_driving_stress_x.set(f)
     
@@ -215,7 +219,7 @@ if __name__ == "__main__":
 
   # Build the true yeild stress for test I
   tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
-  testi_tauc(grid,testi.modeldata.ice,tauc_true)
+  testi_tauc(grid, tauc_true)
 
   # Convert tauc_true to zeta_true
   if config.get_string('inv_ssa_tauc_param')=='ident':
@@ -237,7 +241,7 @@ if __name__ == "__main__":
   if not tauc_guess_const is None:
     tauc.set(tauc_guess_const)
   else:
-    testi_tauc(grid,testi.modeldata.ice,tauc)
+    testi_tauc(grid, tauc)
     tauc.scale(tauc_guess_scale)
 
   # Convert tauc guess to zeta guess

@@ -22,12 +22,13 @@
 #include "PISMVars.hh"
 #include "PISMProf.hh"
 #include "pism_options.hh"
+#include "flowlaw_factory.hh"
 #include "PIO.hh"
 
 SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
-         IceFlowLaw &i, EnthalpyConverter &e,
+         EnthalpyConverter &e,
          const NCConfigVariable &c)
-  : ShallowStressBalance(g, b, i, e, c)
+  : ShallowStressBalance(g, b, e, c)
 {
   mask = NULL;
   thickness = NULL;
@@ -160,7 +161,16 @@ PetscErrorCode SSA::allocate() {
                       &SSADA); CHKERRQ(ierr);
 
   ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
-  
+
+  {
+    IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
+
+    ierr = ice_factory.setType(config.get_string("ssa_flow_law").c_str()); CHKERRQ(ierr);
+
+    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
+    ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -175,7 +185,12 @@ PetscErrorCode SSA::deallocate() {
   if (SSADA != PETSC_NULL) {
     ierr = DMDestroy(&SSADA);CHKERRQ(ierr);
   }
-  
+
+  if (flow_law != NULL) {
+    delete flow_law;
+    flow_law = NULL;
+  }
+
   return 0;
 }
 
@@ -258,8 +273,8 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   ierr = result_e1.begin_access(); CHKERRQ(ierr);
   ierr = result_e2.begin_access(); CHKERRQ(ierr);
 
-	Mask M;
-	ierr = mask->begin_access(); CHKERRQ(ierr);
+  Mask M;
+  ierr = mask->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -270,11 +285,11 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         continue;
       }
 
-      const PetscInt M_ij = mask->as_int(i,j),
-                     M_e = mask->as_int(i + 1,j),
-                     M_w = mask->as_int(i - 1,j),
-                     M_n = mask->as_int(i,j + 1),
-                     M_s = mask->as_int(i,j - 1);
+      const PetscInt
+        M_e = mask->as_int(i + 1,j),
+        M_w = mask->as_int(i - 1,j),
+        M_n = mask->as_int(i,j + 1),
+        M_s = mask->as_int(i,j - 1);
 
       //centered difference scheme; strain in units s-1
       PetscScalar
@@ -330,7 +345,7 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   ierr = result_e1.end_access(); CHKERRQ(ierr);
   ierr = result_e2.end_access(); CHKERRQ(ierr);
 
-	ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -373,31 +388,31 @@ PetscErrorCode SSA::compute_basal_frictional_heating(IceModelVec2S &result) {
 //! \brief Compute the driving stress.
 /*!
 Computes the driving stress at the base of the ice:
-   \f[ \tau_d = - \rho g H \nabla h \f]
+\f[ \tau_d = - \rho g H \nabla h \f]
 
-If configuration parameter \c surface_gradient_method = \c eta then the surface gradient
-\f$\nabla h\f$ is computed by the gradient of the
-transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$).
-The idea is that this quantity is more regular at ice sheet margins, and so we get a 
-better surface gradient.  When the thickness at a grid point is very small
-(below \c minThickEtaTransform in the procedure), the formula is slightly 
-modified to give a lower driving stress.  The transformation is not used in
-floating ice.
+If configuration parameter \c surface_gradient_method = \c eta then the surface
+gradient \f$\nabla h\f$ is computed by the gradient of the transformed variable
+\f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$). The idea is that
+this quantity is more regular at ice sheet margins, and so we get a better
+surface gradient. When the thickness at a grid point is very small (below \c
+minThickEtaTransform in the procedure), the formula is slightly modified to
+give a lower driving stress. The transformation is not used in floating ice.
  */
 PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   PetscErrorCode ierr;
 
   IceModelVec2S &thk = *thickness; // to improve readability (below)
 
-  const PetscScalar n       = ice.exponent(), // frequently n = 3
-                    etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
-                    invpow  = 1.0 / etapow,  // = 3/8
-                    dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
+  const PetscScalar n = flow_law->exponent(), // frequently n = 3
+    etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
+    invpow  = 1.0 / etapow,  // = 3/8
+    dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
   const PetscScalar minThickEtaTransform = 5.0; // m
   const PetscScalar dx=grid.dx, dy=grid.dy;
 
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
-  PetscReal standard_gravity = config.get("standard_gravity");
+  PetscReal standard_gravity = config.get("standard_gravity"),
+    ice_rho = config.get("ice_density");
   bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
   ierr =   surface->begin_access();    CHKERRQ(ierr);
@@ -411,7 +426,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = ice.rho * standard_gravity * thk(i,j); // FIXME task #7297
+      const PetscScalar pressure = ice_rho * standard_gravity * thk(i,j); // FIXME task #7297
       if (pressure <= 0.0) {
         result(i,j).u = 0.0;
         result(i,j).v = 0.0;

@@ -43,7 +43,7 @@ using namespace std;
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
-struct grid_info;
+class grid_info;
 class LocalInterpCtx;
 class PISMNCFile;
 

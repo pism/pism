@@ -142,28 +142,29 @@ Assuming the geometry of the ice evolves (which can be turned off by option \tex
 
 In the polythermal (default) mode of PISM there is only one choice of the flow law: the Glen-Paterson-Budd-Lliboutry-Duval \cite{AschwandenBlatter,LliboutryDuval1985,PatersonBudd}. This law is the only one which we know of in the literature that parameterizes the (observed) softening of pressure-melting-temperature ice, as its liquid fraction increases.
 
-Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
+Note that a ``flow law'' here means the function $F(\sigma,T,\omega,P,d)$ in the relation
 	$$\dot \eps_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'$$
-where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction in the ice, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only.  In PISM one can choose the scalar function $F$ reasonably arbitrarily by modifying source code,\footnote{See source files \texttt{flowlaws.hh}, \texttt{flowlaws.cc} in \texttt{src/base/rheology/}.} or use the single polythermal law (above), or choose among a number of ``cold ice'' laws listed in table \ref{tab:flowlaw}.
+where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction in the ice, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$, so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only.  In PISM one can choose the scalar function $F$ reasonably arbitrarily by modifying source code,\footnote{See source files \texttt{flowlaws.hh}, \texttt{flowlaws.cc} in \texttt{src/base/rheology/}.} or use the single polythermal law (above), or choose among a number of ``cold ice'' laws listed in table \ref{tab:flowlaw}.
 
 Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
-	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
-Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \texttt{-ice_type hybrid}, because the inverse form of the Goldsby-Kohlstedt law is unknown.
+	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,\omega,P,d)\,\dot \eps_{ij} $$
+Here $\nu(\dot \eps,T,\omega,P,d)$ is the effective viscosity.
+% The need for this inverse form of the flow law explains the ``hybrid'' law \texttt{-flow_law hybrid}, because the inverse form of the Goldsby-Kohlstedt law is unknown.
 
 The command-line option \intextoption{e} sets the flow enhancement factor and can be used with any flow law.  It alters the SIA flow law to be ``$\dot \eps_{ij} = e\, F(\sigma,T,\omega,P,d)\, \sigma_{ij}'.$''
 
-Command-line option \intextoption{ice_type} control the flow law in the \texttt{-cold} mode.  Arguments to \texttt{-ice_type} are in table \ref{tab:flowlaw} below.  One \texttt{-cold} mode ice type, namely \texttt{custom}, is customizable at the command line.\footnote{Run with \texttt{-help} to see all the customizable options for your chosen ice type (since \texttt{-help} displays many options, it is often useful to grep the output, as in \texttt{pisms -ice_type custom -help | grep ice_}).}  One use of the \texttt{custom} ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
+Command-line option \intextoption{flow_law} control the flow law in the \texttt{-cold} mode.  Arguments to \texttt{-flow_law} are in table \ref{tab:flowlaw} below.  One \texttt{-cold} mode ice type, namely \texttt{custom}, is customizable at the command line.\footnote{Run with \texttt{-help} to see all the customizable options for your chosen ice type (since \texttt{-help} displays many options, it is often useful to grep the output, as in \texttt{pisms -flow_law custom -help | grep ice_}).}  One use of the \texttt{custom} ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
 where 
 	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
   \frac{1}{4} \left(\ddy{u} + \ddx{v}\right)^2 + \ddx{u}\ddy{v}\right]^{(1-n)/(2n)}.$$
-Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field, but it is constant for isothermal ice.  If \intextoption{ice_custom_hardness} is used then $\bar B$ is set to the given value.  The value should have units of Pa $\text{s}^{1/n}$ where $n$ is the Glen exponent (see \texttt{-ice_type}).  Note that the cold-mode ice type (\texttt{-ice_type}) is \texttt{pb} by default, while \intextoption{ice_custom_hardness} is only available when \texttt{-ice_type custom} is given or when the driver has changed the default ice type (in runs such as with \texttt{ssa_testi} and \texttt{pross}).
+Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field, but it is constant for isothermal ice.  If \intextoption{ice_custom_hardness} is used then $\bar B$ is set to the given value.  The value should have units of Pa $\text{s}^{1/n}$ where $n$ is the Glen exponent (see \texttt{-flow_law}).  Note that the cold-mode ice type (\texttt{-flow_law}) is \texttt{pb} by default, while \intextoption{ice_custom_hardness} is only available when \texttt{-flow_law custom} is given or when the driver has changed the default ice type (in runs such as with \texttt{ssa_testi} and \texttt{pross}).
 
 In the case of \texttt{pross}, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
 
 \begin{table}[ht]
 \centering
-\caption{\emph{For} \texttt{-cold} \emph{mode only:} Choosing the rheology using \t{-ice_type}.}\label{tab:flowlaw}\index{rheology}\index{flow law}
+\caption{\emph{For} \texttt{-cold} \emph{mode only:} Choosing the rheology using \t{-flow_law}.}\label{tab:flowlaw}\index{rheology}\index{flow law}
 \small
 \begin{tabular}{p{0.15\linewidth}p{0.8\linewidth}}\toprule
 \textbf{Type} & \textbf{Comments and Reference} \\ \midrule
@@ -180,7 +181,7 @@ In the case of \texttt{pross}, which performs the EISMINT Ross ice shelf interco
 \end{table}
 
 \begin{comment}
-\opt{shelfext\und} When computing ice shelf and stream velocity, PISM enforces boundary conditions using a fictitious extension of the ice shelf over the entire domain.  This extension provides strength only, it does not change the mass, driving force, or location of the calving front.  By default, it's strength will be computed using the current ice type at reference thickness, temperature, and strain rate, customizable using \texttt{-shelfext_H} (5 meters by default), \texttt{-shelfext_T} (263.15 K), \texttt{-shelfext_Du} (1 m/a per km).  The extension strength is used whenever ice thickness is less than the extension thickness to prevent the equations from becoming singular.  You can also specify the extension strength directly using \texttt{-shelfext_force_nuH} with units in Pa s.  Finally, you can compute strength using a \texttt{custom} ice type the ice used in the rest of PISM by giving \texttt{-shelfext_use_private_ice}.  This option will gives you a \texttt{custom} ice type which you can control via \texttt{-shelfext_ice_custom_} (see \texttt{-ice_type}).  All \texttt{-shelfext} options are displayed in \texttt{-help}.
+\opt{shelfext\und} When computing ice shelf and stream velocity, PISM enforces boundary conditions using a fictitious extension of the ice shelf over the entire domain.  This extension provides strength only, it does not change the mass, driving force, or location of the calving front.  By default, it's strength will be computed using the current ice type at reference thickness, temperature, and strain rate, customizable using \texttt{-shelfext_H} (5 meters by default), \texttt{-shelfext_T} (263.15 K), \texttt{-shelfext_Du} (1 m/a per km).  The extension strength is used whenever ice thickness is less than the extension thickness to prevent the equations from becoming singular.  You can also specify the extension strength directly using \texttt{-shelfext_force_nuH} with units in Pa s.  Finally, you can compute strength using a \texttt{custom} ice type the ice used in the rest of PISM by giving \texttt{-shelfext_use_private_ice}.  This option will gives you a \texttt{custom} ice type which you can control via \texttt{-shelfext_ice_custom_} (see \texttt{-flow_law}).  All \texttt{-shelfext} options are displayed in \texttt{-help}.
 \end{comment}
 
 

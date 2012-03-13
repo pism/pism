@@ -30,8 +30,8 @@ class EnthalpyConverter;
 class SSB_Modifier : public PISMComponent_Diag
 {
 public:
-  SSB_Modifier(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
-    : PISMComponent_Diag(g, c), ice(i), EC(e)
+  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+    : PISMComponent_Diag(g, c), EC(e)
   { D_max = u_max = v_max = 0.0; variables = NULL; allocate(); }
   virtual ~SSB_Modifier() {}
 
@@ -64,10 +64,13 @@ public:
 
   virtual PetscErrorCode stdout_report(string &result)
   { result = ""; return 0; }
+
+  IceFlowLaw* get_flow_law()
+  { return flow_law; }
 protected:
   virtual PetscErrorCode allocate();
 
-  IceFlowLaw &ice;
+  IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
   PetscReal D_max, u_max, v_max;
   IceModelVec2Stag diffusive_flux;
@@ -81,9 +84,8 @@ protected:
 class SSBM_Trivial : public SSB_Modifier
 {
 public:
-  SSBM_Trivial(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
-    : SSB_Modifier(g, i, e, c) {}
-  virtual ~SSBM_Trivial() {}
+  SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c);
+  virtual ~SSBM_Trivial();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
