@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2012 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -46,6 +46,7 @@ public:
              m_VecZ(0), m_VecRHS2(0),
              m_VecV(0), m_VecRHS(0),
              m_misfit_weight(NULL),
+             m_misfit_element_mask(NULL),
              m_zeta_fixed_locations(NULL),
              m_tauc_param(tp),
              m_reassemble_T_matrix_needed(true),
@@ -137,6 +138,9 @@ protected:
 
   // Optional weight for a weighted L2 norm in the range.
   IceModelVec2S *m_misfit_weight;
+
+  // Optional list of elements to be included in the misfit computation.
+  IceModelVec2Int *m_misfit_element_mask;
 
   // Locations where zeta is not allowed to change.
   IceModelVec2Int *m_zeta_fixed_locations;
