@@ -200,7 +200,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
     string tauc_to_phi_file;
     bool flag;
     ierr = PISMOptionsString("-tauc_to_phi", "Specifies the file tauc will be read from",
-                             tauc_to_phi_file, flag); CHKERRQ(ierr);
+                             tauc_to_phi_file, flag, true); CHKERRQ(ierr);
 
     if (tauc_to_phi_file.empty() == false) {
       // "-tauc_to_phi filename.nc" is given
@@ -229,6 +229,9 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
     //
     // Now tauc_to_phi() will correct till_phi at all locations where grounded
     // ice is present:
+
+    ierr = verbPrintf(2, grid.com, "  Computing till friction angle (tillphi) as a function of the yield stress (tauc)...\n"); 
+    CHKERRQ(ierr);
 
     ierr = tauc_to_phi(); CHKERRQ(ierr);
 
@@ -735,7 +738,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
 
         N = PetscMax(N, 0.01);  // guard against dividing by zero
 
-        till_phi(i, j) = 180.0/pi * atan((till_c_0 - tauc(i, j)) / N);
+        till_phi(i, j) = 180.0/pi * atan((tauc(i, j) - till_c_0) / N);
       }
     }
   }
