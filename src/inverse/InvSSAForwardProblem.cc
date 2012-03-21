@@ -952,6 +952,10 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
   }
 
+  if(m_misfit_element_mask!=NULL) {
+    ierr = m_misfit_element_mask->begin_access();CHKERRQ(ierr);    
+  }
+
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
@@ -981,6 +985,13 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
            ys = element_index.ys, ym = element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
+
+      if(m_misfit_element_mask != NULL) {
+        if( m_misfit_element_mask->as_int(i,j) != 1) {
+          continue;
+        }
+      }
+
       // Storage for element-local data
       PISMVector2 y[FEQuadrature::Nk];
 
@@ -1045,6 +1056,9 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
 
   if(m_misfit_weight!=NULL) {
     ierr = m_misfit_weight->end_access();CHKERRQ(ierr);
+  }
+  if(m_misfit_element_mask!=NULL) {
+    ierr = m_misfit_element_mask->end_access();CHKERRQ(ierr);    
   }
 
   return 0;
