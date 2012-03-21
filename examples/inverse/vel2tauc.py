@@ -444,6 +444,7 @@ if __name__ == "__main__":
   # a) tauc from the input file (default)
   # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
   tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
+  tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");       
   tauc = PISM.util.standardYieldStressVec(grid)
   if use_tauc_prior:
     tauc_prior.regrid(inv_data_filename,True)
@@ -454,6 +455,15 @@ if __name__ == "__main__":
     tauc.regrid(input_filename,True)
     tauc_prior.copy_from(tauc)
   vecs.add(tauc_prior,writing=saving_inv_data)
+
+  # If the inverse data file has a variable tauc_true, this is probably
+  # a synthetic inversion.  We'll load it now so that it will get written
+  # out, if needed, at the end of the computation in the output file.
+  if PISM.util.fileHasVariable(inv_data_filename,"tauc_true"):
+    tauc_true = PISM.util.standardYieldStressVec(grid,'tauc_true') 
+    tauc_true.set_attrs("diagnostic", "value of basal yield stress used to generate synthetic SSA velocities", "Pa", "");     
+    tauc_true.regrid(inv_data_filename,True)
+    vecs.add(tauc_true,writing=saving_inv_data)
 
 
   # Determine the initial guess for zeta.  If we are not
