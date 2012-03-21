@@ -77,6 +77,8 @@ inherently computationally expensive operation, because it involves
 simultaneously accessing memory locations that are ``far away'' from each
 other.
 
+You can choose one of the three supported output orders using the \intextoption{o_order} option with one of \texttt{xyz}, \texttt{yxz}, and \texttt{zyx} as the argument.
+
 To transpose dimensions in an existing file, use the \texttt{ncpdq} (``permute
 dimensions quickly'') tool from the NCO (\emph{NetCDF Operators}) suite.
 
@@ -86,9 +88,6 @@ $ ncpdq -a t,z,zb,y,x bad.nc good.nc
 \end{verbatim}%$
 to turn \texttt{bad.nc} (with an unspecified inconvenient storage order) into
 \texttt{good.nc} using the \texttt{t,z,y,x} order.
-
-You can also re-compile PISM to change the default storage order of PISM output
-files: look for the \texttt{Pism_VARIABLE_ORDER} CMake flag.
 
 \subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
@@ -186,8 +185,17 @@ Use options \texttt{-extra_file}, \texttt{-extra_times}, and \texttt{-extra_vars
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
         -extra_times 0:10:1e4 -extra_vars csurf,cbase
-\end{verbatim}
+\end{verbatim} %$
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years. Times are specified using a comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras} for all the options corresponding to this feature; table \ref{tab:extra-vars} lists all the variable choices. 
+
+In addition to specifying a constant step in \texttt{-extra_times a:step:b} one can save every day, month, or every year by using \texttt{daily}, \texttt{monthly} or \texttt{yearly} instead of a number; for example
+\begin{verbatim}
+$ pismr -i foo.nc -y 100 -o output.nc -extra_file extras.nc \
+        -extra_times 0:monthly:100 -extra_vars dHdt
+\end{verbatim} %$
+will save the rate of change of the ice thickness every month for 100 years. PISM uses the Gregorian calendar to compute lengths of months and years.
+
+Times given using \texttt{-extra_times} are interpreted as endpoints of reporting intervals. This implies that \texttt{0:1:10} will produce 10 records and not 11.
 
 If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc\~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-extra_append}.
 

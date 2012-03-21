@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -414,6 +414,7 @@ class IceModel_dHdt : public PISMDiag<IceModel>
 public:
   IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual PetscErrorCode update_cumulative();
 protected:
   IceModelVec2S last_ice_thickness;
   PetscReal last_report_time;

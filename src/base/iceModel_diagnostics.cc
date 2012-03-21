@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -1729,6 +1729,14 @@ PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
   }
 
   // Save the ice thickness and the corresponding time:
+  ierr = this->update_cumulative(); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+PetscErrorCode IceModel_dHdt::update_cumulative() {
+  PetscErrorCode ierr;
   ierr = model->vH.begin_access(); CHKERRQ(ierr);
   ierr = last_ice_thickness.begin_access(); CHKERRQ(ierr);
 
@@ -1743,6 +1751,6 @@ PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
 
   last_report_time = grid.time->current();
 
-  output = result;
   return 0;
 }
+
