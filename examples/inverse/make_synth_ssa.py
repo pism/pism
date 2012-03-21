@@ -83,6 +83,9 @@ if __name__ == '__main__':
   PISM.show_usage_check_req_opts(com, sys.argv[0], ["-i"], usage)
 
   config = context.config
+  if not PISM.optionsIsSet("-ssa_method"):
+    config.set_string("ssa_method","fem")
+
   for o in PISM.OptionsGroup(com,"","SSA Forward"):
     input_file_name = PISM.optionsString("-i","file to bootstrap from")
     output_file_name = PISM.optionsString("-o","output file",default="make_synth_ssa.nc")
@@ -94,7 +97,6 @@ if __name__ == '__main__':
     generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed","generate observed SSA velocities",default=False)
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
 
-  config.set_string("ssa_method","fem")
   
   ssa_run = PISM.ssa.SSAFromInputFile(input_file_name)
 

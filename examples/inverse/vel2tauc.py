@@ -166,8 +166,8 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
       grid = self.grid
       vecs = self.modeldata.vecs
 
-      pio = PISM.PISMIO(grid)
-      pio.open_for_writing(filename,True,True) #append mode!
+      pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+      pio.open(filename,PISM.NC_WRITE,True) #append mode!
       
       self.modeldata.vecs.write(filename)
       pio.close()
