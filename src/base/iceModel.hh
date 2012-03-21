@@ -454,6 +454,7 @@ protected:
   double last_extra;
   set<string> extra_vars;
   NCTimeBounds extra_bounds;
+  NCTimeseries timestamp;
   PetscErrorCode init_extras();
   PetscErrorCode write_extras();
   PetscErrorCode extras_max_timestep(double my_t, double& my_dt, bool &restrict);

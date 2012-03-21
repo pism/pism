@@ -296,6 +296,11 @@ PetscErrorCode IceModel::init_extras() {
   extra_bounds.init("time_bounds", config.get_string("time_dimension_name"),
                     grid.com, grid.rank);
 
+  timestamp.init("timestamp", config.get_string("time_dimension_name"),
+                 grid.com, grid.rank);
+  timestamp.set_units("hours");
+  timestamp.set_string("long_name", "time since the beginning of the run");
+
   return 0;
 }
 
@@ -384,12 +389,15 @@ PetscErrorCode IceModel::write_extras() {
                     filename, grid.time->year());
   CHKERRQ(ierr);
 
-  // create line for history in .nc file, including time of write
-  string date_str = pism_timestamp();
-  char tmp[TEMPORARY_STRING_LENGTH];
-  snprintf(tmp, TEMPORARY_STRING_LENGTH,
-           "%s: %s saving spatial time-series record at %10.5f a\n",
-           date_str.c_str(), executable_short_name.c_str(), grid.time->year());
+  // find out how much time passed since the beginning of the run
+  double wall_clock_hours;
+  if (grid.rank == 0) {
+    PetscLogDouble current_time;
+    ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+    wall_clock_hours = (current_time - start_time) / 3600.0;
+  }
+
+  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 
   if (!extra_file_is_ready) {
 
@@ -418,11 +426,13 @@ PetscErrorCode IceModel::write_extras() {
   ierr = nc.append_time(config.get_string("time_dimension_name"),
                         grid.time->current()); CHKERRQ(ierr);
   ierr = nc.inq_dimlen(config.get_string("time_dimension_name"), time_length); CHKERRQ(ierr);
-  ierr = nc.append_history(tmp); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = extra_bounds.write(filename, static_cast<size_t>(time_length - 1),
                             last_extra, grid.time->current()); CHKERRQ(ierr);
+
+  ierr = timestamp.write(filename, static_cast<size_t>(time_length - 1),
+                         wall_clock_hours); CHKERRQ(ierr);
 
   ierr = write_variables(filename, extra_vars, NC_FLOAT);  CHKERRQ(ierr);
 
