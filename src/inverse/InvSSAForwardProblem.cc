@@ -136,6 +136,11 @@ PetscErrorCode InvSSAForwardProblem::init(PISMVars &vars) {
     verbPrintf(3,grid.com,"Weight for inverse problem L2 norm not available; using standard L2 norm.\n");
   }
 
+  m_misfit_element_mask = dynamic_cast<IceModelVec2Int*>(vars.get("misfit_element_mask"));
+  if (m_misfit_element_mask == NULL){
+    verbPrintf(3,grid.com,"Misfit element mask not available; using all elements.\n");
+  }
+
   return 0;
 }
 
@@ -723,11 +728,20 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
 
+  if(m_misfit_element_mask!=NULL) {
+    ierr = m_misfit_element_mask->begin_access();CHKERRQ(ierr);    
+  }
+
   // Loop through all LOCAL elements.
   PetscInt xs = element_index.lxs, xm = element_index.lxm,
            ys = element_index.lys, ym = element_index.lym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
+      if(m_misfit_element_mask != NULL) {
+        if( m_misfit_element_mask->as_int(i,j) != 1) {
+          continue;
+        }
+      }
       PISMVector2 tmp[FEQuadrature::Nq];
       dofmap.extractLocalDOFs(i,j,A,tmp);
       quadrature.computeTrialFunctionValues(tmp,a);
@@ -746,6 +760,10 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
   if(m_misfit_weight!=NULL) {
     ierr = m_misfit_weight->end_access();CHKERRQ(ierr);
   }
+  if(m_misfit_element_mask!=NULL) {
+    ierr = m_misfit_element_mask->end_access();CHKERRQ(ierr);    
+  }
+
 
   IP /= m_range_l2_area;
   ierr = PISMGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
@@ -934,6 +952,10 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
   }
 
+  if(m_misfit_element_mask!=NULL) {
+    ierr = m_misfit_element_mask->begin_access();CHKERRQ(ierr);    
+  }
+
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
@@ -963,6 +985,13 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
            ys = element_index.ys, ym = element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
+
+      if(m_misfit_element_mask != NULL) {
+        if( m_misfit_element_mask->as_int(i,j) != 1) {
+          continue;
+        }
+      }
+
       // Storage for element-local data
       PISMVector2 y[FEQuadrature::Nk];
 
@@ -1027,6 +1056,9 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
 
   if(m_misfit_weight!=NULL) {
     ierr = m_misfit_weight->end_access();CHKERRQ(ierr);
+  }
+  if(m_misfit_element_mask!=NULL) {
+    ierr = m_misfit_element_mask->end_access();CHKERRQ(ierr);    
   }
 
   return 0;

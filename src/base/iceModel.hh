@@ -450,8 +450,10 @@ protected:
   bool save_extra, extra_file_is_ready, split_extra;
   string extra_filename;
   vector<double> extra_times;
-  unsigned int current_extra;
+  unsigned int next_extra;
+  double last_extra;
   set<string> extra_vars;
+  NCTimeBounds extra_bounds;
   PetscErrorCode init_extras();
   PetscErrorCode write_extras();
   PetscErrorCode extras_max_timestep(double my_t, double& my_dt, bool &restrict);

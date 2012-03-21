@@ -128,7 +128,13 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
     vecs.add( PISM.util.standardVelocityMisfitWeight(self.grid) )
     weight = vecs.vel_misfit_weight
     weight.regrid(self.inv_data_filename,True)
-    
+
+    if PISM.util.fileHasVariable(self.inv_data_filename,'misfit_element_mask'):
+      vecs.add( PISM.util.standardMisfitElementMask(self.grid) )
+      vecs.misfit_element_mask.regrid(self.inv_data_filename,True)
+    else:
+      raise Exception()
+
     zeta_fixed_mask = PISM.IceModelVec2Int()
     zeta_fixed_mask.create(self.grid, 'zeta_fixed_mask', True, self.grid.max_stencil_width);
     zeta_fixed_mask.set_attrs("model_state", "tauc_unchanging integer mask", "", "");

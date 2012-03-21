@@ -148,6 +148,10 @@ if __name__ == '__main__':
     misfit_weight = groundedIceMisfitWeight(modeldata)
   modeldata.vecs.add(misfit_weight,writing=True)    
 
+  # Add a default element mask for now.
+  vecs.add( PISM.util.standardMisfitElementMask(grid), writing=True )
+  vecs.misfit_element_mask.set(1)
+
   if not noise is None:
     u_noise = PISM.sipletools.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
     final_velocity.add(1./PISM.secpera,u_noise)

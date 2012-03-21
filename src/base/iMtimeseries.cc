@@ -186,7 +186,9 @@ PetscErrorCode IceModel::init_extras() {
   PetscErrorCode ierr;
   bool split, times_set, file_set, save_vars;
   string times, vars;
-  current_extra = 0;
+
+  last_extra = 0;               // will be set in write_extras()
+  next_extra = 0;
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling 2D and 3D diagnostic output", ""); CHKERRQ(ierr);
   {
@@ -285,10 +287,14 @@ PetscErrorCode IceModel::init_extras() {
       stress_balance->add_vars_to_output("small", extra_vars);
 
   }
+
   if (extra_vars.size() == 0) {
     ierr = verbPrintf(2, grid.com, 
        "PISM WARNING: no variables list after -extra_vars ... writing empty file ...\n"); CHKERRQ(ierr);
   }
+
+  extra_bounds.init("time_bounds", config.get_string("time_dimension_name"),
+                    grid.com, grid.rank);
 
   return 0;
 }
@@ -303,26 +309,51 @@ PetscErrorCode IceModel::write_extras() {
 				 // this case saving_after is guaranteed to be
 				 // initialized. See the code below.
   char filename[PETSC_MAX_PATH_LEN];
-
+  unsigned int current_extra;
   // determine if the user set the -save_at and -save_to options
   if (!save_extra)
     return 0;
 
   // do we need to save *now*?
-  if ( current_extra < extra_times.size() &&
-       (grid.time->current() >= extra_times[current_extra] ||
-        fabs(grid.time->current() - extra_times[current_extra]) < 1) ) {
+  if ( next_extra < extra_times.size() &&
+       (grid.time->current() >= extra_times[next_extra] ||
+        fabs(grid.time->current() - extra_times[next_extra]) < 1) ) {
     // the condition above is "true" if we passed a requested time or got to
     // within 1 second from it
 
-    saving_after = extra_times[current_extra];
+    current_extra = next_extra;
 
-    while (current_extra < extra_times.size() &&
-           (extra_times[current_extra] <= grid.time->current() ||
-            fabs(grid.time->current() - extra_times[current_extra]) < 1) )
-      current_extra++;
+    // update next_extra
+    while (next_extra < extra_times.size() &&
+           (extra_times[next_extra] <= grid.time->current() ||
+            fabs(grid.time->current() - extra_times[next_extra]) < 1) )
+      next_extra++;
+
+    saving_after = extra_times[current_extra];
   } else {
-    // we don't need to save now, so just return
+    return 0;
+  }
+
+  if (current_extra == 0) {
+    // The first time defines the left end-point of the first reporting
+    // interval; we don't write a report at this time, but we still need to
+    // store cumulative quantities that may be needed to compute rates of
+    // change.
+
+    set<string>::iterator j = extra_vars.begin();
+    while(j != extra_vars.end()) {
+      PISMDiagnostic *diag = diagnostics[*j];
+
+      if (diag != NULL) {
+        ierr = diag->update_cumulative(); CHKERRQ(ierr);
+      }
+      ++j;
+    }
+
+    // This line re-initializes last_extra (the correct value is not known at
+    // the time init_extras() is calles).
+    last_extra = grid.time->current();
+
     return 0;
   }
 
@@ -343,22 +374,22 @@ PetscErrorCode IceModel::write_extras() {
   if (split_extra) {
     extra_file_is_ready = false;	// each time-series record is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc",
-	     extra_filename.c_str(), grid.time->year());
+             extra_filename.c_str(), grid.time->year());
   } else {
     strncpy(filename, extra_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
   ierr = verbPrintf(3, grid.com, 
-		    "\nsaving spatial time-series to %s at %.5f a\n\n",
-		    filename, grid.time->year());
+                    "\nsaving spatial time-series to %s at %.5f a\n\n",
+                    filename, grid.time->year());
   CHKERRQ(ierr);
 
   // create line for history in .nc file, including time of write
   string date_str = pism_timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
-	   "%s: %s saving spatial time-series record at %10.5f a\n",
-	   date_str.c_str(), executable_short_name.c_str(), grid.time->year());
+           "%s: %s saving spatial time-series record at %10.5f a\n",
+           date_str.c_str(), executable_short_name.c_str(), grid.time->year());
 
   if (!extra_file_is_ready) {
 
@@ -371,20 +402,31 @@ PetscErrorCode IceModel::write_extras() {
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        config.get_string("calendar"),
                        grid.time->units()); CHKERRQ(ierr);
+    ierr = nc.put_att_text(config.get_string("time_dimension_name"),
+                           "bounds", "time_bounds"); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = write_metadata(filename); CHKERRQ(ierr); 
 
     extra_file_is_ready = true;
+
   }
+
+  unsigned int time_length = 0;
 
   ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"),
                         grid.time->current()); CHKERRQ(ierr);
+  ierr = nc.inq_dimlen(config.get_string("time_dimension_name"), time_length); CHKERRQ(ierr);
   ierr = nc.append_history(tmp); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
+  ierr = extra_bounds.write(filename, static_cast<size_t>(time_length - 1),
+                            last_extra, grid.time->current()); CHKERRQ(ierr);
+
   ierr = write_variables(filename, extra_vars, NC_FLOAT);  CHKERRQ(ierr);
+
+  last_extra = grid.time->current();
 
   return 0;
 }

@@ -60,6 +60,14 @@ public:
   }
   virtual ~PISMDiagnostic() {}
 
+  //! \brief Update a cumulative quantity needed to compute a rate of change.
+  //! So far we there is only one such quantity: the rate of change of the ice
+  //! thickness.
+  virtual PetscErrorCode update_cumulative()
+  {
+    return 0;
+  }
+
   //! \brief Compute a diagnostic quantity and return a pointer to a newly-allocated
   //! IceModelVec. NB: The caller needs to de-allocate it.
   virtual PetscErrorCode compute(IceModelVec* &result) = 0;
