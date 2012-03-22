@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -470,13 +470,14 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   delta_ij = new PetscScalar[grid.Mz];
 
   const double enhancement_factor = flow_law->enhancement_factor(),
-    constant_grain_size = config.get("constant_grain_size"),
     standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
 
+  double ice_grain_size = config.get("ice_grain_size");
+
   bool compute_grain_size_using_age = config.get_flag("compute_grain_size_using_age");
 
-  // some flow laws use grainsize, and even need age to update grainsize
+  // some flow laws use grain size, and even need age to update grain size
   if (compute_grain_size_using_age && (!config.get_flag("do_age"))) {
     PetscPrintf(grid.com,
                 "PISM ERROR in SIAFD::compute_diffusive_flux(): do_age not set but\n"
@@ -561,14 +562,14 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
           // current level and the top of the column)
           const PetscScalar pressure = ice_rho * standard_gravity * depth;
 
-          PetscScalar flow, grainsize = constant_grain_size;
+          PetscScalar flow;
           if (use_age) {
-            grainsize = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
+            ice_grain_size = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
           }
           // If the flow law does not use grain size, it will just ignore it,
           // no harm there
           PetscScalar E = 0.5 * (E_ij[k] + E_offset[k]);
-          flow = flow_law->flow(alpha * pressure, E, pressure, grainsize);
+          flow = flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
 
           delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 

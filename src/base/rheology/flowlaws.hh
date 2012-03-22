@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -249,9 +249,9 @@ former form of the flow law is known for Goldsby-Kohlstedt.  If one can
 invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
 derived class.
  */
-class HybridIce : public ThermoGlenIce {
+class GoldsbyKohlstedtIce : public ThermoGlenIce {
 public:
-  HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+  GoldsbyKohlstedtIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
             EnthalpyConverter *my_EC);
 protected:
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
@@ -270,15 +270,15 @@ protected:
              p_grain_sz_exp, gbs_Q_warm;
 };
 
-//! Derived class of HybridIce for testing purposes only.
+//! Derived class of GoldsbyKohlstedtIce for testing purposes only.
 /*!
-  HybridIceStripped is a simplification of Goldsby-Kohlstedt. Compare to that
+  GoldsbyKohlstedtIceStripped is a simplification of Goldsby-Kohlstedt. Compare to that
   used in Peltier et al 2000, which is even simpler.
  */
-class HybridIceStripped : public HybridIce {
+class GoldsbyKohlstedtIceStripped : public GoldsbyKohlstedtIce {
 public:
-  HybridIceStripped(MPI_Comm c, const char pre[],
-                    const NCConfigVariable &config, EnthalpyConverter *my_EC);
+  GoldsbyKohlstedtIceStripped(MPI_Comm c, const char pre[],
+                              const NCConfigVariable &config, EnthalpyConverter *my_EC);
 protected:
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
                                    PetscReal pressure, PetscReal gs) const;

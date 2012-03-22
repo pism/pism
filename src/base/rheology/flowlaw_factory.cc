@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,162 +18,163 @@
 
 #include "flowlaw_factory.hh"
 #include "pism_const.hh"
-
-#undef ALEN
-#define ALEN(a) (sizeof(a)/sizeof(a)[0])
+#include "pism_options.hh"
 
 IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
                                      const char pre[], const NCConfigVariable &conf,
                                      EnthalpyConverter *my_EC)
-  : comm(c), config(conf), EC(my_EC) {
+  : com(c), config(conf), EC(my_EC) {
   prefix[0] = 0;
   if (pre) {
-    PetscStrncpy(prefix,pre,sizeof(prefix));
+    PetscStrncpy(prefix, pre, sizeof(prefix));
   }
+
   if (registerAll()) {
-    PetscPrintf(comm,"IceFlowLawFactory::registerAll returned an error but we're in a constructor\n");
+    PetscPrintf(com, "IceFlowLawFactory::registerAll returned an error but we're in a constructor\n");
     PISMEnd();
   }
-  if (setType(ICE_PB)) {       // Set's a default type
-    PetscPrintf(comm,"IceFlowLawFactory::setType(\"%s\") returned an error, but we're in a constructor\n",ICE_PB);
+
+  if (setType(ICE_PB)) {        // Set's a default type
+    PetscPrintf(com, "IceFlowLawFactory::setType(\"%s\") returned an error, but we're in a constructor\n", ICE_PB);
     PISMEnd();
   }
 }
 
 IceFlowLawFactory::~IceFlowLawFactory()
 {
-  PetscFListDestroy(&type_list);
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "IceFlowLawFactory::registerType"
-PetscErrorCode IceFlowLawFactory::registerType(const char tname[],
-               PetscErrorCode(*icreate)(MPI_Comm,const char[],const NCConfigVariable &,
-                                        EnthalpyConverter*, IceFlowLaw**))
+PetscErrorCode IceFlowLawFactory::registerType(string name, IceFlowLawCreator icreate)
 {
-  PetscErrorCode ierr;
+  flow_laws[name] = icreate;
+  return 0;
+}
 
-  PetscFunctionBegin;
-  ierr = PetscFListAdd(&type_list,tname,NULL,(void(*)(void))icreate);CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+PetscErrorCode IceFlowLawFactory::removeType(string name) {
+  flow_laws.erase(name);
+  return 0;
 }
 
 
-static PetscErrorCode create_isothermal_glen(MPI_Comm comm,const char pre[],
+static PetscErrorCode create_isothermal_glen(MPI_Comm com,const char pre[],
                                              const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (IsothermalGlenIce)(comm, pre, config, EC);  return 0;
+  *i = new (IsothermalGlenIce)(com, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_pb(MPI_Comm comm,const char pre[],
+
+static PetscErrorCode create_pb(MPI_Comm com,const char pre[],
                                 const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenIce)(comm, pre, config, EC);  return 0;
+  *i = new (ThermoGlenIce)(com, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[],
+
+static PetscErrorCode create_gpbld(MPI_Comm com,const char pre[],
                                    const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (GPBLDIce)(comm, pre, config, EC);  return 0;
+  *i = new (GPBLDIce)(com, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_hooke(MPI_Comm comm,const char pre[],
+
+static PetscErrorCode create_hooke(MPI_Comm com,const char pre[],
                                    const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (HookeIce)(comm, pre, config, EC);  return 0;
+  *i = new (HookeIce)(com, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_arr(MPI_Comm comm,const char pre[],
+
+static PetscErrorCode create_arr(MPI_Comm com,const char pre[],
                                  const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIce)(comm, pre, config, EC);  return 0;
+  *i = new (ThermoGlenArrIce)(com, pre, config, EC);  return 0;
 }
-static PetscErrorCode create_arrwarm(MPI_Comm comm,const char pre[],
+
+static PetscErrorCode create_arrwarm(MPI_Comm com,const char pre[],
                                      const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIceWarm)(comm, pre, config, EC);  return 0;
-}
-static PetscErrorCode create_hybrid(MPI_Comm comm,const char pre[],
-                                    const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (HybridIce)(comm, pre, config, EC);  return 0;
+  *i = new (ThermoGlenArrIceWarm)(com, pre, config, EC);  return 0;
 }
 
+static PetscErrorCode create_goldsby_kohlstedt(MPI_Comm com,const char pre[],
+                                               const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+  *i = new (GoldsbyKohlstedtIce)(com, pre, config, EC);  return 0;
+}
 
-#undef __FUNCT__
-#define __FUNCT__ "IceFlowLawFactory::registerAll"
 PetscErrorCode IceFlowLawFactory::registerAll()
 {
   PetscErrorCode ierr;
 
-  PetscFunctionBegin;
-  ierr = PetscMemzero(&type_list,sizeof(type_list));CHKERRQ(ierr);
+  flow_laws.clear();
   ierr = registerType(ICE_ISOTHERMAL_GLEN, &create_isothermal_glen); CHKERRQ(ierr);
-  ierr = registerType(ICE_PB,     &create_pb);     CHKERRQ(ierr);
-  ierr = registerType(ICE_GPBLD,  &create_gpbld);  CHKERRQ(ierr);
-  ierr = registerType(ICE_HOOKE,  &create_hooke);  CHKERRQ(ierr);
-  ierr = registerType(ICE_ARR,    &create_arr);    CHKERRQ(ierr);
-  ierr = registerType(ICE_ARRWARM,&create_arrwarm);CHKERRQ(ierr);
-  ierr = registerType(ICE_HYBRID, &create_hybrid); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+  ierr = registerType(ICE_PB, &create_pb);     CHKERRQ(ierr);
+  ierr = registerType(ICE_GPBLD, &create_gpbld);  CHKERRQ(ierr);
+  ierr = registerType(ICE_HOOKE, &create_hooke);  CHKERRQ(ierr);
+  ierr = registerType(ICE_ARR, &create_arr);    CHKERRQ(ierr);
+  ierr = registerType(ICE_ARRWARM, &create_arrwarm);CHKERRQ(ierr);
+  ierr = registerType(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt); CHKERRQ(ierr);
+
+  return 0;
 }
 
-
-#undef __FUNCT__
-#define __FUNCT__ "IceFlowLawFactory::setType"
-PetscErrorCode IceFlowLawFactory::setType(const char type[])
+PetscErrorCode IceFlowLawFactory::setType(string type)
 {
-  void (*r)(void);
+  IceFlowLawCreator r;
   PetscErrorCode ierr;
 
-  PetscFunctionBegin;
-  ierr = PetscFListFind(type_list, comm, type, PETSC_FALSE, (void(**)(void))&r);CHKERRQ(ierr);
+  r = flow_laws[type];
   if (!r) {
-    ierr = PetscPrintf(comm, "PISM ERROR: Selected ice type \"%s\" is not available.\n",type); CHKERRQ(ierr);
+    ierr = PetscPrintf(com, "PISM ERROR: Selected ice type \"%s\" is not available.\n",
+                       type.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
-  ierr = PetscStrncpy(type_name,type,sizeof(type_name));CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+
+  type_name = type;
+
+  return 0;
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "IceFlowLawFactory::setFromOptions"
 PetscErrorCode IceFlowLawFactory::setFromOptions()
 {
   PetscErrorCode ierr;
-  PetscBool flg;
-  char my_type_name[256];
+  bool flag;
+  string my_type_name;
 
-  PetscFunctionBegin;
-  // These options will choose Goldsby-Kohlstedt ice by default (see IceModel::setFromOptions()) but if a derived class
-  // uses a different initialization procedure, we'll recognize them here as well.  A better long-term solution would be
-  // to separate tracking of grain size from a particular flow law (since in principle they are unrelated) but since
-  // HYBRID is the only one that currently uses grain size, this solution is acceptable.
-  ierr = PetscOptionsHasName(prefix, "-gk_age", &flg); CHKERRQ(ierr);
-  if (flg) {
-    ierr = setType(ICE_HYBRID);CHKERRQ(ierr);
-  }
-  // -gk 0 does not make sense, so using PetscOptionsHasName is OK.
-  ierr = PetscOptionsHasName(prefix, "-gk", &flg); CHKERRQ(ierr);
-  if (flg) {
-    ierr = setType(ICE_HYBRID);CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsBegin(comm, prefix, "IceFlowLawFactory options", "IceFlowLaw");CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(com, prefix, "IceFlowLawFactory options", "IceFlowLaw");CHKERRQ(ierr);
   {
-    ierr = PetscOptionsList("-flow_law","Flow law type","IceFlowLawFactory::setType",
-                            type_list,type_name,my_type_name,sizeof(my_type_name),&flg);CHKERRQ(ierr);
-    if (flg) {ierr = setType(my_type_name);CHKERRQ(ierr);}
+
+    // build the list of choices
+    map<string,IceFlowLawCreator>::iterator j = flow_laws.begin();
+    set<string> choices;
+    while (j != flow_laws.end()) {
+      choices.insert(j->first);
+      ++j;
+    }
+
+    ierr = PISMOptionsList(com, "-flow_law", "flow law type", choices,
+                           type_name, my_type_name, flag);CHKERRQ(ierr);
+
+    if (flag) {
+      ierr = setType(my_type_name); CHKERRQ(ierr);
+    }
+
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  return 0;
 }
 
-
-#undef __FUNCT__
-#define __FUNCT__ "IceFlowLawFactory::create"
 PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
 {
-  PetscErrorCode ierr,(*r)(MPI_Comm,const char[],const NCConfigVariable &,EnthalpyConverter*,IceFlowLaw**);
+  PetscErrorCode ierr;
+  IceFlowLawCreator r;
   IceFlowLaw *ice;
 
   PetscFunctionBegin;
   PetscValidPointer(inice,3);
   *inice = 0;
+
   // find the function that can create selected ice type:
-  ierr = PetscFListFind(type_list, comm, type_name, PETSC_FALSE, (void(**)(void))&r);CHKERRQ(ierr);
-  if (!r) SETERRQ1(comm, 1,"Selected Ice type %s not available, but we shouldn't be able to get here anyway",type_name);
+  r = flow_laws[type_name];
+  if (r == NULL) {
+    SETERRQ1(com, 1,
+             "Selected Ice type %s not available, but we shouldn't be able to get here anyway",
+             type_name.c_str());
+  }
+
   // create an IceFlowLaw instance:
-  ierr = (*r)(comm, prefix, config, EC, &ice);CHKERRQ(ierr);
+  ierr = (*r)(com, prefix, config, EC, &ice);CHKERRQ(ierr);
   *inice = ice;
+
   PetscFunctionReturn(0);
 }
