@@ -38,7 +38,7 @@ ncatted -O -a units,precip,m,c,"m a-1" $PISMVERSION
 ncrename -O -v bheatflx_shapiro,bheatflx $PISMVERSION
 ncatted -O -a units,bheatflx,m,c,"W m-2" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
-ncatted -a standard_name,bheatflx,d,, $PISMVERSION
+ncatted -O -a standard_name,bheatflx,d,, $PISMVERSION
 # keep only the fields we actually use at bootstrapping
 ncks -O -v x,y,lat,lon,bheatflx,topg,thk,precip,temp_ma,mapping \
   $PISMVERSION $PISMVERSION
@@ -73,7 +73,7 @@ echo "downloading future forcing data ... "
 wget -nc http://kluis.cs.umt.edu/isis/ANT_climate_forcing_2004_2098_v3.nc
 
 echo "creating unscaled precip anomaly file ... "
-ncks -v preciptation ANT_climate_forcing_2004_2098_v3.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
+ncks -O -v preciptation ANT_climate_forcing_2004_2098_v3.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
 # change name and convert to ice-equivalent units;
 # email 13 July 2011 from Bindshadler says Charles Jackson confirms density 1000.0 is correct
 ncap2 -O -s 'precip=float(preciptation*(1000.0/910.0))' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
@@ -83,8 +83,8 @@ ncks -O -v preciptation -x ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_pre
 ncatted -O -a standard_name,precip,d,, ar4_ant_precip_anomaly_scalefactor_1.0.nc
 
 echo "creating unscaled temp anomaly file ... "
-ncks -v annualtemp ANT_climate_forcing_2004_2098_v3.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
-ncrename -v annualtemp,artm ar4_ant_artm_anomaly_scalefactor_1.0.nc
+ncks -O -v annualtemp ANT_climate_forcing_2004_2098_v3.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
+ncrename -O -v annualtemp,artm ar4_ant_artm_anomaly_scalefactor_1.0.nc
 
 ncap2 -O -s 'precip(:,:,:)= (precip(:,:,:)-precip(0,:,:))' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
 ncap2 -O -s 'artm(:,:,:)= (artm(:,:,:)-artm(0,:,:))' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
@@ -94,15 +94,15 @@ ncrename -O -v precip,precip_anomaly ar4_ant_precip_anomaly_scalefactor_1.0.nc a
 
 echo -n "creating scaled anomaly files ... factor 1.5 "
 echo -n "precip_anomaly.. "
-ncap2 -s 'precip_anomaly(:,:,:)= 1.5 * precip_anomaly(:,:,:)' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.5.nc
+ncap2 -O -s 'precip_anomaly(:,:,:)= 1.5 * precip_anomaly(:,:,:)' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.5.nc
 echo "temp_anomaly.. "
-ncap2 -s 'temp_anomaly(:,:,:)= 1.5 * temp_anomaly(:,:,:)' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.5.nc
+ncap2 -O -s 'temp_anomaly(:,:,:)= 1.5 * temp_anomaly(:,:,:)' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.5.nc
 
 echo -n "creating scaled anomaly files ... factor 2.0 "
 echo -n "precip_anomaly.. "
 ncap2 -s 'precip_anomaly(:,:,:)= 2.0 * precip_anomaly(:,:,:)' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_2.0.nc
 echo "temp_anomaly.. "
-ncap2 -s 'temp_anomaly(:,:,:)= 2.0 * temp_anomaly(:,:,:)' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_2.0.nc
+ncap2 -O -s 'temp_anomaly(:,:,:)= 2.0 * temp_anomaly(:,:,:)' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_2.0.nc
 
 # For the temperature anomalies to be interpreted correctly they need to be in Kelvin:
 ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
