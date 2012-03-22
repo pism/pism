@@ -50,5 +50,15 @@ add_custom_command (OUTPUT manual.pdf
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${latex_sources} ${figures})
 
+add_custom_command (OUTPUT manual_draft.pdf
+  COMMAND ${PDFLATEX_COMPILER} manual.tex
+  COMMAND mv ${CMAKE_CURRENT_BINARY_DIR}/manual.pdf ${CMAKE_CURRENT_BINARY_DIR}/manual_draft.pdf
+  COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/manual.pdf ${PROJECT_BINARY_DIR}/
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS ${latex_sources} ${figures})
+
 add_custom_target(userman ALL
   DEPENDS manual.pdf)
+
+add_custom_target(manual_draft
+  DEPENDS manual_draft.pdf)

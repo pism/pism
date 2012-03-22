@@ -4,16 +4,16 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-echo "Test #25: hybrid (GK-PB) flow law regression."
+echo "Test #25: Goldsby-Kohlstedt flow law regression."
 # The list of files to delete when done.
 files="flowtable.txt diff.txt"
 
 rm -f $files
 
-$PISM_PATH/flowlaw_test -flow_law hybrid > flowtable.txt
+$PISM_PATH/flowlaw_test -flow_law gk > flowtable.txt
 # compare results
 diff flowtable.txt - > diff.txt <<END-OF-OUTPUT
-flow law:   "hybrid"
+flow law:   "gk"
 pressure = 1.785e+07 Pa = (hydrostatic at depth 2000.00 m)
 flowtable:
   (dev stress)   (abs temp) (liq frac) =   (flow)

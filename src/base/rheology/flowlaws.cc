@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "flowlaws.hh"
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
+#include "pism_options.hh"
 
 #include "NCVariable.hh"
 
@@ -74,44 +75,6 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &conf
 
 PetscErrorCode IceFlowLaw::setFromOptions() {
   PetscErrorCode ierr;
-  PetscReal slen=convert(schoofLen, "m", "km"),	// convert to km
-    svel=convert(schoofVel, "m/s", "m/year");	// convert to m/year
-
-  ierr = PetscOptionsBegin(comm,prefix,"IceFlowLaw options",NULL); CHKERRQ(ierr);
-  {
-    ierr = PetscOptionsReal("-ice_reg_schoof_vel",
-                            "Regularizing velocity (Schoof definition, m/a)",
-                            "",svel,&svel,NULL);CHKERRQ(ierr);
-
-    ierr = PetscOptionsReal("-ice_reg_schoof_length",
-                            "Regularizing length (Schoof definition, km)",
-                            "",slen,&slen,NULL);CHKERRQ(ierr);
-
-    schoofVel = convert(svel, "m/year", "m/s");	// convert to m/s
-    schoofLen = convert(slen, "km", "m");	// convert to meters
-    schoofReg = PetscSqr(schoofVel/schoofLen);
-
-    ierr = PetscOptionsReal("-ice_pb_A_cold",
-                            "Paterson-Budd cold softness parameter (Pa^-3 s^-1)",
-                            "",A_cold,&A_cold,NULL);CHKERRQ(ierr);
-
-    ierr = PetscOptionsReal("-ice_pb_A_warm",
-                            "Paterson-Budd warm softness parameter (Pa^-3 s^-1)",
-                            "",A_warm,&A_warm,NULL);CHKERRQ(ierr);
-
-    ierr = PetscOptionsReal("-ice_pb_Q_cold",
-                            "Paterson-Budd activation energy (J/mol)",
-                            "",Q_cold,&Q_cold,NULL);CHKERRQ(ierr);
-
-    ierr = PetscOptionsReal("-ice_pb_Q_warm",
-                            "Paterson-Budd activation energy (J/mol)",
-                            "",Q_warm,&Q_warm,NULL);CHKERRQ(ierr);
-
-    ierr = PetscOptionsReal("-ice_pb_crit_temp",
-                            "Paterson-Budd critical temperature (K)",
-                            "",crit_temp,&crit_temp,NULL);CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -220,21 +183,21 @@ GPBLDIce::GPBLDIce(MPI_Comm c,const char pre[],
 
 PetscErrorCode GPBLDIce::setFromOptions() {
   PetscErrorCode ierr;
+  bool flag;
 
   ierr = IceFlowLaw::setFromOptions(); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(comm,prefix,"GPBLDIce options",NULL); CHKERRQ(ierr);
   {
-    ierr = PetscOptionsReal("-ice_gpbld_water_frac_coeff",
-                            "coefficient of softness factor in temperate ice,"
-                            " as function of liquid water fraction; no units",
-                            "",water_frac_coeff,&water_frac_coeff,NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ice_gpbld_water_frac_observed_limit",
-                            "maximum value of liquid water fraction 'omega' for"
-                            " which softness values are parameterized by Lliboutry and"
-                            " Duval (1985); no units",
-                            "",water_frac_observed_limit,&water_frac_observed_limit,NULL);
-                            CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-ice_gpbld_water_frac_coeff",
+                           "coefficient of softness factor in temperate ice,"
+                           " as function of liquid water fraction; no units",
+                           water_frac_coeff, flag); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-ice_gpbld_water_frac_observed_limit",
+                           "maximum value of liquid water fraction 'omega' for"
+                           " which softness values are parameterized by Lliboutry and"
+                           " Duval (1985); no units",
+                           water_frac_observed_limit, flag); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
@@ -330,7 +293,7 @@ PetscReal HookeIce::softness_parameter_from_temp(PetscReal T_pa) const {
 
 // Hybrid (Goldsby-Kohlstedt / Glen) ice flow law
 
-HybridIce::HybridIce(MPI_Comm c, const char pre[],
+GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const char pre[],
 		     const NCConfigVariable &config, EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
 
@@ -376,7 +339,7 @@ HybridIce::HybridIce(MPI_Comm c, const char pre[],
   D. L. Goldsby & D. L. Kohlstedt (2001), "Superplastic deformation
   of ice: experimental observations", J. Geophys. Res. 106(M6), 11017-11030.
 */
-PetscReal HybridIce::flow_from_temp(PetscReal stress, PetscReal temp,
+PetscReal GoldsbyKohlstedtIce::flow_from_temp(PetscReal stress, PetscReal temp,
                                     PetscReal pressure, PetscReal gs) const {
   PetscReal eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
@@ -412,7 +375,7 @@ PetscReal HybridIce::flow_from_temp(PetscReal stress, PetscReal temp,
 /*****************
 THE NEXT PROCEDURE REPEATS CODE; INTENDED ONLY FOR DEBUGGING
 *****************/
-GKparts HybridIce::flowParts(PetscReal stress,PetscReal temp,PetscReal pressure) const {
+GKparts GoldsbyKohlstedtIce::flowParts(PetscReal stress,PetscReal temp,PetscReal pressure) const {
   PetscReal gs, eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
   GKparts p;
 
@@ -455,14 +418,14 @@ GKparts HybridIce::flowParts(PetscReal stress,PetscReal temp,PetscReal pressure)
 }
 /*****************/
 
-HybridIceStripped::HybridIceStripped(MPI_Comm c,const char pre[],
+GoldsbyKohlstedtIceStripped::GoldsbyKohlstedtIceStripped(MPI_Comm c,const char pre[],
 				     const NCConfigVariable &config, EnthalpyConverter *my_EC)
-  : HybridIce(c, pre, config, my_EC) {
+  : GoldsbyKohlstedtIce(c, pre, config, my_EC) {
   d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)
 }
 
 
-PetscReal HybridIceStripped::flow_from_temp(PetscReal stress, PetscReal temp, PetscReal pressure, PetscReal) const {
+PetscReal GoldsbyKohlstedtIceStripped::flow_from_temp(PetscReal stress, PetscReal temp, PetscReal pressure, PetscReal) const {
   // note value of gs is ignored
   // note pressure only effects the temperature; the "P V" term is dropped
   // note no diffusional flow

@@ -585,22 +585,6 @@ PetscErrorCode IceModel::allocate_flowlaw() {
 
     sia_flow_law = "pb";
     ssa_flow_law = "pb";
-
-    bool flag;
-    ierr = PISMOptionsIsSet("-gk", flag); CHKERRQ(ierr);
-    if (flag) {
-      sia_flow_law = "hybrid";
-      ssa_flow_law = "hybrid";
-    }
-
-    // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice;
-    ierr = PISMOptionsIsSet("-gk_age", flag); CHKERRQ(ierr);
-    if (flag) {
-      sia_flow_law = "hybrid";
-      ssa_flow_law = "hybrid";
-      config.set_flag("compute_grain_size_using_age", true);
-    }
-
   }
 
   config.set_string("sia_flow_law", sia_flow_law);

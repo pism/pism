@@ -152,8 +152,8 @@ netcdf pism_config {
     pism_config:sliding_scale_brutal = 1.0;
     pism_config:sliding_scale_brutal_doc = "; Brutal SSA Sliding Scale";
 
-    pism_config:constant_grain_size = 1.0;
-    pism_config:constant_grain_size_doc = "mm; Default constant grains size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law";
+    pism_config:ice_grain_size = 1.0;
+    pism_config:ice_grain_size_doc = "mm; Default constant ice grain size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law";
 
     pism_config:compute_grain_size_using_age = "no";
     pism_config:compute_grain_size_using_age_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law";

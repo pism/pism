@@ -798,9 +798,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   ierr = config.flag_from_option("e_age_coupling", "do_e_age_coupling"); CHKERRQ(ierr);
 
-  // note "-gk" is used for specifying Goldsby-Kohlstedt ice
-  //   this form allows a constant value of grain size to be input in mm
-  ierr = config.scalar_from_option("gk", "constant_grain_size"); CHKERRQ(ierr);
+  // This parameter is used by the Goldsby-Kohlstedt flow law.
+  ierr = config.scalar_from_option("ice_grain_size", "ice_grain_size"); CHKERRQ(ierr);
+
+  ierr = config.flag_from_option("grain_size_age_coupling", "compute_grain_size_using_age"); CHKERRQ(ierr);
 
   // SSA
   // Decide on the algorithm for solving the SSA

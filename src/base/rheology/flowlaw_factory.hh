@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,32 +20,42 @@
 #define __flowlaw_factory
 
 #include "flowlaws.hh"
+#include <map>
+#include <string>
+
+// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
+/// @cond NAMESPACE_BROWSER
+using namespace std;
+/// @endcond
 
 #define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
 #define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
 #define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (PolyThermalGPBLDIce) */
 #define ICE_HOOKE   "hooke"         /* Hooke (ThermoGlenIceHooke) */
 #define ICE_ARR     "arr"           /* Temperature dependent Arrhenius (either warm or cold) */
-#define ICE_HYBRID  "hybrid"        /* Goldsby-Kohlstedt for SIA, PB for SSA */
+#define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
+
+typedef PetscErrorCode(*IceFlowLawCreator)(MPI_Comm, const char[],
+                                           const NCConfigVariable &, EnthalpyConverter*, IceFlowLaw **);
 
 class IceFlowLawFactory {
 public:
   IceFlowLawFactory(MPI_Comm, const char prefix[], const NCConfigVariable &conf,
                     EnthalpyConverter *my_EC);
   ~IceFlowLawFactory();
-  PetscErrorCode setType(const char[]);
+  PetscErrorCode setType(string name);
   PetscErrorCode setFromOptions();
-  PetscErrorCode registerType(const char[],
-		  PetscErrorCode(*)(MPI_Comm,const char[], const NCConfigVariable &,
-                                    EnthalpyConverter*, IceFlowLaw **));
+  PetscErrorCode registerType(string name, IceFlowLawCreator);
+  PetscErrorCode removeType(string name);
   PetscErrorCode create(IceFlowLaw **);
 private:
   PetscErrorCode registerAll();
 private:
-  MPI_Comm comm;
-  char prefix[256], type_name[256];
-  PetscFList type_list;
+  MPI_Comm com;
+  char prefix[256];
+  string type_name;
+  map<string, IceFlowLawCreator> flow_laws;
   const NCConfigVariable &config;
   EnthalpyConverter *EC;
 };

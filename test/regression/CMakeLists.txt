@@ -83,7 +83,7 @@ pism_test (comparing_restart_i_vs_boot_file_and_regrid_file test_23.sh)
 
 pism_test (Hooke_flow_law_regress test_24.sh)
 
-pism_test (hybrid_GK-PB_flow_law_regress test_25.sh)
+pism_test (GK_flow_law_regress test_25.sh)
 
 pism_test (cold_part_of_Paterson-Budd_flow_law_regress test_26.sh)
 
