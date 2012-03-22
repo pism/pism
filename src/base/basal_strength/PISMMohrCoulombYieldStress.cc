@@ -452,49 +452,56 @@ is not used. Instead, the same rule as above for grounded ice is used.
  */
 PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
   PetscErrorCode ierr;
+  bool  topg_to_phi_set;
+  vector<double> inarray(4);
 
-  PetscInt    Nparam=5;
-  PetscReal   inarray[5] = {5.0, 15.0, -1000.0, 1000.0, 10.0};
+  // default values:
+  inarray[0] = 5.0;
+  inarray[1] = 15.0;
+  inarray[2] = -1000.0;
+  inarray[3] = 1000.0;
 
-  // read comma-separated array of zero to five values
-  PetscBool  topg_to_phi_set;
-  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-topg_to_phi", inarray, &Nparam, &topg_to_phi_set);
-  CHKERRQ(ierr);
-  if (topg_to_phi_set != PETSC_TRUE) {
+  // read the comma-separated list of four values
+  ierr = PISMOptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
+                              inarray, topg_to_phi_set); CHKERRQ(ierr);
+
+  if (topg_to_phi_set == false) {
     SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
   }
 
-  if ((Nparam > 5) || (Nparam < 4)) {
-    ierr = verbPrintf(1, grid.com,
-                      "PISM ERROR: option -topg_to_phi provided with more than 5 or fewer than 4\n"
-                      "            arguments ... ENDING ...\n");
-    CHKERRQ(ierr);
+  if (inarray.size() != 4) {
+    PetscPrintf(grid.com,
+                "PISM ERROR: option -topg_to_phi requires a comma-separated list with 4 numbers; got %d\n",
+                inarray.size());
     PISMEnd();
   }
 
   PetscReal phi_min = inarray[0], phi_max = inarray[1],
-    topg_min = inarray[2], topg_max = inarray[3],
-    phi_ocean = inarray[4];
+    topg_min = inarray[2], topg_max = inarray[3];
+
+  if (phi_min >= phi_max) {
+    PetscPrintf(grid.com,
+                "PISM ERROR: invalid -topg_to_phi arguments: phi_min < phi_max is required\n");
+    PISMEnd();
+  }
+
+  if (topg_min >= topg_max) {
+    PetscPrintf(grid.com,
+                "PISM ERROR: invalid -topg_to_phi arguments: topg_min < topg_max is required\n");
+    PISMEnd();
+  }
 
   ierr = verbPrintf(2, grid.com,
                     "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
                     "            /  %5.2f                                 for   topg < %.f\n"
-                    "      phi = |  %5.2f + (topg - %.f) * (%.2f / %.f)   for   %.f < topg < %.f\n"
+                    "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
                     "            \\  %5.2f                                 for   %.f < topg\n",
                     phi_min, topg_min,
                     phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
                     phi_max, topg_max); CHKERRQ(ierr);
 
-  if (Nparam == 5) {
-    ierr = verbPrintf(2, grid.com,
-                      "      (also using phi = %5.2f in floating ice or ice free ocean)\n",
-                      phi_ocean); CHKERRQ(ierr);
-  }
-
-  MaskQuery m(*mask);
-
   PetscReal slope = (phi_max - phi_min) / (topg_max - topg_min);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
+
   ierr = bed_topography->begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
 
@@ -502,21 +509,17 @@ PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
       PetscScalar bed = (*bed_topography)(i, j);
 
-      if (m.grounded(i, j) || (Nparam < 5)) {
-        if (bed <= topg_min) {
-          till_phi(i, j) = phi_min;
-        } else if (bed >= topg_max) {
-          till_phi(i, j) = phi_max;
-        } else {
-          till_phi(i, j) = phi_min + (bed - topg_min) * slope;
-        }
+      if (bed <= topg_min) {
+        till_phi(i, j) = phi_min;
+      } else if (bed >= topg_max) {
+        till_phi(i, j) = phi_max;
       } else {
-        till_phi(i,j) = phi_ocean;
+        till_phi(i, j) = phi_min + (bed - topg_min) * slope;
       }
+
     }
   }
 
-  ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = bed_topography->end_access(); CHKERRQ(ierr);
   ierr = till_phi.end_access(); CHKERRQ(ierr);
 

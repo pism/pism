@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 The PISM Authors
+# Copyright (C) 2009-2012 The PISM Authors
 ##################################################################################
 # SeaRISE Experiments with PISM trunk (tested for revision 1844) using Data from Anne Le Brocq (from SeaRISE wiki)...
 #...with PIK physics (winkelmann_martin11), mostly as described in martin_winkelmann11 but with enthalpy model and modified configuration parameters
@@ -110,8 +110,8 @@ PIKPHYS_COUPLING="-atmosphere pik -ocean pik -meltfactor_pik 1.5e-2"
 
 # sliding related options:
 PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.97"
-TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
-#TILLPHI="-topg_to_phi 5.0,20.0,-1000.0,0.0,10.0" # as in martin_winkelmann11
+TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
+#TILLPHI="-topg_to_phi 5.0,20.0,-1000.0,0.0" # as in martin_winkelmann11
 FULLPHYS="-ssa_sliding -thk_eff $PARAMS $TILLPHI"
 
 

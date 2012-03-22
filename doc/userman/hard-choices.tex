@@ -262,7 +262,7 @@ Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of g
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \txtopt{topg_to_phi}{\emph{list of 5 numbers}} & Compute $\phi$ using \eqref{eq:1} and \eqref{eq:2}.\\
+    \txtopt{topg_to_phi}{\emph{list of 4 numbers}} & Compute $\phi$ using \eqref{eq:1} and \eqref{eq:2}.\\
     \txtopt{plastic_pwfrac}{\emph{pure number}} & Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
     \intextoption{plastic_c0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
     \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}. The default is $0.01$.\\
@@ -279,7 +279,7 @@ Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling ho
 
 We find that an effective, though heuristic, way to determine \texttt{tillphi} is to make it a function of bed elevation \cite{BKAJS}.  This heuristic is motivated by hypothesis that basal material with a marine history should be weak \cite{HuybrechtsdeWolde}.
 
-Thus PISM has a mechanism setting $\phi$=\texttt{tillphi} to a \emph{piecewise-linear} function of bed elevation.  Given 5 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$, $\phi_{\mathrm{ocean}}$, where $b$ stands for the bed elevation, let 
+Thus PISM has a mechanism setting $\phi$=\texttt{tillphi} to a \emph{piecewise-linear} function of bed elevation.  Given 4 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$, where $b$ stands for the bed elevation, let 
 \begin{equation}
   M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}})\label{eq:1}
 \end{equation}
@@ -291,14 +291,12 @@ be the slope of the nontrivial part.  Then
     &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
     \phi_{\text{max}}, & b_{\text{max}} \le b(x,y). \end{cases}\label{eq:2}
 \end{equation}
-The exception is if the point is marked as floating, in which case the till friction angle
-is set to the value $\phi_{\mathrm{ocean}}$.
 
 Actually the ``yield stress'' $\tau_c$ can be part of a power law model.  In fact, the basal resistance is normally determined by a user-configurable ``pseudo-plastic'' power law.  Specifically, stress is generally a power law function of basal sliding velocity $\mathbf{u}$:
    $$\tau_b = \tau_c \frac{|\mathbf{u}|^{q-1}}{u_{\text{threshold}}^q}\, \mathbf{u}.$$
 Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM input and output files, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The purely plastic case is $q=0$---see \cite{SchoofStream} for precise interpretation---and the linear case is $q=1$, in which case the coefficient of velocity, $\tau_c/u_{\text{threshold}}$, is more commonly called $\beta$ or $\beta^2$ \cite{MacAyeal}.
 
-See \emph{PISM Source Code browser}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding,BKAJS} for more details.
+See \emph{PISM Source Code browser}, source files in \texttt{src/base/basal_resistance}, and \cite{BBssasliding,BKAJS} for more details.
 
 The major example of \texttt{-ssa_sliding} usage is in the first section of this manual.  A made-up example, in which sliding happens in the ``trough'', is
 \begin{verbatim}
@@ -306,7 +304,7 @@ pisms -eisII I -ssa_sliding -Mx 91 -My 91 -Mz 51 \
       -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
 \end{verbatim}
 
-A final note on basal sliding is in order.  There can be sliding in the SIA stress balance model (paradigm) itself, where the velocity of sliding is a direct function of the driving stress.  Such a SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and many other SIA-based modeling efforts in the literature.  \emph{This kind of sliding is not recommended, as it does not make sense to regard the driving stress as the local generator of flow if the bed is not holding all of that stress.}  Within PISM there is an implementation of SIA-based sliding for the verification test E, see \texttt{SIA_Sliding.cc}.  PISM does \emph{not} support this sliding mode in other contexts.  
+A final note on basal sliding is in order.  There can be sliding in the SIA stress balance model (paradigm) itself, where the velocity of sliding is a direct function of the driving stress.  Such a SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and many other SIA-based modeling efforts in the literature.  \emph{This kind of sliding is not recommended, as it does not make sense to regard the driving stress as the local generator of flow if the bed is not holding all of that stress.}  Within PISM there is an implementation of SIA-based sliding for the verification test E, see \texttt{SIA_Sliding.cc}.  PISM does \emph{not} support this sliding mode in other contexts.
 
 
 \subsection{Subglacial hydrology}  \label{subsect:subhydro}

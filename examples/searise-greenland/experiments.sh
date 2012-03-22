@@ -134,7 +134,7 @@ echo
 
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
-TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
+TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
 
 FULLPHYS="-ssa_sliding -thk_eff $TILLPHI"
 
