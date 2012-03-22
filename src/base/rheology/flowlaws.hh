@@ -58,7 +58,7 @@ class IceFlowLaw {
 public:
   IceFlowLaw(MPI_Comm c, const char pre[], const NCConfigVariable &config,
              EnthalpyConverter *EC);
-  virtual ~IceFlowLaw() {}
+ virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
 
   virtual PetscReal effective_viscosity(PetscReal hardness,
@@ -97,7 +97,7 @@ protected:
     e,                          // flow enhancement factor
     n;                          // power law exponent
 
-  MPI_Comm comm;
+  MPI_Comm com;
   char prefix[256];
 };
 
@@ -249,10 +249,30 @@ former form of the flow law is known for Goldsby-Kohlstedt.  If one can
 invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
 derived class.
  */
-class GoldsbyKohlstedtIce : public ThermoGlenIce {
+class GoldsbyKohlstedtIce : public IceFlowLaw {
 public:
   GoldsbyKohlstedtIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
-            EnthalpyConverter *my_EC);
+                      EnthalpyConverter *my_EC);
+
+  virtual PetscReal flow(PetscReal stress, PetscReal E,
+                         PetscReal pressure, PetscReal grainsize) const;
+
+  virtual PetscReal effective_viscosity(PetscReal hardness,
+                                        PetscReal u_x, PetscReal u_y,
+                                        PetscReal v_x, PetscReal v_y) const;
+
+  virtual void effective_viscosity_with_derivative(PetscReal hardness, const PetscReal Du[],
+                                                   PetscReal *nu, PetscReal *dnu) const;
+
+  virtual PetscReal averaged_hardness(PetscReal thickness,
+                                      PetscInt kbelowH,
+                                      const PetscReal *zlevels,
+                                      const PetscReal *enthalpy) const;
+
+  virtual PetscReal hardness_parameter(PetscReal E, PetscReal p) const;
+
+  virtual PetscReal softness_parameter(PetscReal E, PetscReal p) const;
+
 protected:
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
                                    PetscReal pressure, PetscReal gs) const;
