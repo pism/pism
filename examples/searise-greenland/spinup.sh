@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 The PISM Authors
+# Copyright (C) 2009-2012 The PISM Authors
 
 # PISM SeaRISE Greenland spinup using modeled paleoclimate
 #
@@ -183,7 +183,7 @@ COUPLER_PIK="-atmosphere searise_greenland,dTforcing -surface pdd -paleo_precip 
 COUPLER_PIKFTT="-atmosphere searise_greenland,dTforcing -surface pdd,forcing -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES $PIKOPTIONS"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
-TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
+TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
 
 FULLPHYS="-ssa_sliding -thk_eff ${TILLPHI}"
 

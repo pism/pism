@@ -53,7 +53,7 @@ echo
 PIKOPTIONS="-pik -eigen_calving 2.0e18 -calving_at_thickness 150.0"  # parameters preliminary
 
 SSA="-ssa_sliding -ssa_method fd -e_ssa 1.0"
-SLIDING="-thk_eff -pseudo_plastic_q 0.25 -plastic_pwfrac 0.98 -topg_to_phi 5.0,20.0,-300.0,700.0,10.0" # preliminary
+SLIDING="-thk_eff -pseudo_plastic_q 0.25 -plastic_pwfrac 0.98 -topg_to_phi 5.0,20.0,-300.0,700.0" # preliminary
 
 COUPLER_SIMPLE="-atmosphere constant -surface simple"
 COUPLER_FORCING="-atmosphere constant,dTforcing -surface simple -dTforcing pism_dT.nc -ocean constant,dSLforcing -dSLforcing pism_dSL.nc"
