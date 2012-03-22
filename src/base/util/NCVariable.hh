@@ -91,12 +91,14 @@ public:
    */
   map<string, vector<double> > doubles; //!< scalar and array attributes
 
+  virtual PetscErrorCode read_attributes(string filename);
+
   virtual PetscErrorCode define(const PIO &nc, nc_type nctype,
                                 bool write_in_glaciological_units = true) = 0;
 protected:
   virtual PetscErrorCode write_attributes(const PIO &nc, nc_type nctype,
 					  bool write_in_glaciological_units) const;
-  virtual PetscErrorCode read_valid_range(const PIO &nc);
+  virtual PetscErrorCode read_valid_range(const PIO &nc, string name);
   MPI_Comm com;
   PetscMPIInt rank;
   map<string, string> strings;  //!< string and boolean attributes

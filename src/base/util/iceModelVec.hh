@@ -197,6 +197,7 @@ public:
   virtual PetscErrorCode  rename(const string &short_name, const string &long_name,
                                  const string &standard_name, int component = 0);
   virtual PetscErrorCode  set_intent(string pism_intent, int component = 0);
+  virtual PetscErrorCode  read_attributes(string filename, int component = 0);
   virtual NCSpatialVariable get_metadata(int N);
   virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);

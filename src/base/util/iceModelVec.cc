@@ -490,15 +490,26 @@ PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* 
   vector<double> zlevs, zblevs;
   grid_info gi;
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
-  ierr = nc.inq_grid_info(vars[0].short_name, gi);
 
-  if (ierr == 1) {              // no such variable
-    lic = NULL;
-  } else {
-    CHKERRQ(ierr);              // catch other errors
-    //! the *caller* is in charge of destroying lic
-    lic = new LocalInterpCtx(gi, *grid, zlevels.front(), zlevels.back());
+  bool exists, found_by_std_name;
+  string name_found;
+
+  ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
+                    exists, name_found, found_by_std_name); CHKERRQ(ierr);
+
+  if (exists == false) {
+    PetscPrintf(grid->com, "PISM ERROR: cannot find %s (%s) in %s\n",
+                vars[0].short_name.c_str(), vars[0].get_string("standard_name").c_str(),
+                filename.c_str());
+    PISMEnd();
   }
+
+  ierr = nc.inq_grid_info(name_found, gi); CHKERRQ(ierr);
+
+  //! the *caller* is in charge of destroying lic
+  lic = new LocalInterpCtx(gi, *grid, zlevels.front(), zlevels.back());
+  if (lic == NULL)
+    SETERRQ(grid->com, 1, "memory allocation failed");
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -616,6 +627,18 @@ PetscErrorCode IceModelVec::define(const PIO &nc, nc_type output_datatype) {
 
   return 0;
 }
+
+//! \brief Read attributes from the corresponding variable in \c filename.
+/*! Note that unline read() and regrid(), this method does not use the standard
+  name to find the variable to read attributes from.
+ */
+PetscErrorCode IceModelVec::read_attributes(string filename, int N) {
+  if (N < 0 || N >= dof)
+    SETERRQ(grid->com, 1, "invalid N (>= dof)");
+
+  return vars[N].read_attributes(filename);
+}
+
 
 //! \brief Returns a copy of a NCSpatialVariable object containing metadata for
 //! the compoment N.

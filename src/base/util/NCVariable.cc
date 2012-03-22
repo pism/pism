@@ -47,6 +47,57 @@ void NCVariable::init(string name, MPI_Comm c, PetscMPIInt r) {
   rank = r;
 }
 
+//! \brief Read attributes from a file.
+PetscErrorCode NCVariable::read_attributes(string filename) {
+  PetscErrorCode ierr;
+  bool variable_exists, found_by_std_name;
+  string name_found;
+  int nattrs;
+  PIO nc(com, rank, "netcdf3");
+
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+
+  ierr = nc.inq_var(short_name, strings["standard_name"], variable_exists,
+                    name_found, found_by_std_name); CHKERRQ(ierr);
+
+  if (!variable_exists) {
+    ierr = PetscPrintf(com,
+		       "PISM ERROR: variable %s was not found in %s.\n"
+		       "            Exiting...\n",
+		       short_name.c_str(), filename.c_str()); CHKERRQ(ierr);
+    PISMEnd();
+  }
+
+  strings.clear();
+  doubles.clear();
+
+  ierr = nc.inq_nattrs(name_found, nattrs); CHKERRQ(ierr);
+
+  for (int j = 0; j < nattrs; ++j) {
+    string attname;
+    nc_type nctype;
+    ierr = nc.inq_attname(name_found, j, attname); CHKERRQ(ierr);
+    ierr = nc.inq_atttype(name_found, attname, nctype); CHKERRQ(ierr);
+
+    if (nctype == NC_CHAR) {
+      string value;
+      ierr = nc.get_att_text(name_found, attname, value); CHKERRQ(ierr);
+
+      strings[attname] = value;
+    } else {
+      vector<double> values;
+
+      ierr = nc.get_att_double(name_found, attname, values); CHKERRQ(ierr);
+      doubles[attname] = values;
+    }
+  } // end of for (int j = 0; j < nattrs; ++j)
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 //! Set the internal units.
 /*! Units should not be set by accessing the \c strings member directly. This
   method also checks if \c new_units are valid and initializes the \c units structure.
@@ -218,12 +269,12 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
     PISMEnd();
   }
 
-  ierr = nc.get_vec(grid, short_name, nlevels, time, v); CHKERRQ(ierr);
+  ierr = nc.get_vec(grid, name_found, nlevels, time, v); CHKERRQ(ierr);
 
   bool input_has_units;
   utUnit input_units;
 
-  ierr = nc.inq_units(short_name, input_has_units, input_units); CHKERRQ(ierr);
+  ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
   if ( has("units") && (!input_has_units) ) {
     string &units_string = strings["units"],
@@ -264,6 +315,7 @@ PetscErrorCode NCSpatialVariable::write(string filename, nc_type nctype,
 
   if (!exists) {
     ierr = define(nc, nctype, write_in_glaciological_units); CHKERRQ(ierr);
+    name_found = short_name;
   }
 
   if (write_in_glaciological_units) {
@@ -271,7 +323,7 @@ PetscErrorCode NCSpatialVariable::write(string filename, nc_type nctype,
   }
 
   // Actually write data:
-  ierr = nc.put_vec(grid, short_name, nlevels, v); CHKERRQ(ierr);
+  ierr = nc.put_vec(grid, name_found, nlevels, v); CHKERRQ(ierr);
 
   if (write_in_glaciological_units) {
     ierr = change_units(v, &glaciological_units, &units); CHKERRQ(ierr); // restore the units
@@ -312,7 +364,6 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
 
   if (!exists) {		// couldn't find the variable
     if (critical) {		// if it's critical, print an error message and stop
-      // SETERRQ1(com, 1, "Variable '%s' was not found.\n", short_name);
       ierr = PetscPrintf(com,
 			"PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
 			 short_name.c_str(), filename.c_str());
@@ -341,7 +392,7 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
       CHKERRQ(ierr);
     }
   } else {			// the variable was found successfully
-    ierr = nc.regrid_vec(grid, short_name, zlevels, lic, v); CHKERRQ(ierr);
+    ierr = nc.regrid_vec(grid, name_found, zlevels, lic, v); CHKERRQ(ierr);
 
     // Now we need to get the units string from the file and convert the units,
     // because check_range and report_range expect the data to be in PISM (MKS)
@@ -350,7 +401,7 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
     bool input_has_units;
     utUnit input_units;
 
-    ierr = nc.inq_units(short_name, input_has_units, input_units); CHKERRQ(ierr);
+    ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
     if ( has("units") && (!input_has_units) ) {
       ierr = verbPrintf(2, com,
@@ -366,7 +417,7 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
     ierr = change_units(v, &input_units, &units); CHKERRQ(ierr);
 
     // Read the valid range info:
-    ierr = read_valid_range(nc); CHKERRQ(ierr);
+    ierr = read_valid_range(nc, name_found); CHKERRQ(ierr);
 
     // Check the range and warn the user if needed:
     ierr = check_range(v); CHKERRQ(ierr);
@@ -386,7 +437,7 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
 /*! Reads \c valid_min, \c valid_max and \c valid_range attributes; if \c
     valid_range is found, sets the pair \c valid_min and \c valid_max instead.
  */
-PetscErrorCode NCVariable::read_valid_range(const PIO &nc) {
+PetscErrorCode NCVariable::read_valid_range(const PIO &nc, string name) {
   string input_units_string;
   utUnit input_units;
   vector<double> bounds;
@@ -403,7 +454,7 @@ PetscErrorCode NCVariable::read_valid_range(const PIO &nc) {
   // Read the units: The following code ignores the units in the input file if
   // a) they are absent :-) b) they are invalid c) they are not compatible with
   // internal units.
-  ierr = nc.get_att_text(short_name, "units", input_units_string); CHKERRQ(ierr);
+  ierr = nc.get_att_text(name, "units", input_units_string); CHKERRQ(ierr);
   if (input_units_string.empty() == false) {
     ierr = utScan(input_units_string.c_str(), &input_units);
     if (ierr != 0)
@@ -415,17 +466,17 @@ PetscErrorCode NCVariable::read_valid_range(const PIO &nc) {
     intercept = 0;
   }
 
-  ierr = nc.get_att_double(short_name, "valid_range", bounds); CHKERRQ(ierr);
+  ierr = nc.get_att_double(name, "valid_range", bounds); CHKERRQ(ierr);
   if (bounds.size() == 2) {		// valid_range is present
     set("valid_min", intercept + slope*bounds[0]);
     set("valid_max", intercept + slope*bounds[1]);
   } else {			// valid_range has the wrong length or is missing
-    ierr = nc.get_att_double(short_name, "valid_min", bounds); CHKERRQ(ierr);
+    ierr = nc.get_att_double(name, "valid_min", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {		// valid_min is present
       set("valid_min", intercept + slope*bounds[0]);
     }
 
-    ierr = nc.get_att_double(short_name, "valid_max", bounds); CHKERRQ(ierr);
+    ierr = nc.get_att_double(name, "valid_max", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {		// valid_max is present
       set("valid_max", intercept + slope*bounds[0]);
     }
@@ -849,49 +900,9 @@ bool NCVariable::is_valid(PetscScalar a) const {
  */
 PetscErrorCode NCConfigVariable::read(string filename) {
 
-  PetscErrorCode ierr;
-  bool variable_exists;
-  int nattrs;
-  PIO nc(com, rank, "netcdf3");
+  PetscErrorCode ierr = this->read_attributes(filename); CHKERRQ(ierr);
 
-  strings.clear();
-  doubles.clear();
   config_filename = filename;
-
-  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
-
-  ierr = nc.inq_var(short_name, variable_exists); CHKERRQ(ierr);
-
-  if (!variable_exists) {
-    ierr = PetscPrintf(com,
-		       "PISM ERROR: configuration variable %s was not found in %s.\n"
-		       "            Exiting...\n",
-		       short_name.c_str(), filename.c_str()); CHKERRQ(ierr);
-    PISMEnd();
-  }
-
-  ierr = nc.inq_nattrs(short_name, nattrs); CHKERRQ(ierr);
-
-  for (int j = 0; j < nattrs; ++j) {
-    string attname;
-    nc_type nctype;
-    ierr = nc.inq_attname(short_name, j, attname); CHKERRQ(ierr);
-    ierr = nc.inq_atttype(short_name, attname, nctype); CHKERRQ(ierr);
-
-    if (nctype == NC_CHAR) {
-      string value;
-      ierr = nc.get_att_text(short_name, attname, value); CHKERRQ(ierr);
-
-      strings[attname] = value;
-    } else {
-      vector<double> values;
-
-      ierr = nc.get_att_double(short_name, attname, values); CHKERRQ(ierr);
-      doubles[attname] = values;
-    }
-  } // end of for (int j = 0; j < nattrs; ++j)
-
-  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1254,7 +1265,7 @@ PetscErrorCode NCTimeseries::read(string filename, vector<double> &data) {
   }
 
   vector<string> dims;
-  ierr = nc.inq_vardims(short_name, dims); CHKERRQ(ierr);
+  ierr = nc.inq_vardims(name_found, dims); CHKERRQ(ierr);
 
   if (dims.size() != 1) {
     ierr = PetscPrintf(com,
@@ -1280,12 +1291,12 @@ PetscErrorCode NCTimeseries::read(string filename, vector<double> &data) {
 
   ierr = nc.enddef(); CHKERRQ(ierr);
 
-  ierr = nc.get_1d_var(short_name, 0, length, data); CHKERRQ(ierr);
+  ierr = nc.get_1d_var(name_found, 0, length, data); CHKERRQ(ierr);
 
   bool input_has_units;
   utUnit input_units;
 
-  ierr = nc.inq_units(short_name, input_has_units, input_units); CHKERRQ(ierr);
+  ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
   if ( has("units") && (!input_has_units) ) {
     string &units_string = strings["units"],
@@ -1308,12 +1319,14 @@ PetscErrorCode NCTimeseries::read(string filename, vector<double> &data) {
 PetscErrorCode NCTimeseries::get_bounds_name(string filename, string &result) {
   PetscErrorCode ierr;
   PIO nc(com, rank, "netcdf3");
-  bool exists;
+  bool exists, found_by_standard_name;
+  string name_found;
 
   ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
-  ierr = nc.inq_var(short_name, exists); CHKERRQ(ierr);
+  ierr = nc.inq_var(short_name, strings["standard_name"],
+                    exists, name_found, found_by_standard_name); CHKERRQ(ierr);
   if (exists) {
-    ierr = nc.get_att_text(short_name, "bounds", result); CHKERRQ(ierr);
+    ierr = nc.get_att_text(name_found, "bounds", result); CHKERRQ(ierr);
   } else {
     result.clear();
   }
