@@ -10,6 +10,7 @@ add_library (pismboundary
   ./atmosphere/PAGivenClimate.cc
   ./atmosphere/PALapseRates.cc
   ./atmosphere/PAdTforcing.cc
+  ./atmosphere/PAdPforcing.cc
   ./atmosphere/PAAnomaly.cc
   ./ocean/POConstant.cc
   ./ocean/POConstantPIK.cc

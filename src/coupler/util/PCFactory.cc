@@ -34,6 +34,7 @@
 #include "PALapseRates.hh"
 #include "PASeariseGreenland.hh"
 #include "PAdTforcing.hh"
+#include "PAdPforcing.hh"
 #include "PAConstant.hh"
 #include "PAConstantPIK.hh"
 #include "PAAnomaly.hh"
@@ -92,6 +93,11 @@ static void create_pa_dTforcing(IceGrid& g, const NCConfigVariable& conf,
   result = new PAdTforcing(g, conf, input);
 }
 
+static void create_pa_precip_forcing(IceGrid& g, const NCConfigVariable& conf,
+                                     PISMAtmosphereModel *input, PAModifier* &result) {
+  result = new PAdPforcing(g, conf, input);
+}
+
 static void create_pa_anomaly(IceGrid& g, const NCConfigVariable& conf,
                               PISMAtmosphereModel *input, PAModifier* &result) {
   result = new PAAnomaly(g, conf, input);
@@ -105,9 +111,10 @@ void PAFactory::add_standard_types() {
   add_model("pik",               &create_pa_constant_pik);
   set_default("constant");
 
-  add_modifier("anomaly",    &create_pa_anomaly);
-  add_modifier("dTforcing",  &create_pa_dTforcing);
-  add_modifier("lapse_rate", &create_pa_lapse_rates);
+  add_modifier("anomaly",        &create_pa_anomaly);
+  add_modifier("dTforcing",      &create_pa_dTforcing);
+  add_modifier("delta_precip", &create_pa_precip_forcing);
+  add_modifier("lapse_rate",     &create_pa_lapse_rates);
 }
 
 
