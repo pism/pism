@@ -21,7 +21,7 @@
 POdSBMFforcing::POdSBMFforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
 {
-  option = "-ocean_dSBMFforcing";
+  option = "-ocean_delta_mass_flux_file";
   offset_name = "delta_mass_flux";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("m s-1", "");

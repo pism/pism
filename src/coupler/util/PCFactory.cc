@@ -142,9 +142,9 @@ void POFactory::add_standard_types() {
   add_model("pik",      &create_po_pik);
   set_default("constant");
 
-  add_modifier("dSLforcing", &create_po_forcing);
-  add_modifier("dTforcing", &create_po_dTforcing);
-  add_modifier("dSBMFforcing", &create_po_dSBMFforcing);
+  add_modifier("dSLforcing",      &create_po_forcing);
+  add_modifier("dTforcing",       &create_po_dTforcing);
+  add_modifier("delta_mass_flux", &create_po_dSBMFforcing);
 }
 
 // Surface

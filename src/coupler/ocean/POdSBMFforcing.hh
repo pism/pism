@@ -23,7 +23,7 @@
 #include "PISMOcean.hh"
 #include "POModifier.hh"
 
-//! \brief Forcing using shelf base mass flux scalar time-dependent offsets.
+//! \brief Forcing using shelf base mass flux offsets (scalar, time-dependent).
 class POdSBMFforcing : public PScalarForcing<PISMOceanModel,POModifier>
 {
 public:
