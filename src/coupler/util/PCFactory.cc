@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev and Torsten Albrecht
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,8 @@
 #include "POConstantPIK.hh"
 #include "POGivenClimate.hh"
 #include "POdSLforcing.hh"
+#include "POdTforcing.hh"
+#include "POdSBMFforcing.hh"
 
 // surface models:
 #include "PSAnomaly.hh"
@@ -126,6 +128,14 @@ static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, PISMOcea
   result = new POdSLforcing(g, conf, input);
 }
 
+static void create_po_dTforcing(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
+  result = new POdTforcing(g, conf, input);
+}
+
+static void create_po_dSBMFforcing(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
+  result = new POdSBMFforcing(g, conf, input);
+}
+
 void POFactory::add_standard_types() {
   add_model("constant", &create_po_constant);
   add_model("given",    &create_po_given);
@@ -133,6 +143,8 @@ void POFactory::add_standard_types() {
   set_default("constant");
 
   add_modifier("dSLforcing", &create_po_forcing);
+  add_modifier("dTforcing", &create_po_dTforcing);
+  add_modifier("dSBMFforcing", &create_po_dSBMFforcing);
 }
 
 // Surface
