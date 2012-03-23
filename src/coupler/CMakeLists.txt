@@ -15,7 +15,7 @@ add_library (pismboundary
   ./ocean/POConstantPIK.cc
   ./ocean/POGivenClimate.cc
   ./ocean/POdSLforcing.cc
-  ./ocean/POdTForcing.cc
+  ./ocean/POdTforcing.cc
   ./ocean/POdSBMFforcing.cc
   ./surface/ebm_driver.cc
   ./surface/localMassBalance.cc
