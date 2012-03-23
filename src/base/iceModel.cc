@@ -98,7 +98,13 @@ void IceModel::reset_counters() {
   CFLviolcount = 0;
   dt_TempAge = 0.0;
   dt_from_diffus = dt_from_cfl = 0.0;
-  gmaxu = gmaxv = gmaxw = 0;
+
+  // Do not reset the following: they are always re-computed before use (i.e.
+  // aren't a part of the model state). Moreover, keeping these values allows
+  // us to report the max. velocity at the beginning of the run (after the
+  // preliminary step).
+  // gmaxu = gmaxv = gmaxw = 0;
+
   maxdt_temporary = dt = dt_force = 0.0;
   skipCountDown = 0;
 
