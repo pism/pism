@@ -1,4 +1,4 @@
-// Copyright (C) 2011 David Maxwell
+// Copyright (C) 2011, 2012 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,10 +17,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "InvTaucParameterization.hh"
+#include "pism_options.hh"
 
 InvTaucParamIdent g_InvTaucParamIdent;
 InvTaucParamSquare g_InvTaucParamSquare;
 InvTaucParamExp g_InvTaucParamExp;
+
+PetscErrorCode InvTaucParameterization::init( const NCConfigVariable &/*config*/ ) { 
+  return 0;
+}
+
 
 PetscErrorCode InvTaucParamIdent::toTauc( PetscReal p, PetscReal *value, 
                                           PetscReal *derivative)
@@ -75,17 +81,32 @@ PetscErrorCode InvTaucParamExp::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
   return 0;
 }
 
-PetscErrorCode InvTaucParamLinear::toTauc( PetscReal p, PetscReal *value, 
-                                           PetscReal *derivative)
-{
-  *value = m_scale*p;
-  *derivative = m_scale;
+PetscErrorCode InvTaucParamTruncatedIdent::init( const NCConfigVariable &config ) {
+  PetscErrorCode ierr;
+  bool isSet;
+  PetscReal tauc0;
+  ierr = PISMOptionsReal("-tauc_param_trunc_tauc0", "", tauc0, isSet); CHKERRQ(ierr);
+  if(!isSet) {
+    ierr = config.get("tauc_param_trunc_tauc0"); 
+  }
   return 0;
 }
 
-PetscErrorCode InvTaucParamLinear::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
+PetscErrorCode InvTaucParamTruncatedIdent::toTauc( PetscReal p, 
+  PetscReal *value, PetscReal *derivative)
 {
-  *OUTPUT = tauc/m_scale;
+  PetscReal alpha = sqrt(p*p+4*m_tauc0_sq);
+  if(value != NULL) *value = (p+alpha)*0.5;
+  if(derivative != NULL) *derivative = (1+p/alpha)*0.5;
   return 0;
 }
 
+PetscErrorCode InvTaucParamTruncatedIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
+{
+  if(tauc < tauc_eps)
+  {
+    tauc= tauc_eps;
+  }
+  *OUTPUT=tauc-m_tauc0_sq/tauc;
+  return 0;
+}

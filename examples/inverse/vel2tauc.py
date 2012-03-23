@@ -26,7 +26,7 @@ import os, math
 
 import PISM
 from PISM.invert_ssa import SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
-tauc_params, LinearPlotListener, PlotListener 
+tauc_param_factory, LinearPlotListener, PlotListener 
 from PISM.sipletools import pism_print_logger, pism_pause, pauseListener, \
 CaptureLogger, CarefulCaptureLogger
 from PISM.sipletools import PISMLocalVector as PLV
@@ -43,8 +43,9 @@ default_rms_error = 100
 
 
 class Vel2Tauc(PISM.ssa.SSAFromInputFile):
-  def __init__(self,input_filename,inv_data_filename):
+  def __init__(self,input_filename,inv_data_filename,tauc_param):
     PISM.ssa.SSAFromInputFile.__init__(self,input_filename)
+    self.tauc_param = tauc_param;
     self.inv_data_filename = inv_data_filename
 
   def _setFromOptions(self):
@@ -69,11 +70,6 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
     # FIXME: Fix this lousy name
     self.ssa.setup_vars()
 
-    def _constructSSA(self):
-      md = self.modeldata
-      tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
-      self.tauc_param = tauc_params[tauc_param_type]
-      return PISM.InvSSAForwardProblem(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
@@ -154,8 +150,6 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
   def _constructSSA(self):
     md = self.modeldata
     vecs  = self.modeldata.vecs
-    tauc_param_type = self.config.get_string("inv_ssa_tauc_param")
-    self.tauc_param = tauc_params[tauc_param_type]
     return PISM.InvSSAForwardProblem(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
 
 
@@ -404,7 +398,7 @@ if __name__ == "__main__":
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
     method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
     rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=default_rms_error)
-    tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp"],"ident")
+    tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp","trunc"],"ident")
     ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=default_ssa_l2_coeff)
     ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=default_ssa_h1_coeff)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
@@ -428,10 +422,10 @@ if __name__ == "__main__":
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
   config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
 
-  tauc_param = tauc_params[tauc_param_type]
+  tauc_param = tauc_param_factory.create(tauc_param_type,config)
 
   PISM.setVerbosityLevel(verbosity)
-  vel2tauc = Vel2Tauc(input_filename,inv_data_filename)
+  vel2tauc = Vel2Tauc(input_filename,inv_data_filename,tauc_param)
   vel2tauc.setup()
 
   forward_problem = SSAForwardProblem(vel2tauc)
@@ -444,7 +438,7 @@ if __name__ == "__main__":
   # a) tauc from the input file (default)
   # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
   tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
-  tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");       
+  tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
   tauc = PISM.util.standardYieldStressVec(grid)
   if use_tauc_prior:
     tauc_prior.regrid(inv_data_filename,True)
@@ -460,9 +454,9 @@ if __name__ == "__main__":
   # a synthetic inversion.  We'll load it now so that it will get written
   # out, if needed, at the end of the computation in the output file.
   if PISM.util.fileHasVariable(inv_data_filename,"tauc_true"):
-    tauc_true = PISM.util.standardYieldStressVec(grid,'tauc_true') 
-    tauc_true.set_attrs("diagnostic", "value of basal yield stress used to generate synthetic SSA velocities", "Pa", "");     
+    tauc_true = PISM.util.standardYieldStressVec(grid,'tauc_true')
     tauc_true.regrid(inv_data_filename,True)
+    tauc_true.read_attributes(inv_data_filename)
     vecs.add(tauc_true,writing=saving_inv_data)
 
 
@@ -607,6 +601,8 @@ if __name__ == "__main__":
     with PISM.util.Access(nocomm=zeta,comm=tauc):
       for (i,j) in grid.points():
         (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
+        if tauc[i,j] < 0:
+          print 'negative tauc', tauc[i,j], zeta[i,j]
 
   # It may be that a 'tauc' was read in earlier.  We replace it with
   # our newly generated one.

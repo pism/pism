@@ -1,4 +1,4 @@
-// Copyright (C) 2011  David Maxwell
+// Copyright (C) 2011, 2012  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define _INVTAUCPARAM_H_
 
 #include <petsc.h>
+#include "NCVariable.hh"
 
 /*! Encapsulates a parameterization of \f$\tau_c\f$.
 It is frequently when solving an inverse problem for \f$\tau_c\f$
@@ -48,6 +49,8 @@ public:
   InvTaucParameterization(){ /*do nothing*/ };
   
   virtual ~InvTaucParameterization() {};
+
+  virtual PetscErrorCode init( const NCConfigVariable &config);
 
   /*! Converts from parameterization value \f$p\f$ to \f$\tau_c=F(p)\f$.
   \param p The parameter value.
@@ -100,22 +103,26 @@ public:
   virtual PetscErrorCode fromTauc( PetscReal tauc, PetscReal *OUTPUT);
 };
 
-/*! Parameterization \f$\tau_c=F(p)\f$ with $F(p)=exp(p)$. */
-class InvTaucParamLinear: public InvTaucParameterization
+
+/*! Monotone parameterization \f$\tau_c=F(p)\f$ where \f$F(p)\rightarrow 0\f$
+as \f$p\rightarrow-\infty\f$ and \f$F(p)\approx p\f$ for large values of \f$p\f$.  The transition from a nonlinear to an approximately linear 
+function occurs in the neighbourhood of the parameter \f$tauc_0\f$.*/
+class InvTaucParamTruncatedIdent: public InvTaucParameterization
 {
 public:
-  InvTaucParamLinear(PetscReal scale){ m_scale = scale; };
+  InvTaucParamTruncatedIdent( ) {};
 
-  virtual ~InvTaucParamLinear() {};
+  virtual ~InvTaucParamTruncatedIdent() {};
+
+  virtual PetscErrorCode init( const NCConfigVariable &config);
 
   virtual PetscErrorCode toTauc( PetscReal p, PetscReal *value, PetscReal *derivative);
 
   virtual PetscErrorCode fromTauc( PetscReal tauc, PetscReal *OUTPUT);
 
 private:
-  PetscReal m_scale;
+  PetscReal m_tauc0_sq;
 };
-
 
 /*! Some handy pre-instantiated parameterizations. */
 extern InvTaucParamIdent g_InvTaucParamIdent;
