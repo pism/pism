@@ -118,7 +118,7 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   acab->write_in_glaciological_units = true;
   ierr = variables.add(*acab); CHKERRQ(ierr);
 
-  ierr = shelfbasetemp->create(grid, "shelfbasetemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
+  ierr = shelfbasetemp->create(grid, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = shelfbasetemp->set_attrs(
 				 "climate_state", "absolute temperature at ice shelf base",
 				 "K", ""); CHKERRQ(ierr);
@@ -127,7 +127,7 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 
   // ice mass balance rate at the base of the ice shelf; sign convention for vshelfbasemass
   //   matches standard sign convention for basal melt rate of grounded ice
-  ierr = shelfbasemassflux->create(grid, "shelfbasemassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
+  ierr = shelfbasemassflux->create(grid, "shelfbmassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = shelfbasemassflux->set_attrs("climate_state",
 				     "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
 				     "m s-1", ""); CHKERRQ(ierr);
@@ -150,8 +150,8 @@ static PetscErrorCode readIceInfoFromFile(string filename, int start,
   // surface and ocean models and aren't necessarily read from files.
   vars.erase("artm");
   vars.erase("acab");
-  vars.erase("shelfbasemassflux");
-  vars.erase("shelfbasetemp");
+  vars.erase("shelfbmassflux");
+  vars.erase("shelfbtemp");
 
   set<string>::iterator i = vars.begin();
   while (i != vars.end()) {
@@ -201,10 +201,10 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   acab = dynamic_cast<IceModelVec2S*>(variables.get("acab"));
   if (acab == NULL) { SETERRQ(com, 1, "acab is not available"); }
 
-  shelfbasetemp = dynamic_cast<IceModelVec2S*>(variables.get("shelfbasetemp"));
+  shelfbasetemp = dynamic_cast<IceModelVec2S*>(variables.get("shelfbtemp"));
   if (shelfbasetemp == NULL) { SETERRQ(com, 1, "shelfbasetemp is not available"); }
 
-  shelfbasemassflux = dynamic_cast<IceModelVec2S*>(variables.get("shelfbasemassflux"));
+  shelfbasemassflux = dynamic_cast<IceModelVec2S*>(variables.get("shelfbmassflux"));
   if (shelfbasemassflux == NULL) { SETERRQ(com, 1, "shelfbasemassflux is not available"); }
 
   global_attrs.init("global_attributes", com, grid->rank);
@@ -282,6 +282,9 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     PetscReal current_sea_level;
     ierr = ocean->sea_level_elevation(current_sea_level); CHKERRQ(ierr);
 
+    ierr = ocean->shelf_base_temperature(*shelfbasetemp); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_mass_flux(*shelfbasemassflux); CHKERRQ(ierr);
+
     sea_level.append(current_sea_level, time - dt, time);
     sea_level.interp(time - dt, time);
 
@@ -293,6 +296,12 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     // over-write them with values that were actually used by IceModel.
     ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
     ierr = artm->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+    // This ensures that even if a ocean model wrote shelfbasetemp and
+    // shelfbasemassflux we over-write them with values that were actually used
+    // by IceModel.
+    ierr = shelfbasetemp->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = shelfbasemassflux->write(filename, NC_FLOAT); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2,com,"\n"); CHKERRQ(ierr);
 
