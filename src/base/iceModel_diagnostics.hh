@@ -270,6 +270,22 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
+//! \brief Computes the total grounded ice volume.
+class IceModel_ivolg : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_ivolg(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
+//! \brief Computes the total floating ice volume.
+class IceModel_ivolf : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_ivolf(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
 //! \brief Reports the mass continuity time step.
 class IceModel_dt : public PISMTSDiag<IceModel>
 {

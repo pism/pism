@@ -62,6 +62,8 @@ PetscErrorCode IceModel::init_diagnostics() {
   ts_diagnostics["ivoltempf"]     = new IceModel_ivoltempf(this, grid, variables);
   ts_diagnostics["ivolcold"]      = new IceModel_ivolcold(this, grid, variables);
   ts_diagnostics["ivolcoldf"]     = new IceModel_ivolcoldf(this, grid, variables);
+  ts_diagnostics["ivolg"]         = new IceModel_ivolg(this, grid, variables);
+  ts_diagnostics["ivolf"]         = new IceModel_ivolf(this, grid, variables);
   ts_diagnostics["iareatemp"]     = new IceModel_iareatemp(this, grid, variables);
   ts_diagnostics["iareatempf"]    = new IceModel_iareatempf(this, grid, variables);
   ts_diagnostics["iareacold"]     = new IceModel_iareacold(this, grid, variables);
@@ -1754,3 +1756,76 @@ PetscErrorCode IceModel_dHdt::update_cumulative() {
   return 0;
 }
 
+IceModel_ivolg::IceModel_ivolg(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMTSDiag<IceModel>(m, g, my_vars) {
+
+  // set metadata:
+  ts = new DiagnosticTimeseries(&grid, "ivolg", time_dimension_name);
+
+  ts->set_units("m3", "");
+  ts->set_dimension_units(time_units, "");
+  ts->set_attr("long_name", "total grounded ice volume");
+}
+
+PetscErrorCode IceModel_ivolg::update(PetscReal a, PetscReal b) {
+  PetscErrorCode ierr;
+  PetscReal volume=0.0, value;
+
+  MaskQuery mask(model->vMask);
+
+  ierr = model->vH.begin_access(); CHKERRQ(ierr);
+  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
+  ierr = model->cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (mask.grounded_ice(i,j))
+        volume += model->cell_area(i,j) * model->vH(i,j);;
+    }
+  }
+  ierr = model->cell_area.end_access(); CHKERRQ(ierr);
+  ierr = model->vMask.end_access(); CHKERRQ(ierr);
+  ierr = model->vH.end_access(); CHKERRQ(ierr);
+
+  ierr = PISMGlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
+
+  ierr = ts->append(value, a, b); CHKERRQ(ierr);
+
+  return 0;
+}
+
+IceModel_ivolf::IceModel_ivolf(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMTSDiag<IceModel>(m, g, my_vars) {
+
+  // set metadata:
+  ts = new DiagnosticTimeseries(&grid, "ivolf", time_dimension_name);
+
+  ts->set_units("m3", "");
+  ts->set_dimension_units(time_units, "");
+  ts->set_attr("long_name", "total floating ice volume");
+}
+
+PetscErrorCode IceModel_ivolf::update(PetscReal a, PetscReal b) {
+  PetscErrorCode ierr;
+  PetscReal volume=0.0, value;
+
+  MaskQuery mask(model->vMask);
+
+  ierr = model->vH.begin_access(); CHKERRQ(ierr);
+  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
+  ierr = model->cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (mask.floating_ice(i,j))
+        volume += model->cell_area(i,j) * model->vH(i,j);;
+    }
+  }
+  ierr = model->cell_area.end_access(); CHKERRQ(ierr);
+  ierr = model->vMask.end_access(); CHKERRQ(ierr);
+  ierr = model->vH.end_access(); CHKERRQ(ierr);
+
+  ierr = PISMGlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
+
+  ierr = ts->append(value, a, b); CHKERRQ(ierr);
+
+  return 0;
+}

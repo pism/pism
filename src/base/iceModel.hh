@@ -97,6 +97,8 @@ class IceModel {
   friend class IceModel_ivoltempf;
   friend class IceModel_ivolcold;
   friend class IceModel_ivolcoldf;
+  friend class IceModel_ivolg;
+  friend class IceModel_ivolf;
   friend class IceModel_iareatemp;
   friend class IceModel_iareatempf;
   friend class IceModel_iareacold;
