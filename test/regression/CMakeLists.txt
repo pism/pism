@@ -91,6 +91,8 @@ pism_test (verif_PISMBedThermalUnit_test_K_regress btu_regression.sh)
 
 pism_test (runtime_viewers test_27.sh)
 
+pism_test (bootstrapping_incomplete_input test_28.sh)
+
 
 if(Pism_BUILD_PYTHON_BINDINGS)
 
