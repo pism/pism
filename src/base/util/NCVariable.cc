@@ -337,7 +337,6 @@ PetscErrorCode NCSpatialVariable::write(string filename, nc_type nctype,
 /*!
   \li stops if critical == true and the variable was not found
   \li sets \c v to \c default_value if \c set_default_value == true and the variable was not found
-  \li interpolation mask can be NULL if it is not used.
  */
 PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
 					 bool critical, bool set_default_value,

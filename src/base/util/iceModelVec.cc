@@ -483,33 +483,33 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 }
 
 //! \brief Get the interpolation context (grid information) for an input file.
+/*!
+ * Sets lic to NULL if the variable was not found.
+ */
 PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* &lic) {
   PetscErrorCode ierr;
-
   PIO nc(grid->com, grid->rank, "netcdf3");
-  vector<double> zlevs, zblevs;
-  grid_info gi;
-  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
-
   bool exists, found_by_std_name;
   string name_found;
+
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
 
   ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
                     exists, name_found, found_by_std_name); CHKERRQ(ierr);
 
   if (exists == false) {
-    PetscPrintf(grid->com, "PISM ERROR: cannot find %s (%s) in %s\n",
-                vars[0].short_name.c_str(), vars[0].get_string("standard_name").c_str(),
-                filename.c_str());
-    PISMEnd();
+    lic = NULL;
+  } else {
+    grid_info gi;
+
+    ierr = nc.inq_grid_info(name_found, gi); CHKERRQ(ierr);
+
+    //! the *caller* is in charge of destroying lic
+    lic = new LocalInterpCtx(gi, *grid, zlevels.front(), zlevels.back());
+    if (lic == NULL)
+      SETERRQ(grid->com, 1, "memory allocation failed");
+
   }
-
-  ierr = nc.inq_grid_info(name_found, gi); CHKERRQ(ierr);
-
-  //! the *caller* is in charge of destroying lic
-  lic = new LocalInterpCtx(gi, *grid, zlevels.front(), zlevels.back());
-  if (lic == NULL)
-    SETERRQ(grid->com, 1, "memory allocation failed");
 
   ierr = nc.close(); CHKERRQ(ierr);
 
