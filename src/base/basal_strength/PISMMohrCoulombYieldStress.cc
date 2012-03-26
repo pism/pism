@@ -239,6 +239,9 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
     ierr = tauc.set(0.0); CHKERRQ(ierr);
   }
 
+  // ensure that update() computes tauc at the beginning of the run:
+  t = dt = GSL_NAN;
+
   return 0;
 }
 
