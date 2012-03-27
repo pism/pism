@@ -106,16 +106,6 @@ PetscErrorCode NCVariable::set_units(string new_units) {
   strings["units"] = new_units;
   strings["glaciological_units"] = new_units;
 
-  /*!
-    \note This code finds the string "since" in the units_string and
-    terminates it on the first 's' of "since", if this sub-string was found.
-    This is done to ignore the reference date in the time units string (the
-    reference date specification always starts with this word).
-  */
-  int n = (int)new_units.find("since");
-  if (n != -1)
-    new_units.resize(n);
-
   if (utScan(new_units.c_str(), &units) != 0) {
     SETERRQ2(com, 1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());

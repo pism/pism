@@ -458,7 +458,8 @@ PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid, Periodicity periodi
 }
 
 
-PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units) const {
+PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units,
+                              bool use_reference_date) const {
   PetscErrorCode ierr;
   string units_string;
 
@@ -472,14 +473,16 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units) const
     return 0;
   }
 
-  /*!
-    \note This method finds the string "since" in the units_string and
-    terminates it on the first 's' of "since", if this sub-string was found.
-    This is done to ignore the reference date in the time units string (the
-    reference date specification always starts with this word).
-  */
-  int n = (int)units_string.find("since");
-  if (n != -1) units_string.resize(n);
+  if (use_reference_date == false) {
+    /*!
+      \note This code finds the string "since" in the units_string and
+      terminates it on the first 's' of "since", if this sub-string was found.
+      This is done to ignore the reference date in the time units string (the
+      reference date specification always starts with this word).
+    */
+    int n = (int)units_string.find("since");
+    if (n != -1) units_string.resize(n);
+  }
 
   ierr = utScan(units_string.c_str(), &units);
   if (ierr != 0) {

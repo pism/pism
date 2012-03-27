@@ -129,7 +129,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   proc_hours = grid.size * wall_clock_hours;
 
   // MYPPH stands for "model years per processor hour"
-  mypph = (grid.time->year() - grid.time->start_year()) / proc_hours;
+  mypph = grid.time->seconds_to_years(grid.time->current() - grid.time->start()) / proc_hours;
 
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
