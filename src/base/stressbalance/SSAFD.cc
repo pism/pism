@@ -180,6 +180,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   ierr = DMDAVecGetArray(SSADA, rhs, &rhs_uv); CHKERRQ(ierr);
 
   bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+
   if (vel_bc && bc_locations) {
     ierr = vel_bc->begin_access(); CHKERRQ(ierr);
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
@@ -218,7 +219,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           continue;
         }
 
-        if (is_marginal(i, j)) {
+        if (is_marginal(i, j, bedrock_boundary)) {
           PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
           // direct neighbors
 	  if (bedrock_boundary) {
@@ -415,6 +416,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   Mask M;
 
   const bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+
   if (vel_bc && bc_locations) {
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
@@ -510,7 +512,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
           continue;
         }
 
-        if (is_marginal(i, j)) {
+        if (is_marginal(i, j, bedrock_boundary)) {
           // If at least one of the following four conditions is "true", we're
           // at a CFBC location.
 	  if (bedrock_boundary) {
@@ -519,7 +521,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
             if (M.ice_free_ocean(M_w)) aMM = 0;
             if (M.ice_free_ocean(M_n)) bPP = 0;
             if (M.ice_free_ocean(M_s)) bMM = 0;
-          
+
             // decide whether to use centered or one-sided differences
             if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_ne)) aPn = 0;
             if (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_ne)) bPe = 0;
@@ -1235,9 +1237,7 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
  * This method ensures that checks in assemble_rhs() and assemble_matrix() are
  * consistent.
  */
-bool SSAFD::is_marginal(int i, int j) {
-	
-  bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
 	
   const PetscInt M_ij = mask->as_int(i,j),
     // direct neighbors
@@ -1253,10 +1253,10 @@ bool SSAFD::is_marginal(int i, int j) {
 
   Mask M;
 
-  if (bedrock_boundary) {
+  if (ssa_dirichlet_bc) {
     return (!M.ice_free(M_ij)) &&
-     (M.ice_free(M_e) || M.ice_free(M_w) || M.ice_free(M_n) || M.ice_free(M_s) ||
-      M.ice_free(M_ne) || M.ice_free(M_se) || M.ice_free(M_nw) || M.ice_free(M_sw));}
+      (M.ice_free(M_e) || M.ice_free(M_w) || M.ice_free(M_n) || M.ice_free(M_s) ||
+       M.ice_free(M_ne) || M.ice_free(M_se) || M.ice_free(M_nw) || M.ice_free(M_sw));}
   else {
     return (!M.ice_free(M_ij)) &&
       (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_w) || M.ice_free_ocean(M_n) || M.ice_free_ocean(M_s) ||
