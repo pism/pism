@@ -53,6 +53,16 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
     for o in PISM.OptionsGroup(PISM.Context().com,"","Vel2Tauc"):
       self.using_zeta_fixed_mask = PISM.optionsFlag("-use_zeta_fixed_mask","Keep tauc constant except where grounded ice is present",default=False)
 
+  def _initGrid(self):
+    # The implementation in PISM.ssa.SSAFromInputFile uses a non-periodic
+    # grid only if the run is regional and "ssa_method=fem" in the config
+    # file.  For inversions, we always use an FEM type method, so for
+    # regional inversions, we always use a non-periodic grid.
+    periodicity = PISM.XY_PERIODIC
+    if self.is_regional:
+      periodicity=PISM.NOT_PERIODIC
+    PISM.util.init_grid_from_file(self.grid,self.boot_file,periodicity);
+
   def setup(self):
 
     PISM.ssa.SSAFromInputFile.setup(self)
@@ -518,7 +528,6 @@ if __name__ == "__main__":
     vel_ssa_observed.copy_from(vel_surface_observed)
     vel_ssa_observed.add(-1,vel_sia_observed)
     vecs.add(vel_ssa_observed,writing=True)
-
 
   # We establish a logger which will save siple logging messages.  If we 
   # are restarting, and not in append mode, we need to
