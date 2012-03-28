@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,7 +77,7 @@ protected:
   virtual PetscErrorCode set_diagonal_matrix_entry(Mat A, int i, int j,
                                                    PetscScalar value);
 
-  virtual bool is_marginal(int i, int j);
+  virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
