@@ -41,97 +41,88 @@ public:
   PISMTime(MPI_Comm c, const NCConfigVariable &conf);
   virtual ~PISMTime() {}
 
-  //! \brief Intialize using command-line options.
-  virtual PetscErrorCode init();
-
   //! \brief Sets the current time (in seconds since the reference time).
-  virtual void set(PetscReal new_time)
+  void set(double new_time)
   { time_in_seconds = new_time; }
 
-  virtual void set_start(PetscReal new_start)
+  void set_start(double new_start)
   { run_start = new_start; }
 
-  virtual void set_end(PetscReal new_end)
+  void set_end(double new_end)
   { run_end = new_end; }
 
   //! \brief Sets the reference date string.
-  virtual void set_reference_date(string str)
+  void set_reference_date(string str)
   { reference_date = str; }
 
   //! \brief Advance by delta_t seconds.
-  virtual void step(PetscReal delta_t)
+  void step(double delta_t)
   { time_in_seconds += delta_t; }
 
   //! \brief Current time, in seconds.
-  virtual PetscReal current()
+  double current()
   { return time_in_seconds; }
 
-  virtual PetscReal start()
+  double start()
   { return run_start; }
 
-  virtual PetscReal end()
+  double end()
   { return run_end; }
 
-  //! \brief Returns time since the origin modulo period.
-  virtual PetscReal mod(PetscReal time, PetscReal period)
-  {
-    if (period <= 0)
-      return time;
-
-    PetscReal tmp = time - floor(time / period) * period;
-
-    if (fabs(tmp - period) < 1)
-      tmp = 0;
-
-    return tmp;
-  }
-
-  //! \brief Returns the fraction of a year passed since the last beginning of
-  //! a year.
-  virtual PetscReal year_fraction(PetscReal T)
-  { return seconds_to_years(T) - floor(seconds_to_years(T)); }
-
-  //! \brief Returns the year corresponding to time T. Only for reporting.
-  virtual PetscReal year(PetscReal T)
-  { return seconds_to_years(T); }
-
-  //! \brief Returns current time, in years. Only for reporting.
-  virtual PetscReal year()
-  { return time_in_seconds / secpera; }
-
-  //! \brief All times are interpreted as "time since the reference time", even
-  //! if this implementation does not take advantage of that.
-  virtual PetscReal start_year()
-  { return run_start / secpera; }
-
-  //! \brief All times are interpreted as "time since the reference time", even
-  //! if this implementation does not take advantage of that.
-  virtual PetscReal end_year()
-  { return run_end / secpera; }
-
-  //! \brief Returns the length of the current run, in years.
-  virtual PetscReal run_length_years()
-  { return (run_end - run_start) / secpera; }
-
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
-  virtual string units()
-  { return string("seconds since ") + reference_date; }
+  string CF_units()
+  { return units() + string(" since ") + reference_date; }
 
   //! \brief Returns the calendar string.
-  virtual string calendar()
+  string calendar()
   { return calendar_string; }
 
-  virtual PetscReal seconds_to_years(PetscReal T)
+  //! \brief Returns the length of the current run, in years.
+  string run_length();
+
+  double seconds_to_years(double T)
   { return T / secpera; }
 
-  virtual PetscReal years_to_seconds(PetscReal T)
+  double years_to_seconds(double T)
   { return T * secpera; }
+
+  // Virtual methods:
+
+  //! \brief Intialize using command-line options.
+  virtual PetscErrorCode init();
+
+  virtual string units()
+  { return "seconds"; }
+
+  virtual bool use_reference_date()
+  { return false; }
+
+  //! \brief Returns time since the origin modulo period.
+  virtual double mod(double time, double period);
+
+  //! \brief Returns the fraction of a year passed since the last beginning of
+  //! a year. Only useful in codes with a "yearly cycle" (such as the PDD model).
+  virtual double year_fraction(double T);
+
+  //! \brief Returns the date corresponding to time T.
+  virtual string date(double T);
+
+  //! \brief Returns current time, in years. Only for reporting.
+  virtual string date();
+
+  //! \brief All times are interpreted as "time since the reference time", even
+  //! if this implementation does not take advantage of that.
+  virtual string start_date();
+
+  //! \brief All times are interpreted as "time since the reference time", even
+  //! if this implementation does not take advantage of that.
+  virtual string end_date();
 
 protected:
   MPI_Comm com;
   const NCConfigVariable &config;
-  PetscReal secpera;      //!< number of seconds in a year, for unit conversion
-  PetscReal time_in_seconds, //!< current time, in seconds since the reference time
+  double secpera;      //!< number of seconds in a year, for unit conversion
+  double time_in_seconds, //!< current time, in seconds since the reference time
     run_start,                  //!< run start time, in seconds since the reference time
     run_end;                    //!< run end tim, in seconds since the reference time
   string reference_date,     //!< CF reference date; used in the units string

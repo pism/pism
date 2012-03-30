@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@ PSdTforcing::PSdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceMo
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("Celsius", "");
-  offset->set_dimension_units("seconds", "");
+  offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "ice-surface temperature offsets");
 }
 

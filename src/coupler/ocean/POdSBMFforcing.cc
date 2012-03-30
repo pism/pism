@@ -25,7 +25,7 @@ POdSBMFforcing::POdSBMFforcing(IceGrid &g, const NCConfigVariable &conf, PISMOce
   offset_name = "delta_mass_flux";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("m s-1", "");
-  offset->set_dimension_units("seconds", "");
+  offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "ice-shelf-base mass flux offsets");
 }
 

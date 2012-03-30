@@ -235,7 +235,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   DiagnosticTimeseries sea_level(grid, "sea_level", grid->config.get_string("time_dimension_name"));
   sea_level.set_units("m", "m");
-  sea_level.set_dimension_units("seconds", "");
+  sea_level.set_dimension_units(grid->time->units(), "");
   sea_level.output_filename = filename;
   sea_level.set_attr("long_name", "sea level elevation");
 

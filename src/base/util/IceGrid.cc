@@ -20,6 +20,7 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "PISMTime.hh"
+#include "PISMGregorianTime.hh"
 #include "PISMProf.hh"
 #include "NCVariable.hh"
 
@@ -84,7 +85,11 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   profiler = new PISMProf(com, rank, size);
 
-  time = new PISMTime(com, config);
+  if (config.get_string("calendar") == "gregorian") {
+    time = new PISMGregorianTime(com, config);
+  } else {
+    time = new PISMTime(com, config);
+  }
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
 }
@@ -183,8 +188,8 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
          "            Mx = %d, My = %d, Mz = %d,\n",
          Mx,My,Mz); CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,com,
-         "            dx = %6.3f km, dy = %6.3f km, year = %8.4f,\n",
-                    dx/1000.0,dy/1000.0, time->year()); CHKERRQ(ierr);
+         "            dx = %6.3f km, dy = %6.3f km, year = %s,\n",
+                    dx/1000.0,dy/1000.0, time->date().c_str()); CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,com,
          "            Nx = %d, Ny = %d]\n",
          Nx,Ny); CHKERRQ(ierr);
@@ -638,10 +643,10 @@ PetscErrorCode IceGrid::report_parameters() {
 
   // report on time axis
   ierr = verbPrintf(2, com,
-           "   time interval (length)   [ %.2f a, %.2f a]  (%.4f a)\n",
-		    time->start_year(),
-                    time->end_year(),
-                    time->run_length_years()); CHKERRQ(ierr);
+           "   time interval (length)   [%s, %s]  (%s years)\n",
+		    time->start_date().c_str(),
+                    time->end_date().c_str(),
+                    time->run_length().c_str()); CHKERRQ(ierr);
 
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   ierr = printInfo(3); CHKERRQ(ierr);

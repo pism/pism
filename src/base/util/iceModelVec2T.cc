@@ -177,8 +177,9 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     // we're found the time dimension
     NCTimeseries time_dimension;
     time_dimension.init(dimname, dimname, grid->com, grid->rank);
-    ierr = time_dimension.set_units("seconds"); CHKERRQ(ierr);
-    ierr = time_dimension.read(filename, time); CHKERRQ(ierr);
+
+    ierr = time_dimension.set_units(grid->time->units()); CHKERRQ(ierr);
+    ierr = time_dimension.read(filename, grid->time->use_reference_date(), time); CHKERRQ(ierr);
 
     string bounds_name;
     ierr = time_dimension.get_bounds_name(filename, bounds_name);
@@ -189,7 +190,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
       tb.init(bounds_name, dimname, grid->com, grid->rank);
       ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
 
-      ierr = tb.read(filename, time_bounds); CHKERRQ(ierr);
+      ierr = tb.read(filename, grid->time->use_reference_date(), time_bounds); CHKERRQ(ierr);
     } else {
       // compute fake time bounds data
 
@@ -309,12 +310,12 @@ PetscErrorCode IceModelVec2T::update(int start) {
   string long_name = string_attr("long_name");
   ierr = verbPrintf(2, grid->com,
                     "  reading \"%s\" into buffer\n"
-                    "          (short_name = %s): %d records, covering intervals (%3.3f, %3.3f) through (%3.3f, %3.3f) years...\n",
+                    "          (short_name = %s): %d records, covering intervals (%s, %s) through (%s, %s) years...\n",
 		    long_name.c_str(), name.c_str(), missing,
-                    grid->time->year(time_bounds[start*2]),
-                    grid->time->year(time_bounds[start*2 + 1]),
-                    grid->time->year(time_bounds[(start + missing - 1)*2]),
-                    grid->time->year(time_bounds[(start + missing - 1)*2 + 1]));
+                    grid->time->date(time_bounds[start*2]).c_str(),
+                    grid->time->date(time_bounds[start*2 + 1]).c_str(),
+                    grid->time->date(time_bounds[(start + missing - 1)*2]).c_str(),
+                    grid->time->date(time_bounds[(start + missing - 1)*2 + 1]).c_str());
 
   for (int j = 0; j < missing; ++j) {
     if (lic != NULL) {
@@ -441,8 +442,8 @@ PetscErrorCode IceModelVec2T::at_time(double my_t) {
   if (i % 2 == 0) {
     PetscPrintf(grid->com,
                 "PISM ERROR: time bounds array does not represent continguous time intervals.\n"
-                "            (PISM was trying to compute %s at time %3.3f years.)\n",
-                name.c_str(), grid->time->year(my_t));
+                "            (PISM was trying to compute %s at time %s.)\n",
+                name.c_str(), grid->time->date(my_t).c_str());
     PISMEnd();
   }
 

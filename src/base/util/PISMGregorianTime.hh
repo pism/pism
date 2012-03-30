@@ -19,72 +19,36 @@
 #ifndef _PISMGREGORIANTIME_H_
 #define _PISMGREGORIANTIME_H_
 
-class PISMGregorianTime
+#include "PISMTime.hh"
+
+class PISMGregorianTime : public PISMTime
 {
 public:
   PISMGregorianTime(MPI_Comm c, const NCConfigVariable &conf);
   virtual ~PISMGregorianTime() {}
 
-  //! \brief Intialize using command-line options.
   virtual PetscErrorCode init();
 
-  //! \brief Returns time since the origin modulo period.
-  virtual PetscReal mod(PetscReal time, PetscReal period)
-  {
-    if (period <= 0)
-      return time;
+  virtual double mod(double time, double period);
 
-    PetscReal tmp = time - floor(time / period) * period;
+  virtual double year_fraction(double T);
 
-    if (fabs(tmp - period) < 1)
-      tmp = 0;
+  virtual string date(double T);
 
-    return tmp;
-  }
+  virtual string date();
 
-  //! \brief Returns the fraction of a year passed since the last beginning of
-  //! a year.
-  virtual PetscReal year_fraction(PetscReal T)
-  { return seconds_to_years(T) - floor(seconds_to_years(T)); }
+  virtual string start_date();
 
-  //! \brief Returns the year corresponding to time T. Only for reporting.
-  virtual PetscReal year(PetscReal T)
-  { return seconds_to_years(T); }
+  virtual string end_date();
 
-  //! \brief Returns current time, in years. Only for reporting.
-  virtual PetscReal year()
-  { return time_in_seconds / secpera; }
-
-  //! \brief All times are interpreted as "time since the reference time", even
-  //! if this implementation does not take advantage of that.
-  virtual PetscReal start_year()
-  { return run_start / secpera; }
-
-  //! \brief All times are interpreted as "time since the reference time", even
-  //! if this implementation does not take advantage of that.
-  virtual PetscReal end_year()
-  { return run_end / secpera; }
-
-  //! \brief Returns the length of the current run, in years.
-  virtual PetscReal run_length_years()
-  { return (run_end - run_start) / secpera; }
-
-  //! \brief Returns the CF- (and UDUNITS) compliant units string.
   virtual string units()
-  { return string("seconds since ") + reference_date; }
+  { return CF_units(); }
 
-  //! \brief Returns the calendar string.
-  virtual string calendar()
-  { return calendar_string; }
-
-  virtual PetscReal seconds_to_years(PetscReal T)
-  { return T / secpera; }
-
-  virtual PetscReal years_to_seconds(PetscReal T)
-  { return T * secpera; }
+  virtual bool use_reference_date()
+  { return true; }
 
 protected:
-  PetscErrorCode interval_to_seconds(string interval);
+  utUnit ut_units;
 };
 
 

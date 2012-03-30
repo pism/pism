@@ -212,8 +212,8 @@ PetscErrorCode PSExternal::update(PetscReal my_t, PetscReal my_dt) {
 PetscErrorCode PSExternal::update_artm() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(2, grid.com, "Reading the temperature at the top of the ice from %s for year = %1.1f...\n",
-                    ebm_output.c_str(), grid.time->year(t)); 
+  ierr = verbPrintf(2, grid.com, "Reading the temperature at the top of the ice from %s for time = %s...\n",
+                    ebm_output.c_str(), grid.time->date(t).c_str()); 
 
   ierr = artm.regrid(ebm_output, true); CHKERRQ(ierr);
 
@@ -223,8 +223,8 @@ PetscErrorCode PSExternal::update_artm() {
 PetscErrorCode PSExternal::update_acab() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(2, grid.com, "Reading the accumulation/ablation rate from %s for year = %1.1f...\n",
-                    ebm_output.c_str(), grid.time->year(t)); 
+  ierr = verbPrintf(2, grid.com, "Reading the accumulation/ablation rate from %s for time = %s...\n",
+                    ebm_output.c_str(), grid.time->date(t).c_str()); 
 
   ierr = acab.regrid(ebm_output, true); CHKERRQ(ierr);
 
@@ -246,7 +246,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
 
   string t_name = config.get_string("time_dimension_name"),
     t_calendar = config.get_string("calendar"),
-    t_units = grid.time->units();
+    t_units = grid.time->CF_units();
 
   if (t_len == 0) {
     ierr = nc.def_time(t_name, t_calendar, t_units); CHKERRQ(ierr);

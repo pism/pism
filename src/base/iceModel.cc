@@ -751,7 +751,7 @@ PetscErrorCode IceModel::run() {
   // print verbose messages according to user-set verbosity
   if (tmp_verbosity > 2) {
     ierr = PetscPrintf(grid.com,
-      " done; reached time %.4f a\n", grid.time->year()); CHKERRQ(ierr);
+                       " done; reached time %s\n", grid.time->date().c_str()); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com,
       "  re-setting model state as initialized ...\n"); CHKERRQ(ierr);
   }
@@ -774,7 +774,7 @@ PetscErrorCode IceModel::run() {
   ierr = verbPrintf(2,grid.com, "running forward ...\n"); CHKERRQ(ierr);
 
   stdout_flags.erase(); // clear it out
-  ierr = summaryPrintLine(PETSC_TRUE,do_energy, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE, do_energy, "", 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   reset_counters();
   ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
@@ -822,7 +822,7 @@ PetscErrorCode IceModel::run() {
     ierr = verbPrintf(1,grid.com,
                       "count_time_steps:  run() took %d steps\n"
                       "average dt = %.6f years\n",
-                      stepcount, grid.time->run_length_years()/(double)stepcount); CHKERRQ(ierr);
+                      stepcount, grid.time->seconds_to_years(grid.time->end() - grid.time->start())/(double)stepcount); CHKERRQ(ierr);
   }
 
   return 0;

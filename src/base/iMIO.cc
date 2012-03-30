@@ -126,7 +126,7 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
   // Prepare the file
   string time_name = config.get_string("time_dimension_name");
   ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
-  ierr = nc.def_time(time_name, config.get_string("calendar"), grid.time->units()); CHKERRQ(ierr);
+  ierr = nc.def_time(time_name, config.get_string("calendar"), grid.time->CF_units()); CHKERRQ(ierr);
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -673,16 +673,16 @@ PetscErrorCode IceModel::init_snapshots() {
 
     if (split_snapshots) {
       snapshots_file_is_ready = false;	// each snapshot is written to a separate file
-      snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc",
-               snapshots_filename.c_str(), grid.time->year());
+      snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
+               snapshots_filename.c_str(), grid.time->date().c_str());
     } else {
       strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
     }
 
     ierr = verbPrintf(2, grid.com,
-                      "\nsaving snapshot to %s at %.5f a, for time-step goal %.5f a\n\n",
-                      filename, grid.time->year(),
-                      grid.time->year(saving_after));
+                      "\nsaving snapshot to %s at %s, for time-step goal %s\n\n",
+                      filename, grid.time->date().c_str(),
+                      grid.time->date(saving_after).c_str());
     CHKERRQ(ierr);
 
     // create line for history in .nc file, including time of write
@@ -690,9 +690,9 @@ PetscErrorCode IceModel::init_snapshots() {
     string date_str = pism_timestamp();
     char tmp[TEMPORARY_STRING_LENGTH];
     snprintf(tmp, TEMPORARY_STRING_LENGTH,
-             "%s: %s snapshot at %10.5f a, for time-step goal %10.5f a\n",
-             date_str.c_str(), executable_short_name.c_str(), grid.time->year(),
-             grid.time->year(saving_after));
+             "%s: %s snapshot at %s, for time-step goal %s\n",
+             date_str.c_str(), executable_short_name.c_str(), grid.time->date().c_str(),
+             grid.time->date(saving_after).c_str());
 
     if (!snapshots_file_is_ready) {
 
@@ -700,7 +700,7 @@ PetscErrorCode IceModel::init_snapshots() {
       ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
       ierr = nc.def_time(config.get_string("time_dimension_name"),
                          config.get_string("calendar"),
-                         grid.time->units()); CHKERRQ(ierr);
+                         grid.time->CF_units()); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
 
       ierr = write_metadata(filename); CHKERRQ(ierr);
@@ -773,8 +773,8 @@ PetscErrorCode IceModel::write_backup() {
   string date_str = pism_timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
-           "%s automatic backup at %10.5f a, %3.3f hours after the beginning of the run\n",
-           executable_short_name.c_str(), grid.time->year(), wall_clock_hours);
+           "%s automatic backup at %s, %3.3f hours after the beginning of the run\n",
+           executable_short_name.c_str(), grid.time->date().c_str(), wall_clock_hours);
 
   ierr = verbPrintf(2, grid.com,
                     "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
@@ -786,7 +786,7 @@ PetscErrorCode IceModel::write_backup() {
   ierr = nc.open(backup_filename, NC_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
                      config.get_string("calendar"),
-                     grid.time->units()); CHKERRQ(ierr);
+                     grid.time->CF_units()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 

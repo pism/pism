@@ -22,66 +22,69 @@ PISMGregorianTime::PISMGregorianTime(MPI_Comm c, const NCConfigVariable &conf)
   : PISMTime(c, conf) {
 
   calendar_string = "gregorian";  // only "gregorian" is supported by this class
-
-  run_start = config.get("start_year", "years", "seconds");
-  run_end   = run_start + config.get("run_length_years", "years", "seconds");
-
-  time_in_seconds = run_start;
 }
 
 PetscErrorCode PISMGregorianTime::init() {
   PetscErrorCode ierr;
 
-  ierr = PetscOptionsBegin(grid.com, "", "PISM time options", ""); CHKERRQ(ierr);
-  {
-    // -start_date
-    // -end_date
-    // -run_length
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PISMTime::init(); CHKERRQ(ierr);
+
+  // initialize the units object:
+  ierr = utScan(this->units().c_str(), &ut_units); CHKERRQ(ierr);
 
   return 0;
 }
 
+double PISMGregorianTime::mod(double time, double) {
+  // This class does not support the "mod" operation.
+  return time;
+}
 
-PetscErrorCode PISMGregorianTime::interval_to_seconds(string interval, double &result) {
-  PetscErrorCode ierr;
-  utUnit ut_unit, internal_unit;
-  double slope, intercept;
-  int errcode;
+double PISMGregorianTime::year_fraction(double T) {
+  int year, month, day, hour, minute;
+  float second;
+  double year_start, next_year_start;
 
-  errcode = utScan("seconds", &internal_unit);
-  if (errcode != 0)
-    SETERRQ(PETSC_COMM_SELF, 1, "utScan(\"seconds\", ...) failed");
+  utCalendar(T, &ut_units,
+             &year, &month, &day, &hour, &minute, &second);
 
-  errcode = utScan(interval.c_str(), &ut_unit);
-  if (errcode != 0) {
-    PetscPrintf(com, "PISM ERROR: can't parse '%s'\n", interval.c_str());
-    PISMEnd();
-  }
+  utInvCalendar(year,
+                1, 1,            // month, day
+                0, 0, 0,         // hour, minute, second
+                &ut_units,
+                &year_start);
 
-  if (utIsTime(&ut_unit) == 1) {
-    errcode = utConvert(&ut_unit, &internal_unit, &slope, &intercept);
-    if (errcode != 0) {
-      PetscPrintf(com, "PISM ERROR: can't convert '%s' to seconds\n", interval.c_str());
-      PISMEnd();
-    }
+  utInvCalendar(year + 1,
+                1, 1,           // month, day
+                0, 0, 0,        // hour, minute, second
+                &ut_units,
+                &next_year_start);
 
-    result = slope;
-  } else {
-    errcode = utScan("1", &internal_unit);
-    if(errcode != 0)
-      SETERRQ(PETSC_COMM_SELF, 1, "utScan(\"1\", ...) failed");
+  return (T - year_start) / (next_year_start - year_start);
+}
 
-    errcode = utConvert(&ut_unit, &internal_unit, &slope, &intercept);
-    if (errcode != 0) {
-      PetscPrintf(com, "PISM ERROR: can't parse '%s'\n", interval.c_str());
-      PISMEnd();
-    }
+string PISMGregorianTime::date(double T) {
+  char tmp[256];
+  int year, month, day, hour, minute;
+  float second;
 
-    result = slope;
-  }
+  utCalendar(T, &ut_units,
+             &year, &month, &day, &hour, &minute, &second);
 
-  return 0;
+  snprintf(tmp, 256, "%04d-%02d-%02d", year, month, day);
+
+  return string(tmp);
+}
+
+string PISMGregorianTime::date() {
+  return this->date(time_in_seconds);
+}
+
+string PISMGregorianTime::start_date() {
+  return this->date(run_start);
+}
+
+string PISMGregorianTime::end_date() {
+  return this->date(run_end);
 }
 

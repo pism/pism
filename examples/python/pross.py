@@ -213,7 +213,7 @@ class pross(PISM.ssa.SSARun):
       v.set_units("m year-1", "")
 
     for v in riggsvars:
-      v.read(self.riggs_file)
+      v.read(self.riggs_file, False)
 
     length = latdata.length();
 

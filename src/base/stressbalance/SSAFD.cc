@@ -898,7 +898,7 @@ PetscErrorCode SSAFD::writeSSAsystemMatlab() {
                            "Save the linear system to an ASCII .m file. Sets the file prefix.",
                            prefix, flag); CHKERRQ(ierr);
 
-  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m", grid.time->year());
+  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m", grid.time->seconds_to_years(grid.time->current()));
   file_name = prefix + string(yearappend);
 
   ierr = verbPrintf(2, grid.com,
@@ -938,7 +938,7 @@ PetscErrorCode SSAFD::writeSSAsystemMatlab() {
   ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
 
   // save coordinates (for viewing, primarily)
-  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",grid.time->year());  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",grid.time->seconds_to_years(grid.time->current()));  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
             "x=%12.3f + (0:%d)*%12.3f;\n"
             "y=%12.3f + (0:%d)*%12.3f;\n",

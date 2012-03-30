@@ -257,8 +257,8 @@ int main(int argc, char *argv[]) {
     PetscReal TT, FF; // Test K:  use FF, ignore TT
     ierr = exactK(grid.time->end(), 0.0, &TT, &FF, 0); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
-        "  exact Test K reports upward heat flux at z=0, at end year %.2f, as G_0 = %.7f W m-2;\n",
-                      grid.time->end_year(), FF); CHKERRQ(ierr);
+        "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
+                      grid.time->end_date().c_str(), FF); CHKERRQ(ierr);
 
     // compute numerical error
     PetscReal maxghferr, avghferr;
@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
     string time_name = config.get_string("time_dimension_name");
     ierr = pio.open(outname, NC_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(time_name, config.get_string("calendar"),
-                        grid.time->units()); CHKERRQ(ierr);
+                        grid.time->CF_units()); CHKERRQ(ierr);
     ierr = pio.append_time(time_name, grid.time->end()); CHKERRQ(ierr);
     ierr = btu.define_variables(vars, pio, NC_DOUBLE); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);

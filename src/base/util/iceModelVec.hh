@@ -107,7 +107,7 @@ class LocalInterpCtx;
  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
  ierr = nc.def_time(config.get_string("time_dimension_name"),
                     config.get_string("calendar"),
-                    grid.time->units()); CHKERRQ(ierr);
+                    grid.time->CF_units()); CHKERRQ(ierr);
  ierr = nc.append_time(grid.time->current()); CHKERRQ(ierr);
  ierr = nc.close(); CHKERRQ(ierr);
  \endcode

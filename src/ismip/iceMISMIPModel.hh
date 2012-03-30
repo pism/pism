@@ -96,7 +96,7 @@ public:
   using IceModel::summaryPrintLine;
   virtual PetscErrorCode summaryPrintLine(
                  PetscBool printPrototype,  bool tempAndAge,
-                 PetscScalar year,  PetscScalar dt, 
+                 string date,  PetscScalar dt, 
                  PetscScalar volume,  PetscScalar area,
                  PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0);
 

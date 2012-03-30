@@ -20,6 +20,10 @@
 #include "NCVariable.hh"
 #include <sstream>
 
+//! \brief Compute
+/*!
+ * Here a and b are integer years.
+ */
 vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
                              int a, int b, string keyword) {
   utUnit unit;
@@ -230,6 +234,50 @@ PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, d
   if (a) *a = doubles[0];
   if (delta) *delta = doubles[1];
   if (b) *b = doubles[2];
+
+  return 0;
+}
+
+/*!
+ * Converts time interval specifications like "10days", "5hours", "day",
+ * "month" to seconds.
+ */
+PetscErrorCode interval_to_seconds(MPI_Comm com, string interval, double &result) {
+  utUnit interval_units, seconds;
+  double slope, intercept;
+  int errcode;
+
+  errcode = utScan("seconds", &seconds);
+  if (errcode != 0)
+    SETERRQ(PETSC_COMM_SELF, 1, "utScan(\"seconds\", ...) failed");
+
+  errcode = utScan(interval.c_str(), &interval_units);
+  if (errcode != 0) {
+    PetscPrintf(com, "PISM ERROR: can't parse '%s'\n", interval.c_str());
+    PISMEnd();
+  }
+
+  if (utIsTime(&interval_units) == 1) {
+    errcode = utConvert(&interval_units, &seconds, &slope, &intercept);
+    if (errcode != 0) {
+      PetscPrintf(com, "PISM ERROR: can't convert '%s' to seconds\n", interval.c_str());
+      PISMEnd();
+    }
+
+    result = slope;
+  } else {
+    errcode = utScan("1", &seconds);
+    if(errcode != 0)
+      SETERRQ(PETSC_COMM_SELF, 1, "utScan(\"1\", ...) failed");
+
+    errcode = utConvert(&interval_units, &seconds, &slope, &intercept);
+    if (errcode != 0) {
+      PetscPrintf(com, "PISM ERROR: can't parse '%s'\n", interval.c_str());
+      PISMEnd();
+    }
+
+    result = slope;
+  }
 
   return 0;
 }

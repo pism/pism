@@ -27,6 +27,7 @@ add_library (pismutil
   base/util/PISMComponent.cc
   base/util/PISMProf.cc
   base/util/PISMTime.cc
+  base/util/PISMGregorianTime.cc
   base/util/PISMVars.cc
   base/util/Timeseries.cc
   base/util/iceModelVec.cc
