@@ -761,7 +761,7 @@ PetscErrorCode SSAFD::solve() {
         if (getVerbosityLevel() > 2)
           stdout_ssa += "A:";
 
-        // call PETSc to solve linear system by iterative method; "inner linear iteration"
+        // call PETSc to solve linear system by iterative method; "inner iteration"
         ierr = KSPSetOperators(SSAKSP, A, A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
         ierr = KSPSolve(SSAKSP, SSARHS, SSAX); CHKERRQ(ierr); // SOLVE
 
@@ -772,23 +772,26 @@ PetscErrorCode SSAFD::solve() {
           ierr = verbPrintf(1,grid.com,
               "\nPISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
               reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
-          // for now, always write a file with a fixed filename  (FIXME: may want other mechanism?)
+          // write a file with a fixed filename; avoid zillions of files
           char filename[PETSC_MAX_PATH_LEN] = "SSAFD_kspdivergederror.petsc";
           ierr = verbPrintf(1,grid.com,
-              "  writing linear system to PETSc binary file %s ...\n",filename); CHKERRQ(ierr);
+              "  writing linear system to PETSc binary file %s ...\n",filename);
+              CHKERRQ(ierr);
           PetscViewer    viewer;
-          ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
+          ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE, 
+                                       &viewer); CHKERRQ(ierr);
           ierr = MatView(A,viewer); CHKERRQ(ierr);
           ierr = VecView(SSARHS,viewer); CHKERRQ(ierr);
           ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
           // attempt recovery by same mechanism as for outer iteration
           //   (FIXME: could force direct solve on subdomains?)
           if (epsilon <= 0.0) {
-            ierr = verbPrintf(1,grid.com,"KSP diverged AND epsilon<=0.0.\n  ENDING ...\n"); CHKERRQ(ierr);
+            ierr = verbPrintf(1,grid.com,
+                "KSP diverged AND epsilon<=0.0.\n  ENDING ...\n"); CHKERRQ(ierr);
             PISMEnd();
           }
           ierr = verbPrintf(1,grid.com,
-            "  KSP diverged with epsilon=%8.2e.  Retrying with epsilon multiplied by %8.2e.\n\n",
+              "  KSP diverged with epsilon=%8.2e.  Retrying with epsilon multiplied by %8.2e.\n\n",
             epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
           epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
           // recovery requires recompute on nuH  (FIXME: could be implemented by max(eps,nuH) here?)
