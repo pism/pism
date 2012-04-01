@@ -70,8 +70,12 @@ public:
   { return run_end; }
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
+  /*!
+   * This units string is saved in the output file. Always contains a reference
+   * date, even if it is not used by PISM.
+   */
   string CF_units()
-  { return units() + string(" since ") + reference_date; }
+  { return string("seconds since ") + reference_date; }
 
   //! \brief Returns the calendar string.
   string calendar()
@@ -91,6 +95,11 @@ public:
   //! \brief Intialize using command-line options.
   virtual PetscErrorCode init();
 
+  //! \brief Internal time units.
+  /*!
+   * May or may not contain a reference date. (The base class PISMTime does not
+   * use the reference date, while PISMGregorianTime does.)
+   */
   virtual string units()
   { return "seconds"; }
 

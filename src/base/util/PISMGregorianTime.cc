@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMGregorianTime.hh"
+#include "pism_options.hh"
+#include "PIO.hh"
 
 PISMGregorianTime::PISMGregorianTime(MPI_Comm c, const NCConfigVariable &conf)
   : PISMTime(c, conf) {
@@ -26,11 +28,108 @@ PISMGregorianTime::PISMGregorianTime(MPI_Comm c, const NCConfigVariable &conf)
 
 PetscErrorCode PISMGregorianTime::init() {
   PetscErrorCode ierr;
+  string time_file;
+  bool flag;
 
   ierr = PISMTime::init(); CHKERRQ(ierr);
 
+  ierr = PISMOptionsString("-time_file", "Reads time information from a file",
+                           time_file, flag); CHKERRQ(ierr);
+
+  if (flag == true) {
+    ierr = verbPrintf(2, com,
+                      "* Setting time from '%s'...\n",
+                      time_file.c_str()); CHKERRQ(ierr);
+
+    ierr = ignore_option(com, "-y"); CHKERRQ(ierr);
+    ierr = ignore_option(com, "-ys"); CHKERRQ(ierr);
+    ierr = ignore_option(com, "-ye"); CHKERRQ(ierr);
+    ierr = ignore_option(com, "-reference_date"); CHKERRQ(ierr);
+
+    ierr = init_from_file(time_file); CHKERRQ(ierr);
+
+  }
+
   // initialize the units object:
   ierr = utScan(this->units().c_str(), &ut_units); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Sets the time from a NetCDF with forcing data.
+/*!
+ * This allows running PISM for the duration of the available forcing.
+ */
+PetscErrorCode PISMGregorianTime::init_from_file(string filename) {
+  PetscErrorCode ierr;
+  NCTimeseries time_axis;
+  NCTimeBounds bounds;
+  PetscMPIInt rank;
+  vector<double> time, time_bounds;
+  string time_units, time_bounds_name,
+    time_name = config.get_string("time_dimension_name");
+  bool exists;
+
+  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
+  PIO nc(com, rank, "netcdf3");
+
+  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_var(time_name, exists); CHKERRQ(ierr);
+  if (exists == false) {
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    PetscPrintf(com, "PISM ERROR: '%s' variable is not present in '%s'.\n",
+                time_name.c_str(), filename.c_str());
+    PISMEnd();
+  }
+  ierr = nc.get_att_text(time_name, "units", time_units); CHKERRQ(ierr);
+  ierr = nc.get_att_text(time_name, "bounds", time_bounds_name); CHKERRQ(ierr);
+
+  if (time_bounds_name.empty() == false) {
+    ierr = nc.inq_var(time_bounds_name, exists); CHKERRQ(ierr);
+
+    if (exists == false) {
+      ierr = nc.close(); CHKERRQ(ierr);
+
+      PetscPrintf(com, "PISM ERROR: '%s' variable is not present in '%s'.\n",
+                  time_bounds_name.c_str(), filename.c_str());
+      PISMEnd();
+    }
+  }
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  // set the reference date:
+  {
+    size_t position = time_units.find("since");
+    if (position == string::npos) {
+      PetscPrintf(com, "PISM ERROR: time units string '%s' does not contain a reference date.\n",
+                  time_units.c_str());
+      PISMEnd();
+    }
+
+    reference_date = time_units.substr(position + 6); // 6 is the length of "since "
+  }
+
+  // set the time
+  if (time_bounds_name.empty() == false) {
+    // use the time bounds
+    bounds.init(time_bounds_name, time_name, com, rank);
+    bounds.set_units("seconds");
+
+    // do *not* use the reference date
+    ierr = bounds.read(filename, false, time); CHKERRQ(ierr);
+  } else {
+    // use the time axis
+    time_axis.init(time_name, time_name, com, rank);
+    time_axis.set_units("seconds");
+
+    // do *not* use the reference date
+    ierr = time_axis.read(filename, false, time); CHKERRQ(ierr);
+  }
+
+  run_start = time[0];
+  run_end = time[time.size() - 1];
+  time_in_seconds = run_start;
 
   return 0;
 }

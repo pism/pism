@@ -29,6 +29,8 @@ public:
 
   virtual PetscErrorCode init();
 
+  virtual PetscErrorCode init_from_file(string filename);
+
   virtual double mod(double time, double period);
 
   virtual double year_fraction(double T);

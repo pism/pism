@@ -248,13 +248,13 @@ PetscErrorCode IceModel::init_extras() {
 		      extra_filename.c_str()); CHKERRQ(ierr);
   }
 
+  ierr = verbPrintf(2, grid.com, "times requested: %s\n", times.c_str()); CHKERRQ(ierr);
+
   if (extra_times.size() > 500) {
     ierr = verbPrintf(2, grid.com,
 		      "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
     CHKERRQ(ierr);
   }
-
-  ierr = verbPrintf(2, grid.com, "times requested: %s\n", times.c_str()); CHKERRQ(ierr);
 
   string var_name;
   if (save_vars) {
