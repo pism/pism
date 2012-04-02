@@ -156,7 +156,7 @@ class NCTimeseries : public NCVariable {
 public:
   string dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
   void    init(string name, string dim_name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode read(string filename, vector<double> &data);
+  virtual PetscErrorCode read(string filename, bool use_reference_date, vector<double> &data);
   virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode write(string filename, size_t start, double data, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
@@ -170,7 +170,7 @@ class NCTimeBounds : public NCVariable
 {
 public:
   void init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode read(string filename, vector<double> &data);
+  virtual PetscErrorCode read(string filename, bool use_reference_date, vector<double> &data);
   virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode write(string filename, size_t start, double a, double b, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);

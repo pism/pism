@@ -248,13 +248,13 @@ PetscErrorCode IceModel::init_extras() {
 		      extra_filename.c_str()); CHKERRQ(ierr);
   }
 
+  ierr = verbPrintf(2, grid.com, "times requested: %s\n", times.c_str()); CHKERRQ(ierr);
+
   if (extra_times.size() > 500) {
     ierr = verbPrintf(2, grid.com,
 		      "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
     CHKERRQ(ierr);
   }
-
-  ierr = verbPrintf(2, grid.com, "times requested: %s\n", times.c_str()); CHKERRQ(ierr);
 
   string var_name;
   if (save_vars) {
@@ -378,15 +378,15 @@ PetscErrorCode IceModel::write_extras() {
 
   if (split_extra) {
     extra_file_is_ready = false;	// each time-series record is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc",
-             extra_filename.c_str(), grid.time->year());
+    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
+             extra_filename.c_str(), grid.time->date().c_str());
   } else {
     strncpy(filename, extra_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
   ierr = verbPrintf(3, grid.com, 
-                    "\nsaving spatial time-series to %s at %.5f a\n\n",
-                    filename, grid.time->year());
+                    "\nsaving spatial time-series to %s at %s\n\n",
+                    filename, grid.time->date().c_str());
   CHKERRQ(ierr);
 
   // find out how much time passed since the beginning of the run
@@ -409,7 +409,7 @@ PetscErrorCode IceModel::write_extras() {
     ierr = nc.open(filename, NC_WRITE, append); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        config.get_string("calendar"),
-                       grid.time->units()); CHKERRQ(ierr);
+                       grid.time->CF_units()); CHKERRQ(ierr);
     ierr = nc.put_att_text(config.get_string("time_dimension_name"),
                            "bounds", "time_bounds"); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);

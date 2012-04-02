@@ -241,7 +241,7 @@ PetscErrorCode IceUnitModel::test_output() {
   ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
                      config.get_string("calendar"),
-                     grid.time->units()); CHKERRQ(ierr);
+                     grid.time->CF_units()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
   ierr = nc.close();
 
@@ -299,7 +299,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
     ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        config.get_string("calendar"),
-                       grid.time->units()); CHKERRQ(ierr);
+                       grid.time->CF_units()); CHKERRQ(ierr);
     ierr = nc.append_time(config.get_string("time_dimension_name"), t); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
@@ -363,7 +363,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
                      config.get_string("calendar"),
-                     grid.time->units()); CHKERRQ(ierr);
+                     grid.time->CF_units()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), T); CHKERRQ(ierr);
 
   ierr = v.update(T, 0); CHKERRQ(ierr);
@@ -428,7 +428,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
                      config.get_string("calendar"),
-                     grid.time->units()); CHKERRQ(ierr);
+                     grid.time->CF_units()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 

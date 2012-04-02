@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -195,7 +195,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
   ierr = stress_balance->get_max_diffusivity(max_diffusivity); CHKERRQ(ierr);
 
   // main report: 'S' line
-  ierr = summaryPrintLine(PETSC_FALSE,(PetscBool)tempAndAge,grid.time->year(),dt,
+  ierr = summaryPrintLine(PETSC_FALSE, tempAndAge, grid.time->date(), dt,
                           gvolume,garea,meltfrac,max_diffusivity); CHKERRQ(ierr);
 
   return 0;
@@ -239,7 +239,7 @@ Derived classes of IceModel may redefine this method and print alternate
 information.  Use of DiagnosticTimeseries may be superior, however.
  */
 PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAndAge,
-                                          PetscScalar year,  PetscScalar delta_t,
+                                          string date,  PetscScalar delta_t,
                                           PetscScalar volume,  PetscScalar area,
                                           PetscScalar /* meltfrac */,  PetscScalar max_diffusivity) {
 
@@ -298,8 +298,8 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
     }
 
     ierr = verbPrintf(2,grid.com,
-                      "S %12.5f: %8.5f %9.4f %12.8f %17.5f\n",
-                      year, volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity,
+                      "S %s: %8.5f %9.4f %12.8f %17.5f\n",
+                      date.c_str(), volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity,
                       convert(gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", "m/year")); CHKERRQ(ierr);
 
     mass_cont_sub_counter = 0;

@@ -106,16 +106,6 @@ PetscErrorCode NCVariable::set_units(string new_units) {
   strings["units"] = new_units;
   strings["glaciological_units"] = new_units;
 
-  /*!
-    \note This code finds the string "since" in the units_string and
-    terminates it on the first 's' of "since", if this sub-string was found.
-    This is done to ignore the reference date in the time units string (the
-    reference date specification always starts with this word).
-  */
-  int n = (int)new_units.find("since");
-  if (n != -1)
-    new_units.resize(n);
-
   if (utScan(new_units.c_str(), &units) != 0) {
     SETERRQ2(com, 1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());
@@ -274,6 +264,7 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
   bool input_has_units;
   utUnit input_units;
 
+  // We ignore the reference date in units of spatial fields.
   ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
   if ( has("units") && (!input_has_units) ) {
@@ -400,6 +391,7 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
     bool input_has_units;
     utUnit input_units;
 
+    // We ignore the reference date in units of spatial fields.
     ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
     if ( has("units") && (!input_has_units) ) {
@@ -1241,7 +1233,8 @@ void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-PetscErrorCode NCTimeseries::read(string filename, vector<double> &data) {
+PetscErrorCode NCTimeseries::read(string filename, bool use_reference_date,
+                                  vector<double> &data) {
 
   PetscErrorCode ierr;
   PIO nc(com, rank, "netcdf3");
@@ -1295,7 +1288,8 @@ PetscErrorCode NCTimeseries::read(string filename, vector<double> &data) {
   bool input_has_units;
   utUnit input_units;
 
-  ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
+  ierr = nc.inq_units(name_found, input_has_units, input_units,
+                      use_reference_date); CHKERRQ(ierr);
 
   if ( has("units") && (!input_has_units) ) {
     string &units_string = strings["units"],
@@ -1581,7 +1575,8 @@ void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIIn
   bounds_name = "nv";           // number of vertices
 }
 
-PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
+PetscErrorCode NCTimeBounds::read(string filename, bool use_reference_date,
+                                  vector<double> &data) {
   PetscErrorCode ierr;
   PIO nc(com, rank, "netcdf3");
   bool variable_exists;
@@ -1660,7 +1655,8 @@ PetscErrorCode NCTimeBounds::read(string filename, vector<double> &data) {
     PISMEnd();
   }
 
-  ierr = nc.inq_units(dimension_name, input_has_units, input_units); CHKERRQ(ierr);
+  ierr = nc.inq_units(dimension_name, input_has_units, input_units,
+                      use_reference_date); CHKERRQ(ierr);
 
   if ( has("units") && (!input_has_units) ) {
     string &units_string = strings["units"];

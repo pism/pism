@@ -653,7 +653,7 @@ PetscErrorCode IceMISMIPModel::calving() {
 
 PetscErrorCode IceMISMIPModel::additionalAtStartTimestep() {
   // this is called at start of each pass through time-stepping loop IceModel::run()
-  const PetscScalar tonext50 = (50.0 - fmod(grid.time->year(), 50.0)) * secpera;
+  const PetscScalar tonext50 = (50.0 - fmod(grid.time->seconds_to_years(grid.time->current()), 50.0)) * secpera;
   if (maxdt_temporary < 0.0) {  // it has not been set
     maxdt_temporary = tonext50;
   } else {
@@ -703,8 +703,8 @@ PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
   }
 
   snprintf(str, sizeof(str),
-       "Stopping.  Completed timestep year=%.3f.  Writing MISMIP files.\n",
-           grid.time->year());
+       "Stopping.  Completed timestep year=%s.  Writing MISMIP files.\n",
+           grid.time->date().c_str());
   ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
   stampHistory(str);
 
@@ -749,7 +749,7 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
   ierr = vh.begin_access(); CHKERRQ(ierr);
   ierr = vbed.begin_access(); CHKERRQ(ierr);
   if (mismiptype == 'f') {
-    ierr = PetscViewerASCIIPrintf(view,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.time->year());
+    ierr = PetscViewerASCIIPrintf(view,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.time->date().c_str());
                CHKERRQ(ierr);
   } else {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -960,7 +960,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
 PetscErrorCode IceMISMIPModel::summaryPrintLine(
      PetscBool printPrototype,  bool /*tempAndAge*/,
-     PetscScalar year,  PetscScalar /*dt*/,
+     string,  PetscScalar /*dt*/,
      PetscScalar volume,  PetscScalar /*area_kmsquare*/,
      PetscScalar /*meltfrac*/,  PetscScalar H0,  PetscScalar /*T0*/) {
 
@@ -1008,6 +1008,7 @@ is computed as in MISMIP description, and finite differences.
     ierr = verbPrintf(2,grid.com,
       "U        years 10^6_km^3       m      km       m     m/a     m/a     m/a      m/a     1     1\n");
   } else {
+    double year = grid.time->seconds_to_years(grid.time->current());
     ierr = getRoutineStats(); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
       "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %8.2e %5d %5d\n",

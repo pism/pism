@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -93,7 +93,7 @@ protected:
                         offset->short_name.c_str(), filename.c_str());
       CHKERRQ(ierr);
 
-      ierr = offset->read(filename.c_str()); CHKERRQ(ierr);
+      ierr = offset->read(filename.c_str(), g.time->use_reference_date()); CHKERRQ(ierr);
     }
 
     return 0;

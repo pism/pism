@@ -76,11 +76,11 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
   ierr =   udata.set_units("m year-1", ""); CHKERRQ(ierr);
   ierr =   vdata.set_units("m year-1", ""); CHKERRQ(ierr);
 
-  ierr = latdata.read(riggsfile); CHKERRQ(ierr);
-  ierr = londata.read(riggsfile); CHKERRQ(ierr);
-  ierr = magdata.read(riggsfile); CHKERRQ(ierr);
-  ierr =   udata.read(riggsfile); CHKERRQ(ierr);
-  ierr =   vdata.read(riggsfile); CHKERRQ(ierr);
+  ierr = latdata.read(riggsfile, grid.time->use_reference_date()); CHKERRQ(ierr);
+  ierr = londata.read(riggsfile, grid.time->use_reference_date()); CHKERRQ(ierr);
+  ierr = magdata.read(riggsfile, grid.time->use_reference_date()); CHKERRQ(ierr);
+  ierr =   udata.read(riggsfile, grid.time->use_reference_date()); CHKERRQ(ierr);
+  ierr =   vdata.read(riggsfile, grid.time->use_reference_date()); CHKERRQ(ierr);
       
   MaskQuery M(*mask);
 
@@ -518,7 +518,7 @@ PetscErrorCode write_results(ShallowStressBalance &ssa,
   ierr = pio.open(filename, NC_WRITE); CHKERRQ(ierr);
   ierr = pio.def_time(grid.config.get_string("time_dimension_name"),
                       grid.config.get_string("calendar"),
-                      grid.time->units()); CHKERRQ(ierr);
+                      grid.time->CF_units()); CHKERRQ(ierr);
   ierr = pio.append_time(grid.config.get_string("time_dimension_name"), 0.0);
   ierr = pio.close(); CHKERRQ(ierr);
 

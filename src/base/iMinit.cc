@@ -118,8 +118,8 @@ PetscErrorCode IceModel::set_grid_defaults() {
     if (t_exists) {
       grid.time->set_start(input.time);
       ierr = verbPrintf(2, grid.com,
-  		      "  time t = %5.4f years found; setting current year\n",
-                        grid.time->year()); CHKERRQ(ierr);
+  		      "  time t = %s found; setting current time\n",
+                        grid.time->date().c_str()); CHKERRQ(ierr);
     }
   }
 

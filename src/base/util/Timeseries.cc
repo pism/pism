@@ -45,7 +45,7 @@ void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r, string name, str
 
 
 //! Read timeseries data from a NetCDF file \c filename.
-PetscErrorCode Timeseries::read(const char filename[]) {
+PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) {
   PetscErrorCode ierr;
 
   PIO nc(com, rank, "netcdf3");
@@ -82,7 +82,7 @@ PetscErrorCode Timeseries::read(const char filename[]) {
 
   dimension.init(time_name, time_name, com, rank);
 
-  ierr = dimension.read(filename, time); CHKERRQ(ierr);
+  ierr = dimension.read(filename, use_reference_date, time); CHKERRQ(ierr);
   bool is_increasing = true;
   for (unsigned int j = 1; j < time.size(); ++j) {
     if (time[j] - time[j-1] < 1e-16) {
@@ -105,12 +105,12 @@ PetscErrorCode Timeseries::read(const char filename[]) {
     bounds.init(time_bounds_name, time_name, com, rank);
     ierr = bounds.set_units(dimension.get_string("units")); CHKERRQ(ierr);
 
-    ierr = bounds.read(filename, time_bounds); CHKERRQ(ierr);
+    ierr = bounds.read(filename, use_reference_date, time_bounds); CHKERRQ(ierr);
   } else {
     use_bounds = false;
   }
 
-  ierr = var.read(filename, values); CHKERRQ(ierr);
+  ierr = var.read(filename, use_reference_date, values); CHKERRQ(ierr);
 
   if (time.size() != values.size()) {
     ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",

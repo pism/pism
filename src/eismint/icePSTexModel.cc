@@ -515,8 +515,8 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   }
 
   double dt_years = convert(dt, "seconds", "years"),
-    a = grid.time->year() - dt_years,
-    b = grid.time->year();
+    a = grid.time->seconds_to_years(grid.time->current() - dt),
+    b = grid.time->seconds_to_years(grid.time->current());
 
   dt_ser->append(dt_years, a, b);
   dt_ser->interp(a, b);

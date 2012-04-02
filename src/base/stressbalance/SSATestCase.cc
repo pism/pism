@@ -256,7 +256,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
   ierr = pio.open(filename, NC_WRITE); CHKERRQ(ierr);
   ierr = pio.def_time(config.get_string("time_dimension_name"),
                       config.get_string("calendar"),
-                      grid.time->units()); CHKERRQ(ierr);
+                      grid.time->CF_units()); CHKERRQ(ierr);
   ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
   ierr = pio.close(); CHKERRQ(ierr);
 

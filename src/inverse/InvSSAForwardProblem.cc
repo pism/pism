@@ -290,7 +290,7 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
       pio.open(ncfile, NC_WRITE);
       pio.def_time(grid.config.get_string("time_dimension_name"),
                    grid.config.get_string("calendar"),
-                   grid.time->units());
+                   grid.time->CF_units());
       pio.append_time(grid.config.get_string("time_dimension_name"),0.0);
       pio.close();
 

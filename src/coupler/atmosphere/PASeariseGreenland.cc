@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -26,6 +26,7 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include "PISMTime.hh"
 
 ///// PA_SeaRISE_Greenland
 
@@ -73,10 +74,10 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     dTforcing = new Timeseries(grid.com, grid.rank, "delta_T",
                                grid.config.get_string("time_dimension_name"));
     ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
-    ierr = dTforcing->set_dimension_units("seconds", ""); CHKERRQ(ierr);
+    ierr = dTforcing->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
     ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");
-             CHKERRQ(ierr);
-    ierr = dTforcing->read(dT_file); CHKERRQ(ierr);
+    CHKERRQ(ierr);
+    ierr = dTforcing->read(dT_file, grid.time->use_reference_date()); CHKERRQ(ierr);
   }
 
   return 0;
