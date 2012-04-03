@@ -25,7 +25,14 @@
 #include "NCVariable.hh"
 #include "PISMTime.hh"
 #include "PISMNC3File.hh"
+
+#if (PISM_PARALLEL_NETCDF4==1)
 #include "PISMNC4File.hh"
+#endif
+
+#if (PISM_PNETCDF==1)
+#include "PISMPNCFile.hh"
+#endif
 
 PIO::PIO(MPI_Comm c, int r, string mode) {
   com = c;
@@ -43,9 +50,14 @@ PIO::PIO(MPI_Comm c, int r, string mode) {
   if (mode == "netcdf3") {
     nc = new PISMNC3File(com, rank);
   }
-#if (PISM_PARALLEL_NETCDF==1)
+#if (PISM_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
     nc = new PISMNC4File(com, rank);
+  }
+#endif
+#if (PISM_PNETCDF==1)
+  else if (mode == "pnetcdf") {
+    nc = new PISMPNCFile(com, rank);
   }
 #endif
   else {
@@ -75,7 +87,7 @@ PetscErrorCode PIO::open(string filename, int mode, bool append) {
 
   // opening for reading
 
-  if (!(mode & NC_WRITE)) {
+  if (!(mode & PISM_WRITE)) {
     ierr = nc->open(filename, mode);
     if (ierr != 0) {
       PetscPrintf(com, "PISM ERROR: Can't open '%s'. Exiting...\n", filename.c_str());
@@ -96,7 +108,7 @@ PetscErrorCode PIO::open(string filename, int mode, bool append) {
     }
 
     int old_fill;
-    ierr = nc->set_fill(NC_NOFILL, old_fill); CHKERRQ(ierr);
+    ierr = nc->set_fill(PISM_NOFILL, old_fill); CHKERRQ(ierr);
   } else {
 
     ierr = nc->open(filename, mode);
@@ -107,7 +119,7 @@ PetscErrorCode PIO::open(string filename, int mode, bool append) {
     }
 
     int old_fill;
-    ierr = nc->set_fill(NC_NOFILL, old_fill); CHKERRQ(ierr);
+    ierr = nc->set_fill(PISM_NOFILL, old_fill); CHKERRQ(ierr);
 
   }
 
@@ -571,7 +583,7 @@ PetscErrorCode PIO::def_dim(string name, long int length, map<string,string> att
   vector<string> dims(1);
   dims[0] = name;
 
-  ierr = nc->def_var(name, NC_DOUBLE, dims); CHKERRQ(ierr);
+  ierr = nc->def_var(name, PISM_DOUBLE, dims); CHKERRQ(ierr);
 
   map<string,string>::iterator j;
   for (j = attrs.begin(); j != attrs.end(); ++j) {
@@ -587,7 +599,7 @@ PetscErrorCode PIO::def_dim(string name, long int length, map<string,string> att
 }
 
 //! \brief Define a variable.
-PetscErrorCode PIO::def_var(string name, nc_type nctype, vector<string> dims) const {
+PetscErrorCode PIO::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
   PetscErrorCode ierr;
 
   ierr = nc->def_var(name, nctype, dims); CHKERRQ(ierr);
@@ -664,7 +676,7 @@ PetscErrorCode PIO::def_time(string name, string calendar, string units) const {
   attrs["units"]     = units;
   attrs["axis"]      = "T";
 
-  ierr = this->def_dim(name, NC_UNLIMITED, attrs); CHKERRQ(ierr);
+  ierr = this->def_dim(name, PISM_UNLIMITED, attrs); CHKERRQ(ierr);
 
   return 0;
 }
@@ -691,7 +703,7 @@ PetscErrorCode PIO::append_time(string name, double value) const {
 
 //! \brief Append to the history global attribute.
 /*!
- * Use put_att_text("NC_GLOBAL", "history", ...) to overwrite "history".
+ * Use put_att_text("PISM_GLOBAL", "history", ...) to overwrite "history".
  */
 PetscErrorCode PIO::append_history(string history) const {
   PetscErrorCode ierr;
@@ -699,14 +711,14 @@ PetscErrorCode PIO::append_history(string history) const {
 
   ierr = nc->redef(); CHKERRQ(ierr);
 
-  ierr = nc->get_att_text("NC_GLOBAL", "history", old_history); CHKERRQ(ierr);
-  ierr = nc->put_att_text("NC_GLOBAL", "history", history + old_history); CHKERRQ(ierr);
+  ierr = nc->get_att_text("PISM_GLOBAL", "history", old_history); CHKERRQ(ierr);
+  ierr = nc->put_att_text("PISM_GLOBAL", "history", history + old_history); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! \brief Write a multiple-valued double attribute.
-PetscErrorCode PIO::put_att_double(string var_name, string att_name, nc_type nctype,
+PetscErrorCode PIO::put_att_double(string var_name, string att_name, PISM_IO_Type nctype,
                                    vector<double> values) const {
   PetscErrorCode ierr;
 
@@ -718,7 +730,7 @@ PetscErrorCode PIO::put_att_double(string var_name, string att_name, nc_type nct
 }
 
 //! \brief Write a single-valued double attribute.
-PetscErrorCode PIO::put_att_double(string var_name, string att_name, nc_type nctype,
+PetscErrorCode PIO::put_att_double(string var_name, string att_name, PISM_IO_Type nctype,
                                    double value) const {
   PetscErrorCode ierr;
   vector<double> tmp; tmp.push_back(value);
@@ -803,7 +815,7 @@ PetscErrorCode PIO::inq_attname(string var_name, unsigned int n, string &result)
 }
 
 
-PetscErrorCode PIO::inq_atttype(string var_name, string att_name, nc_type &result) const {
+PetscErrorCode PIO::inq_atttype(string var_name, string att_name, PISM_IO_Type &result) const {
   PetscErrorCode ierr = nc->inq_atttype(var_name, att_name, result); CHKERRQ(ierr);
   return 0;
 }

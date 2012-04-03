@@ -126,7 +126,7 @@ protected:
   PISMVars &variables;          //!< dictionary of variables
   IceGrid &grid;                //!< the grid
   int dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
-  nc_type output_datatype;      //!< data type to use in the file
+  PISM_IO_Type output_datatype;      //!< data type to use in the file
   vector<NCSpatialVariable> vars; //!< metadata corresponding to NetCDF variables
 };
 

@@ -617,7 +617,7 @@ PetscErrorCode IceModelVec::read(string filename, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using \c nc.
-PetscErrorCode IceModelVec::define(const PIO &nc, nc_type output_datatype) {
+PetscErrorCode IceModelVec::define(const PIO &nc, PISM_IO_Type output_datatype) {
   PetscErrorCode ierr;
 
   for (int j = 0; j < dof; ++j) {
@@ -676,7 +676,7 @@ PetscErrorCode IceModelVec::write(string filename) {
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-PetscErrorCode IceModelVec::write(string filename, nc_type nctype) {
+PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   Vec g;
 

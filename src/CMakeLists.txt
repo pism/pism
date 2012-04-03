@@ -18,7 +18,10 @@ include_directories (
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
 # all over the place).
-add_library (pismutil
+set(PISM_PARALLEL_IO_FLAGS "")
+
+# Create a list of files making up libpismutil so that we can add to it later:
+set(PISMUTIL_SRC
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
   base/util/IceGrid.cc
@@ -38,7 +41,6 @@ add_library (pismutil
   base/util/io/LocalInterpCtx.cc
   base/util/io/PIO.cc
   base/util/io/PISMNC3File.cc
-  base/util/io/PISMNC4File.cc
   base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
   base/util/pism_default_config.cc
@@ -46,18 +48,32 @@ add_library (pismutil
   base/util/time_options.cc
   base/varcEnthalpyConverter.cc
   )
+
+# Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
+if (Pism_USE_PARALLEL_NETCDF4)
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=1")
+  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4File.cc)
+else()
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=0")
+endif()
+
+# Check if PnetCDF parallel I/O is enabled. If so, set compiler flags and add a source code file.
+if (Pism_USE_PNETCDF)
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=1")
+  list(APPEND PISMUTIL_SRC base/util/io/PISMPNCFile.cc)
+  set_source_files_properties (base/util/io/PISMPNCFile.cc
+    PROPERTIES COMPILE_FLAGS "-I${PNETCDF_INCLUDES}")
+else()
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=0")
+endif()
+
+# The list of headers included in PIO.cc depends on parallel I/O settings. These flags determine which headers are included.
+set_source_files_properties (base/util/io/PIO.cc
+  PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
+
+add_library (pismutil ${PISMUTIL_SRC})
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)
-
-if (Pism_USE_PARALLEL_NETCDF)
-  set_source_files_properties (base/util/io/PISMNC4File.cc base/util/io/PIO.cc
-    PROPERTIES COMPILE_FLAGS
-    "-DPISM_PARALLEL_NETCDF=1")
-else()
-  set_source_files_properties (base/util/io/PISMNC4File.cc base/util/io/PIO.cc
-    PROPERTIES COMPILE_FLAGS
-    "-DPISM_PARALLEL_NETCDF=0 -Wno-unused")
-endif()
 
 add_custom_target (touch_pism_revision
   COMMAND ${CMAKE_COMMAND} -E touch pism_revision.cc

@@ -47,7 +47,7 @@ public:
   // provide default re-implementations of these parent's methods:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, nc_type nctype);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
 protected:

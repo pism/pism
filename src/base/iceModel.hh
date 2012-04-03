@@ -182,7 +182,7 @@ public:
   virtual PetscErrorCode write_model_state(string filename);
   virtual PetscErrorCode write_metadata(string filename, bool write_mapping = true);
   virtual PetscErrorCode write_variables(string filename, set<string> vars,
-					 nc_type nctype);
+					 PISM_IO_Type nctype);
 protected:
 
   IceGrid               &grid;

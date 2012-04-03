@@ -65,7 +65,7 @@ void PISMConstantYieldStress::add_vars_to_output(string /*keyword*/, set<string>
 
 
 PetscErrorCode PISMConstantYieldStress::define_variables(set<string> vars, const PIO &nc,
-                                                         nc_type nctype) {
+                                                         PISM_IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
     PetscErrorCode ierr = tauc.define(nc, nctype); CHKERRQ(ierr);
   }

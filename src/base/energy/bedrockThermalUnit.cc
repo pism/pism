@@ -234,7 +234,7 @@ void PISMBedThermalUnit::add_vars_to_output(string /*keyword*/, set<string> &res
 }
 
 PetscErrorCode PISMBedThermalUnit::define_variables(
-                         set<string> vars, const PIO &nc, nc_type nctype) {
+                         set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.string_attr("short_name"))) {

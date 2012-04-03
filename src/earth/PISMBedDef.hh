@@ -35,7 +35,7 @@ public:
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
   virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/);
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
-                                          nc_type /*nctype*/);
+                                          PISM_IO_Type /*nctype*/);
   virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/);
 protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking

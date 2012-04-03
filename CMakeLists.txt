@@ -38,6 +38,7 @@ if (NOT Pism_MANUAL_BUILD)
 
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
+  find_package (PNetCDF)
 
   # Try to find netcdf_par.h. We assume that NetCDF was compiled with
   # parallel I/O if this header is present.
@@ -45,9 +46,15 @@ if (NOT Pism_MANUAL_BUILD)
   mark_as_advanced(NETCDF_PAR_H)
   if (NETCDF_PAR_H)
     message(STATUS "Note: Selected NetCDF library supports parallel I/O")
-    option (Pism_USE_PARALLEL_NETCDF "Enables parallel NetCDF I/O." ON)
+    option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." ON)
   else()
     message(STATUS "Note: Selected NetCDF library does not support parallel I/O")
+  endif()
+
+  if (PNETCDF_FOUND)
+    message(STATUS "Note: PnetCDF was found. Enabling PnetCDF-based parallel I/O.")
+    option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." ON)
+  else ()
   endif()
 
   # use the PETSc compiler as a hint when looking for an MPI compiler

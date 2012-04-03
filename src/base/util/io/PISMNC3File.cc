@@ -219,7 +219,7 @@ int PISMNC3File::inq_unlimdim(string &result) const {
 
 
 //! \brief Define a variable.
-int PISMNC3File::def_var(string name, nc_type nctype, vector<string> dims) const {
+int PISMNC3File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
   int stat;
 
   if (rank == 0) {
@@ -754,7 +754,7 @@ int PISMNC3File::get_att_text(string variable_name, string att_name, string &res
  * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int PISMNC3File::put_att_double(string variable_name, string att_name,
-                               nc_type nctype, vector<double> &data) const {
+                               PISM_IO_Type nctype, vector<double> &data) const {
 
   int stat = 0;
 
@@ -841,7 +841,7 @@ int PISMNC3File::inq_attname(string variable_name, unsigned int n, string &resul
 /*!
  * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::inq_atttype(string variable_name, string att_name, nc_type &result) const {
+int PISMNC3File::inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const {
   int stat, tmp;
 
   if (rank == 0) {
@@ -853,7 +853,7 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, nc_type &res
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
     }
 
-    // In NetCDF 3.6.x nc_type is an enum; in 4.x it is 'typedef int'.
+    // In NetCDF 3.6.x PISM_IO_Type is an enum; in 4.x it is 'typedef int'.
     nc_type nctype;
     stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &nctype); check(stat);
     tmp = static_cast<int>(nctype);
@@ -861,7 +861,7 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, nc_type &res
   MPI_Barrier(com);
   MPI_Bcast(&tmp, 1, MPI_INT, 0, com);
 
-  result = static_cast<nc_type>(tmp);
+  result = static_cast<PISM_IO_Type>(tmp);
 
   return 0;
 }

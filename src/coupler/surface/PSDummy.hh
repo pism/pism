@@ -46,7 +46,7 @@ public:
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &)
   { return 0; }
   virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/) {}
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/, nc_type /*nctype*/)
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/, PISM_IO_Type /*nctype*/)
   { return 0; }
   virtual PetscErrorCode write_variables(set<string>, string)
   { return 0; }

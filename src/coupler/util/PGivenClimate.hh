@@ -96,7 +96,7 @@ public:
     }
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, nc_type nctype)
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype)
   {
     PetscErrorCode ierr;
 

@@ -142,7 +142,7 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
 PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
-					 nc_type nctype) {
+					 PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
 

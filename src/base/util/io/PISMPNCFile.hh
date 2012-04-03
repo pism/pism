@@ -16,16 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMNC4FILE_H_
-#define _PISMNC4FILE_H_
+#ifndef _PISMPNCFILE_H_
+#define _PISMPNCFILE_H_
 
 #include "PISMNCFile.hh"
 
-class PISMNC4File : public PISMNCFile
+//! \brief PISM's PnetCDF I/O wrapper.
+class PISMPNCFile : public PISMNCFile
 {
 public:
-  PISMNC4File(MPI_Comm com, int rank);
-  virtual ~PISMNC4File();
+  PISMPNCFile(MPI_Comm com, int rank);
+  virtual ~PISMPNCFile();
 
   // open/create/close
   int open(string filename, int mode);
@@ -112,4 +113,4 @@ private:
                      bool mapped) const;
 };
 
-#endif /* _PISMNC4FILE_H_ */
+#endif /* _PISMPNCFILE_H_ */

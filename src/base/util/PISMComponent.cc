@@ -53,7 +53,7 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
 
   PIO nc(grid.com, grid.rank, "netcdf3");
   unsigned int last_record;
-  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);
   last_record -= 1;
   ierr = nc.close(); CHKERRQ(ierr);
