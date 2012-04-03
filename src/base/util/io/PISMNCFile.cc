@@ -19,6 +19,12 @@
 #include "PISMNCFile.hh"
 
 #include <cstdio>               // fprintf, stderr
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
 #include <netcdf.h>
 
 PISMNCFile::PISMNCFile(MPI_Comm c, int r)
