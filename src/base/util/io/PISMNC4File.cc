@@ -25,6 +25,8 @@ extern "C" {
 #include <cstring>		// memset
 #include <cstdio>		// stderr, fprintf
 
+#include "pism_type_conversion.hh"
+
 PISMNC4File::PISMNC4File(MPI_Comm c, int r)
   : PISMNCFile(c, r) {
   // empty
@@ -167,7 +169,7 @@ int PISMNC4File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
     dimids.push_back(dimid);
   }
 
-  stat = nc_def_var(ncid, name.c_str(), nctype,
+  stat = nc_def_var(ncid, name.c_str(), pism_type_to_nc_type(nctype),
                     static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
 
 #if (PISM_DEBUG==1)
@@ -382,7 +384,7 @@ int PISMNC4File::inq_vardimid(string variable_name, vector<string> &result) cons
 int PISMNC4File::inq_varnatts(string variable_name, int &result) const {
   int stat, varid = -1;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -427,7 +429,7 @@ int PISMNC4File::get_att_double(string variable_name, string att_name, vector<do
   size_t attlen;
 
   // Read the attribute length:
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -471,7 +473,7 @@ int PISMNC4File::get_att_text(string variable_name, string att_name, string &res
   // Read the attribute length:
   size_t attlen;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -517,7 +519,7 @@ int PISMNC4File::put_att_double(string variable_name, string att_name, PISM_IO_T
 
   int varid = -1;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -534,7 +536,7 @@ int PISMNC4File::put_att_text(string variable_name, string att_name, string valu
 
   stat = redef(); check(stat);
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -552,7 +554,7 @@ int PISMNC4File::inq_attname(string variable_name, unsigned int n, string &resul
 
   int varid = -1;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -567,14 +569,17 @@ int PISMNC4File::inq_attname(string variable_name, unsigned int n, string &resul
 
 int PISMNC4File::inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const {
   int stat, varid = -1;
+  nc_type tmp;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &result); check(stat);
+  stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &tmp); check(stat);
+
+  result = nc_type_to_pism_type(tmp);
 
   return 0;
 }

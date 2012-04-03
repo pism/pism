@@ -73,7 +73,7 @@ int main(int argc, char**argv) {
   dims[1] = "y";
   dims[2] = "z";
 
-  ierr = nc.def_var("data", NC_DOUBLE, dims); CHKERRQ(ierr);
+  ierr = nc.def_var("data", PISM_DOUBLE, dims); CHKERRQ(ierr);
 
   vector<unsigned int> start(3), count(3), imap(3);
 
