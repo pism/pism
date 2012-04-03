@@ -18,6 +18,7 @@
 
 #include "pism_options.hh"
 #include "NCVariable.hh"
+#include <algorithm>
 #include <sstream>
 
 //! \brief Compute
