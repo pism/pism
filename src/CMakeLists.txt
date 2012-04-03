@@ -61,8 +61,6 @@ endif()
 if (Pism_USE_PNETCDF)
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=1")
   list(APPEND PISMUTIL_SRC base/util/io/PISMPNCFile.cc)
-  set_source_files_properties (base/util/io/PISMPNCFile.cc
-    PROPERTIES COMPILE_FLAGS "-I${PNETCDF_INCLUDES}")
 else()
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=0")
 endif()

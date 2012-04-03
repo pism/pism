@@ -417,6 +417,7 @@ typedef int NormType; // YUCK.
 %include "iceModelVec.hh"
 %include "PISMVars.hh"
 %include "PIO.hh"
+%include "PISMNCFile.hh"
 %include "PISMDiagnostic.hh"
 %include "PISMComponent.hh"
 %include "basal_resistance.hh"

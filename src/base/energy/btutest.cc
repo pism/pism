@@ -285,11 +285,11 @@ int main(int argc, char *argv[]) {
     PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
 
     string time_name = config.get_string("time_dimension_name");
-    ierr = pio.open(outname, NC_WRITE); CHKERRQ(ierr);
+    ierr = pio.open(outname, PISM_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(time_name, config.get_string("calendar"),
                         grid.time->CF_units()); CHKERRQ(ierr);
     ierr = pio.append_time(time_name, grid.time->end()); CHKERRQ(ierr);
-    ierr = btu.define_variables(vars, pio, NC_DOUBLE); CHKERRQ(ierr);
+    ierr = btu.define_variables(vars, pio, PISM_DOUBLE); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
 
     ierr = btu.write_variables(vars, outname); CHKERRQ(ierr);

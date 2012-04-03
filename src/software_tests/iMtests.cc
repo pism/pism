@@ -238,7 +238,7 @@ PetscErrorCode IceUnitModel::test_output() {
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   string filename = "test_output.nc";
 
-  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
                      config.get_string("calendar"),
                      grid.time->CF_units()); CHKERRQ(ierr);
@@ -288,7 +288,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 
   // create a file to regrid from (that will have grid parameters compatible
   // with the current grid):
-  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = mapping.write(filename); CHKERRQ(ierr);
@@ -296,7 +296,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 
   double t = 0, t_max = 50, my_dt = 0.35;
   while (t < t_max) {
-    ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        config.get_string("calendar"),
                        grid.time->CF_units()); CHKERRQ(ierr);
@@ -355,7 +355,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 
   T = T + max_dt / 2.0;
 
-  ierr = nc.open(output, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(output, PISM_WRITE); CHKERRQ(ierr);
   // append == false, check_dims == true
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -368,7 +368,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 
   ierr = v.update(T, 0); CHKERRQ(ierr);
   ierr = v.interp(T); CHKERRQ(ierr);
-  ierr = v.write(output, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = v.write(output, PISM_DOUBLE); CHKERRQ(ierr);
 
   T = 13;
   my_dt = 10;
@@ -425,7 +425,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   char filename[] = "test_IceModelVec2V.nc";
   // create a file to regrid from (that will have grid parameters compatible
   // with the current grid):
-  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
                      config.get_string("calendar"),
                      grid.time->CF_units()); CHKERRQ(ierr);
@@ -435,7 +435,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
 
-  ierr = velocity.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = velocity.write(filename, PISM_DOUBLE); CHKERRQ(ierr);
 
   // reset:
   ierr = velocity.set(0.0); CHKERRQ(ierr);
@@ -443,7 +443,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   // read in:
   ierr = velocity.read(filename, 0); CHKERRQ(ierr);
   // write out:
-  ierr = velocity.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = velocity.write(filename, PISM_DOUBLE); CHKERRQ(ierr);
 
   ierr = velocity.magnitude(vWork2d[0]); CHKERRQ(ierr);
   ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
@@ -453,7 +453,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
 
-  ierr = vWork2d[0].write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, PISM_DOUBLE); CHKERRQ(ierr);
 
   return 0;
 }

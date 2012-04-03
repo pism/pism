@@ -83,7 +83,7 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
   PetscErrorCode ierr;
 
   PIO nc(grid.com, grid.rank, "netcdf3");
-  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
 		    "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);

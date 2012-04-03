@@ -28,6 +28,7 @@
 using namespace std;
 /// @endcond
 
+// This is a subset of NetCDF data-types.
 enum PISM_IO_Type {
   PISM_NAT =	0,	/* NAT = 'Not A Type' (c.f. NaN) */
   PISM_BYTE =	1,	/* signed 1 byte integer */
@@ -38,13 +39,23 @@ enum PISM_IO_Type {
   PISM_DOUBLE =	6	/* double precision floating point number */
 };
 
+// This is a subset of NetCDF file modes. Gets cast to "int", so it should
+// match values used by NetCDF.
 enum PISM_IO_Mode {
   PISM_NOWRITE = 0,
-  PISM_WRITE
+  PISM_WRITE   = 0x0001
 };
 
+// This is the special value corresponding to the "unlimited" dimension length.
+// Gets cast to "int", so it should match the value used by NetCDF.
 enum PISM_Dim_Length {
-  PISM_UNLIMITED = -1
+  PISM_UNLIMITED = 0
+};
+
+// "Fill" mode. Gets cast to "int", so it should match values used by NetCDF.
+enum PISM_Fill_Mode {
+  PISM_FILL = 0,
+  PISM_NOFILL = 0x100
 };
 
 //! \brief The PISM wrapper for a subset of the NetCDF C API.

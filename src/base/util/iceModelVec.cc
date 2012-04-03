@@ -441,7 +441,7 @@ PetscErrorCode IceModelVec::reset_attrs(int N) {
   time_independent = false;
   write_in_glaciological_units = false;
   report_range = true;
-  output_data_type = NC_DOUBLE;
+  output_data_type = PISM_DOUBLE;
 
   vars[N].reset();
 
@@ -492,7 +492,7 @@ PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* 
   bool exists, found_by_std_name;
   string name_found;
 
-  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
                     exists, name_found, found_by_std_name); CHKERRQ(ierr);
@@ -706,7 +706,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
   PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
 
   // append = false, check_dimensions = true
-  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(grid->config.get_string("time_dimension_name"),
                      grid->config.get_string("calendar"),
                      grid->time->units()); CHKERRQ(ierr);
@@ -714,7 +714,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
                         grid->time->current()); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = write(filename, PISM_DOUBLE); CHKERRQ(ierr);
 
   return 0;
 }

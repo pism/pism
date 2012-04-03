@@ -173,7 +173,7 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
     // levels and the depth of the bed thermal layer from it:
     PIO nc(grid.com, grid.rank, "netcdf3");
 
-    ierr = nc.open(input_file, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(input_file, PISM_NOWRITE); CHKERRQ(ierr);
     
     bool exists;
     ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);

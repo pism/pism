@@ -54,7 +54,7 @@ class PISMDiagnostic
 public:
   PISMDiagnostic(IceGrid &g, PISMVars &my_vars)
     : variables(my_vars), grid(g) {
-    output_datatype = NC_FLOAT;
+    output_datatype = PISM_FLOAT;
     dof = 1;
     vars.resize(dof);
   }

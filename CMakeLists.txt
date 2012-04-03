@@ -191,6 +191,11 @@ include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_
 set (Pism_EXTERNAL_LIBS
   ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
 
+if (Pism_USE_PNETCDF)
+  include_directories (${PNETCDF_INCLUDES})
+  list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
+endif()
+
 # Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=1)

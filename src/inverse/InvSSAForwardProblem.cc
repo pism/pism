@@ -21,6 +21,7 @@
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
 #include <unistd.h> // for 'access'
+#include <errno.h>
 #include <sstream>
 #include "PIO.hh"
 
@@ -287,7 +288,7 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
       std::string ncfile = os_ncfile.str();
 
       PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
-      pio.open(ncfile, NC_WRITE);
+      pio.open(ncfile, PISM_WRITE);
       pio.def_time(grid.config.get_string("time_dimension_name"),
                    grid.config.get_string("calendar"),
                    grid.time->CF_units());

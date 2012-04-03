@@ -19,6 +19,7 @@
 #include "PISMNCFile.hh"
 
 #include <cstdio>               // fprintf, stderr
+#include <netcdf.h>
 
 PISMNCFile::PISMNCFile(MPI_Comm c, int r)
   : rank(r), com(c) {

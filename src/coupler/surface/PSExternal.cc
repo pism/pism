@@ -236,7 +236,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
   PetscErrorCode ierr;
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
 
-  ierr = nc.open(ebm_input, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(ebm_input, PISM_WRITE); CHKERRQ(ierr);
 
   // Determine if the file is empty; if it is, create dimenstions and
   // dimensional variables, otherwise overwrite the time stored in the time
@@ -263,7 +263,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
   // define
   for (unsigned int i = 0; i < ebm_vars.size(); ++i) {
     IceModelVec *var = ebm_vars[i];
-    ierr = var->define(nc, NC_DOUBLE); CHKERRQ(ierr);
+    ierr = var->define(nc, PISM_DOUBLE); CHKERRQ(ierr);
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
