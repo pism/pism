@@ -242,6 +242,47 @@ typedef int NormType; // YUCK.
             self.add(v)
   }
 }
+
+// There was a collision between the two IceModelVec::regrid methods:
+//  regrid(string filename,bool critical,start=0)
+//  regrid(string filename, PetscScalar default)
+//
+//  Calls in the python bindings to var.regrid(filename,True)
+//  were actually calling the second version, i.e. with a default value
+//  of true, and verification of critical variables was not done.
+//  
+//  We avoid the collision by renaming all three regrids (there are three
+//  because of SWIG's implementation of the default variable) 
+//
+//  And we add a python method regrid that can be called via
+//  var.regrid(filename, critical=True).  
+//
+//  To access the version of regrid taking a default value, call
+//  var.regrid_with_default(filename, value)
+%rename(regrid_with_default) IceModelVec::regrid(string, PetscScalar);
+%rename(regrid_with_critical) IceModelVec::regrid(string, bool);
+%rename(regrid_with_critical_and_start) IceModelVec::regrid(string, bool, int);
+%extend IceModelVec
+{
+  %pythoncode {
+    def regrid(self,filename,critical=False,start=0):
+      self.regrid_with_critical_and_start(filename,critical,start)
+  }
+}
+
+// We also make the same fix for IceModelVec2's.
+%rename(regrid_with_default) IceModelVec2::regrid(string, PetscScalar);
+%rename(regrid_with_critical) IceModelVec2::regrid(string, bool);
+%rename(regrid_with_critical_and_start) IceModelVec2::regrid(string, bool, int);
+%extend IceModelVec2
+{
+  %pythoncode {
+    def regrid(self,filename,critical=False,start=0):
+      self.regrid_with_critical_and_start(filename,critical,start)
+  }
+}
+
+
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
 // elegant solution.
 %extend IceModelVec2S
