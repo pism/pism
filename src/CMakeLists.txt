@@ -267,6 +267,16 @@ if (Pism_BUILD_EXTRA_EXECS)
     target_link_libraries (pismncfile_test ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
   endif()
 
+  if (Pism_USE_PNETCDF)
+    add_executable (pism_pnetcdf_test software_tests/pism_pnetcdf_test.cc
+      base/util/io/PISMNCFile.cc
+      base/util/io/PISMNC3File.cc
+      base/util/io/PISMPNCFile.cc
+      base/util/PISMProf.cc)
+    target_link_libraries (pism_pnetcdf_test ${NETCDF_LIBRARIES} ${PNETCDF_LIBRARIES}
+      ${PETSC_LIBRARIES} ${MPI_LIBRARIES})
+  endif()
+
   install (TARGETS
     ${SIMPLE_EXECS} tryLCbd pismtests btutest
     RUNTIME DESTINATION ${Pism_BIN_DIR}
