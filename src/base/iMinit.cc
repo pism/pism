@@ -838,6 +838,7 @@ PetscErrorCode IceModel::misc_setup() {
   event_beddef  = grid.profiler->create("bed_def",  "time spent updating the bed deformation model");
 
   event_output    = grid.profiler->create("output", "time spent writing an output file");
+  event_output_define = grid.profiler->create("output_define", "time spent defining variables");
   event_snapshots = grid.profiler->create("snapshots", "time spent writing snapshots");
   event_backups   = grid.profiler->create("backups", "time spent writing backups");
 

@@ -486,6 +486,7 @@ private:
     event_age,			//!< age computation
     event_beddef,		//!< bed deformation step
     event_output,		//!< time spent writing the output file
+    event_output_define,        //!< time spent defining variables
     event_snapshots,            //!< time spent writing snapshots
     event_backups;              //!< time spent writing backups files
 };

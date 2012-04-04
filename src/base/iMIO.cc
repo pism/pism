@@ -146,6 +146,8 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
   PetscErrorCode ierr;
   IceModelVec *v;
 
+  grid.profiler->begin(event_output_define);
+
   // Define all the variables:
   {
     PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
@@ -205,6 +207,8 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
 
     ierr = nc.close(); CHKERRQ(ierr);
   }
+
+  grid.profiler->end(event_output_define);
 
   // Write all the IceModel variables:
   set<string>::iterator i = vars.begin();
