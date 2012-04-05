@@ -275,7 +275,7 @@ if (Pism_BUILD_EXTRA_EXECS)
 
 
   install (TARGETS
-    ${SIMPLE_EXECS} tryLCbd pismtests btutest
+    ${SIMPLE_EXECS} tryLCbd pismtests btutest pism_netcdf_test
     RUNTIME DESTINATION ${Pism_BIN_DIR}
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
