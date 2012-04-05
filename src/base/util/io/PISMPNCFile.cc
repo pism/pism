@@ -16,18 +16,23 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PISMPNCFile.hh"
 #include <pnetcdf.h>
+#include <sstream>
+
+#include "PISMPNCFile.hh"
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
 
 PISMPNCFile::PISMPNCFile(MPI_Comm c, int r)
   : PISMNCFile(c, r) {
-  // empty
+  MPI_Info_create(&mpi_info);
+  mpi_io_hints.push_back("romio_cb_write:disable");
+  mpi_io_hints.push_back("romio_ds_write:disable");
+  mpi_io_hints.push_back("panfs_concurrent_write:1");
 }
 
 
 PISMPNCFile::~PISMPNCFile() {
-  // empty
+  MPI_Info_free(&mpi_info);  // empty
 }
 
 void PISMPNCFile::check(int return_code) const {
@@ -38,12 +43,13 @@ void PISMPNCFile::check(int return_code) const {
 
 
 int PISMPNCFile::open(string fname, int mode) {
-  MPI_Info info = MPI_INFO_NULL;
   int stat;
+
+  init_hints();
 
   filename = fname;
 
-  stat = ncmpi_open(com, filename.c_str(), mode, info, &ncid); check(stat);
+  stat = ncmpi_open(com, filename.c_str(), mode, mpi_info, &ncid); check(stat);
 
   define_mode = false;
 
@@ -52,13 +58,14 @@ int PISMPNCFile::open(string fname, int mode) {
 
 
 int PISMPNCFile::create(string fname) {
-  MPI_Info info = MPI_INFO_NULL;
   int stat;
+
+  init_hints();
 
   filename = fname;
 
   stat = ncmpi_create(com, filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
-                      info, &ncid); check(stat);
+                      mpi_info, &ncid); check(stat);
   define_mode = true;
 
   return stat;
@@ -582,5 +589,35 @@ int PISMPNCFile::put_var_double(string variable_name,
   }
 
   return stat;
+}
+
+
+void PISMPNCFile::init_hints() {
+
+  vector<string>::iterator j = mpi_io_hints.begin();
+  while (j != mpi_io_hints.end()) {
+    istringstream arg(*j);
+    vector<string> words;
+    string word;
+    while (getline(arg, word, ':'))
+      words.push_back(word);
+
+    if (words.size() == 2) {
+      // printf("Setting MPI I/O hint \"%s\" to \"%s\"...\n",
+      //        words[0].c_str(), words[1].c_str());
+
+      MPI_Info_set(mpi_info,
+                   const_cast<char*>(words[0].c_str()),
+                   const_cast<char*>(words[1].c_str()));
+    } else {
+      if (rank == 0) {
+        printf("PISM WARNING: invalid MPI I/O hint: %s. Ignoring it...\n",
+               j->c_str());
+      }
+    }
+
+    ++j;
+  }
+
 }
 
