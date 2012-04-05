@@ -24,15 +24,13 @@
 
 PISMPNCFile::PISMPNCFile(MPI_Comm c, int r)
   : PISMNCFile(c, r) {
-  MPI_Info_create(&mpi_info);
-  mpi_io_hints.push_back("romio_cb_write:disable");
-  mpi_io_hints.push_back("romio_ds_write:disable");
-  mpi_io_hints.push_back("panfs_concurrent_write:1");
+  // MPI_Info_create(&mpi_info);
+  mpi_info = MPI_INFO_NULL;
 }
 
 
 PISMPNCFile::~PISMPNCFile() {
-  MPI_Info_free(&mpi_info);  // empty
+  // MPI_Info_free(&mpi_info);
 }
 
 void PISMPNCFile::check(int return_code) const {
