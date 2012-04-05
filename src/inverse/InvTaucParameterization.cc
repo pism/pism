@@ -85,10 +85,11 @@ PetscErrorCode InvTaucParamTruncatedIdent::init( const NCConfigVariable &config 
   PetscErrorCode ierr;
   bool isSet;
   PetscReal tauc0;
-  ierr = PISMOptionsReal("-tauc_param_trunc_tauc0", "", tauc0, isSet); CHKERRQ(ierr);
+  ierr = PISMOptionsReal("-tauc_param_trunc_tauc0", "", tauc0, isSet);  CHKERRQ(ierr);
   if(!isSet) {
-    ierr = config.get("tauc_param_trunc_tauc0"); 
+    tauc0 = config.get("tauc_param_trunc_tauc0"); 
   }
+  m_tauc0_sq = tauc0*tauc0;
   return 0;
 }
 
