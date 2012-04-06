@@ -422,7 +422,7 @@ if __name__ == "__main__":
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
     monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
-    prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default="")
+    prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
     
   if output_filename is None:
     output_filename = "vel2tauc_"+os.path.basename(input_filename)    

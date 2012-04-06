@@ -224,6 +224,7 @@ install (PROGRAMS
 # Install some python-based pieces of PISM
 install (PROGRAMS
   examples/python/ssa_forward.py
+  examples/python/sia_forward.py
   examples/inverse/make_synth_ssa.py
   examples/inverse/vel2tauc.py
   DESTINATION ${Pism_BIN_DIR} )
