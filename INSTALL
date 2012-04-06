@@ -7,16 +7,19 @@ All information about PISM can be found at
    
 To download the latest stable release use git:
 
-   git clone git://github.com/pism/pism.git pism0.4
+   git clone git://github.com/pism/pism.git pism0.5
 
 For complete installation instructions get the PISM Installation Manual (PDF)
-from www.pism-docs.org.
+from www.pism-docs.org.  Major installation requirements:
 
-Intallation high points:  PETSc (http://www-unix.mcs.anl.gov/petsc/) must be
-installed and functioning before PISM can be built.  We assume now that
-PETSC_DIR and PETSC_ARCH are set properly.
+  *  You must have MPI (www.mcs.anl.gov/mpi/), GSL (www.gnu.org/software/gsl/),
+     and NetCDF (www.unidata.ucar.edu/software/netcdf/).
 
-To install PISM locally (in the PISM source tree), do
+  *  PETSc (www-unix.mcs.anl.gov/petsc/) must be installed and functioning
+     before building PISM.  Environment variables PETSC_DIR and PETSC_ARCH
+     must be set.  PETSc 3.2 or later is required.
+
+To build PISM locally (within the PISM source tree), do
 
   $ cd pism0.4
   $ mkdir build
@@ -25,13 +28,11 @@ To install PISM locally (in the PISM source tree), do
                   # and then 'g' to generate once settings look right
   $ make install
 
-You can check that PISM executables can be found by running:
+Check where PISM executables can be found by:
 
   $ which pismr
 
-and this should tell you a directory in which executable "pismr" is found.
-
-Now run a simplified geometry experiment on 1 processor:
+Run a simplified geometry experiment on one MPI process:
 
   $ pisms
 
@@ -40,15 +41,13 @@ Everything is working if this run goes for 1000 model years and ends with
 
   $ mpiexec -n 2 pisms
 
-A more thorough test of the build runs a suite of software/regression tests,
-but this requires tools (including python and NCO):
+A more thorough test of the build requires tools (esp. python and NCO):
 
   $ make test
 
-Please see the Installation Manual at www.pism-docs.org for more information on
-the build process.  The PISM User's Manual, also at www.pism-docs.org, will
-explain most of what you want to know to do ice sheet modeling with PISM.
+Please see the PISM User's Manual, also at www.pism-docs.org.  It
+explains actual ice sheet modeling with PISM.
 
-If you have questions about PISM usage, installation, or creating new models,
-e-mail us at <help@pism-docs.org>.
+For questions about PISM usage, installation, creating new models, etc.,
+e-mail <help@pism-docs.org>.
 
