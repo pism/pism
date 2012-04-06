@@ -25,6 +25,8 @@
 #endif
 #include <netcdf.h>
 
+#include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
+
 #include <cstring>              // memset
 #include <cstdio>		// stderr, fprintf
 
@@ -240,7 +242,7 @@ int PISMNC3File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
       dimids.push_back(dimid);
     }
 
-    stat = nc_def_var(ncid, name.c_str(), nctype,
+    stat = nc_def_var(ncid, name.c_str(), pism_type_to_nc_type(nctype),
 		      static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
   }
 
@@ -777,7 +779,7 @@ int PISMNC3File::put_att_double(string variable_name, string att_name,
     }
 
     stat = nc_put_att_double(ncid, varid, att_name.c_str(),
-                             nctype, data.size(), &data[0]); check(stat);
+                             pism_type_to_nc_type(nctype), data.size(), &data[0]); check(stat);
   }
 
   MPI_Barrier(com);
@@ -860,7 +862,7 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, PISM_IO_Type
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
     }
 
-    // In NetCDF 3.6.x PISM_IO_Type is an enum; in 4.x it is 'typedef int'.
+    // In NetCDF 3.6.x nc_type is an enum; in 4.x it is 'typedef int'.
     nc_type nctype;
     stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &nctype); check(stat);
     tmp = static_cast<int>(nctype);
