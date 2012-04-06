@@ -588,7 +588,7 @@ int main(int argc, char *argv[]) {
     config.set_flag("use_ssa_velocity", true);
     config.set_flag("use_ssa_when_grounded", false);
     config.set_flag("use_constant_nuh_for_ssa", false);
-    config.set("epsilon_ssafd", 0.0);  // don't use this lower bound on effective viscosity
+    config.set("epsilon_ssa", 0.0);  // don't use this lower bound on effective viscosity
 
     set<string> ssa_choices;
     ssa_choices.insert("fem");

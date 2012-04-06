@@ -291,7 +291,7 @@ notes:
   config.set_flag("use_ssa_velocity", True)
   config.set_flag("use_ssa_when_grounded", False)
   config.set_flag("use_constant_nuh_for_ssa", False)
-  config.set("epsilon_ssafd", 0.0)
+  config.set("epsilon_ssa", 0.0)
 
   for o in PISM.OptionsGroup(com,"","PROSS"):
     Mx = PISM.optionsInt("-Mx","Number of grid points in the X-direction",default=None)

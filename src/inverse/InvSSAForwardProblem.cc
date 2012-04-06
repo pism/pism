@@ -233,7 +233,7 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
 
   // FIXME (DAM 10/25/11): All this lousy code duplication with SSAFEM::solve.  Why
   // didn't I just call it when I wrote this in the first place???
-  m_epsilon_ssa = config.get("epsilon_ssafd");
+  m_epsilon_ssa = config.get("epsilon_ssa");
   const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
 
   if(m_forward_F_needed)

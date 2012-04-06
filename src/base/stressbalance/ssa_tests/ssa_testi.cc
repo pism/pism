@@ -102,7 +102,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
-  config.set("epsilon_ssafd", 0.0);  // don't use this lower bound
+  config.set("epsilon_ssa", 0.0);  // don't use this lower bound
 
   PetscScalar **ptauc;
 

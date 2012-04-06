@@ -99,7 +99,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     # self.config.set_flag("compute_surf_grad_inward_ssa", True);
 
     # SSAFEM uses this (even though it has "ssafd" in its name)
-    self.config.set("epsilon_ssafd", 0.0);
+    self.config.set("epsilon_ssa", 0.0);
 
   def exactSolution(self,i,j,x,y):
     earth_grav = self.config.get("standard_gravity")
