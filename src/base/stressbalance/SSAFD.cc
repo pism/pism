@@ -1154,7 +1154,8 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
         result(i,j,o) *= nu_enhancement_scaling;
 
         // We ensure that nuH is bounded below by a positive constant.
-        result(i,j,o) = PetscMax(epsilon,result(i,j,o));
+//OLD WAY before 4/5/12:       result(i,j,o) = PetscMax(epsilon,result(i,j,o));
+        result(i,j,o) += epsilon;
 
       } // j
     } // i
