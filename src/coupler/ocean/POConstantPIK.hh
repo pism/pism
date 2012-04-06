@@ -39,7 +39,7 @@ public:
 
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
-                                          nc_type nctype);
+                                          PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   IceModelVec2S *ice_thickness;	// is not owned by this class

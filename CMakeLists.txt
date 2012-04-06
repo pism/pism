@@ -38,16 +38,23 @@ if (NOT Pism_MANUAL_BUILD)
 
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
+  find_package (PNetCDF)
 
   # Try to find netcdf_par.h. We assume that NetCDF was compiled with
   # parallel I/O if this header is present.
   find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
   mark_as_advanced(NETCDF_PAR_H)
   if (NETCDF_PAR_H)
-    message(STATUS "Note: Selected NetCDF library supports parallel I/O")
-    option (Pism_USE_PARALLEL_NETCDF "Enables parallel NetCDF I/O." ON)
+    message(STATUS "Note: Selected NetCDF-4 library supports parallel I/O")
+    option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." ON)
   else()
     message(STATUS "Note: Selected NetCDF library does not support parallel I/O")
+  endif()
+
+  if (PNETCDF_FOUND)
+    message(STATUS "Note: PnetCDF was found. Enabling PnetCDF-based parallel I/O.")
+    option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." ON)
+  else ()
   endif()
 
   # use the PETSc compiler as a hint when looking for an MPI compiler
@@ -183,6 +190,11 @@ endif ()
 include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH} ${FFTW_INCLUDES})
 set (Pism_EXTERNAL_LIBS
   ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
+
+if (Pism_USE_PNETCDF)
+  include_directories (${PNETCDF_INCLUDES})
+  list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
+endif()
 
 # Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)

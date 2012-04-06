@@ -105,7 +105,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
 
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
-  ierr = nc.open(ts_filename, NC_WRITE, append); CHKERRQ(ierr);
+  ierr = nc.open(ts_filename, PISM_WRITE, append); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write_metadata(ts_filename, false); CHKERRQ(ierr);
@@ -406,7 +406,7 @@ PetscErrorCode IceModel::write_extras() {
     ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
 
     // Prepare the file:
-    ierr = nc.open(filename, NC_WRITE, append); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        config.get_string("calendar"),
                        grid.time->CF_units()); CHKERRQ(ierr);
@@ -422,7 +422,7 @@ PetscErrorCode IceModel::write_extras() {
 
   unsigned int time_length = 0;
 
-  ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"),
                         grid.time->current()); CHKERRQ(ierr);
   ierr = nc.inq_dimlen(config.get_string("time_dimension_name"), time_length); CHKERRQ(ierr);
@@ -434,7 +434,7 @@ PetscErrorCode IceModel::write_extras() {
   ierr = timestamp.write(filename, static_cast<size_t>(time_length - 1),
                          wall_clock_hours); CHKERRQ(ierr);
 
-  ierr = write_variables(filename, extra_vars, NC_FLOAT);  CHKERRQ(ierr);
+  ierr = write_variables(filename, extra_vars, PISM_FLOAT);  CHKERRQ(ierr);
 
   last_extra = grid.time->current();
 

@@ -33,14 +33,14 @@ public:
   virtual void set_levels(const vector<double> &levels);
   virtual PetscErrorCode read(string filename, unsigned int time, Vec v);
   virtual PetscErrorCode reset();
-  virtual PetscErrorCode write(string filename, nc_type nctype,
+  virtual PetscErrorCode write(string filename, PISM_IO_Type nctype,
 			       bool write_in_glaciological_units, Vec v);
   virtual PetscErrorCode regrid(string filename, LocalInterpCtx *lic,
 				bool critical, bool set_default_value,
 				PetscScalar default_value, Vec v);
   virtual PetscErrorCode to_glaciological_units(Vec v);
 
-  PetscErrorCode define(const PIO &nc, nc_type nctype,
+  PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype,
                         bool write_in_glaciological_units);
 
   mutable map<string,string> dimensions,

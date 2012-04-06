@@ -1071,7 +1071,7 @@ PetscErrorCode IceCompModel::reportErrors() {
 
     // Find the number of records in this file:
     PIO nc(grid.com, grid.rank, "netcdf3");
-    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
@@ -1079,7 +1079,7 @@ PetscErrorCode IceCompModel::reportErrors() {
 
     // Write the dimension variable:
     err.init("N", "N", grid.com, grid.rank);
-    ierr = err.write(filename, (size_t)start, (double)(start + 1), NC_INT); CHKERRQ(ierr);
+    ierr = err.write(filename, (size_t)start, (double)(start + 1), PISM_INT); CHKERRQ(ierr);
 
     // Always write grid parameters:
     err.short_name = "dx";
@@ -1093,7 +1093,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     // Always write the test name:
     err.reset();
     err.short_name = "test";
-    ierr = err.write(filename, (size_t)start, (double)testname, NC_BYTE); CHKERRQ(ierr);
+    ierr = err.write(filename, (size_t)start, (double)testname, PISM_BYTE); CHKERRQ(ierr);
   }
 
   // geometry (thickness, vol) errors if appropriate; reported in m except for relmaxETA

@@ -143,7 +143,7 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, PetscScalar fill) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::write(string filename, nc_type nctype) {
+PetscErrorCode IceModelVec2::write(string filename, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   ierr = checkAllocated(); CHKERRQ(ierr);

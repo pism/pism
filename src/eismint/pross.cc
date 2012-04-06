@@ -332,7 +332,7 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   ierr = mask->set_attr("flag_meanings",
                         "ice_free_bedrock sheet dragging_sheet floating ice_free_ocean");
   CHKERRQ(ierr);
-  mask->output_data_type = NC_BYTE;
+  mask->output_data_type = PISM_BYTE;
   ierr = vars.add(*mask); CHKERRQ(ierr);
 
   ierr = bc_mask->create(grid, "bcflag", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -343,7 +343,7 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   bc_mask_values[1] = 1;
   ierr = bc_mask->set_attr("flag_values", bc_mask_values); CHKERRQ(ierr);
   ierr = bc_mask->set_attr("flag_meanings", "no_data bc_condition"); CHKERRQ(ierr);
-  bc_mask->output_data_type = NC_BYTE;
+  bc_mask->output_data_type = PISM_BYTE;
   ierr = vars.add(*bc_mask); CHKERRQ(ierr);
 
   ierr = vel_bc->create(grid, "bar", true, WIDE_STENCIL); CHKERRQ(ierr); // ubar and vbar
@@ -409,7 +409,7 @@ PetscErrorCode grid_setup(IceGrid &grid) {
       PISMEnd();
     }
 
-    ierr = pio.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = pio.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = pio.inq_grid_info("land_ice_thickness", input); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
 
@@ -515,7 +515,7 @@ PetscErrorCode write_results(ShallowStressBalance &ssa,
 
   PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
 
-  ierr = pio.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = pio.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = pio.def_time(grid.config.get_string("time_dimension_name"),
                       grid.config.get_string("calendar"),
                       grid.time->CF_units()); CHKERRQ(ierr);

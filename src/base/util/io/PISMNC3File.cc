@@ -18,6 +18,13 @@
 
 #include "PISMNC3File.hh"
 
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
+#include <netcdf.h>
+
 #include <cstring>              // memset
 #include <cstdio>		// stderr, fprintf
 
@@ -219,7 +226,7 @@ int PISMNC3File::inq_unlimdim(string &result) const {
 
 
 //! \brief Define a variable.
-int PISMNC3File::def_var(string name, nc_type nctype, vector<string> dims) const {
+int PISMNC3File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
   int stat;
 
   if (rank == 0) {
@@ -575,7 +582,7 @@ int PISMNC3File::inq_vardimid(string variable_name, vector<string> &result) cons
 
 //! \brief Get the number of attributes of a variable.
 /*!
- * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
+ * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int PISMNC3File::inq_varnatts(string variable_name, int &result) const {
   int stat;
@@ -583,7 +590,7 @@ int PISMNC3File::inq_varnatts(string variable_name, int &result) const {
   if (rank == 0) {
     int varid = -1;
 
-    if (variable_name == "NC_GLOBAL") {
+    if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -641,7 +648,7 @@ int PISMNC3File::inq_varname(unsigned int j, string &result) const {
 
 //! \brief Gets a double attribute.
 /*!
- * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
+ * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int PISMNC3File::get_att_double(string variable_name, string att_name, vector<double> &result) const {
   int stat, len, varid = -1;
@@ -650,7 +657,7 @@ int PISMNC3File::get_att_double(string variable_name, string att_name, vector<do
   if (rank == 0) {
     size_t attlen;
 
-    if (variable_name == "NC_GLOBAL") {
+    if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -695,7 +702,7 @@ int PISMNC3File::get_att_double(string variable_name, string att_name, vector<do
 
 //! \brief Gets a text attribute.
 /*!
- * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
+ * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int PISMNC3File::get_att_text(string variable_name, string att_name, string &result) const {
   char *str = NULL;
@@ -705,7 +712,7 @@ int PISMNC3File::get_att_text(string variable_name, string att_name, string &res
   if (rank == 0) {
     size_t attlen;
 
-    if (variable_name == "NC_GLOBAL") {
+    if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -751,10 +758,10 @@ int PISMNC3File::get_att_text(string variable_name, string att_name, string &res
 
 //! \brief Writes a double attribute.
 /*!
- * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
+ * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int PISMNC3File::put_att_double(string variable_name, string att_name,
-                               nc_type nctype, vector<double> &data) const {
+                               PISM_IO_Type nctype, vector<double> &data) const {
 
   int stat = 0;
 
@@ -763,7 +770,7 @@ int PISMNC3File::put_att_double(string variable_name, string att_name,
   if (rank == 0) {
     int varid = -1;
 
-    if (variable_name == "NC_GLOBAL") {
+    if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -783,7 +790,7 @@ int PISMNC3File::put_att_double(string variable_name, string att_name,
 
 //! \brief Writes a text attribute.
 /*!
- * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
+ * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int PISMNC3File::put_att_text(string variable_name, string att_name, string value) const {
   int stat = 0;
@@ -793,7 +800,7 @@ int PISMNC3File::put_att_text(string variable_name, string att_name, string valu
   if (rank == 0) {
     int varid = -1;
 
-    if (variable_name == "NC_GLOBAL") {
+    if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -810,7 +817,7 @@ int PISMNC3File::put_att_text(string variable_name, string att_name, string valu
 
 //! \brief Gets the name of a numbered attribute.
 /*!
- * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
+ * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 int PISMNC3File::inq_attname(string variable_name, unsigned int n, string &result) const {
   int stat;
@@ -820,7 +827,7 @@ int PISMNC3File::inq_attname(string variable_name, unsigned int n, string &resul
   if (rank == 0) {
     int varid = -1;
 
-    if (variable_name == "NC_GLOBAL") {
+    if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -839,9 +846,9 @@ int PISMNC3File::inq_attname(string variable_name, unsigned int n, string &resul
 
 //! \brief Gets the type of an attribute.
 /*!
- * Use "NC_GLOBAL" as the "variable_name" to get the number of global attributes.
+ * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::inq_atttype(string variable_name, string att_name, nc_type &result) const {
+int PISMNC3File::inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const {
   int stat, tmp;
 
   if (rank == 0) {
@@ -853,7 +860,7 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, nc_type &res
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
     }
 
-    // In NetCDF 3.6.x nc_type is an enum; in 4.x it is 'typedef int'.
+    // In NetCDF 3.6.x PISM_IO_Type is an enum; in 4.x it is 'typedef int'.
     nc_type nctype;
     stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &nctype); check(stat);
     tmp = static_cast<int>(nctype);
@@ -861,7 +868,7 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, nc_type &res
   MPI_Barrier(com);
   MPI_Bcast(&tmp, 1, MPI_INT, 0, com);
 
-  result = static_cast<nc_type>(tmp);
+  result = static_cast<PISM_IO_Type>(tmp);
 
   return 0;
 }

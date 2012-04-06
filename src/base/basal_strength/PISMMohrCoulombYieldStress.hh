@@ -76,7 +76,7 @@ public:
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
-                                          nc_type nctype);
+                                          PISM_IO_Type nctype);
 
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 

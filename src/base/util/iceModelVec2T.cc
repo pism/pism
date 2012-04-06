@@ -144,7 +144,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   PIO nc(grid->com, grid->rank, "netcdf3");
   string name_found;
   bool exists, found_by_standard_name;
-  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
   if (!exists) {

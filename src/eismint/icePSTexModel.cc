@@ -171,7 +171,7 @@ PetscErrorCode IcePSTexModel::prepare_series() {
     "  will write time series with special PST information to %s ...\n",
     seriesname); CHKERRQ(ierr);
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
-  ierr = nc.open(seriesname, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(seriesname, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // set-up each scalar time series

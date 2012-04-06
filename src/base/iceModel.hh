@@ -182,7 +182,7 @@ public:
   virtual PetscErrorCode write_model_state(string filename);
   virtual PetscErrorCode write_metadata(string filename, bool write_mapping = true);
   virtual PetscErrorCode write_variables(string filename, set<string> vars,
-					 nc_type nctype);
+					 PISM_IO_Type nctype);
 protected:
 
   IceGrid               &grid;
@@ -486,6 +486,7 @@ private:
     event_age,			//!< age computation
     event_beddef,		//!< bed deformation step
     event_output,		//!< time spent writing the output file
+    event_output_define,        //!< time spent defining variables
     event_snapshots,            //!< time spent writing snapshots
     event_backups;              //!< time spent writing backups files
 };

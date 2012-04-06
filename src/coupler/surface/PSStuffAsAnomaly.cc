@@ -143,7 +143,7 @@ void PSStuffAsAnomaly::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
+PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, temp.string_attr("short_name"))) {

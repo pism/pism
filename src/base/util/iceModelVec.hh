@@ -201,9 +201,9 @@ public:
   virtual NCSpatialVariable get_metadata(int N);
   virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);
-  virtual PetscErrorCode  define(const PIO &nc, nc_type output_datatype);
+  virtual PetscErrorCode  define(const PIO &nc, PISM_IO_Type output_datatype);
   virtual PetscErrorCode  write(string filename);
-  virtual PetscErrorCode  write(string filename, nc_type nctype);
+  virtual PetscErrorCode  write(string filename, PISM_IO_Type nctype);
   virtual PetscErrorCode  dump(const char filename[]);
   virtual PetscErrorCode  read(string filename, unsigned int time);
   virtual PetscErrorCode  regrid(string filename, bool critical, int start = 0);
@@ -227,7 +227,7 @@ public:
     time_independent;                  //!< \brief If true, corresponding
                                        //!< NetCDF variables do not depend on
                                        //!< the 't' dimension.
-  nc_type output_data_type;            //!< Corresponding NetCDF data type.
+  PISM_IO_Type output_data_type;            //!< Corresponding NetCDF data type.
 protected:
   vector<double> zlevels;
   int n_levels;                 //!< number of vertical levels
@@ -285,7 +285,7 @@ public:
   virtual PetscErrorCode view(PetscInt viewer_size);
   virtual PetscErrorCode view(PetscViewer v1, PetscViewer v2);
   using IceModelVec::write;
-  virtual PetscErrorCode write(string filename, nc_type nctype);
+  virtual PetscErrorCode write(string filename, PISM_IO_Type nctype);
   virtual PetscErrorCode read(string filename, const unsigned int time);
   virtual PetscErrorCode regrid(string filename, bool critical, int start = 0);
   virtual PetscErrorCode regrid(string filename, PetscScalar default_value);

@@ -93,7 +93,7 @@ void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
+PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "airtemp")) {
