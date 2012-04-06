@@ -95,7 +95,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 
     ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 
-    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_var("u_ssa", u_ssa_found); CHKERRQ(ierr); 
     ierr = nc.inq_var("v_ssa", v_ssa_found); CHKERRQ(ierr); 
     ierr = nc.inq_nrecords(start); CHKERRQ(ierr);
@@ -546,7 +546,7 @@ void SSA::add_vars_to_output(string /*keyword*/, set<string> &result) {
 }
 
 
-PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, nc_type nctype) {
+PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {

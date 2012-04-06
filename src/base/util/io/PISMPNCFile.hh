@@ -16,16 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMNC4FILE_H_
-#define _PISMNC4FILE_H_
+#ifndef _PISMPNCFILE_H_
+#define _PISMPNCFILE_H_
 
 #include "PISMNCFile.hh"
 
-class PISMNC4File : public PISMNCFile
+//! \brief PISM's PnetCDF I/O wrapper.
+class PISMPNCFile : public PISMNCFile
 {
 public:
-  PISMNC4File(MPI_Comm com, int rank);
-  virtual ~PISMNC4File();
+  PISMPNCFile(MPI_Comm com, int rank);
+  virtual ~PISMPNCFile();
 
   // open/create/close
   int open(string filename, int mode);
@@ -98,6 +99,10 @@ public:
   // misc
   int set_fill(int fillmode, int &old_modep) const;
 
+  vector<string> mpi_io_hints;
+protected:
+  void check(int return_code) const;
+
 private:
   int get_var_double(string variable_name,
                      vector<unsigned int> start,
@@ -110,6 +115,10 @@ private:
                      vector<unsigned int> count,
                      vector<unsigned int> imap, const double *op,
                      bool mapped) const;
+
+  void init_hints();
+
+  MPI_Info mpi_info;            // MPI hints
 };
 
-#endif /* _PISMNC4FILE_H_ */
+#endif /* _PISMPNCFILE_H_ */

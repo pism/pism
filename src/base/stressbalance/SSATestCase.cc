@@ -96,7 +96,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ierr = ice_mask.set_attr("flag_meanings",
                            "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
   CHKERRQ(ierr);
-  ice_mask.output_data_type = NC_BYTE;
+  ice_mask.output_data_type = PISM_BYTE;
   ierr = vars.add(ice_mask); CHKERRQ(ierr);
 
   ierr = ice_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
@@ -111,7 +111,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ierr = bc_mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = bc_mask.set_attr("flag_meanings",
                           "no_data ssa_dirichlet_bc_location"); CHKERRQ(ierr);
-  bc_mask.output_data_type = NC_BYTE;
+  bc_mask.output_data_type = PISM_BYTE;
   ierr = vars.add(bc_mask); CHKERRQ(ierr);
   
   return 0;
@@ -253,7 +253,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
 
   // Write results to an output file:
   PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
-  ierr = pio.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = pio.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = pio.def_time(config.get_string("time_dimension_name"),
                       config.get_string("calendar"),
                       grid.time->CF_units()); CHKERRQ(ierr);

@@ -20,6 +20,13 @@
 
 #include <cstdio>               // fprintf, stderr
 
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
+#include <netcdf.h>
+
 PISMNCFile::PISMNCFile(MPI_Comm c, int r)
   : rank(r), com(c) {
   ncid = -1;
@@ -34,7 +41,7 @@ string PISMNCFile::get_filename() const {
   return filename;
 }
 
-int PISMNCFile::put_att_double(string variable_name, string att_name, nc_type nctype, double value) const {
+int PISMNCFile::put_att_double(string variable_name, string att_name, PISM_IO_Type nctype, double value) const {
   vector<double> tmp(1);
   tmp[0] = value;
   return put_att_double(variable_name, att_name, nctype, tmp);

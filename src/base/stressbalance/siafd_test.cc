@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
     ierr = vMask.set_attr("flag_meanings",
 			"ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
 		  CHKERRQ(ierr);
-    vMask.output_data_type = NC_BYTE;
+    vMask.output_data_type = PISM_BYTE;
     ierr = vars.add(vMask); CHKERRQ(ierr);
 
     // This is never used (but it is a required argument of the
@@ -473,7 +473,7 @@ int main(int argc, char *argv[]) {
     // Write results to an output file:
     PIO pio(grid.com, grid.rank, "netcdf3");
 
-    ierr = pio.open(output_file, NC_WRITE); CHKERRQ(ierr);
+    ierr = pio.open(output_file, PISM_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(config.get_string("time_dimension_name"),
                         config.get_string("calendar"),
                         grid.time->CF_units()); CHKERRQ(ierr);

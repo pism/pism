@@ -96,7 +96,7 @@ public:
     }
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, nc_type nctype)
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype)
   {
     PetscErrorCode ierr;
 
@@ -198,7 +198,7 @@ protected:
       temp_n_records = 1, mass_flux_n_records = 1;
 
     PIO nc(Model::grid.com, Model::grid.rank, "netcdf3");
-    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_nrecords(temp_name, temp_std_name, temp_n_records); CHKERRQ(ierr);
     ierr = nc.inq_nrecords(mass_flux_name,  mass_flux_std_name,  mass_flux_n_records);  CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);

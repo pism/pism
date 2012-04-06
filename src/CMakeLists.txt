@@ -18,7 +18,10 @@ include_directories (
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
 # all over the place).
-add_library (pismutil
+set(PISM_PARALLEL_IO_FLAGS "")
+
+# Create a list of files making up libpismutil so that we can add to it later:
+set(PISMUTIL_SRC
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
   base/util/IceGrid.cc
@@ -38,7 +41,6 @@ add_library (pismutil
   base/util/io/LocalInterpCtx.cc
   base/util/io/PIO.cc
   base/util/io/PISMNC3File.cc
-  base/util/io/PISMNC4File.cc
   base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
   base/util/pism_default_config.cc
@@ -46,18 +48,30 @@ add_library (pismutil
   base/util/time_options.cc
   base/varcEnthalpyConverter.cc
   )
+
+# Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
+if (Pism_USE_PARALLEL_NETCDF4)
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=1")
+  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4File.cc)
+else()
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=0")
+endif()
+
+# Check if PnetCDF parallel I/O is enabled. If so, set compiler flags and add a source code file.
+if (Pism_USE_PNETCDF)
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=1")
+  list(APPEND PISMUTIL_SRC base/util/io/PISMPNCFile.cc)
+else()
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=0")
+endif()
+
+# The list of headers included in PIO.cc depends on parallel I/O settings. These flags determine which headers are included.
+set_source_files_properties (base/util/io/PIO.cc
+  PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
+
+add_library (pismutil ${PISMUTIL_SRC})
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)
-
-if (Pism_USE_PARALLEL_NETCDF)
-  set_source_files_properties (base/util/io/PISMNC4File.cc base/util/io/PIO.cc
-    PROPERTIES COMPILE_FLAGS
-    "-DPISM_PARALLEL_NETCDF=1")
-else()
-  set_source_files_properties (base/util/io/PISMNC4File.cc base/util/io/PIO.cc
-    PROPERTIES COMPILE_FLAGS
-    "-DPISM_PARALLEL_NETCDF=0 -Wno-unused")
-endif()
 
 add_custom_target (touch_pism_revision
   COMMAND ${CMAKE_COMMAND} -E touch pism_revision.cc
@@ -236,7 +250,7 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil pismrevision)
 
-  if (NETCDF_PAR)
+  if (Pism_USE_PARALLEL_NETCDF4)
     add_executable (netcdf_parallel software_tests/netcdf_parallel.cc)
     target_link_libraries (netcdf_parallel ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
 
@@ -253,8 +267,15 @@ if (Pism_BUILD_EXTRA_EXECS)
     target_link_libraries (pismncfile_test ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
   endif()
 
+  add_executable (pism_netcdf_test software_tests/pism_netcdf_test.cc)
+  target_link_libraries (pism_netcdf_test pismutil ${NETCDF_LIBRARIES} ${PNETCDF_LIBRARIES}
+    ${PETSC_LIBRARIES} ${MPI_LIBRARIES})
+  set_source_files_properties (software_tests/pism_netcdf_test.cc
+    PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
+
+
   install (TARGETS
-    ${SIMPLE_EXECS} tryLCbd pismtests btutest
+    ${SIMPLE_EXECS} tryLCbd pismtests btutest pism_netcdf_test
     RUNTIME DESTINATION ${Pism_BIN_DIR}
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})

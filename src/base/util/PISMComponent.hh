@@ -30,19 +30,12 @@
 using namespace std;
 /// @endcond
 
-// The following is a stupid kludge necessary to make NetCDF 4.x work in
-// serial mode in an MPI program:
-#ifndef MPI_INCLUDED
-#define MPI_INCLUDED 1
-#endif
-#include <netcdf.h>		// nc_type
-// Note: as far as I (CK) can tell, MPI_INCLUDED is a MPICH invention.
+#include "PIO.hh"
 
 class IceGrid;
 class NCConfigVariable;
 class PISMDiagnostic;
 class PISMVars;
-class PIO;
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
@@ -126,7 +119,7 @@ public:
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
-                                          nc_type /*nctype*/)
+                                          PISM_IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached
@@ -215,7 +208,7 @@ public:
   }
 
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
-                                          nc_type nctype)
+                                          PISM_IO_Type nctype)
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);

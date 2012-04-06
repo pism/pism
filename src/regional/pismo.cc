@@ -142,7 +142,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
   mask_values[1] = NMMASK_ZERO_OUT;
   ierr = no_model_mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = no_model_mask.set_attr("flag_meanings", "normal special_treatment"); CHKERRQ(ierr);
-  no_model_mask.output_data_type = NC_BYTE;
+  no_model_mask.output_data_type = PISM_BYTE;
   no_model_mask.time_independent = true;
   ierr = no_model_mask.set(NMMASK_NORMAL); CHKERRQ(ierr);
   ierr = variables.add(no_model_mask); CHKERRQ(ierr);
@@ -309,7 +309,7 @@ PetscErrorCode IceRegionalModel::initFromFile(string filename) {
   if (config.get_flag("ssa_dirichlet_bc")) {
     bool u_ssa_exists, v_ssa_exists;
 
-    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_var("u_ssa_bc", u_ssa_exists); CHKERRQ(ierr);
     ierr = nc.inq_var("v_ssa_bc", v_ssa_exists); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);

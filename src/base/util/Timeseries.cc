@@ -54,7 +54,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
   string time_name, standard_name = var.get_string("standard_name"),
     name_found;
 
-  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var(short_name, standard_name,
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
@@ -390,7 +390,7 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
   ierr = MPI_Bcast(&file_exists, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
   if (file_exists == 1) {
-    ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_dimlen(dimension.short_name, len); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
   }
@@ -416,7 +416,7 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
     if (time.empty())
       return 0;
 
-    ierr = nc.open(output_filename, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(output_filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_dimlen(dimension.short_name, len); CHKERRQ(ierr);
 
     if (len > 0) {

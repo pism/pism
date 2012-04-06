@@ -26,15 +26,8 @@
 #include <vector>
 #include <string>
 
-// The following is a stupid kludge necessary to make NetCDF 4.x work in
-// serial mode in an MPI program:
-#ifndef MPI_INCLUDED
-#define MPI_INCLUDED 1
-#endif
-#include <netcdf.h>
-
 #include "IceGrid.hh"           // Needed for Periodicity enum declaration.
-
+#include "PISMNCFile.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -45,7 +38,6 @@ enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
 class grid_info;
 class LocalInterpCtx;
-class PISMNCFile;
 
 //! \brief High-level PISM I/O class.
 /*!
@@ -96,7 +88,7 @@ public:
 
   virtual PetscErrorCode def_dim(string name, long int length, map<string,string> attrs) const;
 
-  virtual PetscErrorCode def_var(string name, nc_type nctype, vector<string> dims) const;
+  virtual PetscErrorCode def_var(string name, PISM_IO_Type nctype, vector<string> dims) const;
 
   virtual PetscErrorCode get_dim(string name, vector<double> &result) const;
 
@@ -118,12 +110,12 @@ public:
 
   virtual PetscErrorCode inq_attname(string var_name, unsigned int n, string &result) const;
 
-  virtual PetscErrorCode inq_atttype(string var_name, string att_name, nc_type &result) const;
+  virtual PetscErrorCode inq_atttype(string var_name, string att_name, PISM_IO_Type &result) const;
 
-  virtual PetscErrorCode put_att_double(string var_name, string att_name, nc_type nctype,
+  virtual PetscErrorCode put_att_double(string var_name, string att_name, PISM_IO_Type nctype,
                                         const vector<double> values) const;
 
-  virtual PetscErrorCode put_att_double(string var_name, string att_name, nc_type nctype,
+  virtual PetscErrorCode put_att_double(string var_name, string att_name, PISM_IO_Type nctype,
                                         double value) const;
 
   virtual PetscErrorCode put_att_text(string var_name, string att_name, string value) const;

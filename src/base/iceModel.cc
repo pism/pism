@@ -251,7 +251,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = vMask.set_attr("flag_meanings",
 			"ice_free_bedrock grounded_ice floating_ice ice_free_ocean"); CHKERRQ(ierr);
-  vMask.output_data_type = NC_BYTE;
+  vMask.output_data_type = PISM_BYTE;
   ierr = variables.add(vMask); CHKERRQ(ierr);
 
   // iceberg identifying integer mask
@@ -271,7 +271,7 @@ PetscErrorCode IceModel::createVecs() {
     ierr = vIcebergMask.set_attr("flag_values", icebergmask_values); CHKERRQ(ierr);
     ierr = vIcebergMask.set_attr("flag_meanings",
                                  "no_iceberg not_set iceberg_candidate ocean_boundary grounded_boundary"); CHKERRQ(ierr);
-    vIcebergMask.output_data_type = NC_BYTE;
+    vIcebergMask.output_data_type = PISM_BYTE;
     ierr = variables.add(vIcebergMask); CHKERRQ(ierr);
   }
 
@@ -389,7 +389,7 @@ PetscErrorCode IceModel::createVecs() {
     bc_mask_values[1] = 1;
     ierr = vBCMask.set_attr("flag_values", bc_mask_values); CHKERRQ(ierr);
     ierr = vBCMask.set_attr("flag_meanings", "no_data bc_condition"); CHKERRQ(ierr);
-    vBCMask.output_data_type = NC_BYTE;
+    vBCMask.output_data_type = PISM_BYTE;
     ierr = variables.add(vBCMask); CHKERRQ(ierr);
 
 

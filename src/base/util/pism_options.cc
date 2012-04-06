@@ -368,7 +368,9 @@ PetscErrorCode PISMOptionsReal(string option, string text,
   PetscBool flag;
   char *endptr;
 
-  ierr = PetscOptionsString(option.c_str(), text.c_str(), "", "none", str,
+  snprintf(str, TEMPORARY_STRING_LENGTH, "%f", result);
+
+  ierr = PetscOptionsString(option.c_str(), text.c_str(), "", str, str,
 			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
   is_set = (flag == PETSC_TRUE);
@@ -681,7 +683,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                     "xyz,yxz,zyx"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("o_format", "output_format",
-                                    "netcdf3,netcdf4_parallel"); CHKERRQ(ierr);
+                                    "netcdf3,netcdf4_parallel,pnetcdf"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
                                    "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);

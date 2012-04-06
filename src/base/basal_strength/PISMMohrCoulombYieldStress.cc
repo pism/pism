@@ -289,7 +289,7 @@ void PISMMohrCoulombYieldStress::get_diagnostics(map<string, PISMDiagnostic*> &d
 
 
 PetscErrorCode PISMMohrCoulombYieldStress::define_variables(set<string> vars, const PIO &nc,
-                                                 nc_type nctype) {
+                                                 PISM_IO_Type nctype) {
   if (set_contains(vars, "tillphi")) {
     PetscErrorCode ierr = till_phi.define(nc, nctype); CHKERRQ(ierr);
   }

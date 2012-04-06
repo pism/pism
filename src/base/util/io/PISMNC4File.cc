@@ -18,14 +18,14 @@
 
 #include "PISMNC4File.hh"
 
-#if (PISM_PARALLEL_NETCDF==1)
 extern "C" {
 #include <netcdf_par.h>
 }
-#endif
 
 #include <cstring>		// memset
 #include <cstdio>		// stderr, fprintf
+
+#include "pism_type_conversion.hh"
 
 PISMNC4File::PISMNC4File(MPI_Comm c, int r)
   : PISMNCFile(c, r) {
@@ -39,7 +39,6 @@ PISMNC4File::~PISMNC4File() {
 // open/create/close
 
 int PISMNC4File::open(string fname, int mode) {
-#if (PISM_PARALLEL_NETCDF==1)
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -52,15 +51,9 @@ int PISMNC4File::open(string fname, int mode) {
   define_mode = false;
 
   return stat;
-#else
-  (void) fname;
-  (void) mode;
-  return -1;
-#endif
 }
 
 int PISMNC4File::create(string fname) {
-#if (PISM_PARALLEL_NETCDF==1)
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -72,10 +65,6 @@ int PISMNC4File::create(string fname) {
   define_mode = true;
 
   return stat;
-#else
-  (void) fname;
-  return -1;
-#endif
 }
 
 int PISMNC4File::close() {
@@ -169,7 +158,7 @@ int PISMNC4File::inq_unlimdim(string &result) const {
 }
 
 // var
-int PISMNC4File::def_var(string name, nc_type nctype, vector<string> dims) const {
+int PISMNC4File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
   vector<int> dimids;
   int stat, varid;
 
@@ -180,7 +169,7 @@ int PISMNC4File::def_var(string name, nc_type nctype, vector<string> dims) const
     dimids.push_back(dimid);
   }
 
-  stat = nc_def_var(ncid, name.c_str(), nctype,
+  stat = nc_def_var(ncid, name.c_str(), pism_type_to_nc_type(nctype),
                     static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
 
 #if (PISM_DEBUG==1)
@@ -256,18 +245,18 @@ int PISMNC4File::get_var_double(string variable_name,
     // Use independent parallel access mode because it works. It would be
     // better to use collective mode, but I/O performance is ruined by
     // "mapping" anyway.
-#if (PISM_PARALLEL_NETCDF==1)
+
     stat = nc_var_par_access(ncid, varid, NC_INDEPENDENT); check(stat);
-#endif
+
     stat = nc_get_varm_double(ncid, varid,
                               &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                               ip); check(stat);
   } else {
     // Use collective parallel access mode because it is faster (and because it
     // works in this case).
-#if (PISM_PARALLEL_NETCDF==1)
+
     stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
-#endif
+
     stat = nc_get_vara_double(ncid, varid,
                               &nc_start[0], &nc_count[0],
                               ip); check(stat);
@@ -334,18 +323,18 @@ int PISMNC4File::put_var_double(string variable_name,
     // Use independent parallel access mode because it works. It would be
     // better to use collective mode, but I/O performance is ruined by
     // "mapping" anyway.
-#if (PISM_PARALLEL_NETCDF==1)
+
     stat = nc_var_par_access(ncid, varid, NC_INDEPENDENT); check(stat);
-#endif
+
     stat = nc_put_varm_double(ncid, varid,
                               &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                               op); check(stat);
   } else {
     // Use collective parallel access mode because it is faster (and because it
     // works in this case).
-#if (PISM_PARALLEL_NETCDF==1)
+
     stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
-#endif
+
     stat = nc_put_vara_double(ncid, varid,
                               &nc_start[0], &nc_count[0],
                               op); check(stat);
@@ -395,7 +384,7 @@ int PISMNC4File::inq_vardimid(string variable_name, vector<string> &result) cons
 int PISMNC4File::inq_varnatts(string variable_name, int &result) const {
   int stat, varid = -1;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -440,7 +429,7 @@ int PISMNC4File::get_att_double(string variable_name, string att_name, vector<do
   size_t attlen;
 
   // Read the attribute length:
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -484,7 +473,7 @@ int PISMNC4File::get_att_text(string variable_name, string att_name, string &res
   // Read the attribute length:
   size_t attlen;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -523,14 +512,14 @@ int PISMNC4File::get_att_text(string variable_name, string att_name, string &res
   return 0;
 }
 
-int PISMNC4File::put_att_double(string variable_name, string att_name, nc_type xtype, vector<double> &data) const {
+int PISMNC4File::put_att_double(string variable_name, string att_name, PISM_IO_Type xtype, vector<double> &data) const {
   int stat = 0;
 
   stat = redef(); check(stat);
 
   int varid = -1;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -547,7 +536,7 @@ int PISMNC4File::put_att_text(string variable_name, string att_name, string valu
 
   stat = redef(); check(stat);
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -565,7 +554,7 @@ int PISMNC4File::inq_attname(string variable_name, unsigned int n, string &resul
 
   int varid = -1;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -578,16 +567,19 @@ int PISMNC4File::inq_attname(string variable_name, unsigned int n, string &resul
   return stat;
 }
 
-int PISMNC4File::inq_atttype(string variable_name, string att_name, nc_type &result) const {
+int PISMNC4File::inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const {
   int stat, varid = -1;
+  nc_type tmp;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &result); check(stat);
+  stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &tmp); check(stat);
+
+  result = nc_type_to_pism_type(tmp);
 
   return 0;
 }

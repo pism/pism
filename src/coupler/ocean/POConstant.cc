@@ -123,7 +123,7 @@ void POConstant::add_vars_to_output(string keyword, set<string> &result) {
 }
 
 PetscErrorCode POConstant::define_variables(set<string> vars, const PIO &nc,
-                                            nc_type nctype) {
+                                            PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "shelfbtemp")) {

@@ -49,7 +49,7 @@ public:
   int inq_unlimdim(string &result) const;
 
   // var
-  int def_var(string name, nc_type nctype, vector<string> dims) const;
+  int def_var(string name, PISM_IO_Type nctype, vector<string> dims) const;
 
   int get_vara_double(string variable_name,
                       vector<unsigned int> start,
@@ -87,13 +87,13 @@ public:
   int get_att_text(string variable_name, string att_name, string &result) const;
 
   using PISMNCFile::put_att_double;
-  int put_att_double(string variable_name, string att_name, nc_type xtype, vector<double> &data) const;
+  int put_att_double(string variable_name, string att_name, PISM_IO_Type xtype, vector<double> &data) const;
 
   int put_att_text(string variable_name, string att_name, string value) const;
 
   int inq_attname(string variable_name, unsigned int n, string &result) const;
 
-  int inq_atttype(string variable_name, string att_name, nc_type &result) const;
+  int inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const;
 
   // misc
   int set_fill(int fillmode, int &old_modep) const;

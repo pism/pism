@@ -45,7 +45,7 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
 
   PIO nc(grid.com, grid.rank, "netcdf3");
 
-  ierr = nc.open(filename, NC_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_grid("land_ice_thickness", &grid, NOT_PERIODIC); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -216,7 +216,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   global_attrs.prepend_history(history);
 
-  ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
   // append == false, check_dims == true
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -249,7 +249,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   for (PetscInt k = 0; k < NN; k++) {
     // use original dt to get correct subinterval starts:
     const PetscReal time = time_start + k * dt;
-    ierr = nc.open(filename, NC_WRITE, true); CHKERRQ(ierr); // append=true,check_dims=false
+    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append=true,check_dims=false
     ierr = nc.def_time(grid->config.get_string("time_dimension_name"),
                        grid->config.get_string("calendar"),
                        grid->time->units()); CHKERRQ(ierr);
@@ -270,7 +270,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = nc.append_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = usurf->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = usurf->write(filename, PISM_FLOAT); CHKERRQ(ierr);
 
     // update surface and ocean models' outputs:
     ierr = surface->update(time, dt_update); CHKERRQ(ierr);
@@ -294,14 +294,14 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
     // This ensures that even if a surface model wrote artm and acab we
     // over-write them with values that were actually used by IceModel.
-    ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
-    ierr = artm->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = acab->write(filename, PISM_FLOAT); CHKERRQ(ierr);
+    ierr = artm->write(filename, PISM_FLOAT); CHKERRQ(ierr);
 
     // This ensures that even if a ocean model wrote shelfbasetemp and
     // shelfbasemassflux we over-write them with values that were actually used
     // by IceModel.
-    ierr = shelfbasetemp->write(filename, NC_FLOAT); CHKERRQ(ierr);
-    ierr = shelfbasemassflux->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = shelfbasetemp->write(filename, PISM_FLOAT); CHKERRQ(ierr);
+    ierr = shelfbasemassflux->write(filename, PISM_FLOAT); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2,com,"\n"); CHKERRQ(ierr);
 
@@ -392,7 +392,7 @@ int main(int argc, char *argv[]) {
     unsigned int last_record;
     bool mapping_exists;
 
-    ierr = nc.open(inname, NC_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(inname, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
     ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);

@@ -54,7 +54,7 @@ class PISMDiagnostic
 public:
   PISMDiagnostic(IceGrid &g, PISMVars &my_vars)
     : variables(my_vars), grid(g) {
-    output_datatype = NC_FLOAT;
+    output_datatype = PISM_FLOAT;
     dof = 1;
     vars.resize(dof);
   }
@@ -126,7 +126,7 @@ protected:
   PISMVars &variables;          //!< dictionary of variables
   IceGrid &grid;                //!< the grid
   int dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
-  nc_type output_datatype;      //!< data type to use in the file
+  PISM_IO_Type output_datatype;      //!< data type to use in the file
   vector<NCSpatialVariable> vars; //!< metadata corresponding to NetCDF variables
 };
 

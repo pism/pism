@@ -23,18 +23,40 @@
 #include <string>
 #include <vector>
 
-// The following is a stupid kludge necessary to make NetCDF 4.x work in
-// serial mode in an MPI program:
-#ifndef MPI_INCLUDED
-#define MPI_INCLUDED 1
-#endif
-#include <netcdf.h>		// nc_type
-// Note: as far as I (CK) can tell, MPI_INCLUDED is a MPICH invention.
-
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
 using namespace std;
 /// @endcond
+
+// This is a subset of NetCDF data-types.
+enum PISM_IO_Type {
+  PISM_NAT =	0,	/* NAT = 'Not A Type' (c.f. NaN) */
+  PISM_BYTE =	1,	/* signed 1 byte integer */
+  PISM_CHAR =	2,	/* ISO/ASCII character */
+  PISM_SHORT =	3,	/* signed 2 byte integer */
+  PISM_INT =	4,	/* signed 4 byte integer */
+  PISM_FLOAT =	5,	/* single precision floating point number */
+  PISM_DOUBLE =	6	/* double precision floating point number */
+};
+
+// This is a subset of NetCDF file modes. Gets cast to "int", so it should
+// match values used by NetCDF.
+enum PISM_IO_Mode {
+  PISM_NOWRITE = 0,
+  PISM_WRITE   = 0x0001
+};
+
+// This is the special value corresponding to the "unlimited" dimension length.
+// Gets cast to "int", so it should match the value used by NetCDF.
+enum PISM_Dim_Length {
+  PISM_UNLIMITED = 0
+};
+
+// "Fill" mode. Gets cast to "int", so it should match values used by NetCDF.
+enum PISM_Fill_Mode {
+  PISM_FILL = 0,
+  PISM_NOFILL = 0x100
+};
 
 //! \brief The PISM wrapper for a subset of the NetCDF C API.
 /*!
@@ -83,7 +105,7 @@ public:
   virtual int inq_unlimdim(string &result) const = 0;
 
   // var
-  virtual int def_var(string name, nc_type nctype, vector<string> dims) const = 0;
+  virtual int def_var(string name, PISM_IO_Type nctype, vector<string> dims) const = 0;
 
   virtual int get_vara_double(string variable_name,
                               vector<unsigned int> start,
@@ -120,15 +142,15 @@ public:
 
   virtual int get_att_text(string variable_name, string att_name, string &result) const = 0;
 
-  virtual int put_att_double(string variable_name, string att_name, nc_type xtype, vector<double> &data) const = 0;
+  virtual int put_att_double(string variable_name, string att_name, PISM_IO_Type xtype, vector<double> &data) const = 0;
 
-  virtual int put_att_double(string variable_name, string att_name, nc_type xtype, double value) const;
+  virtual int put_att_double(string variable_name, string att_name, PISM_IO_Type xtype, double value) const;
 
   virtual int put_att_text(string variable_name, string att_name, string value) const = 0;
 
   virtual int inq_attname(string variable_name, unsigned int n, string &result) const = 0;
 
-  virtual int inq_atttype(string variable_name, string att_name, nc_type &result) const = 0;
+  virtual int inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const = 0;
 
   // misc
   virtual int set_fill(int fillmode, int &old_modep) const = 0;
