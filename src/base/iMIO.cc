@@ -150,7 +150,24 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
 
   // Define all the variables:
   {
-    PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+    string output_format = grid.config.get_string("output_format");
+
+    // This is a kludge: for some reason defining variables using PnetCDF takes
+    // a very, very long time. It uses the NetCDF-3 file format though, so we
+    // *override* this setting here and a) define variables using NetCDF-3 and
+    // then b) write data using PnetCDF.
+    //
+    // I suspect that dimension and variable lookup is to blame: PISM does not
+    // store dimension/variable IDs and looks them up every time they are
+    // needed. A simple test executable (pism_netcdf_test) does not have this
+    // issue.
+    //
+    // Note: variable metadata has nothing to do with this -- increasing header
+    // padding does not help.
+    if (output_format == "pnetcdf")
+      output_format = "netcdf3";
+
+    PIO nc(grid.com, grid.rank, output_format);
     ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
 
     set<string>::iterator i = vars.begin();

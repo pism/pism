@@ -368,7 +368,9 @@ PetscErrorCode PISMOptionsReal(string option, string text,
   PetscBool flag;
   char *endptr;
 
-  ierr = PetscOptionsString(option.c_str(), text.c_str(), "", "none", str,
+  snprintf(str, TEMPORARY_STRING_LENGTH, "%f", result);
+
+  ierr = PetscOptionsString(option.c_str(), text.c_str(), "", str, str,
 			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
   is_set = (flag == PETSC_TRUE);
