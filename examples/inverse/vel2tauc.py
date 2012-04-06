@@ -147,7 +147,7 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
     mask_values=[0,1]
     zeta_fixed_mask.set_attr("flag_values", mask_values);
     zeta_fixed_mask.set_attr("flag_meanings","tauc_changable tauc_unchangeable");
-    zeta_fixed_mask.output_data_type = PISM.NC_BYTE;
+    zeta_fixed_mask.output_data_type = PISM.PISM_BYTE;
     
     zeta_fixed_mask.set(1);
     with PISM.util.Access(comm=zeta_fixed_mask,nocomm=mask):
