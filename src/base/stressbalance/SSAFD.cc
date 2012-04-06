@@ -728,7 +728,7 @@ PetscErrorCode SSAFD::solve() {
   stdout_ssa.clear();
 
   PetscReal ssaRelativeTolerance = config.get("ssafd_relative_convergence"),
-            epsilon              = config.get("epsilon_ssafd");
+            epsilon              = config.get("epsilon_ssa");
   PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssafd"));
   // this has no units; epsilon goes up by this ratio when previous value failed
   const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
@@ -1154,7 +1154,8 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
         result(i,j,o) *= nu_enhancement_scaling;
 
         // We ensure that nuH is bounded below by a positive constant.
-        result(i,j,o) = PetscMax(epsilon,result(i,j,o));
+//OLD WAY before 4/5/12:       result(i,j,o) = PetscMax(epsilon,result(i,j,o));
+        result(i,j,o) += epsilon;
 
       } // j
     } // i

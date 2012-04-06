@@ -123,7 +123,7 @@ PetscErrorCode SSAFEM::solve()
   char           filename[PETSC_MAX_PATH_LEN];
   PetscBool     flg;
 
-  m_epsilon_ssa = config.get("epsilon_ssafd");
+  m_epsilon_ssa = config.get("epsilon_ssa");
 
   ierr = PetscOptionsGetString(NULL, "-ssa_view", filename,
                                PETSC_MAX_PATH_LEN, &flg); CHKERRQ(ierr);

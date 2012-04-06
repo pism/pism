@@ -267,11 +267,18 @@ if (Pism_BUILD_EXTRA_EXECS)
     target_link_libraries (pismncfile_test ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
   endif()
 
-#  add_executable (pism_netcdf_test software_tests/pism_netcdf_test.cc)
-#  target_link_libraries (pism_netcdf_test pismutil ${NETCDF_LIBRARIES} ${PNETCDF_LIBRARIES}
-#    ${PETSC_LIBRARIES} ${MPI_LIBRARIES})
-#  set_source_files_properties (software_tests/pism_netcdf_test.cc
-#    PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
+  set (netcdf_test_libraries pismutil ${NETCDF_LIBRARIES}
+    ${PETSC_LIBRARIES} ${MPI_LIBRARIES})
+
+  if (Pism_USE_PNETCDF)
+    list(APPEND netcdf_test_libraries ${PNETCDF_LIBRARIES})
+  endif()
+
+ add_executable (pism_netcdf_test software_tests/pism_netcdf_test.cc)
+ target_link_libraries (pism_netcdf_test ${netcdf_test_libraries})
+
+ set_source_files_properties (software_tests/pism_netcdf_test.cc
+   PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
 
 
   install (TARGETS
