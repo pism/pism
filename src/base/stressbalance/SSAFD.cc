@@ -728,7 +728,7 @@ PetscErrorCode SSAFD::solve() {
   stdout_ssa.clear();
 
   PetscReal ssaRelativeTolerance = config.get("ssafd_relative_convergence"),
-            epsilon              = config.get("epsilon_ssafd");
+            epsilon              = config.get("epsilon_ssa");
   PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssafd"));
   // this has no units; epsilon goes up by this ratio when previous value failed
   const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
