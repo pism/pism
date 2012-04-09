@@ -1,0 +1,154 @@
+\documentclass[titlepage,letterpaper,final]{scrartcl}
+
+\usepackage{scrindex}           % multiple index support using the "index" package
+\usepackage{index}
+
+%% THE FOLLOWING SHOULD CHANGE FOR A STABLE RELEASE:
+\newcommand{\PISMREV}{revision \input{revision.tex}}
+\newcommand{\PETSCREL}{3.2}
+\newcommand{\PISMDOWNLOADMSG}{Get development branch source code: \quad\texttt{git clone -b dev git@github.com:pism/pism.git pism-dev} \quad}
+\newcommand{\PISMBROWSERURL}{http://www.pism-docs.org/wiki/doku.php?id=browser}
+
+%\addtolength\topmargin{-.1in}
+\addtolength\textheight{0.75in}
+\addtolength{\oddsidemargin}{-.4in}
+\addtolength{\evensidemargin}{-.4in}
+\addtolength{\textwidth}{0.9in}
+\newcommand{\normalspacing}{\renewcommand{\baselinestretch}{1.1}\tiny\normalsize}
+\newcommand{\tablespacing}{\renewcommand{\baselinestretch}{1.0}\tiny\normalsize}
+\normalspacing
+
+\usepackage[usenames]{xcolor}
+
+\usepackage{bm,url,xspace,verbatim}
+\usepackage{amssymb,amsmath}
+\usepackage[pdftex]{graphicx}
+
+\usepackage{booktabs}           % better rules in tables
+\usepackage{xtab}               % long (multi-page) tables
+
+%% uncomment to see locations of index entries
+% \proofmodetrue
+
+\usepackage{underscore}
+
+% this lets us avoid the scrartcl/hyperref conflict...
+\let\ifvtex\relax
+
+% hyperref should be the last package we load
+\usepackage[pdftex,
+                colorlinks=true,
+                plainpages=false, % only if colorlinks=true
+                linkcolor=blue,   % only if colorlinks=true
+                citecolor=blue,   % only if colorlinks=true
+                urlcolor=blue     % only if colorlinks=true
+]{hyperref}
+
+\newcommand{\ddt}[1]{\ensuremath{\frac{\partial #1}{\partial t}}}
+\newcommand{\ddx}[1]{\ensuremath{\frac{\partial #1}{\partial x}}}
+\newcommand{\ddy}[1]{\ensuremath{\frac{\partial #1}{\partial y}}}
+\renewcommand{\t}[1]{\texttt{#1}}
+\newcommand{\Matlab}{\textsc{Matlab}\xspace}
+\newcommand{\bq}{\mathbf{q}}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\eps}{\epsilon}
+\newcommand{\grad}{\nabla}
+\newcommand{\Div}{\nabla\cdot}
+
+%% macros having to do with documentation for options; note these appear in the index
+
+\newindex{default}{idx}{ind}{General Index}
+\newindex{options}{odx}{ond}{PISM Command-line options}
+
+\def\optsection#1{%
+  \def\optindex##1{\index[options]{#1!##1}}
+  \def\optseealso##1{\index[options]{#1|see{##1}}}
+}
+
+\optsection{FIXME}
+
+% Use this to index option definitions:
+\newcommand{\intextoption}[1]{\texttt{-#1}\optindex{\texttt{-#1}}}
+
+\newcommand{\txtopt}[2]{\texttt{-#1} #2\optindex{\texttt{-#1} #2}}
+
+\newcommand{\listopt}[1]{\txtopt{#1}{\emph{comma-separated list}}}
+\newcommand{\fileopt}[1]{\txtopt{#1}{\emph{filename}}}
+\newcommand{\timeopt}[1]{\txtopt{#1}{\emph{range or list}}}
+
+
+\pdfinfo{
+/Title (PISM Climate Forcing options)
+/Author (the PISM authors)
+/Subject (Setting up PISM's climate forcing options)
+/Keywords (PISM ice sheet modeling climate forcing)
+}
+
+\begin{document}
+
+\begin{titlepage}
+
+  \begin{center}
+    {\huge\usekomafont{title} PISM's climate forcing options}
+    \vspace{0.5cm}
+
+    {\Large The PISM Authors}
+    \vspace{1cm}
+
+    \vfill
+
+    \small Support by email: \texttt{help\@@pism-docs.org}. 
+    \medskip
+
+    Manual date \today. Based on PISM \PISMREV.
+    \medskip
+
+    \PISMDOWNLOADMSG
+  \end{center}
+\end{titlepage}
+
+\newpage
+\phantom{bob}
+
+\begin{center}
+  Please see the \emph{PISM User's Manual} for the list of authors
+\end{center}
+
+\vspace{0.2in}
+\begin{quote}
+\textsl{Copyright (C) 2004--2012 The PISM Authors}
+\medskip
+
+\noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+\end{quote}
+
+\newpage
+\setcounter{tocdepth}{3}
+\small
+\tableofcontents
+\normalsize
+
+\newpage
+
+
+\section{Introduction}\label{sect:intro}
+
+\intextoption{blah}
+\cite{AIAAGuidelines}
+
+
+% References and indices
+\clearpage\newpage
+\bibliography{ice-bib}
+\bibliographystyle{siam}
+
+\phantomsection
+\addcontentsline{toc}{section}{General Index}
+\label{sect:index}
+\printindex
+
+\phantomsection
+\addcontentsline{toc}{section}{PISM Command-line options}
+\printindex[options]
+
+\end{document}
