@@ -184,10 +184,8 @@ add_executable (pisms pisms.cc
   eismint/icePSTexModel.cc
   ismip/iceMISMIPModel.cc)
 
-add_executable (pismebm coupler/surface/ebm_driver.cc pismebm.cc)
-
 # All of the following are linked against pismbase
-foreach (EXEC pismr pisms pismebm)
+foreach (EXEC pismr pisms)
   target_link_libraries (${EXEC} pismbase)
 endforeach (EXEC)
 
@@ -209,7 +207,7 @@ add_custom_command (OUTPUT pism_config.nc
 add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
-  pismr pisms pismv pclimate pismebm ## executables
+  pismr pisms pismv pclimate ## executables
   pismutil pismverif pismbase pismflowlaws pismearth pismudunits # libraries
   RUNTIME DESTINATION ${Pism_BIN_DIR}
   LIBRARY DESTINATION ${Pism_LIB_DIR}

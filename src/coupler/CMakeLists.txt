@@ -18,7 +18,6 @@ add_library (pismboundary
   ./ocean/POdSLforcing.cc
   ./ocean/POdTforcing.cc
   ./ocean/POdSBMFforcing.cc
-  ./surface/ebm_driver.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
   ./surface/PSConstantPIK.cc

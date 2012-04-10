@@ -4,8 +4,7 @@ find_package(Doxygen)
 
 # a macro creating a custom command generating a PDF document using general and command-line option indices.
 macro(pism_latex_document name src figs)
-  message(STATUS "${src}")
-
+  # copy files into the build directory:
   foreach (filename ${src} ${figs})
     configure_file(${filename} ${filename} COPYONLY)
   endforeach()

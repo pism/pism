@@ -254,11 +254,10 @@ string pism_filename_add_suffix(string filename, string separator, string suffix
 
 //! \brief Finalizes PETSc and MPI. Replaces PetscEnd().
 /*!
- * The main reason for having this is pismebm, an executable running 2 MPI
- * communicators, only one of which runs PETSc. Using PetscEnd() in this case
- * leaves the process in the communicator \b not running PETsc hanging waiting
- * for a MPI_Finalize() call. (PetscFinalize() only calls MPI_Finalize() if
- * PetscInitialize() called MPI_Init().)
+ * This is necessary if PETSc is using a subset of all the processors in
+ * MPI_COMM_WORLD. Using PetscEnd() in this case leaves processes \b not
+ * running PETSc hanging waiting for a MPI_Finalize() call. (PetscFinalize()
+ * only calls MPI_Finalize() if PetscInitialize() called MPI_Init().)
  */
 void PISMEnd() {
   int flag;

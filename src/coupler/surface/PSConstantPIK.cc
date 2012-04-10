@@ -33,7 +33,7 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
 
   ierr = verbPrintf(2, grid.com,
      "* Initializing the constant-in-time surface processes model PSConstantPIK.\n"
-     "  It reads surface mass balance directly from the file and holds them constant.\n"
+     "  It reads surface mass balance directly from the file and holds it constant.\n"
      "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
      "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n"); CHKERRQ(ierr);
 
