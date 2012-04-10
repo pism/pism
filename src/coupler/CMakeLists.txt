@@ -23,7 +23,6 @@ add_library (pismboundary
   ./surface/PISMSurface.cc
   ./surface/PSConstantPIK.cc
   ./surface/PSElevation.cc
-  ./surface/PSExternal.cc
   ./surface/PSStuffAsAnomaly.cc
   ./surface/PSGivenClimate.cc
   ./surface/PSLapseRates.cc

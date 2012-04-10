@@ -50,7 +50,6 @@
 // surface models:
 #include "PSAnomaly.hh"
 #include "PSElevation.hh"
-#include "PSExternal.hh"
 #include "PSGivenClimate.hh"
 #include "PSLapseRates.hh"
 #include "PSStuffAsAnomaly.hh"
