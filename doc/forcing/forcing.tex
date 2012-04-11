@@ -22,7 +22,7 @@
 \usepackage{bm,url,xspace,verbatim}
 \usepackage{amssymb,amsmath}
 \usepackage[pdftex]{graphicx}
-
+\usepackage{wrapfig}
 \usepackage{booktabs}           % better rules in tables
 \usepackage{xtab}               % long (multi-page) tables
 
@@ -80,9 +80,9 @@ urlcolor=blue     % only if colorlinks=true
 
 
 \pdfinfo{
-  /Title (PISM Climate Forcing options)
+  /Title (PISM climate forcing components)
   /Author (the PISM authors)
-  /Subject (Setting up PISM's climate forcing options)
+  /Subject (Setting up PISM's climate forcing)
   /Keywords (PISM ice sheet modeling climate forcing)
 }
 
@@ -92,7 +92,7 @@ urlcolor=blue     % only if colorlinks=true
 
   \begin{center}
     \vspace*{3.5cm}
-    {\huge\usekomafont{title} PISM's climate forcing options}
+    {\huge\usekomafont{title} PISM's climate forcing components}
     \vspace{0.5cm}
 
     {\Large The PISM Authors}
@@ -100,7 +100,7 @@ urlcolor=blue     % only if colorlinks=true
 
     \vfill
 
-    \small Support by email: \texttt{help\@@pism-docs.org}. 
+    \small Support by email: \texttt{help\@@pism-docs.org}.
     \medskip
 
     Manual date \today. Based on PISM \PISMREV.
@@ -134,53 +134,120 @@ urlcolor=blue     % only if colorlinks=true
 \newpage
 
 
-\section{Introduction}\label{sect:intro}
+\section{Introduction}
+\label{sect:intro}
 
-\subsection{Overview of boundary components}
-\label{sec:overview}
+Please see section \ref*{userman-sec:climate-inputs} of the User's Manual for
+an overview of PISM's climate forcing interfaces.
 
-Setting up PISM's boundary models requires selecting one model of each kind\footnote{Using a default model is a choice.} and zero or more ``model modifiers''.  The selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow} on page \pageref{fig:climate-input-data-flow}.
+Setting up PISM's boundary models requires selecting one \emph{surface} and one
+\emph{ocean} model, and possibly one \emph{atmosphere} model--- depending on
+the surface model choice.
 
-Command-line options \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} each take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
+Command-line options \texttt{-atmosphere}, \texttt{-surface} and
+\texttt{-ocean} each take a comma-separated list of keywords as an argument;
+the first keyword \emph{has} to correspond to a model, the rest can be
+modifiers. Any of these options can be omitted to use the default atmosphere,
+surface or ocean model, although one has to choose a model to use a modifier.
 
-For example,
-\begin{verbatim}
-$ pismr -i foo.nc -atmosphere searise_greenland,dTforcing \
-        -dTforcing delta_T.nc -surface pdd
-\end{verbatim}%$
-chooses a combination of the SeaRISE-Greenland atmosphere model (see below), modified by an ice-core-derived paleo-temperature forcing (shift), and a positive degree-day (PDD) local surface mass balance model.  Because it is not mentioned, the ocean model is the default one (\texttt{-ocean constant}).
+Selected models and modifiers are chained as in
+Figure~\ref*{userman-fig:climate-input-data-flow} of the User's Manual.
 
-\subsection{Data flow}
-\label{sec:data-flow}
-
-\begin{figure}
-  \centering
-  \includegraphics[height=5in]{figs/data-flow.pdf}
-  \caption{PISM climate input data flow.}
-  \label{fig:climate-input-data-flow}
-\end{figure}
+Please see section \ref{sec:known-use-cases} for examples.
 
 \section{Managing model time}
 \label{sec:model-time}
 \optsection{Managing time}
 
+Most of PISM only needs to know how long the current time step is. The climate
+forcing code, on the other hand, uses time to provide boundary conditions to
+other components.
+
+This section describes how to control model time to ensure that the February
+mass balance is used for 28 and not $365/12 = 30.4167$ days--- and related
+issues.
+
 \subsection{Periodic climate data}
 \label{sec:periodic-forcing}
 
+All components reading time-dependent forcing data from files can interpret
+this data as ``periodic''. Each component has a unique command-line option
+prefix. Please refer to corresponding sections for values of the prefix.
+
+The length of the period (in years) is specified using \texttt{-prefix_period}
+option.
+
+For example, to prescribe constant (from year to year) climate which includes
+inter-annual variations using the \texttt{-surface given} option, set:
+\begin{verbatim}
+-surface given -surface_given_period 1 -surface_given_file forcing.nc
+\end{verbatim}
+
+If forcing data has the period other than one year it is also
+necessary to specify the ``starting time'' using the
+\texttt{-prefix_reference_year} option.
+
+For example, to use a 20 year long climate record as periodic climate starting
+at the beginning of the model year 10, do
+\begin{verbatim}
+-surface given -surface_given_period 20 -surface_given_file forcing.nc \
+-surface_given_reference_year 10
+\end{verbatim}
+
+Note that the reference year is given in \emph{model years}, not calendar
+years. We find that it is usually possible to avoid confusion by starting runs
+corresponding to specific historical periods at year zero and using the
+\texttt{-reference_date} option to tie the run to a particular date. For instance,
+\begin{verbatim}
+-surface given -surface_given_period 20 -surface_given_file forcing.nc \
+-ys 0 -reference_date 1989-1-1
+\end{verbatim}
+will use climate data as periodic with the period of 20 years starting on
+January 1, 1989. Please see section \ref{sec:calendars} for more details.
+
+The \texttt{time} variable in a forcing file that is to be used as periodic
+should start at $0$.
+
 \subsection{Using time bounds in forcing data}
 \label{sec:time-bounds}
+
+By default PISM interprets climate forcing data as piecewise-constant in
+time. A forcing file can specify the time bounds corresponding to each record
+by following the CF (Climate and Forecasting) meta-data conventions.
+
+The \texttt{ncdump -h} output from a conforming file would look similar to the
+following:
+\begin{verbatim}
+netcdf forcing {
+dimensions:
+        time = UNLIMITED ; // (214 currently)
+        nv = 2 ;
+variables:
+        double time(time) ;
+                time:units = "seconds since 2000-1-1" ;
+                time:axis = "T" ;
+                time:bounds = "time_bounds" ;
+                time:calendar = "gregorian" ;
+                time:long_name = "time" ;
+        double nv(nv) ;
+        double time_bounds(time, nv) ;
+\end{verbatim}
+
+The \texttt{time_bounds} variable stores the starting and the ending time for
+each interval in the forcing. This variable is assumed to have the same units
+as the \texttt{time} variable it is associated with, which is why its arguments
+are not set in this example.
 
 \subsection{Calendars}
 \label{sec:calendars}
 Internally PISM stores time in seconds since a specified moment in time and
 does not use or need a calendar.
 
-XX-century and prognostic runs require knowledge of lengths of months and
-years, both to use climate data properly and to facilitate model validation
+However, XX-century and prognostic runs require knowledge of lengths of months
+and years, both to use climate data properly and to facilitate model validation
 using observations.
 
-The following sections describe two modes of time management implemented in
-PISM.
+The next two sections describe modes of time management implemented in PISM.
 
 \subsubsection{\texttt{365_day} calendar}
 \label{sec:365-day}
@@ -189,13 +256,18 @@ The default \texttt{365_day} calendar is the default and is used in all PISM
 runs that do not require precise application of forcing data or reporting on
 particular dates.
 
+In this mode PISM \emph{ignores} the reference date in time unit specifications
+(such as ``\texttt{days since 1969-7-20}''). The value set using
+\intextoption{reference_date} option or the configuration parameter is saved in
+output files, though.
+
 \subsubsection{\texttt{gregorian} calendar}
 \label{sec:gregorian}
 
 The command-line option \txtopt{calendar}{\texttt{gregorian}} enables the Gregorian
 calendar mode.
 
-There are two major consequences:
+The implications are:
 \begin{itemize}
 \item PISM uses the date in\texttt{units} attributes of coordinate variables in
   unit conversions. Please make sure that the \texttt{time} variable in all
@@ -203,10 +275,11 @@ There are two major consequences:
     2012-1-1}''. PISM will stop with an error message if a time variable does
   not have a reference date in its unit specification.
 
-  Please use units that are a fixed multiple of ``seconds'', such as
-  ``\texttt{minutes since 1989-1-1}'' or ``\texttt{days since 1999-12-31}'' and
-  avoid ``months'' and ``years''. (PISM uses UDUNITS-2 to convert units, and in
-  UDUNITS $1\, \mathrm{month} = \frac{1}{12}\cdot 365.2524\, \mathrm{days}$.)
+\item It is important to use units that are a fixed multiple of ``seconds'',
+  such as ``\texttt{minutes since 1989-1-1}'' or ``\texttt{days since
+    1999-12-31}'' and avoid ``months'' and ``years''. (PISM uses UDUNITS to
+  convert units, and in UDUNITS one month is always interpreted as
+  $\frac{1}{12}\cdot 365.2524$ days.)
 \item PISM uses dates in standard output:
 \begin{verbatim}
 ...
@@ -234,7 +307,8 @@ from an input file, do
 $ pismr -calendar gregorian -reference_date 1989-1-1 -ys 0 -ye 20
 \end{verbatim}
 
-It is also possible to run PISM for the duration of the available forcing data:
+It is also possible to run PISM for the duration of the available forcing data.
+This command
 \begin{verbatim}
 $ pismr -calendar gregorian -time_file forcing.nc
 \end{verbatim}
@@ -245,8 +319,11 @@ It is also possible to save spatial and/or scalar time-series daily, monthly or
 yearly (using the Gregorian calendar). See sections \ref*{userman-sec:saving-time-series}
 and \ref*{userman-sec:saving-spat-vari} of the User's Manual.
 
-\section{Known use cases}
+\section{Known use cases (and corresponding options)}
 \label{sec:known-use-cases}
+
+FIXME: reference sections describing components that are used in each case,
+list names of variables that the code will try to find in forcing files.
 
 \subsection{Using forcing provided by a regional climate model}
 \label{sec:regional-model}
@@ -254,16 +331,64 @@ and \ref*{userman-sec:saving-spat-vari} of the User's Manual.
 \subsubsection{Ice surface temperature and mass balance}
 \label{sec:ice-surface-bc}
 
+This is the simplest case:
+\begin{verbatim}
+-surface given -surface_given_file forcing.nc
+\end{verbatim}
+
 \subsubsection{Air temperature and precipitation}
 \label{sec:air-temp-and-precip}
 
+\subsubsection{SeaRISE-Greenland}
+\label{sec:parameterized-air-temp}
+
+The SeaRISE-Greenland setup uses the parametrized near-surface air temperature
+and a precipitation field read from the input (\texttt{-i} ot
+\texttt{-boot_file}) file, plus a temperature-index (PDD) scheme to compute the
+surface mass balance.
+
+\begin{verbatim}
+-atmosphere searise_greenland -surface pdd
+\end{verbatim}
+
+\subsubsection{SeaRISE-Greenland paleo-climate run}
+\label{sec:searise-greenland-paleo}
+
+This adds ice-core derived scalar air temperature offsets and precipitation
+adjustments to the previous example.
+
+\begin{verbatim}
+-atmosphere searise_greenland,dTforcing -dTforcing delta_T.nc \
+-paleo_precip  -surface pdd -ocean constant,dSLforcing \
+-dSLforcing delta_SL.nc
+\end{verbatim}
+
+Note that the temperature offsets are applied to \emph{air} temperatures at the
+\emph{atmosphere level}. This ensures that $\Delta T$ influences the PDD
+computation.
 
 \subsection{Using climate anomalies}
 \label{sec:climate-anomalies}
 
+Prognostic modeling experiments frequently use time- and space-dependent
+air temperature and precipitation anomalies. To set up this forcing, use
 
-\subsection{Paleo-climate runs}
+``Atmospheric'' anomalies read from the file are applied to forcing data
+computed by the selected atmosphere model, be it a parametrization or constant
+in time data.
+\begin{verbatim}
+-atmosphere constant,anomaly -atmosphere_anomaly_file anomalies.nc
+\end{verbatim}
+
+\subsection{Antarctic paleo-climate runs}
 \label{sec:paleo-climate}
+
+A paleo-climate Antarctic simulation including both surface temperature and sea
+level offsets may use
+\begin{verbatim}
+-surface constant,dTforcing -dTforcing delta_T.nc -ocean constant \
+-dSLforcing delta_SL.nc
+\end{verbatim}
 
 \section{Checking if forcing data is used correctly}
 \label{sec:checking-forcing}
@@ -274,13 +399,13 @@ and \ref*{userman-sec:saving-spat-vari} of the User's Manual.
 \optsection{\texttt{pclimate} options}
 
 Recall that internally in PISM there is a separation of climate inputs from ice
-dynamics (subsection \ref{sec:climate-inputs}). Executable
+dynamics (see User's Manual, section \ref*{userman-sec:climate-inputs}). Executable
 \texttt{pclimate} \index{executables!\texttt{pclimate}} allows one to visualize climate inputs without
 invoking the ice dynamics core of PISM. This is helpful during the process of
 creating PISM-readable data files, and modeling with such.
 
 \texttt{pclimate} shares the code implementing climate models with other PISM
-executables, so everything said in section \ref{sec:boundary-models} applies
+executables, so everything said elsewhere in this document  applies
 here. In addition to \texttt{-atmosphere}, \texttt{-surface}, \texttt{-ocean}
 and others, \texttt{pclimate} takes options listed in table \ref{tab:pclimate}.
 

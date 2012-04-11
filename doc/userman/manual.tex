@@ -391,7 +391,10 @@ particular modeling choices.
 
 This figure requires an explanation: a ``modifier'' in this context is an
 adjustment of climate inputs that can be used with different climate
-choices.  Using ice-core-derived air temperature offsets to model the space-time distribution of paleo surface temperature is an example.  Note that PISM has a generic ``forcing'' mechanism that can be paired with another model. Please see section \ref{sec:boundary-models} for
+choices.  Using ice-core-derived air temperature offsets to model the
+space-time distribution of paleo surface temperature is an example.  Note that
+PISM has a generic ``forcing'' mechanism that can be paired with another model.
+Please see section the \emph{PISM's climate forcing components} document for
 a list of climate components included in PISM source code and other details.
 
 \begin{figure}
@@ -407,8 +410,8 @@ in coupling PISM to other models. On the other hand, the PISM authors do not
 claim expertise in modeling atmosphere, ocean, or even snow processes.   So the
 separation has a code-reliability purpose. Indeed PISM users need to know that
 they are ultimately responsible for providing the climate inputs they intend.
-The auxiliary tool \texttt{pclimate}, described in subsection
-\ref{subsect:pclimate}, is intended to help users observe the climate inputs
+The auxiliary tool \texttt{pclimate}, also described in \emph{PISM's climate
+  forcing components}, is intended to help users observe the climate inputs
 they have chosen, without involving ice dynamics at all.
 
 \clearpage
