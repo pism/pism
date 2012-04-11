@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -30,7 +30,7 @@ static char help[] =
 #include "pism_options.hh"
 
 #include "PSDummy.hh"
-#include "POConstant.hh"
+#include "POGivenClimate.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     // Initialize boundary models (climate will always come from
     // intercomparison formulas):
     PISMSurfaceModel *surface = new PSDummy(g, config);
-    PISMOceanModel *ocean = new POConstant(g, config);
+    PISMOceanModel *ocean = new POGiven(g, config);
 
     IceModel *m;
     if (PSTexchosen == PETSC_TRUE) {

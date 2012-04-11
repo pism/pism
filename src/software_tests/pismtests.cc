@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@ static char help[] = "Driver for PISM software unit tests.\n";
 #include "iMtests.hh"
 
 #include "PSDummy.hh"
-#include "POConstant.hh"
+#include "POGivenClimate.hh"
 #include "pism_options.hh"
 
 int main(int argc, char *argv[]) {
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 
     // Create boundary models:
     PISMSurfaceModel *surface = new PSDummy(g, config);
-    PISMOceanModel *ocean = new POConstant(g, config);
+    PISMOceanModel *ocean = new POGiven(g, config);
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMTESTS %s (unit tests and new-code-playground mode)\n",

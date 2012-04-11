@@ -25,7 +25,7 @@
 #include "Mask.hh"
 #include "flowlaw_factory.hh"
 #include "PISMStressBalance.hh"
-#include "POConstant.hh"
+#include "POGivenClimate.hh"
 #include "pism_options.hh"
 
 PetscErrorCode MISMIPBasalResistanceLaw::printInfo(int verbthresh, MPI_Comm com) {
@@ -497,14 +497,6 @@ PetscErrorCode IceMISMIPModel::init_couplers() {
   config.set("ocean_sub_shelf_heat_flux_into_ice",0.0); // NO sub ice shelf melting
 
   ierr = IceModel::init_couplers(); CHKERRQ(ierr);
-
-  if (ocean != PETSC_NULL) {
-    POConstant *co = dynamic_cast<POConstant*>(ocean);
-    if (co == NULL)
-      SETERRQ(grid.com, 1, "PISM ERROR: co == NULL in IceMISMIPModel ... ocean model is not a POConstant!\n");
-  } else {
-    SETERRQ(grid.com, 2,"PISM ERROR: ocean == PETSC_NULL");
-  }
 
   return 0;
 }

@@ -176,8 +176,13 @@ protected:
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option %s_file is required.\n", option_prefix.c_str());
-      PISMEnd();
+      // find PISM input file to read data from:
+      ierr = verbPrintf(2, Model::grid.com,
+                        "PISM WARNING: opiton %s_file is not set. Trying to use the input file...\n");
+      CHKERRQ(ierr);
+
+      bool regrid; int start;   // will be ignored
+      ierr = Model::find_pism_input(filename, regrid, start); CHKERRQ(ierr);
     }
 
     if (bc_ref_year_set) {

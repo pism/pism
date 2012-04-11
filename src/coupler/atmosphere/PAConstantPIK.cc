@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,107 @@
 #include "PAConstantPIK.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
+
+PetscErrorCode PAConstantPIK::mean_precip(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  string precip_history = "read from " + input_file + "\n";
+
+  ierr = precip.copy_to(result); CHKERRQ(ierr);
+  ierr = result.set_attr("history", precip_history);
+  return 0;
+}
+
+PetscErrorCode PAConstantPIK::mean_annual_temp(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  string temp_history = "read from " + input_file + "\n";
+
+  ierr = temperature.copy_to(result); CHKERRQ(ierr);
+  ierr = result.set_attr("history", temp_history);
+  return 0;
+}
+
+PetscErrorCode PAConstantPIK::begin_pointwise_access() {
+  PetscErrorCode ierr;
+  ierr = temperature.begin_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode PAConstantPIK::end_pointwise_access() {
+  PetscErrorCode ierr;
+  ierr = temperature.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, int N,
+					    PetscReal */*ts*/, PetscReal *values) {
+  for (PetscInt k = 0; k < N; k++)
+    values[k] = temperature(i,j);
+  return 0;
+}
+
+PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  ierr = mean_annual_temp(result); CHKERRQ(ierr);
+
+  return 0;
+}
+
+void PAConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
+  result.insert("precip");
+  result.insert("temp_ma");
+  
+  if (keyword == "big") {
+    result.insert("airtemp");
+  }
+}
+
+PetscErrorCode PAConstantPIK::define_variables(set<string> vars, const PIO &nc,
+                                            PISM_IO_Type nctype) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "airtemp")) {
+    ierr = airtemp_var.define(nc, nctype, false); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "precip")) {
+    ierr = precip.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "temp_ma")) {
+    ierr = temperature.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode PAConstantPIK::write_variables(set<string> vars, string filename) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "airtemp")) {
+    IceModelVec2S airtemp;
+    ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
+    ierr = airtemp.set_metadata(airtemp_var, 0); CHKERRQ(ierr);
+
+    ierr = temp_snapshot(airtemp); CHKERRQ(ierr);
+
+    ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "precip")) {
+    ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "temp_ma")) {
+    ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+
 
 PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
   PetscErrorCode ierr;

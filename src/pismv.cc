@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ static char help[] =
 #include "verif/iceCompModel.hh"
 
 #include "PSDummy.hh"
-#include "POConstant.hh"
+#include "POGivenClimate.hh"
 #include "pism_options.hh"
 
 // a wrapper that seems to be necessary to make std::transform below work
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize boundary models:
     PISMSurfaceModel *surface = new PSDummy(g, config);
-    PISMOceanModel     *ocean = new POConstant(g, config);
+    PISMOceanModel     *ocean = new POGiven(g, config);
 
     // determine test (and whether to report error)
     string testname = "A";

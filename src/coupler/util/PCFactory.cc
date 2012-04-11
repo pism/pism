@@ -35,12 +35,10 @@
 #include "PASeariseGreenland.hh"
 #include "PAdTforcing.hh"
 #include "PAdPforcing.hh"
-#include "PAConstant.hh"
 #include "PAConstantPIK.hh"
 #include "PAAnomaly.hh"
 
 // ocean models:
-#include "POConstant.hh"
 #include "POConstantPIK.hh"
 #include "POGivenClimate.hh"
 #include "POdSLforcing.hh"
@@ -57,15 +55,10 @@
 #include "PSdTforcing.hh"
 #include "PSTemperatureIndex.hh"
 #include "PSSimple.hh"
-#include "PSConstant.hh"
 #include "PSConstantPIK.hh"
 #include "PSForceThickness.hh"
 
 // Atmosphere
-static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
-  result = new PAConstant(g, conf);
-}
-
 static void create_pa_constant_pik(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
   result = new PAConstantPIK(g, conf);
 }
@@ -104,12 +97,12 @@ static void create_pa_anomaly(IceGrid& g, const NCConfigVariable& conf,
 }
 
 void PAFactory::add_standard_types() {
-  add_model("constant",          &create_pa_constant);
+  add_model("constant",          &create_pa_given);
   add_model("given",             &create_pa_given);
   add_model("searise_greenland", &create_pa_searise_greenland);
   add_model("eismint_greenland", &create_pa_eismint_greenland);
   add_model("pik",               &create_pa_constant_pik);
-  set_default("constant");
+  set_default("given");
 
   add_modifier("anomaly",        &create_pa_anomaly);
   add_modifier("dTforcing",      &create_pa_dTforcing);
@@ -119,10 +112,6 @@ void PAFactory::add_standard_types() {
 
 
 // Ocean
-static void create_po_constant(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
-  result = new POConstant(g, conf);
-}
-
 static void create_po_given(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
   result = new POGiven(g, conf);
 }
@@ -144,10 +133,10 @@ static void create_po_dSBMFforcing(IceGrid& g, const NCConfigVariable& conf, PIS
 }
 
 void POFactory::add_standard_types() {
-  add_model("constant", &create_po_constant);
+  add_model("constant", &create_po_given);
   add_model("given",    &create_po_given);
   add_model("pik",      &create_po_pik);
-  set_default("constant");
+  set_default("given");
 
   add_modifier("dSLforcing",      &create_po_forcing);
   add_modifier("dTforcing",       &create_po_dTforcing);
@@ -161,10 +150,6 @@ static void create_ps_temperatureindex(IceGrid& g, const NCConfigVariable& conf,
 
 static void create_ps_simple(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
   result = new PSSimple(g, conf);
-}
-
-static void create_ps_constant(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
-  result = new PSConstant(g, conf);
 }
 
 static void create_ps_constant_pik(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
@@ -205,13 +190,13 @@ static void create_ps_anomaly(IceGrid& g, const NCConfigVariable& conf,
 }
 
 void PSFactory::add_standard_types() {
-  add_model("constant",      &create_ps_constant);
+  add_model("constant",      &create_ps_given);
   add_model("simple",        &create_ps_simple);
   add_model("pdd",           &create_ps_temperatureindex); 
   add_model("given",         &create_ps_given); 
   add_model("pik",           &create_ps_constant_pik);
   add_model("elevation",     &create_ps_elevation);
-  set_default("constant");
+  set_default("given");
 
   add_modifier("anomaly",    &create_ps_anomaly);
   add_modifier("forcing",    &create_ps_forcing);
