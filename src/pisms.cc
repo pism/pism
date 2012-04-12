@@ -30,7 +30,7 @@ static char help[] =
 #include "pism_options.hh"
 
 #include "PSDummy.hh"
-#include "PODummy.hh"
+#include "POConstant.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     // Initialize boundary models (climate will always come from
     // intercomparison formulas):
     PISMSurfaceModel *surface = new PSDummy(g, config);
-    PISMOceanModel *ocean = new PODummy(g, config);
+    PISMOceanModel *ocean = new POConstant(g, config);
 
     IceModel *m;
     if (PSTexchosen == PETSC_TRUE) {

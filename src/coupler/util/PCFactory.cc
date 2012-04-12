@@ -39,6 +39,7 @@
 #include "PAAnomaly.hh"
 
 // ocean models:
+#include "POConstant.hh"
 #include "POConstantPIK.hh"
 #include "POGivenClimate.hh"
 #include "POdSLforcing.hh"
@@ -115,6 +116,10 @@ static void create_po_given(IceGrid& g, const NCConfigVariable& conf, PISMOceanM
   result = new POGiven(g, conf);
 }
 
+static void create_po_constant(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
+  result = new POConstant(g, conf);
+}
+
 static void create_po_pik(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
   result = new POConstantPIK(g, conf);
 }
@@ -132,9 +137,10 @@ static void create_po_dSBMFforcing(IceGrid& g, const NCConfigVariable& conf, PIS
 }
 
 void POFactory::add_standard_types() {
+  add_model("constant", &create_po_constant);
   add_model("given",    &create_po_given);
   add_model("pik",      &create_po_pik);
-  set_default("given");
+  set_default("constant");
 
   add_modifier("dSLforcing",      &create_po_forcing);
   add_modifier("dTforcing",       &create_po_dTforcing);

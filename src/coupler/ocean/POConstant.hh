@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PODUMMY_H_
-#define _PODUMMY_H_
+#ifndef _POCONSTANT_H_
+#define _POCONSTANT_H_
 
 #include "PISMOcean.hh"
 #include "NCSpatialVariable.hh"
@@ -25,10 +25,10 @@
 //! \brief A class implementing a constant (in terms of the ocean inputs) ocean
 //! model. Uses configuration parameters for the sea level elevation and
 //! sub-shelf heat flux.
-class PODummy : public PISMOceanModel {
+class POConstant : public PISMOceanModel {
 public:
-  PODummy(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PODummy() {}
+  POConstant(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~POConstant() {}
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
@@ -49,4 +49,4 @@ protected:
   PetscReal mymeltrate;
 };
 
-#endif /* _PODUMMY_H_ */
+#endif /* _POCONSTANT_H_ */

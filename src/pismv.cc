@@ -30,7 +30,7 @@ static char help[] =
 #include "verif/iceCompModel.hh"
 
 #include "PSDummy.hh"
-#include "PODummy.hh"
+#include "POConstant.hh"
 #include "pism_options.hh"
 
 // a wrapper that seems to be necessary to make std::transform below work
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize boundary models:
     PISMSurfaceModel *surface = new PSDummy(g, config);
-    PISMOceanModel     *ocean = new PODummy(g, config);
+    PISMOceanModel     *ocean = new POConstant(g, config);
 
     // determine test (and whether to report error)
     string testname = "A";

@@ -23,7 +23,7 @@ static char help[] = "Driver for PISM software unit tests.\n";
 #include "iMtests.hh"
 
 #include "PSDummy.hh"
-#include "PODummy.hh"
+#include "POConstant.hh"
 #include "pism_options.hh"
 
 int main(int argc, char *argv[]) {
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 
     // Create boundary models:
     PISMSurfaceModel *surface = new PSDummy(g, config);
-    PISMOceanModel *ocean = new PODummy(g, config);
+    PISMOceanModel *ocean = new POConstant(g, config);
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMTESTS %s (unit tests and new-code-playground mode)\n",
