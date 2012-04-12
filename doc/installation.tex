@@ -189,7 +189,6 @@ pre- and post-processing, while Git (\url{http://git-scm.com/}) is usually neede
   \pairstack{\t{matplotlib}}{\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}}} & used in some scripts \\
   \pairstack{\t{netcdf4-python}}{\href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}}  & used in \emph{most} scripts  \\    
   \pairstack{\t{numpy}}{\href{http://numpy.scipy.org/}{\t{numpy.scipy.org}}} & used in \emph{most} scripts \\
-  \pairstack{\t{scikits.delaunay}}{\href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}}} & used in few scripts \\
   \bottomrule
 \end{tabular*}
 \end{center}
@@ -616,19 +615,6 @@ assuming that HDF5 and NetCDF were installed in the \texttt{/usr/} tree.
 
 The scripts in directories \texttt{util/}, \texttt{examples/eisgreen}, \texttt{examples/eisross}, \texttt{examples/mismip}, and so
 on, which need \texttt{netCDF3} or \texttt{netCDF4}, should now work.
-
-
-\subsubsection*{Python package \texttt{scikits.delaunay}}  One PISM script, \texttt{examples/eisross/ross_plot.py}, needs this. \href{http://www.enthought.com/}{Enthought Python Distributions} users do (make sure you have version 6.0 or greater): 
-\begin{verbatim}
-$ sudo easy_install http://svn.scipy.org/svn/scikits/trunk/delaunay
-\end{verbatim}
-If you have a different Python distribution installed, here's how to get \texttt{scikits.delaunay}:
-\begin{verbatim}
-$  svn co http://svn.scipy.org/svn/scikits/trunk/delaunay
-$  cd delaunay
-$  sudo python setup.py install
-\end{verbatim}
-(The above use of \texttt{setup.py} will work if the python ``\texttt{setuptools}'' are installed.  On a Debian, that may require getting the \texttt{python-setuptools} package, for example.)
 
 \newpage
 \section{Rebuilding PISM documentation}

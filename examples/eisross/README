@@ -56,8 +56,7 @@ COLUMN    MEANING
           for Chi^2 stat in MacAyeal et al 1996)
 
 rossplot.py:  Takes the NetCDF result of a PISM Ross run (i.e. from
-"pross -boot_file ross.nc -ssaBC ross.nc ...") and produces a
-good-looking figure using Python tools matplotlib, netcdf4-python, and 
-scikits.delaunay.  See comments to install.  Reads the riggs_clean.dat 
-file.  Produces .png images.
+"pross -boot_file ross.nc -ssaBC ross.nc ...") and produces a good-looking
+figure using Python tools matplotlib and netcdf4-python. See comments to
+install. Reads the riggs_clean.dat file. Produces .png images.
 

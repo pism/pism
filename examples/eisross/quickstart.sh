@@ -49,7 +49,7 @@ mpiexec -n $NN pross -boot_file ross.nc -Mx $MMxx -My $MMyy -ssa_method $METHOD 
 set +x
 
 echo "----- Generating figure comparing model vs observed velocity (requires"
-echo "-----   python modules numpy, netCDF3/4, pylab, and scikits.delaunay):"
+echo "-----   python modules numpy, netCDF3/4, and pylab:"
 ./rossplot.py --pism-output rossComputed.nc --riggs riggs_clean.dat
 
 echo "-----  Done."

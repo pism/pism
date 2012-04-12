@@ -6,16 +6,7 @@
 #   1) numpy (see http://numpy.scipy.org/; python-numpy is Debian package)
 #   2) matplotlib (see http://matplotlib.sourceforge.net/; python-matplotlib 
 #        is Debian package)
-#   3) netcdf-python (see http://code.google.com/p/netcdf4-python/; no Debian package)
-#   4) scikits.delaunay (for data regridding; see 
-#        http://scipy.org/scipy/scikits for more information and to learn 
-#        what Scipy Toolkits are.)
-#
-# To install scikits.delaunay, first install setuptools (python-setuptools 
-# is Debian package).  Then do
-#
-#    $ svn co http://svn.scipy.org/svn/scikits/trunk/delaunay
-#    $ cd delaunay; sudo python setup.py install
+#   3) netcdf4-python (see http://code.google.com/p/netcdf4-python/; no Debian package)
 #
 # CK 27may08, ..., 12jan10
 # ELB 15feb11
@@ -31,10 +22,10 @@ except:
     from netCDF3 import Dataset as NC
 
 try:
-    from scikits.delaunay import Triangulation
+    from matplotlib.delaunay import Triangulation
 except:
-    print "ERROR:  scikits.delaunay  not installed (?)"
-    print "see PISM Installation Manual for information"
+    print "ERROR: matplotlib.delaunay  not installed (?)"
+    print "Please upgrade matplotlib"
     exit(1)
 
 seconds_per_year = 3.1556926e7

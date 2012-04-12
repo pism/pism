@@ -23,4 +23,4 @@ Description: The Parallel Ice Sheet Model binary package
   * extensible coupling to atmospheric and ocean models
   * complete documentation for users and developers
  .
- Certain Python modules used by PISM scripts are not available as Debian packages. You might need to install netcdf4-python and scikits.delaunay by hand.
+ Certain Python modules used by PISM scripts are not available as Debian packages. You might need to install netcdf4-python by hand.

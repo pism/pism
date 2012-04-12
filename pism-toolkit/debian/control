@@ -18,5 +18,3 @@ Description: A metapackage installing tools necessary or useful for building PIS
  packages. This includes
  .
  http://code.google.com/p/netcdf4-python/
- .
- http://svn.scipy.org/svn/scikits/trunk/delaunay
