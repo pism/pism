@@ -60,11 +60,9 @@ PetscErrorCode PODummy::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-void PODummy::add_vars_to_output(string keyword, set<string> &result) {
-  if (keyword != "small") {
-    result.insert("shelfbtemp");
-    result.insert("shelfbmassflux");
-  }
+void PODummy::add_vars_to_output(string, set<string> &result) {
+  result.insert("shelfbtemp");
+  result.insert("shelfbmassflux");
 }
 
 PetscErrorCode PODummy::define_variables(set<string> vars, const PIO &nc,

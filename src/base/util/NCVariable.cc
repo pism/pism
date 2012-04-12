@@ -636,28 +636,34 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   min = min * slope + intercept;
   max = max * slope + intercept;
 
+  int len = short_name.size();
+  string spacer(len, ' ');
+
   if (has("standard_name")) {
 
     if (found_by_standard_name) {
       ierr = verbPrintf(2, com, 
-			" %-10s/ standard_name=%-10s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+			" %s / standard_name=%-10s\n"
+                        "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 			short_name.c_str(),
-			strings["standard_name"].c_str(), "", min, max,
+			strings["standard_name"].c_str(), spacer.c_str(), min, max,
 			strings["glaciological_units"].c_str()); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2, com, 
-			" %-10s/ WARNING! standard_name=%s is missing, found by short_name\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+			" %s / WARNING! standard_name=%s is missing, found by short_name\n"
+                        "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 			short_name.c_str(),
-			strings["standard_name"].c_str(), "", min, max,
+			strings["standard_name"].c_str(), spacer.c_str(), min, max,
 			strings["glaciological_units"].c_str()); CHKERRQ(ierr);
     }
 
   } else {
 
     ierr = verbPrintf(2, com, 
-		      " %-10s/ %-10s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+		      " %s / %-10s\n"
+                      "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 		      short_name.c_str(),
-		      strings["long_name"].c_str(), "", min, max,
+		      strings["long_name"].c_str(), spacer.c_str(), min, max,
 		      strings["glaciological_units"].c_str()); CHKERRQ(ierr);
   }
 
@@ -684,7 +690,7 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
       ierr = verbPrintf(2, com,
 			"PISM WARNING: some values of '%s' are outside the valid range [%f, %f] (%s)\n",
 			short_name.c_str(), valid_min, valid_max, units_string.c_str()); CHKERRQ(ierr);
-    
+
   } else if (has("valid_min")) {
     double valid_min = get("valid_min");
     if (min < valid_min) {
@@ -692,7 +698,7 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
 			"PISM WARNING: some values of '%s' are less than the valid minimum %f (%s)\n",
 			short_name.c_str(), valid_min, units_string.c_str()); CHKERRQ(ierr);
     }
-    
+
   } else if (has("valid_max")) {
     double valid_max = get("valid_max");
     if (max > valid_max) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -41,10 +41,6 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
                        "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
   ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   mass_flux.write_in_glaciological_units = true;
-
-  ierr = verbPrintf(2,grid.com,
-                    "    reading boundary conditions from %s ...\n",
-                    filename.c_str()); CHKERRQ(ierr);
 
   ierr = temp.init(filename); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);

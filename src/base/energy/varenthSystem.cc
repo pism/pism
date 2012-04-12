@@ -1,4 +1,4 @@
-// Copyright (C) 2011 The PISM Authors
+// Copyright (C) 2011, 2012 The PISM Authors
 //
 // This file is part of PISM.
 //
@@ -74,7 +74,7 @@ PetscErrorCode varenthSystemCtx::assemble_R() {
       // cold case
       const PetscScalar depth = ice_thickness - k * dzEQ;
       PetscScalar T;
-      ierr = EC->getAbsTemp(Enth[k], EC->getPressureFromDepth(depth), // FIXME: task #7297
+      ierr = EC->getAbsTemp(Enth[k], EC->getPressureFromDepth(depth), // FIXME: issue #15
                             T); CHKERRQ(ierr);
 
       R[k] = ((k_depends_on_T ? k_from_T(T) : ice_k) / EC->c_from_T(T)) * Rfactor;

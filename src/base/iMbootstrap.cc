@@ -265,7 +265,7 @@ geothermal flux:
 Note that \f$z\f$ here is negative, so the temperature increases as one goes
 down into the bed.
 
-FIXME task #7297
+FIXME issue #15
 */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;

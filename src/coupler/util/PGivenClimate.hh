@@ -86,10 +86,8 @@ public:
 
   virtual void add_vars_to_output(string keyword, set<string> &result)
   {
-    if (keyword != "small") {
-      result.insert(temp_name);
-      result.insert(mass_flux_name);
-    }
+    result.insert(temp_name);
+    result.insert(mass_flux_name);
 
     if (Model::input_model != NULL) {
       Model::input_model->add_vars_to_output(keyword, result);
@@ -177,12 +175,18 @@ protected:
 
     if (bc_file_set == false) {
       // find PISM input file to read data from:
-      ierr = verbPrintf(2, Model::grid.com,
-                        "PISM WARNING: opiton %s_file is not set. Trying to use the input file...\n");
-      CHKERRQ(ierr);
-
       bool regrid; int start;   // will be ignored
       ierr = Model::find_pism_input(filename, regrid, start); CHKERRQ(ierr);
+
+      ierr = verbPrintf(2, Model::grid.com,
+                        "  - Option %s_file is not set. Trying the input file '%s'...\n",
+                        option_prefix.c_str(), filename.c_str());
+      CHKERRQ(ierr);
+
+    } else {
+      ierr = verbPrintf(2, Model::grid.com,
+                        "  - Reading boundary conditions from '%s'...\n",
+                        filename.c_str()); CHKERRQ(ierr);
     }
 
     if (bc_ref_year_set) {

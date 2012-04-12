@@ -374,7 +374,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
         tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
         const PetscScalar
-          p_over = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME task #7297
+          p_over = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME issue #15
           p_w    = basal_water_pressure(p_over, (*basal_water_thickness)(i, j),
                                         (*basal_melt_rate)(i, j),
                                         (*ice_thickness)(i, j)),
@@ -688,7 +688,7 @@ PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
       PetscReal thk = (*model->ice_thickness)(i, j);
       if (thk > 0.0) {
         PetscReal ice_thickness = (*model->ice_thickness)(i, j),
-          // FIXME task #7297
+          // FIXME issue #15
           p_overburden = ice_thickness * model->ice_density * model->standard_gravity;
 
         (*result)(i,j) = model->basal_water_pressure(p_overburden,
@@ -735,7 +735,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
         // no change
       } else { // grounded and there is some ice
         const PetscReal
-          p_overburden = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME task #7297
+          p_overburden = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME issue #15
           p_w = basal_water_pressure(p_overburden,
                                      (*basal_water_thickness)(i, j),
                                      (*ice_thickness)(i, j),

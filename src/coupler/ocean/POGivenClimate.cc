@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -39,10 +39,6 @@ PetscErrorCode POGiven::init(PISMVars &) {
   ierr = mass_flux.set_attrs("climate_forcing",
                        "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                        "m s-1", ""); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2,grid.com,
-                    "    reading boundary conditions from %s ...\n",
-                    filename.c_str()); CHKERRQ(ierr);
 
   ierr = temp.init(filename); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);

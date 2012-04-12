@@ -97,7 +97,6 @@ static void create_pa_anomaly(IceGrid& g, const NCConfigVariable& conf,
 }
 
 void PAFactory::add_standard_types() {
-  add_model("constant",          &create_pa_given);
   add_model("given",             &create_pa_given);
   add_model("searise_greenland", &create_pa_searise_greenland);
   add_model("eismint_greenland", &create_pa_eismint_greenland);
@@ -133,7 +132,6 @@ static void create_po_dSBMFforcing(IceGrid& g, const NCConfigVariable& conf, PIS
 }
 
 void POFactory::add_standard_types() {
-  add_model("constant", &create_po_given);
   add_model("given",    &create_po_given);
   add_model("pik",      &create_po_pik);
   set_default("given");
@@ -190,7 +188,6 @@ static void create_ps_anomaly(IceGrid& g, const NCConfigVariable& conf,
 }
 
 void PSFactory::add_standard_types() {
-  add_model("constant",      &create_ps_given);
   add_model("simple",        &create_ps_simple);
   add_model("pdd",           &create_ps_temperatureindex); 
   add_model("given",         &create_ps_given); 

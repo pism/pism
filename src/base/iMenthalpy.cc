@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2012 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -57,7 +57,7 @@ PetscErrorCode IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceMod
       ierr = temperature.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       ierr = result.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
+        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME issue #15
         ierr = EC->getEnthPermissive(Tij[k],0.0,EC->getPressureFromDepth(depth),
                                     Enthij[k]); CHKERRQ(ierr);
       }
@@ -95,7 +95,7 @@ PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
       ierr = liquid_water_fraction.getInternalColumn(i,j,&Liqfracij); CHKERRQ(ierr);
       ierr = result.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
+        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME issue #15
         ierr = EC->getEnthPermissive(Tij[k],Liqfracij[k],
                       EC->getPressureFromDepth(depth), Enthij[k]); CHKERRQ(ierr);
       }
@@ -135,7 +135,7 @@ PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
       ierr = result.getInternalColumn(i,j,&omegaij); CHKERRQ(ierr);
       ierr = enthalpy.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
+        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME issue #15
         ierr = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth),
                                    omegaij[k]); CHKERRQ(ierr);
       }
@@ -171,7 +171,7 @@ PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
       ierr = useForCTS.getInternalColumn(i,j,&CTSij); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
+        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME issue #15
         CTSij[k] = EC->getCTS(Enthij[k], EC->getPressureFromDepth(depth));
       }
     }
@@ -194,7 +194,7 @@ PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
 					      PetscScalar **Enth_s) {
 
   for (PetscInt k = 0; k <= ks; k++) {
-    const PetscScalar p = EC->getPressureFromDepth(thk - grid.zlevels_fine[k]); // FIXME task #7297
+    const PetscScalar p = EC->getPressureFromDepth(thk - grid.zlevels_fine[k]); // FIXME issue #15
     (*Enth_s)[k] = EC->getEnthalpyCTS(p);
   }
   const PetscScalar Es_air = EC->getEnthalpyCTS(p_air);
@@ -377,7 +377,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                  is_floating     = mask.ocean(i,j);
 
       // enthalpy and pressures at top of ice
-      const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]); // FIXME task #7297
+      const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]); // FIXME issue #15
       PetscScalar Enth_ks;
       ierr = EC->getEnthPermissive(artm(i,j), liqfrac_surface(i,j), p_ks, Enth_ks); CHKERRQ(ierr);
 
@@ -425,7 +425,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
 
         const bool base_is_cold = (esys->Enth[0] < esys->Enth_s[0]);
-        const PetscScalar p1 = EC->getPressureFromDepth(vH(i,j) - fdz); // FIXME task #7297
+        const PetscScalar p1 = EC->getPressureFromDepth(vH(i,j) - fdz); // FIXME issue #15
         const bool k1_istemperate = EC->isTemperate(esys->Enth[1], p1); // level  z = + \Delta z
 
         // can now determine melt, but only preliminarily because of drainage,
@@ -436,7 +436,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           if (base_is_cold) {
               vbmr(i,j) = 0.0;  // zero melt rate if cold base
           } else {
-            const PetscScalar pbasal = EC->getPressureFromDepth(vH(i,j)); // FIXME task #7297
+            const PetscScalar pbasal = EC->getPressureFromDepth(vH(i,j)); // FIXME issue #15
             PetscScalar hf_up;
             if (k1_istemperate) {
               const PetscScalar Tpmpbasal = EC->getMeltingTemp(pbasal);
@@ -525,7 +525,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
               liquifiedCount++; // count these rare events ...
               Enthnew[k] = esys->Enth_s[k] + 0.5 * L; //  but lose the energy
             }
-            const PetscReal p = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
+            const PetscReal p = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME issue #15
             PetscReal omega;
             EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked
             if (omega > 0.01) {

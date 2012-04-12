@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2009-2011 the PISM Authors
+# Copyright (C) 2009-2012 the PISM Authors
 
 ## @package pism_python
 # \author the PISM authors
@@ -11,11 +11,11 @@
 # Usage, including a minimal PISM call to bootstrap from this file:
 #
 # \verbatim $ pism_python.py  # creates foo.nc \endverbatim
-# \verbatim $ pismr -boot_file foo.nc -Mx 51 -My 101 -surface constant \
+# \verbatim $ pismr -boot_file foo.nc -Mx 51 -My 101 \
 #       -Mz 21 -Lz 4000 -Mbz 6 -Lbz 2000 -y 1  \endverbatim
 # 
 # Incidentally, next run shows good mass conservation, with no basal melt losses:
-# \verbatim $ pismr -boot_file foo.nc -Mx 51 -My 101 -surface constant \
+# \verbatim $ pismr -boot_file foo.nc -Mx 51 -My 101 \
 #       -Mz 21 -Lz 4000 -Mbz 6 -Lbz 2000 -y 1000 -no_energy  \endverbatim
 
 import sys
