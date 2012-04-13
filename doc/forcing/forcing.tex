@@ -22,14 +22,13 @@
 \usepackage{bm,url,xspace,verbatim}
 \usepackage{amssymb,amsmath}
 \usepackage[pdftex]{graphicx}
-\usepackage{wrapfig}
 \usepackage{booktabs}           % better rules in tables
 \usepackage{xtab}               % long (multi-page) tables
 
 %% uncomment to see locations of index entries
 % \proofmodetrue
 
-\usepackage{underscore}
+\usepackage[nohyphen]{underscore}
 
 % this lets us avoid the scrartcl/hyperref conflict...
 \let\ifvtex\relax
@@ -211,9 +210,9 @@ should start at $0$.
 \subsection{Using time bounds in forcing data}
 \label{sec:time-bounds}
 
-By default PISM interprets climate forcing data as piecewise-constant in
-time. A forcing file can specify the time bounds corresponding to each record
-by following the CF (Climate and Forecasting) meta-data conventions.
+PISM interprets climate  forcing data as piecewise-constant in  time. A forcing
+file can specify the time bounds  corresponding to each record by following the
+CF (Climate and Forecasting) meta-data conventions.
 
 The \texttt{ncdump -h} output from a conforming file would look similar to the
 following:
@@ -240,7 +239,8 @@ are not set in this example.
 
 \subsection{Calendars}
 \label{sec:calendars}
-Internally PISM stores time in seconds since a specified moment in time and
+
+Internally PISM stores time in ``seconds since a specified moment'' and
 does not use or need a calendar.
 
 However, XX-century and prognostic runs require knowledge of lengths of months
@@ -322,73 +322,142 @@ and \ref*{userman-sec:saving-spat-vari} of the User's Manual.
 \section{Known use cases (and corresponding options)}
 \label{sec:known-use-cases}
 
-FIXME: reference sections describing components that are used in each case,
-list names of variables that the code will try to find in forcing files.
+This section gives a very brief overview of some coupling options. Please see sections referenced below for more information.
 
-\subsection{Using forcing provided by a regional climate model}
-\label{sec:regional-model}
+\subsection{One way coupling to a climate model}
+\label{sec:one-way-coupling}
+
+This is the simplest (and preferred) case.
 
 \subsubsection{Ice surface temperature and mass balance}
 \label{sec:ice-surface-bc}
-
-This is the simplest case:
-\begin{verbatim}
--surface given -surface_given_file forcing.nc
-\end{verbatim}
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \texttt{acab}, \texttt{artm} \\
+    Options: & \texttt{-surface given -surface_given_file forcing.nc} \\
+    Software components: & \texttt{PSGivenClimate} \\
+    See also & section \ref{sec:surface-given} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
 
 \subsubsection{Air temperature and precipitation}
 \label{sec:air-temp-and-precip}
 
+If  a climate model  provides near-surface  air temperature  and precipitation,
+these  data need  to be  converted into  top of  the ice  temperature  and mass
+balance.
+
+PISM has  a temperature index  (PDD) model with adjustable  parameters. Default
+parameter values come from \cite{RitzEISMINT}.
+
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \texttt{precip}, \texttt{air_temp} \\
+    Options: & \texttt{-atmosphere given -atmosphere_given_file forcing.nc -surface~pdd} \\
+    Software components: & \texttt{PAGivenClimate}, \texttt{PSTemperatureIndex} \\
+    See also & \texttt{-atmosphere given} : \ref{sec:atmosphere-given},
+    \texttt{-surface pdd}: \ref{sec:surface-pdd} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+I a case when melt is  negligible \texttt{-surface pdd} should be replaced with
+\texttt{-surface simple}.
+
 \subsubsection{SeaRISE-Greenland}
-\label{sec:parameterized-air-temp}
+\label{sec:use-case-searise-greenland}
 
-The SeaRISE-Greenland setup uses the parametrized near-surface air temperature
-and a precipitation field read from the input (\texttt{-i} ot
-\texttt{-boot_file}) file, plus a temperature-index (PDD) scheme to compute the
-surface mass balance.
+The SeaRISE-Greenland setup uses the parameterized near-surface air temperature
+\cite{Faustoetal2009} and a precipitation field read from an input (\texttt{-i}
+or \texttt{-boot_file}) file, plus  a temperature-index (PDD) scheme to compute
+the surface mass balance.
 
-\begin{verbatim}
--atmosphere searise_greenland -surface pdd
-\end{verbatim}
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \texttt{precip} \\
+    Options: & \texttt{-atmosphere searise_greenland -surface~pdd} \\
+    Software components: & \texttt{PASeariseGreenland}, \texttt{PSTemperatureIndex} \\
+    See also & \texttt{-atmosphere searise_greenland} : \ref{sec:searise-greenland},
+    \texttt{-surface pdd}: \ref{sec:surface-pdd} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
 
 \subsubsection{SeaRISE-Greenland paleo-climate run}
-\label{sec:searise-greenland-paleo}
+\label{sec:use-case-searise-greenland-paleo}
 
-This adds ice-core derived scalar air temperature offsets and precipitation
-adjustments to the previous example.
+The air temperature parameterization in the previous section is appropriate for
+present  day  modeling. PISM  includes  some  corrections  taking into  account
+differences  between present  and past  climates.  In particular,  one can  use
+ice-core  derived   scalar  air  temperature   offsets  \cite{JohnsenetalGRIP},
+precipitation  adjustments  \cite{Huybrechts02},  and  sea level  offsets  from
+SPECMAP \cite{Imbrieetal1984}.
 
-\begin{verbatim}
--atmosphere searise_greenland,dTforcing -dTforcing delta_T.nc \
--paleo_precip  -surface pdd -ocean constant,dSLforcing \
--dSLforcing delta_SL.nc
-\end{verbatim}
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \texttt{precip}, \texttt{delta_T}, \texttt{delta_SL}\\
+    Options: & \texttt{-atmosphere searise_greenland,dTforcing
+      \mbox{-dTforcing delta_T.nc}
+      -paleo_precip  -surface pdd \mbox{-ocean constant,dSLforcing}
+      -dSLforcing delta_SL.nc} \\
+    Software components: & \texttt{PASeariseGreenland}, \texttt{PSTemperatureIndex} \\
+    See also & \texttt{-atmosphere searise_greenland} : \ref{sec:searise-greenland},
+    \texttt{-surface pdd}: \ref{sec:surface-pdd} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
 
 Note that the temperature offsets are applied to \emph{air} temperatures at the
 \emph{atmosphere level}. This ensures that $\Delta T$ influences the PDD
 computation.
 
 \subsection{Using climate anomalies}
-\label{sec:climate-anomalies}
+\label{sec:use-case-climate-anomalies}
 
 Prognostic modeling experiments frequently use time- and space-dependent
-air temperature and precipitation anomalies. To set up this forcing, use
+air temperature and precipitation anomalies.
 
-``Atmospheric'' anomalies read from the file are applied to forcing data
-computed by the selected atmosphere model, be it a parametrization or constant
-in time data.
-\begin{verbatim}
--atmosphere constant,anomaly -atmosphere_anomaly_file anomalies.nc
-\end{verbatim}
+\subsubsection{No surface melt}
+\label{sec:use-case-anomalies-antarctica}
+
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \\
+    Options:  &  \texttt{-atmosphere given,anomaly  -atmosphere_anomaly_file
+      anomalies.nc -surface simple} \\
+    Software components: & \texttt{PAGivenClimate}, \texttt{PAAnomaly}, \texttt{PSSimple}\\
+    See  also   &  \texttt{-atmosphere  given}   :  \ref{sec:atmosphere-given},
+    \texttt{anomaly}: \ref{sec:anomalies}, \texttt{-surface simple}: \ref{sec:invisible-model}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+The \texttt{simple} surface model  re-interprets precipitation as mass balance,
+which is  useful in cases when there  is no melt (Antarctic  simulations is one
+example).
 
 \subsection{Antarctic paleo-climate runs}
-\label{sec:paleo-climate}
+\label{sec:use-case-antarctica-paleo}
 
-A paleo-climate Antarctic simulation including both surface temperature and sea
-level offsets may use
-\begin{verbatim}
--surface constant,dTforcing -dTforcing delta_T.nc -ocean constant \
--dSLforcing delta_SL.nc
-\end{verbatim}
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \texttt{acab}, \texttt{artm}, \texttt{delta_T}, \texttt{delta_SL}\\
+    Options: & \texttt{-surface given,dTforcing \mbox{-dTforcing delta_T.nc}
+      \mbox{-ocean constant,dSLforcing} -dSLforcing delta_SL.nc} \\
+    Software   components:  &   \texttt{PSGivenClimate},  \texttt{PSdTforcing},
+    \texttt{POConstant}, \texttt{POdSLforcing}\\
+    See   also    &   \texttt{-surface   given}    :   \ref{sec:surface-given},
+    \texttt{dTforcing}: \ref{sec:delta-temp}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
 
 \section{Checking if forcing data is used correctly}
 \label{sec:checking-forcing}
@@ -466,6 +535,7 @@ See section \ref{sec:eismint-greenland} for another \texttt{pclimate} example.
 \optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, given, lapse_rate, forcing]}
 
 \subsection{SeaRISE-Greenland}
+\label{sec:atmosphere-searise-greenland}
 
 Option: \texttt{searise_greenland}
 
@@ -475,15 +545,8 @@ In addition to the temperature parameterization it allows using the SeaRISE-Gree
 
 It expects variables \texttt{precip}, latitude and longitude to be present in an input file.
 
-\subsection{Constant in time}
-\label{sec:constant-time}
-
-Option: (\texttt{constant})
-
-This atmosphere model reads the snow precipitation (variable \texttt{precip}) and the mean annual near-surface air temperature (variable \texttt{artm}) and provides them to a surface model.
-
 \subsection{Reading atmosphere boundary conditions from a file}
-\label{sec:read-atmosph-bound}
+\label{sec:atmosphere-given}
 
 (\texttt{given})
 
@@ -540,7 +603,7 @@ precipitation using elevation lapse rates. It uses the following options.
 \end{itemize}
 
 \subsection{EISMINT-Greenland}
-\label{sec:eismint-greenland}
+\label{sec:atmosphere-eismint-greenland}
 
 \subsection{PIK}
 \label{sec:atmosphere-pik}
@@ -550,25 +613,25 @@ precipitation using elevation lapse rates. It uses the following options.
 \label{sec:atmosphere-mods}
 
 \subsection{Scalar temperature offsets}
-\label{sec:delta-temp}
+\label{sec:atmosphere-delta-temp}
 
 \subsection{Scalar precipitation offsets}
-\label{sec:delta-precip}
+\label{sec:atmosphere-delta-precip}
 
 \subsection{Lapse rate corrections}
-\label{sec:lapse-rates}
+\label{sec:atmosphere-lapse-rates}
 
 \subsection{Anomalies}
-\label{sec:anomalies}
+\label{sec:atmosphere-anomalies}
 
 
 
 \section{Surface mass and energy process models}
-\label{sec:surface-snow}
+\label{sec:surface}
 \optsection{Climate (boundary) models!\texttt{-surface} [simple, constant, elevation, given, pdd, forcing]}
 
 \subsection{The ``invisible'' model}
-\label{sec:invisible-model}
+\label{sec:surface-simple}
 
 (\texttt{simple}, the default)
 
@@ -581,10 +644,8 @@ melt. Though primitive, this model may be desired in cold environments
 (e.g.~East Antarctic ice sheet) in which melt is negligible and heat from firn
 processes is ignored.
 
-\subsection{Constant in time}
-\label{sec:constant-time-1}
-
-(\texttt{constant})
+\subsection{Reading top-surface boundary conditions from a file}
+\label{sec:surface-given}
 
 This surface model reads constant in time ice upper surface boundary conditions
 from a file. These fields are provided directly to the ice dynamics model (see
@@ -595,9 +656,6 @@ are not present in the input file.
 
 Note: this surface model \emph{ignores} the atmosphere model selection made
 using the \texttt{-atmosphere} option.
-
-\subsection{Reading top-surface boundary conditions from a file}
-\label{sec:reading-top-surface}
 
 (\texttt{given})
 
@@ -633,58 +691,67 @@ $ ncpdq -a t,x,y input.nc output.nc
 \end{itemize}
 
 \subsection{Elevation-dependent temperature and mass balance}
-\label{sec:elev-depend-temp}
+\label{sec:surface-elev-depend-temp}
 
 (\texttt{elevation})
 
-This surface model parametrizes the ice surface temperature $T_{h}$ = \texttt{artm} and the surface mass balance $m$ = \texttt{acab} as a \emph{piecewise-linear} function of surface elevation $h$.
+\newcommand{\var}[2]{ {#1}_{\text{#2}} }
+\newcommand{\h}[1]{ \var{h}{#1} }
+\newcommand{\T}[1]{ \var{T}{#1} }
+\newcommand{\m}[1]{ \var{m}{#1} }
+\newcommand{\ms}[1]{ \var{m^{*}}{#1} }
+\newcommand{\diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
 
-The option \txtopt{artm}{\emph{list of 4 numbers}} determines the surface temperature using the 4 parameters $T_{\mathrm{min}}$, $T_{\mathrm{max}}$, $h_{\mathrm{min}}$, $h_{\mathrm{max}}$. Let
+This surface model parameterizes the ice surface temperature $T_{h}$ = \texttt{artm} and the surface mass balance $m$ = \texttt{acab} as \emph{piecewise-linear} functions of surface elevation $h$.
+
+The option \txtopt{artm}{\emph{list of 4 numbers}} determines the surface temperature using the 4 parameters $\T{min}$, $\T{max}$, $\h{min}$, $\h{max}$. Let
 \begin{equation}
-  \mathrm{d}T/\mathrm{d}h = (T_{\text{max}} - T_{\text{min}}) / (h_{\text{max}} - h_{\text{min}})
+  \diff{T}{h} = (\T{max} - \T{min}) / (\h{max} - \h{min})
 \end{equation}
-be the temperature gradient.  Then
+be the temperature gradient. Then
 \begin{equation}
-  T(x,y) = \begin{cases}
-    T_{\text{min}}, & h(x,y) \le h_{\text{min}}, \\
-    T_{\text{min}} + \mathrm{d}T/\mathrm{d}h\,(h(x,y) - h_{\text{min}}),
-    &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
-    T_{\text{max}}, & h_{\text{max}} \le h(x,y). \end{cases}
+  T(x,y) =
+  \begin{cases}
+    \T{min}, & h(x,y) \le \h{min}, \\
+    \T{min} + \diff{T}{h} \, (h(x,y) - \h{min}), & \h{min} < h(x,y) < \h{max}, \\
+    \T{max}, & \h{max} \le h(x,y).
+  \end{cases}
 \end{equation}
 
-The option \txtopt{acab}{\emph{list of 5 numbers}} determines the surface mass balance using the 5 parameters $m_{\mathrm{min}}$, $m_{\mathrm{max}}$, $h_{\mathrm{min}}$, $h_{\mathrm{ELA}}$, $h_{\mathrm{max}}$. Let
+The option \txtopt{acab}{\emph{list of 5 numbers}} determines the surface mass balance using the 5 parameters $\m{min}$, $\m{max}$, $\h{min}$, $\h{ELA}$, $\h{max}$. Let
 \begin{equation}
-  \mathrm{d}m_{\mathrm{abl}}/\mathrm{d}h = - m_{\text{min}} / (h_{\text{max}} - h_{\text{min}})
+  \diff{\m{abl}}{h} = -\m{min} / (\h{max} - \h{min})
 \end{equation}
 and
 \begin{equation}
-  \mathrm{d}m_{\mathrm{acl}}/\mathrm{d}h = m_{\text{max}} / (h_{\text{max}} - h_{\text{min}})
+\diff{\m{acl}}{h} = \m{max} / (\h{max} - \h{min})
 \end{equation}
 be the mass balance gradient in the ablation and in the accumulation area, respectively.  Then
 \begin{equation}
-  m(x,y) = \begin{cases}
-    m_{\text{min}}, & h(x,y) \le h_{\text{min}}, \\
-    \mathrm{d}m_{\mathrm{abl}}/\mathrm{d}h\,(h(x,y) - h_{\text{ELA}}),
-    &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
-    \mathrm{d}m_{\mathrm{acl}}/\mathrm{d}h\,(h(x,y) - h_{\text{ELA}}),
-    &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
-    m_{\text{max}}, & h_{\text{max}} \le h(x,y). \end{cases}
+  m(x,y) =
+  \begin{cases}
+   \m{min}, & h(x,y) \le \h{min}, \\
+   \diff{\m{abl}}{h} \, (h(x,y) - h_{\text{ELA}}), &  \h{min} < h(x,y) < \h{max}, \\
+   \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
+   \m{max}, & \h{max} \le h(x,y).
+ \end{cases}
 \end{equation}
-The option \txtopt{acab_limits}{\emph{list of 2 numbers}} limits the mass balance below $h_{\mathrm{min}}$ to $m^{*}_{\mathrm{min}}$ and above $h_{\mathrm{max}}$ to $m^{*}_{\mathrm{max}}$, thus
+
+The option \txtopt{acab_limits}{\emph{list of 2 numbers}} limits the mass balance below $\h{min}$ to $\ms{min}$ and above $\h{max}$ to $\ms{max}$, thus
 \begin{equation}
-  m(x,y) = \begin{cases}
-    m^{*}_{\text{min}}, & h(x,y) \le h_{\text{min}}, \\
-    \mathrm{d}m_{\mathrm{abl}}/\mathrm{d}h\,(h(x,y) - h_{\text{ELA}}),
-    &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
-    \mathrm{d}m_{\mathrm{acl}}/\mathrm{d}h\,(h(x,y) - h_{\text{ELA}}),
-    &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
-    m^{*}_{\text{max}}, & h_{\text{max}} \le h(x,y). \end{cases}
+  m(x,y) =
+  \begin{cases}
+    m^{*}_{\text{min}}, & h(x,y) \le \h{min}, \\
+    \diff{\m{abl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
+    \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
+    m^{*}_{\text{max}}, & \h{max} \le h(x,y).
+  \end{cases}
 \end{equation}
 
 Note: this surface model \emph{ignores} the atmosphere model selection made using the \texttt{-atmosphere} option.
 
 \subsection{Temperature-index (positive degree-day) scheme}
-\label{sec:temp-index-posit}
+\label{sec:surface-pdd}
 
 (\texttt{pdd}) \index{temperature-index surface processes model} \index{positive degree day surface processes model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
 
