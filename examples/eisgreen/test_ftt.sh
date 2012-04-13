@@ -69,19 +69,19 @@ $PISM_DO $cmd
 echo
 echo "Test restartability"
 
-cmd="$PISM_MPIDO $NN $PISM -ys -50.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -surface constant,forcing \
+cmd="$PISM_MPIDO $NN $PISM -ys -50.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -surface given,forcing \
   -force_to_thk green20km_y1.nc -o foo.nc"
 $PISM_DO $cmd
 
 echo
 
-cmd="$PISM_MPIDO $NN $PISM -ys -50.0 -ye 25 -skip 5 -i green_ssl2_110ka.nc -surface constant,forcing \
+cmd="$PISM_MPIDO $NN $PISM -ys -50.0 -ye 25 -skip 5 -i green_ssl2_110ka.nc -surface given,forcing \
   -force_to_thk green20km_y1.nc -o joe.nc"
 $PISM_DO $cmd
 
 echo
 
-cmd="$PISM_MPIDO $NN $PISM -ys -25.0 -ye 0 -skip 5 -i joe.nc -surface constant,forcing \
+cmd="$PISM_MPIDO $NN $PISM -ys -25.0 -ye 0 -skip 5 -i joe.nc -surface given,forcing \
   -force_to_thk green20km_y1.nc -o bar.nc"
 $PISM_DO $cmd
 

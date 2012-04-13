@@ -5,7 +5,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 files="foo.nc bar.nc baz.nc joe.nc"
-OPTS="-max_dt 1 -surface constant -o_size small"
+OPTS="-max_dt 1 -o_size small"
 
 set -e -x
 

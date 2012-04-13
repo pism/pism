@@ -6,7 +6,7 @@ MPIEXEC=$2
 echo "Test # 3: no information loss on -y 0 runs (ignoring diagnostics)."
 files="foo.nc bar.nc"
 
-OPTS="-surface constant -o_size small "
+OPTS="-o_size small "
 
 set -e -x
 

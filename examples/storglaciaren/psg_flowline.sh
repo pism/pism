@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2010-2011 Andy Aschwanden
+# Copyright (C) 2010-2012 Andy Aschwanden
 
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
@@ -71,8 +71,8 @@ PISM_DATANAME=pism_$DATANAME
 INNAME=$PISM_DATANAME
 
 # coupler settings
-COUPLER="-surface constant"
-COUPLER_FORCING="-surface constant,forcing"
+COUPLER="-surface given"
+COUPLER_FORCING="-surface given,forcing"
 
 # force-to-thickness
 FTALPHA=0.05

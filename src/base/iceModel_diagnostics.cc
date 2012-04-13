@@ -737,7 +737,7 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
 	PetscScalar tithk = 0.;
 	const PetscInt ks = grid.kBelowHeight(model->vH(i,j));
 
-	for (PetscInt k=0; k<ks; ++k) { // FIXME task #7297
+	for (PetscInt k=0; k<ks; ++k) { // FIXME issue #15
           PetscReal pressure = model->EC->getPressureFromDepth(model->vH(i,j) - grid.zlevels[k]);
 
 	  if (model->EC->isTemperate(Enth[k], pressure)) {
@@ -807,7 +807,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
       PetscInt ks = grid.kBelowHeight(thk),
         k = 0;
 
-      while (k <= ks) {         // FIXME task #7297
+      while (k <= ks) {         // FIXME issue #15
         pressure = EC->getPressureFromDepth(thk - grid.zlevels[k]);
 
         if (EC->isTemperate(Enth[k],pressure))

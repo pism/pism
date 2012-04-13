@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,10 +37,6 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
                         "Kelvin", ""); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                        "m s-1", ""); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com,
-                    "    reading boundary conditions from %s ...\n",
-                    filename.c_str()); CHKERRQ(ierr);
 
   ierr = temp.init(filename); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);

@@ -436,6 +436,9 @@ PetscErrorCode IceModel::write_extras() {
 
   ierr = write_variables(filename, extra_vars, PISM_FLOAT);  CHKERRQ(ierr);
 
+  // flush time-series buffers
+  ierr = flush_timeseries(); CHKERRQ(ierr);
+
   last_extra = grid.time->current();
 
   return 0;

@@ -19,7 +19,7 @@ set -e -x
 $MPIEXEC -n 2 $PISM_PATH/pisms -no_cold -y 6500 $opts -o foo.nc
 
 # bootstrap from it, re-gridding all the variables we can
-$PISM_PATH/pismr -boot_file foo.nc -regrid_file foo.nc -y 0 -surface constant -no_temp $opts -o bar.nc
+$PISM_PATH/pismr -boot_file foo.nc -regrid_file foo.nc -y 0 -no_temp $opts -o bar.nc
 
 set +e
 
