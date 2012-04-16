@@ -1,7 +1,7 @@
 # User's Manual:
 
-# Create the revision stamp:
-file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/revision.tex "${Pism_REVISION_TAG}")
+# copy PISM-related macros, creating the revision tag
+configure_file(../pism-macros.tex pism-macros.tex @ONLY)
 
 # Copy the bibliography file (note the change in the file name)
 configure_file (../ice_bib.bib ice-bib.bib COPYONLY)

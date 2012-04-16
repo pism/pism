@@ -3,79 +3,28 @@
 \usepackage{scrindex}           % multiple index support using the "index" package
 \usepackage{index}
 
-%% THE FOLLOWING SHOULD CHANGE FOR A STABLE RELEASE:
-\newcommand{\PISMREV}{revision \input{revision.tex}}
-\newcommand{\PETSCREL}{3.2}
-\newcommand{\PISMDOWNLOADMSG}{Get development branch source code: \quad\texttt{git clone -b dev git@github.com:pism/pism.git pism-dev} \quad}
-\newcommand{\PISMBROWSERURL}{http://www.pism-docs.org/wiki/doku.php?id=browser}
+\input{pism-macros.tex}
 
 %\addtolength\topmargin{-.1in}
 \addtolength\textheight{0.75in}
 \addtolength{\oddsidemargin}{-.4in}
 \addtolength{\evensidemargin}{-.4in}
 \addtolength{\textwidth}{0.9in}
-\newcommand{\normalspacing}{\renewcommand{\baselinestretch}{1.1}\tiny\normalsize}
-\newcommand{\tablespacing}{\renewcommand{\baselinestretch}{1.0}\tiny\normalsize}
-\normalspacing
-
-\usepackage[usenames]{xcolor}
-
-\usepackage{bm,url,xspace,verbatim}
-\usepackage{amssymb,amsmath}
-\usepackage[pdftex]{graphicx}
-
-\usepackage{booktabs}           % better rules in tables
-\usepackage{xtab}               % long (multi-page) tables
 
 %% uncomment to see locations of index entries
 % \proofmodetrue
-
-\usepackage{underscore}
 
 % this lets us avoid the scrartcl/hyperref conflict...
 \let\ifvtex\relax
 
 % hyperref should be the last package we load
 \usepackage[pdftex,
-                colorlinks=true,
-                plainpages=false, % only if colorlinks=true
-                linkcolor=blue,   % only if colorlinks=true
-                citecolor=blue,   % only if colorlinks=true
-                urlcolor=blue     % only if colorlinks=true
+colorlinks=true,
+plainpages=false, % only if colorlinks=true
+linkcolor=blue,   % only if colorlinks=true
+citecolor=blue,   % only if colorlinks=true
+urlcolor=blue     % only if colorlinks=true
 ]{hyperref}
-
-\newcommand{\ddt}[1]{\ensuremath{\frac{\partial #1}{\partial t}}}
-\newcommand{\ddx}[1]{\ensuremath{\frac{\partial #1}{\partial x}}}
-\newcommand{\ddy}[1]{\ensuremath{\frac{\partial #1}{\partial y}}}
-\renewcommand{\t}[1]{\texttt{#1}}
-\newcommand{\Matlab}{\textsc{Matlab}\xspace}
-\newcommand{\bq}{\mathbf{q}}
-\newcommand{\bU}{\mathbf{U}}
-\newcommand{\eps}{\epsilon}
-\newcommand{\grad}{\nabla}
-\newcommand{\Div}{\nabla\cdot}
-
-%% macros having to do with documentation for options; note these appear in the index
-
-\newindex{default}{idx}{ind}{General Index}
-\newindex{options}{odx}{ond}{PISM Command-line options}
-
-\def\optsection#1{%
-  \def\optindex##1{\index[options]{#1!##1}}
-  \def\optseealso##1{\index[options]{#1|see{##1}}}
-}
-
-\optsection{FIXME}
-
-% Use this to index option definitions:
-\newcommand{\intextoption}[1]{\texttt{-#1}\optindex{\texttt{-#1}}}
-
-\newcommand{\txtopt}[2]{\texttt{-#1} #2\optindex{\texttt{-#1} #2}}
-
-\newcommand{\listopt}[1]{\txtopt{#1}{\emph{comma-separated list}}}
-\newcommand{\fileopt}[1]{\txtopt{#1}{\emph{filename}}}
-\newcommand{\timeopt}[1]{\txtopt{#1}{\emph{range or list}}}
-
 
 \pdfinfo{
 /Title (PISM User's Manual)
@@ -101,7 +50,7 @@
     \includegraphics[width=3.3in,height=6.27in]{grn-grl-csurf}
     \vfill
 
-    \small Support by email: \texttt{help\@@pism-docs.org}. 
+    \small Support by email: \PISMEMAIL. 
     \medskip
 
     Manual date \today. Based on PISM \PISMREV.
@@ -143,7 +92,7 @@ PISM is a joint project between developers in the ice sheet modeling group at th
 \bigskip\bigskip
 Users will reach the \underline{underlined} UAF-based developers listed above by using the email address
 
-\centerline{ \texttt{help\@@pism-docs.org}.  }
+\centerline{ \PISMEMAIL.  }
 
 \bigskip\bigskip
 \noindent \textsc{Front page}:  Magnitude of horizontal surface velocity from PISM run on a horizontal grid resolution of 2\,km.  Visualization by IDV.
@@ -214,7 +163,7 @@ Users who want to understand how PISM works, extend PISM, and/or generally advan
 
 \large
 \begin{center}
-\framebox{\parbox{5.0in}{ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and is generally not mature.  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions at \href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}.} }
+\framebox{\parbox{5.0in}{ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and is generally not mature.  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions at \PISMEMAIL.} }
 \normalsize
 \end{center}
 \normalsize
