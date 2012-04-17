@@ -77,68 +77,75 @@ PetscErrorCode POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-  
-  return 0;                                 
+
+  return 0;
 }
 
-//! Computes mass flux in ice-equivalent m s-1, from assumption that basal heat flux rate converts to mass flux.
+//! \brief Computes mass flux in ice-equivalent m s-1.
+/*!
+ * Assumes that mass flux is proportional to the shelf-base heat flux.
+ */
 PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   PetscReal L = config.get("water_latent_heat_fusion"),
-		    rho_ocean = config.get("sea_water_density"),
-		    rho_ice = config.get("ice_density");
-		    //beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity");
-			// K/m      Clausius-Clapeyron gradient
+    rho_ocean = config.get("sea_water_density"),
+    rho_ice = config.get("ice_density");
+
   const PetscScalar c_p_ocean	  = 3974.0,   // J/(K*kg), specific heat capacity of ocean mixed layer
-				    gamma_T	  = 1e-4;     // m/s, thermal exchange velocity //FIXME gamma_T should be a function of the friction velocity, not a const
+    gamma_T	  = 1e-4;     // m/s, thermal exchange velocity
+  //FIXME: gamma_T should be a function of the friction velocity, not a const
+
+  PetscScalar ocean_salinity = 35.0; 
 
   PetscScalar T_water = -1.7, //Default in PISM-PIK
-			  T_ocean = 273.15 + T_water;
+    T_ocean = 273.15 + T_water;
 
   // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
   // PetscReal meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * rho_ice); // m s-1
 
-  PetscReal meltfactor = 5e-3;  
+  PetscReal meltfactor = 5e-3;
   bool meltfactorSet;
   double meltfactor_pik;
   ierr = PISMOptionsReal("-meltfactor_pik",
-                           "Uses as a meltfactor as in sub-shelf-melting parameterization of martin_winkelmann11",
-                           meltfactor_pik, meltfactorSet); CHKERRQ(ierr);
+                         "Uses as a meltfactor as in sub-shelf-melting parameterization of martin_winkelmann11",
+                         meltfactor_pik, meltfactorSet); CHKERRQ(ierr);
+
   if (meltfactorSet) {
-    meltfactor = meltfactor_pik; //default is 5e-3 as in martin_winkelmann11 
+    meltfactor = meltfactor_pik; // default is 5e-3 as in martin_winkelmann11
   }
-//   ierr = verbPrintf(2, grid.com,"meltfactor=%f\n",meltfactor); CHKERRQ(ierr);
 
   PetscScalar **H;
   ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
 
 
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-    	  // compute T_f[i][j] according to beckmann_goosse03, which has the
-    	  // meaning of the freezing temperature of the ocean water directly
-    	  // under the shelf, (of salinity 35psu) [this is related to the
-    	  // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
-    	  // details]
-    	  PetscScalar shelfbaseelev = - (rho_ice / rho_ocean) * H[i][j],
-    	  T_f= 273.15+ (0.0939 -0.057 * 35.0 + 7.64e-4 * shelfbaseelev); // add 273.15 to get it in Kelvin... 35 is the salinity
+      // compute T_f[i][j] according to beckmann_goosse03, which has the
+      // meaning of the freezing temperature of the ocean water directly
+      // under the shelf, (of salinity 35psu) [this is related to the
+      // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
+      // details]
+      PetscScalar shelfbaseelev = - (rho_ice / rho_ocean) * H[i][j],
+        T_f= 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
+      // add 273.15 to get it in Kelvin
 
-          // compute ocean_heat_flux according to beckmann_goosse03
-          // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice
-    	  PetscScalar oceanheatflux = meltfactor * rho_ocean * c_p_ocean * gamma_T * (T_ocean - T_f);  // in W/m^2 //TODO T_ocean -> field!
+      // compute ocean_heat_flux according to beckmann_goosse03
+      // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice
+      PetscScalar oceanheatflux = meltfactor * rho_ocean * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
+      // TODO: T_ocean -> field!
 
-      	  // shelfbmassflux is positive if ice is freezing on; here it is always negative:
-      	  // same sign as OceanHeatFlux... positive if massflux FROM ice TO ocean
-      	  result(i,j) = oceanheatflux / (L * rho_ice); // m s-1
+      // shelfbmassflux is positive if ice is freezing on; here it is always negative:
+      // same sign as OceanHeatFlux... positive if massflux FROM ice TO ocean
+      result(i,j) = oceanheatflux / (L * rho_ice); // m s-1
 
-      }
     }
+  }
 
-    ierr = ice_thickness->end_access(); CHKERRQ(ierr);
-    ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -151,7 +158,7 @@ void POConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
 }
 
 PetscErrorCode POConstantPIK::define_variables(set<string> vars, const PIO &nc,
-                                            PISM_IO_Type nctype) {
+                                               PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "shelfbtemp")) {
