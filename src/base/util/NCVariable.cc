@@ -238,9 +238,6 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
   if (grid == NULL)
     SETERRQ(com, 1, "NCVariable::read: grid is NULL.");
 
-  if (grid->da2 == PETSC_NULL)
-    SETERRQ(com, 1, "NCVariable::read: grid.da2 is NULL.");
-
   // Open the file:
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -339,9 +336,6 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
 
   if (grid == NULL)
     SETERRQ(com, 1, "NCVariable::regrid: grid is NULL.");
-
-  if (grid->da2 == PETSC_NULL)
-    SETERRQ(com, 1, "NCVariable::regrid: grid.da2 is NULL.");
 
   // Open the file
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);

@@ -30,6 +30,8 @@ problems associated with the forward problem. */
 PetscErrorCode InvSSAForwardProblem::allocate_ksp()
 {
   PetscErrorCode ierr;
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
 
   // Storage for vector unknowns.
   ierr = DMGetMatrix(SSADA, "baij", &m_MatA); CHKERRQ(ierr);
@@ -39,9 +41,9 @@ PetscErrorCode InvSSAForwardProblem::allocate_ksp()
   ierr = DMCreateGlobalVector(SSADA, &m_VecRHS2); CHKERRQ(ierr);
 
   // Storage for scalar unknowns.
-  ierr = DMGetMatrix(grid.da2, "baij", &m_MatB); CHKERRQ(ierr);
-  ierr = DMCreateGlobalVector(grid.da2, &m_VecRHS); CHKERRQ(ierr);
-  ierr = DMCreateGlobalVector(grid.da2, &m_VecV); CHKERRQ(ierr);
+  ierr = DMGetMatrix(da2, "baij", &m_MatB); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da2, &m_VecRHS); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da2, &m_VecV); CHKERRQ(ierr);
 
   ierr = KSPCreate(grid.com, &m_KSP); CHKERRQ(ierr);
   PetscReal ksp_rtol = 1e-12;
@@ -196,7 +198,7 @@ PetscErrorCode InvSSAForwardProblem::set_zeta(IceModelVec2S &new_zeta )
       (*tauc)(i,j) = tmp;
     }
   }
-  
+
   ierr = tauc->end_access(); CHKERRQ(ierr);
   ierr = new_zeta.end_access();CHKERRQ(ierr);
 
@@ -416,6 +418,9 @@ PetscErrorCode InvSSAForwardProblem::solveTStar( IceModelVec2V &residual, IceMod
   PISMVector2 **Z;
   PetscScalar **RHS;
 
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+
   // Solve the nonlinear forward problem if this has not yet been done.
   ierr = solveF_core(); CHKERRQ(ierr);
 
@@ -450,13 +455,13 @@ PetscErrorCode InvSSAForwardProblem::solveTStar( IceModelVec2V &residual, IceMod
   ierr = DMGlobalToLocalEnd(SSADA, m_VecZ2, INSERT_VALUES, m_VecZ);  CHKERRQ(ierr);
 
   // Assemble the right-hand side for the second step.
-  ierr = DMDAVecGetArray(SSADA,m_VecZ,&Z); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(SSADA,m_VecU,&U); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(grid.da2,m_VecRHS,&RHS); CHKERRQ(ierr);
-  ierr = assemble_TStarB_rhs(Z,U,RHS); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(grid.da2,m_VecRHS,&RHS); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(SSADA,m_VecU,&U); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(SSADA,m_VecZ,&Z); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(SSADA, m_VecZ, &Z); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(SSADA, m_VecU, &U); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da2, m_VecRHS, &RHS); CHKERRQ(ierr);
+  ierr = assemble_TStarB_rhs(Z, U, RHS); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da2, m_VecRHS, &RHS); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(SSADA, m_VecU, &U); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(SSADA, m_VecZ, &Z); CHKERRQ(ierr);
 
 
   // call PETSc to solve linear system by iterative method.
@@ -563,7 +568,7 @@ PetscErrorCode InvSSAForwardProblem::assemble_DomainNorm_matrix()
   } // i
 
   // Until now, the rows and columns corresponding to fixed zeta values have not been set.  We now
-  // put an identity block in for these unknowns.  
+  // put an identity block in for these unknowns.
   if (m_zeta_fixed_locations) {
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -589,11 +594,14 @@ PetscErrorCode InvSSAForwardProblem::domainIP(Vec a, Vec b, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PetscScalar **A, **B;
-  ierr = DMDAVecGetArray(grid.da2,a,&A); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(grid.da2,b,&B); CHKERRQ(ierr);
-  ierr = domainIP_core(A,B,OUTPUT);
-  ierr = DMDAVecRestoreArray(grid.da2,a,&A); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(grid.da2,b,&B); CHKERRQ(ierr);
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+
+  ierr = DMDAVecGetArray(da2, a, &A); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da2, b, &B); CHKERRQ(ierr);
+  ierr = domainIP_core(A, B, OUTPUT);
+  ierr = DMDAVecRestoreArray(da2, a, &A); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da2, b, &B); CHKERRQ(ierr);
   return 0;
 }
 PetscErrorCode InvSSAForwardProblem::domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscScalar *OUTPUT)
@@ -730,7 +738,7 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
   quadrature.getWeightedJacobian(JxW);
 
   if(m_misfit_element_mask!=NULL) {
-    ierr = m_misfit_element_mask->begin_access();CHKERRQ(ierr);    
+    ierr = m_misfit_element_mask->begin_access();CHKERRQ(ierr);
   }
 
   // Loop through all LOCAL elements.
@@ -762,7 +770,7 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
     ierr = m_misfit_weight->end_access();CHKERRQ(ierr);
   }
   if(m_misfit_element_mask!=NULL) {
-    ierr = m_misfit_element_mask->end_access();CHKERRQ(ierr);    
+    ierr = m_misfit_element_mask->end_access();CHKERRQ(ierr);
   }
 
 
@@ -954,7 +962,7 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
   }
 
   if(m_misfit_element_mask!=NULL) {
-    ierr = m_misfit_element_mask->begin_access();CHKERRQ(ierr);    
+    ierr = m_misfit_element_mask->begin_access();CHKERRQ(ierr);
   }
 
   // Jacobian times weights for quadrature.
@@ -1059,7 +1067,7 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
     ierr = m_misfit_weight->end_access();CHKERRQ(ierr);
   }
   if(m_misfit_element_mask!=NULL) {
-    ierr = m_misfit_element_mask->end_access();CHKERRQ(ierr);    
+    ierr = m_misfit_element_mask->end_access();CHKERRQ(ierr);
   }
 
   return 0;

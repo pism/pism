@@ -149,7 +149,7 @@ PetscErrorCode SSA::allocate() {
   long_names.push_back("SSA model ice velocity in the Y direction");
   ierr = velocity.rename("_ssa",long_names,""); CHKERRQ(ierr);
 
-  // mimic IceGrid::createDA() with TRANSPOSE :
+  // mimic IceGrid::allocate() with TRANSPOSE :
   PetscInt dof=2, stencil_width=1;
   ierr = DMDACreate2d(grid.com,
                       DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,

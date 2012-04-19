@@ -63,7 +63,6 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   access_counter = other.access_counter;
   array = other.array;
 
-  da = other.da;
   da_stencil_width = other.da_stencil_width;
   dof = other.dof;
 
@@ -118,22 +117,6 @@ void IceModelVec::inc_state_counter() {
   state_counter++;
 }
 
-
-PetscErrorCode IceModelVec::create_2d_da(DM &result, PetscInt da_dof, PetscInt stencil_width) {
-  PetscErrorCode ierr;
-
-  ierr = DMDACreate2d(grid->com,
-                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-                      DMDA_STENCIL_BOX,
-                      grid->My, grid->Mx, // N, M
-                      grid->Ny, grid->Nx, // n, m
-                      da_dof, stencil_width,
-                      &grid->procs_y[0], &grid->procs_x[0], // ly, lx
-                      &result); CHKERRQ(ierr);
-
-  return 0;
-}
-
 IceModelVec::~IceModelVec() {
   // Only destroy the IceModelVec if it is not a shallow copy:
   if (!shallow_copy) destroy();
@@ -158,10 +141,6 @@ PetscErrorCode  IceModelVec::destroy() {
   if (v != PETSC_NULL) {
     ierr = VecDestroy(&v); CHKERRQ(ierr);
     v = PETSC_NULL;
-  }
-  if ((da != PETSC_NULL) && (dof > 1 || n_levels > 1)) {
-    ierr = DMDestroy(&da); CHKERRQ(ierr);
-    da = PETSC_NULL;
   }
 
   // map-plane viewers:
@@ -334,6 +313,7 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x) {
 PetscErrorCode  IceModelVec::copy_to(Vec destination) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
+
   if (localp) {
     ierr = DMLocalToGlobalBegin(da, v, INSERT_VALUES, destination); CHKERRQ(ierr);
     ierr = DMLocalToGlobalEnd(da, v, INSERT_VALUES, destination); CHKERRQ(ierr);
@@ -348,6 +328,7 @@ PetscErrorCode  IceModelVec::copy_to(Vec destination) {
 PetscErrorCode IceModelVec::copy_from(Vec source) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
+
   if (localp) {
     ierr =   DMGlobalToLocalBegin(da, source, INSERT_VALUES, v);  CHKERRQ(ierr);
     ierr =     DMGlobalToLocalEnd(da, source, INSERT_VALUES, v);  CHKERRQ(ierr);

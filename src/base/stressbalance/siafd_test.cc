@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
     grid.compute_ownership_ranges();
     ierr = grid.compute_vertical_levels(); CHKERRQ(ierr); 
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-    ierr = grid.createDA(); CHKERRQ(ierr);
+    ierr = grid.allocate(); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
     ierr = grid.printInfo(1); CHKERRQ(ierr);

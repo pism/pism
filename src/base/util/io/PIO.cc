@@ -464,7 +464,7 @@ PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid, Periodicity periodi
   ierr = grid->compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid->set_vertical_levels(input.z); CHKERRQ(ierr);
 
-  // We're ready to call grid->createDA().
+  // We're ready to call grid->allocate().
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Ed Bueler
+// Copyright (C) 2010, 2011, 2012 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-    ierr = grid.createDA(); CHKERRQ(ierr);
+    ierr = grid.allocate(); CHKERRQ(ierr);
 
     PetscPrintf(grid.com,"PISMBedSmoother TEST\n");
 

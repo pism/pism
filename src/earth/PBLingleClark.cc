@@ -68,8 +68,11 @@ PetscErrorCode PBLingleClark::transfer_to_proc0(IceModelVec2S *source, Vec resul
 
   ierr = source->copy_to(g2);
 
-  ierr = DMDAGlobalToNaturalBegin(grid.da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
-  ierr =   DMDAGlobalToNaturalEnd(grid.da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+
+  ierr = DMDAGlobalToNaturalBegin(da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
+  ierr =   DMDAGlobalToNaturalEnd(da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
 
   ierr = VecScatterBegin(scatter, g2natural, result, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr =   VecScatterEnd(scatter, g2natural, result, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
@@ -83,8 +86,11 @@ PetscErrorCode PBLingleClark::transfer_from_proc0(Vec source, IceModelVec2S *res
   ierr = VecScatterBegin(scatter, source, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   ierr =   VecScatterEnd(scatter, source, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = DMDANaturalToGlobalBegin(grid.da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr =   DMDANaturalToGlobalEnd(grid.da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+
+  ierr = DMDANaturalToGlobalBegin(da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
+  ierr =   DMDANaturalToGlobalEnd(da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
 
   ierr = result->copy_from(g2); CHKERRQ(ierr);
 
@@ -93,12 +99,14 @@ PetscErrorCode PBLingleClark::transfer_from_proc0(Vec source, IceModelVec2S *res
 
 PetscErrorCode PBLingleClark::allocate() {
   PetscErrorCode ierr;
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
 
-  ierr = DMCreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da2, &g2); CHKERRQ(ierr);
 
   // note we want a global Vec but reordered in the natural ordering so when it is
   // scattered to proc zero it is not all messed up; see above
-  ierr = DMDACreateNaturalVector(grid.da2, &g2natural); CHKERRQ(ierr);
+  ierr = DMDACreateNaturalVector(da2, &g2natural); CHKERRQ(ierr);
   // next get context *and* allocate samplep0 (on proc zero only, naturally)
   ierr = VecScatterCreateToZero(g2natural, &scatter, &Hp0); CHKERRQ(ierr);
 

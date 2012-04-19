@@ -22,6 +22,7 @@
 #include <petscdmda.h>
 #include <vector>
 #include <string>
+#include <map>
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -108,9 +109,7 @@ public:
 
   PetscErrorCode report_parameters();
 
-  PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
-  PetscErrorCode createDA(int procs_x, int procs_y,
-			  int* &lx, int* &ly);
+  PetscErrorCode allocate();  // destructor checks if DA was created, and destroys
   PetscErrorCode set_vertical_levels(vector<double> z_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
@@ -128,11 +127,12 @@ public:
   int       kBelowHeight(PetscScalar height);
   PetscErrorCode create_viewer(int viewer_size, string title, PetscViewer &viewer);
   PetscReal      radius(int i, int j);
+  PetscErrorCode get_dm(PetscInt dm_dof, PetscInt stencil_width, DM &result);
 
   const NCConfigVariable &config;
   MPI_Comm    com;
   PetscMPIInt rank, size;
-  DM          da2;
+  map<int,DM> dms;
 
   int    xs,               //!< starting x-index of a processor sub-domain
     xm,                         //!< number of grid points (in the x-direction) in a processor sub-domain
@@ -195,6 +195,11 @@ protected:
   PetscErrorCode compute_horizontal_coordinates();
   PetscErrorCode compute_fine_vertical_grid();
   PetscErrorCode init_interpolation();
+
+  PetscErrorCode create_dm(PetscInt da_dof, PetscInt stencil_width, DM &result);
+  void destroy_dms();
+
+  int index(int, int);
 };
 
 #endif	/* __grid_hh */

@@ -76,11 +76,8 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, string my_short_name,
 
   ierr = IceModelVec2S::create(my_grid, my_short_name, false, width); CHKERRQ(ierr);
 
-  // create the DA:
-  ierr = create_2d_da(da3, n_records, 1); CHKERRQ(ierr);
-
   // allocate the 3D Vec:
-  ierr = DMCreateGlobalVector(da3, &v3); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da, &v3); CHKERRQ(ierr);
 
   return 0;
 }

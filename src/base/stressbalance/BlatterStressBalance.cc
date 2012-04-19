@@ -78,9 +78,11 @@ BlatterStressBalance::~BlatterStressBalance()
 
 PetscErrorCode BlatterStressBalance::allocate_blatter() {
   PetscErrorCode ierr;
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
 
   ierr = THICreate(grid.com,&thi);CHKERRQ(ierr);
-  ierr = THISetup(grid.com, grid.da2, 2*grid.Lx, 2*grid.Ly, thi, &dmmg); CHKERRQ(ierr);
+  ierr = THISetup(grid.com, da2, 2*grid.Lx, 2*grid.Ly, thi, &dmmg); CHKERRQ(ierr);
 
   // now allocate u, v, and w:
 
