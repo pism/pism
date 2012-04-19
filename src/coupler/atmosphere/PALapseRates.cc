@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,6 +45,19 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
   temp_lapse_rate = convert(temp_lapse_rate, "K/km", "K/m");
 
   precip_lapse_rate = convert(precip_lapse_rate, "m/year / km", "m/s / m");
+
+  precip.init_2d("precip", grid);
+  precip.set_string("pism_intent", "diagnostic");
+  precip.set_string("long_name",
+                    "ice-equivalent precipitation rate with a lapse-rate correction");
+  ierr = precip.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = precip.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  air_temp.init_2d("air_temp", grid);
+  air_temp.set_string("pism_intent", "diagnostic");
+  air_temp.set_string("long_name",
+                      "near-surface air temperature with a lapse-rate correction");
+  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -103,4 +116,59 @@ PetscErrorCode PALapseRates::temp_snapshot(IceModelVec2S &result) {
   ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, temp_lapse_rate); CHKERRQ(ierr);
   return 0;
+}
+
+PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "air_temp")) {
+    ierr = air_temp.define(nc, nctype, true); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "precip")) {
+    ierr = precip.define(nc, nctype, true); CHKERRQ(ierr);
+  }
+
+  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PALapseRates::write_variables(set<string> vars, string filename) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "air_temp")) {
+    IceModelVec2S tmp;
+    ierr = tmp.create(grid, "air_temp", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+
+    ierr = temp_snapshot(tmp); CHKERRQ(ierr);
+
+    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+
+    vars.erase("air_temp");
+  }
+
+  if (set_contains(vars, "precip")) {
+    IceModelVec2S tmp;
+    ierr = tmp.create(grid, "precip", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(precip, 0); CHKERRQ(ierr);
+
+    ierr = mean_precip(tmp); CHKERRQ(ierr);
+    tmp.write_in_glaciological_units = true;
+    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+
+    vars.erase("precip");
+  }
+
+  ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+
+  return 0;
+}
+
+void PALapseRates::add_vars_to_output(string keyword, set<string> &result) {
+  if (keyword != "small") {
+    result.insert("air_temp");
+    result.insert("precip");
+  }
 }

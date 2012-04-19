@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -46,6 +46,21 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
 
   smb_lapse_rate = convert(smb_lapse_rate, "m/year / km", "m/s / m");
 
+  acab.init_2d("acab", grid);
+  acab.set_string("pism_intent", "diagnostic");
+  acab.set_string("long_name",
+                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
+  acab.set_string("standard_name",
+                  "land_ice_surface_specific_mass_balance");
+  ierr = acab.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  artm.init_2d("artm", grid);
+  artm.set_string("pism_intent", "diagnostic");
+  artm.set_string("long_name",
+                  "ice temperature at the ice surface");
+  ierr = artm.set_units("K"); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -61,4 +76,59 @@ PetscErrorCode PSLapseRates::ice_surface_temperature(IceModelVec2S &result) {
   ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, temp_lapse_rate); CHKERRQ(ierr);
   return 0;
+}
+
+PetscErrorCode PSLapseRates::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "artm")) {
+    ierr = artm.define(nc, nctype, true); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "acab")) {
+    ierr = acab.define(nc, nctype, true); CHKERRQ(ierr);
+  }
+
+  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PSLapseRates::write_variables(set<string> vars, string filename) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "artm")) {
+    IceModelVec2S tmp;
+    ierr = tmp.create(grid, "artm", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(artm, 0); CHKERRQ(ierr);
+
+    ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
+
+    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+
+    vars.erase("artm");
+  }
+
+  if (set_contains(vars, "acab")) {
+    IceModelVec2S tmp;
+    ierr = tmp.create(grid, "acab", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(acab, 0); CHKERRQ(ierr);
+
+    ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
+    tmp.write_in_glaciological_units = true;
+    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+
+    vars.erase("acab");
+  }
+
+  ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+
+  return 0;
+}
+
+void PSLapseRates::add_vars_to_output(string keyword, set<string> &result) {
+  if (keyword != "small") {
+    result.insert("artm");
+    result.insert("acab");
+  }
 }
