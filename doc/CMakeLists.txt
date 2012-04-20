@@ -2,16 +2,6 @@
 find_package(LATEX)
 find_package(Doxygen)
 
-# a macro generating .pdf figures from doxygen .dot files
-macro(dot_figures sources)
-  foreach(source ${sources})
-    string(REPLACE ".dot" ".pdf" output "${source}")
-    add_custom_command(OUTPUT ${output}
-      COMMAND ${DOXYGEN_DOT_EXECUTABLE} -Tpdf ${CMAKE_CURRENT_SOURCE_DIR}/${source} -o ${output}
-      DEPENDS ${source})
-  endforeach()
-endmacro()
-
 # a macro creating a custom command generating a PDF document using general and command-line option indices.
 macro(pism_latex_document name src figs)
   # copy files into the build directory:

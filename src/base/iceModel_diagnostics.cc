@@ -1692,6 +1692,7 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   vars[0].set("valid_min",  convert(-1e6, "m/year", "m/s"));
   vars[0].set("valid_max",  convert( 1e6, "m/year", "m/s"));
   vars[0].set("_FillValue", convert( 2e6, "m/year", "m/s"));
+  vars[0].set_string("cell_methods", "time: mean");
 
   last_ice_thickness.create(grid, "last_ice_thickness", false);
   last_ice_thickness.set_attrs("internal",
