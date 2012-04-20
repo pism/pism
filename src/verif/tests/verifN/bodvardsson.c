@@ -12,24 +12,22 @@ static const char help[] =
 "TO DO:  * add Picard or Jacobian\n"
 "        * reasonable initial guesses\n";
 
-#include "petscdmda.h"
-#include "petscsnes.h"
+#include <petscdmda.h>
+#include <petscsnes.h>
 
 #include "../exactTestN.h"
 
 
-/* we will use dof=2 DA, and at each grid point have a thickness H and a velocity u */
+/* we will use dof=2 DMDA, and at each grid point have a thickness H and a velocity u */
 typedef struct {
   PetscReal H, u;
 } Node;
 
 
-/* User-defined application context.  Used especially by FormFunctionLocal().
-   The DA for the solution and RHS must be listed first, because of how
-   SNESDAFormFunction works.  */
+/* User-defined application context.  Used especially by FormFunctionLocal().  */
 typedef struct {
-  DA          da;      /* 1d,dof=2 distributed array for soln and residual */
-  DA          scalarda;/* 1d,dof=1 distributed array for parameters depending on x */
+  DM          da;      /* 1d,dof=2 distributed array for soln and residual */
+  DM          scalarda;/* 1d,dof=1 distributed array for suitable for parameters depending on x */
   PetscMPIInt rank;
   PetscInt    Mx, xs, xm, solnghostwidth;
   PetscBool  upwind1; /* if true, used low-order upwinding */
@@ -61,12 +59,12 @@ static PetscErrorCode FillExactSoln(AppCtx *user)
   PetscFunctionBegin;
   /* Compute regular grid exact soln and staggered-grid thickness over the
      locally-owned part of the grid */
-  ierr = DAVecGetArray(user->da,user->Huexact,&Hu);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(user->da,user->Huexact,&Hu);CHKERRQ(ierr);
   for (i = user->xs; i < user->xs + user->xm; i++) {
     x = user->dx * (PetscReal)i;  /* = x_i = distance from dome */
     ierr = exactN(x, &(Hu[i].H), &dum1, &(Hu[i].u), &dum2, &dum3, &dum4); CHKERRQ(ierr);
   }
-  ierr = DAVecRestoreArray(user->da,user->Huexact,&Hu);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(user->da,user->Huexact,&Hu);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -81,12 +79,12 @@ static PetscErrorCode FillInitial(AppCtx *user, Vec *vHu)
   Node           *Hu;
 
   PetscFunctionBegin;
-  ierr = DAVecGetArray(user->da,*vHu,&Hu);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(user->da,*vHu,&Hu);CHKERRQ(ierr);
   for (i = user->xs; i < user->xs + user->xm; i++) {
     Hu[i].H = 1000.0;
     Hu[i].u = 100.0 / user->secpera;
   }
-  ierr = DAVecRestoreArray(user->da,*vHu,&Hu);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(user->da,*vHu,&Hu);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -103,9 +101,9 @@ static PetscErrorCode FillDistributedParams(AppCtx *user)
   PetscFunctionBegin;
   /* Compute regular grid exact soln and staggered-grid thickness over the
      locally-owned part of the grid */
-  ierr = DAVecGetArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
-  ierr = DAVecGetArray(user->scalarda,user->Bstag,&Bstag);CHKERRQ(ierr);
-  ierr = DAVecGetArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(user->scalarda,user->Bstag,&Bstag);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
   for (i = user->xs; i < user->xs + user->xm; i++) {
     x = user->dx * (PetscReal)i;  /* = x_i = distance from dome; regular grid point */
     ierr = exactN(x, &dum1, &dum2, &dum3, &(M[i]), &dum4, &(beta[i])); CHKERRQ(ierr);
@@ -116,9 +114,9 @@ static PetscErrorCode FillDistributedParams(AppCtx *user)
       Bstag[i] = -9999.9999;  /* never accessed, and we don't have the value anyway */
     }
   }
-  ierr = DAVecRestoreArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(user->scalarda,user->Bstag,&Bstag);CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(user->scalarda,user->Bstag,&Bstag);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -156,7 +154,7 @@ static inline PetscScalar dFSRdright(PetscScalar dx, PetscScalar eps, PetscScala
 
 #undef __FUNCT__
 #define __FUNCT__ "BodFunctionLocal"
-static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, AppCtx *user)
+static PetscErrorCode BodFunctionLocal(DMDALocalInfo *info, Node *Hu, Node *f, AppCtx *user)
 {
   PetscErrorCode ierr;
   PetscReal      rg = user->rho * user->g, dx = user->dx;
@@ -168,13 +166,13 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
   PetscFunctionBegin;
 
   /* we need stencil width on Bstag (but not for M, beta) */
-  ierr = DAGetLocalVector(user->scalarda,&locBstag);CHKERRQ(ierr);  /* do NOT destroy it */
-  ierr = DAGlobalToLocalBegin(user->scalarda,user->Bstag,INSERT_VALUES,locBstag); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalEnd(user->scalarda,user->Bstag,INSERT_VALUES,locBstag); CHKERRQ(ierr);
+  ierr = DMGetLocalVector(user->scalarda,&locBstag);CHKERRQ(ierr);  /* do NOT destroy it */
+  ierr = DMGlobalToLocalBegin(user->scalarda,user->Bstag,INSERT_VALUES,locBstag); CHKERRQ(ierr);
+  ierr = DMGlobalToLocalEnd(user->scalarda,user->Bstag,INSERT_VALUES,locBstag); CHKERRQ(ierr);
 
-  ierr = DAVecGetArray(user->scalarda,locBstag,&Bstag);CHKERRQ(ierr);
-  ierr = DAVecGetArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
-  ierr = DAVecGetArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(user->scalarda,locBstag,&Bstag);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
   for (i = info->xs; i < info->xs + info->xm; i++) {
   
     /* MASS CONT */
@@ -240,11 +238,11 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
 
     }
   }
-  ierr = DAVecRestoreArray(user->scalarda,locBstag,&Bstag);CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(user->scalarda,locBstag,&Bstag);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
 
-  ierr = DARestoreLocalVector(user->scalarda,&locBstag);CHKERRQ(ierr);
+  ierr = DMRestoreLocalVector(user->scalarda,&locBstag);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -253,7 +251,7 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
 #undef __FUNCT__
 #define __FUNCT__ "scshell"
 /* Apply scalings to variables and equations to improve. */
-static PetscErrorCode scshell(DALocalInfo *info, Node *Hu, Node *f, AppCtx *user)
+static PetscErrorCode scshell(DMDALocalInfo *info, Node *Hu, Node *f, AppCtx *user)
 {
   PetscErrorCode ierr;
   PetscInt i,
@@ -312,7 +310,7 @@ static PetscScalar scentry(AppCtx *user, MatStencil row, MatStencil col, PetscSc
 #undef __FUNCT__
 #define __FUNCT__ "BodJacobianMatrixLocal"
 /* Evaluate analytical Jacobian matrix. */
-static PetscErrorCode BodJacobianMatrixLocal(DALocalInfo *info, Node *Hu, Mat jac, AppCtx *user)
+static PetscErrorCode BodJacobianMatrixLocal(DMDALocalInfo *info, Node *Hu, Mat jac, AppCtx *user)
 {
   PetscErrorCode ierr;
   PetscInt       i;
@@ -397,8 +395,6 @@ int main(int argc,char **argv)
                          errnorms[2], descaleNode[2];
   PetscBool             eps_set = PETSC_FALSE, dump = PETSC_FALSE, exactinitial = PETSC_FALSE,
                          snes_mf_set, snes_fd_set;
-  MatFDColoring          matfdcoloring = 0;
-  ISColoring             iscoloring;
   SNESConvergedReason    reason;               /* Check convergence */
   
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -422,8 +418,14 @@ int main(int argc,char **argv)
   /* tools for non-dimensionalizing to improve equation scaling */
   user.scaleNode[0] = 1000.0;  user.scaleNode[1] = 100.0 / user.secpera;
   
-  ierr = PetscOptionsTruth("-snes_mf","","",PETSC_FALSE,&snes_mf_set,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsTruth("-snes_fd","","",PETSC_FALSE,&snes_fd_set,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(PETSC_COMM_WORLD,
+           "","options to ssa (bodvardsson case) solver","");CHKERRQ(ierr);
+  {
+    ierr = PetscOptionsBool("-snes_mf","","",PETSC_FALSE,&snes_mf_set,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-snes_fd","","",PETSC_FALSE,&snes_fd_set,NULL);CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd();CHKERRQ(ierr);
+
   if (!snes_mf_set && !snes_fd_set) { 
     PetscPrintf(PETSC_COMM_WORLD,
        "\n***ERROR: bodvardsson needs one or zero of '-snes_mf', '-snes_fd'***\n\n"
@@ -446,9 +448,9 @@ int main(int argc,char **argv)
   ierr = PetscOptionsBegin(PETSC_COMM_WORLD,NULL,
       "bodvardsson program options",__FILE__);CHKERRQ(ierr);
   {
-    ierr = PetscOptionsTruth("-bod_up_one","","",PETSC_FALSE,&user.upwind1,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsTruth("-bod_exact_init","","",PETSC_FALSE,&exactinitial,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsTruth("-bod_dump",
+    ierr = PetscOptionsBool("-bod_up_one","","",PETSC_FALSE,&user.upwind1,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-bod_exact_init","","",PETSC_FALSE,&exactinitial,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-bod_dump",
       "dump out exact and approximate solution and residual, as asci","",
       dump,&dump,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsReal("-bod_epsilon","regularization (a strain rate in units of 1/a)","",
@@ -457,33 +459,38 @@ int main(int argc,char **argv)
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
 
-  /* Create machinery for parallel grid management (DA), nonlinear solver (SNES), 
+  /* Create machinery for parallel grid management (DMDA), nonlinear solver (SNES), 
      and Vecs for fields (solution, RHS).  Note default Mx=46 grid points means
      dx=10 km.  Also degrees of freedom = 2 (thickness and velocity
      at each point) and stencil radius = ghost width = 2 for 2nd-order upwinding.  */
   user.solnghostwidth = 2;
-  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-46,2,user.solnghostwidth,PETSC_NULL,&user.da);
+  ierr = DMDACreate1d(PETSC_COMM_WORLD,DMDA_BOUNDARY_NONE,-46,2,user.solnghostwidth,PETSC_NULL,&user.da);
             CHKERRQ(ierr);
-  ierr = DASetUniformCoordinates(user.da,0.0,user.xc,
+  ierr = DMSetApplicationContext(user.da,&user);CHKERRQ(ierr);
+  ierr = DMDASetUniformCoordinates(user.da,0.0,user.xc,
                                  PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
-  ierr = DASetFieldName(user.da,0,"ice thickness [non-dimensional]"); CHKERRQ(ierr);
-  ierr = DASetFieldName(user.da,1,"ice velocity [non-dimensional]"); CHKERRQ(ierr);
-  ierr = DAGetInfo(user.da,PETSC_IGNORE,&user.Mx,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
-                   PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);
-  ierr = DAGetCorners(user.da,&user.xs,PETSC_NULL,PETSC_NULL,&user.xm,PETSC_NULL,PETSC_NULL);
+
+  ierr = DMDASetFieldName(user.da,0,"ice thickness [non-dimensional]"); CHKERRQ(ierr);
+  ierr = DMDASetFieldName(user.da,1,"ice velocity [non-dimensional]"); CHKERRQ(ierr);
+
+  ierr = DMDAGetInfo(user.da,PETSC_IGNORE,&user.Mx,PETSC_IGNORE,
+                     PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
+                     PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
+                     PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);CHKERRQ(ierr);
+  ierr = DMDAGetCorners(user.da,&user.xs,PETSC_NULL,PETSC_NULL,&user.xm,PETSC_NULL,PETSC_NULL);
                    CHKERRQ(ierr);
   user.dx = user.xc / (PetscReal)(user.Mx-1);
 
-  /* another DA for scalar parameters, with same length */
-  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,user.Mx,1,1,PETSC_NULL,&user.scalarda);CHKERRQ(ierr);
-  ierr = DASetUniformCoordinates(user.scalarda,0.0,user.xc,
+  /* another DMDA for scalar parameters, with same length */
+  ierr = DMDACreate1d(PETSC_COMM_WORLD,DMDA_BOUNDARY_NONE,user.Mx,1,1,PETSC_NULL,&user.scalarda);CHKERRQ(ierr);
+  ierr = DMDASetUniformCoordinates(user.scalarda,0.0,user.xc,
                                  PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
-  /* check that parallel layout of scalar DA is same as dof=2 DA */
-  ierr = DAGetCorners(user.scalarda,&tmpxs,PETSC_NULL,PETSC_NULL,&tmpxm,PETSC_NULL,PETSC_NULL);
+  /* check that parallel layout of scalar DMDA is same as dof=2 DMDA */
+  ierr = DMDAGetCorners(user.scalarda,&tmpxs,PETSC_NULL,PETSC_NULL,&tmpxm,PETSC_NULL,PETSC_NULL);
                    CHKERRQ(ierr);
   if ((tmpxs != user.xs) || (tmpxm != user.xm)) {
     PetscPrintf(PETSC_COMM_SELF,
-       "\n***ERROR: rank %d gets different ownership range for the two DAs!  ENDING ...***\n\n",
+       "\n***ERROR: rank %d gets different ownership range for the two DMDAs!  ENDING ...***\n\n",
        user.rank);
     PetscEnd();
   }
@@ -492,38 +499,26 @@ int main(int argc,char **argv)
       "  Mx = %D points, dx = %.3f m\n  H0 = %.2f m, xc = %.2f km, Txc = %.5e Pa m\n",
       user.Mx, user.dx, user.H0, user.xc/1000.0, user.Txc);CHKERRQ(ierr);
 
-  /* Extract/allocate global vectors from DAs and duplicate for remaining same types */
-  ierr = DACreateGlobalVector(user.da,&Hu);CHKERRQ(ierr);
+  /* Extract/allocate global vectors from DMDAs and duplicate for remaining same types */
+  ierr = DMCreateGlobalVector(user.da,&Hu);CHKERRQ(ierr);
   ierr = VecSetBlockSize(Hu,2);CHKERRQ(ierr);
   ierr = VecDuplicate(Hu,&r);CHKERRQ(ierr); /* inherits block size */
   ierr = VecDuplicate(Hu,&user.Huexact);CHKERRQ(ierr); /* ditto */
 
-  ierr = DACreateGlobalVector(user.scalarda,&user.M);CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(user.scalarda,&user.M);CHKERRQ(ierr);
   ierr = VecDuplicate(user.M,&user.Bstag);CHKERRQ(ierr);
   ierr = VecDuplicate(user.M,&user.beta);CHKERRQ(ierr);
 
-  ierr = DASetLocalFunction(user.da,(DALocalFunction1)scshell);CHKERRQ(ierr);
-  ierr = DASetLocalJacobian(user.da,(DALocalFunction1)BodJacobianMatrixLocal);CHKERRQ(ierr);
-
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes);CHKERRQ(ierr);
+  ierr = SNESSetDM(snes,user.da);CHKERRQ(ierr);
+  ierr = SNESSetApplicationContext(snes,&user);CHKERRQ(ierr);
 
-  ierr = SNESSetFunction(snes,r,SNESDAFormFunction,&user);CHKERRQ(ierr);
+  ierr = DMDASetLocalFunction(user.da,(DMDALocalFunction1)scshell);CHKERRQ(ierr);
+  ierr = DMDASetLocalJacobian(user.da,(DMDALocalFunction1)BodJacobianMatrixLocal);CHKERRQ(ierr);
+
 
   /* setting up a matrix is only actually needed for -snes_fd case */
-  ierr = DAGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
-
-  if (snes_fd_set) {
-    /* tools needed so DA can use sparse matrix for its F.D. Jacobian approx */
-    ierr = DAGetColoring(user.da,IS_COLORING_GLOBAL,MATAIJ,&iscoloring);CHKERRQ(ierr);
-    ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
-    ierr = ISColoringDestroy(iscoloring);CHKERRQ(ierr);
-    ierr = MatFDColoringSetFunction(matfdcoloring,
-               (PetscErrorCode (*)(void))SNESDAFormFunction,&user);CHKERRQ(ierr);
-    ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
-    ierr = SNESSetJacobian(snes,J,J,SNESDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
-  } else {
-    ierr = SNESSetJacobian(snes,J,J,SNESDAComputeJacobian,&user);CHKERRQ(ierr);
-  }
+  ierr = DMGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
@@ -574,19 +569,19 @@ int main(int argc,char **argv)
            "(dx,errHinf,erruinf) %.3f %.4e %.4e\n",
            user.dx,errnorms[0],errnorms[1]*user.secpera);CHKERRQ(ierr);
 
-  ierr = VecDestroy(Hu);CHKERRQ(ierr);
-  ierr = VecDestroy(r);CHKERRQ(ierr);
-  ierr = VecDestroy(user.Huexact);CHKERRQ(ierr);
-  ierr = VecDestroy(user.M);CHKERRQ(ierr);
-  ierr = VecDestroy(user.Bstag);CHKERRQ(ierr);
-  ierr = VecDestroy(user.beta);CHKERRQ(ierr);
+  ierr = VecDestroy(&Hu);CHKERRQ(ierr);
+  ierr = VecDestroy(&r);CHKERRQ(ierr);
+  ierr = VecDestroy(&(user.Huexact));CHKERRQ(ierr);
+  ierr = VecDestroy(&(user.M));CHKERRQ(ierr);
+  ierr = VecDestroy(&(user.Bstag));CHKERRQ(ierr);
+  ierr = VecDestroy(&(user.beta));CHKERRQ(ierr);
 
-  ierr = MatDestroy(J); CHKERRQ(ierr);
+  ierr = MatDestroy(&J); CHKERRQ(ierr);
 
-  ierr = SNESDestroy(snes);CHKERRQ(ierr);
+  ierr = SNESDestroy(&snes);CHKERRQ(ierr);
 
-  ierr = DADestroy(user.da);CHKERRQ(ierr);
-  ierr = DADestroy(user.scalarda);CHKERRQ(ierr);
+  ierr = DMDestroy(&(user.da));CHKERRQ(ierr);
+  ierr = DMDestroy(&(user.scalarda));CHKERRQ(ierr);
 
   ierr = PetscFinalize();CHKERRQ(ierr);
   return 0;
