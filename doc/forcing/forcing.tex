@@ -50,39 +50,39 @@ urlcolor=blue     % only if colorlinks=true
 
     {\Large The PISM Authors}
     \vspace{1cm}
-
-    \vfill
-
-    \small Support by email: \PISMEMAIL.
-    \medskip
-
-    Manual date \today. Based on PISM \PISMREV.
-    \medskip
-
-    \PISMDOWNLOADMSG
   \end{center}
-\end{titlepage}
 
-\newpage
-\phantom{bob}
+\setcounter{tocdepth}{3}
+\small
+\tableofcontents
+\normalsize
 
-\begin{center}
-  Please see the \emph{PISM User's Manual} for the list of authors
-\end{center}
+\vspace{0.3in}
 
-\vspace{0.2in}
+  \begin{center}
+    \small Support by email: \PISMEMAIL.
+
+    \medskip
+    Please see the \emph{PISM User's Manual} for the full list of authors.
+    
+    \medskip
+    Manual date \today.  Based on PISM \PISMREV.
+
+    \medskip
+    \PISMDOWNLOADMSG
+
+  \end{center}
+
+\vspace{0.3in}
 \begin{quote}
   \textsl{Copyright (C) 2004--2012 The PISM Authors}
   \medskip
 
   \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
 \end{quote}
-
-\newpage
-\setcounter{tocdepth}{3}
-\small
-\tableofcontents
 \normalsize
+
+\end{titlepage}
 
 \newpage
 
@@ -90,26 +90,47 @@ urlcolor=blue     % only if colorlinks=true
 \section{Introduction}
 \label{sec:intro}
 
-This document contains descriptions of  PISM's climate forcing code and options
-that     control     it.      Please     see     User's     Manual,     section
-\ref*{userman-sec:climate-inputs},  for an overview  of PISM's  climate forcing
-\emph{interfaces}.
+This document describes PISM's climate forcing code and options
+that control it.  Please see the PISM User's Manual, section
+\ref*{userman-sec:climate-inputs}, for an overview  of PISM's surface
+(atmosphere) and ocean climatic inputs and interfaces.  At these interfaces
+the surface mass and energy balances are determined and/or passed to the ice
+dynamics code.  PISM has well-defined separation of climate forcing
+from ice dynamics, and most options mentioned in the User's Manual
+control the ice dynamics part.
 
-Setting up PISM's boundary models requires selecting one \emph{surface} and one
-\emph{ocean} model, and possibly one \emph{atmosphere} model--- depending on
-the surface model choice.
+This manual distinguishes between those parts of PISM which are related
+to coupling and climate forcing, namely ``components'', and the actual
+physical ``models'' which the components incorporate.  Choosing components by
+options always implies a choice of physical model for how climate forcing fields
+become the fields used by the ice dynamics parts of PISM.  These physical models may be
+very simple, however, with no actual changes to climate input fields in some cases.
+
+Setting up PISM's climate interface requires selecting one \emph{surface} and one
+\emph{ocean} component.  The surface component may use an \emph{atmosphere}
+component also.
 
 Command-line options \texttt{-atmosphere}, \texttt{-surface} and
 \texttt{-ocean} each take a comma-separated list of keywords as an argument;
-the first keyword \emph{has} to correspond to a model, the rest can be
-modifiers. Any of these options can be omitted to use the default atmosphere,
-surface or ocean model, although one has to choose a model to use a modifier.
+the first keyword \emph{has} to correspond to a model component, the rest can be
+``modifier'' components.  Any of these options can be omitted to use the
+default atmosphere, surface or ocean model components, although one has to
+choose a model component to use a modifier.  Model components and modifiers
+are chained as in Figure \ref{fig:climate-input-data-flow-repeated}.
+% which is Figure~\ref*{userman-fig:climate-input-data-flow} of the User's Manual
 
-Selected models and modifiers are chained as in
-Figure~\ref*{userman-fig:climate-input-data-flow} of the User's Manual.
+\begin{figure}
+  \centering
+  \includegraphics[width=5in]{../userman/figs/data-flow.pdf}
+  \caption{PISM climate input data flow. Colored arrows correspond to interfaces in
+    Figure \ref*{userman-fig:climate-inputs} in the User's Manual.}
+  \label{fig:climate-input-data-flow-repeated}
+\end{figure}
 
-Please see section~\ref{sec:known-use-cases} for examples.
+Section~\ref{sec:known-use-cases} describes examples of components and modifiers.  First, however, we must address how PISM handles model time (Section~\ref{sec:model-time}).
 
+
+\newpage
 \section{Managing model time}
 \label{sec:model-time}
 \optsection{Managing model time}
@@ -117,11 +138,9 @@ Please see section~\ref{sec:known-use-cases} for examples.
 
 Most of PISM only needs to know  how long the current time step is. The climate
 forcing  code,  on  the other  hand,  uses  time  to provide  correct  boundary
-conditions to other components.
-
-This section describes how to control model time to ensure that the February
-mass balance is used for 28 and not $365/12 = 30.4167$ days--- and related
-issues.
+conditions to other components.  For example of the issues related to time
+and calendars, this section describes how to control model time to ensure
+that the February mass balance is used for 28 days and not $365/12 = 30.4167$ days.
 
 \subsection{Periodic climate data}
 \label{sec:periodic-forcing}
@@ -282,7 +301,9 @@ It is also possible to save spatial and/or scalar time-series daily, monthly or
 yearly (using the Gregorian calendar). See sections~\ref*{userman-sec:saving-time-series}
 and~\ref*{userman-sec:saving-spat-vari} of the User's Manual.
 
-\section{Known use cases (and corresponding options)}
+
+\clearpage\newpage
+\section{Usage cases and corresponding options}
 \label{sec:known-use-cases}
 
 This section gives a very brief overview of some coupling options. Please see sections referenced below for more information.
@@ -511,6 +532,8 @@ will produce \texttt{foo.nc} containing a ``movie'' very similar to the one crea
 
 In addition to \texttt{foo.nc}, the latter command will produce \texttt{ts.nc} containing scalar time-series. The variable \texttt{surface_ice_flux} (the \emph{total over the ice-covered area} of the surface mass flux) can be used to detect if climate forcing is applied at the right time.
 
+
+\clearpage\newpage
 \newcommand{\surface}{Surface models (\texttt{-surface})}
 \section{Surface mass and energy process models}
 \label{sec:surface}
@@ -769,10 +792,10 @@ latitude (variable \variable{lat}) and surface elevation (dynamically updated
 by PISM). See equation~(1) in~\cite{Martinetal2011}.
 
 \newcommand{\surfacemods}{Surface model modifiers}
-\section{Surface model modifiers}
+%\section{Surface model modifiers}
 \label{sec:modifiers}
 
-\subsection{Scalar temperature offsets}
+\subsection{Modifier: Scalar temperature offsets}
 \label{sec:surface-delta-T}
 \optsection{SB@\surfacemods!\texttt{delta_T}}
 
@@ -802,7 +825,7 @@ This modifier is identical to the corresponding atmosphere modifier, but
 applies offsets at a different stage in the computation of top-surface boundary
 conditions needed by the ice dynamics core.
 
-\subsection{Lapse rate corrections}
+\subsection{Modifier: Lapse rate corrections}
 \label{sec:surface-lapse-rate}
 \optsection{SB@\surfacemods!\texttt{lapse_rate}}
 
@@ -842,7 +865,7 @@ options.
   interpreted as corresponding to $t$ years since $T$.
 \end{itemize}
 
-\subsection{Surface mass flux adjustment}
+\subsection{Modifier: Surface mass flux adjustment}
 \label{sec:smb-adjustment}
 \optsection{SB@\surfacemods!\texttt{forcing}}
 
@@ -889,7 +912,7 @@ as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field
 default value specified in the \emph{Source Code Browser}
 \url{\PISMBROWSERURL}.
 
-\subsection{Anomalies}
+\subsection{Modifier: Anomalies}
 \label{sec:surface-anomaly}
 \optsection{SB@\surfacemods!\texttt{anomaly}}
 
@@ -922,6 +945,8 @@ See also to \texttt{-atmosphere~...,anomaly}
 (section~\ref{sec:atmosphere-anomaly}), which is similar, but applies anomalies
 at the atmosphere level.
 
+
+\clearpage\newpage
 
 \newcommand{\atmosphere}{Atmosphere models (\texttt{-atmosphere})}
 \section{Atmosphere models}
@@ -1023,10 +1048,10 @@ The parameterization is the same as in the \texttt{-surface pik} model,
 section~\ref{sec:surface-pik}.
 
 \newcommand{\atmospheremods}{Atmosphere modifiers (\texttt{-atmosphere})}
-\section{Atmosphere model modifiers}
+%\section{Atmosphere model modifiers}
 \label{sec:atmosphere-mods}
 
-\subsection{Scalar temperature offsets}
+\subsection{Modifier: Scalar temperature offsets}
 \label{sec:atmosphere-delta-temp}
 \optsection{\atmospheremods!\texttt{delta_T}}
 
@@ -1050,7 +1075,7 @@ file PISM will read \variable{delta_T} from.
 \item \intextoption{atmosphere_delta_T_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
 \end{itemize}
 
-\subsection{Scalar precipitation offsets}
+\subsection{Modifier: Scalar precipitation offsets}
 \label{sec:atmosphere-delta-precip}
 \optsection{\atmospheremods!\texttt{delta_P}}
 
@@ -1074,7 +1099,7 @@ file PISM will read \variable{delta_P} from.
 \item \intextoption{atmosphere_delta_P_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
 \end{itemize}
 
-\subsection{Lapse rate corrections}
+\subsection{Modifier: Lapse rate corrections}
 \label{sec:atmosphere-lapse-rates}
 \optsection{\atmospheremods!\texttt{lapse_rate}}
 
@@ -1111,7 +1136,7 @@ precipitation using elevation lapse rates. It uses the following options.
 \item \intextoption{atmosphere_lapse_rate_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
 
-\subsection{Anomalies}
+\subsection{Modifier: Anomalies}
 \label{sec:atmosphere-anomaly}
 \optsection{\atmospheremods!\texttt{anomaly}}
 
@@ -1143,6 +1168,9 @@ It takes the following options:
 See also to \texttt{-surface~...,anomaly}
 (section~\ref{sec:surface-anomaly}), which is similar, but applies anomalies
 at the surface level.
+
+
+\clearpage\newpage
 
 \newcommand{\ocean}{Ocean models (\texttt{-ocean})}
 \section{Ocean models}
@@ -1216,7 +1244,7 @@ This ocean model takes one command-line option:
 \end{itemize}
 
 \newcommand{\oceanmods}{Ocean model modifiers}
-\section{Ocean model modifiers}
+%\section{Ocean model modifiers}
 \label{sec:ocean-mods}
 
 Boundary conditions provided by an ocean model can optionally be passed through one or more of ocean model modifiers.
@@ -1227,7 +1255,7 @@ Modifiers are chained together. For example:
 \end{verbatim}
 Enables all three modifiers described below.
 
-\subsection{Scalar sea level offsets}
+\subsection{Modifier: Scalar sea level offsets}
 \label{sec:delta-sea-level}
 \optsection{OB@\oceanmods!\texttt{delta_SL}}
 
@@ -1250,7 +1278,7 @@ It takes the following command-line options:
 \item \intextoption{ocean_delta_SL_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
 
-\subsection{Scalar sub-shelf temperature offsets}
+\subsection{Modifier: Scalar sub-shelf temperature offsets}
 \label{sec:delta-subshelf-temp}
 \optsection{OB@\oceanmods!\texttt{delta_T}}
 
@@ -1273,7 +1301,7 @@ It takes the following command-line options:
 \item \intextoption{ocean_delta_T_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
 
-\subsection{Scalar sub-shelf mass flux offsets}
+\subsection{Modifier: Scalar sub-shelf mass flux offsets}
 \label{sec:delta-subshelf-smb}
 \optsection{OB@\oceanmods!\texttt{delta_SMB}}
 
