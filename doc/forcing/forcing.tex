@@ -137,93 +137,18 @@ Section~\ref{sec:known-use-cases} describes examples of components and modifiers
 \index{Time}
 
 Most of PISM only needs to know  how long the current time step is. The climate
-forcing  code,  on  the other  hand,  uses  time  to provide  correct  boundary
-conditions to other components.  For example of the issues related to time
+forcing  code,  on  the other  hand,  uses  time in a precise manner
+to provide the correct values at the right time.  For example of the issues related to time
 and calendars, this section describes how to control model time to ensure
 that the February mass balance is used for 28 days and not $365/12 = 30.4167$ days.
 
-\subsection{Periodic climate data}
-\label{sec:periodic-forcing}
-\index{Time!periodic}
-
-All components reading time-dependent forcing data from files can interpret
-it as ``periodic''. Each component has a unique command-line option
-prefix. Please refer to corresponding sections for values of the prefix.
-
-The length of the period (in years) is specified using \texttt{-..._period}
-option. For example, to prescribe constant (from year to year) climate which includes
-inter-annual variations using the \texttt{-surface given} option, set:
-\begin{verbatim}
--surface given -surface_given_period 1 -surface_given_file forcing.nc
-\end{verbatim}
-
-If forcing data has the period other than one year it is also
-necessary to specify the ``starting time'' using the
-\texttt{-..._reference_year} option.
-
-For example, to use a 20 year long climate record as periodic climate starting
-at the beginning of the model year 10, do
-\begin{verbatim}
--surface given -surface_given_period 20 -surface_given_file forcing.nc \
--surface_given_reference_year 10
-\end{verbatim}
-
-Note that the reference year is given in \emph{model years}, not calendar
-years. We find that it is usually possible to avoid confusion by starting runs
-corresponding to specific historical periods at model year zero and using the
-\intextoption{reference_date} option to tie the run to a particular date. For instance,
-\begin{verbatim}
--surface given -surface_given_period 20 -surface_given_file forcing.nc \
--ys 0 -reference_date 1989-1-1
-\end{verbatim}
-will use climate data as periodic with the period of 20 years starting on
-January 1, 1989. Please see section~\ref{sec:calendars} for more details.
-
-The \variable{time} variable  in a forcing file that is to  be used as periodic
-should start at $0$. (In other words, time in a file with periodic forcing data
-is  \emph{time  since   the  beginning  of  a  period}.)   Please  see  section
-\ref{sec:calendars}  for a  discussion  of time  units  appropriate in  forcing
-files.
-
-\subsection{Using time bounds in forcing data}
-\label{sec:time-bounds}
-\index{Time!bounds}
-
-PISM interprets climate forcing data as piecewise-constant in time. A forcing file can specify time bounds corresponding to each record by following the CF (Climate and Forecasting) meta-data conventions.
-
-The \texttt{ncdump -h} output from a conforming file would look similar to the
-following:
-\begin{verbatim}
-netcdf forcing {
-dimensions:
-        time = UNLIMITED ; // (214 currently)
-        nv = 2 ;
-variables:
-        double time(time) ;
-                time:units = "seconds since 2000-1-1" ;
-                time:axis = "T" ;
-                time:bounds = "time_bounds" ;
-                time:calendar = "gregorian" ;
-                time:long_name = "time" ;
-        double nv(nv) ;
-        double time_bounds(time, nv) ;
-\end{verbatim}
-
-The \variable{time_bounds} variable stores the starting and the ending time for
-each interval in the forcing. This variable is assumed to have the same units
-as the \variable{time} variable it is associated with, which is why its arguments
-are not set in this example.
-
-Please see the
-\href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#cell-boundaries}{CF
-Conventions} document for details.
 
 \subsection{Calendars}
 \label{sec:calendars}
 \index{Time!calendars}
 
 Internally PISM stores time in ``seconds since a specified moment'' and
-does not use or need a calendar.
+does not use or need a calendar.  We refer to PISM internal time as \emph{model time}.
 
 However, XX-century and prognostic runs require knowledge of lengths of months
 and years, both to use climate data properly and to facilitate model validation.
@@ -300,6 +225,88 @@ will extract the reference date and run length from \texttt{forcing.nc}, respect
 It is also possible to save spatial and/or scalar time-series daily, monthly or
 yearly (using the Gregorian calendar). See sections~\ref*{userman-sec:saving-time-series}
 and~\ref*{userman-sec:saving-spat-vari} of the User's Manual.
+
+
+\subsection{Periodic climate data}
+\label{sec:periodic-forcing}
+\index{Time!periodic}
+
+All components reading time-dependent forcing data from files can interpret
+it as ``periodic''.  The length of the period (in years) is specified using
+a \texttt{-..._period} option.  For example, to prescribe a periodic climate
+which has the same values each year but which includes
+inter-annual variations, using the \texttt{-surface given} option, set:
+\begin{verbatim}
+-surface given -surface_given_period 1 -surface_given_file forcing.nc
+\end{verbatim}
+
+Each component has a unique command-line option prefix for a
+\texttt{-..._period} option. Please refer to corresponding sections for
+allowed prefixes.
+
+If forcing data has the period other than one year it is also
+necessary to specify the ``starting time'' using the
+\texttt{-..._reference_year} option.
+
+For example, to use a 20 year long climate record as periodic climate starting
+at the beginning of the model year 10, do
+\begin{verbatim}
+-surface given -surface_given_period 20 -surface_given_file forcing.nc \
+-surface_given_reference_year 10
+\end{verbatim}
+
+Note that the reference year is given in \emph{model years}, not calendar
+years. We find that it is usually possible to avoid confusion by starting runs
+corresponding to specific historical periods at model year zero and using the
+\intextoption{reference_date} option to tie the run to a particular date. For instance,
+\begin{verbatim}
+-surface given -surface_given_period 20 -surface_given_file forcing.nc \
+-ys 0 -reference_date 1989-1-1
+\end{verbatim}
+will use climate data as periodic with the period of 20 years starting on
+January 1, 1989. Please see section~\ref{sec:calendars} for more details.
+
+The \variable{time} variable  in a forcing file that is to  be used as periodic
+should start at $0$. (In other words, time in a file with periodic forcing data
+is  \emph{time  since   the  beginning  of  a  period}.)   Please  see  section
+\ref{sec:calendars}  for a  discussion  of time  units  appropriate in  forcing
+files.
+
+
+\subsection{Using time bounds in forcing data}
+\label{sec:time-bounds}
+\index{Time!bounds}
+
+PISM interprets climate forcing data as piecewise-constant in time. A forcing file can specify time bounds corresponding to each record by following the CF (Climate and Forecasting) meta-data conventions.
+
+The \texttt{ncdump -h} output from a conforming file would look similar to the
+following:
+\begin{verbatim}
+netcdf forcing {
+dimensions:
+        time = UNLIMITED ; // (214 currently)
+        nv = 2 ;
+variables:
+        double time(time) ;
+                time:units = "seconds since 2000-1-1" ;
+                time:axis = "T" ;
+                time:bounds = "time_bounds" ;
+                time:calendar = "gregorian" ;
+                time:long_name = "time" ;
+        double nv(nv) ;
+        double time_bounds(time, nv) ;
+\end{verbatim}
+
+The \variable{time_bounds} variable stores the starting and the ending time for
+each interval in the forcing. This variable is assumed to have the same units
+as the \variable{time} variable it is associated with, which is why its arguments
+are not set in this example.
+
+Please see the
+\href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#cell-boundaries}{CF
+Conventions} document for details.
+
+
 
 
 \clearpage\newpage
