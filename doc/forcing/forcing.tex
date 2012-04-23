@@ -90,44 +90,52 @@ urlcolor=blue     % only if colorlinks=true
 \section{Introduction}
 \label{sec:intro}
 
-This document describes PISM's climate forcing code and options
-that control it.  Please see the PISM User's Manual, section
-\ref*{userman-sec:climate-inputs}, for an overview  of PISM's surface
-(atmosphere) and ocean climatic inputs and interfaces.  At these interfaces
-the surface mass and energy balances are determined and/or passed to the ice
-dynamics code.  PISM has well-defined separation of climate forcing
-from ice dynamics, and most options mentioned in the User's Manual
-control the ice dynamics part.
+PISM has well-defined separation of climate forcing
+from ice dynamics.  Most options documented in the PISM User's Manual
+control the ice dynamics part, but section
+\ref*{userman-sec:climate-inputs} of the User's Manual gives an overview
+of PISM's surface (atmosphere) and ocean (sub-shelf) interfaces.  At
+these interfaces the surface mass and energy balances are determined
+and/or passed to the ice dynamics code.
 
-This manual distinguishes between those parts of PISM which are related
-to coupling and climate forcing, namely ``components'', and the actual
-physical ``models'' which the components incorporate.  Choosing components by
-options always implies a choice of physical model for how climate forcing fields
+The current manual describes the PISM ``climate forcing'' components that
+implement those interfaces.  It documents the options that control
+these components.  Notice that we distinguish between portions of PISM code
+which are related to coupling and climate forcing, namely ``components'',
+and the physical models which the components incorporate.  Models
+are science while components are just pieces of code.  Options
+choose components and these implement models for how climate forcing fields
 become the fields used by the ice dynamics parts of PISM.  These physical models may be
 very simple, however, with no actual changes to climate input fields in some cases.
 
-Setting up PISM's climate interface requires selecting one \emph{surface} and one
-\emph{ocean} component.  The surface component may use an \emph{atmosphere}
-component also.
+Section~\ref{sec:known-use-cases} describes examples of components and modifiers.  First, however, we must address how PISM handles model time (Section~\ref{sec:model-time}).
 
-Command-line options \texttt{-atmosphere}, \texttt{-surface} and
+\vspace{0.3in}
+
+\begin{quote}
+\begin{center}
+\emph{Summary of the main idea in using this manual:}
+\end{center}
+
+Setting up PISM's climate interface requires selecting one surface and one
+ocean component.  The surface component may use an atmosphere
+component also; see Figure \ref{fig:climate-input-data-flow-repeated}.  Command-line options \texttt{-atmosphere}, \texttt{-surface} and
 \texttt{-ocean} each take a comma-separated list of keywords as an argument;
 the first keyword \emph{has} to correspond to a model component, the rest can be
 ``modifier'' components.  Any of these options can be omitted to use the
 default atmosphere, surface or ocean model components, although one has to
-choose a model component to use a modifier.  Model components and modifiers
+explicitly choose a model component to use a modifier.  Model components and modifiers
 are chained as in Figure \ref{fig:climate-input-data-flow-repeated}.
 % which is Figure~\ref*{userman-fig:climate-input-data-flow} of the User's Manual
+\end{quote}
 
 \begin{figure}
   \centering
   \includegraphics[width=5in]{../userman/figs/data-flow.pdf}
-  \caption{PISM climate input data flow. Colored arrows correspond to interfaces in
-    Figure \ref*{userman-fig:climate-inputs} in the User's Manual.}
+  \caption{PISM climate input data flow.  Colored arrows correspond to interfaces in
+    Figure \ref*{userman-fig:climate-inputs} in the User's Manual.  Notice that the atmosphere component is only needed for some surface models.}
   \label{fig:climate-input-data-flow-repeated}
 \end{figure}
-
-Section~\ref{sec:known-use-cases} describes examples of components and modifiers.  First, however, we must address how PISM handles model time (Section~\ref{sec:model-time}).
 
 
 \newpage
