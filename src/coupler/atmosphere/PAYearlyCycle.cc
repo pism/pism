@@ -49,30 +49,30 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 			   ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = temp_mj.set_attr("source", reference);
 
-  ierr = precip.create(grid, "precip", false); CHKERRQ(ierr);
-  ierr = precip.set_attrs("climate_state", 
+  ierr = precipitation.create(grid, "precipitation", false); CHKERRQ(ierr);
+  ierr = precipitation.set_attrs("climate_state", 
 			      "mean annual ice-equivalent precipitation rate",
 			      "m s-1", 
 			      ""); CHKERRQ(ierr); // no CF standard_name ??
-  ierr = precip.set_glaciological_units("m year-1");
-  precip.write_in_glaciological_units = true;
-  precip.time_independent = true;
+  ierr = precipitation.set_glaciological_units("m year-1");
+  precipitation.write_in_glaciological_units = true;
+  precipitation.time_independent = true;
 
   ierr = find_pism_input(precip_filename, regrid, start); CHKERRQ(ierr);
 
   // read precipitation rate from file
   ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent precipitation rate 'precip'\n"
+		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
 		    "      from %s ... \n",
 		    precip_filename.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = precip.regrid(precip_filename.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.regrid(precip_filename.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = precip.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
   string precip_history = "read from " + precip_filename + "\n";
 
-  ierr = precip.set_attr("history", precip_history); CHKERRQ(ierr);
+  ierr = precipitation.set_attr("history", precip_history); CHKERRQ(ierr);
 
   airtemp_var.init_2d("airtemp", grid);
   airtemp_var.set_string("pism_intent", "diagnostic");
@@ -84,7 +84,7 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 }
 
 void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
-  result.insert("precip");
+  result.insert("precipitation");
 
   if (keyword == "big") {
     result.insert("airtemp_ma");
@@ -108,8 +108,8 @@ PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, 
     ierr = temp_mj.define(nc, nctype); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "precip")) {
-    ierr = precip.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, "precipitation")) {
+    ierr = precipitation.define(nc, nctype); CHKERRQ(ierr);
   }
 
   return 0;
@@ -137,8 +137,8 @@ PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename)
     ierr = temp_mj.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "precip")) {
-    ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
+  if (set_contains(vars, "precipitation")) {
+    ierr = precipitation.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
@@ -150,7 +150,7 @@ PetscErrorCode PAYearlyCycle::mean_precip(IceModelVec2S &result) {
 
   string precip_history = "read from " + precip_filename + "\n";
 
-  ierr = precip.copy_to(result); CHKERRQ(ierr);
+  ierr = precipitation.copy_to(result); CHKERRQ(ierr);
   ierr = result.set_attr("history", precip_history); CHKERRQ(ierr);
 
   return 0;

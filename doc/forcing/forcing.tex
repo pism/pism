@@ -1079,7 +1079,15 @@ This atmosphere model~component implements a longitude, latitude, and elevation 
 
 The air temperature parameterization is controlled by configuration parameters with the \texttt{snow_temp_fausto} prefix.
 
-In addition to the temperature parameterization, it allows using the SeaRISE-Greenland formula for paleo-precipitation correction from present; a 7.3\% change of precipitation rate for every one degree Celsius of temperature change~\cite{Huybrechts02}.  See \url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland} for details.  Turn on this mechanism by using the \intextoption{paleo_precip} option.
+In addition to the temperature parameterization, it allows using the
+SeaRISE-Greenland formula for paleo-precipitation correction from present; a
+7.3\% change of precipitation rate for every one degree Celsius of temperature
+change~\cite{Huybrechts02}.  See
+\url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland}
+for details.  Turn on this mechanism by using the \fileopt{paleo_precip}
+option. The argument of this option is the name of a file containing
+scalar temperature offsets; usually the same file as used with
+\texttt{-atmosphere ...,delta_T}. See section \ref{sec:atmosphere-delta-temp}.
 
 \subsection{EISMINT-Greenland}
 \label{sec:atmosphere-eismint-greenland}

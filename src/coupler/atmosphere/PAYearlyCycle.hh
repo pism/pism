@@ -47,7 +47,7 @@ protected:
   PISMVars *variables;
   PetscScalar snow_temp_july_day;
   string reference, precip_filename;
-  IceModelVec2S temp_ma, temp_mj, precip;
+  IceModelVec2S temp_ma, temp_mj, precipitation;
   NCSpatialVariable airtemp_var;
 };
 

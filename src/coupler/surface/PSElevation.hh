@@ -47,7 +47,7 @@ public:
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
-  NCSpatialVariable acab, artm;
+  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
   IceModelVec2S *usurf;
   PetscReal artm_min, artm_max,
     z_artm_min, z_artm_max,

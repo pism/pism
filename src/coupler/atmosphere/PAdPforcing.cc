@@ -21,8 +21,8 @@
 PAdPforcing::PAdPforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
-  option = "-atmosphere_delta_precip_file";
-  offset_name = "delta_precip";
+  option = "-atmosphere_delta_P_file";
+  offset_name = "delta_P";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("m / year", "");
   offset->set_dimension_units(grid.time->units(), "");

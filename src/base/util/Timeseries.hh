@@ -49,29 +49,29 @@ using namespace std;
   object and reading data from a file.
 
   \code
-  dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "time");
-  ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
-  ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
-  ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");
+  delta_T = new Timeseries(grid.com, grid.rank, "delta_T", "time");
+  ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
+  ierr = delta_T->set_dimension_units("years", ""); CHKERRQ(ierr);
+  ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
   CHKERRQ(ierr);
   
   ierr = verbPrintf(2, grid.com, 
                     "  reading delta T data from forcing file %s...\n", dT_file);
                     CHKERRQ(ierr);
 	 
-  ierr = dTforcing->read(dT_file); CHKERRQ(ierr);
+  ierr = delta_T->read(dT_file); CHKERRQ(ierr);
   \endcode
 
   Call
   \code
-  double offset = (*dTforcing)(time);
+  double offset = (*delta_T)(time);
   \endcode
   to get the value corresponding to the time "time", in this case in years. The
   value returned will be computed using linear interpolation.
 
   It is also possible to get an n-th value from a time-series: just use square brackets:
   \code
-  double offset = (*dTforcing)[10];
+  double offset = (*delta_T)[10];
   \endcode
  */
 class Timeseries {
@@ -122,14 +122,14 @@ protected:
 
   Next, create the DiagnosticTimeseries object and set metadata. This will
   prepare the offsets object to write delta_T(t) time-series to file
-  ser_delta_T.nc, converting from degrees Celsius (internal units) to degrees
-  Kelvin ("glaciological" units). Time will be written in years (%i.e. there is
+  ser_delta_T.nc, converting from degrees Kelvin (internal units) to degrees
+  Celsius ("glaciological" units). Time will be written in seconds (%i.e. there is
   no unit conversion there).
 
   \code
   offsets = new DiagnosticTimeseries(g, "delta_T", "time");
   offsets->set_units("Kelvin", "Celsius");
-  offsets->set_dimension_units("years", "");
+  offsets->set_dimension_units("seconds", "");
   offsets->buffer_size = 100; // only store 100 entries; default is 10000
   offsets->output_filename = seriesname;
   offsets->set_attr("long_name", "temperature offsets from some value");

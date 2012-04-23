@@ -49,17 +49,17 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   // allocate IceModelVecs for storing temperature and surface mass balance fields
 
   // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
-  ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
-  ierr = acab.set_attrs("climate_state",
+  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_attrs("climate_state",
 			"constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
 			"m s-1",
 			"land_ice_surface_specific_mass_balance"); // CF standard_name
 			CHKERRQ(ierr);
-  ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  acab.write_in_glaciological_units = true;
+  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.write_in_glaciological_units = true;
 
-  ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);
-  ierr = artm.set_attrs("climate_state",
+  ierr = ice_surface_temp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_attrs("climate_state",
 			"constant-in-time ice temperature at the ice surface",
 			"K",
 			""); CHKERRQ(ierr);
@@ -69,17 +69,17 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, grid.com,
-    "    reading ice-equivalent surface mass balance rate 'acab' from %s ... \n",
+    "    reading ice-equivalent surface mass balance rate 'climatic_mass_balance' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr);
   if (regrid) {
-    ierr = acab.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = climatic_mass_balance.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = acab.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = climatic_mass_balance.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
 
 
-  // parameterizing the ice surface temperature 'artm'
-  ierr = verbPrintf(2, grid.com,"    parameterizing the ice surface temperature 'artm' ... \n"); CHKERRQ(ierr);
+  // parameterizing the ice surface temperature 'ice_surface_temp'
+  ierr = verbPrintf(2, grid.com,"    parameterizing the ice surface temperature 'ice_surface_temp' ... \n"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -88,7 +88,7 @@ PetscErrorCode PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "read from " + input_file + "\n";
 
-  ierr = acab.copy_to(result); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.copy_to(result); CHKERRQ(ierr);
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;
@@ -99,21 +99,21 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   string history  = "parmeterized ice surface temperature \n";
 
   ierr = result.begin_access();   CHKERRQ(ierr);
-  ierr = artm.begin_access();   CHKERRQ(ierr);
+  ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
   ierr = usurf->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       result(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
-      artm(i,j)=result(i,j);
+      ice_surface_temp(i,j)=result(i,j);
 
     }
   }
   ierr = usurf->end_access();   CHKERRQ(ierr);
   ierr = lat->end_access(); CHKERRQ(ierr);
   ierr = result.end_access();   CHKERRQ(ierr);
-  ierr = artm.end_access();   CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access();   CHKERRQ(ierr);
 
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
@@ -121,8 +121,8 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
 }
 
 void PSConstantPIK::add_vars_to_output(string /*keyword*/, set<string> &result) {
-  result.insert("acab");
-  result.insert("artm");
+  result.insert("climatic_mass_balance");
+  result.insert("ice_surface_temp");
   // does not call atmosphere->add_vars_to_output().
 }
 
@@ -131,12 +131,12 @@ PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const PIO &nc, 
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
-  if (set_contains(vars, "artm")) {
-    ierr = artm.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, "ice_surface_temp")) {
+    ierr = ice_surface_temp.define(nc, nctype); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "acab")) {
-    ierr = acab.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, "climatic_mass_balance")) {
+    ierr = climatic_mass_balance.define(nc, nctype); CHKERRQ(ierr);
   }
 
   return 0;
@@ -145,12 +145,12 @@ PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const PIO &nc, 
 PetscErrorCode PSConstantPIK::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "artm")) {
-    ierr = artm.write(filename.c_str()); CHKERRQ(ierr);
+  if (set_contains(vars, "ice_surface_temp")) {
+    ierr = ice_surface_temp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "acab")) {
-    ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
+  if (set_contains(vars, "climatic_mass_balance")) {
+    ierr = climatic_mass_balance.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;

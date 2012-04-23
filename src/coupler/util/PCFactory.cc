@@ -103,10 +103,10 @@ void PAFactory::add_standard_types() {
   add_model("pik",               &create_pa_constant_pik);
   set_default("given");
 
-  add_modifier("anomaly",        &create_pa_anomaly);
-  add_modifier("dTforcing",      &create_pa_dTforcing);
-  add_modifier("delta_precip", &create_pa_precip_forcing);
-  add_modifier("lapse_rate",     &create_pa_lapse_rates);
+  add_modifier("anomaly",    &create_pa_anomaly);
+  add_modifier("delta_T",    &create_pa_dTforcing);
+  add_modifier("delta_P",    &create_pa_precip_forcing);
+  add_modifier("lapse_rate", &create_pa_lapse_rates);
 }
 
 
@@ -141,9 +141,9 @@ void POFactory::add_standard_types() {
   add_model("pik",      &create_po_pik);
   set_default("constant");
 
-  add_modifier("dSLforcing",      &create_po_forcing);
-  add_modifier("dTforcing",       &create_po_dTforcing);
-  add_modifier("delta_mass_flux", &create_po_dSBMFforcing);
+  add_modifier("delta_SL",  &create_po_forcing);
+  add_modifier("delta_T",   &create_po_dTforcing);
+  add_modifier("delta_SMB", &create_po_dSBMFforcing);
 }
 
 // Surface
@@ -202,7 +202,7 @@ void PSFactory::add_standard_types() {
 
   add_modifier("anomaly",    &create_ps_anomaly);
   add_modifier("forcing",    &create_ps_forcing);
-  add_modifier("dTforcing",  &create_ps_dTforcing);
+  add_modifier("delta_T",    &create_ps_dTforcing);
   add_modifier("lapse_rate", &create_ps_lapse_rates);
   add_modifier("turn_into_anomaly", &create_ps_stuff_as_anomaly);
 }

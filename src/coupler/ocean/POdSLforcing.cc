@@ -18,13 +18,13 @@
 
 #include "POdSLforcing.hh"
 
-/// -dSLforcing
+/// -ocean_delta_SL_file, ...
 
 POdSLforcing::POdSLforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
 {
-  option = "-dSLforcing";
-  offset_name = "delta_sea_level";
+  option = "-ocean_delta_SL_file";
+  offset_name = "delta_SL";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
   offset->set_units("m", "");

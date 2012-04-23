@@ -43,7 +43,7 @@ public:
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
   string input_file;
-  IceModelVec2S precip, temperature;
+  IceModelVec2S precipitation, temperature;
   NCSpatialVariable airtemp_var;
 };
 

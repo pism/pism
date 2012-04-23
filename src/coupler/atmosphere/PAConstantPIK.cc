@@ -22,11 +22,7 @@
 
 PetscErrorCode PAConstantPIK::mean_precip(IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  string precip_history = "read from " + input_file + "\n";
-
-  ierr = precip.copy_to(result); CHKERRQ(ierr);
-  ierr = result.set_attr("history", precip_history);
+  ierr = precipitation.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -68,7 +64,7 @@ PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
 }
 
 void PAConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
-  result.insert("precip");
+  result.insert("precipitation");
   result.insert("temp_ma");
   
   if (keyword == "big") {
@@ -84,8 +80,8 @@ PetscErrorCode PAConstantPIK::define_variables(set<string> vars, const PIO &nc,
     ierr = airtemp_var.define(nc, nctype, false); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "precip")) {
-    ierr = precip.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, "precipitation")) {
+    ierr = precipitation.define(nc, nctype); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "temp_ma")) {
@@ -108,8 +104,8 @@ PetscErrorCode PAConstantPIK::write_variables(set<string> vars, string filename)
     ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "precip")) {
-    ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
+  if (set_contains(vars, "precipitation")) {
+    ierr = precipitation.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "temp_ma")) {
@@ -135,14 +131,14 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
 
   // create mean annual ice equivalent precipitation rate (before separating
   // rain, and before melt, etc. in PISMSurfaceModel)
-  ierr = precip.create(grid, "precip", false); CHKERRQ(ierr);
-  ierr = precip.set_attrs("climate_state", 
+  ierr = precipitation.create(grid, "precipitation", false); CHKERRQ(ierr);
+  ierr = precipitation.set_attrs("climate_state", 
                           "mean annual ice-equivalent precipitation rate",
                           "m s-1",
                           ""); CHKERRQ(ierr); // no CF standard_name ??
-  ierr = precip.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  precip.write_in_glaciological_units = true;
-  precip.time_independent = true;
+  ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  precipitation.write_in_glaciological_units = true;
+  precipitation.time_independent = true;
 
   ierr = temperature.create(grid, "temp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
   ierr = temperature.set_attrs("climate_state",
@@ -157,13 +153,13 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
 
   // read snow precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent precipitation rate 'precip'\n"
+		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
 		    "    from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = precip.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = precip.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
 
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));

@@ -27,7 +27,7 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
     ierr = input_model->init(vars); CHKERRQ(ierr);
   }
 
-  ierr = mass_flux.create(grid, "acab", false); CHKERRQ(ierr);
+  ierr = mass_flux.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_state",
                              "ice-equivalent surface mass balance (accumulation/ablation) rate",
                              "m s-1",
@@ -35,7 +35,7 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   mass_flux.write_in_glaciological_units = true;
 
-  ierr = temp.create(grid, "artm", false); CHKERRQ(ierr);
+  ierr = temp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
   ierr = temp.set_attrs("climate_state", "ice temperature at the ice surface",
 			"K", ""); CHKERRQ(ierr);
 
@@ -44,7 +44,7 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   ierr = mass_flux_0.set_attrs("internal", "surface mass flux at the beginning of a run",
                                "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
-  ierr = mass_flux_input.create(grid, "acab", false); CHKERRQ(ierr);
+  ierr = mass_flux_input.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
   ierr = mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
                                    "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
@@ -52,7 +52,7 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   ierr = temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
                           ""); CHKERRQ(ierr);
 
-  ierr = temp_input.create(grid, "artm", false); CHKERRQ(ierr);
+  ierr = temp_input.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
   ierr = temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
                               "K", ""); CHKERRQ(ierr);
   string input_file;
@@ -61,8 +61,8 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the 'as_anomaly' modifier\n"
-                    "  (it applies climate data as anomalies relative to 'artm' and 'acab'\n"
+		    "* Initializing the 'turn_into_anomaly' modifier\n"
+                    "  (it applies climate data as anomalies relative to 'ice_surface_temp' and 'climatic_mass_balance'\n"
                     "  read from '%s'.\n", input_file.c_str()); CHKERRQ(ierr);
 
   if (regrid) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -82,7 +82,7 @@ public:
                  PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
                  PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) = 0;
 
-  /*! Remove rain from precip.  Returned value is amount of snow in ice-equivalent m. */
+  /*! Remove rain from precipitation.  Returned value is amount of snow in ice-equivalent m. */
   /*! Inputs \c precip_rate is in ice-equivalent m s-1.  Note
       <tt>dt = N * dt_series</tt> is the full time-step.  */
   virtual PetscScalar getSnowFromPrecipAndTemperatureTimeSeries(

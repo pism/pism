@@ -46,7 +46,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
     PetscInt Nacabparam= 5;
     PetscReal acabarray[5] = {-3,4,1100,1450,1700};
 
-    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-acab", acabarray, &Nacabparam, &elev_acab_set);
+    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-climatic_mass_balance", acabarray, &Nacabparam, &elev_acab_set);
     CHKERRQ(ierr);
 
     acab_min = convert(acabarray[0],"m year-1","m s-1");
@@ -58,7 +58,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
     PetscInt Nlimitsparam= 2;
     PetscReal limitsarray[2] = {0,0};
 
-    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-acab_limits", limitsarray, &Nlimitsparam, &acab_limits_set);
+    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-climatic_mass_balance_limits", limitsarray, &Nlimitsparam, &acab_limits_set);
     CHKERRQ(ierr);
 
     if (acab_limits_set)
@@ -83,7 +83,12 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
                     "     mass balance at  %.0f m a.s.l. = %.2f m/a\n"
                     "     mass balance above %.0f m a.s.l. = %.2f m/a\n"
                     "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
-                    z_artm_min, artm_min, z_artm_max, artm_max, z_acab_min, convert(acab_limit_min,"m s-1","m year-1"), z_acab_min, acab_min, z_acab_max, convert(acab_max,"m s-1","m year-1"), z_acab_max, convert(acab_limit_max,"m s-1","m year-1"), z_ELA); CHKERRQ(ierr);
+                    z_artm_min, artm_min, z_artm_max, artm_max, z_acab_min,
+                    convert(acab_limit_min,"m s-1","m year-1"),
+                    z_acab_min, acab_min, z_acab_max,
+                    convert(acab_max,"m s-1","m year-1"),
+                    z_acab_max,
+                    convert(acab_limit_max,"m s-1","m year-1"), z_ELA); CHKERRQ(ierr);
 
   // get access to ice upper surface elevation
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
@@ -92,46 +97,46 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
 
   // allocate NCSpatialVariables for storing temperature and surface mass balance fields
 
-  acab.init_2d("acab", grid);
-  acab.set_string("pism_intent", "diagnostic");
-  acab.set_string("long_name",
+  climatic_mass_balance.init_2d("climatic_mass_balance", grid);
+  climatic_mass_balance.set_string("pism_intent", "diagnostic");
+  climatic_mass_balance.set_string("long_name",
                   "ice-equivalent surface mass balance (accumulation/ablation) rate");
-  acab.set_string("standard_name",
+  climatic_mass_balance.set_string("standard_name",
                   "land_ice_surface_specific_mass_balance");
-  ierr = acab.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
-  artm.init_2d("artm", grid);
-  artm.set_string("pism_intent", "diagnostic");
-  artm.set_string("long_name",
+  ice_surface_temp.init_2d("ice_surface_temp", grid);
+  ice_surface_temp.set_string("pism_intent", "diagnostic");
+  ice_surface_temp.set_string("long_name",
                   "ice temperature at the ice surface");
-  ierr = artm.set_units("K"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
-  // parameterizing the ice surface temperature 'artm'
-  ierr = verbPrintf(2, grid.com,"    - parameterizing the ice surface temperature 'artm' ... \n"); CHKERRQ(ierr);
+  // parameterizing the ice surface temperature 'ice_surface_temp'
+  ierr = verbPrintf(2, grid.com,"    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n"); CHKERRQ(ierr);
   ierr = verbPrintf(2, grid.com, 
-                    "      ice temperature at the ice surface (artm) is piecewise-linear function\n"
+                    "      ice temperature at the ice surface (T = ice_surface_temp) is piecewise-linear function\n"
                     "        of surface altitude (usurf):\n"
                     "                 /  %2.2f K                            for            usurf < %.f m\n"
-                    "         artm = |   %5.2f K + %5.3f * (usurf - %.f m) for   %.f m < usurf < %.f m\n"
+                    "            T = |   %5.2f K + %5.3f * (usurf - %.f m) for   %.f m < usurf < %.f m\n"
                     "                 \\  %5.2f K                            for   %.f m < usurf\n",
                     artm_min, z_artm_min,
                     artm_min, (artm_max-artm_min)/(z_artm_max-z_artm_min), z_artm_min, z_artm_min, z_artm_max,
                     artm_max, z_artm_max); CHKERRQ(ierr);
 
-  // parameterizing the ice surface mass balance 'acab'
-  ierr = verbPrintf(2, grid.com,"    - parameterizing the ice surface mass balance 'acab' ... \n"); CHKERRQ(ierr);
+  // parameterizing the ice surface mass balance 'climatic_mass_balance'
+  ierr = verbPrintf(2, grid.com,"    - parameterizing the ice surface mass balance 'climatic_mass_balance' ... \n"); CHKERRQ(ierr);
 
   if (acab_limits_set)
     {
-      ierr = verbPrintf(2, grid.com,"    - option '-acab_limits' seen, limiting upper and lower bounds ... \n"); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com,"    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n"); CHKERRQ(ierr);
     }
 
   ierr = verbPrintf(2, grid.com, 
-                    "      surface mass balance (acab) is piecewise-linear function\n"
+                    "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
                     "        of surface altitue (usurf):\n"
                     "                  /  %5.2f m/a                       for          usurf < %3.f m\n"
-                    "          acab = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
+                    "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
                     "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
                     "                   \\ %5.2f m/a                       for %3.f m < usurf\n",
                     convert(acab_limit_min,"m s-1","m year-1"), z_acab_min,
@@ -174,7 +179,7 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
         {
           SETERRQ(grid.com, 1,"HOW DID I GET HERE? ... ending...\n");
         }
-      ierr = verbPrintf(5, grid.com,"!!!!! z=%.2f, acab=%.2f\n",z,result(i,j)*secpera); CHKERRQ(ierr);
+      ierr = verbPrintf(5, grid.com,"!!!!! z=%.2f, climatic_mass_balance=%.2f\n",z,result(i,j)*secpera); CHKERRQ(ierr);
     }
   }
   ierr = usurf->end_access();   CHKERRQ(ierr);
@@ -224,8 +229,8 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
 
 void PSElevation::add_vars_to_output(string keyword, set<string> &result) {
   if (keyword != "small") {
-    result.insert("artm");
-    result.insert("acab");
+    result.insert("ice_surface_temp");
+    result.insert("climatic_mass_balance");
   }
 }
 
@@ -234,12 +239,12 @@ PetscErrorCode PSElevation::define_variables(set<string> vars, const PIO &nc, PI
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
-  if (set_contains(vars, "artm")) {
-    ierr = artm.define(nc, nctype, true); CHKERRQ(ierr);
+  if (set_contains(vars, "ice_surface_temp")) {
+    ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "acab")) {
-    ierr = acab.define(nc, nctype, true); CHKERRQ(ierr);
+  if (set_contains(vars, "climatic_mass_balance")) {
+    ierr = climatic_mass_balance.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   return 0;
@@ -248,20 +253,20 @@ PetscErrorCode PSElevation::define_variables(set<string> vars, const PIO &nc, PI
 PetscErrorCode PSElevation::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "artm")) {
+  if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "artm", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(artm, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(ice_surface_temp, 0); CHKERRQ(ierr);
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "acab")) {
+  if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "acab", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(acab, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(climatic_mass_balance, 0); CHKERRQ(ierr);
 
     ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;

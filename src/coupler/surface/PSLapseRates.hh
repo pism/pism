@@ -44,7 +44,7 @@ public:
   virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
   PetscReal smb_lapse_rate;
-  NCSpatialVariable acab, artm;
+  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
 };
 
 #endif /* _PSLAPSERATES_H_ */

@@ -26,7 +26,7 @@ PSdTforcing::PSdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceMo
   option = "-dTforcing";
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("Celsius", "");
+  offset->set_units("Kelvin", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "ice-surface temperature offsets");
 }

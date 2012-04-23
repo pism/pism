@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,8 +28,8 @@ public:
   PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
     : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
   {
-    temp_name = "artm";
-    mass_flux_name  = "precip";
+    temp_name = "air_temperature";
+    mass_flux_name  = "precipitation";
     option_prefix = "-atmosphere_given";
   }
 

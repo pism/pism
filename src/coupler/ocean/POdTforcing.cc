@@ -21,10 +21,10 @@
 POdTforcing::POdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
 {
-  option = "-ocean_dTforcing";
+  option = "-ocean_delta_T_file";
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("Celsius", "");
+  offset->set_units("Kelvin", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "ice-shelf-base temperature offsets");
 }

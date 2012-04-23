@@ -56,28 +56,25 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   ierr = PISMOptionsIsSet("-paleo_precip", paleo_precipitation_correction); CHKERRQ(ierr);
 
   if (paleo_precipitation_correction) {
-    PetscBool dTforcing_set;
-    char dT_file[PETSC_MAX_PATH_LEN];
+    bool delta_T_set;
+    string delta_T_file;
 
-    ierr = PetscOptionsString("-dTforcing", "Specifies the air temperature offsets file",
-			      "", "",
-			      dT_file, PETSC_MAX_PATH_LEN, &dTforcing_set); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-paleo_precip",
+                             "Specifies the air temperature offsets file to use with -paleo_precip",
+                             "", "",
+                             delta_T_file, PETSC_MAX_PATH_LEN, &delta_T_set); CHKERRQ(ierr);
 
     ierr = verbPrintf(2, grid.com, 
-      "  reading delta T data from forcing file %s for -paleo_precip actions ...\n",
-      dT_file);  CHKERRQ(ierr);
+                      "  reading delta_T data from forcing file %s for -paleo_precip actions ...\n",
+                      delta_T_file);  CHKERRQ(ierr);
 
-    if (!dTforcing_set) {
-      ierr = PetscPrintf(grid.com, "ERROR: option -paleo_precip requires -dTforcing.\n"); CHKERRQ(ierr);
-      PISMEnd();
-    }
-    dTforcing = new Timeseries(grid.com, grid.rank, "delta_T",
-                               grid.config.get_string("time_dimension_name"));
-    ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
-    ierr = dTforcing->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
-    ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");
+    delta_T = new Timeseries(grid.com, grid.rank, "delta_T",
+                             grid.config.get_string("time_dimension_name"));
+    ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
+    ierr = delta_T->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
+    ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
     CHKERRQ(ierr);
-    ierr = dTforcing->read(dT_file, grid.time->use_reference_date()); CHKERRQ(ierr);
+    ierr = delta_T->read(delta_T_file, grid.time->use_reference_date()); CHKERRQ(ierr);
   }
 
   return 0;
@@ -88,11 +85,11 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precip(IceModelVec2S &result) {
 
   ierr = PAYearlyCycle::mean_precip(result); CHKERRQ(ierr);
 
-  if ((dTforcing != NULL) && paleo_precipitation_correction) {
+  if ((delta_T != NULL) && paleo_precipitation_correction) {
     string history = "added the paleo-precipitation correction\n" + result.string_attr("history");
 
     PetscReal precipexpfactor = config.get("precip_exponential_factor_for_temperature");
-    ierr = result.scale(exp( precipexpfactor * (*dTforcing)(t + 0.5 * dt) )); CHKERRQ(ierr);
+    ierr = result.scale(exp( precipexpfactor * (*delta_T)(t + 0.5 * dt) )); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }

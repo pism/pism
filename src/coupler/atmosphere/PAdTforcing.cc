@@ -18,15 +18,15 @@
 
 #include "PAdTforcing.hh"
 
-/// -dTforcing of near-surface air temperatures
+/// delta_T forcing of near-surface air temperatures
 
 PAdTforcing::PAdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
-  option = "-dTforcing";
+  option = "-atmosphere_delta_T_file";
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("Celsius", "");
+  offset->set_units("Kelvin", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "near-surface air temperature offsets");
 }
