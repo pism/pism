@@ -52,6 +52,11 @@ digraph dataflow {
 	bed -> ice;
 	
 	mod_a_node -> surf [color="red"];
+	/* there is a work-around at
+         http://stackoverflow.com/questions/3450700/place-edge-label-on-the-other-side
+       which might allow putting this label on the left side of the arrow,
+       which would improve appearance; but mostly it makes me think we should
+       switch to Tikz? */
 	mod_s_node -> ice [color="green" label="ice temperature\nat its top surface and\nmass flux into the ice"];
 	mod_o_node -> ice [color="blue" label="mass flux into the ocean"];
 	

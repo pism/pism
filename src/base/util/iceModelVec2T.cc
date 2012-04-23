@@ -307,25 +307,28 @@ PetscErrorCode IceModelVec2T::update(int start) {
   if (missing <= 0) return 0;
   
   N = kept + missing;
-  string long_name = string_attr("long_name");
-  ierr = verbPrintf(2, grid->com,
-                    "  reading \"%s\" into buffer\n"
-                    "          (short_name = %s): %d records, covering intervals (%s, %s) through (%s, %s) years...\n",
-		    long_name.c_str(), name.c_str(), missing,
-                    grid->time->date(time_bounds[start*2]).c_str(),
-                    grid->time->date(time_bounds[start*2 + 1]).c_str(),
-                    grid->time->date(time_bounds[(start + missing - 1)*2]).c_str(),
-                    grid->time->date(time_bounds[(start + missing - 1)*2 + 1]).c_str());
+
+  if (this->get_nlevels() > 1 || getVerbosityLevel() > 4) {
+    ierr = verbPrintf(2, grid->com,
+                      "  reading \"%s\" into buffer\n"
+                      "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
+                      string_attr("long_name").c_str(), name.c_str(), missing,
+                      grid->time->date(time_bounds[start*2]).c_str(),
+                      grid->time->date(time_bounds[start*2 + 1]).c_str(),
+                      grid->time->date(time_bounds[(start + missing - 1)*2]).c_str(),
+                      grid->time->date(time_bounds[(start + missing - 1)*2 + 1]).c_str()); CHKERRQ(ierr);
+    report_range = false;
+  } else {
+    report_range = true;
+  }
 
   for (int j = 0; j < missing; ++j) {
     if (lic != NULL) {
       lic->start[0] = start + j;
-      lic->report_range = false;
+      lic->report_range = report_range;
     }
 
     ierr = vars[0].regrid(filename.c_str(), lic, true, false, 0.0, v); CHKERRQ(ierr);
-
-    // ierr = vars[0].read(filename.c_str(), start + j, v); CHKERRQ(ierr);
 
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %f...\n",
 		      name.c_str(), start + j, time[start + j]);

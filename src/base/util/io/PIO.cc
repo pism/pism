@@ -485,6 +485,7 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units,
     return 0;
   }
 
+  int n = (int)units_string.find("since");
   if (use_reference_date == false) {
     /*!
       \note This code finds the string "since" in the units_string and
@@ -492,8 +493,11 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units,
       This is done to ignore the reference date in the time units string (the
       reference date specification always starts with this word).
     */
-    int n = (int)units_string.find("since");
     if (n != -1) units_string.resize(n);
+  } else if (n == -1) {
+    ierr = PetscPrintf(com, "PISM ERROR: units specification '%s' does not contain a reference date (processing variable '%s').\n",
+                       units_string.c_str(), name.c_str());
+    PISMEnd();
   }
 
   ierr = utScan(units_string.c_str(), &units);

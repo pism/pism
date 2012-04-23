@@ -6,7 +6,7 @@ MPIEXEC=$2
 echo "Test # 9: 3D regridding from files with different variable orders."
 files="foo.nc bar.nc baz.nc"
 
-OPTS="-Mx 61 -My 61 -Mz 21 -Lz 4000 -regrid_file foo.nc -regrid_vars topg,litho_temp,thk,bwat,enthalpy -y 0 -surface constant"
+OPTS="-Mx 61 -My 61 -Mz 21 -Lz 4000 -regrid_file foo.nc -regrid_vars topg,litho_temp,thk,bwat,enthalpy -y 0"
 
 rm -f $files
 

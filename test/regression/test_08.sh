@@ -8,7 +8,7 @@ echo "Test # 8: regridding: coarse -> fine -> coarse (vertical direction)."
 # The list of files to delete when done.
 files="coarse1.nc coarse2.nc fine1.nc fine2.nc"
 
-OPTS="-surface constant -y 0 "
+OPTS="-y 0"
 
 set -e -x
 

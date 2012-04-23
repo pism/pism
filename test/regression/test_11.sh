@@ -21,7 +21,7 @@ echo "run with Lz set just right:"
 $MPIEXEC -n 2 $PISM_PATH/pisms -Mz 33 -Lz 960 -o bar.nc $OPTS
 
 echo "regrid from the extended grid onto the one in bar.nc:"
-$MPIEXEC -n 2 $PISM_PATH/pismr -i bar.nc -surface constant -regrid_file foo.nc -regrid_vars enthalpy -y 0 -o baz.nc
+$MPIEXEC -n 2 $PISM_PATH/pismr -i bar.nc -regrid_file foo.nc -regrid_vars enthalpy -y 0 -o baz.nc
 
 # compare results
 $PISM_PATH/nccmp.py -v enthalpy bar.nc baz.nc

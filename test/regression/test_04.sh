@@ -6,7 +6,7 @@ MPIEXEC=$2
 echo "Test # 4: regridding during bootstrapping: coarse -> fine -> coarse."
 files="foo.nc bar.nc baz.nc"
 
-OPTS="-surface constant -Lz 4000 -y 0 -o_size small "
+OPTS="-Lz 4000 -y 0 -o_size small "
 COARSE="-Mx 11 -My 21 -Mz 31"
 FINE=" -Mx 21 -My 31 -Mz 41"
 
