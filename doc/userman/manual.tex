@@ -343,7 +343,7 @@ adjustment of climate inputs that can be used with different climate
 choices.  Using ice-core-derived air temperature offsets to model the
 space-time distribution of paleo surface temperature is an example.  Note that
 PISM has a generic ``forcing'' mechanism that can be paired with another model.
-Please see section the \emph{PISM's climate forcing components} document for
+Please see the \emph{PISM's climate forcing components} document for
 a list of climate components included in PISM source code and other details.
 
 \begin{figure}
@@ -366,7 +366,7 @@ they have chosen, without involving ice dynamics at all.
 \clearpage
 \newpage
 \section{Initialization and bootstrapping}
-\label{sect:boot}  
+\label{sect:boot}
 
 
 There are three ways to start PISM,\begin{itemize}
@@ -412,7 +412,9 @@ Regarding the automatically produced time variable, which has a \texttt{units} a
 
 The need for an identified stage like ``bootstrapping'' comes from the fact that initial conditions, for the evolution equations describing an ice sheet, are not typically observable.  As a principal example of this problem, these equations require the temperature within the ice at the time the run is started.  Glaciological observations, specifically remote-sensed observations which cover a large fraction or all of an ice sheet, never include this temperature field in practice.
 
-Instead, evolutionary ice sheet modeling necessarily does something like this to get ``reasonable'' initial fields within the ice: \begin{enumerate}
+Instead, evolutionary ice sheet modeling necessarily does something like this
+to get ``reasonable'' initial fields within the ice:
+\begin{enumerate}
 \item start only with observable quantities like surface elevation, ice thickness, and ice surface temperature,
 \item ``bootstrap'' as defined here, using heuristics to fill in temperatures at depth and to give a preliminary estimate of the basal sliding condition, and thus of the three-dimensional velocity field, and
 \item \emph{either} do a long run holding the current geometry and surface temperature steady,  to evolve toward a ``more physical'' steady state which will have compatible temperature field, velocities, and age field,
