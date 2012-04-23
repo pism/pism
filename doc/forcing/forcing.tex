@@ -156,13 +156,16 @@ that the February mass balance is used for 28 days and not $365/12 = 30.4167$ da
 \index{Time!calendars}
 
 Internally PISM stores time in ``seconds since a specified moment'' and
-does not use or need a calendar.  We refer to PISM internal time as \emph{model time}.
+generally does not use or need a calendar; seconds are part of SI units.
+We refer to PISM internal time as \emph{model time}.
 
-However, XX-century and prognostic runs require knowledge of lengths of months
+However, runs for specific temporal periods (e.g.~``the 18th-century'' or
+``1989--2010'') generally requires specific knowledge of lengths of months
 and years, both to use climate data properly and to facilitate model validation.
-
+This specific knowledge is recording in a ``calendar'', a concept that
+is part of the \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html}{CF Metadata Conventions}.
 You can choose a calendar by setting the \config{calendar} configuration
-parameter of command-line options described below.
+parameter or the command-line options described below.
 
 \subsubsection{\texttt{365_day} calendar}
 \label{sec:365-day}
@@ -170,19 +173,18 @@ parameter of command-line options described below.
 
 The default ``calendar'' (corresponding to the \txtopt{calendar}{\texttt{365_day}} option) is used in all PISM runs that do not require precise application of forcing data or reporting on particular dates (paleo-climate runs, for example).
 
-In this mode PISM \emph{ignores} the reference date in time unit specifications
-(such as ``\texttt{days since 1969-7-20}''). The value set using
+In this mode PISM ignores the reference date in time unit specifications
+(such as ``\texttt{days since 1969-7-20}''), though the value set using
 \config{reference_date} configuration parameter (or the associated option) is saved in
-output files, though.\footnote{Time units in PISM's output files always contain a reference date because it is required by the CF metadata conventions.}
+output files.  Time units in PISM's output files always contain a reference date
+because it is required by the CF metadata conventions.
 
 \subsubsection{\texttt{gregorian} calendar}
 \label{sec:gregorian}
 \index{Time!calendars!Gregorian}
 
 The command-line option \txtopt{calendar}{\texttt{gregorian}} enables the Gregorian
-calendar mode.
-
-The implications are:
+calendar mode.  The implications are:
 \begin{itemize}
 \item PISM uses the \texttt{units} attribute of coordinate variables
   \emph{literally} (including the reference date) in unit conversions. Please
@@ -210,15 +212,15 @@ S 2012-07-01:  0.00014    0.6306   0.00000000           0.00000
 
 Just like in the \texttt{365_day} mode, run length, run start and run end times
 are specified using \intextoption{y}, \intextoption{ys} and \intextoption{ye}
-command-line options, respectively. Note that here \texttt{-y 1} has the
+command-line options, respectively, and FIXME: ARGUMENTS IN MODEL TIME?
+Note that here \texttt{-y 1} has the
 meaning of $3.14...\cdot 10^{7}$ seconds (one ``tropical year''), \emph{not} a
 calendar year.
 
 Use the \mbox{\txtopt{reference_date}{\texttt{YYYY-MM-DD}}} command-line option
 or the \config{reference_date} configuration parameter to set the reference
-date, i.e. the date corresponding to time $0$.
-
-For example, to run for $20$ years starting on January 1, $1989$, and override time read from an input file, do
+date, i.e. the date corresponding to time $0$.  For example, to run for $20$
+years starting on January 1, $1989$, and override time read from an input file, do
 \begin{verbatim}
 $ pismr -calendar gregorian -reference_date 1989-1-1 -ys 0 -ye 20
 \end{verbatim} %$
@@ -326,10 +328,16 @@ This section gives a very brief overview of some coupling options. Please see se
 \subsection{One way coupling to a climate model}
 \label{sec:one-way-coupling}
 \index{One-way coupling to a climate model}
-This is the simplest (and preferred) case.
+This is the simplest case.  It is often the preferred case, for example when
+the climate model in use has high quality surface mass and energy sub-models
+which are then preferred to the highly simplified (e.g.~temperature index)
+surface models in PISM.
 
 \subsubsection{Reading ice surface temperature and mass balance}
 \label{sec:ice-surface-bc}
+
+FIXME: I THINK YOU INTEND TO SAY: THIS IS A USAGE EXAMPLE BUT INSTEAD YOU SHOW A TABLE FIRST
+
 \begin{center}
   \begin{tabular}{lp{0.7\textwidth}}
     \toprule
@@ -621,7 +629,7 @@ For example, to use monthly records and period of 1 year, create a file (say,
 0, 1, 2, 3, \dots, 11 and have the units of ``month'' (you can use other units,
 too). Then, run
 \begin{verbatim}
-$ pimsr -surface given -surface_given_file foo.nc -surface_given_period 1
+$ pismr -surface given -surface_given_file foo.nc -surface_given_period 1
 \end{verbatim}%$
 
 \noindent Notes:
