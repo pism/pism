@@ -541,8 +541,8 @@ PetscErrorCode SSA::set_initial_guess(IceModelVec2V &guess) {
 }
 
 
-void SSA::add_vars_to_output(string /*keyword*/, set<string> &result) {
-  result.insert("vel_ssa");
+void SSA::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
+  result["vel_ssa"] = velocity.get_metadata();
 }
 
 

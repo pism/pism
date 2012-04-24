@@ -222,10 +222,10 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSElevation::add_vars_to_output(string keyword, set<string> &result) {
+void PSElevation::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
   if (keyword != "small") {
-    result.insert("artm");
-    result.insert("acab");
+    result["artm"] = artm;
+    result["acab"] = acab;
   }
 }
 

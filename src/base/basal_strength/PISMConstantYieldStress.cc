@@ -59,8 +59,8 @@ PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
 }
 
 
-void PISMConstantYieldStress::add_vars_to_output(string /*keyword*/, set<string> &result) {
-  result.insert("tauc");
+void PISMConstantYieldStress::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
+  result["tauc"] = tauc.get_metadata();
 }
 
 

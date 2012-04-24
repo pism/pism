@@ -150,10 +150,10 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-void POConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
+void POConstantPIK::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
   if (keyword != "small") {
-    result.insert("shelfbtemp");
-    result.insert("shelfbmassflux");
+    result["shelfbtemp"] = shelfbtemp;
+    result["shelfbmassflux"] = shelfbmassflux;
   }
 }
 

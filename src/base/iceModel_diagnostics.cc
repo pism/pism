@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "pism_options.hh"
 #include "iceModel_diagnostics.hh"
 #include "PISMDiagnostic.hh"
 #include "Mask.hh"
@@ -28,6 +29,7 @@
 #include "enthalpyConverter.hh"
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
+#include "bedrockThermalUnit.hh"
 
 PetscErrorCode IceModel::init_diagnostics() {
 
@@ -109,31 +111,138 @@ PetscErrorCode IceModel::init_diagnostics() {
     basal_yield_stress->get_diagnostics(diagnostics);
   }
 
-  int threshold = 5;
-  if (getVerbosityLevel() >= threshold) {
-    verbPrintf(threshold, grid.com, " *** Available 2D and 3D diagnostic quantities:\n");
+  bool print_list_and_stop = false;
 
-    map<string, PISMDiagnostic*>::iterator j = diagnostics.begin();
-    while (j != diagnostics.end()) {
-      string name = j->first;
-      PISMDiagnostic *diag = j->second;
+  PetscErrorCode ierr = PISMOptionsIsSet("-list_diagnostics",
+                                         "List available diagnostic quantities and stop",
+                                         print_list_and_stop); CHKERRQ(ierr);
+  if (print_list_and_stop) {
+    ierr = list_diagnostics(); CHKERRQ(ierr);
 
-      int N = diag->get_nvars();
-      verbPrintf(threshold, grid.com, " ** %s\n", name.c_str());
-
-      for (int k = 0; k < N; ++k) {
-        NCSpatialVariable *var = diag->get_metadata(k);
-
-        string long_name = var->get_string("long_name");
-
-        verbPrintf(threshold, grid.com, " * %s\n", long_name.c_str());
-      }
-      ++j;
-    }
+    PISMEnd();
   }
 
   return 0;
 }
+
+PetscErrorCode IceModel::list_diagnostics() {
+
+  PetscPrintf(grid.com, "\n");
+
+  // quantities with dedicated storage
+  {
+    map<string, NCSpatialVariable> list;
+    set<string> vars = variables.keys();
+
+    set<string>::iterator i = vars.begin();
+    while (i != vars.end()) {
+      list[*i] = variables.get(*i)->get_metadata();
+      ++i;
+    }
+
+
+    if (beddef != NULL)
+      beddef->add_vars_to_output("big", list);
+
+    if (btu != NULL)
+      btu->add_vars_to_output("big", list);
+
+    if (basal_yield_stress != NULL)
+      basal_yield_stress->add_vars_to_output("big", list);
+
+    if (stress_balance != NULL)
+      stress_balance->add_vars_to_output("big", list);
+
+    if (ocean != NULL)
+      ocean->add_vars_to_output("big", list);
+
+    if (surface != NULL)
+      surface->add_vars_to_output("big", list);
+
+    for (int d = 3; d > 1; --d) {
+
+      PetscPrintf(grid.com,
+                  "======== Available %dD quantities with dedicated storage ========\n",
+                  d);
+
+      map<string,NCSpatialVariable>::iterator j = list.begin();
+      while(j != list.end()) {
+
+        if ((j->second).get_ndims() == d) {
+          NCSpatialVariable var = j->second;
+
+          string short_name = j->first,
+            units = var.get_string("units"),
+            long_name = var.get_string("long_name");
+
+            PetscPrintf(grid.com,
+                        "   Name: %s [%s]\n"
+                        "       - %s\n\n", short_name.c_str(), units.c_str(), long_name.c_str());
+        }
+
+        ++j;
+      }
+    }
+
+  }
+
+  // 2D and 3D diagnostics
+  for (int d = 3; d > 1; --d) {
+
+    PetscPrintf(grid.com,
+                "======== Available %dD diagnostic quantities ========\n",
+                d);
+
+    map<string, PISMDiagnostic*>::iterator j = diagnostics.begin();
+    while (j != diagnostics.end()) {
+      PISMDiagnostic *diag = j->second;
+
+      string name = j->first,
+        units = diag->get_metadata().get_string("units");
+
+      if (diag->get_metadata().get_ndims() == d) {
+
+        PetscPrintf(grid.com, "   Name: %s [%s]\n", name.c_str(), units.c_str());
+
+        for (int k = 0; k < diag->get_nvars(); ++k) {
+          NCSpatialVariable var = diag->get_metadata(k);
+
+          string long_name = var.get_string("long_name");
+
+          PetscPrintf(grid.com, "      -  %s\n", long_name.c_str());
+        }
+
+        PetscPrintf(grid.com, "\n");
+
+      }
+
+      ++j;
+    }
+  }
+
+  // scalar time-series
+  PetscPrintf(grid.com, "======== Available time-series ========\n");
+
+  map<string, PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+  while (j != ts_diagnostics.end()) {
+    PISMTSDiagnostic *diag = j->second;
+
+    string name = j->first,
+      long_name = diag->get_string("long_name"),
+      units = diag->get_string("units");
+
+    PetscPrintf(grid.com,
+                "   Name: %s [%s]\n"
+                "      -  %s\n\n",
+                name.c_str(), units.c_str(), long_name.c_str());
+
+    ++j;
+  }
+
+  return 0;
+}
+
+
 
 IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
@@ -180,7 +289,7 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
       const PetscScalar H = model->vH(i,j);
       if (H > 0.0) {
         (*result)(i,j) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
-                                               &grid.zlevels[0], Eij);
+                                                     &grid.zlevels[0], Eij);
       } else { // put negative value below valid range
         (*result)(i,j) = fillval;
       }
@@ -277,7 +386,7 @@ PetscErrorCode IceModel_proc_ice_area::compute(IceModelVec* &output) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i)
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j)
       if ((*thickness)(i,j) > 0) {
-	ice_filled_cells += 1;
+        ice_filled_cells += 1;
       }
   ierr = thickness->end_access(); CHKERRQ(ierr);
 
@@ -404,7 +513,7 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
         CHKERRQ(ierr);
 
         if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
-                         // is 273.15
+          // is 273.15
           if ( model->EC->isTemperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
             Tij[k] = melting_point_temp;
           }
@@ -430,7 +539,7 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m, IceGrid &g, PISMVars &my_v
   vars[0].init_2d("temppabase", grid);
 
   set_attrs("pressure-adjusted ice temperature at the base of ice", "",
-            "degrees Celsius", "degrees Celsius", 0);
+            "Celsius", "Celsius", 0);
 }
 
 PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
@@ -472,7 +581,7 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
       CHKERRQ(ierr);
 
       if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
-                       // is 273.15
+        // is 273.15
         if ( model->EC->isTemperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
           (*result)(i,j) = melting_point_temp;
         }
@@ -526,7 +635,7 @@ PetscErrorCode IceModel_enthalpysurf::compute(IceModelVec* &output) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (model->vH(i,j) <= 1.0)
-	(*result)(i,j) = fill_value;
+        (*result)(i,j) = fill_value;
     }
   }
   ierr = result->end_access(); CHKERRQ(ierr);
@@ -733,24 +842,24 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (model->vH(i,j) > 0.) {
-	ierr = model->Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-	PetscScalar tithk = 0.;
-	const PetscInt ks = grid.kBelowHeight(model->vH(i,j));
+        ierr = model->Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
+        PetscScalar tithk = 0.;
+        const PetscInt ks = grid.kBelowHeight(model->vH(i,j));
 
-	for (PetscInt k=0; k<ks; ++k) { // FIXME issue #15
+        for (PetscInt k=0; k<ks; ++k) { // FIXME issue #15
           PetscReal pressure = model->EC->getPressureFromDepth(model->vH(i,j) - grid.zlevels[k]);
 
-	  if (model->EC->isTemperate(Enth[k], pressure)) {
-	    tithk += grid.zlevels[k+1] - grid.zlevels[k];
-	  }
-	}
+          if (model->EC->isTemperate(Enth[k], pressure)) {
+            tithk += grid.zlevels[k+1] - grid.zlevels[k];
+          }
+        }
 
         PetscReal pressure = model->EC->getPressureFromDepth(model->vH(i,j) - grid.zlevels[ks]);
-	if (model->EC->isTemperate(Enth[ks], pressure)) {
-	  tithk += model->vH(i,j) - grid.zlevels[ks];
-	}
+        if (model->EC->isTemperate(Enth[ks], pressure)) {
+          tithk += model->vH(i,j) - grid.zlevels[ks];
+        }
 
-	(*result)(i,j) = tithk;
+        (*result)(i,j) = tithk;
       }
     }
   }

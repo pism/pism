@@ -68,7 +68,7 @@ public:
   virtual string get_string(string) const;
   virtual bool has(string) const;
   virtual bool is_valid(PetscScalar a) const;
-			
+  virtual int get_ndims() const;
   string short_name;
 
   // Attributes:
@@ -97,6 +97,7 @@ protected:
          glaciological_units; //!< \brief for diagnostic variables: units to
 			      //!< use when writing to a NetCDF file and for
 			      //!< standard out reports
+  int ndims;
 };
 
 //! A class for reading, writing and accessing PISM configuration flags and parameters.

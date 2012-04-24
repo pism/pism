@@ -84,14 +84,14 @@ public:
     return 0;
   }
 
-  virtual void add_vars_to_output(string keyword, set<string> &result)
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
   {
-    result.insert(temp_name);
-    result.insert(mass_flux_name);
-
     if (Model::input_model != NULL) {
       Model::input_model->add_vars_to_output(keyword, result);
     }
+
+    result[temp_name] = temp.get_metadata();
+    result[mass_flux_name] = mass_flux.get_metadata();
   }
 
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype)

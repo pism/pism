@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ public:
   }
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 };
 
 #endif /* _PSSIMPLE_H_ */

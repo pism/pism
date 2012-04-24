@@ -94,15 +94,12 @@ PetscErrorCode IceModel::init_timeseries() {
       ts_vars.insert(var_name);
 
   } else {
-    var_name = config.get_string("ts_default_variables");
-    istringstream arg(var_name);
-
-    while (getline(arg, var_name, ' ')) {
-      if (!var_name.empty()) // this ignores multiple spaces separating variable names
-	ts_vars.insert(var_name);
+    map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+    while (j != ts_diagnostics.end()) {
+      ts_vars.insert(j->first);
+      ++j;
     }
   }
-
 
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   ierr = nc.open(ts_filename, PISM_WRITE, append); CHKERRQ(ierr);
@@ -283,8 +280,15 @@ PetscErrorCode IceModel::init_extras() {
       i++;
     }
 
+    map<string,NCSpatialVariable> list;
     if (stress_balance)
-      stress_balance->add_vars_to_output("small", extra_vars);
+      stress_balance->add_vars_to_output("small", list);
+
+    map<string,NCSpatialVariable>::iterator j = list.begin();
+    while(j != list.end()) {
+      extra_vars.insert(j->first);
+      ++j;
+    }
 
   }
 

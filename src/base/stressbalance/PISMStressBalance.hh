@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -54,7 +54,7 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 
   //! Writes requested fields to a file.
   virtual PetscErrorCode write_variables(set<string> vars, string filename);

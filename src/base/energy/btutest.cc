@@ -279,8 +279,15 @@ int main(int argc, char *argv[]) {
                       maxghferr,100.0*maxghferr/FF,avghferr); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
 
+    map<string, NCSpatialVariable> list;
     set<string> vars;
-    btu.add_vars_to_output("big", vars); // "write everything you can"
+    btu.add_vars_to_output("big", list); // "write everything you can"
+
+    map<string, NCSpatialVariable>::iterator j = list.begin();
+    while (j != list.end()) {
+      vars.insert(j->first);
+      ++j;
+    }
 
     PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
 

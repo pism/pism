@@ -83,13 +83,13 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   return 0;
 }
 
-void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
-  result.insert("precip");
+void PAYearlyCycle::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+  result["precip"] = precip.get_metadata();
 
   if (keyword == "big") {
-    result.insert("airtemp_ma");
-    result.insert("airtemp_mj");
-    result.insert("airtemp");
+    result["airtemp_ma"] = temp_ma.get_metadata();
+    result["airtemp_mj"] = temp_mj.get_metadata();
+    result["airtemp"] = airtemp_var;
   }
 }
 

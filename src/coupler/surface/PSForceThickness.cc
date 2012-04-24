@@ -312,12 +312,12 @@ PetscErrorCode PSForceThickness::max_timestep(PetscReal my_t, PetscReal &my_dt, 
 }
 
 //! Adds variables to output files.
-void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
+void PSForceThickness::add_vars_to_output(string key, map<string,NCSpatialVariable> &result) {
   if (input_model != NULL)
     input_model->add_vars_to_output(key, result);
 
-  result.insert("ftt_mask");
-  result.insert("ftt_target_thk");
+  result["ftt_mask"] = ftt_mask.get_metadata();
+  result["ftt_target_thk"] = target_thickness.get_metadata();
 }
 
 PetscErrorCode PSForceThickness::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {

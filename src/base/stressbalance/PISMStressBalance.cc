@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -297,7 +297,7 @@ PetscErrorCode PISMStressBalance::write_variables(set<string> vars, string filen
   return 0;
 }
 
-void PISMStressBalance::add_vars_to_output(string keyword, set<string> &result) {
+void PISMStressBalance::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
 
   stress_balance->add_vars_to_output(keyword, result);
   modifier->add_vars_to_output(keyword, result);
