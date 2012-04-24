@@ -50,7 +50,6 @@ PetscErrorCode IceModel::cell_interface_velocities(bool do_part_grid,
     vel.w = 0.5 * (vreg.w.u + vreg.ij.u);
     vel.n = 0.5 * (vreg.ij.v + vreg.n.v);
     vel.s = 0.5 * (vreg.s.v + vreg.ij.v);
-
     return 0;
   }
 
