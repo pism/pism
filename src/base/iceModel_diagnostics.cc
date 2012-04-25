@@ -973,9 +973,9 @@ IceModel_acab_cumulative::IceModel_acab_cumulative(IceModel *m, IceGrid &g, PISM
   : PISMDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("acab_cumulative", grid);
+  vars[0].init_2d("cumulative_climatic_mass_balance", grid);
 
-  set_attrs("acab_cumulative", "cumulative ice-equivalent surface mass balance",
+  set_attrs("cumulative ice-equivalent climatic mass balance", "",
             "m", "m", 0);
 }
 

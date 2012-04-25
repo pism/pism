@@ -428,6 +428,7 @@ PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   return 0;
+
 }
 
 PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string filename) {

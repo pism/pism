@@ -12,7 +12,7 @@ dx = 2 * L / J;
 [x,y] = meshgrid(-L:dx:L, -L:dx:L);
 
 % no mass balance
-acab = zeros(size(x));
+climatic_mass_balance = zeros(size(x));
 
 % construct a bumpy bed
 %topg = b_mag * randn(size(x));  % uncorrelated (unsmooth) random
@@ -33,7 +33,7 @@ fprintf("  initial volume = %14.10e\n",sum(sum(thk0)) * dx * dx)
 
 % run SIA code
 dtyears = 10.0;
-[h,dtlist] = siageneral(L,L,J,J,acab,h0,topg,dtyears*secpera,tfyears*secpera);
+[h,dtlist] = siageneral(L,L,J,J,climatic_mass_balance,h0,topg,dtyears*secpera,tfyears*secpera);
 
 thk = h - topg;
 fprintf("  final volume   = %14.10e\n",sum(sum(thk)) * dx * dx)

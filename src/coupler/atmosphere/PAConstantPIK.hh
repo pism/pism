@@ -41,8 +41,8 @@ public:
 protected:
   IceModelVec2S *usurf, *lat;
   string input_file;
-  IceModelVec2S precipitation, temperature;
-  NCSpatialVariable airtemp_var;
+  IceModelVec2S precipitation, air_temperature;
+  NCSpatialVariable air_temperature_snapshot;
 };
 
 #endif /* _PACONSTANTPIK_H_ */

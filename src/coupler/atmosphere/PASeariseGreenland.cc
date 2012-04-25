@@ -61,12 +61,11 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
 
     ierr = PISMOptionsString("-paleo_precip",
                              "Specifies the air temperature offsets file to use with -paleo_precip",
-                             "", "",
-                             delta_T_file, PETSC_MAX_PATH_LEN, &delta_T_set); CHKERRQ(ierr);
+                             delta_T_file, delta_T_set); CHKERRQ(ierr);
 
     ierr = verbPrintf(2, grid.com, 
                       "  reading delta_T data from forcing file %s for -paleo_precip actions ...\n",
-                      delta_T_file);  CHKERRQ(ierr);
+                      delta_T_file.c_str());  CHKERRQ(ierr);
 
     delta_T = new Timeseries(grid.com, grid.rank, "delta_T",
                              grid.config.get_string("time_dimension_name"));
@@ -137,14 +136,14 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
   ierr = surfelev->get_array(h);   CHKERRQ(ierr);
   ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
   ierr = lon->get_array(lon_degE); CHKERRQ(ierr);
-  ierr = temp_ma.begin_access();  CHKERRQ(ierr);
-  ierr = temp_mj.begin_access();  CHKERRQ(ierr);
+  ierr = air_temperature_mean_annual.begin_access();  CHKERRQ(ierr);
+  ierr = air_temperature_mean_july.begin_access();  CHKERRQ(ierr);
 
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      temp_ma(i,j) = d_ma + gamma_ma * h[i][j] + c_ma * lat_degN[i][j]
+      air_temperature_mean_annual(i,j) = d_ma + gamma_ma * h[i][j] + c_ma * lat_degN[i][j]
                        + kappa_ma * (-lon_degE[i][j]);
-      temp_mj(i,j) = d_mj + gamma_mj * h[i][j] + c_mj * lat_degN[i][j]
+      air_temperature_mean_july(i,j) = d_mj + gamma_mj * h[i][j] + c_mj * lat_degN[i][j]
                        + kappa_mj * (-lon_degE[i][j]);
     }
   }
@@ -152,8 +151,8 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
   ierr = surfelev->end_access();   CHKERRQ(ierr);
   ierr = lat->end_access(); CHKERRQ(ierr);
   ierr = lon->end_access(); CHKERRQ(ierr);
-  ierr = temp_ma.end_access();  CHKERRQ(ierr);
-  ierr = temp_mj.end_access();  CHKERRQ(ierr);
+  ierr = air_temperature_mean_annual.end_access();  CHKERRQ(ierr);
+  ierr = air_temperature_mean_july.end_access();  CHKERRQ(ierr);
 
   return 0;
 }

@@ -79,8 +79,8 @@ public:
   Timeseries(IceGrid * g, string name, string dimension_name);
   Timeseries(MPI_Comm com, PetscMPIInt rank, string name, string dimension_name);
   
-  PetscErrorCode read(const char filename[], bool use_reference_date);
-  PetscErrorCode write(const char filename[]);
+  PetscErrorCode read(string filename, bool use_reference_date);
+  PetscErrorCode write(string filename);
   double operator()(double time);
   double operator[](unsigned int j) const;
   double average(double t, double dt, unsigned int N);

@@ -50,15 +50,15 @@ if doHalfar
   a = topg;                % no surface balance
 else
   filename = ['testL_' num2str(J+1) '.nc'];
-  fprintf('reading NetCDF file "%s" to get exact solution for Test L ...\n',filename)
-  ncid = netcdf.open(filename, 'NOWRITE' );  % ONLY WORKS IN MATLAB 
-  acabid = netcdf.inqVarID(ncid,'acab');
-  topgid = netcdf.inqVarID(ncid,'topg');
-  usurfid = netcdf.inqVarID(ncid,'usurf');
-  a = netcdf.getVar(ncid,acabid,'double') / secpera;
-  topg = netcdf.getVar(ncid,topgid,'double');
-  h0 = netcdf.getVar(ncid,usurfid,'double');
-  netcdf.close(ncid);
+  fprintf('reading NetCDF file "%s" to get exact solution for Test L ...\n', filename)
+  nc_id = netcdf.open(filename, 'NOWRITE' );  % ONLY WORKS IN MATLAB
+  climatic_mass_balance_id = netcdf.inqVarID(nc_id, 'climatic_mass_balance');
+  topg_id = netcdf.inqVarID(nc_id, 'topg');
+  usurf_id = netcdf.inqVarID(nc_id, 'usurf');
+  a = netcdf.getVar(nc_id, climatic_mass_balance_id, 'double') / secpera;
+  topg = netcdf.getVar(nc_id, topg_id, 'double');
+  h0 = netcdf.getVar(nc_id, usurf_id, 'double');
+  netcdf.close(nc_id);
   t0 = 0.0;
   t1 = 5000.0;
   h1exact = h0;

@@ -45,7 +45,7 @@ void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r, string name, str
 
 
 //! Read timeseries data from a NetCDF file \c filename.
-PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) {
+PetscErrorCode Timeseries::read(string filename, bool use_reference_date) {
   PetscErrorCode ierr;
 
   PIO nc(com, rank, "netcdf3");
@@ -61,7 +61,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
   if (!exists) {
     ierr = PetscPrintf(com,
 		      "PISM ERROR: Can't find '%s' ('%s') in '%s'.\n",
-		       short_name.c_str(), standard_name.c_str(), filename);
+		       short_name.c_str(), standard_name.c_str(), filename.c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -72,7 +72,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
     ierr = PetscPrintf(com,
 		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
 		       "            but a time-series variable can only depend on 1 dimension.\n",
-		       short_name.c_str(), filename, dims.size()); CHKERRQ(ierr);
+		       short_name.c_str(), filename.c_str(), dims.size()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -92,7 +92,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
   }
   if (!is_increasing) {
     ierr = PetscPrintf(com, "PISM ERROR: dimension '%s' has to be strictly increasing (read from '%s').\n",
-		       dimension.short_name.c_str(), filename);
+		       dimension.short_name.c_str(), filename.c_str());
     PISMEnd();
   }
 
@@ -116,7 +116,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
     ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",
 		       dimension.short_name.c_str(),
 		       var.short_name.c_str(),
-		       filename); CHKERRQ(ierr);
+		       filename.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -126,7 +126,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
 }
 
 //! Write timeseries data to a NetCDF file \c filename.
-PetscErrorCode Timeseries::write(const char filename[]) {
+PetscErrorCode Timeseries::write(string filename) {
   PetscErrorCode ierr;
 
   // write the dimensional variable; this call should go first
