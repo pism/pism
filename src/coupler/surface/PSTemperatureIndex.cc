@@ -386,25 +386,24 @@ PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result
   return 0;
 }
 
-void PSTemperatureIndex::add_vars_to_output(string keyword, set<string> &result) {
+void PSTemperatureIndex::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+
+  atmosphere->add_vars_to_output(keyword, result);
+
   if (keyword == "medium" || keyword == "big") {
-    result.insert("climatic_mass_balance");
-    result.insert("ice_surface_temp");
+    result["climatic_mass_balance"] = climatic_mass_balance.get_metadata();
+    result["ice_surface_temp"] = ice_surface_temp;
   }
 
   if (keyword == "big") {
-    result.insert("saccum");
-    result.insert("smelt");
-    result.insert("srunoff");
+    result["saccum"]  = accumulation_rate.get_metadata();
+    result["smelt"]   = melt_rate.get_metadata();
+    result["srunoff"] = runoff_rate.get_metadata();
   }
-
-  atmosphere->add_vars_to_output(keyword, result);
 }
 
 PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
-
-  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, "ice_surface_temp")) {
     ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
@@ -425,6 +424,8 @@ PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO 
   if (set_contains(vars, "srunoff")) {
     ierr = runoff_rate.define(nc, nctype); CHKERRQ(ierr);
   }
+
+  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   return 0;
 }

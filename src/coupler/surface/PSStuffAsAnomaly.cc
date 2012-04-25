@@ -134,13 +134,13 @@ PetscErrorCode PSStuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) 
   return temp.copy_to(result);
 }
 
-void PSStuffAsAnomaly::add_vars_to_output(string keyword, set<string> &result) {
-  result.insert(temp.string_attr("short_name"));
-  result.insert(mass_flux.string_attr("short_name"));
-
+void PSStuffAsAnomaly::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
   if (input_model != NULL) {
     input_model->add_vars_to_output(keyword, result);
   }
+
+  result[temp.string_attr("short_name")] = temp.get_metadata();
+  result[mass_flux.string_attr("short_name")] = mass_flux.get_metadata();
 }
 
 PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {

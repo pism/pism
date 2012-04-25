@@ -37,21 +37,22 @@ static char help[] =
 
 //! \file pismo.cc A regional (outlet glacier) model form of PISM.
 /*! \file pismo.cc 
-The classes in this file modify basic PISM whole ice sheet modeling
-assumptions.  Especially that the ice sheet occupies a
-continent which is surrounded by ocean.  (Or that the edge of the computational
-domain is in a region with strong ablation that the ice will not cross.)
+The classes in this file modify basic PISM whole ice sheet modeling assumptions.
+Normally in PISM the ice sheet occupies a continent which is surrounded by
+ocean.  Or at least PISM assumes that the edge of the computational domain is in
+a region with strong ablation that the ice will not cross.
 
-Various simplifications and boundary conditions are enforced in a strip around
-the edge of the computational domain (variable \c no_model_mask and option
-\c -no_model_strip):
-* the surface gradient computation is made trivial
-* the driving stress changes in the same way
-* the base is made strong so no sliding occurs.
+Here, by contrast, we add a strip around the edge of the computational domain
+(variable \c no_model_mask and option \c -no_model_strip).  Various
+simplifications and boundary conditions are enforced in this script:
+* the surface gradient computation is made trivial,
+* the driving stress does not change during the run but instead comes from
+the gradient of a saved surface elevation, and
+* the base is made strong so that no sliding occurs.
 
 Also options \c -force_to_thk and variable \c ftt_mask play a role in isolating
-the modeled outlet glacier.  See the PSForceThickness surface model modifier 
-class.
+the modeled outlet glacier.  But there is no code here for that purpose. 
+Instead see the PSForceThickness surface model modifier class.
  */
 
 //! \brief A version of the PISM core class (IceModel) which knows about the
@@ -302,7 +303,6 @@ PetscErrorCode IceRegionalModel::initFromFile(string filename) {
   ierr = verbPrintf(2, grid.com,
                     "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
                     filename.c_str()); CHKERRQ(ierr);
-
 
   // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
   // The user is probably using -regrid_file to bring in SSA B.C. data.

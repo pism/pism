@@ -49,7 +49,7 @@ public:
 
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 protected:
   PetscReal precip_lapse_rate;
   NCSpatialVariable precipitation, air_temp;

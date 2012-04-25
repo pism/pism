@@ -1,17 +1,17 @@
 
 \section{Getting started}\label{sect:start}\index{PISM!getting started}
 
-In this section we give an extended example applying PISM to model the Greenland ice sheet.  We use recent data sets provided by the \href{http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment}{Sea-level Response to Ice Sheet Evolution (SeaRISE)} group.  SeaRISE is a community-organized assessment process providing an upper bound on ice sheet contributions to sea level in the next 100--200 years, especially for the next IPCC report in 2013.
+In this section we give an extended example applying PISM to model the Greenland ice sheet.  We use data assembled by the \href{http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment}{Sea-level Response to Ice Sheet Evolution (SeaRISE)} group.  SeaRISE is a community-organized assessment process providing an upper bound on ice sheet contributions to sea level in the next 100--200 years, especially for the IPCC AR5 report in 2013.
 
-The example in this section is a quick, hands-on first look at PISM.  It is not an in-depth tutorial, and some details of what is happening will only be explained later.  The sections on the older \mbox{EISMINT-Greenland} and \mbox{EISMINT-Ross} modeling cases, for instance, do a more complete job of explaining the ways users will need to preprocess not-so-clean input data and then make, and evaluate, modeling choices.
+The example in this section is a hands-on first look at PISM.  It is not an in-depth tutorial, and some details of what is happening will only be explained later.  Other sections explain the ways users will need to preprocess input data and then make and evaluate modeling choices.
 
-The PISM output figures in this section were produced using a supercomputer.  However, in order for the examples here to run on a typical workstation, a rather coarse $20\,\textrm{km}$ grid is used.  One purpose of PISM is to make much higher spatial resolution actually possible, but it does indeed require large-scale \emph{parallel} processing.
+Some of the PISM output figures in this section were produced using a supercomputer.  However, in order for the examples here to run on a typical workstation, a rather coarse $20\,\textrm{km}$ grid is used.  One purpose of PISM is to make much higher spatial resolution actually possible, but it does indeed require large-scale \emph{parallel} processing.
 
 
 \subsection{Install PISM}
 
 See the \emph{Installation Manual} at \href{http://www.pism-docs.org}{\texttt{www.pism-docs.org}}
-to install PISM.  Once installed, executables \texttt{pismr} and \texttt{pclimate}, and several others, will be in the \texttt{bin} subdirectory of the main PISM directory.  The main PISM directory might be at \texttt{/home/username/pism-dev/}, for example.  The instructions below assume you start from that main PISM directory.  We also assume you are using a \texttt{bash} shell or at least one that accepts \texttt{bash} syntax.
+to install PISM.  Once installed, executables \texttt{pismr} and \texttt{pclimate} should be available (i.e.~on the system's ``path'').  The instructions below also assume you are using a \texttt{bash} shell or one that accepts \texttt{bash} syntax.
 
 
 \subsection{Obtain and preprocess the input data}
@@ -27,11 +27,11 @@ The NetCDF data file which we use for input is freely-available online.  Descrip
 $ cd examples/searise-greenland
 $ ./preprocess.sh
 \end{verbatim}
-\noindent The script \texttt{preprocess.sh}\footnote{\protect{This script requires \texttt{wget} and also NCO (NetCDF Operators; \url{http://nco.sourceforge.net/})}.} downloads the version 1.1 SeaRISE ``master'' present-day data set and adjusts it to make it PISM-readable.  It creates three new NetCDF files, each having small metadata changes so that they can be read by PISM.  These metadata can be listed by \texttt{ncdump -h}.  Two of the new files contain famous time-dependent paleo-climate records from ice core (\texttt{pism_dT.nc} has GRIP) and seabed core records (\texttt{pism_dSL.nc} has SPECMAP).
+\noindent The script \texttt{preprocess.sh}\footnote{\protect{This script requires \texttt{wget} and also NCO (NetCDF Operators; \url{http://nco.sourceforge.net/})}.} downloads the version 1.1 SeaRISE ``master'' present-day data set.  It adjusts the metadata in this file to make it PISM-readable.  In fact it creates several new NetCDF files which can be read by PISM; use \texttt{ncdump -h} to see their metadata.  Two of the new files contain famous time-dependent paleo-climate records from ice core and seabed core records; \texttt{pism_dT.nc} has GRIP while \texttt{pism_dSL.nc} has SPECMAP.
 
-Also the preprocess script downloads the SeaRISE summary versions of IPCC AR4 (2007) climate projections, namely files \texttt{ar4_precip_anomaly.nc} and \texttt{ar4_temp_anomaly.nc}.  These files are downloaded from \href{http://www.pism-docs.org/}{www.pism-docs.org}, but they are versions of the data at the SeaRISE page \url{http://websrv.cs.umt.edu/isis/index.php/Future_Climate_Data}.  These surface temperature and precipitation projections  are used in the script \texttt{forecast.sh} to demonstrate offline coupling (forcing) in subsection \ref{subsect:forecastcaution} below.
+Also the preprocess script downloads the SeaRISE summary versions of IPCC AR4 (2007) climate projections, namely \texttt{ar4_precip_anomaly.nc} and \texttt{ar4_temp_anomaly.nc}.  These files are downloaded from \href{http://www.pism-docs.org/}{www.pism-docs.org}, but they are versions of the data at the SeaRISE page \url{http://websrv.cs.umt.edu/isis/index.php/Future_Climate_Data}.  These surface temperature and precipitation scenarios are used in the script \texttt{forecast.sh} to demonstrate offline coupling (forcing) in subsection \ref{subsect:forecastcaution} below.
 
-Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF visualization tools.  (See Table \ref{tab:NetCDFview} below.)  An application of IDV to the master data set produced Figure \ref{fig:sr-input}, for example.
+Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF visualization tools; see Table \ref{tab:NetCDFview} below.  An application of IDV to the master data set produced Figure \ref{fig:sr-input}, for example.
 
 \begin{figure}[ht]
 \centering
@@ -45,35 +45,42 @@ Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF vis
 \end{figure}
 
 
-\subsection{Run PISM}   \label{subsect:runscript}  We are ready to run PISM, but, like many Unix programs, PISM allows \emph{a lot} of command-line options.  Furthermore there are configuration parameters that get read from a file (\mbox{\texttt{lib/pism/pism_config.nc}}).  Because PISM handles many different ice sheet, shelf, and glacier configurations, the list of user-configurable flags and parameters is quite long.\footnote{For a complete list see \url{\PISMBROWSERURL}.}  These many options and parameters imply that one should often build a \emph{script} to run PISM with the correct options.  We have done this for \mbox{SeaRISE-Greenland}.
+\subsection{Run PISM}   \label{subsect:runscript}  We are ready to run PISM.  Like many Unix programs, PISM allows many command-line options.  Furthermore there are configuration parameters that get read from a file---see \mbox{\texttt{src/pism_config.cdl}} in the PISM source code.  Because PISM handles many different ice sheet, shelf, and glacier configurations, the list of user-configurable flags and parameters is quite long; for a complete list see \url{\PISMBROWSERURL}.  Therefore in practice we often build scripts to run PISM with the correct options, and we have done this for \mbox{SeaRISE-Greenland}.
 
-Modeling ice sheets can be done by integrating paleo-climatic and long-time-scale information to build a model for the present state of the ice sheet, so our main script is called ``\texttt{spinup.sh}''.  The spin-up stage is the one which generally requires the most processor-hours, compared to a follow-on ``forecast'' stage.  To \emph{see} what spin-up entails, do this:
+Modeling ice sheets can be done by integrating paleo-climatic and long-time-scale information to build a model for the present state of the ice sheet, so our main script is called ``\texttt{spinup.sh}''.  The spin-up stage is the one which generally requires the most processor-hours, compared to a follow-on ``forecast'' stage.  To see what is done during spin-up, do this:
 \begin{verbatim}
-$ PISM_DO=echo
-$ ./spinup.sh
+$ PISM_DO=echo  ./spinup.sh |less
 \end{verbatim}
-Setting the environment variable \texttt{PISM_DO} in this way tells \texttt{spinup.sh} just to print out the commands it is about to run, not do them.  Note that ``\texttt{mpiexec -n 2 pismr}'' appears in the PISM runs done by \texttt{spinup.sh}.  This means that the PISM executable \texttt{pismr} is run in parallel on two processes (e.g.~cores).  The executable name ``\texttt{pismr}'' stands for the standard ``run'' mode of PISM, in contrast to other, specialized modes described later.
+Setting the environment variable \texttt{PISM_DO} in this way tells \texttt{spinup.sh} just to print out the commands it is about to run, not do them.  Note that the script's output is best seen by piping its text output into a text viewer like \texttt{less}\footnote{\texttt{less} is in most linux distributions.  If you don't have it, try \texttt{more}.}
 
-For the rest of this example, we assume you have a workstation with 8 cores, but this will all work with 1 to 500 processes, with nearly-proportional scaling in speed.
+Note that ``\texttt{mpiexec -n 2 pismr}'' appears in the PISM runs done by \texttt{spinup.sh}.  This means that, by default, the PISM executable \texttt{pismr} is run in parallel on two processes (e.g.~cores).  The executable name ``\texttt{pismr}'' stands for the standard ``run'' mode of PISM, in contrast to other, specialized modes described later.
 
-The script \texttt{spinup.sh} starts by ``bootstrapping.''  This term describes the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the evolving, time-dependent model.  Concretely, the first 100 model year run with 8 processes will look like this (\emph{but there is no need to type here!}):
+For the rest of this example, we assume you have a workstation with 8 cores, but this example will work with 1 to 500 processes, with good scaling in speed.  The script takes the number of processes as its first argument:
+\begin{verbatim}
+$ PISM_DO=echo  ./spinup.sh 8 |less
+\end{verbatim}
+
+The script \texttt{spinup.sh} starts by ``bootstrapping.''  This term describes the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the evolving, time-dependent model.  In fact the first 100 model year run commanded by \texttt{spinup.sh} is this:
 \small
 \begin{verbatim}
-mpiexec -n 8 pismr -ocean_kill -e 3 -skip 10 -boot_file pism_Greenland_5km_v1.1.nc \
-  -Mx 76 -My 141 -Lz 4000 -Lbz 2000 -Mz 51 -Mbz 21 \
-  -atmosphere searise_greenland -surface pdd -pdd_fausto -y 100 -o g20km_pre100.nc
+mpiexec -n 8 pismr -config_override searise_config.nc -acab_cumulative \
+  -skip -skip_max 10 -boot_file pism_Greenland_5km_v1.1.nc -Mx 76 -My 141 \
+  -Lz 4000 -Lbz 2000 -Mz 101 -Mbz 11 -z_spacing equal \
+  -atmosphere searise_greenland -surface pdd -ocean_kill \
+  -y 100 -o g20km_pre100.nc
 \end{verbatim}
 \normalsize
 The options describe a $76\times 141$ point grid in the horizontal, which gives 20 km grid spacing in both directions.  There are also important choices about the vertical extent and resolution of the computational grid; more on those later. 
 
-Now, instead of typing-in the above PISM command with all its options, get the run going by resetting the environment variable \texttt{PISM_DO} to empty, and running the script:
+Now, let's actually get the run going:
 \begin{verbatim}
-$ export PISM_DO=
 $ ./spinup.sh 8 >> out.spin20km &
 \end{verbatim}
-\noindent Because we have re-directed the text output, PISM will show what it is doing in the text file \texttt{out.spin20km} as it runs in the background.  Using the GNU tool \texttt{less}\index{less, a GNU tool} is a good way to watch such a growing text file.  Reasonably quickly--- within a minute--- the run will produce the early flow result in \texttt{g20km_pre100.nc}.
+\noindent Because we have re-directed the text output, PISM will show what it is doing in the text file \texttt{out.spin20km} as it runs in the background.  Using \texttt{less} is a good way to watch such a growing text file.  Quickly the run will produce an early flow result in \texttt{g20km_pre100.nc}.
 
-Soon after that some climatic boundary conditions sample results will appear: \texttt{g20km_climate-500a.nc}, \texttt{g20km_climate-500a.nc}.  Such output from executable \texttt{pclimate} is effectively a movie of the stored and modeled climatic inputs to our ice dynamics model, including the results from surface models like the above-mentioned PDD model for surface mass balance.  This is a convenient way to, early in the modeling process, look at the critical surface mass balance and surface temperature inputs to the ice dynamics.
+Soon after that some climatic boundary conditions sample results will appear in \texttt{g20km_climate-500a.nc}.  Such output from executable \texttt{pclimate} is effectively a movie of the stored and modeled climatic inputs to our ice dynamics model, including the results from surface models like the above-mentioned PDD model for surface mass balance.  This is a convenient way to, early in the modeling process, look at the critical surface mass balance and surface temperature inputs to the ice dynamics.
+
+FIXME from here
 
 \subsection{Spin-Up}  \label{subsect:spinupsketch}  The next paragraphs describe what happens and what files are produced by the run which is underway.  We believe that the modeling choices represented here are reasonable, but there is certainly no claim that this is the ``only way to do it''.  The user is encouraged to experiment\dots that is the point of a model.
 

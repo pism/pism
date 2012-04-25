@@ -46,8 +46,7 @@ urlcolor=blue     % only if colorlinks=true
 %    {\Large Constantine Khroulev \\ Ed Bueler \\ Andy Aschwanden \\ Jed Brown \\ Nathan Shemonski}
     \vspace{1cm}
 
-    %\includegraphics[width=3.3in,keepaspectratio=true]{grn-1km-csurf}
-    \includegraphics[width=3.5in]{grn-1km-csurf}
+    \includegraphics[width=3.3in,keepaspectratio=true]{grn-1km-csurf}
     \vfill
 
     \small Support by email: \PISMEMAIL. 
@@ -67,7 +66,7 @@ urlcolor=blue     % only if colorlinks=true
 \bigskip
 
 \normalspacing
-PISM is a joint project between developers in the ice sheet modeling group at the University of Alaska (UAF) and in Anders Levermann's research group at the Potsdam Institute for Climate Impact Research (PIK).  The number of source code authors, documentation authors, and script contributors is large enough so that perhaps the best description is an alphabetical list, below.
+PISM is a joint project between developers in the ice sheet modeling group at the University of Alaska (UAF) and at the Potsdam Institute for Climate Impact Research (PIK).  The number of source code authors, documentation authors, and script contributors is large. Perhaps the best description is this alphabetical list.
 \bigskip
 \normalspacing
 
@@ -78,12 +77,13 @@ PISM is a joint project between developers in the ice sheet modeling group at th
 \textbf{Jed Brown} & source code original author, SSA numerics, PETSc underpinnings \\
 \textbf{\underline{Ed Bueler}} & \begin{minipage}[t]{4in} principal investigator, verification, earth deformation, SIA, thermodynamics, documentation  \end{minipage} \\
 \textbf{Dani DellaGiustina} & regional modeling \\
+\textbf{Marijke Habermann} & inversion\\
 \textbf{Marianne Haselhoff} & ice streams: physics and numerics\\
 \textbf{Regine Hock} & surface mass and energy balance \\
 \textbf{\underline{Constantine Khroulev}} & \begin{minipage}[t]{4in} source code primary author, input/output, software design, testing, documentation, most bug fixes \end{minipage} \\
 \textbf{Craig Lingle}\index{People!Lingle, Craig} & original modeling choices, earth deformation, modeled-it-before-you-did \\
-\textbf{Maria Martin} & SeaRISE-Antarctica \\
-\textbf{David Maxwell} & SSA finite elements, python bindings \\
+\textbf{Maria Martin} & SeaRISE-Antarctica, Antarctica processes \\
+\textbf{David Maxwell} & inversion, SSA finite elements, python bindings \\
 \textbf{Nathan Shemonski} & EISMINT-Greenland example \\
 \textbf{Ricarda Winkelmann} & Antarctica processes, coupling, and modeling  \\
 \textbf{Florian Ziemen} & bug fixes, sliding \\
@@ -102,7 +102,7 @@ Users will reach the \underline{underlined} UAF-based developers listed above by
 \newpage
 \vspace{0.2in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2011 The PISM Authors}
+\textsl{Copyright (C) 2004--2012 The PISM Authors}
 \medskip
 
 \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
@@ -139,19 +139,18 @@ Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Marijke Habermann, Tore Hat
 
 \section{Introduction}\label{sect:intro}
 
-Welcome!  All information about PISM is online at
+Welcome!  All information about PISM is online at the home page
 \begin{center}
-  \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
+  \url{http://www.pism-docs.org}
 \end{center}
 
 See the \emph{Installation Manual} for how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install}, along with needed libraries.
 
-This \emph{User's Manual} describes how to run PISM using certain publicly-available data for the Greenland ice sheet and the Ross ice shelf.  It illustrates how PISM's numerical approximations are verified.  It documents all the PISM options.  But it does not explain PISM internals, nor is it a guide for extending the functionality of PISM.
+This \emph{User's Manual} describes how to run PISM using certain publicly-available data for the Greenland ice sheet and the Ross ice shelf.  It illustrates how PISM's numerical approximations are verified.  It documents all the PISM options.
 
-Users who want to understand how PISM works, extend PISM, and/or generally advance the science of ice sheets will need to go beyond what is described here.  For such users there is a \emph{C++ Class Browser}\index{PISM!\emph{C++ Class Browser (HTML)}}.  It gives a complete view of the class/object structure of the PISM source code.  It is the best tool for the job of modifying and supplementing PISM by writing derived classes.  See
-\begin{center}
-  \url{\PISMBROWSERURL}
-\end{center}
+But it does not explain the design of the code, the numerical models, nor how to extend the functionality of PISM.  Users who want to understand how PISM works, extend it, or generally advance the science of ice sheets will need to go beyond what is described here.  For such users there is a \emph{Source Code Browser}\index{PISM!\emph{Source Code Browser (HTML)}} which can also be found online.  It gives a complete view of the class/object structure of the PISM source code.
+
+Please see the extensive lists of PISM applications and user projects at the home page.
 
 \vspace{.4in}
   
@@ -163,7 +162,7 @@ Users who want to understand how PISM works, extend PISM, and/or generally advan
 
 \large
 \begin{center}
-\framebox{\parbox{5.0in}{ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and is generally not mature.  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions at \PISMEMAIL.} }
+\framebox{\parbox{5.0in}{ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling requires many choices.  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions at \PISMEMAIL.} }
 \normalsize
 \end{center}
 \normalsize

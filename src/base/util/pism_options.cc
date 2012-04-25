@@ -137,9 +137,9 @@ PetscErrorCode just_show_usage(
       "       http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf\n"
       "  2. read browser for technical details:\n"
       "       http://www.pism-docs.org/doxy/html/index.html\n"
-      "  3. search bugs and tasks source host: https://gna.org/projects/pism\n"
+      "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
       "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
-      "  5. email:  help@pism-docs.org\n", 
+      "  5. email for help:  help@pism-docs.org\n", 
       execname,execname);  CHKERRQ(ierr);
   return 0;
 }

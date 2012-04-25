@@ -126,9 +126,9 @@ PetscErrorCode PSLapseRates::write_variables(set<string> vars, string filename) 
   return 0;
 }
 
-void PSLapseRates::add_vars_to_output(string keyword, set<string> &result) {
-  if (keyword != "small") {
-    result.insert("ice_surface_temp");
-    result.insert("climatic_mass_balance");
+void PSLapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+  if (keyword == "medium" || keyword == "big") {
+    result["ice_surface_temp"] = ice_surface_temp;
+    result["climatic_mass_balance"] = climatic_mass_balance;
   }
 }

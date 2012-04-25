@@ -94,15 +94,12 @@ PetscErrorCode IceModel::init_timeseries() {
       ts_vars.insert(var_name);
 
   } else {
-    var_name = config.get_string("ts_default_variables");
-    istringstream arg(var_name);
-
-    while (getline(arg, var_name, ' ')) {
-      if (!var_name.empty()) // this ignores multiple spaces separating variable names
-	ts_vars.insert(var_name);
+    map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+    while (j != ts_diagnostics.end()) {
+      ts_vars.insert(j->first);
+      ++j;
     }
   }
-
 
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   ierr = nc.open(ts_filename, PISM_WRITE, append); CHKERRQ(ierr);
@@ -184,7 +181,7 @@ PetscErrorCode IceModel::write_timeseries() {
 //! Initialize the code saving spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::init_extras() {
   PetscErrorCode ierr;
-  bool split, times_set, file_set, save_vars;
+  bool split, times_set, file_set, vars_set;
   string times, vars;
 
   last_extra = 0;               // will be set in write_extras()
@@ -199,7 +196,7 @@ PetscErrorCode IceModel::init_extras() {
 			     times, times_set); CHKERRQ(ierr);
 
     ierr = PISMOptionsString("-extra_vars", "Spacifies a comma-separated list of variables to save",
-			     vars, save_vars); CHKERRQ(ierr);
+			     vars, vars_set); CHKERRQ(ierr);
 
     ierr = PISMOptionsIsSet("-extra_split", "Specifies whether to save to separate files",
 			    split); CHKERRQ(ierr);
@@ -257,7 +254,7 @@ PetscErrorCode IceModel::init_extras() {
   }
 
   string var_name;
-  if (save_vars) {
+  if (vars_set) {
     ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
     istringstream arg(vars);
 
@@ -283,8 +280,15 @@ PetscErrorCode IceModel::init_extras() {
       i++;
     }
 
+    map<string,NCSpatialVariable> list;
     if (stress_balance)
-      stress_balance->add_vars_to_output("small", extra_vars);
+      stress_balance->add_vars_to_output("small", list);
+
+    map<string,NCSpatialVariable>::iterator j = list.begin();
+    while(j != list.end()) {
+      extra_vars.insert(j->first);
+      ++j;
+    }
 
   }
 

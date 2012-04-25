@@ -1,0 +1,21 @@
+This DEPRECATED directory contains the script efgrun.sh which does
+the runs for the paper
+  A. Aschwanden, E. Bueler, C. Khroulev, H. Blatter (2012).  An enthalpy
+  formulation for glaciers and ice sheets. Journal of Glaciology 58 (209),
+  441–457.
+Those runs were done under late pism0.3 (I think).
+
+First, run eisgreen/preprocess.sh to create the input file
+"eis_green_smoothed.nc".  Then link to it.  Then run the script here.
+In summary:
+
+$ (cd ../eisgreen && ./preprocess.sh)
+$ ln -s ../eisgreen/eis_green_smoothed.nc
+
+FIXME: efgrun.sh needs eismint_config.nc which seems not to be there
+
+$ export PISM_DO=echo          # in order to see what the run will do
+$ ./efgrun.sh N                # N = number of processors
+$ export PISM_DO=
+$ ./efgrun.sh N >> out.efgrun  # do the run and save the stdout
+

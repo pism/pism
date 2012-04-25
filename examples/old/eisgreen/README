@@ -1,0 +1,10 @@
+
+This DEPRECATED example was in the PISM0.4 and earlier User's Manual.
+It shows how to perform the EISMINT-Greenland intercomparison experiments
+using PISM.  To run the scripts with N processors:
+
+  $ ./preprocess.sh     # downloads from 
+  $ ./bootstrap.sh N >> out.boot &
+  $ ./ssl2.sh N >> out.ssl2 &
+  $ ./ccl3.sh N >> out.ccl3 &
+  

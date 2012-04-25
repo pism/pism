@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -62,6 +62,6 @@ PetscErrorCode PSSimple::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSSimple::add_vars_to_output(string keyword, set<string> &result) {
+void PSSimple::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
   atmosphere->add_vars_to_output(keyword, result);
 }

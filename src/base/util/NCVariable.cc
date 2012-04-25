@@ -47,6 +47,11 @@ void NCVariable::init(string name, MPI_Comm c, PetscMPIInt r) {
   rank = r;
 }
 
+int NCVariable::get_ndims() const {
+  return ndims;
+}
+
+
 //! \brief Read attributes from a file.
 PetscErrorCode NCVariable::read_attributes(string filename) {
   PetscErrorCode ierr;
@@ -216,8 +221,12 @@ void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_level
   zlevels = z_levels;
 
   dimensions["t"] = grid->config.get_string("time_dimension_name");
-  if (nlevels > 1)
+  if (nlevels > 1) {
     dimensions["z"] = "z";      // default; can be overridden easily
+    ndims = 3;
+  } else {
+    ndims = 2;
+  }
 
   variable_order = grid->config.get_string("output_variable_order");
 }
@@ -817,6 +826,8 @@ PetscErrorCode NCVariable::reset() {
   utClear(&units);
   utClear(&glaciological_units);
 
+  ndims = 0;
+
   return 0;
 }
 
@@ -1236,6 +1247,7 @@ void NCConfigVariable::update_from(const NCConfigVariable &other) {
 void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(n, c, r);
   dimension_name = dim_name;
+  ndims = 1;
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
@@ -1579,6 +1591,7 @@ void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIIn
   NCVariable::init(var_name, c, r);
   dimension_name = dim_name;
   bounds_name = "nv";           // number of vertices
+  ndims = 2;
 }
 
 PetscErrorCode NCTimeBounds::read(string filename, bool use_reference_date,

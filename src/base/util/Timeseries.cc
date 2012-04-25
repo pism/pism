@@ -263,6 +263,11 @@ PetscErrorCode Timeseries::set_attr(string name, string value) {
   return 0;
 }
 
+//! Get a string attribute.
+string Timeseries::get_string(string name) {
+  return var.get_string(name);
+}
+
 //! Set a single-valued scalar attribute.
 PetscErrorCode Timeseries::set_attr(string name, double value) {
   var.set(name, value);

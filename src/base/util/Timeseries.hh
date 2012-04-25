@@ -90,6 +90,7 @@ public:
   PetscErrorCode set_attr(string name, string value);
   PetscErrorCode set_units(string units, string glaciological_units);
   PetscErrorCode set_dimension_units(string units, string glaciological_units);
+  string get_string(string name);
 
   string short_name;
 protected:
