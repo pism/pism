@@ -1,4 +1,4 @@
-This folder contains all of the scripts needed to build a PISM regional
+This directory contains all of the scripts needed to build a PISM regional
 of Jakobshavn Isbrae in Greenland, or any other outlet glacier, from the
 SeaRISE 1km Greenland data.  This demonstrates the outlet-glacier-mode
 executable "pismo".
