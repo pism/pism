@@ -1,0 +1,69 @@
+This folder contains all of the scripts needed to build a PISM regional
+of Jakobshavn Isbrae in Greenland, or any other outlet glacier, from the
+SeaRISE 1km Greenland data.  This demonstrates the outlet-glacier-mode
+executable "pismo".
+
+In order to run pismo some preprocessing must be performed.  A number
+of python tools are needed.
+
+* Get regional-tools, the drainage basin generator.  Then go to the
+  newly-created "regional-tools/" directory and set up this python
+  tool as directed in README.md.   Note that README.md lists the
+  dependencies on python modules.  Here is the quick summary if
+  all dependencies are present:
+
+  $ cd ~
+  $ git clone https://bueler@github.com/pism/regional-tools.git
+  $ cd regional-tools/
+  $ python setup.py install    # optionally add "--user" to build locally
+
+* Now download and preprocess the SeaRISE data, an 80 Mb file:
+
+  $ cd ~/pism/examples/jako/   # directory with current README
+  $ ln -s ~/regional-tools/pism_regional.py .
+  $ ./preprocess.sh
+
+* Now use pism_regional.py.  It opens a graphical user interface (GUI)
+  which allows you to select a small rectangle around the flux gate or
+  fjord which is the terminus of the outlet glacier you want to model.
+
+  $ python pism_regional.py
+
+  Now select "gr1km.sh" to open.  Once the topographic map appears
+  in the Figure 1 window, select the button "Select terminus rectangle".
+  Now use the mouse to select the small rectangle around the Jakobshavn
+  terminus, for example.  Once it is a highlighted rectangle, click
+  "Compute the drainage basin mask".  (Because this is a large data set
+  there will be some delay; note that a parallel computation is done.)
+  Finally click "Save the drainage basin mask" and save with your
+  preferred name; we will assume here that it is "jakomask.nc".
+
+  FIXME on above: *  selecting rectangle slow/fragile
+                  *  feedback on completion of steps should appear in GUI
+                       not in terminal
+
+* The feedback from the above process includes a cutout command which
+  (FIXME: appears at terminal but that can get lost) appears as a global
+  attribute of jakomask.nc.  Get it and use it:
+
+  $ ncdump -h jakomask.nc
+
+  [cut and paste the command   <--- FIXME]
+  For example it will look like:
+
+  $ ncks -d x,327,873 -d y,1015,1349 /home/bueler/pism-dev/examples/jako/gr1km.nc output.nc
+
+* Apparently one also needs to cutout from the mask file and merge with ncks presumably
+  FIXME:
+
+   $ ncks -d x,327,873 -d y,1015,1349 /home/bueler/pism-dev/examples/jako/jakomask.nc bar.nc
+   ncks: ERROR Requested netCDF4-format output file but NCO was not built with netCDF4 support
+   ncks: HINT: Obtain or build a netCDF4-enabled version of NCO.  Try, e.g., ./configure --enable-netcdf4 ...;make;make install
+
+
+
+
+FIXME from here
+
+
+
