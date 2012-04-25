@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -128,21 +128,25 @@ PetscErrorCode IceModel::set_output_size(string option,
   set<string> choices;
   string keyword;
   bool flag;
-
-  choices.insert("none");
-  choices.insert("small");
-  choices.insert("medium");
-  choices.insert("big");
-
-  ierr = PISMOptionsList(grid.com, option,
-			 description, choices,
-			 default_value, keyword, flag); CHKERRQ(ierr);
+  map<string, NCSpatialVariable> list;
 
   result.clear();
 
   if (keyword == "none") {
     return 0;
   }
+
+  choices.insert("none");
+  choices.insert("small");
+  choices.insert("medium");
+  choices.insert("big");
+  ierr = PISMOptionsList(grid.com, option,
+			 description, choices,
+			 default_value, keyword, flag); CHKERRQ(ierr);
+
+
+  if (config.get_flag("force_full_diagnostics"))
+    keyword = "big";
 
   // Add all the model-state variables:
   set<string> vars = variables.keys();
@@ -158,68 +162,41 @@ PetscErrorCode IceModel::set_output_size(string option,
     i++;
   }
 
+  if (keyword == "medium" || keyword == "big") {
+    result.insert("enthalpy");
+    result.insert("temp");
+  }
+
   if (config.get_flag("do_age"))
     result.insert("age");
 
   if (config.get_flag("ocean_kill"))
     result.insert("ocean_kill_mask");
 
-  if (config.get_flag("force_full_diagnostics"))
-    keyword = "big";
-
   if (beddef != NULL)
-    beddef->add_vars_to_output(keyword, result);
+    beddef->add_vars_to_output(keyword, list);
 
   if (btu != NULL)
-    btu->add_vars_to_output(keyword, result);
+    btu->add_vars_to_output(keyword, list);
 
   if (basal_yield_stress != NULL)
-    basal_yield_stress->add_vars_to_output(keyword, result);
+    basal_yield_stress->add_vars_to_output(keyword, list);
 
   // Ask the stress balance module to add more variables:
   if (stress_balance != NULL)
-    stress_balance->add_vars_to_output(keyword, result);
+    stress_balance->add_vars_to_output(keyword, list);
 
   // Ask ocean and surface models to add more variables to the list:
   if (ocean != NULL)
-    ocean->add_vars_to_output(keyword, result);
+    ocean->add_vars_to_output(keyword, list);
 
   if (surface != NULL)
-    surface->add_vars_to_output(keyword, result);
+    surface->add_vars_to_output(keyword, list);
 
-  if (keyword == "small") {
-    // only model-state variables are saved; we're done
-    return 0;
-
-  } else if (keyword == "medium") {
-    // add all the variables listed in the config file ("medium" size):
-    string tmp = config.get_string("output_medium");
-    istringstream list(tmp);
-  
-    // split the list; note that this also removes any duplicate entries
-    while (getline(list, tmp, ' ')) {
-      if (!tmp.empty())		// this ignores multiple spaces separating variable names
-	result.insert(tmp);
-    }
-    return 0;
-
-  } else if (keyword == "big") {
-    // add all the variables listed in the config file ("big" size):
-    string tmp = config.get_string("output_big");
-    istringstream list(tmp);
-  
-    // split the list; note that this also removes any duplicate entries
-    while (getline(list, tmp, ' ')) {
-      if (!tmp.empty())		// this ignores multiple spaces separating variable names
-	result.insert(tmp);
-    }
-
-    if (!config.get_flag("do_age"))
-      result.erase("age");
-
-    return 0;
-  } else {
-    SETERRQ(grid.com, 1, "can't happen");
+  map<string,NCSpatialVariable>::iterator j = list.begin();
+  while(j != list.end()) {
+    result.insert(j->first);
+    ++j;
   }
 
   return 0;

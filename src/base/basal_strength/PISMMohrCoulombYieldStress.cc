@@ -278,8 +278,8 @@ PetscErrorCode PISMMohrCoulombYieldStress::regrid() {
 
 
 
-void PISMMohrCoulombYieldStress::add_vars_to_output(string /*keyword*/, set<string> &result) {
-  result.insert("tillphi");
+void PISMMohrCoulombYieldStress::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
+  result["tillphi"] = till_phi.get_metadata();
 }
 
 

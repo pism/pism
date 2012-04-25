@@ -150,6 +150,8 @@ public:
   virtual PetscErrorCode init_diagnostics();
   virtual PetscErrorCode init_ocean_kill();
 
+  virtual PetscErrorCode list_diagnostics();
+
   // see iceModel.cc
   PetscErrorCode init();
   virtual PetscErrorCode run();

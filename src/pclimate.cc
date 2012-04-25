@@ -242,8 +242,15 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   PetscScalar use_dt = dt;
 
   set<string> vars_to_write;
-  surface->add_vars_to_output("big", vars_to_write);
-  ocean->add_vars_to_output("big", vars_to_write);
+  map<string, NCSpatialVariable> list;
+  surface->add_vars_to_output("big", list);
+  ocean->add_vars_to_output("big", list);
+
+  map<string, NCSpatialVariable>::iterator j = list.begin();
+  while (j != list.end()) {
+    vars_to_write.insert(j->first);
+    ++j;
+  }
 
   // write the states
   for (PetscInt k = 0; k < NN; k++) {

@@ -115,9 +115,9 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-void POConstant::add_vars_to_output(string, set<string> &result) {
-  result.insert("shelfbtemp");
-  result.insert("shelfbmassflux");
+void POConstant::add_vars_to_output(string, map<string,NCSpatialVariable> &result) {
+  result["shelfbtemp"] = shelfbtemp;
+  result["shelfbmassflux"] = shelfbmassflux;
 }
 
 PetscErrorCode POConstant::define_variables(set<string> vars, const PIO &nc,

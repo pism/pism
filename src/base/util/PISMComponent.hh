@@ -34,6 +34,7 @@ using namespace std;
 
 class IceGrid;
 class NCConfigVariable;
+class NCSpatialVariable;
 class PISMDiagnostic;
 class PISMVars;
 
@@ -114,7 +115,8 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/) {}
+  virtual void add_vars_to_output(string /*keyword*/,
+                                  map<string,NCSpatialVariable> &/*result*/) {}
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
@@ -200,7 +202,7 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(string keyword, set<string> &result)
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
   {
     if (input_model != NULL) {
       input_model->add_vars_to_output(keyword, result);

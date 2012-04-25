@@ -120,9 +120,9 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSConstantPIK::add_vars_to_output(string /*keyword*/, set<string> &result) {
-  result.insert("acab");
-  result.insert("artm");
+void PSConstantPIK::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
+  result["acab"] = acab.get_metadata();
+  result["artm"] = artm.get_metadata();
   // does not call atmosphere->add_vars_to_output().
 }
 

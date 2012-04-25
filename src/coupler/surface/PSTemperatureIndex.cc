@@ -385,19 +385,20 @@ PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result
   return 0;
 }
 
-void PSTemperatureIndex::add_vars_to_output(string keyword, set<string> &result) {
+void PSTemperatureIndex::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+
+  atmosphere->add_vars_to_output(keyword, result);
+
   if (keyword == "medium" || keyword == "big") {
-    result.insert("acab");
-    result.insert("artm");
+    result["acab"] = acab.get_metadata();
+    result["artm"] = artm;
   }
 
   if (keyword == "big") {
-    result.insert("saccum");
-    result.insert("smelt");
-    result.insert("srunoff");
+    result["saccum"]  = accumulation_rate.get_metadata();
+    result["smelt"]   = melt_rate.get_metadata();
+    result["srunoff"] = runoff_rate.get_metadata();
   }
-
-  atmosphere->add_vars_to_output(keyword, result);
 }
 
 PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {

@@ -67,12 +67,12 @@ PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-void PAConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
-  result.insert("precip");
-  result.insert("temp_ma");
+void PAConstantPIK::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+  result["precip"] = precip.get_metadata();
+  result["temp_ma"] = temperature.get_metadata();
   
   if (keyword == "big") {
-    result.insert("airtemp");
+    result["airtemp"] = airtemp_var;
   }
 }
 
