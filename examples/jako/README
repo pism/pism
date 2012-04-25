@@ -23,43 +23,58 @@ of python tools are needed.
   $ ln -s ~/regional-tools/pism_regional.py .
   $ ./preprocess.sh
 
-* Now use pism_regional.py.  It opens a graphical user interface (GUI)
-  which allows you to select a small rectangle around the flux gate or
+  A file gr1km.nc is created.  Look at what fields it contains:
+
+  $ ncdump -h gr1km.nc
+  $ ncview gr1km.nc
+
+* Now use pism_regional.py on gr1km.nc.  It opens a graphical user interface
+  (GUI) which allows you to select a small rectangle around the flux gate or
   fjord which is the terminus of the outlet glacier you want to model.
 
   $ python pism_regional.py
 
-  Now select "gr1km.sh" to open.  Once the topographic map appears
+  Now select "gr1km.nc" to open.  Once the topographic map appears
   in the Figure 1 window, select the button "Select terminus rectangle".
   Now use the mouse to select the small rectangle around the Jakobshavn
   terminus, for example.  Once it is a highlighted rectangle, click
-  "Compute the drainage basin mask".  (Because this is a large data set
-  there will be some delay; note that a parallel computation is done.)
+  "Compute the drainage basin mask".  Because this is a large data set
+  there will be some delay.  (Note that a parallel computation is done here.)
   Finally click "Save the drainage basin mask" and save with your
   preferred name; we will assume here that it is "jakomask.nc".
 
-  FIXME on above: *  selecting rectangle slow/fragile
-                  *  feedback on completion of steps should appear in GUI
-                       not in terminal
+  FIXME: *  selecting rectangle slow/fragile?
+         *  feedback on completion of steps should appear in GUI
+              not in terminal?
+         *  cutout command which appears at terminal can get lost?
 
 * The feedback from the above process includes a cutout command which
-  (FIXME: appears at terminal but that can get lost) appears as a global
-  attribute of jakomask.nc.  Get it and use it:
+  appears as a global attribute of jakomask.nc.  Get it and use it:
 
-  $ ncdump -h jakomask.nc
+  $ ncdump -h jakomask.nc |grep cutout
 
-  [cut and paste the command   <--- FIXME]
-  For example it will look like:
+  Cut and paste the command, which applies to both the 1km Greenland data file
+  and the mask file.  For example it will look like:
 
-  $ ncks -d x,327,873 -d y,1015,1349 /home/bueler/pism-dev/examples/jako/gr1km.nc output.nc
+  $ ncks -d x,344,873 -d y,1015,1349 gr1km.nc jako.nc
+  $ ncks -A -d x,344,873 -d y,1015,1349 jakomask.nc jako.nc
 
-* Apparently one also needs to cutout from the mask file and merge with ncks presumably
-  FIXME:
+  Now look at jako.nc.  This file is ready for a regional model.  Note that
+  the field ftt_mask has an identified drainage basin, outside of which we
+  will not have a good model, because of the completely unmodeled exterior of
+  the whole rectangle.  Outside of the ftt_mask area we will keep the original
+  thickness, while inside the ftt_mask area all fields will evolve normally.
 
-   $ ncks -d x,327,873 -d y,1015,1349 /home/bueler/pism-dev/examples/jako/jakomask.nc bar.nc
-   ncks: ERROR Requested netCDF4-format output file but NCO was not built with netCDF4 support
-   ncks: HINT: Obtain or build a netCDF4-enabled version of NCO.  Try, e.g., ./configure --enable-netcdf4 ...;make;make install
+* FIXME:  need preprocess.sh to rename presartm and presprecip to use in -surface given
+  mode
 
+  5km:  vaguely like
+
+  mpiexec -n 2 pismo -boot_file jako.nc -Mx 67 -My 106 -Mz 101 -Mbz 21 -Lz 3500 -Lbz 700 -y 1
+
+  1km: like
+
+  mpiexec -n 2 pismo -boot_file jako.nc -Mx 335 -My 530 -Mz 101 -Mbz 21 -Lz 3500 -Lbz 700 -y 1
 
 
 

@@ -21,15 +21,23 @@ echo "  ... done."
 echo
 
 WORKING=gr1km.nc
-echo "creating simplified file $WORKING with vars x,y,usurf,thk from master ..."
+echo "creating PISM-readable file $WORKING from master ..."
 
 # copies over preserving history and global attrs:
-ncks -O -v topg,thk,x,y $DATANAME $WORKING
+ncks -O $DATANAME $WORKING
 
 # remove time dimension
 ncwa -O -a t $WORKING $WORKING
 # create usurf
 ncap -O -s 'usurf=thk+topg' $WORKING $WORKING
+
+echo "copying geometry related fields to use as boundary conditions in no_model area..."
+# create fields thkstore and usrfstore so that pismo is able to appropriately
+# assign Dirichlet b.c. for surface gradient & driving stress
+ncap -O -s "usurfstore=1.0*usurf" $WORKING $WORKING
+ncatted -a standard_name,usurfstore,d,, $WORKING # remove it
+ncap -O -s "thkstore=1.0*thk" $WORKING $WORKING
+ncatted -a standard_name,thkstore,d,, $WORKING # remove it
 
 echo "done with cleaning file $WORKING"
 echo "now do 'python pism_regional.py' and open $WORKING"
