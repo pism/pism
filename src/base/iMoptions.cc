@@ -130,20 +130,20 @@ PetscErrorCode IceModel::set_output_size(string option,
   bool flag;
   map<string, NCSpatialVariable> list;
 
-  choices.insert("none");
-  choices.insert("small");
-  choices.insert("medium");
-  choices.insert("big");
-
-  ierr = PISMOptionsList(grid.com, option,
-			 description, choices,
-			 default_value, keyword, flag); CHKERRQ(ierr);
-
   result.clear();
 
   if (keyword == "none") {
     return 0;
   }
+
+  choices.insert("none");
+  choices.insert("small");
+  choices.insert("medium");
+  choices.insert("big");
+  ierr = PISMOptionsList(grid.com, option,
+			 description, choices,
+			 default_value, keyword, flag); CHKERRQ(ierr);
+
 
   if (config.get_flag("force_full_diagnostics"))
     keyword = "big";
@@ -162,7 +162,7 @@ PetscErrorCode IceModel::set_output_size(string option,
     i++;
   }
 
-  if (keyword != "small") {
+  if (keyword == "medium" || keyword == "big") {
     result.insert("enthalpy");
     result.insert("temp");
   }

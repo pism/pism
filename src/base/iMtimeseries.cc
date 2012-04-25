@@ -181,7 +181,7 @@ PetscErrorCode IceModel::write_timeseries() {
 //! Initialize the code saving spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::init_extras() {
   PetscErrorCode ierr;
-  bool split, times_set, file_set, save_vars;
+  bool split, times_set, file_set, vars_set;
   string times, vars;
 
   last_extra = 0;               // will be set in write_extras()
@@ -196,7 +196,7 @@ PetscErrorCode IceModel::init_extras() {
 			     times, times_set); CHKERRQ(ierr);
 
     ierr = PISMOptionsString("-extra_vars", "Spacifies a comma-separated list of variables to save",
-			     vars, save_vars); CHKERRQ(ierr);
+			     vars, vars_set); CHKERRQ(ierr);
 
     ierr = PISMOptionsIsSet("-extra_split", "Specifies whether to save to separate files",
 			    split); CHKERRQ(ierr);
@@ -254,7 +254,7 @@ PetscErrorCode IceModel::init_extras() {
   }
 
   string var_name;
-  if (save_vars) {
+  if (vars_set) {
     ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
     istringstream arg(vars);
 

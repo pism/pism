@@ -169,7 +169,7 @@ PetscErrorCode PALapseRates::write_variables(set<string> vars, string filename) 
 void PALapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
   input_model->add_vars_to_output(keyword, result);
 
-  if (keyword != "small") {
+  if (keyword == "medium" || keyword == "big") {
     result["air_temp"] = air_temp;
     result["precip"]   = precip;
   }

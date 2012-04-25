@@ -127,7 +127,7 @@ PetscErrorCode PSLapseRates::write_variables(set<string> vars, string filename) 
 }
 
 void PSLapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
-  if (keyword != "small" && keyword != "none") {
+  if (keyword == "medium" || keyword == "big") {
     result["artm"] = artm;
     result["acab"] = acab;
   }

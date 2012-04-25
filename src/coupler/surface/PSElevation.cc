@@ -223,7 +223,7 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
 }
 
 void PSElevation::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
-  if (keyword != "small") {
+  if (keyword == "medium" || keyword == "big") {
     result["artm"] = artm;
     result["acab"] = acab;
   }
