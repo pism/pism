@@ -201,8 +201,7 @@ PRE0CLIMATE=g${CS}km_climate${CLIMSTARTTIME}a.nc
 PCLIM="${PISM_PREFIX}pclimate"
 echo
 echo "$SCRIPTNAME  running pclimate to show climate in modern period [${CLIMSTARTTIME} a,0 a], using current geometry and 10 year subintervals"
-cmd="$PISM_MPIDO $NN $PCLIM -i $PRE0NAME $COUPLER_FORCING \
-  -ys $CLIMSTARTTIME -ye 0 -dt 10.0 -o $PRE0CLIMATE"
+cmd="$PISM_MPIDO $NN $PCLIM -i $PRE0NAME $COUPLER_FORCING -times $CLIMSTARTTIME:10:0 -o $PRE0CLIMATE"
 $PISM_DO $cmd
 
 
