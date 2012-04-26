@@ -169,11 +169,11 @@ echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km), with -skip = $FINESK
 PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG -acab_cumulative"
 
 # coupler settings for pre-spinup
-COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -ocean_kill"
+COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -ocean_kill $INNAME"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_FORCING="-atmosphere searise_greenland,dTforcing -surface pdd -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES -ocean_kill"
+COUPLER_FORCING="-atmosphere searise_greenland,dTforcing -surface pdd -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES -ocean_kill $INNAME"
 # coupler settings for spin-up (i.e. with forcing) and force-to-thickness
-COUPLER_FTT="-atmosphere searise_greenland,dTforcing -surface pdd,forcing -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES -ocean_kill"
+COUPLER_FTT="-atmosphere searise_greenland,dTforcing -surface pdd,forcing -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES -ocean_kill $INNAME"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
