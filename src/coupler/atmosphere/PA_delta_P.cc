@@ -16,34 +16,36 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "POdTforcing.hh"
+#include "PA_delta_P.hh"
 
-POdTforcing::POdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
-  : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
+PA_delta_P::PA_delta_P(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+  : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
-  option_prefix = "-ocean_delta_T_file";
-  offset_name = "delta_T";
+  option_prefix = "-atmosphere_delta_P_file";
+  offset_name = "delta_P";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("Kelvin", "");
+  offset->set_units("m / year", "");
   offset->set_dimension_units(grid.time->units(), "");
-  offset->set_attr("long_name", "ice-shelf-base temperature offsets");
+  offset->set_attr("long_name", "precipitation offsets");
 }
 
-PetscErrorCode POdTforcing::init(PISMVars &vars) {
+PetscErrorCode PA_delta_P::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-                    "* Initializing ice shelf base temperature forcing using scalar offsets...\n"); CHKERRQ(ierr);
+                    "* Initializing precipitation forcing using scalar offsets...\n"); CHKERRQ(ierr);
 
   ierr = init_internal(); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode POdTforcing::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->shelf_base_temperature(result); CHKERRQ(ierr);
+
+PetscErrorCode PA_delta_P::mean_precipitation(IceModelVec2S &result) {
+  PetscErrorCode ierr = input_model->mean_precipitation(result);
   ierr = offset_data(result); CHKERRQ(ierr);
   return 0;
 }
+

@@ -16,23 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PODSBMFFORCING_H_
-#define _PODSBMFFORCING_H_
+#ifndef _PSDTFORCING_H_
+#define _PSDTFORCING_H_
 
 #include "PScalarForcing.hh"
-#include "PISMOcean.hh"
-#include "POModifier.hh"
+#include "PISMSurface.hh"
+#include "PSModifier.hh"
 
-//! \brief Forcing using shelf base mass flux offsets (scalar, time-dependent).
-class POdSBMFforcing : public PScalarForcing<PISMOceanModel,POModifier>
+class PS_delta_T : public PScalarForcing<PISMSurfaceModel,PSModifier>
 {
 public:
-  POdSBMFforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
-  virtual ~POdSBMFforcing() {}
+  PS_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
+  virtual ~PS_delta_T() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 };
 
-#endif /* _PODSBMFFORCING_H_ */
+#endif /* _PSDTFORCING_H_ */

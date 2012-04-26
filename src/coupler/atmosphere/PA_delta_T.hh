@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,22 +16,27 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSDTFORCING_H_
-#define _PSDTFORCING_H_
+#ifndef _PADTFORCING_H_
+#define _PADTFORCING_H_
 
 #include "PScalarForcing.hh"
-#include "PISMSurface.hh"
-#include "PSModifier.hh"
+#include "PAModifier.hh"
 
-class PSdTforcing : public PScalarForcing<PISMSurfaceModel,PSModifier>
+class PA_delta_T : public PScalarForcing<PISMAtmosphereModel,PAModifier>
 {
 public:
-  PSdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
-  virtual ~PSdTforcing() {}
+  PA_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  virtual ~PA_delta_T() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
+
+  virtual PetscErrorCode temp_time_series(int i, int j, int N,
+                                          PetscReal *ts, PetscReal *values);
+  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+
 };
 
-#endif /* _PSDTFORCING_H_ */
+
+#endif /* _PADTFORCING_H_ */

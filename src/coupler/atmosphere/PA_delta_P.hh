@@ -22,11 +22,11 @@
 #include "PScalarForcing.hh"
 #include "PAModifier.hh"
 
-class PAdPforcing : public PScalarForcing<PISMAtmosphereModel,PAModifier>
+class PA_delta_P : public PScalarForcing<PISMAtmosphereModel,PAModifier>
 {
 public:
-  PAdPforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
-  virtual ~PAdPforcing() {}
+  PA_delta_P(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  virtual ~PA_delta_P() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 

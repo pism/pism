@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,11 +22,11 @@
 #include "PScalarForcing.hh"
 #include "POModifier.hh"
 
-class POdSLforcing : public PScalarForcing<PISMOceanModel,POModifier>
+class PO_delta_SL : public PScalarForcing<PISMOceanModel,POModifier>
 {
 public:
-  POdSLforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
-  virtual ~POdSLforcing() {}
+  PO_delta_SL(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
+  virtual ~PO_delta_SL() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode sea_level_elevation(PetscReal &result);

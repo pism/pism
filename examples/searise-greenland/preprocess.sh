@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 Ed Bueler and Andy Aschwanden
+# Copyright (C) 2009-2012 Ed Bueler and Andy Aschwanden
 
 # PISM SeaRISE Greenland
 #
@@ -42,11 +42,11 @@ ncks -O -v lat,lon,bheatflx,topg,thk,precip,mapping \
 echo "done."
 echo
 
-# extract time series into files suitable for -dTforcing and -dSLforcing;
+# extract time series into files suitable for -atmosphere ...,delta_T and -ocean ...,delta_SL
 # compare resulting files to grip_dT.nc and specmap_dSL.nc in pism-dev/examples/eisgreen/
 TEMPSERIES=pism_dT.nc
 SLSERIES=pism_dSL.nc
-echo -n "creating paleo-temperature file $TEMPSERIES from $DATANAME for option -dTforcing ... "
+echo -n "creating paleo-temperature file $TEMPSERIES from $DATANAME for option -atmosphere ...,delta_T ... "
 ncks -O -v oisotopestimes,temp_time_series $DATANAME $TEMPSERIES
 ncrename -O -d oisotopestimes,time -v oisotopestimes,time -v temp_time_series,delta_T $TEMPSERIES
 ncpdq -O --rdr=-time $TEMPSERIES $TEMPSERIES  # reverse time dimension
@@ -54,9 +54,9 @@ ncap -O -s "time=-time" $TEMPSERIES $TEMPSERIES  # make times follow same conven
 ncatted -O -a units,time,a,c,"years since 1-1-1" $TEMPSERIES
 echo "done."
 echo
-echo -n "creating paleo-sea-level file $SLSERIES from $DATANAME for option -dSLforcing ... "
+echo -n "creating paleo-sea-level file $SLSERIES from $DATANAME for option -ocean ...,delta_SL ... "
 ncks -O -v sealeveltimes,sealevel_time_series $DATANAME $SLSERIES
-ncrename -O -d sealeveltimes,time -v sealeveltimes,time -v sealevel_time_series,delta_sea_level $SLSERIES
+ncrename -O -d sealeveltimes,time -v sealeveltimes,time -v sealevel_time_series,delta_SL $SLSERIES
 ncpdq -O --rdr=-time $SLSERIES $SLSERIES  # reverse time dimension
 ncap -O -s "time=-time" $SLSERIES $SLSERIES  # make times follow same convention as PISM
 ncatted -O -a units,time,a,c,"years since 1-1-1" $SLSERIES

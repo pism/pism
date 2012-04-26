@@ -16,11 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PAdTforcing.hh"
+#include "PA_delta_T.hh"
 
 /// delta_T forcing of near-surface air temperatures
 
-PAdTforcing::PAdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+PA_delta_T::PA_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
   option_prefix = "-atmosphere_delta_T_file";
@@ -31,7 +31,7 @@ PAdTforcing::PAdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmospher
   offset->set_attr("long_name", "near-surface air temperature offsets");
 }
 
-PetscErrorCode PAdTforcing::init(PISMVars &vars) {
+PetscErrorCode PA_delta_T::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
@@ -44,13 +44,13 @@ PetscErrorCode PAdTforcing::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PAdTforcing::mean_annual_temp(IceModelVec2S &result) {
+PetscErrorCode PA_delta_T::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->mean_annual_temp(result); CHKERRQ(ierr);
   ierr = offset_data(result); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PAdTforcing::temp_time_series(int i, int j, int N,
+PetscErrorCode PA_delta_T::temp_time_series(int i, int j, int N,
                                              PetscReal *ts, PetscReal *values) {
   PetscErrorCode ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
   
@@ -62,7 +62,7 @@ PetscErrorCode PAdTforcing::temp_time_series(int i, int j, int N,
   return 0;
 }
 
-PetscErrorCode PAdTforcing::temp_snapshot(IceModelVec2S &result) {
+PetscErrorCode PA_delta_T::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
   ierr = offset_data(result); CHKERRQ(ierr);
   return 0;

@@ -45,7 +45,7 @@ ncks -O -v x,y,lat,lon,bheatflx,topg,thk,precip,temp_ma,mapping \
 echo "  PISM-readable file $PISMVERSION created; only has fields"
 echo "    used in bootstrapping."
 
-# extract time series into files suitable for -dTforcing and -dSLforcing;
+# extract time series into files suitable for -atmosphere ...,delta_T and -ocean ...,delta_SL
 TEMPSERIES=pism_dT.nc
 SLSERIES=pism_dSL.nc
 ncks -O -v temptimes,temp_time_series $DATANAME $TEMPSERIES
@@ -53,14 +53,14 @@ ncrename -O -d temptimes,t -v temptimes,t -v temp_time_series,delta_T $TEMPSERIE
 ncpdq -O --rdr=-t $TEMPSERIES $TEMPSERIES  # reverse time dimension so that
 ncap -O -s "t=-t" $TEMPSERIES $TEMPSERIES  #   times follow same convention as PISM
 ncatted -O -a units,t,a,c,"years since 1-1-1" $TEMPSERIES
-echo "  PISM-readable paleo-temperature file $TEMPSERIES; for option -dTforcing"
+echo "  PISM-readable paleo-temperature file $TEMPSERIES; for option -atmosphere ...,delta_T"
 
 ncks -O -v sealeveltimes,sealevel_time_series $DATANAME $SLSERIES
-ncrename -O -d sealeveltimes,t -v sealeveltimes,t -v sealevel_time_series,delta_sea_level $SLSERIES
+ncrename -O -d sealeveltimes,t -v sealeveltimes,t -v sealevel_time_series,delta_SL $SLSERIES
 ncpdq -O --rdr=-t $SLSERIES $SLSERIES  # reverse time dimension so that
 ncap -O -s "t=-t" $SLSERIES $SLSERIES  #   times follow same convention as PISM
 ncatted -O -a units,t,a,c,"years since 1-1-1" $SLSERIES
-echo "  PISM-readable paleo-sea-level file $SLSERIES; for option -dSLforcing"
+echo "  PISM-readable paleo-sea-level file $SLSERIES; for option -ocean ...,delta_SL"
 echo
 
 

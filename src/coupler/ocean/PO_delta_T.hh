@@ -24,11 +24,11 @@
 #include "POModifier.hh"
 
 //! \brief Forcing using shelf base temperature scalar time-dependent offsets.
-class POdTforcing : public PScalarForcing<PISMOceanModel,POModifier>
+class PO_delta_T : public PScalarForcing<PISMOceanModel,POModifier>
 {
 public:
-  POdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
-  virtual ~POdTforcing() {}
+  PO_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
+  virtual ~PO_delta_T() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 

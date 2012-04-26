@@ -598,6 +598,84 @@ will produce \texttt{foo.nc} containing a ``movie'' very similar to the one crea
 
 In addition to \texttt{foo.nc}, the latter command will produce \texttt{ts.nc} containing scalar time-series. The variable \texttt{surface_ice_flux} (the \emph{total over the ice-covered area} of the surface mass flux) can be used to detect if climate forcing is applied at the right time.
 
+\begin{comment}
+  \subsubsection*{Visualizing the climate inputs in the Greenland case}
+\label{sec:pdd-series-with-pclimate}
+
+Assuming that \texttt{green20km_y1.nc} was produced by the run above (see section
+\ref{sect:green-bootstrapping}), one can run the following to check if the PDD
+model in PISM (see section \ref{sec:boundary-models}) is ``reasonable'':
+\begin{verbatim}
+$ pclimate -i green20km_y1.nc -atmosphere eismint_greenland -surface pdd \
+           -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc 
+\end{verbatim}%$
+This produces the file \texttt{pddmovie.nc} with several variables: \texttt{acab}
+(instantaneous net ice equivalent accumulation (ablation) rate), \texttt{artm}
+(mean annual temperature at ice surface but below firn), \texttt{airtemp}
+(instantaneous near-surface air temperature), \texttt{precip} (mean annual
+ice-equivalent precipitation rate) and some others.
+
+Variables \texttt{artm} and \texttt{precip} do not evolve over time because the 
+former is generated from ice sheet geometry and latitude by the EISMINT-Greenland formulas \cite{RitzEISMINT}, while the latter is part of the EISMINT-Greenland data itself.
+
+The other two variables were used to create figure \ref{fig:pddseries}, which
+shows the time-series of the accumulation rate (top graph) and the air
+temperature (bottom graph) with the map view of the air temperature at time 0
+over it. The cross on the latter shows (approximately) the location of the
+point used for the time-series.
+
+Here are two things to notice:
+\begin{enumerate}
+\item The summer peak day is in the right place.  The default for this value is
+  August 1 (day $243$, at approximately $243/365 \simeq 0.66$ year).  (If it is
+  important, the peak day can be changed using the \texttt{-pdd_summer_peak_day}
+  option; subsection \ref{sec:boundary-models}).
+
+\item Lows of the surface mass balance rate \texttt{acab} correspond to 
+  positive degree-days in the given period, because of highs of the air
+  temperature.  Recall the air temperature graph does
+  not show random daily variations.  Even though it has the maximum of about $266$
+  Kelvin, the parameterized instantaneous air temperature can be above freezing.
+  A positive value for positive degree-days is expected \cite{CalovGreve05}.
+\end{enumerate}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5in]{pdd-timeseries}
+  \caption{Time series of the surface mass balance rate and near-surface air temperature. Map view 
+           on the right shows the location chosen.}
+  \label{fig:pddseries}
+\end{figure}
+
+\bigskip
+We can also test the surface temperature forcing code with the following command.
+\begin{verbatim}
+$ pclimate -i green20km_y1.nc -o dT_movie.nc \
+           -atmosphere eismint_greenland,delta_T -atmosphere_delta_T_file grip_dT.nc \
+           -times -2.5e5:2000:0
+\end{verbatim}%$
+The output \texttt{dT_movie.nc} and \texttt{grip_dT.nc} mentioned in section above were used to create figure \ref{fig:artm-timeseries}.
+
+This figure shows the GRIP temperature offsets (top graph; compare to figure \ref{fig:gripDeltaT}) and the time-series of the temperature at the ice surface at a point in southern Greenland (bottom graph), confirming that the temperature offsets are used correctly.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5in]{artm-timeseries}
+  \caption{Time series of the surface temperature compared to GRIP temperature offsets}
+  \label{fig:artm-timeseries}
+\end{figure}
+
+\begin{comment}
+  FIXME: Variable acab in following is worth looking at. It looks right and it
+  may be possible to compare to other paleo-climate studies:
+\begin{verbatim}
+$ pclimate -i green20km_y1.nc -o bar.nc -times -125000.0:1000:0 \
+           -atmosphere_delta_T_file grip_dT.nc -ocean_delta_SL_file specmap_dSL.nc \
+           -atmosphere eismint_greenland,delta_T -surface pdd -ocean constant,delta_SL
+\end{verbatim}%$
+\end{comment}
+
+\end{comment}
 
 \clearpage\newpage
 \newcommand{\surface}{Surface components (\texttt{-surface}; default: \texttt{given})}
@@ -872,7 +950,7 @@ by PISM). See equation~(1) in~\cite{Martinetal2011}.
     \toprule
     Command-line option: & \texttt{-surface~...,delta_T} \index[options]{SB@\surfacemods!\texttt{delta_T}} \\
     NetCDF variables: & \variable{delta_T} \\
-    C++ class: & \class{PSdTforcing}\\
+    C++ class: & \class{PS_delta_T}\\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -1141,7 +1219,7 @@ section~\ref{sec:surface-pik}.
     \toprule
     Command-line option: & \texttt{-atmosphere~...,delta_T} \index[options]{\atmospheremods!\texttt{delta_T}} \\
     NetCDF variables: & \variable{delta_T} \\
-    C++ class: & \class{PAdTforcing}\\
+    C++ class: & \class{PA_delta_T}\\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -1165,7 +1243,7 @@ file PISM will read \variable{delta_T} from.
     \toprule
     Command-line option: & \texttt{-atmosphere~...,delta_P} \index[options]{\atmospheremods!\texttt{delta_P}} \\
     NetCDF variables: & \variable{delta_P} \mbox{[m/s ice equivalent]}\\
-    C++ class: & \class{PAdPforcing}\\
+    C++ class: & \class{PA_delta_P}\\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -1338,7 +1416,7 @@ It takes one command-line option:
     \toprule
     Command-line option: & \texttt{-ocean~...,delta_SL} \index[options]{OB@\oceanmods!\texttt{delta_SL}} \\
     NetCDF variables: & \variable{delta_SL} [meters]\\
-    C++ class: & \class{POdSLforcing}\\
+    C++ class: & \class{PO_delta_SL}\\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -1363,7 +1441,7 @@ It takes the following command-line options:
     \toprule
     Command-line option: & \texttt{-ocean~...,delta_T} \index[options]{OB@\oceanmods!\texttt{delta_T}} \\
     NetCDF variables: & \variable{delta_T} [Kelvin]\\
-    C++ class: & \class{POdTforcing}\\
+    C++ class: & \class{PO_delta_T}\\
     \bottomrule
   \end{tabular}
 \end{center}

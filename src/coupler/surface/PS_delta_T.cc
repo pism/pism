@@ -16,34 +16,36 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "POdSBMFforcing.hh"
+#include "PS_delta_T.hh"
 
-POdSBMFforcing::POdSBMFforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
-  : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
+/// -surface ...,delta_T (scalar forcing of ice surface temperatures)
+
+PS_delta_T::PS_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+  : PScalarForcing<PISMSurfaceModel,PSModifier>(g, conf, in)
 {
-  option_prefix = "-ocean_delta_mass_flux_file";
-  offset_name = "delta_mass_flux";
+  option_prefix = "-surface_delta_T";
+  offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("m s-1", "");
+  offset->set_units("Kelvin", "");
   offset->set_dimension_units(grid.time->units(), "");
-  offset->set_attr("long_name", "ice-shelf-base mass flux offsets");
+  offset->set_attr("long_name", "ice-surface temperature offsets");
 }
 
-PetscErrorCode POdSBMFforcing::init(PISMVars &vars) {
+PetscErrorCode PS_delta_T::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-                    "* Initializing ice shelf base mass flux forcing using scalar offsets...\n"); CHKERRQ(ierr);
+                    "* Initializing ice-surface temperature forcing using scalar offsets...\n"); CHKERRQ(ierr);
 
   ierr = init_internal(); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode POdSBMFforcing::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->shelf_base_mass_flux(result); CHKERRQ(ierr);
+PetscErrorCode PS_delta_T::ice_surface_temperature(IceModelVec2S &result) {
+  PetscErrorCode ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
   ierr = offset_data(result); CHKERRQ(ierr);
   return 0;
 }

@@ -16,36 +16,40 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PSdTforcing.hh"
+#include "PO_delta_SL.hh"
 
-/// -dTforcing of ice surface temperatures
+/// -ocean_delta_SL_file, ...
 
-PSdTforcing::PSdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-  : PScalarForcing<PISMSurfaceModel,PSModifier>(g, conf, in)
+PO_delta_SL::PO_delta_SL(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
+  : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
 {
-  option_prefix = "-surface_delta_T";
-  offset_name = "delta_T";
+  option_prefix = "-ocean_delta_SL_file";
+  offset_name = "delta_SL";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("Kelvin", "");
+
+  offset->set_units("m", "");
   offset->set_dimension_units(grid.time->units(), "");
-  offset->set_attr("long_name", "ice-surface temperature offsets");
+  offset->set_attr("long_name", "sea level elevation offsets");
 }
 
-PetscErrorCode PSdTforcing::init(PISMVars &vars) {
+PetscErrorCode PO_delta_SL::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing ice-surface temperature forcing using scalar offsets...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "* Initializing sea level forcing...\n"); CHKERRQ(ierr);
 
   ierr = init_internal(); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PSdTforcing::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
-  ierr = offset_data(result); CHKERRQ(ierr);
+
+PetscErrorCode PO_delta_SL::sea_level_elevation(PetscReal &result) {
+  PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
+
+  if (offset)
+    result += (*offset)(t + 0.5*dt);
+
   return 0;
 }
