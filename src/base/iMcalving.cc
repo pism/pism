@@ -330,8 +330,6 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
     PISMEnd();
   }
 
-  dt_from_eigencalving = dt; //start value
-  PetscScalar my_dt_from_eigencalving = dt_from_eigencalving;
   PetscScalar dt_from_eigencalving_min = 0.001; //about 9 hours which corresponds to 10000 km/a on a 10 km grid
 
   // Distance (grid cells) from calving front where strain rate is evaluated
