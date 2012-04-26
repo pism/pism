@@ -42,7 +42,7 @@ public:
   }
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
 protected:
   bool paleo_precipitation_correction;
   Timeseries *delta_T;

@@ -260,7 +260,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
 
   // This is a point-wise (local) computation, so we can use "climatic_mass_balance" to store
   // precipitation:
-  ierr = atmosphere->mean_precip(climatic_mass_balance); CHKERRQ(ierr);
+  ierr = atmosphere->mean_precipitation(climatic_mass_balance); CHKERRQ(ierr);
 
   // set up air temperature time series
   PetscInt Nseries;

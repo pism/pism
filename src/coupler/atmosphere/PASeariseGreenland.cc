@@ -35,8 +35,9 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
-		    "  air temperature parameterization and using stored time-independent precipitation...\n"); CHKERRQ(ierr);
-  
+		    "  air temperature parameterization and using stored time-independent precipitation...\n");
+  CHKERRQ(ierr);
+
   reference =
     "R. S. Fausto, A. P. Ahlstrom, D. V. As, C. E. Boggild, and S. J. Johnsen, 2009. "
     "A new present-day temperature parameterization for Greenland. J. Glaciol. 55 (189), 95-105.";
@@ -79,10 +80,10 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_SeaRISE_Greenland::mean_precip(IceModelVec2S &result) {
+PetscErrorCode PA_SeaRISE_Greenland::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = PAYearlyCycle::mean_precip(result); CHKERRQ(ierr);
+  ierr = PAYearlyCycle::mean_precipitation(result); CHKERRQ(ierr);
 
   if ((delta_T != NULL) && paleo_precipitation_correction) {
     string history = "added the paleo-precipitation correction\n" + result.string_attr("history");
@@ -131,7 +132,7 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
     gamma_mj = config.get("snow_temp_fausto_gamma_mj"),
     c_mj     = config.get("snow_temp_fausto_c_mj"),
     kappa_mj = config.get("snow_temp_fausto_kappa_mj");
-  
+
   PetscScalar **lat_degN, **lon_degE, **h;
   ierr = surfelev->get_array(h);   CHKERRQ(ierr);
   ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
@@ -141,13 +142,13 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
 
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      air_temperature_mean_annual(i,j) = d_ma + gamma_ma * h[i][j] + c_ma * lat_degN[i][j]
-                       + kappa_ma * (-lon_degE[i][j]);
-      air_temperature_mean_july(i,j) = d_mj + gamma_mj * h[i][j] + c_mj * lat_degN[i][j]
-                       + kappa_mj * (-lon_degE[i][j]);
+      air_temperature_mean_annual(i,j) = d_ma + gamma_ma * h[i][j] + c_ma * lat_degN[i][j] +
+        kappa_ma * (-lon_degE[i][j]);
+      air_temperature_mean_july(i,j) = d_mj + gamma_mj * h[i][j] + c_mj * lat_degN[i][j] +
+        kappa_mj * (-lon_degE[i][j]);
     }
   }
-  
+
   ierr = surfelev->end_access();   CHKERRQ(ierr);
   ierr = lat->end_access(); CHKERRQ(ierr);
   ierr = lon->end_access(); CHKERRQ(ierr);

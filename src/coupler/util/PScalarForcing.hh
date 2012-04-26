@@ -50,7 +50,7 @@ protected:
   virtual PetscErrorCode init_internal()
   {
     PetscErrorCode ierr;
-    bool option_set, bc_period_set, bc_ref_year_set;
+    bool file_set, bc_period_set, bc_ref_year_set;
 
     IceGrid &g = Mod::grid;
 
@@ -59,18 +59,18 @@ protected:
 
     ierr = PetscOptionsBegin(g.com, "", "Scalar forcing options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString(option, "Specifies a file with scalar offsets",
-                               filename, option_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal(option + "_period", "Specifies the length of the climate data period",
+      ierr = PISMOptionsString(option_prefix + "_file", "Specifies a file with scalar offsets",
+                               filename, file_set); CHKERRQ(ierr);
+      ierr = PISMOptionsReal(option_prefix + "_period", "Specifies the length of the climate data period",
                              bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal(option + "_reference_year", "Boundary condition reference year",
+      ierr = PISMOptionsReal(option_prefix + "_reference_year", "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-    if (option_set == false) {
-      ierr = verbPrintf(2, g.com, "  WARNING: %s is not set; forcing is inactive.\n",
-                        option.c_str()); CHKERRQ(ierr);
+    if (file_set == false) {
+      ierr = verbPrintf(2, g.com, "  WARNING: %s_file is not set; forcing is inactive.\n",
+                        option_prefix.c_str()); CHKERRQ(ierr);
       delete offset;
       offset = NULL;
     }
@@ -108,7 +108,7 @@ protected:
 
   Model *input;
   Timeseries *offset;
-  string filename, offset_name, option;
+  string filename, offset_name, option_prefix;
 
   PetscReal bc_period,          // in seconds
     bc_reference_time;          // in seconds

@@ -23,7 +23,7 @@
 PAdTforcing::PAdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
-  option = "-atmosphere_delta_T_file";
+  option_prefix = "-atmosphere_delta_T_file";
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("Kelvin", "");

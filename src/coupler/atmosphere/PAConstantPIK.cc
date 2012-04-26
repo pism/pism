@@ -20,7 +20,7 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
-PetscErrorCode PAConstantPIK::mean_precip(IceModelVec2S &result) {
+PetscErrorCode PAConstantPIK::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = precipitation.copy_to(result); CHKERRQ(ierr);
   return 0;
@@ -62,7 +62,7 @@ PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
 void PAConstantPIK::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
   result["precipitation"] = precipitation.get_metadata();
   result["air_temperature"] = air_temperature.get_metadata();
-  
+
   if (keyword == "big") {
     result["air_temperature_snapshot"] = air_temperature_snapshot;
   }
@@ -128,27 +128,27 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
   // create mean annual ice equivalent precipitation rate (before separating
   // rain, and before melt, etc. in PISMSurfaceModel)
   ierr = precipitation.create(grid, "precipitation", false); CHKERRQ(ierr);
-  ierr = precipitation.set_attrs("climate_state", 
-                          "mean annual ice-equivalent precipitation rate",
-                          "m s-1",
-                          ""); CHKERRQ(ierr); // no CF standard_name ??
+  ierr = precipitation.set_attrs("climate_state",
+                                 "mean annual ice-equivalent precipitation rate",
+                                 "m s-1",
+                                 ""); CHKERRQ(ierr); // no CF standard_name ??
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   precipitation.write_in_glaciological_units = true;
   precipitation.time_independent = true;
 
   ierr = air_temperature.create(grid, "air_temperature", false); CHKERRQ(ierr);
   ierr = air_temperature.set_attrs("climate_state",
-                               "mean annual near-surface (2 m) air temperature",
-                               "K",
-                               ""); CHKERRQ(ierr);
+                                   "mean annual near-surface (2 m) air temperature",
+                                   "K",
+                                   ""); CHKERRQ(ierr);
   air_temperature.time_independent = true;
-  
+
   // find PISM input file to read data from:
 
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate and air_temperatures from file
-  ierr = verbPrintf(2, grid.com, 
+  ierr = verbPrintf(2, grid.com,
 		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
 		    "    from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr); 
@@ -167,7 +167,7 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
   air_temperature_snapshot.init_2d("air_temperature_snapshot", grid);
   air_temperature_snapshot.set_string("pism_intent", "diagnostic");
   air_temperature_snapshot.set_string("long_name",
-                                 "snapshot of the near-surface air temperature");
+                                      "snapshot of the near-surface air temperature");
   ierr = air_temperature_snapshot.set_units("K"); CHKERRQ(ierr);
 
   return 0;

@@ -23,7 +23,7 @@
 PSdTforcing::PSdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
   : PScalarForcing<PISMSurfaceModel,PSModifier>(g, conf, in)
 {
-  option = "-dTforcing";
+  option_prefix = "-surface_delta_T";
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("Kelvin", "");

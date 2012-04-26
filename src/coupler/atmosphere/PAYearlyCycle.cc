@@ -146,7 +146,7 @@ PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename)
 }
 
 //! Copies the stored precipitation field into result.
-PetscErrorCode PAYearlyCycle::mean_precip(IceModelVec2S &result) {
+PetscErrorCode PAYearlyCycle::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = precipitation.copy_to(result); CHKERRQ(ierr);
   return 0;

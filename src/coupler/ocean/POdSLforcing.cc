@@ -23,7 +23,7 @@
 POdSLforcing::POdSLforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
 {
-  option = "-ocean_delta_SL_file";
+  option_prefix = "-ocean_delta_SL_file";
   offset_name = "delta_SL";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 

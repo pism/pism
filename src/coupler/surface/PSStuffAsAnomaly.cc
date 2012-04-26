@@ -48,7 +48,7 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   ierr = mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
                                    "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
-  ierr = temp_0.create(grid, "temp_0", false); CHKERRQ(ierr);
+  ierr = temp_0.create(grid, "ice_surface_temp_0", false); CHKERRQ(ierr);
   ierr = temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
                           ""); CHKERRQ(ierr);
 

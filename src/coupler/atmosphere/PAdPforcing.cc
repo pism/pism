@@ -21,7 +21,7 @@
 PAdPforcing::PAdPforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
-  option = "-atmosphere_delta_P_file";
+  option_prefix = "-atmosphere_delta_P_file";
   offset_name = "delta_P";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("m / year", "");
@@ -43,8 +43,8 @@ PetscErrorCode PAdPforcing::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PAdPforcing::mean_precip(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->mean_precip(result);
+PetscErrorCode PAdPforcing::mean_precipitation(IceModelVec2S &result) {
+  PetscErrorCode ierr = input_model->mean_precipitation(result);
   ierr = offset_data(result); CHKERRQ(ierr);
   return 0;
 }

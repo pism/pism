@@ -53,19 +53,19 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
   ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
-  air_temp.init_2d("air_temp", grid);
-  air_temp.set_string("pism_intent", "diagnostic");
-  air_temp.set_string("long_name",
+  air_temperature.init_2d("air_temperature", grid);
+  air_temperature.set_string("pism_intent", "diagnostic");
+  air_temperature.set_string("long_name",
                       "near-surface air temperature with a lapse-rate correction");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+  ierr = air_temperature.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
 
 
-PetscErrorCode PALapseRates::mean_precip(IceModelVec2S &result) {
+PetscErrorCode PALapseRates::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = input_model->mean_precip(result); CHKERRQ(ierr);
+  ierr = input_model->mean_precipitation(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, precip_lapse_rate); CHKERRQ(ierr);
   return 0;
 }
@@ -121,8 +121,8 @@ PetscErrorCode PALapseRates::temp_snapshot(IceModelVec2S &result) {
 PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "air_temp")) {
-    ierr = air_temp.define(nc, nctype, true); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temperature")) {
+    ierr = air_temperature.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "precipitation")) {
@@ -137,16 +137,16 @@ PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, P
 PetscErrorCode PALapseRates::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "air_temp")) {
+  if (set_contains(vars, "air_temperature")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temperature", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(air_temperature, 0); CHKERRQ(ierr);
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
 
-    vars.erase("air_temp");
+    vars.erase("air_temperature");
   }
 
   if (set_contains(vars, "precipitation")) {
@@ -154,7 +154,7 @@ PetscErrorCode PALapseRates::write_variables(set<string> vars, string filename) 
     ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
     ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
 
-    ierr = mean_precip(tmp); CHKERRQ(ierr);
+    ierr = mean_precipitation(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
 
@@ -170,7 +170,7 @@ void PALapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariab
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
-    result["air_temp"] = air_temp;
+    result["air_temperature"] = air_temperature;
     result["precipitation"]   = precipitation;
   }
 }

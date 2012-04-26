@@ -31,7 +31,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
   { t = my_t; dt = my_dt; return 0; } // do nothing
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();

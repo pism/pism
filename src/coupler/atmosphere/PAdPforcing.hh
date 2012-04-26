@@ -30,7 +30,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
 };
 
 #endif /* _PADPFORCING_H_ */
