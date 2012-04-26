@@ -62,40 +62,36 @@ of python tools are needed.
 
   Now look at jako.nc.  This file is ready for a regional model.  The field
   ftt_mask has an identified drainage basin, outside of which we
-  will not use a full model, but simplified time-independent boundary
+  will not use a full model, but use simplified time-independent boundary
   conditions instead.  Specifically, outside of the ftt_mask area we will
   essentially keep the initial thickness, while inside the ftt_mask area all
   fields will evolve normally.
 
-* FIXME:  need to do 3km(?) spinup run instead
+* What is the grid in jako.nc?
 
   $ ncdump -h jako.nc |head -n 5
-
   netcdf jako {
   dimensions:
 	y = 335 ;
 	x = 534 ;
   variables:
 
-  FIXME:  next two lines not needed in recent pism-dev
-  $ ncrename -O -v presartm,artm jako.nc
-  $ ncrename -O -v precipitation,precip jako.nc
-
-  $ mpiexec -n 4 pismo -boot_file jako.nc -Mx 534 -My 335 \
-      -no_model_strip 5 -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
+  Thus here is a native 1km one year run:
+  
+  $ mpiexec -n 4 pismo -boot_file jako.nc -Mx 534 -My 335 -no_model_strip 5 \
+      -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
       -atmosphere given -atmosphere_given_file jako.nc \
       -surface pdd,forcing -force_to_thk jako.nc \
-      -o jako1km_y1.nc -o_size medium
+      -sia_e 3.0 -y 1 -skip 50 -o jako1km_y1.nc -o_size medium
 
-  Divide by 3:
+* To make real progress on a spinup we divide -Mx, -My by 3 to get a 3km grid:
 
-  $ mpiexec -n 4 pismo -boot_file jako.nc -Mx 178 -My 112 \
-      -no_model_strip 5 -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
-      -atmosphere given -atmosphere_given_file jako.nc \
-      -surface pdd,forcing -force_to_thk jako.nc \
-      -o jako3km_y1.nc -o_size medium
+  $ ./spinup3km.sh >> out.spin3km &
+  
 
 
+* TO DO:  get Dirichlet BCs from whole ice sheet run (presumably g5km_0.nc
+  saved at pismdocs.org) for thickness, enthalpy, SSA
 
 FIXME from here
 
