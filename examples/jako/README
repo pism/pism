@@ -91,7 +91,12 @@ of python tools are needed.
 
 
 * TO DO:  get Dirichlet BCs from whole ice sheet run (presumably g5km_0.nc
-  saved at pismdocs.org) for thickness, enthalpy, SSA
+  saved at pismdocs.org) for enthalpy, SSA.  The point for the former is that
+  the only alternative is to have the enthalpy not spun-up at all in the no_model_strip,
+  which then advects inward as an unrealistic temp.  The point for the SSA bc
+  is that the alternative is to have zero velocity there while the velocity 
+  tangent to the edge of the no_model strip, i.e. in westerly direction, is
+  significantly nonzero (?).
 
 FIXME from here
 
