@@ -76,30 +76,36 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 
   ierr = lat->create(grid, "lat", true); CHKERRQ(ierr);
   ierr = lat->set_attrs("mapping", "latitude", "degrees_north", "latitude"); CHKERRQ(ierr);
+  lat->time_independent = true;
   ierr = variables.add(*lat); CHKERRQ(ierr);
 
   ierr = lon->create(grid, "lon", true); CHKERRQ(ierr);
   ierr = lon->set_attrs("mapping", "longitude", "degrees_east", "longitude"); CHKERRQ(ierr);
+  lon->time_independent = true;
   ierr = variables.add(*lon); CHKERRQ(ierr);
 
   ierr = mask->create(grid, "mask", true); CHKERRQ(ierr);
   ierr = mask->set_attrs("", "grounded_dragging_floating integer mask",
 			      "", ""); CHKERRQ(ierr);
+  mask->time_independent = true;
   ierr = variables.add(*mask); CHKERRQ(ierr);
 
   ierr = thk->create(grid, "thk", true); CHKERRQ(ierr);
   ierr = thk->set_attrs("", "land ice thickness",
 		             "m", "land_ice_thickness"); CHKERRQ(ierr);
+  thk->time_independent = true;
   ierr = variables.add(*thk); CHKERRQ(ierr);
 
   ierr = surfelev->create(grid, "usurf", true); CHKERRQ(ierr);
   ierr = surfelev->set_attrs("", "ice upper surface elevation",
 		                  "m", "surface_altitude"); CHKERRQ(ierr);
+  surfelev->time_independent = true;
   ierr = variables.add(*surfelev); CHKERRQ(ierr);
 
   ierr = topg->create(grid, "topg", true); CHKERRQ(ierr);
   ierr = topg->set_attrs("", "bedrock surface elevation",
 			"m", "bedrock_altitude"); CHKERRQ(ierr);
+  topg->time_independent = true;
   ierr = variables.add(*topg); CHKERRQ(ierr);
 
   ierr = ice_surface_temp->create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
@@ -136,7 +142,6 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   ierr = shelfbasemassflux->set_glaciological_units("m year-1"); CHKERRQ(ierr);
   ierr = variables.add(*shelfbasemassflux); CHKERRQ(ierr);
 
-
   return 0;
 }
 
@@ -170,8 +175,7 @@ static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
 
   set<string>::iterator i = vars.begin();
   while (i != vars.end()) {
-    IceModelVec *var = variables.get(*i);
-    delete var;
+    delete variables.get(*i);
     i++;
   }
 
@@ -182,13 +186,13 @@ static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
 static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 					   PISMSurfaceModel *surface,
 					   PISMOceanModel* ocean,
-					   const char *filename, IceGrid* grid,
-					   PetscReal time_start, PetscReal time_end, PetscReal dt,
+					   string filename, IceGrid& grid,
+                                           vector<double> times,
 					   NCConfigVariable &mapping) {
 
-  MPI_Comm com = grid->com;
+  MPI_Comm com = grid.com;
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   NCGlobalAttributes global_attrs;
   IceModelVec2S *usurf, *ice_surface_temp, *climatic_mass_balance, *shelfbasetemp, *shelfbasemassflux;
 
@@ -207,7 +211,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   shelfbasemassflux = dynamic_cast<IceModelVec2S*>(variables.get("shelfbmassflux"));
   if (shelfbasemassflux == NULL) { SETERRQ(com, 1, "shelfbasemassflux is not available"); }
 
-  global_attrs.init("global_attributes", com, grid->rank);
+  global_attrs.init("global_attributes", com, grid.rank);
   global_attrs.set_string("Conventions", "CF-1.4");
   global_attrs.set_string("source", string("pclimate ") + PISM_Revision);
 
@@ -223,23 +227,22 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attrs.write(filename); CHKERRQ(ierr);
 
-  PetscInt NN;  // get number of times at which PISM boundary model state is written
-  NN = (int) ceil((time_end - time_start) / dt);
-  if (NN > 1000)
-    SETERRQ(com, 2,"PCLIMATE ERROR: refuse to write more than 1000 times!");
-  if (NN > 50) {
-    ierr = PetscPrintf(com,
-        "\nPCLIMATE ATTENTION: writing more than 50 times to '%s'!!\n\n",
-        filename); CHKERRQ(ierr);
+  if (times.size() > 1000) {
+    PetscPrintf(grid.com, "PCLIMATE ERROR: refuse to write more than 1000 times!");
+    PISMEnd();
   }
 
-  DiagnosticTimeseries sea_level(grid, "sea_level", grid->config.get_string("time_dimension_name"));
+  if (times.size() > 50) {
+    ierr = PetscPrintf(com,
+        "\nPCLIMATE ATTENTION: writing more than 50 times to '%s'!!\n\n",
+        filename.c_str()); CHKERRQ(ierr);
+  }
+
+  DiagnosticTimeseries sea_level(&grid, "sea_level", grid.config.get_string("time_dimension_name"));
   sea_level.set_units("m", "m");
-  sea_level.set_dimension_units(grid->time->units(), "");
+  sea_level.set_dimension_units(grid.time->units(), "");
   sea_level.output_filename = filename;
   sea_level.set_attr("long_name", "sea level elevation");
-
-  PetscScalar use_dt = dt;
 
   set<string> vars_to_write;
   map<string, NCSpatialVariable> list;
@@ -253,25 +256,31 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   }
 
   // write the states
-  for (PetscInt k = 0; k < NN; k++) {
-    // use original dt to get correct subinterval starts:
-    const PetscReal time = time_start + k * dt;
-    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append=true,check_dims=false
-    ierr = nc.def_time(grid->config.get_string("time_dimension_name"),
-                       grid->config.get_string("calendar"),
-                       grid->time->units()); CHKERRQ(ierr);
-    ierr = nc.append_time(grid->config.get_string("time_dimension_name"),
-                          time); CHKERRQ(ierr);
+  unsigned int record_index = 0;
 
-    PetscScalar dt_update = PetscMin(use_dt, time_end - time);
+  while (record_index < times.size() && times[record_index] <= grid.time->current())
+    record_index++;
+
+  while (record_index < times.size() && grid.time->current() < grid.time->end()) {
+
+    double current_time = grid.time->current(),
+      next_time = times[record_index],
+      dt = next_time - current_time;
+
+    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append=true
+    ierr = nc.def_time(grid.config.get_string("time_dimension_name"),
+                       grid.config.get_string("calendar"),
+                       grid.time->units()); CHKERRQ(ierr);
+    ierr = nc.append_time(grid.config.get_string("time_dimension_name"),
+                          current_time); CHKERRQ(ierr);
 
     char timestr[TEMPORARY_STRING_LENGTH];
-    snprintf(timestr, sizeof(timestr), 
-             "  boundary models updated for [%11.3f a,%11.3f a] ...", 
-             convert(time, "seconds", "years"),
-             convert(time + dt_update, "seconds", "years"));
+    snprintf(timestr, sizeof(timestr),
+             "  boundary models updated for [%s, %s] ...", 
+             grid.time->date().c_str(),
+             grid.time->date(next_time).c_str());
     ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
-    ierr = verbPrintf(3,com,"\n%s writing result to %s ..",timestr,filename); CHKERRQ(ierr);
+    ierr = verbPrintf(3,com,"\n%s writing result to %s ..",timestr,filename.c_str()); CHKERRQ(ierr);
     strncat(timestr,"\n",1);
 
     ierr = nc.append_history(timestr); CHKERRQ(ierr); // append the history
@@ -280,8 +289,8 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = usurf->write(filename, PISM_FLOAT); CHKERRQ(ierr);
 
     // update surface and ocean models' outputs:
-    ierr = surface->update(time, dt_update); CHKERRQ(ierr);
-    ierr = ocean->update(time, dt_update); CHKERRQ(ierr);
+    ierr = surface->update(current_time, dt); CHKERRQ(ierr);
+    ierr = ocean->update(current_time, dt); CHKERRQ(ierr);
 
     ierr = surface->ice_surface_mass_flux(*climatic_mass_balance); CHKERRQ(ierr);
     ierr = surface->ice_surface_temperature(*ice_surface_temp); CHKERRQ(ierr);
@@ -292,8 +301,8 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = ocean->shelf_base_temperature(*shelfbasetemp); CHKERRQ(ierr);
     ierr = ocean->shelf_base_mass_flux(*shelfbasemassflux); CHKERRQ(ierr);
 
-    sea_level.append(current_sea_level, time - dt, time);
-    sea_level.interp(time - dt, time);
+    sea_level.append(current_sea_level, current_time, next_time);
+    sea_level.interp(current_time, next_time);
 
     // ask ocean and surface models to write variables:
     ierr = surface->write_variables(vars_to_write, filename); CHKERRQ(ierr);
@@ -309,6 +318,9 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     // by IceModel.
     ierr = shelfbasetemp->write(filename, PISM_FLOAT); CHKERRQ(ierr);
     ierr = shelfbasemassflux->write(filename, PISM_FLOAT); CHKERRQ(ierr);
+
+    record_index++;
+    grid.time->step(dt);
   }
   ierr = verbPrintf(2,com,"\n"); CHKERRQ(ierr);
 
@@ -344,17 +356,12 @@ int main(int argc, char *argv[]) {
     vector<string> required;
     required.push_back("-i");
     required.push_back("-o");
-    required.push_back("-ys");
-    required.push_back("-ye");
-    required.push_back("-dt");
+    required.push_back("-times");
     ierr = show_usage_check_req_opts(com, "pclimate", required,
-      "  pclimate -i IN.nc -o OUT.nc -ys A -ye B -dt C [-atmosphere <name> -surface <name>] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pclimate -i IN.nc -o OUT.nc -times A:dt:B [-atmosphere <name> -surface <name> -ocean <name>] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i             input file in NetCDF format\n"
       "  -o             output file in NetCDF format\n"
-      "  -ys            start time A (= float) in years\n"
-      "  -ye            end time B (= float), B > A, in years\n"
-      "  -dt            time step C (= positive float) in years\n"
       "and set up the models:\n"
       "  -atmosphere    Chooses an atmosphere model; see User's Manual\n"
       "  -surface       Chooses a surface model; see User's Manual\n"
@@ -363,6 +370,7 @@ int main(int argc, char *argv[]) {
 
     // read the config option database:
     ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
+    config.set("run_length_years", 0);
 
     bool override_used;
     ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
@@ -371,22 +379,33 @@ int main(int argc, char *argv[]) {
     config.set_flag("pdd_limit_timestep", true);
 
     IceGrid grid(com, rank, size, config);
-    
-    bool flag;
-    PetscReal dt_years = 0.0;
+
+    bool flag, times_set;
+    string tmp;
+    vector<double> times;
     ierr = PetscOptionsBegin(grid.com, "", "PCLIMATE options", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-i", "Input file name",  inname, flag); CHKERRQ(ierr);
       ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
-
-      ierr = PISMOptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsString("-times", "Specifies times to save at",
+                               tmp, times_set); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+    ierr = parse_times(grid.com, config, tmp, times);
+    if (ierr != 0) {
+      PetscPrintf(grid.com, "PISM ERROR: parsing the -times argument failed.\n");
+      PISMEnd();
+    }
 
     // initialize the computational grid:
     ierr = verbPrintf(2,com, 
 		      "  initializing grid from NetCDF file %s...\n", inname.c_str()); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
+
+    grid.time->set_start(times.front());
+    grid.time->set(times.front());
+    grid.time->set_end(times.back());
 
     mapping.init("mapping", com, rank);
 
@@ -444,11 +463,7 @@ int main(int argc, char *argv[]) {
         outname.c_str()); CHKERRQ(ierr);
 
     ierr = writePCCStateAtTimes(variables, surface, ocean,
-                                outname.c_str(), &grid,
-				grid.time->start(),
-                                grid.time->end(),
-                                convert(dt_years, "years", "seconds"),
-                                mapping); CHKERRQ(ierr);
+                                outname, grid, times, mapping); CHKERRQ(ierr);
 
     if (override_used) {
       ierr = verbPrintf(3, com,

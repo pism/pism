@@ -162,9 +162,29 @@ PetscErrorCode IceModel::set_output_size(string option,
     i++;
   }
 
-  if (keyword == "medium" || keyword == "big") {
-    result.insert("enthalpy");
-    result.insert("temp");
+  if (keyword == "medium") {
+    // add all the variables listed in the config file ("medium" size):
+    string tmp = config.get_string("output_medium");
+    istringstream keywords(tmp);
+
+    // split the list; note that this also removes any duplicate entries
+    while (getline(keywords, tmp, ' ')) {
+      if (!tmp.empty())                // this ignores multiple spaces separating variable names
+       result.insert(tmp);
+    }
+  } else if (keyword == "big") {
+    // add all the variables listed in the config file ("big" size):
+    string tmp = config.get_string("output_big");
+    istringstream keywords(tmp);
+
+    // split the list; note that this also removes any duplicate entries
+    while (getline(keywords, tmp, ' ')) {
+      if (!tmp.empty())                // this ignores multiple spaces separating variable names
+       result.insert(tmp);
+    }
+
+    if (!config.get_flag("do_age"))
+      result.erase("age");
   }
 
   if (config.get_flag("do_age"))

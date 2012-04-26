@@ -3,7 +3,7 @@
 ## @package linesearch
 ## \author Ed Bueler, University of Alaska Fairbanks, USA
 ## \brief A script for doing a line search over stddev parameter of PDD.
-## Copyright (C) 2010 Ed Bueler
+## Copyright (C) 2010, 2012 Ed Bueler
 ##
 ## see README for role of this script
 ## This script uses NCO (http://nco.sourceforge.net/).
@@ -145,7 +145,7 @@ def evalcase(stddev, cp, fn, deletencfiles):
     coupleropts = " -atmosphere searise_greenland -surface pdd"
     if cp.annualizepdd:
       coupleropts += " -pdd_annualize"
-    timeopts = " -ys 1990 -ye 1991 -dt 1.0"
+    timeopts = " -times 1990:1.0:1991"
     #dt = 0.0833333333 # monthly = (1/12) of year
 
     if len(fn.diffsfile) > 0:

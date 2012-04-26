@@ -57,7 +57,15 @@ public:
 
   //! \brief Advance by delta_t seconds.
   void step(double delta_t)
-  { time_in_seconds += delta_t; }
+  {
+    time_in_seconds += delta_t;
+
+    // If we are less than 0.001 second from the end of the run, reset
+    // time_in_seconds to avoid taking a very small (and useless) time step.
+    if (run_end > time_in_seconds &&
+        run_end - time_in_seconds < 1e-3)
+      time_in_seconds = run_end;
+  }
 
   //! \brief Current time, in seconds.
   double current()

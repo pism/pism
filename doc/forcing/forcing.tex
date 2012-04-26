@@ -237,7 +237,7 @@ Here \texttt{-y 1} has the meaning of $3.14...\cdot 10^{7}$ seconds (one
 ``tropical year''). Similarly, \texttt{-ye 2001} means ``stop after reaching
 model year $2001$'', not ``stop at the end of the XX century''.
 
-Use the \mbox{\txtopt{reference_date}{\texttt{YYYY-MM-DD}}} command-line option
+Use the \mbox{\intextoption{reference_date} \texttt{YYYY-MM-DD}} command-line option
 or the \config{reference_date} configuration parameter to set the reference
 date, i.e. the date corresponding to model time $0$. For example, to run for
 $20$ years starting on January 1, $1989$, and override time read from an input
@@ -539,10 +539,10 @@ and others, \texttt{pclimate} takes options listed in table~\ref{tab:pclimate}.
     \midrule
     \fileopt{i} & specifies an input file, which has been produced by PISM;\\
     \fileopt{o} & sets the output file name;\\
-    \txtopt{ys}{(years)} & sets the start time, in years;\\
-    \txtopt{ye}{(years)} & sets the final time, in years;\\
-    \txtopt{dt}{(years)} & sets the interval between saved climate snapshots.\\
-    \bottomrule
+    \txtopt{times}{\emph{list or range}} & sets times at which to save climate data,
+    in model years. \texttt{pclimate} does not save at the first time, which is
+    interpreted as the beginning of the first time-stepping interval.\\
+   \bottomrule
  \end{tabular}
  \label{tab:pclimate}
 \end{table}
@@ -551,7 +551,7 @@ and others, \texttt{pclimate} takes options listed in table~\ref{tab:pclimate}.
 As an example, set up an ice sheet state file and run \texttt{pclimate} on it:
 \begin{verbatim}
 $ mpiexec -n 2 pisms -eisII A -y 1000 -o state.nc
-$ pclimate -i state.nc -surface given -ys 0.0 -ye 2.5 -dt 0.1 -o movie.nc
+$ pclimate -i state.nc -surface given -times 0.0:0.1:2.5 -o movie.nc
 \end{verbatim}
 Using \texttt{pisms} merely generates demonstration climate data, using
 EISMINT II choices~\cite{EISMINT00}.  \texttt{pclimate} extracts the 
@@ -570,7 +570,7 @@ calculation of melting, to get the surface mass balance
 Assuming that \texttt{g20km_pre100.nc} was created as described in the User's Manual, section~\ref*{userman-sect:start}, running
 \begin{verbatim}
 $ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
-           -surface pdd -ys 0 -ye 2.5 -dt 0.1 -o foo.nc
+           -surface pdd -times 0:0.1:2.5 -o foo.nc
 \end{verbatim}%$
 produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle in the variable \variable{air_temperature} and a noticeable decrease in the surface mass balance during summer months (see variable \variable{climatic_mass_balance}). Note that \variable{air_temperature} is constant in time: this is the temperature \emph{at the ice surface but below firn} and it does not include seasonal variations~\cite{Hock05}.
 

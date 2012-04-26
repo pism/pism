@@ -14,7 +14,7 @@ PISM's executable for testing climate inputs
 
 :Author: ckhroulev@alaska.edu
 :Date:   2011-5-12
-:Copyright: Copyright (C) 2011 Constantine Khroulev
+:Copyright: Copyright (C) 2011, 2012 Constantine Khroulev
 :Version: 0.1
 :Manual section: 1
 :Manual group: science
@@ -22,7 +22,7 @@ PISM's executable for testing climate inputs
 SYNOPSIS
 ========
 
-|  pclimate -i *file.nc* -o *output_file.nc* -ys *start_year* -ye *end_year* -dt *timestep*
+|  pclimate -i *file.nc* -o *output_file.nc* -times *start_year:dt:end_year* *other options*
 
 DESCRIPTION
 ===========
@@ -42,9 +42,7 @@ OPTIONS
 
 -i  input file name
 -o  output file name
--ys  start year
--dt  time-step, in model years
--ye  end year
+-times  spcifies times at which to save climate data
 -surface  selects a surface model
 -atmosphere  selects an atmosphere model
 -ocean  selects an ocean model
