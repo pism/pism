@@ -303,7 +303,7 @@ PetscErrorCode IceModel::init_extras() {
   timestamp.init("timestamp", config.get_string("time_dimension_name"),
                  grid.com, grid.rank);
   timestamp.set_units("hours");
-  timestamp.set_string("long_name", "time since the beginning of the run");
+  timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
 
   return 0;
 }

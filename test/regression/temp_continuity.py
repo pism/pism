@@ -24,7 +24,7 @@ if e != 0:
 deltas = []
 dts = [200, 100]
 for dt in dts:
-    cmd = "%s %s/pisms -eisII B -y 5000 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -no_cold -regrid_file bar.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo.nc" % (mpiexec, pism_path, dt)
+    cmd = "%s %s/pisms -eisII B -y 5000 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -no_cold -regrid_file bar.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo.nc -o_size big" % (mpiexec, pism_path, dt)
     stderr.write(cmd + '\n')
 
     e = system(cmd)
