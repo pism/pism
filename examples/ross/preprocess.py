@@ -18,7 +18,7 @@ from PIL import Image, ImageDraw
 
 def preprocess_ice_velocity():
     """
-    Download and preprocess the antarctic ice velocity dataset from
+    Download and preprocess the ~95Mb Antarctic ice velocity dataset from NASA MEASURES project
     http://nsidc.org/data/nsidc-0484.html
     """
     url = "ftp://anonymous@sidads.colorado.edu/pub/DATASETS/nsidc0484_MEASURES_antarc_vel_V01/"
@@ -128,18 +128,18 @@ def preprocess_ice_velocity():
 
 def preprocess_albmap():
     """
-    Download and preprocess the ALBMAP dataset from http://doi.pangaea.de/10.1594/PANGAEA.734145
+    Download and preprocess the ~16Mb ALBMAP dataset from http://doi.pangaea.de/10.1594/PANGAEA.734145
     """
     url = "http://www.pangaea.de/Publications/LeBrocq_et_al_2010/ALBMAPv1.nc.zip"
     input_filename = "ALBMAPv1.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
     commands = ["wget -nc %s" % url,
-                "unzip %s" % input_filename,
+                "unzip -n %s.zip" % input_filename,
                 "ncks -O -d x1,435,645 -d y1,250,460 %s %s" % (input_filename, output_filename),
                 "ncks -O -v usrf,lsrf,topg,temp,acca,mask %s %s" % (output_filename, output_filename),
-                "ncrename -O -d x1,x -d y1,y -v x1,x -v y1,y %s %s" % (output_filename, output_filename),
-                "ncrename -O -v temp,ice_surface_temp -v acca,climatic_mass_balance %s %s" % (output_filename, output_filename)]
+                "ncrename -O -d x1,x -d y1,y -v x1,x -v y1,y %s" % output_filename,
+                "ncrename -O -v temp,ice_surface_temp -v acca,climatic_mass_balance %s" % output_filename]
 
     for cmd in commands:
         print "Running '%s'..." % cmd
@@ -209,7 +209,7 @@ if __name__ == "__main__":
                 "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity),
                 "ncks -x -v mask -O %s %s" % (albmap, output),
                 "ncks -v vx,vy,v_magnitude -A %s %s" % (albmap_velocity, output),
-                "ncrename -v vx,u_ssa_bc -v vy,v_ssa_bc -O %s %s" % (output, output)]
+                "ncrename -v vx,u_ssa_bc -v vy,v_ssa_bc -O %s" % output]
 
     for cmd in commands:
         print "Running '%s'..." % cmd
