@@ -21,7 +21,7 @@
 PO_delta_T::PO_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
 {
-  option_prefix = "-ocean_delta_T_file";
+  option_prefix = "-ocean_delta_T";
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("Kelvin", "");

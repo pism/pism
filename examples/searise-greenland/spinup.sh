@@ -171,9 +171,9 @@ PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG -acab_cumulative"
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -ocean_kill"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_FORCING="-atmosphere searise_greenland,delta_T -surface pdd -paleo_precip -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES -ocean_kill"
+COUPLER_FORCING="-atmosphere searise_greenland,delta_T -surface pdd -paleo_precip $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES -ocean_kill"
 # coupler settings for spin-up (i.e. with forcing) and force-to-thickness
-COUPLER_FTT="-atmosphere searise_greenland,delta_T -surface pdd,forcing -paleo_precip -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES -ocean_kill"
+COUPLER_FTT="-atmosphere searise_greenland,delta_T -surface pdd,forcing -paleo_precip $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES -ocean_kill"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
@@ -324,25 +324,24 @@ echo
 echo "$SCRIPTNAME  some postprocessing"
 echo
 # calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
-cmd="ncap2 -O -s '*sz_idt=time.size(); acab[\$time,\$x,\$y]= 0.f; dHdt[\$time,\$x,\$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}' $EXNAME $EXNAME"
-$PISM_DO $cmd
+ncap2_script="*sz_idt=time.size(); acab[\$time,\$x,\$y]= 0.f; dHdt[\$time,\$x,\$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}"
+
+$PISM_DO ncap2 -O -s "$ncap2_script" $EXNAME $EXNAME
+
 echo
 # adjust meta data for new fields
-cmd="ncatted -a units,acab,o,c,'m year-1' -a units,dHdt,o,c,'m year-1' \
-      -a long_name,acab,o,c,'surface mass balance' \
-      -a long_name,dHdt,o,c,'rate of change of ice thickness' \
-      -a grid_mapping,acab,o,c,'mapping' \
-      -a grid_mapping,dHdt,o,c,'mapping' \
-      -a cell_methods,acab,o,c,'time: mean (interval: $EXFSTEP years)' \
-      -a cell_methods,dHdt,o,c,'time: mean (interval: $EXFSTEP years)' $EXNAME"
-$PISM_DO $cmd
+$PISM_DO ncatted -a units,acab,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
+      -a long_name,acab,o,c,"surface mass balance" \
+      -a long_name,dHdt,o,c,"rate of change of ice thickness" \
+      -a grid_mapping,acab,o,c,"mapping" \
+      -a grid_mapping,dHdt,o,c,"mapping" \
+      -a cell_methods,acab,o,c,"time: mean (interval: $EXFSTEP years)" \
+      -a cell_methods,dHdt,o,c,"time: mean (interval: $EXFSTEP years)" $EXNAME
+
 echo
 # now extract last acab record
 cmd="ncks -A -v acab -d time,$ENDTIME. $EXNAME $OUTNAME"
 $PISM_DO $cmd
-
-
-
 
 echo
 echo "$SCRIPTNAME  spinup done"
