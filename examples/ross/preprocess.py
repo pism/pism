@@ -17,6 +17,15 @@ import pyproj
 # Dirichlet boundary conditions)
 from PIL import Image, ImageDraw
 
+def run(commands):
+    """Run a list of commands (or one command given as a string)."""
+    if isinstance(commands, list):
+        for cmd in commands:
+            print "Running '%s'..." % cmd
+            subprocess.call(cmd.split(' '))
+    else:
+        run([commands])
+
 def preprocess_ice_velocity():
     """
     Download and preprocess the ~95Mb Antarctic ice velocity dataset from NASA MEASURES project
@@ -32,9 +41,7 @@ def preprocess_ice_velocity():
                 ]
 
     if not os.path.exists(input_filename):
-        for cmd in commands:
-            print "Running '%s'..." % cmd
-            subprocess.call(cmd.split(' '))
+        run(commands)
 
     nc = NC.Dataset(input_filename, 'a')
 
@@ -77,7 +84,7 @@ def preprocess_ice_velocity():
 
     if not os.path.exists(output_filename):
         cmd = "ncks -d x,2200,3700 -d y,3500,4700 -O %s %s" % (input_filename, output_filename)
-        subprocess.call(cmd.split(' '))
+        run(cmd)
 
         # Compute and save the velocity magnitude, latitude and longitude
         nc = NC.Dataset(output_filename, 'a')
@@ -98,30 +105,6 @@ def preprocess_ice_velocity():
             magnitude.units = "m / year"
 
             magnitude[:] = v_magnitude
-
-        if 'lon' not in nc.variables:
-            grid_shape = nc.variables['vx'].shape
-
-            lon = np.zeros(grid_shape, dtype='f8')
-            lat = np.zeros_like(lon)
-
-            p = pyproj.Proj(nc.projection.encode("ASCII"))
-
-            x = nc.variables['x'][:]
-            y = nc.variables['y'][:]
-
-            xx,yy = np.meshgrid(x, y)
-
-            lon,lat = p(xx, yy, inverse=True)
-
-            lat_var = nc.createVariable('lat', 'f8', ('y', 'x'))
-            lon_var = nc.createVariable('lon', 'f8', ('y', 'x'))
-
-            lon_var[:] = lon
-            lat_var[:] = lat
-
-            lat_var.units = "degrees"
-            lon_var.units = "degrees"
 
         nc.close()
 
@@ -145,9 +128,7 @@ def preprocess_albmap():
                 "ncrename -O -d x1,x -d y1,y -v x1,x -v y1,y %s" % output_filename, # fix metadata
                 "ncrename -O -v temp,%s -v acca,%s %s" % (temp_name, smb_name, output_filename)]
 
-    for cmd in commands:
-        print "Running '%s'..." % cmd
-        subprocess.call(cmd.split(' '))
+    run(commands)
 
     nc = NC.Dataset(output_filename, 'a')
 
@@ -211,7 +192,7 @@ def preprocess_albmap():
 
     # Remove usrf and lsrf variables:
     command = "ncks -x -v usrf,lsrf -O %s %s" % (output_filename, output_filename)
-    subprocess.call(command.split(' '))
+    run(command)
 
     return output_filename
 
@@ -221,13 +202,22 @@ if __name__ == "__main__":
     albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc" # ice velocity on the ALBMAP grid
     output = "Ross_combined.nc"
 
+    # interpolate ice velocities onto the ALBMAP grid:
     commands = ["nc2cdo.py %s" % velocity,
                 "nc2cdo.py %s" % albmap,
-                "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity),
-                "ncks -x -v mask -O %s %s" % (albmap, output),
+                "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity)]
+    run(commands)
+
+    # replace missing values of velocity boundary conditions with zeros:
+    nc = NC.Dataset(albmap_velocity, 'a')
+    for var in ['vx', 'vy', 'v_magnitude']:
+        tmp = nc.variables[var][:]
+        tmp[tmp.mask == True] = 0
+        nc.variables[var][:] = tmp
+    nc.close()
+
+    commands = ["ncks -x -v mask -O %s %s" % (albmap, output),
                 "ncks -v vx,vy,v_magnitude -A %s %s" % (albmap_velocity, output),
                 "ncrename -v vx,u_ssa_bc -v vy,v_ssa_bc -O %s" % output]
 
-    for cmd in commands:
-        print "Running '%s'..." % cmd
-        subprocess.call(cmd.split(' '))
+    run(commands)

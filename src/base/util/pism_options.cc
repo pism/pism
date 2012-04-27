@@ -711,6 +711,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
     config.set_flag("kill_icebergs", true);
   }
 
+  // kill_icebergs requires part_grid
+  if (config.get_flag("kill_icebergs")) {
+    config.set_flag("part_grid", true);
+  }
   
   ierr = PISMOptionsIsSet("-ssa_floating_only", flag);  CHKERRQ(ierr);
   if (flag) {
