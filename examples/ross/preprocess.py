@@ -10,16 +10,9 @@ import subprocess
 import numpy as np
 import os
 
-# used to compute latitude and longitude fields
-import pyproj
-
-# used to identify the "continental" part of the grounded ice (to compute locations of
-# Dirichlet boundary conditions)
-from PIL import Image, ImageDraw
-
 def run(commands):
     """Run a list of commands (or one command given as a string)."""
-    if isinstance(commands, list):
+    if isinstance(commands, (list, tuple)):
         for cmd in commands:
             print "Running '%s'..." % cmd
             subprocess.call(cmd.split(' '))
@@ -86,14 +79,14 @@ def preprocess_ice_velocity():
         cmd = "ncks -d x,2200,3700 -d y,3500,4700 -O %s %s" % (input_filename, output_filename)
         run(cmd)
 
-        # Compute and save the velocity magnitude, latitude and longitude
         nc = NC.Dataset(output_filename, 'a')
 
         # fix units of 'vx' and 'vy'
         nc.variables['vx'].units = "m / year"
         nc.variables['vy'].units = "m / year"
 
-        if 'v_magnitude' not in nc.variables:
+        # Compute and save the velocity magnitude
+        if 'magnitude' not in nc.variables:
             vx = nc.variables['vx'][:]
             vy = nc.variables['vy'][:]
 
@@ -124,7 +117,7 @@ def preprocess_albmap():
     commands = ["wget -nc %s" % url,                # download
                 "unzip -n %s.zip" % input_filename, # unpack
                 "ncks -O -d x1,439,649 -d y1,250,460 %s %s" % (input_filename, output_filename), # cut out
-                "ncks -O -v usrf,lsrf,topg,temp,acca,mask %s %s" % (output_filename, output_filename), # trim
+                "ncks -O -v usrf,lsrf,topg,temp,acca %s %s" % (output_filename, output_filename), # trim
                 "ncrename -O -d x1,x -d y1,y -v x1,x -v y1,y %s" % output_filename, # fix metadata
                 "ncrename -O -v temp,%s -v acca,%s %s" % (temp_name, smb_name, output_filename)]
 
@@ -140,7 +133,7 @@ def preprocess_albmap():
     SMB[SMB == -9999] = 0
     acab[:] = SMB
 
-    # fix artm
+    # fix artm and topg
     nc.variables[temp_name].units = "Celsius"
     nc.variables["topg"].standard_name = "bedrock_altitude"
 
@@ -155,37 +148,6 @@ def preprocess_albmap():
 
         thk[:] = usrf - lsrf
 
-    # compute locations of Dirichlet boundary conditions:
-    if 'bcflag' not in nc.variables:
-        mask = nc.variables['mask'][:]
-        grid_shape = mask.shape
-
-        bcflag = np.zeros(grid_shape, dtype='i')
-
-        # preprocess the mask using the Python Imaging Library
-        land = 5
-        shelf = 2
-
-        try:
-            img = Image.fromarray(mask)
-            ImageDraw.floodfill(img, (200, 200), land)
-            mask = np.asarray(img)
-
-            My, Mx = bcflag.shape
-            row = np.array([-1,  0,  1, -1, 1, -1, 0, 1])
-            col = np.array([-1, -1, -1,  0, 0,  1, 1, 1])
-
-            for j in xrange(1, My - 1):
-                for i in xrange(1, Mx - 1):
-                    nearest = mask[j + row, i + col]
-
-                    if mask[j,i] == land and np.any(nearest == shelf):
-                        bcflag[j,i] = 1
-        except:
-            pass
-
-        bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
-        bcflag_var[:] = bcflag
 
     nc.projection = "+proj=stere +ellps=WGS84 +datum=WGS84 +lon_0=0 +lat_0=-90 +lat_ts=-71 +units=m"
     nc.close()
@@ -196,28 +158,70 @@ def preprocess_albmap():
 
     return output_filename
 
+def final_corrections(filename):
+    """
+    * replaces missing values with zeros
+    * computes Dirichlet B.C. locations
+    """
+    nc = NC.Dataset(filename, 'a')
+
+    # replace missing values with zeros
+    for var in ['u_ssa_bc', 'v_ssa_bc', 'magnitude']:
+        tmp = nc.variables[var][:]
+        tmp[tmp.mask == True] = 0
+        nc.variables[var][:] = tmp
+
+    thk = nc.variables['thk'][:]
+    topg = nc.variables['topg'][:]
+
+    # compute the grounded/floating mask:
+    mask = np.zeros(thk.shape, dtype='i')
+    rho_ice = 910.0
+    rho_seawater = 1028.0
+
+    ice_free = 0
+    grounded = 1
+    floating = 2
+
+    My, Mx = thk.shape
+    for j in xrange(My):
+        for i in xrange(Mx):
+            if topg[j,i] + thk[j,i] > 0 + (1 - rho_ice/rho_seawater) * thk[j,i]:
+                mask[j,i] = grounded
+            else:
+                if thk[j,i] < 1:
+                    mask[j,i] = ice_free
+                else:
+                    mask[j,i] = floating
+
+    # compute the B.C. locations:
+    bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
+    bcflag_var[:] = mask == grounded
+
+    # mark floating cells next to grounded ones too:
+    row = np.array([-1,  0,  1, -1, 1, -1, 0, 1])
+    col = np.array([-1, -1, -1,  0, 0,  1, 1, 1])
+    for j in xrange(1, My-1):
+        for i in xrange(1, Mx-1):
+            nearest = mask[j + row, i + col]
+
+            if mask[j,i] == floating and np.any(nearest == grounded):
+                bcflag_var[j,i] = 1
+
+    nc.close()
+
 if __name__ == "__main__":
     velocity = preprocess_ice_velocity()
     albmap = preprocess_albmap()
     albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc" # ice velocity on the ALBMAP grid
     output = "Ross_combined.nc"
 
-    # interpolate ice velocities onto the ALBMAP grid:
     commands = ["nc2cdo.py %s" % velocity,
                 "nc2cdo.py %s" % albmap,
-                "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity)]
-    run(commands)
-
-    # replace missing values of velocity boundary conditions with zeros:
-    nc = NC.Dataset(albmap_velocity, 'a')
-    for var in ['vx', 'vy', 'v_magnitude']:
-        tmp = nc.variables[var][:]
-        tmp[tmp.mask == True] = 0
-        nc.variables[var][:] = tmp
-    nc.close()
-
-    commands = ["ncks -x -v mask -O %s %s" % (albmap, output),
+                "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity),
+                "ncks -x -v mask -O %s %s" % (albmap, output),
                 "ncks -v vx,vy,v_magnitude -A %s %s" % (albmap_velocity, output),
-                "ncrename -v vx,u_ssa_bc -v vy,v_ssa_bc -O %s" % output]
-
+                "ncrename -v vx,u_ssa_bc -v vy,v_ssa_bc -v v_magnitude,magnitude -O %s" % output]
     run(commands)
+
+    final_corrections(output)
