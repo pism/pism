@@ -57,12 +57,12 @@ plt.pcolormesh(x, y, csurf, norm=colors.LogNorm(vmin=1, vmax=1.5e3))
 plt.colorbar(extend='both', ticks=[1, 10, 100, 250, 500, 1000], format="%d")
 
 # quiver plot of velocities
-s = 10                                  # stride
+s = 10                                  # stride in grid points
 plt.quiver(x[::s], y[::s], u_bc[::s,::s], v_bc[::s,::s], color='white')
 plt.quiver(x[::s], y[::s], u[::s,::s], v[::s,::s], color='black')
 plt.xticks([])
 plt.yticks([])
-plt.title(r"Ross ice velocity, m/year")
+plt.title(r"Ross ice velocity (m/year); white=observed, black=model")
 plt.savefig('rossquiver.png', dpi=300)
 
 # do the scatter plot
@@ -77,5 +77,5 @@ plt.plot([0, max_velocity], [0, max_velocity], color='black', ls='--')
 plt.axis(xmin=0, xmax=max_velocity, ymin=0, ymax=max_velocity)
 plt.xlabel('modeled speed')
 plt.ylabel('observed speed')
-plt.title("Observed versus modeled speed, in m/year")
+plt.title("Observed versus modeled speed (m/year), at points in quiver plot")
 plt.savefig('rossscatter.png', dpi=300)
