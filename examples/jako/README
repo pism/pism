@@ -34,12 +34,12 @@ of python tools are needed.
 
   $ python pism_regional.py
 
-  Now select "gr1km.nc" to open.  Once the topographic map appears
+  To use the GUI:  Select "gr1km.nc" to open.  Once the topographic map appears
   in the Figure 1 window, select the button "Select terminus rectangle".
-  Now use the mouse to select the small rectangle around the Jakobshavn
+  Now use the mouse to select a small rectangle around the Jakobshavn
   terminus, for example.  Once it is a highlighted rectangle, click
   "Compute the drainage basin mask".  Because this is a large data set
-  there will be some delay.  (Note that a parallel computation is done here.)
+  there will be some delay.  (Note that a parallel computation is done.)
   Finally click "Save the drainage basin mask" and save with your
   preferred name; we will assume here that it is "jakomask.nc".
 
@@ -82,7 +82,7 @@ of python tools are needed.
       -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
       -atmosphere given -atmosphere_given_file jako.nc \
       -surface pdd,forcing -force_to_thk jako.nc \
-      -sia_e 3.0 -y 1 -skip 50 -o jako1km_y1.nc -o_size medium
+      -sia_e 3.0 -y 1 -skip 50 -o jako1km_y1.nc
 
 * To make real progress on a spinup we divide -Mx, -My by 3 to get a 3km grid:
 
