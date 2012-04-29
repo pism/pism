@@ -14,9 +14,15 @@ set -e  # exit on error
 DATAURL=http://websrv.cs.umt.edu/isis/images/a/ab/
 DATANAME=Greenland1km.nc
 DATASIZE=80Mb
-
 echo "fetching $DATASIZE master file $DATANAME ... "
 wget -nc ${DATAURL}${DATANAME}
+
+echo "fetching pre-computed whole ice-sheet result on 5km grid"
+URL=http://www.pism-docs.org/download
+WHOLE=g5km_0_ftt.nc
+wget -nc ${URL}/$WHOLE
+echo "... done."
+echo
 
 WORKING=gr1km.nc
 echo "creating PISM-readable file $WORKING from master ..."
@@ -52,7 +58,18 @@ ncatted -a standard_name,thkstore,d,, $WORKING # remove it
 ncatted -O -a units,thkstore,a,c,"m" $WORKING
 ncatted -O -a long_name,thkstore,a,c,"stored ice thickness for regional boundary condition" $WORKING
 
-echo "done with cleaning file $WORKING"
+echo "... done with cleaning file $WORKING"
+echo
+
+BCFILE=g5km_bc.nc
+echo "creating PISM-readable file $BCFILE from master ..."
+ncks -v u_ssa,v_ssa,bmelt,enthalpy $WHOLE $BCFILE
+# rename u_ssa and v_ssa so that they are specified as b.c.
+ncrename -O -v u_ssa,u_ssa_bc -v v_ssa,v_ssa_bc $BCFILE
+echo "... done with creating bc file $BCFILE"
+echo
+
+
 echo "now do 'python pism_regional.py' and open $WORKING"
 echo
 

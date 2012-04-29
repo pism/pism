@@ -19,7 +19,10 @@ of python tools are needed.
   $ cd ~/pism/examples/jako/             # directory with current README
   $ ln -s ~/regional-tools/pism_regional.py .
 
-* Now download and preprocess the SeaRISE data, an 80 Mb file:
+* Now download and preprocess the SeaRISE data, an 80 Mb file called
+  Greenland1km.nc.  Also download a precomputed whole-ice-sheet result from a
+  PISM SeaRISE-Greenland run, a 1Gb file called g5km_0_ftt.nc.  Then simplify
+  and clean these up:
 
   $ ./preprocess.sh
 
@@ -27,6 +30,8 @@ of python tools are needed.
 
   $ ncdump -h gr1km.nc                   # view metadata
   $ ncview gr1km.nc                      # view fields
+
+  A file g5km_bc.nc is saved.  Look at it the same way.
 
 * Now use pism_regional.py on gr1km.nc.  It opens a graphical user interface
   (GUI) which allows you to select a small rectangle around the flux gate or
@@ -78,27 +83,17 @@ of python tools are needed.
 
   Thus here is a native 1km one year run:
   
-  $ mpiexec -n 4 pismo -boot_file jako.nc -Mx 534 -My 335 -no_model_strip 5 \
-      -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
-      -atmosphere given -atmosphere_given_file jako.nc \
-      -surface pdd,forcing -force_to_thk jako.nc \
-      -sia_e 3.0 -y 1 -skip 50 -o jako1km_y1.nc
+  [FIXME:  extract from spinup3km.sh]
 
 * To make real progress on a spinup we divide -Mx, -My by 3 to get a 3km grid:
 
   $ ./spinup3km.sh >> out.spin3km &
-  
 
-
-* TO DO:  get Dirichlet BCs from whole ice sheet run (presumably g5km_0.nc
-  saved at pismdocs.org) for enthalpy, SSA.  The point for the former is that
+  Comments: The run gets Dirichlet BCs from a saved whole ice sheet run (g5km_0_ftt.nc
+  saved at pismdocs.org) for bmelt, enthalpy, SSA.  The point for the second of these is that
   the only alternative is to have the enthalpy not spun-up at all in the no_model_strip,
   which then advects inward as an unrealistic temp.  The point for the SSA bc
   is that the alternative is to have zero velocity there while the velocity 
   tangent to the edge of the no_model strip, i.e. in westerly direction, is
-  significantly nonzero (?).
-
-FIXME from here
-
-
+  significantly nonzero(?).
 
