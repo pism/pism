@@ -726,11 +726,13 @@ PetscErrorCode IceModel::run() {
 
   // do a one-step diagnostic run:
   ierr = verbPrintf(2,grid.com,
-      "doing preliminary step of 1 s to fill diagnostic quantities ...\n"); CHKERRQ(ierr);
+      "doing preliminary step of 1 s (one model second) to fill diagnostic quantities ...\n");
+      CHKERRQ(ierr);
 
   // set verbosity to 1 to suppress reporting
-  PetscInt tmp_verbosity = getVerbosityLevel(); 
-  ierr = setVerbosityLevel(1); CHKERRQ(ierr);
+  PetscInt tmp_verbosity = getVerbosityLevel();
+  // if user says '-verbose 3' or higher, some feedback during prelim step
+  ierr = setVerbosityLevel(tmp_verbosity > 2 ? 2 : 1); CHKERRQ(ierr);
 
   dt_force = -1.0;
   maxdt_temporary = -1.0;
