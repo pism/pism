@@ -66,8 +66,8 @@ plt.title(r"Ross ice velocity, m/year")
 plt.savefig('rossquiver.png', dpi=300)
 
 # do the scatter plot
-magnitude = np.sqrt(u[::s,::s]**2 + v[::s,::s]**2)
-bc_magnitude = np.sqrt(u_bc[::s,::s]**2 + v_bc[::s,::s]**2)
+magnitude = np.sqrt(np.abs(u[::s,::s])**2 + np.abs(v[::s,::s])**2)
+bc_magnitude = np.sqrt(np.abs(u_bc[::s,::s])**2 + np.abs(v_bc[::s,::s])**2)
 
 max_velocity = np.maximum(magnitude.max(), bc_magnitude.max())
 plt.figure(2)
