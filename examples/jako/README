@@ -13,7 +13,7 @@ of python tools are needed.
   Here is the quick summary if all python dependencies are present:
 
   $ cd ~                                 # location where you want it
-  $ git clone https://bueler@github.com/pism/regional-tools.git
+  $ git clone https://github.com/pism/regional-tools.git
   $ cd regional-tools/
   $ python setup.py install              # or add "--user" to build locally
   $ cd ~/pism/examples/jako/             # directory with current README
