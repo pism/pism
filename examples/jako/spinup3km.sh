@@ -2,13 +2,8 @@
 
 NN=8
 
-#FIXME: next choice makes NO sense because annual cycle not in data:
-#CLIMATE="-atmosphere given -atmosphere_given_file jako.nc -surface pdd,forcing -force_to_thk jako.nc"
 
-#FIXME: next choice makes sense physically but original file gr1km.nc lacks lat,lon
-#       so it fails; can we use cdo to recover lat,lon from mapping in gr1km.nc?
-#       (note we could use '-pdd_positive_threshold_temp 268' or similar to force more ablation)
-CLIMATE="-atmosphere searise_greenland -surface pdd,forcing -force_to_thk jako.nc"
+CLIMATE="-surface given,forcing -surface_given_file g5km_climate.nc -force_to_thk jako.nc"
 
 BCFILE=g5km_bc.nc
 
@@ -17,9 +12,11 @@ NMS_EXDT=200  # about 100 frames
 FINALSPIN=2000
 FS_EXDT=20    # about 100 frames
 
-mpiexec -n $NN pismo -boot_file jako.nc -Mx 178 -My 112 -no_model_strip 10 \
-      -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal -ocean_kill \
-      $CLIMATE -y 1 -skip 30 -o jako3km_y1.nc
+cmd="mpiexec -n $NN pismo -boot_file jako.nc -Mx 178 -My 112 -no_model_strip 10 -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal -ocean_kill $CLIMATE -y 1 -skip 30 -o jako3km_y1.nc"
+echo "running:   $cmd"
+$cmd
+
+exit  # FIXME: temporary
 
 #FIXME:  is -no_mass spinup needed?  perhaps not!
 #mpiexec -n $NN pismo -i jako3km_y1.nc -no_mass \

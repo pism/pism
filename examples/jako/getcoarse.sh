@@ -30,10 +30,22 @@ echo
 BCFILE=g5km_bc.nc
 echo "creating PISM-readable boundary conditions file $BCFILE"
 echo "   from whole ice sheet model result ..."
-ncks -v u_ssa,v_ssa,bmelt,enthalpy $WHOLE $BCFILE
+ncks -O -v u_ssa,v_ssa,bmelt,enthalpy $WHOLE $BCFILE
 # rename u_ssa and v_ssa so that they are specified as b.c.
 ncrename -O -v u_ssa,u_ssa_bc -v v_ssa,v_ssa_bc $BCFILE
 echo "... done with creating bc file $BCFILE"
+echo
+
+CLIMATEFILE=g5km_climate.nc
+echo "creating PISM-readable climate file $CLIMATEFILE from airtemp2m and smb in data file ..."
+ncks -O -v mapping,smb,airtemp2m $DATANAME $CLIMATEFILE
+ncrename -O -v airtemp2m,artm $CLIMATEFILE
+ncatted -O -a units,artm,a,c,"Celsius" $CLIMATEFILE
+ncap -O -s "acab=(1000.0/910.0)*smb" $CLIMATEFILE $CLIMATEFILE
+ncatted -O -a standard_name,acab,a,c,"land_ice_surface_specific_mass_balance" $CLIMATEFILE
+ncatted -O -a units,acab,a,c,"meters/year" $CLIMATEFILE
+ncks -O -x -v smb $CLIMATEFILE $CLIMATEFILE
+echo "... done with creating climate file $CLIMATEFILE"
 echo
 
 
