@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,6 @@
 void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
 
   dict["bfrict"] = new PSB_bfrict(this, grid, *variables);
-  dict["bueler_brown_f"] = new PSB_bueler_brown_f(this, grid, *variables);
 
   dict["cbar"]     = new PSB_cbar(this,     grid, *variables);
   dict["cflx"]     = new PSB_cflx(this,     grid, *variables);
@@ -624,56 +623,6 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_bueler_brown_f::PSB_bueler_brown_f(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
-
-  // set metadata:
-  vars[0].init_2d("bueler_brown_f", grid);
-  set_attrs("f(|v|) in Bueler and Brown (2009), equation 22", "",
-            "", "", 0);
-  vars[0].set("valid_min", 0);
-  vars[0].set("valid_max", 1);
-  vars[0].set("_FillValue", -0.01);
-}
-
-//! \brief Computes f(|v|) as described in [\ref BBssasliding] (page 7, equation 22).
-static PetscScalar bueler_brown_f(PetscScalar v_squared) {
-  const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
-    outC_fofv = 2.0 / pi;
-
-  return 1.0 - outC_fofv * atan(inC_fofv * v_squared);
-}
-
-PetscErrorCode PSB_bueler_brown_f::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2V *vel_ssa;
-  IceModelVec2S *thickness;
-  PetscReal fill_value = -0.01;
-
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bueler_brown_f", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-
-  ierr = model->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
-
-  ierr = vel_ssa->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i)
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j)
-      (*result)(i,j) = bueler_brown_f((*vel_ssa)(i,j).magnitude_squared());
-
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = vel_ssa->end_access(); CHKERRQ(ierr);
-
-  ierr = result->mask_by(*thickness, fill_value); CHKERRQ(ierr);
-
-  output = result;
-  return 0;
-}
 
 PSB_bfrict::PSB_bfrict(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {

@@ -598,6 +598,74 @@ will produce \texttt{foo.nc} containing a ``movie'' very similar to the one crea
 
 In addition to \texttt{foo.nc}, the latter command will produce \texttt{ts.nc} containing scalar time-series. The variable \texttt{surface_ice_flux} (the \emph{total over the ice-covered area} of the surface mass flux) can be used to detect if climate forcing is applied at the right time.
 
+\subsubsection{Visualizing the climate inputs in the Greenland case}
+\label{sec:pdd-series-with-pclimate}
+
+Assuming that \texttt{g20km_pre100.nc} was produced by the run described in section
+\ref{userman-sec:start}), one can run the following to check if the PDD
+model in PISM (see section \ref{sec:surface-pdd}) is ``reasonable'':
+\begin{verbatim}
+FIXME: update command-line options
+$ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
+           -surface pdd -paleo_precip -times 0:0.1:3 \
+           -o pddmovie.nc -o_order zyx -calendar gregorian
+\end{verbatim}%$
+This produces the file \texttt{pddmovie.nc} with several variables: \texttt{climatic_mass_balance}
+(instantaneous net ice equivalent accumulation (ablation) rate), \texttt{ice_surface_temp}
+(mean annual temperature at ice surface but below firn), \texttt{air_temperature}
+(instantaneous near-surface air temperature), \texttt{precipitation} (mean annual
+ice-equivalent precipitation rate) and some others.
+
+Variables \texttt{climatic_mass_balance} and \texttt{precipitation} do not evolve over time because the 
+former is generated from ice sheet geometry and latitude by the
+SeaRISE-Greenland formulas (section \ref{sec:atmosphere-searise-greenland}),
+while the latter is part of the SeaRISE-Greenland data itself.
+
+The other two variables were used to create figure \ref{fig:pddseries}, which
+shows the time-series of the accumulation rate (top graph) and the air
+temperature (bottom graph)  with the map view of the surface elevation on the left.
+
+Here are two things to notice:
+\begin{enumerate}
+\item The summer peak day is in the right place.  The default for this value is
+  July 15 (day $196$, at approximately $196/365 \simeq 0.54$ year).  (If it is
+  important, the peak day can be changed using the \texttt{snow_temp_july_day}
+  configuration parameter).
+
+\item Lows of the surface mass balance rate \texttt{climatic_mass_balance} correspond to
+  positive degree-days in the given period, because of highs of the air
+  temperature.  Recall the air temperature graph does
+  not show random daily variations.  Even though it has the maximum of about $270$
+  Kelvin, the parameterized instantaneous air temperature can be above freezing.
+  A positive value for positive degree-days is expected \cite{CalovGreve05}.
+\end{enumerate}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5in]{pdd-movie}
+  \caption{Time series of the surface mass balance rate and near-surface air temperature.}
+  \label{fig:pddseries}
+\end{figure}
+
+\bigskip
+We can also test the surface temperature forcing code with the following command.
+\begin{verbatim}
+FIXME: update command-line options
+$ pclimate -i g20km_pre100.nc -o dT_movie.nc -surface simple \
+           -atmosphere searise_greenland,dTforcing -dTforcing pism_dT.nc \
+           -times -125e3:1e3:0 -o_order zyx
+\end{verbatim}%$
+The output \texttt{dT_movie.nc} and \texttt{pism_dT.nc} were used to create figure \ref{fig:artm-timeseries}.
+
+This figure shows the GRIP temperature offsets and the time-series of the temperature at the ice surface at a point in southern Greenland (bottom graph), confirming that the temperature offsets are used correctly.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5in]{dT-movie}
+  \caption{Time series of the surface temperature compared to GRIP temperature offsets}
+  \label{fig:artm-timeseries}
+\end{figure}
+
 
 \clearpage\newpage
 \newcommand{\surface}{Surface components (\texttt{-surface}; default: \texttt{given})}

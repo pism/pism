@@ -16,14 +16,13 @@ To get started run the script \texttt{preprocess.sh} in \texttt{examples/storgla
 
 The mean annual air temperature $T_{\mathrm{MA}}=-6^{\circ}$C at the nearby Tarfala Research Stations serves as the boundary condition for the conservation of energy scheme below the firn line $z_{\textrm{FL}} = 1400$\,m above sea level. Above it, where the ice is temperate, we choose 0$^{\circ}$C. The \texttt{psg_config.cdl} contains parameter choices more suitable for small valley glaciers. Specifically, we increase the limit above which drainge occurs from 1\,\% to 2\,\% liquid water fraction. Furthermore, it sets the till friction angle to 40$^{\circ}$ and the threshold velocity to 10\,m/a.
 
-
 \texttt{psg_flowline.sh} runs the flow-line application mode. The first two runs smooth the surface and create a more credible enthalpy field. In this example we want to infer the mass balance that has the present day geometry as a steady-state (for now, we ignore the fact that Storglaci{\"a}ren is probably not in a steady-state). As demonstrated in the third run, we can use PISM's mass balance modifier:
 \begin{quote}\small
 \begin{verbatim}
 -surface constant,forcing -force_to_thk psg_flowline_35m_steady.nc -force_to_thk_alpha 0.05
 \end{verbatim}
 \normalsize\end{quote}
-The result of this run is shown in Figure~\ref{fig:storglaciaren-ftt-result}. Without much parameter fine-tuning, simulated surface velocities are reasonably close to observations, c.f. \cite{AschwandenBlatter}.  We also see that a mass balance of about 4 meters per year at the begrschund, almost linearly decreasing to -4.5 meters per year at the tongue, is required to maintain the glaciers geometry. However, observations show that a more realistic present day mass balance decreases lineraly from 2.5 meters per year at the bergschrund to -3 meters per year at the tongue. We now use the surface processes model PSElevation, which is enabled by \texttt{-surface elevation} and allows to define temperature and surface mass balance as a function of surface elevation (see Section~\ref{sec:pism-surface-snow} for details). The next run uses this present day mass balance which is imposed via 
+The result of this run is shown in Figure~\ref{fig:storglaciaren-ftt-result}. Without much parameter fine-tuning, simulated surface velocities are reasonably close to observations, c.f. \cite{AschwandenBlatter}.  We also see that a mass balance of about 4 meters per year at the begrschund, almost linearly decreasing to -4.5 meters per year at the tongue, is required to maintain the glaciers geometry. However, observations show that a more realistic present day mass balance decreases lineraly from 2.5 meters per year at the bergschrund to -3 meters per year at the tongue. We now use the surface processes model PSElevation, which is enabled by \texttt{-surface elevation} and allows to define temperature and surface mass balance as a function of surface elevation (see the \emph{PISM's climate forcing components} document for details). The next run uses this present day mass balance which is imposed via 
 \begin{quote}\small
 \begin{verbatim}
 -acab -3,2.5.,1200,1450,1615 -acab_limits -3,0

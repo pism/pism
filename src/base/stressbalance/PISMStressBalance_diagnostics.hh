@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -109,14 +109,6 @@ class PSB_velbase : public PISMDiag<PISMStressBalance>
 {
 public:
   PSB_velbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Computes f(|v|) as described in [\ref BBssasliding] (page 7, equation 22).
-class PSB_bueler_brown_f : public PISMDiag<PISMStressBalance>
-{
-public:
-  PSB_bueler_brown_f(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

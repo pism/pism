@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -157,7 +157,7 @@ SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   set_attrs("the x-component of the surface gradient, i-offset", "",
             "", "", 0);
   set_attrs("the x-component of the surface gradient, j-offset", "",
-            "", "", 0);
+            "", "", 1);
 }
 
 PetscErrorCode SIAFD_h_x::compute(IceModelVec* &output) {
@@ -189,7 +189,7 @@ SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   set_attrs("the y-component of the surface gradient, i-offset", "",
             "", "", 0);
   set_attrs("the y-component of the surface gradient, j-offset", "",
-            "", "", 0);
+            "", "", 1);
 }
 
 PetscErrorCode SIAFD_h_y::compute(IceModelVec* &output) {

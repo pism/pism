@@ -1,5 +1,5 @@
 
-\section{Getting started}\label{sect:start}\index{PISM!getting started}
+\section{Getting started}\label{sec:start}\index{PISM!getting started}
 
 In this section we give an extended example applying PISM to model the Greenland ice sheet.  We use data assembled by the \href{http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment}{Sea-level Response to Ice Sheet Evolution (SeaRISE)} group.  SeaRISE is a community-organized assessment process providing an upper bound on ice sheet contributions to sea level in the next 100--200 years, especially for the IPCC AR5 report in 2013.
 
@@ -130,7 +130,7 @@ $ ncview ts_g20km_m20ka.nc ts_g20km_0.nc
 \label{fig:sr-spindone-ivolboth}
 \end{figure}
 
-On an 8 core workstation the total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sect:dynamics}) is about 5 wall clock hours or 40 processor-hours.  For the same machine, the complete 10\,km spin-up used about 660 processor-hours, thus several wall-clock days.
+On an 8 core workstation the total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sec:dynamics}) is about 5 wall clock hours or 40 processor-hours.  For the same machine, the complete 10\,km spin-up used about 660 processor-hours, thus several wall-clock days.
 
 If done without membrane stresses (i.e.~non-sliding SIA only) these computational times are significantly reduced.  The polythermal versus ``cold'' energy-conservation choice corresponds to no performance difference of consequence.
 
