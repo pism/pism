@@ -10,13 +10,10 @@ This example demonstrates the outlet-glacier-mode PISM executable `pismo`
 and the drainage-basin-delineation tool 
 
 Preprocessing
-=================
+----------
 
 In order to run `pismo` some preprocessing must be performed.  A number
 of python tools are needed.
-
-regional-tools
---------------
 
 First get `regional-tools`, the drainage basin generator, by `git clone`.  Then
 set up this python tool as directed in its `README.md`.  Then come back here and
@@ -29,9 +26,6 @@ link the tool we need.  Here is the quick summary:
     $ cd ~/pism/examples/jako/             # directory with current README
     $ ln -s ~/regional-tools/pism_regional.py .
 
-preprocess.sh
--------------
-
 Next we use a script that downloads and cleans the SeaRISE data, an 80 Mb file called
 `Greenland1km.nc`.
 
@@ -41,9 +35,6 @@ A file `gr1km.nc` is created.  We can look at what fields it contains:
 
     $ ncdump -h gr1km.nc                   # view metadata
     $ ncview gr1km.nc                      # view fields
-
-getcoarse.sh
-------------
 
 We also download coarse grid information for the whole ice sheet.  These are 
 model results already, which provide the boundary conditions and climate for 
@@ -61,13 +52,18 @@ link to it to avoid downloading.  Thus
     $ ln -s ../searise-greenland/Greenland_5km_v1.1.nc
     $ ./getcoarse.sh
 
-Creating a regional model
-=============
 
-Extract drainage basin mask
+Creating a regional model
 -------------
 
-Now use `pism_regional.py` on `gr1km.nc`.  It opens a graphical user interface
+First we extract a drainage basin mask from the surface elevation data in
+`gr1km.nc`.  The idea is that the outline of the flow we want to model can be
+determined by the gradient flow from the surface elevation.  Then
+within the masked drainage basin we will apply all physics in the PISM model
+which we run below.  But outside the masked basin we apply simplified models
+or precomputed whole ice sheet results as boundary conditions.
+
+So we use `pism_regional.py` on `gr1km.nc`.  This opens a graphical user interface
 (GUI) which allows you to select a small rectangle around the flux gate or
 fjord which is the terminus of the outlet glacier you want to model.
 
@@ -89,9 +85,8 @@ preferred name; we will assume here that it is `jakomask.nc`.
     *  cutout command which appears at terminal can get lost?
     *  I have to hit "quit" twice to make it so
 
-Cut out the region
--------------
-
+We still need to "cut out" the region we want, including the whole
+drainage basin.
 The feedback from the above process includes a cutout command which
 appears as a global attribute of jakomask.nc.  Get it and use it:
 
@@ -122,12 +117,10 @@ FIXME What is the grid in jako.nc?
 FIXME Thus here is a native 1km one year run:  [extract from spinup3km.sh]
 
 Running the model
-============
+-----------
 
-A sample 3km spinup
-------------
-
-To make real progress on a spinup we divide the grid dimensions by 3 to get a 3km grid:
+To make real progress on a spinup we divide the grid dimensions by 3 to get a
+3km grid.  On this grid we do a basic run (FIXME):
 
     $ ./spinup3km.sh >> out.spin3km &
 
