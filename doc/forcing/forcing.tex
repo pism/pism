@@ -85,20 +85,23 @@ urlcolor=blue     % only if colorlinks=true
 \section{Introduction}
 \label{sec:intro}
 
-PISM has well-defined separation of climate forcing
-from ice dynamics.  Most options documented in the PISM User's Manual
-control the ice dynamics part, but section
-\ref*{userman-sec:climate-inputs} of the User's Manual gives an overview
+PISM has a well-defined separation of climate forcing
+from ice dynamics.  This manual is about the climate forcing interface.
+
+By contrast, most options documented in the PISM User's Manual
+\footnote{PDF for latest stable release at \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf}.}
+control the ice dynamics part.  Section \ref*{userman-sec:climate-inputs} of
+the User's Manual does, however, give an overview
 of PISM's surface (atmosphere) and ocean (sub-shelf) interfaces.  At
 these interfaces the surface mass and energy balances are determined
 and/or passed to the ice dynamics code.
 
 \vspace{0.3in}
 
-First of all, we need to introduce some PISM jargon. In this manual a
+To get started with climate forcing usage we need to introduce some language to describe parts of PISM.  In this manual a
 \emph{component} is a piece of PISM code, usually a C++ class. A combination of
 components (or, in some cases, one component) makes up a ``model'' --- an
-implementation of a mathematical description of a system.
+implementation of a physical/mathematical description of a system.
 
 PISM's climate forcing code has two kinds of components.
 \begin{itemize}
@@ -109,7 +112,7 @@ PISM's climate forcing code has two kinds of components.
   corrections (sections~\ref{sec:surface-lapse-rate}
   and~\ref{sec:atmosphere-lapse-rates}) or ice-core derived offsets
   (sections~\ref{sec:atmosphere-delta-temp} and~\ref{sec:delta-sea-level}, for
-  example). These are called \emph{modifier components} or \emph{modifiers}.
+  example). These are called \emph{modifier~components} or \emph{modifiers}.
 \end{itemize}
 
 Model~components and modifiers can be chained as shown in
@@ -119,13 +122,11 @@ Figure~\ref{fig:climate-input-data-flow-repeated}. For example,
 \end{verbatim}
 combines the component providing constant (both in space and time) ocean
 boundary conditions with a modifier that
-applies scalar sea level offsets. This is one of the many ``ocean models'' that
-can be chosen using ``components'' as building blocks.
-These physical models may be very simple, however, with no actual changes to
-climate input fields in some cases.
+applies scalar sea level (``SL'') offsets. This combination one of the many ocean models that
+can be chosen using components as building blocks.
 
-Section~\ref{sec:examples} introduces some examples of combining components to
-choose models. First, however, we must address how PISM handles model time
+Section~\ref{sec:examples} gives examples of combining components to
+choose models.  Before that we address how PISM handles model time
 (Section~\ref{sec:model-time}).
 
 \vspace{0.3in}
@@ -135,14 +136,14 @@ choose models. First, however, we must address how PISM handles model time
 \emph{Summary of the main idea in using this manual:}
 \end{center}
 
-Setting up PISM's climate interface requires selecting one surface and one
+Setting up PISM's climate interface \emph{requires} selecting one surface and one
 ocean component. The surface component may use an atmosphere component also;
 see Figure \ref{fig:climate-input-data-flow-repeated}. Command-line options
 \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} each take a
 comma-separated list of keywords as an argument; the first keyword \emph{has}
 to correspond to a model~component, the rest can be ``modifier'' components.
 Any of these options can be omitted to use the default atmosphere, surface or
-ocean model~components, although one has to explicitly choose a model~component
+ocean model~components, but one has to explicitly choose a model~component
 to use a modifier. Model~components and modifiers are chained as in Figure
 \ref{fig:climate-input-data-flow-repeated}.
 \end{quote}
@@ -150,8 +151,8 @@ to use a modifier. Model~components and modifiers are chained as in Figure
 \begin{figure}
   \centering
   \includegraphics[width=5in]{../userman/figs/data-flow.pdf}
-  \caption{PISM climate input data flow.  Colored arrows correspond to interfaces in
-    Figure \ref*{userman-fig:climate-inputs} in the User's Manual.  Notice that the atmosphere component is only needed for some surface models.}
+  \caption{PISM climate input data flow.  Colored arrows match colored interfaces in
+    Figure \ref*{userman-fig:climate-inputs} in the User's Manual.  An atmosphere component is only needed for some surface models.}
   \label{fig:climate-input-data-flow-repeated}
 \end{figure}
 
@@ -574,7 +575,6 @@ $ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
 \end{verbatim}%$
 produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle in the variable \variable{air_temperature} and a noticeable decrease in the surface mass balance during summer months (see variable \variable{climatic_mass_balance}). Note that \variable{air_temperature} is constant in time: this is the temperature \emph{at the ice surface but below firn} and it does not include seasonal variations~\cite{Hock05}.
 
-See User's Manual, section~\ref*{userman-sec:eismint-greenland}, for another \texttt{pclimate} example.
 
 \subsection{Low-resolution test runs}
 \label{sec:low-resolution-test-runs}

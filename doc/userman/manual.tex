@@ -75,11 +75,11 @@ PISM is a joint project between developers in the ice sheet modeling group at th
 \textbf{\underline{Andy Aschwanden}} & \begin{minipage}[t]{4in} scripts, visualization, thermodynamics, SeaRISE-Greenland, Storglaci\"aren  \end{minipage}  \\
 \textbf{Jed Brown} & source code original author, SSA numerics, PETSc underpinnings \\
 \textbf{\underline{Ed Bueler}} & \begin{minipage}[t]{4in} principal investigator, verification, earth deformation, SIA, thermodynamics, documentation  \end{minipage} \\
-\textbf{Dani DellaGiustina} & regional modeling \\
+\textbf{Dani DellaGiustina} & regional tools and modeling \\
 \textbf{Marijke Habermann} & inversion\\
 \textbf{Marianne Haselhoff} & ice streams: physics and numerics\\
 \textbf{Regine Hock} & surface mass and energy balance \\
-\textbf{\underline{Constantine Khroulev}} & \begin{minipage}[t]{4in} source code primary author, input/output, software design, testing, documentation, most bug fixes \end{minipage} \\
+\textbf{\underline{Constantine Khroulev}} & \begin{minipage}[t]{4in} source code primary author, input/output, software design, climate couplers, parallelization, testing, user support, most documentation, most bug fixes, regional tools \end{minipage} \\
 \textbf{Craig Lingle}\index{People!Lingle, Craig} & original modeling choices, earth deformation, modeled-it-before-you-did \\
 \textbf{Maria Martin} & SeaRISE-Antarctica, Antarctica processes \\
 \textbf{David Maxwell} & inversion, SSA finite elements, python bindings \\
@@ -143,7 +143,12 @@ Welcome!  All information about PISM is online at the home page
   \url{http://www.pism-docs.org}
 \end{center}
 
-See the \emph{Installation Manual} for how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install}, along with needed libraries.
+See the PISM Installation Manual\footnote{PDF for latest stable release at \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=installation.pdf}.}
+for how to download\index{PISM!download source code} the PISM source code and install
+it\index{PISM!install}, along with needed libraries.  Also, the PISM Climate Forcing Manual
+\footnote{\dots at \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=forcing.pdf}.}
+extends the User's Manual to cover additional couplings to atmosphere and ocean
+models and data.
 
 This \emph{User's Manual} describes how to run PISM using certain publicly-available data for the Greenland ice sheet and the Ross ice shelf.  It illustrates how PISM's numerical approximations are verified.  It documents all the PISM options.
 
@@ -178,15 +183,14 @@ Please see the extensive lists of PISM applications and user projects at the hom
 \subsection{PISM design principles}\index{PISM!principles}  This section gives an overview of ice dynamics models in PISM.  First, some organizing principles:
 \begin{enumerate}
 \item source code should be open, free, and work well with other free software tools,
-\item science is better if done with publicly-available data,
-\item numerical methods should be verifiable (i.e.~compare to exact solutions of the modeled equations),
-\item shallow models are (currently) the most effective at whole ice sheet scale,
-\item comparing results from a hierarchy of ice dynamics simplifications is more valuable than getting them from any particular model equations,
-\item everything computed diagnostically (instantaneously) should be available prognostically (i.e.~it can evolve in time), and
+\item science is better with publicly-available data,
+\item numerical methods should be verifiable (comparable to exact solutions of the equations),
+\item shallow models are the most effective at whole ice sheet scale,
+\item everything computed diagnostically (instantaneously) should be available prognostically (can evolve in time), and
 \item climate inputs should affect ice dynamics by a well-defined interface.
 \end{enumerate}
 
-\noindent We do not claim to follow these principles perfectly, but principle 1 is illustrated by our existence and principle 2 by examples in sections \ref{sec:start}, and \ref{sec:ross}.  Principle 3 is addressed in section \ref{sec:verif}.  Principles 4, 5, 6, and 7 are addressed next.
+\noindent We do not claim to follow these principles perfectly, but principle 1 is illustrated by our existence and principle 2 by examples in sections \ref{sec:start}, and \ref{sec:ross}.  Principle 3 is addressed in section \ref{sec:verif}.  Principles 4, 5, and 6 are addressed next.
 
 
 \subsection{Two main shallow models, SIA and SSA}\index{PISM!SIA}\index{PISM!SSA}  At each time-step of a typical PISM run, the geometry, temperature, and basal strength of the ice sheet are included into stress (momentum) balance equations to determine the velocity of the flowing ice.   The ``full'' stress balance equations, namely the (non-Newtonian) Stokes model for slowly-flowing fluids \cite{Fowler}, are themselves an inertia-free approximation of the conservation of momentum equations.  Even though PISM does not solve this ``full'' model, it can numerically solve two different shallow approximations which are suited to the situations in large ice sheet and ice shelf systems:
@@ -361,11 +365,11 @@ The auxiliary tool \texttt{pclimate}, also described in \emph{PISM's climate
   forcing components}, is intended to help users observe the climate inputs
 they have chosen, without involving ice dynamics at all.
 
+
 \clearpage
 \newpage
 \section{Initialization and bootstrapping}
 \label{sec:boot}
-
 
 There are three ways to start PISM,\begin{itemize}
 \item the executables \texttt{pisms} and \texttt{pismv} initialize simplified-geometry experiments and verification tests, respectively, from formulas in the source code,
