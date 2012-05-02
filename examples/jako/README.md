@@ -120,9 +120,9 @@ Running the model
 -----------
 
 To make real progress on a spinup we divide the grid dimensions by 3 to get a
-3km grid.  On this grid we do a basic run (FIXME):
+3km grid.  On this grid we do a basic run using 4 MPI processes:
 
-    $ ./spinup3km.sh >> out.spin3km &
+    $ ./spinup.sh 4 >> out.spin3km &
 
 Comments: The run gets Dirichlet BCs from a saved whole ice sheet run (g5km_0_ftt.nc
 saved at pismdocs.org) for bmelt, enthalpy, SSA.  The point for the second of these is that
