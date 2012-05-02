@@ -140,7 +140,7 @@ PISM's signal handling.)
     \toprule
     \textbf{Name} & \textbf{Units} & \textbf{Description}\\
     \midrule
-    \texttt{basal_ice_flux} & \textsl{kg $s^{-1}$} &  total basal ice flux \\
+    \texttt{basal_ice_flux} & \textsl{kg  / s} &  total basal ice flux \\
     \texttt{cumulative_basal_ice_flux} & \textsl{kg} &  cumulative total basal ice flux \\
     \texttt{cumulative_discharge_flux} & \textsl{kg} &  cumulative discharge (calving etc.) flux \\
     \texttt{cumulative_float_kill_flux} & \textsl{kg} &  cumulative \texttt{-float_kill} flux \\
@@ -148,11 +148,11 @@ PISM's signal handling.)
     \texttt{cumulative_ocean_kill_flux} & \textsl{kg} &  cumulative \texttt{-ocean_kill} flux \\
     \texttt{cumulative_sub_shelf_ice_flux} & \textsl{kg} &  cumulative total sub-shelf ice flux \\
     \texttt{cumulative_surface_ice_flux} & \textsl{kg} &  cumulative total over ice domain of top surface ice mass flux \\
-    \texttt{dimassdt} & \textsl{kg $s^{-1}$} &  total ice mass rate of change \\
-    \texttt{discharge_flux} & \textsl{kg $s^{-1}$} &  discharge (calving and icebergs) flux \\
-    \texttt{divoldt} & \textsl{$m^{3}$ $s^{-1}$} &  total ice volume rate of change \\
+    \texttt{dimassdt} & \textsl{kg  / s} &  total ice mass rate of change \\
+    \texttt{discharge_flux} & \textsl{kg  / s} &  discharge (calving and icebergs) flux \\
+    \texttt{divoldt} & \textsl{$m^{3}$  / s} &  total ice volume rate of change \\
     \texttt{dt} & \textsl{second} &  mass continuity time step \\
-    \texttt{float_kill_flux} & \textsl{kg $s^{-1}$} &  \texttt{-float_kill} flux \\
+    \texttt{float_kill_flux} & \textsl{kg  / s} &  \texttt{-float_kill} flux \\
     \texttt{iarea} & \textsl{$m^{2}$} &  total ice area \\
     \texttt{iareacold} & \textsl{$m^{2}$} &  ice-covered area where basal ice is cold \\
     \texttt{iareacoldf} & \textsl{1} &  fraction of ice-covered area where basal ice is cold \\
@@ -183,12 +183,12 @@ PISM's signal handling.)
     \texttt{ivolg} & \textsl{$m^{3}$} &  total grounded ice volume \\
     \texttt{ivoltemp} & \textsl{$m^{3}$} &  total volume of temperate ice \\
     \texttt{ivoltempf} & \textsl{1} &  temperate ice volume fraction \\
-    \texttt{max_diffusivity} & \textsl{$m^{2}$ $s^{-1}$} &  maximum diffusivity \\
-    \texttt{nonneg_rule_flux} & \textsl{kg $s^{-1}$} &  \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
-    \texttt{ocean_kill_flux} & \textsl{kg $s^{-1}$} &  \texttt{-ocean_kill} flux \\
+    \texttt{max_diffusivity} & \textsl{$m^{2}$  / s} &  maximum diffusivity \\
+    \texttt{nonneg_rule_flux} & \textsl{kg  / s} &  \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
+    \texttt{ocean_kill_flux} & \textsl{kg  / s} &  \texttt{-ocean_kill} flux \\
     \texttt{slvol} & \textsl{m} &  total sea-level relevant ice \textbf{in sea-level equivalent} \\
-    \texttt{sub_shelf_ice_flux} & \textsl{kg $s^{-1}$} &  total sub-shelf ice flux \\
-    \texttt{surface_ice_flux} & \textsl{kg $s^{-1}$} &  total over ice domain of top surface ice mass flux \\
+    \texttt{sub_shelf_ice_flux} & \textsl{kg  / s} &  total sub-shelf ice flux \\
+    \texttt{surface_ice_flux} & \textsl{kg  / s} &  total over ice domain of top surface ice mass flux \\
     \bottomrule
   \end{tabular}
   \caption{Scalar time-series supported by PISM, part 2}
@@ -258,12 +258,13 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{temp} & \textsl{K} & ice temperature \\
     \texttt{cts} & \textsl{none} &  $\mathrm{cts} = E/E_s(p)$, so cold-temperate transition surface is at $\mathrm{cts} = 1$ \\
     \texttt{liqfrac} & \textsl{1} &  liquid water fraction in ice (between $0$ and $1$) \\
+    \texttt{litho_temp} & \textsl{K} & lithosphere (bedrock) temperature, in \texttt{PISMBedThermalUnit} \\
     \texttt{temp} & \textsl{K} &  ice temperature \\
     \texttt{temp_pa} & \textsl{degrees Celsius} &  pressure-adjusted ice temperature (degrees above pressure-melting point) \\
-    \texttt{uvel} & \textsl{m $s^{-1}$} &  horizontal velocity of ice in the X direction \\
-    \texttt{vvel} & \textsl{m $s^{-1}$} &  horizontal velocity of ice in the Y direction \\
-    \texttt{wvel} & \textsl{m $s^{-1}$} &  vertical velocity of ice, relative to geoid \\
-    \texttt{wvel_rel} & \textsl{m $s^{-1}$} &  vertical velocity of ice, relative to base of ice directly below \\
+    \texttt{uvel} & \textsl{m / year} &  horizontal velocity of ice in the X direction \\
+    \texttt{vvel} & \textsl{m / year} &  horizontal velocity of ice in the Y direction \\
+    \texttt{wvel} & \textsl{m / year} &  vertical velocity of ice, relative to geoid \\
+    \texttt{wvel_rel} & \textsl{m / year} &  vertical velocity of ice, relative to base of ice directly below \\
     \bottomrule
   \end{tabular}
   \caption{3D diagnostic quantities}
@@ -276,23 +277,24 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \toprule
     \textbf{Name} & \textbf{Units} & \textbf{Description} \\
     \midrule
-    \texttt{climatic_mass_balance} & \textsl{m $s^{-1}$} & ice-equivalent surface mass balance (accumulation/ablation) rate \\
+    \texttt{climatic_mass_balance} & \textsl{m / year} & ice-equivalent surface mass balance (accumulation/ablation) rate \\
     \texttt{ice_surface_temp} & \textsl{K} & annual average ice surface temperature, below firn processes \\
     \texttt{bedtoptemp} & \textsl{K} & temperature of top of bedrock thermal layer \\
-    \texttt{bfrict} & \textsl{W $m^{-2}$} &  basal frictional heating \\
-    \texttt{bheatflx} & \textsl{W $m^{-2}$} & upward geothermal flux at bedrock surface \\
-    \texttt{bmelt} & \textsl{m $s^{-1}$} & ice basal melt rate in ice thickness per time \\
+    \texttt{bfrict} & \textsl{W  / $m^2$} &  basal frictional heating \\
+    \texttt{bheatflx} & \textsl{W  / $m^2$} & upward geothermal flux at bedrock surface \\
+    \texttt{bmelt} & \textsl{m / year} & ice basal melt rate in ice thickness per time \\
     \texttt{bwat} & \textsl{m} & effective thickness of subglacial melt water \\
-    \texttt{cbar} & \textsl{m $s^{-1}$} &  magnitude of vertically-integrated horizontal velocity of ice \\
-    \texttt{cbase} & \textsl{m $s^{-1}$} &  magnitude of horizontal velocity of ice at base of ice \\
+    \texttt{bwp} & \textsl{Pa} & subglacial (pore) water pressure \\
+    \texttt{cbar} & \textsl{m / year} &  magnitude of vertically-integrated horizontal velocity of ice \\
+    \texttt{cbase} & \textsl{m / year} &  magnitude of horizontal velocity of ice at base of ice \\
     \texttt{cell_area} & \textsl{$m^{2}$} & cell areas \\
-    \texttt{cflx} & \textsl{$m^{2}$ $s^{-1}$} &  magnitude of vertically-integrated horizontal flux of ice \\
-    \texttt{csurf} & \textsl{m $s^{-1}$} &  magnitude of horizontal velocity of ice at ice surface \\
-    \texttt{dHdt} & \textsl{m $s^{-1}$} &  ice thickness rate of change \\
-    \texttt{dbdt} & \textsl{m $s^{-1}$} & bedrock uplift rate \\
-    \texttt{diffusivity} & \textsl{$m^{2}$ $s^{-1}$} &  diffusivity of SIA mass continuity equation \\
-    \texttt{enthalpybase} & \textsl{J $kg^{-1}$} &  ice enthalpy at the base of ice \\
-    \texttt{enthalpysurf} & \textsl{J $kg^{-1}$} &  ice enthalpy at 1m below the ice surface \\
+    \texttt{cflx} & \textsl{$m^{2}$ / year} &  magnitude of vertically-integrated horizontal flux of ice \\
+    \texttt{csurf} & \textsl{m / year} &  magnitude of horizontal velocity of ice at ice surface \\
+    \texttt{dHdt} & \textsl{m / year} &  ice thickness rate of change \\
+    \texttt{dbdt} & \textsl{m / year} & bedrock uplift rate \\
+    \texttt{diffusivity} & \textsl{$m^{2}$  / s} &  diffusivity of SIA mass continuity equation \\
+    \texttt{enthalpybase} & \textsl{J  / kg} &  ice enthalpy at the base of ice \\
+    \texttt{enthalpysurf} & \textsl{J  / kg} &  ice enthalpy at 1m below the ice surface \\
     \texttt{h_x} & \textsl{none} &  the x-component of the surface gradient, on the staggered grid\\
     \texttt{h_y} & \textsl{none} &  the y-component of the surface gradient, on the staggered grid\\
     \texttt{hardav} & $Pa\, s^{1/n}$ &  vertical average of ice hardness \\
@@ -316,8 +318,10 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \midrule
     \multicolumn{3}{c}{Continued from Table \ref{tab:two-d-diagnostics-1}}\\
     \texttt{schoofs_theta} & \textsl{1} &  multiplier $\theta$ in \cite{Schoofbasaltopg2003} \\
-    \texttt{shelfbmassflux} & \textsl{m $s^{-1}$} & ice mass flux from ice shelf base (positive flux is loss from ice shelf) \\
+    \texttt{shelfbmassflux} & \textsl{m / year} & ice mass flux from ice shelf base (positive flux is loss from ice shelf) \\
     \texttt{shelfbtemp} & \textsl{Kelvin} & absolute temperature at ice shelf base \\
+    \texttt{tauc} & \textsl{Pa} & yield stress for basal till (plastic or pseudo-plastic model) \\
+    \texttt{taud} & \textsl{Pa} & driving shear stress at the base of ice, X and Y components \\
     \texttt{taud_mag} & \textsl{Pa} &  magnitude of the driving shear stress at the base of ice \\
     \texttt{tempbase} & \textsl{K} &  ice temperature at the base of ice \\
     \texttt{tempicethk_basal} & \textsl{m} &  thickness of the basal layer of temperate ice \\
@@ -326,14 +330,15 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{tempsurf} & \textsl{K} &  ice temperature at 1m below the ice surface \\
     \texttt{thksmooth} & \textsl{m} &  thickness relative to smoothed bed elevation in \cite{Schoofbasaltopg2003} \\
     \texttt{thk} & \textsl{m} & land ice thickness \\
+    \texttt{tillphi} & \textsl{degrees} & friction angle for till under grounded ice sheet \\
     \texttt{topgsmooth} & \textsl{m} &  smoothed bed elevation in \cite{Schoofbasaltopg2003}\\
     \texttt{topg} & \textsl{m} & bedrock surface elevation \\
     \texttt{usurf} & \textsl{m} & ice upper surface elevation \\
-    \texttt{velbar} & \textsl{m $s^{-1}$} &  vertical mean of horizontal ice velocity in the X and Y directions \\
-    \texttt{velbase} & \textsl{m $s^{-1}$} &  horizontal velocity of ice at the base of ice in the X and Y directions\\
-    \texttt{velsurf} & \textsl{m $s^{-1}$} &  horizontal velocity of ice at ice surface in the X and Y directions\\
-    \texttt{wvelbase} & \textsl{m $s^{-1}$} &  vertical velocity of ice at the base of ice, relative to the geoid \\
-    \texttt{wvelsurf} & \textsl{m $s^{-1}$} &  vertical velocity of ice at ice surface, relative to the geoid \\
+    \texttt{velbar} & \textsl{m / year} &  vertical mean of horizontal ice velocity in the X and Y directions \\
+    \texttt{velbase} & \textsl{m / year} &  horizontal velocity of ice at the base of ice in the X and Y directions\\
+    \texttt{velsurf} & \textsl{m / year} &  horizontal velocity of ice at ice surface in the X and Y directions\\
+    \texttt{wvelbase} & \textsl{m / year} &  vertical velocity of ice at the base of ice, relative to the geoid \\
+    \texttt{wvelsurf} & \textsl{m / year} &  vertical velocity of ice at ice surface, relative to the geoid \\
   \bottomrule
   \end{tabular}
   \caption{2D diagnostic quantities, part 2}

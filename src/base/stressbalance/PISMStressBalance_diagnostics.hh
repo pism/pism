@@ -154,4 +154,12 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! \brief Reports the volumetric strain heating.
+class PSB_strainheat : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_strainheat(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 #endif /* _PISMSTRESSBALANCE_DIAGNOSTICS_H_ */

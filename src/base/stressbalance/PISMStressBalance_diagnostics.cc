@@ -34,6 +34,8 @@ void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["uvel"]     = new PSB_uvel(this, grid, *variables);
   dict["vvel"]     = new PSB_vvel(this, grid, *variables);
 
+  dict["strainheat"] = new PSB_strainheat(this, grid, *variables);
+
   dict["velbar"]   = new PSB_velbar(this,   grid, *variables);
   dict["velbase"]  = new PSB_velbase(this,  grid, *variables);
   dict["velsurf"]  = new PSB_velsurf(this,  grid, *variables);
@@ -917,3 +919,31 @@ PetscErrorCode PSB_taud_mag::compute(IceModelVec* &output) {
   output = result;
   return 0;
 }
+
+PSB_strainheat::PSB_strainheat(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_3d("strainheat", grid, grid.zlevels);
+
+  set_attrs("rate of strain heating in ice (dissipation heating)", "",
+            "W m-3", "mW m-3", 0);
+}
+
+PetscErrorCode PSB_strainheat::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec3 *result = new IceModelVec3;
+  ierr = result->create(grid, "strainheat", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  IceModelVec3 *tmp;
+  ierr = model->get_volumetric_strain_heating(tmp); CHKERRQ(ierr);
+
+  ierr = tmp->copy_to(*result); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+

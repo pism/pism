@@ -171,13 +171,17 @@ PetscErrorCode IceModel::list_diagnostics() {
         if ((j->second).get_ndims() == d) {
           NCSpatialVariable var = j->second;
 
-          string short_name = j->first,
+          string name = j->first,
             units = var.get_string("units"),
+            glaciological_units = var.get_string("glaciological_units"),
             long_name = var.get_string("long_name");
+
+          if (glaciological_units.empty() == false)
+            units = glaciological_units;
 
             PetscPrintf(grid.com,
                         "   Name: %s [%s]\n"
-                        "       - %s\n\n", short_name.c_str(), units.c_str(), long_name.c_str());
+                        "       - %s\n\n", name.c_str(), units.c_str(), long_name.c_str());
         }
 
         ++j;
@@ -198,7 +202,11 @@ PetscErrorCode IceModel::list_diagnostics() {
       PISMDiagnostic *diag = j->second;
 
       string name = j->first,
-        units = diag->get_metadata().get_string("units");
+        units = diag->get_metadata().get_string("units"),
+        glaciological_units = diag->get_metadata().get_string("glaciological_units");
+
+      if (glaciological_units.empty() == false)
+        units = glaciological_units;
 
       if (diag->get_metadata().get_ndims() == d) {
 
@@ -229,7 +237,11 @@ PetscErrorCode IceModel::list_diagnostics() {
 
     string name = j->first,
       long_name = diag->get_string("long_name"),
-      units = diag->get_string("units");
+      units = diag->get_string("units"),
+      glaciological_units = diag->get_string("glaciological_units");
+
+    if (glaciological_units.empty() == false)
+      units = glaciological_units;
 
     PetscPrintf(grid.com,
                 "   Name: %s [%s]\n"
