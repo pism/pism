@@ -64,7 +64,7 @@ fi
 
 PISM_CONFIG=../eisgreen/eismint_config.nc
 
-for INPUT in $PISM_DATANAME $PISM_CDL; do
+for INPUT in $PISM_DATANAME $PISM_CONFIG; do
   if [ -e "$INPUT" ] ; then  # check if file exist
     echo "$SCRIPTNAME           input   $INPUT (found)"
   else
