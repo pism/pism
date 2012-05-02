@@ -7,13 +7,10 @@ other outlet glaciers in that ice sheet.  The base data is the SeaRISE 1km
 Greenland dataset for the whole ice sheet.
 
 This example demonstrates the outlet-glacier-mode PISM executable `pismo`
-and the drainage-basin-delineation tool 
+and the drainage-basin-delineation tool `regional-tools`.
 
-Preprocessing
+Get a tool
 ----------
-
-In order to run `pismo` some preprocessing must be performed.  A number
-of python tools are needed.
 
 First get `regional-tools`, the drainage basin generator, by `git clone`.  Then
 set up this python tool as directed in its `README.md`.  Then come back here and
@@ -26,11 +23,15 @@ link the tool we need.  Here is the quick summary:
     $ cd ~/pism/examples/jako/             # directory with current README
     $ ln -s ~/regional-tools/pism_regional.py .
 
-Next we use a script that downloads and cleans the SeaRISE data, an 80 Mb file called
-`Greenland1km.nc`.
+Preprocessing
+----------
+
+Next we use a script that downloads and cleans the SeaRISE data, an 80 Mb file
+called `Greenland1km.nc`.
 
     $ ./preprocess.sh
 
+(If the file is already present then no download occurs.)
 A file `gr1km.nc` is created.  We can look at what fields it contains:
 
     $ ncdump -h gr1km.nc                   # view metadata
@@ -56,12 +57,12 @@ link to it to avoid downloading.  Thus
 Creating a regional model
 -------------
 
-First we extract a drainage basin mask from the surface elevation data in
-`gr1km.nc`.  The idea is that the outline of the flow we want to model can be
+We are going to extract a drainage basin mask from the surface elevation data
+in `gr1km.nc`.  The outline of the outlet glacier we want to model can be
 determined by the gradient flow from the surface elevation.  Then
 within the masked drainage basin we will apply all physics in the PISM model
-which we run below.  But outside the masked basin we apply simplified models
-or precomputed whole ice sheet results as boundary conditions.
+which we run below, while outside this basin we will apply simplified models
+or use precomputed whole ice sheet results as boundary conditions.
 
 So we use `pism_regional.py` on `gr1km.nc`.  This opens a graphical user interface
 (GUI) which allows you to select a small rectangle around the flux gate or
@@ -72,7 +73,9 @@ fjord which is the terminus of the outlet glacier you want to model.
 To use the GUI:  Select `gr1km.nc` to open.  Once the topographic map appears
 in the Figure 1 window, select the button `Select terminus rectangle`.
 Now use the mouse to select a small rectangle around the Jakobshavn
-terminus, for example.  Once it is a highlighted rectangle, click
+terminus, for example.  Once it is a highlighted rectangle, select a
+`border width` of at least 50 cells, so that the western boundary of the
+model has zero thickness.  Then click
 `Compute the drainage basin mask`.  Because this is a large data set
 there will be some delay.  (Note that a parallel computation is done.)
 
@@ -95,8 +98,10 @@ appears as a global attribute of jakomask.nc.  Get it and use it:
 Cut and paste the command, which applies to both the 1km Greenland data file
 and the mask file.  For example it will look like:
 
-    $ ncks -d x,340,873 -d y,1015,1349 gr1km.nc jako.nc
-    $ ncks -A -d x,340,873 -d y,1015,1349 jakomask.nc jako.nc   # append
+    $ ncks FIXME gr1km.nc jako.nc
+    $ ncks -A FIXME jakomask.nc jako.nc   # append
+
+FIXME: -d x,299,918 -d y,970,1394
 
 Now look at `jako.nc`.  This file is ready for a regional model.  The field
 `ftt_mask` has an identified drainage basin, outside of which we
@@ -110,11 +115,15 @@ FIXME What is the grid in jako.nc?
     $ ncdump -h jako.nc |head -n 5
     netcdf jako {
     dimensions:
-	  y = 335 ;
-	  x = 534 ;
+	  y = FIXME ;
+	  x = FIXME ;
     variables:
 
-FIXME Thus here is a native 1km one year run:  [extract from spinup3km.sh]
+FIXME:
+	y = 425 ;
+	x = 620 ;
+
+FIXME Thus here is a native 1km one year run:  [extract from spinup.sh]
 
 Running the model
 -----------

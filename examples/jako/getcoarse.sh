@@ -30,7 +30,7 @@ echo
 BCFILE=g5km_bc.nc
 echo "creating PISM-readable boundary conditions file $BCFILE"
 echo "   from whole ice sheet model result ..."
-ncks -O -v u_ssa,v_ssa,bmelt,enthalpy $WHOLE $BCFILE
+ncks -O -v u_ssa,v_ssa,bmelt,bwat,enthalpy $WHOLE $BCFILE
 # rename u_ssa and v_ssa so that they are specified as b.c.
 ncrename -O -v u_ssa,u_ssa_bc -v v_ssa,v_ssa_bc $BCFILE
 echo "... done with creating bc file $BCFILE"
