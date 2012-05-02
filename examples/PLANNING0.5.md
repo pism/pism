@@ -1,0 +1,25 @@
+Planning for stable0.5 release
+=============
+
+THIS FILE HAS PLANS ON WHAT TO DO WITH PISM examples/ SUBDIRECTORIES
+FOR pism0.5 RELEASE:
+
+* inverse     KEEP AND MAINTAIN?
+* jako         CREATED AND IN DEVELOPMENT; MAKE SECTION IN USER'S MANUAL
+* mismip     KEEP AND MAINTAIN?
+* piktests   ASK PIK; KEEP AND MAINTAIN?
+* python     KEEP AND MAINTAIN?
+* ross         CREATED AND IN DEVELOPMENT; MAKE SECTION IN USER'S MANUAL
+* searise-antarctica     KEEP AND MAINTAIN
+* searise-greenland     KEEP AND MAINTAIN; FIRST SECTION IN USER'S MANUAL
+* storglaciaren         KEEP AND MAINTAIN; A SECTION IN USER'S MANUAL?
+
+THESE EXAMPLES ARE DEPRECATED:
+
+* pddtune   MOVE TO old/, CHECK IT WORKS MINIMALLY AT pism0.5, TRIM
+* MOVED TO old/:
+  * eisgreen     DONE.  CHECKED: IT WORKS MINIMALLY AT pism0.5.
+  * eisross      DONE.  CHECKED: IT WORKS MINIMALLY AT pism0.5.
+  * enth-temp    NOT DONE.  DOES NOT WORK MINIMALLY AT pism0.5 YET.  [DEPENDS ON
+    eisgreen.  NOT CRITICAL.]
+
