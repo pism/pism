@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -112,14 +112,6 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Computes f(|v|) as described in [\ref BBssasliding] (page 7, equation 22).
-class PSB_bueler_brown_f : public PISMDiag<PISMStressBalance>
-{
-public:
-  PSB_bueler_brown_f(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
 //! \brief Computes basal frictional heating.
 class PSB_bfrict : public PISMDiag<PISMStressBalance>
 {
@@ -159,6 +151,14 @@ class PSB_taud_mag : public PISMDiag<PISMStressBalance>
 {
 public:
   PSB_taud_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the volumetric strain heating.
+class PSB_strainheat : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_strainheat(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

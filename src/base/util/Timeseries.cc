@@ -110,7 +110,10 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
     use_bounds = false;
   }
 
-  ierr = var.read(filename, use_reference_date, values); CHKERRQ(ierr);
+  // Do not use the reference date. This may be a problem if someone needs to
+  // read a time-series with the meaning of "time depending on time", but this is
+  // not likely.
+  ierr = var.read(filename, false, values); CHKERRQ(ierr);
 
   if (time.size() != values.size()) {
     ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",

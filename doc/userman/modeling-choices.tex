@@ -67,7 +67,7 @@ $  pismr -i foo.nc -Mz 201 -y 100
 
 \noindent will give a warning that ``\texttt{PISM WARNING: ignoring command-line option '-Mz'}'' because \texttt{-i} input files take precedence.
 
-Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using \texttt{-boot_file} or when initializing a simplified-geometry experiment or a verification test, though defaults are generally present in the latter cases.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
+Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using \texttt{-boot_file} or when initializing a simplified-geometry experiment or a verification test, though defaults are generally present in the latter cases.  See sections \ref{sec:start} and \ref{sec:boot} for examples and explanation.
 
 
 \subsection{Model time}
@@ -102,7 +102,7 @@ pismr -i foo.nc -y 0 -o bar.nc -o_size big
 
 In fact, during such a run PISM performs one short time-step to compute ``rates of change'' of ice thickness, surface elevation and other fields, but the model state \emph{is reset} after this step, so re-starting from \texttt{foo.nc} above would give the same result as re-starting from \texttt{bar.nc}.
 
-This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes using \texttt{pross} to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sect:verif}, are diagnostic calculations using the SSA.
+This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sec:ross} describes using \texttt{pross} to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sec:verif}, are diagnostic calculations using the SSA.
 
 Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just a bit more than the variables which are needed to restart the run.  One can  force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{-o_size big}.  Or one can go back and do a ``\texttt{-y 0}'' diagnostic run.
 
@@ -263,7 +263,7 @@ $ mpiexec -n 4 pisms -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
 \end{verbatim}
 Compare the \texttt{topg}, \texttt{usurf}, and \texttt{dbdt} variables in the resulting output files.
 
-Test H in section \ref{sect:verif} can be used to reproduce the comparison done in \cite{BLKfastearth}.
+Test H in section \ref{sec:verif} can be used to reproduce the comparison done in \cite{BLKfastearth}.
 
 \subsection{Disabling PISM components}
 \label{sec:turning-off}

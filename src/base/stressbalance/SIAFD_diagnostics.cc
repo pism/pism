@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,10 +31,10 @@ void SIAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
 
 SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
-  
+
   // set metadata:
   vars[0].init_2d("schoofs_theta", grid);
-  
+
   set_attrs("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA", "",
             "1", "", 0);
   vars[0].set("valid_min", 0);
@@ -63,7 +63,7 @@ PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
 
 SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
-  
+
   // set metadata:
   vars[0].init_2d("topgsmooth", grid);
   set_attrs("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
@@ -87,7 +87,7 @@ PetscErrorCode SIAFD_topgsmooth::compute(IceModelVec* &output) {
 
 SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
-  
+
   // set metadata:
   vars[0].init_2d("thksmooth", grid);
   set_attrs("thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
@@ -124,10 +124,10 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
 
 SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
-  
+
   // set metadata:
   vars[0].init_2d("diffusivity", grid);
-  
+
   set_attrs("diffusivity of SIA mass continuity equation", "",
             "m2 s-1", "m2 s-1", 0);
 }
@@ -135,12 +135,12 @@ SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m, IceGrid &g, PISMVars &my_vars)
 PetscErrorCode SIAFD_diffusivity::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result;
-  
+
   result = new IceModelVec2S;
   ierr = result->create(grid, "diffusivity", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
-  ierr = model->compute_diffusivity(*result); CHKERRQ(ierr); 
+  ierr = model->compute_diffusivity(*result); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -148,21 +148,22 @@ PetscErrorCode SIAFD_diffusivity::compute(IceModelVec* &output) {
 
 SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
-  
+
   // set metadata:
-  vars.resize(2);
+  dof = 2;
+  vars.resize(dof);
   vars[0].init_2d("h_x_i", grid);
   vars[1].init_2d("h_x_j", grid);
-  
+
   set_attrs("the x-component of the surface gradient, i-offset", "",
             "", "", 0);
   set_attrs("the x-component of the surface gradient, j-offset", "",
-            "", "", 0);
+            "", "", 1);
 }
 
 PetscErrorCode SIAFD_h_x::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  
+
   IceModelVec2Stag *result = new IceModelVec2Stag;
   ierr = result->create(grid, "h_x", true); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
@@ -180,21 +181,22 @@ PetscErrorCode SIAFD_h_x::compute(IceModelVec* &output) {
 
 SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
-  
+
   // set metadata:
-  vars.resize(2);
+  dof = 2;
+  vars.resize(dof);
   vars[0].init_2d("h_y_i", grid);
   vars[1].init_2d("h_y_j", grid);
-  
+
   set_attrs("the y-component of the surface gradient, i-offset", "",
             "", "", 0);
   set_attrs("the y-component of the surface gradient, j-offset", "",
-            "", "", 0);
+            "", "", 1);
 }
 
 PetscErrorCode SIAFD_h_y::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  
+
   IceModelVec2Stag *result = new IceModelVec2Stag;
   ierr = result->create(grid, "h_y", true); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);

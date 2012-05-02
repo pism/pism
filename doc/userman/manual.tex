@@ -43,18 +43,17 @@ urlcolor=blue     % only if colorlinks=true
     \vspace{0.5cm}
 
     {\Large The PISM Authors}
-%    {\Large Constantine Khroulev \\ Ed Bueler \\ Andy Aschwanden \\ Jed Brown \\ Nathan Shemonski}
     \vspace{1cm}
 
     \includegraphics[width=3.3in,keepaspectratio=true]{grn-1km-csurf}
     \vfill
 
-    \small Support by email: \PISMEMAIL. 
+    \small Support by email: \PISMEMAIL.
     \medskip
 
     Manual date \today. Based on PISM \PISMREV.
     \medskip
-    
+
     \PISMDOWNLOADMSG
   \end{center}
 \end{titlepage}
@@ -137,7 +136,7 @@ Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Marijke Habermann, Tore Hat
 \newpage
 
 
-\section{Introduction}\label{sect:intro}
+\section{Introduction}\label{sec:intro}
 
 Welcome!  All information about PISM is online at the home page
 \begin{center}
@@ -174,7 +173,7 @@ Please see the extensive lists of PISM applications and user projects at the hom
 
 \clearpage
 \newpage
-\section{Ice dynamics, the PISM view}\label{sect:dynamics}
+\section{Ice dynamics, the PISM view}\label{sec:dynamics}
 
 \subsection{PISM design principles}\index{PISM!principles}  This section gives an overview of ice dynamics models in PISM.  First, some organizing principles:
 \begin{enumerate}
@@ -187,7 +186,7 @@ Please see the extensive lists of PISM applications and user projects at the hom
 \item climate inputs should affect ice dynamics by a well-defined interface.
 \end{enumerate}
 
-\noindent We do not claim to follow these principles perfectly, but principle 1 is illustrated by our existence and principle 2 by examples in sections \ref{sect:start}, \ref{sec:eismint-greenland}, and \ref{sect:ross}.  Principle 3 is addressed in section \ref{sect:verif}.  Principles 4, 5, 6, and 7 are addressed next.
+\noindent We do not claim to follow these principles perfectly, but principle 1 is illustrated by our existence and principle 2 by examples in sections \ref{sec:start}, and \ref{sec:ross}.  Principle 3 is addressed in section \ref{sec:verif}.  Principles 4, 5, 6, and 7 are addressed next.
 
 
 \subsection{Two main shallow models, SIA and SSA}\index{PISM!SIA}\index{PISM!SSA}  At each time-step of a typical PISM run, the geometry, temperature, and basal strength of the ice sheet are included into stress (momentum) balance equations to determine the velocity of the flowing ice.   The ``full'' stress balance equations, namely the (non-Newtonian) Stokes model for slowly-flowing fluids \cite{Fowler}, are themselves an inertia-free approximation of the conservation of momentum equations.  Even though PISM does not solve this ``full'' model, it can numerically solve two different shallow approximations which are suited to the situations in large ice sheet and ice shelf systems:
@@ -221,7 +220,7 @@ Table \ref{tab:modelhierarchy} describes a hierarchy of models, listed in order 
 
 As an additional row for such a table, one might list ``full Stokes''.  That stress balance is \emph{not} planned for PISM at any time, however, as its numerical solution requires a fundamentally different computational architecture.
 
-It makes sense to also talk about an \emph{ice shelf} model hierarchy, and even about a special hierarchy of models for the transition from grounded to floating ice \cite{SchoofMarine1}, but this would take us too far afield.  Currently, ice shelves should always be modeled by the SSA equations in PISM.  See section \ref{sect:ross}.
+It makes sense to also talk about an \emph{ice shelf} model hierarchy, and even about a special hierarchy of models for the transition from grounded to floating ice \cite{SchoofMarine1}, but this would take us too far afield.  Currently, ice shelves should always be modeled by the SSA equations in PISM.  See section \ref{sec:ross}.
 
 Although it begins to expose the internals of PISM, we think it is also helpful to see the implemented stress balances as PISM software components (C++ classes).  Figure \ref{fig:stressbalance} shows that the sequence of actions taken by SIA-only, SSA-only, and SIA+SSA hybrid models is, in some sense, the same: a membrane stress solution first, a distribution of vertical shear in the column of ice second, and a use of incompressibility to compute the vertical component of the velocity third.  The nonsliding SIA-only model has a degenerate first step and the SSA-only model has a degenerate second step.  The hybrid model described by Pollard and deConto \cite{PollardDeConto}, for another example, would add the shear in the column in a different manner (than in the current implementation, following \cite{BBssasliding,Winkelmannetal2011}).
 
@@ -253,13 +252,13 @@ Although it begins to expose the internals of PISM, we think it is also helpful 
 \end{table}
 
 
-\subsection{Evolutionary and diagnostic modeling} \label{subsect:basicmodes}\index{PISM!evolution run}\index{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, it also assumes one has the right initial conditions, adequately describing the present state of the ice sheet.  This last assumption is rarely satisfied.  Instead, heuristics must be used to minimally-initialize an ice sheet model, before a possible stage of paleo-climate driven spin-up; see section \ref{sect:boot}.
+\subsection{Evolutionary and diagnostic modeling} \label{subsect:basicmodes}\index{PISM!evolution run}\index{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, it also assumes one has the right initial conditions, adequately describing the present state of the ice sheet.  This last assumption is rarely satisfied.  Instead, heuristics must be used to minimally-initialize an ice sheet model, before a possible stage of paleo-climate driven spin-up; see section \ref{sec:boot}.
 
 Underlying an ice sheet model like PISM are evolution-in-time partial differential equations.  PISM solves these by taking small time steps.  ``Small'' time steps vary from hundredths to many model years, depending primarily on grid resolution and modeled ice flow speed.  Time steps are chosen adaptively in PISM, according to the stability criteria of the several numerical methods.
 
 However, much ice flow modeling, especially of streams and shelves, uses only instantaneous ``diagnostic'' solution of the partial differential equations which determine the velocity field.  The models in PISM can produce such ``instantaneous'' velocity fields because of the slowness of the ice, in the sense that inertia can be neglected in the stress balance \cite{Fowler}.  The goal of a ``diagnostic run'' is usually to compute this velocity field, especially its observable surface values.  For example, a diagnostic run might be the ``forward model'' step in inverting surface velocities for basal strength\dots but that is beyond the scope of this \emph{Manual}.
 
-Sections \ref{sec:eismint-greenland} and \ref{sect:ross} are examples illustrating evolutionary and diagnostic modeling modes of PISM.  The first of these describes time-stepping evolution models for the Greenland ice sheet, while the second describes a diagnostic SSA model for the Ross ice shelf.
+Sections \ref{sec:start} and \ref{sec:ross} are examples illustrating evolutionary and diagnostic modeling modes of PISM.  The first of these describes time-stepping evolution models for the Greenland ice sheet, while the second describes a diagnostic SSA model for the Ross ice shelf.
 
 
 \begin{figure}
@@ -273,7 +272,7 @@ Sections \ref{sec:eismint-greenland} and \ref{sect:ross} are examples illustrati
 \subsection{Climate inputs, and their interface with ice dynamics}
 \label{sec:climate-inputs}  
 
-Because PISM's job is to approximate ice flow, its ``world view'' is centered around ice dynamics.  The discussion of boundary conditions, in this \emph{Manual} is necessarily ``ice-centric'' in our description here, but there is no constraint on the nature of, or completeness of, climate models which could be coupled to PISM.  This section applies the PISM organizing principle above (section \ref{sect:dynamics}): \emph{climate inputs affect ice dynamics by a well-defined interface}.
+Because PISM's job is to approximate ice flow, its ``world view'' is centered around ice dynamics.  The discussion of boundary conditions, in this \emph{Manual} is necessarily ``ice-centric'' in our description here, but there is no constraint on the nature of, or completeness of, climate models which could be coupled to PISM.  This section applies the PISM organizing principle above (section \ref{sec:dynamics}): \emph{climate inputs affect ice dynamics by a well-defined interface}.
 
 Figure~\ref{fig:climate-inputs} illustrates that any PISM ice sheet model has an interface (green) to a surface processes layer containing snow, firn, and liquid (or refrozen) runoff, and to the ocean (blue) if there is floating ice.  The surface processes layer might be very simple.  If it is ``owned'' by the PISM model then there is an additional interface (red) to the atmosphere above.  The interface to the surface layer is assumed in PISM to cover the whole surface of the ice, including ablation areas and even ice-free land.  Table \ref{tab:ice-dynamics-bc} lists fields which are needed as boundary conditions at the interfaces.
 
@@ -319,7 +318,7 @@ Users wishing to customize PISM's climate inputs should see the \emph{PISM
   Source Browser}, e.g.~at
 \url{\PISMBROWSERURL} and the documentation
 of \emph{PISMSurfaceModel}, \emph{PISMAtmosphereModel} and
-\emph{PISMOceanModel} therein.  Also, section \ref{sec:eismint-greenland} describes a
+\emph{PISMOceanModel} therein.  Also, section \ref{sec:start} describes a
 modeling example using a non-standard air temperature parameterization. Looking
 at the file \texttt{src/coupler/atmosphere/PAEismintGreenland.cc} may be a reasonable
 start.
@@ -365,7 +364,7 @@ they have chosen, without involving ice dynamics at all.
 \clearpage
 \newpage
 \section{Initialization and bootstrapping}
-\label{sect:boot}
+\label{sec:boot}
 
 
 There are three ways to start PISM,\begin{itemize}
@@ -383,7 +382,7 @@ $ pisms -eisII A -i foo.nc -y 100 -o bar.nc
 \end{verbatim}
 \smallskip
 
-Note that simplified-geometry experiments (section \ref{sect:simp}) and verification tests (section \ref{sect:verif}) do not need input files at all because they initialize from formulas in the source code.  They can be continued from saved model states using \texttt{-i}.  As in the above example, however, specifying the simplified geometry experiment or verification test \emph{is} necessary, so that the run can continue with the climate inputs for that experiment or test.  For example, based on the above \texttt{pisms} runs, it is valid to do ``\texttt{\$ pismr -i foo.nc -y 100 -o bar.nc ...}'' but the climate and other parameters us PISM default values, and thus are not (necessarily) the values specified in EISMINT II.
+Note that simplified-geometry experiments (section \ref{sec:simp}) and verification tests (section \ref{sec:verif}) do not need input files at all because they initialize from formulas in the source code.  They can be continued from saved model states using \texttt{-i}.  As in the above example, however, specifying the simplified geometry experiment or verification test \emph{is} necessary, so that the run can continue with the climate inputs for that experiment or test.  For example, based on the above \texttt{pisms} runs, it is valid to do ``\texttt{\$ pismr -i foo.nc -y 100 -o bar.nc ...}'' but the climate and other parameters us PISM default values, and thus are not (necessarily) the values specified in EISMINT II.
 
 As a technical but important note about saved states, a PISM run with \texttt{-ssa_floating_only} or \texttt{-ssa_sliding}
 also saves the last SSA velocities to the output file, in variables 
@@ -423,8 +422,6 @@ to get ``reasonable'' initial fields within the ice:
 The heuristics used by PISM are, for now, only documented in the source code file \texttt{src/base/iMbootstrap.cc}.
 
 When using \fileopt{boot_file} you will need to specify both grid dimensions (using \texttt{-Mx}, \texttt{-My} and \texttt{-Mz}) and the height of the computational box for the ice with \texttt{-Lz}.  The data read from the file can determine the horizontal extent of the model, if options \texttt{-Lx}, \texttt{-Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} \emph{when bootstrapping with} \texttt{-boot_file} is an error.
-
-Subsection \ref{sec:eismint-greenland} shows bootstrapping for the EISMINT-Greenland intercomparison.
 
 \subsubsection*{\texttt{-boot_file} file format}
 \label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
@@ -475,9 +472,6 @@ Subsection \ref{sec:eismint-greenland} shows bootstrapping for the EISMINT-Green
 \input{simplified-geometry.tex}
 
 \clearpage\newpage
-\input{eismint-greenland.tex}
-
-\clearpage\newpage
 \input{eismint-ross.tex}
 
 \clearpage\newpage
@@ -490,7 +484,7 @@ Subsection \ref{sec:eismint-greenland} shows bootstrapping for the EISMINT-Green
 
 \phantomsection
 \addcontentsline{toc}{section}{General Index}
-\label{sect:index}
+\label{sec:index}
 \printindex
 
 \phantomsection
