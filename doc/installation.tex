@@ -1,76 +1,29 @@
-\documentclass[11pt,final]{amsart}
-\usepackage[margin=1in]{geometry}
-\usepackage{underscore}
+\documentclass[titlepage,letterpaper,final]{scrartcl}
 
-\usepackage{booktabs}           % better rules in tables
+\usepackage{index}
+\input{pism-macros.tex}
 
-\newcommand{\PISMREV}{\input{revision.tex}}
-\newcommand{\PETSCREL}{3.1}
-
-\addtolength\topmargin{+.3in}
-\addtolength\textheight{-0.2in}
-%\addtolength{\oddsidemargin}{-.4in}
-%\addtolength{\evensidemargin}{-.4in}
-%\addtolength{\textwidth}{0.9in}
-\newcommand{\normalspacing}{\renewcommand{\baselinestretch}{1.1}\tiny\normalsize}
-\newcommand{\tablespacing}{\renewcommand{\baselinestretch}{1.0}\tiny\normalsize}
-\normalspacing
-
-\usepackage{bm,url,xspace,verbatim}
-\usepackage{amssymb,amsmath}
-\usepackage[final,pdftex]{graphicx}
-
-\usepackage[pdftex,
-                colorlinks=true,
-                plainpages=false, % only if colorlinks=true
-                linkcolor=blue,   % only if colorlinks=true
-                citecolor=blue,   % only if colorlinks=true
-                urlcolor=blue     % only if colorlinks=true
-]{hyperref}[2010/03/30 v6.80u Hypertext links for LaTeX]
+\addtolength\textheight{0.75in}
+\addtolength{\oddsidemargin}{-.4in}
+\addtolength{\evensidemargin}{-.4in}
+\addtolength{\textwidth}{0.9in}
 
 %% uncomment to see locations of index entries
-%\usepackage{showidx}
+% \proofmodetrue
 
-\newcommand{\ddt}[1]{\ensuremath{\frac{\partial #1}{\partial t}}}
-\newcommand{\ddx}[1]{\ensuremath{\frac{\partial #1}{\partial x}}}
-\newcommand{\ddy}[1]{\ensuremath{\frac{\partial #1}{\partial y}}}
-\renewcommand{\t}[1]{\texttt{#1}}
-\newcommand{\Matlab}{\textsc{Matlab}\xspace}
-\newcommand{\bq}{\mathbf{q}}
-\newcommand{\bU}{\mathbf{U}}
-\newcommand{\eps}{\epsilon}
-\newcommand{\grad}{\nabla}
-\newcommand{\Div}{\nabla\cdot}
+% this lets us avoid the scrartcl/hyperref conflict...
+\let\ifvtex\relax
 
-%% macros having to do with documentation for options; note these appear in the index
-\newcommand{\und}{\_\!\_}
-
-%\newcommand{\alphaoptionindex}[1]{\index{alphabetical list of options for PISM (and PETSc)!\texttt{-#1}}}
-\newcommand{\pismoptionindex}[1]{\index{options for PISM (and PETSc)!\texttt{-#1}}}
-\newcommand{\intextoption}[1]{\texttt{-#1}\pismoptionindex{#1}}
-
-%\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \large\texttt{-#1}\normalsize\pismoptionindex{#1}\alphaoptionindex{#1}}
-\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \Large\texttt{-#1}\normalsize\pismoptionindex{#1}}
-\newcommand{\opt}[1]{\rawopt{#1}\,:\quad}
-\newcommand{\optdef}[2]{\rawopt{#1}\,[\textsl{#2}]:\quad}
-\newcommand{\optrestrict}[2]{\rawopt{#1}\,[\texttt{#2} \textsl{only}]:\quad}
-\newcommand{\optdefrestrict}[3]{\rawopt{#1}\,[\textsl{#2}]\,[\texttt{#3} \textsl{only}]:\quad}
-
+% hyperref should be the last package we load
+\usepackage[pdftex,
+colorlinks=true,
+plainpages=false, % only if colorlinks=true
+linkcolor=blue,   % only if colorlinks=true
+citecolor=blue,   % only if colorlinks=true
+urlcolor=blue     % only if colorlinks=true
+]{hyperref}
 
 % preamble:
-
-\makeindex
-
-\title[PISM Installation Manual]{\protect{\Large \emph{PISM}, a Parallel Ice
-    Sheet Model:\normalsize} \\ \protect{\Large \bigskip \bigskip Installation
-    Manual\normalsize}}
-
-\author[]{the PISM authors}
-
-\date{\today.  Get PISM development version by \\
-\phantom{foobar} \qquad\texttt{git clone -b dev git://github.com/pism/pism.git pism-dev} \\
-Based on PISM revision \PISMREV\quad and PETSC release \PETSCREL.}
-
 
 \pdfinfo{
 /Title (PISM Installation Manual)
@@ -82,29 +35,51 @@ Based on PISM revision \PISMREV\quad and PETSC release \PETSCREL.}
 \sloppy
 
 \begin{document}
-\maketitle
-\thispagestyle{empty}
 
-\vspace{1.5in}
-\setcounter{tocdepth}{2}
+\begin{titlepage}
+
+  \begin{center}
+    \vspace*{3.5cm}
+    {\huge\usekomafont{title} PISM Installation Manual}
+    \vspace{0.5cm}
+
+    {\Large The PISM Authors}
+    \vspace{1cm}
+  \end{center}
+
+\setcounter{tocdepth}{3}
+\small
 \tableofcontents
+\normalsize
 
+\vspace{0.3in}
 
+  \begin{center}
+    \small Support by email: \PISMEMAIL.
 
-\newpage
+    \medskip
+    Please see the \emph{PISM User's Manual} for the full list of authors.
+
+    \medskip
+    Manual date \today.  Based on PISM \PISMREV.
+
+    \medskip
+    \PISMDOWNLOADMSG
+ \end{center}
+
+\end{titlepage}
+
 \section*{Introduction}
 
 \large
 This \emph{Installation Manual} describes how to download the PISM source code and install PISM and the libraries it needs.  Information about PISM, including a \emph{User's Manual}, is on-line at
 \bigskip
 \begin{center}
-  \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
+  \href{http://www.pism-docs.org}{www.pism-docs.org}
 \end{center}
 \bigskip
 \noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu) and then install Python packages following section \ref{sec:python}.  See subsection \ref{subsec:debian} about the Debian installation route.
 
-\bigskip
-See the \emph{User's Manual} for authorship of PISM.
 \vfill
 
 \large
@@ -119,7 +94,7 @@ Also, please don't expect all your questions to be answered here.  Write to us w
 \vfill
 
 \begin{quote}
-\textsl{Copyright (C) 2004--2011 the PISM authors.}
+\textsl{Copyright (C) 2004--2012 the PISM authors.}
 \medskip
 
 \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
@@ -138,115 +113,70 @@ This table lists required dependencies for PISM alphabetically.
 \bigskip
 \newcommand{\fattablespacing}{\renewcommand{\baselinestretch}{1.5}\tiny\normalsize}
 
-\fattablespacing
-\newcommand\pairstack[2]{#1 \quad (\small#2\normalsize)}
 \begin{center}
-\begin{tabular*}{1.0\linewidth}{lp{0.5\linewidth}}\toprule
-  \textbf{Required Program or Library} & \textbf{Comment} \\
-  \midrule
-  \pairstack{GSL}{\href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}}}  &  \\
-  \pairstack{MPI}{\href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}}}  & \\
-  \pairstack{NetCDF}{\href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}}}  & version $\ge$ 3.6.1\\
-  \pairstack{PETSc}{\href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}}}  & version $\ge$ \PETSCREL \\
-  \bottomrule
-\end{tabular*}
+  \begin{tabular}{lll}
+    \toprule
+    \multicolumn{2}{c}{\textbf{Required Program or Library}} & \textbf{Comment}\\
+    \midrule
+    GSL &\url{http://www.gnu.org/software/gsl/} & \\
+    MPI &\url{http://www-unix.mcs.anl.gov/mpi/} & \\
+    NetCDF &\url{http://www.unidata.ucar.edu/software/netcdf/} & version $\ge$ 3.6.2 \\
+    PETSc & \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/} & version $\ge$ 3.2 \\
+    \bottomrule
+  \end{tabular}
 \end{center}
 
-\normalspacing
 \bigskip
 
-Before installing these ``by hand'', check the Debian and Mac OS X sections below for specific how-to.  In particular, if multiple MPI implementations (e.g.~MPICH and OPEN-MPI) are installed then PETSc can under some situations ``get confused'' and throw MPI-related errors.  Even package systems have been known to allow this confusion.
+Before installing these ``by hand'', check the Debian and Mac OS X sections below for specific how-to.  In particular, if multiple MPI implementations (e.g.~MPICH and Open-MPI) are installed then PETSc can under some situations ``get confused'' and throw MPI-related errors.  Even package systems have been known to allow this confusion.
 
-One library is only used for the earth deformation (``isostatic rebound'') model, and is thus only recommended:
-\bigskip
+Two libraries are needed for specific PISM features (earth deformation (``isostatic rebound'') 
+model and computing corrected cell areas), and are thus only recommended: \bigskip
 
-\fattablespacing
 \begin{center}
-\begin{tabular*}{1.0\linewidth}{ll}\toprule
-  \textbf{Recommended Library} & \textbf{Comment} \\
-  \midrule
-  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}}\hspace{1.9in} & \\
-  \bottomrule
-\end{tabular*}
+  \begin{tabular}{lll}
+    \toprule
+    \multicolumn{2}{c}{\textbf{Recommended Library}} & \textbf{Comment}\\
+    \midrule
+    FFTW & \url{http://www.fftw.org/} & \\
+    PROJ.4 & \url{http://trac.osgeo.org/proj/} & \\
+   \bottomrule
+  \end{tabular}
 \end{center}
 
-\normalspacing
-
-\vspace{0.2in}
-
 \bigskip
 
-
-In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM
-pre- and post-processing, while Git (\url{http://git-scm.com/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.  Additionally, the following Python packages are needed to do all the examples in the \emph{User's Manual} (which run python scripts).
+In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM pre- and post-processing, while Git (\url{http://git-scm.com/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.  Additionally, the following Python packages are needed to do all the examples in the \emph{User's Manual} (which run python scripts).
 \bigskip
 
-\fattablespacing
 \begin{center}
-\begin{tabular*}{1.0\linewidth}{lp{0.35\linewidth}}\toprule
-  \textbf{Recommended Python Package} & \textbf{Importance} \\
-  \midrule
-  \pairstack{\t{matplotlib}}{\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}}} & used in some scripts \\
-  \pairstack{\t{netcdf4-python}}{\href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}}  & used in \emph{most} scripts  \\    
-  \pairstack{\t{numpy}}{\href{http://numpy.scipy.org/}{\t{numpy.scipy.org}}} & used in \emph{most} scripts \\
-  \bottomrule
-\end{tabular*}
+  \begin{tabular}{lll}
+    \toprule
+    \multicolumn{2}{c}{\textbf{Recommended Python Package}} & \textbf{Comment}\\
+    \midrule
+    matplotlib & \url{http://matplotlib.sourceforge.net/} & used in some scripts \\
+    netcdf4-python & \url{http://code.google.com/p/netcdf4-python/} & used in \emph{most} scripts \\
+    numpy & \url{http://numpy.scipy.org/} & used in \emph{most} scripts \\
+   \bottomrule
+  \end{tabular}
 \end{center}
-\normalspacing
-
 
 \newpage
 \section{Installation Cookbook}\label{sec:cookbook}
 
 \subsection{Installing PISM on a Debian-based Linux system} \label{subsec:debian}
 
-\subsubsection{Installing PISM using a binary package}
-\label{sec:deb-pism-binary}
-
-If you are not planning on using a development version of PISM and don't need to extend PISM by writing new code, you might be
-able to install it with just a few clicks.
-
-Download a binary package from \url{http://www.pism-docs.org} and either run
-\begin{verbatim}
-$ sudo dpkg -i pism_0.4-1.deb
-\end{verbatim}%$
-or double-click on the file and click ``Install'' (will require administrative privileges). This will install PISM, making sure that
-all the libraries it needs are in place and downloading them if necessary.
-
-If this package installation reports no errors, the best way to see that open a terminal and confirm that PISM can already run in parallel:
-\begin{verbatim}
-$ mpiexec -n 2 pisms -o firsttest.nc   # 'mpiexec' for parallel runs
-...                                    # standard output from PISM as it runs
-$ ncview firsttest.nc                  # use your package manager to get ncview,
-                                       #   a tool for looking at NetCDF files
-\end{verbatim}%$
-The above gives a boring model of a circular ice sheet.  If you see that when viewing the NetCDF file \texttt{firsttest.nc}, then PISM already works, and what you need are example data sets to do something interesting with.  Here is the easiest way to get an \texttt{examples/} directory that the \emph{User's Manual} assumes:
-\begin{verbatim}
-$ wget -nc http://www.pism-docs.org/download/examples0.4.tar.gz
-$ mkdir pismdata
-$ cd pismdata
-$ tar -xzvf examples0.4.tar.gz
-$ cd examples0.4/
-$ ls                   # you should see subdirectory "searise-greenland/" and etc.
-\end{verbatim}%$
-And at this point, please read the \emph{User's Manual}.  It describes the SeaRISE-Greenland, EISMINT-Greenland, St\"orglaciaren, and other modeling examples using data from this \texttt{examples0.4/} directory and its subdirectories.
-
-The above installation route is the fastest and easiest if you want to use the latest PISM release.  If you need features only present in development versions, or you want to modify the source code of the latest release, you will need to compile PISM using its source code.  
-
-
-
 \subsubsection{Installing PISM's prerequisites using a meta-package and building PISM from source}
 \label{sec:deb-pism-toolkit}
 
-If you are using a Debian-based system such as Ubuntu but need to compile PISM from source, you can download and install the
-``pism toolkit'' meta-package.
-
-This package does \emph{not} install PISM; it tells the package manager to install all the libraries and tools needed to compile
-PISM from sources.
+If you are using a Debian-based system such as Ubuntu, you can download and install the
+``pism toolkit'' meta-package to make sure that all prerequisite tools and libraries\footnote{Except PETSc.} are installed. (You still need to build
+PISM from sources.)
 
 To use this route of installing PISM's prerequisites, download \texttt{pism-toolkit-FIXME.deb} from \url{http://www.pism-docs.org} and run
 \begin{verbatim}
 $ sudo dpkg -i pism-toolkit-FIXME.deb
+$ sudo apt-get -f install
 \end{verbatim}%$
 or double-click on the file and click ``Install''. Once this is done, see section \ref{sec:install-cmake} for configuration and
 compilation instructions.
@@ -263,8 +193,6 @@ Find and install (using \texttt{apt-get} or \texttt{synaptic}, for example) the 
       \toprule
       \emph{Package name} & \emph{Comments}\\
       \midrule
-      \texttt{petsc-dev} & depends on \texttt{libpetsc3.x.x-dev}; this package 
-      depends on \texttt{libpetsc3.x.x}, \texttt{libopenmpi-dev}, \texttt{libx11-dev},
       \texttt{libblas-dev}, \texttt{liblapack-dev}, \texttt{gfortran}, and others; 
       note \texttt{libopenmpi-dev} depends on \texttt{libopenmpi1}\\
       \texttt{libgsl0-dev} & \\

@@ -47,7 +47,8 @@ if (PDFLATEX_COMPILER)
   # Only offer to build docs if LaTeX is found.
   option (Pism_BUILD_DOCS "Build PISM PDF documentation" OFF)
 
-  file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/revision.tex "${Pism_REVISION_TAG}")
+  # copy PISM-related macros, creating the revision tag
+  configure_file(pism-macros.tex pism-macros.tex @ONLY)
 
   # Installation manual and the cheatsheet:
   foreach (NAME installation cheatsheet)

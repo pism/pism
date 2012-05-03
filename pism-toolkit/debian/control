@@ -8,7 +8,7 @@ Homepage: http://www.pism-docs.org
 
 Package: pism-toolkit
 Architecture: all
-Depends: g++,petsc-dev,netcdf-bin,libnetcdf-dev,ncview,nco,git,libgsl0-dev,libfftw3-dev,python-dev,python-numpy,python-matplotlib,texlive-latex-base,doxygen,graphviz
+Depends: g++,netcdf-bin,libnetcdf-dev,ncview,nco,git,libgsl0-dev,libfftw3-dev,python-dev,python-numpy,python-matplotlib,texlive-latex-base,doxygen,graphviz,cmake,cmake-curses-gui,wget,cdo,libproj-dev
 Description: A metapackage installing tools necessary or useful for building PISM
  This metapackage installs packages commonly used by PISM developers. 
  It can be used to prepare a computer for building a development version of PISM
