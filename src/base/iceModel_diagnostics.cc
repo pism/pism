@@ -75,7 +75,7 @@ PetscErrorCode IceModel::init_diagnostics() {
   ts_diagnostics["dt"]            = new IceModel_dt(this, grid, variables);
   ts_diagnostics["max_diffusivity"] = new IceModel_max_diffusivity(this, grid, variables);
   ts_diagnostics["ienthalpy"]     = new IceModel_ienthalpy(this, grid, variables);
-  ts_diagnostics["max_hor_speed"] = new IceModel_max_hor_speed(this, grid, variables);
+  ts_diagnostics["max_hor_vel"]   = new IceModel_max_hor_vel(this, grid, variables);
 
 
   ts_diagnostics["surface_ice_flux"]   = new IceModel_surface_flux(this, grid, variables);
@@ -1953,26 +1953,29 @@ PetscErrorCode IceModel_ivolf::update(PetscReal a, PetscReal b) {
   return 0;
 }
 
-//! \brief Reports the maximum horizontal speed along the grid.
+//! \brief Reports the maximum horizontal absolute velocity component over the grid.
 /*!
- * This is the value used by the adaptive time-stepping code in the CFL condition.
+ * This is the value used by the adaptive time-stepping code in the CFL condition
+ * for horizontal advection (i.e. in energy and mass conservation time steps).
+ *
+ * This is not the maximum horizontal speed, but rather the maximum of components.
  *
  * Note that this picks up the value computed during the time-step taken at a
- * reporting time. (Not the "average over the reporting interval computed using
+ * reporting time. (It is not the "average over the reporting interval computed using
  * differencing in time", as other rate-of-change diagnostics.)
  */
-IceModel_max_hor_speed::IceModel_max_hor_speed(IceModel *m, IceGrid &g, PISMVars &my_vars)
+IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "max_hor_speed", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "max_hor_vel", time_dimension_name);
 
   ts->set_units("m/second", "m/year");
   ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "maximum horizontal ice speed (along the grid)");
+  ts->set_attr("long_name", "maximum abs component of horizontal ice velocity over grid in last time step during time-series reporting interval");
 }
 
-PetscErrorCode IceModel_max_hor_speed::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_max_hor_vel::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
 
   double gmaxu = model->gmaxu, gmaxv = model->gmaxv;

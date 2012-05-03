@@ -436,11 +436,11 @@ protected:
   PetscReal last_report_time;
 };
 
-//! \brief Reports the mass continuity time step.
-class IceModel_max_hor_speed : public PISMTSDiag<IceModel>
+//! \brief Reports the maximum horizontal absolute velocity component over the grid.
+class IceModel_max_hor_vel : public PISMTSDiag<IceModel>
 {
 public:
-  IceModel_max_hor_speed(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  IceModel_max_hor_vel(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 

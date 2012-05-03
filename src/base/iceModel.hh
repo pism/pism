@@ -122,7 +122,7 @@ class IceModel {
   friend class IceModel_cumulative_float_kill_flux;
   friend class IceModel_discharge_flux;
   friend class IceModel_cumulative_discharge_flux;
-  friend class IceModel_max_hor_speed;
+  friend class IceModel_max_hor_vel;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);

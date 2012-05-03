@@ -262,9 +262,9 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
 
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-                      "P         YEAR:     ivol     iarea     max_diff       max_hor_vel\n");
+                      "P       YEAR:       ivol      iarea  max_diffusivity  max_hor_vel\n");
     ierr = verbPrintf(2,grid.com,
-                      "U        years %skm^3 %skm^2     m^2 s^-1            m/year\n",
+                      "U      years   %skm^3  %skm^2         m^2 s^-1       m/year\n",
                       volscalestr,areascalestr);
     return 0;
   }
@@ -298,7 +298,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
     }
 
     ierr = verbPrintf(2,grid.com,
-                      "S %s: %8.5f %9.4f %12.8f %17.5f\n",
+                      "S %s: %8.5f %9.5f %12.5f %14.5f\n",
                       date.c_str(), volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity,
                       convert(gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", "m/year")); CHKERRQ(ierr);
 
