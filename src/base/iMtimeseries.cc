@@ -52,7 +52,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
   if (ts_file_set ^ ts_times_set) {
     ierr = PetscPrintf(grid.com,
-      "PISM ERROR: you need to specity both -ts_file and -ts_times to save"
+      "PISM ERROR: you need to specity both -ts_file and -ts_times to save "
       "diagnostic time-series.\n");
     CHKERRQ(ierr);
     PISMEnd();
