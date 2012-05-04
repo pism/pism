@@ -391,7 +391,7 @@ from~\cite{RitzEISMINT}.
 \begin{center}
   \begin{tabular}{lp{0.7\textwidth}}
     \toprule
-    Variable names: & \variable{precipitation}, \variable{air_temperature} \\
+    Variable names: & \variable{precipitation}, \variable{air_temp} \\
     Options: & \texttt{-atmosphere given -atmosphere_given_file forcing.nc -surface~pdd} \\
     See also & \texttt{-atmosphere given}: \ref{sec:atmosphere-given},\\
     &\texttt{-surface pdd}: \ref{sec:surface-pdd} \\
@@ -410,7 +410,7 @@ air temperature and precipitation anomalies.
 \begin{center}
   \begin{tabular}{lp{0.7\textwidth}}
     \toprule
-    Variable names: & \variable{precipitation_anomaly}, \variable{air_temperature_anomaly}\\
+    Variable names: & \variable{precipitation_anomaly}, \variable{air_temp_anomaly}\\
     Options:  & \texttt{\mbox{-atmosphere given,anomaly}
       \mbox{-atmosphere_anomaly_file anomalies.nc}
       \mbox{-surface simple}
@@ -493,7 +493,7 @@ computation.
   \begin{tabular}{lp{0.7\textwidth}}
     \toprule
     Variable names: & \variable{climatic_mass_balance},
-    \variable{air_temperature}, \variable{delta_T}, \variable{delta_SL}\\
+    \variable{air_temp}, \variable{delta_T}, \variable{delta_SL}\\
     Options: & \texttt{\mbox{-surface given,delta_T}
       \mbox{-surface_delta_T_file delta_T.nc}
       \mbox{-ocean constant,delta_SL}
@@ -555,10 +555,10 @@ $ pclimate -i state.nc -surface given -times 0.0:0.1:2.5 -o movie.nc
 \end{verbatim}
 Using \texttt{pisms} merely generates demonstration climate data, using
 EISMINT II choices~\cite{EISMINT00}.  \texttt{pclimate} extracts the 
-surface mass balance \variable{climatic_mass_balance} and surface temperature \variable{air_temperature} from \texttt{state.nc}.
+surface mass balance \variable{climatic_mass_balance} and surface temperature \variable{air_temp} from \texttt{state.nc}.
 It then does nothing interesting, exactly because a constant climate
 is used.  Viewing \texttt{movie.nc} we see these same values as from \texttt{state.nc},
-in variables \variable{climatic_mass_balance}, \variable{air_temperature}, reported back to us as the time- and space-dependent
+in variables \variable{climatic_mass_balance}, \variable{air_temp}, reported back to us as the time- and space-dependent
 climate at times \texttt{ys:dt:ye}.  It is a boring ``movie.''
 
 The excuse for the executable \texttt{pclimate} becomes clearer if we use a
@@ -572,7 +572,7 @@ Assuming that \texttt{g20km_pre100.nc} was created as described in the User's Ma
 $ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
            -surface pdd -times 0:0.1:2.5 -o foo.nc
 \end{verbatim}%$
-produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle in the variable \variable{air_temperature} and a noticeable decrease in the surface mass balance during summer months (see variable \variable{climatic_mass_balance}). Note that \variable{air_temperature} is constant in time: this is the temperature \emph{at the ice surface but below firn} and it does not include seasonal variations~\cite{Hock05}.
+produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle in the variable \variable{air_temp} and a noticeable decrease in the surface mass balance during summer months (see variable \variable{climatic_mass_balance}). Note that \variable{air_temp} is constant in time: this is the temperature \emph{at the ice surface but below firn} and it does not include seasonal variations~\cite{Hock05}.
 
 See User's Manual, section~\ref*{userman-sec:eismint-greenland}, for another \texttt{pclimate} example.
 
@@ -590,7 +590,7 @@ $ pismr -boot_file g20km_pre100.nc -Mx 51 -My 101 -Mz 11 \
         -atmosphere searise_greenland \
         -surface pdd -ys 0 -ye 2.5 \
         -extra_file foo.nc -extra_times 0:0.1:2.5 \
-        -extra_vars climatic_mass_balance,air_temperature,smelt,srunoff,saccum
+        -extra_vars climatic_mass_balance,air_temp,smelt,srunoff,saccum
         -ts_file ts.nc -ts_times 0:0.1:2.5 \
         -o bar.nc
 \end{verbatim}%$
@@ -1108,7 +1108,7 @@ at the atmosphere level.
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-atmosphere~given} \index[options]{\atmosphere!\texttt{given}} \\
-    NetCDF variables: & \variable{air_temperature}, \\
+    NetCDF variables: & \variable{air_temp}, \\
     &\variable{precipitation} [m/s ice equivalent]\\
     C++ class: & \class{PAGivenClimate}\\
     \bottomrule
@@ -1130,7 +1130,7 @@ Command-line options:
 
 A file \texttt{foo.nc} used with \texttt{-atmosphere given -atmosphere_given_file foo.nc} should contain several records; the \variable{time} variable should describe what model time these records correspond to.
 
-This model~component was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \variable{air_temperature} and \variable{precipitation}.
+This model~component was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \variable{air_temp} and \variable{precipitation}.
 
 It can also used to drive a temperature-index (PDD) climatic mass balance
 computation (section~\ref{sec:surface-pdd}).
@@ -1303,7 +1303,7 @@ precipitation using elevation lapse rates. It uses the following options.
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-atmosphere~...,anomaly} \index[options]{\atmospheremods!\texttt{anomaly}} \\
-    NetCDF variables: & \variable{air_temperature_anomaly}, \\
+    NetCDF variables: & \variable{air_temp_anomaly}, \\
     &\variable{precipitation_anomaly} [m/s ice equivalent]\\
     C++ class: & \class{PAAnomaly}\\
     \bottomrule
@@ -1316,7 +1316,7 @@ This modifier implements a spatially-variable version of
 It takes the following options:
 \begin{itemize}
 \item \fileopt{atmosphere_anomaly_file} specifies a file containing variables
-  \variable{air_temperature_anomaly} and
+  \variable{air_temp_anomaly} and
   \variable{precipitation_anomaly}.
 \item \txtopt{atmosphere_anomaly_period}{years} specifies the period of the
   forcing data, in model years; section~\ref{sec:periodic-forcing}

@@ -87,8 +87,8 @@ ncks -A $TEMP ${ANOMALY}.nc
 
 ncks -O ${ANOMALY}.nc ${ANOMALY}_scalefactor_1.0.nc
 
-ncap2 -O -s "precipitation_anomaly = 1.5 * precipitation_anomaly; air_temperature_anomaly = 1.5 * air_temperature_anomaly" ${ANOMALY}.nc ${ANOMALY}_scalefactor_1.5.nc
-ncap2 -O -s "precipitation_anomaly = 2.0 * precipitation_anomaly; air_temperature_anomaly = 2.0 * air_temperature_anomaly" ${ANOMALY}.nc ${ANOMALY}_scalefactor_2.0.nc
+ncap2 -O -s "precipitation_anomaly = 1.5 * precipitation_anomaly; air_temp_anomaly = 1.5 * air_temp_anomaly" ${ANOMALY}.nc ${ANOMALY}_scalefactor_1.5.nc
+ncap2 -O -s "precipitation_anomaly = 2.0 * precipitation_anomaly; air_temp_anomaly = 2.0 * air_temp_anomaly" ${ANOMALY}.nc ${ANOMALY}_scalefactor_2.0.nc
 
 echo "done."
 echo

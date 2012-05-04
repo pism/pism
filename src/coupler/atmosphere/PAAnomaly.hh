@@ -22,14 +22,14 @@
 #include "PGivenClimate.hh"
 #include "PAModifier.hh"
 
-//! \brief Reads and uses air_temperature and precipitation anomalies from a file.
+//! \brief Reads and uses air_temp and precipitation anomalies from a file.
 class PAAnomaly : public PGivenClimate<PAModifier,PISMAtmosphereModel>
 {
 public:
   PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
     : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in)
   {
-    temp_name = "air_temperature_anomaly";
+    temp_name = "air_temp_anomaly";
     mass_flux_name  = "precipitation_anomaly";
     option_prefix = "-atmosphere_anomaly";
   }

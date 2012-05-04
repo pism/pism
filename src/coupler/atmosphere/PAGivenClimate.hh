@@ -28,7 +28,7 @@ public:
   PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
     : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
   {
-    temp_name = "air_temperature";
+    temp_name = "air_temp";
     mass_flux_name  = "precipitation";
     option_prefix = "-atmosphere_given";
   }

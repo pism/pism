@@ -88,7 +88,7 @@ def prepare_precipitation_file(output, x, y):
 def prepare_temp_file(output, x, y):
     (nc, t) = prepare_file(output, x, y)
 
-    temp = nc.createVariable("air_temperature", 'f', dimensions=("time", "y", "x"))
+    temp = nc.createVariable("air_temp", 'f', dimensions=("time", "y", "x"))
     temp.units = "Kelvin"
     temp.long_name = "air temperature at 2m above the surface"
     temp.mapping = "mapping"
@@ -145,7 +145,7 @@ ee, nn = (Proj(projection))(lon, lat)
 ee_out,nn_out = meshgrid(x,y)
 usurf_out = griddata(ee,nn,h,ee_out,nn_out)
 
-output_temp = "air_temperature.nc"
+output_temp = "air_temp.nc"
 output_precip = "precipitation.nc"
 
 nc_temp, t_temp_var, temp_var, usurf_var_temp = prepare_temp_file(output_temp, x, y)

@@ -53,11 +53,11 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
   ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
-  air_temperature.init_2d("air_temperature", grid);
-  air_temperature.set_string("pism_intent", "diagnostic");
-  air_temperature.set_string("long_name",
+  air_temp.init_2d("air_temp", grid);
+  air_temp.set_string("pism_intent", "diagnostic");
+  air_temp.set_string("long_name",
                       "near-surface air temperature with a lapse-rate correction");
-  ierr = air_temperature.set_units("K"); CHKERRQ(ierr);
+  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -121,8 +121,8 @@ PetscErrorCode PALapseRates::temp_snapshot(IceModelVec2S &result) {
 PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "air_temperature")) {
-    ierr = air_temperature.define(nc, nctype, true); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp")) {
+    ierr = air_temp.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "precipitation")) {
@@ -137,16 +137,16 @@ PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, P
 PetscErrorCode PALapseRates::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "air_temperature")) {
+  if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temperature", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temperature, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temp", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
 
-    vars.erase("air_temperature");
+    vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
@@ -170,7 +170,7 @@ void PALapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariab
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
-    result["air_temperature"] = air_temperature;
+    result["air_temp"] = air_temp;
     result["precipitation"]   = precipitation;
   }
 }

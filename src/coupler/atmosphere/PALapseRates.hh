@@ -52,7 +52,7 @@ public:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 protected:
   PetscReal precip_lapse_rate;
-  NCSpatialVariable precipitation, air_temperature;
+  NCSpatialVariable precipitation, air_temp;
 };
 
 #endif /* _PALAPSERATES_H_ */

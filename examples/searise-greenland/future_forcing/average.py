@@ -47,12 +47,12 @@ def prepare_file(fname, x, y):
 
     return (nc, t_var)
 
-input_temp = "air_temperature.nc"
+input_temp = "air_temp.nc"
 input_precip = "precipitation.nc"
 
 ## read air temperatures, and get space/time grid info from this file:
 nc_temp = NC(input_temp, 'r')
-temp_in = nc_temp.variables['air_temperature']
+temp_in = nc_temp.variables['air_temp']
 x = nc_temp.variables['x'][:]
 y = nc_temp.variables['y'][:]
 N = len(nc_temp.dimensions['time'])
@@ -75,7 +75,7 @@ output_precip = "ar4_precip_anomaly.nc"
 nc_temp_out, t_temp = prepare_file(output_temp, x, y)
 nc_precip_out, t_precip = prepare_file(output_precip, x, y)
 
-temp = nc_temp_out.createVariable("air_temperature_anomaly", 'f', dimensions=("time", "y", "x"))
+temp = nc_temp_out.createVariable("air_temp_anomaly", 'f', dimensions=("time", "y", "x"))
 temp.units = "Kelvin"
 temp.long_name = \
   "mean annual air temperature at 2m above the surface (as anomaly from first year)"
@@ -113,7 +113,7 @@ for year in arange(years):
     precip[year,:,:] /= 12.0
 
 # convert to anomalies by subtracting-off first year averages:
-print "  converting annual mean temperature to 'air_temperature_anomaly'"
+print "  converting annual mean temperature to 'air_temp_anomaly'"
 temp_0 = temp[0,:,:].copy()
 for year in arange(years):
     temp[year,:,:] -= temp_0

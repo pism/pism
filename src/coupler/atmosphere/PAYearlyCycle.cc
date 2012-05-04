@@ -35,19 +35,19 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   snow_temp_july_day = config.get("snow_temp_july_day");
 
   // Allocate internal IceModelVecs:
-  ierr = air_temperature_mean_annual.create(grid, "air_temperature_mean_annual", false); CHKERRQ(ierr);
-  ierr = air_temperature_mean_annual.set_attrs("diagnostic",
+  ierr = air_temp_mean_annual.create(grid, "air_temp_mean_annual", false); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.set_attrs("diagnostic",
 			   "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
 			   "K", 
 			   ""); CHKERRQ(ierr);  // no CF standard_name ??
-  ierr = air_temperature_mean_annual.set_attr("source", reference);
+  ierr = air_temp_mean_annual.set_attr("source", reference);
 
-  ierr = air_temperature_mean_july.create(grid, "air_temperature_mean_july", false); CHKERRQ(ierr);
-  ierr = air_temperature_mean_july.set_attrs("diagnostic",
+  ierr = air_temp_mean_july.create(grid, "air_temp_mean_july", false); CHKERRQ(ierr);
+  ierr = air_temp_mean_july.set_attrs("diagnostic",
 			   "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
 			   "Kelvin",
 			   ""); CHKERRQ(ierr);  // no CF standard_name ??
-  ierr = air_temperature_mean_july.set_attr("source", reference);
+  ierr = air_temp_mean_july.set_attr("source", reference);
 
   ierr = precipitation.create(grid, "precipitation", false); CHKERRQ(ierr);
   ierr = precipitation.set_attrs("climate_state", 
@@ -74,11 +74,11 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 
   ierr = precipitation.set_attr("history", precip_history); CHKERRQ(ierr);
 
-  air_temperature_snapshot.init_2d("air_temperature_snapshot", grid);
-  air_temperature_snapshot.set_string("pism_intent", "diagnostic");
-  air_temperature_snapshot.set_string("long_name",
+  air_temp_snapshot.init_2d("air_temp_snapshot", grid);
+  air_temp_snapshot.set_string("pism_intent", "diagnostic");
+  air_temp_snapshot.set_string("long_name",
                          "snapshot of the near-surface air temperature");
-  ierr = air_temperature_snapshot.set_units("K"); CHKERRQ(ierr);
+  ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -87,9 +87,9 @@ void PAYearlyCycle::add_vars_to_output(string keyword, map<string,NCSpatialVaria
   result["precipitation"] = precipitation.get_metadata();
 
   if (keyword == "big") {
-    result["air_temperature_mean_annual"] = air_temperature_mean_annual.get_metadata();
-    result["air_temperature_mean_july"] = air_temperature_mean_july.get_metadata();
-    result["air_temperature_snapshot"] = air_temperature_snapshot;
+    result["air_temp_mean_annual"] = air_temp_mean_annual.get_metadata();
+    result["air_temp_mean_july"] = air_temp_mean_july.get_metadata();
+    result["air_temp_snapshot"] = air_temp_snapshot;
   }
 }
 
@@ -97,16 +97,16 @@ void PAYearlyCycle::add_vars_to_output(string keyword, map<string,NCSpatialVaria
 PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "air_temperature_snapshot")) {
-    ierr = air_temperature_snapshot.define(nc, nctype, false); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp_snapshot")) {
+    ierr = air_temp_snapshot.define(nc, nctype, false); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "air_temperature_mean_annual")) {
-    ierr = air_temperature_mean_annual.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp_mean_annual")) {
+    ierr = air_temp_mean_annual.define(nc, nctype); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "air_temperature_mean_july")) {
-    ierr = air_temperature_mean_july.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp_mean_july")) {
+    ierr = air_temp_mean_july.define(nc, nctype); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "precipitation")) {
@@ -120,22 +120,22 @@ PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, 
 PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "air_temperature_snapshot")) {
+  if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temperature_snapshot", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temperature_snapshot, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temp_snapshot", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(air_temp_snapshot, 0); CHKERRQ(ierr);
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "air_temperature_mean_annual")) {
-    ierr = air_temperature_mean_annual.write(filename.c_str()); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp_mean_annual")) {
+    ierr = air_temp_mean_annual.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "air_temperature_mean_july")) {
-    ierr = air_temperature_mean_july.write(filename.c_str()); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp_mean_july")) {
+    ierr = air_temp_mean_july.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "precipitation")) {
@@ -155,7 +155,7 @@ PetscErrorCode PAYearlyCycle::mean_precipitation(IceModelVec2S &result) {
 //! Copies the stored mean annual near-surface air temperature field into result.
 PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = air_temperature_mean_annual.copy_to(result); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -168,8 +168,8 @@ PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, int N,
 
   for (PetscInt k = 0; k < N; ++k) {
     double tk = grid.time->year_fraction(ts[k]) - julyday_fraction;
-    values[k] = air_temperature_mean_annual(i,j) +
-      (air_temperature_mean_july(i,j) - air_temperature_mean_annual(i,j)) * cos(2.0 * pi * tk);
+    values[k] = air_temp_mean_annual(i,j) +
+      (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos(2.0 * pi * tk);
   }
 
   return 0;
@@ -184,18 +184,18 @@ PetscErrorCode PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   double T = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction;
 
   ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = air_temperature_mean_annual.begin_access(); CHKERRQ(ierr);
-  ierr = air_temperature_mean_july.begin_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_july.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j) = air_temperature_mean_annual(i,j) +
-        (air_temperature_mean_july(i,j) - air_temperature_mean_annual(i,j)) * cos(2.0 * pi * T);
+      result(i,j) = air_temp_mean_annual(i,j) +
+        (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos(2.0 * pi * T);
     }
   }
 
-  ierr = air_temperature_mean_july.end_access(); CHKERRQ(ierr);
-  ierr = air_temperature_mean_annual.end_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_july.end_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
@@ -204,8 +204,8 @@ PetscErrorCode PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
 PetscErrorCode PAYearlyCycle::begin_pointwise_access() {
   PetscErrorCode ierr;
 
-  ierr = air_temperature_mean_annual.begin_access(); CHKERRQ(ierr);
-  ierr = air_temperature_mean_july.begin_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_july.begin_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -213,8 +213,8 @@ PetscErrorCode PAYearlyCycle::begin_pointwise_access() {
 PetscErrorCode PAYearlyCycle::end_pointwise_access() {
   PetscErrorCode ierr;
 
-  ierr = air_temperature_mean_annual.end_access(); CHKERRQ(ierr);
-  ierr = air_temperature_mean_july.end_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.end_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_july.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

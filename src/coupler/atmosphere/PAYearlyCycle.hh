@@ -47,8 +47,8 @@ protected:
   PISMVars *variables;
   PetscScalar snow_temp_july_day;
   string reference, precip_filename;
-  IceModelVec2S air_temperature_mean_annual, air_temperature_mean_july, precipitation;
-  NCSpatialVariable air_temperature_snapshot;
+  IceModelVec2S air_temp_mean_annual, air_temp_mean_july, precipitation;
+  NCSpatialVariable air_temp_snapshot;
 };
 
 #endif /* _PAYEARLYCYCLE_H_ */
