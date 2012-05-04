@@ -8,15 +8,15 @@ add_library (pismboundary
   ./atmosphere/PAYearlyCycle.cc
   ./atmosphere/PAGivenClimate.cc
   ./atmosphere/PALapseRates.cc
-  ./atmosphere/PAdTforcing.cc
-  ./atmosphere/PAdPforcing.cc
+  ./atmosphere/PA_delta_T.cc
+  ./atmosphere/PA_delta_P.cc
   ./atmosphere/PAAnomaly.cc
   ./ocean/POConstantPIK.cc
   ./ocean/POConstant.cc
   ./ocean/POGivenClimate.cc
-  ./ocean/POdSLforcing.cc
-  ./ocean/POdTforcing.cc
-  ./ocean/POdSBMFforcing.cc
+  ./ocean/PO_delta_SL.cc
+  ./ocean/PO_delta_T.cc
+  ./ocean/PO_delta_SMB.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
   ./surface/PSConstantPIK.cc
@@ -24,7 +24,7 @@ add_library (pismboundary
   ./surface/PSStuffAsAnomaly.cc
   ./surface/PSGivenClimate.cc
   ./surface/PSLapseRates.cc
-  ./surface/PSdTforcing.cc
+  ./surface/PS_delta_T.cc
   ./surface/PSSimple.cc
   ./surface/PSTemperatureIndex.cc
   ./surface/PSForceThickness.cc

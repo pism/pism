@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -33,19 +33,19 @@ public:
     : PAYearlyCycle(g, conf)
   {
     paleo_precipitation_correction = false;
-    dTforcing = NULL;
+    delta_T = NULL;
   }
 
   virtual ~PA_SeaRISE_Greenland()
   {
-    delete dTforcing;
+    delete delta_T;
   }
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
 protected:
   bool paleo_precipitation_correction;
-  Timeseries *dTforcing;
+  Timeseries *delta_T;
   IceModelVec2S *lat, *lon, *surfelev;
 };
 

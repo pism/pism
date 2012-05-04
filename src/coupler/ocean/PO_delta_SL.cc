@@ -16,26 +16,28 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PAdPforcing.hh"
+#include "PO_delta_SL.hh"
 
-PAdPforcing::PAdPforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-  : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
+/// -ocean_delta_SL_file, ...
+
+PO_delta_SL::PO_delta_SL(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
+  : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
 {
-  option = "-atmosphere_delta_precip_file";
-  offset_name = "delta_precip";
+  option_prefix = "-ocean_delta_SL";
+  offset_name = "delta_SL";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("m / year", "");
+
+  offset->set_units("m", "");
   offset->set_dimension_units(grid.time->units(), "");
-  offset->set_attr("long_name", "precipitation offsets");
+  offset->set_attr("long_name", "sea level elevation offsets");
 }
 
-PetscErrorCode PAdPforcing::init(PISMVars &vars) {
+PetscErrorCode PO_delta_SL::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing precipitation forcing using scalar offsets...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "* Initializing sea level forcing...\n"); CHKERRQ(ierr);
 
   ierr = init_internal(); CHKERRQ(ierr);
 
@@ -43,9 +45,11 @@ PetscErrorCode PAdPforcing::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PAdPforcing::mean_precip(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->mean_precip(result);
-  ierr = offset_data(result); CHKERRQ(ierr);
+PetscErrorCode PO_delta_SL::sea_level_elevation(PetscReal &result) {
+  PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
+
+  if (offset)
+    result += (*offset)(t + 0.5*dt);
+
   return 0;
 }
-

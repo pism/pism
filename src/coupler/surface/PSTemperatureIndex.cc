@@ -108,21 +108,22 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     ierr = verbPrintf(2, grid.com, "  NOTE: Limiting time-steps to 1 year.\n"); CHKERRQ(ierr);
   }
 
-  ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
-  ierr = acab.set_attrs("diagnostic",
+  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_attrs("diagnostic",
 			"instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
 			"m s-1",  // m *ice-equivalent* per second
 			"land_ice_surface_specific_mass_balance");  // CF standard_name
                         CHKERRQ(ierr);
-  ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  acab.write_in_glaciological_units = true;
-  ierr = acab.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.write_in_glaciological_units = true;
+  ierr = climatic_mass_balance.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr);
 
   // diagnostic fields:
 
   ierr = accumulation_rate.create(grid, "saccum", false); CHKERRQ(ierr);
   ierr = accumulation_rate.set_attrs("diagnostic",
-                                     "instantaneous ice-equivalent surface accumulation rate (precip minus rain)",
+                                     "instantaneous ice-equivalent surface accumulation rate"
+                                     " (precipitation minus rain)",
                                      "m s-1",
                                      ""); CHKERRQ(ierr);
   ierr = accumulation_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
@@ -179,11 +180,11 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   // beginning of the run)
   next_pdd_update = grid.time->current();
 
-  artm.init_2d("artm", grid);
-  artm.set_string("pism_intent", "diagnostic");
-  artm.set_string("long_name",
+  ice_surface_temp.init_2d("ice_surface_temp", grid);
+  ice_surface_temp.set_string("pism_intent", "diagnostic");
+  ice_surface_temp.set_string("long_name",
                   "ice temperature at the ice surface");
-  ierr = artm.set_units("K"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -257,9 +258,9 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   // to ensure that temperature time series are correct:
   ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
 
-  // This is a point-wise (local) computation, so we can use "acab" to store
+  // This is a point-wise (local) computation, so we can use "climatic_mass_balance" to store
   // precipitation:
-  ierr = atmosphere->mean_precip(acab); CHKERRQ(ierr);
+  ierr = atmosphere->mean_precipitation(climatic_mass_balance); CHKERRQ(ierr);
 
   // set up air temperature time series
   PetscInt Nseries;
@@ -298,7 +299,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   DegreeDayFactors  ddf = base_ddf;
 
   ierr = atmosphere->begin_pointwise_access(); CHKERRQ(ierr);
-  ierr = acab.begin_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
 
   ierr = accumulation_rate.begin_access(); CHKERRQ(ierr);
   ierr = melt_rate.begin_access(); CHKERRQ(ierr);
@@ -331,7 +332,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
 
       // use the temperature time series to remove the rainfall from the precipitation
       PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
-                                  acab(i,j), // precipitation rate (input)
+                                  climatic_mass_balance(i,j), // precipitation rate (input)
                                   tseries, dtseries, &T[0], Nseries);
 
       // use degree-day factors, and number of PDDs, and the snow precipitation, to
@@ -340,7 +341,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
                                              accumulation_rate(i,j), // output
                                              melt_rate(i,j), // output
                                              runoff_rate(i,j), // output
-                                             acab(i,j)); // acab = smb (output)
+                                             climatic_mass_balance(i,j)); // climatic_mass_balance = smb (output)
                                              CHKERRQ(ierr);
     }
   }
@@ -349,7 +350,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   ierr = melt_rate.end_access(); CHKERRQ(ierr);
   ierr = runoff_rate.end_access(); CHKERRQ(ierr);
 
-  ierr = acab.end_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
 
   if (lat != NULL) {
@@ -368,7 +369,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
 PetscErrorCode PSTemperatureIndex::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = acab.copy_to(result); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.copy_to(result); CHKERRQ(ierr);
 
   return 0;
 }
@@ -390,8 +391,8 @@ void PSTemperatureIndex::add_vars_to_output(string keyword, map<string,NCSpatial
   atmosphere->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
-    result["acab"] = acab.get_metadata();
-    result["artm"] = artm;
+    result["climatic_mass_balance"] = climatic_mass_balance.get_metadata();
+    result["ice_surface_temp"] = ice_surface_temp;
   }
 
   if (keyword == "big") {
@@ -404,14 +405,12 @@ void PSTemperatureIndex::add_vars_to_output(string keyword, map<string,NCSpatial
 PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  if (set_contains(vars, "artm")) {
-    ierr = artm.define(nc, nctype, true); CHKERRQ(ierr);
+  if (set_contains(vars, "ice_surface_temp")) {
+    ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "acab")) {
-    ierr = acab.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, "climatic_mass_balance")) {
+    ierr = climatic_mass_balance.define(nc, nctype); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "saccum")) {
@@ -426,26 +425,29 @@ PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO 
     ierr = runoff_rate.define(nc, nctype); CHKERRQ(ierr);
   }
 
+  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
   return 0;
+
 }
 
 PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "artm")) {
+  if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "artm", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(artm, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(ice_surface_temp, 0); CHKERRQ(ierr);
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
-    vars.erase("artm");
+    vars.erase("ice_surface_temp");
   }
 
-  if (set_contains(vars, "acab")) {
-    ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
-    vars.erase("acab");
+  if (set_contains(vars, "climatic_mass_balance")) {
+    ierr = climatic_mass_balance.write(filename.c_str()); CHKERRQ(ierr);
+    vars.erase("climatic_mass_balance");
   }
 
   if (set_contains(vars, "saccum")) {

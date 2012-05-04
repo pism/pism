@@ -16,12 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "POdSBMFforcing.hh"
+#include "PO_delta_SMB.hh"
 
-POdSBMFforcing::POdSBMFforcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
+PO_delta_SMB::PO_delta_SMB(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
 {
-  option = "-ocean_delta_mass_flux_file";
+  option_prefix = "-ocean_delta_mass_flux";
   offset_name = "delta_mass_flux";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("m s-1", "");
@@ -29,7 +29,7 @@ POdSBMFforcing::POdSBMFforcing(IceGrid &g, const NCConfigVariable &conf, PISMOce
   offset->set_attr("long_name", "ice-shelf-base mass flux offsets");
 }
 
-PetscErrorCode POdSBMFforcing::init(PISMVars &vars) {
+PetscErrorCode PO_delta_SMB::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
@@ -42,7 +42,7 @@ PetscErrorCode POdSBMFforcing::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode POdSBMFforcing::shelf_base_mass_flux(IceModelVec2S &result) {
+PetscErrorCode PO_delta_SMB::shelf_base_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->shelf_base_mass_flux(result); CHKERRQ(ierr);
   ierr = offset_data(result); CHKERRQ(ierr);
   return 0;

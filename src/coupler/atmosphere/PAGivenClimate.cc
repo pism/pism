@@ -47,18 +47,13 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
 PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  if (enable_time_averaging) {
-    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
-    ierr = temp.average(t, 1.0); CHKERRQ(ierr); // compute the "mean annual" temperature
-  } else {
-    ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-    ierr = temp.at_time(t); CHKERRQ(ierr);
-  }
+  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
+  ierr = temp.at_time(t); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::mean_precip(IceModelVec2S &result) {
+PetscErrorCode PAGivenClimate::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr = mass_flux.copy_to(result); CHKERRQ(ierr);
   return 0;
 }

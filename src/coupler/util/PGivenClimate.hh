@@ -142,7 +142,6 @@ protected:
 
   PetscReal bc_period,          // in seconds
     bc_reference_time;          // in seconds
-  bool enable_time_averaging;
 
   PetscErrorCode process_options()
   {
@@ -152,7 +151,6 @@ protected:
     PetscReal bc_period_years = 0,
       bc_reference_year = 0;
 
-    enable_time_averaging = false;
     bc_period = 0;
     bc_reference_time = 0;
 
@@ -167,9 +165,6 @@ protected:
       ierr = PISMOptionsReal(option_prefix + "_reference_year",
                              "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
-      ierr = PISMOptionsIsSet(option_prefix + "_time_average",
-                              "Enable time-averaging of boundary condition data",
-                              enable_time_averaging); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 

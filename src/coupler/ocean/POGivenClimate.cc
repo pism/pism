@@ -49,13 +49,8 @@ PetscErrorCode POGiven::init(PISMVars &) {
 PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  if (enable_time_averaging) {
-    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
-    ierr = temp.average(t, dt); CHKERRQ(ierr); 
-  } else {
-    ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-    ierr = temp.at_time(t); CHKERRQ(ierr);
-  }
+  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
+  ierr = temp.at_time(t); CHKERRQ(ierr);
 
   return 0;
 }

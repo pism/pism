@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -58,20 +58,15 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
 PetscErrorCode PAAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  if (enable_time_averaging) {
-    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
-    ierr = temp.average(t, 1.0); CHKERRQ(ierr); // compute the "mean annual" temperature
-  } else {
-    ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-    ierr = temp.at_time(t); CHKERRQ(ierr);
-  }
+  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
+  ierr = temp.at_time(t); CHKERRQ(ierr);
 
   return 0;
 }
 
 
-PetscErrorCode PAAnomaly::mean_precip(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->mean_precip(result); CHKERRQ(ierr);
+PetscErrorCode PAAnomaly::mean_precipitation(IceModelVec2S &result) {
+  PetscErrorCode ierr = input_model->mean_precipitation(result); CHKERRQ(ierr);
 
   return result.add(1.0, mass_flux);
 }

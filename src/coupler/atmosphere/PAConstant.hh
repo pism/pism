@@ -31,7 +31,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
   { t = my_t; dt = my_dt; return 0; } // do nothing
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
@@ -43,8 +43,8 @@ public:
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
   string input_file;
-  IceModelVec2S precip, temperature;
-  NCSpatialVariable airtemp_var;
+  IceModelVec2S precipitation, air_temp;
+  NCSpatialVariable air_temp_snapshot;
 };
 
 #endif /* _PACONSTANT_H_ */

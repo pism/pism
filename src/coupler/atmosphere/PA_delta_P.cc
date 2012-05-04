@@ -16,54 +16,36 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PAdTforcing.hh"
+#include "PA_delta_P.hh"
 
-/// -dTforcing of near-surface air temperatures
-
-PAdTforcing::PAdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+PA_delta_P::PA_delta_P(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
-  option = "-dTforcing";
-  offset_name = "delta_T";
+  option_prefix = "-atmosphere_delta_P";
+  offset_name = "delta_P";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("Celsius", "");
+  offset->set_units("m / year", "");
   offset->set_dimension_units(grid.time->units(), "");
-  offset->set_attr("long_name", "near-surface air temperature offsets");
+  offset->set_attr("long_name", "precipitation offsets");
 }
 
-PetscErrorCode PAdTforcing::init(PISMVars &vars) {
+PetscErrorCode PA_delta_P::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-                    "* Initializing near-surface air temperature forcing using scalar offsets...\n"); CHKERRQ(ierr);
+                    "* Initializing precipitation forcing using scalar offsets...\n"); CHKERRQ(ierr);
 
   ierr = init_internal(); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PAdTforcing::mean_annual_temp(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->mean_annual_temp(result); CHKERRQ(ierr);
+
+PetscErrorCode PA_delta_P::mean_precipitation(IceModelVec2S &result) {
+  PetscErrorCode ierr = input_model->mean_precipitation(result);
   ierr = offset_data(result); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PAdTforcing::temp_time_series(int i, int j, int N,
-                                             PetscReal *ts, PetscReal *values) {
-  PetscErrorCode ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
-  
-  if (offset) {
-    for (int k = 0; k < N; ++k)
-      values[k] += (*offset)(ts[k]);
-  }
-
-  return 0;
-}
-
-PetscErrorCode PAdTforcing::temp_snapshot(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
-  ierr = offset_data(result); CHKERRQ(ierr);
-  return 0;
-}

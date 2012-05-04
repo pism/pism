@@ -370,24 +370,28 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
       PISMEnd();
     }
 
+    string spacer(short_name.size(), ' ');
+
     if (set_default_value) {	// if it's not and we have a default value, set it
       double slope, intercept, tmp;
       utConvert(&units, &glaciological_units, &slope, &intercept);
       tmp = intercept + slope*default_value;
 
       ierr = verbPrintf(2, com, 
-			"  absent %-10s/ %-10s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
+			"  absent %s / %-10s\n"
+                        "         %s \\ not found; using default constant %7.2f (%s)\n",
 			short_name.c_str(),
 			strings["long_name"].c_str(),
-			"", tmp,
+			spacer.c_str(), tmp,
 			strings["glaciological_units"].c_str());
       CHKERRQ(ierr);
       ierr = VecSet(v, default_value); CHKERRQ(ierr);
     } else {			// otherwise leave it alone
       ierr = verbPrintf(2, com, 
-			"  absent %-10s/ %-10s\n   %-16s\\ not found; continuing without setting it\n",
+			"  absent %s / %-10s\n"
+                        "         %s \\ not found; continuing without setting it\n",
 			short_name.c_str(),
-			strings["long_name"].c_str(), "");
+			strings["long_name"].c_str(), spacer.c_str());
       CHKERRQ(ierr);
     }
   } else {			// the variable was found successfully
@@ -645,8 +649,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   min = min * slope + intercept;
   max = max * slope + intercept;
 
-  int len = short_name.size();
-  string spacer(len, ' ');
+  string spacer(short_name.size(), ' ');
 
   if (has("standard_name")) {
 
@@ -1362,10 +1365,13 @@ PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
   min = min * slope + intercept;
   max = max * slope + intercept;
 
+  string spacer(short_name.size(), ' ');
+
   ierr = verbPrintf(2, com, 
-		    "  FOUND  %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+		    "  FOUND  %s / %-60s\n"
+                    "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 		    short_name.c_str(),
-		    strings["long_name"].c_str(), "", min, max,
+		    strings["long_name"].c_str(), spacer.c_str(), min, max,
 		    strings["glaciological_units"].c_str()); CHKERRQ(ierr);
 
   return 0;

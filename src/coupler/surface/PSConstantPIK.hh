@@ -53,7 +53,7 @@ public:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 protected:
   string input_file;
-  IceModelVec2S acab, artm;
+  IceModelVec2S climatic_mass_balance, ice_surface_temp;
   IceModelVec2S *lat, *usurf;
 };
 

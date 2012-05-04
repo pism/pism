@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,8 +28,8 @@ public:
   PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
     : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
   {
-    temp_name = "artm";
-    mass_flux_name  = "precip";
+    temp_name = "air_temp";
+    mass_flux_name  = "precipitation";
     option_prefix = "-atmosphere_given";
   }
 
@@ -38,7 +38,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 

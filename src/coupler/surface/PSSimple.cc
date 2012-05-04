@@ -42,7 +42,7 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
 
 PetscErrorCode PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = atmosphere->mean_precip(result); CHKERRQ(ierr);
+  ierr = atmosphere->mean_precipitation(result); CHKERRQ(ierr);
 
   string history = result.string_attr("history");
   history = "re-interpreted precipitation as surface mass balance (PSSimple)\n" + history;

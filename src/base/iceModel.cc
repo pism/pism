@@ -426,7 +426,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // fields owned by IceModel but filled by PISMSurfaceModel *surface:
   // mean annual net ice equivalent surface mass balance rate
-  ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
+  ierr = acab.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
   ierr = acab.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "ice-equivalent surface mass balance (accumulation/ablation) rate",
@@ -447,7 +447,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
-  ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);
+  ierr = artm.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
   ierr = artm.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "annual average ice surface temperature, below firn processes",

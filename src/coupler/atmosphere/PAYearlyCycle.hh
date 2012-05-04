@@ -36,7 +36,7 @@ public:
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   //! This method implements the parameterization.
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
@@ -47,8 +47,8 @@ protected:
   PISMVars *variables;
   PetscScalar snow_temp_july_day;
   string reference, precip_filename;
-  IceModelVec2S temp_ma, temp_mj, precip;
-  NCSpatialVariable airtemp_var;
+  IceModelVec2S air_temp_mean_annual, air_temp_mean_july, precipitation;
+  NCSpatialVariable air_temp_snapshot;
 };
 
 #endif /* _PAYEARLYCYCLE_H_ */

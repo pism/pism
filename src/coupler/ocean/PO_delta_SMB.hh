@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,27 +16,23 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PADTFORCING_H_
-#define _PADTFORCING_H_
+#ifndef _PODSBMFFORCING_H_
+#define _PODSBMFFORCING_H_
 
 #include "PScalarForcing.hh"
-#include "PAModifier.hh"
+#include "PISMOcean.hh"
+#include "POModifier.hh"
 
-class PAdTforcing : public PScalarForcing<PISMAtmosphereModel,PAModifier>
+//! \brief Forcing using shelf base mass flux offsets (scalar, time-dependent).
+class PO_delta_SMB : public PScalarForcing<PISMOceanModel,POModifier>
 {
 public:
-  PAdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
-  virtual ~PAdTforcing() {}
+  PO_delta_SMB(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
+  virtual ~PO_delta_SMB() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
-
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-                                          PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-
+  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 };
 
-
-#endif /* _PADTFORCING_H_ */
+#endif /* _PODSBMFFORCING_H_ */

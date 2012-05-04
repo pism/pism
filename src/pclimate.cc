@@ -58,7 +58,7 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
 static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   
   PetscErrorCode ierr;
-  IceModelVec2S *lat, *lon, *mask, *thk, *surfelev, *topg, *acab, *artm, *shelfbasetemp, *shelfbasemassflux;
+  IceModelVec2S *lat, *lon, *mask, *thk, *surfelev, *topg, *climatic_mass_balance, *ice_surface_temp, *shelfbasetemp, *shelfbasemassflux;
 
   lat      = new IceModelVec2S;
   lon      = new IceModelVec2S;
@@ -69,8 +69,8 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   
   // the following are allocated by the pclimate code, but may or may not
   //   actually be read by PISMAtmosphereModel *atmosphere and PISMOceanModel *ocean
-  acab     = new IceModelVec2S;
-  artm     = new IceModelVec2S;
+  climatic_mass_balance     = new IceModelVec2S;
+  ice_surface_temp     = new IceModelVec2S;
   shelfbasetemp     = new IceModelVec2S;
   shelfbasemassflux = new IceModelVec2S;
 
@@ -108,21 +108,21 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   topg->time_independent = true;
   ierr = variables.add(*topg); CHKERRQ(ierr);
 
-  ierr = artm->create(grid, "artm", false); CHKERRQ(ierr);
-  ierr = artm->set_attrs("climate_state",
-			 "annual average ice surface temperature, below firn processes",
-			 "K",
-			 ""); CHKERRQ(ierr);
-  ierr = variables.add(*artm); CHKERRQ(ierr);
+  ierr = ice_surface_temp->create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+  ierr = ice_surface_temp->set_attrs("climate_state",
+                                     "annual average ice surface temperature, below firn processes",
+                                     "K",
+                                     ""); CHKERRQ(ierr);
+  ierr = variables.add(*ice_surface_temp); CHKERRQ(ierr);
 
-  ierr = acab->create(grid, "acab", false); CHKERRQ(ierr);
-  ierr = acab->set_attrs("climate_state", 
-			 "ice-equivalent surface mass balance (accumulation/ablation) rate",
-			 "m s-1", 
-			 ""); CHKERRQ(ierr);
-  ierr = acab->set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  acab->write_in_glaciological_units = true;
-  ierr = variables.add(*acab); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->set_attrs("climate_state",
+                                          "ice-equivalent surface mass balance (accumulation/ablation) rate",
+                                          "m s-1",
+                                          ""); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  climatic_mass_balance->write_in_glaciological_units = true;
+  ierr = variables.add(*climatic_mass_balance); CHKERRQ(ierr);
 
   ierr = shelfbasetemp->create(grid, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = shelfbasetemp->set_attrs(
@@ -151,10 +151,10 @@ static PetscErrorCode readIceInfoFromFile(string filename, int start,
   // Get the names of all the variables allocated earlier:
   set<string> vars = variables.keys();
 
-  // Remove artm, acab, shelfbasemassflux and shelfbasetemp: they are filled by
+  // Remove ice_surface_temp, climatic_mass_balance, shelfbasemassflux and shelfbasetemp: they are filled by
   // surface and ocean models and aren't necessarily read from files.
-  vars.erase("artm");
-  vars.erase("acab");
+  vars.erase("ice_surface_temp");
+  vars.erase("climatic_mass_balance");
   vars.erase("shelfbmassflux");
   vars.erase("shelfbtemp");
 
@@ -194,16 +194,16 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   PetscErrorCode ierr;
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   NCGlobalAttributes global_attrs;
-  IceModelVec2S *usurf, *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
+  IceModelVec2S *usurf, *ice_surface_temp, *climatic_mass_balance, *shelfbasetemp, *shelfbasemassflux;
 
   usurf = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (usurf == NULL) { SETERRQ(com, 1, "usurf is not available"); }
 
-  artm = dynamic_cast<IceModelVec2S*>(variables.get("artm"));
-  if (artm == NULL) { SETERRQ(com, 1, "artm is not available"); }
+  ice_surface_temp = dynamic_cast<IceModelVec2S*>(variables.get("ice_surface_temp"));
+  if (ice_surface_temp == NULL) { SETERRQ(com, 1, "ice_surface_temp is not available"); }
 
-  acab = dynamic_cast<IceModelVec2S*>(variables.get("acab"));
-  if (acab == NULL) { SETERRQ(com, 1, "acab is not available"); }
+  climatic_mass_balance = dynamic_cast<IceModelVec2S*>(variables.get("climatic_mass_balance"));
+  if (climatic_mass_balance == NULL) { SETERRQ(com, 1, "climatic_mass_balance is not available"); }
 
   shelfbasetemp = dynamic_cast<IceModelVec2S*>(variables.get("shelfbtemp"));
   if (shelfbasetemp == NULL) { SETERRQ(com, 1, "shelfbasetemp is not available"); }
@@ -292,8 +292,8 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = surface->update(current_time, dt); CHKERRQ(ierr);
     ierr = ocean->update(current_time, dt); CHKERRQ(ierr);
 
-    ierr = surface->ice_surface_mass_flux(*acab); CHKERRQ(ierr);
-    ierr = surface->ice_surface_temperature(*artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_mass_flux(*climatic_mass_balance); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(*ice_surface_temp); CHKERRQ(ierr);
 
     PetscReal current_sea_level;
     ierr = ocean->sea_level_elevation(current_sea_level); CHKERRQ(ierr);
@@ -308,10 +308,10 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = surface->write_variables(vars_to_write, filename); CHKERRQ(ierr);
     ierr = ocean->write_variables(vars_to_write, filename); CHKERRQ(ierr);
 
-    // This ensures that even if a surface model wrote artm and acab we
+    // This ensures that even if a surface model wrote ice_surface_temp and climatic_mass_balance we
     // over-write them with values that were actually used by IceModel.
-    ierr = acab->write(filename, PISM_FLOAT); CHKERRQ(ierr);
-    ierr = artm->write(filename, PISM_FLOAT); CHKERRQ(ierr);
+    ierr = climatic_mass_balance->write(filename, PISM_FLOAT); CHKERRQ(ierr);
+    ierr = ice_surface_temp->write(filename, PISM_FLOAT); CHKERRQ(ierr);
 
     // This ensures that even if a ocean model wrote shelfbasetemp and
     // shelfbasemassflux we over-write them with values that were actually used

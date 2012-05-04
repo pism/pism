@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,22 +16,23 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSDTFORCING_H_
-#define _PSDTFORCING_H_
+#ifndef _PODTFORCING_H_
+#define _PODTFORCING_H_
 
 #include "PScalarForcing.hh"
-#include "PISMSurface.hh"
-#include "PSModifier.hh"
+#include "PISMOcean.hh"
+#include "POModifier.hh"
 
-class PSdTforcing : public PScalarForcing<PISMSurfaceModel,PSModifier>
+//! \brief Forcing using shelf base temperature scalar time-dependent offsets.
+class PO_delta_T : public PScalarForcing<PISMOceanModel,POModifier>
 {
 public:
-  PSdTforcing(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
-  virtual ~PSdTforcing() {}
+  PO_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
+  virtual ~PO_delta_T() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
+  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
 };
 
-#endif /* _PSDTFORCING_H_ */
+#endif /* _PODTFORCING_H_ */

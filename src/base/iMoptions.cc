@@ -48,7 +48,7 @@ should not directly set these grid parameters.  There are, however, options for 
 setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
 
 Note that additional options are read by PISM{Atmosphere|Surface|Ocean}Model
-instances, including -pdd... and -d?forcing options.
+instances, including -pdd... others.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;

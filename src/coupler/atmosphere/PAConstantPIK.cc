@@ -20,42 +20,34 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
-PetscErrorCode PAConstantPIK::mean_precip(IceModelVec2S &result) {
+PetscErrorCode PAConstantPIK::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  string precip_history = "read from " + input_file + "\n";
-
-  ierr = precip.copy_to(result); CHKERRQ(ierr);
-  ierr = result.set_attr("history", precip_history);
+  ierr = precipitation.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAConstantPIK::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  string temp_history = "read from " + input_file + "\n";
-
-  ierr = temperature.copy_to(result); CHKERRQ(ierr);
-  ierr = result.set_attr("history", temp_history);
+  ierr = air_temp.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAConstantPIK::begin_pointwise_access() {
   PetscErrorCode ierr;
-  ierr = temperature.begin_access(); CHKERRQ(ierr);
+  ierr = air_temp.begin_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAConstantPIK::end_pointwise_access() {
   PetscErrorCode ierr;
-  ierr = temperature.end_access(); CHKERRQ(ierr);
+  ierr = air_temp.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, int N,
-					    PetscReal */*ts*/, PetscReal *values) {
+                                               PetscReal */*ts*/, PetscReal *values) {
   for (PetscInt k = 0; k < N; k++)
-    values[k] = temperature(i,j);
+    values[k] = air_temp(i,j);
   return 0;
 }
 
@@ -68,11 +60,11 @@ PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
 }
 
 void PAConstantPIK::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
-  result["precip"] = precip.get_metadata();
-  result["temp_ma"] = temperature.get_metadata();
-  
+  result["precipitation"] = precipitation.get_metadata();
+  result["air_temp"] = air_temp.get_metadata();
+
   if (keyword == "big") {
-    result["airtemp"] = airtemp_var;
+    result["air_temp_snapshot"] = air_temp_snapshot;
   }
 }
 
@@ -80,16 +72,16 @@ PetscErrorCode PAConstantPIK::define_variables(set<string> vars, const PIO &nc,
                                             PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "airtemp")) {
-    ierr = airtemp_var.define(nc, nctype, false); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp_snapshot")) {
+    ierr = air_temp_snapshot.define(nc, nctype, false); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "precip")) {
-    ierr = precip.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, "precipitation")) {
+    ierr = precipitation.define(nc, nctype); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "temp_ma")) {
-    ierr = temperature.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp")) {
+    ierr = air_temp.define(nc, nctype); CHKERRQ(ierr);
   }
 
   return 0;
@@ -98,22 +90,22 @@ PetscErrorCode PAConstantPIK::define_variables(set<string> vars, const PIO &nc,
 PetscErrorCode PAConstantPIK::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "airtemp")) {
-    IceModelVec2S airtemp;
-    ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
-    ierr = airtemp.set_metadata(airtemp_var, 0); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp_snapshot")) {
+    IceModelVec2S tmp;
+    ierr = tmp.create(grid, "air_temp_snapshot", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(air_temp_snapshot, 0); CHKERRQ(ierr);
 
-    ierr = temp_snapshot(airtemp); CHKERRQ(ierr);
+    ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
-    ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "precip")) {
-    ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
+  if (set_contains(vars, "precipitation")) {
+    ierr = precipitation.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "temp_ma")) {
-    ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
+  if (set_contains(vars, "air_temp")) {
+    ierr = air_temp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
@@ -135,35 +127,35 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
 
   // create mean annual ice equivalent precipitation rate (before separating
   // rain, and before melt, etc. in PISMSurfaceModel)
-  ierr = precip.create(grid, "precip", false); CHKERRQ(ierr);
-  ierr = precip.set_attrs("climate_state", 
-                          "mean annual ice-equivalent precipitation rate",
-                          "m s-1",
-                          ""); CHKERRQ(ierr); // no CF standard_name ??
-  ierr = precip.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  precip.write_in_glaciological_units = true;
-  precip.time_independent = true;
+  ierr = precipitation.create(grid, "precipitation", false); CHKERRQ(ierr);
+  ierr = precipitation.set_attrs("climate_state",
+                                 "mean annual ice-equivalent precipitation rate",
+                                 "m s-1",
+                                 ""); CHKERRQ(ierr); // no CF standard_name ??
+  ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  precipitation.write_in_glaciological_units = true;
+  precipitation.time_independent = true;
 
-  ierr = temperature.create(grid, "temp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
-  ierr = temperature.set_attrs("climate_state",
-                               "mean annual near-surface (2 m) air temperature",
-                               "K",
-                               ""); CHKERRQ(ierr);
-  temperature.time_independent = true;
-  
+  ierr = air_temp.create(grid, "air_temp", false); CHKERRQ(ierr);
+  ierr = air_temp.set_attrs("climate_state",
+                                   "mean annual near-surface (2 m) air temperature",
+                                   "K",
+                                   ""); CHKERRQ(ierr);
+  air_temp.time_independent = true;
+
   // find PISM input file to read data from:
 
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
-  // read snow precipitation rate and temperatures from file
-  ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent precipitation rate 'precip'\n"
+  // read snow precipitation rate and air_temps from file
+  ierr = verbPrintf(2, grid.com,
+		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
 		    "    from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = precip.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = precip.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
 
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
@@ -172,11 +164,11 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
   lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
   if (lat == NULL) SETERRQ(grid.com, 1, "latitude is not available");
 
-  airtemp_var.init_2d("airtemp", grid);
-  airtemp_var.set_string("pism_intent", "diagnostic");
-  airtemp_var.set_string("long_name",
-                         "snapshot of the near-surface air temperature");
-  ierr = airtemp_var.set_units("K"); CHKERRQ(ierr);
+  air_temp_snapshot.init_2d("air_temp_snapshot", grid);
+  air_temp_snapshot.set_string("pism_intent", "diagnostic");
+  air_temp_snapshot.set_string("long_name",
+                                      "snapshot of the near-surface air temperature");
+  ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -187,19 +179,19 @@ PetscErrorCode PAConstantPIK::update(PetscReal, PetscReal) {
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:
 
-  ierr = temperature.begin_access();   CHKERRQ(ierr);
+  ierr = air_temp.begin_access();   CHKERRQ(ierr);
   ierr = usurf->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      temperature(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
+      air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
 
     }
   }
   ierr = usurf->end_access();   CHKERRQ(ierr);
   ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = temperature.end_access();   CHKERRQ(ierr);
+  ierr = air_temp.end_access();   CHKERRQ(ierr);
 
   return 0;
 }

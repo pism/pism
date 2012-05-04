@@ -36,7 +36,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
 
   virtual PetscErrorCode begin_pointwise_access();
@@ -52,7 +52,7 @@ public:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 protected:
   PetscReal precip_lapse_rate;
-  NCSpatialVariable precip, air_temp;
+  NCSpatialVariable precipitation, air_temp;
 };
 
 #endif /* _PALAPSERATES_H_ */

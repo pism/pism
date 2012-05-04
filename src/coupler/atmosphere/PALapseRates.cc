@@ -46,12 +46,12 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
 
   precip_lapse_rate = convert(precip_lapse_rate, "m/year / km", "m/s / m");
 
-  precip.init_2d("precip", grid);
-  precip.set_string("pism_intent", "diagnostic");
-  precip.set_string("long_name",
+  precipitation.init_2d("precipitation", grid);
+  precipitation.set_string("pism_intent", "diagnostic");
+  precipitation.set_string("long_name",
                     "ice-equivalent precipitation rate with a lapse-rate correction");
-  ierr = precip.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = precip.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
@@ -63,9 +63,9 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PALapseRates::mean_precip(IceModelVec2S &result) {
+PetscErrorCode PALapseRates::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = input_model->mean_precip(result); CHKERRQ(ierr);
+  ierr = input_model->mean_precipitation(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, precip_lapse_rate); CHKERRQ(ierr);
   return 0;
 }
@@ -125,8 +125,8 @@ PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, P
     ierr = air_temp.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "precip")) {
-    ierr = precip.define(nc, nctype, true); CHKERRQ(ierr);
+  if (set_contains(vars, "precipitation")) {
+    ierr = precipitation.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -149,16 +149,16 @@ PetscErrorCode PALapseRates::write_variables(set<string> vars, string filename) 
     vars.erase("air_temp");
   }
 
-  if (set_contains(vars, "precip")) {
+  if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precip", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(precip, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
 
-    ierr = mean_precip(tmp); CHKERRQ(ierr);
+    ierr = mean_precipitation(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
 
-    vars.erase("precip");
+    vars.erase("precipitation");
   }
 
   ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
@@ -171,6 +171,6 @@ void PALapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariab
 
   if (keyword == "medium" || keyword == "big") {
     result["air_temp"] = air_temp;
-    result["precip"]   = precip;
+    result["precipitation"]   = precipitation;
   }
 }
