@@ -78,7 +78,7 @@ This \emph{Installation Manual} describes how to download the PISM source code a
   \href{http://www.pism-docs.org}{www.pism-docs.org}
 \end{center}
 \bigskip
-\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu) and then install Python packages following section \ref{sec:python}.  See subsection \ref{subsec:debian} about the Debian installation route.
+\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu):  Start by following subsection \ref{subsec:debian} about getting Debian packages for prerequisites, then \ref{subsec:prereq-petsc} to install PETSc from source, then \ref{sec:install-cmake} to install PISM itself, and finally install Python packages following section \ref{sec:python}.
 
 \vfill
 
@@ -129,8 +129,8 @@ This table lists required dependencies for PISM alphabetically.
 
 Before installing these ``by hand'', check the Debian and Mac OS X sections below for specific how-to.  In particular, if multiple MPI implementations (e.g.~MPICH and Open-MPI) are installed then PETSc can under some situations ``get confused'' and throw MPI-related errors.  Even package systems have been known to allow this confusion.
 
-Two libraries are needed for specific PISM features (earth deformation (``isostatic rebound'') 
-model and computing corrected cell areas), and are thus only recommended: \bigskip
+Two libraries are needed for two specific PISM features, namely earth deformation 
+and cell-area correction, and thus these libraries are recommended, but not strictly required: \bigskip
 
 \begin{center}
   \begin{tabular}{lll}
@@ -160,35 +160,40 @@ In addition, Python (\url{http://python.org/}) is needed both in the PETSc insta
   \end{tabular}
 \end{center}
 
+
 \section{Installation Cookbook}\label{sec:cookbook}
 
-\subsection{Installing PISM on a Debian-based Linux system} \label{subsec:debian}
+\subsection{Installing PISM's prerequisites on a Debian-based Linux system} \label{subsec:debian}
 
-\subsubsection{Installing PISM's prerequisites using a meta-package and building PISM from source}
+\subsubsection{Installing prerequisites using a single meta-package}
 \label{sec:deb-pism-toolkit}
 
 If you are using a Debian-based system such as Ubuntu, you can download and
 install the ``pism toolkit'' meta-package to make sure that all prerequisite
-tools and libraries\footnote{Except PETSc.} are installed. (You still need to
-build PISM from sources.)
-
-To use this route of installing PISM's prerequisites, download
+tools and libraries except PETSc are installed.  You will still need to
+build PISM itself from source code, but that's easy.  To use this route, download
 \texttt{pism-toolkit-FIXME.deb} from \url{http://www.pism-docs.org} and run
 \begin{verbatim}
 $ sudo dpkg -i pism-toolkit-FIXME.deb
 $ sudo apt-get -f install
 \end{verbatim}%$
-or double-click on the file and click ``Install''. Once this is done, see
-section \ref{sec:install-cmake} for configuration and compilation instructions.
+Or double-click on the file and click ``Install''.  Once done, see
+\ref{subsec:prereq-petsc} to install PETSc from source and then
+\ref{sec:install-cmake} for building PISM itself.
 
-\subsubsection{Installing PISM's prerequisites if a meta-package does not work}
+
+\subsubsection{Installing prerequisites if a meta-package does not work}
 \label{sec:deb-libraries-by-hand}
 
-If you need to compile PISM from sources and you can not use the meta-package
-described in the previous section, you can use your package manager to manually
-select packages PISM requires.
+If you cannot use the meta-package above then you can still use your
+package manager to manually select the packages PISM requires.
 
-Find and install (using \texttt{apt-get} or \texttt{synaptic}, for example) the following packages:
+In the following package list, note that \texttt{libopenmpi-dev} and
+\texttt{openmpi-bin} are not needed if you will configure PETSc with
+option \texttt{--download-mpich=1} or similar.
+
+Install (using \texttt{apt-get} or \texttt{synaptic}, for example) the following
+prerequisite packages:
 \begin{center}
   \begin{tabular*}{0.9\linewidth}{p{0.2\linewidth}p{0.7\linewidth}}
     \toprule
@@ -206,48 +211,45 @@ Find and install (using \texttt{apt-get} or \texttt{synaptic}, for example) the 
     \texttt{g++} & required to build PISM \\
     \texttt{git} & required to get PISM source code \\
     \texttt{cmake} & used to configure PISM \\
-    \texttt{cmake-curses-gui} & a text-based GUI for CMake \\
+    \texttt{cmake-curses-gui} & a text-based easy interface for CMake \\
     \texttt{python-dev} & (helps with scripts\dots perhaps not essential) \\
-    \texttt{ncview} & \\
+    \texttt{ncview} & view fields in NetCDF files \\
     \texttt{nco} & used in many pre-processing scripts \\
     \texttt{cdo} & used in some pre-processing scripts \\
     \bottomrule
   \end{tabular*}
 \end{center}
 
-Packages \texttt{libopenmpi-dev} and \texttt{openmpi-bin} are not needed if you
-will configure PETSc with \texttt{--download-mpich=1} or similar.
-
-See section \ref{sec:install-cmake} for configuration and compilation
-instructions and refer to the \emph{Getting Started} section of the
-\emph{User's Manual} once you are done.
+Once done, see \ref{subsec:prereq-petsc} to install PETSc from source and then
+\ref{sec:install-cmake} for building PISM itself.
 
 \vspace{0.3in}
 
-\subsection{Generic PISM installation, using PETSc source code}\label{subsec:generic}
 
-\subsubsection{Installing prerequisites}
+\subsection{Generic PISM installation from source code}\label{subsec:generic}
+
+\subsubsection{Installing prerequisites from source, excluding PETSc}
+\label{subsec:prereq-source}
 \renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
 \begin{enumerate}
 \item You will need a UNIX system with Internet access. A GNU/Linux environment
   will be easiest but other UNIX versions have been used successfully. Package
   management systems are useful for installing many of the tools listed in
   section \ref{sec:prerequisites}, \emph{but} an up-to-date PETSc distribution
-  may not be available in your system's package repositories. You will need
+  is not likely to be available in your system's package repositories. You will need
   \href{http://www.python.org/}{Python} and \href{http://git-scm.com/}{Git}
   installed, but these are included in all current Linux distributions. To use
   the (recommended) graphical output of PISM you will need an
   \href{http://www.x.org/}{X Windows server}.
 
-\item As PISM is currently under rapid development, we distribute it only as
-  compilable source code. On the other hand, there are several software
-  libraries needed by PISM. Therefore the ``header files'' for these libraries
-  are required for building PISM. In particular this means that the
+\item As PISM is currently under rapid development, we distribute it as
+  compilable source code.  Generally the ``header files'' for its prerequisite libraries
+  are required for building PISM.  In particular this means that the
   ``developer's versions'' of the libraries are needed if the libraries are
-  downloaded from package repositories like Debian.
+  downloaded from package repositories like Debian; see section \ref{sec:prerequisites}.
 
 \item PISM uses \href{http://www.unidata.ucar.edu/software/netcdf/}{NetCDF (=
-    \emph{network Common Data Form})}\index{NetCDF} for an input and output
+  \emph{network Common Data Form})}\index{NetCDF} as an input and output
   file format. If it is not already present, install it using the instructions
   at the web-page or using a package management system.
 
@@ -257,8 +259,8 @@ instructions and refer to the \emph{Getting Started} section of the
   present, install it using the instructions at the web-page or using a package
   management system.
 
-\item PISM optionally uses the \href{http://www.fftw.org/}{``FFTW'' library
-    (FFTW = \emph{Fastest Fourier Transform in the West})}\index{FFTW
+\item PISM optionally uses the \href{http://www.fftw.org/}{FFTW
+ (= \emph{Fastest Fourier Transform in the West}) library}\index{FFTW
     (\emph{Fastest Fourier Transform in the West})} in one approximation of the
   deformation of the solid earth (bed) under ice loads.\footnote{Bueler and
     others (2007). \emph{Fast computation of a viscoelastic deformable Earth
@@ -285,17 +287,20 @@ instructions and refer to the \emph{Getting Started} section of the
 
 \texttt{setenv PATH /home/user/mympi/bin:\$PATH}  \qquad (for \texttt{csh} or \texttt{tcsh} shell).
 
-\noindent Such a statement can, of course, appear in your \texttt{.bashrc},
-\texttt{.profile}, or \texttt{.cshrc} file so that there is no need to retype
+\noindent Such a statement can, of course, appear in your \texttt{.bashrc} (or
+\texttt{.profile} or \texttt{.cshrc}) file so that there is no need to retype
 it each time you use MPI.
 
-\medskip
-\begin{center}
-  \emph{From now on this manual will assume the use of} bash.
-\end{center}
+\end{enumerate}
+
+
+\subsubsection{Installing PETSc from source}
+\label{subsec:prereq-petsc}
+
+From no on, this manual assumes the use of the \texttt{bash} shell.
 \medskip
 
-\item PISM uses \href{http://www-unix.mcs.anl.gov/petsc/}{PETSc (=
+PISM uses \href{http://www-unix.mcs.anl.gov/petsc/}{PETSc (=
     \emph{Portable Extensible Toolkit for Scientific
       Computation})}.\index{PETSc (\emph{Portable Extensible Toolkit for
       Scientific computation})} Let's get this out of the way: note ``PETSc''
@@ -312,16 +317,11 @@ You should configure and build PETSc \emph{essentially} as described on the
 PETSc installation page, but it might be best to read the following comments on
 the PETSc configure and build process first:
 
-\renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
-\item Untar in your preferred location, but note PETSc should \emph{not} be
-  configured (next) using root privileges. Note that you will need to define
-  the environment variable \texttt{PETSC_DIR}\index{PETSC_DIR} before
-  configuring PETSc (next). For instance, once you have entered the PETSc
-  directory just untarred, \texttt{export PETSC_DIR=\$PWD}. (Or
-  \texttt{PETSC_DIR=`pwd`}. In this case, note the use of the backprime
-  (\emph{accent-grave}) character, and not the single apostrophe \texttt{'}.)
-
-\item When you run the configure script in the PETSc directory, the following
+\renewcommand{\labelenumi}{(\roman{enumi})}
+\begin{enumerate}
+\item Untar in your preferred location and enter the new PETSc directory.
+  Note PETSc should \emph{not} be configured using root privileges.
+  When you run the configure script the following
   options are recommended; note PISM uses shared libraries by
   default:\index{PETSC_ARCH}
 \begin{verbatim}
@@ -330,19 +330,23 @@ $  export PETSC_ARCH=linux-gnu-opt
 $  ./config/configure.py --with-shared-libraries --with-debugging=0
 \end{verbatim}
 
+Note that you need to define the environment variable
+\texttt{PETSC_DIR}\index{PETSC_DIR} \emph{before} running the configuration
+script.
+
 Turning off the inclusion of debugging code and symbols gives a significant speed improvement.
 
 Using shared libraries may be unwise on certain clusters, etc.; check with your system administrator.
 
-Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\texttt{--with-fortran=0} \texttt{--download-c-blas-lapack=1}'' to the other configure options.
+\item It is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\texttt{--with-fortran=0} \texttt{--download-c-blas-lapack=1}'' to the other configure options; note there is no use of Fortran in PISM.
 
-\item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \texttt{/home/user/mympi/}, one can point PETSc to it by adding the option \texttt{--with-mpi-dir=/home/user/mympi/}.  The path used in this option must have MPI executables \texttt{mpicxx} and \texttt{mpicc}, and either \texttt{mpiexec} or \texttt{mpirun}, in sub-directory \texttt{bin/} and MPI library files in sub-directory \texttt{lib/}.
+\item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \texttt{/home/user/mympi/}, one can point PETSc to it by adding the option ``\texttt{--with-mpi-dir=/home/user/mympi/}''.  The path used in this option must have MPI executables \texttt{mpicxx} and \texttt{mpicc}, and either \texttt{mpiexec} or \texttt{mpirun}, in sub-directory \texttt{bin/} and MPI library files in sub-directory \texttt{lib/}.
 
-\item On the other hand, it seems common that one needs to tell PETSc to download MPI\index{MPI (\emph{Message Passing Interface})} into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \texttt{configure.py} with option \texttt{--download-mpich=1}.
+\item On the other hand, it seems common that one needs to tell PETSc to download MPI\index{MPI (\emph{Message Passing Interface})} into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \texttt{configure.py} with option ``\texttt{--download-mpich=1}''.
 
 \item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \texttt{--with-batch=1}.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}.
 
-\item  Configuring PETSc takes many minutes even when everything goes smoothly.   A value for the environment variable \texttt{PETSC_ARCH} will be reported at the end of the configure process; take note of this value.  (Note that a previously installed PETSc can be reconfigured with a new \texttt{PETSC_ARCH} if necessary.)
+\item  Configuring PETSc takes at least a few minutes even when everything goes smoothly.   A value for the environment variable \texttt{PETSC_ARCH} will be reported at the end of the configure process; take note of this value.  A previously-installed PETSc can be reconfigured with an additional/new \texttt{PETSC_ARCH} if necessary.
 
 \item  After \texttt{configure.py} finishes, you will need to \texttt{make all test} in the PETSc directory and watch the result.  If the X Windows system is functional some example viewers will appear; as noted you will need the X header files for this to work.
 
@@ -352,8 +356,7 @@ export PETSC_DIR=/home/user/petsc-3.2-p7/
 export PETSC_ARCH=linux-gnu-opt
 export PATH=$PETSC_DIR/$PETSC_ARCH/bin/:$PATH
 \end{verbatim}
-\noindent could appear in one of those files.
-\end{enumerate}
+\noindent could appear in \texttt{.profile} or \texttt{.bashrc}.
 \end{enumerate}
 \medskip See the table in the section \ref{sec:prerequisites} for a summary of the dependencies on external libraries, including
 those mentioned so far.
@@ -362,7 +365,7 @@ those mentioned so far.
 \label{sec:install-cmake}
 At this point you have configured the environment which PISM needs.  You are ready to build PISM itself, which is a much quicker procedure!
 
-\begin{enumerate}\setcounter{enumi}{7}
+\begin{enumerate}
 \item Get the latest source\index{PISM!download source code} for PISM using the Git\index{Git} version control system:
 \begin{enumerate}
 \item \label{getPISMstep} Check the website \url{http://www.pism-docs.org/} for the latest version of PISM.
@@ -377,11 +380,11 @@ $  git clone git://github.com/pism/pism.git pism0.5
 
 \item Make sure that \texttt{PETSC_ARCH} and \texttt{PETSC_DIR} variables are set.
 
-\item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.}
+\item Build PISM:\footnote{Please report any problems you meet at these build stages by sending us the output: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.}
 \begin{verbatim}
 $  mkdir pism0.5/build
 $  cd pism0.5/build
-$  PISM_INSTALL_PREFIX=~/pism cmake ..
+$  PISM_INSTALL_PREFIX=~/pism cmake ..   # FIXME: is "pism0.5/" meant?
 $  make install
 \end{verbatim}
 
@@ -427,25 +430,25 @@ directory if you are not planning on re-compiling PISM.
 export PATH=~/pism/bin:$PATH
 \end{verbatim}
 
-\item See the \emph{Getting Started} section \emph{User's Manual} to continue.
+\item Now see the \emph{Getting Started} section of the \emph{User's Manual} to continue.
 \end{enumerate}
 
 \subsection{Installing PISM on a Cray XT system}
 \label{sec:cray}
 
-Installing PISM on a Cray XT system deserves a special mention for two reasons:
+Installing PISM on a Cray XT system deserves special mention for two reasons:
 \begin{itemize}
 \item Cray XT does not support dynamic libraries
-\item Cray XT uses non-standard locations for libraries and header files (which
-  is never a good thing)
+\item Cray XT uses non-standard locations for libraries and header files
 \end{itemize}
-
-Here is a description of a successful PISM installation on a Cray XT at the
-Danish Meteorological Institute.
+This describes a successful PISM installation on a Cray XT at the
+Danish Meteorological Institute:
 
 \begin{enumerate}
-\item Load appropriate modules. (You will need to set module versions; note
-  that PISM requires PETSc 3.2.)
+\item Load appropriate modules.  You will need to set module versions; note
+  that PISM requires PETSc 3.2.  Loading all the necessary modules allows
+  compilers to find headers and libraries even though the resulting CMake
+  configuration is invalid.
 \begin{verbatim}
 module swap PrgEnv-pgi PrgEnv-gnu
 
@@ -458,13 +461,13 @@ module load fftw{/x.y.z}
 module load netcdf{/x.y.z}
 module load petsc{/x.y.z}
 \end{verbatim}
-\item \href{http://www.gnu.org/software/gsl}{Download} and install GSL:
+\item Download GSL from \url{http://www.gnu.org/software/gsl}.  Install it:
 \begin{verbatim}
 configure --prefix=/your/choice && make && make install
 \end{verbatim}
   Make sure that GSL is compiled with GNU compilers, since it will be linked
   into PISM executables, which will be compiled with gnu compilers as well.
-\item \href{http://www.cmake.org}{Download} and install CMake:
+\item Download CMake from \url{http://www.cmake.org}.  Install it:
 \begin{verbatim}
 CC=/usr/bin/gcc CXX=/usr/bin/g++ configure --prefix=/your/choice
 make && make install
@@ -472,17 +475,20 @@ make && make install
   The reason for specifying \texttt{CC=/usr/bin/gcc} and \texttt{CXX=/usr/bin/g++} in
   configuring CMake is to use the base compilers instead of the programming
   environment specific to Cray XT systems of the frontend nodes, since building
-  pism is done on the frontend nodes.
+  PISM is done on the frontend nodes.
 \item Get PISM sources and create a build directory
 \begin{verbatim}
 git clone git://github.com/pism/pism.git
 mkdir pism/build
 cd pism/build
 \end{verbatim}
-\item Create a text file \texttt{pism_config.cmake} in the build directory you
-  created. It should contain the following.
-  (Replace \texttt{/some/path} with the GSL install location and
-  \texttt{/your/choice} with the directory you want to install PISM in.)
+\item Because CMake's configuration mechanism cannot locate libraries and headers
+automatically, because Cray doesn't use standard locations, we provide a
+CMake script which provides bogus locations, thereby fooling CMake, as follows.
+Create a text file \texttt{pism_config.cmake} in the build directory you
+created. It should contain the following, though with replacement of
+``\texttt{/some/path}'' with the GSL install location and
+``\texttt{/your/choice}'' with the desired PISM install directory.
 \begin{verbatim}
 set (CMAKE_C_COMPILER "cc" CACHE STRING "") 
 set (CMAKE_CXX_COMPILER "CC" CACHE STRING "")
@@ -519,12 +525,8 @@ make install
 \end{verbatim}
 \end{enumerate}
 
-CMake's configuration mechanism cannot locate libraries and headers
-automatically because Cray doesn't follow industry conventions, so we provide a
-CMake script (above) which provides bogus locations, fooling CMake.
 
-Loading all the necessary modules allows compilers to find headers and
-libraries even though the resulting CMake configuration is invalid.
+
 
 \subsection{Installing PISM on Mac OS X}  \label{subsec:macosx}
 
@@ -553,9 +555,8 @@ source /sw/bin/init.sh
 \end{verbatim}
 for Fink.
 
-\item Note that it is not necessary to install Python, as it is bundled with
-  the operating system (as are BLAS and LAPACK).
-
+\item It is not necessary to install Python, as it is bundled with
+  the operating system.  Same for BLAS and LAPACK.
   Some PISM scripts use SciPy. It is possible to install it using MacPorts;
   using \href{http://www.enthought.com/}{Enthought Python Distributions} is
   another option.
@@ -564,16 +565,17 @@ for Fink.
 \begin{verbatim}
 $  sudo port install netcdf ncview gsl fftw-3 libproj4 git-core cmake
 \end{verbatim}%$
-to install NetCDF, ncview, GSL, FFTW, PROJ.4, Git, and CMake.
 
 If you're using Fink, use the following command instead (\texttt{ncview} is only available in the unstable branch).
 \begin{verbatim}
 $  fink install netcdf gsl fftw3 proj git cmake
 \end{verbatim}
 
-\item At this point, all the PISM prerequisites except PETSc are installed. Download the latest PETSc tarball from the
-  \href{http://www.mcs.anl.gov/petsc/petsc-as/}{PETSc website}. Untar, then change to the directory just created.
-The next three commands completed the PETSc installation:
+\item At this point, all the PISM prerequisites except PETSc are installed.
+Download the latest PETSc tarball from the
+  \href{http://www.mcs.anl.gov/petsc/petsc-as/}{PETSc website}.
+Untar, then change to the directory just created.
+The next three commands complete the PETSc installation:
 \begin{verbatim}
 $  export PETSC_DIR=$PWD; export PETSC_ARCH=macosx;
 $  ./config/configure.py --download-mpich=1 --with-shared-libraries \
@@ -581,7 +583,7 @@ $  ./config/configure.py --download-mpich=1 --with-shared-libraries \
 $  make all test
 \end{verbatim}
 
-We are telling PETSc to download and build MPICH-2, because recent Mac OS X
+We are telling PETSc to download and build MPICH-2 because recent Mac OS X
 versions do not include Open MPI. (This works better than trying to install
 Open MPI or MPICH-2 via MacPorts.)
 
@@ -639,14 +641,14 @@ $ mpiexec -n 4 pismv -test G -y 200
 \end{verbatim}
 
   \noindent If you see some output and a final \texttt{Writing model state}
-  \texttt{to file 'verify.nc'} \texttt{... done} then PISM completed
+  \texttt{to file 'verify.nc'} then PISM completed
   successfully. At the end of this run you get measurements of the difference
   between the numerical result and the exact solution. See the \emph{User's
     Manual} for more on PISM verification.
 
   The above ``\texttt{-n 4}'' run should work even if there is only one actual
-  processor (core) on your machine, in which case MPI will just run multiple
-  processes on the one processor. This run will also produce a NetCDF output
+  processor (core) on your machine.  (In that case MPI will just run multiple
+  processes on the one processor.)  This run will also produce a NetCDF output
   file \texttt{verify.nc}, which can be read and viewed by NetCDF tools.
 
 \item Try an EISMINT II run using the PETSc viewers (under the X window system):
@@ -662,6 +664,9 @@ $ pisms -y 5000 -view_map thk,temppabase,csurf
 \begin{verbatim}
 $ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,csurf -display :0
 \end{verbatim}
+
+\noindent Also \texttt{-draw_pause 0.1} or similar may be needed if the figures
+are refreshing too fast.
 
 \item Run a basic suite of software tests: \footnote{Note that these tests use
     NCO and depend on Python packages \texttt{numpy} and
