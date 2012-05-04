@@ -172,9 +172,9 @@ If you are using a Debian-based system such as Ubuntu, you can download and
 install the ``pism toolkit'' meta-package to make sure that all prerequisite
 tools and libraries except PETSc are installed.  You will still need to
 build PISM itself from source code, but that's easy.  To use this route, download
-\texttt{pism-toolkit-FIXME.deb} from \url{http://www.pism-docs.org} and run
+\texttt{pism-toolkit_0.1-5_all.deb} from \url{http://www.pism-docs.org} and run
 \begin{verbatim}
-$ sudo dpkg -i pism-toolkit-FIXME.deb
+$ sudo dpkg -i pism-toolkit_0.1-5_all.deb
 $ sudo apt-get -f install
 \end{verbatim}%$
 Or double-click on the file and click ``Install''.  Once done, see
@@ -384,7 +384,7 @@ $  git clone git://github.com/pism/pism.git pism0.5
 \begin{verbatim}
 $  mkdir pism0.5/build
 $  cd pism0.5/build
-$  PISM_INSTALL_PREFIX=~/pism cmake ..   # FIXME: is "pism0.5/" meant?
+$  PISM_INSTALL_PREFIX=~/pism cmake ..
 $  make install
 \end{verbatim}
 
