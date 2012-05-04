@@ -12,8 +12,7 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
 
 \begin{table}[ht]
   \centering
-  \caption{Basic NetCDF input and output options}
-  \begin{tabular}{lp{0.6\linewidth}}
+ \begin{tabular}{lp{0.6\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -28,7 +27,8 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     \texttt{-ssa_floating_only} or \texttt{-ssa_sliding} run. \\
     \bottomrule
  \end{tabular}
- \label{tab:input-output-options}
+\caption{Basic NetCDF input and output options}
+\label{tab:input-output-options}
 \end{table}
 
 Table \ref{tab:stdout} gives a summary of PISM's options controlling
@@ -36,8 +36,7 @@ what is printed to the standard output.  This includes the \texttt{-help} and \t
 
 \begin{table}[ht]
   \centering
-  \caption{Options controlling PISM's standard output}
-  \begin{tabular}{lp{0.7\linewidth}}
+ \begin{tabular}{lp{0.7\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -53,7 +52,8 @@ what is printed to the standard output.  This includes the \texttt{-help} and \t
    \intextoption{version} &   Show version numbers of PETSc and of PISM.\\
    \bottomrule
   \end{tabular}
-  \label{tab:stdout}
+\caption{Options controlling PISM's standard output}
+\label{tab:stdout}
 \end{table}
 
 
@@ -121,8 +121,7 @@ PISM's signal handling.)
 
 \begin{table}[ht]
  \centering
-  \caption{Command-line options controlling saving scalar time-series}
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
+ \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
     \fileopt{ts_file} & Specifies the file to save to.\\
@@ -131,7 +130,8 @@ PISM's signal handling.)
     \intextoption{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
     \bottomrule
   \end{tabular}
- \label{tab:time-series-opts}
+\caption{Command-line options controlling saving scalar time-series}
+\label{tab:time-series-opts}
 \end{table}
 
 \begin{table}[ht]
@@ -164,8 +164,8 @@ PISM's signal handling.)
     \multicolumn{3}{c}{Continued in Table \ref{tab:time-series-2}}\\
     \bottomrule
   \end{tabular}
-  \caption{Scalar time-series supported by PISM, part 1}
- \label{tab:time-series-1}
+\caption{Scalar time-series supported by PISM, part 1}
+\label{tab:time-series-1}
 \end{table}
 
 \begin{table}[ht]
@@ -191,8 +191,8 @@ PISM's signal handling.)
     \texttt{surface_ice_flux} & \textsl{kg  / s} &  total over ice domain of top surface ice mass flux \\
     \bottomrule
   \end{tabular}
-  \caption{Scalar time-series supported by PISM, part 2}
- \label{tab:time-series-2}
+\caption{Scalar time-series supported by PISM, part 2}
+\label{tab:time-series-2}
 \end{table}
 
 
@@ -232,8 +232,7 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
 
 \begin{table}[ht]
  \centering
-  \caption{Command-line options controlling extra diagnostic output}
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
+ \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description}\\
     \midrule
     \fileopt{extra_file} & Specifies the file to save to; should be different from the output \texttt{o} file.\\
@@ -244,7 +243,8 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \intextoption{extra_append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \intextoption{extra_split} is set. \\
     \bottomrule
   \end{tabular}
- \label{tab:extras}
+\caption{Command-line options controlling extra diagnostic output}
+\label{tab:extras}
 \end{table}
 
 \begin{table}[ht]
@@ -267,8 +267,8 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{wvel_rel} & \textsl{m / year} &  vertical velocity of ice, relative to base of ice directly below \\
     \bottomrule
   \end{tabular}
-  \caption{3D diagnostic quantities}
-  \label{tab:three-d-diagnostics}
+\caption{3D diagnostic quantities}
+\label{tab:three-d-diagnostics}
 \end{table}
 
 \begin{table}[ht]
@@ -415,8 +415,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 
 \begin{table}[ht]
   \centering
-  \caption{Command-line options controlling saving snapshots of the model state.}
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
+ \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
     \fileopt{save_file} & Specifies the file to save to.\\
@@ -428,7 +427,8 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
     changes the ``size'' of the file (or files) written; the default is ``small''\\
     \bottomrule
   \end{tabular}
- \label{tab:snapshot-opts}
+\caption{Command-line options controlling saving snapshots of the model state.}
+\label{tab:snapshot-opts}
 \end{table}
 
 
@@ -437,13 +437,11 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 \optsection{Run-time diagnostic viewers}
 Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.  All the quantities listed in tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2} are available.  Additionally, a couple of diagnostic quantities are \emph{only} available as run-time viewers; these are shown in table \ref{tab:special-diag-viewers}.
 
-% FIXME: is this sentence right?:
 Note that (for performance and implementation reasons) map viewers
 are transposed.
 
 \begin{table}[ht]
-  \caption{Options controlling run-time diagnostic viewers}
-  \centering
+ \centering
   \begin{tabular}{p{0.4\linewidth}p{0.5\linewidth}}\toprule
     \small
     \textbf{Option} & \textbf{Description}\\
@@ -460,7 +458,8 @@ are transposed.
    \bottomrule
     \normalsize
   \end{tabular}
- \label{tab:diag-viewers}
+\caption{Options controlling run-time diagnostic viewers}
+\label{tab:diag-viewers}
 \end{table}
 The option \texttt{-view_map} shows map-plane views of 2D fields and surface
 and basal views of 3D fields (see tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}); for example:
@@ -481,8 +480,7 @@ This text file can be run as a script in \Matlab.  The linear system will be sto
 
 \begin{table}[ht]
   \centering
-  \caption{Special run-time-only diagnostic viewers}
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
+ \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \small
     \textbf{Variable name or an option} & \textbf{Description}\\\midrule
   \intextoption{ssa_view_nuh} & log base ten of \texttt{nuH}, only available
@@ -491,7 +489,8 @@ This text file can be run as a script in \Matlab.  The linear system will be sto
     \intextoption{ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Residual norm versus iteration number.\\\bottomrule
     \normalsize
   \end{tabular}
- \label{tab:special-diag-viewers}
+\caption{Special run-time-only diagnostic viewers}
+\label{tab:special-diag-viewers}
 \end{table}
 
 
@@ -589,7 +588,6 @@ See table \ref{tab:regridvar} for the regriddable variables using
 
 \begin{table}[ht]
   \centering
-  \caption{Regriddable variables.\index{regrid}  Use \texttt{-regrid_vars} with these names.}\label{tab:regridvar}
   \begin{tabular}{ll}\toprule
     \textbf{Name} & \textbf{Description}\\ \midrule
     \texttt{age} & age of ice\\
@@ -605,6 +603,8 @@ See table \ref{tab:regridvar} for the regriddable variables using
     \bottomrule
     \normalsize
   \end{tabular}
+\caption{Regriddable variables.\index{regrid}  Use \texttt{-regrid_vars} with these names.}
+\label{tab:regridvar}
 \end{table}
 
 Here is another example: suppose you have an output of a PISM run on a fairly
@@ -632,7 +632,6 @@ the first timestep.
 
 \begin{table}[ht]
 \centering
-\caption{Signalling running PISM processes.  ``\pid''~stands for list of all identifiers of the PISM processes.}\label{tab:signals}
 \begin{tabular}{llp{0.60\linewidth}}\toprule
 \textbf{Command} & \textbf{Signal} & \textbf{PISM behavior} \\
 \midrule
@@ -642,6 +641,8 @@ the first timestep.
 \texttt{kill -USR2} \pid & \texttt{SIGUSR2} & Just flush time-series output buffers.\index{signals!USR2} \\
 \bottomrule
 \end{tabular}
+\label{tab:signals}
+\caption{Signalling running PISM processes.  ``\pid''~stands for list of all identifiers of the PISM processes.}
 \end{table}
 
 Here is an example.  Suppose we start a long verification run in the
@@ -698,11 +699,22 @@ Now we explain what the rest of the flags line, namely
 
 ``\texttt{d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)}''
 
-\noindent might mean.  Note that the PISM time step is determined by an adaptive mechanism.  PISM does each step explicitly when numerically-approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection in conservation of energy and age evolution, requires such an adaptive time-stepping scheme \cite{BBL}.  The first character we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason'' flag.  See Table \ref{tab:adaptiveflag}; ``\texttt{d}'' means that the time step was limited by the diffusivity of SIA mass conservation.  We also see that there was a major time step of 1.08 model years divided into 2 substeps of about 0.54 years.  The \intextoption{skip} option sets the maximum number of such substeps, but the adaptive mechanism may choose to take fewer substeps to satisfy numerical stability criteria.
+\noindent might mean.  Note that the PISM time step is determined by an
+adaptive mechanism.  PISM does each step explicitly when
+numerically-approximating mass conservation in the map-plane.  This, and the
+modeling of horizontal advection in conservation of energy and age evolution,
+requires such an adaptive time-stepping scheme \cite{BBL}.  The first character
+we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason''
+flag.  See Table \ref{tab:adaptiveflag}; ``\texttt{d}'' means that the time
+step was limited by the diffusivity of SIA mass conservation.  We also see that
+there was a major time step of 1.08 model years divided into 2 substeps of
+about 0.54 years.  The \intextoption{skip} option enables this mechanism, while
+\intextoption{skip_max} sets the maximum number of such substeps. The adaptive
+mechanism may choose to take fewer substeps to satisfy numerical stability
+criteria, however.
 
 \begin{table}[ht]
 \centering
-\caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}\label{tab:adaptiveflag}
 \begin{tabular}{p{0.05\linewidth}p{0.9\linewidth}}\toprule
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \midrule
 \texttt{c} & three-dimensional CFL for temperature/age advection \cite{BBL} \\
@@ -715,12 +727,13 @@ Now we explain what the rest of the flags line, namely
 \bottomrule
 \normalsize
 \end{tabular}
+\label{tab:adaptiveflag}
+\caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}
 \end{table}
 
 \begin{table}[ht]
   \centering
-  \caption{Options controlling time-stepping}
-  \begin{tabular}{lp{0.7\linewidth}}
+ \begin{tabular}{lp{0.7\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -731,18 +744,20 @@ Now we explain what the rest of the flags line, namely
     for stability, but not longer.\\
     \txtopt{dt_force}{(years)} & The time step (in years) to take, overriding the
     adaptive scheme. \emph{Not recommended.}\\
-    \intextoption{skip} & Number of mass-balance steps, including SIA
+    \intextoption{skip} & Enables time-step skipping, see below. \\
+    \intextoption{skip_max} & Number of mass-balance steps, including SIA
     diffusivity updates, to perform before temperature, age, and SSA
     stress balance computations are done.  This is only effective if the time
     step is being limited by the diffusivity time step restriction associated
     to mass continuity using the SIA.  The maximum recommended value for
-    \texttt{-skip} is, unfortunately, dependent on the context.  The
+    \texttt{-skip_max} is, unfortunately, dependent on the context.  The
     temperature field should be updated when the surface changes significantly,
     and likewise the basal sliding velocity if it comes (as it should) from the
     SSA calculation.\\
     \bottomrule
   \end{tabular}
- \label{tab:time-stepping}
+\caption{Options controlling time-stepping}
+\label{tab:time-stepping}
 \end{table}
 
 \subsection{PETSC options for PISM users}\label{subsect:petscoptions}
@@ -779,9 +794,9 @@ $  mpiexec -n 8 ssa_testi -Mx 3 -My 769 -ssa_method fd
 
 \noindent fails to converge on a certain machine, but adding ``\verb|-ksp_rtol 1e-10|'' works fine.
 
-There is also the question of solver \emph{type}, using option \intextoption{ksp_type}.  Based on one processor evidence from \texttt{ssa_testi}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.  The default is \t{gmres}.
+There is also the question of solver \emph{type}, using option \intextoption{ksp_type}.  Based on one processor evidence from \texttt{ssa_testi}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \texttt{cg}, \texttt{bicg}, \texttt{gmres}, \texttt{bcgs}, \texttt{cgs}, \texttt{tfqmr}, \texttt{tcqmr}, and \texttt{cr}.  It appears \texttt{bicg}, \texttt{gmres}, \texttt{bcgs}, and \texttt{tfqmr}, at least, are all among the best.  The default is \texttt{gmres}.
 
-Actually the KSP uses preconditioning.  This aspect of the solve is critical for parallel scalability, but it gives results which are dependent on the number of processors.  The preconditioner type can be chosen with \intextoption{pc_type}. Several choices are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{ssa_testi} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).  The default (as set by PISM) is \t{bjacobi}.  To force no preconditioning, which removes processor-number-dependence of results but may make the solves fail, use \t{-pc_type none}.
+Actually the KSP uses preconditioning.  This aspect of the solve is critical for parallel scalability, but it gives results which are dependent on the number of processors.  The preconditioner type can be chosen with \intextoption{pc_type}. Several choices are possible, but for solving the ice stream and shelf equations we recommend only \texttt{bjacobi}, \texttt{ilu}, and \texttt{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{ssa_testi} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).  The default (as set by PISM) is \texttt{bjacobi}.  To force no preconditioning, which removes processor-number-dependence of results but may make the solves fail, use \texttt{-pc_type none}.
 
 
 \subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} In the \verb|test/| and \verb|util/| subdirectories of the PISM directory the user will find some python scripts and one Matlab script, listed in Table \ref{tab:scripts-overview}.  The python scripts are all documented at the \textsl{Packages} tab on the \href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser}.  The python scripts all take option \texttt{--help}.
@@ -790,8 +805,7 @@ Actually the KSP uses preconditioning.  This aspect of the solve is critical for
 
 \begin{table}[ht]
   \centering
-  \caption{Some scripts which help in using PISM.}
-  \begin{tabular}{p{0.35\linewidth}p{0.65\linewidth}}
+ \begin{tabular}{p{0.35\linewidth}p{0.65\linewidth}}
     \toprule
     \textbf{Script} & \textbf{Function(s)}\\
     \midrule
@@ -808,7 +822,8 @@ Actually the KSP uses preconditioning.  This aspect of the solve is critical for
     create a simple NetCDF file PISM can bootstrap from\index{bootstrapping!preparing data using MATLAB}\\
    \bottomrule
   \end{tabular}
- \label{tab:scripts-overview}
+\caption{Some scripts which help in using PISM.}
+\label{tab:scripts-overview}
 \end{table}
 
 \subsection{Using PISM for flow-line modeling}

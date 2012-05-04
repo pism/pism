@@ -234,10 +234,6 @@ Although it begins to expose the internals of PISM, we think it is also helpful 
 \newcommand{\nolist}[1]{[\emph{#1}] \vspace{0.1in}}
 
 \begin{table}[ht]
-\caption{Hierarchy of current and planned flow models in PISM, for the grounded
-  parts of ice sheets, from most to fewest simplifying assumptions \emph{and}
-  from least to greatest need for boundary data.  The \emph{italicized} models
-  are planned for future versions of PISM but are not implemented so far..}\label{tab:modelhierarchy} 
 \small\medskip
 \begin{tabular}{p{0.22\linewidth}p{0.40\linewidth}p{0.32\linewidth}}
 \toprule
@@ -253,6 +249,11 @@ Although it begins to expose the internals of PISM, we think it is also helpful 
 \bottomrule
 \end{tabular}
 \normalsize
+\label{tab:modelhierarchy}
+\caption{Hierarchy of current and planned flow models in PISM, for the grounded
+  parts of ice sheets, from most to fewest simplifying assumptions \emph{and}
+  from least to greatest need for boundary data.  The \emph{italicized} models
+  are planned for future versions of PISM but are not implemented so far..}
 \end{table}
 
 
@@ -289,9 +290,7 @@ Figure~\ref{fig:climate-inputs} illustrates that any PISM ice sheet model has an
 
 \begin{table}[h]
   \centering
-  \caption{Boundary conditions required by PISM's ice dynamics core; see figure
-  \ref{fig:climate-inputs}}
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}
+ \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}
     \toprule
     \textbf{Boundary} & \textbf{Necessary conditions}\\
     \midrule
@@ -300,7 +299,8 @@ Figure~\ref{fig:climate-inputs} illustrates that any PISM ice sheet model has an
     Ice shelf basal surface (\textcolor{blue}{blue})& Mass flux into the ocean and ice boundary temperature\\
    \bottomrule
   \end{tabular}
- \label{tab:ice-dynamics-bc}
+\caption{Boundary conditions required by PISM's ice dynamics core; see figure \ref{fig:climate-inputs}}
+\label{tab:ice-dynamics-bc}
 \end{table}
 
 Regarding the base of the ice, as described in section \ref{subsect:beddef} PISM also includes an optional bed deformation component approximating the movement of the Earth's crust and upper mantle in response to changing ice load.   Furthermore the temperature of the layer of bedrock in contact with grounded ice is included in the conservation of energy model.  In this sense everything below the black dashed line (i.e.~ice and bedrock) is ``owned'' by PISM.  This fact adds two more boundary interfaces for the ice dynamics core: sub-ice-shelf/ocean (shown in blue) and the bottom of the bedrock thermal layer (not shown).
@@ -319,13 +319,19 @@ inputs, promotes code reuse.  Moreover, it isolates the code that needs to be ch
 couple PISM to a climate model.
 
 Users wishing to customize PISM's climate inputs should see the \emph{PISM
-  Source Browser}, e.g.~at
-\url{\PISMBROWSERURL} and the documentation
-of \emph{PISMSurfaceModel}, \emph{PISMAtmosphereModel} and
-\emph{PISMOceanModel} therein.  Also, section \ref{sec:start} describes a
+  Source Browser} at
+\begin{quote}
+  \url{\PISMBROWSERURL}
+\end{quote}
+ and the documentation
+of \mbox{\emph{PISMSurfaceModel}}, \mbox{\emph{PISMAtmosphereModel}}, and
+\mbox{\emph{PISMOceanModel}} therein.  Also, section \ref{sec:start} describes a
 modeling example using a non-standard air temperature parameterization. Looking
-at the file \texttt{src/coupler/atmosphere/PAEismintGreenland.cc} may be a reasonable
-start.
+at the file
+\begin{quote}
+\texttt{src/coupler/atmosphere/PAEismintGreenland.cc}
+\end{quote}
+may be a reasonable start.
 
 Note that figure~\ref{fig:climate-inputs} includes an interface between the surface layer and the air (red dashed line).
 Unlike the ones listed in table~\ref{tab:ice-dynamics-bc}, this interface
@@ -386,11 +392,15 @@ $ pisms -eisII A -i foo.nc -y 100 -o bar.nc
 \end{verbatim}
 \smallskip
 
-Note that simplified-geometry experiments (section \ref{sec:simp}) and verification tests (section \ref{sec:verif}) do not need input files at all because they initialize from formulas in the source code.  They can be continued from saved model states using \texttt{-i}.  As in the above example, however, specifying the simplified geometry experiment or verification test \emph{is} necessary, so that the run can continue with the climate inputs for that experiment or test.  For example, based on the above \texttt{pisms} runs, it is valid to do ``\texttt{\$ pismr -i foo.nc -y 100 -o bar.nc ...}'' but the climate and other parameters us PISM default values, and thus are not (necessarily) the values specified in EISMINT II.
+Note that simplified-geometry experiments (section \ref{sec:simp}) and verification tests (section \ref{sec:verif}) do not need input files at all because they initialize from formulas in the source code.  They can be continued from saved model states using \texttt{-i}.  As in the above example, however, specifying the simplified geometry experiment or verification test \emph{is} necessary, so that the run can continue with the climate inputs for that experiment or test.  For example, based on the above \texttt{pisms} runs, it is valid to do
+\begin{verbatim}
+$ pismr -i foo.nc -y 100 -o bar.nc ...
+\end{verbatim}
+but the climate and other parameters use PISM default values, and thus are not (necessarily) the values specified in EISMINT II.
 
 As a technical but important note about saved states, a PISM run with \texttt{-ssa_floating_only} or \texttt{-ssa_sliding}
 also saves the last SSA velocities to the output file, in variables 
-\texttt{ubar_ssa} and \texttt{vbar_ssa}. The presence
+\texttt{u_ssa} and \texttt{v_ssa}. The presence
 of these velocities adds efficiency in restarting.  If you want a PISM restart to
 ignore these velocities use \texttt{-dontreadSSAvels}.
 
@@ -406,7 +416,7 @@ Note that variables have a \texttt{pism_intent}\index{PISM!\texttt{pism_intent} 
 Regarding the automatically produced time variable, which has a \texttt{units} attribute like \texttt{"years since 1-1-1"}, note that CF metadata conventions require using a reference date in the units string of a time (\texttt{t}) variable.  PISM completely ignores this reference date.
 
 
-\subsection{Bootstrapping} 
+\subsection{Bootstrapping}
 \optsection{Bootstrapping}
 \optseealso{Grid}
 

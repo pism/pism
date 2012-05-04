@@ -31,7 +31,7 @@ Obviously there is no actual clear distinction between the ``hard'' choices in t
 \subsection{Controlling basal strength}  \label{subsect:basestrength}
 \optsection{Basal strength and sliding}
 
-In the \t{-ssa_sliding} case of a SIA+SSA hybrid model, the determination of basal resistance comes in part from a stored basal till material property $\phi=$\texttt{tillphi}, the till friction angle \cite{Paterson}.  The actual strength value is a till yield stress $\tau_c$, which necessarily represents the strength of the aggregate material at the base of an ice sheet, a poorly observed mixture of liquid water, ice, and granular till.  The value of $\tau_c$ is determined in part by a basal water model and in part by $\phi$, using a Mohr-Coulomb criterion \cite[Chapter 8]{Paterson}, 
+In the \texttt{-ssa_sliding} case of a SIA+SSA hybrid model, the determination of basal resistance comes in part from a stored basal till material property $\phi=$\texttt{tillphi}, the till friction angle \cite{Paterson}.  The actual strength value is a till yield stress $\tau_c$, which necessarily represents the strength of the aggregate material at the base of an ice sheet, a poorly observed mixture of liquid water, ice, and granular till.  The value of $\tau_c$ is determined in part by a basal water model and in part by $\phi$, using a Mohr-Coulomb criterion \cite[Chapter 8]{Paterson}, 
 \begin{equation*}
    \tau_c = c_{0} + (\tan\phi)\,(\rho g H - p_w).
 \end{equation*}
@@ -39,8 +39,7 @@ Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of g
 
 \begin{table}
   \centering
-  \caption{Basal strength command-line options}
-  \begin{tabular}{lp{0.6\linewidth}}
+ \begin{tabular}{lp{0.6\linewidth}}
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
@@ -54,7 +53,8 @@ Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of g
     \intextoption{hold_tauc} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.
    \\\bottomrule
   \end{tabular}
- \label{tab:basal-strength}
+\caption{Basal strength command-line options}
+\label{tab:basal-strength}
 \end{table}
 
 Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=$\texttt{bwat}; see the next subsection.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.

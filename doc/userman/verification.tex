@@ -21,7 +21,6 @@ technical terms, \texttt{pismv} runs a derived class of the PISM base class.
 
 \begin{table}[ht]
 \centering
-\caption{Exact solutions for verification.}\label{tab:tests}
 \small
 \begin{tabular}{p{0.1\linewidth}p{0.4\linewidth}p{0.25\linewidth}p{0.15\linewidth}}\toprule
 \textbf{Test} & \textbf{Continuum model tested} & \textbf{Comments} & \textbf{Reference} \\ \midrule
@@ -40,11 +39,12 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREP] \\
 \bottomrule
 \normalsize
 \end{tabular}
+\label{tab:tests}
+\caption{Exact solutions for verification.}
 \end{table}
 
 \begin{table}[ht]
 \centering
-\caption{Canonical PISM \index{executables!\texttt{pismv}!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests-exec}
 \small
 \begin{tabular}{@{}llll}\toprule
 \textbf{Test} & \textbf{Example invocation}  \\ \midrule
@@ -63,12 +63,13 @@ L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\
 \bottomrule
 \normalsize
 \end{tabular}
+\label{tab:tests-exec}
+\caption{Canonical PISM \index{executables!\texttt{pismv}!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}
 \end{table}
 
 \begin{table}[ht]
   \centering
-  \caption{pismv command-line options}
-  \begin{tabular}{lp{0.7\linewidth}}
+ \begin{tabular}{lp{0.7\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -79,7 +80,8 @@ L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\
     approximation at all).
    \\\bottomrule
   \end{tabular}
- \label{tab:pismv-options}
+\caption{pismv command-line options}
+\label{tab:pismv-options}
 \end{table}
 
 Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.  Table \ref{tab:tests-exec} shows how to run each of them on a coarse grids.  Table \ref{tab:pismv-options} gives the special verification-related options of the \texttt{pismv} executable.
@@ -149,7 +151,7 @@ These figures \emph{do not} show outstanding rates of convergence, relative to t
 \begin{figure}[ht]
 \centering
 \includegraphics[width=5.0in,keepaspectratio=true]{test-I-errors}
-\caption{FIXME:  verification scripts need updating to reproduce this.  Numerical errors in horizontal velocities in test I, an ice stream. \t{maximum_u} and \t{average_u} are errors in scalar velocity (because of symmetries in test I).  See \cite{SchoofStream,BBssasliding}.}
+\caption{FIXME:  verification scripts need updating to reproduce this.  Numerical errors in horizontal velocities in test I, an ice stream. \texttt{maximum_u} and \texttt{average_u} are errors in scalar velocity (because of symmetries in test I).  See \cite{SchoofStream,BBssasliding}.}
 \label{fig:velerrsI}
 \end{figure}
 

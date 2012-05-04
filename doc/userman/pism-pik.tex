@@ -20,8 +20,7 @@ A summary of PISM options to turn on these PISM-PIK mechanisms is in Table \ref{
 
 \begin{table}[ht]
   \centering
-  \caption{Options which turn on PISM-PIK ice shelf front mechanisms.}
-  \begin{tabular}{lp{0.7\linewidth}}
+ \begin{tabular}{lp{0.7\linewidth}}
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
@@ -34,7 +33,8 @@ A summary of PISM options to turn on these PISM-PIK mechanisms is in Table \ref{
     \intextoption{pik} & equivalent to option combination ``\texttt{-cfbc -kill_icebergs -part_grid -part_redist}'' \\
     \bottomrule
  \end{tabular}
- \label{tab:pism-pik-part-grid}
+\caption{Options which turn on PISM-PIK ice shelf front mechanisms.}
+\label{tab:pism-pik-part-grid}
 \end{table}
 
 
@@ -69,7 +69,6 @@ Option \intextoption{ocean_kill} is based on the mask values at the beginning of
 
 \begin{table}[ht]
   \centering
-  \caption{Calving options}
   \begin{tabular}{lp{0.6\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
@@ -79,8 +78,9 @@ Option \intextoption{ocean_kill} is based on the mask values at the beginning of
     \intextoption{float_kill} & All floating ice is calved off immediately.\\
     \intextoption{ocean_kill} & All ice flowing into grid cells marked as \texttt{MASK_FLOATING_AT_TIME_0}, and satisfying the flotation criterion, is calved off. \\
     \bottomrule
- \end{tabular}
- \label{tab:calving}
+  \end{tabular}
+\caption{Calving options}
+\label{tab:calving}
 \end{table}
 
 
