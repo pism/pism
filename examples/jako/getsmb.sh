@@ -22,11 +22,11 @@ echo
 CLIMATEFILE=g5km_climate.nc
 echo "creating PISM-readable climate file $CLIMATEFILE from airtemp2m and smb in data file ..."
 ncks -O -v mapping,smb,airtemp2m $DATANAME $CLIMATEFILE
-ncrename -O -v airtemp2m,artm $CLIMATEFILE
-ncatted -O -a units,artm,a,c,"Celsius" $CLIMATEFILE
-ncap -O -s "acab=(1000.0/910.0)*smb" $CLIMATEFILE $CLIMATEFILE
-ncatted -O -a standard_name,acab,a,c,"land_ice_surface_specific_mass_balance" $CLIMATEFILE
-ncatted -O -a units,acab,a,c,"meters/year" $CLIMATEFILE
+ncrename -O -v airtemp2m,ice_surface_temp $CLIMATEFILE
+ncatted -O -a units,ice_surface_temp,a,c,"Celsius" $CLIMATEFILE
+ncap -O -s "climatic_mass_balance=(1000.0/910.0)*smb" $CLIMATEFILE $CLIMATEFILE
+ncatted -O -a standard_name,climatic_mass_balance,a,c,"land_ice_surface_specific_mass_balance" $CLIMATEFILE
+ncatted -O -a units,climatic_mass_balance,a,c,"meters/year" $CLIMATEFILE
 ncks -O -x -v smb $CLIMATEFILE $CLIMATEFILE
 echo "... done with creating climate file $CLIMATEFILE"
 echo
