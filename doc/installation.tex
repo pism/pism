@@ -388,6 +388,8 @@ $  PISM_INSTALL_PREFIX=~/pism cmake ..
 $  make install
 \end{verbatim}
 
+Here \texttt{pism0.5} is the directory containing PISM source code and \texttt{\textasciitilde/pism} is the directory PISM will be installed into. All the temporary files created during the build process will be in \texttt{pism0.5/build} created above.
+
 You might need to add \texttt{CC} and \texttt{CXX} to the \texttt{cmake}
 command:
 \begin{verbatim}
@@ -395,30 +397,27 @@ $  PISM_INSTALL_PREFIX=~/pism CC=mpicc CXX=mpicxx cmake ..
 \end{verbatim}
 Whether this is necessary or not depends on your MPI setup.
 
-This will configure PISM to be installed in \texttt{\textasciitilde/pism/bin},
+Commands above will configure PISM to be installed in \texttt{\textasciitilde/pism/bin},
 \texttt{\textasciitilde/pism/lib/pism} and
 \texttt{\textasciitilde/pism/share/doc}, then compile and install all its
 executables and scripts.
 
-If your operating system does not support shared libraries\footnote{This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.}, then set \texttt{BUILD_SHARED_LIBS} to ``OFF''. This can be done by
+If your operating system does not support shared libraries\footnote{This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.}, then set \texttt{Pism_LINK_STATICALLY} to ``ON''. This can be done by
 either running
 \begin{verbatim}
-$  cmake -DBUILD_SHARED_LIBS:BOOL=OFF ..
+$  cmake -DPism_LINK_STATICALLY:BOOL=ON ..
 \end{verbatim}%$
 or by using \texttt{ccmake}:\footnote{Install the \texttt{cmake-curses-gui} package to get \texttt{ccmake} on Ubuntu.} run
 \begin{verbatim}
 $  ccmake ..
 \end{verbatim}%$
-and then change \texttt{BUILD_SHARED_LIBS} (press 'c' (configure), then 'g' (generate makefiles))
+and then change \texttt{Pism_LINK_STATICALLY} (press 'c' (configure), then 'g' (generate makefiles))
 before \texttt{make install}.
 
-You might also need to set \texttt{Pism_LINK_STATICALLY} on systems that do not
-tolerate any compiler options related to shared libraries.
-
 Object files created during the build process (located in the \texttt{build}
-sub-directory) are not deleted after installing PISM, so do ``\texttt{make
-  clean}'' to delete these if space is an issue. You can also delete the build
-directory if you are not planning on re-compiling PISM.
+sub-directory) are not automatically deleted after installing PISM, so do ``\texttt{make
+  clean}'' if space is an issue. You can also delete the build
+directory altogether if you are not planning on re-compiling PISM.
 
 \item PISM executables can be run most easily by adding the \texttt{bin/}
   sub-directory in your selected install path
@@ -482,8 +481,8 @@ git clone git://github.com/pism/pism.git
 mkdir pism/build
 cd pism/build
 \end{verbatim}
-\item Because CMake's configuration mechanism cannot locate libraries and headers
-automatically, because Cray doesn't use standard locations, we provide a
+\item CMake's configuration mechanism cannot locate libraries and headers
+automatically because Cray doesn't use a standard directory structure, so we provide a
 CMake script which provides bogus locations, thereby fooling CMake, as follows.
 Create a text file \texttt{pism_config.cmake} in the build directory you
 created. It should contain the following, though with replacement of
@@ -557,16 +556,15 @@ for Fink.
 
 \item It is not necessary to install Python, as it is bundled with
   the operating system.  Same for BLAS and LAPACK.
-  Some PISM scripts use SciPy. It is possible to install it using MacPorts;
-  using \href{http://www.enthought.com/}{Enthought Python Distributions} is
-  another option.
+  Some PISM scripts use SciPy; it can be installed using MacPorts or 
+  by downloading the \href{http://www.enthought.com/}{Enthought Python Distributions}.
 
-\item  If you're using MacPorts, do
+\item  If you are using MacPorts, do
 \begin{verbatim}
 $  sudo port install netcdf ncview gsl fftw-3 libproj4 git-core cmake
 \end{verbatim}%$
 
-If you're using Fink, use the following command instead (\texttt{ncview} is only available in the unstable branch).
+Fink users should use the following command instead (\texttt{ncview} is only available in the unstable branch).
 \begin{verbatim}
 $  fink install netcdf gsl fftw3 proj git cmake
 \end{verbatim}
@@ -627,8 +625,7 @@ $  CC=mpicc CXX=mpicxx cmake path/to/pism-source
   \texttt{CMAKE_FIND_ROOT_PATH} in particular.
 \item Some systems support static libraries only. To build PISM statically and
   tell CMake not to try to link to shared libraries, set
-  \texttt{BUILD_SHARED_LIBS} to \texttt{OFF} and \texttt{Pism_LINK_STATICALLY}
-  to \texttt{ON} using \texttt{ccmake}.
+  \texttt{Pism_LINK_STATICALLY} to \texttt{ON} using \texttt{ccmake}.
 \end{itemize}
 
 \section{Quick tests of the installation}
