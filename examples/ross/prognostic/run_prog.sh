@@ -34,12 +34,15 @@ if [ $# -gt 4 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16" then ...
   ECALV="$5"
 fi
 
-cmd_diag="mpiexec -n $NN ../../../bin/pismr -boot_file Ross_combined_prog.nc -Mx $M -My $M \
+PISMPREFIX=""
+# PISMPREFIX="../../../bin/"
+
+cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file Ross_combined_prog.nc -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given -no_sia \
   -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_e $SSAE \
   -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx "
 
-cmd_prog="mpiexec -n $NN ../../../bin/pismr -i startfile_Mx${M}.nc \
+cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc \
   -surface given -no_sia -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_e ${SSAE} \
   -y ${YEARS} -o Mx${M}_year-000${YEARS}.nc -o_order zyx -o_size big \
   -eigen_calving -eigen_calving_K ${ECALV} -thickness_calving -calving_at_thickness 50.0 \
