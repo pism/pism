@@ -18,15 +18,6 @@ wget -nc ${URL}/$WHOLE
 echo "... done"
 echo
 
-# get file; see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
-DATAVERSION=1.1
-DATAURL=http://websrv.cs.umt.edu/isis/images/a/a5/
-DATANAME=Greenland_5km_v$DATAVERSION.nc
-echo "fetching 5km SeaRISE data file which contains surface mass balance ... "
-wget -nc ${DATAURL}${DATANAME}
-echo "  ... done"
-echo
-
 BCFILE=g5km_bc.nc
 echo "creating PISM-readable boundary conditions file $BCFILE"
 echo "   from whole ice sheet model result ..."
@@ -35,17 +26,4 @@ ncks -O -v u_ssa,v_ssa,bmelt,bwat,enthalpy $WHOLE $BCFILE
 ncrename -O -v u_ssa,u_ssa_bc -v v_ssa,v_ssa_bc $BCFILE
 echo "... done with creating bc file $BCFILE"
 echo
-
-CLIMATEFILE=g5km_climate.nc
-echo "creating PISM-readable climate file $CLIMATEFILE from airtemp2m and smb in data file ..."
-ncks -O -v mapping,smb,airtemp2m $DATANAME $CLIMATEFILE
-ncrename -O -v airtemp2m,artm $CLIMATEFILE
-ncatted -O -a units,artm,a,c,"Celsius" $CLIMATEFILE
-ncap -O -s "acab=(1000.0/910.0)*smb" $CLIMATEFILE $CLIMATEFILE
-ncatted -O -a standard_name,acab,a,c,"land_ice_surface_specific_mass_balance" $CLIMATEFILE
-ncatted -O -a units,acab,a,c,"meters/year" $CLIMATEFILE
-ncks -O -x -v smb $CLIMATEFILE $CLIMATEFILE
-echo "... done with creating climate file $CLIMATEFILE"
-echo
-
 
