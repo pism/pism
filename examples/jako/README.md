@@ -196,34 +196,48 @@ So now we do a basic run using 4 MPI processes:
 
     $ ./spinup.sh 4 208 143 >> out.spin3km &
 
-Please read the script, and/or watch the run while it gets going:
+Please read the script, and/or watch the run, while it runs:
 
     $ less spinup.sh
     $ less out.spin3km
 
-**Comments:** There are two runs, first a 1yr run with just SIA velocities,
-which sligin  FIXME:  maybe that's stupid
 
-FIXME FROM HERE
+Comments on the run
+---------
 
-The runs get Dirichlet BCs from `g5km_bc.nc`.  Specifically there
-is option `-no_model_strip 10` asking `pismo` to put a 10km strip around the
-computational domain wherein the thermodynamical spun-up variables
-(`enthalpy`,`bmelt`,`bwat`) are held fixed and used as boundary conditions for
-the conservation of energy model.  The boundary values for the sliding velocity
-(`u_ssa_bc`,`v_ssa_bc`) are also held fixed in the same strip.
+The run uses `-boot_file` on `jako.nc`.  A modestly-fine vertical
+grid (20 m spacing) is chosen.
 
-(<em>An alternative is to have the enthalpy not spun-up at all in the strip,
-which would happen if the first run 
-which then advects inward as an unrealistic temp.  The point for the SSA bc
-is that the alternative is to have zero velocity there while the velocity 
-tangent to the edge of the no_model strip, i.e. in westerly direction, is
-significantly nonzero(?).
+There is option `-no_model_strip 10` asking
+`pismo` to put a 10km strip around edge of the computational domain wherein
+some variables will be held fixed.  Specifically the thermodynamical spun-up
+variables `enthalpy`,`bmelt`,`bwat` from `g5km_bc.nc` are held fixed and used
+as boundary conditions for the conservation of energy model in the strip.
+Dirichlet boundary conditions `u_ssa_bc`,`v_ssa_bc` for the sliding stress
+balance (the SSA) are also read from the same file.
+
+(<em>An alternative is to have the enthalpy and other thermodynamical variables
+not spun-up at all in the strip, which would happen if options `-regrid_...`
+were not used. But the resulting not-very-realistic ice temperatures and ice
+softness/hardness is advected inward as ice with less realistic properties.
+An alternative for the SSA boundary conditions is to have zero velocity in the
+strip, but the velocity tangent to the north and south edges of the strip,
+i.e. in westerly direction, is significantly nonzero in fact.  Generally
+these regridding techniques are recommend for regional modeling.</em>)
+
+The calving front of the glacier is handled by the following options combination:
+`-ocean_kill -cfbc -kill_icebergs`.  This choice uses the present-day data to
+determine the location of the calving front (`-ocean_kill`) but then applies
+the PIK mechanisms for the stress-imbalance at the calving front (`-cfbc`) and
+uses `-kill_icebergs` to eliminate any stray floating pieces of ice for which
+stress balances are indeterminant (ill-posed).
 
 
 
 The model on the 1km grid
 -----------
 
-FIXME Thus here is a native 1km one year run: FIXME
+FIXME
+
+    $ ./century.sh 8 620 425 >> out.1km &
 

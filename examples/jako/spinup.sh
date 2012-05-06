@@ -10,7 +10,7 @@
 #       y = 425 ;
 #       x = 620 ;
 
-NN=4  # default number of processors
+NN=4     # default number of MPI processes
 if [ $# -gt 0 ] ; then  # if user says "spinup.sh 8" then NN=8
   NN="$1"
 fi
@@ -30,20 +30,18 @@ CLIMATEFILE=g5km_climate.nc
 BCFILE=g5km_bc.nc
 
 CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thk $BOOT"
+PHYS="-ocean_kill -cfbc -kill_icebergs -topg_to_phi 5.0,30.0,-300.0,700.0 -diffuse_bwat -thk_eff -ssa_sliding -plastic_pwfrac 0.95 -pseudo_plastic_q 0.15"
 SKIP=5
 
 LENGTH=2000   # model years
 EXDT=20    # 20 year between saves, thus 100 frames
 
-#cmd="mpiexec -n $NN pismo -i jako3km_y1.nc \
 cmd="mpiexec -n $NN pismo -boot_file $BOOT -no_model_strip 10 \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
-  -no_model_strip 10 -ocean_kill -cfbc -kill_icebergs \
-  -topg_to_phi 5.0,30.0,-300.0,700.0 -diffuse_bwat -thk_eff \
-  -ssa_sliding -plastic_pwfrac 0.95 -pseudo_plastic_q 0.15 \
+  -no_model_strip 10 $PHYS \
   -extra_file ex_jako3km_0.nc -extra_times -$LENGTH:$EXDT:0 \
   -extra_vars thk,cbase,bwp,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
-  -ts_file ts_jako3km_0.nc -ts_times -$FINALSPIN:yearly:0 \
+  -ts_file ts_jako3km_0.nc -ts_times -$LENGTH:yearly:0 \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars bmelt,bwat,enthalpy,vel_ssa_bc \
   $CLIMATE -ys -$LENGTH -ye 0 -skip -skip_max $SKIP -o jako3km_0.nc"
 echo "running:   $cmd"
