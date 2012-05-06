@@ -42,7 +42,7 @@ cmd="mpiexec -n $NN pismo -boot_file $BOOT -no_model_strip 10 \
   -extra_file ex_jako3km_0.nc -extra_times -$LENGTH:$EXDT:0 \
   -extra_vars thk,cbase,bwp,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
   -ts_file ts_jako3km_0.nc -ts_times -$LENGTH:yearly:0 \
-  -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars bmelt,bwat,enthalpy,vel_ssa_bc \
+  -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars bmelt,bwat,enthalpy,litho_temp,vel_ssa_bc \
   $CLIMATE -ys -$LENGTH -ye 0 -skip -skip_max $SKIP -o jako3km_0.nc"
 echo "running:   $cmd"
 $cmd
