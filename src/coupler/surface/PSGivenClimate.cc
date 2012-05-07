@@ -45,6 +45,11 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
   ierr = temp.init(filename); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);
 
+  // read time-independent data right away:
+  if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
+    ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
+  }
+
   return 0;
 }
 

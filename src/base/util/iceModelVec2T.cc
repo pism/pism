@@ -66,6 +66,10 @@ void IceModelVec2T::set_n_records(unsigned int my_N) {
   n_records = my_N;
 }
 
+unsigned int IceModelVec2T::get_n_records() {
+  return n_records;
+}
+
 PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, string my_short_name,
                                      bool local, int width) {
   PetscErrorCode ierr;
