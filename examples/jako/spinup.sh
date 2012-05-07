@@ -65,7 +65,7 @@ CLIMATEFILE=g5km_climate.nc
 BCFILE=g5km_bc.nc
 
 CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thk $BOOT"
-PHYS="-ocean_kill -cfbc -kill_icebergs -topg_to_phi 5.0,30.0,-300.0,700.0 -diffuse_bwat -thk_eff -ssa_sliding -plastic_pwfrac 0.95 -pseudo_plastic_q 0.15"
+PHYS="-ocean_kill -cfbc -kill_icebergs -topg_to_phi 5.0,30.0,-300.0,700.0 -diffuse_bwat -thk_eff -ssa_sliding -plastic_pwfrac 0.95 -pseudo_plastic -pseudo_plastic_q 0.25"
 SKIP=5
 
 LENGTH=2000   # model years
@@ -79,7 +79,6 @@ cmd="$PISM_MPIDO $NN $PISM -boot_file $BOOT -no_model_strip 10 \
   -ts_file ts_jako3km_0.nc -ts_times -$LENGTH:yearly:0 \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars bmelt,bwat,enthalpy,litho_temp,vel_ssa_bc \
   $CLIMATE -ys -$LENGTH -ye 0 -skip -skip_max $SKIP -o jako3km_0.nc"
-echo "running:   $cmd"
 $PISM_DO $cmd
 
 # NOTES:
