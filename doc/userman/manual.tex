@@ -405,6 +405,7 @@ of these velocities adds efficiency in restarting.  If you want a PISM restart t
 ignore these velocities use \texttt{-dontreadSSAvels}.
 
 \subsubsection*{\texttt{-i} file format}
+\label{sec:i-format}
 PISM produces\footnote{Or, more accurately, attempts to produce; please let us know about violations you come across.} CF-1.5 compliant NetCDF\index{PISM!NetCDF file format}\index{NetCDF} files.  The easiest way to learn the output format \emph{and} the \texttt{-i} format is to do a simple run and then look at the metadata in the resulting file, like this:
 \begin{verbatim}
 $ pisms -eisII A -y 10 -o foo.nc
@@ -417,6 +418,7 @@ Regarding the automatically produced time variable, which has a \texttt{units} a
 
 
 \subsection{Bootstrapping}
+\label{sec:bootstrapping}
 \optsection{Bootstrapping}
 \optseealso{Grid}
 
@@ -440,7 +442,9 @@ When using \fileopt{boot_file} you will need to specify both grid dimensions (us
 If \texttt{-Lx} and \texttt{-Ly} specify horizontal grid dimensions smaller than in the bootstrapping file, PISM will cut out the \emph{center} portion of the domain. Options \intextoption{x_range} and \intextoption{y_range} each take a list of two numbers, a list of minimum and maximum $x$ and $y$ coordinates, respectively (in meters). This makes it possible to select a subset that is not in the center of a bootstrapping file grid.
 
 \subsubsection*{\texttt{-boot_file} file format}
-\label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
+\label{sec:bootstrapping-format}
+
+Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
 \item NetCDF variables should have the \texttt{units} containing a
   UDUNITS-compatible string. If this attribute is missing, PISM will assume
