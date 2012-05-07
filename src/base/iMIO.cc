@@ -535,7 +535,12 @@ PetscErrorCode IceModel::initFromFile(string filename) {
     // Return if no regridding is requested:
     if (!regrid_file_set) return 0;
 
-    ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
+    if (dimensions != 0) {
+      ierr = verbPrintf(2, grid.com, "regridding %dD variables from file %s ...\n",
+                        dimensions, filename.c_str()); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
+    }
 
     set<string> vars;
     vector<string>::iterator j;
