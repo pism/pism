@@ -190,7 +190,7 @@ spin-up and we attempt to get an equilibrium 1km model.
 
 In the first stage we therefore work on an intermediate grid between the 1km
 goal and the 5km whole ice sheet state.  Quick calculations (round up on
-`620/3 + 1` and `425/3 + 1`) suggest `-Mx 208 -Mx 143` as a 3km grid for PISM.
+`620/3 + 1` and `425/3 + 1`) suggest `-Mx 208 -My 143` as a 3km grid for PISM.
 
 So now we do a basic run using 4 MPI processes:
 
