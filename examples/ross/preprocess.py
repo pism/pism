@@ -111,8 +111,8 @@ def preprocess_albmap():
     input_filename = "ALBMAPv1.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
-    smb_name = "acab"
-    temp_name = "artm"
+    smb_name = "climatic_mass_balance"
+    temp_name = "ice_surface_temp"
 
     commands = ["wget -nc %s" % url,                # download
                 "unzip -n %s.zip" % input_filename, # unpack
