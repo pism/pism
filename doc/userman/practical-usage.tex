@@ -71,12 +71,12 @@ It turns out that it is a lot faster to read and write files using the
 \texttt{t,z,y,x} order.
 
 The reason is that PISM uses the \texttt{x,y,z} order internally\footnote{This
-  is not likely to change.} and transposing an array stored in memory is an
-inherently computationally expensive operation, because it involves
-simultaneously accessing memory locations that are ``far away'' from each
-other.
+  is not likely to change.} and writing an array in a different order is an
+inherently expensive operation.
 
-You can choose one of the three supported output orders using the \intextoption{o_order} option with one of \texttt{xyz}, \texttt{yxz}, and \texttt{zyx} as the argument.
+You can choose one of the three supported output orders using the
+\intextoption{o_order} option with one of \texttt{xyz}, \texttt{yxz}, and
+\texttt{zyx} as the argument.
 
 To transpose dimensions in an existing file, use the \texttt{ncpdq} (``permute
 dimensions quickly'') tool from the NCO (\emph{NetCDF Operators}) suite.
@@ -88,10 +88,22 @@ $ ncpdq -a t,z,zb,y,x bad.nc good.nc
 to turn \texttt{bad.nc} (with an unspecified inconvenient storage order) into
 \texttt{good.nc} using the \texttt{t,z,y,x} order.
 
+PISM also supports NetCDF-4 parallel I/O, which gives better performance in
+high-resolution runs and avoids NetCDF-3 file format limitations. (In a
+NetCDF-3 file a variable record cannot exceed 4 gigabytes.) Build PISM with
+parallel NetCDF-4 and use \txtopt{o_format}{\texttt{netcdf4_parallel}} to
+enable this code.
 
-\subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
+In addition to \texttt{-o_format netcdf4_parallel} and \texttt{netcdf3}
+(default) modes, PISM can be built with PnetCDF for best I/O performance. The
+option \texttt{-o_format pnetcdf} turns ``on'' PnetCDF I/O code. (PnetCDF seems
+to be somewhat fragile, though, so use at your own risk.)
+
+\subsection{Saving time series of scalar diagnostic quantities}
+\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
 \optsection{Saving scalar time-series}
+
  It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \texttt{-ts_file}, \texttt{-ts_times}, and \texttt{-ts_vars}.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
@@ -99,7 +111,7 @@ $ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
 \end{verbatim} %$ just to make emacs happy
 will run for 10000 years, saving total ice volume and grounded ice area to \texttt{time-series.nc} \emph{yearly}. See tables \ref{tab:time-series-opts} for the list of options and \ref{tab:time-series-1}~and~\ref{tab:time-series-2} for the full list of supported time-series.
 
-Note that, similarly to the snapshot-saving code, this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
+Note that, similarly to the snapshot-saving code (section \ref{sec:snapshots}), this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
 
 Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} available variables, as listed in tables \ref{tab:time-series-1}~and~\ref{tab:time-series-2}.  Because scalar time-series take minimal storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
@@ -118,7 +130,9 @@ PISM's signal handling.)
     \midrule
     \fileopt{ts_file} & Specifies the file to save to.\\
     \timeopt{ts_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-    \listopt{ts_vars} & Comma-separated list of variables, see tables~\ref{tab:time-series-1}~and~\ref{tab:time-series-2}. Omitting this option is equivalent to listing the default variables.\\
+    \listopt{ts_vars} & Comma-separated list of variables, see
+    tables~\ref{tab:time-series-1}~and~\ref{tab:time-series-2}. Omitting this
+    option is equivalent to listing the \emph{all} variables.\\
     \intextoption{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
     \bottomrule
   \end{tabular}
@@ -132,9 +146,8 @@ Besides the above information on usage, here are comments on the physical signif
   \item Basic ice volume and area are computed and then split among floating and grounded portions: \texttt{ivol} $\mapsto$ (\texttt{ivolf}, \texttt{ivolg}) while \texttt{iarea} $\mapsto$ (\texttt{iareaf},\texttt{iareag}).
   \item Quantities which are used primarily for diagnosing thermodynamic state, namely amounts of cold or temperate (``\texttt{temp}'') ice, are reported both in absolute and relative terms.  The absolute quantities have units \textsl{$m^3$} for volumes and \textsl{$m^2$} for areas.  The relative quantities have suffix ``\texttt{f}'' for ``fraction'', and dimensionless units.  Here are the \{absolute,relative\} pairs: \texttt{iarea\{cold,coldf\}}, \texttt{iarea\{temp,tempf\}}, \texttt{ivol\{cold,coldf\}},  and \texttt{ivol\{temp,tempf\}}.
   \item If a PISM input file contains the \texttt{mapping} variable which has the
-\texttt{grid_mapping_name} attribute then PISM computes corrected cell areas
-using stored latitude and longitude fields and the WGS84 reference ellipsoid.
-This compute areas and volumes more accurately.
+\texttt{proj4} attribute containing a PROJ.4 string defining the projection then PISM computes corrected cell areas
+using this information, grid parameters, and the WGS84 reference ellipsoid. This compute areas and volumes more accurately.
   \item The sea-level-relevant ice volume \texttt{slvol} is the total grounded ice volume minus the amount of ice, that, in liquid form, would fill up the regions with bedrock below sea level, if this ice were removed.  That is, \texttt{slvol} is the sea level rise potential of the ice sheet at that time.  The result is reported  in sea-level equivalent, i.e.~meters of sea level rise.
   \item Fields \texttt{max_diffusivity} and \texttt{max_hor_vel} relate to PISM time-stepping, and they appear in per-time-step form in the standard output from PISM (i.e.~at default verbosity).  \texttt{max_diffusivity} determines the length of the mass continuity substeps for the SIA stress balance (sub-)model.  \texttt{max_hor_vel} determines the CFL-type restriction for mass continuity and conservation of energy contributions of the SSA stress balance (i.e.~sliding) velocity.
 \end{itemize}
@@ -189,7 +202,7 @@ This compute areas and volumes more accurately.
     \texttt{ivoltemp} & \textsl{$m^{3}$} &  total volume of temperate ice \\
     \texttt{ivoltempf} & \textsl{1} &  temperate ice volume fraction \\
     \texttt{max_diffusivity} & \textsl{$m^{2}$  / s} &  maximum diffusivity \\
-    \texttt{max_hor_vel} & \textsl{$m^{2}$  / s} &  maximum (absolute) component of horizontal ice velocity over the grid \\
+    \texttt{max_hor_vel} & \textsl{m  / s} &  maximum (absolute) component of horizontal ice velocity over the grid \\
     \texttt{nonneg_rule_flux} & \textsl{kg  / s} &  \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
     \texttt{ocean_kill_flux} & \textsl{kg  / s} &  \texttt{-ocean_kill} flux \\
     \texttt{slvol} & \textsl{m} &  total sea-level relevant ice \textbf{in sea-level equivalent} \\

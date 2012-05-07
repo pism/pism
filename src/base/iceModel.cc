@@ -79,7 +79,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   // frequently used physical constants and parameters:
   standard_gravity = config.get("standard_gravity");
 
-  global_attributes.set_string("Conventions", "CF-1.4");
+  global_attributes.set_string("Conventions", "CF-1.5");
   global_attributes.set_string("source", string("PISM ") + PISM_Revision);
 
   // Do not save snapshots by default:

@@ -88,6 +88,7 @@ The following command-line options control PISM time:
 \\[2em]
 \noindent The default value for the end year is the start year (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.
 
+Most of PISM (and its ice dynamics core in particular) only needs to know the length of the current time-step. This explains the unsophisticated interface described here. Careful application of climate data and model validation requires well-organized management of model time, though. Please see the \emph{PISM's climate forcing components} manual for an alternative, calendar-aware, time-management interface.
 
 \subsection{Diagnostic computations}
 \label{sec:diagnostic-computations}
@@ -122,11 +123,13 @@ The possible values of the \texttt{mask}\index{mask} are given in Table \ref{tab
  \small
   \begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}
     \toprule
-    \textbf{Mask value} & \textbf{Meaning}\\\midrule
-    1=\texttt{MASK_SHEET} & ice is grounded (and only the SIA is always applied) \\
-    2=\texttt{MASK_DRAGGING_SHEET} & ice is grounded (and the SSA is applied if option \texttt{-ssa} is given) \\
-    3=\texttt{MASK_FLOATING} & ice is floating (and the SSA is applied if option \texttt{-ssa} is given) \\
-    7=\texttt{MASK_FLOATING_AT_TIME_0} & same as \texttt{MASK_FLOATING}, but the grid point was ice free ocean at initialization of the model by \texttt{-boot_file}; ice with this value will calve off if option \texttt{-ocean_kill} is given.
+    \textbf{Mask value} & \textbf{Meaning}\\
+    \midrule
+    -1=\texttt{MASK_UNKNOWN} & not set, does not appear in PISM output files \\
+    0=\texttt{MASK_ICE_FREE_BEDROCK} & ice free bedrock \\
+    2=\texttt{MASK_GROUNDED}& ice is grounded (and only the SIA is always applied) \\
+    3=\texttt{MASK_FLOATING} & ice is floating (and the SSA is applied if one of \texttt{-ssa_sliding} or \texttt{-ssa_floating_only} is given) \\
+    4=\texttt{MASK_ICE_FREE_OCEAN} & ice-free ocean \\
     \\\bottomrule
   \end{tabular}
   \normalsize
@@ -134,8 +137,7 @@ The possible values of the \texttt{mask}\index{mask} are given in Table \ref{tab
   \caption{The PISM mask\index{mask}, in combination with user options, determines the dynamical model.}
 \end{table}
 
-Assuming the geometry of the ice evolves (which can be turned off by option \texttt{-no_mass}), and assuming an ocean exists (which can be turned off by option \texttt{-dry}), then at each time step the mask changes by the flotation criterion.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING}.  The latter case occurs if the option \texttt{-ssa_sliding} is used, while otherwise all points are marked \texttt{MASK_SHEET}.
-
+Assuming the geometry of the ice evolves (which can be turned off by option \texttt{-no_mass}), and assuming an ocean exists (which can be turned off by option \texttt{-dry}), then at each time step the mask changes by the flotation criterion.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is marked as \texttt{MASK_GROUNDED}.
 
 \subsection{Rheology}
 \label{sec:rheology}
@@ -145,7 +147,7 @@ In the polythermal (default) mode of PISM there is only one choice of the flow l
 
 Note that a ``flow law'' here means the function $F(\sigma,T,\omega,P,d)$ in the relation
 	$$\dot \eps_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'$$
-where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction in the ice, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$, so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size. For example, $F = A \sigma^{n-1}$ is the isothermal Glen law.. That is, we are addressing isotropic flow laws only.  In PISM one can choose the scalar function $F$ reasonably arbitrarily by modifying source code,\footnote{See source files \texttt{flowlaws.hh}, \texttt{flowlaws.cc} in \texttt{src/base/rheology/}.} or use the single polythermal law (above), or choose among a number of ``cold ice'' laws listed in table \ref{tab:flowlaw}.
+where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction in the ice, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$, so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size. For example, $F = A \sigma^{n-1}$ is the isothermal Glen law. That is, we are addressing isotropic flow laws only.  In PISM one can choose the scalar function $F$ reasonably arbitrarily by modifying source code,\footnote{See source files \texttt{flowlaws.hh}, \texttt{flowlaws.cc} in \texttt{src/base/rheology/}.} or use the single polythermal law (above), or choose among a number of ``cold ice'' laws listed in table \ref{tab:flowlaw}.
 
 Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
 	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,\omega,P,d)\,\dot \eps_{ij} $$
@@ -153,9 +155,9 @@ Here $\nu(\dot \eps,T,\omega,P,d)$ is the effective viscosity.
 
 The command-line options \intextoption{sia_e} and \intextoption{ssa_e} set flow enhancement factors for the SIA and SSA respectively. These options can be used with any flow law.  (The enhancement factor $e$ alters the SIA flow law to be ``$\dot \eps_{ij} = e\, F(\sigma,T,\omega,P,d)\, \sigma_{ij}'.$'')
 
-The command-line option \intextoption{flow_law} control the flow law in the \texttt{-cold} mode.  Arguments to \texttt{-flow_law} are in table \ref{tab:flowlaw} below.
+Command-line options \intextoption{sia_flow_law} and \intextoption{ssa_flow_law} control SIA and SSA the flow laws in the \texttt{-cold} mode.  Allowed arguments are listed in table \ref{tab:flowlaw} below.
 
-Flow law parameters such as ice softness can be changed using configuration parameters (see section \ref{sec:pism-defaults}) and the implementation of flow laws in the \emph{Source Code Browser}.
+Flow law parameters such as ice softness can be changed using configuration parameters (see section \ref{sec:pism-defaults} and the implementation of flow laws in the \emph{Source Code Browser}).
 
 \begin{table}[ht]
 \centering
@@ -184,7 +186,7 @@ The basic stress balance used for all grounded ice in PISM is the non-sliding, t
 
 The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance is used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}, as well as being the only stress balance which applies to floating ice.  For the SSA with ``plastic'' basal resistance, the locations of ice streams are determined as part of a free boundary problem identified by Schoof \cite{SchoofStream}.  Schoof's model describes emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA stress balance.  Schoof's model is one way to understand how PISM uses the SSA.
 
-We also assert that this SSA description of ice streams should be regarded as a preferred ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding laws}  It should be used instead of classical SIA sliding laws which make ice basal velocity a local function of the basal value of the driving stress, a quantity which can be quite different from the actual basal stress when there is sliding.  This combination of SIA+SSA is ``hybrid'' approximation of the Stokes model \cite{Winkelmannetal2011}.
+We also assert that this SSA description of ice streams should be regarded as a preferred ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding laws}  It should be used instead of classical SIA sliding laws which make ice basal velocity a local function of the basal value of the driving stress, a quantity which can be quite different from the actual basal stress when there is sliding.  This combination of SIA+SSA is a ``hybrid'' approximation of the Stokes model \cite{Winkelmannetal2011}.
 
 In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of the plastic till SSA as a sliding law.  At all grounded points a yield stress, or pseudo-yield-stress  in the case of power law sliding (subsection \ref{subsect:basestrength}), is computed from the amount of stored basal water and from a (generally) spatially-varying till strength.  The amount of stored basal water is thermodynamically determined.  See subsection \ref{subsect:basestrength}.  Table \ref{tab:stressbalchoice} describes the basic choice of stress balance, while Table \ref{tab:ssausage} describes additional controls on the manner of solution.
 
@@ -260,7 +262,7 @@ The option \txtopt{bed_def}{[none, iso, lc]} turns on bed deformation models.
 
 The first model \verb|-bed_def iso|, is instantaneous pointwise isostasy.  This model assumes that the bed at the starting time is in equilibrium with the load.  Then, as the ice geometry evolves, the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle, so its value is determined by setting the values of \verb|lithosphere_density| and \verb|ice_density| in the configuration file; see subsection \ref{sec:pism-defaults}.  For an example and verification, see Test H in Verification section. 
 
-The second model \verb|-bed_def lc| is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\index{People!Lingle, Craig} \index{People!Clark, J.} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite{Greve2001}.  It imposes  essentially no computational burden because the Fast Fourier Transform is used to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and it that uplift field is put in a NetCDF variable with standard name \verb|tendency_of_bedrock_altitude| in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
+The second model \verb|-bed_def lc| is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\index{People!Lingle, Craig} \index{People!Clark, J.} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite{Greve2001}.  It imposes  essentially no computational burden because the Fast Fourier Transform is used to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and if that uplift field is put in a NetCDF variable with standard name \verb|tendency_of_bedrock_altitude| in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
 
 Minimal example runs to compare these models:
 \begin{verbatim}
@@ -276,7 +278,13 @@ Test H in section \ref{sec:verif} can be used to reproduce the comparison done i
 \label{sec:turning-off}
 \optsection{Disabling PISM components}
 
-Major model components, unlike ``peripheral'' ones like bed deformation, do not need to be turned ``on'' explicitly.\footnote{It would be a hassle to ask for SIA computations every time you need them, for example.} However, in some cases it is useful to be able to disable particular components (during model spin-up, for example). Currently PISM has switches disabling the mass-continuity step (command-line option \intextoption{no_mass}), energy balance computation (option \intextoption{no_energy}) and polythermal energy balance computation: option \intextoption{cold} makes PISM use temperature instead of enthalpy in the energy balance code.
+Major model components, unlike ``peripheral'' ones like bed deformation, do not need to be turned ``on'' explicitly.\footnote{It would be a hassle to ask for SIA computations every time you need them, for example.} However, in some cases it is useful to be able to disable particular components (during model spin-up, for example). Currently PISM has the following switches:
+\begin{itemize}
+\item \intextoption{no_mass} disables the mass-continuity step
+\item \intextoption{no_energy} disables the energy balance computation
+\item \intextoption{cont} makes PISM use temperature instead of enthalpy in the energy balance code
+\item \intextoption{no_sia} disables the SIA stress balance computation (useful for ice-shelf modeling)
+\end{itemize}
 
 %%% Local Variables: 
 %%% mode: latex
