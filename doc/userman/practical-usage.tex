@@ -88,6 +88,7 @@ $ ncpdq -a t,z,zb,y,x bad.nc good.nc
 to turn \texttt{bad.nc} (with an unspecified inconvenient storage order) into
 \texttt{good.nc} using the \texttt{t,z,y,x} order.
 
+
 \subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
 \optsection{Saving scalar time-series}
@@ -100,18 +101,9 @@ will run for 10000 years, saving total ice volume and grounded ice area to \text
 
 Note that, similarly to the snapshot-saving code, this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
 
-Note also that for each variable named \dots\texttt{_flux}, positive values mean ice
-sheet mass gain.
-
-Omitting the \texttt{-ts_vars} option makes PISM save all available variables, as listed in tables \ref{tab:time-series-1}~and~\ref{tab:time-series-2}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
+Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} available variables, as listed in tables \ref{tab:time-series-1}~and~\ref{tab:time-series-2}.  Because scalar time-series take minimal storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
 If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-ts_append}.
-
-If a PISM input file contains the \texttt{mapping} variable which has the
-\texttt{grid_mapping_name} attribute, PISM computes corrected cell areas
-using stored latitude and longitude fields and the WGS84 reference ellipsoid.
-This allows us to compute areas and volumes (see tables \ref{tab:time-series-1}~and~\ref{tab:time-series-2})
-more accurately.
 
 PISM buffers time-series data and writes it at the end of the run, once 10000
 values are stored, or when and \texttt{-extra_file} is saved, whichever comes first. Sending an \texttt{USR1} (or
@@ -133,6 +125,19 @@ PISM's signal handling.)
 \caption{Command-line options controlling saving scalar time-series}
 \label{tab:time-series-opts}
 \end{table}
+
+Besides the above information on usage, here are comments on the physical significance of several scalar diagnostics which appear in tables \ref{tab:time-series-1}~and~\ref{tab:time-series-2}:\index{PISM!physical meaning of scalar diagnostics}
+\begin{itemize}
+  \item For each variable named \dots\texttt{_flux}, positive values mean ice sheet mass gain.
+  \item Basic ice volume and area are computed and then split among floating and grounded portions: \texttt{ivol} $\mapsto$ (\texttt{ivolf}, \texttt{ivolg}) while \texttt{iarea} $\mapsto$ (\texttt{iareaf},\texttt{iareag}).
+  \item Quantities which are used primarily for diagnosing thermodynamic state, namely amounts of cold or temperate (``\texttt{temp}'') ice, are reported both in absolute and relative terms.  The absolute quantities have units \textsl{$m^3$} for volumes and \textsl{$m^2$} for areas.  The relative quantities have suffix ``\texttt{f}'' for ``fraction'', and dimensionless units.  Here are the \{absolute,relative\} pairs: \texttt{iarea\{cold,coldf\}}, \texttt{iarea\{temp,tempf\}}, \texttt{ivol\{cold,coldf\}},  and \texttt{ivol\{temp,tempf\}}.
+  \item If a PISM input file contains the \texttt{mapping} variable which has the
+\texttt{grid_mapping_name} attribute then PISM computes corrected cell areas
+using stored latitude and longitude fields and the WGS84 reference ellipsoid.
+This compute areas and volumes more accurately.
+  \item The sea-level-relevant ice volume \texttt{slvol} is the total grounded ice volume minus the amount of ice, that, in liquid form, would fill up the regions with bedrock below sea level, if this ice were removed.  That is, \texttt{slvol} is the sea level rise potential of the ice sheet at that time.  The result is reported  in sea-level equivalent, i.e.~meters of sea level rise.
+  \item Fields \texttt{max_diffusivity} and \texttt{max_hor_vel} relate to PISM time-stepping, and they appear in per-time-step form in the standard output from PISM (i.e.~at default verbosity).  \texttt{max_diffusivity} determines the length of the mass continuity substeps for the SIA stress balance (sub-)model.  \texttt{max_hor_vel} determines the CFL-type restriction for mass continuity and conservation of energy contributions of the SSA stress balance (i.e.~sliding) velocity.
+\end{itemize}
 
 \begin{table}[ht]
   \centering
@@ -184,6 +189,7 @@ PISM's signal handling.)
     \texttt{ivoltemp} & \textsl{$m^{3}$} &  total volume of temperate ice \\
     \texttt{ivoltempf} & \textsl{1} &  temperate ice volume fraction \\
     \texttt{max_diffusivity} & \textsl{$m^{2}$  / s} &  maximum diffusivity \\
+    \texttt{max_hor_vel} & \textsl{$m^{2}$  / s} &  maximum (absolute) component of horizontal ice velocity over the grid \\
     \texttt{nonneg_rule_flux} & \textsl{kg  / s} &  \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
     \texttt{ocean_kill_flux} & \textsl{kg  / s} &  \texttt{-ocean_kill} flux \\
     \texttt{slvol} & \textsl{m} &  total sea-level relevant ice \textbf{in sea-level equivalent} \\
