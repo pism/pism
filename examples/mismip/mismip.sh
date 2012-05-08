@@ -45,6 +45,9 @@
 #                               (SM_??_A?.nc) before running PISM
 #     $ ./mismip.sh $N D SM     this *is* allowed
 
+# A sample command that seems to work (as of May 8, 2012):
+# ./solverSM.py -m 151 -e 1 -l a -s 1 -n SMthk_1a_M1_A1.nc
+# mpiexec -np 2 pisms -model 1 -mismip 1a -initials ABC -extras -ssa_method fd -cfbc -part_grid -ksp_rtol 1.0e-7 -step 1 -Mx 151 -Mz 15 -My 3 -regrid_file SMthk_1a_M1_A1.nc -regrid_vars thk
 
 NN=2               # set default number of processors here
 
@@ -94,11 +97,7 @@ set -e  # exit on error
 mpimismip()
 {
     # change this if "bin/pisms", etc.:
-    cmd="$MPIDO -np $1 pisms -model $2 -mismip $3 -initials $MYINITIALS -extras -ksp_rtol 1.0e-7 $4"
-
-    #FIXME: the next should work better but does not show big improvement; of course our
-    #  treatment of grounding line does not change with these PIK options
-    #cmd="$MPIDO -np $1 pisms -model $2 -mismip $3 -initials $MYINITIALS -extras -ssa_method fd -cfbc -part_grid -part_redist -ksp_rtol 1.0e-7 $4"
+    cmd="$MPIDO -np $1 pisms -model $2 -mismip $3 -initials $MYINITIALS -extras -ssa_method fd -cfbc -part_grid -ksp_rtol 1.0e-7 $4"
 
     if [ $SHOWONLY = 1 ] ; then
       echo "would try '$cmd'"
@@ -163,7 +162,7 @@ do
       regridstart="-regrid_file ${smncname} -regrid_vars thk"
       ### replace regridstart by empty string if we want to start w 10 m thickness
       #regridstart=
-      options="-step 1 ${SKIP} -Mx ${GRIDMX} -Mz 15 Lbz 0 -Mbz 1 -My 3 ${regridstart}"
+      options="-step 1 ${SKIP} -Mx ${GRIDMX} -Mz 15 -My 3 ${regridstart}"
       mpimismip $NN $MODEL $ES "$options"
       for STEP in 2 3 4 5 6 7 8 9
       do

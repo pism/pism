@@ -10,7 +10,6 @@ configure_file (../ice_bib.bib ice-bib.bib COPYONLY)
 set (latex_sources
   eismint-ross.tex
   getting-started.tex
-  hard-choices.tex
   manual.tex
   modeling-choices.tex
   pism-pik.tex

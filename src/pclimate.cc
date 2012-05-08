@@ -212,7 +212,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   if (shelfbasemassflux == NULL) { SETERRQ(com, 1, "shelfbasemassflux is not available"); }
 
   global_attrs.init("global_attributes", com, grid.rank);
-  global_attrs.set_string("Conventions", "CF-1.4");
+  global_attrs.set_string("Conventions", "CF-1.5");
   global_attrs.set_string("source", string("pclimate ") + PISM_Revision);
 
   // Create a string with space-separated command-line arguments:

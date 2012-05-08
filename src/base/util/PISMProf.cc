@@ -58,11 +58,7 @@ void PISMProf::set_grid_size(int n) {
 }
 
 
-#if PETSC_VERSION_MAJOR >= 3
 # define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
-#else
-# define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((event),(name),(cookie))
-#endif
 
 //! Create a profiling event.
 /*!

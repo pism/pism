@@ -82,7 +82,9 @@ PISM is a joint project between developers in the ice sheet modeling group at th
 \textbf{\underline{Constantine Khroulev}} & \begin{minipage}[t]{4in} source code primary author, input/output, software design, climate couplers, parallelization, testing, user support, most documentation, most bug fixes, regional tools \end{minipage} \\
 \textbf{Craig Lingle}\index{People!Lingle, Craig} & original modeling choices, earth deformation, modeled-it-before-you-did \\
 \textbf{Maria Martin} & SeaRISE-Antarctica, Antarctica processes \\
+\textbf{Mattias Mengel} & marine ice sheet processes \\
 \textbf{David Maxwell} & inversion, SSA finite elements, python bindings \\
+\textbf{Ward van Pelt} & hydrology analysis and design \\
 \textbf{Nathan Shemonski} & EISMINT-Greenland example \\
 \textbf{Ricarda Winkelmann} & Antarctica processes, coupling, and modeling  \\
 \textbf{Florian Ziemen} & bug fixes, sliding \\
@@ -116,10 +118,10 @@ The NASA Modeling, Analysis, and Prediction program\index{Organizations!NASA!Mod
 
 Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and computations.  Bob Bindshadler, Sophie Nowicki, Jesse Johnson, and others in the SeaRISE group have assisted PISM development in many ways.  
 
-Thanks to the many PISM users around the world, including
+Thanks for comments/questions from many PISM users around the world, including
 
 \begin{quote}
-Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Marijke Habermann, Tore Hattermann, Marianne Madsen, Malou Maris, Art Mahoney, Kent Overstreet, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Ward van Pelt, Martin Truffer, Shuting Yang, Ryan Woodard
+Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Tore Hattermann, Marianne Madsen, Malou Maris, Art Mahoney, Kent Overstreet, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Martin Truffer, Shuting Yang, Ryan Woodard
 \end{quote}
 
 \noindent for helpful comments and questions on PISM and this \emph{Manual}.
@@ -405,7 +407,8 @@ of these velocities adds efficiency in restarting.  If you want a PISM restart t
 ignore these velocities use \texttt{-dontreadSSAvels}.
 
 \subsubsection*{\texttt{-i} file format}
-PISM produces\footnote{Or, more accurately, attempts to produce; please let us know about violations you come across.} CF-1.4 compliant NetCDF\index{PISM!NetCDF file format}\index{NetCDF} files.  The easiest way to learn the output format \emph{and} the \texttt{-i} format is to do a simple run and then look at the metadata in the resulting file, like this:
+\label{sec:i-format}
+PISM produces\footnote{Or, more accurately, attempts to produce; please let us know about violations you come across.} CF-1.5 compliant NetCDF\index{PISM!NetCDF file format}\index{NetCDF} files.  The easiest way to learn the output format \emph{and} the \texttt{-i} format is to do a simple run and then look at the metadata in the resulting file, like this:
 \begin{verbatim}
 $ pisms -eisII A -y 10 -o foo.nc
 $ ncdump -h foo.nc | less
@@ -413,10 +416,11 @@ $ ncdump -h foo.nc | less
 
 Note that variables have a \texttt{pism_intent}\index{PISM!\texttt{pism_intent} attribute} attribute.  When that attribute is \texttt{diagnostic}, the variable can be deleted from the file without affecting whether PISM can use it as a \texttt{-i} input file.  Variables with \texttt{pism_intent} = \texttt{model_state}, by contrast, must be present for use with \texttt{-i}.
 
-Regarding the automatically produced time variable, which has a \texttt{units} attribute like \texttt{"years since 1-1-1"}, note that CF metadata conventions require using a reference date in the units string of a time (\texttt{t}) variable.  PISM completely ignores this reference date.
+Regarding the automatically produced time variable, which has a \texttt{units} attribute like \texttt{"seconds since 1-1-1"}, note that CF metadata conventions require using a reference date in the units string of a time (\texttt{time}) variable. By default PISM ignores this reference date.
 
 
 \subsection{Bootstrapping}
+\label{sec:bootstrapping}
 \optsection{Bootstrapping}
 \optseealso{Grid}
 
@@ -437,8 +441,12 @@ The heuristics used by PISM are, for now, only documented in the source code fil
 
 When using \fileopt{boot_file} you will need to specify both grid dimensions (using \texttt{-Mx}, \texttt{-My} and \texttt{-Mz}) and the height of the computational box for the ice with \texttt{-Lz}.  The data read from the file can determine the horizontal extent of the model, if options \texttt{-Lx}, \texttt{-Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} \emph{when bootstrapping with} \texttt{-boot_file} is an error.
 
+If \texttt{-Lx} and \texttt{-Ly} specify horizontal grid dimensions smaller than in the bootstrapping file, PISM will cut out the \emph{center} portion of the domain. Options \intextoption{x_range} and \intextoption{y_range} each take a list of two numbers, a list of minimum and maximum $x$ and $y$ coordinates, respectively (in meters). This makes it possible to select a subset that is not in the center of a bootstrapping file grid.
+
 \subsubsection*{\texttt{-boot_file} file format}
-\label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
+\label{sec:bootstrapping-format}
+
+Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
 \item NetCDF variables should have the \texttt{units} containing a
   UDUNITS-compatible string. If this attribute is missing, PISM will assume
@@ -469,9 +477,6 @@ When using \fileopt{boot_file} you will need to specify both grid dimensions (us
 
 \clearpage\newpage
 \input{modeling-choices.tex}
-
-\clearpage\newpage
-\input{hard-choices.tex}
 
 \clearpage\newpage
 \input{pism-pik.tex}

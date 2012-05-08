@@ -26,7 +26,7 @@ Changes since 0.4 (around June 1, 2011) (in no particular order, need to be orga
 	* Implemented -tauc_to_phi
 	* Updated and improved modeling examples
 	* Removed pgrn
-	* Removed EISMINT-Ross
+	* Removed EISMINT-Ross (and the pross executable)	
 	* Inverse modeling tools (not part of the release)
 
 

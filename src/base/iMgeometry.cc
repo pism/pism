@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -65,8 +65,8 @@ PetscErrorCode IceModel::update_mask() {
   GeometryCalculator gc(sea_level, config);
   MaskQuery mask(vMask);
 
-  ierr =    vH.begin_access();    CHKERRQ(ierr);
-  ierr =  vbed.begin_access();  CHKERRQ(ierr);
+  ierr =    vH.begin_access(); CHKERRQ(ierr);
+  ierr =  vbed.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   PetscInt GHOSTS = 2;
