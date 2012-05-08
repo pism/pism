@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     SSATestCasePlug testcase(com,rank,size,config,glen_n);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report(); CHKERRQ(ierr);
+    ierr = testcase.report("plug"); CHKERRQ(ierr);
     ierr = testcase.write(output_file); CHKERRQ(ierr);
   }
 

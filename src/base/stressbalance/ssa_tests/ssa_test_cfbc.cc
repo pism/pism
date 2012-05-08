@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
     SSATestCaseCFBC testcase(com,rank,size,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report(); CHKERRQ(ierr);
+    ierr = testcase.report("CFBC"); CHKERRQ(ierr);
     ierr = testcase.write(output_file);
   }
 

@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     SSATestCaseConst testcase(com,rank,size,config,basal_q);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report(); CHKERRQ(ierr);
+    ierr = testcase.report("const"); CHKERRQ(ierr);
     ierr = testcase.write(output_file); CHKERRQ(ierr);
   }
 
