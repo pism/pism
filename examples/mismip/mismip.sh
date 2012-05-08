@@ -94,11 +94,7 @@ set -e  # exit on error
 mpimismip()
 {
     # change this if "bin/pisms", etc.:
-    cmd="$MPIDO -np $1 pisms -model $2 -mismip $3 -initials $MYINITIALS -extras -ksp_rtol 1.0e-7 $4"
-
-    #FIXME: the next should work better but does not show big improvement; of course our
-    #  treatment of grounding line does not change with these PIK options
-    #cmd="$MPIDO -np $1 pisms -model $2 -mismip $3 -initials $MYINITIALS -extras -ssa_method fd -cfbc -part_grid -part_redist -ksp_rtol 1.0e-7 $4"
+    cmd="$MPIDO -np $1 pisms -model $2 -mismip $3 -initials $MYINITIALS -extras -ssa_method fd -cfbc -part_grid -ksp_rtol 1.0e-7 $4"
 
     if [ $SHOWONLY = 1 ] ; then
       echo "would try '$cmd'"

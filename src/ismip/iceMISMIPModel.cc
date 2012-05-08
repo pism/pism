@@ -535,11 +535,7 @@ PetscErrorCode IceMISMIPModel::misc_setup() {
   strcpy(tfilename,mprefix);
   strcat(tfilename,"_t");
   ierr = PetscViewerASCIIOpen(grid.com, tfilename, &tviewfile); CHKERRQ(ierr);
-#if PETSC_VERSION_MAJOR >= 3
   ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_DEFAULT); CHKERRQ(ierr);
-#else
-  ierr = PetscViewerSetFormat(tviewfile, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-#endif
 
   return 0;
 }
@@ -731,11 +727,8 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
   PetscErrorCode ierr;
   PetscViewer  view;
   ierr = PetscViewerASCIIOpen(grid.com, filename, &view); CHKERRQ(ierr);
-#if PETSC_VERSION_MAJOR >= 3
   ierr = PetscViewerSetFormat(view, PETSC_VIEWER_DEFAULT); CHKERRQ(ierr);
-#else
-  ierr = PetscViewerSetFormat(view, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
-#endif
+  ierr = PetscViewerASCIISynchronizedAllow(view, PETSC_TRUE); CHKERRQ(ierr);
   // just get all Vecs which might be needed
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vh.begin_access(); CHKERRQ(ierr);
@@ -746,8 +739,8 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
   } else {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       const PetscScalar
-        ifrom0 = static_cast<PetscScalar>(i)
-                                 - static_cast<PetscScalar>(grid.Mx - 1)/2.0,
+        ifrom0 = (static_cast<PetscScalar>(i)
+                  - static_cast<PetscScalar>(grid.Mx - 1)/2.0),
         x = grid.dx * ifrom0;
       if (x >= 0) {
         if (mismiptype == 's') {
