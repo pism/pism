@@ -56,8 +56,8 @@ E & \texttt{pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000}  \\
 F & \texttt{pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000}  \\
 G & \texttt{pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000}  \\
 H & \texttt{pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso} \\
-I & FIXME: use .py \texttt{ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11 } \\
-J & FIXME: use .py \texttt{ssa_testj -ssa_method fd -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12} \\
+I & \texttt{ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11 } \\ % FIXME: use .py 
+J & \texttt{ssa_testj -ssa_method fd -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12} \\ % FIXME: use .py 
 K & \texttt{pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000} \\
 L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\
 \bottomrule
@@ -151,11 +151,9 @@ These figures \emph{do not} show outstanding rates of convergence, relative to t
 \begin{figure}[ht]
 \centering
 \includegraphics[width=5.0in,keepaspectratio=true]{test-I-errors}
-\caption{FIXME:  verification scripts need updating to reproduce this.  Numerical errors in horizontal velocities in test I, an ice stream. \texttt{maximum_u} and \texttt{average_u} are errors in scalar velocity (because of symmetries in test I).  See \cite{SchoofStream,BBssasliding}.}
+\caption{Numerical errors in horizontal velocities in test I, an ice stream. See \cite{SchoofStream,BBssasliding}.}
 \label{fig:velerrsI}
 \end{figure}
-
-
 
 %%% Local Variables: 
 %%% mode: latex

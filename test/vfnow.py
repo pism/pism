@@ -293,7 +293,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     I.path = "(lots of levels)"
     I.My   = [51, 101, 151, 201, 401, 601, 801, 1001, 1501, 2001, 2501, 3073]
     I.Mx   = [5] * len(I.My)
-    I.opts = "-ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
+    I.opts = "-ssa_method fd -ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['I_userman'] = I
 
     return tests
