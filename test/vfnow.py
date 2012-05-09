@@ -330,7 +330,7 @@ try:
     elif opt in ("-l", "--levels"):
         levels = int(arg)
     elif opt in ("-t", "--tests"):
-        test_names = arg.upper()
+        test_names = arg.split(',')
     elif opt in ("-u", "--uneq"):
         extra_options += " -z_spacing quadratic"
     elif opt in ("-e", "--eta"):
@@ -347,6 +347,7 @@ try:
   -p,--prefix=  path prefix to pismv executable
   -r,--report_file=  name of the NetCDF error report file
   -t,--tests=   verification tests to use: A,B,C,D,E,F,G,H,I,J,K,L,M,O
+                specify a comma-separated list
   -u            use unequal spaced (quadratic) vertical spacing
   --userman     run tests necessary to produce figures in the User's Manual
   --debug       do not run PISM, just print commands
