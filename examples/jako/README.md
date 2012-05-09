@@ -116,11 +116,8 @@ can look at the result with `ncview`:
 
     $ ncview -minmax all jakomask.nc
 
-
-Re-creating the region mask if needed
--------------
-
-For repeatability the rest of this **README.md** assumes a particular
+**Re-creating the region mask if needed:** For repeatability the rest
+of this `README.md` assumes a particular
 choice of region.  That is, you can skip the GUI usage above and run
 
     $ python pism_regional.py -i gr1km.nc -o jakomask.nc -x 360,382 -y 1135,1176 -b 50
@@ -201,10 +198,7 @@ Please read the script, and/or watch the run, while it runs:
     $ less spinup.sh
     $ less out.spin3km
 
-
-Comments on the run
----------
-
+**Comments on the run:**
 The run uses `-boot_file` on `jako.nc`.  A modestly-fine vertical
 grid (20 m spacing) is chosen.
 
