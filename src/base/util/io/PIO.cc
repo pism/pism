@@ -762,8 +762,28 @@ PetscErrorCode PIO::get_att_double(string var_name, string att_name,
                                    vector<double> &result) const {
 
   PetscErrorCode ierr;
+  PISM_IO_Type att_type;
+  // virtual int inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const = 0;
 
-  ierr = nc->get_att_double(var_name, att_name, result); CHKERRQ(ierr);
+  ierr = nc->inq_atttype(var_name, att_name, att_type); CHKERRQ(ierr);
+
+  // Give an understandable error message if a string attribute was found when
+  // a number (or a list of numbers) was expected. (We've seen datasets with
+  // "valid_min" stored as a string...)
+  if (att_type == PISM_CHAR) {
+    string tmp;
+    ierr = nc->get_att_text(var_name, att_name, tmp); CHKERRQ(ierr);
+
+    PetscPrintf(com,
+                "PISM ERROR: attribute %s:%s in %s is a string (\"%s\");"
+                " expected a number (or a list of numbers).\n",
+                var_name.c_str(), att_name.c_str(), nc->get_filename().c_str(), tmp.c_str());
+    PISMEnd();
+  } else {
+    // In this case att_type might be PISM_NAT (if an attribute does not
+    // exist), but get_att_double can handle that.
+    ierr = nc->get_att_double(var_name, att_name, result); CHKERRQ(ierr);
+  }
 
   return 0;
 }

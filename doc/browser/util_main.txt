@@ -15,8 +15,8 @@ key classes include:
 - IceModelVec2S, IceModelVec2Stag, IceModelVec2V, and IceModelVec3
 - PISMComponent, PISMComponent_Diag and PISMComponent_TS
 - Timeseries
-- NCTool
-- PISMIO
+- PISMNCFile
+- PIO
 
 The following pages describe some important infrastructure concepts and techniques:
 
@@ -28,7 +28,7 @@ The following pages describe some important infrastructure concepts and techniqu
 - \ref pismio_overview "Reading and writing gridded data (PISMIO)"
 
 <i>
-Copyright (C) 2008-2011 the PISM authors.  
+Copyright (C) 2008-2012 the PISM authors.  
 
 This document is part of PISM. PISM is free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License as published

@@ -864,7 +864,13 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, PISM_IO_Type
 
     // In NetCDF 3.6.x nc_type is an enum; in 4.x it is 'typedef int'.
     nc_type nctype;
-    stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &nctype); check(stat);
+    stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &nctype);
+    if (stat == NC_ENOTATT) {
+      tmp = NC_NAT;
+    } else {
+      check(stat);
+    }
+
     tmp = static_cast<int>(nctype);
   }
   MPI_Barrier(com);

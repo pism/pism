@@ -48,9 +48,9 @@ metadata:
 \li IceModelVec2S -- scalar 2D fields
 \li IceModelVec2V -- vector 2D fields (such as horizontal velocities;
 corresponds to 2 NetCDF variables)
-\li IceModelVec2Mask -- 2D masks, such as the grounded/floating mask
+\li IceModelVec2Int -- 2D masks, such as the grounded/floating mask
+\li IceModelVec2T -- 2D time-dependent fields (used to read and store forcing data)
 \li IceModelVec3 -- scalar 3D fields (within the ice)
-\li IceModelVec3Bedrock -- scalar 3D fields within the bedrock thermal layer
 
 Please see the documentation of these classes for more info.  The base class
 IceModelVec is a virtual class, so code should use the above derived classes.

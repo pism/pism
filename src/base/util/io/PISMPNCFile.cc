@@ -472,6 +472,11 @@ int PISMPNCFile::inq_atttype(string variable_name, string att_name, PISM_IO_Type
   }
 
   stat = ncmpi_inq_atttype(ncid, varid, att_name.c_str(), &tmp); check(stat);
+  if (stat == NC_ENOTATT) {
+    tmp = NC_NAT;
+  } else {
+    check(stat);
+  }
 
   result = nc_type_to_pism_type(tmp);
 
