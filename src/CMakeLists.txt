@@ -124,6 +124,7 @@ add_library (pismbase
   base/basal_strength/PISMMohrCoulombYieldStress.cc
   base/basal_strength/PISMConstantYieldStress.cc
   base/basal_strength/basal_resistance.cc
+  base/basal_strength/MISMIPBasalResistanceLaw.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 

@@ -20,9 +20,7 @@
 #define __iceMISMIPModel_hh
 
 #include <petscvec.h>
-#include "basal_resistance.hh"
 #include "iceModel.hh"
-
 
 struct routineStatsType {
   PetscScalar ig,		// index corresponding to the grounding line
@@ -124,23 +122,6 @@ private:
 
   PetscErrorCode calving();
   PetscErrorCode writeMISMIPasciiFile(const char mismiptype, char* filename);
-};
-
-class MISMIPBasalResistanceLaw : public IceBasalResistancePlasticLaw
-{
-public:
-  MISMIPBasalResistanceLaw(PetscReal m, PetscReal c, PetscReal r)
-    : IceBasalResistancePlasticLaw(1, false, 1, 0)
-  {
-    m_MISMIP = m; // power
-    C_MISMIP = c; // Pa m^(−1/3) s^(1/3)
-    regularize_MISMIP = r;
-  }
-  virtual ~MISMIPBasalResistanceLaw() {}
-  virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
-  virtual PetscScalar drag(PetscScalar tauc,
-                           PetscScalar vx, PetscScalar vy);
-  PetscReal m_MISMIP, C_MISMIP, regularize_MISMIP;
 };
 
 #endif  // __iceMISMIPModel_hh
