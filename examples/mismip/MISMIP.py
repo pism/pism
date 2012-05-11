@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import numpy as np
-from scipy.integrate import odeint
 
 """This module contains MISMIP constants and parameters, as well as functions
 computing theoretical steady state profiles corresponding to various MISMIP
@@ -190,15 +189,78 @@ def x_g(experiment, step, theta=0.0):
         grad = (F(x + delta_x) - f) / delta_x
         dx = -f / grad
         x = x + dx
-    print "x_g = %.3f km" % (x / 1.e3)
 
     return x
 
-# def thickness(experiment, step, theta=0.0, x_grid):
-#     xg = x_g(experiment, step, theta)
+def thickness(experiment, step, x, theta=0.0):
+    """Compute ice thickness for x > 0.
+    """
+    # compute the grounding line position
+    xg = x_g(experiment, step, theta)
 
-#     def surface(h, x):
-#         b_x = b_slope(experiment, x)
-#         rho_g = rho_i() * g()
-#         s = a() * np.abs(x)
-#         return b_x - (C(experiment) / rho_g) * s**m(experiment) / h**(m(experiment) + 1)
+    def surface(h, x):
+        b_x = b_slope(experiment, x)
+        rho_g = rho_i() * g()
+        s = a() * np.abs(x)
+        return b_x - (C(experiment) / rho_g) * s**m(experiment) / h**(m(experiment) + 1)
+
+    # extract the grounded part of the grid
+    x_grounded = x[x < xg]
+
+    # We will integrate from the grounding line inland. odeint requires that
+    # the first point in x_grid be the one corresponding to the initial
+    # condition; append it and reverse the order.
+    x_grid = np.append(xg, x_grounded[::-1])
+
+    # use thickness at the grounding line as the initial condition
+    h_f = b(experiment, xg) * rho_w() / rho_i()
+
+    import scipy.integrate
+    thk_grounded = scipy.integrate.odeint(surface, [h_f], x_grid, atol=1.e-9, rtol=1.e-9)
+
+    # now 'result' contains thickness in reverse order, including the grounding
+    # line point (which is not on the grid); discard it and reverse the order.
+    thk_grounded = np.squeeze(thk_grounded)[:0:-1]
+
+    # extract the floating part of the grid
+    x_floating = x[x >= xg]
+
+    # compute the flux through the grounding line
+    q_0 = a() * xg
+
+    # Calculate ice thickness for shelf from van der Veen (1986)
+    r = rho_i() / rho_w()
+    rho_g = rho_i() * g()
+    numer = h_f * (q_0 + a() * (x_floating - xg))
+    base = q_0**(n() + 1) + h_f**(n() + 1) * ((1 - r) * rho_g / 4)**n() * A(experiment, step) \
+           * ((q_0 + a() * (x_floating - xg))**(n() + 1) - q_0**(n() + 1)) / a()
+    thk_floating = numer / (base**(1.0 / (n() + 1)));
+
+    return np.r_[thk_grounded, thk_floating]
+
+
+if __name__ == "__main__":
+    from pylab import figure, hold, plot, xlabel, ylabel, title, show
+
+    experiment = "1a"
+    step = 1
+
+    xg = x_g(experiment, step)
+
+    x = np.linspace(0, L(), N(2) + 1)
+    thk = thickness(experiment, step, x)
+    x_grounded, thk_grounded = x[x < xg],  thk[x < xg]
+    x_floating, thk_floating = x[x >= xg], thk[x >= xg]
+
+    figure(1)
+    hold(True)
+    plot(x/1e3, np.zeros_like(x), ls='dotted', color='red')
+    plot(x/1e3, -b(experiment, x), color='black')
+    plot(x/1e3, np.r_[thk_grounded - b(experiment, x_grounded),
+                      thk_floating * (1 - rho_i()/rho_w())],
+         color='blue')
+    plot(x_floating/1e3, -thk_floating * (rho_i()/rho_w()), color='blue')
+    xlabel('distance from the summit, km')
+    ylabel('elevation, m')
+    title("MISMIP experiment %s, step %d" % (experiment, step))
+    show()
