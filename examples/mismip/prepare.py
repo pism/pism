@@ -59,8 +59,8 @@ def thickness(experiment, step, x, calving_front=1600e3, semianalytical_profile=
 
     return np.tile(thk, (3, 1))
 
-def create_pism_bootstrap_file(filename, experiment, step, mode,
-                               calving_front=1600e3, N=None, semianalytical_profile=True):
+def pism_bootstrap_file(filename, experiment, step, mode,
+                        calving_front=1600e3, N=None, semianalytical_profile=True):
     import PISMNC
 
     xx = x(mode, N)
@@ -143,12 +143,12 @@ if __name__ == "__main__":
     print "Creating MISMIP setup for experiment %s, step %s, grid mode %d in %s..." % (
         opts.experiment, opts.step, opts.mode, output_filename)
 
-    create_pism_bootstrap_file(output_filename,
-                               opts.experiment,
-                               opts.step,
-                               opts.mode,
-                               calving_front=opts.calving_front,
-                               N=opts.N,
-                               semianalytical_profile=opts.semianalytical_profile)
+    pism_bootstrap_file(output_filename,
+                        opts.experiment,
+                        opts.step,
+                        opts.mode,
+                        calving_front=opts.calving_front,
+                        N=opts.N,
+                        semianalytical_profile=opts.semianalytical_profile)
 
     print "done."
