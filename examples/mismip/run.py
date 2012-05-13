@@ -12,7 +12,7 @@ except:
     from netCDF3 import Dataset as NC
 
 # The "standard" preamble used in many PISM scripts:
-preamble = """
+preamble = '''
 #!/bin/bash
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
@@ -60,138 +60,262 @@ else
   PISM_PREFIX=""    # just a guess
   echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX"
 fi
-"""
-# " this double-quote makes emacs happier
+'''
 
-def physics_options(experiment, step, mode, model=1):
-    config_filename = "MISMIP_conf_%s_A%s.nc" % (experiment, step)
-
-    config(config_filename, experiment, step)
-
-    options = ["-cold",                 # allow selecting cold-mode flow laws
-               "-flow_law isothermal_glen", # isothermal setup
-               "-no_energy",                # isothermal setup
-               "-ssa_sliding",              # use SSA
-               "-mismip_sliding",           # turn "on" the MISMIP sliding law
-               "-ocean_kill",               # calving at the present front
-               "-gradient eta", # default method seems to produce artefacts at the grounding line
-               "-peridicity y", # periodic in the cross-flow direction
-               "-config_override %s" % config_filename,
-               "-ssa_method fd",       # use the FD solver that includes the following
-               "-cfbc",                # calving front boundary conditions
-               "-part_grid",           # sub-grid front motion parameterization
-               "-ksp_rtol 1e-7",
-               "-config_override %s" % config_filename,
-               "-ys 0",
-               "-ye 3e4",
-               ]
-
-    if model == 1:
-        options.extend(["-no_sia"])
-
-    if mode in (2, 3):
-        options.extend(["-skip", "-skip_max 10"])
-
-    return options
-
-def config(filename, experiment, step):
-    """Generates a config file containing flags and parameters
-    for a particular experiment and step.
-
-    This takes care of flags and parameters that *cannot* be set using
-    command-line options. (We try to use command-line options whenever we can.)
-    """
-
-    nc = NC(filename, 'w')
-
-    var = nc.createVariable("pism_overrides", 'i')
-
-    attrs = {"is_dry_simulation" : "no",
-             "include_bmr_in_continuity" : "no",
-             "compute_surf_grad_inward_ssa" : "no",
-             "surface_gradient_method" : "eta",
-             "default_till_phi" : 0.0,
-             "ice_softness" : MISMIP.A(experiment, step),
-             "ice_density" : MISMIP.rho_i(),
-             "sea_water_density" : MISMIP.rho_w(),
-             "bootstrapping_geothermal_flux_value_no_var" : 0.0,
-             "Glen_exponent" : MISMIP.n(),
-             "standard_gravity": MISMIP.g(),
-             "ocean_sub_shelf_heat_flux_into_ice" : 0.0,
-             "MISMIP_C" : MISMIP.C(experiment),
-             "MISMIP_m": MISMIP.m(experiment) }
-
-    for name, value in attrs.iteritems():
-        var.setncattr(name, value)
-
-    nc.close()
-
-def bootstrap_options(experiment, step, mode, semianalytical=True, Mz=41):
-    Mx = MISMIP.N(mode) + 1
+class Experiment:
+    "A MISMIP experiment."
+    experiment = ""
+    mode = 1
+    model = 1
+    semianalytic = True
+    Mx = 151
     My = 3
+    Mz = 15
+    initials = "ABC"
+    executable = "$PISM_DO $PISM_MPIDO $NN ${PISM_PREFIX}pismr"
 
-    if experiment == "2b":
-        Lz = 7000
-    else:
-        Lz = 6000
+    def __init__(self, experiment, model=1, mode=1, Mx=None, Mz=15, semianalytic=True,
+                 initials="ABC", executable=None):
+        self.model = model
+        self.mode = mode
+        self.experiment = experiment
+        self.initials = initials
+        self.semianalytic = semianalytic
 
-    boot_filename = "MISMIP_boot_%s_M%s_A%s.nc" % (experiment, mode, step)
+        if executable:
+            self.executable = executable
 
-    import prepare
-    prepare.pism_bootstrap_file(boot_filename, experiment, step, mode,
-                                semianalytical_profile=semianalytical)
+        if mode == 3:
+            self.Mx = Mx
+        else:
+            self.Mx = 2 * MISMIP.N(self.mode) + 1
 
-    options = ["-boot_file %s" % boot_filename,
-               "-Mx %d" % Mx,
-               "-My %d" % My,
-               "-Mz %d" % Mz,
-               "-Lz %d" % Lz]
+        self.My = 3
 
-    return options
+        if self.experiment == "2b":
+            self.Lz = 7000
+        else:
+            self.Lz = 6000
 
 
-def output_filename(experiment, step, mode, model, initials):
-    return "%s%s_%s_M%s_A%s.nc" % (initials, model, experiment, mode, step)
+    def physics_options(self, step):
+        "Options corresponding to modeling choices."
+        config_filename = self.config(step)
 
-def options(experiment, step, mode, Mz=41, model=1, initials="ABC", semianalytical=True):
-    """Generates a string of PISM options corresponding to a MISMIP experiment."""
+        options = ["-mismip_sliding",
+                   "-cold",                 # allow selecting cold-mode flow laws
+                   "-flow_law isothermal_glen", # isothermal setup
+                   "-no_energy",                # isothermal setup
+                   "-ssa_sliding",              # use SSA
+                   "-mismip_sliding",           # turn "on" the MISMIP sliding law
+                   "-ocean_kill",               # calving at the present front
+                   "-gradient eta", # default method seems to produce artefacts at the grounding line
+                   "-peridicity y", # periodic in the cross-flow direction
+                   "-config_override %s" % config_filename,
+                   "-ssa_method fd",       # use the FD solver that includes PIK improvements
+                   "-cfbc",                # calving front boundary conditions
+                   "-part_grid",           # sub-grid front motion parameterization
+                   "-ksp_rtol 1e-7",
+                   "-ys 0",
+                   ]
 
-    input_file = output_filename(experiment, step-1, mode, model, initials)
-    output_file = output_filename(experiment, step, mode, model, initials)
-    extra_file = "ex_" + output_file
+        if self.experiment in ('3a', '3b'):
+            options.extend(["-ye %f" % MISMIP.time_interval(self.experiment, step)])
+        else:
+            options.extend(["-ye 3e4"])
 
-    if step == 1:
-        input_options = bootstrap_options(experiment, step, mode, semianalytical, Mz)
-    else:
-        input_options = ["-i %s" % input_file]
+        if self.model == 1:
+            options.extend(["-no_sia"])
+        else:
+            options.extend(["-sia"])
 
-    output_options = ["-extra_file %s" % extra_file,
-                      "-extra_times 0:50:3e4",
-                      "-extra_vars thk,topg,cbar,velbar,mask",
-                      "-o %s" % output_file,
-                      "-o_order zyx",
-                      ]
+        if self.mode in (2, 3):
+            options.extend(["-skip", "-skip_max 10"])
 
-    physics = physics_options(experiment, step, mode, model)
+        return options
 
-    options = input_options + physics + output_options
+    def config(self, step):
+        '''Generates a config file containing flags and parameters
+        for a particular experiment and step.
 
-    return options
+        This takes care of flags and parameters that *cannot* be set using
+        command-line options. (We try to use command-line options whenever we can.)
+        '''
 
-def run_experiment(experiment, min_step=1, max_step=15, initials="ABC"):
-    print 'echo "# Experiment %s"' % experiment
-    for step in range(min_step, max_step + 1):
-        print 'echo "# Step %s-%s"' % (experiment, step)
+        filename = "MISMIP_conf_%s_A%s.nc" % (self.experiment, step)
 
-        print ( "$PISM_DO $PISM_MPIDO $NN ${PISM_PREFIX}pismr " +
-                ' '.join(options(experiment, step, 2, model=1, initials=initials)) )
-        print "echo\n"
+        nc = NC(filename, 'w')
 
-def do_mismip(initials):
+        var = nc.createVariable("pism_overrides", 'i')
+        secpera = 3.15569259747e7
+        attrs = {"is_dry_simulation" : "no",
+                 "include_bmr_in_continuity" : "no",
+                 "compute_surf_grad_inward_ssa" : "no",
+                 "surface_gradient_method" : "eta",
+                 "default_till_phi" : 0.0,
+                 "ice_softness" : MISMIP.A(self.experiment, step),
+                 "ice_density" : MISMIP.rho_i(),
+                 "sea_water_density" : MISMIP.rho_w(),
+                 "bootstrapping_geothermal_flux_value_no_var" : 0.0,
+                 "Glen_exponent" : MISMIP.n(),
+                 "standard_gravity": MISMIP.g(),
+                 "ocean_sub_shelf_heat_flux_into_ice" : 0.0,
+                 "MISMIP_C" : MISMIP.C(self.experiment), # sliding law factor
+                 "MISMIP_m": MISMIP.m(self.experiment),  # sliding law exponent
+                 "MISMIP_r" : 0.01 / secpera} # regularization parameter
+
+        for name, value in attrs.iteritems():
+            var.setncattr(name, value)
+
+        nc.close()
+
+        return filename
+
+    def bootstrap_options(self, step):
+        boot_filename = "MISMIP_boot_%s_M%s_A%s.nc" % (self.experiment, self.mode, step)
+
+        import prepare
+        prepare.pism_bootstrap_file(boot_filename, self.experiment, step, self.mode, N=self.Mx,
+                                    semianalytical_profile=self.semianalytic)
+
+        options = ["-boot_file %s" % boot_filename,
+                   "-Mx %d" % self.Mx,
+                   "-My %d" % self.My,
+                   "-Mz %d" % self.Mz,
+                   "-Lz %d" % self.Lz]
+
+        return options
+
+    def output_options(self, step):
+        output_file = self.output_filename(self.experiment, step)
+        extra_file = "ex_" + output_file
+
+        options = ["-extra_file %s" % extra_file,
+                   "-extra_times 0:50:3e4",
+                   "-extra_vars thk,topg,cbar,cflx,mask,dHdt",
+                   "-o %s" % output_file,
+                   "-o_order zyx",
+                   ]
+
+        return output_file, options
+
+    def output_filename(self, experiment, step):
+        return "%s%s_%s_M%s_A%s.nc" % (self.initials, self.model, experiment, self.mode, step)
+
+    def options(self, step, input_file=None):
+        '''Generates a string of PISM options corresponding to a MISMIP experiment.'''
+
+        if input_file is None:
+            input_options = self.bootstrap_options(step)
+        else:
+            input_options = ["-i %s" % input_file]
+
+        physics = self.physics_options(step)
+
+        output_file, output_options  = self.output_options(step)
+
+        return output_file, (input_options + physics + output_options)
+
+    def run_step(self, step, input_file=None):
+        out, opts = self.options(step, input_file)
+        print 'echo "# Step %s-%s"' % (self.experiment, step)
+        print "%s %s" % (self.executable, ' '.join(opts))
+        print 'echo "Done."\n'
+
+        return out
+
+    def run(self):
+        print 'echo "# Experiment %s"' % self.experiment
+
+        if self.experiment in ('1a', '1b'):
+            # bootstrap
+            input_file = None
+            # steps 1 to 9
+            steps = range(1, 10)
+
+        if self.experiment in ('2a', '2b'):
+            # start from step 9 of the corresponding experiment 1
+            input_file = self.output_filename(self.experiment.replace("2", "1"), 9)
+            # steps 8 to 1
+            steps = range(8, 0, -1)
+
+        if self.experiment == '3a':
+            # bootstrap
+            input_file = None
+            # steps 1 to 13
+            steps = range(1, 14)
+
+        if self.experiment == '3b':
+            # bootstrap
+            input_file = None
+            # steps 1 to 15
+            steps = range(1, 16)
+
+        for step in steps:
+            input_file = self.run_step(step, input_file)
+
+def run_mismip(initials, executable, semianalytic):
+    Mx = 601
+    models = (1, 2)
+    modes  = (1, 2, 3)
+    experiments = ('1a', '1b', '2a', '2b', '3a', '3b')
+    semianalytic = True
 
     print preamble
 
-    for ex in ('1a', '1b'):
-        run_experiment(ex, max_step=9, initials=initials)
+    for model in models:
+        for mode in modes:
+            for experiment in experiments:
+                e = Experiment(experiment,
+                               initials=initials,
+                               executable=executable,
+                               model=model, mode=mode, Mx=Mx,
+                               semianalytic=semianalytic)
+                e.run()
 
-do_mismip("ABC")
+
+if __name__ == "__main__":
+    from optparse import OptionParser
+
+    parser = OptionParser()
+
+    parser.usage = "%prog [options]"
+    parser.description = "Creates a script running MISMIP experiments."
+    parser.add_option("--initials", dest="initials", type="string",
+                      help="Initials (3 letters)", default="ABC")
+    parser.add_option("-e", "--experiment", dest="experiment", type="string",
+                      default='1a',
+                      help="MISMIP experiments (one of '1a', '1b', '2a', '2b', '3a', '3b')")
+    parser.add_option("-u", "--uniform_thickness",
+                      action="store_false", dest="semianalytic", default=True,
+                      help="Use uniform 10 m ice thickness")
+    parser.add_option("-a", "--all",
+                      action="store_true", dest="all", default=False,
+                      help="Run all experiments")
+    parser.add_option("-m", "--mode", dest="mode", type="int", default=1,
+                      help="MISMIP grid mode")
+    parser.add_option("--Mx", dest="Mx", type="int", default=601,
+                      help="Custom grid size; use with --mode=3")
+    parser.add_option("--model", dest="model", type="int", default=1,
+                      help="Models: 1 - SSA only; 2 - SIA+SSA")
+    parser.add_option("--executable", dest="executable", type="string",
+                      help="Executable to run, e.g. 'mpiexec -n 4 pismr'")
+
+    (opts, args) = parser.parse_args()
+
+    if opts.all:
+        run_mismip(opts.initials, opts.executable, opts.semianalytic)
+        exit(0)
+
+    if opts.executable is None:
+        print preamble
+
+    e = Experiment(opts.experiment,
+                   initials=opts.initials,
+                   executable=opts.executable,
+                   model=opts.model,
+                   mode=opts.mode,
+                   Mx=opts.Mx,
+                   semianalytic=opts.semianalytic)
+    e.run()
+

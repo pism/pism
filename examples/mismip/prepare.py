@@ -39,17 +39,16 @@ def y(x):
 
 def thickness(experiment, step, x, calving_front=1600e3, semianalytical_profile=True):
 
-    if not semianalytical_profile:
-        thk = np.zeros_like(x) + 10
-        return np.tile(thk, (3,1))
-    
     # we expect x to have an odd number of grid points so that one of them is
     # at 0
     if x.size % 2 != 1:
         raise ValueError("x has to have an odd number of points, got %d", x.size)
 
     x_nonnegative = x[x >= 0]
-    thk_nonnegative = MISMIP.thickness(experiment, step, x_nonnegative)
+    if not semianalytical_profile:
+        thk_nonnegative = np.zeros_like(x_nonnegative) + 10
+    else:
+        thk_nonnegative = MISMIP.thickness(experiment, step, x_nonnegative)
 
     thk_nonnegative[x_nonnegative > calving_front] = 0
 

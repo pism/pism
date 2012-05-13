@@ -27,7 +27,7 @@ def A(experiment, step):
     A1 = np.array([4.6416e-24,  2.1544e-24,  1.0e-24,
                    4.6416e-25,  2.1544e-25,  1.0e-25,
                    4.6416e-26,  2.1544e-26,  1.0e-26])
-    # Values of A to be used in experiment 1.
+    # Values of A to be used in experiments 1 and 2.
 
     A3a = np.array([3.0e-25, 2.5e-25, 2.0e-25,
                     1.5e-25, 1.0e-25, 5.0e-26,
