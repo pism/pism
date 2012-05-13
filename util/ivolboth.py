@@ -14,8 +14,8 @@ except:
 NC = netCDF.Dataset
 
 # generate "whole" time series this way:
-#   $ ncrcat ts_g20km_m10ka.nc ts_g20km_0.nc -o ts_g20km_whole.nc
-#   $ ncrcat ts_g10km_m10ka.nc ts_g10km_0.nc -o ts_g10km_whole.nc
+#   $ ncrcat ts_g20km_m5000a.nc ts_g20km_0.nc -o ts_g20km_whole.nc
+#   $ ncrcat ts_g10km_m5000a.nc ts_g10km_0.nc -o ts_g10km_whole.nc
 # run this way:
 #   $ python ivolboth.py -o both.png ts_g20km_whole.nc ts_g10km_whole.nc
 
