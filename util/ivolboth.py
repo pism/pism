@@ -73,7 +73,7 @@ plt.grid(True)
 #setp(axesinset,xticks=arange(95.e3,101.e3,1.e3),
 #     xticklabels=('95','96','97','98','99','100'))
 
-plt.show()
+#plt.show()
 
 plt.savefig(options.outfile)
 

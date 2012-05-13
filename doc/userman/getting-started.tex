@@ -118,25 +118,29 @@ The spun-up states \texttt{g20km_0.nc} or \texttt{g20km_0_ftt.nc} is intended to
 
 Over the course of the spin-up we have saved the modeled ice volume in ``time-series'' NetCDF files.  This important model output can be viewed by
 \begin{verbatim}
-$ ncview ts_g20km_m20ka.nc ts_g20km_0.nc
+$ ncview ts_g20km_m5000a.nc ts_g20km_0.nc
 \end{verbatim}
-\noindent Figure \ref{fig:sr-spindone-ivolboth} shows this ice volume time series for the whole spin-up.  We see the modeled volatility of ice volume in the late ``Eemian'' period, between -120,000 and -115,000 BPE in the SeaRISE version of the GRIP temperature data.
+\noindent Figure \ref{fig:sr-spindone-ivolboth} shows this ice volume time series for the whole spin-up.  We see the modeled volatility of ice volume in the late ``Eemian'' period, between -120,000 and -115,000 BPE in the SeaRISE version of the GRIP temperature data.  We also see that the result \emph{does} depend on resolution.  Higher resolution grids allow the model to better resolve the flux through outlet glaciers especially, which are topographically-controlled, and such an effect explains the greater Eemian volume loss in the above 10\,km time series.  See the later examples in this manual for more on high resolution modeling.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=5.6in,keepaspectratio=true]{ivolboth}
+\includegraphics[width=4.5in,keepaspectratio=true]{ivolboth}
 \caption{Time series of modeled ice sheet volume on 20km and 10km grids.}
 \label{fig:sr-spindone-ivolboth}
 \end{figure}
 
-On an 8 core workstation the total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sec:dynamics}) is about 5 wall clock hours or 40 processor-hours.  For the same machine, the complete 10\,km spin-up used about 660 processor-hours, thus several wall-clock days.
+%from PISM0.4:  On an 8 core workstation the total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sec:dynamics}) is about 5 wall clock hours or 40 processor-hours.  For the same machine, the complete 10\,km spin-up used about 660 processor-hours, thus several wall-clock days.
+
+On an the total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sec:dynamics}) is about 290 processor-hours.  The complete 10\,km spin-up used about 6131 processor-hours.
 
 If done without membrane stresses (i.e.~non-sliding SIA only) these computational times are significantly reduced.  The polythermal versus ``cold'' energy-conservation choice corresponds to no performance difference of consequence.
 
 
-\subsection{Going forward}  \label{subsect:forecastcaution}  In the same \verb|examples/searise-greenland| directory is a script \verb|forecast.sh|.  (If your spun-up state is called \texttt{g20km_0.nc}, then run  \verb|./forecast.sh 8 g20km_0.nc|, assuming you have 8 cores.  It does two runs for 100 years into the future, initializing from the modeled present-day state. The first run is a ``control''  run assuming steady climate for the entire 100 year period. The second runs uses AR4 climate forcing. Please run it, play with it, and modify it, but remember that it is merely a demonstration.
+\subsection{Going forward}  \label{subsect:forecastcaution}  In the same \verb|examples/searise-greenland| directory is a script \verb|experiments.sh|.  This does a suite of runs for 500 years into the future for the SeaRISE assessment, initializing from the above-computed modeled present-day state.  The first run is a ``control''  run assuming steady climate for the entire period.  Other runs perform the experiments described at \url{http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet}.  Some runs use the AR4 climate forcing files which were produced when you ran \texttt{preprocess.sh}.  Once these runs are completed there are postprocessing scripts which primarily adjust metadata to match the standardizations used for the SeaRISE assessment.
 
-Because ice sheets, and ice sheet models, have a ``memory'' of past climates, whether real or modeled, the results strongly depend on the nature of the spin-up process which preceded this ``forecast'' run.  Therefore, as already noted, it is critical to evaluate the quality of the spunup state, for example using present-day observations of surface velocity \cite{BKAJS}, and other observations including ice temperature in ice bore-holes.  Critical thinking about a broad range of modeling hypotheses is prerequisite to building models of future behavior.  Naive or casual use of PISM to generate ice sheet predictions is \emph{not} recommended!
+Please run \verb|experiments.sh| and the postprocessing scripts, play with them, and modify them, but remember that we include these scripts for demonstration purposes.
+
+Because real ice sheets, and ice sheet models too, have a ``memory'' of past climates, the results strongly depend on the nature of the spin-up process which preceded this ``forecast'' run.  Therefore, as already noted, it is critical to evaluate the quality of the spunup state, for example using present-day observations of surface velocity \cite{AschwandenAdalgeirsdottirKhroulev}, and other observations including ice temperature in ice bore-holes.  Critical thinking about a broad range of modeling hypotheses is prerequisite to building models of future behavior.
 
 
 \subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  At a superficial level, PISM is just a program which takes one or more NetCDF files as input, does some computation, and produces one or more NetCDF files as output.  As a result, the user needs tools to extract some meaning from the NetCDF output files and also, in the general case, more tools to create NetCDF files for input to PISM.\footnote{Regarding the creation of input files, see the section \ref{sec:bootstrapping-format} and table \ref{tab:modelhierarchy} for ideas about the data necessary for modeling.}
