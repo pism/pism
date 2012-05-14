@@ -8,7 +8,7 @@ configure_file (../ice_bib.bib ice-bib.bib COPYONLY)
 
 # The list of all the source files:
 set (latex_sources
-  eismint-ross.tex
+  ross.tex
   getting-started.tex
   manual.tex
   modeling-choices.tex
