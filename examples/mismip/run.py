@@ -110,7 +110,7 @@ class Experiment:
                    "-mismip_sliding",           # turn "on" the MISMIP sliding law
                    "-ocean_kill",               # calving at the present front
                    "-gradient eta", # default method seems to produce artefacts at the grounding line
-                   "-peridicity y", # periodic in the cross-flow direction
+                   "-periodicity y", # periodic in the cross-flow direction
                    "-config_override %s" % config_filename,
                    "-ssa_method fd",       # use the FD solver that includes PIK improvements
                    "-cfbc",                # calving front boundary conditions
@@ -188,11 +188,14 @@ class Experiment:
 
     def output_options(self, step):
         output_file = self.output_filename(self.experiment, step)
-        extra_file = "ex_" + output_file
+        extra_file  = "ex_" + output_file
+        ts_file     = "ts_" + output_file
 
         options = ["-extra_file %s" % extra_file,
                    "-extra_times 0:50:3e4",
-                   "-extra_vars thk,topg,cbar,cflx,mask,dHdt",
+                   "-extra_vars thk,topg,cbar,cflx,mask,dHdt,usurf",
+                   "-ts_file %s" % ts_file,
+                   "-ts_times 0:50:3e4",
                    "-o %s" % output_file,
                    "-o_order zyx",
                    ]
@@ -309,6 +312,8 @@ if __name__ == "__main__":
 
     if opts.executable is None:
         print preamble
+    else:
+        print "#!/bin/bash"
 
     e = Experiment(opts.experiment,
                    initials=opts.initials,
@@ -318,4 +323,3 @@ if __name__ == "__main__":
                    Mx=opts.Mx,
                    semianalytic=opts.semianalytic)
     e.run()
-
