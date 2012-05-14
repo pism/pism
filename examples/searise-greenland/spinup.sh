@@ -233,7 +233,7 @@ OUTNAME=g${CS}km_m${ET}a.nc
 TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
-EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
+EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
 EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,acab_cumulative"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
@@ -258,7 +258,7 @@ OUTNAME=g${FS}km_0.nc
 TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
-EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$ENDTIME
+EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
 echo
 echo "$SCRIPTNAME  regular run"
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
@@ -284,7 +284,7 @@ OUTNAME=g${FS}km_m${ET}a_ftt.nc
 TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$FTTENDTIME
 EXNAME=ex_$OUTNAME
-EXTIMES=$(($STARTTIME+$EXSTEP)):$EXSTEP:$FTTENDTIME
+EXTIMES=$STARTTIME:$EXSTEP:$FTTENDTIME
 echo
 echo "$SCRIPTNAME  force-to-thickness run"
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
@@ -306,9 +306,9 @@ OUTNAME=g${FS}km_0_ftt.nc
 TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
-EXTIMES=$(($STARTTIME+$EXFSTEP)):$EXFSTEP:$ENDTIME
+EXTIMES=$STARTTIME:$EXFSTEP:$ENDTIME
 echo
-echo "$SCRIPTNAME  force-to-thickness run"
+echo "$SCRIPTNAME  force-to-thickness run finishes with frequent diagnostic information"
 echo "$SCRIPTNAME  do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation and modified surface mass balance,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
