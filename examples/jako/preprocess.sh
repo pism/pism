@@ -47,6 +47,3 @@ ncatted -O -a long_name,thkstore,a,c,"stored ice thickness (for regional b.c.)" 
 echo "... done with cleaning file $WORKING"
 echo
 
-echo "to extract drainage basin, do 'python pism_regional.py' and open $WORKING"
-echo
-

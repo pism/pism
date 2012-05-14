@@ -1,7 +1,7 @@
 Jakobshavn outlet glacier regional example
 =================
 
-This directory contains all of the scripts needed to build a PISM regional
+This directory contains all of the scripts needed to build a PISM regional model
 of Jakobshavn Isbrae in the Greenland ice sheet.  The same strategy will
 work for other outlet glaciers.  The base data is the SeaRISE 1km
 Greenland dataset for the whole ice sheet plus an earlier lower-resolution
@@ -30,11 +30,11 @@ To see a description of the drainage basin tool itself, and a bit on how it
 works, see https://github.com/pism/regional-tools.
 
 
-Preprocess fine grid geometry data and coarse climate data
+Preprocess fine grid geometry data
 ----------
 
-Next we use a script that downloads and cleans the SeaRISE data, an 80 Mb file
-called `Greenland1km.nc`.
+Next we use a script that downloads and cleans the fine-grid SeaRISE data,
+an 80 Mb file called `Greenland1km.nc`.
 
     $ ./preprocess.sh
 
@@ -47,20 +47,26 @@ it contains:
     $ ncdump -h gr1km.nc                   # view metadata
     $ ncview gr1km.nc                      # view fields
 
+
+Preprocess coarse climate data
+----------
+
 Also we download the SeaRISE 5km data set `Greenland_5km_v1.1.nc` because it
 contains the surface mass balance model result from RACMO.  This field is not present
-in the SeaRISE 1km data set.  If you have already run the example in the first
-section of the PISM User's Manual, i.e. examples/searise-greenland/ then you
+in the SeaRISE 1km data set above.  If you have already run the example in the first
+section of the PISM User's Manual, i.e. in `examples/searise-greenland/`, then you
 already have this file and you can link to it to avoid downloading:
 
     $ ln -s ../searise-greenland/Greenland_5km_v1.1.nc
 
-But another preprocess stage is still needed to fix the metadata, so do:
+In any case, run this additional preprocess stage to fix the metadata:
 
     $ ./getsmb.sh
 
+A file `g5km_climate.nc` will appear, and can be examined in the usual ways.
 
-Get coarse grid, whole ice sheet spinup result
+
+Get whole ice sheet spinup result
 -----------
 
 Finally, we also get coarse grid model results for the whole ice sheet.  These are 
@@ -99,13 +105,15 @@ Running the script opens a graphical user interface
 fjord which is the terminus of the outlet glacier you want to model.
 
 **To use the GUI:**  Select `gr1km.nc` to open.  Once the topographic map appears
-in the Figure 1 window, select the button `Select terminus rectangle`.
+in the Figure 1 window, you may zoom enough to see the general outlet glacier
+area.  Then select the button `Select terminus rectangle`.
 Now use the mouse to select a small rectangle around the Jakobshavn
 terminus (calving front).  (<em>At this stage you can choose any other
 terminus/calving front and put a small rectangle around it!</em>)
 Once you have a highlighted rectangle, select a `border width` of at
 least 50 cells.  (<em>This suggestion is somewhat Jakobshavn-specific.
-The intention is to have an ice-free western boundary on or region.</em>)
+The intention is to have an ice-free western boundary on the computational
+domain for our modeled region.</em>)
 
 Then click `Compute the drainage basin mask`.  Because this is a large data set
 there will be some delay.  (<em>A parallel computation is done.</em>)
@@ -139,14 +147,13 @@ sets `gr1km.nc` and `g5km_bc.nc`.  (The coarse grid climate data `g5km_climate.n
 does not need this action because PISM's coupling code can already handle all
 needed interpolation/subsampling for such climate data.)
 
-You may have noticed that the feedback from the previous stage includes a
-cutout command which appears as a global attribute of jakomask.nc.  Get it
-and use it:
+You may have noticed that the text output from `pism_regional.py` includes a
+cutout command which appears as a global attribute of jakomask.nc.  Get it this way:
 
     $ ncdump -h jakomask.nc |grep cutout
 
-Cut and paste the command, which applies to both the 1km Greenland data file
-and the mask file.  For example it will look like:
+Copy this command.  It is applied to both the 1km Greenland data file and the
+mask file, so modify the command to make each of these commands, and run them:
 
     $ ncks -d x,299,918 -d y,970,1394 gr1km.nc jako.nc
     $ ncks -A -d x,299,918 -d y,970,1394 jakomask.nc jako.nc   # note -A for append!
@@ -189,9 +196,9 @@ In the first stage we therefore work on an intermediate grid between the 1km
 goal and the 5km whole ice sheet state.  Quick calculations (round up on
 `620/3 + 1` and `425/3 + 1`) suggest `-Mx 208 -My 143` as a 3km grid for PISM.
 
-So now we do a basic run using 4 MPI processes:
+So now we do a basic run using 2 MPI processes:
 
-    $ ./spinup.sh 4 208 143 >> out.spin3km &
+    $ ./spinup.sh 2 208 143 >> out.spin3km &
 
 Please read the script, and/or watch the run, while it runs:
 
