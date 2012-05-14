@@ -84,12 +84,19 @@ Implementation details
 
 The only addition to the PISM code necessary to run MISMIP experiment is the
 sliding law; see `src/base/basal_strength/MISMIPBasalResistanceLaw.cc`. This
-code is turned "on" using the "-mismip_sliding" command-line option.
+code is turned "on" using the "`-mismip_sliding`" command-line option.
 
 Once selected, `MISMIPBasalResistanceLaw` expects to find configuration
-parameters `MISMIP_m`, `MISMIP_C`, and `MISMIP_r` in the configuation database.
+parameters `MISMIP_m` (the the sliding law exponent),
+`MISMIP_C` (a multiplicative factor in the sliding law),
+and `MISMIP_r` (a regularization parameter) in the configuation database.
 We use the `-config_override` option to provide these, along with
 MISMIP-specific values of the ice softness, ice density, etc.
+
+Note that PISM does not implement stopping criteria described in the MISMIP specs;
+we use maximum run lengths that are provided as an alternative. On the other hand,
+PISM's output files contain all the information necessary to compute the rate of change
+of the grounding line position and the thickness rate of change during post-processing.
 
 Post-processing
 ---------------
