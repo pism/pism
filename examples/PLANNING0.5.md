@@ -1,24 +1,43 @@
 Planning for stable0.5 release
 =============
 
-THIS FILE HAS PLANS ON WHAT TO DO WITH PISM examples/ SUBDIRECTORIES
-FOR pism0.5 RELEASE:
+This file has plans on what to do with pism `examples/` subdirectories
+for PISM stable0.5 release.  See also issues #49 and #64 on github.com/pism.
 
-* inverse     KEEP AND MAINTAIN?
+To do
+---------
 * jako         CREATED AND IN DEVELOPMENT; MAKE SECTION IN USER'S MANUAL
-* mismip     KEEP AND MAINTAIN; DONE
-* piktests   ASK PIK; KEEP AND MAINTAIN?
-* python     KEEP AND MAINTAIN?
 * ross         CREATED AND IN DEVELOPMENT; MAKE SECTION IN USER'S MANUAL
-* searise-antarctica     KEEP AND MAINTAIN
-* searise-greenland     KEEP AND MAINTAIN; FIRST SECTION IN USER'S MANUAL
-* storglaciaren         KEEP AND MAINTAIN; A SECTION IN USER'S MANUAL?
+* storglaciaren         KEEP AND MAINTAIN
 
-THESE EXAMPLES ARE DEPRECATED:
+These two we are asking PIK to comment on, decide on, and possibly maintain.  See Bueler email 15 May.
 
-* pddtune   MOVE TO old/, CHECK IT WORKS MINIMALLY AT pism0.5, TRIM
-* MOVED TO old/:
+* piktests
+* searise-antarctica
+
+
+Done
+---------
+* mismip
+* searise-greenland
+
+
+Do not include in 0.5
+---------
+* inverse
+* python
+
+
+Deprecated
+---------
+Deleted:
+
+* eisross   the `pross` EXECUTABLE IS GONE AND THE FUNCTIONALITY
+IS COMPLETELY REPLACED BY ross/ above
+
+Moved to `old/`:
+
+  * pddtune      NOT CHECKED.  FINE TO LEAVE AS IS.
   * eisgreen     DONE.  CHECKED: IT WORKS MINIMALLY AT pism0.5.
-  * enth-temp    NOT DONE.  DOES NOT WORK MINIMALLY AT pism0.5 YET.  [DEPENDS ON
-    eisgreen.  NOT CRITICAL.]
+  * enth-temp    NOT CHECKED.  FINE TO LEAVE AS IS.
 

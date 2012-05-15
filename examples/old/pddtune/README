@@ -1,3 +1,6 @@
+WARNING:  These scripts worked in the stable0.4 release of PISM.  They may need
+update to work in stable0.5.
+
 The scripts in this file demonstrate how to tune PDD parameters to match
 regional climate model output available in a publicly-available data set.
 
