@@ -2,7 +2,7 @@
 
 import MISMIP
 
-from pylab import figure, hold, plot, xlabel, ylabel, title, axis, vlines, savefig
+from pylab import figure, hold, plot, xlabel, ylabel, title, axis, vlines, savefig, text
 from sys import exit
 
 import numpy as np
@@ -21,11 +21,11 @@ parser = OptionParser()
 parser.usage = "%prog <input file> [options]"
 parser.description = "Plots the ice flux as a function of the distance from the divide."
 parser.add_option("-o", "--output", dest="output", type="string",
-                  help="Output file name")
+                  help="Output image file name (e.g. -o foo.png)")
 parser.add_option("-e", "--experiment", dest="experiment", type="string",
-                  help="MISMIP experiment")
+                  help="MISMIP experiment: 1a,1b,2a,2b,3a,3b (e.g. -e 1a)")
 parser.add_option("-s", "--step", dest="step", type="int",
-                  help="MISMIP step")
+                  help="MISMIP step: 1,2,3,... (e.g. -s 1)")
 
 (opts, args) = parser.parse_args()
 
@@ -92,12 +92,13 @@ figure(1)
 hold(True)
 plot(x, np.zeros_like(x), ls='dotted', color='red')
 plot(x, topg, color='black')
-plot(x, usurf, 'o-', color='blue')
-plot(x, lsrf, 'o-', color='blue')
+plot(x, usurf, 'o', color='blue', markersize=4)
+plot(x, lsrf, 'o', color='blue', markersize=4)
 xlabel('distance from the divide, km')
 ylabel('elevation, m')
-title("MISMIP experiment %s, step %d\n$x_{modeled}$ = %4.0f km, $x_{theoretical}$ = %4.0f km" % (
-    opts.experiment, opts.step, xg_PISM/1e3, xg/1e3))
+title("MISMIP experiment %s, step %d" % (opts.experiment, opts.step))
+text(xg_PISM/1e3,4000.0,"$x_g$ (model) = %4.0f km" % (xg_PISM/1e3), color='r')
+text(xg/1e3,3500.0,"$x_g$ (theory) = %4.0f km" % (xg/1e3))
 
 _, _, ymin, ymax = axis(xmin=0, xmax=x.max())
 vlines(xg/1e3, ymin, ymax, linestyles='dashed', color='black')
