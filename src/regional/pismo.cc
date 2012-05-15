@@ -199,7 +199,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   }
 
   bool nmstripSet;
-  PetscReal stripkm;
+  PetscReal stripkm = 0.0;
   ierr = PISMOptionsReal("-no_model_strip", 
                          "width in km of strip near boundary in which modeling is turned off",
 			 stripkm, nmstripSet);

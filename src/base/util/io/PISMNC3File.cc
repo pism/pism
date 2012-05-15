@@ -856,27 +856,26 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, PISM_IO_Type
   if (rank == 0) {
     int varid = -1;
 
-    if (variable_name == "NC_GLOBAL") {
+    if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
       stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
     }
 
     // In NetCDF 3.6.x nc_type is an enum; in 4.x it is 'typedef int'.
-    nc_type nctype;
+    nc_type nctype = NC_NAT;
     stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &nctype);
     if (stat == NC_ENOTATT) {
       tmp = NC_NAT;
     } else {
+      tmp = static_cast<int>(nctype);
       check(stat);
     }
-
-    tmp = static_cast<int>(nctype);
   }
   MPI_Barrier(com);
   MPI_Bcast(&tmp, 1, MPI_INT, 0, com);
 
-  result = static_cast<PISM_IO_Type>(tmp);
+  result = nc_type_to_pism_type(tmp);
 
   return 0;
 }

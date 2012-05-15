@@ -737,7 +737,8 @@ PetscErrorCode IceModel::run() {
   dt_force = -1.0;
   maxdt_temporary = -1.0;
   skipCountDown = 0;
-  dt_TempAge = 0.0;
+  t_TempAge = grid.time->start();
+  dt_TempAge = 1.0;             // one second (for the preliminary step)
   dt = 0.0;
   PetscReal run_end = grid.time->end();
 
@@ -762,6 +763,7 @@ PetscErrorCode IceModel::run() {
   global_attributes.set_string("history", "");
   grid.time->set(grid.time->start());
   t_TempAge = grid.time->start();
+  dt_TempAge = 0.0;
   grid.time->set_end(run_end);
   ierr = model_state_setup(); CHKERRQ(ierr);
 

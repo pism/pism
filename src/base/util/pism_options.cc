@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include <algorithm>
+#include <string.h>
 
 #include "pism_options.hh"
 #include "NCVariable.hh"
@@ -368,6 +369,7 @@ PetscErrorCode PISMOptionsReal(string option, string text,
   PetscBool flag;
   char *endptr;
 
+  memset(str, 0, TEMPORARY_STRING_LENGTH);
   snprintf(str, TEMPORARY_STRING_LENGTH, "%f", result);
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "", str, str,

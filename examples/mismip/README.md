@@ -116,13 +116,19 @@ Post-processing
 Converting PISM output files to ASCII files following MISMIP
 specifications is left as an exercise.
 
-However, we do provide the script `showflux.py`.  This plots ice flux as a
-function of the distance from the divide.  It produces a `.png` image.  We see
-a discontinuity in the flux at the grounding line.  This is an issue in PISM
-that needs to be addressed to improve its handling of the grounding line motion.
-For example,
+However, we do provide scripts `plot_flux.py` and `plot_profile.py`.
+
+`plot_flux.py` plots ice flux as a function of the distance from the divide. It
+produces a `.png` image. We see a discontinuity in the flux at the grounding
+line. This is an issue in PISM that needs to be addressed to improve its
+handling of the grounding line motion. For example, try
 
     ./showflux.py -o flux.png ABC1_1a_M1_A1.nc
+
+`plot_profile.py` plots the geometry profile at the end of a PISM run and shows
+modeled and theoretical locations of the grounding line. Try
+
+    ./plot_profile.py -o profile.png ABC1_1a_M1_A1.nc
 
 Also, note that the variable `iareag` in `ts_ABC1_1a_M1_A1.nc` and similar
 allows one to see time-dependent changes in the grounding line location

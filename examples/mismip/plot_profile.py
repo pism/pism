@@ -80,6 +80,14 @@ lsrf = topg.copy()
 lsrf[mask == 3] = -MISMIP.rho_i() / MISMIP.rho_w() * thk[mask == 3]
 lsrf = np.ma.array(lsrf, mask=mask == 4)
 
+def find_grounding_line(x, topg, thk, mask):
+    # "positive" parts of x, topg, thk, mask
+    x_p = x[x > 0]
+    topg_p = topg[x > 0]
+    thk_p  = thk[x > 0]
+    mask_p = mask[x > 0]
+    pass                                # unfinished
+
 f = 1.0 - (- topg) / (thk * MISMIP.rho_i() / MISMIP.rho_w())
 
 def func(x0):

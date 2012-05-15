@@ -36,7 +36,9 @@ PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf)
 PetscErrorCode PISMTime::init() {
   PetscErrorCode ierr;
   bool y_set, ys_set, ye_set;
-  PetscReal y, ys, ye;
+  PetscReal y = config.get("run_length_years"),
+    ys = config.get("start_year"),
+    ye = ys + y;
 
   ierr = PetscOptionsBegin(com, "", "PISM model time options", ""); CHKERRQ(ierr);
   {

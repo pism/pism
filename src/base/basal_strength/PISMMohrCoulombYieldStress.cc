@@ -128,8 +128,8 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
                             bootstrap); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-tauc_to_phi", "Compute tillphi as a function of tauc and the rest of the model state",
                             tauc_to_phi_set); CHKERRQ(ierr);
-    bool scaleSet;
-    double slidescale;
+    bool scaleSet = false;
+    double slidescale = 0.0;
     ierr = PISMOptionsReal("-sliding_scale",
                            "Divides pseudo-plastic tauc (yield stress) by given factor;"
                            " this would increase sliding by given factor in absence of membrane stresses",

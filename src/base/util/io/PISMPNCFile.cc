@@ -273,7 +273,7 @@ int PISMPNCFile::inq_vardimid(string variable_name, vector<string> &result) cons
 int PISMPNCFile::inq_varnatts(string variable_name, int &result) const {
   int stat, varid = -1;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -319,7 +319,7 @@ int PISMPNCFile::get_att_double(string variable_name, string att_name, vector<do
   MPI_Offset attlen;
 
   // Read the attribute length:
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -363,7 +363,7 @@ int PISMPNCFile::get_att_text(string variable_name, string att_name, string &res
   // Read the attribute length:
   MPI_Offset attlen;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -410,7 +410,7 @@ int PISMPNCFile::put_att_double(string variable_name, string att_name, PISM_IO_T
 
   int varid = -1;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -428,7 +428,7 @@ int PISMPNCFile::put_att_text(string variable_name, string att_name, string valu
 
   stat = redef(); check(stat);
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -447,7 +447,7 @@ int PISMPNCFile::inq_attname(string variable_name, unsigned int n, string &resul
 
   int varid = -1;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -465,7 +465,7 @@ int PISMPNCFile::inq_atttype(string variable_name, string att_name, PISM_IO_Type
   int stat, varid = -1;
   nc_type tmp;
 
-  if (variable_name == "NC_GLOBAL") {
+  if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
     stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
