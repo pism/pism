@@ -11,6 +11,8 @@ try:
 except:
     from netCDF3 import Dataset as NC
 
+secpera = 3.15569259747e7
+
 # The "standard" preamble used in many PISM scripts:
 preamble = '''
 #!/bin/bash
@@ -104,25 +106,21 @@ class Experiment:
 
         options = ["-mismip_sliding",
                    "-cold",                 # allow selecting cold-mode flow laws
-                   "-flow_law isothermal_glen", # isothermal setup
                    "-no_energy",                # isothermal setup
                    "-ssa_sliding",              # use SSA
                    "-mismip_sliding",           # turn "on" the MISMIP sliding law
+                   "-sia_flow_law isothermal_glen", # isothermal setup
+                   "-ssa_flow_law isothermal_glen", # isothermal setup
                    "-ocean_kill",               # calving at the present front
-                   "-gradient eta", # default method seems to produce artefacts at the grounding line
-                   "-periodicity y", # periodic in the cross-flow direction
                    "-config_override %s" % config_filename,
                    "-ssa_method fd",       # use the FD solver that includes PIK improvements
                    "-cfbc",                # calving front boundary conditions
                    "-part_grid",           # sub-grid front motion parameterization
                    "-ksp_rtol 1e-7",
                    "-ys 0",
+                   "-ye %f" % MISMIP.run_length(self.experiment, step),
+                   "-options_left",
                    ]
-
-        if self.experiment in ('3a', '3b'):
-            options.extend(["-ye %f" % MISMIP.time_interval(self.experiment, step)])
-        else:
-            options.extend(["-ye 3e4"])
 
         if self.model == 1:
             options.extend(["-no_sia"])
@@ -144,15 +142,13 @@ class Experiment:
 
         filename = "MISMIP_conf_%s_A%s.nc" % (self.experiment, step)
 
-        nc = NC(filename, 'w')
+        nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
 
         var = nc.createVariable("pism_overrides", 'i')
-        secpera = 3.15569259747e7
+
         attrs = {"is_dry_simulation" : "no",
                  "include_bmr_in_continuity" : "no",
                  "compute_surf_grad_inward_ssa" : "no",
-                 "surface_gradient_method" : "eta",
-                 "default_till_phi" : 0.0,
                  "ice_softness" : MISMIP.A(self.experiment, step),
                  "ice_density" : MISMIP.rho_i(),
                  "sea_water_density" : MISMIP.rho_w(),
@@ -227,7 +223,7 @@ class Experiment:
 
         return out
 
-    def run(self):
+    def run(self, step=None):
         print 'echo "# Experiment %s"' % self.experiment
 
         if self.experiment in ('1a', '1b'):
@@ -253,6 +249,9 @@ class Experiment:
             input_file = None
             # steps 1 to 15
             steps = range(1, 16)
+
+        if step is not None:
+            steps = [step]
 
         for step in steps:
             input_file = self.run_step(step, input_file)
@@ -289,6 +288,8 @@ if __name__ == "__main__":
     parser.add_option("-e", "--experiment", dest="experiment", type="string",
                       default='1a',
                       help="MISMIP experiments (one of '1a', '1b', '2a', '2b', '3a', '3b')")
+    parser.add_option("-s", "--step", dest="step", type="int",
+                      help="MISMIP step number")
     parser.add_option("-u", "--uniform_thickness",
                       action="store_false", dest="semianalytic", default=True,
                       help="Use uniform 10 m ice thickness")
@@ -322,4 +323,8 @@ if __name__ == "__main__":
                    mode=opts.mode,
                    Mx=opts.Mx,
                    semianalytic=opts.semianalytic)
-    e.run()
+
+    if opts.step is not None:
+        e.run(opts.step)
+    else:
+        e.run()

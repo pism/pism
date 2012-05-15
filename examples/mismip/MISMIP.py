@@ -57,7 +57,7 @@ def A(experiment, step):
 
     raise ValueError("invalid experiment (%s)" % experiment)
 
-def time_interval(experiment, step):
+def run_length(experiment, step):
     """Returns the time interval for an experiment 3 step."""
     T3a = np.array([3.0e4, 1.5e4, 1.5e4,
                     1.5e4, 1.5e4, 3.0e4,
@@ -82,7 +82,7 @@ def time_interval(experiment, step):
     except:
         raise ValueError("invalid step (%s) for experiment %s" % (step, experiment))
 
-    raise ValueError("invalid experiment (%s)" % experiment)
+    return 3e4
 
 def rho_i():
     "Ice density"

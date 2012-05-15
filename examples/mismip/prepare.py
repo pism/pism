@@ -70,7 +70,7 @@ def pism_bootstrap_file(filename, experiment, step, mode,
     smb = surface_mass_balance(xx)
     temp = ice_surface_temp(xx)
 
-    nc = PISMNC.PISMDataset(filename, 'w')
+    nc = PISMNC.PISMDataset(filename, 'w', format="NETCDF3_CLASSIC")
 
     nc.create_dimensions(xx, yy)
 
