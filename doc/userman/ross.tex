@@ -4,143 +4,78 @@
 
 The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model and not merely errors in, incompleteness of, or lack of confidence in, the data.
 
-As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} validated several ice shelf numerical models using the Ross ice shelf as an example.  We refer to this intercomparison and its associate write-up \cite{MacAyealetal} as ``EISMINT-Ross''.  The models were compared to data from RIGGS (the Ross Ice shelf Geophysical and Glaciological Survey \cite{RIGGS2,RIGGS1}), acquired in the period 1973--1978.   The RIGGS data include the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf; see figure \ref{fig:rosspython} below for an indication of these positions.
+As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} validated several ice shelf numerical models using the Ross ice shelf as an example.  We refer to this intercomparison and its associate write-up \cite{MacAyealetal} as ``EISMINT-Ross''.  The models were compared to data from RIGGS (the Ross Ice shelf Geophysical and Glaciological Survey \cite{RIGGS2,RIGGS1}), acquired in the period 1973--1978.   The RIGGS data include the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf.
 
 Substantial developments have occurred in the modeling of the Ross ice shelf since the EISMINT-Ross intercomparison.  For example, inverse modeling techniques were used to recover depth-averaged viscosity of the Ross ice shelf from the RIGGS data in \cite{RommelaereMacAyeal}. A parameter-sensitivity study was performed for a particular Ross ice shelf numerical model in \cite{HumbertGreveHutter}.
 
 Previous PISM versions included a specialized executable \texttt{pross} that set up the EISMINT-Ross flow model and performed the diagnostic computation.
 
-Increased availability of data sets for ice sheet modeling (see \cite{LeBrocqetal2010} and \cite{Rignot09092011} in particular) make it possible to create a similar setup using modern, higher-quality and higher-resolution data.
+Increased availability of data sets for ice sheet modeling (see \cite{LeBrocqetal2010} and \cite{Rignot09092011} in particular) make it possible to create a similar setup using modern, higher-quality, higher-resolution data.
 
 The scripts in this section are found in the directory \texttt{examples/ross/}.  The script \texttt{preprocess.py} will download data and build a NetCDF input file. Then \texttt{run.sh} can run \texttt{pismr} as described below.
 
 \subsubsection*{Grabbing the data}
 
-Our setup uses geometry and surface boundary condition data from the ALBMAP v1 dataset (\cite{LeBrocqetal2010}) and MEaSUREs InSAR-Based Antarctica Velocity Map for velocity boundary conditions, both publicly available.\footnote{Please see \texttt{preprocess.py} for URLs.}
+Our setup uses geometry and surface boundary condition data from the ALBMAP v1 dataset \cite{LeBrocqetal2010} and MEaSUREs InSAR-Based Antarctica Velocity Map \cite{Rignot09092011} for velocity boundary conditions, both publicly available.\footnote{Please see \texttt{preprocess.py} for URLs.}
 
-We use NetCDF Operators to cut out the relevant portion of the dataset and CDO to interpolate high-resolution (500m) velocity data onto the coarser (5km) geometry grid.
+We use NetCDF Operators to cut out the relevant portion of the grid and CDO to interpolate high-resolution (500 m) velocity data onto the coarser (5 km) geometry grid used in ALBMAP.
 
-The NetCDF file \texttt{Ross_combined.nc} produced by \texttt{preprocess.py} contains ice thickness, bed elevations, surface temperature, accumulation, as well as latitude and longitude values.  All of these are typical of ice sheet modeling data, both in evolution and diagnostic runs.  The file also has variables \texttt{u_ssa_bc} and \texttt{v_ssa_bc}.  These give the boundary values which are needed for the diagnostic computation of velocity. They are used at all grounded locations and ice shelf cells that are immediate neighbors of grounded ice.
+The NetCDF file \texttt{Ross_combined.nc} produced by \texttt{preprocess.py} contains ice thickness, bed elevations, surface temperature, net accumulation, as well as latitude and longitude values.  All of these are typical of ice sheet modeling data, both in evolution and diagnostic runs.  The file also has variables \texttt{u_ssa_bc} and \texttt{v_ssa_bc}.  These give the boundary values which are needed for the diagnostic computation of velocity. They are used at all grounded locations and ice shelf cells that are immediate neighbors of grounded ice.
 The variable \texttt{bcflag} specifies these location.
 
-Note that observed velocity data is available in the shelf interior and can be used to validate our model.
+Unlike in EISMINT-Ross setup, the data-set with velocity boundary conditions contains measurements in the interior of the shelf. Thanks to this we don't need to look elsewhere for observations we need to validate our model.
 
 \subsubsection*{Diagnostic computation of ice shelf velocity}
 A basic Ross ice shelf velocity computation from these data is:
 
 \begin{verbatim}
-$ pross -boot_file ross.nc -Mx 147 -My 147
+$ mpiexec -n 4 pismr -boot_file Ross_combined.nc \
+          -Mx 211 -My 211 -Mz 21 -Lz 3000 -z_spacing equal \
+          -no_sia -no_energy -ssa_floating_only -pik \
+          -ssa_dirichlet_bc -y 0 -o out_211.nc -o_order zyx
 \end{verbatim}%$
-Here we initialize from \texttt{ross.nc}. The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is $874$ m so we choose a height for the computational box (\texttt{-Lz}) large enough to contain the ice.  Note that using a small number of vertical levels (\texttt{-Mz 3}) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
+Here we initialize from \texttt{Ross_combined.nc}. The computational grid specified here is the $5$ km data grid used in the ALBMAP.  The maximum thickness of the ice is $2766$ m so we choose a height for the computational box (\texttt{-Lz}) large enough to contain the ice.
 
-The executable \texttt{pross} was created especially for this modeling example. It demonstrates PISM's ability to diagnostically model the Ross ice-sheet \emph{and} serves as an example of using PISM components as software libraries. PISM does not have generic mechanisms for diagnostic modeling of the flow in ice shelves or for specifying in-flow boundary conditions such as used in this case. This kind of work will require extending PISM by writing additional code, and looking at \texttt{pross.cc} is a reasonable place to start.
+Several command-line options require explanation:
+\begin{itemize}
+\item \texttt{-no_sia} turns off the SIA stress balance computation, since our
+  goal is to model the ice shelf. It also side-steps a technical issue: PISM
+  uses periodic boundary conditions at domain boundaries and most fields in
+  this setup are not periodic. Turning off SIA avoids operations such as
+  differencing surface elevation across the domain edges.
+\item \texttt{-ssa_dirichlet_bc} reads fields \texttt{u_ssa_bc}, \texttt{v_ssa_bc}, \texttt{bcflag}, and \texttt{thk} from an input file and uses them to prescribe Dirichlet boundary conditions for the SSA velocity (\texttt{u_ssa_bc} and \texttt{v_ssa_bc} are components of the SSA B.C., \texttt{bcflag} is $1$ at B.C. locations and $0$ elsewhere) and \texttt{thk} at $\mathtt{bcflag} = 1$ locations is used as the Dirichlet B.C. condition for the ice thickness. The latter (together with Dirichlet B.C. for the SSA velocity) can be thought of as prescribing ``SSA ice flux'' at given locations in an \emph{evolution} run.
+\item \texttt{-ssa_floating_only} uses the SSA stress balance model for the floating ice \emph{only}. In this setup it is equivalent to \texttt{-ssa_sliding}, because SSA velocities at grounded locations are prescribed.
+\item \texttt{-pik} enables PIK improvements (see section \ref{sec:pism-pik}). The most important one here is the calving front stress boundary condition (CFBC).
+\item \texttt{-y 0} makes PISM stop after the first one-model-second-long ``preliminary'' time-step. The model state is reset after this time-step, making it equivalent to a ``diagnostic'' run.
+\end{itemize}
 
-This particular case of diagnostic modeling does not require solving either temperature\footnote{Recall that the ice hardness is set to a constant.} or mass-continuity equations, so \texttt{pross} only uses the part of PISM responsible for shallow stress balance computations. This means that ``bootstrapping'' in this section differs from bootstrapping in section \ref{sec:boot}. You do have to specify \texttt{Mx} and \texttt{My}, but other parameters are determined from the input file and no heuristics are used to make up for missing data.
+The script \texttt{run.sh} extends the run above by allowing changing grid resolution and using the SSA flow law enhancement factor as a tuning parameter. (There are many reasonable choices of tuning parameters; this is just one of them. One could also use ice softness (in an isothermal setup) or temperature, for example.)
 
-At the end of this run the computed velocity field is compared to the interpolated observed velocities stored in \texttt{ross.nc}.  The value called ``average relative error in vector vel'' is most relevant.  A value of 0.07 here means that the averaged absolute difference between the computed and the observed velocity, in the ``accurate'' region, is 7\%.
+\subsubsection*{Comparison to older EISMINT-Ross results}
 
-The output file \texttt{unnamed_diag.nc} contains vertically-averaged horizontal speed in the variable \texttt{cbar}.  Figure \ref{fig:rosspython} shows that computed speed as the color background; the comparison of modeled and observed vector velocities in that figure is discussed below.
-
-There are many variations on this basic ``\texttt{pross}'' run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:
-\begin{verbatim}
-$ pross -boot_file ross.nc -Mx 147 -My 147 \
-        -view_map cbar,mask,velbar -verbose -pause 10
-        -ssa_view_nuh
-\end{verbatim}
-Secondly one might want to do the run in parallel and do it on a finer grid.  For example,
-
-\begin{verbatim}
-$ mpiexec -n 4 pross -boot_file ross.nc \
-          -Mx 201 -My 201
-\end{verbatim}
-The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
-
-Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use smaller (more severe) tolerances for the nonlinear iteration (\intextoption{ssa_rtol}) and the linear iteration (\intextoption{ksp_rtol}) to get more confidence in the numerical scheme:
-
-\begin{verbatim}
-$ pross -boot_file ross.nc -Mx 147 -My 147 \
-        -ice_custom_hardness 1.8e8 \
-        -o ross_out_1p8.nc -ssa_rtol 1e-6 -ksp_rtol 1e-10
-\end{verbatim}
-
-
-\subsubsection*{Comparison to RIGGS data}  The file \texttt{riggs_clean.dat} is a cleaned-up version of the original RIGGS\index{RIGGS} data \cite{RIGGS1, RIGGS2}.  (See \texttt{README} for more explanation on this RIGGS data.)  To convert this data to a NetCDF file, as needed next, do
-
-\begin{verbatim}
-./riggs.py -o riggs.nc
-\end{verbatim}
-A file \texttt{riggs.nc} will be created.  This data is one-dimensional; it is just a lists of values which have an index dimension \texttt{count} in the NetCDF file \texttt{riggs.nc}.
-
-Now, \texttt{pross} can read this data and compute a $\chi^2$ statistic comparing computed PISM output to the data:
-
-\small
-\begin{verbatim}
-$ mpiexec -n 2 pross -boot_file ross.nc -Mx 147 -My 147 \
-          -riggs riggs.nc -o rossComputed.nc
-PROSS trunk 0.3.1449 (EISMINT-Ross diagnostic velocity computation mode)
-. . .
-* Initializing the SSA stress balance...
-  [using the finite difference implementation]
-* Solving the SSA stress balance ...
-comparing to RIGGS data in riggs.nc ...
-. . .
-Chi^2 statistic for computed results compared to RIGGS is   3680.748
-maximum computed speed in ice shelf is   1401.166 (m/a)
-ERRORS relative to observations of Ross Ice Shelf:
-. . .
- average relative error in vector vel =   0.07168
-\end{verbatim}
-\normalsize
-
-Naturally, the question is ``does this $\chi^2$ value of $3681$ represent a good fit of model result to observations''?  Also naturally, there is no objective answer.  For comparison, Table 1 in \cite{MacAyealetal} is reproduced here as Table \ref{tab:chisqr}.  As noted, all these results are with a constant hardness parameter $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal}. The maximum computed horizontal ice speed above of $1401$ m/a is slightly lower than the maximum velocities reported by some other models but, on the other hand, the maximum measured speed in the RIGGS data set is $1007$ m/a (occurring near the calving front, naturally).  The $\chi^2$ result is essentially as good as the best in the Table, noting smaller $\chi^2$ is better.
-
-\small
-\begin{table}[ht]
-\centering
-\begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.3\linewidth}}\toprule
-\textsl{Model} & $\chi^2$ & \textsl{Maximum velocity, m/year} \\\midrule
-Bremerhaven1 & 3605 & 1379 \\
-Bremerhaven2 & 12\,518 & 1663 \\
-Chicago1 & 5114 & 1497 \\
-Chicago2 & 5125 & 1497 \\
-Grenoble & 5237 & 1508 \\
-\bottomrule
-\end{tabular}
-\label{tab:chisqr}
-\caption{Model performance index, $\chi^2$ (non-dimensional).  \protect{\textsl{(Reproduction of Table 1 in \cite{MacAyealetal}.)}}}
-\end{table}
-\normalsize
-
-\subsubsection*{Alternative FEM method for SSA equations}  Do the following to run the FEM implementation of the SSA equations:
-
-\begin{verbatim}
-$ export METHOD=fem
-$ ./quickstart.sh
-\end{verbatim}
-
-
-\subsubsection*{Tuning the ice hardness for a better fit to RIGGS}  Because there is a relatively rich data set from RIGGS on ice velocity, it is reasonable to ask whether the PISM computed velocities can fit the data better if the spatially-constant hardness parameter $\bar B$ is adjusted.  In directory \texttt{examples/eisross/} there is a Python script \texttt{tune.py} which (by default) runs \texttt{pross} with seven values of $\bar B$ ranging from $\bar B = 1.6  \times 10^8$ to $\bar B = 2.2 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$.  It uses smaller values for the convergence tolerances (by default), yielding slightly different $\chi^2$ values.  It can be run in parallel: ``\texttt{\$ ./tune.py -n 4}.''
-
-One sees that hardnesses $\bar B = 1.9,2.0 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ give the best fits, by the standard of $\chi^2$ relative to RIGGS data.  This fitting exercise is a first small step towards inverse modelling of the spatially-distributed effective viscosity.  Another major tunable parameter, not demonstrated with \texttt{tune.py}, is the calving front force boundary condition.  More steps in the inverse modeling direction, for modeled velocity in Antarctic ice shelves, are found in \cite{HumbertGreveHutter,RommelaereMacAyeal}.
-
-
-\subsubsection*{Additional visualization}  The visualization abilities of PISM's runtime viewers, and of \texttt{ncview} for NetCDF files, are limited.  On the other hand, one can produce pretty pictures using Python.  The script \texttt{rossplot.py} uses Python packages \texttt{netcdf4-python} and \texttt{matplotlib} to do this.  Assuming that files \texttt{ross.nc} and \texttt{rossComputed.nc} were produced as described previously, and are in the current directory, and that file \texttt{riggs_clean.dat} is present in the current directory too, then we can do:
-
-\begin{verbatim}
-$ ./rossplot.py
-\end{verbatim}
-
-\noindent We get Figure \ref{fig:rosspython}.  We have succeeded in modeling the flow in a real ice shelf.
+The script \texttt{plot.py} used PISM output such as \texttt{out_211.nc} to produce Figure \ref{fig:rosspython}. This run used the enhancement factor of $0.6$. The thin black line outlines the shelf (which is the actual ``modeling domain'' here). Compare to Figure \ref{fig:eisrosspython}, which shows PISM results using the EISMINT-Ross setup circa 2011.
 
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[width=3.3in,keepaspectratio=true]{rossquiver}\quad \includegraphics[width=2.7in,keepaspectratio=true]{rossscatter}}
-\caption{\protect{\emph{Left}}: Color is speed in m/a.  Arrows are observed (black) and computed (red) velocities at RIGGS points.  \protect{\emph{Right}}: Comparison between modeled and observed speeds at RIGGS points; compare Figure 2 in \cite{MacAyealetal}.}
+\caption{\protect{\emph{Left}}: Color is speed in m/a.  Arrows are observed (white) and modeled (black) velocities.  \protect{\emph{Right}}: Comparison between modeled and observed speeds at points plotted on the left; compare to Figure \ref{fig:eisrosspython}.}
 \label{fig:rosspython}
 \end{figure}
 
+\begin{figure}[ht]
+\centering
+\mbox{\includegraphics[width=3.3in,keepaspectratio=true]{oldeismintrossquiver}\quad \includegraphics[width=2.7in,keepaspectratio=true]{oldeismintrossscatter}}
+\caption{\protect{\emph{Left}}: Color is speed in m/a.  Arrows are observed (black) and computed (red) velocities at RIGGS points.  \protect{\emph{Right}}: Comparison between modeled and observed speeds at RIGGS points; compare Figure 2 in \cite{MacAyealetal}.}
+\label{fig:eisrosspython}
+\end{figure}
 
-%%% Local Variables: 
+\subsubsection*{Extending this example}
+
+The mechanism described in this section can be easily extended to create flow models of Filchner-Ronne Ice Shelf as in \cite{AlbrechtLevermann2012}, for example. All you need is choose a different part of the domain covered by data-sets used here. See \texttt{preprocess.py} for details.
+
+One can also create a \emph{dynamical} model if an ice shelf with constant-in-time inflow from the grounding line. See scripts in \texttt{examples/ross/prognostic}.
+
+%%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "manual"
-%%% End: 
+%%% End:

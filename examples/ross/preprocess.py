@@ -76,6 +76,7 @@ def preprocess_ice_velocity():
         nc.close()
 
     if not os.path.exists(output_filename):
+        # modify this command to cut-out a different region
         cmd = "ncks -d x,2200,3700 -d y,3500,4700 -O %s %s" % (input_filename, output_filename)
         run(cmd)
 
@@ -116,6 +117,7 @@ def preprocess_albmap():
 
     commands = ["wget -nc %s" % url,                # download
                 "unzip -n %s.zip" % input_filename, # unpack
+                # modify this command to cut out a different region
                 "ncks -O -d x1,439,649 -d y1,250,460 %s %s" % (input_filename, output_filename), # cut out
                 "ncks -O -v usrf,lsrf,topg,temp,acca %s %s" % (output_filename, output_filename), # trim
                 "ncrename -O -d x1,x -d y1,y -v x1,x -v y1,y %s" % output_filename, # fix metadata
