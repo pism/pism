@@ -24,6 +24,7 @@ experiments.  Running `run.py --help` produces the following:
       -e EXPERIMENT, --experiment=EXPERIMENT
                             MISMIP experiments (one of '1a', '1b', '2a', '2b',
                             '3a', '3b')
+      -s STEP, --step=STEP  MISMIP step number
       -u, --uniform_thickness
                             Use uniform 10 m ice thickness
       -a, --all             Run all experiments
@@ -97,23 +98,17 @@ The script `run.py` generates `bash` scripts performing MISMIP runs using
 Implementation details
 ----------------------
 
-The only addition to the PISM code necessary to run MISMIP experiment is the
-sliding law; see `src/base/basal_strength/MISMIPBasalResistanceLaw.cc`. This
-code is turned "on" using the "`-mismip_sliding`" command-line option for the
-general-purpose PISM executable `pismr`.
+We can turn PISM's default sliding law into MISMIP's power law by setting it to 1 meter per second, which will make it inactive.
 
-Once selected, `MISMIPBasalResistanceLaw` expects to find configuration
-parameters `MISMIP_m` (the the sliding law exponent),
-`MISMIP_C` (a multiplicative factor in the sliding law),
-and `MISMIP_r` (a regularization parameter) in the configuation database.
-We use the `-config_override` option to provide these, along with
-MISMIP-specific values of the ice softness, ice density, etc.
+The `-pseudo_plastic_uthreshold` command-line option we use takes the argument in meters per year, so we use `-pseudo_plastic_uthreshold 3.15569259747e7`, where `3.15569259747e7` is the number of seconds in a year.
 
-Note that PISM does not at this time implement the stopping criteria described
-in the MISMIP specification.  Instead
-we use the maximum run lengths that are provided as an alternative. On the other hand,
-PISM's output files contain all the information necessary to compute the rate of change
-of the grounding line position and the thickness rate of change during post-processing.
+The MISMIP parameter C corresponds to `tauc` in PISM. It can be set using `-hold_tauc -tauc C`.
+
+The MISMIP power law exponent `m` corresponds to `-pseudo_plastic_q` in PISM.
+
+We use the `-config_override` option to set other MISMIP-specific parameters, such as ice softness, ice density and others.
+
+Note that PISM does not at this time implement the stopping criteria described in the MISMIP specification.  Instead we use the maximum run lengths that are provided as an alternative. On the other hand, PISM's output files contain all the information necessary to compute the rate of change of the grounding line position and the thickness rate of change during post-processing.
 
 Post-processing
 ---------------

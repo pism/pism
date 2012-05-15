@@ -41,7 +41,6 @@
 #include "PISMProf.hh"
 #include "LocalInterpCtx.hh"
 #include "pism_options.hh"
-#include "MISMIPBasalResistanceLaw.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -712,26 +711,15 @@ PetscErrorCode IceModel::allocate_basal_resistance_law() {
   if (basal != NULL)
     return 0;
 
-  bool flag;
-  PetscErrorCode ierr;
-  ierr = PISMOptionsIsSet("-mismip_sliding", "Turn on the MISMIP sliding law",
-                          flag); CHKERRQ(ierr);
+  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till");
+  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
+    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/s"),
+    plastic_regularization = config.get("plastic_regularization", "1/year", "1/second");
 
-  if (flag) {
-    basal = new MISMIPBasalResistanceLaw(config.get("MISMIP_m"), // sliding law exponent
-                                         config.get("MISMIP_C"), // sliding law factor
-                                         config.get("MISMIP_r")); // regularization parameter
-  } else {
-    bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till");
-    PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
-      pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/s"),
-      plastic_regularization = config.get("plastic_regularization", "1/year", "1/second");
-
-    basal = new IceBasalResistancePlasticLaw(plastic_regularization,
-                                             do_pseudo_plastic_till,
-                                             pseudo_plastic_q,
-                                             pseudo_plastic_uthreshold);
-  }
+  basal = new IceBasalResistancePlasticLaw(plastic_regularization,
+                                           do_pseudo_plastic_till,
+                                           pseudo_plastic_q,
+                                           pseudo_plastic_uthreshold);
 
   return 0;
 }

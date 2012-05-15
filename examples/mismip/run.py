@@ -104,13 +104,17 @@ class Experiment:
         "Options corresponding to modeling choices."
         config_filename = self.config(step)
 
-        options = ["-mismip_sliding",
-                   "-cold",                 # allow selecting cold-mode flow laws
-                   "-no_energy",                # isothermal setup
-                   "-ssa_sliding",              # use SSA
-                   "-mismip_sliding",           # turn "on" the MISMIP sliding law
+        options = ["-cold",             # allow selecting cold-mode flow laws
                    "-sia_flow_law isothermal_glen", # isothermal setup
                    "-ssa_flow_law isothermal_glen", # isothermal setup
+                   "-no_energy",                    # isothermal setup
+                   "-ssa_sliding",                  # use SSA
+                   "-hold_tauc",
+                   "-tauc %e" % MISMIP.C(self.experiment),
+                   "-pseudo_plastic",
+                   "-gradient eta",
+                   "-pseudo_plastic_q %e" % MISMIP.m(self.experiment),
+                   "-pseudo_plastic_uthreshold %e" % secpera,
                    "-ocean_kill",               # calving at the present front
                    "-config_override %s" % config_filename,
                    "-ssa_method fd",       # use the FD solver that includes PIK improvements
@@ -156,9 +160,7 @@ class Experiment:
                  "Glen_exponent" : MISMIP.n(),
                  "standard_gravity": MISMIP.g(),
                  "ocean_sub_shelf_heat_flux_into_ice" : 0.0,
-                 "MISMIP_C" : MISMIP.C(self.experiment), # sliding law factor
-                 "MISMIP_m": MISMIP.m(self.experiment),  # sliding law exponent
-                 "MISMIP_r" : 0.01 / secpera} # regularization parameter
+                 }
 
         for name, value in attrs.iteritems():
             var.setncattr(name, value)

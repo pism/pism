@@ -30,7 +30,7 @@ if opts.output:
     outfilename=opts.output
 else:
     import os.path
-    outfilename=os.path.splitext(infilename)[0] + "-flux.png"
+    outfilename=os.path.splitext(infilename)[0] + "-flux.pdf"
 
 print "opening %s to read cflx" % infilename
 nc = NC(infilename, 'r')
