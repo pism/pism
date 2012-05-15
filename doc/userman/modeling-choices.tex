@@ -337,16 +337,16 @@ The purely plastic case is $q=0$ \cite{SchoofStream}, and it is the default, so 
 
 Equation \eqref{eq:pseudopower} is a very flexible power law form.  The linear case is $q=1$, giving a law of the form
     $$\tau_b = \beta \mathbf{u}$$
-if $\beta=\tau_c/u_{\text{threshold}}$; the coefficient is also called $\beta^2$ \cite{MacAyeal}.  If you want such a linear sliding law, and you have a value $\beta=$\verb|beta| in $\text{Pa}\,\text{s}\,\text{m}^{-1}$, then you should use option combination
+if $\beta=\tau_c/u_{\text{threshold}}$; the coefficient is also called $\beta^2$ \cite{MacAyeal}.  If you want such a linear sliding law, and you have a value $\beta=$\verb|beta| in $\text{Pa}\,\text{s}\,\text{m}^{-1}$, then you should use this option combination:
 \begin{verbatim}
--pseudo_plastic -pseudo_plastic_q 1.0 -pseudo_plastic_uthreshold 3.16887646e-8 \
+-pseudo_plastic -pseudo_plastic_q 1.0 -pseudo_plastic_uthreshold 3.1556926e7 \
   -hold_tauc -tauc beta
 \end{verbatim}
-\noindent (You are setting $u_{\text{threshold}}$ to 1 $\text{m}\,\text{s}^{-1}$ but using units $\text{m}\,\text{a}^{-1}$.)  It is also common in the literature to see sliding relations
+\noindent (You are setting $u_{\text{threshold}}$ to 1 $\text{m}\,\text{s}^{-1}$ but using units $\text{m}\,\text{a}^{-1}$.)  More generally, it is common in the literature to see power-law sliding relations in the form
     $$\tau_b = C |\mathbf{u}|^{m-1} \mathbf{u},$$
-as, for example, in section \ref{subsect:MISMIP}.  Use this option combination
+as, for example, in section \ref{subsect:MISMIP}.  In that case, use this option combination:
 \begin{verbatim}
--pseudo_plastic -pseudo_plastic_q m -pseudo_plastic_uthreshold 3.16887646e-8 \
+-pseudo_plastic -pseudo_plastic_q m -pseudo_plastic_uthreshold 3.1556926e7 \
   -hold_tauc -tauc C
 \end{verbatim}
 
