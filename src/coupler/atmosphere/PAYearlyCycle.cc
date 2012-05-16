@@ -127,7 +127,7 @@ PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename)
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(filename); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "air_temp_mean_annual")) {

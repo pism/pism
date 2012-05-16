@@ -288,6 +288,17 @@ PetscErrorCode PISMStressBalance::stdout_report(string &result) {
   return 0;
 }
 
+PetscErrorCode PISMStressBalance::define_variables(set<string> vars, const PIO &nc,
+                                                   PISM_IO_Type nctype) {
+  PetscErrorCode ierr;
+
+  ierr = stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = modifier->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 PetscErrorCode PISMStressBalance::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 

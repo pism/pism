@@ -97,7 +97,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   if (!usurf) SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 
 
-  // allocate NCSpatialVariables for storing temperature and surface mass balance fields
+  // NCSpatialVariables storing temperature and surface mass balance metadata
 
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");

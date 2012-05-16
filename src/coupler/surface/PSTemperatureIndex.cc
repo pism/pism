@@ -388,7 +388,7 @@ PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result
 
 void PSTemperatureIndex::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
 
-  atmosphere->add_vars_to_output(keyword, result);
+  PISMSurfaceModel::add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
     result["climatic_mass_balance"] = climatic_mass_balance.get_metadata();

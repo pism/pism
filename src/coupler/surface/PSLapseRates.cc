@@ -58,7 +58,7 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
-                  "ice temperature at the ice surface");
+                              "ice temperature at the ice surface");
   ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
@@ -76,6 +76,15 @@ PetscErrorCode PSLapseRates::ice_surface_temperature(IceModelVec2S &result) {
   ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, temp_lapse_rate); CHKERRQ(ierr);
   return 0;
+}
+
+void PSLapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+  if (keyword == "medium" || keyword == "big") {
+    result["ice_surface_temp"] = ice_surface_temp;
+    result["climatic_mass_balance"] = climatic_mass_balance;
+  }
+
+  input_model->add_vars_to_output(keyword, result);
 }
 
 PetscErrorCode PSLapseRates::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
@@ -126,9 +135,3 @@ PetscErrorCode PSLapseRates::write_variables(set<string> vars, string filename) 
   return 0;
 }
 
-void PSLapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
-  if (keyword == "medium" || keyword == "big") {
-    result["ice_surface_temp"] = ice_surface_temp;
-    result["climatic_mass_balance"] = climatic_mass_balance;
-  }
-}

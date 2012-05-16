@@ -139,24 +139,24 @@ void PSStuffAsAnomaly::add_vars_to_output(string keyword, map<string,NCSpatialVa
     input_model->add_vars_to_output(keyword, result);
   }
 
-  result[temp.string_attr("short_name")] = temp.get_metadata();
-  result[mass_flux.string_attr("short_name")] = mass_flux.get_metadata();
+  result["ice_surface_temp"] = temp.get_metadata();
+  result["climatic_mass_balance"] = mass_flux.get_metadata();
 }
 
 PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, temp.string_attr("short_name"))) {
+  if (set_contains(vars, "ice_surface_temp")) {
     ierr = temp.define(nc, nctype); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, mass_flux.string_attr("short_name"))) {
+  if (set_contains(vars, "climatic_mass_balance")) {
     ierr = mass_flux.define(nc, nctype); CHKERRQ(ierr);
   }
 
   // ensure that no one overwrites these two
-  vars.erase(temp.string_attr("short_name"));
-  vars.erase(mass_flux.string_attr("short_name"));
+  vars.erase("ice_surface_temp");
+  vars.erase("climatic_mass_balance");
 
   if (input_model != NULL) {
     ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -168,17 +168,17 @@ PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const PIO &n
 PetscErrorCode PSStuffAsAnomaly::write_variables(set<string> vars, string fname) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, temp.string_attr("short_name"))) {
+  if (set_contains(vars, "ice_surface_temp")) {
     ierr = temp.write(fname); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, mass_flux.string_attr("short_name"))) {
+  if (set_contains(vars, "climatic_mass_balance")) {
     ierr = mass_flux.write(fname); CHKERRQ(ierr);
   }
 
   // ensure that no one overwrites these two
-  vars.erase(temp.string_attr("short_name"));
-  vars.erase(mass_flux.string_attr("short_name"));
+  vars.erase("ice_surface_temp");
+  vars.erase("climatic_mass_balance");
 
   if (input_model != NULL) {
     ierr = input_model->write_variables(vars, fname); CHKERRQ(ierr);

@@ -33,6 +33,13 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
+
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+protected:
+  NCSpatialVariable shelfbmassflux, shelfbtemp;
 };
 
 #endif /* _PODSBMFFORCING_H_ */

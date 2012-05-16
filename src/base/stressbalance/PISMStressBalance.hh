@@ -56,6 +56,11 @@ public:
    */
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 
+  //! Defines requested fields to file and/or asks an attached
+  //! model to do so.
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+                                          PISM_IO_Type /*nctype*/);
+
   //! Writes requested fields to a file.
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 

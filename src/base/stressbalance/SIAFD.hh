@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,6 +50,21 @@ public:
 
   //! Add pointers to diagnostic quantities to a dictionary.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+
+  virtual void add_vars_to_output(string /*keyword*/,
+                                  map<string,NCSpatialVariable> &/*result*/)
+  { }
+
+  //! Defines requested couplings fields to file and/or asks an attached
+  //! model to do so.
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+                                          PISM_IO_Type /*nctype*/)
+  { return 0; }
+
+  //! Writes requested couplings fields to file and/or asks an attached
+  //! model to do so.
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
+  { return 0; }
 
 protected:
   virtual PetscErrorCode allocate();

@@ -36,6 +36,16 @@ public:
                                           PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
+  virtual void add_vars_to_output(string keyword,
+                                  map<string,NCSpatialVariable> &result);
+
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
+
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+
+protected:
+  NCSpatialVariable air_temp, precipitation;
 };
 
 

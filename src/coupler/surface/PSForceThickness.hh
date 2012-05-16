@@ -48,6 +48,7 @@ protected:
   PetscReal alpha;
   IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
   IceModelVec2S target_thickness, ftt_mask;
+  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
 };
 
 #endif /* _PSFORCETHICKNESS_H_ */

@@ -116,18 +116,16 @@ public:
     Keyword can be one of "small", "medium" or "big".
    */
   virtual void add_vars_to_output(string /*keyword*/,
-                                  map<string,NCSpatialVariable> &/*result*/) {}
+                                  map<string,NCSpatialVariable> &/*result*/) = 0;
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/)
-  { return 0; }
+                                          PISM_IO_Type /*nctype*/) = 0;
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
-  { return 0; }
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}

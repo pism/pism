@@ -144,7 +144,7 @@ PetscErrorCode PALapseRates::write_variables(set<string> vars, string filename) 
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(filename); CHKERRQ(ierr);
 
     vars.erase("air_temp");
   }
@@ -156,7 +156,7 @@ PetscErrorCode PALapseRates::write_variables(set<string> vars, string filename) 
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(filename); CHKERRQ(ierr);
 
     vars.erase("precipitation");
   }
