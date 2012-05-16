@@ -191,7 +191,7 @@ class Experiment:
 
         options = ["-extra_file %s" % extra_file,
                    "-extra_times 0:50:3e4",
-                   "-extra_vars thk,topg,cbar,cflx,mask,dHdt,usurf",
+                   "-extra_vars thk,topg,cbar,cflx,mask,dHdt,usurf,hardav",
                    "-ts_file %s" % ts_file,
                    "-ts_times 0:50:3e4",
                    "-o %s" % output_file,

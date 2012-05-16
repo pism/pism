@@ -32,19 +32,39 @@ parser.add_option("-s", "--step", dest="step", type="int",
 infilename=""
 outfilename=""
 
-if opts.experiment is None:
-    print "Please specify the experiment name (e.g. '-e 1a')."
-    exit(0)
-
-if opts.step is None:
-    print "Please specify the step (e.g. '-s 1')."
-    exit(0)
-
 try:
     infilename = args[0]
 except:
     print "ERROR: An input file is requied."
     exit(0)
+
+tokens = infilename.split('_')
+if tokens[0] == "ex":
+    print "Using an -extra_file %s" % infilename
+    tokens = tokens[1:]
+
+try:
+    model = tokens[0]
+    experiment = tokens[1]
+    mode = int(tokens[2][1])
+    step = int(tokens[3][1])
+
+    print "Plotting profile for model %s, experiment %s, grid mode %s, step %s" % (model, experiment, mode, step)
+except:
+    print "Can't parse file name %s" % infilename
+
+    if opts.experiment is None:
+        print "Please specify the experiment name (e.g. '-e 1a')."
+        exit(0)
+    else:
+        experiment = opts.experiment
+
+    if opts.step is None:
+        print "Please specify the step (e.g. '-s 1')."
+        exit(0)
+    else:
+        step = opts.step
+
 
 if opts.output:
     outfilename=opts.output
@@ -52,7 +72,7 @@ else:
     import os.path
     outfilename=os.path.splitext(infilename)[0] + "-profile.pdf"
 
-xg = MISMIP.x_g(opts.experiment, opts.step)
+xg = MISMIP.x_g(experiment, step)
 
 print "opening %s" % infilename
 nc = NC(infilename)
@@ -104,7 +124,7 @@ plot(x, usurf, 'o', color='blue', markersize=4)
 plot(x, lsrf, 'o', color='blue', markersize=4)
 xlabel('distance from the divide, km')
 ylabel('elevation, m')
-title("MISMIP experiment %s, step %d" % (opts.experiment, opts.step))
+title("MISMIP experiment %s, step %d" % (experiment, step))
 text(1200.0,4000.0,"$x_g$ (model) = %4.0f km" % (xg_PISM/1e3), color='r')
 text(1200.0,3500.0,"$x_g$ (theory) = %4.0f km" % (xg/1e3))
 
