@@ -875,7 +875,7 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, PISM_IO_Type
   MPI_Barrier(com);
   MPI_Bcast(&tmp, 1, MPI_INT, 0, com);
 
-  result = nc_type_to_pism_type(tmp);
+  result = nc_type_to_pism_type(static_cast<nc_type>(tmp));
 
   return 0;
 }
