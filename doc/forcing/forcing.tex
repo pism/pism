@@ -116,7 +116,7 @@ PISM's climate forcing code has two kinds of components.
 \end{itemize}
 
 Model~components and modifiers can be chained as shown in
-Figure~\ref{fig:climate-input-data-flow-repeated}. For example,
+Figure~\ref{fig:climate-input-data-flow}. For example,
 \begin{verbatim}
 -ocean constant,delta_SL -ocean_delta_SL_file delta_SL.nc
 \end{verbatim}
@@ -138,22 +138,22 @@ choose models.  Before that we address how PISM handles model time
 
 Setting up PISM's climate interface \emph{requires} selecting one surface and one
 ocean component. The surface component may use an atmosphere component also;
-see Figure \ref{fig:climate-input-data-flow-repeated}. Command-line options
+see Figure \ref{fig:climate-input-data-flow}. Command-line options
 \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} each take a
 comma-separated list of keywords as an argument; the first keyword \emph{has}
 to correspond to a model~component, the rest can be ``modifier'' components.
 Any of these options can be omitted to use the default atmosphere, surface or
 ocean model~components, but one has to explicitly choose a model~component
 to use a modifier. Model~components and modifiers are chained as in Figure
-\ref{fig:climate-input-data-flow-repeated}.
+\ref{fig:climate-input-data-flow}.
 \end{quote}
 
 \begin{figure}
   \centering
-  \includegraphics[width=5in]{../userman/figs/data-flow.pdf}
+  \includegraphics[width=5in]{data-flow.pdf}
   \caption{PISM climate input data flow.  Colored arrows match colored interfaces in
     Figure \ref*{userman-fig:climate-inputs} in the User's Manual.  An atmosphere component is only needed for some surface models.}
-  \label{fig:climate-input-data-flow-repeated}
+  \label{fig:climate-input-data-flow}
 \end{figure}
 
 
