@@ -37,7 +37,7 @@ def y(x):
     dy = dx
     return np.array([-dy, 0, dy])
 
-def thickness(experiment, step, x, calving_front=1600e3, semianalytical_profile=True):
+def thickness(experiment, step, x, calving_front=1750e3, semianalytical_profile=True):
 
     # we expect x to have an odd number of grid points so that one of them is
     # at 0
