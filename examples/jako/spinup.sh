@@ -65,7 +65,12 @@ CLIMATEFILE=g5km_climate.nc
 BCFILE=g5km_bc.nc
 
 CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thk $BOOT"
-PHYS="-ocean_kill $BOOT -cfbc -kill_icebergs -topg_to_phi 5.0,30.0,-300.0,700.0 -diffuse_bwat -thk_eff -ssa_sliding -plastic_pwfrac 0.95 -pseudo_plastic -pseudo_plastic_q 0.25"
+
+# regarding physics: '-plastic_pwfrac 0.98 -pseudo_plastic -pseudo_plastic_q 0.25' matches
+#   spinup.sh in examples/searise-greenland/spinup.sh.  but here we do not use -sia_e 3.0
+#   and we use a particular calving model that is different
+PHYS="-ocean_kill $BOOT -cfbc -kill_icebergs -topg_to_phi 5.0,30.0,-300.0,700.0 -diffuse_bwat -thk_eff -ssa_sliding -plastic_pwfrac 0.98 -pseudo_plastic -pseudo_plastic_q 0.25"
+
 SKIP=5
 
 LENGTH=2000   # model years
