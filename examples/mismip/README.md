@@ -100,7 +100,7 @@ Implementation details
 
 We can turn PISM's default sliding law into MISMIP's power law by setting it to 1 meter per second, which will make it inactive.
 
-The `-pseudo_plastic_uthreshold` command-line option we use takes the argument in meters per year, so we use `-pseudo_plastic_uthreshold 3.15569259747e7`, where `3.15569259747e7` is the number of seconds in a year.
+The `-pseudo_plastic_uthreshold` command-line option takes an argument in meters per year, so we use `-pseudo_plastic_uthreshold 3.15569259747e7`, where `3.15569259747e7` is the number of seconds in a year.
 
 The MISMIP parameter C corresponds to `tauc` in PISM. It can be set using `-hold_tauc -tauc C`.
 
@@ -116,19 +116,21 @@ Post-processing
 Converting PISM output files to ASCII files following MISMIP
 specifications is left as an exercise.
 
-However, we do provide scripts `plot_flux.py` and `plot_profile.py`.
+However, we do provide the `plot.py` script for visualization.
 
-`plot_flux.py` plots ice flux as a function of the distance from the divide. It
-produces a `.png` image. We see a discontinuity in the flux at the grounding
+It plots modeled ice flux as a function of the distance from the divide and the geometry profile.
+
+We see a discontinuity in the flux at the grounding
 line. This is an issue in PISM that needs to be addressed to improve its
 handling of the grounding line motion. For example, try
 
-    ./showflux.py -o flux.png ABC1_1a_M1_A1.nc
+    ./plot.py ABC1_1a_M1_A1.nc -f -o flux.png
 
-`plot_profile.py` plots the geometry profile at the end of a PISM run and shows
-modeled and theoretical locations of the grounding line. Try
+Run `plot.py --help` for a list of command-line options. You can also produce plots for several PISM output files at once. For example,
 
-    ./plot_profile.py -o profile.png ABC1_1a_M1_A1.nc
+    ./plot.py ABC*.nc
+
+will create geometry profile *and* ice flux plots for all matched files.
 
 Also, note that the variable `iareag` in `ts_ABC1_1a_M1_A1.nc` and similar
 allows one to see time-dependent changes in the grounding line location

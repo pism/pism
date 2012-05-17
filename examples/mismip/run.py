@@ -11,8 +11,6 @@ try:
 except:
     from netCDF3 import Dataset as NC
 
-secpera = 3.15569259747e7
-
 # The "standard" preamble used in many PISM scripts:
 preamble = '''
 #!/bin/bash
@@ -114,7 +112,7 @@ class Experiment:
                    "-pseudo_plastic",
                    "-gradient eta",
                    "-pseudo_plastic_q %e" % MISMIP.m(self.experiment),
-                   "-pseudo_plastic_uthreshold %e" % secpera,
+                   "-pseudo_plastic_uthreshold %e" % MISMIP.secpera(),
                    "-ocean_kill",               # calving at the present front
                    "-config_override %s" % config_filename,
                    "-ssa_method fd",       # use the FD solver that includes PIK improvements

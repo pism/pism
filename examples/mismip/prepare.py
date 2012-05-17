@@ -59,7 +59,7 @@ def thickness(experiment, step, x, calving_front=1750e3, semianalytical_profile=
     return np.tile(thk, (3, 1))
 
 def pism_bootstrap_file(filename, experiment, step, mode,
-                        calving_front=1600e3, N=None, semianalytical_profile=True):
+                        calving_front=1750e3, N=None, semianalytical_profile=True):
     import PISMNC
 
     xx = x(mode, N)

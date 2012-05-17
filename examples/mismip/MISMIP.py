@@ -8,6 +8,10 @@ experiments.
 It should not be cluttered with plotting or NetCDF output code.
 """
 
+def secpera():
+    "Number of seconds per year."
+    return 3.15569259747e7
+
 def L():
     "The length of the MISMIP domain."
     return 1800e3
@@ -102,8 +106,7 @@ def n():
 
 def a():
     "Accumulation rate (m/s)"
-    secpera = 31556926.  # (= 365.2422 days/a)
-    return 0.3 / secpera
+    return 0.3 / secpera()
 
 def m(experiment):
     "Sliding law exponent"
