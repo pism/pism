@@ -11,10 +11,10 @@ try:
 except:
     from netCDF3 import Dataset as NC
 
+import sys
+
 # The "standard" preamble used in many PISM scripts:
 preamble = '''
-#!/bin/bash
-
 if [ -n "${SCRIPTNAME:+1}" ] ; then
   echo "[SCRIPTNAME=$SCRIPTNAME (already set)]"
   echo ""
@@ -311,10 +311,12 @@ if __name__ == "__main__":
         run_mismip(opts.initials, opts.executable, opts.semianalytic)
         exit(0)
 
+    print "#!/bin/bash"
+    print "# This script was created by examples/mismip/run.py. The command was:"
+    print "# %s" % (' '.join(sys.argv))
+
     if opts.executable is None:
         print preamble
-    else:
-        print "#!/bin/bash"
 
     e = Experiment(opts.experiment,
                    initials=opts.initials,

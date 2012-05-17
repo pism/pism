@@ -241,12 +241,11 @@ def thickness(experiment, step, x, theta=0.0):
 
     return np.r_[thk_grounded, thk_floating]
 
+def plot_profile(experiment, step, out_file):
+    from pylab import figure, subplot, hold, plot, xlabel, ylabel, text, title, axis, vlines, savefig
 
-if __name__ == "__main__":
-    from pylab import figure, hold, plot, xlabel, ylabel, title, show
-
-    experiment = "1a"
-    step = 1
+    if out_file is None:
+        out_file = "MISMIP_%s_A%d.pdf" % (experiment, step)
 
     xg = x_g(experiment, step)
 
@@ -256,6 +255,7 @@ if __name__ == "__main__":
     x_floating, thk_floating = x[x >= xg], thk[x >= xg]
 
     figure(1)
+    ax = subplot(111)
     hold(True)
     plot(x/1e3, np.zeros_like(x), ls='dotted', color='red')
     plot(x/1e3, -b(experiment, x), color='black')
@@ -263,7 +263,30 @@ if __name__ == "__main__":
                       thk_floating * (1 - rho_i()/rho_w())],
          color='blue')
     plot(x_floating/1e3, -thk_floating * (rho_i()/rho_w()), color='blue')
+    _, _, ymin, ymax = axis(xmin=0, xmax=x.max()/1e3)
+    vlines(xg/1e3, ymin, ymax, linestyles='dashed', color='black')
+
     xlabel('distance from the summit, km')
     ylabel('elevation, m')
+    text(0.6, 0.9, "$x_g$ (theory) = %4.0f km" % (xg/1e3),
+         color='black', transform=ax.transAxes)
     title("MISMIP experiment %s, step %d" % (experiment, step))
-    show()
+    savefig(out_file)
+
+if __name__ == "__main__":
+    from optparse import OptionParser
+
+    parser = OptionParser()
+
+    parser.usage = "%prog [options]"
+    parser.description = "Plots the theoretical geometry profile corresponding to MISMIP experiment and step."
+    parser.add_option("-e", "--experiment", dest="experiment", type="string",
+                      default='1a',
+                      help="MISMIP experiments (one of '1a', '1b', '2a', '2b', '3a', '3b')")
+    parser.add_option("-s", "--step", dest="step", type="int", default=1,
+                      help="MISMIP step number")
+    parser.add_option("-o", dest="out_file", help="output file name")
+
+    (opts, args) = parser.parse_args()
+
+    plot_profile(opts.experiment, opts.step, opts.out_file)
