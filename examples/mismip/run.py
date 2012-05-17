@@ -158,6 +158,7 @@ class Experiment:
                  "Glen_exponent" : MISMIP.n(),
                  "standard_gravity": MISMIP.g(),
                  "ocean_sub_shelf_heat_flux_into_ice" : 0.0,
+                 "bed_smoother_range" : 0.0,
                  }
 
         for name, value in attrs.iteritems():
@@ -251,6 +252,7 @@ class Experiment:
             steps = range(1, 16)
 
         if step is not None:
+            input_file = None
             steps = [step]
 
         for step in steps:

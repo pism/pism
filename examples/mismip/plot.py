@@ -2,7 +2,7 @@
 
 import MISMIP
 
-from pylab import figure, hold, plot, xlabel, ylabel, title, axis, vlines, savefig, text
+from pylab import figure, subplot, hold, plot, xlabel, ylabel, title, axis, vlines, savefig, text
 from sys import exit
 
 import numpy as np
@@ -166,6 +166,7 @@ def plot_profile(in_file, out_file):
     x /= 1e3
 
     figure(1)
+    ax = subplot(111)
     hold(True)
     plot(x, np.zeros_like(x), ls='dotted', color='red')
     plot(x, topg, color='black')
@@ -174,8 +175,10 @@ def plot_profile(in_file, out_file):
     xlabel('distance from the divide, km')
     ylabel('elevation, m')
     title("MISMIP experiment %s, step %d" % (experiment, step))
-    text(1200.0,4000.0,"$x_g$ (model) = %4.0f km" % (xg_PISM/1e3), color='r')
-    text(1200.0,3500.0,"$x_g$ (theory) = %4.0f km" % (xg/1e3))
+    text(0.6,0.9,"$x_g$ (model) = %4.0f km" % (xg_PISM/1e3), color='r',
+         transform=ax.transAxes)
+    text(0.6,0.85,"$x_g$ (theory) = %4.0f km" % (xg/1e3), color='black',
+         transform=ax.transAxes)
 
     _, _, ymin, ymax = axis(xmin=0, xmax=x.max())
     vlines(xg/1e3, ymin, ymax, linestyles='dashed', color='black')
