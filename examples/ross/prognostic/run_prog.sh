@@ -47,7 +47,7 @@ cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc \
   -y ${YEARS} -o Mx${M}_year-000${YEARS}.nc -o_order zyx -o_size big \
   -eigen_calving -eigen_calving_K ${ECALV} -thickness_calving -calving_at_thickness 50.0 \
   -ts_file ts-prog.nc -ts_times 0:1:${YEARS} \
-  -save_file Mx${M}_year -save_times ${interval}:${interval}:${YEARS} -save_size medium -save_split "
+  -extra_file ex_Mx${M}.nc -extra_times ${interval}:${interval}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask"
 
 # -ssa_rtol 1.0e-3 -ssa_eps 5.0e15
 # -cfl_eigencalving

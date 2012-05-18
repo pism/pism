@@ -108,7 +108,7 @@ def preprocess_albmap():
     """
     Download and preprocess the ~16Mb ALBMAP dataset from http://doi.pangaea.de/10.1594/PANGAEA.734145
     """
-    url = "http://www.pangaea.de/Publications/LeBrocq_et_al_2010/ALBMAPv1.nc.zip"
+    url = "http://store.pangaea.de/Publications/LeBrocq_et_al_2010/ALBMAPv1.nc.zip"
     input_filename = "ALBMAPv1.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 

@@ -3,7 +3,7 @@ MISMIP in PISM
 
 This directory contains scripts that can be used to run MISMIP experiments using PISM.  To understand the intent of these experiments, please see the MISMIP website at http://homepages.ulb.ac.be/~fpattyn/mismip/, and download the intercomparison description PDF from that site.
 
-Older PISM versions included C++ code managing MISMIP experiments. With the addition of more sophisticated reporting code that old code became unnecessary.  Here all MISMIP-specific code is in python scripts.
+Older PISM versions included C++ code managing MISMIP experiments. With the addition of more sophisticated reporting code that old code became unnecessary.  Here all MISMIP-specific code is in Python scripts.
 
 Step by step instructions
 -------------------------
@@ -89,7 +89,7 @@ thickness profile for each experiment.
 
 The script `prepare.py` contains functions using `MISMIP.py` to generate
 PISM-readable NetCDF files with semi-analytic ice thickness profiles, and
-the prescribed accumulation map. This script can be imported as a module or run
+the prescribed accumulation map. It can be imported as a module or run
 as a script to generate PISM bootstrapping files.
 
 The script `run.py` generates `bash` scripts performing MISMIP runs using
@@ -98,7 +98,8 @@ The script `run.py` generates `bash` scripts performing MISMIP runs using
 Implementation details
 ----------------------
 
-We can turn PISM's default sliding law into MISMIP's power law by setting it to 1 meter per second, which will make it inactive.
+We can turn PISM's default sliding law into MISMIP's power law by setting the
+threshold speed to 1 meter per second, which will make it inactive.
 
 The `-pseudo_plastic_uthreshold` command-line option takes an argument in meters per year, so we use `-pseudo_plastic_uthreshold 3.15569259747e7`, where `3.15569259747e7` is the number of seconds in a year.
 
