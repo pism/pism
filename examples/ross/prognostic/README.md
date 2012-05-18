@@ -5,6 +5,6 @@ This example demonstrates regional evolutionary modeling of ice shelves. Accordi
 
 Run scripts according to the diagnostic case (preprocess, run, plot).
 
-./preprocess_prog.py
-./run_prog.sh 2 211 0.6 50 1e17
-./plot_prog.py --pism-output=Mx211_year-00050.nc
+    ./preprocess_prog.py
+    ./run_prog.sh 2 211 0.6 50 1e17
+    ./plot_prog.py --pism-output=Mx211_year-00050.nc

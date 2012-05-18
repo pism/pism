@@ -10,6 +10,10 @@ import subprocess
 import numpy as np
 import os
 
+smb_name = "climatic_mass_balance"
+temp_name = "ice_surface_temp"
+
+
 def run(commands):
     """Run a list of commands (or one command given as a string)."""
     if isinstance(commands, (list, tuple)):
@@ -107,12 +111,9 @@ def preprocess_albmap():
     """
     Download and preprocess the ~16Mb ALBMAP dataset from http://doi.pangaea.de/10.1594/PANGAEA.734145
     """
-    url = "http://www.pangaea.de/Publications/LeBrocq_et_al_2010/ALBMAPv1.nc.zip"
+    url = "http://store.pangaea.de/Publications/LeBrocq_et_al_2010/ALBMAPv1.nc.zip"
     input_filename = "ALBMAPv1.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
-
-    smb_name = "acab"
-    temp_name = "artm"
 
     commands = ["wget -nc %s" % url,                # download
                 "unzip -n %s.zip" % input_filename, # unpack
@@ -210,7 +211,7 @@ def final_corrections(filename):
                 topg[j,i]=-2000
 
     #modifications for prognostic run
-    tempma = nc.variables['artm'][:]
+    tempma = nc.variables[temp_name][:]
 
     for j in xrange(My):
         for i in xrange(Mx):
@@ -219,7 +220,7 @@ def final_corrections(filename):
             if tempma[j,i] > -20.0:
                 tempma[j,i]=-20.0 # to adjust open ocean temperatures
 
-    nc.variables['artm'][:] = tempma
+    nc.variables[temp_name][:] = tempma
     nc.variables['topg'][:] = topg
 
     nc.close()
