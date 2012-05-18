@@ -2,12 +2,11 @@ Planning for stable0.5 release
 =============
 
 This file has plans on what to do with pism `examples/` subdirectories
-for PISM stable0.5 release.  See also issues #49 and #64 on github.com/pism.
+for PISM stable0.5 release.
 
 To do
 ---------
 * jako         CREATED AND IN DEVELOPMENT; MAKE SECTION IN USER'S MANUAL
-* ross         CREATED AND IN DEVELOPMENT; MAKE SECTION IN USER'S MANUAL
 * storglaciaren         KEEP AND MAINTAIN
 
 These two we are asking PIK to comment on, decide on, and possibly maintain.  See Bueler email 15 May.
@@ -19,14 +18,8 @@ These two we are asking PIK to comment on, decide on, and possibly maintain.  Se
 Done
 ---------
 * mismip
+* ross
 * searise-greenland
-
-
-Do not include in 0.5
----------
-* inverse
-* python
-
 
 Deprecated
 ---------

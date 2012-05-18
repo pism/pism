@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.8.0) # 2.8.0 is almost 3 years old, so this sh
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
-set (Pism_BRANCH "development")
+set (Pism_BRANCH "stable")
 
 # Set Pism_REVISION_TAG
 pism_set_revision_tag()
@@ -106,7 +106,6 @@ endif()
 # The default options cache
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
-option (Pism_BUILD_PYTHON_BINDINGS "Build (experimental) python bindings" OFF)
 
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
@@ -171,22 +170,6 @@ if (Pism_GPROF_FLAGS)
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 endif ()
 
-
-if (Pism_BUILD_PYTHON_BINDINGS)
-  find_package(Python REQUIRED)
-  find_package(PETSc4Py REQUIRED)
-  find_package(SWIG REQUIRED)
-
-  mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
-
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import distutils.sysconfig; print distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}')"
-    OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
-    CACHE PATH "Python extension module installation directory." FORCE)
-endif ()
-
 if (${FFTW_FOUND})
   include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH} ${FFTW_INCLUDES})
 else ()
@@ -237,14 +220,6 @@ install (PROGRAMS
   util/nccmp.py
   util/pism_config_editor.py
   DESTINATION ${Pism_BIN_DIR})
-
-# Install some python-based pieces of PISM
-install (PROGRAMS
-  examples/python/ssa_forward.py
-  examples/python/sia_forward.py
-  examples/inverse/make_synth_ssa.py
-  examples/inverse/vel2tauc.py
-  DESTINATION ${Pism_BIN_DIR} )
 
 if (Pism_BUILD_DOCS)
   add_subdirectory (doc)

@@ -26,7 +26,6 @@
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
-#include "BlatterStressBalance.hh"
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
@@ -41,6 +40,7 @@
 #include "PISMProf.hh"
 #include "LocalInterpCtx.hh"
 #include "pism_options.hh"
+#include "PISMStressBalance.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -623,15 +623,12 @@ PetscErrorCode IceModel::allocate_stressbalance() {
 
   bool
     use_ssa_velocity = config.get_flag("use_ssa_velocity"),
-    do_blatter = config.get_flag("do_blatter"),
     do_sia = config.get_flag("do_sia");
 
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added
   // up (there is no switch saying "do the hybrid").
   if (stress_balance == NULL) {
-    if (do_blatter) {
-      stress_balance = new BlatterStressBalance(grid, ocean, config);
-    } else {
+    {
       ShallowStressBalance *my_stress_balance;
       if (use_ssa_velocity) {
         string ssa_method = config.get_string("ssa_method");

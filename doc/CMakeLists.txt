@@ -79,4 +79,3 @@ if (PDFLATEX_COMPILER)
   endif ()                      # if Pism_BUILD_DOCS
 endif ()                        # if PDFLATEX_COMPILER
 
-add_subdirectory(manpages)
