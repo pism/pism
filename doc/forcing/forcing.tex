@@ -568,7 +568,7 @@ degree-day scheme uses a variable called \variable{precipitation}, and a
 calculation of melting, to get the surface mass balance
 \variable{climatic_mass_balance}.
 
-Assuming that \texttt{g20km_pre100.nc} was created as described in the User's Manual, section~\ref*{userman-sect:start}, running
+Assuming that \texttt{g20km_pre100.nc} was created as described in the User's Manual, section~\ref*{userman-sec:start}, running
 \begin{verbatim}
 $ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
            -surface pdd -times 0:0.1:2.5 -o foo.nc
@@ -857,8 +857,7 @@ Note: this surface model \emph{ignores} the atmosphere model selection made usin
 \end{center}
 
 The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is
-based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see User's
-Manual, section~\ref*{userman-sec:eismint-greenland}, and~\cite{RitzEISMINT}).
+based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
 
 Our PDD implementation is meant to be used with an atmosphere model
 implementing a cosine yearly cycle such as \texttt{searise_greenland} (section
@@ -1129,6 +1128,34 @@ computation (section~\ref{sec:surface-pdd}).
 
 See also section~\ref{sec:surface-given}, which describes a similar surface
 model~component (\texttt{-surface~given}).
+
+\subsection{Cosine yearly cycle}
+\label{sec:cosine-yearly-cycle}
+\optsection{\atmosphere!\texttt{yearly_cycle}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~yearly_cycle}
+    \index[options]{\atmosphere!\texttt{yearly_cycle}} \\
+    NetCDF variables: & \variable{air_temp_mean_annual},\\
+    &\variable{air_temp_mean_july},\\
+    &\variable{precipitation} \mbox{[m/s ice equivalent]}\\
+    &\variable{amplitude_scaling} \\
+    C++ class: & \class{PACosineYearlyCycle}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This atmosphere model~component computes the near-surface air temperature using the following formula:
+\begin{displaymath}
+  T(\mathrm{time}) = T_{\text{mean annual}} + A(\mathrm{time})\cdot(T_{\text{mean July}} - T_{\text{mean annual}}) \cdot \cos(2\pi t),
+\end{displaymath}
+where $t$ is the year fraction ``since last July''; the summer peak of the cycle is on \config{snow_temp_july_day}, which is set to day $196$ by default (approximately July 15).
+
+Here $T_{\text{mean annual}}$ (variable \variable{air_temp_mean_annual}) and $T_{\text{mean July}}$ (variable \variable{air_temp_mean_july}) are read from a file selected using the \intextoption{atmosphere_yearly_cycle_file} command-line option. A time-independent precipitation field (variable \variable{precipitation}) is read from the same file.
+
+Optionally a time-dependent scalar amplitude scaling $A(t)$ can be used. Specify a file to read it from using the  \intextoption{atmosphere_yearly_cycle_scaling_file} command-line option. Without this option $A(\mathrm{time}) \equiv 1$.
 
 \subsection{SeaRISE-Greenland}
 \label{sec:atmosphere-searise-greenland}
@@ -1488,7 +1515,7 @@ It takes the following command-line options:
 
 \phantomsection
 \addcontentsline{toc}{section}{General Index}
-\label{sect:index}
+\label{sec:index}
 {\small \printindex }
 
 \phantomsection

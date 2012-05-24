@@ -57,7 +57,7 @@ macro(pism_set_revision_tag_git)
     if (EXISTS ${Pism_SOURCE_DIR}/.git)
       find_program (GIT_EXECUTABLE git DOC "Git executable")
       mark_as_advanced(GIT_EXECUTABLE)
-      execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v?.?
+      execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v*
         WORKING_DIRECTORY ${Pism_SOURCE_DIR}
         OUTPUT_VARIABLE Pism_VERSION
         OUTPUT_STRIP_TRAILING_WHITESPACE)

@@ -6,6 +6,7 @@ add_library (pismboundary
   ./atmosphere/PAEismintGreenland.cc
   ./atmosphere/PASeariseGreenland.cc
   ./atmosphere/PAYearlyCycle.cc
+  ./atmosphere/PACosineYearlyCycle.cc
   ./atmosphere/PAGivenClimate.cc
   ./atmosphere/PALapseRates.cc
   ./atmosphere/PA_delta_T.cc
