@@ -568,7 +568,7 @@ degree-day scheme uses a variable called \variable{precipitation}, and a
 calculation of melting, to get the surface mass balance
 \variable{climatic_mass_balance}.
 
-Assuming that \texttt{g20km_pre100.nc} was created as described in the User's Manual, section~\ref*{userman-sect:start}, running
+Assuming that \texttt{g20km_pre100.nc} was created as described in the User's Manual, section~\ref*{userman-sec:start}, running
 \begin{verbatim}
 $ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
            -surface pdd -times 0:0.1:2.5 -o foo.nc
@@ -857,8 +857,7 @@ Note: this surface model \emph{ignores} the atmosphere model selection made usin
 \end{center}
 
 The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is
-based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see User's
-Manual, section~\ref*{userman-sec:eismint-greenland}, and~\cite{RitzEISMINT}).
+based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
 
 Our PDD implementation is meant to be used with an atmosphere model
 implementing a cosine yearly cycle such as \texttt{searise_greenland} (section
@@ -1514,7 +1513,7 @@ It takes the following command-line options:
 
 \phantomsection
 \addcontentsline{toc}{section}{General Index}
-\label{sect:index}
+\label{sec:index}
 {\small \printindex }
 
 \phantomsection

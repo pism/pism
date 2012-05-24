@@ -52,7 +52,7 @@ Note that the discretized SSA stress balance, in the default finite difference d
 \subsection{Calving}
 \label{sec:calving}
 \optsection{Calving}
-At the start, PISM-PIK included a physically based 2D-calving parameterization, further developed in \cite{LevermannAlbrecht11}. This calving parameterization is turned on by option \intextoption{eigen_calving}.  Average calving rates, $c$, are proportional to the product of principal components of the horizontal strain rates, $\dot{\epsilon}_{_\pm}$, derived from SSA-velocities 
+At the start, PISM-PIK included a physically based 2D-calving parameterization, further developed in \cite{Levermannetal2012}. This calving parameterization is turned on by option \intextoption{eigen_calving}.  Average calving rates, $c$, are proportional to the product of principal components of the horizontal strain rates, $\dot{\epsilon}_{_\pm}$, derived from SSA-velocities 
 \begin{equation}
 \label{eq: calv2}
 c = K\; \dot{\epsilon}_{_+}\; \dot{\epsilon}_{_-}\quad\text{and}\quad\dot{\epsilon}_{_\pm}>0\:.
@@ -75,7 +75,7 @@ Option \fileopt{ocean_kill} reads in the ice thickness field from a file. Any lo
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
-    \intextoption{eigen_calving} & Physically-based calving parameterization \cite{LevermannAlbrecht11,Winkelmannetal2011}.  Calving proportional to product of principle strain rates, where they are positive. \\
+    \intextoption{eigen_calving} & Physically-based calving parameterization \cite{Levermannetal2012,Winkelmannetal2011}.  Calving proportional to product of principle strain rates, where they are positive. \\
     \intextoption{eigen_calving_K} ($K$) & sets the calving parameter $K$ \\
     \intextoption{thickness_calving} & enables grid-cell wise calving depending on terminal ice thickness \\
     \intextoption{calving_at_thickness ($H_{\textrm{cr}}$)} & sets the terminal thickness threshold \\
