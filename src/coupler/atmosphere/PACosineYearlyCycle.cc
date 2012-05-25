@@ -17,12 +17,19 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PACosineYearlyCycle.hh"
+#include "Timeseries.hh"
+#include "PISMTime.hh"
 #include "pism_options.hh"
+
+PACosineYearlyCycle::~PACosineYearlyCycle() {
+  if (A != NULL)
+    delete A;
+}
 
 PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  bool flag;
-  string input_file;
+  bool input_file_flag, scaling_flag;
+  string input_file, scaling_file;
 
   variables = &vars;
   snow_temp_july_day = config.get("snow_temp_july_day");
@@ -61,12 +68,16 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling '-atmosphere yearly_cycle'",
                            ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-atmosphere_yearly_cycle_file", "PACosineYearlyCycle input file name",
-                             input_file, flag); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-atmosphere_yearly_cycle_file",
+                             "PACosineYearlyCycle input file name",
+                             input_file, input_file_flag); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-atmosphere_yearly_cycle_scaling_file",
+                             "PACosineYearlyCycle amplitude scaling input file name",
+                             scaling_file, scaling_flag); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  if (flag == false) {
+  if (input_file_flag == false) {
     PetscPrintf(grid.com,
                 "PISM ERROR: Please specify an '-atmosphere yearly_cycle' input file\n"
                 "            using the -atmosphere_yearly_cycle_file option.\n");
@@ -87,6 +98,23 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
                                "snapshot of the near-surface air temperature");
   ierr = air_temp_snapshot.set_units("Kelvin"); CHKERRQ(ierr);
 
+  if (scaling_flag) {
+    ierr = verbPrintf(2, grid.com,
+                      "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
+                      scaling_file.c_str()); CHKERRQ(ierr);
+
+    A = new Timeseries(&grid, "amplitude_scaling",
+                       config.get_string("time_dimension_name"));
+    A->set_units("1", "1");
+    A->set_dimension_units(grid.time->units(), "");
+    A->set_attr("long_name", "cosine yearly cycle amplitude scaling");
+
+    ierr = A->read(scaling_file, grid.time->use_reference_date()); CHKERRQ(ierr);
+  } else {
+    if (A != NULL)
+      delete A;
+    A = NULL;
+  }
 
   return 0;
 }
@@ -98,3 +126,55 @@ PetscErrorCode PACosineYearlyCycle::update(PetscReal my_t, PetscReal my_dt) {
   return 0;
 }
 
+PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  const PetscReal
+    sperd = 8.64e4, // exact number of seconds per day
+    julyday_fraction = (sperd / secpera) * snow_temp_july_day;
+
+  double T = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
+    scaling = 1;
+
+  if (A != NULL) {
+    scaling = (*A)(t + 0.5 * dt);
+  }
+
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_july.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      result(i,j) = air_temp_mean_annual(i,j) +
+        scaling * (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos(2.0 * pi * T);
+    }
+  }
+
+  ierr = air_temp_mean_july.end_access(); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PACosineYearlyCycle::temp_time_series(int i, int j, int N,
+                                                     PetscReal *ts, PetscReal *values) {
+  // constants related to the standard yearly cycle
+  const PetscReal
+    sperd = 8.64e4, // exact number of seconds per day
+    julyday_fraction = (sperd / secpera) * snow_temp_july_day;
+
+  for (PetscInt k = 0; k < N; ++k) {
+    double tk = grid.time->year_fraction(ts[k]) - julyday_fraction,
+      scaling = 1;
+
+    if (A != NULL) {
+      scaling = (*A)(ts[k]);
+    }
+
+    values[k] = air_temp_mean_annual(i,j) +
+      scaling * (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos(2.0 * pi * tk);
+  }
+
+  return 0;
+}

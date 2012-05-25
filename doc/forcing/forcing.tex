@@ -1138,8 +1138,10 @@ model~component (\texttt{-surface~given}).
     \toprule
     Command-line option: & \texttt{-atmosphere~yearly_cycle}
     \index[options]{\atmosphere!\texttt{yearly_cycle}} \\
-    NetCDF variables: & \variable{air_temp_mean_annual}, \variable{air_temp_mean_july},
-    \variable{precipitation} \mbox{[m/s ice equivalent]}\\
+    NetCDF variables: & \variable{air_temp_mean_annual},\\
+    &\variable{air_temp_mean_july},\\
+    &\variable{precipitation} \mbox{[m/s ice equivalent]}\\
+    &\variable{amplitude_scaling} \\
     C++ class: & \class{PACosineYearlyCycle}\\
     \bottomrule
   \end{tabular}
@@ -1147,13 +1149,13 @@ model~component (\texttt{-surface~given}).
 
 This atmosphere model~component computes the near-surface air temperature using the following formula:
 \begin{displaymath}
-  T(t) = T_{\text{mean annual}} + (T_{\text{mean July}} - T_{\text{mean annual}}) \cdot \cos(2\pi t),
+  T(\mathrm{time}) = T_{\text{mean annual}} + A(\mathrm{time})\cdot(T_{\text{mean July}} - T_{\text{mean annual}}) \cdot \cos(2\pi t),
 \end{displaymath}
 where $t$ is the year fraction ``since last July''; the summer peak of the cycle is on \config{snow_temp_july_day}, which is set to day $196$ by default (approximately July 15).
 
-Here $T_{\text{mean annual}}$ (variable \variable{air_temp_mean_annual}) and $T_{\text{mean July}}$ (variable \variable{air_temp_mean_july}) are read from a file specified using the \intextoption{atmosphere_yearly_cycle_file} command-line option.
+Here $T_{\text{mean annual}}$ (variable \variable{air_temp_mean_annual}) and $T_{\text{mean July}}$ (variable \variable{air_temp_mean_july}) are read from a file selected using the \intextoption{atmosphere_yearly_cycle_file} command-line option. A time-independent precipitation field (variable \variable{precipitation}) is read from the same file.
 
-A time-independent precipitation field (variable \variable{precipitation}) is read from the same file.
+Optionally a time-dependent scalar amplitude scaling $A(t)$ can be used. Specify a file to read it from using the  \intextoption{atmosphere_yearly_cycle_scaling_file} command-line option. Without this option $A(\mathrm{time}) \equiv 1$.
 
 \subsection{SeaRISE-Greenland}
 \label{sec:atmosphere-searise-greenland}
