@@ -379,6 +379,10 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
   return 0;
 }
 
+Vec IceModelVec::get_vec() {
+  return v;
+}
+
 //! Sets the variable name to \c name and resets metadata.
 PetscErrorCode  IceModelVec::set_name(string new_name, int N) {
   reset_attrs(N);

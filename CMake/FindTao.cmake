@@ -1,13 +1,13 @@
 # - Try to find TAO
 # Once done this will define
 #
-#  TAO_FOUND        - system has SLEPc
-#  TAO_INCLUDE_DIR  - include directories for SLEPc
-#  TAO_LIBARIES     - libraries for SLEPc
-#  TAO_DIR          - directory where SLEPc is built
+#  TAO_FOUND        - system has TAO
+#  TAO_INCLUDE_DIRS  - include directories for TAO
+#  TAO_LIBARIES     - libraries for TAO
+#  TAO_DIR          - directory where TAO is built
 #
 # Assumes that PETSC_DIR and PETSC_ARCH has been set by
-# alredy calling find_package(PETSc)
+# already calling find_package(PETSc)
 
 #=============================================================================
 # Copyright (C) 2010-2012 Garth N. Wells, Anders Logg and Johannes Ring

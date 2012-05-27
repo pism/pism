@@ -79,6 +79,12 @@ if (NOT Pism_MANUAL_BUILD)
   # optional
   find_package (FFTW)
   find_package (PROJ4)
+
+  find_package(TAO)
+  if (NOT TAO_FOUND)
+    message(WARNING  "TAO not found. Inverse solvers using the TAO library will not be built.")
+  endif()
+
 else ()
   # includes
   set (PETSC_INCLUDES "EDIT_THIS" CACHE STRING "PETSc include directories (semicolon-separated list)")
@@ -217,6 +223,11 @@ if (PROJ4_FOUND)
   list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
 else()
   add_definitions (-DPISM_HAVE_PROJ4=0)
+endif()
+
+if (TAO_FOUND)
+  include_directories (${TAO_INCLUDE_DIRS})
+  list (APPEND Pism_EXTERNAL_LIBS ${TAO_LIBRARIES})
 endif()
 
 add_custom_target (etags

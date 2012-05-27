@@ -31,6 +31,7 @@
 #include "stressbalance/SSAFEM.hh"
 #include "inverse/InvSSAForwardProblem.hh"
 #include "inverse/InvTaucParameterization.hh"
+#include "inverse/TaoUtil.hh"
 #include "stressbalance/SSAFD.hh"
 #include "pism_python.hh"
 #include "iceModel.hh"
@@ -487,6 +488,7 @@ typedef int NormType; // YUCK.
 %include "stressbalance/SSAFEM.hh"
 %include "inverse/InvSSAForwardProblem.hh"
 %include "inverse/InvTaucParameterization.hh"
+%include "inverse/TaoUtil.hh"
 %template(PISMDiag_SSAFD) PISMDiag<SSAFD>;
 %include "stressbalance/SSAFD.hh"
 %include "Mask.hh"

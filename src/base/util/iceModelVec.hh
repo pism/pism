@@ -182,6 +182,7 @@ public:
   virtual PetscErrorCode  copy_from(Vec source);
   virtual PetscErrorCode  copy_to(IceModelVec &destination);
   virtual PetscErrorCode  copy_from(IceModelVec &source);
+  virtual Vec get_vec();
   virtual PetscErrorCode  has_nan();
   virtual PetscErrorCode  set_name(string name, int component = 0);
   virtual PetscErrorCode  set_glaciological_units(string units);
@@ -220,6 +221,7 @@ public:
 
   virtual int get_state_counter() const;
   virtual void inc_state_counter();
+
 
   bool   report_range;                 //!< If true, report range when regridding.
   bool   write_in_glaciological_units, //!< \brief If true, data is written to
