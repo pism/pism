@@ -170,15 +170,15 @@ should be instatiated as:
 TaoBasicSolver<MyProblem> solver(PETSC_COMM_WORLD,"tao_cg",problem,kTaoObjectiveGradientCallbacksCombined);
 
 */
-template<class Problem>
+template<class Problem, class Callback >
 class TaoBasicSolver {
 public:
     
-  TaoBasicSolver(MPI_Comm comm, const char* tao_type, Problem &prob, TaoBasicCallbackType cbType = kTaoObjectiveGradientCallbacksCombined ):
+  TaoBasicSolver(MPI_Comm comm, const char* tao_type, Problem &prob):
   m_comm(comm), m_problem(prob)
    {
     PetscErrorCode ierr;
-    ierr = this->construct(tao_type, cbType);
+    ierr = this->construct(tao_type);
     if(ierr) {
       CHKERRCONTINUE(ierr);
       PetscPrintf(m_comm, "FATAL ERROR: TaoBasicProblem allocation failed.\n");
@@ -229,28 +229,11 @@ public:
 
 protected:
 
-  virtual PetscErrorCode construct(const char* tao_type, TaoBasicCallbackType /*cbType*/  ) {
+  virtual PetscErrorCode construct(const char* tao_type) {
     PetscErrorCode ierr;
     ierr = TaoCreate(m_comm ,&m_tao); CHKERRQ(ierr); 
     ierr = TaoSetType(m_tao,tao_type); CHKERRQ(ierr);    
-    ierr = TaoCombinedObjectiveAndGradientCallback<Problem>::connect(m_tao,m_problem); CHKERRQ(ierr);
-
-/*
-    switch(cbType) {
-      case kTaoObjectiveCallbackOnly:
-        ierr = TaoObjectiveCallback<Problem>::connect(m_tao,&m_problem); CHKERRQ(ierr);
-        break;
-      case kTaoObjectiveGradientCallbacksCombined:
-        ierr = TaoCombinedObjectiveAndGradientCallback<Problem>::connect(m_tao,&m_problem); CHKERRQ(ierr);
-        break;
-      case kTaoObjectiveGradientCallbacksSeparated:
-        ierr = TaoObjectiveCallback<Problem>::connect(m_tao,&m_problem); CHKERRQ(ierr);
-        ierr = TaoGradientCallback<Problem>::connect(m_tao,&m_problem); CHKERRQ(ierr);
-        break;
-      default:
-        SETERRQ(m_comm,1,"TaoBasicSolver callback type not implemented.");
-    }
-*/
+    ierr = Callback::connect(m_tao,m_problem); CHKERRQ(ierr);
     ierr = TaoSetFromOptions(m_tao); CHKERRQ(ierr);
     return 0;
   }
@@ -263,8 +246,6 @@ protected:
     return 0; 
   }
   
-  // virtual void evaluateGradient(TaoSolver *tao, Vec x, PetscReal *value);
-  
   MPI_Comm m_comm;
   TaoSolver m_tao;
   Problem  &m_problem;
@@ -273,7 +254,6 @@ protected:
   TaoSolverTerminationReason m_reason;
   std::string m_reasonDescription;
 };
-
 
 template<class Problem>
 class TaoLCLCallbacks {

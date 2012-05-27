@@ -90,6 +90,7 @@ PetscErrorCode ObjectiveFunction::evaluateObjectiveAndGradient(TaoSolver, Vec x,
   return 0;
 }
 
+typedef TaoBasicSolver<ObjectiveFunction, TaoCombinedObjectiveAndGradientCallback<ObjectiveFunction> > TaoObjGradSolver;
 
 int main(int argc, char** argv) {
   PetscInitialize(&argc,&argv,NULL,NULL);
@@ -102,7 +103,7 @@ int main(int argc, char** argv) {
     ierr = PetscOptionsInt("-N","Problem size","",N,&N,&flag); CHKERRQ(ierr);
 
     ObjectiveFunction f(N);
-    TaoBasicSolver<ObjectiveFunction> solver(PETSC_COMM_WORLD,"tao_cg", f);
+    TaoObjGradSolver solver(PETSC_COMM_WORLD,"tao_cg", f);
   
     bool success;
     ierr = solver.solve(success); CHKERRQ(ierr);
