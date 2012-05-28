@@ -419,3 +419,95 @@ int PismIntMask(PetscScalar maskvalue) {
   return static_cast<int>(floor(maskvalue + 0.5));
 }
 
+DirichletData::DirichletData() : 
+m_indices(NULL), m_values(NULL) {  
+}
+
+DirichletData::~DirichletData() {
+  if(m_indices != NULL) {
+    PetscErrorCode ierr;
+    ierr = verbPrintf(1,m_indices->get_grid()->com, "Warning: DirichletData destructing with IceModelVecs still accessed.  Looks like DirichletData::finish() was not called.");
+      CHKERRCONTINUE(ierr);
+  }
+}
+
+
+PetscErrorCode DirichletData::init(IceModelVec2Int *indices, IceModelVec2V *values, PetscReal weight) {
+  PetscErrorCode ierr;
+  m_indices = indices;
+  m_values  = values;
+  m_weight  = weight;
+  
+  if((indices != NULL) && (values != NULL) ) {
+    ierr = m_indices->get_array(m_pIndices); CHKERRQ(ierr);
+    ierr = m_values->get_array(m_pValues); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+PetscErrorCode DirichletData::finish() {
+  PetscErrorCode ierr;
+  if(m_indices) {
+    ierr = m_indices->end_access(); CHKERRQ(ierr);
+    ierr = m_values->end_access(); CHKERRQ(ierr);
+    m_indices = NULL;
+    m_values = NULL;
+    m_pIndices = NULL;
+    m_pValues = NULL;
+  }
+  return 0;
+}
+
+void DirichletData::update( FEDOFMap &dofmap, PISMVector2* x_e ) {
+  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
+  for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+      PetscInt i, j;
+      dofmap.localToGlobal(k,&i,&j);
+      x_e[k].u = m_pValues[i][j].u;
+      x_e[k].v = m_pValues[i][j].v;
+      // Mark any kind of Dirichlet node as not to be touched
+      dofmap.markRowInvalid(k);
+      dofmap.markColInvalid(k);
+    }
+  }
+}
+
+void DirichletData::fixResidual( PISMVector2 **x, PISMVector2 **r) {
+  IceGrid &grid = *m_indices->get_grid();
+  
+  PetscInt i,j;
+  // For each node that we own:
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+          // Enforce explicit dirichlet data.
+          r[i][j].u = m_weight * (x[i][j].u - m_pValues[i][j].u);
+          r[i][j].v = m_weight * (x[i][j].v - m_pValues[i][j].v);
+      }
+    }
+  }
+}
+
+PetscErrorCode DirichletData::fixJacobian(Mat J) {
+  PetscInt i,j;
+  PetscErrorCode ierr;
+  IceGrid &grid = *m_indices->get_grid();
+
+  // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
+  // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
+  // columns previously, the symmetry of the Jacobian matrix is preserved.
+
+  const PetscReal ident[4] = {m_weight,0,0,m_weight};
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+        MatStencil row;
+        // Transpose shows up here!
+        row.j = i; row.i = j;
+        ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,ident,ADD_VALUES); CHKERRQ(ierr);
+      }
+    }
+  }
+  return 0;
+}

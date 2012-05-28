@@ -228,6 +228,9 @@ endif()
 if (TAO_FOUND)
   include_directories (${TAO_INCLUDE_DIRS})
   list (APPEND Pism_EXTERNAL_LIBS ${TAO_LIBRARIES})
+  add_definitions (-DPISM_HAS_TAO=1)
+else()
+add_definitions (-DPISM_HAS_TAO=0)
 endif()
 
 add_custom_target (etags

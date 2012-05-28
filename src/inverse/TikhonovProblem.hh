@@ -22,14 +22,14 @@
 #include "TaoUtil.hh"
 
 template<class InvProblem>
-class TikhonovProblem {
+class TikhonovProblem: {
 public:
   typedef InvProblem::DomainVec DesignVec;
   typedef InvProblem::RangeVec  StateVec;
   
   TikhonovProblem( InvProblem &invProblem,
                    DomainVec &d0, StateVec &u_obs, PetscReal eta):
-  m_d0(d0), m_u_obs(u_obs), m_eta(eta) {
+  m_invProblem(invProblem), m_d0(d0), m_u_obs(u_obs), m_eta(eta) {
     IceGrid &grid = *m_d0.get_grid();
 
     PetscInt design_stencil_width = m_d0.get_stencil_width();
@@ -40,8 +40,8 @@ public:
     m_du.create( grid, "state residual", kHasGhosts, state_stencil_width);
     m_dd.create( grid, "design residual", kHasGhosts, design_stencil_width);
 
-    m_grad_penalty.create( grid, "penalty gradient", kNoGhosts, 0);
-    m_grad_objective.create( grid, "objective gradient", kNoGhosts, 0);
+    m_grad_penalty.create( grid, "penalty gradient", kNoGhosts, design_stencil_width);
+    m_grad_objective.create( grid, "objective gradient", kNoGhosts, design_stencil_width);
   }
   virtual ~TikhonovProblem() {};
 
@@ -64,7 +64,7 @@ protected:
 
     bool success =  m_invProblem.linearizeAt(m_d);
     if(!success) {
-      SETERRQ("Failure in TikhonovProblem forward solve: %s",m_invProblem.reason().c_str());
+      SETERRQ("Failure in TikhonovProblem forward solve.",m_invProblem.reason().c_str());
     }
 
     ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);

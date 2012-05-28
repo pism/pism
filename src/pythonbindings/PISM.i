@@ -31,7 +31,10 @@
 #include "stressbalance/SSAFEM.hh"
 #include "inverse/InvSSAForwardProblem.hh"
 #include "inverse/InvTaucParameterization.hh"
+#if(PISM_HAS_TAO)
 #include "inverse/TaoUtil.hh"
+#include "inverse/InvSchrodTikhonov.hh"
+#endif
 #include "stressbalance/SSAFD.hh"
 #include "pism_python.hh"
 #include "iceModel.hh"
@@ -202,7 +205,7 @@ typedef int NormType; // YUCK.
 %apply PetscReal & OUTPUT {PetscReal & result};
 %apply PetscScalar & OUTPUT {PetscScalar & result};
 %apply PetscReal & OUTPUT {PetscReal & out};
-%apply bool & OUTPUT {bool & is_set, bool & result, bool & flag};
+%apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
 
 %Pism_pointer_reference_is_always_output(IceModelVec2S)
 %Pism_pointer_reference_is_always_output(IceModelVec2V)
@@ -308,6 +311,9 @@ typedef int NormType; // YUCK.
             raise ValueError("__setitem__ requires 2 arguments; received %d" % len(args));
     }
 };
+
+%rename(__mult__) PISMVector2::operator*;
+%rename(__add__) PISMVector2::operator+;
 
 %extend IceModelVec2V
 {
@@ -487,8 +493,6 @@ typedef int NormType; // YUCK.
 %include "stressbalance/SSA.hh"
 %include "stressbalance/SSAFEM.hh"
 %include "inverse/InvSSAForwardProblem.hh"
-%include "inverse/InvTaucParameterization.hh"
-%include "inverse/TaoUtil.hh"
 %template(PISMDiag_SSAFD) PISMDiag<SSAFD>;
 %include "stressbalance/SSAFD.hh"
 %include "Mask.hh"
@@ -501,6 +505,11 @@ typedef int NormType; // YUCK.
 %include "regional/regional.hh"
 %include "FEEvaluator.hh"
 
+#if(PISM_HAS_TAO)
+%include "inverse/InvTaucParameterization.hh"
+%include "inverse/TaoUtil.hh"
+%include "inverse/InvSchrodTikhonov.hh"
+#endif
 
 // Tell SWIG that input arguments of type double * are to be treated as return values,
 // and that int return values are to be error checked as per a PetscErrorCode.
@@ -512,3 +521,4 @@ PyPetsc_ChkErrQ($1); %set_output(VOID_Object);
 // FIXME! I don't know how to undo the output typemap.
 // %typemap(out,noblock=1) int = PREVIOUS;
 %clear double *;
+

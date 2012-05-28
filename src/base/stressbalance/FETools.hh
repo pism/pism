@@ -30,8 +30,8 @@
 //! \file 
 //! \brief Classes for implementing the Finite Element Method on an IceGrid.
 /*! \file
-We assume that the reader has a basic understanding of the finite element method
-at the level of ?????.  The following is a reminder of the method that also
+We assume that the reader has a basic understanding of the finite element method.
+The following is a reminder of the method that also
 gives the background for the how to implement it on an IceGrid with the tools in this 
 module.
 
@@ -427,5 +427,26 @@ protected:
   PISMVector2 m_tmpVector[Nk];
 };
 
+class DirichletData {
+public:
+  DirichletData();
+  ~DirichletData();
+  PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2V *values, PetscReal weight);
+  void update( FEDOFMap &dofmap, PISMVector2* x_e );
+  void fixResidual( PISMVector2 **x, PISMVector2 **r);
+  PetscErrorCode fixJacobian( Mat J);
+  operator bool() {
+    return m_indices != NULL;
+  }
+  PetscErrorCode finish();
+protected:
+  
+  PetscReal m_indices_e[FEQuadrature::Nk];
+  IceModelVec2Int *m_indices;
+  IceModelVec2V   *m_values;
+  PetscReal      **m_pIndices;
+  PISMVector2    **m_pValues;
+  PetscReal        m_weight;
+};
 
 #endif/* _FETOOLS_H_*/

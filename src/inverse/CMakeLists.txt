@@ -3,6 +3,7 @@ add_library (pisminverse
   ./TaoUtil.cc
   ./InvTaucParameterization.cc
   ./InvSSAForwardProblem.cc
+  ./InvSchrodTikhonov.cc
   )
 target_link_libraries (pisminverse pismbase pismutil)
 

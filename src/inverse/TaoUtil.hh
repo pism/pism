@@ -256,6 +256,12 @@ protected:
 };
 
 template<class Problem>
+struct TaoSolverCategory {
+  typedef TaoBasicSolver<Problem,TaoObjectiveCallback<Problem> > ObjOnly;
+  typedef TaoBasicSolver<Problem,TaoCombinedObjectiveAndGradientCallback<Problem> > ObjGrad;
+};
+
+template<class Problem>
 class TaoLCLCallbacks {
 public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p, Vec c, Mat Jc, Mat Jd, Mat Jcpc=NULL, Mat Jcinv=NULL, Mat Jdpc=NULL) {

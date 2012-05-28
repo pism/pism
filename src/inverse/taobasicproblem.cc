@@ -90,7 +90,9 @@ PetscErrorCode ObjectiveFunction::evaluateObjectiveAndGradient(TaoSolver, Vec x,
   return 0;
 }
 
-typedef TaoBasicSolver<ObjectiveFunction, TaoCombinedObjectiveAndGradientCallback<ObjectiveFunction> > TaoObjGradSolver;
+// typedef TaoBasicSolver<ObjectiveFunction, TaoCombinedObjectiveAndGradientCallback<ObjectiveFunction> > TaoObjGradSolver;
+
+typedef TaoSolverCategory<ObjectiveFunction>::ObjGrad TaoObjGradSolver;
 
 int main(int argc, char** argv) {
   PetscInitialize(&argc,&argv,NULL,NULL);

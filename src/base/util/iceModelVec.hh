@@ -153,6 +153,14 @@ class LocalInterpCtx;
  update.
 
  */
+
+//! The IceModelVec::create methods take a boolean flag to indicate
+//! whether or not the vector should have ghosts.  The following constants
+//! can be used to ease code readability, e.g.
+//!       v.create(grid,"surface elevation",kHasGhosts,1))
+const bool kHasGhosts = true;
+const bool kNoGhosts = false;
+
 class IceModelVec {
 public:
   IceModelVec();
