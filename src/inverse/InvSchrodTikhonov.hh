@@ -22,6 +22,8 @@
 #include "SNESCallbacks.hh"
 #include "IceModelVec.hh"
 #include "FETools.hh"
+#include "TikhonovProblem.hh"
+#include "TaoUtil.hh"
 
 class InvSchrodTikhonov {
 public:
@@ -53,10 +55,20 @@ public:
   std::string reasonDescription() {
     return std::string(SNESConvergedReasons[m_reason]);
   }
-  
+
   PetscErrorCode assembleFunction( DMDALocalInfo *info, PISMVector2 **x, PISMVector2 **f);
   PetscErrorCode assembleJacobian( DMDALocalInfo *info, PISMVector2 **x, Mat J);
-  
+
+  PetscErrorCode linearizeAt( IceModelVec2S &c, bool &success);
+
+  PetscErrorCode evalObjective(IceModelVec2S &dc, PetscReal *OUTPUT);
+  PetscErrorCode evalPenalty(IceModelVec2V &du, PetscReal *OUTPUT);
+
+  PetscErrorCode evalGradObjective(IceModelVec2S &dc, IceModelVec2S &gradient);
+  PetscErrorCode evalGradPenaltyReduced(IceModelVec2V &dr, IceModelVec2S &gradient);
+
+  PetscErrorCode assembleAdjointRHS(IceModelVec2V &du);
+
 protected:
 
   PetscErrorCode construct();
@@ -73,6 +85,11 @@ protected:
   IceModelVec2V  m_uGlobal;
   IceModelVec2V  m_u;
   IceModelVec2V  m_r;
+
+  IceModelVec2V  m_vGlobal;
+  IceModelVec2V  m_v;
+
+  IceModelVec2V  m_adjointRHS;
   
   SNESDMCallbacks<InvSchrodTikhonov,PISMVector2 **> m_callbacks;
 
@@ -82,28 +99,16 @@ protected:
   
   SNES m_snes;
   DM   m_da;
+  KSP  m_ksp;
   Mat  m_J;
   
   SNESConvergedReason m_reason;
-/*  
-  IceModelVec2V &solution();
-  
-  PetscErrorCode linearizeAt( IceModelVec2S &c);
-  
-  void setDirichletData( IceModelVec2Int &locations,
-                         IceModelVec2V &velocities );
-  
-  PetscErrorCode solve();
-  
-  PetscErrorCode evalObjective(IceModelVec2S &dc, PetscReal *OUTPUT);
-  PetscErrorCode evalPenalty(IceModelVec2V &du, PetscReal *OUTPUT);
 
-  PetscErrorCode evalGradObjective(IceModelVec2S &dc, IceModelVec2S &gradient);
-  PetscErrorCode evalGradPenaltyReduced(IceModelVec2V &du, IceModelVec2S &gradient);
-*/
   // PetscErrorCode evalGradPenalty(IceModelVec2V &du, IceModelVec2V &gradient);
 
 };
 
+typedef TikhonovProblem<InvSchrodTikhonov> InvSchrodTikhonovProblem;
+typedef TaoBasicSolver<InvSchrodTikhonovProblem> InvSchrodTikhonovSolver;
 
 #endif /* end of include guard: INVSCHRODTIKHONOV_HH_LD0HAMOE */

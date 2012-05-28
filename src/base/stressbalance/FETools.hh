@@ -433,7 +433,9 @@ public:
   ~DirichletData();
   PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2V *values, PetscReal weight);
   void update( FEDOFMap &dofmap, PISMVector2* x_e );
+  void update( FEDOFMap &dofmap );
   void fixResidual( PISMVector2 **x, PISMVector2 **r);
+  void fixResidualHomogeneous( PISMVector2 **r);
   PetscErrorCode fixJacobian( Mat J);
   operator bool() {
     return m_indices != NULL;

@@ -47,6 +47,12 @@ PetscErrorCode InvSchrodTikhonov::construct() {
   m_u.create(m_grid,"Schrodinger solution",kHasGhosts,stencilWidth);
   m_r.create(m_grid,"Schrodinger residual",kNoGhosts,stencilWidth);
 
+  m_vGlobal.create(m_grid,"adjoint work vector (sans ghosts)",kNoGhosts,stencilWidth);
+  m_v.create(m_grid,"adjoint work vector",kHasGhosts,stencilWidth);
+
+  m_adjointRHS.create(m_grid,"adjoint RHS",kNoGhosts,stencilWidth);
+  
+
   // Create a DA with 2 degres of freedom.
   PetscInt dof=2, stencil_width=1;
   ierr = DMDACreate2d( m_grid.com,
@@ -59,6 +65,14 @@ PetscErrorCode InvSchrodTikhonov::construct() {
                       &m_da); CHKERRQ(ierr);
 
   ierr = DMGetMatrix(m_da, "baij", &m_J); CHKERRQ(ierr);
+
+  ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
+  PetscReal ksp_rtol = 1e-12;
+  ierr = KSPSetTolerances(m_ksp,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+  PC pc;
+  ierr = KSPGetPC(m_ksp,&pc); CHKERRQ(ierr);
+  ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);  
 
   ierr = SNESCreate(m_grid.com, &m_snes);CHKERRQ(ierr);
 
@@ -93,6 +107,14 @@ PetscErrorCode InvSchrodTikhonov::destruct() {
   ierr = DMDestroy(&m_da); CHKERRQ(ierr);
   ierr = MatDestroy(&m_J); CHKERRQ(ierr);
   ierr = SNESDestroy(&m_snes); CHKERRQ(ierr);
+  ierr = KSPDestroy(&m_ksp); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode InvSchrodTikhonov::linearizeAt( IceModelVec2S &c, bool &success) {
+  this->set_c(c);
+  PetscErrorCode ierr;
+  ierr = this->solve(success); CHKERRQ(ierr);
   return 0;
 }
 
@@ -284,6 +306,337 @@ PetscErrorCode InvSchrodTikhonov::assembleJacobian( DMDALocalInfo *info, PISMVec
   ierr = MatSetOption(J,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   ierr = m_c->end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode InvSchrodTikhonov::evalObjective(IceModelVec2S &dc, PetscReal *OUTPUT) {
+
+  // Just L2 matrix for now.
+  PetscInt         i,j;
+  PetscErrorCode   ierr;
+
+  // The value of the objective
+  PetscReal value = 0;
+
+  PetscReal **dc_a;
+  PetscReal dc_e[FEQuadrature::Nq];
+  PetscReal dc_q[FEQuadrature::Nq];
+
+  ierr = dc.get_array(dc_a); CHKERRQ(ierr);
+
+  // Jacobian times weights for quadrature.
+  PetscScalar JxW[FEQuadrature::Nq];
+  m_quadrature.getWeightedJacobian(JxW);
+
+  // Loop through all LOCAL elements.
+  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
+           ys = m_element_index.lys, ym = m_element_index.lym;
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+      
+      // Obtain the value of the solution at the nodes adjacent to the element.
+      m_dofmap.extractLocalDOFs(i,j,dc_a,dc_e);
+
+      // Compute the solution values and symmetric gradient at the quadrature points.
+      m_quadrature.computeTrialFunctionValues(dc_e,dc_q);
+
+      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+        value += JxW[q]*(dc_q[q]*dc_q[q]);
+      } // q
+    } // j
+  } // i
+  value *= 0.5;
+
+  ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+
+  ierr = dc.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode InvSchrodTikhonov::evalPenalty(IceModelVec2V &du, PetscReal *OUTPUT) {
+
+  PetscErrorCode   ierr;
+
+  // The value of the objective
+  PetscReal value = 0;
+
+  PISMVector2 **du_a;
+  PISMVector2 du_e[FEQuadrature::Nq];
+  PISMVector2 du_q[FEQuadrature::Nq];
+
+  ierr = du.get_array(du_a); CHKERRQ(ierr);
+
+  // Jacobian times weights for quadrature.
+  PetscScalar JxW[FEQuadrature::Nq];
+  m_quadrature.getWeightedJacobian(JxW);
+
+  // Loop through all LOCAL elements.
+  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
+           ys = m_element_index.lys, ym = m_element_index.lym;
+  for (PetscInt i=xs; i<xs+xm; i++) {
+    for (PetscInt j=ys; j<ys+ym; j++) {
+      
+      // Obtain the value of the solution at the nodes adjacent to the element.
+      m_dofmap.extractLocalDOFs(i,j,du_a,du_e);
+
+      // Compute the solution values and symmetric gradient at the quadrature points.
+      m_quadrature.computeTrialFunctionValues(du_e,du_q);
+
+      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+        value += JxW[q]*(du_q[q].u*du_q[q].u+du_q[q].v*du_q[q].v);
+      } // q
+    } // j
+  } // i
+  value *= 0.5;
+
+  ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+
+  ierr = du.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode InvSchrodTikhonov::evalGradObjective(IceModelVec2S &dc, IceModelVec2S &gradient) {
+
+  PetscErrorCode   ierr;
+
+  // Clear the gradient in prep for updating it.
+  ierr = gradient.set(0); CHKERRQ(ierr);
+
+  PetscReal **dc_a;
+  PetscReal dc_e[FEQuadrature::Nk];
+  PetscReal dc_q[FEQuadrature::Nq];
+
+  PetscReal **gradient_a;
+  PetscReal gradient_e[FEQuadrature::Nk];
+
+  ierr = dc.get_array(dc_a); CHKERRQ(ierr);
+  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
+  gradient.set(0);
+
+  // An Nq by Nk array of test function values.
+  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+
+  // Jacobian times weights for quadrature.
+  PetscScalar JxW[FEQuadrature::Nq];
+  m_quadrature.getWeightedJacobian(JxW);
+
+  // Loop through all LOCAL elements.
+  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
+           ys = m_element_index.lys, ym = m_element_index.lym;
+  for (PetscInt i=xs; i<xs+xm; i++) {
+    for (PetscInt j=ys; j<ys+ym; j++) {
+
+      // Initialize the map from global to local degrees of freedom for this element.
+      m_dofmap.reset(i,j,m_grid);
+      
+      // Obtain the value of the solution at the nodes adjacent to the element.
+      // Compute the solution values and symmetric gradient at the quadrature points.
+      m_dofmap.extractLocalDOFs(i,j,dc_a,dc_e);
+      m_quadrature.computeTrialFunctionValues(dc_e,dc_q);
+
+      // Zero out the element-local residual in prep for updating it.
+      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+        gradient_e[k] = 0;
+      }
+
+      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+        PetscReal dc_qq = dc_q[q];
+        for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+          gradient_e[k] += JxW[q]*(dc_qq*test[q][k].val);
+        }
+      } // q
+      m_dofmap.addLocalResidualBlock(gradient_e,gradient_a);
+    } // j
+  } // i
+
+  ierr = dc.end_access(); CHKERRQ(ierr);
+  ierr = gradient.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode InvSchrodTikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceModelVec2S &gradient) {
+  PetscErrorCode ierr;
+
+  // Clear the gradient in prep for updating it.
+  gradient.set(0);
+
+  // Assemble the Jacobian matrix.
+  PISMVector2 **u_a;
+  ierr = m_u.get_array(u_a); CHKERRQ(ierr);  
+
+  DMDALocalInfo *info = NULL;
+  this->assembleJacobian( info, u_a, m_J);
+
+  this->assembleAdjointRHS(du);
+
+  KSPConvergedReason  kspreason;
+  // call PETSc to solve linear system by iterative method.
+  ierr = KSPSetOperators(m_ksp, m_J, m_J, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSolve(m_ksp, m_adjointRHS.get_vec(), m_vGlobal.get_vec()); CHKERRQ(ierr); // SOLVE
+
+  ierr = KSPGetConvergedReason(m_ksp, &kspreason); CHKERRQ(ierr);
+  
+  if (kspreason < 0) {
+    SETERRQ1(m_grid.com,1,"InvSchrodTikhonov adjoint linear solve failed (KSP reason %s)",KSPConvergedReasons[kspreason]);
+  }
+
+  ierr = m_v.copy_from(m_vGlobal); CHKERRQ(ierr);
+
+
+  PetscInt         i,j;
+
+  PISMVector2 **v_a;
+  PISMVector2 v_e[FEQuadrature::Nk];
+  PISMVector2 v_q[FEQuadrature::Nq];
+
+  PISMVector2 u_e[FEQuadrature::Nk];
+  PISMVector2 u_q[FEQuadrature::Nq];
+
+  PetscReal **gradient_a;
+  PetscReal gradient_e[FEQuadrature::Nk];
+
+  ierr = m_v.get_array(v_a); CHKERRQ(ierr);
+  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
+
+  // An Nq by Nk array of test function values.
+  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+
+  // Jacobian times weights for quadrature.
+  PetscScalar JxW[FEQuadrature::Nq];
+  m_quadrature.getWeightedJacobian(JxW);
+
+  // Loop through all LOCAL elements.
+  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
+           ys = m_element_index.lys, ym = m_element_index.lym;
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+
+      // Initialize the map from global to local degrees of freedom for this element.
+      m_dofmap.reset(i,j,m_grid);
+      
+      // Obtain the value of the solution at the nodes adjacent to the element.
+      // Compute the solution values and symmetric gradient at the quadrature points.
+      m_dofmap.extractLocalDOFs(i,j,v_a,v_e);
+      m_quadrature.computeTrialFunctionValues(v_e,v_q);
+      m_dofmap.extractLocalDOFs(i,j,u_a,u_e);
+      m_quadrature.computeTrialFunctionValues(u_e,u_q);
+
+      // Zero out the element-local residual in prep for updating it.
+      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+        gradient_e[k] = 0;
+      }
+
+      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+        PISMVector2 v_qq = v_q[q];
+        PISMVector2 u_qq = u_q[q];
+        for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+          gradient_e[k] += -JxW[q]*(v_qq.u*u_qq.u+v_qq.v*u_qq.v)*test[q][k].val;
+        }
+      } // q
+      m_dofmap.addLocalResidualBlock(gradient_e,gradient_a);
+    } // j
+  } // i
+
+  ierr = m_v.end_access(); CHKERRQ(ierr);
+  ierr = m_u.end_access(); CHKERRQ(ierr);
+  ierr = gradient.end_access(); CHKERRQ(ierr);
+  return 0;
+
+}
+
+PetscErrorCode InvSchrodTikhonov::assembleAdjointRHS(IceModelVec2V &du) {
+  PetscInt         i,j,k,q;
+  PetscErrorCode   ierr;
+
+  PISMVector2 **rhs_a;
+  ierr = m_adjointRHS.get_array(rhs_a); CHKERRQ(ierr);
+
+  PISMVector2 **du_a;
+  ierr = du.get_array(du_a); CHKERRQ(ierr);
+
+  // Zero out the portion of the function we are responsible for computing.
+  for (i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+    for (j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+      rhs_a[i][j].u = 0;
+      rhs_a[i][j].v = 0;
+    }
+  }
+
+  DirichletData dirichletBC;
+  ierr = dirichletBC.init(m_dirichletLocations,m_dirichletValues,m_dirichletWeight); CHKERRQ(ierr);
+
+  // Jacobian times weights for quadrature.
+  PetscScalar JxW[FEQuadrature::Nq];
+  m_quadrature.getWeightedJacobian(JxW);
+
+  // Storage for R at quadrature points.
+  PISMVector2 du_q[FEQuadrature::Nq];
+
+  // An Nq by Nk array of test function values.
+  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+
+  // PetscReal **misfit_weight_a;
+  // PetscReal misfit_weight_q[FEQuadrature::Nq];
+  // if(m_misfit_weight!=NULL) {
+  //   ierr = m_misfit_weight->get_array(misfit_weight_a);CHKERRQ(ierr);
+  // } else {
+  //   for(q=0;q<FEQuadrature::Nq;q++) {
+  //     misfit_weight[q]=1;
+  //   }
+  // }
+
+  // Iterate over the elements.
+  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+           ys = m_element_index.ys, ym = m_element_index.ym;
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+
+      // Storage for element-local data
+      PISMVector2 rhs_e[FEQuadrature::Nk];
+
+      // Initialize the map from global to local degrees of freedom for this element.
+      m_dofmap.reset(i,j,m_grid);
+
+      if(dirichletBC) dirichletBC.update(m_dofmap);
+
+      // Obtain the value of the solution at the adjacent nodes to the element.
+      m_quadrature.computeTrialFunctionValues(i,j,m_dofmap,du_a,du_q);
+
+      // Zero out the element-local residual in prep for updating it.
+      for(k=0;k<FEQuadrature::Nk;k++){
+        rhs_e[k].u = 0; rhs_e[k].v = 0;
+      }
+
+      // if(m_misfit_weight != NULL) {
+      //   quadrature.computeTrialFunctionValues(i,j,dofmap,misfit_weight_a,misfit_weight_q);
+      // }
+
+      for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
+        // Coefficients and weights for this quadrature point.
+        const PetscReal    jw  = JxW[q];
+        for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
+          const FEFunctionGerm &testqk = test[q][k];
+          rhs_e[k].u += jw*testqk.val*du_q[q].u;//*misfit_weight_q[q];
+          rhs_e[k].v += jw*testqk.val*du_q[q].v;//*misfit_weight_q[q];
+        }
+      } // q
+
+      m_dofmap.addLocalResidualBlock(rhs_e,rhs_a);
+    } // j-loop
+  } // i-loop
+
+  // Until now we have not touched rows in the residual corresponding to Dirichlet data.
+  // We fix this now.
+  if(dirichletBC) dirichletBC.fixResidualHomogeneous(rhs_a);
+  ierr = dirichletBC.finish(); CHKERRQ(ierr);
+
+  // if(m_misfit_weight!=NULL) {
+  //   ierr = m_misfit_weight->end_access();CHKERRQ(ierr);
+  // }
+
+  ierr = m_adjointRHS.end_access(); CHKERRQ(ierr);
+  ierr = du.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

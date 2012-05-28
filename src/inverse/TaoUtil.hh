@@ -81,13 +81,13 @@ protected:
 };
 
 template<class Problem>
-class TaoCombinedObjectiveAndGradientCallback {
+class TaoObjGradCallback {
 public:
 
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetObjectiveAndGradientRoutine(tao,
-      TaoCombinedObjectiveAndGradientCallback<Problem>::evaluateObjectiveAndGradientCallback,
+      TaoObjGradCallback<Problem>::evaluateObjectiveAndGradientCallback,
       &p ); CHKERRQ(ierr);
     return 0;
   }
@@ -170,7 +170,7 @@ should be instatiated as:
 TaoBasicSolver<MyProblem> solver(PETSC_COMM_WORLD,"tao_cg",problem,kTaoObjectiveGradientCallbacksCombined);
 
 */
-template<class Problem, class Callback >
+template<class Problem>
 class TaoBasicSolver {
 public:
     
@@ -233,7 +233,7 @@ protected:
     PetscErrorCode ierr;
     ierr = TaoCreate(m_comm ,&m_tao); CHKERRQ(ierr); 
     ierr = TaoSetType(m_tao,tao_type); CHKERRQ(ierr);    
-    ierr = Callback::connect(m_tao,m_problem); CHKERRQ(ierr);
+    ierr = m_problem.connect(m_tao); CHKERRQ(ierr);
     ierr = TaoSetFromOptions(m_tao); CHKERRQ(ierr);
     return 0;
   }
@@ -253,12 +253,6 @@ protected:
   bool m_success;
   TaoSolverTerminationReason m_reason;
   std::string m_reasonDescription;
-};
-
-template<class Problem>
-struct TaoSolverCategory {
-  typedef TaoBasicSolver<Problem,TaoObjectiveCallback<Problem> > ObjOnly;
-  typedef TaoBasicSolver<Problem,TaoCombinedObjectiveAndGradientCallback<Problem> > ObjGrad;
 };
 
 template<class Problem>

@@ -35,6 +35,12 @@ public:
     return m_x;
   }
 
+  PetscErrorCode connect(TaoSolver tao) {
+    PetscErrorCode ierr;
+    ierr = TaoObjGradCallback<ObjectiveFunction>::connect(tao,*this); CHKERRQ(ierr);
+    return 0;
+  }
+
 private:
   Vec m_x;
   Vec m_x0;
@@ -90,10 +96,6 @@ PetscErrorCode ObjectiveFunction::evaluateObjectiveAndGradient(TaoSolver, Vec x,
   return 0;
 }
 
-// typedef TaoBasicSolver<ObjectiveFunction, TaoCombinedObjectiveAndGradientCallback<ObjectiveFunction> > TaoObjGradSolver;
-
-typedef TaoSolverCategory<ObjectiveFunction>::ObjGrad TaoObjGradSolver;
-
 int main(int argc, char** argv) {
   PetscInitialize(&argc,&argv,NULL,NULL);
   {
@@ -105,7 +107,7 @@ int main(int argc, char** argv) {
     ierr = PetscOptionsInt("-N","Problem size","",N,&N,&flag); CHKERRQ(ierr);
 
     ObjectiveFunction f(N);
-    TaoObjGradSolver solver(PETSC_COMM_WORLD,"tao_cg", f);
+    TaoBasicSolver<ObjectiveFunction> solver(PETSC_COMM_WORLD,"tao_cg", f);
   
     bool success;
     ierr = solver.solve(success); CHKERRQ(ierr);

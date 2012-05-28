@@ -473,6 +473,17 @@ void DirichletData::update( FEDOFMap &dofmap, PISMVector2* x_e ) {
   }
 }
 
+void DirichletData::update( FEDOFMap &dofmap ) {
+  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
+  for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+      // Mark any kind of Dirichlet node as not to be touched
+      dofmap.markRowInvalid(k);
+      dofmap.markColInvalid(k);
+    }
+  }
+}
+
 void DirichletData::fixResidual( PISMVector2 **x, PISMVector2 **r) {
   IceGrid &grid = *m_indices->get_grid();
   
@@ -484,6 +495,22 @@ void DirichletData::fixResidual( PISMVector2 **x, PISMVector2 **r) {
           // Enforce explicit dirichlet data.
           r[i][j].u = m_weight * (x[i][j].u - m_pValues[i][j].u);
           r[i][j].v = m_weight * (x[i][j].v - m_pValues[i][j].v);
+      }
+    }
+  }
+}
+
+void DirichletData::fixResidualHomogeneous(  PISMVector2 **r) {
+  IceGrid &grid = *m_indices->get_grid();
+  
+  PetscInt i,j;
+  // For each node that we own:
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+          // Enforce explicit dirichlet data.
+          r[i][j].u = 0;
+          r[i][j].v = 0;
       }
     }
   }

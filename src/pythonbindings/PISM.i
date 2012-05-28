@@ -66,8 +66,6 @@
 // Conversions between python lists and certain std::vector's
 %include std_set.i
 
-
-
 namespace std {
    %template(IntVector) vector<int>;
    %template(DoubleVector) vector<double>;
@@ -508,7 +506,10 @@ typedef int NormType; // YUCK.
 #if(PISM_HAS_TAO)
 %include "inverse/InvTaucParameterization.hh"
 %include "inverse/TaoUtil.hh"
+%include "inverse/TikhonovProblem.hh"
 %include "inverse/InvSchrodTikhonov.hh"
+%template(InvSchrodTikhonovProblem) TikhonovProblem<InvSchrodTikhonov> ;
+%template(InvSchrodTikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSchrodTikhonov> >;
 #endif
 
 // Tell SWIG that input arguments of type double * are to be treated as return values,
