@@ -4,6 +4,7 @@ add_library (pisminverse
   ./InvTaucParameterization.cc
   ./InvSSAForwardProblem.cc
   ./InvSchrodTikhonov.cc
+  ./Functional.cc
   )
 target_link_libraries (pisminverse pismbase pismutil)
 

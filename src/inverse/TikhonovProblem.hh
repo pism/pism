@@ -39,7 +39,7 @@ public:
     PetscInt state_stencil_width = m_u_obs.get_stencil_width();
     m_d.create(grid, "design variable", kHasGhosts, design_stencil_width);
     m_dGlobal.create(grid, "design variable (global)", kNoGhosts, design_stencil_width);
-    m_dGlobal.copy_from(m_d);
+    m_dGlobal.copy_from(m_d0);
 
     m_u_diff.create( grid, "state residual", kHasGhosts, state_stencil_width);
     m_d_diff.create( grid, "design residual", kHasGhosts, design_stencil_width);

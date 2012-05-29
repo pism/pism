@@ -16,8 +16,8 @@ PISM.stop_on_version_option()
 config = context.config
 
 for o in PISM.OptionsGroup(com,"",sys.argv[0]):
-  M = PISM.optionsInt("-M","problem size",default=10)
-  eta = PISM.optionsReal("-eta","regularization paramter",default=1.)
+  M = PISM.optionsInt("-M","problem size",default=30)
+  eta = PISM.optionsReal("-eta","regularization paramter",default=300.)
 
 x0 = 0.;
 L  = math.pi;
@@ -79,61 +79,50 @@ u_obs = PISM.PISM.IceModelVec2V()
 u_obs.create(grid, "true value", PISM.kHasGhosts, stencil_width);
 u_obs.copy_from(invProblem.solution())
 
-# h = PISM.PISM.IceModelVec2S()
-# h.create(grid, "", PISM.kHasGhosts, stencil_width);
-# h.set(1)
-# print invProblem.evalObjective(h)
-# print (2*math.pi)**2/2
-# 
-# g = PISM.PISM.IceModelVec2S()
-# g.create(grid, "", PISM.kNoGhosts, stencil_width);
-# invProblem.evalGradObjective(h,g)
-# 
-
 
 ip = PISM.InvSchrodTikhonovProblem(invProblem,c0,u_obs,eta)
 solver = PISM.InvSchrodTikhonovSolver(grid.com,"tao_lmvm",ip)
 
 if solver.solve():
   PISM.verbPrintf(1,grid.com,"Inverse solve success (%s)!\n" % solver.reasonDescription());
-  # u_i = ip.stateSolution();
-  # c_i = ip.designSolution();
-  # 
-  # tozero1 = PISM.toproczero.ToProcZero(grid,dof=1,dim=2)
-  # ci_a = tozero1.communicate(c_i);
-  # c_a = tozero1.communicate(c);
-  # c0_a = tozero1.communicate(c0);
-  # 
-  # 
-  # tozero2 = PISM.toproczero.ToProcZero(grid,dof=2,dim=2)
-  # ui_a = tozero2.communicate(u_i);
-  # u_a = tozero2.communicate(u_obs);
-  # if context.rank == 0:
-  #   import matplotlib.pyplot as pp
-  #   cmin=np.min(c_a); cmax = np.max(c_a)
-  # 
-  #   pp.imshow(ci_a,vmin=cmin,vmax=cmax)
-  #   pp.colorbar()
-  #   pp.title("c from inversion")
-  #   pp.draw()
-  # 
-  #   pp.figure()
-  #   pp.imshow(c_a,vmin=cmin,vmax=cmax)
-  #   pp.title("c true value")
-  #   pp.colorbar()
-  #   pp.draw()
-  # 
-  #   du_a = ui_a-u_a
-  #   du_norm = np.sqrt(du_a[0,:,:]*du_a[0,:,:]+du_a[1,:,:]*du_a[1,:,:])
-  #   pp.figure()
-  #   pp.imshow(du_norm)
-  #   pp.title("observation error")
-  #   pp.colorbar()
-  #   pp.draw()
-  # 
-  # 
-  #   pause_time = PISM.optionsReal("-final_draw_pause","",default=10)
-  #   import time
-  #   time.sleep(pause_time)
+  u_i = ip.stateSolution();
+  c_i = ip.designSolution();
+  
+  tozero1 = PISM.toproczero.ToProcZero(grid,dof=1,dim=2)
+  ci_a = tozero1.communicate(c_i);
+  c_a = tozero1.communicate(c);
+  c0_a = tozero1.communicate(c0);
+  
+  
+  tozero2 = PISM.toproczero.ToProcZero(grid,dof=2,dim=2)
+  ui_a = tozero2.communicate(u_i);
+  u_a = tozero2.communicate(u_obs);
+  if context.rank == 0:
+    import matplotlib.pyplot as pp
+    cmin=np.min(c_a); cmax = np.max(c_a)
+  
+    pp.imshow(ci_a,vmin=cmin,vmax=cmax)
+    pp.colorbar()
+    pp.title("c from inversion")
+    pp.draw()
+  
+    pp.figure()
+    pp.imshow(c_a,vmin=cmin,vmax=cmax)
+    pp.title("c true value")
+    pp.colorbar()
+    pp.draw()
+  
+    du_a = ui_a-u_a
+    du_norm = np.sqrt(du_a[0,:,:]*du_a[0,:,:]+du_a[1,:,:]*du_a[1,:,:])
+    pp.figure()
+    pp.imshow(du_norm)
+    pp.title("observation error")
+    pp.colorbar()
+    pp.draw()
+  
+  
+    pause_time = PISM.optionsReal("-final_draw_pause","",default=10)
+    import time
+    time.sleep(pause_time)
 else:
   PISM.verbPrintf(1,grid.com,"Inverse solve failure (%s)!\n" % solver.reasonDescription());

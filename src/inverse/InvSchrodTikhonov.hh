@@ -24,6 +24,8 @@
 #include "FETools.hh"
 #include "TikhonovProblem.hh"
 #include "TaoUtil.hh"
+#include "Functional.hh"
+#include <memory> // for std::auto_ptr
 
 class InvSchrodTikhonov {
 public:
@@ -62,12 +64,10 @@ public:
   PetscErrorCode linearizeAt( IceModelVec2S &c, bool &success);
 
   PetscErrorCode evalObjective(IceModelVec2S &dc, PetscReal *OUTPUT);
-  PetscErrorCode evalPenalty(IceModelVec2V &du, PetscReal *OUTPUT);
-
   PetscErrorCode evalGradObjective(IceModelVec2S &dc, IceModelVec2S &gradient);
-  PetscErrorCode evalGradPenaltyReduced(IceModelVec2V &dr, IceModelVec2S &gradient);
 
-  PetscErrorCode assembleAdjointRHS(IceModelVec2V &du);
+  PetscErrorCode evalPenalty(IceModelVec2V &du, PetscReal *OUTPUT);
+  PetscErrorCode evalGradPenaltyReduced(IceModelVec2V &dr, IceModelVec2S &gradient);
 
 protected:
 
@@ -96,6 +96,9 @@ protected:
   FEElementMap m_element_index;
   FEQuadrature m_quadrature;
   FEDOFMap     m_dofmap;
+
+  std::auto_ptr< Functional<IceModelVec2S> > m_designFunctional;
+  std::auto_ptr< Functional<IceModelVec2V> > m_penaltyFunctional;
   
   SNES m_snes;
   DM   m_da;
