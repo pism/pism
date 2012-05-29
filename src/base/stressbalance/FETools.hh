@@ -432,11 +432,18 @@ public:
   DirichletData();
   ~DirichletData();
   PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2V *values, PetscReal weight);
-  void update( FEDOFMap &dofmap, PISMVector2* x_e );
+  PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2S *values, PetscReal weight);
+  PetscErrorCode init( IceModelVec2Int *indices);
   void update( FEDOFMap &dofmap );
+  void update( FEDOFMap &dofmap, PISMVector2* x_e );
+  void update( FEDOFMap &dofmap, PetscReal* x_e );
+  void updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e );
+  void updateHomogeneous( FEDOFMap &dofmap, PetscReal* x_e );
   void fixResidual( PISMVector2 **x, PISMVector2 **r);
+  void fixResidual( PetscReal **x, PetscReal **r);
   void fixResidualHomogeneous( PISMVector2 **r);
-  PetscErrorCode fixJacobian( Mat J);
+  void fixResidualHomogeneous( PetscReal **r);
+  PetscErrorCode fixJacobian2V( Mat J);
   operator bool() {
     return m_indices != NULL;
   }
@@ -445,9 +452,10 @@ protected:
   
   PetscReal m_indices_e[FEQuadrature::Nk];
   IceModelVec2Int *m_indices;
-  IceModelVec2V   *m_values;
+  IceModelVec     *m_values;
+
   PetscReal      **m_pIndices;
-  PISMVector2    **m_pValues;
+  void           **m_pValues;
   PetscReal        m_weight;
 };
 

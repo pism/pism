@@ -44,6 +44,11 @@ public:
     m_dirichletValues = &values;
   }
 
+  void setFixedDesignLocations(IceModelVec2Int &locs) {
+    m_fixedDesignLocations = &locs;
+    printf("Did set %lld\n",(long long) m_fixedDesignLocations);
+  }
+
   PetscErrorCode solve(bool &success);
 
   IceModelVec2V &solution() {
@@ -81,6 +86,8 @@ protected:
   IceModelVec2Int *m_dirichletLocations;
   IceModelVec2V   *m_dirichletValues;
   PetscReal        m_dirichletWeight;
+
+  IceModelVec2Int *m_fixedDesignLocations;
   
   IceModelVec2V  m_uGlobal;
   IceModelVec2V  m_u;

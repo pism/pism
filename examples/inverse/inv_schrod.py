@@ -4,6 +4,7 @@ from petsc4py import PETSc
 import PISM
 import math
 import numpy as np
+import matplotlib.pyplot as pp
 
 context = PISM.Context()
 com = context.com
@@ -18,7 +19,7 @@ config = context.config
 for o in PISM.OptionsGroup(com,"",sys.argv[0]):
   M = PISM.optionsInt("-M","problem size",default=30)
   eta = PISM.optionsReal("-eta","regularization paramter",default=300.)
-
+  hasFixedDesignLocs = PISM.optionsFlag("-fixed_design_locs","test having fixed design variables",default=False)
 x0 = 0.;
 L  = math.pi;
 
@@ -66,10 +67,32 @@ with PISM.util.Access(comm=[dirichletIndices,dirichletValues]):
     if i==0 or j==0 or (i==M-1) or (j==M-1):
       dirichletIndices[i,j]=1;
 
+with PISM.util.Access(comm=[dirichletIndices,dirichletValues]):
+  for (i,j) in grid.points():
+    x=grid.x[i]; y=grid.y[j]
+    dirichletValues[i,j] = utruef(x,y)
+    if i==0 or j==0 or (i==M-1) or (j==M-1):
+      dirichletIndices[i,j]=1;
 
 invProblem = PISM.InvSchrodTikhonov(grid,f)
 invProblem.set_c(c)
 invProblem.setDirichletData(dirichletIndices,dirichletValues)
+
+fixedDesignLocs = PISM.PISM.IceModelVec2Int()
+fixedDesignLocs.create(grid, "zeta_fixed_mask", PISM.kHasGhosts, stencil_width);
+if hasFixedDesignLocs:
+  fixedDesignLocs.set(0);
+  with PISM.util.Access(comm=[fixedDesignLocs]):
+    for (i,j) in grid.points():
+      if(i>M/2) and (j>M/2):
+        fixedDesignLocs[i,j]=1;
+  invProblem.setFixedDesignLocations(fixedDesignLocs)  
+  # tozero1 = PISM.toproczero.ToProcZero(grid,dof=1,dim=2)
+  # fd_a = tozero1.communicate(fixedDesignLocs);
+  # pp.imshow(fd_a)
+  # pp.colorbar()
+  # pp.show()
+  # 
 
 if not invProblem.solve():
   PISM.verbPrintf(1,grid.com,"Forward solve failed (%s)!\n" % invProblem.reasonDescription());
@@ -98,7 +121,6 @@ if solver.solve():
   ui_a = tozero2.communicate(u_i);
   u_a = tozero2.communicate(u_obs);
   if context.rank == 0:
-    import matplotlib.pyplot as pp
     cmin=np.min(c_a); cmax = np.max(c_a)
   
     pp.imshow(ci_a,vmin=cmin,vmax=cmax)

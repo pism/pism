@@ -17,11 +17,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "InvSchrodTikhonov.hh"
+#include "H1NormFunctional.hh"
 
 InvSchrodTikhonov::InvSchrodTikhonov( IceGrid  &grid, IceModelVec2V &f) :
 m_grid(grid), m_c(NULL), m_f(&f), 
 m_dirichletLocations(NULL), m_dirichletValues(NULL), m_dirichletWeight(1.), 
-m_element_index(grid) {
+m_fixedDesignLocations(NULL), m_element_index(grid) {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
   if(ierr) {
@@ -43,8 +44,7 @@ PetscErrorCode InvSchrodTikhonov::construct() {
   PetscErrorCode ierr;
   PetscInt stencilWidth = 1;
 
-  m_designFunctional.reset(new L2NormFunctional2S(m_grid));
-  m_penaltyFunctional.reset(new L2NormFunctional2V(m_grid));
+  // m_designFunctional.reset(new L2NormFunctional2S(m_grid));
 
   m_uGlobal.create(m_grid,"Schrodinger solution (sans ghosts)",kNoGhosts,stencilWidth);
   m_u.create(m_grid,"Schrodinger solution",kHasGhosts,stencilWidth);
@@ -93,6 +93,23 @@ PetscErrorCode InvSchrodTikhonov::construct() {
 
 PetscErrorCode InvSchrodTikhonov::solve(bool &success) {
   PetscErrorCode ierr;
+
+  PetscReal cL2 = 1;
+  ierr = PetscOptionsReal("-inv_schrod_cL2",
+                          "design variable L2 weight",
+                          "",
+                          cL2,
+                          &cL2,NULL);CHKERRQ(ierr);
+  PetscReal cH1 = 1;
+  ierr = PetscOptionsReal("-inv_schrod_cH1",
+                          "design variable H1 weight",
+                          "",
+                          cH1,
+                          &cH1,NULL);CHKERRQ(ierr);
+
+  m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixedDesignLocations));    
+
+  m_penaltyFunctional.reset(new L2NormFunctional2V(m_grid));
 
   success=false;
   ierr = SNESSolve(m_snes,NULL,m_uGlobal.get_vec()); CHKERRQ(ierr);
@@ -332,7 +349,7 @@ PetscErrorCode InvSchrodTikhonov::assembleJacobian( DMDALocalInfo *info, PISMVec
   } // i
 
   if(dirichletBC) {
-    ierr = dirichletBC.fixJacobian(J); CHKERRQ(ierr);
+    ierr = dirichletBC.fixJacobian2V(J); CHKERRQ(ierr);
   }
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
@@ -457,6 +474,13 @@ PetscErrorCode InvSchrodTikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceM
       m_dofmap.addLocalResidualBlock(gradient_e,gradient_a);
     } // j
   } // i
+
+  if(m_fixedDesignLocations) {
+    DirichletData dirichletBC;
+    ierr = dirichletBC.init(m_fixedDesignLocations); CHKERRQ(ierr);
+    dirichletBC.fixResidualHomogeneous(gradient_a);
+    ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  }
 
   ierr = m_v.end_access(); CHKERRQ(ierr);
   ierr = m_u.end_access(); CHKERRQ(ierr);

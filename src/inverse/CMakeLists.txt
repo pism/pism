@@ -5,6 +5,7 @@ add_library (pisminverse
   ./InvSSAForwardProblem.cc
   ./InvSchrodTikhonov.cc
   ./Functional.cc
+  ./H1NormFunctional.cc
   )
 target_link_libraries (pisminverse pismbase pismutil)
 
