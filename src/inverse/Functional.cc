@@ -28,7 +28,6 @@ PetscErrorCode L2NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) 
   PetscReal **x_a;
   PetscReal x_e[FEQuadrature::Nk];
   PetscReal x_q[FEQuadrature::Nq];
-
   ierr = x.get_array(x_a); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.

@@ -46,7 +46,10 @@ public:
 
   void setFixedDesignLocations(IceModelVec2Int &locs) {
     m_fixedDesignLocations = &locs;
-    printf("Did set %lld\n",(long long) m_fixedDesignLocations);
+  }
+
+  void setObservationWeights(IceModelVec2S &weights) {
+    m_observationWeights = &weights;
   }
 
   PetscErrorCode solve(bool &success);
@@ -88,6 +91,7 @@ protected:
   PetscReal        m_dirichletWeight;
 
   IceModelVec2Int *m_fixedDesignLocations;
+  IceModelVec2S   *m_observationWeights;
   
   IceModelVec2V  m_uGlobal;
   IceModelVec2V  m_u;
@@ -113,8 +117,6 @@ protected:
   Mat  m_J;
   
   SNESConvergedReason m_reason;
-
-  // PetscErrorCode evalGradPenalty(IceModelVec2V &du, IceModelVec2V &gradient);
 
 };
 

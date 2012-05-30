@@ -18,11 +18,12 @@
 
 #include "InvSchrodTikhonov.hh"
 #include "H1NormFunctional.hh"
+#include "MeanSquareObservationFunctional.hh"
 
 InvSchrodTikhonov::InvSchrodTikhonov( IceGrid  &grid, IceModelVec2V &f) :
 m_grid(grid), m_c(NULL), m_f(&f), 
 m_dirichletLocations(NULL), m_dirichletValues(NULL), m_dirichletWeight(1.), 
-m_fixedDesignLocations(NULL), m_element_index(grid) {
+m_fixedDesignLocations(NULL), m_observationWeights(NULL), m_element_index(grid) {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
   if(ierr) {
@@ -109,7 +110,8 @@ PetscErrorCode InvSchrodTikhonov::solve(bool &success) {
 
   m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixedDesignLocations));    
 
-  m_penaltyFunctional.reset(new L2NormFunctional2V(m_grid));
+  m_penaltyFunctional.reset(new MeanSquareObservationFunctional2V(m_grid,m_observationWeights));    
+  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize();
 
   success=false;
   ierr = SNESSolve(m_snes,NULL,m_uGlobal.get_vec()); CHKERRQ(ierr);

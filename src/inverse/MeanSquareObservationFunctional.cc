@@ -98,8 +98,8 @@ PetscErrorCode MeanSquareObservationFunctional2V::gradientAt(IceModelVec2V &x, I
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
     for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
       for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-        gradient_a[i][j].u = 2*x_a[i][j].v*w_a[i][j]/m_normalization;
-        gradient_a[i][j].u = 2*x_a[i][j].v*w_a[i][j]/m_normalization;
+        gradient_a[i][j].u = 2*x_a[i][j].u*w_a[i][j]/m_normalization;
+        gradient_a[i][j].v = 2*x_a[i][j].v*w_a[i][j]/m_normalization;
       }
     }
     ierr = m_weights->end_access(); CHKERRQ(ierr);

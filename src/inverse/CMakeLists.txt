@@ -6,6 +6,7 @@ add_library (pisminverse
   ./InvSchrodTikhonov.cc
   ./Functional.cc
   ./H1NormFunctional.cc
+  ./MeanSquareObservationFunctional.cc
   )
 target_link_libraries (pisminverse pismbase pismutil)
 
