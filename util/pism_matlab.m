@@ -6,11 +6,11 @@ function pism_matlab()
 %    $ matlab
 %    >> pism_matlab  % creates bar.nc
 %    >> exit
-%    $ pismr -boot_file foo.nc -Mx 51 -My 101 -surface constant \
+%    $ pismr -boot_file foo.nc -Mx 51 -My 101 \
 %            -Mz 21 -Lz 4000 -Mbz 6 -Lbz 2000 -y 1
 % 
 % Incidentally, next run shows good mass conservation, with no basal melt losses:
-%    $ pismr -boot_file foo.nc -Mx 51 -My 101 -surface constant \
+%    $ pismr -boot_file foo.nc -Mx 51 -My 101 \
 %            -Mz 21 -Lz 4000 -Mbz 6 -Lbz 2000 -y 1000 -no_energy
 
 % tested in MATLAB Version 7.7.0.471 (R2008b) and Version 7.9.0.529 (R2009b)

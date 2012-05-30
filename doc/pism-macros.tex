@@ -1,0 +1,59 @@
+% This file contains macros included in manual.tex and forcing.tex, in the preamble.
+% This way we have all the URLs and such in one place.
+
+%% THE FOLLOWING SHOULD CHANGE FOR A STABLE RELEASE:
+\newcommand{\PISMREV}{revision \texttt{@Pism_REVISION_TAG@}}
+\newcommand{\PETSCREL}{3.2}
+\newcommand{\PISMDOWNLOADMSG}{Get development branch source code:
+  \quad \texttt{git clone -b dev git@github.com:pism/pism.git pism-dev} \quad}
+\newcommand{\PISMBROWSERURL}{http://www.pism-docs.org/wiki/doku.php?id=browser}
+\newcommand{\PISMEMAIL}{\href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}}
+
+\newcommand{\normalspacing}{\renewcommand{\baselinestretch}{1.1}\tiny\normalsize}
+\newcommand{\tablespacing}{\renewcommand{\baselinestretch}{1.0}\tiny\normalsize}
+\normalspacing
+
+\usepackage[usenames]{xcolor}
+
+\usepackage{bm,url,xspace,verbatim}
+\usepackage{amssymb,amsmath}
+\usepackage[pdftex]{graphicx}
+
+\usepackage{booktabs}           % better rules in tables
+\usepackage[nohyphen]{underscore}
+
+\newcommand{\ddt}[1]{\ensuremath{\frac{\partial #1}{\partial t}}}
+\newcommand{\ddx}[1]{\ensuremath{\frac{\partial #1}{\partial x}}}
+\newcommand{\ddy}[1]{\ensuremath{\frac{\partial #1}{\partial y}}}
+\renewcommand{\t}[1]{\texttt{#1}}
+\newcommand{\Matlab}{\textsc{Matlab}\xspace}
+\newcommand{\bq}{\mathbf{q}}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\eps}{\epsilon}
+\newcommand{\grad}{\nabla}
+\newcommand{\Div}{\nabla\cdot}
+
+%% macros having to do with documentation for options; note these appear in the index
+
+\newindex{default}{idx}{ind}{General Index}
+\newindex{options}{odx}{ond}{PISM Command-line options}
+
+\def\optsection#1{%
+  \def\optindex##1{\index[options]{#1!##1}}
+  \def\optseealso##1{\index[options]{#1|see{##1}}}
+}
+
+\optsection{FIXME}
+
+% Use this to index option definitions:
+\newcommand{\intextoption}[1]{\texttt{-#1}\optindex{\texttt{-#1}}}
+
+\newcommand{\txtopt}[2]{\texttt{-#1} #2\optindex{\texttt{-#1} #2}}
+
+\newcommand{\listopt}[1]{\txtopt{#1}{\emph{comma-separated list}}}
+\newcommand{\fileopt}[1]{\txtopt{#1}{\emph{filename}}}
+\newcommand{\timeopt}[1]{\txtopt{#1}{\emph{range or list}}}
+
+\def\variable#1{\texttt{#1}\index{NetCDF variables!\texttt{#1}}}
+\def\config#1{\texttt{#1}\index{Configuration flags and parameters!\texttt{#1}}}
+\def\class#1{\texttt{#1}\index{C++ classes!\texttt{#1}}}

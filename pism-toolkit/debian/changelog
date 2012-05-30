@@ -1,7 +1,11 @@
-pism-toolkit (0.1-3) unstable; urgency=low
+pism-toolkit (0.1-5) unstable; urgency=low
 
+  * Added more libraries (we need more now that petsc-dev is removed)
+	
+  * Updated debian/control (removed petsc-dev, added more tools)
+	
   * Updated the debian/control file (switched to git).
 
   * Initial release.
 
- -- Constantine Khroulev <ckhroulev@alaska.edu>  Tue, 08 Nov 2011 14:03:00 -0900
+ -- Constantine Khroulev <ckhroulev@alaska.edu>  Thu, 03 May 2012 14:31:00 -0900

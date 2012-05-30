@@ -45,7 +45,7 @@ void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r, string name, str
 
 
 //! Read timeseries data from a NetCDF file \c filename.
-PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) {
+PetscErrorCode Timeseries::read(string filename, bool use_reference_date) {
   PetscErrorCode ierr;
 
   PIO nc(com, rank, "netcdf3");
@@ -61,7 +61,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
   if (!exists) {
     ierr = PetscPrintf(com,
 		      "PISM ERROR: Can't find '%s' ('%s') in '%s'.\n",
-		       short_name.c_str(), standard_name.c_str(), filename);
+		       short_name.c_str(), standard_name.c_str(), filename.c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -72,7 +72,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
     ierr = PetscPrintf(com,
 		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
 		       "            but a time-series variable can only depend on 1 dimension.\n",
-		       short_name.c_str(), filename, dims.size()); CHKERRQ(ierr);
+		       short_name.c_str(), filename.c_str(), dims.size()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -92,7 +92,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
   }
   if (!is_increasing) {
     ierr = PetscPrintf(com, "PISM ERROR: dimension '%s' has to be strictly increasing (read from '%s').\n",
-		       dimension.short_name.c_str(), filename);
+		       dimension.short_name.c_str(), filename.c_str());
     PISMEnd();
   }
 
@@ -110,13 +110,16 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
     use_bounds = false;
   }
 
-  ierr = var.read(filename, use_reference_date, values); CHKERRQ(ierr);
+  // Do not use the reference date. This may be a problem if someone needs to
+  // read a time-series with the meaning of "time depending on time", but this is
+  // not likely.
+  ierr = var.read(filename, false, values); CHKERRQ(ierr);
 
   if (time.size() != values.size()) {
     ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",
 		       dimension.short_name.c_str(),
 		       var.short_name.c_str(),
-		       filename); CHKERRQ(ierr);
+		       filename.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -126,7 +129,7 @@ PetscErrorCode Timeseries::read(const char filename[], bool use_reference_date) 
 }
 
 //! Write timeseries data to a NetCDF file \c filename.
-PetscErrorCode Timeseries::write(const char filename[]) {
+PetscErrorCode Timeseries::write(string filename) {
   PetscErrorCode ierr;
 
   // write the dimensional variable; this call should go first
@@ -261,6 +264,11 @@ PetscErrorCode Timeseries::set_dimension_units(string units, string glaciologica
 PetscErrorCode Timeseries::set_attr(string name, string value) {
   var.set_string(name, value);
   return 0;
+}
+
+//! Get a string attribute.
+string Timeseries::get_string(string name) {
+  return var.get_string(name);
 }
 
 //! Set a single-valued scalar attribute.

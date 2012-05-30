@@ -11,7 +11,7 @@
 #    2. run spinup.sh to do spinup
 #    3. run experiments.sh to do
 #       experiment runs into these files:
-#           UAF1_G_D3_C?_E?_raw.nc
+#           UAF1_G_D3_C?_E?_raw_y500.nc
 #           ts_UAF1_G_D3_C?_E?.nc
 #    4. run this current script 
 #         ./postprocess.sh

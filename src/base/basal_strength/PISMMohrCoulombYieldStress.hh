@@ -71,7 +71,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 

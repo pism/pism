@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2007-2012 Ed Bueler and Nathan Shemonski and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -39,25 +39,25 @@ PetscErrorCode PA_EISMINT_Greenland::update(PetscReal my_t, PetscReal my_dt) {
 
   ierr = surfelev->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
-  ierr = temp_ma.begin_access();  CHKERRQ(ierr);
-  ierr = temp_mj.begin_access();  CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.begin_access();  CHKERRQ(ierr);
+  ierr = air_temp_mean_july.begin_access();  CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscReal Z = PetscMax((*surfelev)(i,j), 20 * ((*lat)(i,j) - 65));
 
-      temp_ma(i,j) = 49.13 - 0.007992 * Z - 0.7576 * (*lat)(i,j) + 273.15;
-      temp_mj(i,j) = 273.15 + 30.38 - 0.006277 * (*surfelev)(i,j) - 0.3262 * (*lat)(i,j);
+      air_temp_mean_annual(i,j) = 49.13 - 0.007992 * Z - 0.7576 * (*lat)(i,j) + 273.15;
+      air_temp_mean_july(i,j) = 273.15 + 30.38 - 0.006277 * (*surfelev)(i,j) - 0.3262 * (*lat)(i,j);
     }
-  }  
+  }
   ierr = surfelev->end_access();   CHKERRQ(ierr);
   ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = temp_ma.end_access();  CHKERRQ(ierr);
-  ierr = temp_mj.end_access();  CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.end_access();  CHKERRQ(ierr);
+  ierr = air_temp_mean_july.end_access();  CHKERRQ(ierr);
 
   if (do_greenhouse_warming == PETSC_TRUE) {
     const PetscScalar shift = greenhouse_shift(my_t, my_dt);
-    ierr = temp_ma.shift(shift); CHKERRQ(ierr);
-    ierr = temp_mj.shift(shift); CHKERRQ(ierr);
+    ierr = air_temp_mean_annual.shift(shift); CHKERRQ(ierr);
+    ierr = air_temp_mean_july.shift(shift); CHKERRQ(ierr);
   }
 
   return 0;

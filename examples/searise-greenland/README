@@ -1,0 +1,4 @@
+This directory contains all of the scripts needed to do a representative
+PISM run similar to the SeaRISE submission for Greenland.  See the User's
+Manual, whose first section documents this example.
+

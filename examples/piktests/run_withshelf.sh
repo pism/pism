@@ -8,7 +8,7 @@ infile=circular_withshelf_12km.nc
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 4500 -Lbz 1000"
 
-pismopts="-boot_file $infile $grid -surface constant -ssa_sliding -ssa_method fd"
+pismopts="-boot_file $infile $grid -ssa_sliding -ssa_method fd"
 
 #doit="mpiexec -n $N ../../bin/pismr $pismopts"
 doit="mpiexec -n $N pismr $pismopts"

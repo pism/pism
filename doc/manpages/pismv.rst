@@ -14,7 +14,7 @@ PISM's verification mode executable
 
 :Author: ckhroulev@alaska.edu
 :Date:   2011-5-12
-:Copyright: Copyright (C) 2011 Constantine Khroulev
+:Copyright: Copyright (C) 2011, 2012 Constantine Khroulev
 :Version: 0.1
 :Manual section: 1
 :Manual group: science
@@ -42,7 +42,6 @@ SEE ALSO
 ========
 
 - The *User's Manual* and other documentation online at http://www.pism-docs.org/
-- PISM's *Cheat Sheet* for a quick overview of command-line options.
 - PISM's *Source Code Browser* for technical documentation.
 
 Another important PISM executables include **pismr**, **pisms** and **pross**. 

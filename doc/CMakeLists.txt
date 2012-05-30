@@ -2,14 +2,56 @@
 find_package(LATEX)
 find_package(Doxygen)
 
+# a macro creating a custom command generating a PDF document using general and command-line option indices.
+macro(pism_latex_document name src figs)
+  # copy files into the build directory:
+  foreach (filename ${src} ${figs})
+    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${filename})
+      configure_file(${filename} ${filename} COPYONLY)
+    else ()
+      set(missing "${missing} ${filename}")
+    endif()
+  endforeach()
+
+  if (missing)
+    message(STATUS "Will try to generate ${missing}")
+  endif()
+
+  add_custom_command (OUTPUT ${name}.pdf
+    COMMAND ${PDFLATEX_COMPILER} ${name}.tex
+    COMMAND ${BIBTEX_COMPILER} ${name}
+    COMMAND ${MAKEINDEX_COMPILER} -l ${name}
+    COMMAND ${MAKEINDEX_COMPILER} -l -o ${name}.ond ${name}.odx
+    COMMAND ${PDFLATEX_COMPILER} ${name}.tex
+    COMMAND ${PDFLATEX_COMPILER} ${name}.tex
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/${name}.pdf ${PROJECT_BINARY_DIR}/
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS ${src} ${figs})
+
+  add_custom_command (OUTPUT ${name}_draft.pdf
+    COMMAND ${PDFLATEX_COMPILER} ${name}.tex
+    COMMAND mv ${CMAKE_CURRENT_BINARY_DIR}/${name}.pdf ${CMAKE_CURRENT_BINARY_DIR}/${name}_draft.pdf
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/${name}_draft.pdf ${PROJECT_BINARY_DIR}/
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS ${src} ${figs})
+
+  add_custom_target(${name} ALL
+    DEPENDS ${name}.pdf)
+
+  add_custom_target(${name}_draft
+    DEPENDS ${name}_draft.pdf)
+
+endmacro()
+
 if (PDFLATEX_COMPILER)
   # Only offer to build docs if LaTeX is found.
   option (Pism_BUILD_DOCS "Build PISM PDF documentation" OFF)
 
-  file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/revision.tex "${Pism_REVISION_TAG}")
+  # copy PISM-related macros, creating the revision tag
+  configure_file(pism-macros.tex pism-macros.tex @ONLY)
 
-  # Installation manual and the cheatsheet:
-  foreach (NAME installation cheatsheet)
+  # Installation manual:
+  foreach (NAME installation)
     configure_file (${NAME}.tex ${NAME}.tex COPYONLY)
 
     add_custom_command (OUTPUT ${NAME}.pdf
@@ -26,11 +68,12 @@ if (PDFLATEX_COMPILER)
 
   add_subdirectory(userman)
 
+  add_subdirectory(forcing)
+
   if (Pism_BUILD_DOCS)
     install (FILES
       "${CMAKE_CURRENT_BINARY_DIR}/userman/manual.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/installation.pdf"
-      "${CMAKE_CURRENT_BINARY_DIR}/cheatsheet.pdf"
       DESTINATION ${Pism_DOC_DIR})
 
   endif ()                      # if Pism_BUILD_DOCS

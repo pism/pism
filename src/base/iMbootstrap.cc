@@ -44,6 +44,9 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
   // Check the consistency of geometry fields:
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); 
 
+  ierr = verbPrintf(2, grid.com,
+		    "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
+
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
   if (surface != NULL) {
@@ -57,6 +60,7 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
 
     ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
   } else SETERRQ(grid.com, 1, "surface == NULL");
+
   if (ocean != NULL) {
     PetscReal max_dt = 0;
     bool restrict = false;
@@ -68,6 +72,9 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
 
     ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
   } else SETERRQ(grid.com, 1, "ocean == NULL");
+
+  ierr = verbPrintf(2, grid.com,
+		    "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
 
   // Fill 3D fields using heuristics:
   ierr = bootstrap_3d(); CHKERRQ(ierr);
@@ -265,7 +272,7 @@ geothermal flux:
 Note that \f$z\f$ here is negative, so the temperature increases as one goes
 down into the bed.
 
-FIXME task #7297
+FIXME issue #15
 */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;

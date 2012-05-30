@@ -1,0 +1,12 @@
+.gitignore
+build/
+*.nc
+*~
+*.dat
+*.o
+*.petsc
+*.petsc.info
+out.*
+examples/**/*.png
+examples/**/*.zip
+

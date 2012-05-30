@@ -9,7 +9,7 @@ infile="circular_shelfonly.nc"
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
-pismopts="-boot_file $infile $grid -surface constant -verbose 3 -ssa_sliding -ssa_dirichlet_bc "
+pismopts="-boot_file $infile $grid -verbose 3 -ssa_sliding -ssa_dirichlet_bc "
 
 #doit="mpiexec -n $N ../../bin/pismr $pismopts"
 doit="mpiexec -n $N pismr $pismopts"

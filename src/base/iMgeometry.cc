@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -65,8 +65,8 @@ PetscErrorCode IceModel::update_mask() {
   GeometryCalculator gc(sea_level, config);
   MaskQuery mask(vMask);
 
-  ierr =    vH.begin_access();    CHKERRQ(ierr);
-  ierr =  vbed.begin_access();  CHKERRQ(ierr);
+  ierr =    vH.begin_access(); CHKERRQ(ierr);
+  ierr =  vbed.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   PetscInt GHOSTS = 2;
@@ -153,7 +153,7 @@ PetscErrorCode IceModel::cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, 
 
   Even if we regard the map-plane flux as defined by the formula
   \f$\mathbf{q} = \bar{\mathbf{U}} H\f$, the flow of ice is at least somewhat
-  diffusive in almost all cases, and in simplified models (the SIA model) it
+  diffusive in almost all cases.  In the non-sliding SIA model it
   is exactly true that \f$\mathbf{q} = - D \nabla h\f$.  In the current method the
   flux is split into the part from the diffusive non-sliding SIA model
   and a part which is a less-diffusive, presumably membrane-stress-dominated
@@ -183,7 +183,8 @@ PetscErrorCode IceModel::cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, 
   \f$\Delta t \sim \Delta x^2 / \max D\f$; see also [\ref MortonMayers].
 
   The divergence of the flux from velocity \f$\mathbf{U}_b\f$ is computed by
-  the PIK upwinding technique [equation (25) in \ref Winkelmannetal2011].
+  the upwinding technique [equation (25) in \ref Winkelmannetal2011] which
+  is the donor cell upwind method [\ref LeVeque].
   The CFL condition for this advection scheme is checked; see
   computeMax2DSlidingSpeed() and determineTimeStep().  This method implements the
   direct-superposition (PIK) hybrid which adds the SSA velocity to the SIA velocity
@@ -308,10 +309,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
         divQ = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
       }
 
-      // get non-diffusive velocities according to old or -part_grid scheme
       planeStar<int> M = vMask.int_star(i, j);
-      planeStar<PetscScalar> v;
 
+      // get non-diffusive velocities according to old or -part_grid scheme
+      planeStar<PetscScalar> v;
       ierr = cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
 
       if (dirichlet_bc) {
@@ -331,7 +332,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
       divQ += (  v.n * (v.n > 0 ? vH(i, j) : vH(i, j + 1))
                  - v.s * (v.s > 0 ? vH(i, j - 1) : vH(i, j)) ) / dy;
 
-
       PetscReal S = 0.0;
       if (include_bmr_in_continuity) {
         if (mask.ocean(i, j))
@@ -340,7 +340,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
           S = vbmr(i, j);
       }
 
-      // decide whether to apply Albrecht et al 2011 subgrid-scale parameterization (-part_grid)
+      // decide whether to apply Albrecht et al 2011 subgrid-scale
+      //   parameterization
 
       // case where we apply -part_grid
       // applies for ice flux from floating ice shelf to open ocean only

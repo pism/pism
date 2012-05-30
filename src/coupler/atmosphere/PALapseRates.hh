@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
 
   virtual PetscErrorCode begin_pointwise_access();
@@ -45,8 +45,14 @@ public:
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
                                           PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+
+
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 protected:
   PetscReal precip_lapse_rate;
+  NCSpatialVariable precipitation, air_temp;
 };
 
 #endif /* _PALAPSERATES_H_ */

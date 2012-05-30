@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include <algorithm>
+#include <string.h>
 
 #include "pism_options.hh"
 #include "NCVariable.hh"
@@ -137,9 +138,9 @@ PetscErrorCode just_show_usage(
       "       http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf\n"
       "  2. read browser for technical details:\n"
       "       http://www.pism-docs.org/doxy/html/index.html\n"
-      "  3. search bugs and tasks source host: https://gna.org/projects/pism\n"
+      "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
       "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
-      "  5. email:  help@pism-docs.org\n", 
+      "  5. email for help:  help@pism-docs.org\n", 
       execname,execname);  CHKERRQ(ierr);
   return 0;
 }
@@ -368,6 +369,7 @@ PetscErrorCode PISMOptionsReal(string option, string text,
   PetscBool flag;
   char *endptr;
 
+  memset(str, 0, TEMPORARY_STRING_LENGTH);
   snprintf(str, TEMPORARY_STRING_LENGTH, "%f", result);
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "", str, str,
@@ -711,6 +713,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
     config.set_flag("kill_icebergs", true);
   }
 
+  // kill_icebergs requires part_grid
+  if (config.get_flag("kill_icebergs")) {
+    config.set_flag("part_grid", true);
+  }
   
   ierr = PISMOptionsIsSet("-ssa_floating_only", flag);  CHKERRQ(ierr);
   if (flag) {

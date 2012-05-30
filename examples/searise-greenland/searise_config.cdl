@@ -14,7 +14,7 @@ netcdf pism_overrides {
    pism_overrides:institution = "University of Alaska Fairbanks";
    pism_overrides:institution_doc = "Institution name. This string is written to output files as the 'institution' global attribute.";
 
-    pism_overrides:enhancement_factor = 3.0;
-    pism_overrides:enhancement_factor_doc = "; Flow enhancement factor for SIA";
+    pism_overrides:sia_enhancement_factor = 3.0;
+    pism_overrides:sia_enhancement_factor_doc = "; Flow enhancement factor for SIA";
 
 }

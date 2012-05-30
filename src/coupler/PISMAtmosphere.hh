@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -33,7 +33,7 @@ public:
     : PISMComponent_TS(g, conf) {};
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result) = 0;
 
   //! \brief Sets result to the mean annual near-surface air temperature, in degrees Kelvin.
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result) = 0;

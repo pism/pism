@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -130,6 +130,12 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
   ierr = v.end_access(); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);  
 
+  // Communicate to get ghosts (needed to compute w):
+  ierr = u.beginGhostComm(); CHKERRQ(ierr);
+  ierr = v.beginGhostComm(); CHKERRQ(ierr);
+  ierr = u.endGhostComm(); CHKERRQ(ierr);
+  ierr = v.endGhostComm(); CHKERRQ(ierr);
+
   ierr = PISMGlobalMax(&my_u_max, &u_max, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalMax(&my_v_max, &v_max, grid.com); CHKERRQ(ierr);
 
@@ -179,7 +185,7 @@ PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3
           // Use hydrostatic pressure; presumably this is not quite right in context
           //   of shelves and streams; here we hard-wire the Glen law
           PetscReal depth = thk - grid.zlevels[k],
-            pressure = ice_rho * standard_gravity * depth, // FIXME task #7297
+            pressure = ice_rho * standard_gravity * depth, // FIXME issue #15
           // Account for the enhancement factor.
           //   Note, enhancement factor is not used in SSA anyway.
           //   Should we get rid of it completely?  If not, what is most consistent here?

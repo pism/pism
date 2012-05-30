@@ -18,7 +18,7 @@ Ed's cookbook for maintaining PISM:
 
 2)  Which files do I need to keep up-to-date at www.pism-docs.org for stable docs?
 
-  These files: manual.pdf, installation.pdf, cheatsheet.pdf.
+  These files: manual.pdf, installation.pdf.
   And a recent version of the source code browser, next.
 
 3)  How do I upload a recent version of the (development) source code browser?

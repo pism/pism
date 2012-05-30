@@ -10,10 +10,9 @@
 
 PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table \ref{tab:input-output-options} summarizes command-line options controlling the most basic input and output of NetCDF files relating to starting and ending PISM runs.
 
-\begin{table}[h]
+\begin{table}[ht]
   \centering
-  \caption{Basic NetCDF input and output options}
-  \begin{tabular}{lp{0.6\linewidth}}
+ \begin{tabular}{lp{0.6\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -22,14 +21,14 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     \txtopt{o_size}{[small, medium, big]} & Chooses the ``size'' of the output file to produce.
     Possible options are \texttt{none} (\emph{no} output file at all), \texttt{small} (only variables necessary to restart
     PISM), \texttt{medium} (the default, includes some diagnostic quantities)
-    and \texttt{big} (writes all the variables mentioned in table
-    \ref{tab:extra-vars}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
+    and \texttt{big} (writes all the variables mentioned in tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
     \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa}
     and \texttt{vbar_ssa} velocities saved by a previous
     \texttt{-ssa_floating_only} or \texttt{-ssa_sliding} run. \\
     \bottomrule
  \end{tabular}
- \label{tab:input-output-options}
+\caption{Basic NetCDF input and output options}
+\label{tab:input-output-options}
 \end{table}
 
 Table \ref{tab:stdout} gives a summary of PISM's options controlling
@@ -37,8 +36,7 @@ what is printed to the standard output.  This includes the \texttt{-help} and \t
 
 \begin{table}[ht]
   \centering
-  \caption{Options controlling PISM's standard output}
-  \begin{tabular}{lp{0.7\linewidth}}
+ \begin{tabular}{lp{0.7\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -54,7 +52,8 @@ what is printed to the standard output.  This includes the \texttt{-help} and \t
    \intextoption{version} &   Show version numbers of PETSc and of PISM.\\
    \bottomrule
   \end{tabular}
-  \label{tab:stdout}
+\caption{Options controlling PISM's standard output}
+\label{tab:stdout}
 \end{table}
 
 
@@ -72,12 +71,12 @@ It turns out that it is a lot faster to read and write files using the
 \texttt{t,z,y,x} order.
 
 The reason is that PISM uses the \texttt{x,y,z} order internally\footnote{This
-  is not likely to change.} and transposing an array stored in memory is an
-inherently computationally expensive operation, because it involves
-simultaneously accessing memory locations that are ``far away'' from each
-other.
+  is not likely to change.} and writing an array in a different order is an
+inherently expensive operation.
 
-You can choose one of the three supported output orders using the \intextoption{o_order} option with one of \texttt{xyz}, \texttt{yxz}, and \texttt{zyx} as the argument.
+You can choose one of the three supported output orders using the
+\intextoption{o_order} option with one of \texttt{xyz}, \texttt{yxz}, and
+\texttt{zyx} as the argument.
 
 To transpose dimensions in an existing file, use the \texttt{ncpdq} (``permute
 dimensions quickly'') tool from the NCO (\emph{NetCDF Operators}) suite.
@@ -89,87 +88,135 @@ $ ncpdq -a t,z,zb,y,x bad.nc good.nc
 to turn \texttt{bad.nc} (with an unspecified inconvenient storage order) into
 \texttt{good.nc} using the \texttt{t,z,y,x} order.
 
-\subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
+PISM also supports NetCDF-4 parallel I/O, which gives better performance in
+high-resolution runs and avoids NetCDF-3 file format limitations. (In a
+NetCDF-3 file a variable record cannot exceed 4 gigabytes.) Build PISM with
+parallel NetCDF-4 and use \txtopt{o_format}{\texttt{netcdf4_parallel}} to
+enable this code.
+
+In addition to \texttt{-o_format netcdf4_parallel} and \texttt{netcdf3}
+(default) modes, PISM can be built with PnetCDF for best I/O performance. The
+option \texttt{-o_format pnetcdf} turns ``on'' PnetCDF I/O code. (PnetCDF seems
+to be somewhat fragile, though, so use at your own risk.)
+
+\subsection{Saving time series of scalar diagnostic quantities}
+\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
 \optsection{Saving scalar time-series}
+
  It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \texttt{-ts_file}, \texttt{-ts_times}, and \texttt{-ts_vars}.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
         -ts_times 0:1:1e4 -ts_vars ivol,iareag
 \end{verbatim} %$ just to make emacs happy
-will run for 10000 years, saving total ice volume and grounded ice area to \texttt{time-series.nc} \emph{yearly}. See tables \ref{tab:time-series-opts} for the list of options and \ref{tab:time-series} for the full list of supported time-series.
+will run for 10000 years, saving total ice volume and grounded ice area to \texttt{time-series.nc} \emph{yearly}. See tables \ref{tab:time-series-opts} for the list of options and \ref{tab:time-series-1}~and~\ref{tab:time-series-2} for the full list of supported time-series.
 
-Note that, similarly to the snapshot-saving code, this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
+Note that, similarly to the snapshot-saving code (section \ref{sec:snapshots}), this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
 
-Omitting the \texttt{-ts_vars} option makes PISM save a default list of variables, as listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
-
-The non-default variables listed in table \ref{tab:time-series} can be harder to interpret.  They are all time derivatives of PISM quantities.  They are correctly-computed at the user-specified times, but, unless very fine temporal resolution is used when reporting them, they may sample the fast (e.g.~subannual) variability of the PISM model state so infrequently that the resulting time series is unusable.  For example, consider options \texttt{-ts_times 0:10:100000 -ts_vars divoldt,ivol} in the case of SeaRISE-Greenland, which has an annual cycle driving its surface mass balance.  In this case the value \texttt{divoldt} will always be positive, at the user-specified times, \emph{because in January the ice sheet is always gaining volume}.  (Note that integer years mean 1 January.)  Thus a flat \texttt{ivol} time series and a flat but significantly-positive \texttt{divoldt} is expected and correct, at the above times, even when the ice sheet model is in steady state, when the yearly-averaged \texttt{divoldt} is nearly zero.
+Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} available
+variables, as listed in tables
+\ref{tab:time-series-1}~and~\ref{tab:time-series-2}.  Because scalar
+time-series take minimal storage space, compared to spatially-varying data,
+this is usually a reasonable choice. Run PISM with the
+\intextoption{list_diagnostics} option to see the list of all available time-series.
 
 If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-ts_append}.
 
-If a PISM input file contains the \texttt{mapping} variable which has the
-\texttt{grid_mapping_name} attribute, PISM computes corrected cell areas
-using stored latitude and longitude fields and the WGS84 reference ellipsoid.
-This allows us to compute areas and volumes (see table \ref{tab:time-series})
-more accurately.
-
-PISM buffers time-series data and writes it at the end of the run or once 10000
-values are stored, whichever comes first. Sending an \texttt{USR1} (or
+PISM buffers time-series data and writes it at the end of the run, once 10000
+values are stored, or when and \texttt{-extra_file} is saved, whichever comes first. Sending an \texttt{USR1} (or
 \texttt{USR2}) signal to a PISM process flushes these buffers, making it
 possible to monitor the run. (See section \ref{subsect:signal} for more about
 PISM's signal handling.)
 
-\begin{table}[h]
+\begin{table}[ht]
  \centering
-  \caption{Command-line options controlling saving scalar time-series}
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
+ \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
     \fileopt{ts_file} & Specifies the file to save to.\\
     \timeopt{ts_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-    \listopt{ts_vars} & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing the default variables.\\
+    \listopt{ts_vars} & Comma-separated list of variables, see
+    tables~\ref{tab:time-series-1}~and~\ref{tab:time-series-2}. Omitting this
+    option is equivalent to listing the \emph{all} variables.\\
     \intextoption{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
     \bottomrule
   \end{tabular}
- \label{tab:time-series-opts}
+\caption{Command-line options controlling saving scalar time-series}
+\label{tab:time-series-opts}
+\end{table}
+
+Besides the above information on usage, here are comments on the physical significance of several scalar diagnostics which appear in tables \ref{tab:time-series-1}~and~\ref{tab:time-series-2}:\index{PISM!physical meaning of scalar diagnostics}
+\begin{itemize}
+  \item For each variable named \dots\texttt{_flux}, positive values mean ice sheet mass gain.
+  \item Basic ice volume and area are computed and then split among floating and grounded portions: \texttt{ivol} $\mapsto$ (\texttt{ivolf}, \texttt{ivolg}) while \texttt{iarea} $\mapsto$ (\texttt{iareaf},\texttt{iareag}).
+  \item Quantities which are used primarily for diagnosing thermodynamic state, namely amounts of cold or temperate (``\texttt{temp}'') ice, are reported both in absolute and relative terms.  The absolute quantities have units \textsl{$m^3$} for volumes and \textsl{$m^2$} for areas.  The relative quantities have suffix ``\texttt{f}'' for ``fraction'', and dimensionless units.  Here are the \{absolute,relative\} pairs: \texttt{iarea\{cold,coldf\}}, \texttt{iarea\{temp,tempf\}}, \texttt{ivol\{cold,coldf\}},  and \texttt{ivol\{temp,tempf\}}.
+  \item If a PISM input file contains the \texttt{mapping} variable which has the
+\texttt{proj4} attribute containing a PROJ.4 string defining the projection then PISM computes corrected cell areas
+using this information, grid parameters, and the WGS84 reference ellipsoid. This compute areas and volumes more accurately.
+  \item The sea-level-relevant ice volume \texttt{slvol} is the total grounded ice volume minus the amount of ice, that, in liquid form, would fill up the regions with bedrock below sea level, if this ice were removed.  That is, \texttt{slvol} is the sea level rise potential of the ice sheet at that time.  The result is reported  in sea-level equivalent, i.e.~meters of sea level rise.
+  \item Fields \texttt{max_diffusivity} and \texttt{max_hor_vel} relate to PISM time-stepping, and they appear in per-time-step form in the standard output from PISM (i.e.~at default verbosity).  \texttt{max_diffusivity} determines the length of the mass continuity substeps for the SIA stress balance (sub-)model.  \texttt{max_hor_vel} determines the CFL-type restriction for mass continuity and conservation of energy contributions of the SSA stress balance (i.e.~sliding) velocity.
+\end{itemize}
+
+\begin{table}[ht]
+  \centering
+ \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}
+    \toprule
+    \textbf{Name} & \textbf{Units} & \textbf{Description}\\
+    \midrule
+    \texttt{basal_ice_flux} & \textsl{kg  / s} &  total basal ice flux \\
+    \texttt{cumulative_basal_ice_flux} & \textsl{kg} &  cumulative total basal ice flux \\
+    \texttt{cumulative_discharge_flux} & \textsl{kg} &  cumulative discharge (calving etc.) flux \\
+    \texttt{cumulative_float_kill_flux} & \textsl{kg} &  cumulative \texttt{-float_kill} flux \\
+    \texttt{cumulative_nonneg_rule_flux} & \textsl{kg} &  cumulative \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
+    \texttt{cumulative_ocean_kill_flux} & \textsl{kg} &  cumulative \texttt{-ocean_kill} flux \\
+    \texttt{cumulative_sub_shelf_ice_flux} & \textsl{kg} &  cumulative total sub-shelf ice flux \\
+    \texttt{cumulative_surface_ice_flux} & \textsl{kg} &  cumulative total over ice domain of top surface ice mass flux \\
+    \texttt{dimassdt} & \textsl{kg  / s} &  total ice mass rate of change \\
+    \texttt{discharge_flux} & \textsl{kg  / s} &  discharge (calving and icebergs) flux \\
+    \texttt{divoldt} & \textsl{$m^{3}$  / s} &  total ice volume rate of change \\
+    \texttt{dt} & \textsl{second} &  mass continuity time step \\
+    \texttt{float_kill_flux} & \textsl{kg  / s} &  \texttt{-float_kill} flux \\
+    \texttt{iarea} & \textsl{$m^{2}$} &  total ice area \\
+    \texttt{iareacold} & \textsl{$m^{2}$} &  ice-covered area where basal ice is cold \\
+    \texttt{iareacoldf} & \textsl{1} &  fraction of ice-covered area where basal ice is cold \\
+    \texttt{iareaf} & \textsl{$m^{2}$} &  total floating ice area \\
+    \texttt{iareag} & \textsl{$m^{2}$} &  total grounded ice area \\
+    \texttt{iareatemp} & \textsl{$m^{2}$} &  ice-covered area where basal ice is temperate \\
+    \texttt{iareatempf} & \textsl{1} &  fraction of ice-covered area where basal ice is temperate \\
+    \texttt{ienthalpy} & \textsl{J} &  total ice enthalpy \\
+    \multicolumn{3}{c}{Continued in Table \ref{tab:time-series-2}}\\
+    \bottomrule
+  \end{tabular}
+\caption{Scalar time-series supported by PISM, part 1}
+\label{tab:time-series-1}
 \end{table}
 
 \begin{table}[ht]
   \centering
-  \caption{Scalar time-series supported by PISM.  Names above the horizontal line are written by default when \texttt{-ts_vars} is omitted.  For each variable named \dots\texttt{_flux}, positive values mean ice sheet mass gain.}
-  \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}
+ \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}
     \toprule
-    \textbf{Variable name} & \textbf{Units} & \textbf{Description}\\
+    \textbf{Name} & \textbf{Units} & \textbf{Description}\\
     \midrule
-    \texttt{ivol} &m$^{3}$ & total ice volume\\
-    \texttt{ivolcoldf} &m$^{3}$ & cold ice volume fraction\\
-    \texttt{ivoltempf} &m$^{3}$ & temperate ice volume fraction\\
-    \texttt{iarea} & m$^{2}$ & total area covered by ice \\
-    \texttt{iareacoldf} & m$^{2}$ & area fraction covered by cold ice \\
-    \texttt{iareatempf} & m$^{2}$ & area fraction covered by temperate ice \\
-    \texttt{iareag} & m$^{2}$ & area covered by grounded ice\\
-    \texttt{iareaf} & m$^{2}$ & area covered by floating ice\\
-    \texttt{imass} & kg & total mass of ice sheet \\
-    \texttt{ienthalpy} & J & total internal energy (enthalpy) of ice sheet \\
-    \texttt{dt} & years & mass-continuity time-step\\ 
-    \texttt{divoldt} & m$^{3}\,$s$^{-1}$ & ice volume rate of change\\
-    \texttt{dimassdt} & kg s$^{-1}$ & ice mass rate of change\\
-    \texttt{max_diffusivity} & m$^{2}$ s$^{-1}$ & maximum diffusivity \\
-    \texttt{surface_ice_flux} & kg s$^{-1}$ & total surface ice flux \\
-    \texttt{cumulative_surface_ice_flux} & kg & \ldots cumulative of the above \\
-    \texttt{basal_ice_flux} & kg s$^{-1}$ & total basal ice flux \\
-    \texttt{cumulative_basal_ice_flux} & kg & \ldots cumulative of the above \\
-    \texttt{sub_shelf_ice_flux} & kg s$^{-1}$  & total sub-ice-shelf ice flux \\
-    \texttt{cumulative_sub_shelf_ice_flux} & kg  & \ldots cumulative of the above \\
-    \texttt{nonneg_rule_flux} & kg s$^{-1}$  & total ice flux from application of $H\ge 0$ constraint on ice thickness \\
-    \texttt{cumulative_nonneg_rule_flux} & kg  & \ldots cumulative of the above \\
-    \texttt{ocean_kill_flux} & kg s$^{-1}$  & total ice flux from application of \texttt{-ocean_kill} option  \\
-    \texttt{cumulative_ocean_kill_flux} & kg  & \ldots cumulative of the above  \\
-    \texttt{float_kill_flux} & kg s$^{-1}$  & total ice flux from application of \texttt{-float_kill} option  \\
-    \texttt{cumulative_float_kill_flux} & kg  & \ldots cumulative of the above \\
+    \multicolumn{3}{c}{Continued from Table \ref{tab:time-series-1}}\\
+    \texttt{imass} & \textsl{kg} &  total ice mass \\
+    \texttt{ivol} & \textsl{$m^{3}$} &  total ice volume \\
+    \texttt{ivolcold} & \textsl{$m^{3}$} &  total volume of cold ice \\
+    \texttt{ivolcoldf} & \textsl{1} &  cold ice volume fraction \\
+    \texttt{ivolf} & \textsl{$m^{3}$} &  total floating ice volume \\
+    \texttt{ivolg} & \textsl{$m^{3}$} &  total grounded ice volume \\
+    \texttt{ivoltemp} & \textsl{$m^{3}$} &  total volume of temperate ice \\
+    \texttt{ivoltempf} & \textsl{1} &  temperate ice volume fraction \\
+    \texttt{max_diffusivity} & \textsl{$m^{2}$  / s} &  maximum diffusivity \\
+    \texttt{max_hor_vel} & \textsl{m  / s} &  maximum (absolute) component of horizontal ice velocity over the grid \\
+    \texttt{nonneg_rule_flux} & \textsl{kg  / s} &  \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
+    \texttt{ocean_kill_flux} & \textsl{kg  / s} &  \texttt{-ocean_kill} flux \\
+    \texttt{slvol} & \textsl{m} &  total sea-level relevant ice \textbf{in sea-level equivalent} \\
+    \texttt{sub_shelf_ice_flux} & \textsl{kg  / s} &  total sub-shelf ice flux \\
+    \texttt{surface_ice_flux} & \textsl{kg  / s} &  total over ice domain of top surface ice mass flux \\
     \bottomrule
   \end{tabular}
- \label{tab:time-series}
+\caption{Scalar time-series supported by PISM, part 2}
+\label{tab:time-series-2}
 \end{table}
 
 
@@ -186,16 +233,34 @@ Use options \texttt{-extra_file}, \texttt{-extra_times}, and \texttt{-extra_vars
 $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
         -extra_times 0:10:1e4 -extra_vars csurf,cbase
 \end{verbatim} %$
-will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years. Times are specified using a comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras} for all the options corresponding to this feature; table \ref{tab:extra-vars} lists all the variable choices. 
+will run for 10000 years, saving the magnitude of horizontal velocities at the
+ice surface and at the base of ice every 10 years. Times are specified using a
+comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras}
+for all the options corresponding to this feature;
+tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}
+list all the variable choices.
+
+The list of available diagnostic quantities depends on the model setup. For
+example, a run with only one vertical grid level in the bedrock thermal layer
+will not be able to save \texttt{litho_temp}, an SIA-only run does not use a
+basal yield stress model and so will not provide \texttt{tauc}, etc. To see
+which quantities are available in a particular setup, use the
+\intextoption{list_diagnostics} option, which prints the list of diagnostics
+and stops.
 
 In addition to specifying a constant step in \texttt{-extra_times a:step:b} one can save every day, month, or every year by using \texttt{daily}, \texttt{monthly} or \texttt{yearly} instead of a number; for example
 \begin{verbatim}
 $ pismr -i foo.nc -y 100 -o output.nc -extra_file extras.nc \
         -extra_times 0:monthly:100 -extra_vars dHdt
 \end{verbatim} %$
-will save the rate of change of the ice thickness every month for 100 years. PISM uses the Gregorian calendar to compute lengths of months and years.
+will save the rate of change of the ice thickness every month for 100 years.
+PISM uses the Gregorian calendar to compute lengths of months and years. In
+this case the \emph{reference date} mentioned in section \ref{sec:i-format}
+\textbf{is} used. Use the \intextoption{reference_date} option or the
+configuration parameter with the same name to set it. (And see \emph{PISM's
+  climate forcing components} for more details.
 
-Times given using \texttt{-extra_times} are interpreted as endpoints of reporting intervals. This implies that \texttt{0:1:10} will produce 10 records and not 11.
+Times given using \texttt{-extra_times} are interpreted as endpoints of reporting intervals. This implies that \texttt{0:1:10} will produce 10 records and \emph{not} 11.
 
 If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc\~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-extra_append}.
 
@@ -204,109 +269,124 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
 
 \begin{table}[ht]
  \centering
-  \caption{Command-line options controlling extra diagnostic output}
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
+ \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description}\\
     \midrule
     \fileopt{extra_file} & Specifies the file to save to; should be different from the output \texttt{o} file.\\
     \timeopt{extra_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
-    \listopt{extra_vars} & Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
+    \listopt{extra_vars} & Comma-separated list of variables, see
+    tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}\\
     \intextoption{extra_split} & Save to separate files, similar to \texttt{-save_split}\\
     \intextoption{extra_append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \intextoption{extra_split} is set. \\
     \bottomrule
   \end{tabular}
- \label{tab:extras}
+\caption{Command-line options controlling extra diagnostic output}
+\label{tab:extras}
 \end{table}
 
-%\clearpage
-%\newpage
-% xtab stuff for the long table
-\topcaption{Diagnostic quantities}
-\tablefirsthead{\toprule\textbf{Name} & \textbf{Units} & \textbf{Description}\\\midrule}
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
+    \toprule
+    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
+    \midrule
+    \texttt{age} & \textsl{s} & age of ice \\
+    \texttt{enthalpy} & \textsl{J $\mathrm{kg}^{-1}$} & ice enthalpy (includes sensible heat, latent heat, pressure) \\
+    \texttt{temp} & \textsl{K} & ice temperature \\
+    \texttt{cts} & \textsl{none} &  $\mathrm{cts} = E/E_s(p)$, so cold-temperate transition surface is at $\mathrm{cts} = 1$ \\
+    \texttt{liqfrac} & \textsl{1} &  liquid water fraction in ice (between $0$ and $1$) \\
+    \texttt{litho_temp} & \textsl{K} & lithosphere (bedrock) temperature, in \texttt{PISMBedThermalUnit} \\
+    \texttt{temp} & \textsl{K} &  ice temperature \\
+    \texttt{temp_pa} & \textsl{degrees Celsius} &  pressure-adjusted ice temperature (degrees above pressure-melting point) \\
+    \texttt{uvel} & \textsl{m / year} &  horizontal velocity of ice in the X direction \\
+    \texttt{vvel} & \textsl{m / year} &  horizontal velocity of ice in the Y direction \\
+    \texttt{wvel} & \textsl{m / year} &  vertical velocity of ice, relative to geoid \\
+    \texttt{wvel_rel} & \textsl{m / year} &  vertical velocity of ice, relative to base of ice directly below \\
+    \bottomrule
+  \end{tabular}
+\caption{3D diagnostic quantities}
+\label{tab:three-d-diagnostics}
+\end{table}
 
-\tablehead{\multicolumn{3}{c}% 
-  {{\textbf{\tablename}\ \thetable{} -- continued from previous page}} \\ 
-  \toprule\textbf{Name} & \textbf{Units} & \textbf{Description}\\\midrule}
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
+    \toprule
+    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
+    \midrule
+    \texttt{climatic_mass_balance} & \textsl{m / year} & ice-equivalent surface mass balance (accumulation/ablation) rate \\
+    \texttt{ice_surface_temp} & \textsl{K} & annual average ice surface temperature, below firn processes \\
+    \texttt{bedtoptemp} & \textsl{K} & temperature of top of bedrock thermal layer \\
+    \texttt{bfrict} & \textsl{W  / $m^2$} &  basal frictional heating \\
+    \texttt{bheatflx} & \textsl{W  / $m^2$} & upward geothermal flux at bedrock surface \\
+    \texttt{bmelt} & \textsl{m / year} & ice basal melt rate in ice thickness per time \\
+    \texttt{bwat} & \textsl{m} & effective thickness of subglacial melt water \\
+    \texttt{bwp} & \textsl{Pa} & subglacial (pore) water pressure \\
+    \texttt{cbar} & \textsl{m / year} &  magnitude of vertically-integrated horizontal velocity of ice \\
+    \texttt{cbase} & \textsl{m / year} &  magnitude of horizontal velocity of ice at base of ice \\
+    \texttt{cell_area} & \textsl{$m^{2}$} & cell areas \\
+    \texttt{cflx} & \textsl{$m^{2}$ / year} &  magnitude of vertically-integrated horizontal flux of ice \\
+    \texttt{csurf} & \textsl{m / year} &  magnitude of horizontal velocity of ice at ice surface \\
+    \texttt{dHdt} & \textsl{m / year} &  ice thickness rate of change \\
+    \texttt{dbdt} & \textsl{m / year} & bedrock uplift rate \\
+    \texttt{diffusivity} & \textsl{$m^{2}$  / s} &  diffusivity of SIA mass continuity equation \\
+    \texttt{enthalpybase} & \textsl{J  / kg} &  ice enthalpy at the base of ice \\
+    \texttt{enthalpysurf} & \textsl{J  / kg} &  ice enthalpy at 1m below the ice surface \\
+    \texttt{h_x} & \textsl{none} &  the x-component of the surface gradient, on the staggered grid\\
+    \texttt{h_y} & \textsl{none} &  the y-component of the surface gradient, on the staggered grid\\
+    \texttt{hardav} & $Pa\, s^{1/n}$ &  vertical average of ice hardness \\
+    \texttt{lat} & \textsl{degrees north} & latitude \\
+    \texttt{lon} & \textsl{degrees east} & longitude \\
+    \texttt{mask} & \textsl{none} & grounded/dragging/floating integer mask \\
+    \texttt{proc_ice_area} & \textsl{none} &  number of cells containing ice in a processor's domain \\
+    \texttt{rank} & \textsl{none} &  processor rank \\
+   \multicolumn{3}{c}{Continued in Table \ref{tab:two-d-diagnostics-2}}\\
+  \bottomrule
+  \end{tabular}
+  \caption{2D diagnostic quantities, part 1}
+  \label{tab:two-d-diagnostics-1}
+\end{table}
 
-\tablelasthead{\multicolumn{3}{c}% 
-  {{\textbf{\tablename}\ \thetable{} -- concluded from previous page}} \\ 
-  \toprule\textbf{Name} & \textbf{Units} & \textbf{Description}\\\midrule}
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
+    \toprule
+    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
+    \midrule
+    \multicolumn{3}{c}{Continued from Table \ref{tab:two-d-diagnostics-1}}\\
+    \texttt{schoofs_theta} & \textsl{1} &  multiplier $\theta$ in \cite{Schoofbasaltopg2003} \\
+    \texttt{shelfbmassflux} & \textsl{m / year} & ice mass flux from ice shelf base (positive flux is loss from ice shelf) \\
+    \texttt{shelfbtemp} & \textsl{Kelvin} & absolute temperature at ice shelf base \\
+    \texttt{tauc} & \textsl{Pa} & yield stress for basal till (plastic or pseudo-plastic model) \\
+    \texttt{taud} & \textsl{Pa} & driving shear stress at the base of ice, X and Y components \\
+    \texttt{taud_mag} & \textsl{Pa} &  magnitude of the driving shear stress at the base of ice \\
+    \texttt{tempbase} & \textsl{K} &  ice temperature at the base of ice \\
+    \texttt{tempicethk_basal} & \textsl{m} &  thickness of the basal layer of temperate ice \\
+    \texttt{tempicethk} & \textsl{m} &  temperate ice thickness (total column content) \\
+    \texttt{temppabase} & \textsl{Celsius} &  pressure-adjusted ice temperature at the base of ice \\
+    \texttt{tempsurf} & \textsl{K} &  ice temperature at 1m below the ice surface \\
+    \texttt{thksmooth} & \textsl{m} &  thickness relative to smoothed bed elevation in \cite{Schoofbasaltopg2003} \\
+    \texttt{thk} & \textsl{m} & land ice thickness \\
+    \texttt{tillphi} & \textsl{degrees} & friction angle for till under grounded ice sheet \\
+    \texttt{topgsmooth} & \textsl{m} &  smoothed bed elevation in \cite{Schoofbasaltopg2003}\\
+    \texttt{topg} & \textsl{m} & bedrock surface elevation \\
+    \texttt{usurf} & \textsl{m} & ice upper surface elevation \\
+    \texttt{velbar} & \textsl{m / year} &  vertical mean of horizontal ice velocity in the X and Y directions \\
+    \texttt{velbase} & \textsl{m / year} &  horizontal velocity of ice at the base of ice in the X and Y directions\\
+    \texttt{velsurf} & \textsl{m / year} &  horizontal velocity of ice at ice surface in the X and Y directions\\
+    \texttt{wvelbase} & \textsl{m / year} &  vertical velocity of ice at the base of ice, relative to the geoid \\
+    \texttt{wvelsurf} & \textsl{m / year} &  vertical velocity of ice at ice surface, relative to the geoid \\
+  \bottomrule
+  \end{tabular}
+  \caption{2D diagnostic quantities, part 2}
+  \label{tab:two-d-diagnostics-2}
+\end{table}
 
-\tabletail{\midrule \multicolumn{3}{c}{{Continued on next page}} \\ \bottomrule} 
-\tablelasttail{\bottomrule}
-
-\begin{center}
-  \begin{xtabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
-    \label{tab:extra-vars}
-    \texttt{acab} &m/year & instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate \\
-    \texttt{age} & years & age of ice \\
-    \texttt{artm} & K & time-dependent annual average ice temperature at ice surface but below firn processes\\
-    \texttt{bfrict} & mW/m$^{2}$ & basal frictional heating from ice sliding (= till dissipation) \\
-    \texttt{bheatflx} & W/m$^{2}$ & upward geothermal flux at bedrock surface \\
-    \texttt{bmelt} & m/year & ice basal melt rate in ice thickness per time \\
-    \texttt{bwat} & m & effective thickness of subglacial melt water \\
-    \texttt{bwp} & Pa & subglacial (pore) water pressure \\
-    \texttt{cbar} & m/year & magnitude of vertically-integrated horizontal velocity of ice \\
-    \texttt{cbase} & m/year & magnitude of horizontal velocity of ice at base of ice \\
-    \texttt{cell_area} & km$^{2}$ & corrected cell areas, computed using WGS84
-    reference ellipsoid\\
-    \texttt{cflx} & m$^{2}$/year & magnitude of vertically-integrated horizontal flux of ice \\
-    \texttt{csurf} & m/year & magnitude of horizontal velocity of ice at ice
-    surface \\
-   \texttt{diffusivity} & m$^{2}$ / s & diffusivity coefficient $D$ in
-    map-plane continuity equation; only makes sense in regions of shallow ice
-    flow \\
-    \texttt{dHdt} & m/year & rate of change of ice thickness \\
-    \texttt{dbdt} & m/year& bedrock uplift rate \\
-    \texttt{dhdt} & m/year& rate of change of surface elevation \\
-    \texttt{enthalpybase} & K & ice enthalpy at the ice base\\
-    \texttt{enthalpysurf} & K & ice enthalpy at the ice surface\\
-    \texttt{hardav} & Pa s$^{1/n}$ & vertical average of ice hardness \\
-    \texttt{lat} & degrees north& latitude \\
-    \texttt{litho_temp} & K & lithosphere (bedrock) temperature\\
-    \texttt{liqfrac} & 1 & liquid water fraction \\
-    \texttt{lon} & degrees east & longitude \\
-    \texttt{mask} & none & grounded/dragging/floating integer mask \\
-    \texttt{strainheat} & mW/m$^{3}$ & rate of strain heating in ice (dissipation heating) \\
-    \texttt{SigmaComp} & mW/m$^{3}$ & rate of compensatory strain heating in ice (PISMV only)\\
-    \texttt{tauc} & Pa & yield stress for basal till (plastic or pseudo-plastic model) \\
-    \texttt{taud_mag} & Pa & magnitude of driving shear stress at base of ice \\
-    \texttt{taud} & Pa & driving shear stress at base of ice (both components)\\
-    \texttt{temp} & K & ice temperature \\
-    \texttt{tempbase} & K & ice temperature at the ice base\\
-    \texttt{temppabase} & $^{\circ}$C & pressure-adjusted ice temperature at the base of ice\\
-    \texttt{temp_pa} & $^{\circ}$C & pressure-adjusted ice temperature \\
-    \texttt{tempicethk} & m & thickness of the temperate ice \\
-    \scriptsize \texttt{tempicethk_basal}\normalsize & m & thickness of the basal layer of temperate ice \\
-    \texttt{tempsurf} & K & ice temperature at the ice surface\\
-    \texttt{thk} & m & ice thickness\\
-    \texttt{thksmooth} & m & ice thickness relative to \texttt{topgsmooth} \\
-    \texttt{tillphi} & degrees & friction angle for till under grounded ice sheet \\
-    \texttt{topg} & m & bedrock surface elevation \\
-    \texttt{topgsmooth} & m & smoothed bed elevation in Schoof's
-    \cite{Schoofbasaltopg2003} theory
-    of bed roughness in SIA \\
-    \texttt{velbar} & m/year & vertical mean of horizontal ice velocity (components \texttt{ubar} and \texttt{vbar} appear in file) \\
-    \texttt{velbase} & m/year & horizontal ice velocity at the ice base (components \texttt{uvelbase} and \texttt{vvelbase} appear in file) \\
-    \texttt{usurf} & m & ice upper surface elevation \\
-    \texttt{uvel} & m/year & horizontal velocity of ice in the X direction \\
-   \texttt{velsurf} & m/year & horizontal ice velocity at the ice surface (components \texttt{uvelsurf} and \texttt{vvelsurf} appear in file) \\
-   \texttt{vvel} & m/year & horizontal velocity of ice in the Y direction \\
-    \texttt{wvel_rel} & m/year & vertical velocity of ice \\
-    \texttt{wvelbase} & m/year &vertical velocity of ice at the ice base\\
-    \texttt{wvelsurf} & m/year & vertical velocity of ice at the ice surface\\
-  \end{xtabular}
-\end{center}
-
-%\clearpage
 
 \subsection{Saving re-startable snapshots of the model state}\index{snapshots of the model state}\index{PISM!saving snapshots of the model state}
 \label{sec:snapshots}
 \optsection{Saving snapshots}
 Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
-
-By default re-startable snapshots contain only the variables needed for
-restarting PISM. Use the command-line option \texttt{-save_size} to change what is saved.
 
 If saving exactly at specified times is not critical, then use the \texttt{-save_file} and \texttt{-save_times} options.  For example,
 \begin{verbatim}
@@ -342,11 +422,14 @@ $ ncks -d t,1 snapshots.nc foo.nc
 \end{verbatim}
 Also note that the second snapshot will probably be \emph{around} $1500$ years and \texttt{ncks} handles this correctly: it takes the record closest to $1500$ years.
 
+By default re-startable snapshots contain only the variables needed for
+restarting PISM. Use the command-line option \texttt{-save_size} to change what is saved.
+
 Another possible use of snapshots is for restarting runs on a batch system which kills jobs which go over their allotted time.  Running PISM with options \texttt{-y 1500} \texttt{-save_times 1000:100:1400} would mean that if the job is killed before completing the whole 1500 year run, we can restart from near the last multiple of $100$ years.  Restarting with option \texttt{-ye} would finish the run on the desired year.
 
 When running PISM on such a batch system it is also possible to save
 re-startable snapshots at equal wall-clock time (as opposed to model time)
-intervals by adding the '\txtopt{backup_interval}{hours}' option.
+intervals by adding the ``\txtopt{backup_interval}{hours}'' option.
 
 \textbf{A note of caution:} if the wall-clock limit is equal to $N$ times backup
 interval for a whole number $N$ PISM will likely get killed while writing the
@@ -369,8 +452,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 
 \begin{table}[ht]
   \centering
-  \caption{Command-line options controlling saving snapshots of the model state.}
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
+ \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
     \fileopt{save_file} & Specifies the file to save to.\\
@@ -378,31 +460,30 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
     \intextoption{save_split} & Separate the snapshot output into files
     named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more
     than a dozen or so snapshots. \\
-    \txtopt{save_size}{[none,small, medium, big]} & similar to \texttt{o_size},
+    \txtopt{save_size}{[none,small,medium,big]} & similar to \texttt{o_size},
     changes the ``size'' of the file (or files) written; the default is ``small''\\
     \bottomrule
   \end{tabular}
- \label{tab:snapshot-opts}
+\caption{Command-line options controlling saving snapshots of the model state.}
+\label{tab:snapshot-opts}
 \end{table}
 
 
 \subsection{Run-time diagnostic viewers}
 \label{sec:diagnostic-viewers}
 \optsection{Run-time diagnostic viewers}
-Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.  All the quantities listed in table \ref{tab:extra-vars} are available.  Additionally, a couple of diagnostic quantities are \emph{only} available as run-time viewers; these are shown in table \ref{tab:special-diag-viewers}.
+Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.  All the quantities listed in tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2} are available.  Additionally, a couple of diagnostic quantities are \emph{only} available as run-time viewers; these are shown in table \ref{tab:special-diag-viewers}.
 
-% FIXME: is this sentence right?:
 Note that (for performance and implementation reasons) map viewers
 are transposed.
 
 \begin{table}[ht]
-  \caption{Options controlling run-time diagnostic viewers}
-  \centering
+ \centering
   \begin{tabular}{p{0.4\linewidth}p{0.5\linewidth}}\toprule
     \small
     \textbf{Option} & \textbf{Description}\\
     \midrule
-    \listopt{view_map} & Turns on map-plane views of one or several variables, see tables \ref{tab:extra-vars}  \\
+    \listopt{view_map} & Turns on map-plane views of one or several variables, see tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}  \\
     \txtopt{view_size}{number} & desired viewer size, in pixels\\
     \listopt{view_sounding} &Turns on sounding viewers showing values in a column\\
     \txtopt{id}{row} & Sounding row-index\\
@@ -414,10 +495,11 @@ are transposed.
    \bottomrule
     \normalsize
   \end{tabular}
- \label{tab:diag-viewers}
+\caption{Options controlling run-time diagnostic viewers}
+\label{tab:diag-viewers}
 \end{table}
 The option \texttt{-view_map} shows map-plane views of 2D fields and surface
-and basal views of 3D fields (see table \ref{tab:extra-vars}); for example:
+and basal views of 3D fields (see tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}); for example:
 \begin{verbatim}
 $ pismr -i input.nc -y 1000 -o output.nc -view_map thk,tempsurf
 \end{verbatim}
@@ -435,8 +517,7 @@ This text file can be run as a script in \Matlab.  The linear system will be sto
 
 \begin{table}[ht]
   \centering
-  \caption{Special run-time-only diagnostic viewers}
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
+ \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \small
     \textbf{Variable name or an option} & \textbf{Description}\\\midrule
   \intextoption{ssa_view_nuh} & log base ten of \texttt{nuH}, only available
@@ -445,7 +526,8 @@ This text file can be run as a script in \Matlab.  The linear system will be sto
     \intextoption{ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Residual norm versus iteration number.\\\bottomrule
     \normalsize
   \end{tabular}
- \label{tab:special-diag-viewers}
+\caption{Special run-time-only diagnostic viewers}
+\label{tab:special-diag-viewers}
 \end{table}
 
 
@@ -518,71 +600,6 @@ macbook:pism>
 \end{verbatim}
 \normalsize
 
-
-\subsection{Visualizing climate inputs, without ice dynamics}
-\label{subsect:pclimate}
-\optsection{Visualizing climate inputs}
-
-Recall that internally in PISM there is a separation of climate inputs from ice
-dynamics (subsection \ref{sec:climate-inputs}). Executable
-\texttt{pclimate} \index{executables!\texttt{pclimate}} allows one to visualize climate inputs without
-invoking the ice dynamics core of PISM. This is helpful during the process of
-creating PISM-readable data files, and modeling with such.
-
-\texttt{pclimate} shares the code implementing climate models with other PISM
-executables, so everything said in section \ref{sec:boundary-models} applies
-here. In addition to \texttt{-atmosphere}, \texttt{-surface}, \texttt{-ocean}
-and others, \texttt{pclimate} takes options listed in table \ref{tab:pclimate}.
-
-\begin{table}[ht]
-  \centering
-  \caption{\texttt{pclimate} command-line options}
-  \begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}\toprule
-    \textbf{Option} & \textbf{Description}\\
-    \midrule
-    \fileopt{i} & specifies an input file, which has been produced by PISM;\\
-    \fileopt{o} & sets the output file name;\\
-    \txtopt{ys}{(years)} & sets the start time, in years;\\
-    \txtopt{ye}{(years)} & sets the final time, in years;\\
-    \txtopt{dt}{(years)} & sets the interval between saved climate snapshots.\\
-    \bottomrule
- \end{tabular}
- \label{tab:pclimate}
-\end{table}
-
-\bigskip
-As an example, set up an ice sheet state file and run \texttt{pclimate} on it:
-\begin{verbatim}
-$ mpiexec -n 2 pisms -eisII A -y 1000 -o state.nc
-$ pclimate -i state.nc -surface constant -ys 0.0 -ye 2.5 -dt 0.1 -o movie.nc
-\end{verbatim}
-Using \texttt{pisms} merely generates demonstration climate data, using
-EISMINT II choices \cite{EISMINT00}.  \texttt{pclimate} extracts the 
-surface mass balance \texttt{acab} and surface temperature \texttt{artm} from \texttt{state.nc}.
-It then does nothing interesting, exactly because a constant climate
-is used.  Viewing \texttt{movie.nc} we see these same values as from \texttt{state.nc},
-in variables \texttt{acab}, \texttt{artm}, reported back to us as the time- and space-dependent
-climate at times \texttt{ys:dt:ye}.  It is a boring ``movie.''
-
-The excuse for the executable \texttt{pclimate} becomes clearer if we use a positive degree-day
-model (subsection \ref{sec:boundary-models}).  The positive degree-day
-model uses a variable called \texttt{precip}, and a calculation of melting, to get the
-surface mass balance \texttt{acab}. 
-
-Assuming that \texttt{g20km_pre100.nc} was created as described in section
-\ref{sect:start}, running
-\begin{verbatim}
-$ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
-           -surface pdd -ys 0 -ye 2.5 -dt 0.1 -o foo.nc
-\end{verbatim}%$
-produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle
-in the variable \texttt{airtemp} and a noticeable decrease in the surface mass
-balance during summer months (see variable \texttt{acab}). Note that
-\texttt{artm} is constant in time: this is the temperature \emph{at the ice
-  surface but below firn} and it does not include seasonal variations \cite{Hock05}.
-
-See section \ref{sec:eismint-greenland} for another \texttt{pclimate} example.
-
 \subsection{Regridding}
 \label{sec:regridding}
 \optsection{Regridding}
@@ -601,14 +618,13 @@ $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
 \end{verbatim}
 \noindent By specifying regridded variables ``\texttt{thk,temp}'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Here one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
-A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sect:boot} and illustrated by example in section \ref{sec:eismint-greenland}.
+A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sec:boot} and illustrated by example in section \ref{sec:start}.
 
 See table \ref{tab:regridvar} for the regriddable variables using
 \texttt{-regrid_file}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
 
 \begin{table}[ht]
   \centering
-  \caption{Regriddable variables.\index{regrid}  Use \texttt{-regrid_vars} with these names.}\label{tab:regridvar}
   \begin{tabular}{ll}\toprule
     \textbf{Name} & \textbf{Description}\\ \midrule
     \texttt{age} & age of ice\\
@@ -624,6 +640,8 @@ See table \ref{tab:regridvar} for the regriddable variables using
     \bottomrule
     \normalsize
   \end{tabular}
+\caption{Regriddable variables.\index{regrid}  Use \texttt{-regrid_vars} with these names.}
+\label{tab:regridvar}
 \end{table}
 
 Here is another example: suppose you have an output of a PISM run on a fairly
@@ -638,8 +656,8 @@ $ pismr -boot_file foo.nc -Mx 201 -My 201 -Mz 21 -Lz 4000 \
 In this case all the model-state 2D variables present in \texttt{foo.nc} will
 be interpolated onto the new grid during bootstrapping, which happens first,
 while three-dimensional variables are filled using heuristics mentioned in
-section \ref{sect:boot}.  Then temperature in bedrock (\texttt{litho_temp}) and
-ice enthalpy (\texttt{temp}) will be interpolated from \texttt{foo.nc} onto the
+section \ref{sec:boot}.  Then temperature in bedrock (\texttt{litho_temp}) and
+ice enthalpy (\texttt{enthalpy}) will be interpolated from \texttt{foo.nc} onto the
 new grid during the regridding stage, overriding values set at the
 bootstrapping stage.  All of this, bootstrapping and regridding, occurs before
 the first timestep.
@@ -651,7 +669,6 @@ the first timestep.
 
 \begin{table}[ht]
 \centering
-\caption{Signalling running PISM processes.  ``\pid''~stands for list of all identifiers of the PISM processes.}\label{tab:signals}
 \begin{tabular}{llp{0.60\linewidth}}\toprule
 \textbf{Command} & \textbf{Signal} & \textbf{PISM behavior} \\
 \midrule
@@ -661,6 +678,8 @@ the first timestep.
 \texttt{kill -USR2} \pid & \texttt{SIGUSR2} & Just flush time-series output buffers.\index{signals!USR2} \\
 \bottomrule
 \end{tabular}
+\label{tab:signals}
+\caption{Signalling running PISM processes.  ``\pid''~stands for list of all identifiers of the PISM processes.}
 \end{table}
 
 Here is an example.  Suppose we start a long verification run in the
@@ -717,11 +736,22 @@ Now we explain what the rest of the flags line, namely
 
 ``\texttt{d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)}''
 
-\noindent might mean.  Note that the PISM time step is determined by an adaptive mechanism.  PISM does each step explicitly when numerically-approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection in conservation of energy and age evolution, requires such an adaptive time-stepping scheme \cite{BBL}.  The first character we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason'' flag.  See Table \ref{tab:adaptiveflag}; ``\texttt{d}'' means that the time step was limited by the diffusivity of SIA mass conservation.  We also see that there was a major time step of 1.08 model years divided into 2 substeps of about 0.54 years.  The \intextoption{skip} option sets the maximum number of such substeps, but the adaptive mechanism may choose to take fewer substeps to satisfy numerical stability criteria.
+\noindent might mean.  Note that the PISM time step is determined by an
+adaptive mechanism.  PISM does each step explicitly when
+numerically-approximating mass conservation in the map-plane.  This, and the
+modeling of horizontal advection in conservation of energy and age evolution,
+requires such an adaptive time-stepping scheme \cite{BBL}.  The first character
+we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason''
+flag.  See Table \ref{tab:adaptiveflag}; ``\texttt{d}'' means that the time
+step was limited by the diffusivity of SIA mass conservation.  We also see that
+there was a major time step of 1.08 model years divided into 2 substeps of
+about 0.54 years.  The \intextoption{skip} option enables this mechanism, while
+\intextoption{skip_max} sets the maximum number of such substeps. The adaptive
+mechanism may choose to take fewer substeps to satisfy numerical stability
+criteria, however.
 
 \begin{table}[ht]
 \centering
-\caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}\label{tab:adaptiveflag}
 \begin{tabular}{p{0.05\linewidth}p{0.9\linewidth}}\toprule
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \midrule
 \texttt{c} & three-dimensional CFL for temperature/age advection \cite{BBL} \\
@@ -734,12 +764,13 @@ Now we explain what the rest of the flags line, namely
 \bottomrule
 \normalsize
 \end{tabular}
+\label{tab:adaptiveflag}
+\caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}
 \end{table}
 
 \begin{table}[ht]
   \centering
-  \caption{Options controlling time-stepping}
-  \begin{tabular}{lp{0.7\linewidth}}
+ \begin{tabular}{lp{0.7\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -750,18 +781,20 @@ Now we explain what the rest of the flags line, namely
     for stability, but not longer.\\
     \txtopt{dt_force}{(years)} & The time step (in years) to take, overriding the
     adaptive scheme. \emph{Not recommended.}\\
-    \intextoption{skip} & Number of mass-balance steps, including SIA
+    \intextoption{skip} & Enables time-step skipping, see below. \\
+    \intextoption{skip_max} & Number of mass-balance steps, including SIA
     diffusivity updates, to perform before temperature, age, and SSA
     stress balance computations are done.  This is only effective if the time
     step is being limited by the diffusivity time step restriction associated
     to mass continuity using the SIA.  The maximum recommended value for
-    \texttt{-skip} is, unfortunately, dependent on the context.  The
+    \texttt{-skip_max} is, unfortunately, dependent on the context.  The
     temperature field should be updated when the surface changes significantly,
     and likewise the basal sliding velocity if it comes (as it should) from the
     SSA calculation.\\
     \bottomrule
   \end{tabular}
- \label{tab:time-stepping}
+\caption{Options controlling time-stepping}
+\label{tab:time-stepping}
 \end{table}
 
 \subsection{PETSC options for PISM users}\label{subsect:petscoptions}
@@ -798,25 +831,24 @@ $  mpiexec -n 8 ssa_testi -Mx 3 -My 769 -ssa_method fd
 
 \noindent fails to converge on a certain machine, but adding ``\verb|-ksp_rtol 1e-10|'' works fine.
 
-There is also the question of solver \emph{type}, using option \intextoption{ksp_type}.  Based on one processor evidence from \texttt{ssa_testi}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.  The default is \t{gmres}.
+There is also the question of solver \emph{type}, using option \intextoption{ksp_type}.  Based on one processor evidence from \texttt{ssa_testi}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \texttt{cg}, \texttt{bicg}, \texttt{gmres}, \texttt{bcgs}, \texttt{cgs}, \texttt{tfqmr}, \texttt{tcqmr}, and \texttt{cr}.  It appears \texttt{bicg}, \texttt{gmres}, \texttt{bcgs}, and \texttt{tfqmr}, at least, are all among the best.  The default is \texttt{gmres}.
 
-Actually the KSP uses preconditioning.  This aspect of the solve is critical for parallel scalability, but it gives results which are dependent on the number of processors.  The preconditioner type can be chosen with \intextoption{pc_type}. Several choices are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{ssa_testi} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).  The default (as set by PISM) is \t{bjacobi}.  To force no preconditioning, which removes processor-number-dependence of results but may make the solves fail, use \t{-pc_type none}.
+Actually the KSP uses preconditioning.  This aspect of the solve is critical for parallel scalability, but it gives results which are dependent on the number of processors.  The preconditioner type can be chosen with \intextoption{pc_type}. Several choices are possible, but for solving the ice stream and shelf equations we recommend only \texttt{bjacobi}, \texttt{ilu}, and \texttt{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{ssa_testi} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).  The default (as set by PISM) is \texttt{bjacobi}.  To force no preconditioning, which removes processor-number-dependence of results but may make the solves fail, use \texttt{-pc_type none}.
 
 
 \subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} In the \verb|test/| and \verb|util/| subdirectories of the PISM directory the user will find some python scripts and one Matlab script, listed in Table \ref{tab:scripts-overview}.  The python scripts are all documented at the \textsl{Packages} tab on the \href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser}.  The python scripts all take option \texttt{--help}.
 
 \newcommand{\scripthead}[1]{\texttt{#1}}
 
-\begin{table}[h]
+\begin{table}[ht]
   \centering
-  \caption{Some scripts which help in using PISM.}
-  \begin{tabular}{p{0.35\linewidth}p{0.65\linewidth}}
+ \begin{tabular}{p{0.35\linewidth}p{0.65\linewidth}}
     \toprule
     \textbf{Script} & \textbf{Function(s)}\\
     \midrule
-    \scripthead{test/vfnow.py} & Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section \ref{sect:verif}). \\
-    \scripthead{test/vnreport.py} & Automates the creation of convergence graphs like figures \ref{fig:thickerrsB}--~\ref{fig:temperrsK}. \\
-    \scripthead{util/fill_missing.py} & Uses an approximation to Laplace's equation $\grad^2 u = 0$ to smoothly replace missing values in a two-dimensional NetCDF variable.  The ``hole'' is filled with an average of the boundary non-missing values. Section \ref{sec:eismint-greenland} gives an example application to the bed elevations in the EISMINT-Greenland data.  Depends on \texttt{netcdf4-python} and \texttt{scipy} Python packages. \\
+    \scripthead{test/vfnow.py} & Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section \ref{sec:verif}). \\
+    \scripthead{test/vnreport.py} & Automates the creation of convergence graphs like figures \ref{fig:thickerrsB}--~\ref{fig:velerrsI}. \\
+    \scripthead{util/fill_missing.py} & Uses an approximation to Laplace's equation $\grad^2 u = 0$ to smoothly replace missing values in a two-dimensional NetCDF variable.  The ``hole'' is filled with an average of the boundary non-missing values. Depends on \texttt{netcdf4-python} and \texttt{scipy} Python packages. \\
    \scripthead{util/check_stationarity.py} & \\
     \scripthead{util/nc2mat.py} & Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format \texttt{.mat}, supported by MATLAB version 5 and later.  Depends on \texttt{netcdf4-python} and \texttt{scipy} Python packages. \\
     \scripthead{util/nccmp.py} & a script comparing variables in a given pair
@@ -827,101 +859,9 @@ Actually the KSP uses preconditioning.  This aspect of the solve is critical for
     create a simple NetCDF file PISM can bootstrap from\index{bootstrapping!preparing data using MATLAB}\\
    \bottomrule
   \end{tabular}
- \label{tab:scripts-overview}
+\caption{Some scripts which help in using PISM.}
+\label{tab:scripts-overview}
 \end{table}
-
-\subsection{Experimental: coupling PISM to an external surface model}
-\label{sec:surface-external}
-\optsection{\texttt{pismebm}}
-
-PISM's surface and atmosphere models described in section
-\ref{sec:boundary-models} are admittedly simplified. (Moreover, PISM developers
-do not claim to be experts in atmosphere, energy (or mass) balance modeling. We
-are delighted to work with people who are, though.)
-
-There are at least two ways of making PISM benefit from other modelers'
-expertise: incorporating their code into PISM and running PISM and a
-stand-alone surface model side by side, making them exchange information every
-so often.
-
-One possible approach is to run PISM for 1 year, save results. Run a surface
-model using PISM's modeling results to produce new mass balance and
-surface-temperature fields. Start PISM using these new fields, run for 1
-year...
-
-This method is very flexible and is known to work, but has several drawbacks:
-\begin{itemize}
-\item PISM has to wait for a surface model to produce new boundary data,
-\item stopping and re-starting PISM can be computationally expensive,
-  especially on fine grids,
-\item if a surface model is not written to work in parallel, this method wastes
-  many processor hours when used on a batch system with a large number of
-  requested cores.
-\end{itemize}
-
-PISM has an executable \texttt{pismebm}\footnote{``EBM'' can be interpreted as
-  an ``external boundary model'' or ``energy balance model'' or...} created to
-optimize coupling PISM to \emph{serial} models perform diagnostic computations
-(i.e. computations that do not involve time-stepping).
-
-The \texttt{pismebm} executable is equivalent to \texttt{pismr} in every respect related
-to ice-dynamics, but ignores \texttt{-surface}, \texttt{-atmosphere} and all
-related options.
-
-It can run on 2 and more processors (use \texttt{mpiexec -n XX} with
-\texttt{XX} $> 2$) and takes the following additional options:
-
-\begin{table}[h]
-  \centering
-  \caption{\texttt{pismebm} options}
-  \begin{tabular}{lp{0.6\linewidth}}
-    \toprule
-    \textbf{Option} & \textbf{Description} \\
-    \midrule
-    \txtopt{ebm_command}{``command''} & specifies a command that runs an EBM, enclosed in double quotes,\\
-    \fileopt{ebm_input_file} & the file an EBM will read from\\
-    \fileopt{ebm_output_file} & the file an EBM will produce and PISM will read \texttt{acab} and \texttt{artm} from\\
-    \listopt{ebm_vars} & list of variables PISM has to write to \texttt{-ebm_input_file}, defaults to \texttt{topg,usurf}\\
-    \txtopt{update_interval}{years} & EBM update interval \\
-    \txtopt{artm_lapse_rate}{$\gamma$} & the lapse rate for the \texttt{artm} variable, in degrees
-    Kelvin per kilometer. Disables the code reading artm from the
-    \texttt{-ebm_output_file} and uses PISM code for the lapse-rate correction. 
-   \\\bottomrule
- \end{tabular}
- \label{tab:pismebm-options}
-\end{table}
-
-So, if "\texttt{ebm -i ebm_in.nc -o ebm_out.nc}" is the command running an EBM,
-run something similar to
-\begin{verbatim}
-$ mpiexec -n 5 pismebm -ebm_command "ebm -i ebm_in.nc -o ebm_out.nc" \
-  -ebm_input_file ebm_in.nc -ebm_output_file ebm_out.nc \
-  -update_interval 10 [other PISM options]
-\end{verbatim}%$
-to use this code.
-
-The command above will use $5-1=4$ processors to run the ice-sheet
-model and the remaining (one) processor to periodically run an EBM.
-
-In this particular case, an EBM will run at the beginning of the model
-run (PISM will wait), then at year=5 (in parallel with PISM). At
-year=10, PISM will read \texttt{acab} and \texttt{artm} produced by an EBM using data
-corresponding to year=5 (waiting for an EBM to finish the computation
-if necessary). At year=15 an EBM will run to compute B.C. that will be
-read by PISM at year=20, etc.
-
-So, as long as an EBM takes less time per computation than PISM takes to step
-through $0.5$*\texttt{update_interval} years, PISM waits for an EBM exactly
-once, at the beginning of the run.
-
-Note that an EBM command executed by PISM can be a shell, Python, or any
-other kind of script your system supports. This makes it possible to include
-pre- and post-processing tasks in this script, avoiding source code
-modifications that would otherwise be necessary to make PISM output files ready
-to use with a particular model and vice versa.
-
-You can find an example "fake EBM" Python script in the "\texttt{examples/coupling}"
-directory of the PISM source tree, \texttt{examples/coupling/ebm}.
 
 \subsection{Using PISM for flow-line modeling}
 \label{sec:flowline-modeling}
@@ -954,8 +894,8 @@ points.\footnote{This script requires \texttt{numpy}, \texttt{netCDF3} or
 Here's an example. The script below creates a minimal (and obviously
 unphysical) dataset. It describes ice geometry (variables \texttt{thk} and
 \texttt{topg}) and the boundary conditions required by the \texttt{constant}
-surface model (variables \texttt{acab} and \texttt{artm}; see section
-\ref{sec:boundary-models}). \footnote{We recommend creating more metadata-rich
+surface model (variables \texttt{climatic_mass_balance} and
+\texttt{ice_surface_temp}; see section \emph{PISM's climate forcing components}). \footnote{We recommend creating more metadata-rich
   datasets; this script contains the bare minimum to make it shorter.}
 \begin{verbatim}
 #!/usr/bin/env python
@@ -966,8 +906,8 @@ Lx         = 1000e3                     # 1000 km
 Mx         = 501
 topg_slope = -1e-4
 thk_0      = 1e3                        # meters
-acab_0     = 0                          # m / year
-artm_0     = -10                        # Celsius
+climatic_mass_balance_0 = 0             # m / year
+ice_surface_temp_0      = -10           # Celsius
 
 nc = netCDF4.Dataset("slab.nc", 'w')
 nc.createDimension('x', Mx)
@@ -975,8 +915,8 @@ nc.createDimension('x', Mx)
 x    = nc.createVariable('x',    'f4', ('x',))
 topg = nc.createVariable('topg', 'f4', ('x',))
 thk  = nc.createVariable('thk',  'f4', ('x',))
-acab = nc.createVariable('acab', 'f4', ('x',))
-artm = nc.createVariable('artm', 'f4', ('x',))
+climatic_mass_balance = nc.createVariable('climatic_mass_balance', 'f4', ('x',))
+ice_surface_temp = nc.createVariable('ice_surface_temp', 'f4', ('x',))
 
 x[:]    = linspace(-Lx, Lx, Mx);    x.units = "m"
 topg[:] = topg_slope * (x[:] - Lx); topg.units = "m"
@@ -984,8 +924,10 @@ topg[:] = topg_slope * (x[:] - Lx); topg.units = "m"
 thk[:] =  maximum(minimum(5e3 - abs(x[:])*0.01, thk_0),0)
 thk.units = "m"
 
-acab[:] = acab_0; acab.units = "m / year"
-artm[:] = artm_0; artm.units = "Celsius"
+climatic_mass_balance[:] = climatic_mass_balance_0;
+climatic_mass_balance.units = "m / year"
+ice_surface_temp[:] = ice_surface_temp_0;
+ice_surface_temp.units = "Celsius"
 
 nc.close()
 \end{verbatim}
@@ -1025,7 +967,7 @@ Please see source code browsers at \url{http://www.pism-docs.org} for the latter
 \item We find it very useful to be able to check if a recent source code change
   broke something. PISM comes with ``regression tests'', which check if certain
   parts of PISM perform the way it should.\footnote{This automates running
-    verification tests described in section \ref{sect:verif}, for example.}
+    verification tests described in section \ref{sec:verif}, for example.}
 
   Run ``\texttt{make test}'' in the build directory to run PISM's regression tests.
 

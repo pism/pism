@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,12 +40,13 @@ PetscErrorCode POGiven::init(PISMVars &) {
                        "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                        "m s-1", ""); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com,
-                    "    reading boundary conditions from %s ...\n",
-                    filename.c_str()); CHKERRQ(ierr);
-
   ierr = temp.init(filename); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);
+
+  // read time-independent data right away:
+  if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
+    ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
+  }
 
   return 0;
 }
@@ -53,13 +54,8 @@ PetscErrorCode POGiven::init(PISMVars &) {
 PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  if (enable_time_averaging) {
-    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
-    ierr = temp.average(t, dt); CHKERRQ(ierr); 
-  } else {
-    ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-    ierr = temp.at_time(t); CHKERRQ(ierr);
-  }
+  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
+  ierr = temp.at_time(t); CHKERRQ(ierr);
 
   return 0;
 }

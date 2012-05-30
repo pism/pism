@@ -1059,19 +1059,20 @@ PetscErrorCode IceCompModel::reportErrors() {
   CHKERRQ(ierr);
 
   unsigned int start;
-  char filename[TEMPORARY_STRING_LENGTH];
-  PetscBool netcdf_report;
+  string filename;
+  bool netcdf_report, append;
   NCTimeseries err;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-report_file", filename,
-			       TEMPORARY_STRING_LENGTH, &netcdf_report); CHKERRQ(ierr);
-
+  ierr = PISMOptionsString("-report_file", "NetCDF error report file",
+                           filename, netcdf_report); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-append", "Append the NetCDF error report",
+                          append); CHKERRQ(ierr);
   if (netcdf_report) {
-    ierr = verbPrintf(2,grid.com, "Also writing errors to '%s'...\n", filename);
+    ierr = verbPrintf(2,grid.com, "Also writing errors to '%s'...\n", filename.c_str());
     CHKERRQ(ierr);
 
     // Find the number of records in this file:
     PIO nc(grid.com, grid.rank, "netcdf3");
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
     ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 

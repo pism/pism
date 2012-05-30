@@ -45,16 +45,13 @@ public:
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 protected:
-  NCSpatialVariable acab, artm;
+  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
   IceModelVec2S *usurf;
-  PetscReal artm_min, artm_max,
-    z_artm_min, z_artm_max,
-    acab_min, acab_max, acab_limit_min, acab_limit_max,
-    z_acab_min, z_ELA, z_acab_max;
-  PetscBool elev_artm_set, elev_acab_set, acab_limits_set;
-
+  PetscReal T_min, T_max, z_T_min, z_T_max,
+    m_min, m_max, m_limit_min, m_limit_max,
+    z_m_min, z_ELA, z_m_max;
 };
 
 #endif /* _PSELEVATION_H_ */

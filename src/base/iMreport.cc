@@ -85,12 +85,12 @@ PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac) 
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vH(i,j) > 0) {
 	// accumulate area of base which is at melt point
-	if (EC->isTemperate(Enthbase[i][j], EC->getPressureFromDepth(vH(i,j)) )) // FIXME task #7297
+	if (EC->isTemperate(Enthbase[i][j], EC->getPressureFromDepth(vH(i,j)) )) // FIXME issue #15
 	  meltarea += a;
       }
       // if you happen to be at center, record absolute basal temp there
       if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-	ierr = EC->getAbsTemp(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)), temp0); // FIXME task #7297
+	ierr = EC->getAbsTemp(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)), temp0); // FIXME issue #15
 	CHKERRQ(ierr);
       }
     }
@@ -262,9 +262,9 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
 
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-                      "P         YEAR:     ivol     iarea     max_diff       max_hor_vel\n");
+                      "P       YEAR:       ivol      iarea  max_diffusivity  max_hor_vel\n");
     ierr = verbPrintf(2,grid.com,
-                      "U        years %skm^3 %skm^2     m^2 s^-1            m/year\n",
+                      "U      years   %skm^3  %skm^2         m^2 s^-1       m/year\n",
                       volscalestr,areascalestr);
     return 0;
   }
@@ -298,7 +298,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
     }
 
     ierr = verbPrintf(2,grid.com,
-                      "S %s: %8.5f %9.4f %12.8f %17.5f\n",
+                      "S %s: %8.5f %9.5f %12.5f %14.5f\n",
                       date.c_str(), volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity,
                       convert(gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", "m/year")); CHKERRQ(ierr);
 
@@ -385,11 +385,11 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(PetscScalar &result) {
         const PetscInt ks = grid.kBelowHeight(vH(i,j));
         ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
         for (PetscInt k=0; k<ks; ++k) {
-          if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) { // FIXME task #7297
+          if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) { // FIXME issue #15
             volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
           }
         }
-        if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) { // FIXME task #7297
+        if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) { // FIXME issue #15
           volume += (vH(i,j) - grid.zlevels[ks]) * cell_area(i,j);
         }
       }
@@ -419,11 +419,11 @@ PetscErrorCode IceModel::compute_ice_volume_cold(PetscScalar &result) {
         const PetscInt ks = grid.kBelowHeight(vH(i,j));
         ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
         for (PetscInt k=0; k<ks; ++k) {
-          if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) { // FIXME task #7297
+          if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) { // FIXME issue #15
             volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
           }
         }
-        if (!EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) { // FIXME task #7297
+        if (!EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) { // FIXME issue #15
           volume += (vH(i,j) - grid.zlevels[ks]) * cell_area(i,j);
         }
       }
@@ -470,7 +470,7 @@ PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ( (vH(i,j) > 0) && (EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) ) // FIXME task #7297
+      if ( (vH(i,j) > 0) && (EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) ) // FIXME issue #15
         area += cell_area(i,j);
     }
   }
@@ -494,7 +494,7 @@ PetscErrorCode IceModel::compute_ice_area_cold(PetscScalar &result) {
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ( (vH(i,j) > 0) && (!EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) ) // FIXME task #7297
+      if ( (vH(i,j) > 0) && (!EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) ) // FIXME issue #15
         area += cell_area(i,j);
     }
   }

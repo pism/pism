@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -38,12 +38,13 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
   ierr = mass_flux.set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                        "m s-1", ""); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com,
-                    "    reading boundary conditions from %s ...\n",
-                    filename.c_str()); CHKERRQ(ierr);
-
   ierr = temp.init(filename); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);
+
+  // read time-independent data right away:
+  if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
+    ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
+  }
 
   return 0;
 }
@@ -51,18 +52,13 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
 PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  if (enable_time_averaging) {
-    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
-    ierr = temp.average(t, 1.0); CHKERRQ(ierr); // compute the "mean annual" temperature
-  } else {
-    ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-    ierr = temp.at_time(t); CHKERRQ(ierr);
-  }
+  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
+  ierr = temp.at_time(t); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::mean_precip(IceModelVec2S &result) {
+PetscErrorCode PAGivenClimate::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr = mass_flux.copy_to(result); CHKERRQ(ierr);
   return 0;
 }

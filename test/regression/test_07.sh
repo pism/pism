@@ -7,7 +7,7 @@ echo "Test # 7: comparing regridding via -boot_file and -regrid_file."
 # The list of files to delete when done:
 files="foo.nc bar.nc baz.nc"
 
-OPTS="-y 0 -surface constant"
+OPTS="-y 0"
 
 set -e -x
 

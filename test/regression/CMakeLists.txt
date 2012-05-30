@@ -71,8 +71,6 @@ pism_test (verif_SSAFEM_regress_plug_flow ssa/ssafem_test_plug.sh)
 
 pism_test (verif_test_K_regress_cold_ice_bedrock_thermal test_18.sh)
 
-pism_test (EISMINT-Ross_experiment_regress test_19.sh)
-
 pism_test (GPBLD_flow_law_regress test_20.sh)
 
 pism_test (Paterson-Budd_flow_law_regress test_21.sh)
@@ -107,7 +105,5 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 	pism_python_test (verif_SSAFEM_regress_linear_flow_py ssa/ssafem_test_linear.sh)
 
         pism_python_test (verif_SSAFEM_regress_plug_flow_py ssa/ssafem_test_plug.sh)
-
-        pism_python_test (EISMINT-Ross_experiment_regress_py test_19.sh)
 
 endif()

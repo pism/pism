@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ public:
 
   inline void compute(PetscReal bed, PetscReal thickness,
                       int *out_mask, PetscReal *out_surface) {
-    const PetscReal  hgrounded = bed + thickness; // FIXME task #7297
+    const PetscReal  hgrounded = bed + thickness; // FIXME issue #15
     const PetscReal  hfloating = sea_level + alpha*thickness;
 
     const bool is_floating = hfloating > hgrounded + 1.0,

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Constantine Khroulev
+// Copyright (C) 2009--2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -100,6 +100,7 @@ public:
   virtual ~IceModelVec2T();
 
   virtual void set_n_records(unsigned int N);
+  virtual unsigned int get_n_records();
   using IceModelVec2S::create;
   virtual PetscErrorCode create(IceGrid &mygrid, string my_short_name,
                                 bool local, int width = 1);

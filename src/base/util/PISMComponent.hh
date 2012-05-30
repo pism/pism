@@ -34,6 +34,7 @@ using namespace std;
 
 class IceGrid;
 class NCConfigVariable;
+class NCSpatialVariable;
 class PISMDiagnostic;
 class PISMVars;
 
@@ -114,18 +115,17 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/) {}
+  virtual void add_vars_to_output(string /*keyword*/,
+                                  map<string,NCSpatialVariable> &/*result*/) = 0;
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/)
-  { return 0; }
+                                          PISM_IO_Type /*nctype*/) = 0;
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
-  { return 0; }
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
@@ -200,7 +200,7 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(string keyword, set<string> &result)
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
   {
     if (input_model != NULL) {
       input_model->add_vars_to_output(keyword, result);

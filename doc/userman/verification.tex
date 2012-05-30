@@ -1,5 +1,5 @@
 
-\section{Verification}\label{sect:verif}
+\section{Verification}\label{sec:verif}
 \optsection{Verification}
 
 \bigskip
@@ -10,7 +10,7 @@
 
 \subsection{Ideas}  Verification\index{PISM!verification of} is the essentially mathematical task of checking that the predictions of the numerical code are close to the predictions of a continuum model, the one which the numerical code claims to approximate.  It is a crucial task for a code as complicated as PISM. In verification there is no comparison between model output and observations of nature.  Instead, one compares exact solutions of the continuum model, in circumstance in which they are available, to their numerical approximations.
 
-Reference \cite{Roache} gives a broad discussion of verification and validation in computational fluid dynamics. See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models, and \cite{BBssasliding,SchoofStream} for verification using an exact solution to the SSA equations for ice streams.  
+Reference \cite{Roache} gives a broad discussion of verification and validation in computational fluid dynamics. See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models, and \cite{BBssasliding,SchoofStream} for verification using an exact solution to the SSA equations for ice streams.
 
 In PISM there is a separate executable \texttt{pismv}, which is used
 for SIA-related verification, and there are additional scripts for SSA-related
@@ -21,7 +21,6 @@ technical terms, \texttt{pismv} runs a derived class of the PISM base class.
 
 \begin{table}[ht]
 \centering
-\caption{Exact solutions for verification.}\label{tab:tests}
 \small
 \begin{tabular}{p{0.1\linewidth}p{0.4\linewidth}p{0.25\linewidth}p{0.15\linewidth}}\toprule
 \textbf{Test} & \textbf{Continuum model tested} & \textbf{Comments} & \textbf{Reference} \\ \midrule
@@ -40,11 +39,12 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREP] \\
 \bottomrule
 \normalsize
 \end{tabular}
+\label{tab:tests}
+\caption{Exact solutions for verification.}
 \end{table}
 
 \begin{table}[ht]
 \centering
-\caption{Canonical PISM \index{executables!\texttt{pismv}!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests-exec}
 \small
 \begin{tabular}{@{}llll}\toprule
 \textbf{Test} & \textbf{Example invocation}  \\ \midrule
@@ -56,19 +56,20 @@ E & \texttt{pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000}  \\
 F & \texttt{pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000}  \\
 G & \texttt{pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000}  \\
 H & \texttt{pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso} \\
-I & FIXME: use .py \texttt{ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11 } \\
-J & FIXME: use .py \texttt{ssa_testj -ssa_method fd -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12} \\
+I & \texttt{ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11 } \\ % FIXME: use .py 
+J & \texttt{ssa_testj -ssa_method fd -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12} \\ % FIXME: use .py 
 K & \texttt{pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000} \\
 L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\
 \bottomrule
 \normalsize
 \end{tabular}
+\label{tab:tests-exec}
+\caption{Canonical PISM \index{executables!\texttt{pismv}!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}
 \end{table}
 
 \begin{table}[ht]
   \centering
-  \caption{pismv command-line options}
-  \begin{tabular}{lp{0.7\linewidth}}
+ \begin{tabular}{lp{0.7\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -79,7 +80,8 @@ L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\
     approximation at all).
    \\\bottomrule
   \end{tabular}
- \label{tab:pismv-options}
+\caption{pismv command-line options}
+\label{tab:pismv-options}
 \end{table}
 
 Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.  Table \ref{tab:tests-exec} shows how to run each of them on a coarse grids.  Table \ref{tab:pismv-options} gives the special verification-related options of the \texttt{pismv} executable.
@@ -107,7 +109,7 @@ pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241 -z_spacing equal
 pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361 -z_spacing equal
 \end{verbatim}
 \normalsize\end{quote}
-The last two runs require a supercomputer!  In fact the $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps. Appropriate use of parallelism (\texttt{mpiexec -n NN pismv}) and of the \texttt{-skip} modification to adaptive timestepping accelerates such fine-grid runs; see section \ref{sec:practical-usage}.
+The last two runs require a supercomputer!  In fact the $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps. Appropriate use of parallelism (\texttt{mpiexec -n NN pismv}) and of the \texttt{-skip} modification to adaptive timestepping accelerates such fine-grid runs; see section \ref{subsect:adapt}.
 
 
 \subsection{Sample verification results}  Figures \ref{fig:thickerrsB} through
@@ -149,11 +151,9 @@ These figures \emph{do not} show outstanding rates of convergence, relative to t
 \begin{figure}[ht]
 \centering
 \includegraphics[width=5.0in,keepaspectratio=true]{test-I-errors}
-\caption{FIXME:  verification scripts need updating to reproduce this.  Numerical errors in horizontal velocities in test I, an ice stream. \t{maximum_u} and \t{average_u} are errors in scalar velocity (because of symmetries in test I).  See \cite{SchoofStream,BBssasliding}.}
+\caption{Numerical errors in horizontal velocities in test I, an ice stream. See \cite{SchoofStream,BBssasliding}.}
 \label{fig:velerrsI}
 \end{figure}
-
-
 
 %%% Local Variables: 
 %%% mode: latex

@@ -557,7 +557,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
 
         PetscScalar  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
         for (PetscInt k = 0; k <= ks; ++k) {
-          PetscReal depth = thk - grid.zlevels[k]; // FIXME task #7297
+          PetscReal depth = thk - grid.zlevels[k]; // FIXME issue #15
           // pressure added by the ice (i.e. pressure difference between the
           // current level and the top of the column)
           const PetscScalar pressure = ice_rho * standard_gravity * depth;

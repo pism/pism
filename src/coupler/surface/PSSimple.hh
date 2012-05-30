@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 
 #include "PISMSurface.hh"
 #include "PISMAtmosphere.hh"
+#include "NCSpatialVariable.hh"
 
 //! \brief A class implementing a primitive surface model.
 /*! 
@@ -50,7 +51,12 @@ public:
   }
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+protected:
+  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
 };
 
 #endif /* _PSSIMPLE_H_ */

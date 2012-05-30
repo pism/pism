@@ -5,7 +5,7 @@
 ## \brief A script for verification of numerical schemes in PISM.
 ## \details It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
 ## pismv accordingly.
-## Copyright (C) 2007--2011 Ed Bueler and Constantine Khroulev
+## Copyright (C) 2007--2012 Ed Bueler and Constantine Khroulev
 ##
 ## Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in the user manual.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 ##
@@ -15,7 +15,7 @@
 ##    - \verbatim vfnow.py -n 2 -l 3 -t CEIJGKLO \endverbatim uses two processers (cores) and runs in about an hour,
 ##    - \verbatim vfnow.py -n 40 -l 5 -t ABCDEFGIJKLO \endverbatim will use forty processors to do all possible verification as managed by \c vfnow.py; don't run this unless you have a big computer and you are prepared to wait.
 ## For a list of options do \verbatim test/vfnow.py --help \endverbatim.
-## Timing information is given in the \c vfnow.py output so performance, including parallel performance, can be assessed along with accuracy. 
+## Timing information is given in the \c vfnow.py output so performance, including parallel performance, can be assessed along with accuracy.
 
 import sys, getopt, time, commands
 from numpy import array, double, int
@@ -31,7 +31,7 @@ class PISMVerificationTest:
     ## test description
     test = ""
     ## description of the refinement path
-    path = ""                   
+    path = ""
     Mx = []
     My = []
     ## 31 levels in the ice
@@ -39,9 +39,9 @@ class PISMVerificationTest:
     ## no bedrock by default
     Mbz = [1] * N
     ## extra options (such as -y, -ys, -ssa_rtol)
-    opts = ""                   
+    opts = ""
     executable = "pismv"
-    
+
     def build_command(self, exec_prefix, level):
         M = zip(self.Mx, self.My, self.Mz, self.Mbz)
 
@@ -63,6 +63,8 @@ def run_test(executable, name, level, extra_options = "", debug = False):
     if level == 1:
         print " ++++  TEST %s:  verifying with %s exact solution  ++++\n %s" % (
             test.name, test.test, test.path)
+    else:
+        extra_options += " -append"
 
     command = test.build_command(executable, level) + " " + extra_options
 
@@ -76,7 +78,7 @@ def run_test(executable, name, level, extra_options = "", debug = False):
     try:
         lasttime = time.time()
         (status,output) = commands.getstatusoutput(command)
-        elapsetime = time.time() - lasttime      
+        elapsetime = time.time() - lasttime
     except KeyboardInterrupt:
         sys.exit(2)
     if status:
@@ -95,12 +97,12 @@ def run_test(executable, name, level, extra_options = "", debug = False):
             if endline == -1:
                 endline = len(report)
             print '   #' + report[0:endline]
-            report = report[endline+1:]       
+            report = report[endline+1:]
             endline = report.find('\n')
             if endline == -1:
                 endline = len(report)
             print '   |' + report[0:endline]
-            report = report[endline+1:]       
+            report = report[endline+1:]
     else:
         print " ERROR: can't find reported numerical error"
         sys.exit(99)
@@ -185,6 +187,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     tests['H'] = H
     # I
     I = PISMVerificationTest()
+    I.executable = "ssa_testi"
     I.name = "I"
     I.test = "plastic till ice stream (SSA)"
     I.path = "(refine dy=5000,1250,312.5,78.13,19.53,m, My=49,193,769,3073,12289)"
@@ -195,6 +198,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     tests['I'] = I
     # J
     J = PISMVerificationTest()
+    J.executable = "ssa_testj"
     J.name = "J"
     J.test = "periodic ice shelf (linearized SSA)"
     J.path = "(refine dy=5000,1250,312.5,78.13,19.53,m, Mx=49,193,769,3073,12289)"
@@ -280,15 +284,16 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     G.Mz   = G.Mx
     G.opts = "-y 25000.0"
     tests['G_userman'] = G
-    
+
     # test I (for a figure in the User's Manual)
     I = PISMVerificationTest()
+    I.executable = "ssa_testi"
     I.name = "I"
     I.test = "plastic till ice stream (SSA)"
     I.path = "(lots of levels)"
     I.My   = [51, 101, 151, 201, 401, 601, 801, 1001, 1501, 2001, 2501, 3073]
     I.Mx   = [5] * len(I.My)
-    I.opts = "-ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
+    I.opts = "-ssa_method fd -ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['I_userman'] = I
 
     return tests
@@ -325,7 +330,7 @@ try:
     elif opt in ("-l", "--levels"):
         levels = int(arg)
     elif opt in ("-t", "--tests"):
-        test_names = arg.upper()
+        test_names = arg.split(',')
     elif opt in ("-u", "--uneq"):
         extra_options += " -z_spacing quadratic"
     elif opt in ("-e", "--eta"):
@@ -342,6 +347,7 @@ try:
   -p,--prefix=  path prefix to pismv executable
   -r,--report_file=  name of the NetCDF error report file
   -t,--tests=   verification tests to use: A,B,C,D,E,F,G,H,I,J,K,L,M,O
+                specify a comma-separated list
   -u            use unequal spaced (quadratic) vertical spacing
   --userman     run tests necessary to produce figures in the User's Manual
   --debug       do not run PISM, just print commands
@@ -363,7 +369,7 @@ tests = define_refinement_paths(KSPRTOL, SSARTOL)
 
 if do_userman:
     print " VFNOW.PY: test(s) %s, using '%s...'\n" % (userman_tests, exec_prefix) + \
-          "           and ignoring options -t and -l" 
+          "           and ignoring options -t and -l"
     for test in userman_tests:
         N = len(tests[test].Mx)
         for j in range(1, N + 1):

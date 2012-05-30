@@ -13,11 +13,11 @@ def prepare_file(fname, x, y):
     print "  preparing file '%s'..." % fname
     nc = NC(fname, "w",format="NETCDF3_CLASSIC")
     nc.set_fill_off()
-    nc.createDimension("t", None)
+    nc.createDimension("time", None)
     nc.createDimension("x", size=x.size)
     nc.createDimension("y", size=y.size)
 
-    t_var = nc.createVariable("t", 'f', dimensions=("t",))
+    t_var = nc.createVariable("time", 'f', dimensions=("time",))
 
     x_var = nc.createVariable("x", 'f', dimensions=("x",))
     x_var[:] = x
@@ -29,7 +29,7 @@ def prepare_file(fname, x, y):
     #   name : (unit, long_name, standard_name)
     attributes = {"x" : ("m", "X-coordinate in Cartesian system", "projection_x_coordinate"),
                   "y" : ("m", "Y-coordinate in Cartesian system", "projection_y_coordinate"),
-                  "t" : ("years since 2004-1-1",  "time", "time")
+                  "time" : ("years since 2004-1-1",  "time", "time")
                   }
 
     for each in list(attributes.keys()):
@@ -47,23 +47,23 @@ def prepare_file(fname, x, y):
 
     return (nc, t_var)
 
-input_temp = "temp.nc"
-input_precip = "precip.nc"
+input_temp = "air_temp.nc"
+input_precip = "precipitation.nc"
 
 ## read air temperatures, and get space/time grid info from this file:
 nc_temp = NC(input_temp, 'r')
-temp_in = nc_temp.variables['temp']
+temp_in = nc_temp.variables['air_temp']
 x = nc_temp.variables['x'][:]
 y = nc_temp.variables['y'][:]
-N = len(nc_temp.dimensions['t'])
+N = len(nc_temp.dimensions['time'])
 years = N/12                    # number of years covered
 print "  found N = %d frames covering %d years in file %s" % (N, years, input_temp)
 
 ## read precipitation:
 nc_precip = NC(input_precip, 'r')
-precip_in = nc_precip.variables['precip']
-if len(nc_precip.dimensions['t']) != N:
-    print "ERROR: number of frames in precip file '%s' does not match that in temp file '%s'" \
+precip_in = nc_precip.variables['precipitation']
+if len(nc_precip.dimensions['time']) != N:
+    print "ERROR: number of frames in precipitation file '%s' does not match that in air temperature file '%s'" \
          % (input_temp,input_precip)
     exit(1)
 else:
@@ -75,14 +75,14 @@ output_precip = "ar4_precip_anomaly.nc"
 nc_temp_out, t_temp = prepare_file(output_temp, x, y)
 nc_precip_out, t_precip = prepare_file(output_precip, x, y)
 
-temp = nc_temp_out.createVariable("temp_anomaly", 'f', dimensions=("t", "y", "x"))
+temp = nc_temp_out.createVariable("air_temp_anomaly", 'f', dimensions=("time", "y", "x"))
 temp.units = "Kelvin"
 temp.long_name = \
   "mean annual air temperature at 2m above the surface (as anomaly from first year)"
 temp.mapping = "mapping"
 temp.description = "AR4 temperature anomaly"
 
-precip = nc_precip_out.createVariable("precip_anomaly", 'f', dimensions=("t", "y", "x"))
+precip = nc_precip_out.createVariable("precipitation_anomaly", 'f', dimensions=("time", "y", "x"))
 precip.units = "m year-1"
 precip.long_name = \
   "mean annual ice-equivalent precipitation rate (as anomaly from first year)"
@@ -113,12 +113,12 @@ for year in arange(years):
     precip[year,:,:] /= 12.0
 
 # convert to anomalies by subtracting-off first year averages:
-print "  converting annual mean temperature to 'temp_anomaly'"
+print "  converting annual mean temperature to 'air_temp_anomaly'"
 temp_0 = temp[0,:,:].copy()
 for year in arange(years):
     temp[year,:,:] -= temp_0
 
-print "  converting annual mean precipitation to 'precip_anomaly'"
+print "  converting annual mean precipitation to 'precipitation_anomaly'"
 precip_0 = precip[0,:,:].copy()
 for year in arange(years):
     precip[year,:,:] -= precip_0

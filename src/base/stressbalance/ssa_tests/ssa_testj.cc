@@ -113,7 +113,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
       ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
 
       thickness(i,j) = H;
-      surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME task #7297
+      surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
 
       // special case at center point: here we set vel_bc at (i,j) by marking
       // this grid point as SHEET and setting vel_bc approriately
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
     SSATestCaseJ testcase(com,rank,size,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report(); CHKERRQ(ierr);
+    ierr = testcase.report("J"); CHKERRQ(ierr);
     ierr = testcase.write(output_file);
   }
 

@@ -227,9 +227,9 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
 }
 
 
-void PISMBedThermalUnit::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PISMBedThermalUnit::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
   if (temp.was_created()) {
-    result.insert(temp.string_attr("short_name"));
+    result[temp.string_attr("short_name")] = temp.get_metadata();
   }
 }
 

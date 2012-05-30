@@ -1,5 +1,5 @@
 
-\section{Simplified geometry experiments with PISM}\label{sect:simp}
+\section{Simplified geometry experiments with PISM}\label{sec:simp}
 
 \subsubsection*{Historical note}  There have been three stages of ice sheet model intercomparisons based on simplified geometry experiments since the early 1990s \cite{BuelerSpray}.\index{EISMINT!defined}
 
@@ -9,7 +9,7 @@ EISMINT II \cite{EISMINT00} pointed out interesting and surprising properties of
 
 The ISMIP (Ice Sheet Model Intercomparison Project)\footnote{See \url{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.}\index{ISMIP!defined} round of intercomparisons is still ongoing at this time (2009).  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{ISMIPHOM,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov,Calovetal2009HEINOfinal}.  Of these, PISM participated in HEINO, but this ability is unmaintained.   We believe\index{ISMIP!interpretation of HEINO results} the continuum problem described by HEINO, also used in EISMINT II experiment H (above), is not easily approximate-able because of a required discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity because of this jump \cite[Appendix B]{BBssasliding}.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.
 
-PISM offers the physical continuum model described in \cite{BBssasliding}, an SIA/SSA hybrid, as an alternative to the continuum model used in ISMIP-HEINO and EISMINT II experiment H.  Indeed the SIA/SSA hybrid is offered as a unified shallow model for real ice sheets (section \ref{sect:dynamics}).
+PISM offers the physical continuum model described in \cite{BBssasliding}, an SIA/SSA hybrid, as an alternative to the continuum model used in ISMIP-HEINO and EISMINT II experiment H.  Indeed the SIA/SSA hybrid is offered as a unified shallow model for real ice sheets (section \ref{sec:dynamics}).
 
 There is no current plan to support ISMIP-HOM, but comparison of shallow PISM results to exact Stokes solutions is a goal for PISM evaluation.
 
@@ -41,10 +41,10 @@ Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Ex
 
 \begin{table}[ht]
 \centering
-\caption{Running the EISMINT II experiments in PISM.\index{PISM!running the EISMINT II experiments in}  Use \t{-skip 5}, on the $61\times 61$ default grid, for significant speedup.}\label{tab:eisII}
 \small
 \begin{tabular}{@{}llll}\toprule
-\textbf{Command: ``\t{pisms }'' $+$} & \textbf{Relation to experiment A} \\ \midrule
+\textbf{Command: ``\texttt{pisms }'' $+$} & \textbf{Relation to experiment A} \\
+\midrule
 \texttt{-eisII A -Mx 61 -My 61 -Mz 61 -y 200000 -o eisIIA.nc} & \\
 \texttt{-eisII B -i eisIIA.nc -y 2e5 -o eisIIB.nc} & warmer \\
 \texttt{-eisII C -i eisIIA.nc -y 2e5 -o eisIIC.nc} & less snow (lower accumulation)\\
@@ -57,14 +57,17 @@ Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Ex
 \texttt{-eisII J -i eisIII.nc -y 2e5 -o eisIIJ.nc} & trough topography and less snow \\
 \texttt{-eisII K -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIK.nc} & mound topography \\
 \texttt{-eisII L -i eisIIK.nc -y 2e5 -o eisIIL.nc} & mound topography and less snow \\
-\bottomrule\normalsize
-\end{tabular}\end{table}
+\bottomrule
+\normalsize
+\end{tabular}
+\label{tab:eisII}
+\caption{Running the EISMINT II experiments in PISM.\index{PISM!running the EISMINT II experiments in}  Use \texttt{-skip -skip_max 5}, on the $61\times 61$ default grid, for significant speedup.}
+\end{table}
 
-The EISMINT II experiments can be run with various modifications of the default settings.  Of course the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\t{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists some optional settings which are particular to the EISMINT II experiments.
+The EISMINT II experiments can be run with various modifications of the default settings.  Of course the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\texttt{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists some optional settings which are particular to the EISMINT II experiments.
 
 \begin{table}[ht]
 \centering
-\caption{Changing the default settings for EISMINT II}\label{tab:eisIIoptions}
 \small
 \begin{tabular}{@{}lp{0.35\linewidth}lp{0.35\linewidth}}\toprule
 \textbf{Option} & \textbf{Default values [expers]} & \textbf{Units} & \textbf{Meaning} \\\midrule
@@ -77,7 +80,10 @@ The EISMINT II experiments can be run with various modifications of the default 
  & 243.15[B], 223.15[F] & & \\
 \intextoption{bmr_in_cont} & & & Include the basal melt rate in the mass continuity computation (override default for EISMINT II)\\
 \bottomrule\normalsize
-\end{tabular}\end{table}
+\end{tabular}
+\label{tab:eisIIoptions}
+\caption{Changing the default settings for EISMINT II}
+\end{table}
 
 In PISM the height of the computational box, the quantity set by \texttt{-Lz}, is set at the beginning of the run.  It is chosen for the EISMINT II experiments according to the observed maximum values occuring in standard runs.  If the ice thickens beyond the chosen level for the top of the computational box then additional layers are automatically added to the computational grid.  In fact, if the ice grows above the height of the computational box then a message appears, \texttt{PISM WARNING: max ice thickness ... is greater than the height of the computational box ...}, and then at least two additional levels are added to the vertical grid.  This is to some degree an emergency mechanism, however, because it can run away to use up all memory in extreme cases.  If the height of the computational box grows so large that the grid has more than twice the original number of vertical levels then PISM produces a \texttt{PISM ERROR} error message and stops.   Therefore it is possible that the number of vertical levels at the end of the run exceeds the initial \texttt{-Mz} value.  Setting EISMINT II options \texttt{-Mmax} or \texttt{-Sb} to produce higher accumulation rates than the default values (see table \ref{tab:eisIIoptions}) may cause the ice sheet to thicken above the standard thickness and therefore trigger this automatic extension mechanism.  Similarly, colder ice caused by nonstandard \texttt{-Tmin} or \texttt{-ST} values can produce unusually thick ice.  The user may always choose to use a larger, more conservative value for option \texttt{-Lz}, however.
 
@@ -91,97 +97,44 @@ This intercomparison addresses grounding line dynamics by considering an idealiz
 
 \noindent Find a full text description there.  It is essential reading for understanding MISMIP results generally, and for appreciating many of the comments in this subsection.
 
-PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the MISMIP flow line case.  The analysis in \cite{SchoofMarine1} shows that the only effect of an ice shelf, in the flow line case, is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  But this analysis does not apply to ice shelves with two horizontal dimensions, of course.  Real ice shelves have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances \cite{Goldbergetal2009}.  See the Ross ice shelf example in section \ref{sect:ross}, for example.
+PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the MISMIP flow line case.  The analysis in \cite{SchoofMarine1} shows that the only effect of an ice shelf, in the flow line case, is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  But this analysis does not apply to ice shelves with two horizontal dimensions, of course.  Real ice shelves have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances \cite{Goldbergetal2009}.  See the Ross ice shelf example in section \ref{sec:ross}, for example.
 
 We use the usual PISM ice shelf model, with two horizontal dimensions, to do MISMIP.  This intercomparison therefore looks at the grounding line dynamics results from the usual PISM code, though in a highly symmetric case without side drag.
 
-Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem.  The flow direction for MISMIP is arbitrarily taken to be ``$x$''.  We periodize the cross-flow direction ``$y$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\texttt{-My 3}''; fewer points than this in the cross-flow direction confuses the finite difference scheme.
+Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem (see section \ref{sec:flowline-modeling}). The flow direction for MISMIP is arbitrarily taken to be ``$x$''.  We periodize the cross-flow direction ``$y$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\texttt{-My 3}''; fewer points than this in the cross-flow direction confuses the finite difference scheme.
 
-PISM has two applicable ice dynamics models corresponding to the \texttt{-model 1} and \texttt{-model 2} options in Table \ref{tab:MISMIPoptions}.  Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
+PISM has two applicable ice dynamics models. Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
 
-There are many runs for a complete MISMIP intercomparison submission.  There are $62$ runs for each model and grid choice, and there are two models and three (suggested) grid choices, so a full suite is $6 \times 62 = 372$ runs.  The finest grid runs account for all the compute time, however.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction, a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.  For the PISM MISMIP submission in Sept.~2008 we chose to only submit runs for a grid with 150 (``grid mode 1'') and 600 (``grid mode 3'') grid spaces in the flow line direction.  This was still 248 runs to submit, with 3 files each for a total of 744 text files.
- 
-\begin{table}[ht]
-\centering
-\caption{Special MISMIP run options in PISM.  Below the line are special interpretations of standard PISM options.\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
-\small
-\begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.6\linewidth}}\toprule
-\textbf{Option} & \textbf{Default} & \textbf{Meaning} \\ \midrule
-\intextoption{extras} &  & if this flag is set then, once steady state is reached, surface and bed elevation are written to an extra file with name ending ``\texttt{_extras}''; script \texttt{figsMISMIP.py} reads them\\
-\intextoption{initials} & \texttt{ABC} & initials to prepend to ASCII output file names \\
-\intextoption{initialthk} & 10.0 & initial thickness (m) at start of run \\
-\intextoption{mismip} & \texttt{1a} & experiment number followed by sliding flag; allowed values are \texttt{1a,1b,2a,2b,3a,3b} \\
-\intextoption{model} & 1 & model 1 is SSA only and model 2 combines SIA and SSA velocities; see text \\
-\intextoption{steady_atol} & \texttt{1.0e-4} & m/a; tolerance for steady state; criterion is  $\|dH/dt\|_\infty <$(\texttt{steady_atol} value) \\
-\intextoption{step} & 1 & allowed values are $\{1,\dots,9\}$ for experiments 1 and 2, $\{1,\dots,13\}$ for  exper.~3a, and $\{1,\dots,15\}$ for exper.~3b; note typo in table 6 in \texttt{mismip_4.pdf}: ``step 15'' skipped \\
-\intextoption{try_calving} &  & flag to turn on experimental calving law which keeps  calving front thickness in range $[100\text{ m},200\text{ m}]$ \\
-\midrule
-\intextoption{Mx} &  & this option gets additional interpretation: \texttt{-Mx 151} makes grid  mode 1 so output files have ``\texttt{_M1_}''; \texttt{-Mx 1501} is grid mode 2  (``\texttt{_M2_}''); any other value is grid mode 3 (``\texttt{_M3_}'') \\
-\bottomrule\normalsize
-\end{tabular}
-\end{table}
+There are many runs for a complete MISMIP intercomparison submission.  There are $62$ runs for each model and grid choice, and there are two models and three (suggested) grid choices, so a full suite is $6 \times 62 = 372$ runs.  The finest grid runs account for all the compute time, however.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction\footnote{This translates into 3001 grid \emph{points} in PISM's doubled computational domain.}, a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.  For the PISM MISMIP submission in Sept.~2008 we chose to only submit runs for a grid with 150 (``grid mode 1'') and 600 (``grid mode 3'') grid spaces in the flow line direction.  This was still 248 runs to submit, with 3 files each for a total of 744 text files.
 
-To do an actual MISMIP run, one uses \texttt{pisms -mismip} with additional options.  See Table \ref{tab:MISMIPoptions}.  A first run is:
-
-\texttt{\$ cd examples/mismip/}  \hfill \scriptsize(directory where some MISMIP-related scripts are)\normalsize
-
-\begin{verbatim}
-$ pisms -mismip 1a -model 1 -step 1 -My 3 -Mz 15 -Mx 151
-\end{verbatim}
-
-\noindent This will produce ASCII files \texttt{ABC1_1a_M1_A1_t}, \texttt{ABC1_1a_M1_A1_ss}, and \texttt{ABC1_1a_M1_A1_f}, as well as a standard NetCDF output file \texttt{ABC1_1a_M1_A1.nc}, in about 3 minutes.  Using a few processors speeds things up a little, and a little extra output is nice, so re-doing it:
-
-\begin{verbatim}
-$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -My 3 -Mz 15 -Mx 151 -extras
-\end{verbatim}
-
-\noindent This run takes about 2 minutes on an 8 core machine.  In addition to the same files as before, now we get an additional ASCII file \texttt{ABC1_1a_M1_A1_extras}.  The \texttt{_ss} file with thickness and the \texttt{_extras} file with bed and surface elevation allow us to produce a figure showing the profile for the final steady state, Figure \ref{fig:MISMIPmodel1exper1aM1A1}:
-
-\begin{verbatim}
-$ ./figsMISMIP.py -p ABC1_1a_M1_A1 --extras
-\end{verbatim}
-
-\noindent The script \texttt{makefigs.sh} will apply \texttt{figsMISMIP.py} to each MISMIP output in the current directory.
+Please see \texttt{README.md} in \texttt{examples/mismip} for a description of the setup that can be used to run MISMIP experiments in PISM.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=4.0in,keepaspectratio=true]{profile-EBU1-1a-M1-A1}
-\caption{A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a, grid mode 1, step 1.}
+\includegraphics[width=4.0in,keepaspectratio=true]{CKH1-1a-M1-A1-profile}
+\caption{A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a, grid mode 1, step 1. Starting from a uniform $10$ m ice thickness.}
 \label{fig:MISMIPmodel1exper1aM1A1}
 \end{figure}
-
-MISMIP runs are done in sequence using the result of a previous run but with a step change in ice hardness.  That is, you initialize as usual in PISM from a saved \texttt{.nc} file.  The next run is
-
-\begin{verbatim}
-$ mpiexec -n 4 pisms -model 1 -mismip 1a -extras -step 2 -i ABC1_1a_M1_A1.nc
-\end{verbatim}
-
-\noindent The result is \texttt{ABC1_1a_M1_A2_t}, etc.
-
-Running \texttt{pisms -mismip ...} with options as shown here is practical for a few examples.  The script \texttt{mismip.sh} automates the process for the hundreds of runs in the intercomparison.  Setting variables \texttt{MODELRANGE} and \texttt{GRIDRANGE} at the top of the file will mostly configure what you want.  Do ``\texttt{./mismip.sh 4 D}'', or similar, to see what calls will happen \emph{before} actually starting them; ``\texttt{D}'' stands for ``debug''.  The script \texttt{mismip.sh} also illustrates how to reverse the order of steps in experiments 2a and 2b.
-
-For significantly finer grids than mode 1, it becomes more critical to set the tolerance parameters for the SSA velocity calculation.  Apparently adding option \texttt{-ksp_rtol 1.0e-7} is effective.
 
 The implementation of MISMIP in PISM conforms fairly closely to the intercomparison description.  However, that document specifies
 \begin{quotation}
 \dots we require that the rate of change of grounding line position be $0.1$ m/a or less, while the rate of change of ice thickness at each grid point at which ice thickness is defined must be less than $10^{-4}$ m/a \dots
 \end{quotation}
-as a standard for ``steady state''.  Because the grounding line undergoes only discrete jumps on the grid, because it shows great stability, and because in two horizontal dimensions there is no well-defined ``rate of change of grounding line position'' which would be generally implementable in PISM, we do not check the grounding line movement criterion.  Steady state is achieved if the ice thickness criterion holds.  However, we report enough information, in the required ASCII files with names ending in \texttt{_t}, to compute a grounding line rate.
+as a standard for ``steady state''. PISM does not include a stopping criterion such as ones described here. However, we report enough information, in PISM output files with scalar and spatially-variable time-series, to compute a grounding line rate or the time at which the thickness rate of change drops below $10^{-4}$ m/a.
 
-Also, two physical parameters regarding PISM's ice shelf model need comment.  First, we make the base of the ice shelves have very small resistance, using $10^{-4}$ times the linear drag typical of a Siple coast ice stream \cite{HulbeMacAyeal}, because this seems to have the effect of stabilizing the ice shelf.  Second, there is no direct implementation of the calving front force imbalance associated to the calving front.  Instead, an ice shelf extension of strength equivalent to a $5$ m ice shelf is added at points which have zero thickness ice.
-
+One of the physical parameters regarding PISM's ice shelf model needs comment: we make the base of the ice shelves have very small resistance, using $10^{-4}$ times the linear drag typical of a Siple coast ice stream \cite{HulbeMacAyeal}, because this seems to have the effect of stabilizing the ice shelf.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=4.0in,keepaspectratio=true]{SM-1a-A1}
-\caption{Analytical profile for steady state of experiment 1a, grid mode 1, step 1, from theory in \cite{SchoofMarine1}.  This is a boundary layer asymptotic matching result, but not the exact solution to the equations solved numerically by PISM.  The grounding line is at $1052.5$ km.  Compare Figures \ref{fig:MISMIPmodel1exper1aM1A1} and \ref{fig:MISMIPmodel1exper1aM3A1FROMSM} generated by PISM.}
+\caption{Analytical profile for steady state of experiment 1a, grid mode 1, step 1, from theory in \cite{SchoofMarine1}.  This is a boundary layer asymptotic matching result, but not the exact solution to the equations solved numerically by PISM. Compare Figures \ref{fig:MISMIPmodel1exper1aM1A1} and \ref{fig:MISMIPmodel1exper1aM3A1FROMSM} generated by PISM.}
 \label{fig:SMexper1aM1A1}
 \end{figure}
 
-There is an additional script \texttt{solverSM.py} which computes the profile from the Schoof's \cite{SchoofMarine1} asymptotic-matching boundary layer theory.  This script is a Python translation, using \texttt{scipy} and \texttt{pylab}, of the \Matlab codes in \url{http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar}.  For example,
+The script \texttt{MISMIP.py} in \texttt{examples/mismip} has the ability to compute the profile from the Schoof's \cite{SchoofMarine1} asymptotic-matching boundary layer theory.  This script is a Python translation, using \texttt{scipy} and \texttt{pylab}, of the \Matlab codes in \url{http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar}.  For example,
 
 \begin{verbatim}
-$ ./solverSM.py -e 1 --sliding=a -s 1
+$ python MISMIP.py
 \end{verbatim}
 
 \noindent produces Figure \ref{fig:SMexper1aM1A1}.
@@ -190,28 +143,22 @@ We see immediately that the PISM result does not put the grounding line in the s
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=4.0in,keepaspectratio=true]{cflx-EBU1-1a-M1-A1}
+\includegraphics[width=4.0in,keepaspectratio=true]{CKH1-1a-M1-A1-flux}
 \caption{Numerically computed flux $\bq = \bar\bU\, H$, where $\bar\bU$ is the vertically-averaged horizontal velocity and $H$ the thickness, for steady state of experiment 1a, grid mode 1, step 1.  Illustrates a significant numerical problem; it should be the dotted line, which has slope $a = 0.3$ m/a.}
 \label{fig:cflx1aM1A1}
 \end{figure}
 
-We can learn more about the problem.  It turns out that the numerical flaw in the flux also keeps the grounding line from moving properly, we think.  The problem is that the numerical result doesn't move the grounding line to its correct location if the ice sheet and shelf are initially 10 m as specified in MISMIP.  On the other hand, the correct location for the grounding line is also approximately a steady state for PISM numerics; the grounding line stays where you put it (compare \cite{SchoofMarine2} and \cite{VieliPayne}).
+We can learn more about the problem.  It turns out that the numerical flaw in the flux also keeps the grounding line from moving properly, we think.  The problem is that the numerical result doesn't move the grounding line to its correct location if the ice sheet and shelf are initially $10$ m as specified in MISMIP.  On the other hand, the correct location for the grounding line is also approximately a steady state for PISM numerics; the grounding line stays where you put it (compare \cite{SchoofMarine2} and \cite{VieliPayne}).
 
-But \texttt{solverSM.py} has an option which allows the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to be written into a NetCDF file.  We can then initialize the PISM thickness from it, using regridding (subsection \ref{sec:regridding}).
+In fact, by default \texttt{run.py} uses the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to initialize the initial ice thickness, as allowed by the MISMIP specification.
 
-The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is a step forward:
-
-\begin{verbatim}
-$ ./solverSM.py  --Mx=601 -e 1 --sliding=a -s 1 -n SM.nc
-$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_file SM.nc \
-          -regrid_vars thk -ksp_rtol 1.0e-7 -My 3 -Mz 15 -Mx 601
-\end{verbatim}
-\noindent The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is more satisfactory.  On the other hand, inspection of the flux for this new run shows a smaller, but similarly worrying, jump in flux.
+The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is a step forward.
+The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is more satisfactory.  On the other hand, inspection of the flux for this new run shows a smaller, but similarly worrying, jump in flux.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=4.0in,keepaspectratio=true]{profile-EBU1-1a-M3-A1}
-\caption{A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a, grid mode 3, step 1, but on a run started from the corresponding asymptotic-matching result.  At least the location of the grounding line agrees closely with that in Figure \ref{fig:SMexper1aM1A1}.}
+\includegraphics[width=4.0in,keepaspectratio=true]{CKH1-1a-M3-A1-profile}
+\caption{A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a, grid mode 3, step 1, but on a run started from the corresponding asymptotic-matching result.  At least the location of the grounding line agrees more closely with that in Figure \ref{fig:SMexper1aM1A1}.}
 \label{fig:MISMIPmodel1exper1aM3A1FROMSM}
 \end{figure}
 

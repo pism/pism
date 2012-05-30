@@ -33,39 +33,33 @@
 #include "PAGivenClimate.hh"
 #include "PALapseRates.hh"
 #include "PASeariseGreenland.hh"
-#include "PAdTforcing.hh"
-#include "PAdPforcing.hh"
-#include "PAConstant.hh"
+#include "PA_delta_T.hh"
+#include "PA_delta_P.hh"
 #include "PAConstantPIK.hh"
 #include "PAAnomaly.hh"
+#include "PACosineYearlyCycle.hh"
 
 // ocean models:
 #include "POConstant.hh"
 #include "POConstantPIK.hh"
 #include "POGivenClimate.hh"
-#include "POdSLforcing.hh"
-#include "POdTforcing.hh"
-#include "POdSBMFforcing.hh"
+#include "PO_delta_SL.hh"
+#include "PO_delta_T.hh"
+#include "PO_delta_SMB.hh"
 
 // surface models:
 #include "PSAnomaly.hh"
 #include "PSElevation.hh"
-#include "PSExternal.hh"
 #include "PSGivenClimate.hh"
 #include "PSLapseRates.hh"
 #include "PSStuffAsAnomaly.hh"
-#include "PSdTforcing.hh"
+#include "PS_delta_T.hh"
 #include "PSTemperatureIndex.hh"
 #include "PSSimple.hh"
-#include "PSConstant.hh"
 #include "PSConstantPIK.hh"
 #include "PSForceThickness.hh"
 
 // Atmosphere
-static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
-  result = new PAConstant(g, conf);
-}
-
 static void create_pa_constant_pik(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
   result = new PAConstantPIK(g, conf);
 }
@@ -83,19 +77,24 @@ static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf
   result = new PA_EISMINT_Greenland(g, conf);
 }
 
+static void create_pa_yearly_cycle(IceGrid& g, const NCConfigVariable& conf,
+                                   PISMAtmosphereModel* &result) {
+  result = new PACosineYearlyCycle(g, conf);
+}
+
 static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf,
                                   PISMAtmosphereModel *input, PAModifier* &result) {
   result = new PALapseRates(g, conf, input);
 }
 
-static void create_pa_dTforcing(IceGrid& g, const NCConfigVariable& conf,
+static void create_pa_delta_T(IceGrid& g, const NCConfigVariable& conf,
                                 PISMAtmosphereModel *input, PAModifier* &result) {
-  result = new PAdTforcing(g, conf, input);
+  result = new PA_delta_T(g, conf, input);
 }
 
-static void create_pa_precip_forcing(IceGrid& g, const NCConfigVariable& conf,
-                                     PISMAtmosphereModel *input, PAModifier* &result) {
-  result = new PAdPforcing(g, conf, input);
+static void create_pa_delta_P(IceGrid& g, const NCConfigVariable& conf,
+                              PISMAtmosphereModel *input, PAModifier* &result) {
+  result = new PA_delta_P(g, conf, input);
 }
 
 static void create_pa_anomaly(IceGrid& g, const NCConfigVariable& conf,
@@ -104,43 +103,43 @@ static void create_pa_anomaly(IceGrid& g, const NCConfigVariable& conf,
 }
 
 void PAFactory::add_standard_types() {
-  add_model("constant",          &create_pa_constant);
   add_model("given",             &create_pa_given);
   add_model("searise_greenland", &create_pa_searise_greenland);
   add_model("eismint_greenland", &create_pa_eismint_greenland);
   add_model("pik",               &create_pa_constant_pik);
-  set_default("constant");
+  add_model("yearly_cycle",      &create_pa_yearly_cycle);
+  set_default("given");
 
-  add_modifier("anomaly",        &create_pa_anomaly);
-  add_modifier("dTforcing",      &create_pa_dTforcing);
-  add_modifier("delta_precip", &create_pa_precip_forcing);
-  add_modifier("lapse_rate",     &create_pa_lapse_rates);
+  add_modifier("anomaly",    &create_pa_anomaly);
+  add_modifier("delta_T",    &create_pa_delta_T);
+  add_modifier("delta_P",    &create_pa_delta_P);
+  add_modifier("lapse_rate", &create_pa_lapse_rates);
 }
 
 
 // Ocean
-static void create_po_constant(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
-  result = new POConstant(g, conf);
-}
-
 static void create_po_given(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
   result = new POGiven(g, conf);
+}
+
+static void create_po_constant(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
+  result = new POConstant(g, conf);
 }
 
 static void create_po_pik(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
   result = new POConstantPIK(g, conf);
 }
 
-static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
-  result = new POdSLforcing(g, conf, input);
+static void create_po_delta_SL(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
+  result = new PO_delta_SL(g, conf, input);
 }
 
-static void create_po_dTforcing(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
-  result = new POdTforcing(g, conf, input);
+static void create_po_delta_T(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
+  result = new PO_delta_T(g, conf, input);
 }
 
-static void create_po_dSBMFforcing(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
-  result = new POdSBMFforcing(g, conf, input);
+static void create_po_delta_SMB(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
+  result = new PO_delta_SMB(g, conf, input);
 }
 
 void POFactory::add_standard_types() {
@@ -149,9 +148,9 @@ void POFactory::add_standard_types() {
   add_model("pik",      &create_po_pik);
   set_default("constant");
 
-  add_modifier("dSLforcing",      &create_po_forcing);
-  add_modifier("dTforcing",       &create_po_dTforcing);
-  add_modifier("delta_mass_flux", &create_po_dSBMFforcing);
+  add_modifier("delta_SL",  &create_po_delta_SL);
+  add_modifier("delta_T",   &create_po_delta_T);
+  add_modifier("delta_SMB", &create_po_delta_SMB);
 }
 
 // Surface
@@ -161,10 +160,6 @@ static void create_ps_temperatureindex(IceGrid& g, const NCConfigVariable& conf,
 
 static void create_ps_simple(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
   result = new PSSimple(g, conf);
-}
-
-static void create_ps_constant(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
-  result = new PSConstant(g, conf);
 }
 
 static void create_ps_constant_pik(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
@@ -189,9 +184,9 @@ static void create_ps_given(IceGrid& g, const NCConfigVariable& conf, PISMSurfac
   result = new PSGivenClimate(g, conf);
 }
 
-static void create_ps_dTforcing(IceGrid& g, const NCConfigVariable& conf,
+static void create_ps_delta_T(IceGrid& g, const NCConfigVariable& conf,
                                 PISMSurfaceModel *input, PSModifier* &result) {
-  result = new PSdTforcing(g, conf, input);
+  result = new PS_delta_T(g, conf, input);
 }
 
 static void create_ps_stuff_as_anomaly(IceGrid& g, const NCConfigVariable& conf,
@@ -205,17 +200,16 @@ static void create_ps_anomaly(IceGrid& g, const NCConfigVariable& conf,
 }
 
 void PSFactory::add_standard_types() {
-  add_model("constant",      &create_ps_constant);
   add_model("simple",        &create_ps_simple);
   add_model("pdd",           &create_ps_temperatureindex); 
   add_model("given",         &create_ps_given); 
   add_model("pik",           &create_ps_constant_pik);
   add_model("elevation",     &create_ps_elevation);
-  set_default("constant");
+  set_default("given");
 
   add_modifier("anomaly",    &create_ps_anomaly);
   add_modifier("forcing",    &create_ps_forcing);
-  add_modifier("dTforcing",  &create_ps_dTforcing);
+  add_modifier("delta_T",    &create_ps_delta_T);
   add_modifier("lapse_rate", &create_ps_lapse_rates);
   add_modifier("turn_into_anomaly", &create_ps_stuff_as_anomaly);
 }

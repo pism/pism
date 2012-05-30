@@ -595,6 +595,10 @@ INPUT                  = pism_config.txt \
                          ${PROJECT_SOURCE_DIR}/src/base/basal_strength/ \
                          ${PROJECT_SOURCE_DIR}/src/software_tests/ \
                          ${PROJECT_SOURCE_DIR}/src/coupler/ \
+                         ${PROJECT_SOURCE_DIR}/src/coupler/atmosphere/ \
+                         ${PROJECT_SOURCE_DIR}/src/coupler/surface/ \
+                         ${PROJECT_SOURCE_DIR}/src/coupler/ocean/ \
+                         ${PROJECT_SOURCE_DIR}/src/coupler/util/ \
                          ${PROJECT_SOURCE_DIR}/src/earth/ \
                          ${PROJECT_SOURCE_DIR}/src/verif/ \
                          ${PROJECT_SOURCE_DIR}/src/verif/tests/ \
@@ -1342,7 +1346,7 @@ INCLUDE_FILE_PATTERNS  =
 # undefined via #undef or recursively expanded use the := operator
 # instead of the = operator.
 
-PREDEFINED             = PISM_HAVE_FFTW
+PREDEFINED             = PISM_HAVE_FFTW,PISM_DEBUG,PISM_HAVE_PROJ4,PISM_PARALLEL_NETCDF4,PISM_PNETCDF
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.

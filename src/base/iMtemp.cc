@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -306,7 +306,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             Tnew[k] = x[k];
           } else {
             const PetscScalar
-              Tpmp = melting_point_temp - beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME task #7297
+              Tpmp = melting_point_temp - beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME issue #15
             if (x[k] > Tpmp) {
               Tnew[k] = Tpmp;
               PetscScalar Texcess = x[k] - Tpmp; // always positive
@@ -333,7 +333,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           if (allowAboveMelting == PETSC_TRUE) { // ice/rock interface
             Tnew[0] = x[0];
           } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-            const PetscScalar Tpmp = melting_point_temp - beta_CC_grad * vH(i,j); // FIXME task #7297
+            const PetscScalar Tpmp = melting_point_temp - beta_CC_grad * vH(i,j); // FIXME issue #15
             PetscScalar Texcess = x[0] - Tpmp; // positive or negative
             if (mask.ocean(i,j)) {
               // when floating, only half a segment has had its temperature raised

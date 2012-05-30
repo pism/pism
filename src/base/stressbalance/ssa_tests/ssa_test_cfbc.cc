@@ -139,7 +139,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
         ice_mask(i, j)  = MASK_ICE_FREE_OCEAN;
       }
 
-      surface(i,j) = (1.0 - ice_rho / ocean_rho) * thickness(i, j); // FIXME task #7297
+      surface(i,j) = (1.0 - ice_rho / ocean_rho) * thickness(i, j); // FIXME issue #15
 
       if (i == 0) {
         bc_mask(i, j)  = 1;
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
     SSATestCaseCFBC testcase(com,rank,size,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report(); CHKERRQ(ierr);
+    ierr = testcase.report("CFBC"); CHKERRQ(ierr);
     ierr = testcase.write(output_file);
   }
 

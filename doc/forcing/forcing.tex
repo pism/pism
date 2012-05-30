@@ -1,0 +1,1527 @@
+\documentclass[titlepage,letterpaper,final]{scrartcl}
+
+\usepackage{scrindex}           % multiple index support using the "index" package
+\usepackage{index}
+
+\input{pism-macros.tex}
+
+\addtolength\textheight{0.75in}
+\addtolength{\oddsidemargin}{-.4in}
+\addtolength{\evensidemargin}{-.4in}
+\addtolength{\textwidth}{0.9in}
+
+%% uncomment to see locations of index entries
+% \proofmodetrue
+
+% this lets us avoid the scrartcl/hyperref conflict...
+\let\ifvtex\relax
+
+\usepackage{xr}
+\externaldocument[userman-]{../userman/manual}
+
+% hyperref should be the last package we load
+\usepackage[pdftex,
+colorlinks=true,
+plainpages=false, % only if colorlinks=true
+linkcolor=blue,   % only if colorlinks=true
+citecolor=blue,   % only if colorlinks=true
+urlcolor=blue     % only if colorlinks=true
+]{hyperref}
+
+\pdfinfo{
+  /Title (PISM climate forcing components)
+  /Author (the PISM authors)
+  /Subject (Setting up PISM's climate forcing)
+  /Keywords (PISM ice sheet modeling climate forcing)
+}
+
+\begin{document}
+
+\begin{titlepage}
+
+  \begin{center}
+    \vspace*{3.5cm}
+    {\huge\usekomafont{title} PISM's climate forcing components}
+    \vspace{0.5cm}
+
+    {\Large The PISM Authors}
+    \vspace{1cm}
+  \end{center}
+
+\setcounter{tocdepth}{3}
+\small
+\tableofcontents
+\normalsize
+
+\vspace{0.3in}
+
+  \begin{center}
+    \small Support by email: \PISMEMAIL.
+
+    \medskip
+    Please see the \emph{PISM User's Manual} for the full list of authors.
+
+    \medskip
+    Manual date \today.  Based on PISM \PISMREV.
+
+    \medskip
+    \PISMDOWNLOADMSG
+ \end{center}
+
+\vspace{0.3in}
+\begin{quote}
+  \textsl{Copyright (C) 2004--2012 The PISM Authors}
+  \medskip
+
+  \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+\end{quote}
+\normalsize
+
+\end{titlepage}
+
+\newpage
+
+
+\section{Introduction}
+\label{sec:intro}
+
+PISM has a well-defined separation of climate forcing
+from ice dynamics.  This manual is about the climate forcing interface.
+
+By contrast, most options documented in the PISM User's Manual
+\footnote{PDF for latest stable release at \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf}.}
+control the ice dynamics part.  Section \ref*{userman-sec:climate-inputs} of
+the User's Manual does, however, give an overview
+of PISM's surface (atmosphere) and ocean (sub-shelf) interfaces.  At
+these interfaces the surface mass and energy balances are determined
+and/or passed to the ice dynamics code.
+
+\vspace{0.3in}
+
+To get started with climate forcing usage we need to introduce some language to describe parts of PISM.  In this manual a
+\emph{component} is a piece of PISM code, usually a C++ class. A combination of
+components (or, in some cases, one component) makes up a ``model'' --- an
+implementation of a physical/mathematical description of a system.
+
+PISM's climate forcing code has two kinds of components.
+\begin{itemize}
+\item Ones that can be used as ``stand-alone'' models, such as the
+  implementation of the PDD scheme (section~\ref{sec:surface-pdd}). These are
+  \emph{model~components}.
+\item Ones implementing ``corrections'' of various kinds, such as lapse rate
+  corrections (sections~\ref{sec:surface-lapse-rate}
+  and~\ref{sec:atmosphere-lapse-rates}) or ice-core derived offsets
+  (sections~\ref{sec:atmosphere-delta-temp} and~\ref{sec:delta-sea-level}, for
+  example). These are called \emph{modifier~components} or \emph{modifiers}.
+\end{itemize}
+
+Model~components and modifiers can be chained as shown in
+Figure~\ref{fig:climate-input-data-flow}. For example,
+\begin{verbatim}
+-ocean constant,delta_SL -ocean_delta_SL_file delta_SL.nc
+\end{verbatim}
+combines the component providing constant (both in space and time) ocean
+boundary conditions with a modifier that
+applies scalar sea level (``SL'') offsets. This combination one of the many ocean models that
+can be chosen using components as building blocks.
+
+Section~\ref{sec:examples} gives examples of combining components to
+choose models.  Before that we address how PISM handles model time
+(Section~\ref{sec:model-time}).
+
+\vspace{0.3in}
+
+\begin{quote}
+\begin{center}
+\emph{Summary of the main idea in using this manual:}
+\end{center}
+
+Setting up PISM's climate interface \emph{requires} selecting one surface and one
+ocean component. The surface component may use an atmosphere component also;
+see Figure \ref{fig:climate-input-data-flow}. Command-line options
+\texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} each take a
+comma-separated list of keywords as an argument; the first keyword \emph{has}
+to correspond to a model~component, the rest can be ``modifier'' components.
+Any of these options can be omitted to use the default atmosphere, surface or
+ocean model~components, but one has to explicitly choose a model~component
+to use a modifier. Model~components and modifiers are chained as in Figure
+\ref{fig:climate-input-data-flow}.
+\end{quote}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=5in]{data-flow.pdf}
+  \caption{PISM climate input data flow.  Colored arrows match colored interfaces in
+    Figure \ref*{userman-fig:climate-inputs} in the User's Manual.  An atmosphere component is only needed for some surface models.}
+  \label{fig:climate-input-data-flow}
+\end{figure}
+
+
+\newpage
+\section{Managing model time}
+\label{sec:model-time}
+\optsection{Managing model time}
+\index{Time}
+
+Most of PISM only needs to know  how long the current time step is. The climate
+forcing  code,  on  the other  hand,  uses  time in a precise manner
+to provide the correct values at the right time.  For example of the issues related to time
+and calendars, this section describes how to control model time to ensure
+that the February mass balance is used for 28 days and not $365/12 = 30.4167$ days.
+
+
+\subsection{Calendars}
+\label{sec:calendars}
+\index{Time!calendars}
+
+Internally PISM stores time in ``seconds since a specified moment'' and
+generally does not use or need a calendar; seconds are part of SI units.
+We refer to PISM internal time as \emph{model time}.
+
+However, runs for specific temporal periods (e.g.~``the 18th-century'' or
+``1989--2010'') generally requires specific knowledge of lengths of months
+and years, both to use climate data properly and to facilitate model validation.
+This specific knowledge is recording in a ``calendar'', a concept that
+is part of the \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html}{CF Metadata Conventions}.
+You can choose a calendar by setting the \config{calendar} configuration
+parameter or the command-line options described below.
+
+\subsubsection{\texttt{365_day} calendar}
+\label{sec:365-day}
+\index{Time!calendars!365-day}
+
+The default ``calendar'' (corresponding to the \txtopt{calendar}{\texttt{365_day}} option) is used in all PISM runs that do not require precise application of forcing data or reporting on particular dates (paleo-climate runs, for example).
+
+In this mode PISM ignores the reference date in time unit specifications
+(such as ``\texttt{days since 1969-7-20}''), though the value set using
+\config{reference_date} configuration parameter (or the associated option) is saved in
+output files.  Time units in PISM's output files always contain a reference date
+because it is required by the CF metadata conventions.
+
+\subsubsection{\texttt{gregorian} calendar}
+\label{sec:gregorian}
+\index{Time!calendars!Gregorian}
+
+The command-line option \txtopt{calendar}{\texttt{gregorian}} enables the Gregorian
+calendar mode.  The implications are:
+\begin{itemize}
+\item PISM uses the \texttt{units} attribute of coordinate variables
+  \emph{literally} (including the reference date) in unit conversions. Please
+  make sure that the \variable{time} variable in all forcing files has the
+  units attribute such as ``\texttt{days since 2012-1-1}''. PISM will stop with
+  an error message if a time variable does not have a reference date in its
+  unit specification.
+\item It is important to use units that are a fixed multiple of ``seconds'',
+  such as ``\texttt{minutes since 1989-1-1}'' or ``\texttt{days since
+    1999-12-31}'' and avoid ``months'' and ``years''. (PISM uses UDUNITS to
+  convert units, and in UDUNITS one month is always interpreted as
+  $\frac{1}{12}\cdot 365.242198781$ days.) Please see the 
+  \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#time-coordinate}{CF
+    Conventions} document for details.
+\item PISM uses dates in standard output:
+\begin{verbatim}
+...
+   time interval (length)   [2012-01-01, 2021-12-31]  (10.000 years)
+...
+S 2012-05-26:  0.00011    0.6306   0.00000000           0.00000
+$v$Eh m (dt=0.10000)
+S 2012-07-01:  0.00014    0.6306   0.00000000           0.00000
+\end{verbatim}
+\end{itemize}
+
+Just like in the \texttt{365_day} mode, run length, run start and run end times
+are specified using \intextoption{y}, \intextoption{ys} and \intextoption{ye}
+command-line options, respectively. Arguments of these options use ``model
+time'' and \textbf{not} calendar years.
+
+Here \texttt{-y 1} has the meaning of $3.14...\cdot 10^{7}$ seconds (one
+``tropical year''). Similarly, \texttt{-ye 2001} means ``stop after reaching
+model year $2001$'', not ``stop at the end of the XX century''.
+
+Use the \mbox{\intextoption{reference_date} \texttt{YYYY-MM-DD}} command-line option
+or the \config{reference_date} configuration parameter to set the reference
+date, i.e. the date corresponding to model time $0$. For example, to run for
+$20$ years starting on January 1, $1989$, and override time read from an input
+file, do
+\begin{verbatim}
+$ pismr -calendar gregorian -reference_date 1989-1-1 -ys 0 -ye 20
+\end{verbatim} %$
+
+It is also possible to run PISM for the duration of the available forcing data using the \fileopt{time_file} option.
+This command
+\begin{verbatim}
+$ pismr -calendar gregorian -time_file forcing.nc
+\end{verbatim} %$
+will extract the reference date and run length from \texttt{forcing.nc}, respecting time bounds.
+
+It is also possible to save spatial and/or scalar time-series daily, monthly or
+yearly (using the Gregorian calendar). See sections~\ref*{userman-sec:saving-time-series}
+and~\ref*{userman-sec:saving-spat-vari} of the User's Manual.
+
+
+\subsection{Periodic climate data}
+\label{sec:periodic-forcing}
+\index{Time!periodic}
+
+All components reading time-dependent forcing data from files can interpret
+it as ``periodic''.  The length of the period (in years) is specified using
+a \texttt{-..._period} option.  For example, to prescribe a periodic climate
+which has the same values each year but which includes
+inter-annual variations, using the \texttt{-surface given} option, set:
+\begin{verbatim}
+-surface given -surface_given_period 1 -surface_given_file forcing.nc
+\end{verbatim}
+
+Each component has a unique command-line option prefix for a
+\texttt{-..._period} option. Please refer to corresponding sections for
+allowed prefixes.
+
+If forcing data has the period other than one year it is also
+necessary to specify the ``starting time'' using the
+\texttt{-..._reference_year} option.
+
+For example, to use a 20 year long climate record as periodic climate starting
+at the beginning of the model year 10, do
+\begin{verbatim}
+-surface given -surface_given_period 20 -surface_given_file forcing.nc \
+-surface_given_reference_year 10
+\end{verbatim}
+
+Note that the reference year is given in \emph{model years}, not calendar
+years. We find that it is usually possible to avoid confusion by starting runs
+corresponding to specific historical periods at model year zero and using the
+\intextoption{reference_date} option to tie the run to a particular date. For instance,
+\begin{verbatim}
+-surface given -surface_given_period 20 -surface_given_file forcing.nc \
+-ys 0 -reference_date 1989-1-1
+\end{verbatim}
+will use climate data as periodic with the period of 20 years starting on
+January 1, 1989. Please see section~\ref{sec:calendars} for more details.
+
+The \variable{time} variable  in a forcing file that is to  be used as periodic
+should start at $0$. (In other words, time in a file with periodic forcing data
+is  \emph{time  since   the  beginning  of  a  period}.)   Please  see  section
+\ref{sec:calendars}  for a  discussion  of time  units  appropriate in  forcing
+files.
+
+
+\subsection{Using time bounds in forcing data}
+\label{sec:time-bounds}
+\index{Time!bounds}
+
+PISM interprets climate forcing data as piecewise-constant in time. A forcing file can specify time bounds corresponding to each record by following the CF (Climate and Forecasting) meta-data conventions.
+
+The \texttt{ncdump -h} output from a conforming file would look similar to the
+following:
+\begin{verbatim}
+netcdf forcing {
+dimensions:
+        time = UNLIMITED ; // (214 currently)
+        nv = 2 ;
+variables:
+        double time(time) ;
+                time:units = "seconds since 2000-1-1" ;
+                time:axis = "T" ;
+                time:bounds = "time_bounds" ;
+                time:calendar = "gregorian" ;
+                time:long_name = "time" ;
+        double nv(nv) ;
+        double time_bounds(time, nv) ;
+\end{verbatim}
+
+The \variable{time_bounds} variable stores the starting and the ending time for
+each interval in the forcing. This variable is assumed to have the same units
+as the \variable{time} variable it is associated with, which is why its arguments
+are not set in this example.
+
+Please see the
+\href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#cell-boundaries}{CF
+Conventions} document for details.
+
+
+
+
+\clearpage\newpage
+\section{Examples and corresponding options}
+\label{sec:examples}
+
+This section gives a very brief overview of some coupling options. Please see sections referenced below for more information.
+
+\subsection{One way coupling to a climate model}
+\label{sec:one-way-coupling}
+\index{One-way coupling to a climate model}
+
+One-way coupling of PISM to a climate model can be achieved by reading a NetCDF
+file with time- and space-dependent climate data produced by a climate model.
+
+There are two cases:
+\begin{itemize}
+\item coupling to a climate model that includes surface (firn, snow) processes
+\item coupling to a climate model providing near-surface air temperature and precipitation
+\end{itemize}
+
+\subsubsection{Reading ice surface temperature and mass balance}
+\label{sec:ice-surface-bc}
+
+This is the simplest case.  It is often the preferred case, for example when
+the climate model in use has high quality surface mass and energy sub-models
+which are then preferred to the highly simplified (e.g.~temperature index)
+surface models in PISM.
+
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \variable{climatic_mass_balance}, \variable{ice_surface_temp} \\
+    Options: & \texttt{-surface given -surface_given_file forcing.nc} \\
+    See also & \ref{sec:surface-given} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\subsubsection{Reading air temperature and precipitation}
+\label{sec:air-temp-and-precip}
+
+As mentioned above, if a climate model provides near-surface air temperature
+and precipitation, these data need to be converted into top-of-the-ice
+temperature and climatic mass balance.
+
+One way to do that is by using a temperature index (PDD) model~component included in
+PISM. This component has adjustable parameters; default values come
+from~\cite{RitzEISMINT}.
+
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \variable{precipitation}, \variable{air_temp} \\
+    Options: & \texttt{-atmosphere given -atmosphere_given_file forcing.nc -surface~pdd} \\
+    See also & \texttt{-atmosphere given}: \ref{sec:atmosphere-given},\\
+    &\texttt{-surface pdd}: \ref{sec:surface-pdd} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+If melt is negligible \texttt{-surface pdd} should be replaced with \texttt{-surface simple} (see section~\ref{sec:surface-simple}).
+
+\subsection{Using climate anomalies}
+\label{sec:use-case-climate-anomalies}
+
+Prognostic modeling experiments frequently use time- and space-dependent
+air temperature and precipitation anomalies.
+
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \variable{precipitation_anomaly}, \variable{air_temp_anomaly}\\
+    Options:  & \texttt{\mbox{-atmosphere given,anomaly}
+      \mbox{-atmosphere_anomaly_file anomalies.nc}
+      \mbox{-surface simple}
+    } \\
+    See  also   &  \texttt{-atmosphere~given}: \ref{sec:atmosphere-given}, \\
+    & \texttt{anomaly}: \ref{sec:atmosphere-anomaly}, \\
+    & \texttt{-surface~simple}: \ref{sec:surface-simple} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+The \texttt{simple} surface model~component re-interprets precipitation as
+climatic mass balance, which is useful in cases when there is no melt
+(Antarctic simulations is an example).
+
+Simulations of the Greenland ice sheet typically use \texttt{-surface~pdd} instead of \texttt{-surface~simple}.
+
+\subsection{SeaRISE-Greenland}
+\label{sec:use-case-searise-greenland}
+
+The SeaRISE-Greenland setup uses a parameterized near-surface air temperature
+\cite{Faustoetal2009} and a constant-in-time precipitation field read from an
+input (\texttt{-i} or \texttt{-boot_file}) file. A temperature-index (PDD)
+scheme is used to compute the climatic mass balance.
+
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \variable{precipitation}, \variable{lat}, \variable{lon} \\
+    Options: & \texttt{-atmosphere searise_greenland -surface~pdd} \\
+    See also & \texttt{-atmosphere searise_greenland}: \ref{sec:atmosphere-searise-greenland},\\
+    &\texttt{-surface pdd}: \ref{sec:surface-pdd} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+The air temperature parameterization is a function of latitude
+(\variable{lat}), longitude (\variable{lon}) and surface elevation (dynamically
+updated by PISM).
+
+\subsection{SeaRISE-Greenland paleo-climate run}
+\label{sec:use-case-searise-greenland-paleo}
+
+The air temperature parameterization in the previous section is appropriate for
+present day modeling. PISM includes some mechanisms allowing for corrections
+taking into account differences between present and past climates. In
+particular, one can use ice-core derived scalar air temperature offsets
+\cite{JohnsenetalGRIP}, precipitation adjustments~\cite{Huybrechts02}, and sea
+level offsets from SPECMAP~\cite{Imbrieetal1984}.
+
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \variable{precipitation}, \variable{delta_T},
+    \variable{delta_SL}, \variable{lat}, \variable{lon}\\
+    Options: & \texttt{\mbox{-atmosphere searise_greenland,delta_T}
+      \mbox{-atmosphere_delta_T_file delta_T.nc}
+      \mbox{-paleo_precip}
+      \mbox{-surface pdd}
+      \mbox{-ocean constant,delta_SL}
+      \mbox{-ocean_delta_SL_file delta_SL.nc}
+    } \\
+    See also & \texttt{-atmosphere searise_greenland}:
+    \ref{sec:atmosphere-searise-greenland}, \\
+    & \texttt{-surface pdd}: \ref{sec:surface-pdd} \\
+    & \texttt{-ocean constant}: \ref{sec:ocean-constant} \\
+    & \texttt{delta_SL}: \ref{sec:delta-sea-level} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+Note that the temperature offsets are applied to \emph{air} temperatures at the
+\emph{atmosphere level}. This ensures that $\Delta T$ influences the PDD
+computation.
+
+\subsection{Antarctic paleo-climate runs}
+\label{sec:use-case-antarctica-paleo}
+
+\begin{center}
+  \begin{tabular}{lp{0.7\textwidth}}
+    \toprule
+    Variable names: & \variable{climatic_mass_balance},
+    \variable{air_temp}, \variable{delta_T}, \variable{delta_SL}\\
+    Options: & \texttt{\mbox{-surface given,delta_T}
+      \mbox{-surface_delta_T_file delta_T.nc}
+      \mbox{-ocean constant,delta_SL}
+      \mbox{-ocean_delta_SL_file delta_SL.nc}} \\
+    See   also    &   \texttt{-surface~given}:   \ref{sec:surface-given}, \\
+    & \texttt{delta_T}: \ref{sec:surface-delta-T}, \\
+    & \texttt{-ocean~constant}: \ref{sec:ocean-constant}, \\
+    & \texttt{delta_SL}: \ref{sec:delta-sea-level} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\section{Checking if forcing data is used correctly}
+\label{sec:checking-forcing}
+
+It is very important to ensure that selected forcing options produce the result you expect: we find that the ice sheet response is very sensitive to provided climate forcing, especially in short-scale simulations.
+
+This section describes \texttt{pclimate}, a PISM tool created to inspect climate forcing, and suggests an alternative way of diagnosing climate forcing issues using PISM's reporting features.
+
+\subsection{Visualizing climate inputs, without ice dynamics}
+\label{sec:pclimate}
+\index{Visualizing climate inputs!without ice dynamics}
+\index{Visualizing climate inputs!\texttt{pclimate}}
+\index{pclimate@\texttt{pclimate}}
+
+\optsection{pclimate@\texttt{pclimate} options}
+
+Recall that internally in PISM there is a separation of climate inputs from ice dynamics (see User's Manual, section~\ref*{userman-sec:climate-inputs}). Executable \texttt{pclimate} allows one to visualize climate inputs without invoking the ice dynamics core of PISM.
+
+This is helpful during the process of creating PISM-readable data files, and modeling with such.
+
+\texttt{pclimate} shares the code implementing climate model~components with
+other PISM executables, so everything said elsewhere in this document applies
+here. In addition to \texttt{-atmosphere}, \texttt{-surface}, \texttt{-ocean}
+and others, \texttt{pclimate} takes options listed in table~\ref{tab:pclimate}.
+
+\begin{table}[ht]
+  \centering
+  \caption{\texttt{pclimate} command-line options}
+  \begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}
+    \toprule
+    \textbf{Option} & \textbf{Description}\\
+    \midrule
+    \fileopt{i} & specifies an input file, which has been produced by PISM;\\
+    \fileopt{o} & sets the output file name;\\
+    \txtopt{times}{\emph{list or range}} & sets times at which to save climate data,
+    in model years. \texttt{pclimate} does not save at the first time, which is
+    interpreted as the beginning of the first time-stepping interval.\\
+   \bottomrule
+ \end{tabular}
+ \label{tab:pclimate}
+\end{table}
+
+\bigskip
+As an example, set up an ice sheet state file and run \texttt{pclimate} on it:
+\begin{verbatim}
+$ mpiexec -n 2 pisms -eisII A -y 1000 -o state.nc
+$ pclimate -i state.nc -surface given -times 0.0:0.1:2.5 -o movie.nc
+\end{verbatim}
+Using \texttt{pisms} merely generates demonstration climate data, using
+EISMINT II choices~\cite{EISMINT00}.  \texttt{pclimate} extracts the 
+surface mass balance \variable{climatic_mass_balance} and surface temperature \variable{air_temp} from \texttt{state.nc}.
+It then does nothing interesting, exactly because a constant climate
+is used.  Viewing \texttt{movie.nc} we see these same values as from \texttt{state.nc},
+in variables \variable{climatic_mass_balance}, \variable{air_temp}, reported back to us as the time- and space-dependent
+climate at times \texttt{ys:dt:ye}.  It is a boring ``movie.''
+
+The excuse for the executable \texttt{pclimate} becomes clearer if we use a
+positive degree-day scheme (section~\ref{sec:surface-pdd}). The positive
+degree-day scheme uses a variable called \variable{precipitation}, and a
+calculation of melting, to get the surface mass balance
+\variable{climatic_mass_balance}.
+
+Assuming that \texttt{g20km_pre100.nc} was created as described in the User's Manual, section~\ref*{userman-sec:start}, running
+\begin{verbatim}
+$ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
+           -surface pdd -times 0:0.1:2.5 -o foo.nc
+\end{verbatim}%$
+produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle in the variable \variable{air_temp} and a noticeable decrease in the surface mass balance during summer months (see variable \variable{climatic_mass_balance}). Note that \variable{air_temp} is constant in time: this is the temperature \emph{at the ice surface but below firn} and it does not include seasonal variations~\cite{Hock05}.
+
+
+\subsection{Low-resolution test runs}
+\label{sec:low-resolution-test-runs}
+\index{Visualizing climate inputs!using a low-resolution run}
+
+One weakness of the \texttt{pclimate} is a direct consequence of one its strengths: avoiding ice dynamics computations makes \texttt{pclimate} runs computationally cheap, but its output does not include ice geometry/climate feedbacks.
+
+In this case one can use a low-resolution \texttt{pismr} run instead.
+
+The command
+\begin{verbatim}
+$ pismr -boot_file g20km_pre100.nc -Mx 51 -My 101 -Mz 11 \
+        -atmosphere searise_greenland \
+        -surface pdd -ys 0 -ye 2.5 \
+        -extra_file foo.nc -extra_times 0:0.1:2.5 \
+        -extra_vars climatic_mass_balance,air_temp,smelt,srunoff,saccum
+        -ts_file ts.nc -ts_times 0:0.1:2.5 \
+        -o bar.nc
+\end{verbatim}%$
+will produce \texttt{foo.nc} containing a ``movie'' very similar to the one created using \texttt{pclimate} above, but including the influence of ice dynamics.
+
+In addition to \texttt{foo.nc}, the latter command will produce \texttt{ts.nc} containing scalar time-series. The variable \texttt{surface_ice_flux} (the \emph{total over the ice-covered area} of the surface mass flux) can be used to detect if climate forcing is applied at the right time.
+
+\subsubsection{Visualizing the climate inputs in the Greenland case}
+\label{sec:pdd-series-with-pclimate}
+
+Assuming that \texttt{g20km_pre100.nc} was produced by the run described in section
+\ref{userman-sec:start}), one can run the following to check if the PDD
+model in PISM (see section \ref{sec:surface-pdd}) is ``reasonable'':
+\begin{verbatim}
+$ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
+           -surface pdd -paleo_precip pism_dT.nc -times 0:0.05:3 \
+           -o pddmovie.nc -o_order zyx -calendar gregorian
+\end{verbatim}%$
+This produces the file \texttt{pddmovie.nc} with several variables: \texttt{climatic_mass_balance}
+(instantaneous net ice equivalent accumulation (ablation) rate), \texttt{ice_surface_temp}
+(mean annual temperature at ice surface but below firn), \texttt{air_temperature}
+(instantaneous near-surface air temperature), \texttt{precipitation} (mean annual
+ice-equivalent precipitation rate) and some others.
+
+Variables \texttt{climatic_mass_balance} and \texttt{precipitation} do not evolve over time because the 
+former is generated from ice sheet geometry and latitude by the
+SeaRISE-Greenland formulas (section \ref{sec:atmosphere-searise-greenland}),
+while the latter is part of the SeaRISE-Greenland data itself.
+
+The other two variables were used to create figure \ref{fig:pddseries}, which
+shows the time-series of the accumulation rate (top graph) and the air
+temperature (bottom graph)  with the map view of the surface elevation on the left.
+
+Here are two things to notice:
+\begin{enumerate}
+\item The summer peak day is in the right place.  The default for this value is
+  July 15 (day $196$, at approximately $196/365 \simeq 0.54$ year).  (If it is
+  important, the peak day can be changed using the \texttt{snow_temp_july_day}
+  configuration parameter).
+
+\item Lows of the surface mass balance rate \texttt{climatic_mass_balance} correspond to
+  positive degree-days in the given period, because of highs of the air
+  temperature.  Recall the air temperature graph does
+  not show random daily variations.  Even though it has the maximum of about $270$
+  Kelvin, the parameterized instantaneous air temperature can be above freezing.
+  A positive value for positive degree-days is expected \cite{CalovGreve05}.
+\end{enumerate}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5in]{pdd-movie}
+  \caption{Time series of the surface mass balance rate and near-surface air temperature.}
+  \label{fig:pddseries}
+\end{figure}
+
+\bigskip
+We can also test the surface temperature forcing code with the following command.
+\begin{verbatim}
+$ pclimate -i g20km_pre100.nc -o dT_movie.nc -surface simple \
+           -atmosphere searise_greenland,delta_T \
+           -atmosphere_delta_T_file pism_dT.nc \
+           -times -125e3:1e3:0 -o_order zyx
+\end{verbatim}%$
+The output \texttt{dT_movie.nc} and \texttt{pism_dT.nc} were used to create figure \ref{fig:artm-timeseries}.
+
+This figure shows the GRIP temperature offsets and the time-series of the temperature at the ice surface at a point in southern Greenland (bottom graph), confirming that the temperature offsets are used correctly.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5in]{dT-movie}
+  \caption{Time series of the surface temperature compared to GRIP temperature offsets}
+  \label{fig:artm-timeseries}
+\end{figure}
+
+
+\clearpage\newpage
+\newcommand{\surface}{Surface components (\texttt{-surface}; default: \texttt{given})}
+\section{Surface mass and energy process model~components}
+\label{sec:surface}
+
+\subsection{The ``invisible'' model}
+\label{sec:surface-simple}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~simple} \index[options]{SA@\surface!\texttt{simple}}\\
+    NetCDF variables: & none \\
+    C++ class: & \class{PSSimple}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This is the simplest ``surface model'' available in PISM, enabled using
+\texttt{-surface~simple}. Its job is to re-interpret precipitation as climatic
+mass balance, and to re-interprets mean annual near-surface (2m) air
+temperature as the temperature of the ice at the depth at which firn processes
+cease to change the temperature of the ice. (I.e.~the temperature \emph{below}
+the firn.) This implies that there is no melt. Though primitive, this model~component may
+be desired in cold environments (e.g.~East Antarctic ice sheet) in which melt
+is negligible and heat from firn processes is ignored.
+
+\subsection{Reading top-surface boundary conditions from a file}
+\label{sec:surface-given}
+\optsection{SA@\surface!\texttt{given}}
+\index{One-way coupling to a climate model}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~given}
+    \index[options]{SA@\surface!\texttt{given}}\\
+    NetCDF variables: & \variable{ice_surface_temp}, \\
+    &\variable{climatic_mass_balance} [m/s ice equivalent]\\
+    C++ class: & \class{PSGivenClimate}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\begin{center}
+  \bf This is the default choice.
+\end{center}
+
+This model~component was created to force PISM with sampled (possibly periodic)
+climate data by reading ice upper surface boundary conditions from a file.
+These fields are provided directly to the ice dynamics code (see User's
+Manual, table~\ref*{userman-tab:ice-dynamics-bc}).
+
+PISM will stop if variables \variable{ice_surface_temp} (ice temperature at the
+ice surface but below firn) and \variable{climatic_mass_balance} (top surface
+mass flux into the ice) are not present in the input file.
+
+Command-line options:
+\begin{itemize}
+\item \fileopt{surface_given_file} prescribes an input file
+\item \txtopt{surface_given_period}{\emph{years}} makes PISM interpret data in
+\texttt{-surface_given_file} as periodic. See section~\ref{sec:periodic-forcing}.
+\item \intextoption{surface_given_reference_year} sets the reference model year;
+  see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+A file \texttt{foo.nc} used with \texttt{-surface given -surface_given_file
+  foo.nc} should contain several records. If this file contains one record
+(i.e. fields corresponding to one time value only), provided forcing data is
+interpreted as time-independent. The \variable{time} variable should describe
+what model time these records correspond to; see section~\ref{sec:model-time}
+for details.
+
+For example, to use monthly records and period of 1 year, create a file (say,
+``\texttt{foo.nc}'') with 12 records. The \variable{time} variable may contain
+0, 1, 2, 3, \dots, 11 and have the units of ``month'' (you can use other units,
+too). Then, run
+\begin{verbatim}
+$ pismr -surface given -surface_given_file foo.nc -surface_given_period 1
+\end{verbatim}%$
+
+\noindent Notes:
+\begin{itemize}
+\item This surface model \emph{ignores} the atmosphere model selection made
+  using the \texttt{-atmosphere} option.
+\item PISM can handle files with virtually any number of records: it will
+  read and store in memory at most \config{climate_forcing_buffer_size} records
+  at any given time (default: 60, or 5 years' worth of monthly fields).
+\item when preparing a file for use with this model, it is best to use the
+  \texttt{t,x,y} variable storage order: files using this order can be read in
+  faster than ones using the \texttt{t,y,x} order, for reasons explained in the
+  User's Manual, section~\ref*{userman-sec:pism-io-performance}.
+
+  To change the storage order in a NetCDF file, use \texttt{ncpdq}:
+\begin{verbatim}
+$ ncpdq -a t,x,y input.nc output.nc
+\end{verbatim}%$
+  will copy data from \texttt{input.nc} into \texttt{output.nc}, changing the
+  storage order to \texttt{t,x,y} at the same time.
+\end{itemize}
+
+\subsection{Elevation-dependent temperature and mass balance}
+\label{sec:surface-elevation}
+\optsection{SA@\surface!\texttt{elevation}}
+
+\newcommand{\var}[2]{ {#1}_{\text{#2}} }
+\newcommand{\h}[1]{ \var{h}{#1} }
+\newcommand{\T}[1]{ \var{T}{#1} }
+\newcommand{\m}[1]{ \var{m}{#1} }
+\newcommand{\ms}[1]{ \var{m^{*}}{#1} }
+\newcommand{\diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~elevation} \index[options]{SA@\surface!\texttt{elevation}} \\
+    NetCDF variables: & none\\
+    C++ class: & \class{PSElevation} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This surface model~component parametrizes the ice surface temperature $T_{h}$ =
+\variable{ice_surface_temp} and the mass balance $m$ =
+\variable{climatic_mass_balance} as \emph{piecewise-linear} functions of
+surface elevation $h$.
+
+The option \txtopt{ice_surface_temp}{\emph{list of 4 numbers}} determines the surface temperature using the 4 parameters $\T{min}$, $\T{max}$, $\h{min}$, $\h{max}$. Let
+\begin{equation}
+  \diff{T}{h} = (\T{max} - \T{min}) / (\h{max} - \h{min})
+\end{equation}
+be the temperature gradient. Then
+\begin{equation}
+  T(x,y) =
+  \begin{cases}
+    \T{min}, & h(x,y) \le \h{min}, \\
+    \T{min} + \diff{T}{h} \, (h(x,y) - \h{min}), & \h{min} < h(x,y) < \h{max}, \\
+    \T{max}, & \h{max} \le h(x,y).
+  \end{cases}
+\end{equation}
+
+The option \txtopt{climatic_mass_balance}{\emph{list of 5 numbers}} determines the surface mass balance using the 5 parameters $\m{min}$, $\m{max}$, $\h{min}$, $\h{ELA}$, $\h{max}$. Let
+\begin{equation}
+  \diff{\m{abl}}{h} = -\m{min} / (\h{max} - \h{min})
+\end{equation}
+and
+\begin{equation}
+\diff{\m{acl}}{h} = \m{max} / (\h{max} - \h{min})
+\end{equation}
+be the mass balance gradient in the ablation and in the accumulation area, respectively.  Then
+\begin{equation}
+  m(x,y) =
+  \begin{cases}
+   \m{min}, & h(x,y) \le \h{min}, \\
+   \diff{\m{abl}}{h} \, (h(x,y) - h_{\text{ELA}}), &  \h{min} < h(x,y) < \h{max}, \\
+   \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
+   \m{max}, & \h{max} \le h(x,y).
+ \end{cases}
+\end{equation}
+
+The option \txtopt{climatic_mass_balance_limits}{\emph{list of 2 numbers}} limits the mass balance below $\h{min}$ to $\ms{min}$ and above $\h{max}$ to $\ms{max}$, thus
+\begin{equation}
+  m(x,y) =
+  \begin{cases}
+    m^{*}_{\text{min}}, & h(x,y) \le \h{min}, \\
+    \diff{\m{abl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
+    \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
+    m^{*}_{\text{max}}, & \h{max} \le h(x,y).
+  \end{cases}
+\end{equation}
+
+Note: this surface model \emph{ignores} the atmosphere model selection made using the \texttt{-atmosphere} option.
+
+\subsection{Temperature-index (positive degree-day) scheme}
+\label{sec:surface-pdd}
+\optsection{SA@\surface!\texttt{pdd}}
+\index{temperature-index surface processes model}
+\index{positive degree day surface processes model}
+\index{PDD (positive degree day model)}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~pdd} \index[options]{SA@\surface!\texttt{pdd}} \\
+    NetCDF variables: & none \\
+    C++ class: & \class{PSTemperatureIndex}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is
+based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+
+Our PDD implementation is meant to be used with an atmosphere model
+implementing a cosine yearly cycle such as \texttt{searise_greenland} (section
+\ref{sec:atmosphere-searise-greenland}) and \texttt{eismint_greenland} (section
+\ref{sec:atmosphere-eismint-greenland}), but it is not restricted to
+parameterizations like these.
+
+A PDD generally adds ``white noise'' to the seasonal cycle to simulate
+additional daily variability associated to the vagaries of weather. This
+additional random variation is quite significant, as the seasonal cycle may
+never reach the melting point but that point may be reached with some
+probability, in the presence of the daily variability, and thus melt may occur.
+Concretely, a normally-distributed, mean zero random temperature increment is
+added to the seasonal cycle. There is no assumed spatial correlation of daily
+variability. The standard deviation of the daily variability is controlled by
+the \intextoption{pdd_std_dev} option, and the corresponding configuration
+parameter has the same name. The default value is 5.0 degrees
+\cite{RitzEISMINT}.
+
+The number of positive degree days is computed as the magnitude of the
+temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the
+duration (in days) when it is above zero.
+
+In PISM there are two methods for computing the number of positive degree days.
+The first computes only the expected value, by the method described in
+\cite{CalovGreve05}. This is the default when a PDD is chosen (i.e.~option
+\texttt{-surface~pdd}). The second is a monte carlo simulation of the white
+noise itself, chosen by adding the option \intextoption{pdd_rand}. This monte
+carlo simulation adds the same daily variation at every point, though the
+seasonal cycle is (generally) location dependent. If repeatable randomness is
+desired use \intextoption{pdd_rand_repeatable} instead of \texttt{-pdd_rand}.
+
+The number of positive degree days is multiplied by a coefficient (config
+parameter \config{pdd_factor_snow}) to compute the amount of snow melted. Of
+the melted snow, a fraction (\config{pdd_refreeze}) is kept as ice. This ice,
+plus all unmelted snow (already measured as ice-equivalent) is added to the
+mass balance, unless the number of positive degree days exceeds that required
+to melt all of the snow. In this latter case, in which there are excess
+positive degree days available for melting, the excess is multiplied by a
+coefficient (\config{pdd_factor_ice}) to compute how much ice is melted. In
+this case actual ablation occurs at that location.
+
+It also implements latitude- and mean July temperature dependent ice and snow
+factors using formulas (6) and (7) in~\cite{Faustoetal2009}; set
+\intextoption{pdd_fausto} to enable. The default standard deviation of the
+daily variability (\intextoption{pdd_std_dev} option) is 2.53 degrees under the
+\intextoption{pdd_fausto} option~\cite{Faustoetal2009}. See also configuration
+parameters with the \texttt{pdd_fausto} prefix.
+
+\subsection{PIK}
+\label{sec:surface-pik}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~pik} \index[options]{SA@\surface!\texttt{pik}} \\
+    NetCDF variables: & \variable{climatic_mass_balance} [m/s ice
+    equivalent],\\
+    &\variable{lat} (latitude), [degrees north]\\
+    C++ class: & \class{PSConstantPIK}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This surface model~component implements the setup used in~\cite{Martinetal2011}. The
+\variable{climatic_mass_balance} is read from an input (\texttt{-i} or
+\texttt{-boot_file}) file; the ice surface temperature is computed as a function of
+latitude (variable \variable{lat}) and surface elevation (dynamically updated
+by PISM). See equation~(1) in~\cite{Martinetal2011}.
+
+\newcommand{\surfacemods}{Surface modifiers}
+\subsection{Modifier: Scalar temperature offsets}
+\label{sec:surface-delta-T}
+\optsection{SB@\surfacemods!\texttt{delta_T}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~...,delta_T} \index[options]{SB@\surfacemods!\texttt{delta_T}} \\
+    NetCDF variables: & \variable{delta_T} \\
+    C++ class: & \class{PS_delta_T}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+Command-line options:
+\begin{itemize}
+\item \fileopt{surface_delta_T_file} sets the name of the
+file PISM will read \variable{delta_T} from.
+\item \txtopt{surface_delta_T_period}{\emph{years}} sets the period of the
+  forcing data (section~\ref{sec:periodic-forcing})
+\item \intextoption{surface_delta_T_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
+\end{itemize}
+
+The time-dependent scalar offsets \variable{delta_T} are added to
+\variable{ice_surface_temp} computed by a surface model.
+
+Please make sure that \variable{delta_T} has the units of
+``\texttt{Kelvin}''.
+
+This modifier is identical to the corresponding atmosphere modifier, but
+applies offsets at a different stage in the computation of top-surface boundary
+conditions needed by the ice dynamics core.
+
+\subsection{Modifier: Lapse rate corrections}
+\label{sec:surface-lapse-rate}
+\optsection{SB@\surfacemods!\texttt{lapse_rate}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~...,lapse_rate} \index[options]{SB@\surfacemods!\texttt{lapse_rate}} \\
+    NetCDF variables: & \variable{surface_altitude} (CF standard name), \\
+    C++ class: & \class{PSLapseRates}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+The \texttt{lapse_rate} modifier allows correcting ice-surface temperature and
+surface mass balance using elevation lapse rates. It uses the following
+options.
+
+\begin{itemize}
+\item \intextoption{temp_lapse_rate} gives the temperature lapse rate, in
+  $K/km$. Note that we use the following definition of the temperature lapse
+  rate:
+  \begin{displaymath}
+    \gamma = -\frac{dT}{dz}.
+  \end{displaymath}
+\item \intextoption{smb_lapse_rate} gives the surface mass balance lapse rate,
+  in $m/year/km$. Here, $\gamma=-\frac{dM}{dz}$.
+\item \fileopt{surface_lapse_rate_file} specifies the file containing the reference
+  surface elevation field (standard name: \variable{surface_altitude}). This file
+  can contain several surface elevation records to use lapse rate corrections
+  relative to time-dependent surface. If one record is provided, the reference
+  surface elevation is assumed to be time-independent.
+\item \intextoption{surface_lapse_rate_period} gives the period, in model years, to
+  use when interpreting data in the file given with
+  \texttt{-surface_given_file},
+\item \intextoption{surface_lapse_rate_reference_year} takes the time $T$ in model
+  years. The record for $t$ years in \texttt{-surface_given_file} is
+  interpreted as corresponding to $t$ years since $T$.
+\end{itemize}
+
+\subsection{Modifier: Surface mass flux adjustment}
+\label{sec:smb-adjustment}
+\optsection{SB@\surfacemods!\texttt{forcing}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~...,forcing} \index[options]{SB@\surfacemods!\texttt{forcing}} \\
+    NetCDF variables: & \variable{thk} (ice thickness), \\
+    C++ class: & \class{PSForceThickness}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+The \texttt{forcing} modifier implements a surface mass balance adjustment
+mechanism which forces ice thickness to a target thickness distribution at the
+end of the run. The idea behind this mechanism is that spinup of ice sheet
+models frequently requires the surface elevation to come close to measured
+values at the end of a run. A simpler alternative to accomplish this, namely
+option \texttt{-no_mass}, represents an unmodeled, frequently large,
+violation of the mass continuity equation.
+
+In more detail, let $H_{\text{tar}}$ be the target thickness. Let $H$ be the
+time-dependent model thickness. Note that a surface model~component described
+in this section produces the $M$ term in the mass continuity equation
+$$\frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q}.$$
+(Other details of this equation do not concern us here.) Option
+\fileopt{force_to_thk} causes $M$ to be modified by a multiple of the
+difference between the target thickness and the current thickness,
+$$\Delta M = \alpha (H_{\text{tar}} - H)$$
+where $\alpha>0$. We are adding mass ($\Delta M>0$) where $H_{\text{tar}} > H$
+and ablating where $H_{\text{tar}} < H$.
+
+Option \fileopt{force_to_thk} identifies the file containing the target ice
+thickness field. A basic run modifying surface model \texttt{given} would
+look like
+\begin{verbatim}
+$ pismr -i foo.nc -surface given,forcing -force_to_thk bar.nc
+\end{verbatim}%$
+
+In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp},
+as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field
+\variable{thk} which will serve as the target thickness. Option
+\intextoption{force_to_thk_alpha} adjusts the value of $\alpha_0$, which has a
+default value specified in the \emph{Source Code Browser}
+\url{\PISMBROWSERURL}.
+
+\subsection{Modifier: Anomalies}
+\label{sec:surface-anomaly}
+\optsection{SB@\surfacemods!\texttt{anomaly}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~...,anomaly} \index[options]{SB@\surfacemods!\texttt{anomaly}} \\
+    NetCDF variables: & \variable{ice_surface_temp_anomaly}, \\
+    &\variable{climatic_mass_balance_anomaly} \mbox{[m/s ice equivalent]}\\
+    C++ class: & \class{PSAnomaly}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier implements a spatially-variable version of \texttt{-surface
+  ...,delta_T} which also applies time-dependent climatic mass balance anomalies.
+
+It takes the following options:
+\begin{itemize}
+\item \fileopt{surface_anomaly_file} specifies a file containing variables
+  \variable{ice_surface_temp_anomaly} and
+  \variable{climatic_mass_balance_anomaly}.
+\item \txtopt{surface_anomaly_period}{years} specifies the period of the
+  forcing data, in model years; section~\ref{sec:periodic-forcing}
+\item \intextoption{surface_anomaly_reference_year} specifies the reference
+  year; section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+See also to \texttt{-atmosphere~...,anomaly}
+(section~\ref{sec:atmosphere-anomaly}), which is similar, but applies anomalies
+at the atmosphere level.
+
+
+\clearpage\newpage
+
+\newcommand{\atmosphere}{Atmosphere components (\texttt{-atmosphere};
+  default: \texttt{given})}
+\section{Atmosphere model~components}
+\label{sec:atmosphere}
+
+\subsection{Reading atmosphere boundary conditions from a file}
+\label{sec:atmosphere-given}
+\optsection{\atmosphere!\texttt{given}}
+\index{One-way coupling to a climate model}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~given} \index[options]{\atmosphere!\texttt{given}} \\
+    NetCDF variables: & \variable{air_temp}, \\
+    &\variable{precipitation} [m/s ice equivalent]\\
+    C++ class: & \class{PAGivenClimate}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\begin{center}
+  \bf This is the default choice.
+\end{center}
+
+Command-line options:
+\begin{itemize}
+\item \fileopt{atmosphere_given_file} prescribes an input file
+\item \txtopt{atmosphere_given_period}{\emph{years}} makes PISM interpret data in
+\texttt{-atmosphere_given_file} as periodic. See section~\ref{sec:periodic-forcing}.
+\item \intextoption{atmosphere_given_reference_year} sets the reference model year;
+  see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+A file \texttt{foo.nc} used with \texttt{-atmosphere given -atmosphere_given_file foo.nc} should contain several records; the \variable{time} variable should describe what model time these records correspond to.
+
+This model~component was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \variable{air_temp} and \variable{precipitation}.
+
+It can also used to drive a temperature-index (PDD) climatic mass balance
+computation (section~\ref{sec:surface-pdd}).
+
+See also section~\ref{sec:surface-given}, which describes a similar surface
+model~component (\texttt{-surface~given}).
+
+\subsection{Cosine yearly cycle}
+\label{sec:cosine-yearly-cycle}
+\optsection{\atmosphere!\texttt{yearly_cycle}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~yearly_cycle}
+    \index[options]{\atmosphere!\texttt{yearly_cycle}} \\
+    NetCDF variables: & \variable{air_temp_mean_annual},\\
+    &\variable{air_temp_mean_july},\\
+    &\variable{precipitation} \mbox{[m/s ice equivalent]}\\
+    &\variable{amplitude_scaling} \\
+    C++ class: & \class{PACosineYearlyCycle}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This atmosphere model~component computes the near-surface air temperature using the following formula:
+\begin{displaymath}
+  T(\mathrm{time}) = T_{\text{mean annual}} + A(\mathrm{time})\cdot(T_{\text{mean July}} - T_{\text{mean annual}}) \cdot \cos(2\pi t),
+\end{displaymath}
+where $t$ is the year fraction ``since last July''; the summer peak of the cycle is on \config{snow_temp_july_day}, which is set to day $196$ by default (approximately July 15).
+
+Here $T_{\text{mean annual}}$ (variable \variable{air_temp_mean_annual}) and $T_{\text{mean July}}$ (variable \variable{air_temp_mean_july}) are read from a file selected using the \intextoption{atmosphere_yearly_cycle_file} command-line option. A time-independent precipitation field (variable \variable{precipitation}) is read from the same file.
+
+Optionally a time-dependent scalar amplitude scaling $A(t)$ can be used. Specify a file to read it from using the  \intextoption{atmosphere_yearly_cycle_scaling_file} command-line option. Without this option $A(\mathrm{time}) \equiv 1$.
+
+\subsection{SeaRISE-Greenland}
+\label{sec:atmosphere-searise-greenland}
+\optsection{\atmosphere!\texttt{searise_greenland}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~searise_greenland} \index[options]{\atmosphere!\texttt{searise_greenland}} \\
+    NetCDF variables: & \variable{lon}, \variable{lat},
+    \variable{precipitation} \mbox{[m/s ice equivalent]}\\
+    C++ class: & \class{PASeariseGreenland}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This atmosphere model~component implements a longitude, latitude, and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in~\cite{Faustoetal2009} and uses a constant in time ice-equivalent precipitation field (in units of thickness per time, variable \variable{precipitation}) that is read from an input (\texttt{-i} or \texttt{-boot_file}) file.
+
+The air temperature parameterization is controlled by configuration parameters with the \texttt{snow_temp_fausto} prefix.
+
+In addition to the temperature parameterization, it allows using the
+SeaRISE-Greenland formula for paleo-precipitation correction from present; a
+7.3\% change of precipitation rate for every one degree Celsius of temperature
+change~\cite{Huybrechts02}.  See
+\url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland}
+for details.  Turn on this mechanism by using the \fileopt{paleo_precip}
+option. The argument of this option is the name of a file containing
+scalar temperature offsets; usually the same file as used with
+\texttt{-atmosphere ...,delta_T}. See section \ref{sec:atmosphere-delta-temp}.
+
+\subsection{EISMINT-Greenland}
+\label{sec:atmosphere-eismint-greenland}
+\optsection{\atmosphere!\texttt{eismint_greenland}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~eismint_greenland} \index[options]{\atmosphere!\texttt{eismint_greenland}} \\
+    NetCDF variables: & \variable{lon}, \variable{lat},
+    \variable{precipitation} \mbox{[m/s ice equivalent]} \\
+    C++ class: & \class{PAEismintGreenland}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This model~component implements the latitude, longitude, and surface elevation-dependent
+near-surface air temperature parameterization described in~\cite{RitzEISMINT}.
+
+The time-independent \variable{precipitation} field is read from an input
+(\texttt{-i} or \texttt{-boot_file}) file.
+
+\subsection{PIK}
+\label{sec:atmosphere-pik}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~pik}
+    \index[options]{\atmosphere!\texttt{pik}}  \\
+    NetCDF variables: & \variable{lat}, \variable{precipitation} \\
+    C++ class: & \class{PAConstantPIK}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This model~component reads a time-independent precipitation field from an input
+(\texttt{-i} or \texttt{-boot_file}) file and computes near-surface air
+temperature using a latitude and surface elevation-dependent formula.
+
+The parameterization is the same as in the \texttt{-surface pik} model,
+section~\ref{sec:surface-pik}.
+
+\newcommand{\atmospheremods}{Atmosphere modifiers (\texttt{-atmosphere})}
+\subsection{Modifier: Scalar temperature offsets}
+\label{sec:atmosphere-delta-temp}
+\optsection{\atmospheremods!\texttt{delta_T}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~...,delta_T} \index[options]{\atmospheremods!\texttt{delta_T}} \\
+    NetCDF variables: & \variable{delta_T} \\
+    C++ class: & \class{PA_delta_T}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier applies scalar time-dependent air temperature offsets to the
+output of an atmosphere model. It takes the following command-line options.
+\begin{itemize}
+\item \fileopt{atmosphere_delta_T_file} sets the name of the
+file PISM will read \variable{delta_T} from.
+\item \txtopt{atmosphere_delta_T_period}{\emph{years}} sets the period of the
+  forcing data (section~\ref{sec:periodic-forcing})
+\item \intextoption{atmosphere_delta_T_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
+\end{itemize}
+
+Please make sure that \variable{delta_T} has the units of
+``\texttt{Kelvin}''.
+
+\subsection{Modifier: Scalar precipitation offsets}
+\label{sec:atmosphere-delta-precip}
+\optsection{\atmospheremods!\texttt{delta_P}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~...,delta_P} \index[options]{\atmospheremods!\texttt{delta_P}} \\
+    NetCDF variables: & \variable{delta_P} \mbox{[m/s ice equivalent]}\\
+    C++ class: & \class{PA_delta_P}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier applies scalar time-dependent precipitation  offsets to the
+output of an atmosphere model. It takes the following command-line options.
+\begin{itemize}
+\item \fileopt{atmosphere_delta_P_file} sets the name of the
+file PISM will read \variable{delta_P} from.
+\item \txtopt{atmosphere_delta_P_period}{\emph{years}} sets the period of the
+  forcing data (section~\ref{sec:periodic-forcing})
+\item \intextoption{atmosphere_delta_P_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
+\end{itemize}
+
+\subsection{Modifier: Lapse rate corrections}
+\label{sec:atmosphere-lapse-rates}
+\optsection{\atmospheremods!\texttt{lapse_rate}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~...,lapse_rate} \index[options]{\atmospheremods!\texttt{lapse_rate}} \\
+    NetCDF variables: & \variable{surface_altitude} (CF standard name) \\
+    C++ class: & \class{PALapseRates}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+The \texttt{lapse_rate} modifier allows for correcting air temperature and
+precipitation using elevation lapse rates. It uses the following options.
+
+\begin{itemize}
+\item \intextoption{temp_lapse_rate} gives the temperature lapse rate, in
+  $K/km$. Note that we use the following definition of the temperature lapse
+  rate:
+  \begin{displaymath}
+    \gamma = -\frac{dT}{dz}.
+  \end{displaymath}
+\item \intextoption{precip_lapse_rate} gives the precipitation lapse rate, in
+  $m/year/km$. Here $\gamma = -\frac{dM}{dz}$.
+\item \fileopt{atmosphere_lapse_rate_file} specifies a file containing the
+  reference surface elevation field (standard name:
+  \variable{surface_altitude}). This file may contain several surface elevation
+  records to use lapse rate corrections relative to a time-dependent surface.
+  If one record is provided, the reference surface elevation is assumed to be
+  time-independent.
+\item \intextoption{atmosphere_lapse_rate_period} gives the period, in model
+  years; see section~\ref{sec:periodic-forcing}
+\item \intextoption{atmosphere_lapse_rate_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+\subsection{Modifier: Anomalies}
+\label{sec:atmosphere-anomaly}
+\optsection{\atmospheremods!\texttt{anomaly}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~...,anomaly} \index[options]{\atmospheremods!\texttt{anomaly}} \\
+    NetCDF variables: & \variable{air_temp_anomaly}, \\
+    &\variable{precipitation_anomaly} [m/s ice equivalent]\\
+    C++ class: & \class{PAAnomaly}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier implements a spatially-variable version of
+\texttt{-atmosphere~...,delta_T,delta_P}.
+
+It takes the following options:
+\begin{itemize}
+\item \fileopt{atmosphere_anomaly_file} specifies a file containing variables
+  \variable{air_temp_anomaly} and
+  \variable{precipitation_anomaly}.
+\item \txtopt{atmosphere_anomaly_period}{years} specifies the period of the
+  forcing data, in model years; section~\ref{sec:periodic-forcing}
+\item \intextoption{atmosphere_anomaly_reference_year} specifies the reference
+  year; section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+See also to \texttt{-surface~...,anomaly}
+(section~\ref{sec:surface-anomaly}), which is similar, but applies anomalies
+at the surface level.
+
+
+\clearpage\newpage
+
+\newcommand{\ocean}{Ocean components (\texttt{-ocean}; default: \texttt{constant})}
+\section{Ocean model~components}
+\label{sec:pism-ocean-models}
+
+PISM Ocean model~components provide sub-shelf ice temperature (\variable{shelfbtemp}) and sub-shelf mass flux (\variable{shelfbmassflux}) to the ice dynamics core.
+
+The sub-shelf ice temperature is used as a Dirichlet boundary condition in the energy conservation code. The sub-shelf mass flux is used as a source in the mass-continuity (transport) equation. Positive flux corresponds to ice loss; in other words, this sub-shelf mass flux is a ``melt rate''.
+
+\subsection{Constant in time and space}
+\label{sec:ocean-constant}
+\optsection{OA@\ocean!\texttt{constant}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~constant} \index[options]{OA@\ocean!\texttt{constant}} \\
+    NetCDF variables: & none \\
+    C++ class: & \class{POConstant}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\begin{center}
+  \bf This is the default choice..
+\end{center}
+
+This ocean model~component implements boundary conditions at the ice/ocean interface that are constant \textbf{both} in space and time.
+
+The sub-shelf ice temperature is set to pressure melting and the sub-shelf melt rate is assumed to be proportional to the heat flux from the ocean into the ice (configuration parameter\\ \texttt{ocean_sub_shelf_heat_flux_into_ice}).
+
+Alternatively, the sub-shelf melt rate in meters per year can be set using the \intextoption{shelf_base_melt_rate} command-line option.
+
+\subsection{Reading forcing data from a file}
+\label{sec:ocean-given}
+\optsection{OA@\ocean!\texttt{given}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~given}
+    \index[options]{OA@\ocean!\texttt{given}} \\
+    NetCDF variables: & \variable{shelfbtemp}, \variable{shelfbmassflux}\\
+    C++ class: & \class{POGivenClimate}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This ocean model~component reads sub-shelf ice temperature \variable{shelfbtemp} and the sub-shelf mass flux \variable{shelfbmassflux} from a file. It takes the following command-line options.
+\begin{itemize}
+\item \fileopt{ocean_given_file}: sets the name of the file to read forcing data from. The file may contain several records. If only one record is provided it is interpreted as time-independent.
+\item \intextoption{ocean_given_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
+\item \intextoption{ocean_given_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+Variables \variable{shelfbtemp} and \variable{shelfbmassflux} may be
+time-dependent. (The \texttt{-ocean given} component is very similar to
+\texttt{-surface~given} and \texttt{-atmosphere~given}.)
+
+\subsection{PIK}
+\label{sec:ocean-pik}
+\optsection{OA@\ocean!\texttt{pik}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~pik} \index[options]{OA@\ocean!\texttt{pik}} \\
+    NetCDF variables: & none \\
+    C++ class: & \class{POConstantPIK}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This ocean model~component implements the ocean forcing setup used in~\cite{Martinetal2011}. The sub-shelf ice temperature is set to pressure-melting; the sub-shelf mass flux computation follows~\cite{BeckmannGoosse2003}.
+
+It takes one command-line option:
+\begin{itemize}
+\item \intextoption{meltfactor_pik}: a melt factor $F_{\mathrm{melt}}$ in sub-shelf-melting parameterization, see equation~(5) in~\cite{Martinetal2011}.
+\end{itemize}
+
+\newcommand{\oceanmods}{Ocean modifiers}
+\subsection{Modifier: Scalar sea level offsets}
+\label{sec:delta-sea-level}
+\optsection{OB@\oceanmods!\texttt{delta_SL}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~...,delta_SL} \index[options]{OB@\oceanmods!\texttt{delta_SL}} \\
+    NetCDF variables: & \variable{delta_SL} [meters]\\
+    C++ class: & \class{PO_delta_SL}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+The \texttt{delta_SL} modifier implements sea level forcing using scalar offsets.
+
+It takes the following command-line options:
+\begin{itemize}
+\item \fileopt{ocean_delta_SL_file}: specifies the name of the file containing
+  forcing data. This file has to contain the \variable{delta_SL} variable using
+  units ``meters'' or equivalent.
+\item \intextoption{ocean_delta_SL_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
+\item \intextoption{ocean_delta_SL_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+\subsection{Modifier: Scalar sub-shelf temperature offsets}
+\label{sec:delta-subshelf-temp}
+\optsection{OB@\oceanmods!\texttt{delta_T}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~...,delta_T} \index[options]{OB@\oceanmods!\texttt{delta_T}} \\
+    NetCDF variables: & \variable{delta_T} [Kelvin]\\
+    C++ class: & \class{PO_delta_T}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier implements forcing using sub-shelf ice temperature offsets.
+
+It takes the following command-line options:
+\begin{itemize}
+\item \fileopt{ocean_delta_T_file}: specifies the name of the file containing
+  forcing data. This file has to contain the \variable{delta_T} variable using
+  units of ``Kelvin'' or equivalent.
+\item \intextoption{ocean_delta_T_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
+\item \intextoption{ocean_delta_T_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+\subsection{Modifier: Scalar sub-shelf mass flux offsets}
+\label{sec:delta-subshelf-smb}
+\optsection{OB@\oceanmods!\texttt{delta_SMB}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~...,delta_SMB} \index[options]{OB@\oceanmods!\texttt{delta_SMB}} \\
+    NetCDF variables: & \variable{delta_SMB} \\
+    C++ class: & \class{POdSBMFforcing}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier implements forcing using sub-shelf mass flux (melt rate) offsets.
+
+It takes the following command-line options:
+\begin{itemize}
+\item \fileopt{ocean_delta_SMB_file}: specifies the name of the file containing forcing data. This file has to contain the \variable{delta_SMB} variable using units of ice-equivalent thickness per time.
+\item \intextoption{ocean_delta_SMB_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
+\item \intextoption{ocean_delta_SMB_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+% The End
+
+% References and indices
+\clearpage\newpage
+\bibliography{ice-bib}
+\bibliographystyle{siam}
+
+\phantomsection
+\addcontentsline{toc}{section}{General Index}
+\label{sec:index}
+{\small \printindex }
+
+\phantomsection
+\addcontentsline{toc}{section}{Command-line options}
+{\small \printindex[options]}
+
+\end{document}
+
+% LocalWords: pclimate

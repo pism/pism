@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,8 +30,8 @@ public:
   PSGivenClimate(IceGrid &g, const NCConfigVariable &conf)
     : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, NULL)
   {
-    temp_name = "artm";
-    mass_flux_name = "acab";
+    temp_name = "ice_surface_temp";
+    mass_flux_name = "climatic_mass_balance";
     option_prefix = "-surface_given";
   }
   virtual ~PSGivenClimate() {}

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,8 +26,8 @@
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!
 Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.
-Then sets \c CFLmaxdt, the maximum time step allowed under the 
-Courant-Friedrichs-Lewy (CFL) condition on the 
+Then sets \c CFLmaxdt, the maximum time step allowed under the
+Courant-Friedrichs-Lewy (CFL) condition on the
 horizontal advection scheme for age and for temperature.
 
 Under BOMBPROOF there is no CFL condition for the vertical advection.
@@ -41,35 +41,41 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
 
   IceModelVec3 *u3, *v3, *w3;
 
+  MaskQuery mask(vMask);
+
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
   ierr = w3->begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   // update global max of abs of velocities for CFL; only velocities under surface
   PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt      ks = grid.kBelowHeight(vH(i,j));
-      ierr = u3->getInternalColumn(i,j,&u); CHKERRQ(ierr);
-      ierr = v3->getInternalColumn(i,j,&v); CHKERRQ(ierr);
-      ierr = w3->getInternalColumn(i,j,&w); CHKERRQ(ierr);
-      for (PetscInt k=0; k<ks; ++k) {
-        const PetscScalar absu = PetscAbs(u[k]),
-                          absv = PetscAbs(v[k]);
-        maxu = PetscMax(maxu,absu);
-        maxv = PetscMax(maxv,absv);
-        // make sure the denominator below is positive:
-        PetscScalar tempdenom = (0.001/secpera) / (grid.dx + grid.dy);
-        tempdenom += PetscAbs(absu/grid.dx) + PetscAbs(absv/grid.dy);
-        locCFLmaxdt = PetscMin(locCFLmaxdt,1.0 / tempdenom); 
-        maxw = PetscMax(maxw, PetscAbs(w[k]));
+  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+      if (mask.icy(i, j)) {
+        const PetscInt ks = grid.kBelowHeight(vH(i, j));
+        ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
+        ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
+        ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
+        for (PetscInt k = 0; k <= ks; ++k) {
+          const PetscScalar absu = PetscAbs(u[k]),
+            absv = PetscAbs(v[k]);
+          maxu = PetscMax(maxu, absu);
+          maxv = PetscMax(maxv, absv);
+          // make sure the denominator below is positive:
+          PetscScalar tempdenom = (0.001 / secpera) / (grid.dx + grid.dy);
+          tempdenom += PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
+          locCFLmaxdt = PetscMin(locCFLmaxdt, 1.0 / tempdenom);
+          maxw = PetscMax(maxw, PetscAbs(w[k]));
+        }
       }
     }
   }
 
+  ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = u3->end_access(); CHKERRQ(ierr);
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = w3->end_access(); CHKERRQ(ierr);
@@ -101,7 +107,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   MaskQuery mask(vMask);
 
   IceModelVec2V *vel_advective;
-  ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr); 
+  ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr);
 
   ierr = vel_advective->get_array(vel); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -132,16 +138,16 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   PetscErrorCode ierr;
 
   bool do_skip = config.get_flag("do_skip");
-  
+
   const PetscScalar adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
 
   const PetscInt skip_max = static_cast<PetscInt>(config.get("skip_max"));
 
   const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
 
-  ierr = stress_balance->get_max_diffusivity(gDmax); CHKERRQ(ierr); 
+  ierr = stress_balance->get_max_diffusivity(gDmax); CHKERRQ(ierr);
 
-  const PetscScalar  
+  const PetscScalar
           gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
   dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
@@ -162,10 +168,10 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 
 
 //! Use various stability criteria to determine the time step for an evolution run.
-/*! 
+/*!
 The main loop in run() approximates many physical processes.  Several of these approximations,
 including the mass continuity and temperature equations in particular, involve stability
-criteria.  This procedure builds the length of the next time step by using these criteria and 
+criteria.  This procedure builds the length of the next time step by using these criteria and
 by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived classes.
  */
 PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
@@ -236,9 +242,9 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       adaptReasonFlag = 'e';
     }
     if ((adaptReasonFlag == 'm') || (adaptReasonFlag == 't') || (adaptReasonFlag == 'e')) {
-      if (skipCountDown > 1) skipCountDown = 1; 
+      if (skipCountDown > 1) skipCountDown = 1;
     }
-  }    
+  }
   return 0;
 }
 

@@ -436,6 +436,13 @@ protected:
   PetscReal last_report_time;
 };
 
+//! \brief Reports the maximum horizontal absolute velocity component over the grid.
+class IceModel_max_hor_vel : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_max_hor_vel(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
 
 
 #endif  /* _ICEMODEL_DIAGNOSTICS_H_ */

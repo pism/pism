@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -92,6 +92,21 @@ public:
   using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
                                 bool fast);
+  virtual void add_vars_to_output(string /*keyword*/,
+                                  map<string,NCSpatialVariable> &/*result*/)
+  { }
+
+  //! Defines requested couplings fields to file and/or asks an attached
+  //! model to do so.
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+                                          PISM_IO_Type /*nctype*/)
+  { return 0; }
+
+  //! Writes requested couplings fields to file and/or asks an attached
+  //! model to do so.
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
+  { return 0; }
+
 protected:
   PetscErrorCode compute_sigma(IceModelVec2S *D2_input, IceModelVec3 &result);
   IceModelVec3 *enthalpy;

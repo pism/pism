@@ -48,9 +48,9 @@ metadata:
 \li IceModelVec2S -- scalar 2D fields
 \li IceModelVec2V -- vector 2D fields (such as horizontal velocities;
 corresponds to 2 NetCDF variables)
-\li IceModelVec2Mask -- 2D masks, such as the grounded/floating mask
+\li IceModelVec2Int -- 2D masks, such as the grounded/floating mask
+\li IceModelVec2T -- 2D time-dependent fields (used to read and store forcing data)
 \li IceModelVec3 -- scalar 3D fields (within the ice)
-\li IceModelVec3Bedrock -- scalar 3D fields within the bedrock thermal layer
 
 Please see the documentation of these classes for more info.  The base class
 IceModelVec is a virtual class, so code should use the above derived classes.
@@ -196,22 +196,22 @@ The following snippet from PAForcing::init() illustrates creating a Timeseries
 object and reading data from a file.
 
 \code
-    dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
-    ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
-    ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
-    ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");
-             CHKERRQ(ierr);
+    delta_T = new Timeseries(grid.com, grid.rank, "delta_T", "t");
+    ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
+    ierr = delta_T->set_dimension_units("years", ""); CHKERRQ(ierr);
+    ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
+    CHKERRQ(ierr);
 
     ierr = verbPrintf(2, grid.com, 
 		      "  reading delta T data from forcing file %s...\n", dT_file);
 		      CHKERRQ(ierr);
 	 
-    ierr = dTforcing->read(dT_file); CHKERRQ(ierr);
+    ierr = delta_T->read(dT_file); CHKERRQ(ierr);
 \endcode
 
 Call
 \code
-double offset = (*dTforcing)(time);
+double offset = (*delta_T)(time);
 \endcode
 to get the value corresponding to the time "time", in this case in years. The
 value returned will be computed using linear interpolation.

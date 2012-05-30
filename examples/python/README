@@ -20,15 +20,6 @@ example should work:
   $ cd examples/python/ssa_tests/
   $ ./ssa_testj.py
 
-To run the pross.py example, go to the main EISMINT-Ross example and preprocess,
-then link (or copy) to get that in the current directory:
-  $ cd examples/eisross/
-  $ ./quickstart.sh          # generates ross.nc and riggs.nc needed by pross.py
-  $ cd ../python/
-  $ ln -s ../eisross/ross.nc
-  $ ln -s ../eisross/riggs.nc
-  $ ./pross.py -boot_file ross.nc -Mx 147 -My 147 -riggs riggs.nc
-
 Of course you can run these inside python:
   $ python      # or ipython or 'ipython -pylab'
   $ run pross -boot_file ross.nc -Mx 147 -My 147 -riggs riggs.nc  # FIXME:  not sure these options are handled correctly ... try changing them ... or do you have a different usage mode?

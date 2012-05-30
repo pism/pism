@@ -47,6 +47,11 @@ void NCVariable::init(string name, MPI_Comm c, PetscMPIInt r) {
   rank = r;
 }
 
+int NCVariable::get_ndims() const {
+  return ndims;
+}
+
+
 //! \brief Read attributes from a file.
 PetscErrorCode NCVariable::read_attributes(string filename) {
   PetscErrorCode ierr;
@@ -216,8 +221,12 @@ void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_level
   zlevels = z_levels;
 
   dimensions["t"] = grid->config.get_string("time_dimension_name");
-  if (nlevels > 1)
+  if (nlevels > 1) {
     dimensions["z"] = "z";      // default; can be overridden easily
+    ndims = 3;
+  } else {
+    ndims = 2;
+  }
 
   variable_order = grid->config.get_string("output_variable_order");
 }
@@ -355,24 +364,28 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
       PISMEnd();
     }
 
+    string spacer(short_name.size(), ' ');
+
     if (set_default_value) {	// if it's not and we have a default value, set it
       double slope, intercept, tmp;
       utConvert(&units, &glaciological_units, &slope, &intercept);
       tmp = intercept + slope*default_value;
 
       ierr = verbPrintf(2, com, 
-			"  absent %-10s/ %-10s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
+			"  absent %s / %-10s\n"
+                        "         %s \\ not found; using default constant %7.2f (%s)\n",
 			short_name.c_str(),
 			strings["long_name"].c_str(),
-			"", tmp,
+			spacer.c_str(), tmp,
 			strings["glaciological_units"].c_str());
       CHKERRQ(ierr);
       ierr = VecSet(v, default_value); CHKERRQ(ierr);
     } else {			// otherwise leave it alone
       ierr = verbPrintf(2, com, 
-			"  absent %-10s/ %-10s\n   %-16s\\ not found; continuing without setting it\n",
+			"  absent %s / %-10s\n"
+                        "         %s \\ not found; continuing without setting it\n",
 			short_name.c_str(),
-			strings["long_name"].c_str(), "");
+			strings["long_name"].c_str(), spacer.c_str());
       CHKERRQ(ierr);
     }
   } else {			// the variable was found successfully
@@ -630,28 +643,33 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   min = min * slope + intercept;
   max = max * slope + intercept;
 
+  string spacer(short_name.size(), ' ');
+
   if (has("standard_name")) {
 
     if (found_by_standard_name) {
       ierr = verbPrintf(2, com, 
-			" %-10s/ standard_name=%-10s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+			" %s / standard_name=%-10s\n"
+                        "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 			short_name.c_str(),
-			strings["standard_name"].c_str(), "", min, max,
+			strings["standard_name"].c_str(), spacer.c_str(), min, max,
 			strings["glaciological_units"].c_str()); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2, com, 
-			" %-10s/ WARNING! standard_name=%s is missing, found by short_name\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+			" %s / WARNING! standard_name=%s is missing, found by short_name\n"
+                        "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 			short_name.c_str(),
-			strings["standard_name"].c_str(), "", min, max,
+			strings["standard_name"].c_str(), spacer.c_str(), min, max,
 			strings["glaciological_units"].c_str()); CHKERRQ(ierr);
     }
 
   } else {
 
     ierr = verbPrintf(2, com, 
-		      " %-10s/ %-10s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+		      " %s / %-10s\n"
+                      "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 		      short_name.c_str(),
-		      strings["long_name"].c_str(), "", min, max,
+		      strings["long_name"].c_str(), spacer.c_str(), min, max,
 		      strings["glaciological_units"].c_str()); CHKERRQ(ierr);
   }
 
@@ -678,7 +696,7 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
       ierr = verbPrintf(2, com,
 			"PISM WARNING: some values of '%s' are outside the valid range [%f, %f] (%s)\n",
 			short_name.c_str(), valid_min, valid_max, units_string.c_str()); CHKERRQ(ierr);
-    
+
   } else if (has("valid_min")) {
     double valid_min = get("valid_min");
     if (min < valid_min) {
@@ -686,7 +704,7 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
 			"PISM WARNING: some values of '%s' are less than the valid minimum %f (%s)\n",
 			short_name.c_str(), valid_min, units_string.c_str()); CHKERRQ(ierr);
     }
-    
+
   } else if (has("valid_max")) {
     double valid_max = get("valid_max");
     if (max > valid_max) {
@@ -804,6 +822,8 @@ PetscErrorCode NCVariable::reset() {
 
   utClear(&units);
   utClear(&glaciological_units);
+
+  ndims = 0;
 
   return 0;
 }
@@ -1224,6 +1244,7 @@ void NCConfigVariable::update_from(const NCConfigVariable &other) {
 void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(n, c, r);
   dimension_name = dim_name;
+  ndims = 1;
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
@@ -1338,10 +1359,13 @@ PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
   min = min * slope + intercept;
   max = max * slope + intercept;
 
+  string spacer(short_name.size(), ' ');
+
   ierr = verbPrintf(2, com, 
-		    "  FOUND  %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+		    "  FOUND  %s / %-60s\n"
+                    "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 		    short_name.c_str(),
-		    strings["long_name"].c_str(), "", min, max,
+		    strings["long_name"].c_str(), spacer.c_str(), min, max,
 		    strings["glaciological_units"].c_str()); CHKERRQ(ierr);
 
   return 0;
@@ -1567,6 +1591,7 @@ void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIIn
   NCVariable::init(var_name, c, r);
   dimension_name = dim_name;
   bounds_name = "nv";           // number of vertices
+  ndims = 2;
 }
 
 PetscErrorCode NCTimeBounds::read(string filename, bool use_reference_date,

@@ -84,16 +84,14 @@ public:
     return 0;
   }
 
-  virtual void add_vars_to_output(string keyword, set<string> &result)
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
   {
-    if (keyword != "small") {
-      result.insert(temp_name);
-      result.insert(mass_flux_name);
-    }
-
     if (Model::input_model != NULL) {
       Model::input_model->add_vars_to_output(keyword, result);
     }
+
+    result[temp_name] = temp.get_metadata();
+    result[mass_flux_name] = mass_flux.get_metadata();
   }
 
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype)
@@ -144,7 +142,6 @@ protected:
 
   PetscReal bc_period,          // in seconds
     bc_reference_time;          // in seconds
-  bool enable_time_averaging;
 
   PetscErrorCode process_options()
   {
@@ -154,7 +151,6 @@ protected:
     PetscReal bc_period_years = 0,
       bc_reference_year = 0;
 
-    enable_time_averaging = false;
     bc_period = 0;
     bc_reference_time = 0;
 
@@ -169,15 +165,23 @@ protected:
       ierr = PISMOptionsReal(option_prefix + "_reference_year",
                              "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
-      ierr = PISMOptionsIsSet(option_prefix + "_time_average",
-                              "Enable time-averaging of boundary condition data",
-                              enable_time_averaging); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option %s_file is required.\n", option_prefix.c_str());
-      PISMEnd();
+      // find PISM input file to read data from:
+      bool regrid; int start;   // will be ignored
+      ierr = Model::find_pism_input(filename, regrid, start); CHKERRQ(ierr);
+
+      ierr = verbPrintf(2, Model::grid.com,
+                        "  - Option %s_file is not set. Trying the input file '%s'...\n",
+                        option_prefix.c_str(), filename.c_str());
+      CHKERRQ(ierr);
+
+    } else {
+      ierr = verbPrintf(2, Model::grid.com,
+                        "  - Reading boundary conditions from '%s'...\n",
+                        filename.c_str()); CHKERRQ(ierr);
     }
 
     if (bc_ref_year_set) {

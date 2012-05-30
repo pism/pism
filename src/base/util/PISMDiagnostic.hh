@@ -76,11 +76,11 @@ public:
   virtual int get_nvars() { return dof; }
 
   //! Get a pointer to a metadata object corresponding to variable number N.
-  virtual NCSpatialVariable* get_metadata(int N = 0)
+  virtual NCSpatialVariable get_metadata(int N = 0)
   {
-    if (N >= dof) return NULL;
+    if (N >= dof) return NCSpatialVariable();
 
-    return &(vars[N]);
+    return vars[N];
   }
 
   //! Define NetCDF variables corresponding to a diagnostic quantity.
@@ -174,6 +174,11 @@ public:
       return ts->init(filename);
     return 0;
   }
+
+  virtual string get_string(string name) {
+    return ts->get_string(name);
+  }
+
 protected:
   PISMVars &variables;          //!< dictionary of variables
   IceGrid &grid;                //!< the grid

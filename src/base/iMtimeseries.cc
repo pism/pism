@@ -52,7 +52,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
   if (ts_file_set ^ ts_times_set) {
     ierr = PetscPrintf(grid.com,
-      "PISM ERROR: you need to specity both -ts_file and -ts_times to save"
+      "PISM ERROR: you need to specity both -ts_file and -ts_times to save "
       "diagnostic time-series.\n");
     CHKERRQ(ierr);
     PISMEnd();
@@ -94,15 +94,12 @@ PetscErrorCode IceModel::init_timeseries() {
       ts_vars.insert(var_name);
 
   } else {
-    var_name = config.get_string("ts_default_variables");
-    istringstream arg(var_name);
-
-    while (getline(arg, var_name, ' ')) {
-      if (!var_name.empty()) // this ignores multiple spaces separating variable names
-	ts_vars.insert(var_name);
+    map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+    while (j != ts_diagnostics.end()) {
+      ts_vars.insert(j->first);
+      ++j;
     }
   }
-
 
   PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
   ierr = nc.open(ts_filename, PISM_WRITE, append); CHKERRQ(ierr);
@@ -184,7 +181,7 @@ PetscErrorCode IceModel::write_timeseries() {
 //! Initialize the code saving spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::init_extras() {
   PetscErrorCode ierr;
-  bool split, times_set, file_set, save_vars;
+  bool split, extra_times_set, extra_file_set, extra_vars_set;
   string times, vars;
 
   last_extra = 0;               // will be set in write_extras()
@@ -193,26 +190,26 @@ PetscErrorCode IceModel::init_extras() {
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling 2D and 3D diagnostic output", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsString("-extra_file", "Specifies the output file",
-			     extra_filename, file_set); CHKERRQ(ierr);
+			     extra_filename, extra_file_set); CHKERRQ(ierr);
 
     ierr = PISMOptionsString("-extra_times", "Specifies times to save at",
-			     times, times_set); CHKERRQ(ierr);
+			     times, extra_times_set); CHKERRQ(ierr);
 
     ierr = PISMOptionsString("-extra_vars", "Spacifies a comma-separated list of variables to save",
-			     vars, save_vars); CHKERRQ(ierr);
+			     vars, extra_vars_set); CHKERRQ(ierr);
 
     ierr = PISMOptionsIsSet("-extra_split", "Specifies whether to save to separate files",
 			    split); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  if (file_set ^ times_set) {
+  if (extra_file_set ^ extra_times_set) {
     PetscPrintf(grid.com,
       "PISM ERROR: you need to specify both -extra_file and -extra_times to save spatial time-series.\n");
     PISMEnd();
   }
 
-  if (!file_set && !times_set) {
+  if (!extra_file_set && !extra_times_set) {
     save_extra = false;
     return 0;
   }
@@ -257,7 +254,7 @@ PetscErrorCode IceModel::init_extras() {
   }
 
   string var_name;
-  if (save_vars) {
+  if (extra_vars_set) {
     ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
     istringstream arg(vars);
 
@@ -283,8 +280,15 @@ PetscErrorCode IceModel::init_extras() {
       i++;
     }
 
+    map<string,NCSpatialVariable> list;
     if (stress_balance)
-      stress_balance->add_vars_to_output("small", extra_vars);
+      stress_balance->add_vars_to_output("small", list);
+
+    map<string,NCSpatialVariable>::iterator j = list.begin();
+    while(j != list.end()) {
+      extra_vars.insert(j->first);
+      ++j;
+    }
 
   }
 
@@ -299,7 +303,7 @@ PetscErrorCode IceModel::init_extras() {
   timestamp.init("timestamp", config.get_string("time_dimension_name"),
                  grid.com, grid.rank);
   timestamp.set_units("hours");
-  timestamp.set_string("long_name", "time since the beginning of the run");
+  timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
 
   return 0;
 }

@@ -315,9 +315,10 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
 
 PetscErrorCode IceModel::write_model_state(string filename) {
   PetscErrorCode ierr;
+  string o_size = get_output_size("-o_size");
 
   // only write out these extra diagnostics if decently big
-  if (get_output_size("-o_size") != "small") {
+  if (o_size == "medium" || o_size == "big") {
     bool write_temp_pa, write_liqfrac;
     ierr = PISMOptionsIsSet("-temp_pa", write_temp_pa); CHKERRQ(ierr);
     if (write_temp_pa || (!config.get_flag("do_cold_ice_methods"))) {
@@ -534,7 +535,12 @@ PetscErrorCode IceModel::initFromFile(string filename) {
     // Return if no regridding is requested:
     if (!regrid_file_set) return 0;
 
-    ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
+    if (dimensions != 0) {
+      ierr = verbPrintf(2, grid.com, "regridding %dD variables from file %s ...\n",
+                        dimensions, filename.c_str()); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
+    }
 
     set<string> vars;
     vector<string>::iterator j;

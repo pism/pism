@@ -36,6 +36,9 @@ POConstant::POConstant(IceGrid &g, const NCConfigVariable &conf)
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
+
+  mymeltrate = 0.0;
+  meltrate_set = false;
 }
 
 PetscErrorCode POConstant::init(PISMVars &vars) {
@@ -49,12 +52,15 @@ PetscErrorCode POConstant::init(PISMVars &vars) {
 
   ierr = PISMOptionsReal("-shelf_base_melt_rate",
                           "Specifies a sub shelf ice-equivalent melt rate in meters/year",
-			  mymeltrate,meltrate_set); CHKERRQ(ierr);
+			  mymeltrate, meltrate_set); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (meltrate_set) {
-    ierr = verbPrintf(2, grid.com,"    - option '-shelf_base_melt_rate' seen, setting basal sub shelf basal melt rate to %.2f m/year ... \n",mymeltrate); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com,
+                      "    - option '-shelf_base_melt_rate' seen, "
+                      "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
+                      mymeltrate); CHKERRQ(ierr);
   }
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
@@ -115,11 +121,9 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-void POConstant::add_vars_to_output(string keyword, set<string> &result) {
-  if (keyword != "small") {
-    result.insert("shelfbtemp");
-    result.insert("shelfbmassflux");
-  }
+void POConstant::add_vars_to_output(string, map<string,NCSpatialVariable> &result) {
+  result["shelfbtemp"] = shelfbtemp;
+  result["shelfbmassflux"] = shelfbmassflux;
 }
 
 PetscErrorCode POConstant::define_variables(set<string> vars, const PIO &nc,

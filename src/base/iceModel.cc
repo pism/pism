@@ -79,7 +79,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   // frequently used physical constants and parameters:
   standard_gravity = config.get("standard_gravity");
 
-  global_attributes.set_string("Conventions", "CF-1.4");
+  global_attributes.set_string("Conventions", "CF-1.5");
   global_attributes.set_string("source", string("PISM ") + PISM_Revision);
 
   // Do not save snapshots by default:
@@ -426,7 +426,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // fields owned by IceModel but filled by PISMSurfaceModel *surface:
   // mean annual net ice equivalent surface mass balance rate
-  ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
+  ierr = acab.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
   ierr = acab.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "ice-equivalent surface mass balance (accumulation/ablation) rate",
@@ -447,7 +447,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
-  ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);
+  ierr = artm.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
   ierr = artm.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "annual average ice surface temperature, below firn processes",
@@ -726,16 +726,19 @@ PetscErrorCode IceModel::run() {
 
   // do a one-step diagnostic run:
   ierr = verbPrintf(2,grid.com,
-      "doing preliminary step of 1 s to fill diagnostic quantities ...\n"); CHKERRQ(ierr);
+      "doing preliminary step of 1 s (one model second) to fill diagnostic quantities ...\n");
+      CHKERRQ(ierr);
 
   // set verbosity to 1 to suppress reporting
-  PetscInt tmp_verbosity = getVerbosityLevel(); 
-  ierr = setVerbosityLevel(1); CHKERRQ(ierr);
+  PetscInt tmp_verbosity = getVerbosityLevel();
+  // if user says '-verbose 3' or higher, some feedback during prelim step
+  ierr = setVerbosityLevel(tmp_verbosity > 2 ? 2 : 1); CHKERRQ(ierr);
 
   dt_force = -1.0;
   maxdt_temporary = -1.0;
   skipCountDown = 0;
-  dt_TempAge = 0.0;
+  t_TempAge = grid.time->start();
+  dt_TempAge = 1.0;             // one second (for the preliminary step)
   dt = 0.0;
   PetscReal run_end = grid.time->end();
 
@@ -760,6 +763,7 @@ PetscErrorCode IceModel::run() {
   global_attributes.set_string("history", "");
   grid.time->set(grid.time->start());
   t_TempAge = grid.time->start();
+  dt_TempAge = 0.0;
   grid.time->set_end(run_end);
   ierr = model_state_setup(); CHKERRQ(ierr);
 

@@ -4,7 +4,7 @@
 
 # PISM SeaRISE Greenland experiments
 
-# Before using this script, run preprocess.sh and then initialization.sh
+# Before using this script, run preprocess.sh and then spinup.sh
 # recommended way to run with N processors is
 #    "./experiments.sh N foo.nc >& out.experiments &"
 # to initialize from spinup result foo.nc

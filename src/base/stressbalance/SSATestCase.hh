@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2012 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -75,7 +75,7 @@ public:
 
   virtual PetscErrorCode run();
 
-  virtual PetscErrorCode report();
+  virtual PetscErrorCode report(string testname);
 
   virtual PetscErrorCode write(const string &filename);
 
@@ -98,6 +98,13 @@ protected:
   virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
     PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
 
+  PetscErrorCode report_netcdf(string testname,
+                               double max_vector,
+                               double rel_vector,
+                               double max_u,
+                               double max_v,
+                               double avg_u,
+                               double avg_v);
   NCConfigVariable &config;
   IceGrid grid;
 

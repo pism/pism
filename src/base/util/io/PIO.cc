@@ -485,6 +485,7 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units,
     return 0;
   }
 
+  int n = (int)units_string.find("since");
   if (use_reference_date == false) {
     /*!
       \note This code finds the string "since" in the units_string and
@@ -492,8 +493,11 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units,
       This is done to ignore the reference date in the time units string (the
       reference date specification always starts with this word).
     */
-    int n = (int)units_string.find("since");
     if (n != -1) units_string.resize(n);
+  } else if (n == -1) {
+    ierr = PetscPrintf(com, "PISM ERROR: units specification '%s' does not contain a reference date (processing variable '%s').\n",
+                       units_string.c_str(), name.c_str());
+    PISMEnd();
   }
 
   ierr = utScan(units_string.c_str(), &units);
@@ -758,8 +762,28 @@ PetscErrorCode PIO::get_att_double(string var_name, string att_name,
                                    vector<double> &result) const {
 
   PetscErrorCode ierr;
+  PISM_IO_Type att_type;
+  // virtual int inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const = 0;
 
-  ierr = nc->get_att_double(var_name, att_name, result); CHKERRQ(ierr);
+  ierr = nc->inq_atttype(var_name, att_name, att_type); CHKERRQ(ierr);
+
+  // Give an understandable error message if a string attribute was found when
+  // a number (or a list of numbers) was expected. (We've seen datasets with
+  // "valid_min" stored as a string...)
+  if (att_type == PISM_CHAR) {
+    string tmp;
+    ierr = nc->get_att_text(var_name, att_name, tmp); CHKERRQ(ierr);
+
+    PetscPrintf(com,
+                "PISM ERROR: attribute %s:%s in %s is a string (\"%s\");"
+                " expected a number (or a list of numbers).\n",
+                var_name.c_str(), att_name.c_str(), nc->get_filename().c_str(), tmp.c_str());
+    PISMEnd();
+  } else {
+    // In this case att_type might be PISM_NAT (if an attribute does not
+    // exist), but get_att_double can handle that.
+    ierr = nc->get_att_double(var_name, att_name, result); CHKERRQ(ierr);
+  }
 
   return 0;
 }

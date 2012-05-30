@@ -4,7 +4,7 @@ NN=2
 
 INFILE=startSMALLablate.nc
 
-OPTS="-Lz 3500 -Mx 51 -My 51 -Mz 61 -no_temp -y 500 -surface constant -extra_vars thk,csurf -extra_times 0:10:500 -ts_times 0:1:500"
+OPTS="-Lz 3500 -Mx 51 -My 51 -Mz 61 -no_temp -y 500 -extra_vars thk,csurf -extra_times 0:10:500 -ts_times 0:1:500"
 
 mpiexec -n $NN pismr -boot_file $INFILE -gradient haseloff $OPTS -extra_file Hex.nc -ts_file Hts.nc -o H.nc
 

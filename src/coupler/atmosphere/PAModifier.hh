@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,10 +28,10 @@ public:
     : Modifier<PISMAtmosphereModel>(g, conf, in) {}
   virtual ~PAModifier() {}
 
-  virtual PetscErrorCode mean_precip(IceModelVec2S &result)
+  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->mean_precip(result); CHKERRQ(ierr);
+      PetscErrorCode ierr = input_model->mean_precipitation(result); CHKERRQ(ierr);
     }
     return 0;
   }

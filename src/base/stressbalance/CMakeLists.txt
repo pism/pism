@@ -19,7 +19,7 @@ add_library (pismstressbalance
   BlatterStressBalance.cc
   THI.cc
 )
-target_link_libraries (pismstressbalance pismutil pismflowlaws)
+target_link_libraries (pismstressbalance pismutil pismflowlaws pismrevision)
 
 install (TARGETS pismstressbalance DESTINATION ${Pism_LIB_DIR})
 

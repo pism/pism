@@ -95,7 +95,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   PetscErrorCode ierr;
   PetscScalar    **ph, **pbed;
 
-  ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
+  ierr = bc_mask.set(0); CHKERRQ(ierr);
   ierr = thickness.set(H0_schoof); CHKERRQ(ierr);
 
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
@@ -126,7 +126,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = surface.get_array(ph); CHKERRQ(ierr);    
+  ierr = surface.get_array(ph); CHKERRQ(ierr);
   ierr = bed.get_array(pbed); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -135,7 +135,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
       // eval exact solution; will only use exact vels if at edge
       exactI(m_schoof, myx, myy, &(pbed[i][j]), &junk, &myu, &myv); 
       ph[i][j] = pbed[i][j] + H0_schoof;
-      
+
       bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
       if (edge) {
         bc_mask(i,j) = 1;
@@ -143,10 +143,10 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
         vel_bc(i,j).v = myv;
       }
     }
-  } 
+  }
   ierr = vel_bc.end_access(); CHKERRQ(ierr);
   ierr = bc_mask.end_access(); CHKERRQ(ierr);
-  ierr = surface.end_access(); CHKERRQ(ierr);    
+  ierr = surface.end_access(); CHKERRQ(ierr);
   ierr = bed.end_access(); CHKERRQ(ierr);
 
   // communicate what we have set
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     SSATestCaseI testcase(com,rank,size,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report(); CHKERRQ(ierr);
+    ierr = testcase.report("I"); CHKERRQ(ierr);
     ierr = testcase.write(output_file); CHKERRQ(ierr);
   }
 

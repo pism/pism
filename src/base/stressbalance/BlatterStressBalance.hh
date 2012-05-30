@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -118,8 +118,12 @@ public:
   virtual PetscErrorCode stdout_report(string &/*result*/)
   { return 0; }  // FIXME: implementation needed
 
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
+  virtual void add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &/*result*/)
   {  }  // FIXME: implementation needed
+
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+                                          PISM_IO_Type /*nctype*/)
+  { return 0; }                 // FIXME: implementation needed
 
   virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
   {  return 0; }  // FIXME: implementation needed

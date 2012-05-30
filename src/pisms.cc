@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Ice sheet driver for EISMINT II, MISMIP, and other constant climate, simplified geometry\n"
+  "Ice sheet driver for EISMINT II, and other constant climate, simplified geometry\n"
   "intercomparison simulations.\n";
 
 #include <cstring>
@@ -26,7 +26,6 @@ static char help[] =
 #include "iceModel.hh"
 #include "eismint/iceEISModel.hh"
 #include "eismint/icePSTexModel.hh"
-#include "ismip/iceMISMIPModel.hh"
 #include "pism_options.hh"
 
 #include "PSDummy.hh"
@@ -55,10 +54,9 @@ int main(int argc, char *argv[]) {
     vector<string> required;
     required.clear(); // no actually required options; "-eisII A" is default
     ierr = show_usage_check_req_opts(com, "pisms", required,
-      "  pisms [-eisII x|-pst -xxx|-mismip N] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pisms [-eisII x|-pst -xxx] [OTHER PISM & PETSc OPTIONS]\n"
       "where major option chooses type of simplified experiment:\n"
       "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"
-      "  -mismip Nx  choose MISMIP experiment (Nx = 1a|1b|2a|2b|3a|3b)\n"
       "  -pst -xxx   choose plastic till ice stream experiment; see Bueler & Brown (2009);\n"
       "              (-xxx = -P0A|-P0I|-P1|-P2|-P3|-P4)\n"
       "notes:\n"
@@ -68,16 +66,14 @@ int main(int argc, char *argv[]) {
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
-    bool EISIIchosen, PSTexchosen, MISMIPchosen;
+    bool EISIIchosen, PSTexchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
     ierr = PISMOptionsIsSet("-eisII", EISIIchosen); CHKERRQ(ierr);
     /* This option chooses Plastic till ice Stream with Thermocoupling experiment. */
     ierr = PISMOptionsIsSet("-pst", PSTexchosen); CHKERRQ(ierr);
-    /* This option chooses MISMIP; "-mismip N" is experiment N in MISMIP; N=1,2,3 */
-    ierr = PISMOptionsIsSet("-mismip", MISMIPchosen); CHKERRQ(ierr);
-    
-    int  choiceSum = (int) EISIIchosen + (int) PSTexchosen + (int) MISMIPchosen;
+
+    int  choiceSum = (int) EISIIchosen + (int) PSTexchosen;
     if (choiceSum > 1) {
       ierr = PetscPrintf(com,
          "PISM ERROR: pisms called with more than one simplified geometry experiment chosen\n");
@@ -96,8 +92,6 @@ int main(int argc, char *argv[]) {
     IceModel *m;
     if (PSTexchosen == PETSC_TRUE) {
       m = new IcePSTexModel(g, config, overrides);
-    } else if (MISMIPchosen == PETSC_TRUE) {
-      m = new IceMISMIPModel(g, config, overrides);
     } else {
       m = new IceEISModel(g, config, overrides);
     }
@@ -113,12 +107,6 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "... done with run \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper.nc"); CHKERRQ(ierr);
 
-    if (MISMIPchosen == PETSC_TRUE) {
-      IceMISMIPModel* mMISMIP = dynamic_cast<IceMISMIPModel*>(m);
-      if (!mMISMIP) { SETERRQ(com, 4, "PISMS: mismip write files ... how did I get here?"); }
-      ierr = mMISMIP->writeMISMIPFinalFiles(); CHKERRQ(ierr);
-    }
-    
     delete m;
   }
 
