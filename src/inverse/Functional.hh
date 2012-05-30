@@ -19,7 +19,7 @@
 #ifndef FUNCTIONAL_HH_1E2DIXE6
 #define FUNCTIONAL_HH_1E2DIXE6
 
-#include "IceModelVec.hh"
+#include "iceModelVec.hh"
 #include "FETools.hh"
 
 template<class IMVecType>

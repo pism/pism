@@ -20,7 +20,7 @@
 #define INVSCHRODTIKHONOV_HH_LD0HAMOE
 
 #include "SNESCallbacks.hh"
-#include "IceModelVec.hh"
+#include "iceModelVec.hh"
 #include "FETools.hh"
 #include "TikhonovProblem.hh"
 #include "TaoUtil.hh"
