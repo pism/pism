@@ -89,9 +89,9 @@ PetscErrorCode H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   DirichletData dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
 
-  // Loop through all LOCAL elements.
-  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  // Loop through all local and ghosted elements.
+  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+           ys = m_element_index.ys, ym = m_element_index.ym;
   for (PetscInt i=xs; i<xs+xm; i++) {
     for (PetscInt j=ys; j<ys+ym; j++) {
 

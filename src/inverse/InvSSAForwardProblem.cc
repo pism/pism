@@ -142,6 +142,10 @@ PetscErrorCode InvSSAForwardProblem::init(PISMVars &vars) {
     verbPrintf(3,grid.com,"Misfit element mask not available; using all elements.\n");
   }
 
+  ierr = assemble_DomainNorm_matrix(); CHKERRQ(ierr);
+
+  ierr = compute_range_l2_area(&m_range_l2_area);
+
   return 0;
 }
 
@@ -150,17 +154,6 @@ PetscErrorCode InvSSAForwardProblem::set_initial_velocity_guess(  IceModelVec2V 
   PetscErrorCode ierr;
   ierr = v.copy_to(SSAX); CHKERRQ(ierr);
   m_reassemble_T_matrix_needed = true;
-  return 0;
-}
-
-// FIXME
-/*! \brief apparently unused method! */
-PetscErrorCode InvSSAForwardProblem::setup_vars()
-{
-  PetscErrorCode ierr;
-  ierr = setup(); CHKERRQ(ierr);
-  ierr = assemble_DomainNorm_matrix(); CHKERRQ(ierr);
-  ierr = compute_range_l2_area(&m_range_l2_area);
   return 0;
 }
 

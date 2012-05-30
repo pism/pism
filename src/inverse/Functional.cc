@@ -122,9 +122,9 @@ PetscErrorCode L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   PetscScalar JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
-  // Loop through all LOCAL elements.
-  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  // Loop through all local and ghosted elements.
+  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+           ys = m_element_index.ys, ym = m_element_index.ym;
   for (PetscInt i=xs; i<xs+xm; i++) {
     for (PetscInt j=ys; j<ys+ym; j++) {
 
@@ -171,7 +171,7 @@ PetscErrorCode L2NormFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OUTPUT) 
   PetscScalar JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
-  // Loop through all LOCAL elements.
+  // Loop through all local and ghosted elements.
   PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
   for (PetscInt i=xs; i<xs+xm; i++) {
@@ -259,9 +259,9 @@ PetscErrorCode L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &g
   PetscScalar JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
-  // Loop through all LOCAL elements.
-  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  // Loop through all local and ghosted elements.
+  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+           ys = m_element_index.ys, ym = m_element_index.ym;
   for (PetscInt i=xs; i<xs+xm; i++) {
     for (PetscInt j=ys; j<ys+ym; j++) {
 

@@ -69,16 +69,13 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
 
     vecs = self.modeldata.vecs
 
-    self.ssa.init(vecs.asPISMVars())
-
     if vecs.has('vel_bc'):
       self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
 
     if vecs.has('zeta_fixed_mask') and self.using_zeta_fixed_mask:
       self.ssa.set_zeta_fixed_locations(vecs.zeta_fixed_mask)
 
-    # FIXME: Fix this lousy name
-    self.ssa.setup_vars()
+    self.ssa.init(vecs.asPISMVars())
 
 
   def _initSSACoefficients(self):

@@ -69,7 +69,7 @@ PetscErrorCode SSAFEM::deallocate_fem() {
   PetscErrorCode ierr;
 
   ierr = SNESDestroy(&snes);CHKERRQ(ierr);
-  delete feStore;
+  delete[] feStore;
   ierr = VecDestroy(&r); CHKERRQ(ierr);
   ierr = MatDestroy(&J); CHKERRQ(ierr);
 
@@ -93,6 +93,9 @@ PetscErrorCode SSAFEM::init(PISMVars &vars) {
   // and the call below clears SSAX.
 
   ierr = velocity.copy_to(SSAX); CHKERRQ(ierr);
+
+  // Store coefficient data at the quadrature points.
+  ierr = cacheQuadPtValues(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -152,9 +155,6 @@ PetscErrorCode SSAFEM::solve()
   if (getVerbosityLevel() >= 2)
     stdout_ssa = "  SSA: ";
 
-  // Set up the system to solve (store coefficient data at the quadrature points):
-  ierr = setup(); CHKERRQ(ierr);
-
   // Solve:
   ierr = SNESSolve(snes,NULL,SSAX);CHKERRQ(ierr);
 
@@ -195,7 +195,7 @@ any geometry or temperature related coefficients have changed. The method
 stores the values of the coefficients at the quadrature points of each
 element so that these interpolated values do not need to be computed
 during each outer iteration of the nonlinear solve.*/
-PetscErrorCode SSAFEM::setup()
+PetscErrorCode SSAFEM::cacheQuadPtValues()
 {
   PetscReal      **h,
                  **H,

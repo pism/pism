@@ -82,8 +82,6 @@ public:
 
   PetscErrorCode set_zeta(IceModelVec2S &zeta );
 
-  PetscErrorCode setup_vars();
-
   PetscErrorCode solveF(IceModelVec2V &result);
 
   PetscErrorCode solveT( IceModelVec2S &d, IceModelVec2V &result);

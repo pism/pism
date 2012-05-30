@@ -4,6 +4,7 @@ add_library (pisminverse
   ./InvTaucParameterization.cc
   ./InvSSAForwardProblem.cc
   ./InvSchrodTikhonov.cc
+  ./InvSSATikhonov.cc
   ./Functional.cc
   ./H1NormFunctional.cc
   ./MeanSquareObservationFunctional.cc
