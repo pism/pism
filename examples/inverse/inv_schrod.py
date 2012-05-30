@@ -2,25 +2,27 @@ import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import PISM
+import PISM.invert_ssa
 import math
 import numpy as np
 import matplotlib.pyplot as pp
 
 context = PISM.Context()
 com = context.com
+config = context.config
 
 PISM.set_abort_on_sigint(True)
 
 PISM.verbosityLevelFromOptions()
 PISM.stop_on_version_option()
 
-config = context.config
 
 for o in PISM.OptionsGroup(com,"",sys.argv[0]):
   M = PISM.optionsInt("-M","problem size",default=30)
   eta = PISM.optionsReal("-eta","regularization paramter",default=300.)
   hasFixedDesignLocs = PISM.optionsFlag("-fixed_design_locs","test having fixed design variables",default=False)
   hasMisfitWeight = PISM.optionsFlag("-use_misfit_weight","test misfit weight paramter",default=False)
+  tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp","trunc"],"ident")
 x0 = 0.;
 L  = math.pi;
 
@@ -56,7 +58,7 @@ c0.create(grid,"c",PISM.kHasGhosts,stencil_width)
 c0.set(1)
 
 # Convert c/c0 to zeta/zeta0
-tauc_param = PISM.InvTaucParamIdent();
+tauc_param = PISM.invert_ssa.tauc_param_factory.create(tauc_param_type,config)
 zeta0 = PISM.IceModelVec2S();
 zeta0.create(grid,"zeta0",PISM.kHasGhosts,stencil_width)
 zeta = PISM.IceModelVec2S();
@@ -105,7 +107,7 @@ if hasMisfitWeight:
         misfitWeight[i,j]=0;
   invProblem.setObservationWeights(misfitWeight)
 
-# Solve the forwward problem for the true value of c/zeta and obtain an
+# Solve the forward problem for the true value of c/zeta and obtain an
 # observed solution 
 invProblem.setZeta(zeta)
 if not invProblem.solve():
@@ -124,6 +126,18 @@ if solver.solve():
   PISM.verbPrintf(1,grid.com,"Inverse solve success (%s)!\n" % solver.reasonDescription());
   u_i = ip.stateSolution();
   zeta_i = ip.designSolution();
+  
+  du = PISM.IceModelVec2V()
+  du.create(grid, "du", PISM.kHasGhosts, stencil_width);
+  du.copy_from(u_i)
+  du.add(-1,u_obs)
+  if hasMisfitWeight:
+    misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,misfitWeight);
+  else:
+    misfit_functional = PISM.MeanSquareObservationFunctional2V(grid);
+  misfit_functional.normalize()
+  misfit = math.sqrt(misfit_functional.valueAt(du))
+  PISM.verbPrintf(1,grid.com,"RMS Misfit: %g\n",misfit)
 
   c_i = PISM.IceModelVec2S();
   c_i.create(grid,"c_i",PISM.kHasGhosts,stencil_width)
@@ -161,7 +175,6 @@ if solver.solve():
     pp.title("observation error")
     pp.colorbar()
     pp.draw()
-  
   
     pause_time = PISM.optionsReal("-final_draw_pause","",default=10)
     import time

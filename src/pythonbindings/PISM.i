@@ -31,6 +31,9 @@
 #include "stressbalance/SSAFEM.hh"
 #include "inverse/InvSSAForwardProblem.hh"
 #include "inverse/InvTaucParameterization.hh"
+#include "inverse/Functional.hh"
+#include "inverse/H1NormFunctional.hh"
+#include "inverse/MeanSquareObservationFunctional.hh"
 #if(PISM_HAS_TAO)
 #include "inverse/TaoUtil.hh"
 #include "inverse/InvSchrodTikhonov.hh"
@@ -490,7 +493,6 @@ typedef int NormType; // YUCK.
 %template(PISMDiag_SSA) PISMDiag<SSA>;
 %include "stressbalance/SSA.hh"
 %include "stressbalance/SSAFEM.hh"
-%include "inverse/InvSSAForwardProblem.hh"
 %template(PISMDiag_SSAFD) PISMDiag<SSAFD>;
 %include "stressbalance/SSAFD.hh"
 %include "Mask.hh"
@@ -503,8 +505,13 @@ typedef int NormType; // YUCK.
 %include "regional/regional.hh"
 %include "FEEvaluator.hh"
 
-#if(PISM_HAS_TAO)
+%include "inverse/Functional.hh"
+%include "inverse/H1NormFunctional.hh"
+%include "inverse/MeanSquareObservationFunctional.hh"
 %include "inverse/InvTaucParameterization.hh"
+%include "inverse/InvSSAForwardProblem.hh"
+
+#if(PISM_HAS_TAO)
 %include "inverse/TaoUtil.hh"
 %include "inverse/TikhonovProblem.hh"
 %include "inverse/InvSchrodTikhonov.hh"
