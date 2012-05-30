@@ -20,10 +20,11 @@
 #include "H1NormFunctional.hh"
 #include "MeanSquareObservationFunctional.hh"
 
-InvSchrodTikhonov::InvSchrodTikhonov( IceGrid  &grid, IceModelVec2V &f) :
-m_grid(grid), m_c(NULL), m_f(&f), 
+InvSchrodTikhonov::InvSchrodTikhonov( IceGrid  &grid, IceModelVec2V &f, InvTaucParameterization &tp) :
+m_grid(grid), m_zeta(NULL), m_f(&f), 
 m_dirichletLocations(NULL), m_dirichletValues(NULL), m_dirichletWeight(1.), 
-m_fixedDesignLocations(NULL), m_observationWeights(NULL), m_element_index(grid) {
+m_fixedDesignLocations(NULL), m_observationWeights(NULL), 
+m_tauc_param(tp), m_element_index(grid) {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
   if(ierr) {
@@ -45,7 +46,7 @@ PetscErrorCode InvSchrodTikhonov::construct() {
   PetscErrorCode ierr;
   PetscInt stencilWidth = 1;
 
-  // m_designFunctional.reset(new L2NormFunctional2S(m_grid));
+  m_c.create(m_grid,"pseudo yield stress",kHasGhosts,stencilWidth);
 
   m_uGlobal.create(m_grid,"Schrodinger solution (sans ghosts)",kNoGhosts,stencilWidth);
   m_u.create(m_grid,"Schrodinger solution",kHasGhosts,stencilWidth);
@@ -166,11 +167,38 @@ PetscErrorCode InvSchrodTikhonov::destruct() {
   return 0;
 }
 
-PetscErrorCode InvSchrodTikhonov::linearizeAt( IceModelVec2S &c, bool &success) {
-  this->set_c(c);
+PetscErrorCode InvSchrodTikhonov::setZeta(IceModelVec2S &zeta) {
+
   PetscErrorCode ierr;
+  
+  m_zeta = &zeta;
+
+  PetscReal **zeta_a;
+  PetscReal **c_a;
+  ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
+  ierr = m_c.get_array(c_a); CHKERRQ(ierr);
+  for(PetscInt i=m_grid.xs;i<m_grid.xs+m_grid.xm;i++){
+    for(PetscInt j=m_grid.ys;j<m_grid.ys+m_grid.ym;j++){
+      PetscReal tauc;
+      m_tauc_param.toTauc(zeta_a[i][j],&tauc,NULL);
+      c_a[i][j] = tauc;
+    }
+  }
+  ierr = m_c.end_access(); CHKERRQ(ierr);
+  ierr = m_zeta->end_access(); CHKERRQ(ierr);
+  ierr = m_c.beginGhostComm(); CHKERRQ(ierr);
+  ierr = m_c.endGhostComm(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode InvSchrodTikhonov::linearizeAt( IceModelVec2S &zeta, bool &success) {
+
+  PetscErrorCode ierr;
+  ierr = this->setZeta(zeta); CHKERRQ(ierr);
   ierr = this->solve(success); CHKERRQ(ierr);
   return 0;
+
 }
 
 PetscErrorCode InvSchrodTikhonov::assembleFunction( DMDALocalInfo *info, PISMVector2 **xg, PISMVector2 **yg) {
@@ -204,8 +232,8 @@ PetscErrorCode InvSchrodTikhonov::assembleFunction( DMDALocalInfo *info, PISMVec
   PISMVector2 f_q[FEQuadrature::Nq];
 
   PetscReal **c;
-  ierr = m_c->get_array(c); CHKERRQ(ierr);
-  PetscReal   c_q[FEQuadrature::Nq];
+  ierr =      m_c.get_array(c); CHKERRQ(ierr);
+  PetscReal c_q[FEQuadrature::Nq];
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -227,6 +255,7 @@ PetscErrorCode InvSchrodTikhonov::assembleFunction( DMDALocalInfo *info, PISMVec
       m_dofmap.extractLocalDOFs(i,j,xg,x_e);
       m_dofmap.extractLocalDOFs(i,j,f,f_e);
       m_dofmap.extractLocalDOFs(i,j,c,c_e);
+      
 
       if(dirichletBC) dirichletBC.update(m_dofmap,x_e);
 
@@ -266,7 +295,7 @@ PetscErrorCode InvSchrodTikhonov::assembleFunction( DMDALocalInfo *info, PISMVec
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
   ierr = m_f->end_access(); CHKERRQ(ierr);
-  ierr = m_c->end_access(); CHKERRQ(ierr);
+  ierr = m_c.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -280,7 +309,7 @@ PetscErrorCode InvSchrodTikhonov::assembleJacobian( DMDALocalInfo *info, PISMVec
   (void) x;
 
   PetscReal **c;
-  ierr = m_c->get_array(c); CHKERRQ(ierr);
+  ierr = m_c.get_array(c); CHKERRQ(ierr);
   PetscReal   c_q[FEQuadrature::Nq];
   
   // Zero out the Jacobian in preparation for updating it.
@@ -360,7 +389,7 @@ PetscErrorCode InvSchrodTikhonov::assembleJacobian( DMDALocalInfo *info, PISMVec
 
   ierr = MatSetOption(J,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
-  ierr = m_c->end_access(); CHKERRQ(ierr);
+  ierr = m_c.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -399,7 +428,6 @@ PetscErrorCode InvSchrodTikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceM
 
   m_penaltyFunctional->gradientAt(du,m_adjointRHS);
   if(m_dirichletLocations) {
-    // Start access of Dirichlet data, if present.
     DirichletData dirichletBC;
     ierr = dirichletBC.init(m_dirichletLocations,m_dirichletValues,m_dirichletWeight); CHKERRQ(ierr);
     PISMVector2 **rhs_a;
@@ -476,6 +504,17 @@ PetscErrorCode InvSchrodTikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceM
       m_dofmap.addLocalResidualBlock(gradient_e,gradient_a);
     } // j
   } // i
+
+  PetscReal **zeta_a;
+  ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
+  for( i=m_grid.xs;i<m_grid.xs+m_grid.xm;i++){
+    for( j=m_grid.ys;j<m_grid.ys+m_grid.ym;j++){
+      PetscReal dtauc_dzeta;
+      m_tauc_param.toTauc(zeta_a[i][j],NULL,&dtauc_dzeta);
+      gradient_a[i][j] *= dtauc_dzeta;
+    }
+  }
+  ierr = m_zeta->end_access(); CHKERRQ(ierr);
 
   if(m_fixedDesignLocations) {
     DirichletData dirichletBC;

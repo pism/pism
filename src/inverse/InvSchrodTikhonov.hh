@@ -25,6 +25,7 @@
 #include "TikhonovProblem.hh"
 #include "TaoUtil.hh"
 #include "Functional.hh"
+#include "InvTaucParameterization.hh"
 #include <memory> // for std::auto_ptr
 
 class InvSchrodTikhonov {
@@ -32,12 +33,10 @@ public:
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;
   
-  InvSchrodTikhonov( IceGrid  &grid, IceModelVec2V &f);
+  InvSchrodTikhonov( IceGrid  &grid, IceModelVec2V &f, InvTaucParameterization &tp);
   ~InvSchrodTikhonov();
 
-  void set_c(IceModelVec2S &c) {
-    m_c = &c;
-  }
+  PetscErrorCode setZeta(IceModelVec2S &zeta);
 
   void setDirichletData(IceModelVec2Int &locs, IceModelVec2V &values) {
     m_dirichletLocations = &locs;
@@ -83,15 +82,18 @@ protected:
   PetscErrorCode destruct();
 
   IceGrid &m_grid;
-  IceModelVec2S   *m_c;
+  IceModelVec2S   *m_zeta;
   IceModelVec2V   *m_f;
-  
+  IceModelVec2S   m_c;
+
   IceModelVec2Int *m_dirichletLocations;
   IceModelVec2V   *m_dirichletValues;
   PetscReal        m_dirichletWeight;
 
   IceModelVec2Int *m_fixedDesignLocations;
   IceModelVec2S   *m_observationWeights;
+
+  InvTaucParameterization &m_tauc_param;
   
   IceModelVec2V  m_uGlobal;
   IceModelVec2V  m_u;
