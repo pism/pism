@@ -698,6 +698,7 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   // Deallocate old Vec:
   ierr = VecDestroy(&v); CHKERRQ(ierr);
   v = v_new;
+  da = da_new;
 
   // IceGrid will dispose of the old DA
 

@@ -91,7 +91,7 @@ PetscErrorCode PS_delta_T::define_variables(set<string> vars, const PIO &nc, PIS
   return 0;
 }
 
-PetscErrorCode PS_delta_T::write_variables(set<string> vars, string filename) {
+PetscErrorCode PS_delta_T::write_variables(set<string> vars, string output_filename) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -101,7 +101,7 @@ PetscErrorCode PS_delta_T::write_variables(set<string> vars, string filename) {
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(output_filename); CHKERRQ(ierr);
 
     vars.erase("ice_surface_temp");
   }
@@ -113,12 +113,12 @@ PetscErrorCode PS_delta_T::write_variables(set<string> vars, string filename) {
 
     ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(output_filename); CHKERRQ(ierr);
 
     vars.erase("climatic_mass_balance");
   }
 
-  ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+  ierr = input_model->write_variables(vars, output_filename); CHKERRQ(ierr);
 
   return 0;
 }

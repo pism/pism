@@ -1006,8 +1006,8 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
 
   // Communicate to get ghosts:
   ierr = u_out.beginGhostComm(); CHKERRQ(ierr);
-  ierr = v_out.beginGhostComm(); CHKERRQ(ierr);
   ierr = u_out.endGhostComm(); CHKERRQ(ierr);
+  ierr = v_out.beginGhostComm(); CHKERRQ(ierr);
   ierr = v_out.endGhostComm(); CHKERRQ(ierr);
 
   return 0;

@@ -65,6 +65,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
 
   da_stencil_width = other.da_stencil_width;
   dof = other.dof;
+  da = other.da;
 
   grid = other.grid;
 

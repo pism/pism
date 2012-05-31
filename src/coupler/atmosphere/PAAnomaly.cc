@@ -168,7 +168,7 @@ PetscErrorCode PAAnomaly::define_variables(set<string> vars, const PIO &nc,
 }
 
 
-PetscErrorCode PAAnomaly::write_variables(set<string> vars, string filename) {
+PetscErrorCode PAAnomaly::write_variables(set<string> vars, string output_filename) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -178,7 +178,7 @@ PetscErrorCode PAAnomaly::write_variables(set<string> vars, string filename) {
 
     ierr = mean_annual_temp(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(filename); CHKERRQ(ierr);
+    ierr = tmp.write(output_filename); CHKERRQ(ierr);
 
     vars.erase("air_temp");
   }
@@ -191,12 +191,12 @@ PetscErrorCode PAAnomaly::write_variables(set<string> vars, string filename) {
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(filename); CHKERRQ(ierr);
+    ierr = tmp.write(output_filename); CHKERRQ(ierr);
 
     vars.erase("precipitation");
   }
 
-  ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+  ierr = input_model->write_variables(vars, output_filename); CHKERRQ(ierr);
 
   return 0;
 }

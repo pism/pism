@@ -240,8 +240,8 @@ PetscErrorCode BlatterStressBalance::mesh_to_regular_grid() {
   ierr = DMDAVecRestoreArray(dmmg[0]->dm, dmmg[0]->x, &U); CHKERRQ(ierr);
 
   ierr = u.beginGhostComm(); CHKERRQ(ierr);
-  ierr = v.beginGhostComm(); CHKERRQ(ierr);
   ierr = u.endGhostComm(); CHKERRQ(ierr);
+  ierr = v.beginGhostComm(); CHKERRQ(ierr);
   ierr = v.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
