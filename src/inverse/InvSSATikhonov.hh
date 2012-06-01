@@ -27,8 +27,10 @@
 
 class InvSSATikhonov : public SSAFEM
 {
-
 public:
+
+  typedef IceModelVec2S DesignVec;
+  typedef IceModelVec2V StateVec;
 
   InvSSATikhonov(IceGrid &g, IceBasalResistancePlasticLaw &b,
     EnthalpyConverter &e, InvTaucParameterization &tp,
@@ -43,6 +45,16 @@ public:
     m_fixed_tauc_locations = &locations;
     return 0;
   }
+
+  IceModelVec2V &solution() {
+    return velocity;
+  }
+
+  std::string reasonDescription() {
+    return std::string("FIXME");
+  }
+
+  PetscErrorCode set_functionals();
 
   PetscErrorCode set_zeta( IceModelVec2S &zeta);
 

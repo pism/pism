@@ -19,12 +19,14 @@ PISM.stop_on_version_option()
 
 for o in PISM.OptionsGroup(com,"",sys.argv[0]):
   M = PISM.optionsInt("-M","problem size",default=30)
-  eta = PISM.optionsReal("-eta","regularization paramter",default=300.)
+  eta = PISM.optionsReal("-eta","regularization paramter",default=5e4)
+  hasFixedDesignLocs = PISM.optionsFlag("-fixed_design_locs","test having fixed design variables",default=False)
   hasFixedDesignLocs = PISM.optionsFlag("-fixed_design_locs","test having fixed design variables",default=False)
   hasMisfitWeight = PISM.optionsFlag("-use_misfit_weight","test misfit weight paramter",default=False)
-  tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp","trunc"],"ident")
 x0 = 0.;
 L  = math.pi;
+
+config.set_string("inv_ssa_tauc_param","ident")
 
 # Build the grid.
 grid = PISM.Context().newgrid()
@@ -58,7 +60,7 @@ c0.create(grid,"c",PISM.kHasGhosts,stencil_width)
 c0.set(1)
 
 # Convert c/c0 to zeta/zeta0
-tauc_param = PISM.invert_ssa.tauc_param_factory.create(tauc_param_type,config)
+tauc_param = PISM.invert_ssa.tauc_param_factory.create(config)
 zeta0 = PISM.IceModelVec2S();
 zeta0.create(grid,"zeta0",PISM.kHasGhosts,stencil_width)
 zeta = PISM.IceModelVec2S();

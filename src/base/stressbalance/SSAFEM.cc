@@ -118,8 +118,32 @@ PetscErrorCode SSAFEM::setFromOptions()
   PetscFunctionReturn(0);
 }
 
-//! Solve the SSA.
+//! Solve the SSA.  The FEM solver exchanges time for memory by computing
+//! the value of the various coefficients at each of the quadrature points
+//! only once.  When running in an ice-model context, at each time step,
+//! SSA::update is called, which calls SSAFEM::solve.  Since coefficients
+//! have generally changed between timesteps, we need to recompute coefficeints
+//! at the quad points. On the other hand, in the context of inversion, 
+//! coefficients will not change between iteration and there is no need to
+//! recompute the values at the quad points.  So there are two different solve
+//! methods, SSAFEM::solve() and SSAFEM::solve_nocache().  The only difference
+//! is that SSAFEM::solve() recomputes the cached values of the coefficients at
+//! quadrature points before calling SSAFEM::solve_nocache().
 PetscErrorCode SSAFEM::solve()
+{
+  PetscErrorCode ierr;
+
+  // Set up the system to solve (store coefficient data at the quadrature points):
+  ierr = cacheQuadPtValues(); CHKERRQ(ierr);
+  
+  ierr = solve_nocache(); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+//! Solve the SSA without first recomputing the values of coefficients at quad
+//! points.  See the disccusion of SSAFEM::solve for more discussion.
+PetscErrorCode SSAFEM::solve_nocache()
 {
   PetscErrorCode ierr;
   PetscViewer    viewer;

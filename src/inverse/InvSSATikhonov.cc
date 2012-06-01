@@ -21,6 +21,8 @@
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
 #include <assert.h>
+#include "H1NormFunctional.hh"
+#include "MeanSquareObservationFunctional.hh"
 
 InvSSATikhonov::InvSSATikhonov(IceGrid &g, IceBasalResistancePlasticLaw &b,
   EnthalpyConverter &e, InvTaucParameterization &tp,
@@ -39,6 +41,21 @@ InvSSATikhonov::~InvSSATikhonov() {
   CHKERRCONTINUE(ierr);
   assert(ierr == 0);
 }
+
+// FIXME: replace this
+PetscErrorCode InvSSATikhonov::set_functionals() {
+  
+  PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
+  PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
+  
+  m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixed_tauc_locations));    
+
+  m_penaltyFunctional.reset(new MeanSquareObservationFunctional2V(m_grid,m_misfit_weight));    
+  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize();  
+
+  return 0;
+}
+
 
 // Initialize the solver, called once by the client before use.
 PetscErrorCode InvSSATikhonov::init(PISMVars &vars) {

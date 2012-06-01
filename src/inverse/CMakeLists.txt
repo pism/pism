@@ -5,6 +5,7 @@ add_library (pisminverse
   ./InvSSAForwardProblem.cc
   ./InvSchrodTikhonov.cc
   ./InvSSATikhonov.cc
+  ./InvSSABasicTikhonov.cc
   ./Functional.cc
   ./H1NormFunctional.cc
   ./MeanSquareObservationFunctional.cc

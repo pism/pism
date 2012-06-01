@@ -37,6 +37,8 @@
 #if(PISM_HAS_TAO)
 #include "inverse/TaoUtil.hh"
 #include "inverse/InvSchrodTikhonov.hh"
+#include "inverse/InvSSATikhonov.hh"
+#include "inverse/InvSSABasicTikhonov.hh"
 #endif
 #include "stressbalance/SSAFD.hh"
 #include "pism_python.hh"
@@ -515,8 +517,14 @@ typedef int NormType; // YUCK.
 %include "inverse/TaoUtil.hh"
 %include "inverse/TikhonovProblem.hh"
 %include "inverse/InvSchrodTikhonov.hh"
+%include "inverse/InvSSATikhonov.hh"
+%include "inverse/InvSSABasicTikhonov.hh"
 %template(InvSchrodTikhonovProblem) TikhonovProblem<InvSchrodTikhonov> ;
 %template(InvSchrodTikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSchrodTikhonov> >;
+%template(InvSSATikhonovProblem) TikhonovProblem<InvSSATikhonov> ;
+%template(InvSSATikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSSATikhonov> >;
+%template(InvSSABasicTikhonovProblem) TikhonovProblem<InvSSABasicTikhonov> ;
+%template(InvSSABasicTikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSSABasicTikhonov> >;
 #endif
 
 // Tell SWIG that input arguments of type double * are to be treated as return values,

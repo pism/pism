@@ -77,6 +77,10 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
 
     self.ssa.init(vecs.asPISMVars())
 
+    # Cache the values of the coefficeints at quadrature points once here.
+    # Subsequent solves will then not need to cache these values.
+    self.ssa.cacheQuadPtValues();
+
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
@@ -405,7 +409,6 @@ if __name__ == "__main__":
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
     method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
     rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=default_rms_error)
-    tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp","trunc"],"ident")
     ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=default_ssa_l2_coeff)
     ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=default_ssa_h1_coeff)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
@@ -426,11 +429,11 @@ if __name__ == "__main__":
 
   saving_inv_data = (inv_data_filename != output_filename)
 
-  config.set_string("inv_ssa_tauc_param",tauc_param_type)
+  config.set("inv_ssa_tauc_param","ident")
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
   config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
 
-  tauc_param = tauc_param_factory.create(tauc_param_type,config)
+  tauc_param = tauc_param_factory.create(config)
 
   PISM.setVerbosityLevel(verbosity)
   vel2tauc = Vel2Tauc(input_filename,inv_data_filename,tauc_param)
