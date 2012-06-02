@@ -71,8 +71,8 @@ PISM_DATANAME=pism_$DATANAME
 INNAME=$PISM_DATANAME
 
 # coupler settings
-COUPLER="-surface given"
-COUPLER_FORCING="-surface given,forcing"
+COUPLER="-surface given -surface_given_file $PISM_DATANAME"
+COUPLER_FORCING="-surface given,forcing -surface_given_file $PISM_DATANAME"
 
 # force-to-thickness
 FTALPHA=0.05

@@ -322,7 +322,7 @@ PetscErrorCode IceModelVec2T::update(int start) {
   
   N = kept + missing;
 
-  if (this->get_nlevels() > 1 || getVerbosityLevel() > 4) {
+  if (this->get_n_records() > 1 || getVerbosityLevel() > 4) {
     ierr = verbPrintf(2, grid->com,
                       "  reading \"%s\" into buffer\n"
                       "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",

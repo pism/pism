@@ -67,7 +67,7 @@ acab[:5] = 0
 acab[5:105] = np.linspace(acab_max,acab_min,100)
 acab[105:] = acab_min
 
-acab_var = nc.createVariable("acab", 'f', dimensions=("x",))
+acab_var = nc.createVariable("climatic_mass_balance", 'f', dimensions=("x",))
 acab_var.units = "m year-1";
 acab_var.standard_name = "land_ice_surface_specific_mass_balance"
 acab_var[:] = acab
@@ -82,7 +82,7 @@ zcts  = 1400   # m a.s.l.; altitude where CTS is at the surface
 
 artm = np.zeros_like(x)
 artm[(topg+thk)<zcts] = Tma
-artm_var = nc.createVariable("artm", 'f', dimensions=("x",))
+artm_var = nc.createVariable("ice_surface_temp", 'f', dimensions=("x",))
 artm_var.units = "deg_C";
 artm_var[:] = artm
 
