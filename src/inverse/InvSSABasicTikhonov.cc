@@ -98,13 +98,13 @@ PetscErrorCode InvSSABasicTikhonov::solve(bool &success) {
   PetscErrorCode ierr;
 
   PetscReal cL2 = 1;
-  ierr = PetscOptionsReal("-inv_schrod_cL2",
+  ierr = PetscOptionsReal("-inv_ssa_cL2",
                           "design variable L2 weight",
                           "",
                           cL2,
                           &cL2,NULL);CHKERRQ(ierr);
   PetscReal cH1 = 1;
-  ierr = PetscOptionsReal("-inv_schrod_cH1",
+  ierr = PetscOptionsReal("-inv_ssa_cH1",
                           "design variable H1 weight",
                           "",
                           cH1,

@@ -18,8 +18,7 @@ PISM.stop_on_version_option()
 
 
 for o in PISM.OptionsGroup(com,"",sys.argv[0]):
-  Mx = PISM.optionsInt("-Mx","problem size",default=11)
-  My = PISM.optionsInt("-My","problem size",default=30)
+  M = PISM.optionsInt("-M","problem size",default=30)
   eta = PISM.optionsReal("-eta","regularization paramter",default=5e4)
   p = PISM.optionsReal("-p","glen exponent",default=2)
   q = PISM.optionsReal("-q","pseudo yeild stress exponent",default=1)
@@ -27,20 +26,18 @@ for o in PISM.OptionsGroup(com,"",sys.argv[0]):
   hasFixedDesignLocs = PISM.optionsFlag("-fixed_design_locs","test having fixed design variables",default=False)
   hasMisfitWeight = PISM.optionsFlag("-use_misfit_weight","test misfit weight paramter",default=False)
 x0 = 0.;
-LSchoof  = 1;
+L = math.pi;
 m=4
-Lx = 1
-Ly = 3*LSchoof
 
 config.set_string("inv_ssa_tauc_param","ident")
 
 # Build the grid.
 grid = PISM.Context().newgrid()
-PISM.util.init_shallow_grid(grid,Lx,Ly,Mx,My,PISM.NOT_PERIODIC)
+PISM.util.init_shallow_grid(grid,L,L,M,M,PISM.NOT_PERIODIC)
 
-# A manufactured solution.
-cf = lambda x,y:  (abs(y/LSchoof))**m
-ff = lambda x,y:  PISM.PISMVector2(1-(abs(y/LSchoof))**m,0)
+# Coefficient data
+cf = lambda x,y: 1.5+0.4*np.cos(2*x)*np.sin(1.5*y)
+ff = lambda x,y:  PISM.PISMVector2(2*np.sin(x)*np.cos(y),2*np.sin(x)*np.cos(y)) 
 
 # one neighbouring ghost only for all variables with ghosts.
 stencil_width = 1
@@ -82,7 +79,7 @@ dirichletValues.set(0)
 with PISM.util.Access(comm=[dirichletIndices,dirichletValues]):
   for (i,j) in grid.points():
     x=grid.x[i]; y=grid.y[j]
-    if j==0 or j==(My-1):
+    if i==0 or i==(M-1) or j==0 or j==(M-1):
       dirichletIndices[i,j]=1;
 invProblem = PISM.InvSSABasicTikhonov(grid,f,p,q,tauc_param)
 invProblem.setZeta(zeta0)
@@ -141,7 +138,8 @@ if solver.solve():
     misfit_functional = PISM.MeanSquareObservationFunctional2V(grid);
   misfit_functional.normalize()
   misfit = math.sqrt(misfit_functional.valueAt(du))
-  PISM.verbPrintf(1,grid.com,"RMS Misfit: %g\n",misfit)
+  misfit_norm = math.sqrt(misfit_functional.valueAt(u_i))  
+  PISM.verbPrintf(1,grid.com,"RMS Misfit: %g (relative %g)\n",misfit,misfit/misfit_norm)
 
   c_i = PISM.IceModelVec2S();
   c_i.create(grid,"c_i",PISM.kHasGhosts,stencil_width)
