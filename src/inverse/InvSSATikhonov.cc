@@ -44,14 +44,14 @@ InvSSATikhonov::~InvSSATikhonov() {
 
 // FIXME: replace this
 PetscErrorCode InvSSATikhonov::set_functionals() {
-  
-  PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
-  PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
-  
+
+  PetscReal cL2 = m_grid.config.get("inv_ssa_cL2");
+  PetscReal cH1 = m_grid.config.get("inv_ssa_cH1");
+
   m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixed_tauc_locations));    
 
   m_penaltyFunctional.reset(new MeanSquareObservationFunctional2V(m_grid,m_misfit_weight));    
-  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize();  
+  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize();
 
   return 0;
 }
@@ -113,18 +113,7 @@ PetscErrorCode InvSSATikhonov::set_zeta(IceModelVec2S &new_zeta )
   m_zeta = &new_zeta;
   
   // Convert zeta to tauc.
-  PetscReal **zeta_a;  
-  ierr = m_zeta->get_array(zeta_a);CHKERRQ(ierr);
-  ierr = m_tauc->begin_access(); CHKERRQ(ierr);
-  for (i=grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for (j=grid.ys;j<m_grid.ys+m_grid.ym; j++) {
-      PetscReal tmp;
-      m_tauc_param.toTauc((*m_zeta)(i,j),&tmp,NULL);
-      (*tauc)(i,j) = tmp;
-    }
-  }  
-  ierr = m_tauc->end_access(); CHKERRQ(ierr);
-  ierr = m_zeta->end_access(); CHKERRQ(ierr);
+  m_tauc_param.convertToTauc(*m_zeta,*m_tauc);
 
   // Cache tauc at the quadrature points in feStore.
   PetscReal **tauc_a;

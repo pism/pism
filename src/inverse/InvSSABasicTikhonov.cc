@@ -21,8 +21,8 @@
 #include "MeanSquareObservationFunctional.hh"
 
 InvSSABasicTikhonov::InvSSABasicTikhonov( IceGrid  &grid, IceModelVec2V &f, PetscReal p, PetscReal q,  InvTaucParameterization &tp) :
-m_grid(grid), m_zeta(NULL), m_f(&f), m_p(p), m_q(q),
-m_epsilon_beta(1e-6), m_epsilon_ssa(1e-6), m_epsilon_schoof(1e-6),
+m_grid(grid), m_zeta(NULL), m_f(&f), m_p(p), m_q(q), m_B(1), m_H(1),
+m_epsilon_velocity(1e-3), m_epsilon_strainrate(1e-3), m_epsilon_nuH(1e-3), m_pseudo_plastic_threshold(1e-1),
 m_dirichletLocations(NULL), m_dirichletValues(NULL), m_dirichletWeight(1.), 
 m_fixedDesignLocations(NULL), m_observationWeights(NULL), 
 m_tauc_param(tp), m_element_index(grid) {
@@ -97,18 +97,8 @@ PetscErrorCode InvSSABasicTikhonov::construct() {
 PetscErrorCode InvSSABasicTikhonov::solve(bool &success) {
   PetscErrorCode ierr;
 
-  PetscReal cL2 = 1;
-  ierr = PetscOptionsReal("-inv_ssa_cL2",
-                          "design variable L2 weight",
-                          "",
-                          cL2,
-                          &cL2,NULL);CHKERRQ(ierr);
-  PetscReal cH1 = 1;
-  ierr = PetscOptionsReal("-inv_ssa_cH1",
-                          "design variable H1 weight",
-                          "",
-                          cH1,
-                          &cH1,NULL);CHKERRQ(ierr);
+  PetscReal cL2 = m_grid.config.get("inv_ssa_cL2");
+  PetscReal cH1 = m_grid.config.get("inv_ssa_cH1");
 
   m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixedDesignLocations));    
 
@@ -181,6 +171,18 @@ PetscErrorCode InvSSABasicTikhonov::destruct() {
   return 0;
 }
 
+void InvSSABasicTikhonov::setParamsFromConfig( NCConfigVariable &config ) {
+  m_epsilon_velocity         = config.get("plastic_regularization") / secpera;
+
+  PetscReal schoofLen = config.get("Schoof_regularizing_length", "km", "m"); // convert to meters
+  PetscReal schoofVel = config.get("Schoof_regularizing_velocity", "m/year", "m/s"); // convert to m/s
+  m_epsilon_strainrate = schoofVel/schoofLen;
+
+  m_epsilon_nuH = config.get("epsilon_ssa");
+
+  m_pseudo_plastic_threshold = config.get("pseudo_plastic_uthreshold") / secpera;
+}
+
 PetscErrorCode InvSSABasicTikhonov::setZeta(IceModelVec2S &zeta) {
 
   PetscErrorCode ierr;
@@ -217,24 +219,23 @@ PetscErrorCode InvSSABasicTikhonov::linearizeAt( IceModelVec2S &zeta, bool &succ
 
 void InvSSABasicTikhonov::computeNuH(PetscReal B, PetscReal H, const PetscReal Du[],
   PetscReal *nuH, PetscReal *dNuH) {
-  const PetscReal alpha =  m_epsilon_schoof + 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2]));
+  const PetscReal alpha =  PetscSqr(m_epsilon_strainrate) + 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2]));
   const PetscReal power = (m_p-2)*0.5;
-  static bool saidit = false;
-  if(!saidit) printf("power %g p=%g\n\n\n",power,m_p);
-  saidit=true;
   
-  *nuH = 0.5 * B * H * pow(alpha, power);
-  *nuH += m_epsilon_ssa;
+  // Strictly speaking, nuH has a factor of .5, and the SSA has coefficents
+  // of the form 2*nuH.  So we just cancel these dualing factors here
+  *nuH = B * H * pow(alpha, power);
+  *nuH += 2*m_epsilon_nuH;
   
   if(dNuH) *dNuH = power * (*nuH) / alpha;
 
-  // 
-  // *nuH  *=  2;
-  // if (dNuH) *dNuH *= 2;
+}
 
-    // *nuH = 1;
-    // if (dNuH) *dNuH = 0;
-    
+
+void InvSSABasicTikhonov::computeBeta(PetscReal tauc, PISMVector2 U,PetscReal *beta, PetscReal *dbeta) {
+  const PetscScalar Usq = PetscSqr(m_epsilon_velocity) + PetscSqr(U.u) + PetscSqr(U.v);
+  *beta = tauc * pow(Usq, 0.5*(m_q - 1)) * pow(m_pseudo_plastic_threshold, -m_q);
+  if (dbeta) *dbeta = (m_q - 1) * *beta / Usq;
 }
 
 
@@ -272,9 +273,6 @@ PetscErrorCode InvSSABasicTikhonov::assembleFunction( DMDALocalInfo *info, PISMV
   PetscReal   c_q[FEQuadrature::Nq];
 
   PISMVector2   y_e[FEQuadrature::Nk];
-
-  // PetscReal B = 1;
-  // PetscReal H = 1;
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -316,13 +314,12 @@ PetscErrorCode InvSSABasicTikhonov::assembleFunction( DMDALocalInfo *info, PISMV
       for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
 
         const PetscReal    jw  = JxW[q];
-        const PetscReal unormsq = m_epsilon_beta+u_q[q].u*u_q[q].u + u_q[q].v*u_q[q].v;
-        const PetscReal beta    = c_q[q] * pow(unormsq,(m_q-1.)*.5);
+        PetscReal beta;
+        this->computeBeta(c_q[q],u_q[q],&beta, NULL);
 
         PetscReal *Du_qq = Du_q[q];
         PetscReal nuH;
-        PetscReal B=1, H=1;
-        computeNuH(B,H,Du_qq,&nuH,NULL);
+        computeNuH(m_B,m_H,Du_qq,&nuH,NULL);
 
         PetscReal Fu_q =beta*u_q[q].u-f_q[q].u;
         PetscReal Fv_q =beta*u_q[q].v-f_q[q].v;
@@ -332,9 +329,9 @@ PetscErrorCode InvSSABasicTikhonov::assembleFunction( DMDALocalInfo *info, PISMV
           const PetscReal *tDDx = testx_DD[q][k];
           const PetscReal *tDDy = testy_DD[q][k];
 
-          y_e[k].u += jw*(0.5*nuH*(tDDx[0]*Du_qq[0]+tDDx[1]*Du_qq[1]+2*tDDx[2]*Du_qq[2]+ tDDx[3]*(Du_qq[0]+Du_qq[1])) +
+          y_e[k].u += jw*(nuH*(tDDx[0]*Du_qq[0]+tDDx[1]*Du_qq[1]+2*tDDx[2]*Du_qq[2]+ tDDx[3]*(Du_qq[0]+Du_qq[1])) +
             testqk.val*Fu_q);
-          y_e[k].v += jw*(0.5*nuH*(tDDy[0]*Du_qq[0]+tDDy[1]*Du_qq[1]+2*tDDy[2]*Du_qq[2]+ tDDy[3]*(Du_qq[0]+Du_qq[1])) +
+          y_e[k].v += jw*(nuH*(tDDy[0]*Du_qq[0]+tDDy[1]*Du_qq[1]+2*tDDy[2]*Du_qq[2]+ tDDy[3]*(Du_qq[0]+Du_qq[1])) +
             testqk.val*Fv_q);
         }
       } // q
@@ -378,8 +375,6 @@ PetscErrorCode InvSSABasicTikhonov::assembleJacobian( DMDALocalInfo *info, PISMV
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
-
-  // PetscReal B=1., H=1.;
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
@@ -425,14 +420,13 @@ PetscErrorCode InvSSABasicTikhonov::assembleJacobian( DMDALocalInfo *info, PISMV
         // Shorthand for values and derivatives of the solution at the single quadrature point.
 
         const PISMVector2 &u_qq = u_q[q];
-        const PetscReal unormsq  = m_epsilon_beta + u_qq.u*u_qq.u+ u_qq.v*u_qq.v;
-        const PetscReal beta     = c_q[q] * pow(unormsq,(m_q-1)*.5);
-        const PetscReal dbeta    = (m_q-1)*beta/unormsq;
-        // PetscReal nuH = 1;
+
+        PetscReal beta, dbeta;
+        this->computeBeta(c_q[q],u_qq,&beta, &dbeta);
+
         PetscReal nuH, dNuH;
-        PetscReal B=1, H=1;
         PetscReal *Du_qq = Du_q[q];
-        computeNuH(B,H,Du_qq,&nuH,&dNuH);
+        this->computeNuH(m_B,m_H,Du_qq,&nuH,&dNuH);
 
         const PetscReal    jw  = JxW[q];
 
@@ -441,10 +435,9 @@ PetscErrorCode InvSSABasicTikhonov::assembleJacobian( DMDALocalInfo *info, PISMV
         for(PetscInt k=0;k<FEQuadrature::Nk;k++) {
           PetscReal *Dtestxk=testx_DD[q][k];
           PetscReal *Dtestyk=testy_DD[q][k];
-          Dtestx_dot_Du[k] = Dtestxk[0]*Du_qq[0]+Dtestxk[1]*Du_qq[1]+2*Dtestxk[2]*Du_qq[2]+ Dtestxk[3]*(Du_qq[0]+Du_qq[1]);
-          Dtesty_dot_Du[k] = Dtestyk[0]*Du_qq[0]+Dtestyk[1]*Du_qq[1]+2*Dtestyk[2]*Du_qq[2]+ Dtestyk[3]*(Du_qq[0]+Du_qq[1]);
+          Dtestx_dot_Du[k] = (Dtestxk[0]*Du_qq[0]+Dtestxk[1]*Du_qq[1]+2*Dtestxk[2]*Du_qq[2]+ Dtestxk[3]*(Du_qq[0]+Du_qq[1]));
+          Dtesty_dot_Du[k] = (Dtestyk[0]*Du_qq[0]+Dtestyk[1]*Du_qq[1]+2*Dtestyk[2]*Du_qq[2]+ Dtestyk[3]*(Du_qq[0]+Du_qq[1]));
         }
-
         
         for (PetscInt k=0; k<4; k++) {   // Test functions
           for (PetscInt l=0; l<4; l++) { // Trial functions
@@ -466,16 +459,16 @@ PetscErrorCode InvSSABasicTikhonov::assembleJacobian( DMDALocalInfo *info, PISMV
             PetscReal Dtestky_dot_Du = Dtesty_dot_Du[k];
             PetscReal Dtestly_dot_Du = Dtesty_dot_Du[l];
 
-            K[k*16+l*2]     += jw*( 0.5*nuH*Dtestkx_dot_Dtestlx + 0.5*dNuH* Dtestlx_dot_Du * Dtestkx_dot_Du +
+            K[k*16+l*2]     += jw*( nuH*Dtestkx_dot_Dtestlx + dNuH* Dtestlx_dot_Du * Dtestkx_dot_Du +
               beta*test_qk.val*test_ql.val + dbeta*(test_qk.val*u_qq.u*test_ql.val*u_qq.u) );
             // u-v coupling
-            K[k*16+l*2+1]   += jw*( 0.5*nuH*Dtestkx_dot_Dtestly + 0.5*dNuH* Dtestly_dot_Du * Dtestkx_dot_Du +
+            K[k*16+l*2+1]   += jw*( nuH*Dtestkx_dot_Dtestly + dNuH* Dtestly_dot_Du * Dtestkx_dot_Du +
               dbeta*(test_qk.val*u_qq.u*test_ql.val*u_qq.v) );
             // v-u coupling
-            K[k*16+8+l*2]   += jw*( 0.5*nuH*Dtestky_dot_Dtestlx + 0.5*dNuH* Dtestlx_dot_Du * Dtestky_dot_Du +
+            K[k*16+8+l*2]   += jw*( nuH*Dtestky_dot_Dtestlx + dNuH* Dtestlx_dot_Du * Dtestky_dot_Du +
               dbeta*(test_qk.val*u_qq.v*test_ql.val*u_qq.u) );
             // v-v coupling
-            K[k*16+8+l*2+1] += jw*( 0.5*nuH*Dtestky_dot_Dtestly + 0.5*dNuH* Dtestly_dot_Du * Dtestky_dot_Du +
+            K[k*16+8+l*2+1] += jw*( nuH*Dtestky_dot_Dtestly + dNuH* Dtestly_dot_Du * Dtestky_dot_Du +
               beta*test_qk.val*test_ql.val + dbeta*(test_qk.val*u_qq.v*test_ql.val*u_qq.v));
           } // l
         } // k
@@ -499,16 +492,16 @@ PetscErrorCode InvSSABasicTikhonov::assembleJacobian( DMDALocalInfo *info, PISMV
   return 0;
 }
 
-PetscErrorCode InvSSABasicTikhonov::evalObjective(IceModelVec2S &dc, PetscReal *OUTPUT) {
+PetscErrorCode InvSSABasicTikhonov::evalObjective(IceModelVec2S &dzeta, PetscReal *OUTPUT) {
 
   PetscErrorCode ierr;
-  ierr = m_designFunctional->valueAt(dc,OUTPUT);
+  ierr = m_designFunctional->valueAt(dzeta,OUTPUT);
   return 0;
 }
 
-PetscErrorCode InvSSABasicTikhonov::evalGradObjective(IceModelVec2S &dc, IceModelVec2S &gradient) {
+PetscErrorCode InvSSABasicTikhonov::evalGradObjective(IceModelVec2S &dzeta, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
-  ierr = m_designFunctional->gradientAt(dc,gradient);
+  ierr = m_designFunctional->gradientAt(dzeta,gradient);
   return 0;
 }
 
@@ -603,8 +596,8 @@ PetscErrorCode InvSSABasicTikhonov::evalGradPenaltyReduced(IceModelVec2V &du, Ic
         PISMVector2 v_qq = v_q[q];
         PISMVector2 u_qq = u_q[q];
 
-        const PetscReal unormsq   = m_epsilon_beta + u_qq.u*u_qq.u+ u_qq.v*u_qq.v;
-        const PetscReal dbeta_dc  = pow(unormsq,(m_q-1)*.5);
+        PetscReal dbeta_dc;
+        this->computeBeta(1,u_qq,&dbeta_dc,NULL);
 
         for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
           gradient_e[k] += -JxW[q]*dbeta_dc*(v_qq.u*u_qq.u+v_qq.v*u_qq.v)*test[q][k].val;

@@ -20,8 +20,6 @@
 #define INVSSABASICTIKHONOV_HH_5AJEULAC
 
 
-
-
 #include "SNESCallbacks.hh"
 #include "iceModelVec.hh"
 #include "FETools.hh"
@@ -40,6 +38,23 @@ public:
   ~InvSSABasicTikhonov();
 
   PetscErrorCode setZeta(IceModelVec2S &zeta);
+
+  void setEpsilon( PetscReal eps_vel, PetscReal eps_Du, PetscReal eps_nuH) {
+    m_epsilon_velocity = eps_vel;
+    m_epsilon_strainrate = eps_Du;
+    m_epsilon_nuH = eps_nuH;
+  }
+
+  void setParamsFromConfig( NCConfigVariable &config );
+
+  void setPseudoPlasticThreshold( PetscReal threshold) {
+    m_pseudo_plastic_threshold = threshold;
+  }
+
+
+  void setBH(PetscReal B, PetscReal H) {
+    m_B = B; m_H = H;
+  }
 
   void setDirichletData(IceModelVec2Int &locs, IceModelVec2V &values) {
     m_dirichletLocations = &locs;
@@ -87,15 +102,20 @@ protected:
   void computeNuH(PetscReal B, PetscReal H, const PetscReal Du[],
     PetscReal *nuH, PetscReal *dNuH );
 
+  void computeBeta(PetscReal tauc, PISMVector2 U,
+    PetscReal *beta, PetscReal *dBeta );
+
   IceGrid &m_grid;
   IceModelVec2S   *m_zeta;
   IceModelVec2V   *m_f;
   PetscReal m_p, m_q;
   IceModelVec2S   m_c;
+  PetscReal m_B, m_H;
 
-  PetscReal m_epsilon_beta;
-  PetscReal m_epsilon_ssa;
-  PetscReal m_epsilon_schoof;
+  PetscReal m_epsilon_velocity;
+  PetscReal m_epsilon_strainrate;
+  PetscReal m_epsilon_nuH;
+  PetscReal m_pseudo_plastic_threshold;
 
   IceModelVec2Int *m_dirichletLocations;
   IceModelVec2V   *m_dirichletValues;
