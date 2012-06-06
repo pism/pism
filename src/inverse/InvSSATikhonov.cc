@@ -50,8 +50,9 @@ PetscErrorCode InvSSATikhonov::set_functionals() {
 
   m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixed_tauc_locations));    
 
+  PetscReal velocity_scale = m_grid.config.get("inv_ssa_velocity_scale")/secpera;
   m_penaltyFunctional.reset(new MeanSquareObservationFunctional2V(m_grid,m_misfit_weight));    
-  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize();
+  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize(velocity_scale);
 
   return 0;
 }

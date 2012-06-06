@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Functional.hh"
+#include "L2NormFunctional.hh"
 
 PetscErrorCode L2NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) {
 

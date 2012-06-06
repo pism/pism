@@ -6,7 +6,7 @@ add_library (pisminverse
   ./InvSchrodTikhonov.cc
   ./InvSSATikhonov.cc
   ./InvSSABasicTikhonov.cc
-  ./Functional.cc
+  ./L2NormFunctional.cc
   ./H1NormFunctional.cc
   ./MeanSquareObservationFunctional.cc
   )

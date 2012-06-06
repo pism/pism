@@ -306,6 +306,10 @@ class MonitorAdjointLin:
     ip2 = fp.rangeIP(self.Td,r)
     siple.reporting.msg("adjoint test: <Td,r>=%g <d,T^*r>=%g (percent error %g)",ip1,ip2,(abs(ip1-ip2))/max(abs(ip1),abs(ip2)))
 
+def printMisfit(inverse_solver,count,x,Fx,y,d,r,*args):
+    fp = inverse_solver.forward_problem
+    rms_misfit = math.sqrt(fp.rangeIP(r,r))*PISM.secpera
+    siple.reporting.msg("RMS misfit: %g m/a" % rms_misfit)
 
 class Vel2TaucLinPlotListener(LinearPlotListener):
   def __init__(self,grid,Vmax):
@@ -599,6 +603,7 @@ if __name__ == "__main__":
   if do_pause:
     solver.addIterationListener(pauseListener)            
   # Saving the current iteration
+  solver.addIterationListener(printMisfit)
   solver.addXUpdateListener(ZetaSaver(output_filename)) 
 
   # Solver is set up.  Give the user's prep module a chance to do any final

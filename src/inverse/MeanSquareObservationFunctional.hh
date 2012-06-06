@@ -27,7 +27,7 @@ public:
   Functional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~MeanSquareObservationFunctional2V() {};
 
-  virtual PetscErrorCode normalize();
+  virtual PetscErrorCode normalize(PetscReal scale);
 
   virtual PetscErrorCode valueAt(IceModelVec2V &x, PetscReal *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);

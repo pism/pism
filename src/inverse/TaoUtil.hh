@@ -58,6 +58,29 @@ protected:
 };
 
 template<class Problem>
+class TaoMonitorCallback {
+public:
+
+  static PetscErrorCode connect(TaoSolver tao, Problem &p) {
+    PetscErrorCode ierr;
+    ierr = TaoSetMonitor(tao,
+      TaoMonitorCallback<Problem>::monitorTao,
+      &p, NULL ); CHKERRQ(ierr);
+    return 0;
+  }
+
+protected:
+
+  static PetscErrorCode monitorTao(TaoSolver tao, void *ctx ) {
+    PetscErrorCode ierr;
+    Problem *p = reinterpret_cast<Problem *>(ctx);
+    ierr = p->monitorTao(tao); CHKERRQ(ierr);
+    return 0;
+  }
+};
+
+
+template<class Problem>
 class TaoGradientCallback {
 public:
 

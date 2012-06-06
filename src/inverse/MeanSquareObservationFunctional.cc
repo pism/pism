@@ -18,7 +18,7 @@
 
 #include "MeanSquareObservationFunctional.hh"
 
-PetscErrorCode MeanSquareObservationFunctional2V::normalize() {
+PetscErrorCode MeanSquareObservationFunctional2V::normalize(PetscReal scale) {
   PetscErrorCode   ierr;
 
   // The local value of the weights
@@ -42,7 +42,7 @@ PetscErrorCode MeanSquareObservationFunctional2V::normalize() {
   }
   
   ierr = PISMGlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
-
+  m_normalization *= (scale*scale);
   return 0;
 }
 

@@ -16,37 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef FUNCTIONAL_HH_1E2DIXE6
-#define FUNCTIONAL_HH_1E2DIXE6
+#ifndef PYTHONTIKHONOVSVLISTENER_HH_ZILN5E62
+#define PYTHONTIKHONOVSVLISTENER_HH_ZILN5E62
 
 #include "iceModelVec.hh"
-#include "FETools.hh"
+#include <memory>
 
-template<class IMVecType>
-class Functional {
+class PythonTikhonovSVListener {
 public:
-  
-  Functional(IceGrid &grid) : m_grid(grid), m_element_index(m_grid) { 
-    m_quadrature.init(m_grid);
-  }
-
-  virtual ~Functional() {};
-
-  virtual PetscErrorCode valueAt(IMVecType &x, PetscReal *OUTPUT) = 0;
-  virtual PetscErrorCode gradientAt(IMVecType &x, IMVecType &gradient) = 0;
-
-protected:
-  IceGrid &m_grid;
-
-  FEElementMap m_element_index;
-  FEQuadrature m_quadrature;
-  FEDOFMap     m_dofmap;
-  
-private:
-  // Hide copy/assignment operations
-  Functional(Functional const &);
-  Functional & operator=(Functional const &);
-
+  typedef std::tr1::shared_ptr<PythonTikhonovSVListener> Ptr;
+  PythonTikhonovSVListener() {}
+  virtual ~PythonTikhonovSVListener() {}
+  virtual void iteration(PetscInt iter, PetscReal eta,
+   PetscReal objectiveValue, PetscReal designValue,
+   IceModelVec2S &d, IceModelVec2S &diff_d, IceModelVec2S &grad_d,
+   IceModelVec2V &u,  IceModelVec2V &diff_u,  IceModelVec2S &grad_u,
+   IceModelVec2S &gradient) { };
 };
 
-#endif /* end of include guard: FUNCTIONAL_HH_1E2DIXE6 */
+#endif /* end of include guard: PYTHONTIKHONOVSVLISTENER_HH_ZILN5E62 */

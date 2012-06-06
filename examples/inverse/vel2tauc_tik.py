@@ -41,6 +41,18 @@ default_ssa_l2_coeff = 1.
 default_ssa_h1_coeff = 0.
 default_eta = 1
 
+class Listener(PISM.PythonTikhonovSVListener):
+  def __init__(self):
+    PISM.PythonTikhonovSVListener.__init__(self)
+  def iteration(self,it,eta,objVal,penaltyVal,d,diff_d,grad_d,u,diff_u,grad_u,grad):
+    print "----------------------------------------------------------"
+    print "Iteration %d" % it
+    print "RMS misfit: %g" % math.sqrt(penaltyVal)
+    print "sqrt(design objective) %g; weighted %g" % (math.sqrt(objVal),math.sqrt(objVal/eta)) 
+    print "gradient: design %g state %g sum %g " % (grad_d.norm(PETSc.NormType.NORM_2)/eta,grad_u.norm(PETSc.NormType.NORM_2),grad.norm(PETSc.NormType.NORM_2))
+    print "tikhonov functional: %g" % (objVal/eta + penaltyVal)
+#    print "doing iteration %d: gradients %g %g %g" % (it,grad_d.norm(PETSc.NormType.NORM_2),eta*grad_u.norm(PETSc.NormType.NORM_2),grad.norm(PETSc.NormType.NORM_2))
+
 class Vel2TaucTikhonov(PISM.ssa.SSAFromInputFile):
   def __init__(self,input_filename,inv_data_filename,tauc_param):
     PISM.ssa.SSAFromInputFile.__init__(self,input_filename)
@@ -434,7 +446,7 @@ if __name__ == "__main__":
   area_scale     = length_scale*length_scale
   velocity_scale = 100 / PISM.secpera # 100m/a
   inv_ssa_cL2 /= area_scale 
-  eta /= velocity_scale**2
+  #eta /= velocity_scale**2
 
   config.set_string("inv_ssa_tauc_param","ident")
   config.set("inv_ssa_cL2",inv_ssa_cL2)
@@ -444,6 +456,7 @@ if __name__ == "__main__":
   config.set("tauc_param_trunc_tauc0",.1*stress_scale)
   config.set("tauc_param_tauc_eps",.001*stress_scale)
   config.set("tauc_param_tauc_scale",stress_scale)
+  config.set("inv_ssa_velocity_scale",1) # m/a
 
   tauc_param = tauc_param_factory.create(config)
 
@@ -540,8 +553,9 @@ if __name__ == "__main__":
   # if logger is None: logger = CarefulCaptureLogger(output_filename);
 
   ip     = PISM.InvSSATikhonovProblem(vel2tauc.ssa,zeta,vel_ssa_observed,eta)
+  l = Listener()
+  ip.addListener(l)
   solver = PISM.InvSSATikhonovSolver(grid.com,"tao_lmvm",ip)
-
   # # Attach various iteration listeners to the solver as needed for:
   # # Plotting
   # if do_plotting:
