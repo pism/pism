@@ -429,9 +429,14 @@ if __name__ == "__main__":
 
   saving_inv_data = (inv_data_filename != output_filename)
 
-  config.set("inv_ssa_tauc_param","ident")
+  config.set_string("inv_ssa_tauc_param","ident")
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
   config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
+
+  stress_scale = 50000 # Pa
+  config.set("tauc_param_trunc_tauc0",.1*stress_scale)
+  config.set("tauc_param_tauc_eps",.001*stress_scale)
+  config.set("tauc_param_tauc_scale",stress_scale)
 
   tauc_param = tauc_param_factory.create(config)
 

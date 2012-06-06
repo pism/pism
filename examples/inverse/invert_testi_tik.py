@@ -117,7 +117,6 @@ class testi_run(InvSSATikRun):
          config.get("pseudo_plastic_q"),
          config.get("pseudo_plastic_uthreshold") / PISM.secpera);
 
-    basal.printInfo(1,PETSc.COMM_WORLD)
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
@@ -211,13 +210,6 @@ if __name__ == "__main__":
   viscosity_scale  = B*(strainrate_scale**(-2./3.))
   nuH_scale        = viscosity_scale * depth_scale
 
-
-  print stress_scale, velocity_scale, time_scale, strainrate_scale, viscosity_scale, nuH_scale
-
-  # area_scale = 1000e2*1000e2  # 100 km^2
-  # velocity_scale = 100 / PISM.secpera  # 100 m/a
-  # stress_scale = 500000 # Pa
-
   inv_ssa_cL2 /= area_scale 
   eta /= velocity_scale**2
 
@@ -242,8 +234,7 @@ if __name__ == "__main__":
   # Build the true yeild stress for test I
   tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
   testi_tauc(grid, tauc_true)
-  tauc_true.scale(1.)
-  # tauc_true.set(stress_scale)
+
   # Convert tauc_true to zeta_true
   zeta_true = PISM.IceModelVec2S();
   zeta_true.create(grid,"zeta_true",PISM.kHasGhosts,kFEMStencilWidth)
@@ -259,7 +250,6 @@ if __name__ == "__main__":
   u_obs.copy_from(testi.ssa.solution())
 
 
-  tauc_guess_const = stress_scale
   # Build the initial guess for tauc for the inversion.
   tauc = PISM.util.standardYieldStressVec(grid)
   if not tauc_guess_const is None:
@@ -268,44 +258,10 @@ if __name__ == "__main__":
     testi_tauc(grid, tauc)
     tauc.scale(tauc_guess_scale)
 
-  designFunc =PISM.H1NormFunctional2S(grid,inv_ssa_cL2,inv_ssa_cH1)
-  stateFunc = PISM.MeanSquareObservationFunctional2V(grid)
-  print "cL2, cH1", inv_ssa_cL2,inv_ssa_cH1
-  grid.printInfo(1)
-  print "design functional value is: %g" % designFunc.valueAt(zeta_true)
-  print "tauc design functional value is: %g" % designFunc.valueAt(tauc_true)
-  print "state functional value is: %g; eta=%g" % (eta*stateFunc.valueAt(u_obs),eta)
-  
-  maxU = 0 
-  maxZeta = 0
-  maxTauc = 0
-  with PISM.util.Access(nocomm=[u_obs,zeta_true,tauc_true]):
-    for (i,j) in grid.points():
-      U=u_obs[i,j].magnitude()
-      if U>maxU:
-        maxU = U
-      Zeta=zeta_true[i,j]
-      if Zeta>maxZeta:
-        maxZeta = Zeta
-      TAUC=tauc_true[i,j]
-      if TAUC>maxTauc:
-        maxTauc = TAUC
-  print "Maximum velocity is : %g m/s = %g m/a.  Relative: %g" % (maxU,maxU*PISM.secpera,maxU/velocity_scale)
-  print "Maximum zeta is : %g Relative: %g" % (maxZeta,maxZeta)
-  print "Maximum tauc is : %g Relative: %g" % (maxTauc,maxTauc/stress_scale)
-
-  # tozero = PISM.toproczero.ToProcZero(grid,dof=2,dim=2)
-  # u_obs_a = tozero.communicate(u_obs)
-  # pp.plot(grid.y,u_obs_a[0,:,Mx/2])
-  # pp.show()
-  # quit()
-
-
   # Convert tauc guess to zeta guess
   zeta = PISM.IceModelVec2S();
   zeta.create(grid, "zeta", PISM.kHasGhosts, kFEMStencilWidth)
   tauc_param.convertFromTauc(tauc,zeta)
-
 
   # Build the inverse solver.  This first step feels redundant.
   ip = PISM.InvSSATikhonovProblem(testi.ssa,zeta,u_obs,eta)
@@ -346,9 +302,18 @@ if __name__ == "__main__":
   tz = PISM.toproczero.ToProcZero(grid)
   tauc_a = tz.communicate(tauc)
   tauc_true = tz.communicate(tauc_true)
+  tz2 = PISM.toproczero.ToProcZero(grid,dof=2,dim=2)
+  u_i_a = tz2.communicate(u_i)
+  u_obs_a = tz2.communicate(u_obs)
+
   if do_final_plot and (not tauc_a is None):
     from matplotlib import pyplot
     pyplot.clf()
+    pyplot.subplot(1,2,1)
     pyplot.plot(grid.y,tauc_a[:,Mx/2])
     pyplot.plot(grid.y,tauc_true[:,Mx/2])
+
+    pyplot.subplot(1,2,2)
+    pyplot.plot(grid.y,u_i_a[0,:,Mx/2])
+    pyplot.plot(grid.y,u_obs_a[0,:,Mx/2])
     pyplot.show()

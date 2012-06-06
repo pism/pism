@@ -98,6 +98,7 @@ public:
     ierr = m_invProblem.evalObjective(m_d_diff,&valObjective); CHKERRQ(ierr);
     ierr = m_invProblem.evalPenalty(m_u_diff,&valPenalty); CHKERRQ(ierr);
 
+    ierr = verbPrintf(1,PETSC_COMM_WORLD,"tikhonov problem objective %g penalty %g eta*penalty %g\n",valObjective, valPenalty, m_eta*valPenalty); CHKERRQ(ierr);
     *value = valObjective + m_eta * valPenalty;
     
     return 0;

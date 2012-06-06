@@ -578,9 +578,17 @@ if __name__ == "__main__":
   if not solver.solve():
     PISM.verbPrintf(1,grid.com,"Inverse solve FAILURE (%s)!\n" % solver.reasonDescription());
     PISM.PISMEnd()
+  PISM.verbPrintf(1,grid.com,"Inverse solve converged (%s)!\n" % solver.reasonDescription());
 
-  u    = ip.stateSolution();
-  zeta = ip.designSolution();
+  vel_ssa_inv      = ip.stateSolution();
+  zeta_inv         = ip.designSolution();
+
+  vel_ssa_misfit = PISM.util.standard2dVelocityVec(grid,'_ssa_misfit',stencil_width=2)
+  vel_ssa_misfit.copy_from(vel_ssa_inv)
+  vel_ssa_misfit.add(-1,vel_ssa_observed)
+  vel_ssa_misfit.beginGhostComm();  vel_ssa_misfit.endGhostComm()
+  misfit = math.sqrt(vel2tauc.ssa.evalPenalty(vel_ssa_misfit))
+  print "Velocity misfit %g m/a" % (misfit * PISM.secpera)
 
   # Convert back from zeta to tauc
   tauc_param.convertToTauc(zeta,tauc)
@@ -590,8 +598,8 @@ if __name__ == "__main__":
   if vecs.has('tauc'): vecs.remove('tauc')
   vecs.add(tauc,writing=True)
 
-  u.rename("_ssa_inv","SSA velocity computed by inversion","")
-  vecs.add(u,writing=True)
+  vel_ssa_inv.rename("_ssa_inv","SSA velocity computed by inversion","")
+  vecs.add(vel_ssa_inv,writing=True)
 
   # Write solution out to netcdf file
   vel2tauc.write(output_filename,append=append_mode)
