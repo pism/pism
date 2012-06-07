@@ -84,19 +84,6 @@ public:
   virtual PetscErrorCode fromTauc( PetscReal tauc, PetscReal *OUTPUT);
 };
 
-/*! Parameterization \f$\tau_c=F(p)\f$ with $F(p)=\tauc_{scale} p$. */
-class InvTaucParamIdentDimensionless: public InvTaucParameterization
-{
-public:
-  InvTaucParamIdentDimensionless(){ /*do nothing*/ };
-
-  virtual ~InvTaucParamIdentDimensionless() {};
-
-  virtual PetscErrorCode toTauc( PetscReal p, PetscReal *value, PetscReal *derivative);
-
-  virtual PetscErrorCode fromTauc( PetscReal tauc, PetscReal *OUTPUT);
-};
-
 /*! Parameterization \f$\tau_c=F(p)\f$ with $F(p)=p^2$. */
 class InvTaucParamSquare: public InvTaucParameterization
 {

@@ -32,6 +32,17 @@ tauc_param_factory, PlotListener
 
 import matplotlib.pyplot as pp
 
+class Listener(PISM.PythonTikhonovSVListener):
+  def __init__(self):
+    PISM.PythonTikhonovSVListener.__init__(self)
+  def iteration(self,it,eta,objVal,penaltyVal,d,diff_d,grad_d,u,diff_u,grad_u,grad):
+    print "----------------------------------------------------------"
+    print "Iteration %d" % it
+    print "RMS misfit: %g" % math.sqrt(penaltyVal)
+    print "sqrt(design objective) %g; weighted %g" % (math.sqrt(objVal),math.sqrt(objVal/eta)) 
+    print "gradient: design %g state %g sum %g " % (grad_d.norm(PETSc.NormType.NORM_2)/eta,grad_u.norm(PETSc.NormType.NORM_2),grad.norm(PETSc.NormType.NORM_2))
+    print "tikhonov functional: %g" % (objVal/eta + penaltyVal)
+
 class InvSSATikRun(PISM.ssa.SSARun):
 
   def setup(self):
@@ -81,9 +92,6 @@ rms_error = 1. #m/a
 
 right_side_weight = 1.
 
-ssa_l2_coeff = 1.
-ssa_h1_coeff = 0.
-
 tauc_guess_scale = 0.3
 tauc_guess_const = None
 
@@ -107,7 +115,7 @@ class testi_run(InvSSATikRun):
     Mx=self.Mx; My=self.My
     Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
     Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NOT_PERIODIC);
+    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.X_PERIODIC);
 
   def _initPhysics(self):
     config = self.config
@@ -183,7 +191,7 @@ if __name__ == "__main__":
     eta = PISM.optionsReal("-eta","penalty weight",default=1)
     right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
     inv_ssa_cL2 = PISM.optionsReal("-inv_ssa_cL2","L2 coefficient for domain inner product",default=1)
-    inv_ssa_cH1 = PISM.optionsReal("-inv_ssa_cH1","H1 coefficient for domain inner product",default=1)
+    inv_ssa_cH1 = PISM.optionsReal("-inv_ssa_cH1","H1 coefficient for domain inner product",default=0)
     tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
     tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
@@ -211,7 +219,6 @@ if __name__ == "__main__":
   nuH_scale        = viscosity_scale * depth_scale
 
   inv_ssa_cL2 /= area_scale 
-  eta /= velocity_scale**2
 
   config.set("inv_ssa_cL2",inv_ssa_cL2)
   config.set("inv_ssa_cH1",inv_ssa_cH1)
@@ -219,6 +226,8 @@ if __name__ == "__main__":
   config.set("tauc_param_trunc_tauc0",.1*stress_scale)
   config.set("tauc_param_tauc_eps",.001*stress_scale)
   config.set("tauc_param_tauc_scale",stress_scale)
+
+  config.set("inv_ssa_velocity_scale",1) # m/a
 
   # Default to be overridden by command line perhaps
   config.set_string("inv_ssa_tauc_param","ident")
@@ -241,15 +250,6 @@ if __name__ == "__main__":
   tauc_param = PISM.invert_ssa.tauc_param_factory.create(config)
   tauc_param.convertFromTauc(tauc_true,zeta_true)
 
-  # Send the true yeild stress through the forward problem to 
-  # get at true velocity field.
-  if not testi.ssa.linearizeAt(zeta_true):
-    PISM.verbPrintf(1,grid.com,"Forward solve failed (%s)!\n" % testi.ssa.reasonDescription());
-    exit(1)
-  u_obs = PISM.util.standard2dVelocityVec( grid, name='_ssa_true', desc='SSA velocity boundary condition',intent='intent' )
-  u_obs.copy_from(testi.ssa.solution())
-
-
   # Build the initial guess for tauc for the inversion.
   tauc = PISM.util.standardYieldStressVec(grid)
   if not tauc_guess_const is None:
@@ -263,8 +263,64 @@ if __name__ == "__main__":
   zeta.create(grid, "zeta", PISM.kHasGhosts, kFEMStencilWidth)
   tauc_param.convertFromTauc(tauc,zeta)
 
+  # Send the true yeild stress through the forward problem to 
+  # get at true velocity field.
+  if not testi.ssa.linearizeAt(zeta_true):
+    PISM.verbPrintf(1,grid.com,"Forward solve failed (%s)!\n" % testi.ssa.reasonDescription());
+    exit(1)
+  u_obs = PISM.util.standard2dVelocityVec( grid, name='_ssa_true', desc='SSA velocity boundary condition',intent='intent' )
+  u_obs.copy_from(testi.ssa.solution())
+  
+  if not testi.ssa.linearizeAt(zeta):
+    PISM.verbPrintf(1,grid.com,"Forward solve failed (%s)!\n" % invProblem.reasonDescription());
+    exit(1)
+  u0 = PISM.PISM.IceModelVec2V()
+  u0.create(grid, "initial value", PISM.kHasGhosts, kFEMStencilWidth );
+  u0.copy_from(testi.ssa.solution())
+  du = PISM.PISM.IceModelVec2V()
+  du.create(grid, "du", PISM.kHasGhosts,  kFEMStencilWidth);
+  du.copy_from(u0)
+  du.add(-1,u_obs)
+
+  designFunc =PISM.H1NormFunctional2S(grid,inv_ssa_cL2,inv_ssa_cH1)
+  stateFunc = PISM.MeanSquareObservationFunctional2V(grid)
+  stateFunc.normalize(1/PISM.secpera)
+  print "cL2, cH1", inv_ssa_cL2,inv_ssa_cH1
+  grid.printInfo(1)
+  print "design functional value is: %g" % designFunc.valueAt(zeta)
+  print "state functional value is: %g; eta=%g" % (stateFunc.valueAt(du),eta)
+
+  maxU = 0 
+  maxZeta = 0
+  maxTauc = 0
+  with PISM.util.Access(nocomm=[u_obs,zeta_true,tauc_true]):
+    for (i,j) in grid.points():
+      U=u_obs[i,j].magnitude()
+      if U>maxU:
+        maxU = U
+      Zeta=zeta_true[i,j]
+      if Zeta>maxZeta:
+        maxZeta = Zeta
+      TAUC=tauc_true[i,j]
+      if TAUC>maxTauc:
+        maxTauc = TAUC
+  print "Maximum velocity is : %g m/s = %g m/a.  Relative: %g" % (maxU,maxU*PISM.secpera,maxU/velocity_scale)
+  print "Maximum zeta is : %g Relative: %g" % (maxZeta,maxZeta)
+  print "Maximum tauc is : %g Relative: %g" % (maxTauc,maxTauc/stress_scale)
+
+  # tozero = PISM.toproczero.ToProcZero(grid,dof=2,dim=2)
+  # import schoof
+  # s = schoof.SchoofSSA1dExact(L_schoof,m_schoof,B=B_schoof,h=H0_schoof,f=f0)
+  # u_true_a = [s.eval(y) for y in grid.y]
+  # u_obs_a = tozero.communicate(u_obs)
+  # pp.plot(grid.y,u_obs_a[0,:,Mx/2],grid.y,u_true_a)
+  # pp.show()
+
+
   # Build the inverse solver.  This first step feels redundant.
   ip = PISM.InvSSATikhonovProblem(testi.ssa,zeta,u_obs,eta)
+  l=Listener()
+  ip.addListener(l)
   solver = PISM.InvSSATikhonovSolver(grid.com,"tao_lmvm",ip)
 
   # Try solving
@@ -282,7 +338,7 @@ if __name__ == "__main__":
   du.add(-1,u_obs)
   du.beginGhostComm(); du.endGhostComm()
   misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,testi.modeldata.vecs.vel_misfit_weight);
-  misfit_functional.normalize()
+  misfit_functional.normalize(1/PISM.secpera)
   misfit = math.sqrt(misfit_functional.valueAt(du))
   misfit_norm = math.sqrt(misfit_functional.valueAt(u_i))  
   PISM.verbPrintf(1,grid.com,"RMS Misfit: %g (relative %g)\n",misfit,misfit/misfit_norm)

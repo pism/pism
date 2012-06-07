@@ -72,26 +72,12 @@ PetscErrorCode InvTaucParameterization::convertFromTauc( IceModelVec2S &tauc, Ic
 PetscErrorCode InvTaucParamIdent::toTauc( PetscReal p, PetscReal *value, 
                                           PetscReal *derivative)
 {
-  if(value != NULL) *value = p;
-  if(derivative != NULL) *derivative = 1.;
-  return 0;
-}
-
-PetscErrorCode InvTaucParamIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
-{
-  *OUTPUT = tauc;
-  return 0;
-}
-
-PetscErrorCode InvTaucParamIdentDimensionless::toTauc( PetscReal p, PetscReal *value, 
-                                          PetscReal *derivative)
-{
   if(value != NULL) *value = m_tauc_scale*p;
   if(derivative != NULL) *derivative = m_tauc_scale;
   return 0;
 }
 
-PetscErrorCode InvTaucParamIdentDimensionless::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
+PetscErrorCode InvTaucParamIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
   *OUTPUT = tauc/m_tauc_scale;
   return 0;

@@ -28,6 +28,7 @@
 #include "Functional.hh"
 #include "InvTaucParameterization.hh"
 #include <memory> // for std::auto_ptr
+#include "PythonTikhonovSVListener.hh"
 
 class InvSSABasicTikhonov {
 public:
@@ -155,6 +156,34 @@ protected:
 
 typedef TikhonovProblem<InvSSABasicTikhonov> InvSSABasicTikhonovProblem;
 typedef TaoBasicSolver<InvSSABasicTikhonovProblem> InvSSABasicTikhonovSolver;
+
+
+// SWIG is having problem recognising subclasses of templated superclasses
+// have the correct type.  The following are workarounds to allow for
+// python-based listeners to InvSSATikhonov
+
+class InvSSABasicPythonListenerBridge: public TikhonovProblemListener<InvSSABasicTikhonov> {
+public:
+  InvSSABasicPythonListenerBridge(PythonTikhonovSVListener::Ptr core) : m_core(core) { }
+  PetscErrorCode iteration( TikhonovProblem<InvSSABasicTikhonov> &,
+             PetscReal eta, PetscInt iter, 
+             PetscReal objectiveValue, PetscReal designValue,
+             IceModelVec2S &d, IceModelVec2S &diff_d, IceModelVec2S &grad_d,
+             IceModelVec2V &u,  IceModelVec2V &diff_u,  IceModelVec2S &grad_u,
+             IceModelVec2S &gradient) {
+    m_core->iteration(iter,eta,objectiveValue,designValue,d,diff_d,grad_d,
+      u,diff_u,grad_u,gradient);
+    return 0;
+  }
+protected:
+  PythonTikhonovSVListener::Ptr m_core;
+};
+
+void InvSSABasicTikhonovAddListener(TikhonovProblem<InvSSABasicTikhonov> &problem, 
+                 PythonTikhonovSVListener::Ptr listener ) {
+  std::tr1::shared_ptr<InvSSABasicPythonListenerBridge> bridge(new InvSSABasicPythonListenerBridge(listener) );
+  problem.addListener(bridge);
+}
 
 #endif /* end of include guard: INVSSABASICTIKHONOV_HH_5AJEULAC */
 

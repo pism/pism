@@ -553,6 +553,14 @@ namespace std {
     InvSSATikhonovAddListener(self,l)
   }
 }
+%rename InvSSABasicTikhonovProblem::addListener _addListener;
+%extend TikhonovProblem<InvSSABasicTikhonov>
+{
+  %pythoncode{
+  def addListener(self,l):
+    InvSSABasicTikhonovAddListener(self,l)
+  }
+}
 %template(InvSSABasicTikhonovProblem) TikhonovProblem<InvSSABasicTikhonov> ;
 %template(InvSSABasicTikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSSABasicTikhonov> >;
 #endif

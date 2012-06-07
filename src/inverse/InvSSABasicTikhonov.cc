@@ -103,7 +103,8 @@ PetscErrorCode InvSSABasicTikhonov::solve(bool &success) {
   m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixedDesignLocations));    
 
   m_penaltyFunctional.reset(new MeanSquareObservationFunctional2V(m_grid,m_observationWeights));    
-  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize(1.);
+  PetscReal velocity_scale = m_grid.config.get("inv_ssa_velocity_scale");  
+  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize(velocity_scale);
 
   success=false;
   ierr = SNESSolve(m_snes,NULL,m_uGlobal.get_vec()); CHKERRQ(ierr);

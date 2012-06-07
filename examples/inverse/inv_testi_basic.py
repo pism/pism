@@ -16,16 +16,32 @@ PISM.set_abort_on_sigint(True)
 PISM.verbosityLevelFromOptions()
 PISM.stop_on_version_option()
 
+tauc_guess_scale = 0.3
+tauc_guess_const = None
+
+class Listener(PISM.PythonTikhonovSVListener):
+  def __init__(self):
+    PISM.PythonTikhonovSVListener.__init__(self)
+  def iteration(self,it,eta,objVal,penaltyVal,d,diff_d,grad_d,u,diff_u,grad_u,grad):
+    print "----------------------------------------------------------"
+    print "Iteration %d" % it
+    print "RMS misfit: %g" % math.sqrt(penaltyVal)
+    print "sqrt(design objective) %g; weighted %g" % (math.sqrt(objVal),math.sqrt(objVal/eta)) 
+    print "gradient: design %g state %g sum %g " % (grad_d.norm(PETSc.NormType.NORM_2)/eta,grad_u.norm(PETSc.NormType.NORM_2),grad.norm(PETSc.NormType.NORM_2))
+    print "tikhonov functional: %g" % (objVal/eta + penaltyVal)
+
 
 for o in PISM.OptionsGroup(com,"",sys.argv[0]):
   Mx = PISM.optionsInt("-Mx","problem size",default=11)
   My = PISM.optionsInt("-My","problem size",default=61)
   eta = PISM.optionsReal("-eta","regularization paramter",default=5e4)
-  cL2 = PISM.optionsReal("-inv_ssa_cL2","regularization paramter",default=0)
-  cH1 = PISM.optionsReal("-inv_ssa_cH1","regularization paramter",default=1)
+  cL2 = PISM.optionsReal("-inv_ssa_cL2","regularization paramter",default=1)
+  cH1 = PISM.optionsReal("-inv_ssa_cH1","regularization paramter",default=0)
+  tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
+  tauc_guess_const = PISM.optionsReal("-tauc_guess_const","initial guess for tauc to be this constant",default=tauc_guess_const)
 
-  p = PISM.optionsReal("-p","glen exponent",default=2)
-  q = PISM.optionsReal("-q","pseudo yeild stress exponent",default=1)
+  p = PISM.optionsReal("-p","glen exponent",default=4./3.)
+  q = PISM.optionsReal("-q","pseudo yeild stress exponent",default=0)
   hasFixedDesignLocs = PISM.optionsFlag("-use_fixed_design_locs","test having fixed design variables",default=False)
   hasMisfitWeight = PISM.optionsFlag("-use_misfit_weight","test misfit weight paramter",default=False)
   isDimensionless = PISM.optionsInt("-is_dimensionless","use dimensionless units",default=1)
@@ -89,7 +105,6 @@ nuH_scale        = viscosity_scale * depth_scale
 
 cL2 /= area_scale 
 # cH1 /= (stress_scale**2)
-eta /= velocity_scale**2
 
 config.set("inv_ssa_cL2",cL2)
 config.set("inv_ssa_cH1",cH1)
@@ -100,11 +115,15 @@ config.set("tauc_param_tauc_scale",stress_scale)
 
 m=2
 
+one_m_per_a = (1./PISM.secpera)*(velocity_scale/velocity_scale_dim)
+config.set("inv_ssa_velocity_scale",one_m_per_a) # m/a
+
 config.set_string("inv_ssa_tauc_param","ident")
 
 # Build the grid.
 grid = PISM.Context().newgrid()
-PISM.util.init_shallow_grid(grid,Lx,Ly,Mx,My,PISM.NOT_PERIODIC)
+PISM.util.init_shallow_grid(grid,Lx,Ly,Mx,My,PISM.X_PERIODIC)
+grid.printInfo(1)
 
 # Coefficient data
 cf = lambda x,y:  f0*(abs(y/L_schoof))**m
@@ -126,8 +145,12 @@ with PISM.util.Access(comm=[c,f,c0]):
     x=grid.x[i]; y=grid.y[j]
     f[i,j] = ff(x,y);
     c[i,j] = cf(x,y)
-    # c0[i,j] = 0.3*c[i,j]
-c0.set(stress_scale)
+
+if tauc_guess_const is not None:
+  c0.set(tauc_guess_const)
+else:
+  c0.copy_from(c)
+  c0.scale(tauc_guess_scale)
 
 # Convert c/c0 to zeta/zeta0
 tauc_param = PISM.invert_ssa.tauc_param_factory.create(config)
@@ -190,16 +213,26 @@ u_obs = PISM.PISM.IceModelVec2V()
 u_obs.create(grid, "true value", PISM.kHasGhosts, stencil_width);
 u_obs.copy_from(invProblem.solution())
 
+invProblem.setZeta(zeta0)
+if not invProblem.solve():
+  PISM.verbPrintf(1,grid.com,"Forward solve failed (%s)!\n" % invProblem.reasonDescription());
+  exit(1)
+u0 = PISM.PISM.IceModelVec2V()
+u0.create(grid, "initial value", PISM.kHasGhosts, stencil_width);
+u0.copy_from(invProblem.solution())
+du = PISM.PISM.IceModelVec2V()
+du.create(grid, "du", PISM.kHasGhosts, stencil_width);
+du.copy_from(u0)
+du.add(-1,u_obs)
+
 
 designFunc =PISM.H1NormFunctional2S(grid,cL2,cH1)
 stateFunc = PISM.MeanSquareObservationFunctional2V(grid)
+stateFunc.normalize( grid.config.get("inv_ssa_velocity_scale")  )
 print "cL2, cH1", cL2,cH1
 grid.printInfo(1)
-print "design functional value is: %g" % designFunc.valueAt(zeta)
-print "tauc design functional value is: %g" % designFunc.valueAt(c)
-print "state functional value is: %g; eta=%g" % (eta*stateFunc.valueAt(u_obs),eta)
-
-
+print "design functional value is: %g" % designFunc.valueAt(zeta0)
+print "state functional value is: %g; eta=%g" % (stateFunc.valueAt(du),eta)
 
 maxU = 0 
 maxZeta = 0
@@ -220,13 +253,21 @@ print "Maximum zeta is : %g Relative: %g" % (maxZeta,maxZeta)
 print "Maximum tauc is : %g Relative: %g" % (maxTauc,maxTauc/stress_scale)
 
 # tozero = PISM.toproczero.ToProcZero(grid,dof=2,dim=2)
-# u_obs_a = tozero.communicate(u_obs)
-# pp.plot(grid.y,u_obs_a[0,:,Mx/2])
+# import schoof
+# import matplotlib.pyplot as pp
+# standard_gravity = grid.config.get("standard_gravity");
+# ice_density = grid.config.get("ice_density");
+# s = schoof.SchoofSSA1dExact(L_schoof,m,B=B,h=H,f=f0)
+# u_schoof_a = [s.eval(y) for y in grid.y]
+# u_true_a = tozero.communicate(u_obs)
+# pp.plot(grid.y,u_true_a[0,:,Mx/2],grid.y,u_schoof_a)
 # pp.show()
 # quit()
 
 # Build the inverse solver.  This first step feels redundant.
 ip = PISM.InvSSABasicTikhonovProblem(invProblem,zeta0,u_obs,eta)
+l=Listener()
+ip.addListener(l)
 solver = PISM.InvSSABasicTikhonovSolver(grid.com,"tao_lmvm",ip)
 
 # Try solving
@@ -250,7 +291,7 @@ if hasMisfitWeight:
   misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,misfitWeight);
 else:
   misfit_functional = PISM.MeanSquareObservationFunctional2V(grid);
-misfit_functional.normalize()
+misfit_functional.normalize( config.get("inv_ssa_velocity_scale")  )
 misfit = math.sqrt(misfit_functional.valueAt(du))
 misfit_norm = math.sqrt(misfit_functional.valueAt(u_i))  
 PISM.verbPrintf(1,grid.com,"RMS Misfit: %g (relative %g)\n",misfit,misfit/misfit_norm)
