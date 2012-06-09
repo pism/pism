@@ -30,6 +30,10 @@ L = math.pi;
 m=4
 
 config.set_string("inv_ssa_tauc_param","ident")
+config.set('tauc_param_tauc_scale',1)
+config.set('inv_ssa_velocity_scale',1)
+config.set('inv_ssa_cL2',1)
+config.set('inv_ssa_cH1',0)
 
 # Build the grid.
 grid = PISM.Context().newgrid()
@@ -136,7 +140,7 @@ if solver.solve():
     misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,misfitWeight);
   else:
     misfit_functional = PISM.MeanSquareObservationFunctional2V(grid);
-  misfit_functional.normalize()
+  misfit_functional.normalize(1)
   misfit = math.sqrt(misfit_functional.valueAt(du))
   misfit_norm = math.sqrt(misfit_functional.valueAt(u_i))  
   PISM.verbPrintf(1,grid.com,"RMS Misfit: %g (relative %g)\n",misfit,misfit/misfit_norm)

@@ -72,6 +72,7 @@ public:
   PetscErrorCode connect(TaoSolver tao) {
     PetscErrorCode ierr;
     ierr = TaoObjGradCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
+    // ierr = TaoObjectiveCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
     ierr = TaoMonitorCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
     return 0;
   }
@@ -90,6 +91,35 @@ public:
                    m_invProblem.solution(), m_u_diff, m_grad_penalty,
                    m_grad ); CHKERRQ(ierr);
     }
+    return 0;
+  }
+
+  virtual PetscErrorCode evaluateObjective(TaoSolver tao, Vec x, PetscReal *value) {
+    PetscErrorCode ierr;
+
+    // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
+    ierr = m_d.copy_from(x); CHKERRQ(ierr);
+
+    bool success;
+    ierr = m_invProblem.linearizeAt(m_d, success); CHKERRQ(ierr);
+    if(!success) {
+      SETERRQ1(m_comm,1,"Failure in TikhonovProblem forward solve. %s",m_invProblem.reasonDescription().c_str());
+    }
+
+    ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);
+    ierr = m_d_diff.add(-1,m_d0); CHKERRQ(ierr);
+
+    ierr = m_u_diff.copy_from(m_invProblem.solution()); CHKERRQ(ierr);
+    ierr = m_u_diff.add(-1, m_u_obs); CHKERRQ(ierr);
+
+    PetscReal valObjective, valPenalty;
+    ierr = m_invProblem.evalObjective(m_d_diff,&valObjective); CHKERRQ(ierr);
+    ierr = m_invProblem.evalPenalty(m_u_diff,&valPenalty); CHKERRQ(ierr);
+
+    m_valObjective = valObjective;
+    m_valPenalty = valPenalty;
+    
+    *value = valObjective / m_eta + valPenalty;
     return 0;
   }
 
@@ -112,8 +142,10 @@ public:
     ierr = m_u_diff.copy_from(m_invProblem.solution()); CHKERRQ(ierr);
     ierr = m_u_diff.add(-1, m_u_obs); CHKERRQ(ierr);
     ierr = m_invProblem.evalGradPenaltyReduced(m_u_diff,m_grad_penalty); CHKERRQ(ierr);
+    // ierr = evaluateGradientReducedFD2(m_invProblem,m_d,m_u_obs, m_grad_penalty); CHKERRQ(ierr);
 
-    // ierr = m_grad.set(0.); CHKERRQ(ierr);
+
+
     ierr = m_grad.copy_from(m_grad_objective); CHKERRQ(ierr);
     ierr = m_grad.scale(1./m_eta); CHKERRQ(ierr);    
     ierr = m_grad.add(1,m_grad_penalty); CHKERRQ(ierr);
@@ -159,5 +191,109 @@ protected:
 
   MPI_Comm m_comm;
 };
+
+template<class InverseProblem>
+PetscErrorCode evaluateGradientReducedFD(InverseProblem &prob,IceModelVec2S &zeta,IceModelVec2V &u0, IceModelVec2S &gradient) {
+  PetscErrorCode ierr;
+  bool success;
+  PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
+
+  IceGrid &grid = *zeta.get_grid();
+
+  IceModelVec2V du;
+  ierr = du.create(grid,"du",kHasGhosts,1); CHKERRQ(ierr);
+
+  PetscReal f0;
+  ierr = prob.linearizeAt(zeta,success); CHKERRQ(ierr);
+  ierr = du.copy_from(prob.solution()); CHKERRQ(ierr);
+  ierr = du.add(-1,u0); CHKERRQ(ierr);
+  ierr = prob.evalPenalty(du, &f0); CHKERRQ(ierr);
+  
+  ierr = gradient.begin_access(); CHKERRQ(ierr);
+  for(PetscInt i=grid.xs; i< grid.xs+grid.xm; i++) {
+    for(PetscInt j=grid.ys; j< grid.ys+grid.ym; j++) {
+      ierr = zeta.begin_access(); CHKERRQ(ierr);
+      zeta(i,j) += h;
+      ierr = zeta.end_access(); CHKERRQ(ierr);
+      ierr = zeta.beginGhostComm(); CHKERRQ(ierr);
+      ierr = zeta.endGhostComm(); CHKERRQ(ierr);
+      
+      ierr = prob.linearizeAt(zeta,success); CHKERRQ(ierr);
+
+      ierr = zeta.begin_access(); CHKERRQ(ierr);
+      zeta(i,j) -= h;
+      ierr = zeta.end_access(); CHKERRQ(ierr);
+      ierr = zeta.beginGhostComm(); CHKERRQ(ierr);
+      ierr = zeta.endGhostComm(); CHKERRQ(ierr);
+
+      ierr = du.copy_from(prob.solution()); CHKERRQ(ierr);
+      ierr = du.add(-1,u0); CHKERRQ(ierr);
+      PetscReal fh;
+      ierr = prob.evalPenalty(du, &fh); CHKERRQ(ierr);
+      gradient(i,j) = (fh-f0)/h;
+    }
+  }
+  ierr = gradient.end_access(); CHKERRQ(ierr);
+  ierr = prob.linearizeAt(zeta, success); CHKERRQ(ierr);
+  return 0;
+}
+
+template<class InverseProblem>
+PetscErrorCode evaluateGradientReducedFD2(InverseProblem &prob,IceModelVec2S &zeta,IceModelVec2V u0, IceModelVec2S gradient) {
+  PetscErrorCode ierr;
+  bool success;
+  PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
+
+  IceGrid &grid = *zeta.get_grid();
+
+  IceModelVec2V u;
+  ierr = u.create(grid,"u",kHasGhosts,1); CHKERRQ(ierr);
+  ierr = u.copy_from(prob.solution()); CHKERRQ(ierr);
+
+  IceModelVec2V du;
+  ierr = du.create(grid,"du",kHasGhosts,1); CHKERRQ(ierr);
+  ierr = du.copy_from(u); CHKERRQ(ierr);
+  ierr = du.add(-1,u0); CHKERRQ(ierr);
+
+  IceModelVec2V gradPenalty;
+  ierr = gradPenalty.create(grid,"gradPenalty",kNoGhosts,0); CHKERRQ(ierr);
+  ierr = prob.evalGradPenalty(du,gradPenalty); CHKERRQ(ierr);
+  
+  ierr = gradient.begin_access(); CHKERRQ(ierr);
+  for(PetscInt i=grid.xs; i< grid.xs+grid.xm; i++) {
+    for(PetscInt j=grid.ys; j< grid.ys+grid.ym; j++) {
+      ierr = zeta.begin_access(); CHKERRQ(ierr);
+      zeta(i,j) += h;
+      ierr = zeta.end_access(); CHKERRQ(ierr);
+      ierr = zeta.beginGhostComm(); CHKERRQ(ierr);
+      ierr = zeta.endGhostComm(); CHKERRQ(ierr);
+      
+      ierr = prob.linearizeAt(zeta,success); CHKERRQ(ierr);
+
+      ierr = zeta.begin_access(); CHKERRQ(ierr);
+      zeta(i,j) -= h;
+      ierr = zeta.end_access(); CHKERRQ(ierr);
+      ierr = zeta.beginGhostComm(); CHKERRQ(ierr);
+      ierr = zeta.endGhostComm(); CHKERRQ(ierr);
+
+      ierr = du.copy_from(prob.solution()); CHKERRQ(ierr);
+      ierr = du.add(-1,u); CHKERRQ(ierr);
+      ierr = du.scale(1/h); CHKERRQ(ierr);
+
+      PetscReal g=0;
+      ierr = du.begin_access();
+      ierr = gradPenalty.begin_access();
+      for(PetscInt k=grid.xs; k< grid.xs+grid.xm; k++) {
+        for(PetscInt l=grid.ys; l< grid.ys+grid.ym; l++) {
+          g += gradPenalty(k,l).u*du(k,l).u+gradPenalty(k,l).v*du(k,l).v;
+        }
+      }
+      gradient(i,j) = g;
+    }
+  }
+  ierr = gradient.end_access(); CHKERRQ(ierr);
+  ierr = prob.linearizeAt(zeta, success); CHKERRQ(ierr);
+  return 0;
+}
 
 #endif /* end of include guard: TIKHONOVPROBLEM_HH_70YYTOXB */

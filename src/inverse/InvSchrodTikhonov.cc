@@ -413,6 +413,13 @@ PetscErrorCode InvSchrodTikhonov::evalPenalty(IceModelVec2V &du, PetscReal *OUTP
   return 0;
 }
 
+PetscErrorCode InvSchrodTikhonov::evalGradPenalty(IceModelVec2V &du, IceModelVec2V &gradient) {
+  PetscErrorCode ierr;
+  ierr = m_penaltyFunctional->gradientAt(du,gradient); CHKERRQ(ierr);
+  return 0;
+}
+
+/*
 PetscErrorCode InvSchrodTikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
 
@@ -516,6 +523,122 @@ PetscErrorCode InvSchrodTikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceM
   }
   ierr = m_zeta->end_access(); CHKERRQ(ierr);
 
+  if(m_fixedDesignLocations) {
+    DirichletData dirichletBC;
+    ierr = dirichletBC.init(m_fixedDesignLocations); CHKERRQ(ierr);
+    dirichletBC.fixResidualHomogeneous(gradient_a);
+    ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  }
+
+  ierr = m_v.end_access(); CHKERRQ(ierr);
+  ierr = m_u.end_access(); CHKERRQ(ierr);
+  ierr = gradient.end_access(); CHKERRQ(ierr);
+  return 0;
+
+}
+*/
+PetscErrorCode InvSchrodTikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceModelVec2S &gradient) {
+  PetscErrorCode ierr;
+
+  // Clear the gradient in prep for updating it.
+  gradient.set(0);
+
+  // Assemble the Jacobian matrix.
+  PISMVector2 **u_a;
+  ierr = m_u.get_array(u_a); CHKERRQ(ierr);  
+
+  DMDALocalInfo *info = NULL;
+  this->assembleJacobian( info, u_a, m_J);
+
+  m_penaltyFunctional->gradientAt(du,m_adjointRHS);
+  if(m_dirichletLocations) {
+    DirichletData dirichletBC;
+    ierr = dirichletBC.init(m_dirichletLocations,m_dirichletValues,m_dirichletWeight); CHKERRQ(ierr);
+    PISMVector2 **rhs_a;
+    ierr = m_adjointRHS.get_array(rhs_a); CHKERRQ(ierr);
+    dirichletBC.fixResidualHomogeneous(rhs_a);
+    ierr = dirichletBC.finish(); CHKERRQ(ierr); 
+    ierr = m_adjointRHS.end_access(); CHKERRQ(ierr);
+  }
+
+  KSPConvergedReason  kspreason;
+  // call PETSc to solve linear system by iterative method.
+  ierr = KSPSetOperators(m_ksp, m_J, m_J, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSolve(m_ksp, m_adjointRHS.get_vec(), m_vGlobal.get_vec()); CHKERRQ(ierr); // SOLVE
+
+  ierr = KSPGetConvergedReason(m_ksp, &kspreason); CHKERRQ(ierr);
+  
+  if (kspreason < 0) {
+    SETERRQ1(m_grid.com,1,"InvSchrodTikhonov adjoint linear solve failed (KSP reason %s)",KSPConvergedReasons[kspreason]);
+  }
+
+  ierr = m_v.copy_from(m_vGlobal); CHKERRQ(ierr);
+
+
+  PetscInt         i,j;
+
+  PISMVector2 **v_a;
+  PISMVector2 v_e[FEQuadrature::Nk];
+  PISMVector2 v_q[FEQuadrature::Nq];
+
+  PISMVector2 u_e[FEQuadrature::Nk];
+  PISMVector2 u_q[FEQuadrature::Nq];
+
+  PetscReal **gradient_a;
+  PetscReal gradient_e[FEQuadrature::Nk];
+
+  ierr = m_v.get_array(v_a); CHKERRQ(ierr);
+  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
+
+  // An Nq by Nk array of test function values.
+  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+
+  // Jacobian times weights for quadrature.
+  PetscScalar JxW[FEQuadrature::Nq];
+  m_quadrature.getWeightedJacobian(JxW);
+
+  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+           ys = m_element_index.ys, ym = m_element_index.ym;
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+
+      // Initialize the map from global to local degrees of freedom for this element.
+      m_dofmap.reset(i,j,m_grid);
+      
+      // Obtain the value of the solution at the nodes adjacent to the element.
+      // Compute the solution values and symmetric gradient at the quadrature points.
+      m_dofmap.extractLocalDOFs(i,j,v_a,v_e);
+      m_quadrature.computeTrialFunctionValues(v_e,v_q);
+      m_dofmap.extractLocalDOFs(i,j,u_a,u_e);
+      m_quadrature.computeTrialFunctionValues(u_e,u_q);
+
+      // Zero out the element-local residual in prep for updating it.
+      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+        gradient_e[k] = 0;
+      }
+
+      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+        PISMVector2 v_qq = v_q[q];
+        PISMVector2 u_qq = u_q[q];
+        for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+          gradient_e[k] += -JxW[q]*(v_qq.u*u_qq.u+v_qq.v*u_qq.v)*test[q][k].val;
+        }
+      } // q
+      m_dofmap.addLocalResidualBlock(gradient_e,gradient_a);
+    } // j
+  } // i
+
+  PetscReal **zeta_a;
+  ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
+  for( i=m_grid.xs;i<m_grid.xs+m_grid.xm;i++){
+    for( j=m_grid.ys;j<m_grid.ys+m_grid.ym;j++){
+      PetscReal dtauc_dzeta;
+      m_tauc_param.toTauc(zeta_a[i][j],NULL,&dtauc_dzeta);
+      gradient_a[i][j] *= dtauc_dzeta;
+    }
+  }
+  ierr = m_zeta->end_access(); CHKERRQ(ierr);
+  
   if(m_fixedDesignLocations) {
     DirichletData dirichletBC;
     ierr = dirichletBC.init(m_fixedDesignLocations); CHKERRQ(ierr);

@@ -507,8 +507,15 @@ PetscErrorCode InvSSABasicTikhonov::evalGradObjective(IceModelVec2S &dzeta, IceM
 }
 
 PetscErrorCode InvSSABasicTikhonov::evalPenalty(IceModelVec2V &du, PetscReal *OUTPUT) {
+
   PetscErrorCode ierr;
   ierr = m_penaltyFunctional->valueAt(du,OUTPUT);
+  return 0;
+}
+
+PetscErrorCode InvSSABasicTikhonov::evalGradPenalty(IceModelVec2V &du, IceModelVec2V &gradient) {
+  PetscErrorCode ierr;
+  ierr = m_penaltyFunctional->gradientAt(du,gradient); CHKERRQ(ierr);
   return 0;
 }
 
@@ -573,8 +580,8 @@ PetscErrorCode InvSSABasicTikhonov::evalGradPenaltyReduced(IceModelVec2V &du, Ic
   m_quadrature.getWeightedJacobian(JxW);
 
   // Loop through all LOCAL elements.
-  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+           ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
 

@@ -93,6 +93,7 @@ public:
   PetscErrorCode evalGradObjective(IceModelVec2S &dc, IceModelVec2S &gradient);
 
   PetscErrorCode evalPenalty(IceModelVec2V &du, PetscReal *OUTPUT);
+  PetscErrorCode evalGradPenalty(IceModelVec2V &du,  IceModelVec2V &gradient);
   PetscErrorCode evalGradPenaltyReduced(IceModelVec2V &dr, IceModelVec2S &gradient);
 
 protected:

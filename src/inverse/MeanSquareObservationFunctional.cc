@@ -117,3 +117,101 @@ PetscErrorCode MeanSquareObservationFunctional2V::gradientAt(IceModelVec2V &x, I
 
   return 0;
 }
+
+PetscErrorCode MeanSquareObservationFunctional2S::normalize(PetscReal scale) {
+  PetscErrorCode   ierr;
+
+  // The local value of the weights
+  PetscReal value = 0;
+
+  if(m_weights) {
+    PetscReal **w_a;
+    ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
+    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+        value += w_a[i][j];
+      }
+    }
+    ierr = m_weights->end_access(); CHKERRQ(ierr);
+  } else {
+    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+        value += 1;
+      }
+    }
+  }
+  
+  ierr = PISMGlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
+  m_normalization *= (scale*scale);
+  return 0;
+}
+
+PetscErrorCode MeanSquareObservationFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT)  {
+  PetscErrorCode   ierr;
+
+  // The value of the objective
+  PetscReal value = 0;
+
+  PetscReal **x_a;
+  ierr = x.get_array(x_a); CHKERRQ(ierr);
+
+  if(m_weights) {
+    PetscReal **w_a;
+    ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
+    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+        PetscReal &x_ij = x_a[i][j];
+        value += x_ij*x_ij*w_a[i][j];
+      }
+    }
+    ierr = m_weights->end_access(); CHKERRQ(ierr);
+  } else {
+    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+        PetscReal &x_ij = x_a[i][j];
+        value += x_ij*x_ij;
+      }
+    }
+  }
+  value /= m_normalization;
+  
+  ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+
+  ierr = x.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode MeanSquareObservationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient)  {
+  PetscErrorCode   ierr;
+
+  gradient.set(0);
+
+  PetscReal **x_a;
+  ierr = x.get_array(x_a); CHKERRQ(ierr);
+
+  PetscReal **gradient_a;
+  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
+
+  if(m_weights) {
+    PetscReal **w_a;
+    ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
+    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+        gradient_a[i][j] = 2*x_a[i][j]*w_a[i][j]/m_normalization;
+      }
+    }
+    ierr = m_weights->end_access(); CHKERRQ(ierr);
+  } else {
+    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+        gradient_a[i][j] = 2*x_a[i][j]/m_normalization;
+      }
+    }
+  }
+
+  ierr = x.end_access(); CHKERRQ(ierr);
+  ierr = gradient.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}

@@ -21,6 +21,27 @@
 
 #include "Functional.hh"
 
+class MeanSquareObservationFunctional2S : public Functional<IceModelVec2S> {
+public:
+  MeanSquareObservationFunctional2S(IceGrid &grid, IceModelVec2S *weights=NULL) :
+  Functional<IceModelVec2S>(grid), m_weights(weights), m_normalization(1.) {};
+  virtual ~MeanSquareObservationFunctional2S() {};
+
+  virtual PetscErrorCode normalize(PetscReal scale);
+
+  virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
+  virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+
+protected:
+  IceModelVec2S *m_weights;
+  PetscReal m_normalization;
+
+private:
+  MeanSquareObservationFunctional2S(MeanSquareObservationFunctional2S const &);
+  MeanSquareObservationFunctional2S & operator=(MeanSquareObservationFunctional2S const &);
+};
+
+
 class MeanSquareObservationFunctional2V : public Functional<IceModelVec2V> {
 public:
   MeanSquareObservationFunctional2V(IceGrid &grid, IceModelVec2S *weights=NULL) :

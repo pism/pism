@@ -41,7 +41,7 @@ public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetObjectiveRoutine(tao,
-      TaoObjectiveCallback<Problem>::evaluateObjective
+      TaoObjectiveCallback<Problem>::evaluateObjectiveCallback,
       &p ); CHKERRQ(ierr);
     return 0;
   }
@@ -87,7 +87,7 @@ public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetGradientRoutine(tao,
-      TaoGradientCallback<Problem>::evaluateGradient
+      TaoGradientCallback<Problem>::evaluateGradient,
       &p ); CHKERRQ(ierr);
     return 0;
   }

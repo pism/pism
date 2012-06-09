@@ -23,9 +23,12 @@ petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import numpy as np
 import siple
+import math
 
 import PISM
 from PISM import util
+
+import matplotlib.pyplot as pp
 
 from PISM.invert_ssa import InvSSARun, SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
 tauc_param_factory, PlotListener 
@@ -35,6 +38,22 @@ from PISM.sipletools import PISMLocalVector as PLV
 siple.reporting.clear_loggers()
 siple.reporting.add_logger(pism_print_logger)
 siple.reporting.set_pause_callback(pism_pause)
+
+def printMisfit(inverse_solver,count,x,Fx,y,d,r,*args):
+    fp = inverse_solver.forward_problem
+    rms_misfit = math.sqrt(fp.rangeIP(r,r))*PISM.secpera
+    siple.reporting.msg("RMS misfit: %g m/a" % rms_misfit)
+
+def plotGrad(inverse_solver,count,x,Fx,y,d,r,*args):
+  d=d.core()
+  grid = d.get_grid()
+  tozero = PISM.toproczero.ToProcZero(grid,dof=1,dim=2)
+  d_a = tozero.communicate(d)
+  md = np.max(d_a)
+  pp.clf()
+  pp.plot(grid.y,d_a[:,grid.Mx/2]/md)
+  pp.draw()
+  
 
 class TestIPlotListener(PlotListener):
   
@@ -255,8 +274,9 @@ if __name__ == "__main__":
   tauc_param.convertFromTauc(tauc,zeta)
 
   if test_adjoint:
-    d = PLV(PISM.sipletools.randVectorS(grid,1e5))
-    r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera))
+    stencil_width=1
+    d = PLV(PISM.sipletools.randVectorS(grid,1e5,stencil_width))
+    r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera,stencil_width))
     (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
     siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
     exit(0)
@@ -286,6 +306,8 @@ if __name__ == "__main__":
     solver.addIterationListener(TestIPlotListener(grid))
   if do_pause:
     solver.addIterationListener(pauseListener)
+  solver.addIterationListener(printMisfit)
+  solver.addIterationListener(plotGrad)
     
   rms_error /= PISM.secpera # m/s
   (zeta,u) = solver.solve(zeta,u_true,rms_error)

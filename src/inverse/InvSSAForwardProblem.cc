@@ -698,6 +698,41 @@ PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, 
   return 0;
 }
 
+/*
+PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT)
+{
+  PetscErrorCode ierr;
+  PetscReal **zeta_fixed_a;
+
+  PetscInt         i,j;
+
+  // The value of the inner product.
+  PetscReal IP = 0;
+
+  // Start access of Dirichlet data, if present.
+  if (m_zeta_fixed_locations ) {
+    ierr = m_zeta_fixed_locations->get_array(zeta_fixed_a);CHKERRQ(ierr);
+  }
+
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if(m_zeta_fixed_locations && zeta_fixed_a[i][j]) {
+        continue;
+      }
+      IP += A[i][j]*B[i][j];
+    } // j
+  } // i
+
+  // End access of Dirichlet data, if present.
+  if (m_zeta_fixed_locations ) {
+    ierr = m_zeta_fixed_locations->end_access(); CHKERRQ(ierr);
+  }
+
+  ierr = PISMGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+*/
+
 PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**B, PetscScalar *OUTPUT)
 {
   PetscInt         i,j;

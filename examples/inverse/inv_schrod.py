@@ -27,6 +27,11 @@ x0 = 0.;
 L  = math.pi;
 
 config.set_string("inv_ssa_tauc_param","ident")
+stress_scale = 1
+config.set("tauc_param_trunc_tauc0",.1*stress_scale)
+config.set("tauc_param_tauc_eps",.001*stress_scale)
+config.set("tauc_param_tauc_scale",stress_scale)
+
 
 # Build the grid.
 grid = PISM.Context().newgrid()
@@ -69,7 +74,6 @@ with PISM.util.Access(comm=[zeta0,zeta],nocomm=[c0,c]):
   for (i,j) in grid.points():
     zeta0[i,j] = tauc_param.fromTauc(c0[i,j])
     zeta[i,j] = tauc_param.fromTauc(c[i,j])
-
 
 # Create Dirichlet data and apply it
 dirichletIndices = PISM.PISM.IceModelVec2Int()
@@ -137,7 +141,7 @@ if solver.solve():
     misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,misfitWeight);
   else:
     misfit_functional = PISM.MeanSquareObservationFunctional2V(grid);
-  misfit_functional.normalize()
+  misfit_functional.normalize(1)
   misfit = math.sqrt(misfit_functional.valueAt(du))
   PISM.verbPrintf(1,grid.com,"RMS Misfit: %g\n",misfit)
 

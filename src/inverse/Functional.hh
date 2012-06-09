@@ -49,4 +49,7 @@ private:
 
 };
 
+PetscErrorCode gradientFD(Functional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient);
+PetscErrorCode gradientFD(Functional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+
 #endif /* end of include guard: FUNCTIONAL_HH_1E2DIXE6 */

@@ -43,6 +43,31 @@ class Listener(PISM.PythonTikhonovSVListener):
     print "gradient: design %g state %g sum %g " % (grad_d.norm(PETSc.NormType.NORM_2)/eta,grad_u.norm(PETSc.NormType.NORM_2),grad.norm(PETSc.NormType.NORM_2))
     print "tikhonov functional: %g" % (objVal/eta + penaltyVal)
 
+    grid = grad.get_grid()
+    tozero = PISM.toproczero.ToProcZero(grid,dof=1,dim=2)
+    tozero2 = PISM.toproczero.ToProcZero(grid,dof=2,dim=2)
+
+    d_a = tozero.communicate(d)
+    pp.clf()
+    pp.subplot(1,3,1)
+    pp.plot(grid.y,d_a[:,grid.Mx/2])
+
+    u_a = tozero2.communicate(u)
+    mg = np.max(np.abs(u_a))
+    pp.subplot(1,3,2)
+    pp.plot(grid.y,u_a[0,:,grid.Mx/2]/mg)
+    # 
+    grad_d_a = tozero.communicate(grad_d)
+    grad_u_a = tozero.communicate(grad_u)
+    grad_a = tozero.communicate(grad)
+    mg = np.max(np.abs(grad_a))
+    pp.subplot(1,3,3)
+    pp.plot(grid.y,-grad_d_a[:,grid.Mx/2]/eta,grid.y,grad_u_a[:,grid.Mx/2],grid.y,grad_a[:,grid.Mx/2])
+    pp.draw()
+    import time
+    # time.sleep(3)
+
+
 class InvSSATikRun(PISM.ssa.SSARun):
 
   def setup(self):
@@ -326,8 +351,8 @@ if __name__ == "__main__":
   # Try solving
   if not solver.solve():
     PISM.verbPrintf(1,grid.com,"Inverse solve FAILURE (%s)!\n" % solver.reasonDescription());
-    
-  PISM.verbPrintf(1,grid.com,"Inverse solve success (%s)!\n" % solver.reasonDescription());
+  else:  
+    PISM.verbPrintf(1,grid.com,"Inverse solve success (%s)!\n" % solver.reasonDescription());
 
   u_i    = ip.stateSolution();
   zeta_i = ip.designSolution();
@@ -337,11 +362,11 @@ if __name__ == "__main__":
   du.copy_from(u_i)
   du.add(-1,u_obs)
   du.beginGhostComm(); du.endGhostComm()
-  misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,testi.modeldata.vecs.vel_misfit_weight);
-  misfit_functional.normalize(1/PISM.secpera)
-  misfit = math.sqrt(misfit_functional.valueAt(du))
-  misfit_norm = math.sqrt(misfit_functional.valueAt(u_i))  
-  PISM.verbPrintf(1,grid.com,"RMS Misfit: %g (relative %g)\n",misfit,misfit/misfit_norm)
+  # misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,testi.modeldata.vecs.vel_misfit_weight);
+  # misfit_functional.normalize(1/PISM.secpera)
+  # misfit = math.sqrt(misfit_functional.valueAt(du))
+  # misfit_norm = math.sqrt(misfit_functional.valueAt(u_i))  
+  # PISM.verbPrintf(1,grid.com,"RMS Misfit: %g (relative %g)\n",misfit,misfit/misfit_norm)
 
 
   tauc_param.convertToTauc(zeta_i,tauc)

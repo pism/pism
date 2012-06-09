@@ -65,9 +65,15 @@ public:
   PetscErrorCode evalGradObjective(IceModelVec2S &dc, IceModelVec2S &gradient);
 
   PetscErrorCode evalPenalty(IceModelVec2V &du, PetscReal *OUTPUT);
+  PetscErrorCode evalGradPenalty(IceModelVec2V &du,  IceModelVec2V &gradient);
   PetscErrorCode evalGradPenaltyReduced(IceModelVec2V &dr, IceModelVec2S &gradient);
+  PetscErrorCode evalGradPenaltyReducedFD(IceModelVec2V &du, IceModelVec2S &gradient);
+  PetscErrorCode evalGradPenaltyReducedNoTranspose(IceModelVec2V &du, IceModelVec2S &gradient);
 
 protected:
+
+  PetscErrorCode assemble_T_rhs(IceModelVec2S &dzeta, IceModelVec2V &rhs);
+  PetscErrorCode computeT(IceModelVec2S &dzeta,IceModelVec2V &du);
 
   PetscErrorCode construct();
   PetscErrorCode destruct();
