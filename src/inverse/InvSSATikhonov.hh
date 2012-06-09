@@ -25,6 +25,7 @@
 #include <memory> // for std::auto_ptr
 #include "TikhonovProblem.hh"
 #include "PythonTikhonovSVListener.hh"
+#include "MeanSquareFunctional.hh"
 
 class InvSSATikhonov : public SSAFEM
 {
@@ -70,10 +71,14 @@ public:
   PetscErrorCode evalGradPenaltyReducedFD(IceModelVec2V &du, IceModelVec2S &gradient);
   PetscErrorCode evalGradPenaltyReducedNoTranspose(IceModelVec2V &du, IceModelVec2S &gradient);
 
-protected:
-
   PetscErrorCode assemble_T_rhs(IceModelVec2S &dzeta, IceModelVec2V &rhs);
   PetscErrorCode computeT(IceModelVec2S &dzeta,IceModelVec2V &du);
+
+  PetscErrorCode domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT);
+  PetscErrorCode rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT);
+
+protected:
+
 
   PetscErrorCode construct();
   PetscErrorCode destruct();
@@ -96,7 +101,9 @@ protected:
 
   std::auto_ptr< Functional<IceModelVec2S> > m_designFunctional;
   std::auto_ptr< Functional<IceModelVec2V> > m_penaltyFunctional;
-  
+
+  std::auto_ptr< MeanSquareFunctional2S > m_domainIP;
+
   KSP  m_ksp;
   Mat  m_Jadjoint;
   

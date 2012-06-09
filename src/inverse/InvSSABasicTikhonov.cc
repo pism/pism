@@ -18,7 +18,7 @@
 
 #include "InvSSABasicTikhonov.hh"
 #include "H1NormFunctional.hh"
-#include "MeanSquareObservationFunctional.hh"
+#include "MeanSquareFunctional.hh"
 
 InvSSABasicTikhonov::InvSSABasicTikhonov( IceGrid  &grid, IceModelVec2V &f, PetscReal p, PetscReal q,  InvTaucParameterization &tp) :
 m_grid(grid), m_zeta(NULL), m_f(&f), m_p(p), m_q(q), m_B(1), m_H(1),
@@ -102,9 +102,9 @@ PetscErrorCode InvSSABasicTikhonov::solve(bool &success) {
 
   m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixedDesignLocations));    
 
-  m_penaltyFunctional.reset(new MeanSquareObservationFunctional2V(m_grid,m_observationWeights));    
+  m_penaltyFunctional.reset(new MeanSquareFunctional2V(m_grid,m_observationWeights));    
   PetscReal velocity_scale = m_grid.config.get("inv_ssa_velocity_scale");  
-  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize(velocity_scale);
+  (reinterpret_cast<MeanSquareFunctional2V&>(*m_penaltyFunctional)).normalize(velocity_scale);
 
   success=false;
   ierr = SNESSolve(m_snes,NULL,m_uGlobal.get_vec()); CHKERRQ(ierr);

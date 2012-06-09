@@ -57,7 +57,7 @@ PetscErrorCode L2NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) 
   return 0;
 }
 
-PetscErrorCode L2NormFunctional2S::ip(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT) {
+PetscErrorCode L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT) {
 
   PetscErrorCode   ierr;
 
@@ -194,7 +194,7 @@ PetscErrorCode L2NormFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OUTPUT) 
   return 0;
 }
 
-PetscErrorCode L2NormFunctional2V::ip(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT) {
+PetscErrorCode L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT) {
 
   PetscErrorCode   ierr;
 

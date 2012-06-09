@@ -21,13 +21,13 @@
 
 #include "Functional.hh"
 
-class L2NormFunctional2S : public Functional<IceModelVec2S> {
+class L2NormFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
-  L2NormFunctional2S(IceGrid &grid) : Functional<IceModelVec2S>(grid) {};
+  L2NormFunctional2S(IceGrid &grid) : IPFunctional<IceModelVec2S>(grid) {};
   virtual ~L2NormFunctional2S() {};
   
   virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
-  virtual PetscErrorCode ip(IceModelVec2S &a, IceModelVec2S &b, PetscReal *v);
+  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *v);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 private:
@@ -35,13 +35,13 @@ private:
   L2NormFunctional2S & operator=(L2NormFunctional2S const &);  
 };
 
-class L2NormFunctional2V : public Functional<IceModelVec2V> {
+class L2NormFunctional2V : public IPFunctional<IceModelVec2V> {
 public:
-  L2NormFunctional2V(IceGrid &grid) : Functional<IceModelVec2V>(grid) {};
+  L2NormFunctional2V(IceGrid &grid) : IPFunctional<IceModelVec2V>(grid) {};
   virtual ~L2NormFunctional2V() {};
   
   virtual PetscErrorCode valueAt(IceModelVec2V &x, PetscReal *v);
-  virtual PetscErrorCode ip(IceModelVec2V &a, IceModelVec2V &b, PetscReal *v);
+  virtual PetscErrorCode dot(IceModelVec2V &a, IceModelVec2V &b, PetscReal *v);
   virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 private:

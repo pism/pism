@@ -21,16 +21,16 @@
 
 #include "Functional.hh"
 
-class H1NormFunctional2S : public Functional<IceModelVec2S> {
+class H1NormFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
   H1NormFunctional2S(IceGrid &grid, PetscReal cL2, 
       PetscReal cH1, IceModelVec2Int *dirichletLocations=NULL) :
-      Functional<IceModelVec2S>(grid),
+      IPFunctional<IceModelVec2S>(grid),
       m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations) {};
   virtual ~H1NormFunctional2S() {};
   
   virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
-  // virtual PetscErrorCode ip(IceModelVec2S &a, IceModelVec2S &b, PetscReal *v);
+  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 protected:

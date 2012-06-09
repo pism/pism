@@ -9,7 +9,7 @@ add_library (pisminverse
   ./Functional.cc
   ./L2NormFunctional.cc
   ./H1NormFunctional.cc
-  ./MeanSquareObservationFunctional.cc
+  ./MeanSquareFunctional.cc
   )
 target_link_libraries (pisminverse pismbase pismutil)
 

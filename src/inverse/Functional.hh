@@ -49,6 +49,13 @@ private:
 
 };
 
+template<class IMVecType>
+class IPFunctional : public Functional<IMVecType>{
+public:
+  IPFunctional(IceGrid &grid) : Functional<IMVecType>(grid) {};
+  virtual PetscErrorCode dot(IMVecType &a, IMVecType &b, PetscReal *OUTPUT) = 0;
+};
+
 PetscErrorCode gradientFD(Functional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient);
 PetscErrorCode gradientFD(Functional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
 

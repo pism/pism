@@ -22,7 +22,7 @@
 #include "PISMVars.hh"
 #include <assert.h>
 #include "H1NormFunctional.hh"
-#include "MeanSquareObservationFunctional.hh"
+#include "MeanSquareFunctional.hh"
 
 InvSSATikhonov::InvSSATikhonov(IceGrid &g, IceBasalResistancePlasticLaw &b,
   EnthalpyConverter &e, InvTaucParameterization &tp,
@@ -50,12 +50,14 @@ PetscErrorCode InvSSATikhonov::set_functionals() {
 
   m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixed_tauc_locations));    
   // PetscReal stress_scale = m_grid.config.get("tauc_param_tauc_scale");
-  // m_designFunctional.reset(new MeanSquareObservationFunctional2S(m_grid));
-  // (reinterpret_cast<MeanSquareObservationFunctional2S&>(*m_designFunctional)).normalize(stress_scale);
+  // m_designFunctional.reset(new MeanSquareFunctional2S(m_grid));
+  // (reinterpret_cast<MeanSquareFunctional2S&>(*m_designFunctional)).normalize(stress_scale);
 
   PetscReal velocity_scale = m_grid.config.get("inv_ssa_velocity_scale")/secpera;
-  m_penaltyFunctional.reset(new MeanSquareObservationFunctional2V(m_grid,m_misfit_weight));    
-  (reinterpret_cast<MeanSquareObservationFunctional2V&>(*m_penaltyFunctional)).normalize(velocity_scale);
+  m_penaltyFunctional.reset(new MeanSquareFunctional2V(m_grid,m_misfit_weight));    
+  (reinterpret_cast<MeanSquareFunctional2V&>(*m_penaltyFunctional)).normalize(velocity_scale);
+
+  m_domainIP.reset(new MeanSquareFunctional2S(m_grid));
 
   return 0;
 }
@@ -231,8 +233,6 @@ PetscErrorCode InvSSATikhonov::evalGradPenaltyReducedFD(IceModelVec2V &du, IceMo
 */
 
 PetscErrorCode InvSSATikhonov::evalGradPenaltyReducedFD(IceModelVec2V &du, IceModelVec2S &gradient) {
-  printf("evalGradPenaltyReducedFD!\n");
-
   PetscErrorCode ierr;
   bool success;
   PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
@@ -517,6 +517,9 @@ PetscErrorCode InvSSATikhonov::assemble_T_rhs(IceModelVec2S &dzeta, IceModelVec2
 PetscErrorCode InvSSATikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
 
+  // ierr = evalGradPenaltyReducedFD(du,gradient); CHKERRQ(ierr);
+  // return 0;
+
   // Some aliases to help with notation consistency below.
   IceModelVec2V   &m_u                  = velocity;
   IceModelVec2Int *m_dirichletLocations = bc_locations;
@@ -650,5 +653,16 @@ PetscErrorCode InvSSATikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceMode
   ierr = m_u.end_access(); CHKERRQ(ierr);
   ierr = gradient.end_access(); CHKERRQ(ierr);
 
+  return 0;
+}
+PetscErrorCode InvSSATikhonov::domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT) {
+  PetscErrorCode ierr;
+  ierr = m_domainIP->dot(a,b,OUTPUT); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode InvSSATikhonov::rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT) {
+  PetscErrorCode ierr;
+  ierr = dynamic_cast<IPFunctional<IceModelVec2V> *>(m_penaltyFunctional.get())->dot(a,b,OUTPUT); CHKERRQ(ierr);
   return 0;
 }

@@ -25,7 +25,7 @@ import numpy as np
 import os, math
 
 import PISM
-from PISM.invert_ssa import SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
+from PISM.invert_ssa import SSAForwardProblem, SSAForwardProblemFIXME, InvertSSANLCG, InvertSSAIGN, \
 tauc_param_factory, LinearPlotListener, PlotListener 
 from PISM.sipletools import pism_print_logger, pism_pause, pauseListener, \
 CaptureLogger, CarefulCaptureLogger
@@ -43,10 +43,11 @@ default_rms_error = 100
 
 
 class Vel2Tauc(PISM.ssa.SSAFromInputFile):
-  def __init__(self,input_filename,inv_data_filename,tauc_param):
+  def __init__(self,input_filename,inv_data_filename,tauc_param,forward_type):
     PISM.ssa.SSAFromInputFile.__init__(self,input_filename)
     self.tauc_param = tauc_param;
     self.inv_data_filename = inv_data_filename
+    self.forward_type=forward_type
 
   def _setFromOptions(self):
     PISM.ssa.SSAFromInputFile._setFromOptions(self)
@@ -80,6 +81,10 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
     # Cache the values of the coefficeints at quadrature points once here.
     # Subsequent solves will then not need to cache these values.
     self.ssa.cacheQuadPtValues();
+
+    # YUCK
+    if self.forward_type == 'tao':
+      self.ssa.set_functionals()
 
 
   def _initSSACoefficients(self):
@@ -160,9 +165,10 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
 
   def _constructSSA(self):
     md = self.modeldata
-    vecs  = self.modeldata.vecs
-    return PISM.InvSSAForwardProblem(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
-
+    if self.forward_type == 'classic':
+      return PISM.InvSSAForwardProblem(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
+    else:
+      return PISM.InvSSATikhonov(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
 
   def write(self,filename,append=False):
     if not append:
@@ -412,9 +418,10 @@ if __name__ == "__main__":
     inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
     method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
+    forward_type = PISM.optionsList(context.com,"-inv_forward","Forward problem description",["classic","tao"],"classic")
     rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=default_rms_error)
-    ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=default_ssa_l2_coeff)
-    ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=default_ssa_h1_coeff)
+    ssa_l2_coeff = PISM.optionsReal("-inv_ssa_cL2","L2 coefficient for domain inner product",default=default_ssa_l2_coeff)
+    ssa_h1_coeff = PISM.optionsReal("-inv_ssa_cH1","H1 coefficient for domain inner product",default=default_ssa_h1_coeff)
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
     do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
@@ -436,8 +443,14 @@ if __name__ == "__main__":
   config.set_string("inv_ssa_tauc_param","ident")
   config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
   config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
+  config.set("inv_ssa_cL2",ssa_l2_coeff)
+  config.set("inv_ssa_cH1",ssa_h1_coeff)
+  # velocity_scale = 100 / PISM.secpera # 100m/a
+  velocity_scale = PISM.secpera #m/s
+  config.set("inv_ssa_velocity_scale",velocity_scale) # m/a
+  
 
-  stress_scale = 50000 # Pa
+  stress_scale = 1# 50000 # Pa
   config.set("tauc_param_trunc_tauc0",.1*stress_scale)
   config.set("tauc_param_tauc_eps",.001*stress_scale)
   config.set("tauc_param_tauc_scale",stress_scale)
@@ -445,10 +458,13 @@ if __name__ == "__main__":
   tauc_param = tauc_param_factory.create(config)
 
   PISM.setVerbosityLevel(verbosity)
-  vel2tauc = Vel2Tauc(input_filename,inv_data_filename,tauc_param)
+  vel2tauc = Vel2Tauc(input_filename,inv_data_filename,tauc_param,forward_type)
   vel2tauc.setup()
 
-  forward_problem = SSAForwardProblem(vel2tauc)
+  if forward_type == 'classic':
+    forward_problem = SSAForwardProblem(vel2tauc)
+  else:
+    forward_problem = SSAForwardProblemFIXME(vel2tauc)
 
   modeldata = vel2tauc.modeldata
   vecs = modeldata.vecs
