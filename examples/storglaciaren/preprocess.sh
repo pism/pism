@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 
 ./sg_create_flowline.py
 DATANAME=storglaciaren_flowline.nc
