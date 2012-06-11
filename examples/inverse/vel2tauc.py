@@ -450,7 +450,7 @@ if __name__ == "__main__":
   config.set("inv_ssa_velocity_scale",velocity_scale) # m/a
   
 
-  stress_scale = 1# 50000 # Pa
+  stress_scale = 50000 # Pa
   config.set("tauc_param_trunc_tauc0",.1*stress_scale)
   config.set("tauc_param_tauc_eps",.001*stress_scale)
   config.set("tauc_param_tauc_scale",stress_scale)
@@ -508,12 +508,7 @@ if __name__ == "__main__":
       exit(1)
     zeta.regrid(output_filename,True)
   else:
-    if config.get_string('inv_ssa_tauc_param')=='ident':
-      zeta.copy_from(tauc_prior)
-    else:
-      with PISM.util.Access(nocomm=tauc_prior,comm=zeta):
-        for (i,j) in grid.points():
-          zeta[i,j] = tauc_param.fromTauc(tauc_prior[i,j])
+    tauc_param.convertFromTauc(tauc_prior,zeta)
   vecs.add(zeta,writing=True) # Ensure that the last value of zeta will
                               # be written out
 
@@ -639,14 +634,7 @@ if __name__ == "__main__":
   (zeta,u) = solver.solve(zeta,vel_ssa_observed,rms_error)
 
   # Convert back from zeta to tauc
-  if config.get_string('inv_ssa_tauc_param')=='ident':
-    tauc.copy_from(zeta)
-  else:
-    with PISM.util.Access(nocomm=zeta,comm=tauc):
-      for (i,j) in grid.points():
-        (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
-        if tauc[i,j] < 0:
-          print 'negative tauc', tauc[i,j], zeta[i,j]
+  tauc_param.convertToTauc(zeta,tauc_prior)
 
   # It may be that a 'tauc' was read in earlier.  We replace it with
   # our newly generated one.

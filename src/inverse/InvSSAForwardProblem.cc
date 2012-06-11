@@ -24,6 +24,8 @@
 #include <errno.h>
 #include <sstream>
 #include "PIO.hh"
+#include <cmath>
+#include "pism_options.hh"
 
 /*! \brief Allocate PETSC structures needed for solving the various linearized
 problems associated with the forward problem. */
@@ -162,6 +164,7 @@ PetscErrorCode InvSSAForwardProblem::set_zeta(IceModelVec2S &new_zeta )
   PetscErrorCode ierr;
   PetscInt i,j,q;
 
+  m_zeta = &new_zeta;
 
   PetscReal **zeta_array;
   ierr = new_zeta.get_array(zeta_array);CHKERRQ(ierr);
@@ -177,21 +180,14 @@ PetscErrorCode InvSSAForwardProblem::set_zeta(IceModelVec2S &new_zeta )
       PetscReal *dtauc_dzeta = m_dtauc_dzeta_store + ij*FEQuadrature::Nq;
       for (q=0; q<4; q++) {
         m_tauc_param.toTauc(zetaq[q],&(feS[q].tauc),dtauc_dzeta+q);
+        if(std::isnan(feS[q].tauc)) {
+          PetscPrintf(PETSC_COMM_WORLD,"InvSSAForwardProblem::set_zeta made a NaN: zeta=%g\n",zetaq[q]);
+        }
       }
     }
   }
 
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
-  for (i=xs; i<xs+xm; i++) {
-    for (j=ys;j<ys+ym; j++) {
-      PetscReal tmp;
-      m_tauc_param.toTauc(new_zeta(i,j),&tmp,NULL);
-      (*tauc)(i,j) = tmp;
-    }
-  }
-  
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = new_zeta.end_access();CHKERRQ(ierr);
+  m_tauc_param.convertToTauc(new_zeta,*tauc);
 
   m_reassemble_T_matrix_needed = true;
   m_forward_F_needed = true;
@@ -348,11 +344,54 @@ PetscErrorCode InvSSAForwardProblem::solveF(IceModelVec2V &result)
   return 0;
 }
 
+PetscErrorCode InvSSAForwardProblem::solveT_FD(IceModelVec2S &dzeta, IceModelVec2V &result) {
+  PetscErrorCode ierr;
+  
+  PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
+  PetscReal dzeta_size;
+  ierr = VecNorm(dzeta.get_vec(),NORM_2,&dzeta_size); CHKERRQ(ierr);
+  if(dzeta_size !=0) {
+    h /= dzeta_size;    
+  }
+
+  IceModelVec2S *zeta0 = m_zeta;
+
+  IceModelVec2V u0;
+  ierr = u0.create(grid,"u0",kHasGhosts,result.get_stencil_width()); CHKERRQ(ierr);
+  ierr = u0.copy_from(SSAX); CHKERRQ(ierr);
+
+  IceModelVec2S zeta1;
+  ierr = zeta1.create(grid,"z1",kHasGhosts,m_zeta->get_stencil_width()); CHKERRQ(ierr);
+  ierr = zeta1.copy_from(*zeta0); CHKERRQ(ierr);
+  ierr = zeta1.add(h,dzeta); CHKERRQ(ierr);
+
+  ierr = this->set_zeta(zeta1); CHKERRQ(ierr);
+  ierr = this->solveF_core(); CHKERRQ(ierr);
+  ierr = result.copy_from(SSAX); CHKERRQ(ierr);
+
+  ierr = result.add(-1,u0); CHKERRQ(ierr);
+  ierr = result.scale(1/h); CHKERRQ(ierr);
+
+  ierr = this->set_zeta(*zeta0); CHKERRQ(ierr);
+  ierr = this->solveF_core(); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+
 /* \brief Solves the linearized forward problem */
 PetscErrorCode InvSSAForwardProblem::solveT( IceModelVec2S &dtauc, IceModelVec2V &result)
 {
-  KSPConvergedReason  reason;
   PetscErrorCode ierr;
+  
+  bool do_fd;
+  ierr = PISMOptionsIsSet("-inv_ssa_solveT_fd","compute SSA forward linearization via finite differences",do_fd); CHKERRQ(ierr);
+  if(do_fd) {
+    ierr = this->solveT_FD(dtauc,result); CHKERRQ(ierr);
+    return 0;
+  }
+  
+  KSPConvergedReason  reason;
   PetscScalar **dtauc_a;
   PISMVector2 **vel;
   PISMVector2 **rhs;

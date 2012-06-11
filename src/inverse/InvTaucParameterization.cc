@@ -18,6 +18,7 @@
 
 #include "InvTaucParameterization.hh"
 #include "pism_options.hh"
+#include <cmath>
 
 InvTaucParamIdent g_InvTaucParamIdent;
 InvTaucParamSquare g_InvTaucParamSquare;
@@ -38,7 +39,10 @@ PetscErrorCode InvTaucParameterization::convertToTauc( IceModelVec2S &zeta, IceM
   for(PetscInt i= grid.xs; i< grid.xs+grid.xm; i++) {
     for(PetscInt j= grid.ys; j< grid.ys+grid.ym; j++) {
       ierr = this->toTauc(zeta_a[i][j], &tauc_a[i][j], NULL); CHKERRQ(ierr);
-    }    
+      if(std::isnan(tauc_a[i][j])) {
+        PetscPrintf(PETSC_COMM_WORLD,"made a tauc nan zeta=%g tauc=%g\n",zeta_a[i][j],tauc_a[i][j]);
+      } 
+    }
   }
   ierr = zeta.end_access(); CHKERRQ(ierr);
   ierr = tauc.end_access(); CHKERRQ(ierr);
@@ -58,6 +62,9 @@ PetscErrorCode InvTaucParameterization::convertFromTauc( IceModelVec2S &tauc, Ic
   for(PetscInt i= grid.xs; i< grid.xs+grid.xm; i++) {
     for(PetscInt j= grid.ys; j< grid.ys+grid.ym; j++) {
       ierr = this->fromTauc(tauc_a[i][j], &zeta_a[i][j]); CHKERRQ(ierr);
+      if(std::isnan(zeta_a[i][j])) {
+        PetscPrintf(PETSC_COMM_WORLD,"made a zeta nan tauc=%g zeta=%g\n",tauc_a[i][j],zeta_a[i][j]);
+      } 
     }    
   }
   ierr = zeta.end_access(); CHKERRQ(ierr);
@@ -107,14 +114,16 @@ PetscErrorCode InvTaucParamExp::init( const NCConfigVariable &config ) {
   PetscErrorCode ierr;
   ierr = InvTaucParameterization::init(config); CHKERRQ(ierr);
   m_tauc_eps = config.get("tauc_param_tauc_eps");
-  printf("Tauc param exp eps=%g scale=%g\n",m_tauc_eps,m_tauc_scale);
   return 0;
 }
 
 PetscErrorCode InvTaucParamExp::toTauc( PetscReal p, PetscReal *value, 
                                            PetscReal *derivative)
 {
-  if(value != NULL) *value = m_tauc_scale*exp(p);
+  if(value != NULL) {
+    *value = m_tauc_scale*exp(p);
+  } 
+  
   if(derivative != NULL) *derivative = m_tauc_scale*exp(p);    
   return 0;
 }
@@ -126,6 +135,7 @@ PetscErrorCode InvTaucParamExp::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
     tauc= m_tauc_eps;
   }
   *OUTPUT=log(tauc/m_tauc_scale);
+
   return 0;
 }
 

@@ -145,11 +145,16 @@ public:
     // ierr = evaluateGradientReducedFD2(m_invProblem,m_d,m_u_obs, m_grad_penalty); CHKERRQ(ierr);
 
 
-
-    ierr = m_grad.copy_from(m_grad_objective); CHKERRQ(ierr);
-    ierr = m_grad.scale(1./m_eta); CHKERRQ(ierr);    
-    ierr = m_grad.add(1,m_grad_penalty); CHKERRQ(ierr);
-    ierr = m_grad.copy_to(gradient); CHKERRQ(ierr);
+    if(m_eta>1) {
+      ierr = m_grad.copy_from(m_grad_objective); CHKERRQ(ierr);
+      ierr = m_grad.scale(1./m_eta); CHKERRQ(ierr);    
+      ierr = m_grad.add(1,m_grad_penalty); CHKERRQ(ierr);
+    } else{
+      ierr = m_grad.copy_from(m_grad_penalty); CHKERRQ(ierr);
+      ierr = m_grad.scale(m_eta); CHKERRQ(ierr);    
+      ierr = m_grad.add(1,m_grad_objective); CHKERRQ(ierr);
+    }
+    ierr = m_grad.copy_to(gradient); CHKERRQ(ierr);      
 
     PetscReal valObjective, valPenalty;
     ierr = m_invProblem.evalObjective(m_d_diff,&valObjective); CHKERRQ(ierr);
@@ -158,7 +163,11 @@ public:
     m_valObjective = valObjective;
     m_valPenalty = valPenalty;
     
-    *value = valObjective / m_eta + valPenalty;
+    if(m_eta > 1) {
+      *value = valObjective / m_eta + valPenalty;
+    } else {
+      *value = valObjective + valPenalty*m_eta;
+    }
 
     return 0;
   }
