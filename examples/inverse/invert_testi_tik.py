@@ -25,63 +25,12 @@ import numpy as np
 import math
 
 import PISM
+import PISM.invert_ssa
 from PISM import util
 
-from PISM.invert_ssa import SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
-tauc_param_factory, PlotListener 
-from PISM.sipletools import PISMLocalVector as PLV
 import siple
 
 import matplotlib.pyplot as pp
-
-def printMisfit(inverse_solver,count,x,Fx,y,d,r,*args):
-    fp = inverse_solver.forward_problem
-    rms_misfit = math.sqrt(fp.rangeIP(r,r))*PISM.secpera
-    siple.reporting.msg("RMS misfit: %g m/a" % rms_misfit)
-
-class Bunch:
-  def __init__(self, **kwds):
-      self.__dict__.update(kwds)
-
-  def has_key(self,k):
-    return self.__dict__.has_key(k)
-  
-  def update(self,**kwds):
-    self.__dict__.update(**kwds)
-  
-  def __repr__(self):
-      keys = self.__dict__.keys()
-      return 'Bunch(%s)'%', '.join(['%s=%s'%(k,self.__dict__[k]) for k in keys])
-
-class TikhonovListenerAdaptor(PISM.PythonTikhonovSVListener):
-  def __init__(self,owner,listener):
-    PISM.PythonTikhonovSVListener.__init__(self)
-    self.owner = owner
-    self.listener = listener
-  def iteration(self,it,eta,objVal,penaltyVal,d,diff_d,grad_d,u,diff_u,grad_u,grad):
-    data = Bunch(eta=eta,objVal=objVal,penaltyVal=penaltyVal,
-                      zeta=d,diff_zeta=diff_d,grad_zeta=grad_d,
-                      u=u,diff_u=diff_u,grad_u=grad_u,grad=grad)
-    try:
-      self.listener(self.owner,it,data)
-    except Exception as e:
-      PISM.verbPrintf(1,PISM.Context().com,"\nWARNING: Exception occured during an inverse solver listener callback:\n%s\n\n" % str(e))
-
-class TikhonovProgressListener:
-  def __call__(self,invssasolver,it,data):
-    eta = data.eta
-    com = PISM.Context().com
-    v = 2
-    PISM.verbPrintf(v,com,"----------------------------------------------------------\n");
-    PISM.verbPrintf(v,com,"Iteration %d\n" % it)    
-    PISM.verbPrintf(v,com,"RMS misfit: %g\n" % math.sqrt(data.penaltyVal))
-    PISM.verbPrintf(v,com,"sqrt(design objective) %g; weighted %g\n" % (math.sqrt(data.objVal),math.sqrt(data.objVal/eta))) 
-    PISM.verbPrintf(v,com,"gradient: design %g state %g sum %g\n" % (data.grad_zeta.norm(PETSc.NormType.NORM_2)/eta,data.grad_u.norm(PETSc.NormType.NORM_2),data.grad.norm(PETSc.NormType.NORM_2)))
-    if(eta>1):
-      tik_val = data.objVal/eta + data.penaltyVal
-    else:
-      tik_val = data.objVal + data.penaltyVal*eta      
-    PISM.verbPrintf(v,com,"tikhonov functional: %g\n" % tik_val)
 
     # grid = data.grad.get_grid()
     # tozero = PISM.toproczero.ToProcZero(grid,dof=1,dim=2)
@@ -106,175 +55,6 @@ class TikhonovProgressListener:
     # pp.draw()
     # import time
     # # time.sleep(3)
-
-
-class InvSSARun(PISM.ssa.SSARun):
-
-  def setup(self):
-
-    PISM.ssa.SSARun.setup(self)
-
-    vecs = self.modeldata.vecs
-
-    # The SSA instance will not keep a reference to pismVars; it only uses it to extract
-    # its desired variables.  So it is safe to pass it pismVars and then let pismVars
-    # go out of scope at the end of this method.
-
-    self.ssa.init(vecs.asPISMVars())
-
-    if vecs.has('vel_bc'):
-      self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
-
-    # Cache the values of the coefficients at quadrature points once here.
-    # Subsequent solves will then not need to cache these values.
-    self.ssa.cacheQuadPtValues();
-
-    # YUCK
-    inv_method = self.config.get_string('inv_ssa_method');
-    if inv_method.startswith('tikhonov'):
-      self.ssa.set_functionals()
-
-  def _constructSSA(self):
-    md = self.modeldata
-    vecs  = self.modeldata.vecs
-    self.tauc_param = tauc_param_factory.create(self.config)
-
-    inv_method = self.config.get_string('inv_ssa_method');
-    InvSSAClass = PISM.InvSSAForwardProblem
-    if inv_method.startswith('tikhonov'):
-      InvSSAClass = PISM.InvSSATikhonov
-    
-    return InvSSAClass(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
-
-def InvSSASolver(ssarun):
-  method = ssarun.config.get_string('inv_ssa_method')
-  if method.startswith('tikhonov'):
-    return InvSSASolver_Tikhonov(ssarun)
-  if method == 'sd' or method == 'nlcg' or method == 'ign':
-    return InvSSASolver_Siple(ssarun)
-  raise Exception("Unknown inverse method '%s'; unable to construct solver.",method)
-
-class InvSSASolver_Tikhonov:
-  tao_types = {'tikhonov_lmvm':'tao_lmvm', 'tikhonov_cg':'tao_cg', 'tikhonov_lcl':'tao_lcl'}
-  
-  def __init__(self,ssarun):
-    self.ssarun = ssarun
-    self.config = ssarun.config
-
-    self.method = self.config.get_string('inv_ssa_method')
-
-    self.listeners = []
-
-  def solveForward(self,zeta,out=None):
-    ssa = self.ssarun.ssa
-
-    if not ssa.linearizeAt(zeta):
-      raise Exception("")
-    if out is not None:
-      out.copy_from(ssa.solution())
-    else:
-      out = ssa.solution()
-    return out
-
-  def addIterationListener(self,listener):
-    self.listeners.append(listener)
-
-  def solveInverse(self,zeta0,u_obs):
-    eta = self.config.get("inv_ssa_tikhonov_eta")
-
-    tao_type = self.tao_types[self.method]
-    if self.method == 'tikhonov_lcl':
-      self.ip = PISM.InvSSA_LCLTikhonov(self.ssarun.ssa,zeta0,u_obs,eta)
-      self.solver = PISM.InvSSA_LCLTikhonovSolver(self.ssarun.grid.com,tao_type,self.ip)
-    else:
-      self.ip = PISM.InvSSATikhonovProblem(self.ssarun.ssa,zeta0,u_obs,eta)
-      self.solver = PISM.InvSSATikhonovSolver(self.ssarun.grid.com,tao_type,self.ip)
-
-    pl = [ TikhonovListenerAdaptor(self,l) for l in self.listeners ]
-    for l in pl:
-      pass
-      # self.ip.addListener(l)
-
-    return self.solver.solve()
-
-  def inverseSolution(self):
-    zeta = self.ip.designSolution()
-    u =    self.ip.stateSolution()
-    return (zeta,u)
-
-  def inverseConvergedReason(self):
-    return self.solver.reasonDescription()
-
-class InvSSASolver_Siple:
-
-  def __init__(self,ssarun):
-    self.ssarun = ssarun
-    self.config = ssarun.config
-    self.converged_reason = "No Problem Solved"
-
-    self.method = self.config.get_string('inv_ssa_method')
-
-    self.rms_error = self.config.get("inv_ssa_rms_error") / PISM.secpera
-
-    self.forward_problem = SSAForwardProblem(ssarun)
-
-    # Determine the inversion algorithm, and set up its arguments.
-    if self.method == "ign":
-      Solver = InvertSSAIGN
-    else:
-      Solver = InvertSSANLCG
-
-    params=Solver.defaultParameters()
-    if self.method == "sd":
-      params.steepest_descent = True
-      params.ITER_MAX=10000
-    elif self.method =="ign":
-      params.linearsolver.ITER_MAX=10000
-      params.linearsolver.verbose = True
-    # if ls_verbose:
-    #   params.linesearch.verbose = True
-    params.verbose   = True
-    params.deriv_eps = 0.
-
-    # Run the inversion
-    self.solver=Solver(self.forward_problem,params=params)
-
-  def solveForward(self,zeta,out=None):
-    if out is None:
-      out = self.forward_problem.F(PLV(zeta))
-    else:
-      out = self.forward_problem.F(PLV(zeta),out=PLV(out))
-    return out.core()
-
-  def addIterationListener(self,listener):
-    self.solver.addIterationListener(listener)
-
-  def addXUpdateListener(self,listener):
-    self.solver.addXUpdateListener(listener)
-
-  def addLinearIterationListener(self,listener):
-    self.solver.addLinearIterationListener(listener)
-
-  def solveInverse(self,zeta0,u_obs):
-    try:
-      print 'solving'
-      (self.zeta_i,self.u_i) = self.solver.solve(zeta0,u_obs,self.rms_error)
-      print 'did solve'
-    except Exception as e:
-      self.converged_reason = str(e)
-      # It would be nice to make siple so that if the inverse solve failse
-      # you can still keep the most recent iteration. 
-      self.u_i = None
-      self.zeta_i = None
-      return False
-    self.converged_reason = "Morozov Discrepancy Met"
-    return True
-
-  def inverseSolution(self):
-    return (self.zeta_i,self.u_i)
-
-  def inverseConvergedReason(self):
-    return self.converged_reason
 
 Mx = 11 
 My = 61
@@ -309,7 +89,7 @@ def testi_tauc(grid, tauc):
       y=grid.y[j]
       tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
 
-class testi_run(InvSSARun):
+class testi_run(PISM.invert_ssa.InvSSARun):
   def __init__(self,Mx,My):
     self.grid = PISM.Context().newgrid()
     self.Mx = Mx
@@ -423,7 +203,6 @@ if __name__ == "__main__":
   nuH_scale        = viscosity_scale * depth_scale
 
   inv_ssa_cL2 /= area_scale 
-
   config.set("inv_ssa_cL2",inv_ssa_cL2)
   config.set("inv_ssa_cH1",inv_ssa_cH1)
 
@@ -469,7 +248,7 @@ if __name__ == "__main__":
   zeta0.create(grid, "zeta", PISM.kHasGhosts, kFEMStencilWidth)
   tauc_param.convertFromTauc(tauc,zeta0)
 
-  solver = InvSSASolver(testi)
+  solver = PISM.invert_ssa.InvSSASolver(testi)
 
   # Send the true yeild stress through the forward problem to 
   # get at true velocity field.
@@ -477,9 +256,7 @@ if __name__ == "__main__":
   solver.solveForward(zeta_true,out=u_obs)
 
   if inv_method.startswith('tikhonov'):
-    solver.addIterationListener(TikhonovProgressListener())
-  else:
-    solver.addIterationListener(printMisfit)
+    solver.addIterationListener(PISM.invert_ssa.printTikhonovProgress)
 
   # Try solving
   if not solver.solveInverse(zeta0,u_obs):
