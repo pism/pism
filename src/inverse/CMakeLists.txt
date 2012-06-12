@@ -10,6 +10,8 @@ add_library (pisminverse
   ./L2NormFunctional.cc
   ./H1NormFunctional.cc
   ./MeanSquareFunctional.cc
+  ./TwoBlockVec.cc
+  ./InvSSA_LCLTikhonov.cc
   )
 target_link_libraries (pisminverse pismbase pismutil)
 

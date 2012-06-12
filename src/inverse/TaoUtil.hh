@@ -281,7 +281,7 @@ protected:
 template<class Problem>
 class TaoLCLCallbacks {
 public:
-  static PetscErrorCode connect(TaoSolver tao, Problem &p, Vec c, Mat Jc, Mat Jd, Mat Jcpc=NULL, Mat Jcinv=NULL, Mat Jdpc=NULL) {
+  static PetscErrorCode connect(TaoSolver tao, Problem &p, Vec c, Mat Jc, Mat Jd, Mat Jcpc=NULL, Mat Jcinv=NULL) {
     PetscErrorCode ierr;
     ierr = TaoSetConstraintsRoutine(tao,c,TaoLCLCallbacks<Problem>::evaluateConstraintsCallback,&p); CHKERRQ(ierr);
     if(Jcpc==NULL) Jcpc = Jc;

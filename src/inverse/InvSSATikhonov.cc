@@ -23,6 +23,7 @@
 #include <assert.h>
 #include "H1NormFunctional.hh"
 #include "MeanSquareFunctional.hh"
+#include "pism_options.hh"
 
 InvSSATikhonov::InvSSATikhonov(IceGrid &g, IceBasalResistancePlasticLaw &b,
   EnthalpyConverter &e, InvTaucParameterization &tp,
@@ -153,6 +154,36 @@ PetscErrorCode InvSSATikhonov::linearizeAt( IceModelVec2S &zeta, bool &success) 
   return 0;
 }
 
+PetscErrorCode InvSSATikhonov::assembleFunction(IceModelVec2V u, Vec RHS) {
+  PetscErrorCode ierr;
+
+  PISMVector2 **u_a, **rhs_a;
+
+  ierr = u.get_array(u_a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(SSADA,RHS,&rhs_a); CHKERRQ(ierr);    
+
+  DMDALocalInfo *info = NULL;
+  ierr = this->compute_local_function(info,const_cast<const PISMVector2 **>(u_a),rhs_a); CHKERRQ(ierr);
+
+  ierr = DMDAVecRestoreArray(SSADA,RHS,&rhs_a); CHKERRQ(ierr);
+  ierr = u.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode InvSSATikhonov::assembleJacobian(IceModelVec2V u, Mat Jac) {
+  PetscErrorCode ierr;
+
+  PISMVector2 **u_a;
+  ierr = u.get_array(u_a); CHKERRQ(ierr);
+
+  DMDALocalInfo *info = NULL;
+  ierr = this->compute_local_jacobian(info,const_cast<const PISMVector2 **>(u_a),Jac); CHKERRQ(ierr);
+  
+  ierr = u.end_access(); CHKERRQ(ierr);
+  
+  return 0;
+}
 
 PetscErrorCode InvSSATikhonov::evalObjective(IceModelVec2S &dzeta, PetscReal *OUTPUT) {
   PetscErrorCode ierr;
@@ -177,60 +208,6 @@ PetscErrorCode InvSSATikhonov::evalGradPenalty(IceModelVec2V &du, IceModelVec2V 
   ierr = m_penaltyFunctional->gradientAt(du,gradient); CHKERRQ(ierr);
   return 0;
 }
-
-/*
-PetscErrorCode InvSSATikhonov::evalGradPenaltyReducedFD(IceModelVec2V &du, IceModelVec2S &gradient) {
-  PetscErrorCode ierr;
-
-  PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
-  ierr = gradient.set(0); CHKERRQ(ierr);
-
-
-  ierr = gradientFD(*m_penaltyFunctional,du,m_adjointRHS); CHKERRQ(ierr);
-
-  IceModelVec2V u0;
-  ierr = u0.create(grid,"u0",kHasGhosts,1); CHKERRQ(ierr);
-  ierr = u0.copy_from(velocity); CHKERRQ(ierr);
-
-  IceModelVec2V gradF;
-  ierr = gradF.create(grid,"gradF",kHasGhosts,1); CHKERRQ(ierr);
-
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
-  ierr = m_adjointRHS.begin_access(); CHKERRQ(ierr);
-  for(PetscInt i=grid.xs; i< grid.xs+grid.xm; i++) {
-    for(PetscInt j=grid.ys; j< grid.ys+grid.ym; j++) {
-      ierr = m_zeta->begin_access(); CHKERRQ(ierr);
-      (*m_zeta)(i,j) += h;
-      ierr = m_zeta->end_access(); CHKERRQ(ierr);
-      
-      ierr = this->set_zeta(*m_zeta); CHKERRQ(ierr);
-      ierr = this->solve(); CHKERRQ(ierr);
-      ierr = gradF.copy_from(velocity); CHKERRQ(ierr);
-      ierr = gradF.add(-1,u0); CHKERRQ(ierr);
-      ierr = gradF.scale(1/h); CHKERRQ(ierr);
-      
-      PetscReal gF = 0;
-      ierr = gradF.begin_access(); CHKERRQ(ierr);
-      for(PetscInt k=grid.xs; k< grid.xs+grid.xm; k++) {
-        for(PetscInt l=grid.ys; l< grid.ys+grid.ym; l++) {
-          gF += gradF(k,l).u*m_adjointRHS(k,l).u+gradF(k,l).v*m_adjointRHS(k,l).v;
-        }
-      }
-      ierr = gradF.end_access(); CHKERRQ(ierr);
-      // gradient(i,j) = gF;
-
-      ierr = m_zeta->begin_access(); CHKERRQ(ierr);
-      (*m_zeta)(i,j) -= h;
-      ierr = m_zeta->end_access(); CHKERRQ(ierr);
-    }
-  }
-  ierr = m_adjointRHS.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
-
-  ierr = velocity.copy_from(u0); CHKERRQ(ierr);
-  return 0;
-}  
-*/
 
 PetscErrorCode InvSSATikhonov::evalGradPenaltyReducedFD(IceModelVec2V &du, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
@@ -381,7 +358,7 @@ PetscErrorCode InvSSATikhonov::computeT(IceModelVec2S &dzeta,IceModelVec2V &du) 
   this->compute_local_jacobian( info, const_cast<const PISMVector2**>(u_a), m_Jadjoint);
   ierr = velocity.end_access(); CHKERRQ(ierr);
 
-  ierr = this->assemble_T_rhs(dzeta,m_adjointRHS);
+  ierr = this->assemble_T_rhs(*m_zeta,velocity,dzeta,m_adjointRHS);
 
   KSPConvergedReason  kspreason;
   // call PETSc to solve linear system by iterative method.
@@ -400,34 +377,55 @@ PetscErrorCode InvSSATikhonov::computeT(IceModelVec2S &dzeta,IceModelVec2V &du) 
   return 0;
 }
 
-PetscErrorCode InvSSATikhonov::assemble_T_rhs(IceModelVec2S &dzeta, IceModelVec2V &rhs) {
+PetscErrorCode InvSSATikhonov::assemble_T_rhs(IceModelVec2S &zeta, IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &rhs) {
+  PetscErrorCode ierr;
+
+  PetscReal **zeta_a;
+  ierr = zeta.get_array(zeta_a); CHKERRQ(ierr);
+  
+  PISMVector2 **u_a;
+  ierr = u.get_array(u_a); CHKERRQ(ierr);
+
+  PetscReal **dzeta_a;
+  ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
+
+  PISMVector2 **rhs_a;
+  ierr = rhs.get_array(rhs_a); CHKERRQ(ierr);
+
+  ierr = this->assemble_T_rhs(zeta_a,u_a,dzeta_a,rhs_a);
+
+  ierr = zeta.end_access(); CHKERRQ(ierr);
+  ierr = u.end_access(); CHKERRQ(ierr);
+  ierr = dzeta.end_access(); CHKERRQ(ierr);
+  ierr = rhs.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode InvSSATikhonov::assemble_T_rhs(PetscReal **zeta_a, PISMVector2 **u_a, PetscReal **dzeta_a, PISMVector2 **rhs_a) {
   PetscInt         i,j;
   PetscErrorCode ierr;
 
-  ierr = rhs.set(0); CHKERRQ(ierr);
+  // Zero out the portion of the function we are responsible for computing.
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      rhs_a[i][j].u = rhs_a[i][j].v = 0;
+    }
+  }
 
   // Aliases to help with notation consistency below.
-  IceModelVec2V   &m_u = velocity;
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = vel_bc;
   PetscReal        m_dirichletWeight    = dirichletScale;
 
-  PISMVector2 **u_a;
   PISMVector2 u_e[FEQuadrature::Nk];
   PISMVector2 u_q[FEQuadrature::Nq];
-  ierr = m_u.get_array(u_a); CHKERRQ(ierr);
 
-  PISMVector2 **rhs_a;
   PISMVector2 rhs_e[FEQuadrature::Nk];
-  ierr = rhs.get_array(rhs_a); CHKERRQ(ierr);
 
-  PetscReal **dzeta_a;
   PetscReal dzeta_e[FEQuadrature::Nk];
-  ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
 
-  PetscReal **zeta_a;
   PetscReal zeta_e[FEQuadrature::Nk];
-  ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
 
   PetscReal dtauc_e[FEQuadrature::Nk];
   PetscReal dtauc_q[FEQuadrature::Nq];
@@ -506,19 +504,124 @@ PetscErrorCode InvSSATikhonov::assemble_T_rhs(IceModelVec2S &dzeta, IceModelVec2
   if(dirichletBC) dirichletBC.fixResidualHomogeneous(rhs_a);
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  ierr = m_u.end_access(); CHKERRQ(ierr);
-  ierr = m_zeta->end_access(); CHKERRQ(ierr);
-  ierr = dzeta.end_access(); CHKERRQ(ierr);
-  ierr = rhs.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+/*
+PetscErrorCode InvSSATikhonov::computeJacobianDesign(IceModelVec2S &zeta, IceModelVec2V &u, Mat Jac) {
+
+  PetscInt         i,j;
+  PetscErrorCode   ierr;
+
+  IceModelVec2Int *m_dirichletLocations = bc_locations;
+  IceModelVec2V   *m_dirichletValues    = vel_bc;
+  PetscReal        m_dirichletWeight    = dirichletScale;
+
+  // Zero out the Jacobian in preparation for updating it.
+  ierr = MatZeroEntries(Jac);CHKERRQ(ierr);
+
+  // Jacobian times weights for quadrature.
+  PetscScalar JxW[FEQuadrature::Nq];
+  quadrature.getWeightedJacobian(JxW);
+
+  PISMVector2 **u_a;
+  PISMVector2  u_e[FEQuadrature::Nk];
+  PISMVector2  u_q[FEQuadrature::Nq];
+  ierr = u.get_array(u_a); CHKERRQ(ierr);
+
+  PetscScalar **zeta_a;
+  PetscScalar zeta_e[FEQuadrature::Nk];
+  zeta.get_array(zeta_a);
+
+  PetscScalar dtauc_dzeta_e[FEQuadrature::Nk];
+
+  DirichletData dirichletBC;
+  ierr = dirichletBC.init(m_dirichletLocations,m_dirichletValues,m_dirichletWeight); CHKERRQ(ierr);
+  DirichletData fixedZeta;
+  ierr = fixedZeta.init(m_fixed_tauc_locations);
+
+  // Values of the finite element test functions at the quadrature points.
+  // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
+  const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
+
+  // Loop through all the elements.
+  PetscInt xs = element_index.xs, xm = element_index.xm,
+           ys = element_index.ys, ym = element_index.ym;
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+
+      // Element-local Jacobian matrix.
+      PetscReal      K[(2*FEQuadrature::Nk)*(FEQuadrature::Nk)];
+
+      // Index into the coefficient storage array.
+      const PetscInt ij = element_index.flatten(i,j);
+
+      // Initialize the map from global to local degrees of freedom for this element.
+      dofmap.reset(i,j,grid);
+
+      // Obtain the value of the solution at the adjacent nodes to the element.
+      dofmap.extractLocalDOFs(i,j,u_a,u_e);
+      if(dirichletData) dirichletData.update(u_e);
+      quadrature.computeTrialFunctionValues(u_e,u_q);
+
+      // Compute the change in tau_c with respect to zeta at the element nodes.
+      m_dofmap.extractLocalDOFs(i,j,zeta_a,zeta_e);
+      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+        m_tauc_param.toTauc(zeta_e[k],NULL,dtauc_dzeta_e + k);
+      }
+      if(fixedZeta) fixedZeta.updateHomogeneous(m_dofmap,dtauc_dzeta_e);
+
+      // Build the element-local Jacobian.
+      ierr = PetscMemzero(K,sizeof(K));CHKERRQ(ierr);
+      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+
+        // Shorthand for values and derivatives of the solution at the single quadrature point.
+        PISMVector2 &u_qq = u_q[q];
+
+        // Coefficients evaluated at the single quadrature point.
+        const FEStoreNode *feS = &feStore[ij*Quadrature::Nq + q];
+        const PetscReal    jw  = JxW[q];
+
+        // Determine "dbeta/dtauc" at the quadrature point
+        PetscReal dbeta_dtauc = 0;
+        if( M.grounded_ice(feS->mask) ) {
+          dbeta_dtauc = basal.drag(1.,u_qq.u,u_qq.v);
+        }
+
+        for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+          for (PetscInt l=0; l<FEQuadrature::Nk; l++) {
+            K[2*k*Quadrature::Nk +2*l  ] += JxW[q]*dbeta_dtauc*u_qq.u*test[q][k].val*test[q][l].val*dtauc_dzeta_e[l];
+            K[2*k*Quadrature::Nk +2*l+1] += JxW[q]*dbeta_dtauc*u_qq.v*test[q][k].val*test[q][l].val*dtauc_dzeta_e[l];
+          }
+        }
+      } // q
+
+      
+
+????      ierr = dofmap.addLocalJacobianBlock(K,Jac);
+
+    } // j
+  } // i
+
+  ierr = MatAssemblyBegin(Jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+  ierr = MatSetOption(Jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   return 0;
 }
+*/
 
 PetscErrorCode InvSSATikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
 
-  // ierr = evalGradPenaltyReducedFD(du,gradient); CHKERRQ(ierr);
-  // return 0;
+  bool do_fd;
+  ierr = PISMOptionsIsSet("-inv_ssa_tik_fd","compute tikhonov forward linearization via finite differences",do_fd); CHKERRQ(ierr);
+  if(do_fd) {
+    ierr = evalGradPenaltyReducedFD(du,gradient); CHKERRQ(ierr);
+    return 0;
+  }
+  
 
   // Some aliases to help with notation consistency below.
   IceModelVec2V   &m_u                  = velocity;
@@ -665,4 +768,10 @@ PetscErrorCode InvSSATikhonov::rangeIP(IceModelVec2V &a, IceModelVec2V &b, Petsc
   PetscErrorCode ierr;
   ierr = dynamic_cast<IPFunctional<IceModelVec2V> *>(m_penaltyFunctional.get())->dot(a,b,OUTPUT); CHKERRQ(ierr);
   return 0;
+}
+
+void InvSSATikhonovAddListener(TikhonovProblem<InvSSATikhonov> &problem, 
+                 PythonTikhonovSVListener::Ptr listener ) {
+  std::tr1::shared_ptr<InvSSAPythonListenerBridge> bridge(new InvSSAPythonListenerBridge(listener) );
+  problem.addListener(bridge);
 }

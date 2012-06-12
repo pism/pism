@@ -55,6 +55,11 @@ public:
   std::string reasonDescription() {
     return std::string("FIXME");
   }
+  
+  PetscErrorCode get_da(DM *da) {
+    *da = SSADA;
+    return 0;
+  }
 
   PetscErrorCode set_functionals();
 
@@ -71,7 +76,12 @@ public:
   PetscErrorCode evalGradPenaltyReducedFD(IceModelVec2V &du, IceModelVec2S &gradient);
   PetscErrorCode evalGradPenaltyReducedNoTranspose(IceModelVec2V &du, IceModelVec2S &gradient);
 
-  PetscErrorCode assemble_T_rhs(IceModelVec2S &dzeta, IceModelVec2V &rhs);
+  PetscErrorCode assembleFunction(IceModelVec2V u, Vec RHS);
+  
+  PetscErrorCode assembleJacobian(IceModelVec2V u, Mat J);
+
+  PetscErrorCode assemble_T_rhs(IceModelVec2S &zeta, IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &rhs);
+  PetscErrorCode assemble_T_rhs(PetscReal **zeta, PISMVector2 **u, PetscReal **dzeta, PISMVector2 **rhs);
   PetscErrorCode computeT(IceModelVec2S &dzeta,IceModelVec2V &du);
 
   PetscErrorCode domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT);
@@ -132,9 +142,6 @@ protected:
 };
 
 void InvSSATikhonovAddListener(TikhonovProblem<InvSSATikhonov> &problem, 
-                 PythonTikhonovSVListener::Ptr listener ) {
-  std::tr1::shared_ptr<InvSSAPythonListenerBridge> bridge(new InvSSAPythonListenerBridge(listener) );
-  problem.addListener(bridge);
-}
+PythonTikhonovSVListener::Ptr listener );
 
 #endif /* end of include guard: INVSSATIKHONOV_HH_NSO6ITYB */
