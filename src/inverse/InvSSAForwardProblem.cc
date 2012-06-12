@@ -554,8 +554,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_DomainNorm_matrix()
     ierr = m_zeta_fixed_locations->get_array(zeta_fixed_mask);CHKERRQ(ierr);
   }
 
-  PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
-  PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
+  PetscReal cH1 = config.get("inv_ssa_cH1");
+  PetscReal cL2 = config.get("inv_ssa_cL2");
 
   // Loop through all the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
@@ -693,8 +693,8 @@ PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, 
     ierr = m_zeta_fixed_locations->get_array(zeta_fixed_mask);CHKERRQ(ierr);
   }
 
-  PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
-  PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
+  PetscReal cH1 = config.get("inv_ssa_cH1");
+  PetscReal cL2 = config.get("inv_ssa_cL2");
 
   // Loop through all LOCAL elements.
   PetscInt xs = element_index.lxs, xm = element_index.lxm,

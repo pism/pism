@@ -40,6 +40,7 @@
 #include "inverse/InvSchrodTikhonov.hh"
 #include "inverse/InvSSATikhonov.hh"
 #include "inverse/InvSSABasicTikhonov.hh"
+#include "inverse/InvSSA_LCLTikhonov.hh"
 #endif
 #include "stressbalance/SSAFD.hh"
 #include "pism_python.hh"
@@ -537,6 +538,7 @@ namespace std {
 %include "inverse/InvSchrodTikhonov.hh"
 %template(InvSSATikhonovProblemListener) TikhonovProblemListener< InvSSATikhonov >;
 %include "inverse/InvSSATikhonov.hh"
+%include "inverse/InvSSA_LCLTikhonov.hh"
 %include "inverse/InvSSABasicTikhonov.hh"
 %shared_ptr(PythonTikhonovSVListener)
 %feature("director") PythonTikhonovSVListener;
@@ -545,6 +547,7 @@ namespace std {
 %template(InvSchrodTikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSchrodTikhonov> >;
 %template(InvSSATikhonovProblem) TikhonovProblem<InvSSATikhonov> ;
 %template(InvSSATikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSSATikhonov> >;
+%template(InvSSA_LCLTikhonovSolver) TaoBasicSolver< InvSSA_LCLTikhonov >;
 %rename InvSSATikhonovProblem::addListener _addListener;
 %extend TikhonovProblem<InvSSATikhonov>
 {

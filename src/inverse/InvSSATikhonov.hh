@@ -83,7 +83,7 @@ public:
   PetscErrorCode assemble_T_rhs(IceModelVec2S &zeta, IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &rhs);
   PetscErrorCode assemble_T_rhs(PetscReal **zeta, PISMVector2 **u, PetscReal **dzeta, PISMVector2 **rhs);
   PetscErrorCode computeT(IceModelVec2S &dzeta,IceModelVec2V &du);
-
+  PetscErrorCode compute_Jdesign_transpose(PetscReal **zeta_a, PISMVector2 **u_a, PISMVector2 **v_a, PetscReal **gradient_a);
   PetscErrorCode domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT);
   PetscErrorCode rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT);
 

@@ -621,7 +621,6 @@ PetscErrorCode InvSSATikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceMode
     ierr = evalGradPenaltyReducedFD(du,gradient); CHKERRQ(ierr);
     return 0;
   }
-  
 
   // Some aliases to help with notation consistency below.
   IceModelVec2V   &m_u                  = velocity;
@@ -665,21 +664,37 @@ PetscErrorCode InvSSATikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceMode
 
   ierr = m_v.copy_from(m_vGlobal); CHKERRQ(ierr);
 
-
-  PetscInt         i,j;
-
   PISMVector2 **v_a;
+  ierr = m_v.get_array(v_a); CHKERRQ(ierr);
+
+  PetscReal **gradient_a;
+  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
+  
+  PetscReal **zeta_a;
+  ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
+  
+  ierr = this->compute_Jdesign_transpose(zeta_a,u_a,v_a,gradient_a); CHKERRQ(ierr);
+
+
+  ierr = m_v.end_access(); CHKERRQ(ierr);
+  ierr = m_u.end_access(); CHKERRQ(ierr);
+  ierr = gradient.end_access(); CHKERRQ(ierr);
+  ierr = m_zeta->end_access(); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+PetscErrorCode InvSSATikhonov::compute_Jdesign_transpose(PetscReal **zeta_a, PISMVector2 **u_a, PISMVector2 **v_a, PetscReal **gradient_a) {
+  PetscInt         i,j;
+  PetscErrorCode ierr;
+
   PISMVector2 v_e[FEQuadrature::Nk];
   PISMVector2 v_q[FEQuadrature::Nq];
 
   PISMVector2 u_e[FEQuadrature::Nk];
   PISMVector2 u_q[FEQuadrature::Nq];
 
-  PetscReal **gradient_a;
   PetscReal gradient_e[FEQuadrature::Nk];
-
-  ierr = m_v.get_array(v_a); CHKERRQ(ierr);
-  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -734,8 +749,6 @@ PetscErrorCode InvSSATikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceMode
     } // j
   } // i
 
-  PetscReal **zeta_a;
-  ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
   for( i=m_grid.xs;i<m_grid.xs+m_grid.xm;i++){
     for( j=m_grid.ys;j<m_grid.ys+m_grid.ym;j++){
       PetscReal dtauc_dzeta;
@@ -743,7 +756,6 @@ PetscErrorCode InvSSATikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceMode
       gradient_a[i][j] *= dtauc_dzeta;
     }
   }
-  ierr = m_zeta->end_access(); CHKERRQ(ierr);
   
   if(m_fixed_tauc_locations) {
     DirichletData dirichletBC;
@@ -751,10 +763,6 @@ PetscErrorCode InvSSATikhonov::evalGradPenaltyReduced(IceModelVec2V &du, IceMode
     dirichletBC.fixResidualHomogeneous(gradient_a);
     ierr = dirichletBC.finish(); CHKERRQ(ierr);
   }
-
-  ierr = m_v.end_access(); CHKERRQ(ierr);
-  ierr = m_u.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

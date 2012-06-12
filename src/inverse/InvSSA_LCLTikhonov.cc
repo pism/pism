@@ -39,6 +39,9 @@ PetscErrorCode InvSSA_LCLTikhonov::construct() {
 
   IceGrid &grid = *m_d0.get_grid();
 
+  PetscReal stressScale = grid.config.get("tauc_param_tauc_scale"); CHKERRQ(ierr);
+  m_constraintsScale = 1/(grid.Lx*grid.Ly*4*stressScale);
+
   PetscInt design_stencil_width = m_d0.get_stencil_width();
   PetscInt state_stencil_width = m_u_obs.get_stencil_width();
   ierr = m_d.create(grid, "design variable", kHasGhosts, design_stencil_width); CHKERRQ(ierr);
@@ -48,6 +51,7 @@ PetscErrorCode InvSSA_LCLTikhonov::construct() {
 
   ierr = m_uGlobal.create(grid, "state variable (global)", kNoGhosts, state_stencil_width); CHKERRQ(ierr);
   ierr = m_u.create(grid, "state variable", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_du.create(grid, "du", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
   ierr = m_u_Jdesign.create(grid, "Jdesign state variable", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
   
   ierr = m_u_diff.create( grid, "state residual", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
@@ -66,7 +70,9 @@ PetscErrorCode InvSSA_LCLTikhonov::construct() {
   PetscInt nGlobalNodes = grid.Mx*grid.My;
   ierr = MatCreateShell(grid.com,2*nLocalNodes,nLocalNodes,2*nGlobalNodes,nGlobalNodes,this,&m_Jdesign); CHKERRQ(ierr);
   ierr = MatShellSetOperation(m_Jdesign,MATOP_MULT,(void(*)(void))InvSSA_LCLTikhonov_applyJacobianDesign); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(m_Jdesign,MATOP_MULT_TRANSPOSE,(void(*)(void))InvSSA_LCLTikhonov_applyJacobianDesignTranspose); CHKERRQ(ierr);
 
+  m_x.reset(new TwoBlockVec(m_dGlobal.get_vec(),m_uGlobal.get_vec()));
   return 0;
 }
 
@@ -101,6 +107,7 @@ InvSSA_LCLTikhonov::DesignVec &InvSSA_LCLTikhonov::designSolution() {
 
 PetscErrorCode InvSSA_LCLTikhonov::connect(TaoSolver tao) {
   PetscErrorCode ierr;
+  ierr = TaoSetStateDesignIS(tao, m_x->blockBIndexSet() /*state*/ , m_x->blockAIndexSet() /*design*/); CHKERRQ(ierr);
   ierr = TaoObjGradCallback<InvSSA_LCLTikhonov>::connect(tao,*this); CHKERRQ(ierr);
   ierr = TaoLCLCallbacks<InvSSA_LCLTikhonov>::connect(tao,*this,m_constraints,m_Jstate,m_Jdesign); CHKERRQ(ierr);
   ierr = TaoMonitorCallback<InvSSA_LCLTikhonov>::connect(tao,*this); CHKERRQ(ierr);
@@ -186,6 +193,8 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateConstraints(TaoSolver, Vec x, Vec r) 
 
   ierr = m_invProblem.assembleFunction(m_u, r); CHKERRQ(ierr);
 
+  ierr = VecScale(r,m_constraintsScale);
+
   return 0;
 }
 
@@ -199,6 +208,8 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateConstraintsJacobianState(TaoSolver, V
   ierr = m_invProblem.set_zeta(m_d); CHKERRQ(ierr);
   ierr = m_invProblem.assembleJacobian(m_u,*Jstate); CHKERRQ(ierr);
   *s = SAME_NONZERO_PATTERN;
+
+  ierr = MatScale(*Jstate,m_constraintsScale); CHKERRQ(ierr);
 
   return 0;
 }
@@ -235,7 +246,7 @@ PetscErrorCode InvSSA_LCLTikhonov::applyConstraintsJacobianDesign(Vec x, Vec y) 
 
   ierr = DMDAVecRestoreArray(m_da,y,&y_a); CHKERRQ(ierr);
   
-  ierr = VecScale(y,-1); CHKERRQ(ierr);
+  ierr = VecScale(y,-m_constraintsScale); CHKERRQ(ierr);
   
   ierr = m_d_Jdesign.end_access(); CHKERRQ(ierr);
   ierr = m_u_Jdesign.end_access(); CHKERRQ(ierr);
@@ -244,12 +255,52 @@ PetscErrorCode InvSSA_LCLTikhonov::applyConstraintsJacobianDesign(Vec x, Vec y) 
   return 0;
 }
 
+PetscErrorCode InvSSA_LCLTikhonov::applyConstraintsJacobianDesignTranspose(Vec x, Vec y) {
+  PetscErrorCode ierr;
+  ierr = m_du.copy_from(x); CHKERRQ(ierr);
+
+  PetscReal **zeta_a;
+  ierr = m_d_Jdesign.get_array(zeta_a); CHKERRQ(ierr);
+
+  PISMVector2 **u_a;
+  ierr = m_u_Jdesign.get_array(u_a); CHKERRQ(ierr);
+  
+  PISMVector2 **du_a;
+  ierr = m_du.get_array(du_a); CHKERRQ(ierr);
+  
+  PetscReal **y_a;
+
+  IceGrid &grid = *m_dGlobal.get_grid();
+  ierr = DMDAVecGetArray(grid.da2,y,&y_a); CHKERRQ(ierr);
+  
+  ierr = m_invProblem.compute_Jdesign_transpose(zeta_a, u_a, du_a, y_a); CHKERRQ(ierr);
+
+
+  ierr = DMDAVecRestoreArray(grid.da2,y,&y_a); CHKERRQ(ierr);
+
+  ierr = VecScale(y,m_constraintsScale); CHKERRQ(ierr);
+  
+  ierr = m_d_Jdesign.end_access(); CHKERRQ(ierr);
+  ierr = m_u_Jdesign.end_access(); CHKERRQ(ierr);
+  ierr = m_du.end_access(); CHKERRQ(ierr);
+  
+  return 0;
+}
 
 PetscErrorCode InvSSA_LCLTikhonov_applyJacobianDesign(Mat A, Vec x, Vec y) {
   PetscErrorCode ierr;
   InvSSA_LCLTikhonov *ctx;
-  ierr = MatShellGetContext(A,(void *)ctx); CHKERRQ(ierr);
+  ierr = MatShellGetContext(A,&ctx); CHKERRQ(ierr);
   ierr = ctx->applyConstraintsJacobianDesign(x,y); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode InvSSA_LCLTikhonov_applyJacobianDesignTranspose(Mat A, Vec x, Vec y) {
+  PetscErrorCode ierr;
+  InvSSA_LCLTikhonov *ctx;
+  ierr = MatShellGetContext(A,&ctx); CHKERRQ(ierr);
+  ierr = ctx->applyConstraintsJacobianDesignTranspose(x,y); CHKERRQ(ierr);
 
   return 0;
 }

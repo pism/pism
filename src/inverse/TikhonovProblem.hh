@@ -199,6 +199,12 @@ protected:
   std::vector<ListenerPtr> m_listeners;
 
   MPI_Comm m_comm;
+
+private:
+  // Hide copy/assignment operations
+  TikhonovProblem(TikhonovProblem const &);
+  TikhonovProblem & operator=(TikhonovProblem const &);
+
 };
 
 template<class InverseProblem>

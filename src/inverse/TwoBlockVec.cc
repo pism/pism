@@ -28,7 +28,7 @@ TwoBlockVec::TwoBlockVec(Vec a, Vec b) {
 TwoBlockVec::~TwoBlockVec() {
   PetscErrorCode ierr;
   ierr = this->destruct();
-  assert(ierr=0);
+  assert(ierr==0);
 }
 
 PetscErrorCode TwoBlockVec::construct(Vec a, Vec b)  {
@@ -64,6 +64,7 @@ PetscErrorCode TwoBlockVec::construct(Vec a, Vec b)  {
   
   ierr = ISDestroy(&is_a); CHKERRQ(ierr);
   ierr = ISDestroy(&is_b); CHKERRQ(ierr);
+
   return 0;
 }
 

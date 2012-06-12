@@ -31,6 +31,7 @@ class InvSSATikhonov;
 
 
 PetscErrorCode InvSSA_LCLTikhonov_applyJacobianDesign(Mat A, Vec x, Vec y);
+PetscErrorCode InvSSA_LCLTikhonov_applyJacobianDesignTranspose(Mat A, Vec x, Vec y);
 
 class InvSSA_LCLTikhonov {
 public:
@@ -85,6 +86,7 @@ public:
   virtual PetscErrorCode evaluateConstraintsJacobianDesign(TaoSolver, Vec x, Mat* /*Jdesign*/);
 
   virtual PetscErrorCode applyConstraintsJacobianDesign(Vec x, Vec y);
+  virtual PetscErrorCode applyConstraintsJacobianDesignTranspose(Vec x, Vec y);
 
 protected:
 
@@ -101,6 +103,7 @@ protected:
 
   StateVec m_uGlobal;
   StateVec m_u;
+  StateVec m_du;
   StateVec &m_u_obs;
   StateVec m_u_diff;
 
@@ -122,6 +125,9 @@ protected:
 
   IceModelVec2S m_d_Jdesign;
   IceModelVec2V m_u_Jdesign;
+
+  PetscReal m_constraintsScale;
+
   // std::vector<ListenerPtr> m_listeners;
 };
 
