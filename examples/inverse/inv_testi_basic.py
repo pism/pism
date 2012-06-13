@@ -227,7 +227,7 @@ du.add(-1,u_obs)
 
 
 designFunc =PISM.H1NormFunctional2S(grid,cL2,cH1)
-stateFunc = PISM.MeanSquareObservationFunctional2V(grid)
+stateFunc = PISM.MeanSquareFunctional2V(grid)
 stateFunc.normalize( grid.config.get("inv_ssa_velocity_scale")  )
 print "cL2, cH1", cL2,cH1
 grid.printInfo(1)
@@ -288,9 +288,9 @@ du.create(grid, "du", PISM.kHasGhosts, stencil_width);
 du.copy_from(u_i)
 du.add(-1,u_obs)
 if hasMisfitWeight:
-  misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,misfitWeight);
+  misfit_functional = PISM.MeanSquareFunctional2V(grid,misfitWeight);
 else:
-  misfit_functional = PISM.MeanSquareObservationFunctional2V(grid);
+  misfit_functional = PISM.MeanSquareFunctional2V(grid);
 misfit_functional.normalize( config.get("inv_ssa_velocity_scale")  )
 misfit = math.sqrt(misfit_functional.valueAt(du))
 misfit_norm = math.sqrt(misfit_functional.valueAt(u_i))  

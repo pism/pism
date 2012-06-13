@@ -25,6 +25,9 @@ for o in PISM.OptionsGroup(com,"",sys.argv[0]):
   hasFixedDesignLocs = PISM.optionsFlag("-fixed_design_locs","test having fixed design variables",default=False)
   hasFixedDesignLocs = PISM.optionsFlag("-fixed_design_locs","test having fixed design variables",default=False)
   hasMisfitWeight = PISM.optionsFlag("-use_misfit_weight","test misfit weight paramter",default=False)
+  inv_ssa_cL2 = PISM.optionsReal("-inv_ssa_cL2","L2 coefficient for domain inner product",default=1)
+  inv_ssa_cH1 = PISM.optionsReal("-inv_ssa_cH1","H1 coefficient for domain inner product",default=0)
+
 x0 = 0.;
 L = math.pi;
 m=4
@@ -32,8 +35,8 @@ m=4
 config.set_string("inv_ssa_tauc_param","ident")
 config.set('tauc_param_tauc_scale',1)
 config.set('inv_ssa_velocity_scale',1)
-config.set('inv_ssa_cL2',1)
-config.set('inv_ssa_cH1',0)
+config.set('inv_ssa_cL2',inv_ssa_cL2)
+config.set('inv_ssa_cH1',inv_ssa_cH1)
 
 # Build the grid.
 grid = PISM.Context().newgrid()
@@ -137,9 +140,9 @@ if solver.solve():
   du.copy_from(u_i)
   du.add(-1,u_obs)
   if hasMisfitWeight:
-    misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,misfitWeight);
+    misfit_functional = PISM.MeanSquareFunctional2V(grid,misfitWeight);
   else:
-    misfit_functional = PISM.MeanSquareObservationFunctional2V(grid);
+    misfit_functional = PISM.MeanSquareFunctional2V(grid);
   misfit_functional.normalize(1)
   misfit = math.sqrt(misfit_functional.valueAt(du))
   misfit_norm = math.sqrt(misfit_functional.valueAt(u_i))  

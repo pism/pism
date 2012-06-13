@@ -138,9 +138,9 @@ if solver.solve():
   du.copy_from(u_i)
   du.add(-1,u_obs)
   if hasMisfitWeight:
-    misfit_functional = PISM.MeanSquareObservationFunctional2V(grid,misfitWeight);
+    misfit_functional = PISM.MeanSquareFunctional2V(grid,misfitWeight);
   else:
-    misfit_functional = PISM.MeanSquareObservationFunctional2V(grid);
+    misfit_functional = PISM.MeanSquareFunctional2V(grid);
   misfit_functional.normalize(1)
   misfit = math.sqrt(misfit_functional.valueAt(du))
   PISM.verbPrintf(1,grid.com,"RMS Misfit: %g\n",misfit)

@@ -26,35 +26,76 @@ import math
 
 import PISM
 import PISM.invert_ssa
+import PISM.sipletools
 from PISM import util
 
 import siple
+siple.reporting.clear_loggers()
+siple.reporting.add_logger(PISM.sipletools.pism_print_logger)
+siple.reporting.set_pause_callback(PISM.sipletools.pism_pause)
+
 
 import matplotlib.pyplot as pp
 
-    # grid = data.grad.get_grid()
-    # tozero = PISM.toproczero.ToProcZero(grid,dof=1,dim=2)
-    # tozero2 = PISM.toproczero.ToProcZero(grid,dof=2,dim=2)
-    # 
-    # d_a = tozero.communicate(d)
-    # pp.clf()
-    # pp.subplot(1,3,1)
-    # pp.plot(grid.y,d_a[:,grid.Mx/2])
-    # 
-    # u_a = tozero2.communicate(u)
-    # mg = np.max(np.abs(u_a))
-    # pp.subplot(1,3,2)
-    # pp.plot(grid.y,u_a[0,:,grid.Mx/2]/mg)
-    # # 
-    # grad_d_a = tozero.communicate(grad_d)
-    # grad_u_a = tozero.communicate(grad_u)
-    # grad_a = tozero.communicate(grad)
-    # mg = np.max(np.abs(grad_a))
-    # pp.subplot(1,3,3)
-    # pp.plot(grid.y,-grad_d_a[:,grid.Mx/2]/eta,grid.y,grad_u_a[:,grid.Mx/2],grid.y,grad_a[:,grid.Mx/2])
-    # pp.draw()
-    # import time
-    # # time.sleep(3)
+
+class PlotListener(PISM.invert_ssa.PlotListener):
+  def __call__(self,inv_solver,it,data):
+
+    grid = self.grid
+        
+    zeta = self.toproczero(data.zeta)
+    u    = self.toproczero(data.u)
+
+    if inv_solver.method.startswith('tikhonov'):
+      eta = data.eta
+      if eta>1:
+        sWeight=1
+        dWeight=1/eta
+      else:
+        sWeight=eta
+        dWeight=1
+      grad_zeta = self.toproczero(data.grad_zeta)
+      grad_u = self.toproczero(data.grad_u)
+      grad= self.toproczero(data.grad)
+    else:
+      r = self.toproczero(data.r)
+
+    if zeta is not None:
+      pp.figure(self.figure())
+      pp.clf()
+      pp.subplot(1,3,1)
+      pp.plot(grid.y,zeta[:,grid.Mx/2])
+    
+      mag = np.max(np.abs(u))
+      pp.subplot(1,3,2)
+      pp.plot(grid.y,u[0,:,grid.Mx/2]/mag)
+
+      pp.subplot(1,3,3)
+      if inv_solver.method.startswith('tikhonov'):
+        pp.plot(grid.y,-grad_zeta[:,grid.Mx/2]*dWeight,grid.y,grad_u[:,grid.Mx/2]*sWeight,grid.y,grad[:,grid.Mx/2])
+      else:
+        pp.plot(grid.y,r[0,:,grid.Mx/2])
+        
+      pp.ion()
+      pp.show()
+
+
+class LinPlotListener(PISM.invert_ssa.PlotListener):
+  def __call__(self,inv_solver,it,data):
+
+    grid = self.grid
+
+    x  = self.toproczero(data.x)
+
+    if x is not None:
+      pp.figure(self.figure())
+      pp.clf()
+      mag = np.max(np.abs(x));
+      if mag==0 : mag = 1
+      pp.plot(grid.y,x[:,grid.Mx/2]/mag)
+
+      pp.ion()
+      pp.show()
 
 Mx = 11 
 My = 61
@@ -183,6 +224,7 @@ if __name__ == "__main__":
     do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=True)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
+    monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
 
   length_scale  = L_schoof
   slope = 0.001
@@ -222,6 +264,8 @@ if __name__ == "__main__":
   PISM.setVerbosityLevel(verbosity)
   testi = testi_run(Mx,My)
   testi.setup()
+  solver = PISM.invert_ssa.InvSSASolver(testi)
+  tauc_param = solver.ssarun.tauc_param
 
   grid = testi.grid
 
@@ -248,15 +292,45 @@ if __name__ == "__main__":
   zeta0.create(grid, "zeta", PISM.kHasGhosts, kFEMStencilWidth)
   tauc_param.convertFromTauc(tauc,zeta0)
 
-  solver = PISM.invert_ssa.InvSSASolver(testi)
+
+  if test_adjoint:
+    if solver.method.startswith('tikhonov'):
+      siple.reporting.msg("option -inv_test_adjoint cannot be used with inverse method %s",solver.method)
+      exit(1)
+    from PISM.sipletools import PISMLocalVector as PLV
+    stencil_width=1
+    forward_problem = solver.forward_problem
+    d = PLV(PISM.sipletools.randVectorS(grid,1e5,stencil_width))
+    r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera,stencil_width))
+    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta0),d,r,3)
+    siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
+    exit(0)
 
   # Send the true yeild stress through the forward problem to 
   # get at true velocity field.
   u_obs = PISM.util.standard2dVelocityVec( grid, name='_ssa_true', desc='SSA velocity boundary condition',intent='intent' )
   solver.solveForward(zeta_true,out=u_obs)
 
+
+  # Attach various iteration listeners to the solver as needed for:
+  # progress reporting,
   if inv_method.startswith('tikhonov'):
     solver.addIterationListener(PISM.invert_ssa.printTikhonovProgress)
+  # adjoint monitoring,
+  if monitor_adjoint:    
+    solver.addIterationListener(PISM.invert_ssa.MonitorAdjoint())
+      # if inv_method=='ign':
+      #   solver.addLinearIterationListener(MonitorAdjointLin())
+  # Plotting
+  if do_plotting:
+    solver.addIterationListener(PlotListener(grid))
+    if inv_method=='ign':
+      solver.addLinearIterationListener(LinPlotListener(grid))
+  # Pausing
+  if do_pause:
+    solver.addIterationListener(PISM.invert_ssa.pauseListener)            
+  # Iteration saving
+  solver.addXUpdateListener(PISM.invert_ssa.ZetaSaver(output_file)) 
 
   # Try solving
   if not solver.solveInverse(zeta0,u_obs):
