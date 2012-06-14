@@ -72,8 +72,8 @@ public:
   PetscErrorCode connect(TaoSolver tao) {
     PetscErrorCode ierr;
     ierr = TaoObjGradCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
-    // ierr = TaoObjectiveCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
     ierr = TaoMonitorCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
+    ierr = TaoGetVariableBoundsCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
     return 0;
   }
 
@@ -91,6 +91,12 @@ public:
                    m_invProblem.solution(), m_u_diff, m_grad_penalty,
                    m_grad ); CHKERRQ(ierr);
     }
+    return 0;
+  }
+
+  virtual PetscErrorCode getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
+    PetscErrorCode ierr;
+    ierr = m_invProblem.getVariableBounds(lo,hi); CHKERRQ(ierr);
     return 0;
   }
 

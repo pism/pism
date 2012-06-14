@@ -268,7 +268,6 @@ class Vel2TaucLinPlotListener(PISM.invert_ssa.PlotListener):
     self.Vmax = Vmax
     self.l2_weight = None
     self.l2_weight_init = False
-    self.figure =None
 
   def __call__(self,inverse_solver,count,data):
     # On the first go-around, extract the l2_weight vector onto 
@@ -280,11 +279,11 @@ class Vel2TaucLinPlotListener(PISM.invert_ssa.PlotListener):
 
     import matplotlib.pyplot as pp
     pp.figure(self.figure())
-
+    
     l2_weight=self.l2_weight
     r = self.toproczero(data.r)
     d = self.toproczero(data.d)
-
+    
     pp.clf()
     
     V = self.Vmax
@@ -358,7 +357,7 @@ if __name__ == "__main__":
 
     inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-    inv_method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd","tikhonov_lmvm","tikhonov_cg"],"ign")
+    inv_method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd","tikhonov_lmvm","tikhonov_cg","tikhonov_blmvm","tikhonov_lcl"],"ign")
     # forward_type = PISM.optionsList(context.com,"-inv_forward","Forward problem description",["classic","tao"],"classic")
     rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=100)
     eta = PISM.optionsReal("-eta","penalty weight",default=1)
@@ -387,12 +386,15 @@ if __name__ == "__main__":
   config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
   config.set("inv_ssa_cL2",ssa_l2_coeff)
   config.set("inv_ssa_cH1",ssa_h1_coeff)
-  # velocity_scale = 100 / PISM.secpera # 100m/a
+  velocity_scale = 100 # 100m/a
   # velocity_scale = PISM.secpera #m/s
-  config.set("inv_ssa_velocity_scale",1)
+  config.set("inv_ssa_velocity_scale",velocity_scale)
+
+  config.set("inv_ssa_tauc_min",5e2); #Pa
+  config.set("inv_ssa_tauc_max",5e7); #Pa
 
   stress_scale = 50000 # Pa
-  config.set("tauc_param_trunc_tauc0",.1*stress_scale)
+  config.set("tauc_param_trunc_tauc0",.01*stress_scale)
   config.set("tauc_param_tauc_eps",.001*stress_scale)
   config.set("tauc_param_tauc_scale",stress_scale)
 
@@ -541,8 +543,8 @@ if __name__ == "__main__":
   # Progress reporting
   if inv_method.startswith('tikhonov'):
     solver.addIterationListener(PISM.invert_ssa.printTikhonovProgress)
-  # else:
-  #   solver.addIterationListener(PISM.invert_ssa.printMisfit)
+  else:
+    solver.addIterationListener(PISM.invert_ssa.printRMSMisfit)
   # Saving the current iteration
   solver.addXUpdateListener(PISM.invert_ssa.ZetaSaver(output_filename)) 
 

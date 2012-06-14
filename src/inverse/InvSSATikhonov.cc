@@ -78,9 +78,6 @@ PetscErrorCode InvSSATikhonov::init(PISMVars &vars) {
   return 0;
 }
 
-// m_uGlobal "=" SSAX
-// m_u = velocity
-
 PetscErrorCode InvSSATikhonov::construct() {
   PetscErrorCode ierr;
   PetscInt stencilWidth = 1;
@@ -153,6 +150,23 @@ PetscErrorCode InvSSATikhonov::linearizeAt( IceModelVec2S &zeta, bool &success) 
   success = true;
   return 0;
 }
+
+PetscErrorCode InvSSATikhonov::getVariableBounds(Vec lo, Vec hi) {
+  PetscErrorCode ierr;
+  
+  PetscReal zeta_min, zeta_max, tauc_min, tauc_max;
+  
+  tauc_min = grid.config.get("inv_ssa_tauc_min");
+  tauc_max = grid.config.get("inv_ssa_tauc_max");
+  
+  ierr = m_tauc_param.fromTauc(tauc_min,&zeta_min); CHKERRQ(ierr);
+  ierr = m_tauc_param.fromTauc(tauc_max,&zeta_max); CHKERRQ(ierr);
+
+  ierr = VecSet(lo,zeta_min); CHKERRQ(ierr);
+  ierr = VecSet(hi,zeta_max); CHKERRQ(ierr);
+  return 0;
+}
+
 
 PetscErrorCode InvSSATikhonov::assembleFunction(IceModelVec2V u, Vec RHS) {
   PetscErrorCode ierr;

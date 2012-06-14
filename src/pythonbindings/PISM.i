@@ -524,6 +524,8 @@ namespace std {
 %include "inverse/Functional.hh"
 %template(Functional2S) Functional< IceModelVec2S >;
 %template(Functional2V) Functional< IceModelVec2V >;
+%template(IPFunctional2S) IPFunctional< IceModelVec2S >;
+%template(IPFunctional2V) IPFunctional< IceModelVec2V >;
 %include "inverse/L2NormFunctional.hh"
 %include "inverse/H1NormFunctional.hh"
 %include "inverse/MeanSquareFunctional.hh"
@@ -539,6 +541,7 @@ namespace std {
 %template(InvSSATikhonovProblemListener) TikhonovProblemListener< InvSSATikhonov >;
 %include "inverse/InvSSATikhonov.hh"
 %include "inverse/InvSSA_LCLTikhonov.hh"
+%template(InvSSABasicTikhonovProblemListener) TikhonovProblemListener< InvSSABasicTikhonov >;
 %include "inverse/InvSSABasicTikhonov.hh"
 %shared_ptr(PythonTikhonovSVListener)
 %feature("director") PythonTikhonovSVListener;

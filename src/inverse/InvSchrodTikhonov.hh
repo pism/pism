@@ -65,6 +65,13 @@ public:
     return std::string(SNESConvergedReasons[m_reason]);
   }
 
+  PetscErrorCode getVariableBounds(Vec lo, Vec hi) {
+    PetscErrorCode ierr;
+    ierr = VecSet(lo,0); CHKERRQ(ierr);
+    ierr = VecSet(hi,TAO_INFINITY); CHKERRQ(ierr);
+    return 0;
+  }
+
   PetscErrorCode assembleFunction( DMDALocalInfo *info, PISMVector2 **x, PISMVector2 **f);
   PetscErrorCode assembleJacobian( DMDALocalInfo *info, PISMVector2 **x, Mat J);
 

@@ -70,6 +70,14 @@ public:
     m_observationWeights = &weights;
   }
 
+  PetscErrorCode getVariableBounds(Vec lo, Vec hi) {
+    PetscErrorCode ierr;
+    ierr = VecSet(lo,0); CHKERRQ(ierr);
+    ierr = VecSet(hi,TAO_INFINITY); CHKERRQ(ierr);
+    return 0;
+  }
+
+
   PetscErrorCode solve(bool &success);
 
   IceModelVec2V &solution() {

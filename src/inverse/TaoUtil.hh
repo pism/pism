@@ -79,6 +79,27 @@ protected:
   }
 };
 
+template<class Problem>
+class TaoGetVariableBoundsCallback {
+public:
+
+  static PetscErrorCode connect(TaoSolver tao, Problem &p) {
+    PetscErrorCode ierr;
+    ierr = TaoSetVariableBoundsRoutine(tao,
+      TaoGetVariableBoundsCallback<Problem>::getVariableBounds,
+      &p); CHKERRQ(ierr);
+    return 0;
+  }
+
+protected:
+
+  static PetscErrorCode getVariableBounds(TaoSolver tao, Vec lo, Vec hi, void *ctx ) {
+    PetscErrorCode ierr;
+    Problem *p = reinterpret_cast<Problem *>(ctx);
+    ierr = p->getVariableBounds(tao,lo,hi); CHKERRQ(ierr);
+    return 0;
+  }
+};
 
 template<class Problem>
 class TaoGradientCallback {

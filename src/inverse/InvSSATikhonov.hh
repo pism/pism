@@ -63,6 +63,8 @@ public:
 
   PetscErrorCode set_functionals();
 
+  PetscErrorCode getVariableBounds(Vec lo, Vec hi);
+
   PetscErrorCode set_zeta( IceModelVec2S &zeta);
 
   PetscErrorCode linearizeAt( IceModelVec2S &c, bool &success);
