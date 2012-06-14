@@ -64,7 +64,7 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
       self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
 
     if vecs.has('zeta_fixed_mask') and self.using_zeta_fixed_mask:
-      self.ssa.set_zeta_fixed_locations(vecs.zeta_fixed_mask)
+      self.ssa.set_tauc_fixed_locations(vecs.zeta_fixed_mask)
 
     self.ssa.init(vecs.asPISMVars())
 
