@@ -553,7 +553,7 @@ if __name__ == "__main__":
   
   if prep_module is not None:
     exec "import %s as user_prep_module" % prep_module
-    user_prep_module.prep_solver(solver,method)
+    user_prep_module.prep_solver(solver)
 
   # Run the inverse solver!
   if do_restart:
