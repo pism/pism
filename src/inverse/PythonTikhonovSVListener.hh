@@ -39,4 +39,21 @@ public:
   };
 };
 
+class PythonLCLTikhonovSVListener {
+public:
+  typedef std::tr1::shared_ptr<PythonLCLTikhonovSVListener> Ptr;
+  PythonLCLTikhonovSVListener() {}
+  virtual ~PythonLCLTikhonovSVListener() {}
+  virtual void iteration(PetscInt iter, PetscReal eta,
+   PetscReal objectiveValue, PetscReal designValue,
+   IceModelVec2S &d, IceModelVec2S &diff_d, IceModelVec2S &grad_d,
+   IceModelVec2V &u,  IceModelVec2V &diff_u,  IceModelVec2V &grad_u,
+   IceModelVec2V &constraints) { 
+     (void) iter; (void) eta; (void) objectiveValue; (void) designValue;
+     (void) d; (void) diff_d; (void) grad_d; 
+     (void) u; (void) diff_u; (void) grad_u;
+     (void) constraints;
+  };
+};
+
 #endif /* end of include guard: PYTHONTIKHONOVSVLISTENER_HH_ZILN5E62 */

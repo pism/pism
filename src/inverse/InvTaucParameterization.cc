@@ -101,12 +101,10 @@ PetscErrorCode InvTaucParamSquare::toTauc( PetscReal p, PetscReal *value,
 
 PetscErrorCode InvTaucParamSquare::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
+  if(tauc<0) {
+    tauc = 0;
+  }
   *OUTPUT = sqrt(tauc/m_tauc_scale);
-  // if(tauc>=0) {
-  //   *OUTPUT = sqrt(tauc); 
-  // } else {
-  //   *OUTPUT = NaN;
-  // }
   return 0;
 }
 

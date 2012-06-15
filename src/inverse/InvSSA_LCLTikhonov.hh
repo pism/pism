@@ -23,12 +23,55 @@
 #include "TaoUtil.hh"
 #include "TwoBlockVec.hh"
 #include <petsc.h>
-#include <memory>
+#include <tr1/memory>
 #include "iceModelVec.hh"
+#include "PythonTikhonovSVListener.hh"
 
 class InvSSATikhonov;
 // #include "TikhonovProblemListener.hh"
 
+
+class InvSSA_LCLTikhonov;
+class InvSSA_LCLTikhonovProblemListener {
+public:
+  typedef std::tr1::shared_ptr<InvSSA_LCLTikhonovProblemListener> Ptr;
+  typedef IceModelVec2S DesignVec;
+  typedef IceModelVec2V StateVec;
+  
+  InvSSA_LCLTikhonovProblemListener() {}
+  virtual ~InvSSA_LCLTikhonovProblemListener() {}
+  
+  virtual PetscErrorCode 
+  iteration( InvSSA_LCLTikhonov &problem,
+             PetscReal eta, PetscInt iter,
+             PetscReal objectiveValue, PetscReal designValue,
+             DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
+             StateVec &u,   StateVec &diff_u,  StateVec &grad_u,
+             StateVec &constraints) { 
+               printf("Iteration %d: objValue %g designValue %g\n",iter,objectiveValue,designValue);
+               return 0;};
+};
+
+
+class InvSSA_LCLTikhonovPythonListenerBridge: public InvSSA_LCLTikhonovProblemListener {
+public:
+  InvSSA_LCLTikhonovPythonListenerBridge(PythonLCLTikhonovSVListener::Ptr core) : m_core(core) { }
+  PetscErrorCode iteration( InvSSA_LCLTikhonov &problem,
+             PetscReal eta, PetscInt iter,
+             PetscReal objectiveValue, PetscReal designValue,
+             DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
+             StateVec &u,   StateVec &diff_u,  StateVec &grad_u,
+             StateVec &constraints) { 
+    m_core->iteration(iter,eta,objectiveValue,designValue,d,diff_d,grad_d,
+      u,diff_u,grad_u,constraints);
+    return 0;
+  }
+protected:
+  PythonLCLTikhonovSVListener::Ptr m_core;
+};
+
+void InvSSALCLTikhonovAddListener(InvSSA_LCLTikhonov &problem, 
+PythonLCLTikhonovSVListener::Ptr listener );
 
 PetscErrorCode InvSSA_LCLTikhonov_applyJacobianDesign(Mat A, Vec x, Vec y);
 PetscErrorCode InvSSA_LCLTikhonov_applyJacobianDesignTranspose(Mat A, Vec x, Vec y);
@@ -39,16 +82,15 @@ public:
   typedef IceModelVec2S  DesignVec;
   typedef IceModelVec2V  StateVec;
 
-  // typedef TikhonovProblemListener<InverseProblem> Listener;
-  // typedef typename Listener::Ptr ListenerPtr;
+  typedef InvSSA_LCLTikhonovProblemListener Listener;
   
   InvSSA_LCLTikhonov( InvSSATikhonov &invProblem, DesignVec &d0, StateVec &u_obs, PetscReal eta);
 
   virtual ~InvSSA_LCLTikhonov();
 
-  // virtual void addListener(ListenerPtr listener) {
-  //   m_listeners.push_back(listener);
-  // }
+  virtual void addListener(Listener::Ptr listener) {
+    m_listeners.push_back(listener);
+  }
 
   virtual StateVec &stateSolution();
   virtual DesignVec &designSolution();
@@ -58,22 +100,6 @@ public:
   PetscErrorCode connect(TaoSolver tao);
 
   PetscErrorCode monitorTao(TaoSolver tao);
-  //  {
-  // //   PetscErrorCode ierr;
-  // //   
-  // //   PetscInt its;
-  // //   ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL ); CHKERRQ(ierr);
-  // //   
-  // //   int nListeners = m_listeners.size();
-  // //   for(int k=0; k<nListeners; k++) {
-  // //    ierr = m_listeners[k]->iteration(*this,m_eta,
-  // //                  its,m_valObjective,m_valPenalty,
-  // //                  m_d, m_d_diff, m_grad_objective,
-  // //                  m_invProblem.solution(), m_u_diff, m_grad_penalty,
-  // //                  m_grad ); CHKERRQ(ierr);
-  // //   }
-  // //   return 0;
-  // // }
 
   virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient);
   
@@ -119,7 +145,7 @@ protected:
 
   DM m_da;
 
-  Vec m_constraints;
+  StateVec m_constraints;
   Mat m_Jstate;
   Mat m_Jdesign;
 
@@ -128,9 +154,8 @@ protected:
 
   PetscReal m_constraintsScale;
 
-  // std::vector<ListenerPtr> m_listeners;
+  std::vector<Listener::Ptr> m_listeners;
 };
 
 
 #endif /* end of include guard: INVSSA_LCLTIKHONOV_HH_9T38Z13E */
-

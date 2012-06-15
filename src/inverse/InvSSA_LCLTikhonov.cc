@@ -39,7 +39,7 @@ PetscErrorCode InvSSA_LCLTikhonov::construct() {
 
   IceGrid &grid = *m_d0.get_grid();
 
-  PetscReal stressScale = grid.config.get("tauc_param_tauc_scale"); CHKERRQ(ierr);
+  PetscReal stressScale = grid.config.get("tauc_param_tauc_scale");
   m_constraintsScale = 1/(grid.Lx*grid.Ly*4*stressScale);
 
   PetscInt design_stencil_width = m_d0.get_stencil_width();
@@ -60,10 +60,11 @@ PetscErrorCode InvSSA_LCLTikhonov::construct() {
 
   ierr = m_grad_penalty.create( grid, "penalty gradient", kNoGhosts, state_stencil_width); CHKERRQ(ierr);
   ierr = m_grad_objective.create( grid, "objective gradient", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
-  
+
   ierr = m_invProblem.get_da(&m_da); CHKERRQ(ierr);
   
-  ierr = DMCreateGlobalVector(m_da, &m_constraints); CHKERRQ(ierr);
+  ierr = m_constraints.create(grid,"PDE constraints",kNoGhosts,design_stencil_width); CHKERRQ(ierr);
+  
   ierr = DMGetMatrix(m_da, "baij", &m_Jstate); CHKERRQ(ierr);
 
   PetscInt nLocalNodes  = grid.xm*grid.ym;
@@ -85,7 +86,6 @@ InvSSA_LCLTikhonov::~InvSSA_LCLTikhonov()
 
 PetscErrorCode InvSSA_LCLTikhonov::destruct() {
   PetscErrorCode ierr;
-  ierr = VecDestroy(&m_constraints); CHKERRQ(ierr);
   ierr = MatDestroy(&m_Jstate); CHKERRQ(ierr);
   ierr = MatDestroy(&m_Jdesign); CHKERRQ(ierr);
 
@@ -109,7 +109,7 @@ PetscErrorCode InvSSA_LCLTikhonov::connect(TaoSolver tao) {
   PetscErrorCode ierr;
   ierr = TaoSetStateDesignIS(tao, m_x->blockBIndexSet() /*state*/ , m_x->blockAIndexSet() /*design*/); CHKERRQ(ierr);
   ierr = TaoObjGradCallback<InvSSA_LCLTikhonov>::connect(tao,*this); CHKERRQ(ierr);
-  ierr = TaoLCLCallbacks<InvSSA_LCLTikhonov>::connect(tao,*this,m_constraints,m_Jstate,m_Jdesign); CHKERRQ(ierr);
+  ierr = TaoLCLCallbacks<InvSSA_LCLTikhonov>::connect(tao,*this,m_constraints.get_vec(),m_Jstate,m_Jdesign); CHKERRQ(ierr);
   ierr = TaoMonitorCallback<InvSSA_LCLTikhonov>::connect(tao,*this); CHKERRQ(ierr);
   return 0;
 }
@@ -119,16 +119,16 @@ PetscErrorCode InvSSA_LCLTikhonov::monitorTao(TaoSolver tao) {
   
   PetscInt its;
   ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL ); CHKERRQ(ierr);
-/*  
+  
   int nListeners = m_listeners.size();
   for(int k=0; k<nListeners; k++) {
    ierr = m_listeners[k]->iteration(*this,m_eta,
                  its,m_valObjective,m_valPenalty,
                  m_d, m_d_diff, m_grad_objective,
                  m_invProblem.solution(), m_u_diff, m_grad_penalty,
-                 m_grad ); CHKERRQ(ierr);
+                 m_constraints); CHKERRQ(ierr);
   }
-*/
+
   return 0;
 }
 
@@ -303,4 +303,10 @@ PetscErrorCode InvSSA_LCLTikhonov_applyJacobianDesignTranspose(Mat A, Vec x, Vec
   ierr = ctx->applyConstraintsJacobianDesignTranspose(x,y); CHKERRQ(ierr);
 
   return 0;
+}
+
+void InvSSALCLTikhonovAddListener(InvSSA_LCLTikhonov &problem, 
+                 PythonLCLTikhonovSVListener::Ptr listener ) {
+  std::tr1::shared_ptr<InvSSA_LCLTikhonovPythonListenerBridge> bridge(new InvSSA_LCLTikhonovPythonListenerBridge(listener) );
+  problem.addListener(bridge);
 }

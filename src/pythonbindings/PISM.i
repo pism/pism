@@ -544,7 +544,9 @@ namespace std {
 %template(InvSSABasicTikhonovProblemListener) TikhonovProblemListener< InvSSABasicTikhonov >;
 %include "inverse/InvSSABasicTikhonov.hh"
 %shared_ptr(PythonTikhonovSVListener)
+%shared_ptr(PythonLCLTikhonovSVListener)
 %feature("director") PythonTikhonovSVListener;
+%feature("director") PythonLCLTikhonovSVListener;
 %include "inverse/PythonTikhonovSVListener.hh"
 %template(InvSchrodTikhonovProblem) TikhonovProblem<InvSchrodTikhonov> ;
 %template(InvSchrodTikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSchrodTikhonov> >;
@@ -565,6 +567,14 @@ namespace std {
   %pythoncode{
   def addListener(self,l):
     InvSSABasicTikhonovAddListener(self,l)
+  }
+}
+%rename InvSSA_LCLTikhonov::addListener _addListener;
+%extend InvSSA_LCLTikhonov
+{
+  %pythoncode{
+  def addListener(self,l):
+    InvSSALCLTikhonovAddListener(self,l)
   }
 }
 %template(InvSSABasicTikhonovProblem) TikhonovProblem<InvSSABasicTikhonov> ;
