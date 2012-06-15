@@ -39,6 +39,9 @@ public:
     IceGrid &grid = *m_d0.get_grid();
     m_comm = grid.com;
 
+    m_tikhonov_atol = grid.config.get("tikhonov_atol");
+    m_tikhonov_rtol = grid.config.get("tikhonov_rtol");
+
     PetscInt design_stencil_width = m_d0.get_stencil_width();
     PetscInt state_stencil_width = m_u_obs.get_stencil_width();
     m_d.create(grid, "design variable", kHasGhosts, design_stencil_width);
@@ -73,6 +76,7 @@ public:
     PetscErrorCode ierr;
     ierr = TaoObjGradCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
     ierr = TaoMonitorCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
+    ierr = TaoConvergenceCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
     ierr = TaoGetVariableBoundsCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
     return 0;
   }
@@ -91,6 +95,34 @@ public:
                    m_invProblem.solution(), m_u_diff, m_grad_penalty,
                    m_grad ); CHKERRQ(ierr);
     }
+    return 0;
+  }
+
+  virtual PetscErrorCode convergenceTest(TaoSolver tao) {
+    PetscErrorCode ierr;
+    
+    PetscReal designNorm, stateNorm, sumNorm;
+    PetscReal dWeight, sWeight;
+    if(m_eta>1) {
+      dWeight = 1/m_eta;
+      sWeight = 1;
+    } else {
+      dWeight = 1;
+      sWeight = m_eta;      
+    }
+    
+    ierr = m_grad_objective.norm(NORM_2,designNorm); CHKERRQ(ierr);
+    ierr = m_grad_penalty.norm(NORM_2,stateNorm); CHKERRQ(ierr);
+    ierr = m_grad.norm(NORM_2,sumNorm); CHKERRQ(ierr);
+    designNorm *= dWeight;    
+    stateNorm  *= sWeight;
+    
+    if( sumNorm < m_tikhonov_atol && sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm) ) {
+      ierr = TaoSetTerminationReason(tao,TAO_CONVERGED_USER); CHKERRQ(ierr);
+    } else {
+      ierr = TaoDefaultConvergenceTest(tao,NULL); CHKERRQ(ierr);
+    }
+
     return 0;
   }
 
@@ -203,6 +235,9 @@ protected:
   InverseProblem &m_invProblem;
 
   std::vector<ListenerPtr> m_listeners;
+
+  PetscReal m_tikhonov_atol;
+  PetscReal m_tikhonov_rtol;
 
   MPI_Comm m_comm;
 

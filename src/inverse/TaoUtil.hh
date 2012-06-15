@@ -125,6 +125,30 @@ protected:
 };
 
 template<class Problem>
+class TaoConvergenceCallback {
+public:
+
+  static PetscErrorCode connect(TaoSolver tao, Problem &p) {
+    PetscErrorCode ierr;
+    ierr = TaoSetConvergenceTest(tao,
+      TaoConvergenceCallback<Problem>::convergenceTestCallback,
+      &p ); CHKERRQ(ierr);
+    return 0;
+  }
+
+protected:
+
+  static PetscErrorCode convergenceTestCallback(TaoSolver tao, void *ctx ) {
+    PetscErrorCode ierr;
+    Problem *p = reinterpret_cast<Problem *>(ctx);
+    ierr = p->convergenceTest(tao); CHKERRQ(ierr);
+    return 0;
+  }
+};
+
+
+
+template<class Problem>
 class TaoObjGradCallback {
 public:
 

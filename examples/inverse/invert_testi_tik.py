@@ -215,7 +215,6 @@ if __name__ == "__main__":
     rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=rms_error)
     eta = PISM.optionsReal("-eta","penalty weight",default=1)
     right_side_weight = PISM.optionsReal("-right_side_weight","L2 weight for y>0",default=right_side_weight)
-    inv_method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd","tikhonov_lmvm","tikhonov_cg", "tikhonov_lcl"],"ign")
     inv_ssa_cL2 = PISM.optionsReal("-inv_ssa_cL2","L2 coefficient for domain inner product",default=1)
     inv_ssa_cH1 = PISM.optionsReal("-inv_ssa_cH1","H1 coefficient for domain inner product",default=0)
     tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale","initial guess for tauc to be this factor of the true value",default=tauc_guess_scale)
@@ -225,6 +224,8 @@ if __name__ == "__main__":
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
+    tikhonov_atol = PISM.optionsReal("-tikhonov_atol","",default=1)
+    tikhonov_rtol = PISM.optionsReal("-tikhonov_rtol","",default=.1)
 
   length_scale  = L_schoof
   slope = 0.001
@@ -253,6 +254,9 @@ if __name__ == "__main__":
   config.set("tauc_param_tauc_scale",stress_scale)
 
   config.set("inv_ssa_velocity_scale",1) # m/a
+
+  config.set("tikhonov_atol",tikhonov_atol)
+  config.set("tikhonov_rtol",tikhonov_rtol)
 
   config.set_string("inv_ssa_method",inv_method)
   config.set("inv_ssa_rms_error",rms_error)

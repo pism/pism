@@ -375,7 +375,8 @@ if __name__ == "__main__":
     monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
     prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
-    
+    tikhonov_atol = PISM.optionsReal("-tikhonov_atol","",default=1)
+    tikhonov_rtol = PISM.optionsReal("-tikhonov_rtol","",default=.1)
   if output_filename is None:
     output_filename = "vel2tauc_"+os.path.basename(input_filename)    
 
@@ -392,6 +393,9 @@ if __name__ == "__main__":
 
   config.set("inv_ssa_tauc_min",5e2); #Pa
   config.set("inv_ssa_tauc_max",5e7); #Pa
+
+  config.set("tikhonov_atol",tikhonov_atol)
+  config.set("tikhonov_rtol",tikhonov_rtol)
 
   stress_scale = 50000 # Pa
   config.set("tauc_param_trunc_tauc0",.01*stress_scale)
