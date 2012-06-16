@@ -75,7 +75,7 @@ public:
 
   PetscErrorCode set_initial_velocity_guess(IceModelVec2V &v);
 
-  virtual PetscErrorCode set_zeta_fixed_locations(IceModelVec2Int &locations)
+  virtual PetscErrorCode set_tauc_fixed_locations(IceModelVec2Int &locations)
   { 
     m_zeta_fixed_locations = &locations;
     return 0;

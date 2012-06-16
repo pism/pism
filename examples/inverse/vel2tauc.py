@@ -42,7 +42,7 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
   def _setFromOptions(self):
     PISM.ssa.SSAFromInputFile._setFromOptions(self)
     for o in PISM.OptionsGroup(PISM.Context().com,"","Vel2Tauc"):
-      self.using_zeta_fixed_mask = PISM.optionsFlag("-use_zeta_fixed_mask","Keep tauc constant except where grounded ice is present",default=False)
+      self.using_zeta_fixed_mask = PISM.optionsFlag("-use_zeta_fixed_mask","Keep tauc constant except where grounded ice is present",default=True)
 
   def _initGrid(self):
     # The implementation in PISM.ssa.SSAFromInputFile uses a non-periodic
