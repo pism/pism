@@ -26,13 +26,12 @@ import os, math
 
 import PISM
 import PISM.invert_ssa
-from PISM.sipletools import pism_print_logger, pism_pause, CaptureLogger, CarefulCaptureLogger
 
 import siple
 
 siple.reporting.clear_loggers()
-siple.reporting.add_logger(pism_print_logger)
-siple.reporting.set_pause_callback(pism_pause)
+siple.reporting.add_logger(PISM.sipletools.pism_logger)
+siple.reporting.set_pause_callback(PISM.sipletools.pism_pause)
 
 class Vel2Tauc(PISM.ssa.SSAFromInputFile):
   def __init__(self,input_filename,inv_data_filename):
@@ -460,8 +459,6 @@ if __name__ == "__main__":
     zeta.regrid(output_filename,True)
   else:
     tauc_param.convertFromTauc(tauc_prior,zeta)
-  vecs.add(zeta,writing=True) # Ensure that the last value of zeta will
-                              # be written out
 
   if test_adjoint:
     if solver.method.startswith('tikhonov'):
@@ -505,17 +502,14 @@ if __name__ == "__main__":
     vel_ssa_observed.add(-1,vel_sia_observed)
     vecs.add(vel_ssa_observed,writing=True)
 
-  # We establish a logger which will save siple logging messages.  If we 
-  # are restarting, and not in append mode, we need to
-  # construct the logger now so that it can extract any prior siple_logs
-  # from the old output file before we clobber it. 
-  logger = None
-
+  # Establish a logger which will save logging messages to the output file.  
+  logger = PISM.logging.CaptureLogger(output_filename,'vel2tauc_log');
+  PISM.logging.add_logger(logger)
+  if append_mode or do_restart:
+    logger.readOldLog()
+  
   # Prep the output file from the grid so that we can save zeta to it during the runs.
   if not append_mode:
-    if do_restart:
-      logger = CarefulCaptureLogger(output_filename);
-      
     pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
     pio.open(output_filename,PISM.NC_WRITE,False)
     pio.def_time(grid.config.get_string("time_dimension_name"),
@@ -524,12 +518,10 @@ if __name__ == "__main__":
     pio.close()
   zeta.write(output_filename)
 
+
   # Log the command line to the output file now so that we have a record of
   # what was attempted
   PISM.util.writeProvenance(output_filename)    
-
-  # If we haven't set up the aforementioned logger yet, it's safe to do so now.
-  if logger is None: logger = CarefulCaptureLogger(output_filename);
 
   # Attach various iteration listeners to the solver as needed for:
   # Plotting
@@ -582,6 +574,8 @@ if __name__ == "__main__":
   # our newly generated one.
   if vecs.has('tauc'): vecs.remove('tauc')
   vecs.add(tauc,writing=True)
+
+  vecs.add(zeta,writing=True)
 
   u.rename("_ssa_inv","SSA velocity computed by inversion","")
   vecs.add(u,writing=True)
