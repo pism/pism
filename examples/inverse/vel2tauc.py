@@ -315,6 +315,20 @@ class Vel2TaucLinPlotListener(PISM.invert_ssa.PlotListener):
     pp.show()
 
 
+def adjustTauc(mask,tauc):
+  """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
+
+  grid = mask.get_grid()
+  high_tauc = grid.config.get("high_tauc")
+
+  with PISM.util.Access(comm=tauc,nocomm=mask):
+    mq = PISM.MaskQuery(mask)
+    for (i,j) in grid.points():
+      if mq.grounded_ice(i,j):
+        tauc[i,j] = 0;
+      elif mq.ice_free(i,j):
+        tauc[i,j] = high_tauc
+
 ## Main code starts here
 if __name__ == "__main__":
   context = PISM.Context()
@@ -435,6 +449,7 @@ if __name__ == "__main__":
       exit(1)
     tauc.regrid(input_filename,True)
     tauc_prior.copy_from(tauc)
+  adjustTauc(vecs.ice_mask,tauc_prior)
   vecs.add(tauc_prior,writing=saving_inv_data)
 
   # If the inverse data file has a variable tauc_true, this is probably
