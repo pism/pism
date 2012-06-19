@@ -603,6 +603,24 @@ if __name__ == "__main__":
   u.rename("_ssa_inv","SSA velocity computed by inversion","")
   vecs.add(u,writing=True)
 
+  residual = PISM.util.standard2dVelocityVec(grid,name='_inv_ssa_residual')
+  residual.copy_from(u)
+  residual.add(-1,vel_ssa_observed);
+  
+  r_mag = PISM.IceModelVec2S();
+  r_mag.create(grid,"inv_ssa_residual", PISM.kNoGhosts,0);
+  
+  r_mag.set_attrs("magnitude of mismatch between observed surface velocities and their reconstrution by inversion", "",
+            "m s-1", "m year-1", 0);
+  r_mag.set_attr("_FillValue", PISM.convert(-0.01,'m/year','m/s'));
+  r_mag.set_attr("valid_min", 0.0);
+  
+  residual.magnitude(r_mag)
+  r_mag.mask_by(vecs.thickness)
+  
+  vecs.add(residual,writing=True)
+  vecs.add(r_mag,writing=True)
+
   # Write solution out to netcdf file
   vel2tauc.write(output_filename,append=append_mode)
   # If we're not in append mode, the previous command just nuked
