@@ -60,7 +60,7 @@ public:
 
   virtual InverseProblem &invProblem() { return m_invProblem;}
 
-  virtual PetscErrorCode setInitialGuess( DesignVec d0) {
+  virtual PetscErrorCode setInitialGuess( DesignVec &d0) {
     PetscErrorCode ierr;
     ierr = m_dGlobal.copy_from(d0); CHKERRQ(ierr);
     return 0;

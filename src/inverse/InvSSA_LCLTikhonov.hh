@@ -97,7 +97,7 @@ public:
 
   virtual InvSSATikhonov &invProblem() { return m_invProblem;}
 
-  virtual PetscErrorCode setInitialGuess( DesignVec d0);
+  virtual PetscErrorCode setInitialGuess( DesignVec &d0);
 
   PetscErrorCode connect(TaoSolver tao);
 
