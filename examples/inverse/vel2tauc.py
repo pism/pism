@@ -324,7 +324,7 @@ def adjustTauc(mask,tauc):
   with PISM.util.Access(comm=tauc,nocomm=mask):
     mq = PISM.MaskQuery(mask)
     for (i,j) in grid.points():
-      if mq.grounded_ice(i,j):
+      if mq.ocean(i,j):
         tauc[i,j] = 0;
       elif mq.ice_free(i,j):
         tauc[i,j] = high_tauc
@@ -370,55 +370,30 @@ if __name__ == "__main__":
 
     inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-    inv_method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd","tikhonov_lmvm","tikhonov_cg","tikhonov_blmvm","tikhonov_lcl"],"ign")
-    # forward_type = PISM.optionsList(context.com,"-inv_forward","Forward problem description",["classic","tao"],"classic")
-    rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=100)
-    eta = PISM.optionsReal("-eta","penalty weight",default=1)
-    ssa_l2_coeff = PISM.optionsReal("-inv_ssa_cL2","L2 coefficient for domain inner product",default=1)
-    ssa_h1_coeff = PISM.optionsReal("-inv_ssa_cH1","H1 coefficient for domain inner product",default=0)
+
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
     do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
     do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
-    use_tauc_prior = PISM.optionsFlag("-use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
+    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
+
     monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
-    is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
     prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
-    tikhonov_atol = PISM.optionsReal("-tikhonov_atol","",default=1)
-    tikhonov_rtol = PISM.optionsReal("-tikhonov_rtol","",default=.1)
+
+    is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
+
+
+  inv_method = config.get_string("inv_ssa_method")
+  
+  
   if output_filename is None:
     output_filename = "vel2tauc_"+os.path.basename(input_filename)    
 
   saving_inv_data = (inv_data_filename != output_filename)
-
-  config.set_string("inv_ssa_tauc_param","ident")
-  config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
-  config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
-  config.set("inv_ssa_cL2",ssa_l2_coeff)
-  config.set("inv_ssa_cH1",ssa_h1_coeff)
-  velocity_scale = 100 # 100m/a
-  # velocity_scale = PISM.secpera #m/s
-  config.set("inv_ssa_velocity_scale",velocity_scale)
-
-  config.set("inv_ssa_tauc_min",5e2); #Pa
-  config.set("inv_ssa_tauc_max",5e7); #Pa
-
-  config.set("tikhonov_atol",tikhonov_atol)
-  config.set("tikhonov_rtol",tikhonov_rtol)
-
-  stress_scale = 50000 # Pa
-  config.set("tauc_param_trunc_tauc0",.01*stress_scale)
-  config.set("tauc_param_tauc_eps",.001*stress_scale)
-  config.set("tauc_param_tauc_scale",stress_scale)
-
-  config.set_string("inv_ssa_method",inv_method)
-  config.set("inv_ssa_rms_error",rms_error)
-  config.set("inv_ssa_tikhonov_eta",eta)
-
 
   PISM.setVerbosityLevel(verbosity)
   vel2tauc = Vel2Tauc(input_filename,inv_data_filename)
@@ -580,7 +555,6 @@ if __name__ == "__main__":
   else:
     siple.reporting.msg('============== Starting inversion. ==================')  
 
-  rms_error /= PISM.secpera # m/s
   # Try solving
   if not solver.solveInverse(zeta_prior,vel_ssa_observed,zeta):
     PISM.verbPrintf(1,grid.com,"Inverse solve FAILURE (%s)!\n" % solver.inverseConvergedReason());
