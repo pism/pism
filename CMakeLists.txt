@@ -258,7 +258,6 @@ install (PROGRAMS
   examples/python/sia_forward.py
   examples/inverse/make_synth_ssa.py
   examples/inverse/vel2tauc.py
-  examples/inverse/vel2tauc_tik.py
   DESTINATION ${Pism_BIN_DIR} )
 
 if (Pism_BUILD_DOCS)

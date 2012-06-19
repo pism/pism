@@ -49,10 +49,13 @@ PetscErrorCode InvSSATikhonov::set_functionals() {
   PetscReal cL2 = m_grid.config.get("inv_ssa_cL2");
   PetscReal cH1 = m_grid.config.get("inv_ssa_cH1");
 
+  PetscReal area = 4*m_grid.Lx*m_grid.Ly;
+  PetscReal length_scale = m_grid.config.get("inv_ssa_length_scale");
+  cL2 /= area;
+  cH1 /= area;
+  cH1 *= (length_scale*length_scale);
+
   m_designFunctional.reset(new H1NormFunctional2S(m_grid,cL2,cH1,m_fixed_tauc_locations));    
-  // PetscReal stress_scale = m_grid.config.get("tauc_param_tauc_scale");
-  // m_designFunctional.reset(new MeanSquareFunctional2S(m_grid));
-  // (reinterpret_cast<MeanSquareFunctional2S&>(*m_designFunctional)).normalize(stress_scale);
 
   PetscReal velocity_scale = m_grid.config.get("inv_ssa_velocity_scale")/secpera;
   m_penaltyFunctional.reset(new MeanSquareFunctional2V(m_grid,m_misfit_weight));    

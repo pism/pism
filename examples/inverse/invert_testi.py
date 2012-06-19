@@ -241,16 +241,6 @@ if __name__ == "__main__":
   viscosity_scale  = B*(strainrate_scale**(-2./3.))
   nuH_scale        = viscosity_scale * depth_scale
 
-  # inv_ssa_cL2 /= area_scale 
-  # config.set("inv_ssa_cL2",inv_ssa_cL2)
-  # config.set("inv_ssa_cH1",inv_ssa_cH1)
-
-  # config.set("tauc_param_trunc_tauc0",.1*stress_scale)
-  # config.set("tauc_param_tauc_eps",.001*stress_scale)
-  # config.set("tauc_param_tauc_scale",stress_scale)
-  # 
-  # config.set("inv_ssa_velocity_scale",1) # m/a
-
   PISM.setVerbosityLevel(verbosity)
   testi = testi_run(Mx,My)
   testi.setup()

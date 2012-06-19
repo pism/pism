@@ -556,6 +556,11 @@ PetscErrorCode InvSSAForwardProblem::assemble_DomainNorm_matrix()
 
   PetscReal cH1 = config.get("inv_ssa_cH1");
   PetscReal cL2 = config.get("inv_ssa_cL2");
+  PetscReal area = 4*grid.Lx*grid.Ly;
+  PetscReal length_scale = grid.config.get("inv_ssa_length_scale");
+  cL2 /= area;
+  cH1 /= area;
+  cH1 *= (length_scale*length_scale);
 
   // Loop through all the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
@@ -695,6 +700,11 @@ PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, 
 
   PetscReal cH1 = config.get("inv_ssa_cH1");
   PetscReal cL2 = config.get("inv_ssa_cL2");
+  PetscReal area = 4*grid.Lx*grid.Ly;
+  PetscReal length_scale = grid.config.get("inv_ssa_length_scale");
+  cL2 /= area;
+  cH1 /= area;
+  cH1 *= (length_scale*length_scale);
 
   // Loop through all LOCAL elements.
   PetscInt xs = element_index.lxs, xm = element_index.lxm,
@@ -796,6 +806,8 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
 
+  PetscReal units_factor = secpera*secpera;
+
   if(m_misfit_element_mask!=NULL) {
     ierr = m_misfit_element_mask->begin_access();CHKERRQ(ierr);    
   }
@@ -820,7 +832,7 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
         quadrature.computeTrialFunctionValues(i,j,dofmap,W,misfit_weight);
       }
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        IP += JxW[q]*(a[q].u*b[q].u + a[q].v*b[q].v)*misfit_weight[q];
+        IP += JxW[q]*(a[q].u*b[q].u + a[q].v*b[q].v)*misfit_weight[q]*units_factor;
       } // q
     } // j
   } // i
@@ -1028,6 +1040,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
 
+  PetscReal units_factor = secpera*secpera;
+
   // Flags for each vertex in an element that determine if explicit Dirichlet data has
   // been set.
   PetscReal local_bc_mask[FEQuadrature::Nk];
@@ -1097,8 +1111,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
         const PetscReal    jw  = JxW[q]/m_range_l2_area;
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
-          y[k].u += jw*testqk.val*res[q].u*misfit_weight[q];
-          y[k].v += jw*testqk.val*res[q].v*misfit_weight[q];
+          y[k].u += jw*testqk.val*res[q].u*misfit_weight[q]*units_factor;
+          y[k].v += jw*testqk.val*res[q].v*misfit_weight[q]*units_factor;
         }
       } // q
 

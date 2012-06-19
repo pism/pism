@@ -150,16 +150,11 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateObjectiveAndGradient(TaoSolver /*tao*
   ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);
   ierr = m_d_diff.add(-1,m_d0); CHKERRQ(ierr);
   ierr = m_invProblem.evalGradObjective(m_d_diff,m_grad_objective); CHKERRQ(ierr);
-  if(m_eta>1) {
-    m_grad_objective.scale(1/m_eta);
-  }
+  m_grad_objective.scale(1/m_eta);
 
   ierr = m_u_diff.copy_from(m_uGlobal); CHKERRQ(ierr);
   ierr = m_u_diff.add(-1, m_u_obs); CHKERRQ(ierr);
   ierr = m_invProblem.evalGradPenalty(m_u_diff,m_grad_penalty); CHKERRQ(ierr);
-  if(m_eta<1) {
-    m_grad_penalty.scale(m_eta);
-  }
 
   m_x->gather(m_grad_objective.get_vec(),m_grad_penalty.get_vec(),gradient);
 
@@ -170,11 +165,7 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateObjectiveAndGradient(TaoSolver /*tao*
   m_valObjective = valObjective;
   m_valPenalty = valPenalty;
 
-  if(m_eta > 1) {
-    *value = valObjective / m_eta + valPenalty;
-  } else {
-    *value = valObjective + valPenalty*m_eta;
-  }
+  *value = valObjective / m_eta + valPenalty;
 
   return 0;
 }
