@@ -60,6 +60,12 @@ public:
 
   virtual InverseProblem &invProblem() { return m_invProblem;}
 
+  virtual PetscErrorCode setInitialGuess( DesignVec d0) {
+    PetscErrorCode ierr;
+    ierr = m_dGlobal.copy_from(d0); CHKERRQ(ierr);
+    return 0;
+  }
+
   virtual void addListener(ListenerPtr listener) {
     m_listeners.push_back(listener);
   }

@@ -442,15 +442,23 @@ if __name__ == "__main__":
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
   tauc = PISM.util.standardYieldStressVec(grid)
   if use_tauc_prior:
-    tauc_prior.regrid(inv_data_filename,True)
+    tauc_prior.regrid(inv_data_filename,critical=True)
+    vecs.add(tauc_prior,writing=saving_inv_data)
   else:
     if not PISM.util.fileHasVariable(input_filename,"tauc"):
       PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
       exit(1)
     tauc.regrid(input_filename,True)
     tauc_prior.copy_from(tauc)
+    vecs.add(tauc_prior,writing=True)
+
   adjustTauc(vecs.ice_mask,tauc_prior)
-  vecs.add(tauc_prior,writing=saving_inv_data)
+
+  # Convert tauc_prior -> zeta_prior
+  zeta_prior = PISM.IceModelVec2S();
+  zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, PISM.util.WIDE_STENCIL)
+  tauc_param.convertFromTauc(tauc_prior,zeta_prior)
+  vecs.add(zeta_prior,writing=True)
 
   # If the inverse data file has a variable tauc_true, this is probably
   # a synthetic inversion.  We'll load it now so that it will get written
@@ -473,7 +481,7 @@ if __name__ == "__main__":
       exit(1)
     zeta.regrid(output_filename,True)
   else:
-    tauc_param.convertFromTauc(tauc_prior,zeta)
+    zeta.copy_from(zeta_prior)
 
   if test_adjoint:
     if solver.method.startswith('tikhonov'):
@@ -574,7 +582,7 @@ if __name__ == "__main__":
 
   rms_error /= PISM.secpera # m/s
   # Try solving
-  if not solver.solveInverse(zeta,vel_ssa_observed):
+  if not solver.solveInverse(zeta_prior,vel_ssa_observed,zeta):
     PISM.verbPrintf(1,grid.com,"Inverse solve FAILURE (%s)!\n" % solver.inverseConvergedReason());
     quit()
   else:  
