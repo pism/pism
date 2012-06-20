@@ -584,11 +584,13 @@ if __name__ == "__main__":
   r_mag = PISM.IceModelVec2S();
   r_mag.create(grid,"inv_ssa_residual", PISM.kNoGhosts,0);
   
-  r_mag.set_attrs("magnitude of mismatch between observed surface velocities and their reconstrution by inversion", "",
-            "m s-1", "m year-1", 0);
+  r_mag.set_attrs("diagnostic","magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
+            "m s-1", "inv_ssa_residual", 0);
   r_mag.set_attr("_FillValue", PISM.convert(-0.01,'m/year','m/s'));
   r_mag.set_attr("valid_min", 0.0);
-  
+  r_mag.set_glaciological_units("m a-1")
+  r_mag.write_in_glaciological_units = True
+
   residual.magnitude(r_mag)
   r_mag.mask_by(vecs.thickness)
   
