@@ -128,7 +128,7 @@ PetscErrorCode PA_delta_T::write_variables(set<string> vars, string filename) {
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
     ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 
