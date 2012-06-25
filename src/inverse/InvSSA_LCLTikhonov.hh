@@ -155,6 +155,7 @@ protected:
   IceModelVec2V m_u_Jdesign;
 
   PetscReal m_constraintsScale;
+  PetscReal m_velocityScale;
 
   std::vector<Listener::Ptr> m_listeners;
 };

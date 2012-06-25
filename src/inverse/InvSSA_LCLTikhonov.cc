@@ -40,7 +40,10 @@ PetscErrorCode InvSSA_LCLTikhonov::construct() {
   IceGrid &grid = *m_d0.get_grid();
 
   PetscReal stressScale = grid.config.get("tauc_param_tauc_scale");
-  m_constraintsScale = 1/(grid.Lx*grid.Ly*4*stressScale);
+  m_constraintsScale = grid.Lx*grid.Ly*4*stressScale;
+
+  m_velocityScale = grid.config.get("inv_ssa_velocity_scale")/secpera;
+
 
   PetscInt design_stencil_width = m_d0.get_stencil_width();
   PetscInt state_stencil_width = m_u_obs.get_stencil_width();
@@ -98,12 +101,13 @@ PetscErrorCode InvSSA_LCLTikhonov::setInitialGuess( DesignVec &d0) {
   return 0;
 }
 
-// virtual void addListener(ListenerPtr listener) {
-//   m_listeners.push_back(listener);
-// }
-
 InvSSA_LCLTikhonov::StateVec &InvSSA_LCLTikhonov::stateSolution() {
-  m_x->scatterToB(m_uGlobal.get_vec());
+  PetscErrorCode ierr;
+  
+  // FIXME!
+  m_x->scatterToB(m_uGlobal.get_vec()); //CHKERRQ(ierr);
+  m_uGlobal.scale(m_velocityScale); //CHKERRQ(ierr);
+  
   return m_uGlobal;
 }
 
@@ -142,7 +146,8 @@ PetscErrorCode InvSSA_LCLTikhonov::monitorTao(TaoSolver tao) {
 PetscErrorCode InvSSA_LCLTikhonov::evaluateObjectiveAndGradient(TaoSolver /*tao*/, Vec x, PetscReal *value, Vec gradient) {
   PetscErrorCode ierr;
 
-  m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec());
+  ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
+  ierr = m_uGlobal.scale(m_velocityScale); CHKERRQ(ierr);
   
   // Variable 'm_dGlobal' has no ghosts.  We need ghosts for computation with the design variable.
   ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
@@ -155,8 +160,18 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateObjectiveAndGradient(TaoSolver /*tao*
   ierr = m_u_diff.copy_from(m_uGlobal); CHKERRQ(ierr);
   ierr = m_u_diff.add(-1, m_u_obs); CHKERRQ(ierr);
   ierr = m_invProblem.evalGradPenalty(m_u_diff,m_grad_penalty); CHKERRQ(ierr);
+  ierr = m_grad_penalty.scale(m_velocityScale); CHKERRQ(ierr);
 
   m_x->gather(m_grad_objective.get_vec(),m_grad_penalty.get_vec(),gradient);
+
+  PetscReal go,gp,x_norm, g_norm;
+  ierr = m_grad_objective.norm(NORM_2,go); CHKERRQ(ierr);
+  ierr = m_grad_penalty.norm(NORM_2,gp); CHKERRQ(ierr);
+
+  // ierr = VecNorm(*m_x,NORM_2,&x_norm); CHKERRQ(ierr);
+  // ierr = VecNorm(gradient,NORM_2,&g_norm); CHKERRQ(ierr);
+  // // ierr = VecView(*m_x,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  // printf("grad_objective %g grad_penalty, %g x residual: %g same? %g\n",go,gp,x_norm,g_norm);
 
   PetscReal valObjective, valPenalty;
   ierr = m_invProblem.evalObjective(m_d_diff,&valObjective); CHKERRQ(ierr);
@@ -173,9 +188,17 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateObjectiveAndGradient(TaoSolver /*tao*
 Vec InvSSA_LCLTikhonov::formInitialGuess() {
   PetscErrorCode ierr;
   bool success;
+  ierr = m_d.copy_from(m_dGlobal); //CHKERRQ(ierr);
   ierr = m_invProblem.linearizeAt(m_d,success); //CHKERRQ(ierr);
   ierr = m_uGlobal.copy_from(m_invProblem.solution());// CHKERRQ(ierr);
-  m_x->gather(m_dGlobal.get_vec(),m_uGlobal.get_vec());
+  ierr = m_uGlobal.scale(1./m_velocityScale); //CHKERRQ(ierr);  
+  m_uGlobal.set(0);
+
+  m_x->gather(m_dGlobal.get_vec(),m_uGlobal.get_vec()); //CHKERRQ(ierr);
+
+  // This is probably irrelevant.
+  ierr = m_uGlobal.scale(m_velocityScale); //CHKERRQ(ierr);  
+
   return *m_x;
 }
 
@@ -183,6 +206,7 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateConstraints(TaoSolver, Vec x, Vec r) 
   PetscErrorCode ierr;
 
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
+  ierr = m_uGlobal.scale(m_velocityScale); CHKERRQ(ierr);
 
   ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
   ierr = m_u.copy_from(m_uGlobal); CHKERRQ(ierr);
@@ -191,7 +215,7 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateConstraints(TaoSolver, Vec x, Vec r) 
 
   ierr = m_invProblem.assembleFunction(m_u, r); CHKERRQ(ierr);
 
-  ierr = VecScale(r,m_constraintsScale);
+  ierr = VecScale(r,1./m_constraintsScale);
 
   return 0;
 }
@@ -200,6 +224,8 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateConstraintsJacobianState(TaoSolver, V
   PetscErrorCode ierr;
 
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
+  ierr = m_uGlobal.scale(m_velocityScale); CHKERRQ(ierr);
+  
   ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
   ierr = m_u.copy_from(m_uGlobal); CHKERRQ(ierr);
 
@@ -207,7 +233,9 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateConstraintsJacobianState(TaoSolver, V
   ierr = m_invProblem.assembleJacobian(m_u,*Jstate); CHKERRQ(ierr);
   *s = SAME_NONZERO_PATTERN;
 
-  ierr = MatScale(*Jstate,m_constraintsScale); CHKERRQ(ierr);
+  PetscReal n1, n2;
+
+  ierr = MatScale(*Jstate,m_velocityScale/m_constraintsScale); CHKERRQ(ierr);
 
   return 0;
 }
@@ -218,6 +246,7 @@ PetscErrorCode  InvSSA_LCLTikhonov::evaluateConstraintsJacobianDesign(TaoSolver,
   // in evaluateObjectiveAndGradient be sufficient) but we'll do them here
   // just in case.
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
+  ierr = m_uGlobal.scale(m_velocityScale); CHKERRQ(ierr);
   ierr = m_d_Jdesign.copy_from(m_dGlobal); CHKERRQ(ierr);
   ierr = m_u_Jdesign.copy_from(m_uGlobal); CHKERRQ(ierr);
 
@@ -244,17 +273,24 @@ PetscErrorCode InvSSA_LCLTikhonov::applyConstraintsJacobianDesign(Vec x, Vec y) 
 
   ierr = DMDAVecRestoreArray(m_da,y,&y_a); CHKERRQ(ierr);
   
-  ierr = VecScale(y,-m_constraintsScale); CHKERRQ(ierr);
+  ierr = VecScale(y,-1./m_constraintsScale); CHKERRQ(ierr);
   
   ierr = m_d_Jdesign.end_access(); CHKERRQ(ierr);
   ierr = m_u_Jdesign.end_access(); CHKERRQ(ierr);
   ierr = m_dzeta.end_access(); CHKERRQ(ierr);
+
+  // PetscReal normX, normY;
+  // ierr = VecNorm(x,NORM_2,&normX); CHKERRQ(ierr);
+  // ierr = VecNorm(y,NORM_2,&normY); CHKERRQ(ierr);  
+  // printf("applyConstraintsJacobianDesign %g %g\n",normX,normY);
+  
   
   return 0;
 }
 
 PetscErrorCode InvSSA_LCLTikhonov::applyConstraintsJacobianDesignTranspose(Vec x, Vec y) {
   PetscErrorCode ierr;
+  
   ierr = m_du.copy_from(x); CHKERRQ(ierr);
 
   PetscReal **zeta_a;
@@ -276,11 +312,16 @@ PetscErrorCode InvSSA_LCLTikhonov::applyConstraintsJacobianDesignTranspose(Vec x
 
   ierr = DMDAVecRestoreArray(grid.da2,y,&y_a); CHKERRQ(ierr);
 
-  ierr = VecScale(y,m_constraintsScale); CHKERRQ(ierr);
+  ierr = VecScale(y,1./m_constraintsScale); CHKERRQ(ierr);
   
   ierr = m_d_Jdesign.end_access(); CHKERRQ(ierr);
   ierr = m_u_Jdesign.end_access(); CHKERRQ(ierr);
   ierr = m_du.end_access(); CHKERRQ(ierr);
+
+  // PetscReal normX, normY;
+  // ierr = VecNorm(x,NORM_2,&normX); CHKERRQ(ierr);
+  // ierr = VecNorm(y,NORM_2,&normY); CHKERRQ(ierr);  
+  // printf("applyConstraintsJacobianDesignTranspose %g %g\n",normX,normY);
   
   return 0;
 }

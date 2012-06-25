@@ -520,6 +520,7 @@ PetscErrorCode InvSSATikhonov::assemble_T_rhs(PetscReal **zeta_a, PISMVector2 **
 
   if(dirichletBC) dirichletBC.fixResidualHomogeneous(rhs_a);
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  ierr = fixedZeta.finish(); CHKERRQ(ierr);
 
   return 0;
 }
