@@ -727,7 +727,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
   }
 
   ierr = MatSetOption(Jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-
+  ierr = MatSetOption(Jac,MAT_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
