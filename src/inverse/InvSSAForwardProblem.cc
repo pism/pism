@@ -24,6 +24,8 @@
 #include <errno.h>
 #include <sstream>
 #include "PIO.hh"
+#include <cmath>
+#include "pism_options.hh"
 
 /*! \brief Allocate PETSC structures needed for solving the various linearized
 problems associated with the forward problem. */
@@ -142,6 +144,10 @@ PetscErrorCode InvSSAForwardProblem::init(PISMVars &vars) {
     verbPrintf(3,grid.com,"Misfit element mask not available; using all elements.\n");
   }
 
+  ierr = assemble_DomainNorm_matrix(); CHKERRQ(ierr);
+
+  ierr = compute_range_l2_area(&m_range_l2_area);
+
   return 0;
 }
 
@@ -153,22 +159,12 @@ PetscErrorCode InvSSAForwardProblem::set_initial_velocity_guess(  IceModelVec2V 
   return 0;
 }
 
-// FIXME
-/*! \brief apparently unused method! */
-PetscErrorCode InvSSAForwardProblem::setup_vars()
-{
-  PetscErrorCode ierr;
-  ierr = setup(); CHKERRQ(ierr);
-  ierr = assemble_DomainNorm_matrix(); CHKERRQ(ierr);
-  ierr = compute_range_l2_area(&m_range_l2_area);
-  return 0;
-}
-
 PetscErrorCode InvSSAForwardProblem::set_zeta(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
   PetscInt i,j,q;
 
+  m_zeta = &new_zeta;
 
   PetscReal **zeta_array;
   ierr = new_zeta.get_array(zeta_array);CHKERRQ(ierr);
@@ -184,21 +180,14 @@ PetscErrorCode InvSSAForwardProblem::set_zeta(IceModelVec2S &new_zeta )
       PetscReal *dtauc_dzeta = m_dtauc_dzeta_store + ij*FEQuadrature::Nq;
       for (q=0; q<4; q++) {
         m_tauc_param.toTauc(zetaq[q],&(feS[q].tauc),dtauc_dzeta+q);
+        if(std::isnan(feS[q].tauc)) {
+          PetscPrintf(PETSC_COMM_WORLD,"InvSSAForwardProblem::set_zeta made a NaN: zeta=%g\n",zetaq[q]);
+        }
       }
     }
   }
 
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
-  for (i=xs; i<xs+xm; i++) {
-    for (j=ys;j<ys+ym; j++) {
-      PetscReal tmp;
-      m_tauc_param.toTauc(new_zeta(i,j),&tmp,NULL);
-      (*tauc)(i,j) = tmp;
-    }
-  }
-  
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = new_zeta.end_access();CHKERRQ(ierr);
+  m_tauc_param.convertToTauc(new_zeta,*tauc);
 
   m_reassemble_T_matrix_needed = true;
   m_forward_F_needed = true;
@@ -355,11 +344,54 @@ PetscErrorCode InvSSAForwardProblem::solveF(IceModelVec2V &result)
   return 0;
 }
 
+PetscErrorCode InvSSAForwardProblem::solveT_FD(IceModelVec2S &dzeta, IceModelVec2V &result) {
+  PetscErrorCode ierr;
+  
+  PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
+  PetscReal dzeta_size;
+  ierr = VecNorm(dzeta.get_vec(),NORM_2,&dzeta_size); CHKERRQ(ierr);
+  if(dzeta_size !=0) {
+    h /= dzeta_size;    
+  }
+
+  IceModelVec2S *zeta0 = m_zeta;
+
+  IceModelVec2V u0;
+  ierr = u0.create(grid,"u0",kHasGhosts,result.get_stencil_width()); CHKERRQ(ierr);
+  ierr = u0.copy_from(SSAX); CHKERRQ(ierr);
+
+  IceModelVec2S zeta1;
+  ierr = zeta1.create(grid,"z1",kHasGhosts,m_zeta->get_stencil_width()); CHKERRQ(ierr);
+  ierr = zeta1.copy_from(*zeta0); CHKERRQ(ierr);
+  ierr = zeta1.add(h,dzeta); CHKERRQ(ierr);
+
+  ierr = this->set_zeta(zeta1); CHKERRQ(ierr);
+  ierr = this->solveF_core(); CHKERRQ(ierr);
+  ierr = result.copy_from(SSAX); CHKERRQ(ierr);
+
+  ierr = result.add(-1,u0); CHKERRQ(ierr);
+  ierr = result.scale(1/h); CHKERRQ(ierr);
+
+  ierr = this->set_zeta(*zeta0); CHKERRQ(ierr);
+  ierr = this->solveF_core(); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+
 /* \brief Solves the linearized forward problem */
 PetscErrorCode InvSSAForwardProblem::solveT( IceModelVec2S &dtauc, IceModelVec2V &result)
 {
-  KSPConvergedReason  reason;
   PetscErrorCode ierr;
+  
+  bool do_fd;
+  ierr = PISMOptionsIsSet("-inv_ssa_solveT_fd","compute SSA forward linearization via finite differences",do_fd); CHKERRQ(ierr);
+  if(do_fd) {
+    ierr = this->solveT_FD(dtauc,result); CHKERRQ(ierr);
+    return 0;
+  }
+  
+  KSPConvergedReason  reason;
   PetscScalar **dtauc_a;
   PISMVector2 **vel;
   PISMVector2 **rhs;
@@ -522,8 +554,13 @@ PetscErrorCode InvSSAForwardProblem::assemble_DomainNorm_matrix()
     ierr = m_zeta_fixed_locations->get_array(zeta_fixed_mask);CHKERRQ(ierr);
   }
 
-  PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
-  PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
+  PetscReal cH1 = config.get("inv_ssa_cH1");
+  PetscReal cL2 = config.get("inv_ssa_cL2");
+  PetscReal area = 4*grid.Lx*grid.Ly;
+  PetscReal length_scale = grid.config.get("inv_ssa_length_scale");
+  cL2 /= area;
+  cH1 /= area;
+  cH1 *= (length_scale*length_scale);
 
   // Loop through all the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
@@ -661,8 +698,13 @@ PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, 
     ierr = m_zeta_fixed_locations->get_array(zeta_fixed_mask);CHKERRQ(ierr);
   }
 
-  PetscReal cH1 = config.get("inv_ssa_domain_h1_coeff");
-  PetscReal cL2 = config.get("inv_ssa_domain_l2_coeff");
+  PetscReal cH1 = config.get("inv_ssa_cH1");
+  PetscReal cL2 = config.get("inv_ssa_cL2");
+  PetscReal area = 4*grid.Lx*grid.Ly;
+  PetscReal length_scale = grid.config.get("inv_ssa_length_scale");
+  cL2 /= area;
+  cH1 /= area;
+  cH1 *= (length_scale*length_scale);
 
   // Loop through all LOCAL elements.
   PetscInt xs = element_index.lxs, xm = element_index.lxm,
@@ -705,6 +747,41 @@ PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, 
   return 0;
 }
 
+/*
+PetscErrorCode InvSSAForwardProblem::domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT)
+{
+  PetscErrorCode ierr;
+  PetscReal **zeta_fixed_a;
+
+  PetscInt         i,j;
+
+  // The value of the inner product.
+  PetscReal IP = 0;
+
+  // Start access of Dirichlet data, if present.
+  if (m_zeta_fixed_locations ) {
+    ierr = m_zeta_fixed_locations->get_array(zeta_fixed_a);CHKERRQ(ierr);
+  }
+
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if(m_zeta_fixed_locations && zeta_fixed_a[i][j]) {
+        continue;
+      }
+      IP += A[i][j]*B[i][j];
+    } // j
+  } // i
+
+  // End access of Dirichlet data, if present.
+  if (m_zeta_fixed_locations ) {
+    ierr = m_zeta_fixed_locations->end_access(); CHKERRQ(ierr);
+  }
+
+  ierr = PISMGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+*/
+
 PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**B, PetscScalar *OUTPUT)
 {
   PetscInt         i,j;
@@ -728,6 +805,8 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
+
+  PetscReal units_factor = secpera*secpera;
 
   if(m_misfit_element_mask!=NULL) {
     ierr = m_misfit_element_mask->begin_access();CHKERRQ(ierr);    
@@ -753,7 +832,7 @@ PetscErrorCode InvSSAForwardProblem::rangeIP_core(PISMVector2 **A, PISMVector2**
         quadrature.computeTrialFunctionValues(i,j,dofmap,W,misfit_weight);
       }
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        IP += JxW[q]*(a[q].u*b[q].u + a[q].v*b[q].v)*misfit_weight[q];
+        IP += JxW[q]*(a[q].u*b[q].u + a[q].v*b[q].v)*misfit_weight[q]*units_factor;
       } // q
     } // j
   } // i
@@ -961,6 +1040,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
 
+  PetscReal units_factor = secpera*secpera;
+
   // Flags for each vertex in an element that determine if explicit Dirichlet data has
   // been set.
   PetscReal local_bc_mask[FEQuadrature::Nk];
@@ -1030,8 +1111,8 @@ PetscErrorCode InvSSAForwardProblem::assemble_TStarA_rhs( PISMVector2 **R, PISMV
         const PetscReal    jw  = JxW[q]/m_range_l2_area;
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
-          y[k].u += jw*testqk.val*res[q].u*misfit_weight[q];
-          y[k].v += jw*testqk.val*res[q].v*misfit_weight[q];
+          y[k].u += jw*testqk.val*res[q].u*misfit_weight[q]*units_factor;
+          y[k].v += jw*testqk.val*res[q].v*misfit_weight[q]*units_factor;
         }
       } // q
 

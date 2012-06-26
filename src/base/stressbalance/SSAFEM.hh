@@ -67,7 +67,7 @@ class SSAFEM : public SSA
 public:
   SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b,
          EnthalpyConverter &e, const NCConfigVariable &c)
-    : SSA(g,b,e,c), element_index(g)
+  : SSA(g,b,e,c), element_index(g)
   {
     quadrature.init(grid);
     PetscErrorCode ierr = allocate_fem();
@@ -84,8 +84,9 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
+  virtual PetscErrorCode cacheQuadPtValues();
+
 protected:
-  PetscErrorCode setup();
 
   virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,
                                              const PISMVector2 *,const PetscReal[],
@@ -103,6 +104,8 @@ protected:
   virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const PISMVector2 **xg, Mat J);
 
   virtual PetscErrorCode solve();
+
+  virtual PetscErrorCode solve_nocache();
   
   virtual PetscErrorCode setFromOptions();
 

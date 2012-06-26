@@ -18,27 +18,75 @@
 
 #include "InvTaucParameterization.hh"
 #include "pism_options.hh"
+#include <cmath>
 
 InvTaucParamIdent g_InvTaucParamIdent;
 InvTaucParamSquare g_InvTaucParamSquare;
 InvTaucParamExp g_InvTaucParamExp;
 
-PetscErrorCode InvTaucParameterization::init( const NCConfigVariable &/*config*/ ) { 
+PetscErrorCode InvTaucParameterization::init( const NCConfigVariable & config ) { 
+  m_tauc_scale = config.get("tauc_param_tauc_scale");
   return 0;
 }
 
+PetscErrorCode InvTaucParameterization::convertToTauc( IceModelVec2S &zeta, IceModelVec2S &tauc, bool communicate ) {
+  PetscReal **zeta_a, **tauc_a;
+  PetscErrorCode ierr;
+  
+  ierr = zeta.get_array(zeta_a); CHKERRQ(ierr);
+  ierr = tauc.get_array(tauc_a); CHKERRQ(ierr);
+  IceGrid &grid = *zeta.get_grid();
+  for(PetscInt i= grid.xs; i< grid.xs+grid.xm; i++) {
+    for(PetscInt j= grid.ys; j< grid.ys+grid.ym; j++) {
+      ierr = this->toTauc(zeta_a[i][j], &tauc_a[i][j], NULL); CHKERRQ(ierr);
+      if(std::isnan(tauc_a[i][j])) {
+        PetscPrintf(PETSC_COMM_WORLD,"made a tauc nan zeta=%g tauc=%g\n",zeta_a[i][j],tauc_a[i][j]);
+      } 
+    }
+  }
+  ierr = zeta.end_access(); CHKERRQ(ierr);
+  ierr = tauc.end_access(); CHKERRQ(ierr);
+  if(communicate) {
+    ierr = tauc.beginGhostComm(); CHKERRQ(ierr);
+    ierr = tauc.endGhostComm(); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+PetscErrorCode InvTaucParameterization::convertFromTauc( IceModelVec2S &tauc, IceModelVec2S &zeta, bool communicate ) {
+  PetscReal **zeta_a, **tauc_a;
+  PetscErrorCode ierr;
+  ierr = zeta.get_array(zeta_a); CHKERRQ(ierr);
+  ierr = tauc.get_array(tauc_a); CHKERRQ(ierr);
+  IceGrid &grid = *zeta.get_grid();
+  for(PetscInt i= grid.xs; i< grid.xs+grid.xm; i++) {
+    for(PetscInt j= grid.ys; j< grid.ys+grid.ym; j++) {
+      ierr = this->fromTauc(tauc_a[i][j], &zeta_a[i][j]); CHKERRQ(ierr);
+      if(std::isnan(zeta_a[i][j])) {
+        PetscPrintf(PETSC_COMM_WORLD,"made a zeta nan tauc=%g zeta=%g\n",tauc_a[i][j],zeta_a[i][j]);
+      } 
+    }    
+  }
+  ierr = zeta.end_access(); CHKERRQ(ierr);
+  ierr = tauc.end_access(); CHKERRQ(ierr);
+  if(communicate) {
+    ierr = zeta.beginGhostComm(); CHKERRQ(ierr);
+    ierr = zeta.endGhostComm(); CHKERRQ(ierr);
+  }
+  return 0;
+}
 
 PetscErrorCode InvTaucParamIdent::toTauc( PetscReal p, PetscReal *value, 
                                           PetscReal *derivative)
 {
-  if(value != NULL) *value = p;
-  if(derivative != NULL) *derivative = 1.;
+  if(value != NULL) *value = m_tauc_scale*p;
+  if(derivative != NULL) *derivative = m_tauc_scale;
   return 0;
 }
 
 PetscErrorCode InvTaucParamIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
-  *OUTPUT = tauc;
+  *OUTPUT = tauc/m_tauc_scale;
   return 0;
 }
 
@@ -46,50 +94,58 @@ PetscErrorCode InvTaucParamIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 PetscErrorCode InvTaucParamSquare::toTauc( PetscReal p, PetscReal *value, 
                                            PetscReal *derivative)
 {
-  if(value != NULL) *value = p*p;
-  if(derivative != NULL) *derivative = 2*p;
+  if(value != NULL) *value = m_tauc_scale*p*p;
+  if(derivative != NULL) *derivative = m_tauc_scale*2*p;
   return 0;
 }
 
 PetscErrorCode InvTaucParamSquare::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
-  *OUTPUT = sqrt(tauc);
-  // if(tauc>=0) {
-  //   *OUTPUT = sqrt(tauc); 
-  // } else {
-  //   *OUTPUT = NaN;
-  // }
+  if(tauc<0) {
+    tauc = 0;
+  }
+  *OUTPUT = sqrt(tauc/m_tauc_scale);
   return 0;
 }
 
-PetscReal tauc_eps = 1.;
+PetscErrorCode InvTaucParamExp::init( const NCConfigVariable &config ) { 
+  PetscErrorCode ierr;
+  ierr = InvTaucParameterization::init(config); CHKERRQ(ierr);
+  m_tauc_eps = config.get("tauc_param_tauc_eps");
+  return 0;
+}
+
 PetscErrorCode InvTaucParamExp::toTauc( PetscReal p, PetscReal *value, 
                                            PetscReal *derivative)
 {
-  if(value != NULL) *value = exp(p);
-  if(derivative != NULL) *derivative = exp(p);    
+  if(value != NULL) {
+    *value = m_tauc_scale*exp(p);
+  } 
+  
+  if(derivative != NULL) *derivative = m_tauc_scale*exp(p);    
   return 0;
 }
 
 PetscErrorCode InvTaucParamExp::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
-  if(tauc < tauc_eps)
+  if(tauc < m_tauc_eps)
   {
-    tauc= tauc_eps;
+    tauc= m_tauc_eps;
   }
-  *OUTPUT=log(tauc);
+  *OUTPUT=log(tauc/m_tauc_scale);
+
   return 0;
 }
 
 PetscErrorCode InvTaucParamTruncatedIdent::init( const NCConfigVariable &config ) {
   PetscErrorCode ierr;
-  bool isSet;
-  PetscReal tauc0;
-  ierr = PISMOptionsReal("-tauc_param_trunc_tauc0", "", tauc0, isSet);  CHKERRQ(ierr);
-  if(!isSet) {
-    tauc0 = config.get("tauc_param_trunc_tauc0"); 
-  }
-  m_tauc0_sq = tauc0*tauc0;
+  ierr = InvTaucParameterization::init(config); CHKERRQ(ierr);
+  
+  PetscReal tauc0 = config.get("tauc_param_trunc_tauc0"); 
+  m_tauc0_sq = tauc0*tauc0/(m_tauc_scale*m_tauc_scale);
+
+  m_tauc_eps = config.get("tauc_param_tauc_eps");
+
   return 0;
 }
 
@@ -97,17 +153,18 @@ PetscErrorCode InvTaucParamTruncatedIdent::toTauc( PetscReal p,
   PetscReal *value, PetscReal *derivative)
 {
   PetscReal alpha = sqrt(p*p+4*m_tauc0_sq);
-  if(value != NULL) *value = (p+alpha)*0.5;
-  if(derivative != NULL) *derivative = (1+p/alpha)*0.5;
+  if(value != NULL) *value = m_tauc_scale*(p+alpha)*0.5;
+  if(derivative != NULL) *derivative = m_tauc_scale*(1+p/alpha)*0.5;
   return 0;
 }
 
 PetscErrorCode InvTaucParamTruncatedIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
-  if(tauc < tauc_eps)
+  if(tauc < m_tauc_eps)
   {
-    tauc= tauc_eps;
+    tauc= m_tauc_eps;
   }
-  *OUTPUT=tauc-m_tauc0_sq/tauc;
+  PetscReal tauc_dimensionless = tauc/m_tauc_scale;
+  *OUTPUT=tauc_dimensionless-m_tauc0_sq/tauc_dimensionless;
   return 0;
 }

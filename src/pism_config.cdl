@@ -381,6 +381,53 @@ netcdf pism_config {
     pism_config:ocean_sub_shelf_heat_flux_into_ice = 0.5;
     pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in src/coupler/PISMOcean.cc";
 
+    // SSA inversion constants
+    
+    pism_config:inv_ssa_method = "tikhonov_lmvm";
+    pism_config:inv_ssa_method_doc = "algorithm to use for SSA inversions";
+
+    pism_config:inv_ssa_tauc_param = "exp";
+    pism_config:inv_ssa_tauc_param_doc = "parameterization of tauc used during inversion";
+
+    pism_config:inv_ssa_cL2     = 1;
+    pism_config:inv_ssa_cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";
+    
+    pism_config:inv_ssa_cH1     = 0;
+    pism_config:inv_ssa_cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
+
+    pism_config:inv_ssa_velocity_scale = 100;
+    pism_config:inv_ssa_velocity_scale_doc = "m/a; typical size of ice velocities expected during inversion";
+
+    pism_config:inv_ssa_length_scale = 50e3;
+    pism_config:inv_ssa_velocity_scale_doc = "m; typical length scale for rescaling derivative norms";
+
+    pism_config:inv_ssa_tauc_min = 0;
+    pism_config:inv_ssa_tauc_min_doc = "Pa; Minimum allowed value of tauc for inversions with bound constraints";
+    
+    pism_config:inv_ssa_tauc_max = 5e7;
+    pism_config:inv_ssa_tauc_min_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
+    
+    pism_config:inv_ssa_target_rms_misfit = 100;
+    pism_config:inv_ssa_target_rms_misfit_doc = "m/a; desired RMS misfit for SSA inversions";
+    
+    pism_config:tikhonov_atol  = 1;
+    pism_config:tikhonov_atol_doc = "m/a; absolute threshold for Tikhonov stopping criterion";
+    
+    pism_config:tikhonov_rtol  = 5e-2;
+    pism_config:tikhonov_rtol_doc = "relative threshold for Tikhonov stopping criterion";
+    
+    pism_config:tikhonov_penalty_weight = 1;
+    pism_config:tikhonov_penalty_weight_doc = "penalty parameter for Tikhonov inversion";
+    
+    pism_config:tauc_param_tauc_scale = 100000;
+    pism_config:tauc_param_tauc_scale_doc = "Pa; typical size of yield stresses";
+
+    pism_config:tauc_param_tauc_eps     = 100;
+    pism_config:tauc_param_tauc_eps_doc = "Pa; tiny yield stress used as a substitute for 0 in some tauc parameterizations";
+
+    pism_config:tauc_param_trunc_tauc0 = 1000;
+    pism_config:tauc_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for tauc_parameterization type 'trunc'";
+
 
     // THESE CONSTANTS MAY DUPLICATE, AND MAY SUPERSEDE, CONSTANTS IN materials.cc
 

@@ -612,6 +612,18 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr); 
  
+  // SSA Inversion
+
+  ierr = config.keyword_from_option("inv_method","inv_ssa_method","sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("rms_error","inv_ssa_target_rms_misfit"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("tikhonov_penalty","tikhonov_penalty_weight"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("tikhonov_atol","tikhonov_atol"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("tikhonov_rtol","tikhonov_rtol"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("inv_ssa_cL2","inv_ssa_cL2"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("inv_ssa_cH1","inv_ssa_cH1"); CHKERRQ(ierr);
 
   // Basal strength
 

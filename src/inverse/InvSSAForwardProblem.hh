@@ -56,7 +56,8 @@ public:
     if (ierr != 0) {
       PetscPrintf(grid.com, "FATAL ERROR: InvSSAForwardProblem allocation failed.\n");
       PISMEnd();
-    }    
+    }
+    // m_zeta.create(grid,"zeta",kHasGhosts,2);
     ierr = allocate_store();
     if (ierr != 0) {
       PetscPrintf(grid.com, "FATAL ERROR: InvSSAForwardProblem allocation failed.\n");
@@ -74,7 +75,7 @@ public:
 
   PetscErrorCode set_initial_velocity_guess(IceModelVec2V &v);
 
-  virtual PetscErrorCode set_zeta_fixed_locations(IceModelVec2Int &locations)
+  virtual PetscErrorCode set_tauc_fixed_locations(IceModelVec2Int &locations)
   { 
     m_zeta_fixed_locations = &locations;
     return 0;
@@ -82,11 +83,10 @@ public:
 
   PetscErrorCode set_zeta(IceModelVec2S &zeta );
 
-  PetscErrorCode setup_vars();
-
   PetscErrorCode solveF(IceModelVec2V &result);
 
   PetscErrorCode solveT( IceModelVec2S &d, IceModelVec2V &result);
+  PetscErrorCode solveT_FD( IceModelVec2S &d, IceModelVec2V &result);
 
   PetscErrorCode solveTStar( IceModelVec2V &r, IceModelVec2S &result);
 
@@ -144,6 +144,9 @@ protected:
 
   // Locations where zeta is not allowed to change.
   IceModelVec2Int *m_zeta_fixed_locations;
+
+  // parameterized tauc
+  IceModelVec2S *m_zeta;
 
   // Store for values of dtauc_dzeta at the quad points.
   

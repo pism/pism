@@ -21,6 +21,7 @@
 
 #include <petsc.h>
 #include "NCVariable.hh"
+#include "iceModelVec.hh"
 
 /*! Encapsulates a parameterization of \f$\tau_c\f$.
 It is frequently when solving an inverse problem for \f$\tau_c\f$
@@ -62,6 +63,12 @@ public:
    \f$\tau_c=F(p)\f$.  More than one such \f$p\f$ may exist; only one is returned. */
   virtual PetscErrorCode fromTauc( PetscReal tauc, PetscReal *OUTPUT) = 0;
 
+  virtual PetscErrorCode convertToTauc( IceModelVec2S &zeta, IceModelVec2S &tauc, bool communicate = true);
+
+  virtual PetscErrorCode convertFromTauc( IceModelVec2S &tauc, IceModelVec2S &zeta,  bool communicate = true);
+protected:
+  
+  PetscReal m_tauc_scale;
 };
 
 /*! Parameterization \f$\tau_c=F(p)\f$ with $F(p)=p$. */
@@ -98,9 +105,14 @@ public:
 
   virtual ~InvTaucParamExp() {};
 
+  virtual PetscErrorCode init( const NCConfigVariable &config);
+
   virtual PetscErrorCode toTauc( PetscReal p, PetscReal *value, PetscReal *derivative);
 
   virtual PetscErrorCode fromTauc( PetscReal tauc, PetscReal *OUTPUT);
+
+private:
+  PetscReal m_tauc_eps;
 };
 
 
@@ -122,6 +134,7 @@ public:
 
 private:
   PetscReal m_tauc0_sq;
+  PetscReal m_tauc_eps;
 };
 
 /*! Some handy pre-instantiated parameterizations. */

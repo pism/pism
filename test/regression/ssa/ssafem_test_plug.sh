@@ -24,7 +24,7 @@ rm -f $files
 set -e
 set -x
 
-OPTS="-verbose 1 -ssa_method fem -o foo.nc"
+OPTS="-verbose 1 -ssa_method fem -o foo.nc -ksp_type cg"
 
 # do stuff
 $MPIEXEC_COMMAND $PISM_PATH/ssa_test_plug${EXT} -Mx 22 -My 31 $OPTS > test-out.txt
