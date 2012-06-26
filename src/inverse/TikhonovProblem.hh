@@ -84,6 +84,11 @@ public:
     ierr = TaoMonitorCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
     ierr = TaoConvergenceCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
     ierr = TaoGetVariableBoundsCallback<TikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
+
+    PetscReal fatol = 1e-10, frtol = 1e-20;
+    PetscReal gatol = PETSC_DEFAULT, grtol = PETSC_DEFAULT, gttol = PETSC_DEFAULT;
+    ierr = TaoSetTolerances(tao, fatol, frtol, gatol, grtol, gttol); CHKERRQ(ierr);
+
     return 0;
   }
 

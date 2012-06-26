@@ -102,7 +102,7 @@ PetscErrorCode InvSSA_LCLTikhonov::setInitialGuess( DesignVec &d0) {
 }
 
 InvSSA_LCLTikhonov::StateVec &InvSSA_LCLTikhonov::stateSolution() {
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
   
   // FIXME!
   m_x->scatterToB(m_uGlobal.get_vec()); //CHKERRQ(ierr);
@@ -164,9 +164,9 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateObjectiveAndGradient(TaoSolver /*tao*
 
   m_x->gather(m_grad_objective.get_vec(),m_grad_penalty.get_vec(),gradient);
 
-  PetscReal go,gp,x_norm, g_norm;
-  ierr = m_grad_objective.norm(NORM_2,go); CHKERRQ(ierr);
-  ierr = m_grad_penalty.norm(NORM_2,gp); CHKERRQ(ierr);
+  // PetscReal go,gp,x_norm, g_norm;
+  // ierr = m_grad_objective.norm(NORM_2,go); CHKERRQ(ierr);
+  // ierr = m_grad_penalty.norm(NORM_2,gp); CHKERRQ(ierr);
 
   // ierr = VecNorm(*m_x,NORM_2,&x_norm); CHKERRQ(ierr);
   // ierr = VecNorm(gradient,NORM_2,&g_norm); CHKERRQ(ierr);
@@ -232,8 +232,6 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateConstraintsJacobianState(TaoSolver, V
   ierr = m_invProblem.set_zeta(m_d); CHKERRQ(ierr);
   ierr = m_invProblem.assembleJacobian(m_u,*Jstate); CHKERRQ(ierr);
   *s = SAME_NONZERO_PATTERN;
-
-  PetscReal n1, n2;
 
   ierr = MatScale(*Jstate,m_velocityScale/m_constraintsScale); CHKERRQ(ierr);
 

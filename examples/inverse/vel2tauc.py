@@ -27,12 +27,6 @@ import os, math
 import PISM
 import PISM.invert_ssa
 
-import siple
-
-siple.reporting.clear_loggers()
-siple.reporting.add_logger(PISM.sipletools.pism_logger)
-siple.reporting.set_pause_callback(PISM.sipletools.pism_pause)
-
 class Vel2Tauc(PISM.ssa.SSAFromInputFile):
   def __init__(self,input_filename,inv_data_filename):
     PISM.ssa.SSAFromInputFile.__init__(self,input_filename)
@@ -175,7 +169,6 @@ class Vel2TaucPlotListener(PISM.invert_ssa.PlotListener):
   def __init__(self,grid,Vmax):
     PISM.invert_ssa.PlotListener.__init__(self,grid)
     self.Vmax = Vmax
-    self.rank = grid.rank
     self.l2_weight = None
     self.l2_weight_init = False
 
@@ -189,77 +182,81 @@ class Vel2TaucPlotListener(PISM.invert_ssa.PlotListener):
     method = inverse_solver.method
 
     r=self.toproczero(data.r)
-
-    import matplotlib.pyplot as pp
-    
-    pp.figure(self.figure())
-
-    l2_weight=self.l2_weight
-
-    pp.clf()
-    
-    V = self.Vmax
-
-    pp.subplot(2,3,1)
-    rx = l2_weight*r[0,:,:]*PISM.secpera
-    rx = np.maximum(rx,-V)
-    rx = np.minimum(rx,V)
-    pp.imshow(rx,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.title('r_x')
-    pp.jet()
-
-    pp.subplot(2,3,4)
-    ry = l2_weight*r[1,:,:]*PISM.secpera
-    ry = np.maximum(ry,-V)
-    ry = np.minimum(ry,V)
-    pp.imshow(ry,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.title('r_y')
-    pp.jet()
-    
-    
-    if method == 'ign':
-      Td = self.toproczero(data.Td)
-      pp.subplot(2,3,2)
-      Tdx = Td[0,:,:]*PISM.secpera
-      pp.imshow(Tdx,origin='lower',interpolation='nearest')
-      pp.colorbar()
-      pp.title('Td_x')
-      pp.jet()
-
-      pp.subplot(2,3,5)
-      Tdy = Td[1,:,:]*PISM.secpera
-      pp.imshow(Tdy,origin='lower',interpolation='nearest')
-      pp.colorbar()
-      pp.title('Td_y')
-      pp.jet()
-    elif method == 'sd' or method == 'nlcg':
-      TStarR = self.toproczero(data.TStarR)
-      pp.subplot(2,3,2)
-      pp.imshow(TStarR,origin='lower',interpolation='nearest')
-      pp.colorbar()
-      pp.title('TStarR')
-      pp.jet()
-
-    if data.has_key('d'):
-      d = self.toproczero(data.d)
-      d *= -1
-      pp.subplot(2,3,3)      
-      pp.imshow(d,origin='lower',interpolation='nearest')
-      pp.colorbar()
-      pp.jet()
-      pp.title('-d')
-
-    pp.subplot(2,3,6)
+    Td = None
+    if data.has_key('Td'): Td = self.toproczero(data.Td)
+    TStarR = None
+    if data.has_key('TStarR'): TStarR = self.toproczero(data.TStarR)
+    d = None
+    if data.has_key('d'): d = self.toproczero(data.d)
     zeta = self.toproczero(data.zeta)      
-    pp.imshow(zeta,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.jet()
-    pp.title('zeta')
+
+    if self.grid.rank == 0:
+      import matplotlib.pyplot as pp
     
-    pp.ion()
-    pp.show()
+      pp.figure(self.figure())
+
+      l2_weight=self.l2_weight
+
+      pp.clf()
+    
+      V = self.Vmax
+
+      pp.subplot(2,3,1)
+      rx = l2_weight*r[0,:,:]*PISM.secpera
+      rx = np.maximum(rx,-V)
+      rx = np.minimum(rx,V)
+      pp.imshow(rx,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.title('r_x')
+      pp.jet()
+
+      pp.subplot(2,3,4)
+      ry = l2_weight*r[1,:,:]*PISM.secpera
+      ry = np.maximum(ry,-V)
+      ry = np.minimum(ry,V)
+      pp.imshow(ry,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.title('r_y')
+      pp.jet()
+    
+    
+      if method == 'ign':
+        pp.subplot(2,3,2)
+        Tdx = Td[0,:,:]*PISM.secpera
+        pp.imshow(Tdx,origin='lower',interpolation='nearest')
+        pp.colorbar()
+        pp.title('Td_x')
+        pp.jet()
+
+        pp.subplot(2,3,5)
+        Tdy = Td[1,:,:]*PISM.secpera
+        pp.imshow(Tdy,origin='lower',interpolation='nearest')
+        pp.colorbar()
+        pp.title('Td_y')
+        pp.jet()
+      elif method == 'sd' or method == 'nlcg':
+        pp.subplot(2,3,2)
+        pp.imshow(TStarR,origin='lower',interpolation='nearest')
+        pp.colorbar()
+        pp.title('TStarR')
+        pp.jet()
+
+      if d is not None:
+        d *= -1
+        pp.subplot(2,3,3)      
+        pp.imshow(d,origin='lower',interpolation='nearest')
+        pp.colorbar()
+        pp.jet()
+        pp.title('-d')
+
+      pp.subplot(2,3,6)
+      pp.imshow(zeta,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.jet()
+      pp.title('zeta')
+    
+      pp.ion()
+      pp.show()
 
 class Vel2TaucLinPlotListener(PISM.invert_ssa.PlotListener):
   def __init__(self,grid,Vmax):
@@ -276,44 +273,43 @@ class Vel2TaucLinPlotListener(PISM.invert_ssa.PlotListener):
       self.l2_weight = self.toproczero(vecs.vel_misfit_weight)
       self.l2_init = True
 
-    import matplotlib.pyplot as pp
-    pp.figure(self.figure())
-    
     l2_weight=self.l2_weight
     r = self.toproczero(data.r)
     d = self.toproczero(data.d)
-    
-    pp.clf()
-    
-    V = self.Vmax
-    pp.subplot(1,3,1)
-    rx = l2_weight*r[0,:,:]
-    rx = np.maximum(rx,-V)
-    rx = np.minimum(rx,V)
-    pp.imshow(rx,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.title('ru')
-    pp.jet()
-    
-    pp.subplot(1,3,2)
-    ry = l2_weight*r[1,:,:]
-    ry = np.maximum(ry,-V)
-    ry = np.minimum(ry,V)
-    pp.imshow(ry,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.title('rv')
-    pp.jet()
-    
-    d *= -1
-    pp.subplot(1,3,3)      
-    pp.imshow(d,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.jet()
-    pp.title('-d')
-    
-    pp.ion()
-    pp.show()
 
+    if self.grid.rank == 0:
+      import matplotlib.pyplot as pp
+      pp.figure(self.figure())
+      pp.clf()
+    
+      V = self.Vmax
+      pp.subplot(1,3,1)
+      rx = l2_weight*r[0,:,:]
+      rx = np.maximum(rx,-V)
+      rx = np.minimum(rx,V)
+      pp.imshow(rx,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.title('ru')
+      pp.jet()
+    
+      pp.subplot(1,3,2)
+      ry = l2_weight*r[1,:,:]
+      ry = np.maximum(ry,-V)
+      ry = np.minimum(ry,V)
+      pp.imshow(ry,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.title('rv')
+      pp.jet()
+    
+      d *= -1
+      pp.subplot(1,3,3)      
+      pp.imshow(d,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.jet()
+      pp.title('-d')
+    
+      pp.ion()
+      pp.show()
 
 def adjustTauc(mask,tauc):
   """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
@@ -460,7 +456,7 @@ if __name__ == "__main__":
 
   if test_adjoint:
     if solver.method.startswith('tikhonov'):
-      siple.reporting.msg("option -inv_test_adjoint cannot be used with inverse method %s",solver.method)
+      PISM.logging.logMessage("option -inv_test_adjoint cannot be used with inverse method %s",solver.method)
       exit(1)
     from PISM.sipletools import PISMLocalVector as PLV
     d = PISM.sipletools.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL)
@@ -475,7 +471,7 @@ if __name__ == "__main__":
     r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
     forward_problem = solver.forward_problem
     (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),r,3)
-    siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
+    PISM.logging.logMessage("domainip %g rangeip %g",domainIP,rangeIP)
     exit(0)
 
   vel_ssa_observed = None
@@ -551,16 +547,16 @@ if __name__ == "__main__":
 
   # Run the inverse solver!
   if do_restart:
-    siple.reporting.msg('************** Restarting inversion. ****************')
+    PISM.logging.logMessage('************** Restarting inversion. ****************\n')
   else:
-    siple.reporting.msg('============== Starting inversion. ==================')  
+    PISM.logging.logMessage('============== Starting inversion. ==================\n')  
 
   # Try solving
   if not solver.solveInverse(zeta_prior,vel_ssa_observed,zeta):
-    PISM.verbPrintf(1,grid.com,"Inverse solve FAILURE (%s)!\n" % solver.inverseConvergedReason());
+    PISM.logging.logError("Inverse solve FAILURE (%s)!\n" % solver.inverseConvergedReason());
     quit()
   else:  
-    PISM.verbPrintf(1,grid.com,"Inverse solve success (%s)!\n" % solver.inverseConvergedReason());
+    PISM.logging.logMessage("Inverse solve success (%s)!\n" % solver.inverseConvergedReason());
 
   (zeta,u) = solver.inverseSolution()
 
