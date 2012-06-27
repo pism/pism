@@ -56,11 +56,21 @@ public:
   PetscErrorCode assemble_jacobian_state(IceModelVec2V &u, Mat J);
 
   PetscErrorCode apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta,IceModelVec2V &du);
+  PetscErrorCode apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, Vec du);
+  PetscErrorCode apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, PISMVector2 **du_a);
+
   PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,IceModelVec2S &dzeta);
+  PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta);
+  PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,PetscReal **dzeta);
 
   PetscErrorCode apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du);
   PetscErrorCode apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);
 
+  PetscErrorCode get_da(DM *da) {
+    *da = SSADA;
+    return 0;
+  }
+  
 protected:
 
   PetscErrorCode construct();

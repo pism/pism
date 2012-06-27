@@ -164,8 +164,25 @@ PetscErrorCode SSAForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat 
   return 0;
 }
 
-
 PetscErrorCode SSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, IceModelVec2V &du) {
+  PetscErrorCode ierr;
+  PISMVector2 **du_a;
+  ierr = du.get_array(du_a); CHKERRQ(ierr);
+  ierr = this->apply_jacobian_design(u,dzeta,du_a);
+  ierr = du.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode SSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, Vec du) {
+  PetscErrorCode ierr;
+  PISMVector2 **du_a;
+  ierr = DMDAVecGetArray(SSADA,du,&du_a); CHKERRQ(ierr);
+  ierr = this->apply_jacobian_design(u,dzeta,du_a);
+  ierr = DMDAVecRestoreArray(SSADA,du,&du_a); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode SSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, PISMVector2 **du_a) {
   PetscErrorCode ierr;
 
   PetscReal **zeta_a;
@@ -176,9 +193,6 @@ PetscErrorCode SSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceMode
 
   PetscReal **dzeta_a;
   ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
-
-  PISMVector2 **du_a;
-  ierr = du.get_array(du_a); CHKERRQ(ierr);
 
   PetscInt         i,j;
 
@@ -284,16 +298,33 @@ PetscErrorCode SSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceMode
   ierr = m_zeta->end_access(); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);
   ierr = dzeta.end_access(); CHKERRQ(ierr);
-  ierr = du.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
 
+
 PetscErrorCode SSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,IceModelVec2S &dzeta) {
+  PetscErrorCode ierr;
+  PetscReal **dzeta_a;
+  ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
+  ierr = this->apply_jacobian_design_transpose(u,du,dzeta_a);CHKERRQ(ierr);
+  ierr = dzeta.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode SSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta) {
+  PetscErrorCode ierr;
+  PetscReal **dzeta_a;
+  ierr = DMDAVecGetArray(m_grid.da2,dzeta,&dzeta_a); CHKERRQ(ierr);
+  ierr = this->apply_jacobian_design_transpose(u,du,dzeta_a);CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(m_grid.da2,dzeta,&dzeta_a); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode SSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,PetscReal **dzeta_a) {
   PetscInt         i,j;
   PetscErrorCode ierr;
 
-  dzeta.set(0);
   PetscReal **zeta_a;
   ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
 
@@ -302,9 +333,6 @@ PetscErrorCode SSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V 
 
   PISMVector2 **du_a;
   ierr = du.get_array(du_a); CHKERRQ(ierr);
-
-  PetscReal **dzeta_a;
-  ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
 
   PISMVector2 u_e[FEQuadrature::Nk];
   PISMVector2 u_q[FEQuadrature::Nq];
@@ -330,6 +358,13 @@ PetscErrorCode SSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V 
 
   // Mask query for determining where ice is grounded.
   Mask M;
+
+  // Zero out the portion of the function we are responsible for computing.
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      dzeta_a[i][j] = 0;
+    }
+  }
 
   PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
@@ -396,7 +431,6 @@ PetscErrorCode SSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V 
   ierr = m_zeta->end_access(); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);
   ierr = du.end_access(); CHKERRQ(ierr);
-  ierr = dzeta.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

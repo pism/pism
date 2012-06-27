@@ -39,7 +39,7 @@
 #if(PISM_HAS_TAO)
 #include "inverse/TaoUtil.hh"
 #include "inverse/InvSSATikhonov.hh"
-#include "inverse/InvSSA_LCLTikhonov.hh"
+#include "inverse/InvSSATikhonovLCL.hh"
 #include "inverse/SSATikhonovProblem.hh"
 #endif
 #include "stressbalance/SSAFD.hh"
@@ -536,42 +536,38 @@ namespace std {
 %include "inverse/MeanSquareFunctional.hh"
 %include "inverse/InvTaucParameterization.hh"
 %include "inverse/InvSSAForwardProblem.hh"
+%include "inverse/SSAForwardProblem.hh"
 
 #if(PISM_HAS_TAO)
 %ignore TaoConvergedReasons;
 %include "inverse/TaoUtil.hh"
+
+%shared_ptr(InvSSATikhonovLCLListener)
+%feature("director") InvSSATikhonovLCLListener;
+%include "inverse/InvSSATikhonovLCL.hh"
+%template(InvSSATikhonovLCLSolver) TaoBasicSolver< InvSSATikhonovLCL >;
+
+%shared_ptr(SSATikhonovProblemListener)
+%feature("director") SSATikhonovProblemListener;
+%include "inverse/SSATikhonovProblem.hh"
+%template(SSATikhonovSolver) TaoBasicSolver<SSATikhonovProblem>;
+
 %include "inverse/TikhonovProblem.hh"
 %include "inverse/TikhonovProblemListener.hh"
 %template(InvSSATikhonovProblemListener) TikhonovProblemListener< InvSSATikhonov >;
 %include "inverse/InvSSATikhonov.hh"
-%include "inverse/InvSSA_LCLTikhonov.hh"
-%shared_ptr(SSATikhonovProblemListener)
-%feature("director") SSATikhonovProblemListener;
-%include "inverse/SSATikhonovProblem.hh"
-%include "inverse/SSAForwardProblem.hh"
+
 %shared_ptr(PythonTikhonovSVListener)
-%shared_ptr(PythonLCLTikhonovSVListener)
 %feature("director") PythonTikhonovSVListener;
-%feature("director") PythonLCLTikhonovSVListener;
 %include "inverse/PythonTikhonovSVListener.hh"
 %template(InvSSATikhonovProblem) TikhonovProblem<InvSSATikhonov> ;
 %template(InvSSATikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSSATikhonov> >;
-%template(InvSSA_LCLTikhonovSolver) TaoBasicSolver< InvSSA_LCLTikhonov >;
-%template(SSATikhonovSolver) TaoBasicSolver<SSATikhonovProblem>;
 %rename InvSSATikhonovProblem::addListener _addListener;
 %extend TikhonovProblem<InvSSATikhonov>
 {
   %pythoncode{
   def addListener(self,l):
     InvSSATikhonovAddListener(self,l)
-  }
-}
-%rename InvSSA_LCLTikhonov::addListener _addListener;
-%extend InvSSA_LCLTikhonov
-{
-  %pythoncode{
-  def addListener(self,l):
-    InvSSALCLTikhonovAddListener(self,l)
   }
 }
 #endif

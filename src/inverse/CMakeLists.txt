@@ -16,7 +16,7 @@ if(TAO_FOUND)
   ./TaoUtil.cc
   ./SSATikhonovProblem.cc
   ./InvSSATikhonov.cc
-  ./InvSSA_LCLTikhonov.cc  
+  ./InvSSATikhonovLCL.cc  
   )
 endif()
 
