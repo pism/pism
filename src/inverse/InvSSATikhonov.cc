@@ -17,10 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#include "SSATikhonovProblem.hh"
+#include "InvSSATikhonov.hh"
 #include <assert.h>
 
-SSATikhonovProblem::SSATikhonovProblem( SSAForwardProblem &ssaforward,
+InvSSATikhonov::InvSSATikhonov( SSAForwardProblem &ssaforward,
                  DesignVec &d0, StateVec &u_obs, PetscReal eta,
                  Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional ):
                   m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
@@ -32,7 +32,7 @@ SSATikhonovProblem::SSATikhonovProblem( SSAForwardProblem &ssaforward,
 }
 
 
-PetscErrorCode SSATikhonovProblem::construct() {
+PetscErrorCode InvSSATikhonov::construct() {
   PetscErrorCode ierr;
 
   m_grid = m_d0.get_grid();
@@ -58,18 +58,18 @@ PetscErrorCode SSATikhonovProblem::construct() {
   return 0;
 }
 
-SSATikhonovProblem::~SSATikhonovProblem() {}
+InvSSATikhonov::~InvSSATikhonov() {}
 
-PetscErrorCode SSATikhonovProblem::connect(TaoSolver tao) {
+PetscErrorCode InvSSATikhonov::connect(TaoSolver tao) {
   PetscErrorCode ierr;
-  ierr = TaoObjGradCallback<SSATikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
-  ierr = TaoMonitorCallback<SSATikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
-  ierr = TaoConvergenceCallback<SSATikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);
+  ierr = TaoObjGradCallback<InvSSATikhonov>::connect(tao,*this); CHKERRQ(ierr);
+  ierr = TaoMonitorCallback<InvSSATikhonov>::connect(tao,*this); CHKERRQ(ierr);
+  ierr = TaoConvergenceCallback<InvSSATikhonov>::connect(tao,*this); CHKERRQ(ierr);
 
   const char *type;
   ierr = TaoGetType(tao,&type); CHKERRQ(ierr);
   if( strcmp(type,"blmvm") == 0 ) {
-    ierr = TaoGetVariableBoundsCallback<SSATikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);    
+    ierr = TaoGetVariableBoundsCallback<InvSSATikhonov>::connect(tao,*this); CHKERRQ(ierr);    
   }
 
   PetscReal fatol = 1e-10, frtol = 1e-20;
@@ -79,7 +79,7 @@ PetscErrorCode SSATikhonovProblem::connect(TaoSolver tao) {
   return 0;
 }
 
-PetscErrorCode SSATikhonovProblem::monitorTao(TaoSolver tao) {
+PetscErrorCode InvSSATikhonov::monitorTao(TaoSolver tao) {
   PetscErrorCode ierr;
   
   PetscInt its;
@@ -97,7 +97,7 @@ PetscErrorCode SSATikhonovProblem::monitorTao(TaoSolver tao) {
   return 0;
 }
 
-PetscErrorCode SSATikhonovProblem::convergenceTest(TaoSolver tao) {
+PetscErrorCode InvSSATikhonov::convergenceTest(TaoSolver tao) {
   PetscErrorCode ierr;
   PetscReal designNorm, stateNorm, sumNorm;
   PetscReal dWeight, sWeight;
@@ -118,7 +118,7 @@ PetscErrorCode SSATikhonovProblem::convergenceTest(TaoSolver tao) {
   return 0;
 }
 
-PetscErrorCode SSATikhonovProblem::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
+PetscErrorCode InvSSATikhonov::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
   PetscErrorCode ierr;
   
   PetscReal zeta_min, zeta_max, tauc_min, tauc_max;
@@ -135,7 +135,7 @@ PetscErrorCode SSATikhonovProblem::getVariableBounds(TaoSolver /*tao*/, Vec lo, 
   return 0;
 }
 
-PetscErrorCode SSATikhonovProblem::evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient) {
+PetscErrorCode InvSSATikhonov::evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient) {
   PetscErrorCode ierr;
 
   (void) tao;
@@ -145,7 +145,7 @@ PetscErrorCode SSATikhonovProblem::evaluateObjectiveAndGradient(TaoSolver tao, V
   bool success;
   ierr = m_ssaforward.linearize_at(m_d, success); CHKERRQ(ierr);
   if(!success) {
-    SETERRQ(m_grid->com,1,"Failure in SSATikhonovProblem forward solve.");
+    SETERRQ(m_grid->com,1,"Failure in InvSSATikhonov forward solve.");
   }
 
   ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);

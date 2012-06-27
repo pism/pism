@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef SSATIKHONOVPROBLEM_HH_XO5579QQ
-#define SSATIKHONOVPROBLEM_HH_XO5579QQ
+#ifndef INVSSATIKHONOV_HH_GHK50ADU
+#define INVSSATIKHONOV_HH_GHK50ADU
 
 #include <tr1/memory>
 
@@ -25,19 +25,19 @@
 #include "TaoUtil.hh"
 #include "Functional.hh"
 
-class SSATikhonovProblem;
+class InvSSATikhonov;
 
-class SSATikhonovProblemListener {
+class InvSSATikhonovListener {
 public:
-  typedef std::tr1::shared_ptr<SSATikhonovProblemListener> Ptr;
+  typedef std::tr1::shared_ptr<InvSSATikhonovListener> Ptr;
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;
   
-  SSATikhonovProblemListener() {}
-  virtual ~SSATikhonovProblemListener() {}
+  InvSSATikhonovListener() {}
+  virtual ~InvSSATikhonovListener() {}
   
   virtual PetscErrorCode 
-  iteration( SSATikhonovProblem &problem,
+  iteration( InvSSATikhonov &problem,
              PetscReal eta, PetscInt iter,
              PetscReal objectiveValue, PetscReal designValue,
              DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
@@ -45,18 +45,18 @@ public:
              DesignVec &gradient) = 0;
 };
 
-class SSATikhonovProblem
+class InvSSATikhonov
 {
 public:
 
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;
-  typedef SSATikhonovProblemListener Listener;
+  typedef InvSSATikhonovListener Listener;
 
-  SSATikhonovProblem( SSAForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
+  InvSSATikhonov( SSAForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
                   Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional);
 
-  virtual ~SSATikhonovProblem();
+  virtual ~InvSSATikhonov();
 
   virtual PetscErrorCode setInitialGuess( DesignVec &d) {
     PetscErrorCode ierr;
@@ -128,4 +128,4 @@ protected:
 
 };
 
-#endif /* end of include guard: SSATIKHONOVPROBLEM_HH_XO5579QQ */
+#endif /* end of include guard: INVSSATIKHONOV_HH_GHK50ADU */

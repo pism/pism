@@ -38,8 +38,8 @@
 #include "inverse/SSAForwardProblem.hh"
 #if(PISM_HAS_TAO)
 #include "inverse/TaoUtil.hh"
+#include "inverse/InvSSATikhonov.hh"
 #include "inverse/InvSSATikhonovLCL.hh"
-#include "inverse/SSATikhonovProblem.hh"
 #endif
 #include "stressbalance/SSAFD.hh"
 #include "pism_python.hh"
@@ -541,15 +541,16 @@ namespace std {
 %ignore TaoConvergedReasons;
 %include "inverse/TaoUtil.hh"
 
+%shared_ptr(InvSSATikhonovListener)
+%feature("director") InvSSATikhonovListener;
+%include "inverse/InvSSATikhonov.hh"
+%template(InvSSATikhonovSolver) TaoBasicSolver<InvSSATikhonov>;
+
 %shared_ptr(InvSSATikhonovLCLListener)
 %feature("director") InvSSATikhonovLCLListener;
 %include "inverse/InvSSATikhonovLCL.hh"
 %template(InvSSATikhonovLCLSolver) TaoBasicSolver< InvSSATikhonovLCL >;
 
-%shared_ptr(SSATikhonovProblemListener)
-%feature("director") SSATikhonovProblemListener;
-%include "inverse/SSATikhonovProblem.hh"
-%template(SSATikhonovSolver) TaoBasicSolver<SSATikhonovProblem>;
 #endif
 
 // Tell SWIG that input arguments of type double * are to be treated as return values,
