@@ -38,7 +38,6 @@
 #include "inverse/SSAForwardProblem.hh"
 #if(PISM_HAS_TAO)
 #include "inverse/TaoUtil.hh"
-#include "inverse/InvSSATikhonov.hh"
 #include "inverse/InvSSATikhonovLCL.hh"
 #include "inverse/SSATikhonovProblem.hh"
 #endif
@@ -551,25 +550,6 @@ namespace std {
 %feature("director") SSATikhonovProblemListener;
 %include "inverse/SSATikhonovProblem.hh"
 %template(SSATikhonovSolver) TaoBasicSolver<SSATikhonovProblem>;
-
-%include "inverse/TikhonovProblem.hh"
-%include "inverse/TikhonovProblemListener.hh"
-%template(InvSSATikhonovProblemListener) TikhonovProblemListener< InvSSATikhonov >;
-%include "inverse/InvSSATikhonov.hh"
-
-%shared_ptr(PythonTikhonovSVListener)
-%feature("director") PythonTikhonovSVListener;
-%include "inverse/PythonTikhonovSVListener.hh"
-%template(InvSSATikhonovProblem) TikhonovProblem<InvSSATikhonov> ;
-%template(InvSSATikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSSATikhonov> >;
-%rename InvSSATikhonovProblem::addListener _addListener;
-%extend TikhonovProblem<InvSSATikhonov>
-{
-  %pythoncode{
-  def addListener(self,l):
-    InvSSATikhonovAddListener(self,l)
-  }
-}
 #endif
 
 // Tell SWIG that input arguments of type double * are to be treated as return values,

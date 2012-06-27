@@ -15,7 +15,6 @@ if(TAO_FOUND)
   set(PISM_INVERSE_SOURCES ${PISM_INVERSE_SOURCES}
   ./TaoUtil.cc
   ./SSATikhonovProblem.cc
-  ./InvSSATikhonov.cc
   ./InvSSATikhonovLCL.cc  
   )
 endif()

@@ -65,11 +65,6 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
     # Subsequent solves will then not need to cache these values.
     self.ssa.cacheQuadPtValues();
 
-    # YUCK
-    inv_method = self.config.get_string('inv_ssa_method');
-    if inv_method.startswith('tikhonov'):
-      self.ssa.set_functionals()
-
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
