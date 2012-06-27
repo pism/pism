@@ -185,21 +185,22 @@ PetscErrorCode InvSSA_LCLTikhonov::evaluateObjectiveAndGradient(TaoSolver /*tao*
   return 0;
 }
 
-Vec InvSSA_LCLTikhonov::formInitialGuess() {
+PetscErrorCode InvSSA_LCLTikhonov::formInitialGuess(Vec *x) {
   PetscErrorCode ierr;
   bool success;
-  ierr = m_d.copy_from(m_dGlobal); //CHKERRQ(ierr);
-  ierr = m_invProblem.linearizeAt(m_d,success); //CHKERRQ(ierr);
-  ierr = m_uGlobal.copy_from(m_invProblem.solution());// CHKERRQ(ierr);
-  ierr = m_uGlobal.scale(1./m_velocityScale); //CHKERRQ(ierr);  
+  ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
+  ierr = m_invProblem.linearizeAt(m_d,success); CHKERRQ(ierr);
+  ierr = m_uGlobal.copy_from(m_invProblem.solution()); CHKERRQ(ierr);
+  ierr = m_uGlobal.scale(1./m_velocityScale); CHKERRQ(ierr);  
   m_uGlobal.set(0);
 
-  m_x->gather(m_dGlobal.get_vec(),m_uGlobal.get_vec()); //CHKERRQ(ierr);
+  ierr = m_x->gather(m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
 
   // This is probably irrelevant.
-  ierr = m_uGlobal.scale(m_velocityScale); //CHKERRQ(ierr);  
+  ierr = m_uGlobal.scale(m_velocityScale); CHKERRQ(ierr);  
 
-  return *m_x;
+  *x =  *m_x;
+  return 0;
 }
 
 PetscErrorCode InvSSA_LCLTikhonov::evaluateConstraints(TaoSolver, Vec x, Vec r) {

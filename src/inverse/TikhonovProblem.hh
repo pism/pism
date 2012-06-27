@@ -207,8 +207,9 @@ public:
     return 0;
   }
   
-  virtual Vec formInitialGuess() {
-    return m_dGlobal.get_vec();
+  virtual PetscErrorCode formInitialGuess(Vec *x) {
+    *x = m_dGlobal.get_vec();
+    return 0;
   }
 protected:
 

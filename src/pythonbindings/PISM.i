@@ -35,12 +35,12 @@
 #include "inverse/L2NormFunctional.hh"
 #include "inverse/H1NormFunctional.hh"
 #include "inverse/MeanSquareFunctional.hh"
+#include "inverse/SSAForwardProblem.hh"
 #if(PISM_HAS_TAO)
 #include "inverse/TaoUtil.hh"
-#include "inverse/InvSchrodTikhonov.hh"
 #include "inverse/InvSSATikhonov.hh"
-#include "inverse/InvSSABasicTikhonov.hh"
 #include "inverse/InvSSA_LCLTikhonov.hh"
+#include "inverse/SSATikhonovProblem.hh"
 #endif
 #include "stressbalance/SSAFD.hh"
 #include "pism_python.hh"
@@ -65,6 +65,11 @@
 %include "petsc4py/petsc4py.i"
 
 %include "pism_exception.i"
+
+%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) PetscErrorCode {
+   $1 = PyInt_Check($input) ? 1 : 0;
+}
+%typemap(directorout) PetscErrorCode %{ $result =  PyInt_AsLong($input); %}
 
 // Automatic conversions between std::string and python string arguments and return values
 %include std_string.i
@@ -537,36 +542,28 @@ namespace std {
 %include "inverse/TaoUtil.hh"
 %include "inverse/TikhonovProblem.hh"
 %include "inverse/TikhonovProblemListener.hh"
-%include "inverse/InvSchrodTikhonov.hh"
 %template(InvSSATikhonovProblemListener) TikhonovProblemListener< InvSSATikhonov >;
 %include "inverse/InvSSATikhonov.hh"
 %include "inverse/InvSSA_LCLTikhonov.hh"
-%template(InvSSABasicTikhonovProblemListener) TikhonovProblemListener< InvSSABasicTikhonov >;
-%include "inverse/InvSSABasicTikhonov.hh"
+%shared_ptr(SSATikhonovProblemListener)
+%feature("director") SSATikhonovProblemListener;
+%include "inverse/SSATikhonovProblem.hh"
+%include "inverse/SSAForwardProblem.hh"
 %shared_ptr(PythonTikhonovSVListener)
 %shared_ptr(PythonLCLTikhonovSVListener)
 %feature("director") PythonTikhonovSVListener;
 %feature("director") PythonLCLTikhonovSVListener;
 %include "inverse/PythonTikhonovSVListener.hh"
-%template(InvSchrodTikhonovProblem) TikhonovProblem<InvSchrodTikhonov> ;
-%template(InvSchrodTikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSchrodTikhonov> >;
 %template(InvSSATikhonovProblem) TikhonovProblem<InvSSATikhonov> ;
 %template(InvSSATikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSSATikhonov> >;
 %template(InvSSA_LCLTikhonovSolver) TaoBasicSolver< InvSSA_LCLTikhonov >;
+%template(SSATikhonovSolver) TaoBasicSolver<SSATikhonovProblem>;
 %rename InvSSATikhonovProblem::addListener _addListener;
 %extend TikhonovProblem<InvSSATikhonov>
 {
   %pythoncode{
   def addListener(self,l):
     InvSSATikhonovAddListener(self,l)
-  }
-}
-%rename InvSSABasicTikhonovProblem::addListener _addListener;
-%extend TikhonovProblem<InvSSABasicTikhonov>
-{
-  %pythoncode{
-  def addListener(self,l):
-    InvSSABasicTikhonovAddListener(self,l)
   }
 }
 %rename InvSSA_LCLTikhonov::addListener _addListener;
@@ -577,8 +574,6 @@ namespace std {
     InvSSALCLTikhonovAddListener(self,l)
   }
 }
-%template(InvSSABasicTikhonovProblem) TikhonovProblem<InvSSABasicTikhonov> ;
-%template(InvSSABasicTikhonovSolver) TaoBasicSolver< TikhonovProblem<InvSSABasicTikhonov> >;
 #endif
 
 // Tell SWIG that input arguments of type double * are to be treated as return values,

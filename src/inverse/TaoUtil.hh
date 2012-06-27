@@ -271,7 +271,9 @@ public:
     m_reasonDescription.clear();
 
     /* Solve the application */ 
-    ierr = TaoSetInitialVector(m_tao, m_problem.formInitialGuess()); CHKERRQ(ierr);
+    Vec x0;
+    ierr = m_problem.formInitialGuess(&x0); CHKERRQ(ierr);
+    ierr = TaoSetInitialVector(m_tao, x0); CHKERRQ(ierr);
     ierr = TaoSolve(m_tao); CHKERRQ(ierr);  
 
     ierr = TaoGetTerminationReason(m_tao, &m_reason); CHKERRQ(ierr);

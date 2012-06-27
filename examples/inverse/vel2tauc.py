@@ -531,7 +531,7 @@ if __name__ == "__main__":
   if do_pause:
     solver.addIterationListener(PISM.invert_ssa.pauseListener)
   # Progress reporting
-  if inv_method.startswith('tikhonov'):
+  if inv_method.startswith('tik'):
     solver.addIterationListener(PISM.invert_ssa.printTikhonovProgress)
   else:
     solver.addIterationListener(PISM.invert_ssa.printRMSMisfit)

@@ -105,7 +105,7 @@ public:
 
   virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient);
   
-  virtual Vec formInitialGuess();
+  virtual PetscErrorCode formInitialGuess(Vec *x);
 
   virtual PetscErrorCode evaluateConstraints(TaoSolver, Vec x, Vec r);
 

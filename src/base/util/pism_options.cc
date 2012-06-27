@@ -614,7 +614,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
  
   // SSA Inversion
 
-  ierr = config.keyword_from_option("inv_method","inv_ssa_method","sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl"); CHKERRQ(ierr);
+  ierr = config.keyword_from_option("inv_method","inv_ssa_method","sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tiknew_lmvm"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("inv_ssa_tauc_param","inv_ssa_tauc_param","ident,trunc,square,exp"); CHKERRQ(ierr);
 
