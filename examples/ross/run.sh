@@ -6,7 +6,7 @@
 #     (can be reduced to '-cfbc -kill_icebergs')
 # -ssa_method fem seems not to work?
 
-NN=4  # default number of processors
+NN=2  # default number of processors
 if [ $# -gt 0 ] ; then  # if user says "run.sh 8" then NN = 8
   NN="$1"
 fi
