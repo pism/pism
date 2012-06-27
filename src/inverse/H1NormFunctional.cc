@@ -34,18 +34,19 @@ PetscErrorCode H1NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) 
   PetscScalar JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
-  // DirichletData dirichletBC;
-  // ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
+  DirichletData dirichletBC;
+  ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
 
   // Loop through all LOCAL elements.
   PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
   for (PetscInt i=xs; i<xs+xm; i++) {
     for (PetscInt j=ys; j<ys+ym; j++) {
+      m_dofmap.reset(i,j,m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(i,j,x_a,x_e);
-      // if(dirichletBC) dirichletBC.update(m_dofmap,x_e);
+      m_dofmap.extractLocalDOFs(x_a,x_e);
+      if(dirichletBC) dirichletBC.updateHomogeneous(m_dofmap,x_e);
       m_quadrature.computeTrialFunctionValues(x_e,x_q,dxdx_q,dxdy_q);
 
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
@@ -56,7 +57,7 @@ PetscErrorCode H1NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) 
 
   ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  // ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
   ierr = x.end_access(); CHKERRQ(ierr);
 
@@ -84,20 +85,25 @@ PetscErrorCode H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, Petsc
   PetscScalar JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
-  // DirichletData dirichletBC;
-  // ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
-
+  DirichletData dirichletBC;
+  ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
+  
   // Loop through all LOCAL elements.
   PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
   for (PetscInt i=xs; i<xs+xm; i++) {
     for (PetscInt j=ys; j<ys+ym; j++) {
+      m_dofmap.reset(i,j,m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(i,j,a_a,a_e);
+      m_dofmap.extractLocalDOFs(a_a,a_e);
+      if(dirichletBC) {
+        dirichletBC.updateHomogeneous(m_dofmap,a_e);
+      }
       m_quadrature.computeTrialFunctionValues(a_e,a_q,dadx_q,dady_q);
 
-      m_dofmap.extractLocalDOFs(i,j,b_a,b_e);
+      m_dofmap.extractLocalDOFs(b_a,b_e);
+      if(dirichletBC) dirichletBC.updateHomogeneous(m_dofmap,b_e);
       m_quadrature.computeTrialFunctionValues(b_e,b_q,dbdx_q,dbdy_q);
 
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
@@ -108,7 +114,7 @@ PetscErrorCode H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, Petsc
 
   ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  // ierr = dirichletBC.finish(); CHKERRQ(ierr);
+  ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
   ierr = a.end_access(); CHKERRQ(ierr);
   ierr = b.end_access(); CHKERRQ(ierr);
@@ -177,5 +183,67 @@ PetscErrorCode H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
   ierr = x.end_access(); CHKERRQ(ierr);
   ierr = gradient.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode H1NormFunctional2S::assemble_form(Mat form) {
+  PetscInt         i,j;
+  PetscErrorCode   ierr;
+
+  // Zero out the Jacobian in preparation for updating it.
+  ierr = MatZeroEntries(form);CHKERRQ(ierr);
+
+  // Jacobian times weights for quadrature.
+  PetscScalar JxW[FEQuadrature::Nq];
+  m_quadrature.getWeightedJacobian(JxW);
+
+  DirichletData zeroLocs;
+  ierr = zeroLocs.init(m_dirichletIndices); CHKERRQ(ierr);
+
+  // Values of the finite element test functions at the quadrature points.
+  // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
+  const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
+
+  // Loop through all the elements.
+  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+           ys = m_element_index.ys, ym = m_element_index.ym;
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+      // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
+      // of freedom per elment, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
+      // entries in the local Jacobian.
+      PetscReal      K[FEQuadrature::Nk][FEQuadrature::Nk];
+
+      // Initialize the map from global to local degrees of freedom for this element.
+      m_dofmap.reset(i,j,m_grid);
+
+      // These values now need to be adjusted if some nodes in the element have
+      // Dirichlet data.
+      if(zeroLocs) zeroLocs.update(m_dofmap);
+
+      // Build the element-local Jacobian.
+      ierr = PetscMemzero(K,sizeof(K));CHKERRQ(ierr);
+      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+        for (PetscInt k=0; k<4; k++) {   // Test functions
+          for (PetscInt l=0; l<4; l++) { // Trial functions
+            const FEFunctionGerm &test_qk=test[q][k];
+            const FEFunctionGerm &test_ql=test[q][l];
+            K[k][l]     += JxW[q]*(m_cL2*test_qk.val*test_ql.val
+              +  m_cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy) );
+          } // l
+        } // k
+      } // q
+      ierr = m_dofmap.addLocalJacobianBlock(&K[0][0],form);
+    } // j
+  } // i
+
+  if(zeroLocs) {
+    ierr = zeroLocs.fixJacobian2S(form); CHKERRQ(ierr);
+  }
+  ierr = zeroLocs.finish(); CHKERRQ(ierr);
+  
+  ierr = MatAssemblyBegin(form,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(form,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
   return 0;
 }

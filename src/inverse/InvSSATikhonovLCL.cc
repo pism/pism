@@ -25,7 +25,7 @@ typedef IceModelVec2V  StateVec;
 // typedef TikhonovProblemListener<InverseProblem> Listener;
 // typedef typename Listener::Ptr ListenerPtr;
 
-InvSSATikhonovLCL::InvSSATikhonovLCL( SSAForwardProblem &ssaforward,
+InvSSATikhonovLCL::InvSSATikhonovLCL( InvSSAForwardProblem &ssaforward,
 InvSSATikhonovLCL::DesignVec &d0, InvSSATikhonovLCL::StateVec &u_obs, PetscReal eta,
 Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),

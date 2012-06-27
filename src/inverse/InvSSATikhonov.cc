@@ -20,7 +20,7 @@
 #include "InvSSATikhonov.hh"
 #include <assert.h>
 
-InvSSATikhonov::InvSSATikhonov( SSAForwardProblem &ssaforward,
+InvSSATikhonov::InvSSATikhonov( InvSSAForwardProblem &ssaforward,
                  DesignVec &d0, StateVec &u_obs, PetscReal eta,
                  Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional ):
                   m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),

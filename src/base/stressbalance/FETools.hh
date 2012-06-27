@@ -444,6 +444,7 @@ public:
   void fixResidualHomogeneous( PISMVector2 **r);
   void fixResidualHomogeneous( PetscReal **r);
   PetscErrorCode fixJacobian2V( Mat J);
+  PetscErrorCode fixJacobian2S( Mat J);
   operator bool() {
     return m_indices != NULL;
   }

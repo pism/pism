@@ -32,6 +32,7 @@ public:
   virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
   virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual PetscErrorCode assemble_form(Mat J);
 
 protected:
 

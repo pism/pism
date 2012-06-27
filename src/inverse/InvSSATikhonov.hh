@@ -21,7 +21,7 @@
 
 #include <tr1/memory>
 
-#include "SSAForwardProblem.hh"
+#include "InvSSAForwardProblem.hh"
 #include "TaoUtil.hh"
 #include "Functional.hh"
 
@@ -53,7 +53,7 @@ public:
   typedef IceModelVec2V StateVec;
   typedef InvSSATikhonovListener Listener;
 
-  InvSSATikhonov( SSAForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
+  InvSSATikhonov( InvSSAForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
                   Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional);
 
   virtual ~InvSSATikhonov();
@@ -97,7 +97,7 @@ protected:
   
   IceGrid *m_grid;
   
-  SSAForwardProblem &m_ssaforward;
+  InvSSAForwardProblem &m_ssaforward;
 
   DesignVec m_dGlobal;
   DesignVec m_d;

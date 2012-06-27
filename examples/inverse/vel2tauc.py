@@ -120,12 +120,6 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
     weight = vecs.vel_misfit_weight
     weight.regrid(self.inv_data_filename,True)
 
-    if PISM.util.fileHasVariable(self.inv_data_filename,'misfit_element_mask'):
-      vecs.add( PISM.util.standardMisfitElementMask(self.grid) )
-      vecs.misfit_element_mask.regrid(self.inv_data_filename,True)
-    else:
-      raise Exception()
-
     zeta_fixed_mask = PISM.IceModelVec2Int()
     zeta_fixed_mask.create(self.grid, 'zeta_fixed_mask', True, self.grid.max_stencil_width);
     zeta_fixed_mask.set_attrs("model_state", "tauc_unchanging integer mask", "", "");
@@ -454,19 +448,14 @@ if __name__ == "__main__":
       PISM.logging.logMessage("option -inv_test_adjoint cannot be used with inverse method %s",solver.method)
       exit(1)
     from PISM.sipletools import PISMLocalVector as PLV
-    d = PISM.sipletools.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL)
-    # If we're fixing some tauc values, we need to ensure that we don't
-    # move in a direction 'd' that changes those values in this test.
-    if vel2tauc.using_zeta_fixed_mask:
-      zeta_fixed_mask = vecs.zeta_fixed_mask
-      with PISM.util.Access(comm=d, nocomm=zeta_fixed_mask):
-        for (i,j) in grid.points():
-          if zeta_fixed_mask[i,j] != 0:
-            d[i,j] = 0;
+    (seed,seed_set) = PISM.optionsIntWasSet("-inv_test_adjoint_seed","")
+    if seed_set:
+      np.random.seed(seed)    
+    d = PLV(PISM.sipletools.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL))
     r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
     forward_problem = solver.forward_problem
-    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),r,3)
-    PISM.logging.logMessage("domainip %g rangeip %g",domainIP,rangeIP)
+    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
+    PISM.logging.logMessage("domainip %.10g rangeip %.10g\n" % (domainIP,rangeIP) )
     exit(0)
 
   vel_ssa_observed = None

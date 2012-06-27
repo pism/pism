@@ -3,7 +3,7 @@
 set( PISM_INVERSE_SOURCES 
 ./InvTaucParameterization.cc
 ./InvSSAForwardProblem.cc
-./SSAForwardProblem.cc
+./InvSSAForwardProblem_dep.cc
 ./Functional.cc
 ./L2NormFunctional.cc
 ./H1NormFunctional.cc

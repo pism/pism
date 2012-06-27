@@ -420,7 +420,7 @@ int PismIntMask(PetscScalar maskvalue) {
 }
 
 DirichletData::DirichletData() : 
-m_indices(NULL), m_values(NULL) {  
+m_indices(NULL), m_values(NULL), m_weight(1) {  
 }
 
 DirichletData::~DirichletData() {
@@ -483,7 +483,7 @@ PetscErrorCode DirichletData::init(IceModelVec2Int *indices ) {
 
   m_values  = NULL;
   m_pValues  = NULL;
-  m_weight  = 0; // Not used, but we'll set it to something irrelevant
+  m_weight  = 1;
   
   m_indices = indices;
   if( m_indices != NULL) {
@@ -565,8 +565,6 @@ void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e ) {
   dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
   for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
     if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
-      PetscInt i, j;
-      dofmap.localToGlobal(k,&i,&j);
       x_e[k].u = 0;
       x_e[k].v = 0;
       // Mark any kind of Dirichlet node as not to be touched
@@ -580,9 +578,7 @@ void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PetscReal* x_e ) {
   dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
   for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
     if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
-      PetscInt i, j;
-      dofmap.localToGlobal(k,&i,&j);
-      x_e = 0;
+      x_e[k] = 0.;
       dofmap.markRowInvalid(k);
       dofmap.markColInvalid(k);
     }
@@ -680,6 +676,29 @@ PetscErrorCode DirichletData::fixJacobian2V(Mat J) {
         // Transpose shows up here!
         row.j = i; row.i = j;
         ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,ident,ADD_VALUES); CHKERRQ(ierr);
+      }
+    }
+  }
+  return 0;
+}
+
+PetscErrorCode DirichletData::fixJacobian2S(Mat J) {
+  PetscInt i,j;
+  PetscErrorCode ierr;
+  IceGrid &grid = *m_indices->get_grid();
+
+  // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
+  // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
+  // columns previously, the symmetry of the Jacobian matrix is preserved.
+
+  const PetscReal ident = m_weight;
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+        MatStencil row;
+        // Transpose shows up here!
+        row.j = i; row.i = j;
+        ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,&ident,ADD_VALUES); CHKERRQ(ierr);
       }
     }
   }

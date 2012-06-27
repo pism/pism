@@ -30,12 +30,12 @@
 #include "exactTestsIJ.h"
 #include "stressbalance/SSAFEM.hh"
 #include "inverse/InvSSAForwardProblem.hh"
+#include "inverse/InvSSAForwardProblem_dep.hh"
 #include "inverse/InvTaucParameterization.hh"
 #include "inverse/Functional.hh"
 #include "inverse/L2NormFunctional.hh"
 #include "inverse/H1NormFunctional.hh"
 #include "inverse/MeanSquareFunctional.hh"
-#include "inverse/SSAForwardProblem.hh"
 #if(PISM_HAS_TAO)
 #include "inverse/TaoUtil.hh"
 #include "inverse/InvSSATikhonov.hh"
@@ -535,7 +535,7 @@ namespace std {
 %include "inverse/MeanSquareFunctional.hh"
 %include "inverse/InvTaucParameterization.hh"
 %include "inverse/InvSSAForwardProblem.hh"
-%include "inverse/SSAForwardProblem.hh"
+%include "inverse/InvSSAForwardProblem_dep.hh"
 
 #if(PISM_HAS_TAO)
 %ignore TaoConvergedReasons;

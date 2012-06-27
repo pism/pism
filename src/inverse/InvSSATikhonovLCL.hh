@@ -25,7 +25,7 @@
 #include <petsc.h>
 #include <tr1/memory>
 #include "iceModelVec.hh"
-#include "SSAForwardProblem.hh"
+#include "InvSSAForwardProblem.hh"
 #include "Functional.hh"
 
 class InvSSATikhonovLCL;
@@ -58,7 +58,7 @@ public:
 
   typedef InvSSATikhonovLCLListener Listener;
   
-  InvSSATikhonovLCL( SSAForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta,
+  InvSSATikhonovLCL( InvSSAForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta,
                       Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional);
 
   virtual ~InvSSATikhonovLCL();
@@ -94,7 +94,7 @@ protected:
   virtual PetscErrorCode construct();
   virtual PetscErrorCode destruct();
 
-  SSAForwardProblem &m_ssaforward;
+  InvSSAForwardProblem &m_ssaforward;
 
   std::auto_ptr<TwoBlockVec> m_x;
 
