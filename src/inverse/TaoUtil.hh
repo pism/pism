@@ -148,14 +148,14 @@ protected:
 
 
 
-template<class Problem>
+template<class Problem, PetscErrorCode (Problem::*Callback)(TaoSolver,Vec,PetscReal*,Vec) >
 class TaoObjGradCallback {
 public:
 
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetObjectiveAndGradientRoutine(tao,
-      TaoObjGradCallback<Problem>::evaluateObjectiveAndGradientCallback,
+      TaoObjGradCallback<Problem,Callback>::evaluateObjectiveAndGradientCallback,
       &p ); CHKERRQ(ierr);
     return 0;
   }
@@ -166,19 +166,10 @@ protected:
                                  Vec x, PetscReal *value, Vec gradient, void *ctx ) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
-    ierr = p->evaluateObjectiveAndGradient(tao,x,value,gradient); CHKERRQ(ierr);
+    ierr = (p->*Callback)(tao,x,value,gradient); CHKERRQ(ierr);
     return 0;
   }
 };
-
-//typedef PetscObjectGuard<TaoSolver,TaoDestroy> TaoSolverGuard;
-typedef enum {
-  kTaoObjectiveCallbackOnly,
-  kTaoObjectiveGradientCallbacksCombined,
-  kTaoObjectiveGradientCallbacksSeparated,
-  kTaoObjectiveGradientHessianCallbacksCombined,
-  kTaoObjectiveGradientHessianCallbacksSeparated
-} TaoBasicCallbackType;
 
 //! \brief An interface for solving an optimization problem with TAO where the
 //! problem itself is defined by a separate Problem class.

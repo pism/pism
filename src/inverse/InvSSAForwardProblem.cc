@@ -45,14 +45,16 @@ PetscErrorCode InvSSAForwardProblem::construct() {
   PetscErrorCode ierr;
   PetscInt stencilWidth = 1;
 
-  m_du_global.create(m_grid,"linearization work vector (sans ghosts)",kNoGhosts,stencilWidth);
-  m_du_local.create(m_grid,"linearization work vector (with ghosts)",kHasGhosts,stencilWidth);
+  ierr = m_dzeta_local.create(m_grid,"d_zeta_local",kHasGhosts,stencilWidth); CHKERRQ(ierr);
+
+  ierr = m_du_global.create(m_grid,"linearization work vector (sans ghosts)",kNoGhosts,stencilWidth); CHKERRQ(ierr);
+  ierr = m_du_local.create(m_grid,"linearization work vector (with ghosts)",kHasGhosts,stencilWidth); CHKERRQ(ierr);
 
   ierr = DMGetMatrix(SSADA, "baij", &m_J_state); CHKERRQ(ierr);
 
   ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
   PetscReal ksp_rtol = 1e-12;
-  ierr = KSPSetTolerances(m_ksp,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+  ierr = KSPSetTolerances(m_ksp,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(m_ksp,&pc); CHKERRQ(ierr);
   ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
@@ -192,7 +194,14 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceM
   ierr = u.get_array(u_a); CHKERRQ(ierr);
 
   PetscReal **dzeta_a;
-  ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
+  IceModelVec2S *dzeta_local;
+  if(dzeta.has_ghosts()) {
+    dzeta_local = &dzeta;
+  } else {
+    ierr = m_dzeta_local.copy_from(dzeta); CHKERRQ(ierr);
+    dzeta_local = &m_dzeta_local;
+  }
+  ierr = dzeta_local->get_array(dzeta_a); CHKERRQ(ierr);
 
   PetscInt         i,j;
 
@@ -256,11 +265,15 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceM
       // Obtain the value of the solution at the nodes adjacent to the element,
       // fix dirichlet values, and compute values at quad pts.
       m_dofmap.extractLocalDOFs(i,j,u_a,u_e);
-      if(dirichletBC) dirichletBC.update(m_dofmap,u_e);
+      if(dirichletBC) {
+        dirichletBC.constrain(m_dofmap);
+        dirichletBC.update(m_dofmap,u_e);
+      }
       m_quadrature.computeTrialFunctionValues(u_e,u_q);
 
       // Compute dzeta at the nodes
       m_dofmap.extractLocalDOFs(i,j,dzeta_a,dzeta_e);
+      if(fixedZeta) fixedZeta.updateHomogeneous(m_dofmap,dzeta_e);
 
       // Compute the change in tau_c with respect to zeta at the quad points.
       m_dofmap.extractLocalDOFs(i,j,zeta_a,zeta_e);
@@ -268,7 +281,6 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceM
         m_tauc_param.toTauc(zeta_e[k],NULL,dtauc_e + k);
         dtauc_e[k]*=dzeta_e[k];
       }
-      if(fixedZeta) fixedZeta.updateHomogeneous(m_dofmap,dtauc_e);
       m_quadrature.computeTrialFunctionValues(dtauc_e,dtauc_q);
 
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
@@ -291,13 +303,13 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceM
     } // j
   } // i
 
-  if(dirichletBC) dirichletBC.fixResidualHomogeneous(du_a);
+  // if(dirichletBC) dirichletBC.fixResidualHomogeneous(du_a);
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
   ierr = fixedZeta.finish(); CHKERRQ(ierr);
 
   ierr = m_zeta->end_access(); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);
-  ierr = dzeta.end_access(); CHKERRQ(ierr);
+  ierr = dzeta_local->end_access(); CHKERRQ(ierr);
 
   return 0;
 }

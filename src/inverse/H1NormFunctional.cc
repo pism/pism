@@ -160,7 +160,10 @@ PetscErrorCode H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(i,j,x_a,x_e);
-      if(dirichletBC) dirichletBC.updateHomogeneous(m_dofmap,x_e);
+      if(dirichletBC) {
+        dirichletBC.constrain(m_dofmap);
+        dirichletBC.updateHomogeneous(m_dofmap,x_e);
+      }
       m_quadrature.computeTrialFunctionValues(x_e,x_q,dxdx_q,dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
@@ -217,9 +220,8 @@ PetscErrorCode H1NormFunctional2S::assemble_form(Mat form) {
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i,j,m_grid);
 
-      // These values now need to be adjusted if some nodes in the element have
-      // Dirichlet data.
-      if(zeroLocs) zeroLocs.update(m_dofmap);
+      // Don't update rows/cols where we project to zero.
+      if(zeroLocs) zeroLocs.constrain(m_dofmap);
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K,sizeof(K));CHKERRQ(ierr);

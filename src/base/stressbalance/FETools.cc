@@ -511,7 +511,7 @@ PetscErrorCode DirichletData::finish() {
   }
   return 0;
 }
-void DirichletData::update( FEDOFMap &dofmap ) {
+void DirichletData::constrain( FEDOFMap &dofmap ) {
   dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
   for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
     if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
@@ -534,9 +534,6 @@ void DirichletData::update( FEDOFMap &dofmap, PISMVector2* x_e ) {
       dofmap.localToGlobal(k,&i,&j);
       x_e[k].u = pValues[i][j].u;
       x_e[k].v = pValues[i][j].v;
-      // Mark any kind of Dirichlet node as not to be touched
-      dofmap.markRowInvalid(k);
-      dofmap.markColInvalid(k);
     }
   }
 }
@@ -553,9 +550,6 @@ void DirichletData::update( FEDOFMap &dofmap, PetscReal* x_e ) {
       PetscInt i, j;
       dofmap.localToGlobal(k,&i,&j);
       x_e[k] = pValues[i][j];
-      // Mark any kind of Dirichlet node as not to be touched
-      dofmap.markRowInvalid(k);
-      dofmap.markColInvalid(k);
     }
   }
 }
@@ -567,9 +561,6 @@ void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e ) {
     if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
       x_e[k].u = 0;
       x_e[k].v = 0;
-      // Mark any kind of Dirichlet node as not to be touched
-      dofmap.markRowInvalid(k);
-      dofmap.markColInvalid(k);
     }
   }
 }
@@ -579,8 +570,6 @@ void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PetscReal* x_e ) {
   for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
     if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
       x_e[k] = 0.;
-      dofmap.markRowInvalid(k);
-      dofmap.markColInvalid(k);
     }
   }
 }

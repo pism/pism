@@ -434,7 +434,7 @@ public:
   PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2V *values, PetscReal weight);
   PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2S *values, PetscReal weight);
   PetscErrorCode init( IceModelVec2Int *indices);
-  void update( FEDOFMap &dofmap );
+  void constrain( FEDOFMap &dofmap );
   void update( FEDOFMap &dofmap, PISMVector2* x_e );
   void update( FEDOFMap &dofmap, PetscReal* x_e );
   void updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e );

@@ -27,119 +27,7 @@ import os, math
 import PISM
 import PISM.invert_ssa
 
-class Vel2Tauc(PISM.ssa.SSAFromInputFile):
-  def __init__(self,input_filename,inv_data_filename):
-    PISM.ssa.SSAFromInputFile.__init__(self,input_filename)
-    self.inv_data_filename = inv_data_filename
-
-  def _setFromOptions(self):
-    PISM.ssa.SSAFromInputFile._setFromOptions(self)
-    for o in PISM.OptionsGroup(PISM.Context().com,"","Vel2Tauc"):
-      self.using_zeta_fixed_mask = PISM.optionsFlag("-use_zeta_fixed_mask","Keep tauc constant except where grounded ice is present",default=True)
-
-  def _initGrid(self):
-    # The implementation in PISM.ssa.SSAFromInputFile uses a non-periodic
-    # grid only if the run is regional and "ssa_method=fem" in the config
-    # file.  For inversions, we always use an FEM type method, so for
-    # regional inversions, we always use a non-periodic grid.
-    periodicity = PISM.XY_PERIODIC
-    if self.is_regional:
-      periodicity=PISM.NOT_PERIODIC
-    PISM.util.init_grid_from_file(self.grid,self.boot_file,periodicity);
-
-  def setup(self):
-
-    PISM.ssa.SSAFromInputFile.setup(self)
-
-    vecs = self.modeldata.vecs
-
-    if vecs.has('vel_bc'):
-      self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
-
-    if vecs.has('zeta_fixed_mask') and self.using_zeta_fixed_mask:
-      self.ssa.set_tauc_fixed_locations(vecs.zeta_fixed_mask)
-
-    self.ssa.init(vecs.asPISMVars())
-
-    # Cache the values of the coefficeints at quadrature points once here.
-    # Subsequent solves will then not need to cache these values.
-    self.ssa.cacheQuadPtValues();
-
-
-  def _initSSACoefficients(self):
-    self._allocStdSSACoefficients()
-    
-    # Read PISM SSA related state variables
-
-    vecs = self.modeldata.vecs
-    thickness = vecs.thickness; bed = vecs.bed; enthalpy = vecs.enthalpy
-    mask = vecs.ice_mask; surface = vecs.surface
-
-    # Read in the PISM state variables that are used directly in the SSA solver
-    for v in [thickness, bed, enthalpy]:
-      v.regrid(self.boot_file,True)
-  
-    # variables mask and surface are computed from the geometry previously read
-    sea_level = 0 # FIXME setFromOption?
-    gc = PISM.GeometryCalculator(sea_level, self.config)
-    gc.compute(bed,thickness,mask,surface)
-
-    if self.is_regional:
-      vecs.add( PISM.util.standardNoModelMask(self.grid), 'no_model_mask' )
-      vecs.no_model_mask.regrid(self.boot_file,True)
-      vecs.add( vecs.surface, 'usurfstore')
-      vecs.setPISMVarsName('usurfstore','usurfstore')
-
-    if self.config.get_flag('ssa_dirichlet_bc'):
-      vecs.add( PISM.util.standard2dVelocityVec( self.grid, name='_ssa_bc', desc='SSA velocity boundary condition',intent='intent' ), "vel_ssa_bc" )
-      has_u_ssa_bc = PISM.util.fileHasVariable(self.boot_file,'u_ssa_bc');
-      has_v_ssa_bc = PISM.util.fileHasVariable(self.boot_file,'v_ssa_bc');
-      if (not has_u_ssa_bc) or (not has_v_ssa_bc):
-        PISM.verbPrintf(2,grid.com, "Input file '%s' missing Dirichlet boundary data u/v_ssa_bc; using zero default instead." % self.boot_file)
-        vecs.vel_ssa_bc.set(0.)
-      else:
-        vecs.vel_ssa_bc.regrid(self.boot_file,True)
-
-      if self.is_regional:
-        vecs.add( vecs.no_model_mask, 'bc_mask')
-      else:
-        vecs.add( PISM.util.standardBCMask( self.grid ), 'bc_mask' )
-        bc_mask_name = vecs.bc_mask.string_attr("name")
-        if PISM.util.fileHasVariable(self.boot_file,bc_mask_name):
-          vecs.bc_mask.regrid(self.boot_file,True)          
-        else:
-          PISM.verbPrintf(2,grid.com,"Input file '%s' missing Dirichlet location mask '%s'.  Default to no Dirichlet locations." %(self.boot_file,bc_mask_name))
-          vecs.bc_mask.set(0)
-      # We call this variable 'bc_mask' in the python code, it is called
-      # 'bcflag' when passed between pism components, and it has yet
-      # another name when written out to a file.  Anyway, we flag its
-      # export to PISMVars name here.
-      vecs.setPISMVarsName('bc_mask','bcflag')
-
-    vecs.add( PISM.util.standardVelocityMisfitWeight(self.grid) )
-    weight = vecs.vel_misfit_weight
-    weight.regrid(self.inv_data_filename,True)
-
-    zeta_fixed_mask = PISM.IceModelVec2Int()
-    zeta_fixed_mask.create(self.grid, 'zeta_fixed_mask', True, self.grid.max_stencil_width);
-    zeta_fixed_mask.set_attrs("model_state", "tauc_unchanging integer mask", "", "");
-    mask_values=[0,1]
-    zeta_fixed_mask.set_attr("flag_values", mask_values);
-    zeta_fixed_mask.set_attr("flag_meanings","tauc_changable tauc_unchangeable");
-    zeta_fixed_mask.output_data_type = PISM.PISM_BYTE;
-    
-    zeta_fixed_mask.set(1);
-    with PISM.util.Access(comm=zeta_fixed_mask,nocomm=mask):
-      mq = PISM.MaskQuery(mask)
-      for (i,j) in self.grid.points():
-        if mq.grounded_ice(i,j):
-          zeta_fixed_mask[i,j] = 0;
-    vecs.add(zeta_fixed_mask)
-
-  def _constructSSA(self):
-    md = self.modeldata
-    self.tauc_param = PISM.invert_ssa.tauc_param_factory.create(self.config)
-    return PISM.invert_ssa.invSSAFactory(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
+class Vel2Tauc(PISM.invert_ssa.InvSSAFromInputFile):
 
   def write(self,filename,append=False):
     if not append:
@@ -150,7 +38,7 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
 
       pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
       pio.open(filename,PISM.NC_WRITE,True) #append mode!
-      
+
       self.modeldata.vecs.write(filename)
       pio.close()
 
@@ -444,19 +332,33 @@ if __name__ == "__main__":
     zeta.copy_from(zeta_prior)
 
   if test_adjoint:
-    if solver.method.startswith('tikhonov'):
+    if solver.method.startswith('tikhonov') and solver.method != 'tikhonov_gn':
       PISM.logging.logMessage("option -inv_test_adjoint cannot be used with inverse method %s",solver.method)
       exit(1)
-    from PISM.sipletools import PISMLocalVector as PLV
-    (seed,seed_set) = PISM.optionsIntWasSet("-inv_test_adjoint_seed","")
-    if seed_set:
-      np.random.seed(seed)    
-    d = PLV(PISM.sipletools.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL))
-    r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
-    forward_problem = solver.forward_problem
-    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
-    PISM.logging.logMessage("domainip %.10g rangeip %.10g\n" % (domainIP,rangeIP) )
-    exit(0)
+
+    if solver.method == 'tikhonov_gn':
+      pass
+    else:
+      import numpy as np
+      (seed,seed_set) = PISM.optionsIntWasSet("-inv_test_adjoint_seed","")
+      if seed_set:
+        np.random.seed(seed+PISM.Context().rank)
+      d = PISM.util.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL)
+      # If we're fixing some tauc values, we need to ensure that we don't
+      # move in a direction 'd' that changes those values in this test.
+      if vel2tauc.using_zeta_fixed_mask:
+        zeta_fixed_mask = vecs.zeta_fixed_mask
+        with PISM.util.Access(comm=d, nocomm=zeta_fixed_mask):
+          for (i,j) in grid.points():
+            if zeta_fixed_mask[i,j] != 0:
+              d[i,j] = 0;
+      r = PISM.util.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL)
+      from PISM.sipletools import PISMLocalVector as PLV
+      forward_problem = solver.forward_problem
+      (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),PLV(r),3)
+      PISM.logging.logMessage("domainip %.10g rangeip %.10g\n" % (domainIP,rangeIP) )
+      PISM.logging.logMessage("relative error %.10g\n" % abs((domainIP-rangeIP)/domainIP))
+      exit(0)
 
   vel_ssa_observed = None
   vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed',stencil_width=2)

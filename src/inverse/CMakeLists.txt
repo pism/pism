@@ -9,6 +9,7 @@ set( PISM_INVERSE_SOURCES
 ./H1NormFunctional.cc
 ./MeanSquareFunctional.cc
 ./TwoBlockVec.cc
+./InvSSATikhonovGN.cc  
 )
 
 if(TAO_FOUND)

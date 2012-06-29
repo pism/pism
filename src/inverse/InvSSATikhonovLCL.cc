@@ -121,7 +121,7 @@ InvSSATikhonovLCL::DesignVec &InvSSATikhonovLCL::designSolution() {
 PetscErrorCode InvSSATikhonovLCL::connect(TaoSolver tao) {
   PetscErrorCode ierr;
   ierr = TaoSetStateDesignIS(tao, m_x->blockBIndexSet() /*state*/ , m_x->blockAIndexSet() /*design*/); CHKERRQ(ierr);
-  ierr = TaoObjGradCallback<InvSSATikhonovLCL>::connect(tao,*this); CHKERRQ(ierr);
+  ierr = TaoObjGradCallback<InvSSATikhonovLCL,&InvSSATikhonovLCL::evaluateObjectiveAndGradient>::connect(tao,*this); CHKERRQ(ierr);
   ierr = TaoLCLCallbacks<InvSSATikhonovLCL>::connect(tao,*this,m_constraints.get_vec(),m_Jstate,m_Jdesign); CHKERRQ(ierr);
   ierr = TaoMonitorCallback<InvSSATikhonovLCL>::connect(tao,*this); CHKERRQ(ierr);
   return 0;

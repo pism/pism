@@ -45,15 +45,10 @@ class PlotListener(PISM.invert_ssa.PlotListener):
         
     zeta = self.toproczero(data.zeta)
     u    = self.toproczero(data.u)
-
     if inv_solver.method.startswith('tikhonov'):
       eta = data.eta
-      if eta>1:
-        sWeight=1
-        dWeight=1/eta
-      else:
-        sWeight=eta
-        dWeight=1
+      sWeight=1
+      dWeight=1/eta
       grad_zeta = self.toproczero(data.grad_zeta)
       grad_u = self.toproczero(data.grad_u)
       grad= self.toproczero(data.grad)

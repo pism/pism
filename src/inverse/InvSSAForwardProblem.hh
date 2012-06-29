@@ -80,6 +80,7 @@ protected:
   IceGrid &m_grid;
 
   IceModelVec2S   *m_zeta;
+  IceModelVec2S   m_dzeta_local;
 
   IceModelVec2Int *m_fixed_tauc_locations;
 

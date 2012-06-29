@@ -62,7 +62,8 @@ InvSSATikhonov::~InvSSATikhonov() {}
 
 PetscErrorCode InvSSATikhonov::connect(TaoSolver tao) {
   PetscErrorCode ierr;
-  ierr = TaoObjGradCallback<InvSSATikhonov>::connect(tao,*this); CHKERRQ(ierr);
+  typedef TaoObjGradCallback<InvSSATikhonov,&InvSSATikhonov::evaluateObjectiveAndGradient> ObjGradCallback; 
+  ierr = ObjGradCallback::connect(tao,*this); CHKERRQ(ierr);
   ierr = TaoMonitorCallback<InvSSATikhonov>::connect(tao,*this); CHKERRQ(ierr);
   ierr = TaoConvergenceCallback<InvSSATikhonov>::connect(tao,*this); CHKERRQ(ierr);
 
