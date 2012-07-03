@@ -269,3 +269,9 @@ if __name__ == "__main__":
   PISM.verbPrintf(1,grid.com,"relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_Td_l2/n_Td_l2,n_d_Td_l1/n_Td_l1,n_d_Td_linf/n_Td_linf) )
   
   PISM.verbPrintf(1,grid.com,"\n")
+
+  d_Td_global = PISM.IceModelVec2V()
+  d_Td_global.create(grid,"",PISM.kNoGhosts)
+  d_Td_global.copy_from(d_Td)
+  d_Td_global.scale(1./n_Td_linf)
+  d_Td_global.get_vec().view(PETSc.Viewer.DRAW())

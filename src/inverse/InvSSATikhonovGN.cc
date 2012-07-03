@@ -63,8 +63,8 @@ PetscErrorCode InvSSATikhonovGN::construct() {
 
   ierr = KSPCreate(grid.com, &m_ksp); CHKERRQ(ierr);
   ierr = KSPSetOptionsPrefix(m_ksp,"inv_gn_"); CHKERRQ(ierr);
-  // PetscReal ksp_rtol = 1e-8; // Soft tolerance
-  // ierr = KSPSetTolerances(m_ksp,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+  PetscReal ksp_rtol = 1e-2; // Soft tolerance
+  ierr = KSPSetTolerances(m_ksp,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
   ierr = KSPSetType(m_ksp,KSPCG); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(m_ksp,&pc); CHKERRQ(ierr);
@@ -104,17 +104,24 @@ PetscErrorCode InvSSATikhonovGN::apply_GN(IceModelVec2S &x,IceModelVec2S &y) {
 PetscErrorCode InvSSATikhonovGN::apply_GN(Vec x, Vec y) {
   PetscErrorCode ierr;
   
-  printf("GN apply!\n");
   // FIXME: Needless copies for now.
   ierr = m_x.copy_from(x); CHKERRQ(ierr);
+  
   
   ierr = m_ssaforward.apply_linearization(m_x,m_tmp_S1); CHKERRQ(ierr);
   ierr = m_stateFunctional.interior_product(m_tmp_S1,m_tmp_S2); CHKERRQ(ierr);
   ierr = m_ssaforward.apply_linearization_transpose(m_tmp_S2,m_y); CHKERRQ(ierr);
+  // ierr = verbPrintf(1,m_comm,"part 1:\n");
+  // ierr = VecView(m_y.get_vec(),PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
 
-  ierr = m_designFunctional.interior_product(m_x,m_tmp_D1); CHKERRQ(ierr);  
+  ierr = m_designFunctional.interior_product(m_x,m_tmp_D1); CHKERRQ(ierr);
+  // ierr = verbPrintf(1,m_comm,"part 2:\n");
+  // ierr = VecView(m_tmp_D1.get_vec(),PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   ierr = m_y.add(1./m_eta,m_tmp_D1);
+
+  // ierr = verbPrintf(1,m_comm,"combined:\n");
+  // ierr = VecView(m_y.get_vec(),PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
   
   ierr = m_y.copy_to(y); CHKERRQ(ierr);
   return 0;
