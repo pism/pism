@@ -45,6 +45,7 @@ set(PISMUTIL_SRC
   base/util/pism_const.cc
   base/util/pism_default_config.cc
   base/util/pism_options.cc
+  base/util/TerminationReason.cc
   base/util/time_options.cc
   base/varcEnthalpyConverter.cc
   )

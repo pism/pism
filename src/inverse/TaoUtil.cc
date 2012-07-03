@@ -17,27 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "TaoUtil.hh"
-const char *TaoConvergedReasonsShifted[] = {
-    " ", " ", 
-    "TAO_DIVERGED_USER",
-    "TAO_DIVERGED_TR_REDUCTION",
-    "TAO_DIVERGED_LS_FAILURE",
-    "TAO_DIVERGED_MAXFCN",
-    "TAO_DIVERGED_NAN",
-    " ",
-    "TAO_DIVERGED_MAXITS",
-    " ",
-    "TAO_CONTINUE_ITERATING",
-    "TAO_CONVERGED_FATOL",
-    "TAO_CONVERGED_FRTOL",
-    "TAO_CONVERGED_GATOL",
-    "TAO_CONVERGED_GRTOL",
-    "TAO_CONVERGED_GTTOL",
-    "TAO_CONVERGED_STEPTOL",
-    "TAO_CONVERGED_MINF",
-    "TAO_CONVERGED_USER" };
-const char *const* TaoConvergedReasons = TaoConvergedReasonsShifted + 10;
-
 
 TaoInitializer::TaoInitializer(int *argc, char ***argv, char *file, char *help) {
   PetscErrorCode ierr = TaoInitialize(argc,argv,file,help);
@@ -73,4 +52,35 @@ TaoInitializer::~TaoInitializer() {
     PetscPrintf(PETSC_COMM_WORLD,"FATAL ERROR: Unable to finalize TAO.");
     PISMEnd();
   }
+}
+
+const char *TaoConvergedReasonsShifted[] = {
+    " ", " ", 
+    "TAO_DIVERGED_USER",
+    "TAO_DIVERGED_TR_REDUCTION",
+    "TAO_DIVERGED_LS_FAILURE",
+    "TAO_DIVERGED_MAXFCN",
+    "TAO_DIVERGED_NAN",
+    " ",
+    "TAO_DIVERGED_MAXITS",
+    " ",
+    "TAO_CONTINUE_ITERATING",
+    "TAO_CONVERGED_FATOL",
+    "TAO_CONVERGED_FRTOL",
+    "TAO_CONVERGED_GATOL",
+    "TAO_CONVERGED_GRTOL",
+    "TAO_CONVERGED_GTTOL",
+    "TAO_CONVERGED_STEPTOL",
+    "TAO_CONVERGED_MINF",
+    "TAO_CONVERGED_USER" };
+const char *const* TaoConvergedReasons = TaoConvergedReasonsShifted + 10;
+
+TAOTerminationReason::TAOTerminationReason( TaoSolverTerminationReason r)  {
+  m_reason = r;
+}
+void TAOTerminationReason::get_description( std::ostream &desc, int indent_level) {
+  for( int i=0; i < indent_level; i++) {
+    desc << sm_indent;
+  }
+  desc << TaoConvergedReasons[m_reason];
 }

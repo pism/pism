@@ -106,14 +106,13 @@ PetscErrorCode InvSSAForwardProblem::set_zeta(IceModelVec2S &new_zeta )
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem::linearize_at( IceModelVec2S &zeta, bool &success) {
+PetscErrorCode InvSSAForwardProblem::linearize_at( IceModelVec2S &zeta, TerminationReason::Ptr &reason) {
 
   PetscErrorCode ierr;
   ierr = this->set_zeta(zeta); CHKERRQ(ierr);
 
-  ierr = this->solve(); CHKERRQ(ierr);
+  ierr = this->solve_nocache(reason); CHKERRQ(ierr);
 
-  success = true;
   return 0;
 }
 

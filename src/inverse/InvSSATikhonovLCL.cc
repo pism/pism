@@ -174,11 +174,14 @@ PetscErrorCode InvSSATikhonovLCL::evaluateObjectiveAndGradient(TaoSolver /*tao*/
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovLCL::formInitialGuess(Vec *x) {
+PetscErrorCode InvSSATikhonovLCL::formInitialGuess(Vec *x,TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
-  bool success;
   ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
-  ierr = m_ssaforward.linearize_at(m_d,success); CHKERRQ(ierr);
+  ierr = m_ssaforward.linearize_at(m_d,reason); CHKERRQ(ierr);
+  if(reason->failed()) {
+    return 0;
+  }
+  
   ierr = m_uGlobal.copy_from(m_ssaforward.solution()); CHKERRQ(ierr);
   ierr = m_uGlobal.scale(1./m_velocityScale); CHKERRQ(ierr);  
 
@@ -188,6 +191,7 @@ PetscErrorCode InvSSATikhonovLCL::formInitialGuess(Vec *x) {
   ierr = m_uGlobal.scale(m_velocityScale); CHKERRQ(ierr);  
 
   *x =  *m_x;
+  reason.reset(new GenericTerminationReason(1,"success"));
   return 0;
 }
 

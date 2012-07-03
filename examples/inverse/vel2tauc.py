@@ -438,11 +438,12 @@ if __name__ == "__main__":
     PISM.logging.logMessage('============== Starting inversion. ==================\n')  
 
   # Try solving
-  if not solver.solveInverse(zeta_prior,vel_ssa_observed,zeta):
-    PISM.logging.logError("Inverse solve FAILURE (%s)!\n" % solver.inverseConvergedReason());
+  reason = solver.solveInverse(zeta_prior,vel_ssa_observed,zeta);
+  if reason.failed():
+    PISM.logging.logError("Inverse solve FAILURE (%s)!\n" % reason.description());
     quit()
-  else:  
-    PISM.logging.logMessage("Inverse solve success (%s)!\n" % solver.inverseConvergedReason());
+
+  PISM.logging.logMessage("Inverse solve success (%s)!\n" % reason.description());
 
   (zeta,u) = solver.inverseSolution()
 

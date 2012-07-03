@@ -27,6 +27,7 @@
 
 #include "PIO.hh"
 #include "Timeseries.hh"
+#include "TerminationReason.hh"
 #include "exactTestsIJ.h"
 #include "stressbalance/SSAFEM.hh"
 #include "inverse/InvSSAForwardProblem.hh"
@@ -205,6 +206,19 @@ namespace std {
          PyList_SetItem($result, i, PyFloat_FromDouble((*$1)[i]));
      }
 }
+
+%shared_ptr(TerminationReason)
+%typemap(in, numinputs=0, noblock=1) std::tr1::shared_ptr<TerminationReason> & OUTPUT(TerminationReason::Ptr temp) {
+  $1 = &temp;
+}
+%typemap(argout,noblock=1) std::tr1::shared_ptr<TerminationReason> & OUTPUT
+{
+  {
+    std::tr1::shared_ptr<  TerminationReason > *smartresult = new std::tr1::shared_ptr<  TerminationReason >(*$1);
+    %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
+  }
+};
+%apply std::tr1::shared_ptr<TerminationReason> & OUTPUT { std::tr1::shared_ptr<TerminationReason> &reason };
 
 %apply vector<PetscInt> & OUTPUT {vector<PetscInt> &result};
 %apply vector<PetscReal> & OUTPUT {vector<PetscReal> &result};
@@ -509,6 +523,11 @@ namespace std {
 
 %include "iceModel.hh"
 
+%shared_ptr(KSPTerminationReason)
+%shared_ptr(SNESTerminationReason)
+%shared_ptr(GenericTerminationReason)
+%include "TerminationReason.hh"
+
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
 %template(PISMDiag_SSA) PISMDiag<SSA>;
@@ -541,6 +560,7 @@ namespace std {
 
 #if(PISM_HAS_TAO)
 %ignore TaoConvergedReasons;
+%shared_ptr(TAOTerminationReason)
 %include "inverse/TaoUtil.hh"
 
 %shared_ptr(InvSSATikhonovListener)

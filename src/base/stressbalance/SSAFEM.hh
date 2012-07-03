@@ -22,7 +22,7 @@
 #include "SSA.hh"
 #include "FETools.hh"
 #include <petscsnes.h>
-
+#include "TerminationReason.hh"
 
 //! Storage for SSA coefficients at a quadrature point.
 struct FEStoreNode {
@@ -105,7 +105,9 @@ protected:
 
   virtual PetscErrorCode solve();
 
-  virtual PetscErrorCode solve_nocache();
+  virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
+
+  virtual PetscErrorCode solve_nocache(TerminationReason::Ptr &reason);
   
   virtual PetscErrorCode setFromOptions();
 

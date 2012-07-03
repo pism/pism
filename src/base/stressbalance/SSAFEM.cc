@@ -135,15 +135,39 @@ PetscErrorCode SSAFEM::solve()
 
   // Set up the system to solve (store coefficient data at the quadrature points):
   ierr = cacheQuadPtValues(); CHKERRQ(ierr);
+
+  TerminationReason::Ptr reason;
+  ierr = solve_nocache(reason); CHKERRQ(ierr);
+  if(reason->failed())
+  {
+    SETERRQ1(grid.com, 1,
+    "SSAFEM solve failed to converge (SNES reason %s)\n\n", reason->description().c_str());
+  }
+  else if(getVerbosityLevel() > 2)
+  {
+    stdout_ssa += "SSAFEM converged (SNES reason ";
+    stdout_ssa += reason->description();
+    stdout_ssa += ")\n";
+  }
   
-  ierr = solve_nocache(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode SSAFEM::solve(TerminationReason::Ptr &reason)
+{
+  PetscErrorCode ierr;
+
+  // Set up the system to solve (store coefficient data at the quadrature points):
+  ierr = cacheQuadPtValues(); CHKERRQ(ierr);
+
+  ierr = solve_nocache(reason); CHKERRQ(ierr);
   
   return 0;
 }
 
 //! Solve the SSA without first recomputing the values of coefficients at quad
 //! points.  See the disccusion of SSAFEM::solve for more discussion.
-PetscErrorCode SSAFEM::solve_nocache()
+PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason)
 {
   PetscErrorCode ierr;
   PetscViewer    viewer;
@@ -183,18 +207,11 @@ PetscErrorCode SSAFEM::solve_nocache()
   ierr = SNESSolve(snes,NULL,SSAX);CHKERRQ(ierr);
 
   // See if it worked.
-  SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason( snes, &reason); CHKERRQ(ierr);
-  if(reason < 0)
-  {
-    SETERRQ1(grid.com, 1,
-      "SSAFEM solve failed to converge (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
-  }
-  else if(getVerbosityLevel() > 2)
-  {
-    stdout_ssa += "SSAFEM converged (SNES reason ";
-    stdout_ssa += SNESConvergedReasons[reason];
-    stdout_ssa += ")\n";
+  SNESConvergedReason snes_reason;
+  ierr = SNESGetConvergedReason( snes, &snes_reason); CHKERRQ(ierr);
+  reason.reset(new SNESTerminationReason(snes_reason));
+  if(reason->failed()) {
+    return 0;
   }
 
   // Extract the solution back from SSAX to velocity and communicate.

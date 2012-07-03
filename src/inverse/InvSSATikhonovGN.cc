@@ -18,6 +18,7 @@
 
 #include "InvSSATikhonovGN.hh"
 #include <assert.h>
+#include "TerminationReason.hh"
 
 InvSSATikhonovGN::InvSSATikhonovGN( InvSSAForwardProblem &ssaforward,
 DesignVec &d0, StateVec &u_obs, PetscReal eta,
@@ -88,10 +89,9 @@ PetscErrorCode InvSSATikhonovGN::destruct() {
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::init() {
+PetscErrorCode InvSSATikhonovGN::init(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
-  bool success;
-  ierr = m_ssaforward.linearize_at(m_d0,success); CHKERRQ(ierr);
+  ierr = m_ssaforward.linearize_at(m_d0,reason); CHKERRQ(ierr);
   return 0;
 }
 
@@ -139,14 +139,13 @@ PetscErrorCode InvSSATikhonovGN::assemble_GN_rhs(DesignVec &rhs) {
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::solve() {
+PetscErrorCode InvSSATikhonovGN::solve_linearized(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
   ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);
   ierr = m_d_diff.add(-1,m_d0); CHKERRQ(ierr);
   
-  bool success;
-  ierr = m_ssaforward.linearize_at(m_d0,success); CHKERRQ(ierr);
+  ierr = m_ssaforward.linearize_at(m_d0,reason); CHKERRQ(ierr);
   ierr = m_u_diff.copy_from(m_ssaforward.solution()); CHKERRQ(ierr);
   ierr = m_u_diff.add(-1,m_u_obs); CHKERRQ(ierr);
   
@@ -155,13 +154,18 @@ PetscErrorCode InvSSATikhonovGN::solve() {
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
   ierr = KSPSolve(m_ksp,m_GN_rhs.get_vec(),m_dGlobal.get_vec()); CHKERRQ(ierr);
 
-  KSPConvergedReason reason;
-  ierr = KSPGetConvergedReason(m_ksp,&reason); CHKERRQ(ierr);
-  if(reason<0) {
-    SETERRQ1(m_comm,1,"InvSSATikhonovGN::solve KSP failed %d\n",reason);    
-  }
+  KSPConvergedReason ksp_reason;
+  ierr = KSPGetConvergedReason(m_ksp,&ksp_reason); CHKERRQ(ierr);
 
   ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
 
+  reason.reset( new KSPTerminationReason(ksp_reason) );
+
+  return 0;
+}
+
+PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
+  PetscErrorCode ierr;
+  ierr = this->solve_linearized(reason); CHKERRQ(ierr);
   return 0;
 }

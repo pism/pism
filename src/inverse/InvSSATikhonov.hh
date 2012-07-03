@@ -86,8 +86,9 @@ public:
 
   virtual PetscErrorCode getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi); 
 
-  virtual PetscErrorCode formInitialGuess(Vec *v) {
+  virtual PetscErrorCode formInitialGuess(Vec *v, TerminationReason::Ptr & reason) {
     *v = m_dGlobal.get_vec();
+    reason.reset(new GenericTerminationReason(1,"success"));
     return 0;
   }
 

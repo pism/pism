@@ -22,6 +22,7 @@
 #include <tao.h>
 #include <string>
 #include "pism_const.hh"
+#include "TerminationReason.hh"
 
 extern const char *const* TaoConvergedReasons;
 
@@ -32,6 +33,13 @@ public:
   TaoInitializer(int *argc, char ***argv);
   ~TaoInitializer();
 private:
+};
+
+
+class TAOTerminationReason: public TerminationReason {
+public:
+  TAOTerminationReason( TaoSolverTerminationReason r);
+  virtual void get_description( std::ostream &desc,int indent_level=0);
 };
 
 template<class Problem>
@@ -255,33 +263,26 @@ public:
     }
   };
 
-  virtual PetscErrorCode solve(bool &success) {
+  virtual PetscErrorCode solve(TerminationReason::Ptr &reason) {
     PetscErrorCode ierr;
-    m_success=false; 
-    m_reason = TAO_CONTINUE_ITERATING;
-    m_reasonDescription.clear();
 
     /* Solve the application */ 
     Vec x0;
-    ierr = m_problem.formInitialGuess(&x0); CHKERRQ(ierr);
+    ierr = m_problem.formInitialGuess(&x0,reason); CHKERRQ(ierr);
+    if(reason->failed()) {
+      TerminationReason::Ptr root_cause = reason;
+      reason.reset(new GenericTerminationReason(-1,"Unable to form initial guess"));
+      reason->set_root_cause(root_cause);
+      return 0;
+    }
     ierr = TaoSetInitialVector(m_tao, x0); CHKERRQ(ierr);
     ierr = TaoSolve(m_tao); CHKERRQ(ierr);  
 
-    ierr = TaoGetTerminationReason(m_tao, &m_reason); CHKERRQ(ierr);
+    TaoSolverTerminationReason tao_reason;
+    ierr = TaoGetTerminationReason(m_tao, &tao_reason); CHKERRQ(ierr);
+    reason.reset(new TAOTerminationReason(tao_reason));
 
-    if(m_reason>0){
-      m_success = true;
-    } 
-    m_reasonDescription = TaoConvergedReasons[m_reason];
-    success =  m_success;
     return 0;
-  }
-
-  virtual TaoSolverTerminationReason reason() {
-    return m_reason;
-  }
-  virtual std::string const &reasonDescription() {
-    return m_reasonDescription;
   }
 
   virtual Problem &problem() {
@@ -310,10 +311,6 @@ protected:
   MPI_Comm m_comm;
   TaoSolver m_tao;
   Problem  &m_problem;
-
-  bool m_success;
-  TaoSolverTerminationReason m_reason;
-  std::string m_reasonDescription;
 };
 
 template<class Problem>

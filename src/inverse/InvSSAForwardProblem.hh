@@ -49,7 +49,7 @@ public:
 
   PetscErrorCode set_zeta( IceModelVec2S &zeta);
 
-  PetscErrorCode linearize_at( IceModelVec2S &zeta, bool &success);
+  PetscErrorCode linearize_at( IceModelVec2S &zeta, TerminationReason::Ptr &reason);
 
   PetscErrorCode assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
   PetscErrorCode assemble_residual(IceModelVec2V &u, Vec R);

@@ -40,3 +40,9 @@ void SNESTerminationReason::get_description( std::ostream &desc,int indent_level
   desc << SNESConvergedReasons[m_reason];
 }
 
+void GenericTerminationReason::get_description( std::ostream &desc,int indent_level) {
+  for( int i=0; i < indent_level; i++) {
+    desc << sm_indent;
+  }
+  desc << m_description;
+}

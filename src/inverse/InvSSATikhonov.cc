@@ -139,14 +139,15 @@ PetscErrorCode InvSSATikhonov::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec 
 PetscErrorCode InvSSATikhonov::evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient) {
   PetscErrorCode ierr;
 
-  (void) tao;
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
   ierr = m_d.copy_from(x); CHKERRQ(ierr);
 
-  bool success;
-  ierr = m_ssaforward.linearize_at(m_d, success); CHKERRQ(ierr);
-  if(!success) {
-    SETERRQ(m_grid->com,1,"Failure in InvSSATikhonov forward solve.");
+  TerminationReason::Ptr reason;
+  ierr = m_ssaforward.linearize_at(m_d, reason); CHKERRQ(ierr);
+  if(reason->failed()) {
+    ierr = verbPrintf(2,m_grid->com,"InvSSATikhonov::evaluateObjectiveAndGradient failure in forward solve\n%s\n",reason->description().c_str()); CHKERRQ(ierr);
+    ierr = TaoSetTerminationReason(tao,TAO_DIVERGED_USER); CHKERRQ(ierr);
+    return 0;
   }
 
   ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);

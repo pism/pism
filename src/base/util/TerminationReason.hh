@@ -27,6 +27,7 @@
 
 class TerminationReason {
 public:
+  TerminationReason() :m_reason(0) {};
   
   typedef std::tr1::shared_ptr<TerminationReason> Ptr;
   
@@ -34,19 +35,17 @@ public:
     return m_reason;
   };
 
-  virtual std::string &description() {
+  virtual std::string description() {
     std::stringstream sdesc;
     this->get_description(sdesc);
-    m_description = sdesc.str();
-    return m_description;
+    return sdesc.str();
   }
   virtual void get_description( std::ostream &desc,int indent_level=0) = 0;
 
-  virtual std::string &nested_description() {
+  virtual std::string nested_description() {
     std::stringstream sdesc;
     this->get_nested_description(sdesc);
-    m_description = sdesc.str();
-    return m_description;
+    return sdesc.str();
   }
   virtual void get_nested_description( std::ostream &desc,int indent_level=0) {
     this->get_description(desc,indent_level);
@@ -58,21 +57,33 @@ public:
   }
 
   virtual bool has_root_cause() {
-    return false;
+    return m_root_cause;
   };
 
   TerminationReason::Ptr root_cause() {
-    return TerminationReason::Ptr(); // NULL
+    return m_root_cause;
   };
+
+  void set_root_cause(TerminationReason::Ptr cause) {
+    m_root_cause = cause;
+  }
   
   bool succeeded() {
     return (this->reason())>0;
   }
   
+  bool failed() {
+    return (this->reason())<0;
+  }
+  
 protected:
-  std::string m_description;
   int m_reason;
+  TerminationReason::Ptr m_root_cause;
   static const char *sm_indent;
+
+private:
+  TerminationReason(TerminationReason const &reason);
+  TerminationReason &operator =(TerminationReason const &reason);
 };
 
 class KSPTerminationReason: public TerminationReason {
@@ -87,5 +98,21 @@ public:
   virtual void get_description( std::ostream &desc,int indent_level=0);
 };
 
+class GenericTerminationReason: public TerminationReason {
+public:
+  GenericTerminationReason(int code, std::string &desc) :
+  m_description(desc) {
+    m_reason = code;
+  };
+
+  GenericTerminationReason(int code, const char*desc) :
+  m_description(desc) {
+    m_reason = code;
+  };
+  
+  virtual void get_description( std::ostream &desc, int indent_level=0); 
+protected:
+  std::string m_description;
+};
 
 #endif /* end of include guard: TERMINATIONREASON_HH_JW17MC8V */

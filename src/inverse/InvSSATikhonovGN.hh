@@ -22,6 +22,7 @@
 #include "iceModelVec.hh"
 #include "InvSSAForwardProblem.hh"
 #include "Functional.hh"
+#include "TerminationReason.hh"
 
 template<class C,PetscErrorCode (C::*MultiplyCallback)(Vec,Vec) >
 class MatrixMultiplyCallback {
@@ -71,8 +72,9 @@ public:
 
   virtual PetscErrorCode assemble_GN_rhs(DesignVec &out);
 
-  virtual PetscErrorCode init();
-  virtual PetscErrorCode solve();
+  virtual PetscErrorCode init(TerminationReason::Ptr &reason);
+  virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
+  virtual PetscErrorCode solve_linearized(TerminationReason::Ptr &reason);
 
 protected:
 

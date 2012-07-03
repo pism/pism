@@ -10,7 +10,6 @@ set( PISM_INVERSE_SOURCES
 ./MeanSquareFunctional.cc
 ./TwoBlockVec.cc
 ./InvSSATikhonovGN.cc  
-./TerminationReason.cc
 )
 
 if(TAO_FOUND)
