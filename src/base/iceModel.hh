@@ -110,8 +110,8 @@ class IceModel {
   friend class IceModel_max_diffusivity;
   friend class IceModel_surface_flux;
   friend class IceModel_cumulative_surface_flux;
-  friend class IceModel_basal_flux;
-  friend class IceModel_cumulative_basal_flux;
+  friend class IceModel_grounded_basal_flux;
+  friend class IceModel_cumulative_grounded_basal_flux;
   friend class IceModel_sub_shelf_flux;
   friend class IceModel_cumulative_sub_shelf_flux;
   friend class IceModel_nonneg_flux;
@@ -262,7 +262,7 @@ protected:
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, dt_from_eigencalving,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
-    cumulative_basal_ice_flux,
+    cumulative_grounded_basal_ice_flux,
     cumulative_float_kill_flux,
     cumulative_discharge_flux,
     cumulative_nonneg_rule_flux,

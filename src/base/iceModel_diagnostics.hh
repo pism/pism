@@ -318,19 +318,19 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
-//! \brief Reports the total basal ice flux.
-class IceModel_basal_flux : public PISMTSDiag<IceModel>
+//! \brief Reports the total basal ice flux over the grounded region.
+class IceModel_grounded_basal_flux : public PISMTSDiag<IceModel>
 {
 public:
-  IceModel_basal_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  IceModel_grounded_basal_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
-//! \brief Reports the cumulative total basal ice flux.
-class IceModel_cumulative_basal_flux : public PISMTSDiag<IceModel>
+//! \brief Reports the cumulative total basal ice flux over the grounded region.
+class IceModel_cumulative_grounded_basal_flux : public PISMTSDiag<IceModel>
 {
 public:
-  IceModel_cumulative_basal_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  IceModel_cumulative_grounded_basal_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 

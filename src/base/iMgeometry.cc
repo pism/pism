@@ -221,7 +221,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
   PetscScalar
     // totals over the processor's domain:
-    my_basal_ice_flux = 0,
+    my_grounded_basal_ice_flux = 0,
     my_float_kill_flux = 0,
     my_nonneg_rule_flux = 0,
     my_ocean_kill_flux = 0,
@@ -229,7 +229,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
     my_surface_ice_flux = 0,
     // totals over all processors:
     sub_shelf_ice_flux = 0,
-    basal_ice_flux = 0,
+    grounded_basal_ice_flux = 0,
     float_kill_flux = 0,
     nonneg_rule_flux = 0,
     ocean_kill_flux = 0,
@@ -414,7 +414,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
           // basal mass flux accounting: always count freeze-on, count melt if
           // there will be ice to melt (due to flow)
           if (vbmr(i, j) < 0 || there_is_ice_due_to_flow)
-            my_basal_ice_flux -= vbmr(i, j); // note the "-="
+            my_grounded_basal_ice_flux -= vbmr(i, j); // note the "-="
 
         }
       }
@@ -486,7 +486,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // flux accounting
   {
-    ierr = PISMGlobalSum(&my_basal_ice_flux,     &basal_ice_flux,     grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&my_grounded_basal_ice_flux,     &grounded_basal_ice_flux,     grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&my_float_kill_flux,    &float_kill_flux,    grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&my_nonneg_rule_flux,   &nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&my_ocean_kill_flux,    &ocean_kill_flux,    grid.com); CHKERRQ(ierr);
@@ -498,7 +498,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
     // these are computed using accumulation/ablation or melt rates, so we need
     // to multiply by dt
-    cumulative_basal_ice_flux     += basal_ice_flux     * factor * dt;
+    cumulative_grounded_basal_ice_flux += grounded_basal_ice_flux * factor * dt;
     cumulative_sub_shelf_ice_flux += sub_shelf_ice_flux * factor * dt;
     cumulative_surface_ice_flux   += surface_ice_flux   * factor * dt;
     // these are computed using ice thickness and are "cumulative" already
