@@ -82,7 +82,7 @@ if (NOT Pism_MANUAL_BUILD)
 
   find_package(TAO)
   if (NOT TAO_FOUND)
-    message(WARNING  "TAO not found. Inverse solvers using the TAO library will not be built.")
+    message(STATUS  "TAO not found. Inverse solvers using the TAO library will not be built.")
   endif()
 
 else ()
@@ -230,7 +230,7 @@ if (TAO_FOUND)
   list (APPEND Pism_EXTERNAL_LIBS ${TAO_LIBRARIES})
   add_definitions (-DPISM_HAS_TAO=1)
 else()
-add_definitions (-DPISM_HAS_TAO=0)
+  add_definitions (-DPISM_HAS_TAO=0)
 endif()
 
 add_custom_target (etags
