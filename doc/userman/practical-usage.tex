@@ -163,8 +163,7 @@ using this information, grid parameters, and the WGS84 reference ellipsoid. This
     \toprule
     \textbf{Name} & \textbf{Units} & \textbf{Description}\\
     \midrule
-    \texttt{basal_ice_flux} & \textsl{kg  / s} &  total basal ice flux \\
-    \texttt{cumulative_basal_ice_flux} & \textsl{kg} &  cumulative total basal ice flux \\
+    \texttt{cumulative_grounded_basal_ice_flux} & \textsl{kg} &  cumulative total grounded basal ice flux \\
     \texttt{cumulative_discharge_flux} & \textsl{kg} &  cumulative discharge (calving etc.) flux \\
     \texttt{cumulative_float_kill_flux} & \textsl{kg} &  cumulative \texttt{-float_kill} flux \\
     \texttt{cumulative_nonneg_rule_flux} & \textsl{kg} &  cumulative \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
@@ -176,6 +175,7 @@ using this information, grid parameters, and the WGS84 reference ellipsoid. This
     \texttt{divoldt} & \textsl{$m^{3}$  / s} &  total ice volume rate of change \\
     \texttt{dt} & \textsl{second} &  mass continuity time step \\
     \texttt{float_kill_flux} & \textsl{kg  / s} &  \texttt{-float_kill} flux \\
+    \texttt{grounded_basal_ice_flux} & \textsl{kg  / s} &  total, over grounded ice, of basal ice flux \\
     \texttt{iarea} & \textsl{$m^{2}$} &  total ice area \\
     \texttt{iareacold} & \textsl{$m^{2}$} &  ice-covered area where basal ice is cold \\
     \texttt{iareacoldf} & \textsl{1} &  fraction of ice-covered area where basal ice is cold \\

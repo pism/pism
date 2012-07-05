@@ -108,7 +108,7 @@ void IceModel::reset_counters() {
   maxdt_temporary = dt = dt_force = 0.0;
   skipCountDown = 0;
 
-  cumulative_basal_ice_flux = 0;
+  cumulative_grounded_basal_ice_flux = 0;
   cumulative_float_kill_flux = 0;
   cumulative_discharge_flux = 0;
   cumulative_nonneg_rule_flux = 0;
