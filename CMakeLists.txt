@@ -190,7 +190,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
-    CACHE PATH "Python extension module installation directory." FORCE)
+    CACHE PATH "Python extension module installation directory." )
 endif ()
 
 if (${FFTW_FOUND})
