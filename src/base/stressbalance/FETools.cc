@@ -582,7 +582,7 @@ void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PetscReal* x_e ) {
     if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
       PetscInt i, j;
       dofmap.localToGlobal(k,&i,&j);
-      x_e = 0;
+      x_e[k] = 0.;
       dofmap.markRowInvalid(k);
       dofmap.markColInvalid(k);
     }

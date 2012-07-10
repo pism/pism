@@ -47,7 +47,10 @@ public:
              PetscReal objectiveValue, PetscReal designValue,
              DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
              StateVec &u,   StateVec &diff_u,  StateVec &grad_u,
-             StateVec &constraints) { 
+             StateVec &constraints) {
+               (void) problem; (void) eta; (void) d; 
+               (void) diff_d; (void) grad_d; (void) u;
+               (void) diff_u; (void) grad_u; (void) constraints;
                printf("Iteration %d: objValue %g designValue %g\n",iter,objectiveValue,designValue);
                return 0;};
 };
@@ -62,6 +65,7 @@ public:
              DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
              StateVec &u,   StateVec &diff_u,  StateVec &grad_u,
              StateVec &constraints) { 
+    (void) problem;
     m_core->iteration(iter,eta,objectiveValue,designValue,d,diff_d,grad_d,
       u,diff_u,grad_u,constraints);
     return 0;
