@@ -276,7 +276,11 @@ Once done, see \ref{subsec:prereq-petsc} to install PETSc from source and then
   case the path to the MPI directory will be used when installing PETSc below.
   Otherwise we recommend that you allow PETSc to download
   \href{http://www-unix.mcs.anl.gov/mpi/mpich2/}{MPICH2} as part of the PETSc
-  configure process (next). In either case, once MPI is installed, you will
+  configure process (next).  The goal is to have the PETSc installation use the
+  same version of MPI which is called by the \texttt{mpiexec} or \texttt{mpirun}
+  executable.
+
+  In fact, once MPI is installed, you will
   want to add the MPI \texttt{bin} directory to your path so that you can
   invoke MPI using the \texttt{mpiexec} or \texttt{mpirun} command. For
   example, you can add it with the statement
@@ -590,7 +594,8 @@ Open MPI or MPICH-2 via MacPorts.)
 \item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}
 
-\subsection{If it still does not work}
+
+\subsection{Common build problems and solutions (i.e.~if it still does not work \dots)}
 \label{subsec:config}
 
 We recommend using \texttt{ccmake}, the text-based CMake interface to adjust
@@ -602,7 +607,11 @@ Here are some issues we know about.
 \begin{itemize}
 \item Sometimes it is necessary to set \texttt{GSL_CBLAS_LIB} using
   \texttt{cmake -Dvariable=value} mechanism if installation fails at the
-  linking stage.
+  linking stage, or by using the ``advanced'' mode in \texttt{ccmake}.
+  The symptom may be build error messages like
+\begin{verbatim}
+/usr/lib/../../../../lib/libgsl.so: undefined reference to `cblas_xxx'
+\end{verbatim}
 \item Sometimes, if a system has more than one MPI installation CMake finds the
   wrong one. To tell it which one to use, set \texttt{MPI_LIBRARY} and related
   variables by using \texttt{ccmake} or editing \texttt{CMakeCache.txt} in the
@@ -627,6 +636,8 @@ $  CC=mpicc CXX=mpicxx cmake path/to/pism-source
   tell CMake not to try to link to shared libraries, set
   \texttt{Pism_LINK_STATICALLY} to \texttt{ON} using \texttt{ccmake}.
 \end{itemize}
+
+
 
 \section{Quick tests of the installation}
 Once you're done with the installation, a few tests can confirm that PISM is functioning correctly.
@@ -665,17 +676,18 @@ $ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,csurf -display :0
 \noindent Also \texttt{-draw_pause 0.1} or similar may be needed if the figures
 are refreshing too fast.
 
-\item Run a basic suite of software tests: \footnote{Note that these tests use
-    NCO and depend on Python packages \texttt{numpy} and
-    \texttt{netcdf4-python}}
+\item Run a basic suite of software tests.  To do this, you need to be in PISM's
+build directory, and the cmake flag \texttt{Pism_BUILD_EXTRA_EXECS} should be
+\texttt{ON}.  Then do:
 \begin{verbatim}
 $ make test
 \end{verbatim}
-
-  (You need to be in PISM's build directory.)
-
-  \noindent Feel free to email us about failed tests, etc.:
-  \href{mailto:help@pism-docs.org}{help@pism-docs.org}.
+The message at the bottom should say ``\texttt{100\% tests passed, 0 tests
+failed out of XX}'' or similar.  These tests use NCO they require
+Python packages \texttt{numpy} and \texttt{netcdf4-python}.  Feel free to
+send the output of \texttt{make test} to
+\href{mailto:help@pism-docs.org}{help@pism-docs.org} if any failed tests cannot
+be resolved.
 \end{enumerate}
 
 \subsubsection*{Next steps}
