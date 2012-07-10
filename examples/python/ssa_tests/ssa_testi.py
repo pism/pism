@@ -19,10 +19,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-import sys, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
-
 import PISM, math
 
 m_schoof = 10;        # (pure number)

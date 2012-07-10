@@ -18,12 +18,8 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-
-import sys, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
-import PISM, math, time
-
+import PISM
+import math, time
 
 # The main code for a run follows:
 if __name__ == '__main__':

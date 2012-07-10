@@ -18,10 +18,9 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import sys, os, math, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
 import PISM
+import sys, os, math
+from petsc4py import PETSc
 
 class BasalTillStrength:
   def __init__(self,grid,ice_rho,standard_gravity):

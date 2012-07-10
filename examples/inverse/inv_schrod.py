@@ -1,9 +1,6 @@
-import sys, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
 import PISM
 import PISM.invert_ssa
-import math
+import sys,math
 import numpy as np
 import matplotlib.pyplot as pp
 
