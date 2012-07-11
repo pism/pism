@@ -6,6 +6,7 @@ build/
 *.o
 *.petsc
 *.petsc.info
+*.pyc
 out.*
 examples/**/*.png
 examples/**/*.zip
