@@ -10,7 +10,7 @@ My="$3"
 PREFILE="$4"
 
 if [ $# -lt 4 ] ; then  
-  echo "century.sh ERROR: needs three arguments"
+  echo "century.sh ERROR: needs four arguments"
   exit
 fi
 
@@ -60,14 +60,15 @@ PHYS="-ocean_kill $BOOT -cfbc -kill_icebergs -topg_to_phi 5.0,30.0,-300.0,700.0 
 SKIP=10
 
 LENGTH=100   # model years
-EXDT=1       # 1 year between saves, thus 100 frames
 
-# recommended if sufficient memory
-Mz=401
-Mbz=101
+Mz=201
+Mbz=51
+# strongly recommended if sufficient memory:
+#Mz=401
+#Mbz=101
 
 echo
-cmd="$PISM_MPIDO $NN $PISM -boot_file $BOOT  \
+cmd="$PISM_MPIDO $NN $PISM_EXEC -boot_file $BOOT  \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz $Mz -Mbz $Mbz -z_spacing equal \
   -no_model_strip 10 $PHYS \
   -ssa_dirichlet_bc -regrid_file $PREFILE -regrid_vars thk,Href,bmelt,bwat,enthalpy,litho_temp,vel_ssa_bc \
@@ -75,11 +76,11 @@ cmd="$PISM_MPIDO $NN $PISM -boot_file $BOOT  \
 $PISM_DO $cmd
 
 echo
-cmd="$PISM_MPIDO $NN $PISM -i jakofine_short.nc \
+cmd="$PISM_MPIDO $NN $PISM_EXEC -i jakofine_short.nc \
   -no_model_strip 10 $PHYS \
-  -extra_file ex_jakofine.nc -extra_times -$LENGTH:$EXDT:0 \
+  -extra_file ex_jakofine.nc -extra_times 0:yearly:$LENGTH \
   -extra_vars thk,cbase,bwp,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
-  -ts_file ts_jakofine.nc -ts_times -$LENGTH:monthly:0 \
+  -ts_file ts_jakofine.nc -ts_times 0:monthly:$LENGTH \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars vel_ssa_bc \
   $CLIMATE -ys 0 -ye $LENGTH -skip -skip_max $SKIP -o jakofine.nc"
 $PISM_DO $cmd

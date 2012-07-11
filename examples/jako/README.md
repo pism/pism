@@ -209,22 +209,24 @@ regional model.  (For instance, the intention may be to study equilibrium states
 with model settings special to the region.)  Here we assume that more
 spin-up is needed.  We will get first an equilibrium 5km model, and then do a
 century run of a 2km model based on the equilibriated 5km result.
-(Determining "equilibrium" requires a decision, of course.  The standard here
-is that the ice volume in the region should not change more than one percent
-in 100 model years.  See `ivol` in `ts_spunjako_0.nc` below.)
+(Determining "equilibrium" requires a decision, of course.  A standard
+satisfied here is that the ice volume in the region changes by less than 0.1
+percent in the final 100 model years.  See `ivol` in `ts_spunjako_0.nc` below.)
 
 Quick calculations for the 5km grid, e.g. by calculations
 `620/5 + 1` and `425/5 + 1`, suggest `-Mx 125 -My 86`.
-So now we do a basic run using 2 MPI processes:
+So now we do a basic run using 4 MPI processes:
 
-    $ ./spinup.sh 2 125 86 >> out.spin5km &
+    $ ./spinup.sh 4 125 86 >> out.spin5km &
 
-Please read the script, and watch the run, while it runs:
+You can read the script, and watch the run, while it runs:
 
     $ less spinup.sh
     $ less out.spin5km
 
-The run takes about FIXME (approx 4?) processor-hours.
+The run takes about 9 processor-hours.  The run produces these files which
+can be viewed with `ncview`, for example: `spunjako_0.nc`, `ts_spunjako_0.nc`,
+`ex_spunjako_0.nc`.
 
 **Comments on the run:**
 The run uses `-boot_file` on `jako.nc`.  A modestly-fine vertical
@@ -248,7 +250,7 @@ in fact.  Thus, generally the regridding techniques used here are recommended
 for regional modeling.</em>)
 
 The calving front of the glacier is handled by the following options combination:
-`-ocean_kill FILENAME -cfbc -kill_icebergs`.  This choice uses the present-day
+`-ocean_kill file.nc -cfbc -kill_icebergs`.  This choice uses the present-day
 ice extent to determine the location of the calving front, but it then applies
 the PIK mechanisms for the stress boundary condition at the calving front
 (`-cfbc`) and it uses `-kill_icebergs` to eliminate any stray floating pieces
@@ -258,7 +260,11 @@ of ice for which stress balances are indeterminant (ill-posed).
 Century run on a 2km grid
 -----------
 
-FIXME
+Here is a 100 year run on a 2km grid, starting from the final state generated
+by the 5km run above:
 
-    $ ./century.sh 8 311 212 spunjako_0.nc >> out.2km_100a &
+    $ ./century.sh 4 311 213 spunjako_0.nc >> out.2km_100a &
+
+This run requires about 6 Gib of memory.  It produces a file almost immediately,
+namely `jakofine_short.nc`, and then restarts from it.  Th
 
