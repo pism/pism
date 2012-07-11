@@ -399,13 +399,13 @@ netcdf pism_config {
     pism_config:inv_ssa_velocity_scale_doc = "m/a; typical size of ice velocities expected during inversion";
 
     pism_config:inv_ssa_length_scale = 50e3;
-    pism_config:inv_ssa_velocity_scale_doc = "m; typical length scale for rescaling derivative norms";
+    pism_config:inv_ssa_length_scale_doc = "m; typical length scale for rescaling derivative norms";
 
     pism_config:inv_ssa_tauc_min = 0;
     pism_config:inv_ssa_tauc_min_doc = "Pa; Minimum allowed value of tauc for inversions with bound constraints";
     
     pism_config:inv_ssa_tauc_max = 5e7;
-    pism_config:inv_ssa_tauc_min_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
+    pism_config:inv_ssa_tauc_max_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
     
     pism_config:inv_ssa_target_rms_misfit = 100;
     pism_config:inv_ssa_target_rms_misfit_doc = "m/a; desired RMS misfit for SSA inversions";
