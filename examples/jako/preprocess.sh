@@ -30,6 +30,7 @@ ncwa -O -a t $WORKING $WORKING
 # create usurf, needed by regional-tools not pismo
 ncap2 -O -s 'usurf=thk+topg' $WORKING $WORKING
 ncap2 -O -s 'where(usurf<0.0) usurf=0.0' $WORKING $WORKING
+ncatted -a standard_name,usurf,d,, $WORKING # remove it
 ncatted -O -a units,usurf,a,c,"m" $WORKING
 ncatted -O -a long_name,usurf,a,c,"ice surface elevation" $WORKING
 

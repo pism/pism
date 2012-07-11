@@ -3,26 +3,14 @@
 # do a basic Jakoshavn spinup by:
 #   ./spinup NN Mx My >> out.spin &
 
-# the grid DEFAULTS below apply to:
-#   $ ncdump -h jako.nc |head
-#   netcdf jako {
-#   dimensions:
-#       y = 425 ;
-#       x = 620 ;
+# if user says "spinup.sh 8 620 425" then NN=8, Mx=620, My=425
+NN="$1"
+Mx="$2"
+My="$3"
 
-NN=4     # default number of MPI processes
-if [ $# -gt 0 ] ; then  # if user says "spinup.sh 8" then NN=8
-  NN="$1"
-fi
-
-Mx=208   # grid default
-if [ $# -gt 1 ] ; then  # if user says "spinup.sh 8 620" then NN=8 and Mx=620
-  Mx="$2"
-fi
-
-My=143   # grid default
-if [ $# -gt 2 ] ; then  # if user says "spinup.sh 8 620 425" then NN=8, Mx=620, My=425
-  My="$3"
+if [ $# -lt 3 ] ; then  
+  echo "spinup.sh ERROR: needs three arguments"
+  exit
 fi
 
 # set MPIDO if using different MPI execution command, for example:
@@ -79,16 +67,15 @@ EXDT=20    # 20 year between saves, thus 100 frames
 cmd="$PISM_MPIDO $NN $PISM -boot_file $BOOT -no_model_strip 10 \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
   -no_model_strip 10 $PHYS \
-  -extra_file ex_jako3km_0.nc -extra_times -$LENGTH:$EXDT:0 \
+  -extra_file ex_spunjako_0.nc -extra_times -$LENGTH:$EXDT:0 \
   -extra_vars thk,cbase,bwp,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
-  -ts_file ts_jako3km_0.nc -ts_times -$LENGTH:yearly:0 \
+  -ts_file ts_spunjako_0.nc -ts_times -$LENGTH:yearly:0 \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars bmelt,bwat,enthalpy,litho_temp,vel_ssa_bc \
-  $CLIMATE -ys -$LENGTH -ye 0 -skip -skip_max $SKIP -o jako3km_0.nc"
+  $CLIMATE -ys -$LENGTH -ye 0 -skip -skip_max $SKIP -o spunjako_0.nc"
 $PISM_DO $cmd
 
 # NOTES:
-# OLD:  -topg_to_phi 5.0,20.0,-300.0,700.0 -diffuse_bwat -thk_eff -ssa_sliding -plastic_pwfrac 0.95 -pseudo_plastic_q 0.25
 # useful diagnostic:  -ssa_view_nuh
 # good postprocess:
-#ncap -O -s "dtau=taud_mag-tauc" jako3km_0.nc jako3km_0.nc 
+#ncap -O -s "dtau=taud_mag-tauc" spunjako_0.nc spunjako_0.nc 
 

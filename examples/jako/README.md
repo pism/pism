@@ -132,7 +132,7 @@ choice of region.  That is, you can skip the GUI usage above and run
 
     $ python pism_regional.py -i gr1km.nc -o jakomask.nc -x 360,382 -y 1135,1176 -b 50
 
-The options `-x 360,382 -y 1135,1176` identify the grid indices of the
+The options `-x A,B -y C,D` identify the grid indices of the corners of the
 terminus rectangle.  Thus this command also generates the file `jakomask.nc`
 used in the rest of the script.
 
@@ -156,11 +156,15 @@ cutout command which appears as a global attribute of jakomask.nc.  Get it this 
 
     $ ncdump -h jakomask.nc |grep cutout
 
-Copy this command.  It is applied to both the 1km Greenland data file and the
-mask file, so modify the command to make each of these commands, and run them:
+Copy and run the command that appears in the string `cutout`, something like
 
     $ ncks -d x,299,918 -d y,970,1394 gr1km.nc jako.nc
-    $ ncks -A -d x,299,918 -d y,970,1394 jakomask.nc jako.nc   # note -A for append!
+
+This command is applied to both the 1km Greenland data file and the
+mask file, so modify the command to work on the mask also, and note option
+`-A` for append:
+
+    $ ncks -A -d x,299,918 -d y,970,1394 jakomask.nc jako.nc
 
 Now look at `jako.nc`:
 
@@ -175,39 +179,52 @@ fields will evolve normally.
 
 To run PISM we will need to know the size of the 1km grid in jako.nc.  Do this:
 
-    $ ncdump -h jako.nc |head -n 4
+    $ ncdump -h jako.nc |head
     netcdf jako {
     dimensions:
 	  y = 425 ;
 	  x = 620 ;
+	...
 
-That is, our region covers a 620 km by 425 km region of Greenland.  A 1km
-resolution, century scale model run is achievable on a desktop machine, and 
-that is our goal below.  (<em>PISM can do 1km runs for the whole ice sheet,
-but you do need a supercomputer for that!</em>)
+The grid has spacing of 1 km, so our region is a 620 km by 425 km rectangle.
 
 
-Running the model on a 3km grid
+Spinning-up the regional model on a 5km grid
 -----------
 
-The whole ice sheet model fields in `g5km_bc.nc` may or may not, depending on
-modeler intent, be spun-up adequately for the purposes of the regional model.
-That is, the intent may be to study equilibrium states with model settings
-special to the region.  Here we assume that is the case.  Thus we do more
-spin-up and we attempt to get an equilibrium 1km model.
+A 2km resolution, century-scale model run on this Jakobshavn region is
+achievable on a desktop machine, with a bit of patience, and that is our goal below.
+A 5km resolution run, which is the resolution of the 5km whole ice sheet state
+which was computed on a supercomputer, is definitely achievable on a
+desktop or laptop, and that is what we do first.
 
-In the first stage we therefore work on an intermediate grid between the 1km
-goal and the 5km whole ice sheet state.  Quick calculations (round up on
-`620/3 + 1` and `425/3 + 1`) suggest `-Mx 208 -My 143` as a 3km grid for PISM.
+(<em>PISM can do 1km runs for the whole Greenland ice sheet, as shown in this
+[`pism-docs.org` news item](http://www.pism-docs.org/wiki/doku.php?id=news:first1km)
+but you certainly need a supercomputer for that!</em>)
 
+The whole ice sheet model fields in `g5km_bc.nc`, which is restricted to the 
+regional grid as the initial state of the regional model, may or may not,
+depending on modeler intent, be spun-up adequately for the purposes of the
+regional model.  (For instance, the intention may be to study equilibrium states
+with model settings special to the region.)  Here we assume that more
+spin-up is needed.  We will get first an equilibrium 5km model, and then do a
+century run of a 2km model based on the equilibriated 5km result.
+(Determining "equilibrium" requires a decision, of course.  The standard here
+is that the ice volume in the region should not change more than one percent
+in 100 model years.  See `ivol` in `ts_spunjako_0.nc` below.)
+
+Quick calculations for the 5km grid, e.g. by calculations
+`620/5 + 1` and `425/5 + 1`, suggest `-Mx 125 -My 86`.
 So now we do a basic run using 2 MPI processes:
 
-    $ ./spinup.sh 2 208 143 >> out.spin3km &
+    $ ./spinup.sh 2 125 86 >> out.spin5km &
 
-Please read the script, and/or watch the run, while it runs:
+Please read the script, and watch the run, while it runs:
 
     $ less spinup.sh
-    $ less out.spin3km
+    $ less out.spin5km
+
+The run takes about FIXME (approx 4?) processor-hours.
 
 **Comments on the run:**
 The run uses `-boot_file` on `jako.nc`.  A modestly-fine vertical
@@ -218,31 +235,30 @@ There is option `-no_model_strip 10` asking
 some variables will be held fixed.  Specifically the thermodynamical spun-up
 variables `enthalpy`,`bmelt`,`bwat` from `g5km_bc.nc` are held fixed and used
 as boundary conditions for the conservation of energy model in the strip.
-Dirichlet boundary conditions `u_ssa_bc`,`v_ssa_bc` for the sliding stress
-balance (the SSA) are also read from the same file.
+Additionally, Dirichlet boundary conditions `u_ssa_bc`,`v_ssa_bc` are read
+for the sliding stress balance (the SSA) from the same file.
 
 (<em>An alternative is to have the enthalpy and other thermodynamical variables
 not spun-up at all in the strip, which would happen if options `-regrid_...`
-were not used. But the resulting not-very-realistic ice temperatures and ice
-softness/hardness is advected inward as ice with less realistic properties.
-An alternative for the SSA boundary conditions is to have zero velocity in the
-strip, but the velocity tangent to the north and south edges of the strip,
-i.e. in westerly direction, is significantly nonzero in fact.  Generally
-these regridding techniques are recommend for regional modeling.</em>)
+were not used.  However, the resulting not-very-realistic ice temperatures and
+softness/hardness is advected inward. An alternative for the SSA boundary
+conditions is to have zero velocity in the `no_model_strip`, but the velocity
+tangent to the north and south edges of the strip is significantly nonzero
+in fact.  Thus, generally the regridding techniques used here are recommended
+for regional modeling.</em>)
 
 The calving front of the glacier is handled by the following options combination:
-`-ocean_kill -cfbc -kill_icebergs`.  This choice uses the present-day data to
-determine the location of the calving front (`-ocean_kill`) but then applies
-the PIK mechanisms for the stress-imbalance at the calving front (`-cfbc`) and
-uses `-kill_icebergs` to eliminate any stray floating pieces of ice for which
-stress balances are indeterminant (ill-posed).
+`-ocean_kill FILENAME -cfbc -kill_icebergs`.  This choice uses the present-day
+ice extent to determine the location of the calving front, but it then applies
+the PIK mechanisms for the stress boundary condition at the calving front
+(`-cfbc`) and it uses `-kill_icebergs` to eliminate any stray floating pieces
+of ice for which stress balances are indeterminant (ill-posed).
 
 
-
-The model on the 1km grid
+Century run on a 2km grid
 -----------
 
 FIXME
 
-    $ ./century.sh 8 620 425 >> out.1km &
+    $ ./century.sh 8 311 212 spunjako_0.nc >> out.2km_100a &
 
