@@ -37,6 +37,7 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
                         "Kelvin", ""); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                        "m s-1", ""); CHKERRQ(ierr);
+  ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ierr = temp.init(filename); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);
