@@ -2,7 +2,9 @@
 
 # Copyright (C) 2011-2012 the PISM authors
 
-# executes all preprocessing actions, before "spinup.sh", described in README.md
+# executes all preprocessing actions appropriate to Jakobshavn case,
+# with a particular selection of terminus rectangle
+
 # assumes local presence of "regional-tools" script pism_regional.py
 # scripts called here download large files if they are not already present
 # result is file jako.nc
