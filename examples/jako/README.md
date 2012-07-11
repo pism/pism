@@ -4,7 +4,7 @@ Jakobshavn outlet glacier regional modeling example
 This directory contains all of the scripts needed to build a PISM regional model
 of Jakobshavn Isbrae in the Greenland ice sheet.  The same strategy will
 work for other outlet glaciers.  The base data is the SeaRISE 1km
-Greenland dataset for the whole ice sheet plus an earlier lower-resolution
+Greenland dataset for the whole ice sheet, plus an earlier lower-resolution
 (5km) whole ice sheet spun-up state.  That whole ice sheet state can be
 downloaded or regenerated from examples/searise-greenland/ scripts.
 
@@ -30,67 +30,59 @@ To see a description of the drainage basin tool itself, and a bit on how it
 works, see https://github.com/pism/regional-tools.
 
 
-Preprocess higher-resolution geometry data
+Preprocess data and whole ice sheet model results
 ----------
 
-Next we use a script that downloads and cleans the fine-grid SeaRISE data,
-an 80 Mb file called `Greenland1km.nc`.
+Next we use a script `preprocess.sh` that downloads and cleans the 1km grid
+SeaRISE data, an 80 Mb file called `Greenland1km.nc`.
+
+If the file, or any of the downloaded files, are already present then no
+download occurs, but preprocessing proceeds in any case.
+
+The script also downloads the SeaRISE 5km data set `Greenland_5km_v1.1.nc`.
+It contains the surface mass balance model result from RACMO, a field which is
+not present in the 1km data set.  If you have already run the example in the
+first section of the PISM User's Manual, i.e. from directory
+`examples/searise-greenland/`, then you already have this file and you can link
+to it to avoid downloading:
+
+    $ ln -s ../searise-greenland/Greenland_5km_v1.1.nc
+
+Finally, the same script also downloads 5km grid PISM results `g5km_0_ftt.nc`
+a 1.3Gb file, for the whole ice sheet.  They provide the boundary conditions and
+thermodynamical initial condition for  the regional flow model we are building.
+(The same file can be built by running the highest-resolution case in
+`examples/searise-greenland/spinup.sh`.)
+
+So now we can run it:
 
     $ ./preprocess.sh
 
-If the file is already present then no download occurs, but preprocessing
-proceeds in any case.
-
-When it is done, a file `gr1km.nc` is created.  We can look at what fields
-it contains:
+Files `gr1km.nc`, `g5km_climate.nc`, and `g5km_bc.nc` will appear.  These can
+be examined in the usual ways, for example:
 
     $ ncdump -h gr1km.nc                   # view metadata
     $ ncview gr1km.nc                      # view fields
 
+Note specifically that there are thermodynamical spun-up variables
+(`enthalpy`,`bmelt`,`bwat`) and boundary values for the sliding velocity in the
+regional model (`u_ssa_bc`,`v_ssa_bc`) in the boundary condition file
+`g5km_bc.nc` extracted from the whole ice sheet model result.
 
-Preprocess lower-resolution climate data
-----------
-
-Also we download the SeaRISE 5km data set `Greenland_5km_v1.1.nc` because it
-contains the surface mass balance model result from RACMO.  This field is not present
-in the SeaRISE 1km data set above.  If you have already run the example in the first
-section of the PISM User's Manual, i.e. in `examples/searise-greenland/`, then you
-already have this file and you can link to it to avoid downloading:
-
-    $ ln -s ../searise-greenland/Greenland_5km_v1.1.nc
-
-In any case, run this additional preprocess stage to fix the metadata:
-
-    $ ./getsmb.sh
-
-A file `g5km_climate.nc` will appear, and can be examined in the usual ways.
-
-
-Get whole ice sheet spinup result
------------
-
-Finally, we also get coarse grid model results for the whole ice sheet.  These are 
-not data but come from a prior PISM run.  They provide the boundary conditions
-and thermodynamical initial condition for 
-the regional flow model we are building.  The next script downloads a
-precomputed whole-ice-sheet result from a PISM SeaRISE-Greenland run, a 1.3Gb
-file called `g5km_0_ftt.nc`.  (No download occurs if a file by that name is
-already present.)
-
-    $ ./getcoarse.sh
-
-A file `g5km_bc.nc` is created with the fields we actually need.  In particular
-there are thermodynamical spun-up variables (`enthalpy`,`bmelt`,`bwat`) and
-boundary values for the sliding velocity in the regional model (`u_ssa_bc`,
-`v_ssa_bc`).
+None of the above is specific to Jakobshavn, but of course it is specific to the
+Greenland ice sheet.  If your goal is to build a regional model of another
+outlet glacier in Greenland, then you can use `preprocess.sh` immediately.
+Note, however, that the SeaRISE 1 km data set only has updated, high resolution
+bed topography data for the vicinity of the Jakobshavn outlet.  Thus additional
+effort may be needed to give a useful improvement over the coarse 5 km data.
 
 
 Extract region for modeling
 -------------
 
-We are going to extract a "drainage basin mask" from the fine grid surface
-elevation data.  The outline of the flow into the outlet glacier we want to model
-can be determined by the gradient flow from the surface elevation.
+We are going to extract a "drainage basin mask" from the 1 km surface
+elevation data.  The outline of the flow into the outlet glacier we want to
+model can be determined by the gradient flow from the surface elevation.
 `pism_regional.py` will identify the upstream area, the drainage basin in the
 sense of the surface gradient flow, into a chosen "terminus rectangle".
 Within this masked drainage basin we will apply all physics in the PISM model
@@ -177,6 +169,14 @@ conditions instead.  Specifically, outside of the `ftt_mask` area we will
 essentially keep the initial thickness, while inside the `ftt_mask` area all
 fields will evolve normally.
 
+All of the above steps can be accomplished in by one command,
+
+    $ ./quickprocess.sh
+
+
+Spinning-up the regional model on a 5km grid
+-----------
+
 To run PISM we will need to know the size of the 1km grid in jako.nc.  Do this:
 
     $ ncdump -h jako.nc |head
@@ -187,11 +187,6 @@ To run PISM we will need to know the size of the 1km grid in jako.nc.  Do this:
 	...
 
 The grid has spacing of 1 km, so our region is a 620 km by 425 km rectangle.
-
-
-Spinning-up the regional model on a 5km grid
------------
-
 A 2km resolution, century-scale model run on this Jakobshavn region is
 achievable on a desktop machine, with a bit of patience, and that is our goal below.
 A 5km resolution run, which is the resolution of the 5km whole ice sheet state
