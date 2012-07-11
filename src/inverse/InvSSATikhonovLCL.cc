@@ -191,7 +191,7 @@ PetscErrorCode InvSSATikhonovLCL::formInitialGuess(Vec *x,TerminationReason::Ptr
   ierr = m_uGlobal.scale(m_velocityScale); CHKERRQ(ierr);  
 
   *x =  *m_x;
-  reason.reset(new GenericTerminationReason(1,"success"));
+  reason = GenericTerminationReason::success();
   return 0;
 }
 

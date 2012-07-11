@@ -440,7 +440,7 @@ if __name__ == "__main__":
   # Try solving
   reason = solver.solveInverse(zeta_prior,vel_ssa_observed,zeta);
   if reason.failed():
-    PISM.logging.logError("Inverse solve FAILURE (%s)!\n" % reason.description());
+    PISM.logging.logError("Inverse solve FAILURE:\n%s\n" % reason.nested_description(1));
     quit()
 
   PISM.logging.logMessage("Inverse solve success (%s)!\n" % reason.description());

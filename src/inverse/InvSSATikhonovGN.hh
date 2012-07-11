@@ -67,14 +67,23 @@ public:
     return 0;
   }
 
+  virtual PetscErrorCode evaluateGNFunctional(DesignVec h, PetscReal *value);
+
   virtual PetscErrorCode apply_GN(IceModelVec2S &h, IceModelVec2S &out);
   virtual PetscErrorCode apply_GN(Vec h, Vec out);
 
   virtual PetscErrorCode assemble_GN_rhs(DesignVec &out);
 
   virtual PetscErrorCode init(TerminationReason::Ptr &reason);
+
+  virtual PetscErrorCode check_convergence(TerminationReason::Ptr &reason); 
+  
   virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
   virtual PetscErrorCode solve_linearized(TerminationReason::Ptr &reason);
+
+
+  virtual PetscErrorCode assemble_dalpha_rhs(DesignVec &rhs);
+  virtual PetscErrorCode compute_dalpha(PetscReal *dalpha, TerminationReason::Ptr &reason);
 
 protected:
 
@@ -86,9 +95,14 @@ protected:
   DesignVec m_x;
   DesignVec m_y;
 
-  DesignVec m_tmp_D1;
-  StateVec  m_tmp_S1;
-  StateVec  m_tmp_S2;
+  DesignVec m_tmp_D1Global;
+  DesignVec m_tmp_D2Global;
+  DesignVec m_tmp_D1Local;
+  DesignVec m_tmp_D2Local;
+  StateVec  m_tmp_S1Global;
+  StateVec  m_tmp_S2Global;
+  StateVec  m_tmp_S1Local;
+  StateVec  m_tmp_S2Local;
 
   DesignVec  m_GN_rhs;
 
@@ -96,6 +110,12 @@ protected:
   DesignVec m_dGlobal;
   DesignVec m_d;
   DesignVec m_d_diff;
+
+  DesignVec m_h;
+  DesignVec m_hGlobal;
+  DesignVec m_dalpha_rhs;
+  DesignVec m_dh_dalpha;
+  DesignVec m_dh_dalphaGlobal;
 
   StateVec &m_u_obs;
   StateVec m_u_diff;
@@ -106,6 +126,13 @@ protected:
   PetscReal m_eta;
   IPFunctional<DesignVec> &m_designFunctional;
   IPFunctional<StateVec> &m_stateFunctional;
+
+  PetscReal m_alpha;
+  PetscReal m_rms_error;
+
+  PetscInt m_iter;
+  bool m_tikhonov_adaptive;
+  PetscReal m_vel_scale;
 
   MPI_Comm m_comm;
 

@@ -88,7 +88,7 @@ public:
 
   virtual PetscErrorCode formInitialGuess(Vec *v, TerminationReason::Ptr & reason) {
     *v = m_dGlobal.get_vec();
-    reason.reset(new GenericTerminationReason(1,"success"));
+    reason = GenericTerminationReason::success();
     return 0;
   }
 

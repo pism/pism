@@ -42,9 +42,9 @@ public:
   }
   virtual void get_description( std::ostream &desc,int indent_level=0) = 0;
 
-  virtual std::string nested_description() {
+  virtual std::string nested_description(int indent_level=0) {
     std::stringstream sdesc;
-    this->get_nested_description(sdesc);
+    this->get_nested_description(sdesc,indent_level);
     return sdesc.str();
   }
   virtual void get_nested_description( std::ostream &desc,int indent_level=0) {
@@ -74,6 +74,10 @@ public:
   
   bool failed() {
     return (this->reason())<0;
+  }
+  
+  bool done() {
+    return (this->reason())!= 0;
   }
   
 protected:
@@ -110,6 +114,26 @@ public:
     m_reason = code;
   };
   
+  static TerminationReason::Ptr keep_iterating() {
+    static TerminationReason::Ptr sm_keep_iterating(new GenericTerminationReason(0,"Keep iterating."));
+    return sm_keep_iterating;
+  }
+
+  static TerminationReason::Ptr max_iter() {
+    static TerminationReason::Ptr sm_max_iter(new GenericTerminationReason(-1,"Iteration count exceeded."));
+    return sm_max_iter;
+  }
+
+  static TerminationReason::Ptr success() {
+    static TerminationReason::Ptr sm_success(new GenericTerminationReason(1,"Success."));
+    return sm_success;
+  }
+
+  static TerminationReason::Ptr failure() {
+    static TerminationReason::Ptr sm_failure(new GenericTerminationReason(-1,"Failure."));
+    return sm_failure;
+  }
+
   virtual void get_description( std::ostream &desc, int indent_level=0); 
 protected:
   std::string m_description;
