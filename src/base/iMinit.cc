@@ -866,13 +866,13 @@ PetscErrorCode IceModel::init_ocean_kill() {
 
   if (filename.empty()) {
     ierr = verbPrintf(2, grid.com,
-                      "* Using ice thickness at the beginning of the run\n"
-                      "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
+       "* Option -ocean_kill seen: using ice thickness at the beginning of the run\n"
+       "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
     tmp = &vH;
   } else {
     ierr = verbPrintf(2, grid.com,
-                      "* Setting fixed calving front location using ice thickness from '%s'.\n",
-                      filename.c_str()); CHKERRQ(ierr);
+       "* Option -ocean_kill seen: setting fixed calving front location using\n"
+       "  ice thickness from '%s'.\n",filename.c_str()); CHKERRQ(ierr);
 
     ierr = thickness.create(grid, "thk", false); CHKERRQ(ierr);
     ierr = thickness.set_attrs("temporary", "land ice thickness",
