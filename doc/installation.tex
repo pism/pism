@@ -342,7 +342,7 @@ Turning off the inclusion of debugging code and symbols gives a significant spee
 
 Using shared libraries may be unwise on certain clusters, etc.; check with your system administrator.
 
-\item It is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\texttt{--with-fortran=0} \texttt{--download-c-blas-lapack=1}'' to the other configure options; note there is no use of Fortran in PISM.
+\item It is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\texttt{--with-fortran=0} \texttt{--download-f2cblaslapack=1}'' to the other configure options; note there is no use of Fortran in PISM.
 
 \item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \texttt{/home/user/mympi/}, one can point PETSc to it by adding the option ``\texttt{--with-mpi-dir=/home/user/mympi/}''.  The path used in this option must have MPI executables \texttt{mpicxx} and \texttt{mpicc}, and either \texttt{mpiexec} or \texttt{mpirun}, in sub-directory \texttt{bin/} and MPI library files in sub-directory \texttt{lib/}.
 
