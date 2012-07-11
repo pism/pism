@@ -1,4 +1,4 @@
-Jakobshavn outlet glacier regional example
+Jakobshavn outlet glacier regional modeling example
 =================
 
 This directory contains all of the scripts needed to build a PISM regional model
@@ -22,7 +22,7 @@ link the tool we need.  Here is the quick summary of these actions:
     $ cd ~                                 # whatever location you want for it
     $ git clone https://github.com/pism/regional-tools.git
     $ cd regional-tools/
-    $ python setup.py install              # or add "--user" to build locally
+    $ python setup.py install              # add "--user" to build locally
     $ cd ~/pism/examples/jako/             # come back to current directory
     $ ln -s ~/regional-tools/pism_regional.py .      # symbolic link to tool
 
@@ -30,7 +30,7 @@ To see a description of the drainage basin tool itself, and a bit on how it
 works, see https://github.com/pism/regional-tools.
 
 
-Preprocess fine grid geometry data
+Preprocess higher-resolution geometry data
 ----------
 
 Next we use a script that downloads and cleans the fine-grid SeaRISE data,
@@ -48,7 +48,7 @@ it contains:
     $ ncview gr1km.nc                      # view fields
 
 
-Preprocess coarse climate data
+Preprocess lower-resolution climate data
 ----------
 
 Also we download the SeaRISE 5km data set `Greenland_5km_v1.1.nc` because it
@@ -85,14 +85,16 @@ boundary values for the sliding velocity in the regional model (`u_ssa_bc`,
 `v_ssa_bc`).
 
 
-Creating a region for us to model
+Extract region for modeling
 -------------
 
-We are going to extract a drainage basin mask from the fine grid surface
+We are going to extract a "drainage basin mask" from the fine grid surface
 elevation data.  The outline of the flow into the outlet glacier we want to model
 can be determined by the gradient flow from the surface elevation.
-Within this masked drainage basin we will apply all physics in the PISM model---
-see below---but outside this basin we will apply simplified models
+`pism_regional.py` will identify the upstream area, the drainage basin in the
+sense of the surface gradient flow, into a chosen "terminus rectangle".
+Within this masked drainage basin we will apply all physics in the PISM model
+but outside this basin we will apply simplified models
 or use precomputed whole ice sheet results as boundary conditions.
 
 So we use the script `pism_regional.py` from `regional-tools` (see above)
@@ -130,7 +132,9 @@ choice of region.  That is, you can skip the GUI usage above and run
 
     $ python pism_regional.py -i gr1km.nc -o jakomask.nc -x 360,382 -y 1135,1176 -b 50
 
-This also generates the file `jakomask.nc` used in the rest of the script.
+The options `-x 360,382 -y 1135,1176` identify the grid indices of the
+terminus rectangle.  Thus this command also generates the file `jakomask.nc`
+used in the rest of the script.
 
 Such a step is exactly what is needed to have more precise control over the
 identification of a terminus rectangle.  You may need to re-create the region
@@ -160,7 +164,7 @@ mask file, so modify the command to make each of these commands, and run them:
 
 Now look at `jako.nc`:
 
-    $ ncview jako.nc
+    $ ncview -minmax all jako.nc
 
 This file is the full geometry data ready for a regional model.  The field
 `ftt_mask` has an identified drainage basin, outside of which we

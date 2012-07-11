@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# do a basic Jakoshavn spinup; run as
+# do a basic Jakoshavn spinup by:
 #   ./spinup NN Mx My >> out.spin &
 
 # the grid DEFAULTS below apply to:
-#   $ ncdump -h jako.nc |head -n 4
+#   $ ncdump -h jako.nc |head
 #   netcdf jako {
 #   dimensions:
 #       y = 425 ;
@@ -13,6 +13,16 @@
 NN=4     # default number of MPI processes
 if [ $# -gt 0 ] ; then  # if user says "spinup.sh 8" then NN=8
   NN="$1"
+fi
+
+Mx=208   # grid default
+if [ $# -gt 1 ] ; then  # if user says "spinup.sh 8 620" then NN=8 and Mx=620
+  Mx="$2"
+fi
+
+My=143   # grid default
+if [ $# -gt 2 ] ; then  # if user says "spinup.sh 8 620 425" then NN=8, Mx=620, My=425
+  My="$3"
 fi
 
 # set MPIDO if using different MPI execution command, for example:
@@ -46,16 +56,6 @@ if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
 else
   PISM_EXEC="pismo"
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
-fi
-
-Mx=208   # grid default
-if [ $# -gt 1 ] ; then  # if user says "spinup.sh 8 620" then NN=8 and Mx=620
-  Mx="$2"
-fi
-
-My=143   # grid default
-if [ $# -gt 2 ] ; then  # if user says "spinup.sh 8 620 425" then NN=8, Mx=620, My=425
-  My="$3"
 fi
 
 PISM=$PISM_EXEC

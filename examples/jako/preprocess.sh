@@ -28,7 +28,8 @@ ncks -O -v x,y,mapping,bheatflx,topg,thk $DATANAME $WORKING
 ncwa -O -a t $WORKING $WORKING
 
 # create usurf, needed by regional-tools not pismo
-ncap -O -s 'usurf=thk+topg' $WORKING $WORKING
+ncap2 -O -s 'usurf=thk+topg' $WORKING $WORKING
+ncap2 -O -s 'where(usurf<0.0) usurf=0.0' $WORKING $WORKING
 ncatted -O -a units,usurf,a,c,"m" $WORKING
 ncatted -O -a long_name,usurf,a,c,"ice surface elevation" $WORKING
 
