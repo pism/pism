@@ -61,7 +61,7 @@ def get_projection_from_file(nc):
                 if hasattr(nc.variables[var],'grid_mapping'):
                     mappingvarname = nc.variables[var].grid_mapping
                     exit
-            print('Found projection information in variable %s, using it' % mappingvarname)
+            print('Found projection information in variable "%s", using it' % mappingvarname)
             var_mapping = nc.variables[mappingvarname]
             p = Proj(proj   = "stere",
                      ellps  = var_mapping.ellipsoid,
@@ -169,7 +169,7 @@ if __name__ == "__main__":
 
 
     if (not 'lon' in nc.variables.keys()) or ( not 'lat' in nc.variables.keys()):
-        print("No lat/lon coordinates found, creating it")
+        print("No lat/lon coordinates found, creating them")
         ee,nn = np.meshgrid(easting,northing)
         lon,lat = proj(ee,nn,inverse=True)
 
