@@ -81,9 +81,7 @@ public:
   virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
   virtual PetscErrorCode solve_linearized(TerminationReason::Ptr &reason);
 
-
-  virtual PetscErrorCode assemble_dalpha_rhs(DesignVec &rhs);
-  virtual PetscErrorCode compute_dalpha(PetscReal *dalpha, TerminationReason::Ptr &reason);
+  virtual PetscErrorCode compute_dlogalpha(PetscReal *dalpha, TerminationReason::Ptr &reason);
 
 protected:
 
@@ -110,6 +108,7 @@ protected:
   DesignVec m_dGlobal;
   DesignVec m_d;
   DesignVec m_d_diff;
+  DesignVec m_d_diff_lin;
 
   DesignVec m_h;
   DesignVec m_hGlobal;
@@ -128,6 +127,7 @@ protected:
   IPFunctional<StateVec> &m_stateFunctional;
 
   PetscReal m_alpha;
+  PetscReal m_logalpha;
   PetscReal m_rms_error;
 
   PetscInt m_iter;

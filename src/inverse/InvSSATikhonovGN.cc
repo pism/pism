@@ -64,6 +64,7 @@ PetscErrorCode InvSSATikhonovGN::construct() {
   ierr = m_dGlobal.create(grid,"d (sans ghosts)",kNoGhosts,0); CHKERRQ(ierr);
   ierr = m_d.create(grid,"d",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
   ierr = m_d_diff.create(grid,"d_diff",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff_lin.create(grid,"d_diff linearized",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
   ierr = m_h.create(grid,"h",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
   ierr = m_hGlobal.create(grid,"h (sans ghosts)",kNoGhosts); CHKERRQ(ierr);
   
@@ -90,6 +91,7 @@ PetscErrorCode InvSSATikhonovGN::construct() {
   ierr = multCallback::connect(m_mat_GN);
 
   m_alpha = 1./m_eta;
+  m_logalpha = log(m_alpha);
   m_vel_scale = grid.config.get("inv_ssa_velocity_scale");
   m_rms_error = grid.config.get("inv_ssa_target_rms_misfit")/m_vel_scale;
 
@@ -210,7 +212,7 @@ PetscErrorCode InvSSATikhonovGN::check_convergence(TerminationReason::Ptr &reaso
   ierr = m_stateFunctional.valueAt(m_u_diff,&sVal); CHKERRQ(ierr);
   PetscReal F = m_alpha*dVal + sVal;
   
-  printf("InvSSATikhonovGN Iteration %d: misfit %g; functional %g alpha %g\n",m_iter,sqrt(sVal)*m_vel_scale,F*m_vel_scale*m_vel_scale,m_alpha);
+  ierr = verbPrintf(1,PETSC_COMM_WORLD,"InvSSATikhonovGN Iteration %d: misfit %g; functional %g log(alpha) %g\n",m_iter,sqrt(sVal)*m_vel_scale,F*m_vel_scale*m_vel_scale,m_logalpha); CHKERRQ(ierr);
   
   PetscInt iter_max = 10; bool flag;
   ierr = PISMOptionsInt("-inv_gn_iter_max", "",iter_max,flag); CHKERRQ(ierr);
@@ -230,6 +232,13 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
   ierr = m_d.copy_from(m_d0); CHKERRQ(ierr);
 
   TerminationReason::Ptr step_reason;
+  // ierr = m_ssaforward.linearize_at(m_d,step_reason); CHKERRQ(ierr);
+  // if(step_reason->failed()) {
+  //   reason.reset(new GenericTerminationReason(-1,"Forward solve"));
+  //   reason->set_root_cause(step_reason);
+  //   return 0;
+  // }
+
   while(true) {
     ierr = m_ssaforward.linearize_at(m_d,step_reason); CHKERRQ(ierr);
     if(step_reason->failed()) {
@@ -256,9 +265,9 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
       return 0;
     }
 
-    PetscReal dalpha = 0;
+    PetscReal dlogalpha = 0;
     if(m_tikhonov_adaptive) {
-      ierr = this->compute_dalpha(&dalpha,step_reason); CHKERRQ(ierr);
+      ierr = this->compute_dlogalpha(&dlogalpha,step_reason); CHKERRQ(ierr);
       if(step_reason->failed()) {
         TerminationReason::Ptr cause = reason;
         reason.reset(new GenericTerminationReason(-1,"Tikhonov penalty update"));
@@ -269,26 +278,26 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
 
     ierr = m_d.add(1,m_h); CHKERRQ(ierr);  // Replace with line search.
 
-    m_alpha += dalpha;
+    if(m_tikhonov_adaptive) {
+      m_logalpha += dlogalpha;
+      m_alpha = exp(m_logalpha);
+    }
     m_iter++;
   }
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::assemble_dalpha_rhs(DesignVec &rhs) {
-  PetscErrorCode ierr;
-  ierr = m_tmp_D1Local.copy_from(m_d_diff); CHKERRQ(ierr);
-  ierr = m_tmp_D1Local.add(1,m_h); CHKERRQ(ierr);  
-  ierr = m_designFunctional.interior_product(m_tmp_D1Local,rhs); CHKERRQ(ierr);
-  ierr = rhs.scale(-1); CHKERRQ(ierr);
-  return 0;
-}
+PetscErrorCode InvSSATikhonovGN::compute_dlogalpha(PetscReal *dlogalpha, TerminationReason::Ptr &reason) {
 
-PetscErrorCode InvSSATikhonovGN::compute_dalpha(PetscReal *dalpha, TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
-  ierr = this->assemble_dalpha_rhs(m_dalpha_rhs); CHKERRQ(ierr);
- 
+  // Compute the right-hand side for computing dh/dalpha.
+  ierr = m_d_diff_lin.copy_from(m_d_diff); CHKERRQ(ierr);
+  ierr = m_d_diff_lin.add(1,m_h); CHKERRQ(ierr);  
+  ierr = m_designFunctional.interior_product(m_d_diff_lin,m_dalpha_rhs); CHKERRQ(ierr);
+  ierr = m_dalpha_rhs.scale(-1);
+
+  // Solve linear equation for dh/dalpha. 
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
   ierr = KSPSolve(m_ksp,m_dalpha_rhs.get_vec(),m_dh_dalphaGlobal.get_vec()); CHKERRQ(ierr);
   ierr = m_dh_dalpha.copy_from(m_dh_dalphaGlobal); CHKERRQ(ierr);
@@ -300,62 +309,70 @@ PetscErrorCode InvSSATikhonovGN::compute_dalpha(PetscReal *dalpha, TerminationRe
     return 0;
   }
 
-  ierr = m_tmp_D1Local.copy_from(m_d_diff); CHKERRQ(ierr);
-  ierr = m_tmp_D1Local.add(1,m_h); CHKERRQ(ierr);
-
+  // S1Local contains T(h) + F(x) - u_obs, i.e. the linearized misfit field.
   ierr = m_ssaforward.apply_linearization(m_h,m_tmp_S1Local); CHKERRQ(ierr);
   ierr = m_tmp_S1Local.beginGhostComm(); CHKERRQ(ierr);
   ierr = m_tmp_S1Local.endGhostComm(); CHKERRQ(ierr);
   ierr = m_tmp_S1Local.add(1,m_u_diff); CHKERRQ(ierr);
 
-  ierr = m_designFunctional.interior_product(m_tmp_D1Local,m_tmp_D1Global); CHKERRQ(ierr);
-  ierr = m_tmp_D1Global.scale(m_alpha); CHKERRQ(ierr);
-  
-  ierr = m_stateFunctional.interior_product(m_tmp_S1Local,m_tmp_S1Global); CHKERRQ(ierr);
-  ierr = m_ssaforward.apply_linearization_transpose(m_tmp_S1Global,m_tmp_D2Global); CHKERRQ(ierr);
-  
-  PetscReal n1,n2,dn;
-  ierr = m_tmp_D1Global.norm(NORM_2,n1); CHKERRQ(ierr);
-  ierr = m_tmp_D2Global.norm(NORM_2,n2); CHKERRQ(ierr);
-  ierr = m_tmp_D2Global.add(-1,m_tmp_D1Global); CHKERRQ(ierr);
-  ierr = m_tmp_D2Global.norm(NORM_2,dn); CHKERRQ(ierr);
-  
-  printf("Norms Adx %g T^tB(Tx-y) %g diff %g\n",n1,n2,dn);
-
+  // Compute linearized discrepancy.
   PetscReal disc_sq;
   ierr = m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S1Local,&disc_sq); CHKERRQ(ierr);
 
-  ierr = m_ssaforward.apply_linearization(m_dh_dalpha,m_tmp_S2Local); CHKERRQ(ierr);
-  ierr = m_tmp_S2Local.beginGhostComm(); CHKERRQ(ierr);
-  ierr = m_tmp_S2Local.endGhostComm(); CHKERRQ(ierr);
+  // There are a number of equivalent ways to compute the derivative of the 
+  // linearized discrepancy with respect to alpha, some of which are cheaper
+  // than others to compute.  This equivalency relies, however, on having an 
+  // exact solution in the Gauss-Newton step.  Since we only solve this with 
+  // a soft tolerance, we lose equivalency.  We attempt a cheap computation,
+  // and then do a sanity check (namely that the derivative is positive).
+  // If this fails, we compute by a harder way that inherently yields a 
+  // positive number.
 
   PetscReal ddisc_sq_dalpha;
-  ierr = m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S2Local,&ddisc_sq_dalpha); CHKERRQ(ierr);
-  ddisc_sq_dalpha *= 2;
+  ierr = m_designFunctional.dot(m_dh_dalpha,m_d_diff_lin,&ddisc_sq_dalpha);
+  ddisc_sq_dalpha *= -2*m_alpha;
 
-  PetscReal ddisc_sq_dalpha4_a;
-  ierr = m_stateFunctional.dot(m_tmp_S2Local,m_tmp_S2Local,&ddisc_sq_dalpha4_a); CHKERRQ(ierr);
-  PetscReal ddisc_sq_dalpha4_b;
-  ierr = m_designFunctional.dot(m_dh_dalpha,m_dh_dalpha,&ddisc_sq_dalpha4_b); CHKERRQ(ierr);
-  PetscReal ddisc_sq_dalpha4 = 2*m_alpha*(ddisc_sq_dalpha4_a+m_alpha*ddisc_sq_dalpha4_b);
+  if(ddisc_sq_dalpha <= 0) {
+    // Try harder.
+    
+    ierr = verbPrintf(3,PETSC_COMM_WORLD,"Adaptive Tikhonov sanity check failed (dh/dalpha= %g <= 0).  Tighten inv_gn_ksp_rtol?\n",ddisc_sq_dalpha); CHKERRQ(ierr);
+    
+    // S2Local contains T(dh/dalpha)
+    ierr = m_ssaforward.apply_linearization(m_dh_dalpha,m_tmp_S2Local); CHKERRQ(ierr);
+    ierr = m_tmp_S2Local.beginGhostComm(); CHKERRQ(ierr);
+    ierr = m_tmp_S2Local.endGhostComm(); CHKERRQ(ierr);
+
+    PetscReal ddisc_sq_dalpha_a;
+    ierr = m_stateFunctional.dot(m_tmp_S2Local,m_tmp_S2Local,&ddisc_sq_dalpha_a); CHKERRQ(ierr);
+    PetscReal ddisc_sq_dalpha_b;
+    ierr = m_designFunctional.dot(m_dh_dalpha,m_dh_dalpha,&ddisc_sq_dalpha_b); CHKERRQ(ierr);
+    ddisc_sq_dalpha = 2*m_alpha*(ddisc_sq_dalpha_a+m_alpha*ddisc_sq_dalpha_b);
+
+    ierr = verbPrintf(3,PETSC_COMM_WORLD,"Adaptive Tikhonov sanity check recovery attempt: dh/dalpha= %g. \n",ddisc_sq_dalpha); CHKERRQ(ierr);
+
+    // This is yet another alternative formula.
+    // ierr = m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S2Local,&ddisc_sq_dalpha); CHKERRQ(ierr);
+    // ddisc_sq_dalpha *= 2;
+  }
+
+  // Newton's method formula.
+  *dlogalpha = (m_rms_error*m_rms_error-disc_sq)/(ddisc_sq_dalpha*m_alpha);
+
+  // It's easy to take steps that are too big when we are far from the solution.
+  // So we limit the step size.
+  PetscReal stepmax = 3;
+  if(fabs(*dlogalpha)> stepmax) {
+    PetscReal sgn = *dlogalpha > 0 ? 1 : -1;
+    *dlogalpha = stepmax*sgn;
+  }
   
-  PetscReal ddisc_sq_dalpha2;
-  ierr = m_designFunctional.dot(m_dh_dalpha,m_tmp_D1Local,&ddisc_sq_dalpha2);
-  ddisc_sq_dalpha2 *= -2*m_alpha;
-  
-  PetscReal ddisc_sq_dalpha3;
-  ierr = this->apply_GN(m_dh_dalphaGlobal,m_tmp_D2Global);
-  ierr = VecDot(m_dh_dalphaGlobal.get_vec(),m_tmp_D2Global.get_vec(),&ddisc_sq_dalpha3);
-  ddisc_sq_dalpha3 *= 2*m_alpha;
+  if(*dlogalpha<0) {
+    *dlogalpha*=.5;
+  }
 
-  printf("four derivatives: %g %.10g %.10g %.10g\n",ddisc_sq_dalpha,ddisc_sq_dalpha2,ddisc_sq_dalpha3,ddisc_sq_dalpha4);
-
-  *dalpha = (m_rms_error*m_rms_error-disc_sq)/ddisc_sq_dalpha2;
-
-  printf("disc_sq %g ddisc_sq_dalpha %g alt %g\n",disc_sq,ddisc_sq_dalpha,ddisc_sq_dalpha2);
-
-  printf("disc %.10g desired %.10g alpha %.10g dalpha %.10g\n",sqrt(disc_sq)*m_vel_scale,m_rms_error*m_vel_scale,m_alpha,*dalpha);
+  ierr = verbPrintf(2,PETSC_COMM_WORLD,"Discrepancy %.10g desired %.10g dlogalpha %.10g\n",sqrt(disc_sq)*m_vel_scale,m_rms_error*m_vel_scale,*dlogalpha); CHKERRQ(ierr);
 
   reason = GenericTerminationReason::success();
+
   return 0;
 }
