@@ -36,8 +36,9 @@ Preprocess data and whole ice sheet model results
 Next we use a script `preprocess.sh` that downloads and cleans the 1km grid
 SeaRISE data, an 80 Mb file called `Greenland1km.nc`.
 
-If the file, or any of the downloaded files, are already present then no
-download occurs, but preprocessing proceeds in any case.
+(If this file, or any of the other downloaded files below, are already present,
+then no actual download occurs, and preprocessing proceeds in any case.  So
+do not worry about download time if you need to preprocess again.)
 
 The script also downloads the SeaRISE 5km data set `Greenland_5km_v1.1.nc`.
 It contains the surface mass balance model result from RACMO, a field which is
@@ -64,12 +65,13 @@ be examined in the usual ways, for example:
     $ ncdump -h gr1km.nc                   # view metadata
     $ ncview gr1km.nc                      # view fields
 
-Note specifically that there are thermodynamical spun-up variables
+Note specifically that the boundary condition file
+`g5km_bc.nc` contains thermodynamical spun-up variables
 (`enthalpy`,`bmelt`,`bwat`) and boundary values for the sliding velocity in the
-regional model (`u_ssa_bc`,`v_ssa_bc`) in the boundary condition file
-`g5km_bc.nc` extracted from the whole ice sheet model result.
+regional model (`u_ssa_bc`,`v_ssa_bc`).  These have been extracted from the
+whole ice sheet model result.
 
-None of the above is specific to Jakobshavn, but of course it is specific to the
+None of the above is specific to Jakobshavn, though all are specific to the
 Greenland ice sheet.  If your goal is to build a regional model of another
 outlet glacier in Greenland, then you can use `preprocess.sh` immediately.
 Note, however, that the SeaRISE 1 km data set only has updated, high resolution
@@ -169,9 +171,14 @@ conditions instead.  Specifically, outside of the `ftt_mask` area we will
 essentially keep the initial thickness, while inside the `ftt_mask` area all
 fields will evolve normally.
 
-All of the above steps can be accomplished in by one command,
+Skipping all the details
+-----------
 
-    $ ./quickprocess.sh
+All of the above steps are accomplished in one script,
+
+    $ ./quickjakosetup.sh
+
+Running this takes about a minute on a fast laptop.
 
 
 Spinning-up the regional model on a 5km grid
@@ -219,9 +226,9 @@ You can read the script, and watch the run, while it runs:
     $ less spinup.sh
     $ less out.spin5km
 
-The run takes about 9 processor-hours.  The run produces these files which
-can be viewed with `ncview`, for example: `spunjako_0.nc`, `ts_spunjako_0.nc`,
-`ex_spunjako_0.nc`.
+The run takes about 10 processor-hours.   <!-- 9.12 proc-hours on bueler-lemur -->
+The run produces three files which can be viewed with `ncview`:
+`spunjako_0.nc`, `ts_spunjako_0.nc`, and `ex_spunjako_0.nc`.
 
 **Comments on the run:**
 The run uses `-boot_file` on `jako.nc`.  A modestly-fine vertical
@@ -261,5 +268,27 @@ by the 5km run above:
     $ ./century.sh 4 311 213 spunjako_0.nc >> out.2km_100a &
 
 This run requires about 6 Gib of memory.  It produces a file almost immediately,
-namely `jakofine_short.nc`, and then restarts from it.  Th
+namely `jakofine_short.nc`, and then restarts from it.  (This is explained by the
+need to regrid fields first from the result of the previous 5 km regional run,
+i.e. from `spunjako_0.nc`, and then to "go back" and regrid the SSA boundary
+conditions from the 5 km whole ice sheet results, i.e. from the file
+`g5km_bc.nc`.)  At the end of the run the final file `jakofine.nc` is produced,
+along with a time-series result file `ts_jakofine.nc` with monthly scalar time-
+series, and a spatial time-dependent result file `ex_jakofine.nc`.  The latter
+is a source of simple "movies" of the simulation.
+
+The above `century.sh` run takes about 20 processor-hours. <!-- 17.77 proc-hours on bueler-lemur -->
+
+Plotting the results
+----------
+
+FIXME: To visualize the surface speed at the end of the 2km run, do
+
+    $ basemap-plot.py --singlerow -v csurf -o csurf.png jakofine.nc
+
+to choose a colormap add option
+
+    --colormap ~/PyPISMTools/colormaps/Full_saturation_spectrum_CCW.cpt
+
+or similar
 
