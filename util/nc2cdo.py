@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-import numpy as np
-from pyproj import Proj
-from optparse import OptionParser
 
 ## @package nc2cdo
 # \author Andy Aschwanden, University of Alaska Fairbanks, USA
@@ -24,6 +21,11 @@ from optparse import OptionParser
 #
 # \verbatim $ nc2cdo.py foo.nc \endverbatim
 
+import numpy as np
+from argparse import ArgumentParser
+
+from pyproj import Proj
+
 # try different netCDF modules
 try:
     from netCDF4 import Dataset as CDF
@@ -32,12 +34,16 @@ except:
 
 
 ## Set up the option parser
-parser = OptionParser()
-parser.usage = "usage: %prog FILE"
-parser.description = "Script makes netCDF file ready for Climate Data Operators (CDO)."
-
-(options, args) = parser.parse_args()
-
+parser = ArgumentParser()
+parser.description = '''Script makes netCDF file ready for Climate Data Operators (CDO). Either a global attribute "projection", a mapping variable, or a command-line proj4 must be given.'''
+parser.add_argument("FILE", nargs=1)
+parser.add_argument("--srs",dest="srs",
+                  help='''
+                  a valid proj4 string describing describing the projection
+                  ''', default=None)
+options = parser.parse_args()
+args = options.FILE
+srs = options.srs
 
 if len(args) == 1:
     nc_outfile = args[0]
@@ -134,8 +140,12 @@ if __name__ == "__main__":
     ## array holding lon-component of grid corners
     gc_lon = np.zeros((N,M,grid_corners))
 
-    ## Get projection from file
-    proj = get_projection_from_file(nc)
+    if srs:
+        ## Use projection from command line
+        proj = Proj(srs)
+    else:
+        ## Get projection from file
+        proj = get_projection_from_file(nc)
     
     ## If it does not yet exist, create dimension 'grid_corners'    
     if 'grid_corners' not in nc.dimensions.keys():
