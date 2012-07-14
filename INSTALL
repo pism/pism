@@ -21,7 +21,7 @@ from www.pism-docs.org.  Major installation requirements:
 
 To build PISM locally (within the PISM source tree), do
 
-  $ cd pism0.4
+  $ cd pism0.5
   $ mkdir build
   $ cd build
   $ ccmake ..     # hit 'c' to see initial config, 'c' again to configure,
