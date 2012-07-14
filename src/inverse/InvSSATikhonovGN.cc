@@ -73,6 +73,10 @@ PetscErrorCode InvSSATikhonovGN::construct() {
   ierr = m_dh_dalphaGlobal.create(grid,"dh_dalpha",kNoGhosts); CHKERRQ(ierr);
   ierr = m_u_diff.create(grid,"du",kHasGhosts,state_stencil_width); CHKERRQ(ierr);
 
+  ierr = m_grad_design.create(grid,"grad design",kNoGhosts); CHKERRQ(ierr);
+  ierr = m_grad_state.create(grid,"grad design",kNoGhosts); CHKERRQ(ierr);
+  ierr = m_gradient.create(grid,"grad design",kNoGhosts); CHKERRQ(ierr);
+
   ierr = KSPCreate(grid.com, &m_ksp); CHKERRQ(ierr);
   ierr = KSPSetOptionsPrefix(m_ksp,"inv_gn_"); CHKERRQ(ierr);
   PetscReal ksp_rtol = 1e-5; // Soft tolerance
@@ -97,6 +101,13 @@ PetscErrorCode InvSSATikhonovGN::construct() {
 
   ierr = PISMOptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
   
+  m_iter_max = 10; bool flag;
+  ierr = PISMOptionsInt("-inv_gn_iter_max", "",m_iter_max,flag); CHKERRQ(ierr);  
+
+  m_tikhonov_atol = grid.config.get("tikhonov_atol");
+  m_tikhonov_rtol = grid.config.get("tikhonov_rtol");
+  m_tikhonov_ptol = grid.config.get("tikhonov_ptol");
+
   return 0;
 }
 
@@ -206,22 +217,89 @@ PetscErrorCode InvSSATikhonovGN::evaluateGNFunctional(DesignVec h, PetscReal *va
 
 PetscErrorCode InvSSATikhonovGN::check_convergence(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
-  
-  PetscReal dVal, sVal;
-  ierr = m_designFunctional.valueAt(m_d_diff,&dVal); CHKERRQ(ierr);
-  ierr = m_stateFunctional.valueAt(m_u_diff,&sVal); CHKERRQ(ierr);
-  PetscReal F = m_alpha*dVal + sVal;
-  
-  ierr = verbPrintf(1,PETSC_COMM_WORLD,"InvSSATikhonovGN Iteration %d: misfit %g; functional %g log(alpha) %g\n",m_iter,sqrt(sVal)*m_vel_scale,F*m_vel_scale*m_vel_scale,m_logalpha); CHKERRQ(ierr);
-  
-  PetscInt iter_max = 10; bool flag;
-  ierr = PISMOptionsInt("-inv_gn_iter_max", "",iter_max,flag); CHKERRQ(ierr);
 
-  if(m_iter>iter_max) {
+  PetscReal designNorm, stateNorm, sumNorm;
+  PetscReal dWeight, sWeight;
+  dWeight = m_alpha;
+  sWeight = 1;
+
+  ierr = m_grad_design.norm(NORM_2,designNorm); CHKERRQ(ierr);
+  ierr = m_grad_state.norm(NORM_2,stateNorm); CHKERRQ(ierr);
+  designNorm *= dWeight;
+  stateNorm  *= sWeight;
+
+  ierr = m_gradient.norm(NORM_2,sumNorm); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,PETSC_COMM_WORLD,"----------------------------------------------------------\n",designNorm,stateNorm,sumNorm); CHKERRQ(ierr);
+  ierr = verbPrintf(2,PETSC_COMM_WORLD,"InvSSATikhonovGN Iteration %d: misfit %g; functional %g \n",m_iter,sqrt(m_val_state)*m_vel_scale,m_value*m_vel_scale*m_vel_scale); CHKERRQ(ierr);
+  if(m_tikhonov_adaptive) {
+    ierr = verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha); CHKERRQ(ierr);
+  }
+  PetscReal relsum = (sumNorm/PetscMax(designNorm,stateNorm));
+  ierr = verbPrintf(2,PETSC_COMM_WORLD,"design norm %g stateNorm %g sum %g; relative difference %g\n",designNorm,stateNorm,sumNorm,relsum); CHKERRQ(ierr);
+
+  // If we have an adaptive tikhonov parameter, check if we have met
+  // this constraint first.
+  if(m_tikhonov_adaptive) {
+    PetscReal disc_ratio = fabs( (sqrt(m_val_state)/m_rms_error) - 1.);
+    if(disc_ratio > m_tikhonov_ptol) {
+      reason = GenericTerminationReason::keep_iterating();
+      return 0;
+    }
+  }
+  
+  if(sumNorm < m_tikhonov_atol) {
+    reason.reset(new GenericTerminationReason(1,"TIKHONOV_ATOL"));
+    return 0;
+  }
+
+  if( sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm) ) {
+    reason.reset(new GenericTerminationReason(1,"TIKHONOV_RTOL"));
+    return 0;
+  }
+
+  if(m_iter>m_iter_max) {
     reason = GenericTerminationReason::max_iter();
   } else {
     reason = GenericTerminationReason::keep_iterating();
   }
+  return 0;
+}
+
+PetscErrorCode InvSSATikhonovGN::evaluate_objective_and_gradient(TerminationReason::Ptr &reason) {
+  PetscErrorCode ierr;
+
+  ierr = m_ssaforward.linearize_at(m_d,reason); CHKERRQ(ierr);
+  if(reason->failed()) {
+    return 0;
+  }
+
+  ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);
+  ierr = m_d_diff.add(-1,m_d0); CHKERRQ(ierr);
+
+  ierr = m_u_diff.copy_from(m_ssaforward.solution()); CHKERRQ(ierr);
+  ierr = m_u_diff.add(-1,m_u_obs); CHKERRQ(ierr);
+
+  ierr = m_designFunctional.gradientAt(m_d_diff,m_grad_design); CHKERRQ(ierr);
+
+  // The following computes the reduced gradient.
+  StateVec &adjointRHS = m_tmp_S1Global;
+  ierr = m_stateFunctional.gradientAt(m_u_diff,adjointRHS); CHKERRQ(ierr);  
+  ierr = m_ssaforward.apply_linearization_transpose(adjointRHS,m_grad_state); CHKERRQ(ierr);
+
+  ierr = m_gradient.copy_from(m_grad_design); CHKERRQ(ierr);
+  ierr = m_gradient.scale(m_alpha); CHKERRQ(ierr);    
+  ierr = m_gradient.add(1,m_grad_state); CHKERRQ(ierr);
+
+  PetscReal valDesign, valState;
+  ierr = m_designFunctional.valueAt(m_d_diff,&valDesign); CHKERRQ(ierr);
+  ierr = m_stateFunctional.valueAt(m_u_diff,&valState); CHKERRQ(ierr);
+
+  m_val_design = valDesign;
+  m_val_state = valState;
+  
+  m_value = valDesign * m_alpha + valState;
+
   return 0;
 }
 
@@ -231,31 +309,26 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
   m_iter = 0;
   ierr = m_d.copy_from(m_d0); CHKERRQ(ierr);
 
+  PetscReal dlogalpha = 0;
+
   TerminationReason::Ptr step_reason;
-  // ierr = m_ssaforward.linearize_at(m_d,step_reason); CHKERRQ(ierr);
-  // if(step_reason->failed()) {
-  //   reason.reset(new GenericTerminationReason(-1,"Forward solve"));
-  //   reason->set_root_cause(step_reason);
-  //   return 0;
-  // }
 
   while(true) {
-    ierr = m_ssaforward.linearize_at(m_d,step_reason); CHKERRQ(ierr);
+
+    this->evaluate_objective_and_gradient(step_reason);
     if(step_reason->failed()) {
       reason.reset(new GenericTerminationReason(-1,"Forward solve"));
       reason->set_root_cause(step_reason);
-      return 0;
     }
-
-    ierr = m_d_diff.copy_from(m_d); CHKERRQ(ierr);
-    ierr = m_d_diff.add(-1,m_d0); CHKERRQ(ierr);
-
-    ierr = m_u_diff.copy_from(m_ssaforward.solution()); CHKERRQ(ierr);
-    ierr = m_u_diff.add(-1,m_u_obs); CHKERRQ(ierr);
 
     ierr = this->check_convergence(reason); CHKERRQ(ierr);
     if(reason->done()) {
       return 0;
+    }
+
+    if(m_tikhonov_adaptive) {
+      m_logalpha += dlogalpha;
+      m_alpha = exp(m_logalpha);
     }
 
     ierr = this->solve_linearized(step_reason); CHKERRQ(ierr);
@@ -265,7 +338,6 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
       return 0;
     }
 
-    PetscReal dlogalpha = 0;
     if(m_tikhonov_adaptive) {
       ierr = this->compute_dlogalpha(&dlogalpha,step_reason); CHKERRQ(ierr);
       if(step_reason->failed()) {
@@ -278,10 +350,6 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
 
     ierr = m_d.add(1,m_h); CHKERRQ(ierr);  // Replace with line search.
 
-    if(m_tikhonov_adaptive) {
-      m_logalpha += dlogalpha;
-      m_alpha = exp(m_logalpha);
-    }
     m_iter++;
   }
   return 0;
@@ -369,8 +437,6 @@ PetscErrorCode InvSSATikhonovGN::compute_dlogalpha(PetscReal *dlogalpha, Termina
   if(*dlogalpha<0) {
     *dlogalpha*=.5;
   }
-
-  ierr = verbPrintf(2,PETSC_COMM_WORLD,"Discrepancy %.10g desired %.10g dlogalpha %.10g\n",sqrt(disc_sq)*m_vel_scale,m_rms_error*m_vel_scale,*dlogalpha); CHKERRQ(ierr);
 
   reason = GenericTerminationReason::success();
 

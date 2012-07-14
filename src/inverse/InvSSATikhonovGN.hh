@@ -72,18 +72,22 @@ public:
   virtual PetscErrorCode apply_GN(IceModelVec2S &h, IceModelVec2S &out);
   virtual PetscErrorCode apply_GN(Vec h, Vec out);
 
-  virtual PetscErrorCode assemble_GN_rhs(DesignVec &out);
-
   virtual PetscErrorCode init(TerminationReason::Ptr &reason);
 
   virtual PetscErrorCode check_convergence(TerminationReason::Ptr &reason); 
   
   virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
+
+  virtual PetscErrorCode evaluate_objective_and_gradient(TerminationReason::Ptr &reason);
+
+protected:
+
+  virtual PetscErrorCode assemble_GN_rhs(DesignVec &out);
+
   virtual PetscErrorCode solve_linearized(TerminationReason::Ptr &reason);
 
   virtual PetscErrorCode compute_dlogalpha(PetscReal *dalpha, TerminationReason::Ptr &reason);
 
-protected:
 
   PetscErrorCode construct();
   PetscErrorCode destruct();
@@ -116,6 +120,12 @@ protected:
   DesignVec m_dh_dalpha;
   DesignVec m_dh_dalphaGlobal;
 
+  DesignVec m_grad_design;
+  DesignVec m_grad_state;
+  DesignVec m_gradient;
+  
+  PetscReal m_val_design, m_val_state, m_value;
+
   StateVec &m_u_obs;
   StateVec m_u_diff;
 
@@ -130,9 +140,10 @@ protected:
   PetscReal m_logalpha;
   PetscReal m_rms_error;
 
-  PetscInt m_iter;
+  PetscInt m_iter, m_iter_max;
   bool m_tikhonov_adaptive;
   PetscReal m_vel_scale;
+  PetscReal m_tikhonov_rtol, m_tikhonov_atol, m_tikhonov_ptol;
 
   MPI_Comm m_comm;
 

@@ -415,6 +415,9 @@ netcdf pism_config {
     
     pism_config:tikhonov_rtol  = 5e-2;
     pism_config:tikhonov_rtol_doc = "relative threshold for Tikhonov stopping criterion";
+
+    pism_config:tikhonov_ptol  = .1;
+    pism_config:tikhonov_ptol_doc = "threshold for reaching desired misfit for adaptive Tikhonov algorithms";
     
     pism_config:tikhonov_penalty_weight = 1;
     pism_config:tikhonov_penalty_weight_doc = "penalty parameter for Tikhonov inversion";
