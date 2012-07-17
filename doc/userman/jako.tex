@@ -203,9 +203,11 @@ Figure \ref{fig:jako-csurf} was generated using \href{https://github.com/pism/Py
 $ ncpdq -a time,z,y,x spunjako_0.nc jako5km.nc
 $ nc2cdo.py jako5km.nc
 $ cdo remapbil,jako5km.nc Greenland_5km_v1.1.nc Greenland_5km_v1.1_jako.nc
-$ ncap2 -O -s "csurf=surfvelmag*1.;" Greenland_5km_v1.1_jako.nc Greenland_5km_v1.1_jako.nc
-$ basemap-plot.py -v csurf --singlerow -o jako-csurf.png jakofine.nc Greenland_5km_v1.1_jako.nc
+$ ncap2 -O -s "csurf=surfvelmag*1.;" Greenland_5km_v1.1_jako.nc \
+    Greenland_5km_v1.1_jako.nc
+$ basemap-plot.py -v csurf --singlerow -o jako-csurf.png jakofine.nc \
+    Greenland_5km_v1.1_jako.nc
 \end{verbatim}
 \normalsize\end{quote}
-To choose a colormap \verb|foo.cpt| add option \verb|--colormap foo.cpt| in the last command.
+To choose a colormap \verb|foo.cpt| add option \verb|--colormap foo.cpt| in the last command. For this example \verb|PyPISMTools/colormaps/Full_saturation_spectrum_CCW.cpt| was used.
 
