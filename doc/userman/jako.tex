@@ -5,10 +5,10 @@
 
 Jakobshavn Isbrae is a fast-flowing outlet glacier in western Greenland that drains approximately 7\% of the area of the Greenland ice sheet.  It experienced a large acceleration following the loss of its floating tongue in the 1990s \cite{JoughinAbdalatiFahnestock}, an event which seems to have been driven by warmer ocean temperatures \cite{Hollandetal2008}.  Because it is thick, has a steep surface slope, has a deep trough in its bedrock topography (Figure \ref{fig:jako-basin-topg}), and has a thick layer of low-viscosity temperate ice at its base \cite{Luethietal2009}, this ice flow is different from the ice streams in West Antarctica or Northeast Greenland \cite{TrufferEchelmeyer}.
  
-This section describes how to build a PISM regional model of this outlet glacier using scripts from \texttt{examples/jako/} \cite{DellaGiustina2011}, but the same strategy will work for other outlet glaciers.  We also demonstrate the outlet-glacier-mode PISM executable \texttt{pismo}, and a Python drainage-basin-delineation tool \texttt{regional-tools}, also by the PISM authors.  Such regional models allow modest-size computers to run high resolution models\footnote{PISM can do 1km runs for the whole Greenland ice sheet; see this \href{http://www.pism-docs.org/wiki/doku.php?id=news:first1km}{news item}.  You need a supercomputer for that!} and large ensembles.  Model-based regional analysis is also justified if additional data is available for the region, of course.\index{PISM!pismo executable for outlet glaciers}\index{regional-tools}
+This section describes how to build a PISM regional model of this outlet glacier using scripts from \texttt{examples/jako/} \cite{DellaGiustina2011}, but the same strategy will work for other outlet glaciers.  We also demonstrate the outlet-glacier-mode PISM executable \texttt{pismo}, and a Python drainage-basin-delineation tool \texttt{regional-tools}, also by the PISM authors.  Such regional models allow modest-size computers to run high resolution models\footnote{PISM can do 1\,km runs for the whole Greenland ice sheet; see this \href{http://www.pism-docs.org/wiki/doku.php?id=news:first1km}{news item}.  You need a supercomputer for that!} and large ensembles.  Model-based regional analysis is also justified if additional data is available for the region, of course.\index{PISM!pismo executable for outlet glaciers}\index{regional-tools}
 
 \index{CReSIS bedrock topography for Jakobshavn}
-The geometric data used here is the SeaRISE  \cite{Bindshadler2012SeaRISE} 1 km dataset for the whole Greenland ice sheet.  It contains bedrock topography from recent CReSIS radar in the Jakobshavn area.  We also use the SeaRISE 5 km data set which has climatic mass balance from the Greenland-region climate model RACMO \cite{Ettemaetal2009}.  A regional ice flow model also generally needs boundary conditions.  For this we use a 5 km whole ice sheet spun-up model state from PISM, described in Section \ref{sec:start} of this \emph{Manual}.  You can generate the file by running those scripts at their highest-resolution settings, or you can download the result, a 1.3 Gib NetCDF file, from the PISM website.
+The geometric data used here is the SeaRISE  \cite{Bindshadler2012SeaRISE} 1\,km dataset for the whole Greenland ice sheet.  It contains bedrock topography from recent CReSIS radar in the Jakobshavn area.  We also use the SeaRISE 5\,km data set which has climatic mass balance from the Greenland-region climate model RACMO \cite{Ettemaetal2009}.  A regional ice flow model also generally needs boundary conditions.  For this we use a 5\,km whole ice sheet spun-up model state from PISM, described in Section \ref{sec:start} of this \emph{Manual}.  You can generate the file by running those scripts at their highest-resolution settings, or you can download the result, a 1.3\,GB NetCDF file, from the PISM website.
 
 \begin{figure}[ht]
   \centering
@@ -32,13 +32,13 @@ $ ln -s ~/usr/local/regional-tools/pism_regional.py .  # symbolic link to tool
 \normalsize\end{quote}
 
 \subsection*{Preprocess the data and get the whole ice sheet model file}
-Script \texttt{preprocess.sh} downloads and cleans the 1 km SeaRISE data, an 80 Mb file called \texttt{Greenland1km.nc}.\footnote{If this file is already present then no actual download occurs, and preprocessing proceeds.  Thus:  Do not worry about download time if you need to preprocess again.  The same comment applies to other downloaded files.}  The script also downloads the SeaRISE 5 km data set \texttt{Greenland_5km_v1.1.nc}, which contains the RACMO surface mass balance field (not present in the 1 km data set).  If you have already run the example in Section \ref{sec:start} then you already have this file and you can link to it to avoid downloading:
+Script \texttt{preprocess.sh} downloads and cleans the 1\,km SeaRISE data, an 80 Mb file called \texttt{Greenland1km.nc}.\footnote{If this file is already present then no actual download occurs, and preprocessing proceeds.  Thus:  Do not worry about download time if you need to preprocess again.  The same comment applies to other downloaded files.}  The script also downloads the SeaRISE 5\,km data set \texttt{Greenland_5km_v1.1.nc}, which contains the RACMO surface mass balance field (not present in the 1\,km data set).  If you have already run the example in Section \ref{sec:start} then you already have this file and you can link to it to avoid downloading:
 \begin{quote}\small
 \begin{verbatim}
 $ ln -s ../searise-greenland/Greenland_5km_v1.1.nc
 \end{verbatim}
 \normalsize\end{quote}
-Finally, the same script also downloads a pre-computed 5 km grid PISM model result \texttt{g5km_0_ftt.nc} for the whole ice sheet, a 1.3Gb file so there may be some delay.  This provides the boundary conditions, and the thermodynamical initial condition, for the regional flow model we are building.
+Finally, the same script also downloads a pre-computed 5\,km grid PISM model result \texttt{g5km_0_ftt.nc} for the whole ice sheet, a 1.3\,GB file so there may be some delay.  This provides the boundary conditions, and the thermodynamical initial condition, for the regional flow model we are building.
 
 So now let's actual run the preprocessing script:
 \begin{quote}\small
@@ -55,7 +55,7 @@ $ ncview gr1km.nc                      # view fields
 \normalsize\end{quote}
 Note specifically that the boundary condition file \texttt{g5km_bc.nc} contains thermodynamical spun-up variables (\texttt{enthalpy,bmelt,bwat}) and boundary values for the sliding velocity (\texttt{u_ssa_bc,v_ssa_bc}); these have been extracted from \texttt{g5km_0_ftt.nc}.
 
-None of the above actions is specific to Jakobshavn, though all are specific to Greenland.  If your goal is to build a regional model of another outlet glacier in Greenland, then you may be able to use \texttt{preprocess.sh} as is.  The SeaRISE 1 km data set only has recent CReSIS bed topography data for the vicinity of the Jakobshavn outlet, however, and it is otherwise just BEDMAP.  Because outlet glacier flows are bed-topography-dominated, additional bed elevation data should be sought.
+None of the above actions is specific to Jakobshavn, though all are specific to Greenland.  If your goal is to build a regional model of another outlet glacier in Greenland, then you may be able to use \texttt{preprocess.sh} as is.  The SeaRISE 1\,km data set only has recent CReSIS bed topography data for the vicinity of the Jakobshavn outlet, however, and it is otherwise just BEDMAP.  Because outlet glacier flows are bed-topography-dominated, additional bed elevation data should be sought.
 
 \subsection*{Extract the region for modeling}
 We are going to extract a ``drainage basin mask'' from the surface elevation data (DEM) in \texttt{gr1km.nc}.  The goal is to determine the locations, outside of the flow into the outlet glacier we want to model, where boundary conditions taken from the precomputed whole ice sheet run can be applied.  Such locations are outside of the drainage basin.  The basin is determined by the gradient flow from the surface elevation, thus its generation uses a highly-simplified ice dynamics model (namely: ice flows down the surface gradient).  We will apply the full PISM model in the basin interior.  Outside the basin we will apply simplified models or use the whole ice sheet results as boundary conditions.  The script \texttt{pism_regional.py} computes the drainage basin based on a user choice of a ``terminus rectangle''; see Figure \ref{fig:jako-basin-topg}.  
@@ -108,8 +108,8 @@ $ ./quickjakosetup.sh
 \normalsize\end{quote}
 Running this takes about a minute on a fast laptop.
 
-\subsection*{Spinning-up the regional model on a 5km grid}
-To run the PISM regional model we will need to know the number of grid points in the 1 km grid in \verb|jako.nc|.  Do this:
+\subsection*{Spinning-up the regional model on a 5\,km grid}
+To run the PISM regional model we will need to know the number of grid points in the 1\,km grid in \verb|jako.nc|.  Do this:
 \begin{quote}\small
 \begin{verbatim}
 $ ncdump -h jako.nc |head
@@ -120,11 +120,11 @@ $ ncdump -h jako.nc |head
     ...
 \end{verbatim}
 \normalsize\end{quote}
-The grid has spacing of 1 km, so our computational domain is a 620 km by 425 km rectangle.  A 2 km resolution, century-scale model run is easily achievable on a desktop or laptop computer, and that is our goal below.  A 5 km resolution spin-up run, matching the resolution of the 5 km whole ice sheet state which was computed on a supercomputer, is also achievable on a small computer; we do that first.
+The grid has spacing of 1\,km, so our computational domain is a 620\,km by 425\,km rectangle.  A 2\,km resolution, century-scale model run is easily achievable on a desktop or laptop computer, and that is our goal below.  A 5\,km resolution spin-up run, matching the resolution of the 5\,km whole ice sheet state which was computed on a supercomputer, is also achievable on a small computer; we do that first.
 
-The boundary condition fields in \verb|g5km_bc.nc|, from the whole ice sheet model result  \verb|g5km_0_ftt.nc|, may or may not, depending on modeler intent, be spun-up adequately for the purposes of the regional model.  For instance, the intention may be to study equilibrium states with model settings special to the region.  Here, however we assume that more regional spin-up is needed.  We will get first an equilibrium\footnote{Determining ``equilibrium'' requires a decision, of course.  A standard satisfied here is that the ice volume in the region changes by less than 0.1 percent in the final 100 model years.  See \texttt{ivol} in \texttt{ts_spunjako_0.nc}.} 5 km regional model, and then do a century run of a 2 km model based on that.
+The boundary condition fields in \verb|g5km_bc.nc|, from the whole ice sheet model result  \verb|g5km_0_ftt.nc|, may or may not, depending on modeler intent, be spun-up adequately for the purposes of the regional model.  For instance, the intention may be to study equilibrium states with model settings special to the region.  Here, however we assume that more regional spin-up is needed.  We will get first an equilibrium\footnote{Determining ``equilibrium'' requires a decision, of course.  A standard satisfied here is that the ice volume in the region changes by less than 0.1 percent in the final 100 model years.  See \texttt{ivol} in \texttt{ts_spunjako_0.nc}.} 5\,km regional model, and then do a century run of a 2\,km model based on that.
 
-Quick calculations for the 5 km grid\footnote{Calculate \texttt{620/5 + 1} and \texttt{425/5 + 1}, for example.} suggest \verb|-Mx 125 -My 86|.  So now we do a basic run using 4 MPI processes:
+Quick calculations for the 5\,km grid\footnote{Calculate \texttt{620/5 + 1} and \texttt{425/5 + 1}, for example.} suggest \verb|-Mx 125 -My 86|.  So now we do a basic run using 4 MPI processes:
 \begin{quote}\small
 \begin{verbatim}
 $ ./spinup.sh 4 125 86 >> out.spin5km &
@@ -141,7 +141,7 @@ $ PISM_DO=echo spinup.sh 4 125 86 | less
 \normalsize\end{quote}
 \item  We use \verb|-boot_file| on \verb|jako.nc|, so we get to choose our grid, and (as usual in PISM with \verb|-boot_file|) the fields are interpolated to our grid.
 \item A modestly-fine vertical grid with 20 m spacing is chosen, but even finer is recommended, especially to resolve the temperate ice layer in these outlet glaciers.
-\item There is an option \verb|-no_model_strip 10| asking \verb|pismo| to put a 10 km strip around edge of the computational domain.  This strip is entirely outside of the drainage basin defined by \verb|ftt_mask|.  In this strip the thermodynamical spun-up variables \verb|enthalpy,bmelt,bwat| from \verb|g5km_bc.nc| are held fixed and used as boundary conditions for the conservation of energy model. (An alternative is to have the enthalpy and other thermodynamical variables not spun-up at all in the strip, which would happen if options 
+\item There is an option \verb|-no_model_strip 10| asking \verb|pismo| to put a 10\,km strip around edge of the computational domain.  This strip is entirely outside of the drainage basin defined by \verb|ftt_mask|.  In this strip the thermodynamical spun-up variables \verb|enthalpy,bmelt,bwat| from \verb|g5km_bc.nc| are held fixed and used as boundary conditions for the conservation of energy model. (An alternative is to have the enthalpy and other thermodynamical variables not spun-up at all in the strip, which would happen if options 
 \begin{quote}\small
 \begin{verbatim}
   -regrid_file g5km_bc.nc -regrid_vars bmelt,bwat,enthalpy,litho_temp,vel_ssa_bc
@@ -161,23 +161,23 @@ This choice uses the present-day ice extent, ultimately as defined by SeaRISE da
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[height=1.8in,keepaspectratio=true]{jako-csurf} \, \includegraphics[height=1.8in,keepaspectratio=true]{jako-surfvelmag-true}
-  \caption{Left: modeled surface speed at the end of a 2 km grid, 100 model year, steady present-day climate run.  Right: observed surface speed, an average of four winter velocity maps (2000,2006--2008) derived from RADARSAT data, as included in the SeaRISE  5 km data set \cite{Joughinetal2010}, for approximately the same region.  Scales are in meters per year.}
+  \includegraphics[width=0.95\textwidth,keepaspectratio=true]{jako-csurf}
+  \caption{Left: modeled surface speed at the end of a 2\,km grid, 100 model year, steady present-day climate run.  Right: observed surface speed, an average of four winter velocity maps (2000,2006--2008) derived from RADARSAT data, as included in the SeaRISE  5\,km data set \cite{Joughinetal2010}, for the same region.  Scales are in meters per year.}
   \label{fig:jako-csurf}
 \end{figure}
 
 
-\subsection*{Century run on a 2km grid}
-Now that we have a spun-up state, here is a 100 model year run on a 2km grid:
+\subsection*{Century run on a 2\,km grid}
+Now that we have a spun-up state, here is a 100 model year run on a 2\,km grid:
 \begin{quote}\small
 \begin{verbatim}
     $ ./century.sh 4 311 213 spunjako_0.nc >> out.2km_100a &
 \end{verbatim}
 \normalsize\end{quote}
-This run requires at least 6 Gib of memory, and it takes about 25 processor-hours.
+This run requires at least 6\,GB of memory, and it takes about 25 processor-hours.
 % 17.77 proc-hours on bueler-lemur with Mz=201, 23.27 on bueler-leopard with Mz=401
 
-It produces a file almost immediately, namely \verb|jakofine_short.nc|, and then restarts from it.  This is explained by the need to regrid fields first from the result of the previous 5 km regional run, i.e. from \verb|spunjako_0.nc|, and then to ``go back'' and regrid the SSA boundary conditions from the 5 km whole ice sheet results, i.e.~from the file \verb|g5km_bc.nc|.
+It produces a file almost immediately, namely \verb|jakofine_short.nc|, and then restarts from it.  This is explained by the need to regrid fields first from the result of the previous 5\,km regional run, i.e. from \verb|spunjako_0.nc|, and then to ``go back'' and regrid the SSA boundary conditions from the 5\,km whole ice sheet results, i.e.~from the file \verb|g5km_bc.nc|.
 
 At the end of the run the final file \verb|jakofine.nc| is produced.  Also there is a time-series file \verb|ts_jakofine.nc| with monthly scalar time-series and a spatial time-dependent file \verb|ex_jakofine.nc|.  (Files \verb|ex_spunjako_0.nc| and \verb|ex_jakofine.nc| are sources for ``movies'' of these simulations.)
 
@@ -200,16 +200,15 @@ The ice dynamics parameters chosen in \verb|spinup.sh| and \verb|century.sh|, es
 
 This is about Figure {fig:jako-csurf}.  We use  PyPISMTools.
 
-To visualize the surface speed at the end of the 2km run, download PyPISMTools and do
+To visualize the surface speed at the end of the 2\,km run, download PyPISMTools and do
+\begin{verbatim}
+$ ncpdq -a time,z,y,x spunjako_0.nc jako5km.nc
+$ nc2cdo.py jako5km.nc
+$ cdo remapbil,jako5km.nc Greenland_5km_v1.1.nc Greenland_5km_v1.1_jako.nc
+$ ncap2 -O -s "csurf=surfvelmag*1.;" Greenland_5km_v1.1_jako.nc Greenland_5km_v1.1_jako.nc
+$ basemap-plot.py -v csurf --singlerow -o jako-csurf.png jakofine.nc Greenland_5km_v1.1_jako.nc
+\end{verbatim}
 
-  basemap-plot.py --singlerow -v csurf -o csurf.png jakofine.nc
-
-To choose a colormap add option \verb|--colormap foo.cpt| or similar; some colormaps can 
-
-  cp Greenland_5km_v1.1.nc gr5km_xy.nc
-  ncrename -v x1,x -v y1,y gr5km_xy.nc 
-  ncrename -d x1,x -d y1,y gr5km_xy.nc 
-  ncks -d x,55,175 -d y,195,280 -v lat,lon,mapping,surfvelmag gr5km_xy.nc foo.nc
-  basemap-plot.py --singlerow -v surfvelmag -o surfvelmag.png foo.nc
+To choose a colormap add option \verb|--colormap foo.cpt| or similar.
 
 \end{comment}
