@@ -8,7 +8,7 @@ Jakobshavn Isbrae is a fast-flowing outlet glacier in western Greenland that dra
 This section describes how to build a PISM regional model of this outlet glacier using scripts from \texttt{examples/jako/} \cite{DellaGiustina2011}, but the same strategy will work for other outlet glaciers.  We also demonstrate the outlet-glacier-mode PISM executable \texttt{pismo}, and a Python drainage-basin-delineation tool \texttt{regional-tools}, also by the PISM authors.  Such regional models allow modest-size computers to run high resolution models\footnote{PISM can do 1\,km runs for the whole Greenland ice sheet; see this \href{http://www.pism-docs.org/wiki/doku.php?id=news:first1km}{news item}.  You need a supercomputer for that!} and large ensembles.  Model-based regional analysis is also justified if additional data is available for the region, of course.\index{PISM!pismo executable for outlet glaciers}\index{regional-tools}
 
 \index{CReSIS bedrock topography for Jakobshavn}
-The geometric data used here is the SeaRISE  \cite{Bindshadler2012SeaRISE} 1\,km dataset for the whole Greenland ice sheet.  It contains bedrock topography from recent CReSIS radar in the Jakobshavn area.  We also use the SeaRISE 5\,km data set which has climatic mass balance from the Greenland-region climate model RACMO \cite{Ettemaetal2009}.  A regional ice flow model also generally needs boundary conditions.  For this we use a 5\,km whole ice sheet spun-up model state from PISM, described in Section \ref{sec:start} of this \emph{Manual}.  You can generate the file by running those scripts at their highest-resolution settings, or you can download the result, a 1.3\,GB NetCDF file, from the PISM website.
+The geometric data used here is the SeaRISE  \cite{Bindshadler2012SeaRISE} 1\,km dataset for the whole Greenland ice sheet.  It contains bedrock topography from recent CReSIS radar in the Jakobshavn area.  We also use the SeaRISE 5\,km data set which has climatic mass balance from the Greenland-region climate model RACMO \cite{Ettemaetal2009}.  A regional ice flow model also generally needs boundary conditions.  For this we use a 5\,km whole ice sheet spun-up model state from PISM, described in Section \ref{sec:start} of this \emph{Manual}.  You can download the 1.3\,GB NetCDF result from the PISM website, or you can generate it by running the Section \ref{sec:start} script. 
 
 \begin{figure}[ht]
   \centering
@@ -171,7 +171,7 @@ This choice uses the present-day ice extent, ultimately as defined by SeaRISE da
 Now that we have a spun-up state, here is a 100 model year run on a 2\,km grid:
 \begin{quote}\small
 \begin{verbatim}
-    $ ./century.sh 4 311 213 spunjako_0.nc >> out.2km_100a &
+$ ./century.sh 4 311 213 spunjako_0.nc >> out.2km_100a &
 \end{verbatim}
 \normalsize\end{quote}
 This run requires at least 6\,GB of memory, and it takes about 25 processor-hours.
@@ -186,21 +186,19 @@ The surface speed at the end of this run is shown in Figure \ref{fig:jako-csurf}
 Over the 100 year period covered by \verb|ex_jakofine.nc| the flow appears to be a steady state.  Though the climate forcing and boundary conditions are time-independent, a longer run will reveal ongoing speed variability associated to subglacially-driven sliding cyclicity \cite{vanPeltOerlemans2012}.
 
 The ice dynamics parameters chosen in \verb|spinup.sh| and \verb|century.sh|, especially the combination
+\begin{quote}\small
+\begin{verbatim}
+   -sia_e 1.0 -ssa_sliding -topg_to_phi 5.0,30.0,-300.0,700.0 -plastic_pwfrac 0.98 \
+      -pseudo_plastic -pseudo_plastic_q 0.25
+\end{verbatim}
+\normalsize\end{quote}
+is an appropriate topic for a parameter study \cite{BKAJS}.
 
-  \verb|-sia_e 1.0 -ssa_sliding -topg_to_phi 5.0,30.0,-300.0,700.0 -plastic_pwfrac 0.98 \|
-
-  \verb|  -pseudo_plastic -pseudo_plastic_q 0.25|
-  
-\noindent are a highly-appropriate topic for a parameter study \cite{BKAJS}.
-
-
-\begin{comment}
 
 \subsection*{Plotting the results}
 
-This is about Figure {fig:jako-csurf}.  We use  PyPISMTools.
-
-To visualize the surface speed at the end of the 2\,km run, download PyPISMTools and do
+Figure \ref{fig:jako-csurf} was generated using \href{https://github.com/pism/PyPISMTools}{PyPISMTools} and \href{http://nco.sourceforge.net/}{NCO} and \href{http://code.zmaw.de/projects/cdo}{CDO}.  Do
+\begin{quote}\small
 \begin{verbatim}
 $ ncpdq -a time,z,y,x spunjako_0.nc jako5km.nc
 $ nc2cdo.py jako5km.nc
@@ -208,7 +206,6 @@ $ cdo remapbil,jako5km.nc Greenland_5km_v1.1.nc Greenland_5km_v1.1_jako.nc
 $ ncap2 -O -s "csurf=surfvelmag*1.;" Greenland_5km_v1.1_jako.nc Greenland_5km_v1.1_jako.nc
 $ basemap-plot.py -v csurf --singlerow -o jako-csurf.png jakofine.nc Greenland_5km_v1.1_jako.nc
 \end{verbatim}
+\normalsize\end{quote}
+To choose a colormap \verb|foo.cpt| add option \verb|--colormap foo.cpt| in the last command.
 
-To choose a colormap add option \verb|--colormap foo.cpt| or similar.
-
-\end{comment}
