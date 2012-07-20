@@ -154,11 +154,13 @@ Please run \verb|experiments.sh| and the postprocessing scripts, play with them,
 Because real ice sheets, and ice sheet models too, have a ``memory'' of past climates, the results strongly depend on the nature of the spin-up process which preceded this ``forecast'' run.  Therefore, as already noted, it is critical to evaluate the quality of the spunup state, for example using present-day observations of surface velocity \cite{AschwandenAdalgeirsdottirKhroulev}, and other observations including ice temperature in ice bore-holes.  Critical thinking about a broad range of modeling hypotheses is prerequisite to building models of future behavior.
 
 
-\subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  At a superficial level, PISM is just a program which takes one or more NetCDF files as input, does some computation, and produces one or more NetCDF files as output.  As a result, the user needs tools to extract some meaning from the NetCDF output files and also, in the general case, more tools to create NetCDF files for input to PISM.\footnote{Regarding the creation of input files, see the section \ref{sec:bootstrapping-format} and table \ref{tab:modelhierarchy} for ideas about the data necessary for modeling.}
+\subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  PISM takes one or more NetCDF files as input, then it does some computation, and then it produces one or more NetCDF files as output.  Usually, other tools help to extract meaning from these NetCDF files, and yet more tools help with creating PISM input files or post-processing PISM output files.
 
-The most basic tools for converting NetCDF files to and from a standard text representation are called \texttt{ncdump} and \texttt{ncgen}.  A glance at Unix \texttt{man} pages for these tools might be wise at this time.
+Table \ref{tab:NetCDFview} lists such tools.  We frequently use \texttt{ncview}, ``\texttt{ncdump -h}'', and NCO for quick visualization, metadata examination, and command-line manipulation, respectively.  Visualization tools IDV and PyNGL are especially useful.  
 
-We most-regularly use \texttt{ncview} to look at NetCDF files.  Table \ref{tab:NetCDFview} lists NetCDF tools that can be useful for visualizing and post-processing PISM output files, as well as for preparing input data.  We find \texttt{ncview}, NCO, IDV and PyNGL especially useful.
+To use CDO on PISM files, first run the script \texttt{nc2cdo.py}, from the \texttt{util/} PISM directory, on the file.  This fixes the metadata so that CDO will understand the mapping.
+
+Regarding the creation of input files for PISM, see the section \ref{sec:bootstrapping-format} and table \ref{tab:modelhierarchy} for ideas about the data necessary for modeling.
 
 \newcommand{\netcdftool}[1]{#1\index{NetCDF!tools!#1}}
 \begin{table}[ht]
@@ -168,21 +170,21 @@ We most-regularly use \texttt{ncview} to look at NetCDF files.  Table \ref{tab:N
   \toprule
   \textbf{Tool} & \textbf{Site} & \textbf{Function} \\
   \midrule
+  & \url{www.unidata.ucar.edu/software/netcdf/} & root for NetCDF information \\
+  \midrule
   \netcdftool{\texttt{ncdump}} & \emph{included with any NetCDF distribution} & dump binary NetCDF as \texttt{.cdl} (text) file \\
   \netcdftool{\texttt{ncgen}} & \emph{included with any NetCDF distribution} & convert \texttt{.cdl} file to binary NetCDF \\
-  \netcdftool{\texttt{ncview}} & \href{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}{\texttt{meteora.ucsd.edu/~pierce/ncview_home_page.html}} & quick graphical view \\
+  \midrule
+  \netcdftool{CDO} & \url{http://code.zmaw.de/projects/cdo} & = Climate Data Operators; command-line tools, including conservative re-mapping \\
   \netcdftool{IDV} & \url{http://www.unidata.ucar.edu/software/idv/} & more complete visualization \\
-  % \netcdftool{Paraview} & \href{http://www.paraview.org}{\texttt{www.paraview.org}} & powerful open-source parallel visualization \\
-  \netcdftool{NCL} &  \url{http://www.ncl.ucar.edu} & NCAR Command Language\\
+  \netcdftool{NCO}\index{NCO (NetCDF Operators)} & \url{http://nco.sourceforge.net/} & = NetCDF Operators; command-line tools\\
+  \netcdftool{NCL} &  \url{http://www.ncl.ucar.edu} & = NCAR Command Language\\
+  \netcdftool{\texttt{ncview}} & \href{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}{\texttt{meteora.ucsd.edu/$\sim$pierce/ncview_home_page.html}} & quick graphical view \\
   \netcdftool{PyNGL} &  \url{http://www.pyngl.ucar.edu} & Python version of NCL\\
-  % \netcdftool{VisIt} & \href{http://visit.llnl.gov}{\texttt{visit.llnl.gov}} & advanced parallel visualization \\
-  \netcdftool{NCO}\index{NCO (NetCDF Operators)} & \url{http://nco.sourceforge.net/} & NetCDF Operators; command-line tools\\
-  \netcdftool{CDO} & \url{http://code.zmaw.de/projects/cdo} & Climate Data Operators; more command-line tools, including conservative re-mapping \\
-  & \url{www.unidata.ucar.edu/software/netcdf/} & root for NetCDF information \\
   \bottomrule
 \end{tabular}
 \normalsize
-\caption{Tools for viewing and modifying NetCDF files.}
+\caption{A selection of tools for viewing and modifying NetCDF files.}
 \label{tab:NetCDFview}
 \end{table}
 
