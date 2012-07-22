@@ -86,7 +86,10 @@ PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANAME -sur
 PARAMS="-pseudo_plastic -pseudo_plastic_q 0.25 -plastic_pwfrac 0.97"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
 #TILLPHI="-topg_to_phi 5.0,20.0,-1000.0,0.0,10.0" # as in Martin et al 2012
-FULLPHYS="-ssa_sliding -thk_eff $PARAMS $TILLPHI"
+FULLPHYS="-ssa_sliding -thk_eff -diffuse_bwat $PARAMS $TILLPHI"
+
+# use these KSP "diverged" errors occur
+STRONGKSP="-ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
 
 
 echo "$SCRIPTNAME             PISM = $PISM_EXEC"
@@ -150,6 +153,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i $INNAME \
 	-ys 0 -y $RUNTIME \
 	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 	-extra_file $EXTRANAME $exfilepackage \
+	$STRONGKSP \
 	-o $RESNAME -o_size big"
 $DO $cmd
 #exit # <-- uncomment to stop here
@@ -175,6 +179,7 @@ $DO $cmd
 #	-ys 0 -y $RUNTIME \
 #	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 #	-extra_file $EXTRANAME $exfilepackage \
+#	$STRONGKSP \
 #	-o $RESNAME -o_size big"
 #	
 #echo $DO $cmd 
@@ -202,6 +207,7 @@ $DO $cmd
 #	-ys 0 -y $RUNTIME \
 #	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 #	-extra_file $EXTRANAME $exfilepackage \
+#	$STRONGKSP \
 #	-o $RESNAME -o_size big"
 #	
 #echo $DO $cmd 
@@ -229,6 +235,7 @@ $DO $cmd
 #	-ys 0 -y $RUNTIME \
 #	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 #	-extra_file $EXTRANAME $exfilepackage \
+#	$STRONGKSP \
 #	-o $RESNAME -o_size big"
 #	
 #echo $DO $cmd 
