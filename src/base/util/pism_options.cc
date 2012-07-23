@@ -611,6 +611,9 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("brutal_sliding", "scalebrutalSet"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr); 
+  
+  ierr = config.flag_from_option("stress_output", "do_stresses"); CHKERRQ(ierr);
+
  
   // SSA Inversion
 

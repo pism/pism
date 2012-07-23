@@ -244,6 +244,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
     floating_ice_killed = config.get_flag("floating_ice_killed"),
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     compute_cumulative_acab = config.get_flag("compute_cumulative_acab");
+    
+  bool do_stresses = config.get_flag("do_stresses");
+  if (do_stresses){
+    ierr = stress_balance->get_2D_stresses(txx, tyy, txy); CHKERRQ(ierr);}
 
   if (surface != NULL) {
     ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);

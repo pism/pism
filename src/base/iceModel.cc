@@ -387,6 +387,25 @@ PetscErrorCode IceModel::createVecs() {
                                   "1/s", ""); CHKERRQ(ierr);
     ierr = variables.add(vPrinStrain2); CHKERRQ(ierr);
   }
+  
+  if (config.get_flag("do_stresses")== true) {
+    ierr = txx.create(grid, "sigma_xx", true); CHKERRQ(ierr);
+    ierr = txx.set_attrs("internal", 
+                                   "deviatoric stress in x direction",
+                                   "Pa", ""); CHKERRQ(ierr);
+    ierr = variables.add(txx); CHKERRQ(ierr);
+    ierr = tyy.create(grid, "sigma_yy", true); CHKERRQ(ierr);
+    ierr = tyy.set_attrs("internal", 
+                                   "deviatoric stress in y direction",
+                                   "Pa", ""); CHKERRQ(ierr);
+    ierr = variables.add(tyy); CHKERRQ(ierr);
+    ierr = txy.create(grid, "sigma_xy", true); CHKERRQ(ierr);
+    ierr = txy.set_attrs("internal", 
+                                   "deviatoric shear stress",
+                                   "Pa", ""); CHKERRQ(ierr);
+    ierr = variables.add(txy); CHKERRQ(ierr);
+  }
+  
 
   if (config.get_flag("ssa_dirichlet_bc") == true) {
     // bc_locations

@@ -227,6 +227,10 @@ protected:
         vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
         vPrinStrain1,   //!< major principal component of horizontal strain-rate tensor
         vPrinStrain2,   //!< minor principal component of horizontal strain-rate tensor
+        
+        txx,   //!< deviatoric stress in x-direction
+        tyy,   //!< deviatoric stress in y-direction
+        txy,   //!< deviatoric shear stress
 
     acab,		//!< accumulation/ablation rate; no ghosts
     acab_cumulative,    //!< cumulative acab
