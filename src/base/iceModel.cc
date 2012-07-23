@@ -233,6 +233,15 @@ PetscErrorCode IceModel::createVecs() {
     ierr = variables.add(ocean_kill_mask); CHKERRQ(ierr);
 
   }
+  
+  if (config.get_flag("sub_groundingline")) {
+    ierr = gl_mask.create(grid, "gl_mask", false); CHKERRQ(ierr);
+    ierr = gl_mask.set_attrs("internal",
+                                     "mask specifying grounding line position",
+                                     "", ""); CHKERRQ(ierr);
+    ierr = variables.add(gl_mask); CHKERRQ(ierr);
+
+  }
 
   // grounded_dragging_floating integer mask
   if(config.get_flag("do_eigen_calving")) {

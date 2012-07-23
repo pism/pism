@@ -120,6 +120,9 @@ netcdf pism_config {
     pism_config:nuBedrockSet = "false";
     pism_config:nuBedrockSet_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
 
+		pism_config:sub_groundingline  = "false";
+    pism_config:sub_groundingline_doc = "The Pattyn et al. interpolation scheme expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
+
     // parameters:
 
     pism_config:bootstrapping_H_value_no_var = 0.0;

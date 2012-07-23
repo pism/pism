@@ -662,6 +662,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.scalar_from_option("thk_eff_H_low","thk_eff_H_low");  CHKERRQ(ierr);
   // pure number :
   ierr = config.scalar_from_option("thk_eff_reduced","thk_eff_reduced");  CHKERRQ(ierr);
+  
+  ierr = config.flag_from_option("subgl", "sub_groundingline"); CHKERRQ(ierr);
 
   // Ice shelves
 

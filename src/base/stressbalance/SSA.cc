@@ -38,6 +38,9 @@ SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
   enthalpy = NULL;
   driving_stress_x = NULL;
   driving_stress_y = NULL;
+  if (config.get_flag("sub_groundingline")) {
+    gl_mask = NULL;
+  }
 
   strength_extension = new SSAStrengthExtension(config);
   allocate();
@@ -51,6 +54,11 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n"); CHKERRQ(ierr);
+  
+  if (config.get_flag("sub_groundingline")) {
+    gl_mask = dynamic_cast<IceModelVec2S*>(vars.get("gl_mask"));
+    if (gl_mask == NULL) SETERRQ(grid.com, 1, "subgrid_grounding_line_position is not available");
+  }
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");

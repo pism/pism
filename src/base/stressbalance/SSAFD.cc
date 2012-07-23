@@ -420,6 +420,11 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   if (vel_bc && bc_locations) {
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
+  
+  const bool sub_gl = config.get_flag("sub_groundingline");
+  if (sub_gl){
+    ierr = gl_mask->begin_access(); CHKERRQ(ierr);
+   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
   bool nuBedrockSet=config.get_flag("nuBedrockSet");
@@ -618,6 +623,12 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
           // areas already have a strength extension
           beta = beta_ice_free_bedrock;
         }
+        if (sub_gl){
+          // if grounding line interpolation apply here reduced basal drag
+          if (M.icy(M_ij)) {
+            beta = (*gl_mask)(i,j) * basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          }
+        }
       }
 
       // add beta to diagonal entries
@@ -643,6 +654,10 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   if (vel_bc && bc_locations) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
   }
+  
+  if (sub_gl){
+    ierr = gl_mask->end_access(); CHKERRQ(ierr);
+   }
 
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = vel.end_access(); CHKERRQ(ierr);
