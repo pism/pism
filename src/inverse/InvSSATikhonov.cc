@@ -111,7 +111,9 @@ PetscErrorCode InvSSATikhonov::convergenceTest(TaoSolver tao) {
   designNorm *= dWeight;    
   stateNorm  *= sWeight;
   
-  if( sumNorm < m_tikhonov_atol && sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm) ) {
+  if( sumNorm < m_tikhonov_atol) {
+    ierr = TaoSetTerminationReason(tao, TAO_CONVERGED_GATOL); CHKERRQ(ierr);    
+  } else if( sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm) ) {
     ierr = TaoSetTerminationReason(tao,TAO_CONVERGED_USER); CHKERRQ(ierr);
   } else {
     ierr = TaoDefaultConvergenceTest(tao,NULL); CHKERRQ(ierr);

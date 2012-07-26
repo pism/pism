@@ -88,6 +88,7 @@ protected:
 
   virtual PetscErrorCode compute_dlogalpha(PetscReal *dalpha, TerminationReason::Ptr &reason);
 
+  virtual PetscErrorCode linesearch(TerminationReason::Ptr &reason);
 
   PetscErrorCode construct();
   PetscErrorCode destruct();

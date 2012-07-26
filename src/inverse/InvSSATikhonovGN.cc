@@ -303,6 +303,51 @@ PetscErrorCode InvSSATikhonovGN::evaluate_objective_and_gradient(TerminationReas
   return 0;
 }
 
+PetscErrorCode InvSSATikhonovGN::linesearch(TerminationReason::Ptr &reason) {
+  PetscErrorCode ierr;
+
+  TerminationReason::Ptr step_reason;
+
+  PetscReal old_value = m_val_design * m_alpha + m_val_state;
+
+  PetscReal descent_derivative;
+
+  ierr = m_tmp_D1Global.copy_from(m_h); CHKERRQ(ierr);
+  ierr = VecDot(m_gradient.get_vec(),m_tmp_D1Global.get_vec(),&descent_derivative);
+
+  if(descent_derivative >=0 ) {
+    printf("descent derivative: %g\n",descent_derivative);
+    reason.reset(new GenericTerminationReason(-1,"Not descent direction"));
+    return 0;
+  }
+
+  PetscReal alpha = 1;
+  ierr = m_tmp_D1Local.copy_from(m_d); CHKERRQ(ierr);
+  while(true) {
+    ierr = m_d.add(alpha,m_h); CHKERRQ(ierr);  // Replace with line search.
+    ierr = this->evaluate_objective_and_gradient(step_reason); CHKERRQ(ierr);
+    if(step_reason->failed()) {
+      reason.reset(new GenericTerminationReason(-1,"Forward solve"));
+      reason->set_root_cause(step_reason);
+      return 0;
+    }
+    printf("alpha %g; old value %g; new value %g; desired %g\n",alpha,old_value,m_value,old_value + 1e-3*alpha*descent_derivative);
+    if(m_value <= old_value + 1e-3*alpha*descent_derivative) {
+      break;
+    }
+    alpha *=.5;
+    if(alpha<1e-20) {
+      printf("alpha= %g; derivative = %g\n",alpha,descent_derivative);
+      reason.reset(new GenericTerminationReason(-1,"Too many step shrinks."));
+      return 0;
+    }
+    ierr = m_d.copy_from(m_tmp_D1Local); CHKERRQ(ierr);
+  }
+  
+  reason = GenericTerminationReason::success();
+  return 0;
+}
+
 PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
@@ -313,13 +358,14 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
 
   TerminationReason::Ptr step_reason;
 
-  while(true) {
+  this->evaluate_objective_and_gradient(step_reason);
+  if(step_reason->failed()) {
+    reason.reset(new GenericTerminationReason(-1,"Forward solve"));
+    reason->set_root_cause(step_reason);
+    return 0;
+  }
 
-    this->evaluate_objective_and_gradient(step_reason);
-    if(step_reason->failed()) {
-      reason.reset(new GenericTerminationReason(-1,"Forward solve"));
-      reason->set_root_cause(step_reason);
-    }
+  while(true) {
 
     ierr = this->check_convergence(reason); CHKERRQ(ierr);
     if(reason->done()) {
@@ -338,6 +384,14 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
       return 0;
     }
 
+    ierr = this->linesearch(step_reason); CHKERRQ(ierr);
+    if(step_reason->failed()) {
+      TerminationReason::Ptr cause = reason;
+      reason.reset(new GenericTerminationReason(-1,"Linesearch"));
+      reason->set_root_cause(step_reason);
+      return 0;
+    }
+
     if(m_tikhonov_adaptive) {
       ierr = this->compute_dlogalpha(&dlogalpha,step_reason); CHKERRQ(ierr);
       if(step_reason->failed()) {
@@ -347,8 +401,6 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
         return 0;
       }
     }
-
-    ierr = m_d.add(1,m_h); CHKERRQ(ierr);  // Replace with line search.
 
     m_iter++;
   }

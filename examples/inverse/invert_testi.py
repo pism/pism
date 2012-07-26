@@ -315,8 +315,8 @@ if __name__ == "__main__":
   solver.addXUpdateListener(PISM.invert_ssa.ZetaSaver(output_file)) 
 
   # Try solving
-  reason = solver.solveInverse(zeta0,u_obs,zeta0):
-  if reason.failed()
+  reason = solver.solveInverse(zeta0,u_obs,zeta0)
+  if reason.failed():
     PISM.verbPrintf(1,grid.com,"Inverse solve FAILURE (%s)!\n" % reason.description());
     quit()
   PISM.verbPrintf(1,grid.com,"Inverse solve success (%s)!\n" % reason.description());
