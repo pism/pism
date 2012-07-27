@@ -381,7 +381,6 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-
       // Index into coefficient storage in feStore
       const PetscInt ij = element_index.flatten(i,j);
 
@@ -419,6 +418,7 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec
           dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
         }
       } // q
+
       m_dofmap.addLocalResidualBlock(dzeta_e,dzeta_a);
     } // j
   } // i
@@ -449,7 +449,7 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec
 PetscErrorCode InvSSAForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du) {
   
   PetscErrorCode ierr;
-  
+
   if(m_rebuild_J_state) {
     ierr = this->assemble_jacobian_state(velocity,m_J_state); CHKERRQ(ierr);
     m_rebuild_J_state = false;
@@ -496,7 +496,7 @@ PetscErrorCode InvSSAForwardProblem::apply_linearization_transpose(IceModelVec2V
   ierr = m_du_global.get_array(du_a); CHKERRQ(ierr);
   DirichletData dirichletBC;
   ierr = dirichletBC.init(m_dirichletLocations,m_dirichletValues,m_dirichletWeight); CHKERRQ(ierr);
-  dirichletBC.fixResidualHomogeneous(du_a);
+  if(dirichletBC) dirichletBC.fixResidualHomogeneous(du_a);
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
   ierr = m_du_global.end_access(); CHKERRQ(ierr);
 
@@ -518,5 +518,6 @@ PetscErrorCode InvSSAForwardProblem::apply_linearization_transpose(IceModelVec2V
   ierr = m_du_local.copy_from(m_du_global); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design_transpose(velocity,m_du_local,dzeta); CHKERRQ(ierr);
   ierr = dzeta.scale(-1); CHKERRQ(ierr);
+
   return 0;
 }

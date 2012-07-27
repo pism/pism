@@ -101,7 +101,7 @@ PetscErrorCode InvSSATikhonovGN::construct() {
 
   ierr = PISMOptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
   
-  m_iter_max = 10; bool flag;
+  m_iter_max = 1000; bool flag;
   ierr = PISMOptionsInt("-inv_gn_iter_max", "",m_iter_max,flag); CHKERRQ(ierr);  
 
   m_tikhonov_atol = grid.config.get("tikhonov_atol");

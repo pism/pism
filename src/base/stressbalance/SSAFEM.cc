@@ -261,19 +261,19 @@ PetscErrorCode SSAFEM::cacheQuadPtValues()
 
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
   bool driving_stress_explicit;
-  if(surface != NULL) {
-    driving_stress_explicit = false;
-    ierr = surface->get_array(h);CHKERRQ(ierr);
-  } else {
+  if( (driving_stress_x != NULL) && (driving_stress_y != NULL) ) {
     driving_stress_explicit = true;
     ierr = driving_stress_x->get_array(ds_x);CHKERRQ(ierr);
     ierr = driving_stress_y->get_array(ds_y);CHKERRQ(ierr);
-  }
+  } else {
+    // The class SSA ensures in this case that 'surface' is available
+    driving_stress_explicit = false;
+    ierr = surface->get_array(h);CHKERRQ(ierr);
+  } 
 
   ierr = thickness->get_array(H);CHKERRQ(ierr);
   ierr = bed->get_array(topg);CHKERRQ(ierr);
   ierr = tauc->get_array(tauc_array);CHKERRQ(ierr);
-
 
   PetscInt xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
@@ -349,11 +349,11 @@ PetscErrorCode SSAFEM::cacheQuadPtValues()
       }
     }
   }
-  if(surface != NULL) {
-    ierr = surface->end_access();CHKERRQ(ierr);
-  } else {
+  if(driving_stress_explicit) {
     ierr = driving_stress_x->end_access();CHKERRQ(ierr);
     ierr = driving_stress_y->end_access();CHKERRQ(ierr);
+  } else {
+    ierr = surface->end_access();CHKERRQ(ierr);
   }
   ierr = thickness->end_access();CHKERRQ(ierr);
   ierr = bed->end_access();CHKERRQ(ierr);

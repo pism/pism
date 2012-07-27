@@ -410,7 +410,7 @@ netcdf pism_config {
     pism_config:inv_ssa_target_rms_misfit = 100;
     pism_config:inv_ssa_target_rms_misfit_doc = "m/a; desired RMS misfit for SSA inversions";
     
-    pism_config:tikhonov_atol  = 1;
+    pism_config:tikhonov_atol  = 1e-10;
     pism_config:tikhonov_atol_doc = "m/a; absolute threshold for Tikhonov stopping criterion";
     
     pism_config:tikhonov_rtol  = 5e-2;

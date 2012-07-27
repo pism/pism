@@ -285,7 +285,7 @@ if __name__ == "__main__":
 
   # Determine the prior guess for tauc. This can be one of 
   # a) tauc from the input file (default)
-  # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
+  # b) tauc_prior from the inv_datafile if -inv_use_tauc_prior is set
   tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
   tauc = PISM.util.standardYieldStressVec(grid)
