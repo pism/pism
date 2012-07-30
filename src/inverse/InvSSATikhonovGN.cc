@@ -326,14 +326,13 @@ PetscErrorCode InvSSATikhonovGN::linesearch(TerminationReason::Ptr &reason) {
   while(true) {
     ierr = m_d.add(alpha,m_h); CHKERRQ(ierr);  // Replace with line search.
     ierr = this->evaluate_objective_and_gradient(step_reason); CHKERRQ(ierr);
-    if(step_reason->failed()) {
-      reason.reset(new GenericTerminationReason(-1,"Forward solve"));
-      reason->set_root_cause(step_reason);
-      return 0;
+    if(step_reason->succeeded()) {
+      if(m_value <= old_value + 1e-3*alpha*descent_derivative) {
+        break;
+      }
     }
-    printf("alpha %g; old value %g; new value %g; desired %g\n",alpha,old_value,m_value,old_value + 1e-3*alpha*descent_derivative);
-    if(m_value <= old_value + 1e-3*alpha*descent_derivative) {
-      break;
+    else {
+      printf("forward solve failed in linsearch.  Shrinking.\n");
     }
     alpha *=.5;
     if(alpha<1e-20) {
