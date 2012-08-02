@@ -15,7 +15,7 @@ set -x
 
 python pism_regional.py -i gr1km.nc -o jakomask.nc -x 360,382 -y 1135,1176 -b 50
 
-ncks -d x,299,918 -d y,970,1394 gr1km.nc jako.nc
+ncks -O -d x,299,918 -d y,970,1394 gr1km.nc jako.nc
 
 ncks -A -d x,299,918 -d y,970,1394 jakomask.nc jako.nc
 

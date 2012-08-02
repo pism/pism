@@ -88,7 +88,7 @@ def get_projection_from_file(nc):
 if __name__ == "__main__": 
 
     ## open netCDF file in 'append' mode
-    nc = CDF(nc_outfile,'a',format='NETCDF3_CLASSIC')
+    nc = CDF(nc_outfile,'a')
 
     ## a list of possible x-dimensions names
     xdims = ['x', 'x1']
@@ -184,7 +184,7 @@ if __name__ == "__main__":
         lon, lat = proj(ee, nn, inverse=True)
 
     var = 'lon'
-    ## If it does not yet exist, create variable 'lat_bounds'
+    ## If it does not yet exist, create variable 'lon'
     if not var in nc.variables.keys():
         var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim))
         ## Assign values to variable 'lon'
@@ -200,9 +200,8 @@ if __name__ == "__main__":
     ## Assign bounds to variable 'lon'
     var_out.bounds = "lon_bounds"
     
-
     var = 'lat'
-    ## If it does not yet exist, create variable 'lat_bounds'
+    ## If it does not yet exist, create variable 'lat'
     if not var in nc.variables.keys():
         var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim))
         var_out[:] = lat
