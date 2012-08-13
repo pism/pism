@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2011 Ricarda Winkelmann and Torsten Albrecht and Ed Bueler
+# Copyright (C) 2012 Ricarda Winkelmann and Torsten Albrecht and Ed Bueler
 
 import sys
 import getopt
@@ -143,14 +143,14 @@ vars = {'x': ['m',
 	      'bedrock_altitude',
 	      -600.0,
 	      bed],
-     	'artm': ['K',
-	      'annual mean air temperature at ice surface',
-	      'surface_temperature',
+	'ice_surface_temp': ['K',
+             'annual mean air temperature at ice surface',
+	     'surface_temperature',
 	      248.0,
 	      Ts],
-	'acab': ['m s-1',
-	      'mean annual net ice equivalent accumulation rate',
-	      'land_ice_surface_specific_mass_balance',
+	'climatic_mass_balance': ['m s-1',
+	     'mean annual net ice equivalent accumulation rate',
+             'land_ice_surface_specific_mass_balance',
 	      0.2/SECPERA,
 	      accum],
 	}
