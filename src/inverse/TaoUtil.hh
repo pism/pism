@@ -123,7 +123,7 @@ public:
 
 protected:
 
-  static PetscErrorCode evaluateGradientCallback(TaoSolver tao,
+  static PetscErrorCode evaluateGradient(TaoSolver tao,
                                  Vec x, Vec gradient, void *ctx ) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
