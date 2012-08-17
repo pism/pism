@@ -417,10 +417,14 @@ if __name__ == "__main__":
   if do_pause:
     solver.addIterationListener(PISM.invert_ssa.pauseListener)
   # Progress reporting
+  progress_reporter = None
   if inv_method.startswith('tik'):
-    solver.addIterationListener(PISM.invert_ssa.printTikhonovProgress)
+    progress_reporter = PISM.invert_ssa.PrintTikhonovProgress()
   else:
-    solver.addIterationListener(PISM.invert_ssa.printRMSMisfit)
+    progress_reporter = PISM.invert_ssa.PrintRMSMisfit()
+  if progress_reporter is not None:
+    solver.addIterationListener(progress_reporter)
+
   # Saving the current iteration
   solver.addXUpdateListener(PISM.invert_ssa.ZetaSaver(output_filename)) 
 
@@ -486,3 +490,7 @@ if __name__ == "__main__":
   # the output file.  So we rewrite the siple log.
   if not append_mode:
     logger.write(output_filename)
+
+  # Save the misfit history
+  if progress_reporter is not None:
+    progress_reporter.write(output_filename)
