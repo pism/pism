@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012 Moritz Hütten
+# Copyright (C) 2012 Moritz Huetten
 
 # geometry setup MISMIP3D P75S/P10S-experiment
 

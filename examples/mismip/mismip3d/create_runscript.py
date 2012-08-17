@@ -1,16 +1,11 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012 Moritz Hütten and Torsten Albrecht 
+# Copyright (C) 2012 Moritz Huetten and Torsten Albrecht
 
 # create MISMIP-runscript
 
-from pylab import *
-import os
 import sys
 import getopt
-import math
-#from numpy import *
-import numpy as np
 try:
     from netCDF4 import Dataset as NC
 except:

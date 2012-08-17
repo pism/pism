@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012 Moritz Hütten
+# Copyright (C) 2012 Moritz Huetten
 
 import sys
 import getopt
