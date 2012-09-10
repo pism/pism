@@ -70,9 +70,6 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   } else {
     ierr = precipitation.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
-  string precip_history = "read from " + precip_filename + "\n";
-
-  ierr = precipitation.set_attr("history", precip_history); CHKERRQ(ierr);
 
   air_temp_snapshot.init_2d("air_temp_snapshot", grid);
   air_temp_snapshot.set_string("pism_intent", "diagnostic");

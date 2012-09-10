@@ -86,12 +86,8 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precipitation(IceModelVec2S &result) {
   ierr = PAYearlyCycle::mean_precipitation(result); CHKERRQ(ierr);
 
   if ((delta_T != NULL) && paleo_precipitation_correction) {
-    string history = "added the paleo-precipitation correction\n" + result.string_attr("history");
-
     PetscReal precipexpfactor = config.get("precip_exponential_factor_for_temperature");
     ierr = result.scale(exp( precipexpfactor * (*delta_T)(t + 0.5 * dt) )); CHKERRQ(ierr);
-
-    ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }
 
   return 0;

@@ -86,17 +86,14 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
 
 PetscErrorCode PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  string history  = "read from " + input_file + "\n";
 
   ierr = climatic_mass_balance.copy_to(result); CHKERRQ(ierr);
-  ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;
 }
 
 PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  string history  = "parmeterized ice surface temperature \n";
 
   ierr = result.begin_access();   CHKERRQ(ierr);
   ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
@@ -114,8 +111,6 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   ierr = lat->end_access(); CHKERRQ(ierr);
   ierr = result.end_access();   CHKERRQ(ierr);
   ierr = ice_surface_temp.end_access();   CHKERRQ(ierr);
-
-  ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;
 }
