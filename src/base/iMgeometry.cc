@@ -243,7 +243,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed"),
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
-    compute_cumulative_acab = config.get_flag("compute_cumulative_acab");
+    compute_cumulative_climatic_mass_balance = config.get_flag("compute_cumulative_climatic_mass_balance");
     
   bool do_stresses = config.get_flag("do_stresses");
   if (do_stresses){
@@ -298,8 +298,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = ocean_kill_mask.begin_access(); CHKERRQ(ierr);
   }
 
-  if (compute_cumulative_acab) {
-    ierr = acab_cumulative.begin_access(); CHKERRQ(ierr);
+  if (compute_cumulative_climatic_mass_balance) {
+    ierr = climatic_mass_balance_cumulative.begin_access(); CHKERRQ(ierr);
   }
 
   MaskQuery mask(vMask);
@@ -456,8 +456,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       // Track cumulative surface mass balance. Note that this keeps track of
       // cumulative acab at all the grid cells (including ice-free cells).
-      if (compute_cumulative_acab) {
-        acab_cumulative(i, j) += acab(i, j) * dt;
+      if (compute_cumulative_climatic_mass_balance) {
+        climatic_mass_balance_cumulative(i, j) += acab(i, j) * dt;
       }
 
     } // end of the inner for loop
@@ -472,8 +472,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 
-  if (compute_cumulative_acab) {
-    ierr = acab_cumulative.end_access(); CHKERRQ(ierr);
+  if (compute_cumulative_climatic_mass_balance) {
+    ierr = climatic_mass_balance_cumulative.end_access(); CHKERRQ(ierr);
   }
 
   if (do_part_grid) {

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 The PISM Authors
+# Copyright (C) 2009-2012 The PISM Authors
 #
 # This script should produce a file which conforms to SeaRISE output format at
 #    http://websrv.cs.umt.edu/isis/index.php/Output_Format
@@ -60,7 +60,7 @@ for NAME in "${MODEL}_A_D3_C1_E0" \
   # create draft of deliverable file:
   ncks -O ${RESDIR}/extra_${NAME}.nc -o ${NAME}_full.nc
   # calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
-  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}' ${NAME}_full.nc ${NAME}_full.nc
+  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(climatic_mass_balance_cumulative(idt,:,:)-climatic_mass_balance_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}' ${NAME}_full.nc ${NAME}_full.nc
   # adjust meta data for new fields
   ncatted -a units,acab,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
       -a long_name,acab,o,c,"surface mass balance" \
@@ -70,8 +70,8 @@ for NAME in "${MODEL}_A_D3_C1_E0" \
       -a cell_methods,acab,o,c,"time: mean (interval: 1 year)" \
       -a cell_methods,dHdt,o,c,"time: mean (interval: 1 year)" ${NAME}_full.nc
   # We keep the "full" files for record
-  # select every fifth year, don't copy acab_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides
-  ncks -O -x -v acab_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides \
+  # select every fifth year, don't copy climatic_mass_balance_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides
+  ncks -O -x -v climatic_mass_balance_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides \
       -d time,,,5 ${NAME}_full.nc ${NAME}.nc
   echo "(postprocess.sh)    combining annual scalar time series ts_${NAME}.nc with spatial file ..."
   cp ${RESDIR}/ts_${NAME}.nc tmp.nc

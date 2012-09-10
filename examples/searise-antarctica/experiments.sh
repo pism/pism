@@ -122,7 +122,7 @@ echo "$SCRIPTNAME PIKPHYS_COUPLING = $PIKPHYS_COUPLING"
 
 ###################################################################
 
-expackage="-acab_cumulative -extra_vars  usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab_cumulative,cbase,csurf,tempicethk_basal,tauc"
+expackage="-climatic_mass_balance_cumulative -extra_vars  usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,climatic_mass_balance_cumulative,cbase,csurf,tempicethk_basal,tauc"
 tspackage="-ts_vars ivol,iareag,iareaf"
 
 STARTTIME=0

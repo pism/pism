@@ -37,8 +37,8 @@ netcdf pism_config {
     pism_config:count_time_steps = "no";
     pism_config:count_time_steps_doc = "If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.";
 
-    pism_config:compute_cumulative_acab = "no";
-    pism_config:compute_cumulative_acab_doc = "If yes, keep track of the cumulative surface mass balance (for SeaRISE).";
+    pism_config:compute_cumulative_climatic_mass_balance = "no";
+    pism_config:compute_cumulative_climatic_mass_balance_doc = "If yes, keep track of the cumulative surface mass balance (for SeaRISE).";
 
     pism_config:ssa_method = "fd";
     pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";

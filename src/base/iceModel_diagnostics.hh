@@ -417,10 +417,10 @@ public:
 };
 
 //! \brief Reports cumulative surface mass balance.
-class IceModel_acab_cumulative : public PISMDiag<IceModel>
+class IceModel_climatic_mass_balance_cumulative : public PISMDiag<IceModel>
 {
 public:
-  IceModel_acab_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  IceModel_climatic_mass_balance_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

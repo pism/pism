@@ -166,7 +166,7 @@ echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km), with -skip = $COAR
 echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km), with -skip = $FINESKIP)"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG -acab_cumulative"
+PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG -climatic_mass_balance_cumulative"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -ocean_kill $INNAME"
@@ -234,7 +234,7 @@ TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
 EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,acab_cumulative"
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,climatic_mass_balance_cumulative"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
@@ -324,7 +324,7 @@ echo
 echo "$SCRIPTNAME  some postprocessing"
 echo
 # calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
-ncap2_script="*sz_idt=time.size(); acab[\$time,\$x,\$y]= 0.f; dHdt[\$time,\$x,\$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}"
+ncap2_script="*sz_idt=time.size(); acab[\$time,\$x,\$y]= 0.f; dHdt[\$time,\$x,\$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(climatic_mass_balance_cumulative(idt,:,:)-climatic_mass_balance_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}"
 
 $PISM_DO ncap2 -O -s "$ncap2_script" $EXNAME $EXNAME
 

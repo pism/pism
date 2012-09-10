@@ -84,7 +84,7 @@ class IceModel {
   friend class IceModel_tempicethk;
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
-  friend class IceModel_acab_cumulative;
+  friend class IceModel_climatic_mass_balance_cumulative;
   friend class IceModel_dHdt;
   // scalar:
   friend class IceModel_ivol;
@@ -233,7 +233,7 @@ protected:
         txy,   //!< deviatoric shear stress
 
     acab,		//!< accumulation/ablation rate; no ghosts
-    acab_cumulative,    //!< cumulative acab
+    climatic_mass_balance_cumulative,    //!< cumulative acab
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
