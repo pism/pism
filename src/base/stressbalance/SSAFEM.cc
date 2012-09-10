@@ -21,6 +21,16 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 
+#if !defined(PETSC_VERSION_LT)
+#  define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
+#  define SNESDMComputeFunction(a,b,c,d) SNESDAFormFunction(a,b,c,d)
+#else
+#  if PETSC_VERSION_LT(3,3,0)
+#    define SNESDMComputeFunction(a,b,c,d) SNESDAFormFunction(a,b,c,d)
+#    define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
+#  endif
+#endif
+
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                    EnthalpyConverter &ec, const NCConfigVariable &c)
 {
@@ -37,7 +47,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
   m_beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
 
   ierr = DMCreateGlobalVector(SSADA, &r);CHKERRQ(ierr);
-  ierr = DMGetMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
 
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
 
@@ -172,8 +182,8 @@ PetscErrorCode SSAFEM::solve_nocache()
   ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
   callback_data.da = SSADA;  callback_data.ssa = this;
   ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes, r,    SNESDMComputeFunction,   &callback_data);CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes, J, J, SNESDMComputeJacobian,&callback_data);CHKERRQ(ierr);
 
   stdout_ssa.clear();
   if (getVerbosityLevel() >= 2)

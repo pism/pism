@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -175,7 +175,7 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
   if (!viewer) {
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
   }
-  ierr = PetscTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
   if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for ColumnSystem\n"); }
 
   ierr = PetscViewerASCIIPrintf(viewer,
@@ -210,7 +210,7 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
   if (!viewer) {
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
   }
-  ierr = PetscTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
   if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for ColumnSystem\n"); }
 
   if (L==NULL) {

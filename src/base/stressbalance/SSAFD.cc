@@ -22,6 +22,14 @@
 #include "pism_options.hh"
 #include "flowlaw_factory.hh"
 
+#if !defined(PETSC_VERSION_LT)
+#  define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
+#else
+#  if PETSC_VERSION_LT(3,3,0)
+#    define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
+#  endif
+#endif
+
 SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                   EnthalpyConverter &ec, const NCConfigVariable &c)
 {
@@ -44,7 +52,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   // note SSADA and SSAX are allocated in SSA::allocate()
   ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
 
-  ierr = DMGetMatrix(SSADA, MATAIJ, &SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA, MATAIJ, &SSAStiffnessMatrix); CHKERRQ(ierr);
 
   ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
   // the default PC type somehow is ILU, which now fails (?) while block jacobi

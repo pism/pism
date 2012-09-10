@@ -32,6 +32,16 @@
 using namespace std;
 /// @endcond
 
+// In PETSc 3.3 PetscTypeCompare was renamed to PetscObjectTypeCompare. Please
+// include this header in files using PetscObjectTypeCompare to support PETSc 3.2.
+#if !defined(PETSC_VERSION_LT)
+#  define PetscObjectTypeCompare(obj,type,flag) PetscTypeCompare(obj,type,flag)
+#else
+#  if PETSC_VERSION_LT(3,3,0)
+#    define PetscObjectTypeCompare(obj,type,flag) PetscTypeCompare(obj,type,flag)
+#  endif
+#endif
+
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 

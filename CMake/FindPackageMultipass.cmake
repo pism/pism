@@ -21,7 +21,14 @@
 #      # Make temporary files, run programs, etc, to determine FOO_INCLUDES and FOO_LIBRARIES
 #    endif (NOT foo_current)
 #
+# MULTIPASS_SOURCE_RUNS (Name INCLUDES LIBRARIES SOURCE RUNS LANGUAGE)
+#  Always runs the given test, use this when you need to re-run tests
+#  because parent variables have made old cache entries stale. The LANGUAGE
+#  variable is either C or CXX indicating which compiler the test should
+#  use. 
 # MULTIPASS_C_SOURCE_RUNS (Name INCLUDES LIBRARIES SOURCE RUNS)
+#  DEPRECATED! This is only included for backwards compatability. Use
+#  the more general MULTIPASS_SOURCE_RUNS instead.
 #  Always runs the given test, use this when you need to re-run tests
 #  because parent variables have made old cache entries stale.
 
@@ -70,9 +77,9 @@ macro (FIND_PACKAGE_MULTIPASS _name _current)
 endmacro (FIND_PACKAGE_MULTIPASS)
 
 
-macro (MULTIPASS_C_SOURCE_RUNS includes libraries source runs)
-  include (CheckCSourceRuns)
-  # This is a ridiculous hack.  CHECK_C_SOURCE_* thinks that if the
+macro (MULTIPASS_SOURCE_RUNS includes libraries source runs language)
+  include (Check${language}SourceRuns)
+  # This is a ridiculous hack.  CHECK_${language}_SOURCE_* thinks that if the
   # *name* of the return variable doesn't change, then the test does
   # not need to be re-run.  We keep an internal count which we
   # increment to guarantee that every test name is unique.  If we've
@@ -86,6 +93,14 @@ macro (MULTIPASS_C_SOURCE_RUNS includes libraries source runs)
   set (testname MULTIPASS_TEST_${MULTIPASS_TEST_COUNT}_${runs})
   set (CMAKE_REQUIRED_INCLUDES ${includes})
   set (CMAKE_REQUIRED_LIBRARIES ${libraries})
-  check_c_source_runs ("${source}" ${testname})
+  if(${language} STREQUAL "C")
+    check_c_source_runs ("${source}" ${testname})
+  elseif(${language} STREQUAL "CXX")
+    check_cxx_source_runs ("${source}" ${testname})
+  endif()
   set (${runs} "${${testname}}")
+endmacro (MULTIPASS_SOURCE_RUNS)
+
+macro (MULTIPASS_C_SOURCE_RUNS includes libraries source runs)
+  multipass_source_runs("${includes}" "${libraries}" "${source}" ${runs} "C")
 endmacro (MULTIPASS_C_SOURCE_RUNS)
