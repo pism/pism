@@ -57,24 +57,12 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
 }
 
 PetscErrorCode PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = atmosphere->mean_precipitation(result); CHKERRQ(ierr);
-
-  string history = result.string_attr("history");
-  history = "re-interpreted precipitation as surface mass balance (PSSimple)\n" + history;
-  ierr = result.set_attr("history", history); CHKERRQ(ierr);
-
+  PetscErrorCode ierr = atmosphere->mean_precipitation(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PSSimple::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = atmosphere->mean_annual_temp(result); CHKERRQ(ierr);
-
-  string history = result.string_attr("history");
-  history = "re-interpreted mean annual 2 m air temperature as instantaneous ice temperature at the ice surface (PSSimple)\n" + history;
-  ierr = result.set_attr("history", history); CHKERRQ(ierr);
-
+  PetscErrorCode ierr = atmosphere->mean_annual_temp(result); CHKERRQ(ierr);
   return 0;
 }
 
