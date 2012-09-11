@@ -22,6 +22,8 @@
 #include "THItools.hh"
 #include "pism_const.hh"        // PetscObjectTypeCompare redefinition for PETSc < 3.3
 
+#include "pism_petsc32_compat.hh"
+
 static PetscClassId THI_COOKIE;
 
 struct _p_THI {

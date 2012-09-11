@@ -20,6 +20,7 @@
 #include "pism_const.hh"
 #include "varcEnthalpyConverter.hh"
 
+#include "pism_petsc32_compat.hh"
 
 /*!
 A calculation only used in the cold case.

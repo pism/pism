@@ -21,6 +21,7 @@
 #include "iceModelVec.hh"
 #include "columnSystem.hh"
 
+#include "pism_petsc32_compat.hh"
 
 //! Allocate a tridiagonal system of maximum size my_nmax.
 /*!

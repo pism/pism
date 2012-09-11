@@ -22,6 +22,8 @@
 #include "iceModelVec.hh"
 #include "pism_const.hh"        // PetscObjectTypeCompare redefinition for PETSc < 3.3
 
+#include "pism_petsc32_compat.hh"
+
 enthSystemCtx::enthSystemCtx(const NCConfigVariable &config,
                              IceModelVec3 &my_Enth3, int my_Mz, string my_prefix)
       : columnSystemCtx(my_Mz, my_prefix) {  // <- critical: sets size of sys

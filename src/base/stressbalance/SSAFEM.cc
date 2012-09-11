@@ -21,15 +21,7 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 
-#if !defined(PETSC_VERSION_LT)
-#  define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
-#  define SNESDMComputeFunction(a,b,c,d) SNESDAFormFunction(a,b,c,d)
-#else
-#  if PETSC_VERSION_LT(3,3,0)
-#    define SNESDMComputeFunction(a,b,c,d) SNESDAFormFunction(a,b,c,d)
-#    define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
-#  endif
-#endif
+#include "pism_petsc32_compat.hh"
 
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                    EnthalpyConverter &ec, const NCConfigVariable &c)
@@ -50,6 +42,18 @@ PetscErrorCode SSAFEM::allocate_fem() {
   ierr = DMCreateMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
 
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
+
+  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
+  // methods via SSAFEFunction and SSAFEJ
+  callback_data.da = SSADA;
+  callback_data.ssa = this;
+  ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction); CHKERRQ(ierr);
+  ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian); CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes, r,    PETSC_NULL, PETSC_NULL);CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes, J, J, PETSC_NULL, PETSC_NULL);CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(SSADA, &callback_data); CHKERRQ(ierr);
+
+  ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
 
   // Default of maximum 200 iterations; possibly overridded by commandline
   PetscInt snes_max_it = 200;
@@ -175,15 +179,6 @@ PetscErrorCode SSAFEM::solve_nocache()
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
-
-  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  // methods via SSAFEFunction and SSAFEJ
-  ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
-  ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
-  callback_data.da = SSADA;  callback_data.ssa = this;
-  ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes, r,    SNESDMComputeFunction,   &callback_data);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes, J, J, SNESDMComputeJacobian,&callback_data);CHKERRQ(ierr);
 
   stdout_ssa.clear();
   if (getVerbosityLevel() >= 2)

@@ -26,7 +26,7 @@
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
-#include "BlatterStressBalance.hh"
+#include "PISMStressBalance.hh"
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
@@ -630,7 +630,9 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   // up (there is no switch saying "do the hybrid").
   if (stress_balance == NULL) {
     if (do_blatter) {
-      stress_balance = new BlatterStressBalance(grid, ocean, config);
+      PetscPrintf(grid.com, "Blatter solver is disabled for now.\n");
+      PISMEnd();
+      // stress_balance = new BlatterStressBalance(grid, ocean, config);
     } else {
       ShallowStressBalance *my_stress_balance;
       if (use_ssa_velocity) {

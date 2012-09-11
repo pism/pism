@@ -21,6 +21,8 @@
 #include "enthalpyConverter.hh"
 #include "NCVariable.hh"
 
+#include "pism_petsc32_compat.hh"
+
 EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1
   c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1

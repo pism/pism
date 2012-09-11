@@ -22,13 +22,7 @@
 #include "pism_options.hh"
 #include "flowlaw_factory.hh"
 
-#if !defined(PETSC_VERSION_LT)
-#  define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
-#else
-#  if PETSC_VERSION_LT(3,3,0)
-#    define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
-#  endif
-#endif
+#include "pism_petsc32_compat.hh"
 
 SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                   EnthalpyConverter &ec, const NCConfigVariable &c)

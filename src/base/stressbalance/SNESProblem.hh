@@ -1,4 +1,4 @@
-// Copyright (C) 2011 David Maxwell
+// Copyright (C) 2011, 2012 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,8 @@
 
 #include "IceGrid.hh"           // inline implementation in the header uses IceGrid
 #include "iceModelVec.hh"       // to get PISMVector2
+
+#include "pism_petsc32_compat.hh"
 
 template<int DOF, class U> class SNESProblem{
 public:
@@ -133,7 +135,7 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
 
   ierr = DMCreateGlobalVector(m_DA, &m_X); CHKERRQ(ierr);
   ierr = DMCreateGlobalVector(m_DA, &m_F); CHKERRQ(ierr);
-  ierr = DMGetMatrix(m_DA, "baij",  &m_J); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(m_DA, "baij",  &m_J); CHKERRQ(ierr);
 
   ierr = SNESCreate(m_grid.com, &m_snes);CHKERRQ(ierr);
 

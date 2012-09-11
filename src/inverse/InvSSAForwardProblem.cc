@@ -27,6 +27,8 @@
 #include <cmath>
 #include "pism_options.hh"
 
+#include "pism_petsc32_compat.hh"
+
 /*! \brief Allocate PETSC structures needed for solving the various linearized
 problems associated with the forward problem. */
 PetscErrorCode InvSSAForwardProblem::allocate_ksp()
@@ -34,14 +36,14 @@ PetscErrorCode InvSSAForwardProblem::allocate_ksp()
   PetscErrorCode ierr;
 
   // Storage for vector unknowns.
-  ierr = DMGetMatrix(SSADA, "baij", &m_MatA); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA, "baij", &m_MatA); CHKERRQ(ierr);
   ierr = DMCreateLocalVector(SSADA, &m_VecU); CHKERRQ(ierr);
   ierr = DMCreateGlobalVector(SSADA, &m_VecZ2); CHKERRQ(ierr);
   ierr = DMCreateLocalVector(SSADA, &m_VecZ); CHKERRQ(ierr);
   ierr = DMCreateGlobalVector(SSADA, &m_VecRHS2); CHKERRQ(ierr);
 
   // Storage for scalar unknowns.
-  ierr = DMGetMatrix(grid.da2, "baij", &m_MatB); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(grid.da2, "baij", &m_MatB); CHKERRQ(ierr);
   ierr = DMCreateGlobalVector(grid.da2, &m_VecRHS); CHKERRQ(ierr);
   ierr = DMCreateGlobalVector(grid.da2, &m_VecV); CHKERRQ(ierr);
 
@@ -227,14 +229,6 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
 
   if(m_forward_F_needed)
   {
-    // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-    // methods via SSAFEFunction and SSAFEJ
-    ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
-    ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
-    callback_data.da = SSADA;  callback_data.ssa = this;
-    ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
-    ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
-    ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
 
     SNESConvergedReason reason;
     while(true) {
