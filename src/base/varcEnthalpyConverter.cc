@@ -1,4 +1,4 @@
-// Copyright (C) 2011 The PISM Authors
+// Copyright (C) 2011, 2012 The PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #include "pism_const.hh"
 #include "varcEnthalpyConverter.hh"
 
+#include "pism_petsc32_compat.hh"
 
 /*!
 A calculation only used in the cold case.
@@ -82,7 +83,7 @@ PetscErrorCode varcEnthalpyConverter::viewConstants(PetscViewer viewer) const {
   if (!viewer) {
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
   }
-  ierr = PetscTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
   if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for EnthalpyConverter\n"); }
 
   ierr = PetscViewerASCIIPrintf(viewer,

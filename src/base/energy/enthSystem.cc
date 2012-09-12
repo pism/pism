@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2012 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,8 @@
 #include <gsl/gsl_math.h>
 #include "NCVariable.hh"
 #include "iceModelVec.hh"
+
+#include "pism_petsc32_compat.hh"
 
 enthSystemCtx::enthSystemCtx(const NCConfigVariable &config,
                              IceModelVec3 &my_Enth3, int my_Mz, string my_prefix)
@@ -124,7 +126,7 @@ PetscErrorCode enthSystemCtx::viewConstants(
   }
 
   PetscBool iascii;
-  ierr = PetscTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
   if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for enthSystemCtx::viewConstants()\n"); }
   
   ierr = PetscViewerASCIIPrintf(viewer,

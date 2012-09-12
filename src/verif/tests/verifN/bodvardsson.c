@@ -518,7 +518,7 @@ int main(int argc,char **argv)
 
 
   /* setting up a matrix is only actually needed for -snes_fd case */
-  ierr = DMGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
+  ierr = DMCreateMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 

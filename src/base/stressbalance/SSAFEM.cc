@@ -21,6 +21,8 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 
+#include "pism_petsc32_compat.hh"
+
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                    EnthalpyConverter &ec, const NCConfigVariable &c)
 {
@@ -159,15 +161,6 @@ PetscErrorCode SSAFEM::solve()
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
-
-  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  // methods via SSAFEFunction and SSAFEJ
-  ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
-  ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
-  callback_data.da = SSADA;  callback_data.ssa = this;
-  ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
 
   stdout_ssa.clear();
   if (getVerbosityLevel() >= 2)
