@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2012 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -113,8 +113,6 @@ protected:
   // objects used internally
   IceModelVec2S hardav;         // vertically-averaged ice hardness
   SSAFEM_SNESCallbackData callback_data;
-  Mat J;
-  Vec r;
 
   SNES         snes;
   FEStoreNode *feStore;

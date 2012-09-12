@@ -258,8 +258,15 @@ PetscErrorCode InvSSAForwardProblem::solveF_core()
           "  writing linear system to PETSc binary file %s ...\n",c_petscfile); CHKERRQ(ierr);
       PetscViewer    viewer;
       ierr = PetscViewerBinaryOpen(grid.com, c_petscfile, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
-      ierr = MatView(J,viewer); CHKERRQ(ierr);
-      ierr = VecView(r,viewer); CHKERRQ(ierr);
+      {
+        Mat J;
+        Vec r;
+        ierr = SNESGetFunction(snes, &r, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+        ierr = SNESGetJacobian(snes, &J, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+
+        ierr = MatView(J, viewer); CHKERRQ(ierr);
+        ierr = VecView(r, viewer); CHKERRQ(ierr);
+      }
       ierr = VecView(SSAX,viewer); CHKERRQ(ierr);
       ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 

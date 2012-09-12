@@ -37,8 +37,6 @@
 #if PISM_PETSC32_COMPAT==1
 # define PetscObjectTypeCompare(obj,type,flag) PetscTypeCompare(obj,type,flag)
 # define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
-# define SNESDMComputeFunction SNESDAFormFunction
-# define SNESDMComputeJacobian SNESDAComputeJacobian
 #endif
 
 #endif /* _PISM_PETSC32_COMPAT_H_ */
