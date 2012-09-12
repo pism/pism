@@ -1,4 +1,4 @@
-// Copyright (C) 2011 David Maxwell
+// Copyright (C) 2011, 2012 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,8 @@
 
 #include "IceGrid.hh"           // inline implementation in the header uses IceGrid
 #include "iceModelVec.hh"       // to get PISMVector2
+
+#include "pism_petsc32_compat.hh"
 
 template<int DOF, class U> class SNESProblem{
 public:
@@ -52,9 +54,7 @@ protected:
 
   IceGrid     &m_grid;
 
-  Mat          m_J;
   Vec          m_X;
-  Vec          m_F;
   SNES         m_snes;
   DM           m_DA;
 
@@ -132,20 +132,34 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
                       &m_DA); CHKERRQ(ierr);
 
   ierr = DMCreateGlobalVector(m_DA, &m_X); CHKERRQ(ierr);
-  ierr = DMCreateGlobalVector(m_DA, &m_F); CHKERRQ(ierr);
-  ierr = DMGetMatrix(m_DA, "baij",  &m_J); CHKERRQ(ierr);
 
   ierr = SNESCreate(m_grid.com, &m_snes);CHKERRQ(ierr);
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
+  m_callbackData.da = m_DA;
+  m_callbackData.solver = this;
   ierr = DMDASetLocalFunction(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalFunction);CHKERRQ(ierr);
   ierr = DMDASetLocalJacobian(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalJacobian);CHKERRQ(ierr);
-  m_callbackData.da = m_DA;  m_callbackData.solver = this;
+
+#if PISM_PETSC32_COMPAT==1
+  Mat m_J;
+  Vec m_F;
+  ierr = DMGetMatrix(m_DA, "baij",  &m_J); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(m_DA, &m_F); CHKERRQ(ierr);
+
+  ierr = SNESSetFunction(m_snes, m_F, SNESDAFormFunction, &m_callbackData); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(m_snes, m_J, m_J, SNESDAComputeJacobian, &m_callbackData); CHKERRQ(ierr);
+
+  // Thanks to reference counting these two are destroyed during the SNESDestroy() call below.
+  ierr = MatDestroy(&m_J); CHKERRQ(ierr);
+  ierr = VecDestroy(&m_F); CHKERRQ(ierr);
+#else
+  ierr = DMSetMatType(m_DA, "baij"); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(m_DA, &m_callbackData); CHKERRQ(ierr);
+#endif
 
   ierr = SNESSetDM(m_snes, m_DA); CHKERRQ(ierr);
-  ierr = SNESSetFunction(m_snes, m_F, SNESDAFormFunction, &m_callbackData);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(m_snes, m_J, m_J, SNESDAComputeJacobian, &m_callbackData);CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(m_snes);CHKERRQ(ierr);
 
@@ -159,8 +173,6 @@ PetscErrorCode SNESProblem<DOF,U>::finalize() {
 
   ierr = SNESDestroy(&m_snes);CHKERRQ(ierr);
   ierr = VecDestroy(&m_X); CHKERRQ(ierr);
-  ierr = VecDestroy(&m_F); CHKERRQ(ierr);
-  ierr = MatDestroy(&m_J); CHKERRQ(ierr);
 
   return 0;
 }
