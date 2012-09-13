@@ -221,14 +221,6 @@ PetscErrorCode InvSSAForwardProblem_dep::solveF_core()
 
   if(m_forward_F_needed)
   {
-    // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-    // methods via SSAFEFunction and SSAFEJ
-    ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
-    ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
-    callback_data.da = SSADA;  callback_data.ssa = this;
-    ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
-    ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
-    ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
 
     SNESConvergedReason reason;
     while(true) {
@@ -258,6 +250,12 @@ PetscErrorCode InvSSAForwardProblem_dep::solveF_core()
           "  writing linear system to PETSc binary file %s ...\n",c_petscfile); CHKERRQ(ierr);
       PetscViewer    viewer;
       ierr = PetscViewerBinaryOpen(grid.com, c_petscfile, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
+
+      Mat J;
+      Vec r;
+      ierr = SNESGetFunction(snes, &r, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+      ierr = SNESGetJacobian(snes, &J, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+
       ierr = MatView(J,viewer); CHKERRQ(ierr);
       ierr = VecView(r,viewer); CHKERRQ(ierr);
       ierr = VecView(SSAX,viewer); CHKERRQ(ierr);
