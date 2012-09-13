@@ -143,17 +143,17 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
   ierr = DMDASetLocalJacobian(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalJacobian);CHKERRQ(ierr);
 
 #if PISM_PETSC32_COMPAT==1
-  Mat m_J;
-  Vec m_F;
-  ierr = DMGetMatrix(m_DA, "baij",  &m_J); CHKERRQ(ierr);
-  ierr = DMCreateGlobalVector(m_DA, &m_F); CHKERRQ(ierr);
+  Mat J;
+  Vec F;
+  ierr = DMGetMatrix(m_DA, "baij",  &J); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(m_DA, &F); CHKERRQ(ierr);
 
-  ierr = SNESSetFunction(m_snes, m_F, SNESDAFormFunction, &m_callbackData); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(m_snes, m_J, m_J, SNESDAComputeJacobian, &m_callbackData); CHKERRQ(ierr);
+  ierr = SNESSetFunction(m_snes, F, SNESDAFormFunction, &m_callbackData); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(m_snes, J, J, SNESDAComputeJacobian, &m_callbackData); CHKERRQ(ierr);
 
   // Thanks to reference counting these two are destroyed during the SNESDestroy() call below.
-  ierr = MatDestroy(&m_J); CHKERRQ(ierr);
-  ierr = VecDestroy(&m_F); CHKERRQ(ierr);
+  ierr = MatDestroy(&J); CHKERRQ(ierr);
+  ierr = VecDestroy(&F); CHKERRQ(ierr);
 #else
   ierr = DMSetMatType(m_DA, "baij"); CHKERRQ(ierr);
   ierr = DMSetApplicationContext(m_DA, &m_callbackData); CHKERRQ(ierr);
