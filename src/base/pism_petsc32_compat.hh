@@ -27,16 +27,21 @@
 // 3.3; it should be included in .cc files calling functions that were renamed.
 
 #if !defined(PETSC_VERSION_LT)
-#  define PISM_PETSC32_COMPAT 1
-#elif PETSC_VERSION_LT(3,3,0)
-#  define PISM_PETSC32_COMPAT 1
-#else
-#  define PISM_PETSC32_COMPAT 0
+#define PETSC_VERSION_LT(MAJOR,MINOR,SUBMINOR) \
+  (PETSC_VERSION_MAJOR < (MAJOR) ||            \
+   (PETSC_VERSION_MAJOR == (MAJOR) &&          \
+    (PETSC_VERSION_MINOR < (MINOR) ||          \
+     (PETSC_VERSION_MINOR == (MINOR) &&        \
+      (PETSC_VERSION_SUBMINOR < (SUBMINOR))))))
 #endif
 
-#if PISM_PETSC32_COMPAT==1
+
+#if PETSC_VERSION_LT(3,3,0)
+# define PISM_PETSC32_COMPAT 1
 # define PetscObjectTypeCompare(obj,type,flag) PetscTypeCompare(obj,type,flag)
 # define DMCreateMatrix(a,b,c) DMGetMatrix(a,b,c)
+#else
+# define PISM_PETSC32_COMPAT 0
 #endif
 
 #endif /* _PISM_PETSC32_COMPAT_H_ */
