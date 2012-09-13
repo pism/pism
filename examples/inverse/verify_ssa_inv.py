@@ -49,9 +49,9 @@ import argparse
 
 parser = argparse.ArgumentParser(description=help_description,
 epilog=help_epilog,formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('-m','--desired_misfit', required=True,help='desired final misfit')
-parser.add_argument('-e','--desired_misfit_tolerance',required=True, help='acceptable margin of error for final misfit')
-parser.add_argument('-i','--iter_max', required=True, help='maximum number of iterations')
+parser.add_argument('-m','--desired_misfit', required=True,type=float,help='desired final misfit')
+parser.add_argument('-e','--desired_misfit_tolerance',required=True, type=float,help='acceptable margin of error for final misfit')
+parser.add_argument('-i','--iter_max', required=True, type=int,help='maximum number of iterations')
 args = parser.parse_args()
 
 inv_filename = 'tiny_inv.nc'
@@ -65,15 +65,14 @@ misfit = data.variables.get('inv_ssa_misfit')
 if misfit is None:
   fail('Inversion file %s missing misfit history variable "inv_ssa_misfit".\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
 
-max_iteration = args.iter_max
 desired_misfit = args.desired_misfit
 eps_misfit = args.desired_misfit_tolerance
 
 iter_count = len(misfit)
 last_misfit = misfit[-1]
 
-if max_iteration < iter_count:
-  fail("Inversion took an excessive number of iterations: %d > %d" % (iter_count,max_iteration))
+if iter_count > args.iter_max :
+  fail("Inversion took an excessive number of iterations: %d > %d" % (iter_count,args.iter_max))
 
 if abs(last_misfit-desired_misfit) > eps_misfit:
   fail("Final misfit is unexpected: computed %0.4g and desired %0.4g +/- %0.4g" % (last_misfit,desired_misfit,eps_misfit))
