@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2011 Ricarda Winkelmann and Torsten Albrecht and Ed Bueler
+# Copyright (C) 2012 Ricarda Winkelmann and Torsten Albrecht and Ed Bueler
 
 import sys
 import getopt
@@ -11,7 +11,7 @@ try:
 except:
     from netCDF3 import Dataset as NC
 
-WRIT_FILE = 'circular_shelfonly.nc'
+WRIT_FILE = 'circular_noshelf.nc'
 SECPERA = 3.15569259747e7               # seconds per yea
 standard_gravity = 9.81                 # g
 B0 = 1.9e8                              # ice hardness
@@ -52,8 +52,10 @@ jmiddle = (MyNEW-1)/2
 
 topg_min = -3000.0  # for practical reasons (e.g. viewing), we don't need it too deep
 
-r_cf = 0.45e6
+r_cf = 0.3e6
 gl_tol = 50.0 # tolerance for finding grounding line, depends on coarseness of the grid
+
+
 
 ### CREATE ARRAYS which will go in output ###
 thk    = zeros((MxNEW, MyNEW), float32)		# sheet/shelf thickness
@@ -69,7 +71,6 @@ x=linspace(-sizeofdomain/2*1000.0,sizeofdomain/2*1000.0,MxNEW)
 y=linspace(-sizeofdomain/2*1000.0,sizeofdomain/2*1000.0,MyNEW)
 
 ### GROUNDING LINE RADIUS ###
-#r_gl = 0.35e6
 r_gl = 0.25e6
 
 
@@ -94,8 +95,7 @@ for i in range(MxNEW):
 
 	
 	if (radius <= r_cf and radius >r_gl): 
-		#van der veen flowline as guess
-		thk[i,j] = (4.0 * C / Q0 * (radius-r_gl) + 1 / H0**4)**(-0.25)
+		#thk[i,j] = (4.0 * C / Q0 * (radius-r_gl) + 1 / H0**4)**(-0.25)
 		if (thk[i,j]>600.0):
 			thk[i,j]=600.0
 	elif (radius <= r_gl):
@@ -126,8 +126,8 @@ for i in range(MxNEW):
 		bcflag[i,j] = 1.0
 	elif (radius <= r_gl):
 		bcflag[i,j] = 1.0
-		vbar[i,j] = vel_bc/SECPERA*inew_m/radius
-		ubar[i,j] = vel_bc/SECPERA*jnew_m/radius
+		ubar[i,j] = vel_bc/SECPERA*inew_m/radius
+		vbar[i,j] = vel_bc/SECPERA*jnew_m/radius
 		thk[i,j] = 600.0
 		bed[i,j] = topg_min
 
@@ -162,31 +162,31 @@ vars = {'x': ['m',
 	      'bedrock_altitude',
 	      -600.0,
 	      bed],
-     	'artm': ['K',
-	      'annual mean air temperature at ice surface',
-	      'surface_temperature',
+	'ice_surface_temp': ['K',
+	     'annual mean air temperature at ice surface',
+	     'surface_temperature',
 	      248.0,
 	      Ts],
-	'acab': ['m s-1',
-	      'mean annual net ice equivalent accumulation rate',
-	      'land_ice_surface_specific_mass_balance',
+	'climatic_mass_balance': ['m s-1',
+	     'mean annual net ice equivalent accumulation rate',
+	     'land_ice_surface_specific_mass_balance',
 	      0.2/SECPERA,
 	      accum],
 	'bcflag': ['',
-		  'bcflag',
-		  'bcflag',
-		   0.0,
-		   bcflag],
-    'ubar': ['m s-1',
-	  	  'ubar',
-		  'ubar',
-		   0.0,
-		   ubar],
-	'vbar': ['m s-1',
-		   'vbar',
-		   'vbar',
-		    0.0,
-		    vbar],
+	     'bcflag',
+	     'bcflag',
+              0.0,
+	      bcflag],
+        'u_ssa_bc': ['m s-1',
+	     'X-component of the SSA velocity boundary conditions',
+	     'ubar',
+	      0.0,
+	      vbar],
+	'v_ssa_bc': ['m s-1',
+             'Y-component of the SSA velocity boundary conditions',
+	     'vbar',
+              0.0,
+	      ubar],
 	}
 
 

@@ -18,14 +18,10 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import sys, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
-import numpy as np
-import os, math
-
 import PISM
 import PISM.invert_ssa
+import numpy as np
+import sys, os, math
 
 class Vel2Tauc(PISM.invert_ssa.InvSSAFromInputFile):
 

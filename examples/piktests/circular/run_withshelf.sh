@@ -10,8 +10,8 @@ grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 4500 -Lbz 1000"
 
 pismopts="-boot_file $infile $grid -ssa_sliding -ssa_method fd"
 
-#doit="mpiexec -n $N ../../bin/pismr $pismopts"
-doit="mpiexec -n $N pismr $pismopts"
+doit="mpiexec -n $N ../../../bin/pismr $pismopts"
+#doit="mpiexec -n $N pismr $pismopts"
 
 # run circular_with_shelf.py first to generate input file circular_with_shelf_12km.nc
 

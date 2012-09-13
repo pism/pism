@@ -26,7 +26,7 @@
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
-#include "BlatterStressBalance.hh"
+#include "PISMStressBalance.hh"
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
@@ -510,8 +510,8 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("compute_cumulative_acab")) {
-    ierr = acab_cumulative.set(0.0); CHKERRQ(ierr);
+  if (config.get_flag("compute_cumulative_climatic_mass_balance")) {
+    ierr = climatic_mass_balance_cumulative.set(0.0); CHKERRQ(ierr);
   }
 
   ierr = compute_cell_areas(); CHKERRQ(ierr);
@@ -630,7 +630,9 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   // up (there is no switch saying "do the hybrid").
   if (stress_balance == NULL) {
     if (do_blatter) {
-      stress_balance = new BlatterStressBalance(grid, ocean, config);
+      PetscPrintf(grid.com, "Blatter solver is disabled for now.\n");
+      PISMEnd();
+      // stress_balance = new BlatterStressBalance(grid, ocean, config);
     } else {
       ShallowStressBalance *my_stress_balance;
       if (use_ssa_velocity) {
@@ -866,13 +868,13 @@ PetscErrorCode IceModel::init_ocean_kill() {
 
   if (filename.empty()) {
     ierr = verbPrintf(2, grid.com,
-                      "* Using ice thickness at the beginning of the run\n"
-                      "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
+       "* Option -ocean_kill seen: using ice thickness at the beginning of the run\n"
+       "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
     tmp = &vH;
   } else {
     ierr = verbPrintf(2, grid.com,
-                      "* Setting fixed calving front location using ice thickness from '%s'.\n",
-                      filename.c_str()); CHKERRQ(ierr);
+       "* Option -ocean_kill seen: setting fixed calving front location using\n"
+       "  ice thickness from '%s'.\n",filename.c_str()); CHKERRQ(ierr);
 
     ierr = thickness.create(grid, "thk", false); CHKERRQ(ierr);
     ierr = thickness.set_attrs("temporary", "land ice thickness",

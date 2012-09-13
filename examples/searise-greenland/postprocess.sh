@@ -53,7 +53,7 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   # create draft of deliverable file:
   ncks -O ${NAME}_raw_y*.nc -o ${NAME}_full.nc
   # calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
-  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(acab_cumulative(idt,:,:)-acab_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7;}' ${NAME}_full.nc ${NAME}_full.nc
+  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(climatic_mass_balance_cumulative(idt,:,:)-climatic_mass_balance_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7;}' ${NAME}_full.nc ${NAME}_full.nc
   # adjust meta data for new fields
   ncatted -a units,acab,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
       -a long_name,acab,o,c,"surface mass balance" \
@@ -63,8 +63,8 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
       -a cell_methods,acab,o,c,"time: mean (interval: 1 year)" \
       -a cell_methods,dHdt,o,c,"time: mean (interval: 1 year)" ${NAME}_full.nc
   # We keep the "full" files for record
-  # select every fifth year, don't copy acab_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides
-  ncks -O -x -v acab_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides \
+  # select every fifth year, don't copy climatic_mass_balance_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides
+  ncks -O -x -v climatic_mass_balance_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides \
       -d time,,,5 ${NAME}_full.nc ${NAME}.nc
   echo "(postprocess.sh)    combining annual scalar time series ts_y*_${NAME}.nc with spatial file ..."
   cp ts_y*_${NAME}.nc tmp.nc

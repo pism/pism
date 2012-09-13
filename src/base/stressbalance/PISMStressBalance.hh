@@ -107,6 +107,10 @@ public:
   //! \brief Get the largest and smallest eigenvalues of the strain rate tensor.
   virtual PetscErrorCode get_principal_strain_rates(
                 IceModelVec2S &result_e1, IceModelVec2S &result_e2);
+                
+  //! \brief Get the components of the 2D deviatoric stress tensor.
+  virtual PetscErrorCode get_2D_stresses(
+               IceModelVec2S &result_Txx, IceModelVec2S &result_Tyy, IceModelVec2S &result_Txy);
 
   //! \brief Produce a report string for the standard output.
   virtual PetscErrorCode stdout_report(string &result);

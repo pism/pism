@@ -37,8 +37,8 @@ netcdf pism_config {
     pism_config:count_time_steps = "no";
     pism_config:count_time_steps_doc = "If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.";
 
-    pism_config:compute_cumulative_acab = "no";
-    pism_config:compute_cumulative_acab_doc = "If yes, keep track of the cumulative surface mass balance (for SeaRISE).";
+    pism_config:compute_cumulative_climatic_mass_balance = "no";
+    pism_config:compute_cumulative_climatic_mass_balance_doc = "If yes, keep track of the cumulative surface mass balance (for SeaRISE).";
 
     pism_config:ssa_method = "fd";
     pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
@@ -119,6 +119,13 @@ netcdf pism_config {
 
     pism_config:nuBedrockSet = "false";
     pism_config:nuBedrockSet_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
+
+    pism_config:sub_groundingline  = "false";
+    pism_config:sub_groundingline_doc = "The Pattyn et al. interpolation scheme expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
+
+    pism_config:do_stresses = "no";
+    pism_config:do_stresses_doc = "Calculation of stress field for output.";
+
 
     // parameters:
 
@@ -399,13 +406,13 @@ netcdf pism_config {
     pism_config:inv_ssa_velocity_scale_doc = "m/a; typical size of ice velocities expected during inversion";
 
     pism_config:inv_ssa_length_scale = 50e3;
-    pism_config:inv_ssa_velocity_scale_doc = "m; typical length scale for rescaling derivative norms";
+    pism_config:inv_ssa_length_scale_doc = "m; typical length scale for rescaling derivative norms";
 
     pism_config:inv_ssa_tauc_min = 0;
     pism_config:inv_ssa_tauc_min_doc = "Pa; Minimum allowed value of tauc for inversions with bound constraints";
     
     pism_config:inv_ssa_tauc_max = 5e7;
-    pism_config:inv_ssa_tauc_min_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
+    pism_config:inv_ssa_tauc_max_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
     
     pism_config:inv_ssa_target_rms_misfit = 100;
     pism_config:inv_ssa_target_rms_misfit_doc = "m/a; desired RMS misfit for SSA inversions";

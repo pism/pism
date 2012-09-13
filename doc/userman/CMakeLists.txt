@@ -18,6 +18,7 @@ set (latex_sources
   storglaciaren.tex
   verification.tex
   storglaciaren.tex
+  jako.tex
   )
 
 # Find all the figures in figs/

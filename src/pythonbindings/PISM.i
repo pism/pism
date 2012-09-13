@@ -95,6 +95,19 @@ typedef double PetscReal; // YUCK.
 typedef int PetscInt; // YUCK.
 typedef int NormType; // YUCK.
 
+// SWIG seems convinced that it might need to convert a PetscScalar into a 
+// complex number at some point, even though it never will.  It issues undesired
+// warnings as a consequence of this and some conversion code in petsc4py.i.  
+// The following dummy fragments address these warning messages.  We provide
+// stubs for doing the conversion, but not the code to do so (since it is not needed).
+%fragment(SWIG_AsVal_frag(std::complex<long double>),"header" )
+{
+}
+%fragment(SWIG_From_frag(std::complex<long double>),"header" )
+{
+}
+
+
 namespace std {
    %template(IntVector) vector<PetscInt>;
    %template(DoubleVector) vector<PetscReal>;

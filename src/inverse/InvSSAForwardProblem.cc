@@ -21,6 +21,8 @@
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
+#include "pism_petsc32_compat.hh"
+
 
 
 InvSSAForwardProblem::InvSSAForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,

@@ -29,18 +29,18 @@ ncatted -O -a standard_parallel,mapping,m,d,-71.0 $PISMVERSION
 # rename usurf for convenience
 ncrename -O -v usrf,usurf $PISMVERSION
 # fix surface temperature name and make K
-ncap -O -s "temp_ma=temp+273.15" $PISMVERSION $PISMVERSION
-ncatted -O -a units,temp_ma,a,c,"K" $PISMVERSION
+ncap -O -s "air_temp=temp+273.15" $PISMVERSION $PISMVERSION
+ncatted -O -a units,air_temp,a,c,"K" $PISMVERSION
 # choose Van de Berg et al version of accumulation; will treat as ice-equivalent snow rate
-ncrename -O -v accr,precip $PISMVERSION
-ncatted -O -a units,precip,m,c,"m a-1" $PISMVERSION
+ncrename -O -v accr,precipitation $PISMVERSION
+ncatted -O -a units,precipitation,m,c,"m a-1" $PISMVERSION
 # use bheatflx_shapiro as the default bheatflx data and 
 ncrename -O -v bheatflx_shapiro,bheatflx $PISMVERSION
 ncatted -O -a units,bheatflx,m,c,"W m-2" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -O -a standard_name,bheatflx,d,, $PISMVERSION
 # keep only the fields we actually use at bootstrapping
-ncks -O -v x,y,lat,lon,bheatflx,topg,thk,precip,temp_ma,mapping \
+ncks -O -v x,y,lat,lon,bheatflx,topg,thk,precipitation,air_temp,mapping \
   $PISMVERSION $PISMVERSION
 echo "  PISM-readable file $PISMVERSION created; only has fields"
 echo "    used in bootstrapping."
@@ -89,8 +89,8 @@ ncrename -O -v annualtemp,artm ar4_ant_artm_anomaly_scalefactor_1.0.nc
 ncap2 -O -s 'precip(:,:,:)= (precip(:,:,:)-precip(0,:,:))' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
 ncap2 -O -s 'artm(:,:,:)= (artm(:,:,:)-artm(0,:,:))' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
 
-ncrename -O -v artm,temp_anomaly ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
-ncrename -O -v precip,precip_anomaly ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
+ncrename -O -v artm,temp_anomaly ar4_ant_artm_anomaly_scalefactor_1.0.nc
+ncrename -O -v precip,precip_anomaly ar4_ant_precip_anomaly_scalefactor_1.0.nc
 
 echo -n "creating scaled anomaly files ... factor 1.5 "
 echo -n "precip_anomaly.. "
@@ -100,15 +100,15 @@ ncap2 -O -s 'temp_anomaly(:,:,:)= 1.5 * temp_anomaly(:,:,:)' ar4_ant_artm_anomal
 
 echo -n "creating scaled anomaly files ... factor 2.0 "
 echo -n "precip_anomaly.. "
-ncap2 -s 'precip_anomaly(:,:,:)= 2.0 * precip_anomaly(:,:,:)' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_2.0.nc
+ncap2 -O -s 'precip_anomaly(:,:,:)= 2.0 * precip_anomaly(:,:,:)' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_2.0.nc
 echo "temp_anomaly.. "
 ncap2 -O -s 'temp_anomaly(:,:,:)= 2.0 * temp_anomaly(:,:,:)' ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_2.0.nc
 
 # For the temperature anomalies to be interpreted correctly they need to be in Kelvin:
-ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_1.0.nc ar4_ant_artm_anomaly_scalefactor_1.0.nc
-ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_1.5.nc ar4_ant_artm_anomaly_scalefactor_1.5.nc
-ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_2.0.nc ar4_ant_artm_anomaly_scalefactor_2.0.nc
+ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_1.0.nc
+ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_1.5.nc
+ncatted -O -a units,temp_anomaly,o,c,"K" ar4_ant_artm_anomaly_scalefactor_2.0.nc
 
-echo "now run spin-up script 'antspin.sh'"
+echo "now run spin-up script 'antspinCC.sh'"
 echo
 

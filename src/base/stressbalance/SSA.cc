@@ -38,6 +38,9 @@ SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
   enthalpy = NULL;
   driving_stress_x = NULL;
   driving_stress_y = NULL;
+  if (config.get_flag("sub_groundingline")) {
+    gl_mask = NULL;
+  }
 
   strength_extension = new SSAStrengthExtension(config);
   allocate();
@@ -51,6 +54,11 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n"); CHKERRQ(ierr);
+  
+  if (config.get_flag("sub_groundingline")) {
+    gl_mask = dynamic_cast<IceModelVec2S*>(vars.get("gl_mask"));
+    if (gl_mask == NULL) SETERRQ(grid.com, 1, "subgrid_grounding_line_position is not available");
+  }
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
@@ -563,3 +571,52 @@ PetscErrorCode SSA::write_variables(set<string> vars, string filename) {
   return 0;
 }
 
+PetscErrorCode SSA::compute_2D_stresses(IceModelVec2S &result_Txx, IceModelVec2S &result_Tyy, IceModelVec2S &result_Txy) {
+  PetscErrorCode ierr;
+  PetscScalar    dx = grid.dx, dy = grid.dy;
+  PetscScalar    Mx = grid.Mx, My = grid.My;
+  IceModelVec2S &thk = *thickness; // to improve readability (below)
+  ierr = velocity.begin_access(); CHKERRQ(ierr);
+  ierr = thk.begin_access(); CHKERRQ(ierr);
+  ierr = result_Txx.begin_access(); CHKERRQ(ierr);
+  ierr = result_Tyy.begin_access(); CHKERRQ(ierr);
+  ierr = result_Txy.begin_access(); CHKERRQ(ierr);
+  
+  PetscScalar hardness = pow(config.get("ice_softness"),-1.0/config.get("Glen_exponent"));
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+
+      if ( velocity(i,j).u == 0.0 || velocity(i,j).v == 0.0 ) {
+        result_Txx(i,j)=0.0;
+        result_Tyy(i,j)=0.0;
+        result_Txy(i,j)=0.0;
+        continue;
+      }
+
+      //centered difference scheme; strain in units s-1
+      PetscScalar
+        u_x = (velocity(i+1,j).u - velocity(i-1,j).u) / (2 * dx),
+        u_y = (velocity(i,j+1).u - velocity(i,j-1).u) / (2 * dy),
+        v_x = (velocity(i+1,j).v - velocity(i-1,j).v) / (2 * dx),
+        v_y = (velocity(i,j+1).v - velocity(i,j-1).v) / (2 * dy);
+
+
+      PetscScalar nu = flow_law->effective_viscosity(hardness, u_x, u_y, v_x, v_y);
+
+      //get deviatoric stresses
+      result_Txx(i,j)=nu*u_x;
+      result_Tyy(i,j)=nu*v_y;
+      result_Txy(i,j)=0.5*nu*(u_y+v_x);
+
+    } // j
+  }   // i
+
+  ierr = velocity.end_access(); CHKERRQ(ierr);
+  ierr = thk.end_access(); CHKERRQ(ierr);
+  ierr = result_Txx.end_access(); CHKERRQ(ierr);
+  ierr = result_Tyy.end_access(); CHKERRQ(ierr);
+  ierr = result_Txy.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}

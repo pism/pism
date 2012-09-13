@@ -611,6 +611,9 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("brutal_sliding", "scalebrutalSet"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr); 
+  
+  ierr = config.flag_from_option("stress_output", "do_stresses"); CHKERRQ(ierr);
+
  
   // SSA Inversion
 
@@ -663,6 +666,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.scalar_from_option("thk_eff_H_low","thk_eff_H_low");  CHKERRQ(ierr);
   // pure number :
   ierr = config.scalar_from_option("thk_eff_reduced","thk_eff_reduced");  CHKERRQ(ierr);
+  
+  ierr = config.flag_from_option("subgl", "sub_groundingline"); CHKERRQ(ierr);
 
   // Ice shelves
 
@@ -693,7 +698,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
 
   // Output
-  ierr = config.flag_from_option("acab_cumulative", "compute_cumulative_acab"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("climatic_mass_balance_cumulative", "compute_cumulative_climatic_mass_balance"); CHKERRQ(ierr);
   ierr = config.flag_from_option("f3d", "force_full_diagnostics"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("o_order", "output_variable_order",

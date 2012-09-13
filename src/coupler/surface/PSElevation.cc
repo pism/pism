@@ -154,7 +154,6 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscReal dabdz = -m_min/(z_ELA - z_m_min);
   PetscReal dacdz = m_max/(z_m_max - z_ELA);
-  string history  = "elevation-dependent surface mass balance\n";
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = usurf->begin_access(); CHKERRQ(ierr);
@@ -182,14 +181,11 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   ierr = usurf->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
-  ierr = result.set_attr("history", history); CHKERRQ(ierr);
-
   return 0;
 }
 
 PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  string history  = "elevation-dependent ice surface temperature \n";
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = usurf->begin_access(); CHKERRQ(ierr);
@@ -216,8 +212,6 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   }
   ierr = usurf->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-
-  ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;
 }

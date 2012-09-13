@@ -84,7 +84,7 @@ class IceModel {
   friend class IceModel_tempicethk;
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
-  friend class IceModel_acab_cumulative;
+  friend class IceModel_climatic_mass_balance_cumulative;
   friend class IceModel_dHdt;
   // scalar:
   friend class IceModel_ivol;
@@ -110,8 +110,8 @@ class IceModel {
   friend class IceModel_max_diffusivity;
   friend class IceModel_surface_flux;
   friend class IceModel_cumulative_surface_flux;
-  friend class IceModel_basal_flux;
-  friend class IceModel_cumulative_basal_flux;
+  friend class IceModel_grounded_basal_flux;
+  friend class IceModel_cumulative_grounded_basal_flux;
   friend class IceModel_sub_shelf_flux;
   friend class IceModel_cumulative_sub_shelf_flux;
   friend class IceModel_nonneg_flux;
@@ -227,9 +227,13 @@ protected:
         vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
         vPrinStrain1,   //!< major principal component of horizontal strain-rate tensor
         vPrinStrain2,   //!< minor principal component of horizontal strain-rate tensor
+        
+        txx,   //!< deviatoric stress in x-direction
+        tyy,   //!< deviatoric stress in y-direction
+        txy,   //!< deviatoric shear stress
 
     acab,		//!< accumulation/ablation rate; no ghosts
-    acab_cumulative,    //!< cumulative acab
+    climatic_mass_balance_cumulative,    //!< cumulative acab
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
@@ -246,6 +250,8 @@ protected:
     vBCMask; //!< mask to determine Dirichlet boundary locations
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
+  
+  IceModelVec2S gl_mask; //!< mask to determine grounding line position
 
 
   IceModelVec3
@@ -262,7 +268,7 @@ protected:
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, dt_from_eigencalving,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
-    cumulative_basal_ice_flux,
+    cumulative_grounded_basal_ice_flux,
     cumulative_float_kill_flux,
     cumulative_discharge_flux,
     cumulative_nonneg_rule_flux,
@@ -346,6 +352,7 @@ protected:
   virtual PetscErrorCode cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
                                                        planeStar<PetscScalar> &Q_output);
   virtual PetscErrorCode massContExplicitStep();
+  virtual PetscErrorCode sub_gl_position();
 
   // see iMhydrology.cc
   virtual PetscErrorCode diffuse_bwat();

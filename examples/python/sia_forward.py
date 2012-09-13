@@ -18,10 +18,9 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import sys, os, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
 import PISM
+from petsc4py import PETSc
+import os
 
 context = PISM.Context()
 config = context.config
@@ -29,13 +28,14 @@ config = context.config
 PISM.set_abort_on_sigint(True)
 
 usage = \
-"""  sia.py -i IN.nc [-o file.nc]
+"""  sia_forward.py -i IN.nc [-o file.nc]
   where:
     -i      IN.nc is input file in NetCDF format: contains PISM-written model state
   notes:
     * -i is required
   """
 
+PISM.verbosityLevelFromOptions()
 PISM.show_usage_check_req_opts(context.com,"sia.py",["-i"],usage)
 
 for o in PISM.OptionsGroup(context.com,"","sia"):

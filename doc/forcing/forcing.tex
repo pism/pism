@@ -856,8 +856,9 @@ Note: this surface model \emph{ignores} the atmosphere model selection made usin
   \end{tabular}
 \end{center}
 
-The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is
-based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+The default PDD model used by PISM, turned on by option \texttt{-surface pdd}, is based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+
+By default, PISM computes the number of PDD, accumulation and ablation at each time-step. To do this calculation on an annual basis instead, option \texttt{-pdd_annualize} should be used. This becomes particularly important when using annually-variable climate inputs and sub-annual time-steps.
 
 Our PDD implementation is meant to be used with an atmosphere model
 implementing a cosine yearly cycle such as \texttt{searise_greenland} (section

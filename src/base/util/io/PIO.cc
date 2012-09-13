@@ -230,9 +230,9 @@ PetscErrorCode PIO::inq_var(string short_name, string std_name, bool &exists,
           result = name;
         } else {
 	  ierr = PetscPrintf(com,
-			     "PISM ERROR: Inconsistency in the input file: "
+			     "PISM ERROR: Inconsistency in the input file %s:\n  "
 			     "Variables '%s' and '%s' have the same standard_name ('%s').\n",
-			     result.c_str(), name.c_str(), attribute.c_str());
+			     inq_filename().c_str(), result.c_str(), name.c_str(), attribute.c_str());
 	  CHKERRQ(ierr);
 	  PISMEnd();
         }

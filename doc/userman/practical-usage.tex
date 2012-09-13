@@ -99,6 +99,7 @@ In addition to \texttt{-o_format netcdf4_parallel} and \texttt{netcdf3}
 option \texttt{-o_format pnetcdf} turns ``on'' PnetCDF I/O code. (PnetCDF seems
 to be somewhat fragile, though, so use at your own risk.)
 
+
 \subsection{Saving time series of scalar diagnostic quantities}
 \index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
@@ -148,8 +149,8 @@ PISM's signal handling.)
 Besides the above information on usage, here are comments on the physical significance of several scalar diagnostics which appear in tables \ref{tab:time-series-1}~and~\ref{tab:time-series-2}:\index{PISM!physical meaning of scalar diagnostics}
 \begin{itemize}
   \item For each variable named \dots\texttt{_flux}, positive values mean ice sheet mass gain.
-  \item Basic ice volume and area are computed and then split among floating and grounded portions: \texttt{ivol} $\mapsto$ (\texttt{ivolf}, \texttt{ivolg}) while \texttt{iarea} $\mapsto$ (\texttt{iareaf},\texttt{iareag}).
-  \item Quantities which are used primarily for diagnosing thermodynamic state, namely amounts of cold or temperate (``\texttt{temp}'') ice, are reported both in absolute and relative terms.  The absolute quantities have units \textsl{$m^3$} for volumes and \textsl{$m^2$} for areas.  The relative quantities have suffix ``\texttt{f}'' for ``fraction'', and dimensionless units.  Here are the \{absolute,relative\} pairs: \texttt{iarea\{cold,coldf\}}, \texttt{iarea\{temp,tempf\}}, \texttt{ivol\{cold,coldf\}},  and \texttt{ivol\{temp,tempf\}}.
+  \item Ice volume and area are computed and then split among floating and grounded portions: \texttt{ivol} $\mapsto$ (\texttt{ivolf}, \texttt{ivolg}) while \texttt{iarea} $\mapsto$ (\texttt{iareaf},\texttt{iareag}).  The volumes have units \textsl{$m^3$} and the areas have units \textsl{$m^2$}.
+  \item The thermodynamic state of the ice sheet can be assessed, in part, by the amount of cold or temperate (``\texttt{temp}'') ice.  Thus their is another splitting: \texttt{ivol} $\mapsto$ (\texttt{ivolcold}, \texttt{ivoltemp}) and \texttt{iarea} $\mapsto$ (\texttt{iareacold},\texttt{iareatemp}).
   \item If a PISM input file contains the \texttt{mapping} variable which has the
 \texttt{proj4} attribute containing a PROJ.4 string defining the projection then PISM computes corrected cell areas
 using this information, grid parameters, and the WGS84 reference ellipsoid. This compute areas and volumes more accurately.
@@ -163,8 +164,7 @@ using this information, grid parameters, and the WGS84 reference ellipsoid. This
     \toprule
     \textbf{Name} & \textbf{Units} & \textbf{Description}\\
     \midrule
-    \texttt{basal_ice_flux} & \textsl{kg  / s} &  total basal ice flux \\
-    \texttt{cumulative_basal_ice_flux} & \textsl{kg} &  cumulative total basal ice flux \\
+    \texttt{cumulative_grounded_basal_ice_flux} & \textsl{kg} &  cumulative total grounded basal ice flux \\
     \texttt{cumulative_discharge_flux} & \textsl{kg} &  cumulative discharge (calving etc.) flux \\
     \texttt{cumulative_float_kill_flux} & \textsl{kg} &  cumulative \texttt{-float_kill} flux \\
     \texttt{cumulative_nonneg_rule_flux} & \textsl{kg} &  cumulative \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
@@ -176,13 +176,12 @@ using this information, grid parameters, and the WGS84 reference ellipsoid. This
     \texttt{divoldt} & \textsl{$m^{3}$  / s} &  total ice volume rate of change \\
     \texttt{dt} & \textsl{second} &  mass continuity time step \\
     \texttt{float_kill_flux} & \textsl{kg  / s} &  \texttt{-float_kill} flux \\
+    \texttt{grounded_basal_ice_flux} & \textsl{kg  / s} &  total, over grounded ice, of basal ice flux \\
     \texttt{iarea} & \textsl{$m^{2}$} &  total ice area \\
     \texttt{iareacold} & \textsl{$m^{2}$} &  ice-covered area where basal ice is cold \\
-    \texttt{iareacoldf} & \textsl{1} &  fraction of ice-covered area where basal ice is cold \\
     \texttt{iareaf} & \textsl{$m^{2}$} &  total floating ice area \\
     \texttt{iareag} & \textsl{$m^{2}$} &  total grounded ice area \\
     \texttt{iareatemp} & \textsl{$m^{2}$} &  ice-covered area where basal ice is temperate \\
-    \texttt{iareatempf} & \textsl{1} &  fraction of ice-covered area where basal ice is temperate \\
     \texttt{ienthalpy} & \textsl{J} &  total ice enthalpy \\
     \multicolumn{3}{c}{Continued in Table \ref{tab:time-series-2}}\\
     \bottomrule
@@ -201,11 +200,9 @@ using this information, grid parameters, and the WGS84 reference ellipsoid. This
     \texttt{imass} & \textsl{kg} &  total ice mass \\
     \texttt{ivol} & \textsl{$m^{3}$} &  total ice volume \\
     \texttt{ivolcold} & \textsl{$m^{3}$} &  total volume of cold ice \\
-    \texttt{ivolcoldf} & \textsl{1} &  cold ice volume fraction \\
     \texttt{ivolf} & \textsl{$m^{3}$} &  total floating ice volume \\
     \texttt{ivolg} & \textsl{$m^{3}$} &  total grounded ice volume \\
     \texttt{ivoltemp} & \textsl{$m^{3}$} &  total volume of temperate ice \\
-    \texttt{ivoltempf} & \textsl{1} &  temperate ice volume fraction \\
     \texttt{max_diffusivity} & \textsl{$m^{2}$  / s} &  maximum diffusivity \\
     \texttt{max_hor_vel} & \textsl{m  / s} &  maximum (absolute) component of horizontal ice velocity over the grid \\
     \texttt{nonneg_rule_flux} & \textsl{kg  / s} &  \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
@@ -678,8 +675,8 @@ the first timestep.
 \texttt{kill -USR2} \pid & \texttt{SIGUSR2} & Just flush time-series output buffers.\index{signals!USR2} \\
 \bottomrule
 \end{tabular}
-\label{tab:signals}
 \caption{Signalling running PISM processes.  ``\pid''~stands for list of all identifiers of the PISM processes.}
+\label{tab:signals}
 \end{table}
 
 Here is an example.  Suppose we start a long verification run in the
@@ -764,8 +761,8 @@ criteria, however.
 \bottomrule
 \normalsize
 \end{tabular}
-\label{tab:adaptiveflag}
 \caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}
+\label{tab:adaptiveflag}
 \end{table}
 
 \begin{table}[ht]

@@ -82,7 +82,7 @@ if (NOT Pism_MANUAL_BUILD)
 
   find_package(TAO)
   if (NOT TAO_FOUND)
-    message(WARNING  "TAO not found. Inverse solvers using the TAO library will not be built.")
+    message(STATUS  "TAO not found. Inverse solvers using the TAO library will not be built.")
   endif()
 
 else ()
@@ -190,7 +190,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
-    CACHE PATH "Python extension module installation directory." FORCE)
+    CACHE PATH "Python extension module installation directory." )
 endif ()
 
 if (${FFTW_FOUND})
@@ -230,7 +230,7 @@ if (TAO_FOUND)
   list (APPEND Pism_EXTERNAL_LIBS ${TAO_LIBRARIES})
   add_definitions (-DPISM_HAS_TAO=1)
 else()
-add_definitions (-DPISM_HAS_TAO=0)
+  add_definitions (-DPISM_HAS_TAO=0)
 endif()
 
 add_custom_target (etags

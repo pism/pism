@@ -21,6 +21,8 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 
+#include "pism_petsc32_compat.hh"
+
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                    EnthalpyConverter &ec, const NCConfigVariable &c)
 {
@@ -36,10 +38,33 @@ PetscErrorCode SSAFEM::allocate_fem() {
   earth_grav = config.get("standard_gravity");
   m_beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
 
-  ierr = DMCreateGlobalVector(SSADA, &r);CHKERRQ(ierr);
-  ierr = DMGetMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
+  ierr = SNESCreate(grid.com, &snes);CHKERRQ(ierr);
 
-  ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
+  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
+  // methods via SSAFEFunction and SSAFEJ
+  callback_data.da = SSADA;
+  callback_data.ssa = this;
+  ierr = DMDASetLocalFunction(SSADA, (DMDALocalFunction1)SSAFEFunction); CHKERRQ(ierr);
+  ierr = DMDASetLocalJacobian(SSADA, (DMDALocalFunction1)SSAFEJacobian); CHKERRQ(ierr);
+
+#if PISM_PETSC32_COMPAT==1
+  Mat J;
+  Vec r;
+  ierr = DMGetMatrix(SSADA, "baij",  &J); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(SSADA, &r); CHKERRQ(ierr);
+
+  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data); CHKERRQ(ierr);
+
+  // Thanks to reference counting these two are destroyed during the SNESDestroy() call below.
+  ierr = MatDestroy(&J); CHKERRQ(ierr);
+  ierr = VecDestroy(&r); CHKERRQ(ierr);
+#else
+  ierr = DMSetMatType(SSADA, "baij"); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(SSADA, &callback_data); CHKERRQ(ierr);
+#endif
+
+  ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
 
   // Default of maximum 200 iterations; possibly overridded by commandline
   PetscInt snes_max_it = 200;
@@ -70,8 +95,6 @@ PetscErrorCode SSAFEM::deallocate_fem() {
 
   ierr = SNESDestroy(&snes);CHKERRQ(ierr);
   delete[] feStore;
-  ierr = VecDestroy(&r); CHKERRQ(ierr);
-  ierr = MatDestroy(&J); CHKERRQ(ierr);
 
   return 0;
 }
@@ -189,15 +212,6 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason)
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
-
-  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  // methods via SSAFEFunction and SSAFEJ
-  ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
-  ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
-  callback_data.da = SSADA;  callback_data.ssa = this;
-  ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
 
   stdout_ssa.clear();
   if (getVerbosityLevel() >= 2)

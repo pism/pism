@@ -168,6 +168,12 @@ PetscErrorCode PISMStressBalance::get_principal_strain_rates(
   return 0;
 }
 
+PetscErrorCode PISMStressBalance::get_2D_stresses(
+                IceModelVec2S &result_Txx, IceModelVec2S &result_Tyy, IceModelVec2S &result_Txy) {
+  PetscErrorCode ierr;
+  ierr = stress_balance->compute_2D_stresses(result_Txx, result_Tyy, result_Txy); CHKERRQ(ierr);
+  return 0;
+}
 
 //! \brief Extend the grid vertically.
 PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
