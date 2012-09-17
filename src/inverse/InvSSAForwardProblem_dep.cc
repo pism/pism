@@ -34,14 +34,14 @@ PetscErrorCode InvSSAForwardProblem_dep::allocate_ksp()
   PetscErrorCode ierr;
 
   // Storage for vector unknowns.
-  ierr = DMGetMatrix(SSADA, "baij", &m_MatA); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA, "baij", &m_MatA); CHKERRQ(ierr);
   ierr = DMCreateLocalVector(SSADA, &m_VecU); CHKERRQ(ierr);
   ierr = DMCreateGlobalVector(SSADA, &m_VecZ2); CHKERRQ(ierr);
   ierr = DMCreateLocalVector(SSADA, &m_VecZ); CHKERRQ(ierr);
   ierr = DMCreateGlobalVector(SSADA, &m_VecRHS2); CHKERRQ(ierr);
 
   // Storage for scalar unknowns.
-  ierr = DMGetMatrix(grid.da2, "baij", &m_MatB); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(grid.da2, "baij", &m_MatB); CHKERRQ(ierr);
   ierr = DMCreateGlobalVector(grid.da2, &m_VecRHS); CHKERRQ(ierr);
   ierr = DMCreateGlobalVector(grid.da2, &m_VecV); CHKERRQ(ierr);
 

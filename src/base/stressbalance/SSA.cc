@@ -74,7 +74,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   driving_stress_y = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_y"));
   if( (driving_stress_x==NULL) || (driving_stress_y==NULL) ) {
     if(surface == NULL) {
-      SETERRQ(grid.com, 1, "neither surface_altitude nor the pair ssa_driving_stress_x/y is available");      
+      SETERRQ(grid.com, 1, "neither surface_altitude nor the pair ssa_driving_stress_x/y is available");
     }
  }
 
@@ -112,7 +112,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 
       ierr = velocity.read(filename.c_str(), start); CHKERRQ(ierr); 
     }
-    
+
   } else {
     ierr = velocity.set(0.0); CHKERRQ(ierr); // default initial guess
   }
@@ -120,7 +120,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   if (config.get_flag("ssa_dirichlet_bc")) {
     bc_locations = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
     if (bc_locations == NULL) SETERRQ(grid.com, 1, "bc_locations is not available");
-    
+
     vel_bc = dynamic_cast<IceModelVec2V*>(vars.get("vel_ssa_bc"));
     if (vel_bc == NULL) SETERRQ(grid.com, 1, "vel_ssa_bc is not available");
   }
@@ -265,16 +265,16 @@ the magnitudes, and either principal strain rate could be negative or positive.
 
 Result can be used in a calving law, for example in eigencalving (PIK).
 
-FIXME:  need to answer: strain rates will be derived from SSA velocities. Is there ghost communication needed?
-*/
+Note: strain rates will be derived from SSA velocities, using ghosts when
+necessary. Both implementations (SSAFD and SSAFEM) call
+beginGhostComm()/endGhostComm() to ensure that ghost values are up to date.
+ */
 PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
                                                    IceModelVec2S &result_e2) {
   PetscErrorCode ierr;
   PetscScalar    dx = grid.dx, dy = grid.dy;
 
-  IceModelVec2S H = *thickness; // an alias
   ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = H.begin_access(); CHKERRQ(ierr);
   ierr = result_e1.begin_access(); CHKERRQ(ierr);
   ierr = result_e2.begin_access(); CHKERRQ(ierr);
 
@@ -284,7 +284,9 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      if ( velocity(i,j).u == 0.0 || velocity(i,j).v == 0.0) {
+      if ( PetscAbs(velocity(i,j).u) < 1e-9 ||
+           PetscAbs(velocity(i,j).v) < 1e-9) {
+        // FIXME: should the condition above be "m.icy(i,j) == false"?
         result_e1(i,j) = 0.0;
         result_e2(i,j) = 0.0;
         continue;
@@ -346,7 +348,6 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
   }   // i
 
   ierr = velocity.end_access(); CHKERRQ(ierr);
-  ierr = H.end_access(); CHKERRQ(ierr);
   ierr = result_e1.end_access(); CHKERRQ(ierr);
   ierr = result_e2.end_access(); CHKERRQ(ierr);
 
@@ -571,13 +572,13 @@ PetscErrorCode SSA::write_variables(set<string> vars, string filename) {
   return 0;
 }
 
-PetscErrorCode SSA::compute_2D_stresses(IceModelVec2S &result_Txx, IceModelVec2S &result_Tyy, IceModelVec2S &result_Txy) {
+PetscErrorCode SSA::compute_2D_stresses(IceModelVec2S &result_Txx,
+                                        IceModelVec2S &result_Tyy,
+                                        IceModelVec2S &result_Txy) {
   PetscErrorCode ierr;
   PetscScalar    dx = grid.dx, dy = grid.dy;
-  PetscScalar    Mx = grid.Mx, My = grid.My;
-  IceModelVec2S &thk = *thickness; // to improve readability (below)
+
   ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = thk.begin_access(); CHKERRQ(ierr);
   ierr = result_Txx.begin_access(); CHKERRQ(ierr);
   ierr = result_Tyy.begin_access(); CHKERRQ(ierr);
   ierr = result_Txy.begin_access(); CHKERRQ(ierr);
@@ -587,7 +588,9 @@ PetscErrorCode SSA::compute_2D_stresses(IceModelVec2S &result_Txx, IceModelVec2S
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      if ( velocity(i,j).u == 0.0 || velocity(i,j).v == 0.0 ) {
+      if ( PetscAbs(velocity(i,j).u) < 1e-9 ||
+           PetscAbs(velocity(i,j).v) < 1e-9 ) {
+        // FIXME: should the condition above be "m.icy(i,j) == false"?
         result_Txx(i,j)=0.0;
         result_Tyy(i,j)=0.0;
         result_Txy(i,j)=0.0;
@@ -601,7 +604,6 @@ PetscErrorCode SSA::compute_2D_stresses(IceModelVec2S &result_Txx, IceModelVec2S
         v_x = (velocity(i+1,j).v - velocity(i-1,j).v) / (2 * dx),
         v_y = (velocity(i,j+1).v - velocity(i,j-1).v) / (2 * dy);
 
-
       PetscScalar nu = flow_law->effective_viscosity(hardness, u_x, u_y, v_x, v_y);
 
       //get deviatoric stresses
@@ -613,7 +615,6 @@ PetscErrorCode SSA::compute_2D_stresses(IceModelVec2S &result_Txx, IceModelVec2S
   }   // i
 
   ierr = velocity.end_access(); CHKERRQ(ierr);
-  ierr = thk.end_access(); CHKERRQ(ierr);
   ierr = result_Txx.end_access(); CHKERRQ(ierr);
   ierr = result_Tyy.end_access(); CHKERRQ(ierr);
   ierr = result_Txy.end_access(); CHKERRQ(ierr);

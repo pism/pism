@@ -52,7 +52,7 @@ PetscErrorCode InvSSAForwardProblem::construct() {
   ierr = m_du_global.create(m_grid,"linearization work vector (sans ghosts)",kNoGhosts,stencilWidth); CHKERRQ(ierr);
   ierr = m_du_local.create(m_grid,"linearization work vector (with ghosts)",kHasGhosts,stencilWidth); CHKERRQ(ierr);
 
-  ierr = DMGetMatrix(SSADA, "baij", &m_J_state); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA, "baij", &m_J_state); CHKERRQ(ierr);
 
   ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
   PetscReal ksp_rtol = 1e-12;
