@@ -198,7 +198,7 @@ target_link_libraries (pismv pismverif pismbase)
 add_executable (pclimate pclimate.cc)
 target_link_libraries (pclimate pismboundary pismrevision)
 
-find_program (NCGEN_PROGRAM "ncgen")
+find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
 mark_as_advanced(NCGEN_PROGRAM)
 
 add_custom_command (OUTPUT pism_config.nc
