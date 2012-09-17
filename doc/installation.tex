@@ -137,7 +137,7 @@ and cell-area correction, and thus these libraries are recommended, but not stri
     \toprule
     \multicolumn{2}{c}{\textbf{Recommended Library}} & \textbf{Comment}\\
     \midrule
-    FFTW & \url{http://www.fftw.org/} & \\
+    FFTW & \url{http://www.fftw.org/} & PISM supports FFTW version 3.x\\
     PROJ.4 & \url{http://trac.osgeo.org/proj/} & \\
    \bottomrule
   \end{tabular}
@@ -266,7 +266,7 @@ Once done, see \ref{subsec:prereq-petsc} to install PETSc from source and then
     others (2007). \emph{Fast computation of a viscoelastic deformable Earth
       model for ice sheet simulation}, Ann.~Glaciol.~46, pp.~97–-105.} If you
   want the functionality of this bed deformation model, which is coupled to the
-  ice flow and which we recommend, install FFTW or check that it is installed
+  ice flow and which we recommend, install FFTW version 3.x or check that it is installed
   already. If this library is absent, all of PISM will work \emph{except} for
   this bed deformation model.
 
@@ -448,10 +448,10 @@ This describes a successful PISM installation on a Cray XT at the
 Danish Meteorological Institute:
 
 \begin{enumerate}
-\item Load appropriate modules.  You will need to set module versions; note
-  that PISM requires PETSc 3.2.  Loading all the necessary modules allows
-  compilers to find headers and libraries even though the resulting CMake
-  configuration is invalid.
+\item Load appropriate modules. You will need to set module versions; note that
+  PISM requires PETSc version $\ge$ \PETSCREL. Loading all the necessary
+  modules allows compilers to find headers and libraries even though the
+  resulting CMake configuration is invalid.
 \begin{verbatim}
 module swap PrgEnv-pgi PrgEnv-gnu
 
@@ -632,6 +632,12 @@ $  CC=mpicc CXX=mpicxx cmake path/to/pism-source
   To tell CMake where to look for libraries for the target system, see
   \url{http://www.cmake.org/Wiki/CMake_Cross_Compiling} and the paragraph about
   \texttt{CMAKE_FIND_ROOT_PATH} in particular.
+\item Note that the PISM build system uses \texttt{ncgen} from the NetCDF
+  package to generate \mbox{\texttt{pism_config.nc}}. This means that a working
+  NetCDF installation is required on both the ``host'' and the ``target''
+  systems when cross-compiling PISM. If CMake finds \texttt{ncgen} for the
+  target platform, try setting
+  \mbox{\texttt{CMAKE_FIND_ROOT_PATH_MODE_PROGRAM}} to \texttt{NEVER}.
 \item Some systems support static libraries only. To build PISM statically and
   tell CMake not to try to link to shared libraries, set
   \texttt{Pism_LINK_STATICALLY} to \texttt{ON} using \texttt{ccmake}.
