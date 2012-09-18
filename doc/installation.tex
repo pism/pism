@@ -605,13 +605,6 @@ PISM's build parameters. One can also set CMake cache variables using the
 
 Here are some issues we know about.
 \begin{itemize}
-\item Sometimes it is necessary to set \texttt{GSL_CBLAS_LIB} using
-  \texttt{cmake -Dvariable=value} mechanism if installation fails at the
-  linking stage, or by using the ``advanced'' mode in \texttt{ccmake}.
-  The symptom may be build error messages like
-\begin{verbatim}
-/usr/lib/../../../../lib/libgsl.so: undefined reference to `cblas_xxx'
-\end{verbatim}
 \item Sometimes, if a system has more than one MPI installation CMake finds the
   wrong one. To tell it which one to use, set \texttt{MPI_LIBRARY} and related
   variables by using \texttt{ccmake} or editing \texttt{CMakeCache.txt} in the
