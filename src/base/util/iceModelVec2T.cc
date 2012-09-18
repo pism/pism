@@ -188,25 +188,32 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     string bounds_name;
     ierr = time_dimension.get_bounds_name(filename, bounds_name);
 
-    if (!bounds_name.empty()) {
-      // read time bounds data from a file
-      NCTimeBounds tb;
-      tb.init(bounds_name, dimname, grid->com, grid->rank);
-      ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
+    if (time.size() > 1) {
+      if (!bounds_name.empty()) {
+        // read time bounds data from a file
+        NCTimeBounds tb;
+        tb.init(bounds_name, dimname, grid->com, grid->rank);
+        ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
 
-      ierr = tb.read(filename, grid->time->use_reference_date(), time_bounds); CHKERRQ(ierr);
-    } else {
-      // compute fake time bounds data
+        ierr = tb.read(filename, grid->time->use_reference_date(), time_bounds); CHKERRQ(ierr);
 
-      time_bounds.resize(2 * time.size());
-
-      time_bounds[0] = time.front() - 1; // this value does not matter because
-                                         // we use constant-in-time extrapolation
-      time_bounds[1] = time.front();
-      for (unsigned int i = 1; i < time.size(); ++i) {
-        time_bounds[2 * i]     = time[i-1];
-        time_bounds[2 * i + 1] = time[i];
+        // time bounds data overrides the time variable: we make t[j] be the
+        // right end-point of the j-th interval
+        for (unsigned int k = 0; k < time.size(); ++k)
+          time[k] = time_bounds[2*k + 1];
+      } else {
+        // no time bounds attribute
+        PetscPrintf(grid->com,
+                    "PISM ERROR: Variable '%s' does not have the time_bounds attribute.\n"
+                    "  Cannot use time-dependent forcing data '%s' (%s) without time bounds.\n",
+                    dimname.c_str(),  vars[0].get_string("long_name").c_str(), vars[0].short_name.c_str());
+        PISMEnd();
       }
+    } else {
+      // only one time record; set fake time bounds:
+      time_bounds.resize(2);
+      time_bounds[0] = time[0] - 1;
+      time_bounds[1] = time[0] + 1;
     }
 
   } else {
@@ -218,7 +225,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     // set fake time bounds:
     time_bounds.resize(2);
     time_bounds[0] = -1;
-    time_bounds[1] =  0;
+    time_bounds[1] =  1;
   }
   
   if (!is_increasing(time)) {
@@ -290,12 +297,15 @@ PetscErrorCode IceModelVec2T::update(int start) {
     SETERRQ1(grid->com, 1, "IceModelVec2T::update(int start): start = %d is invalid", start);
 
   int missing = PetscMin(n_records, time_size - start);
-  
+
+  if (start == first)
+    return 0;                   // nothing to do
+
   int kept = 0;
   if (first >= 0) {
     int last = first + (N - 1);
     if ((N > 0) && (start >= first) && (start <= last)) {
-      int discarded = start - first; 
+      int discarded = start - first;
       kept = last - start + 1;
       ierr = discard(discarded); CHKERRQ(ierr);
       missing -= kept;
@@ -346,6 +356,9 @@ PetscErrorCode IceModelVec2T::update(int start) {
 PetscErrorCode IceModelVec2T::discard(int number) {
   PetscErrorCode ierr;
   PetscScalar **a2, ***a3;
+
+  if (number == 0)
+    return 0;
 
   N -= number;
 
@@ -521,6 +534,10 @@ PetscErrorCode IceModelVec2T::interp(int i, int j, int number,
   int last = first + (N - 1);
 
   for (int k = 0; k < number; ++k) {
+
+    if (k > 0 && ts[k] < ts[k-1])
+      mcurr = first; // reset the mcurr index: ts are not increasing!
+
     // extrapolate on the left:
     if (ts[k] <= time[first]) {
       values[k] = a3[i][j][0];

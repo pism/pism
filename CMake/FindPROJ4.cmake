@@ -1,7 +1,7 @@
 # - Find proj.4
 # Find the native proj.4 includes and library
 #
-#  PROJ4_INCLUDES    - where to find fftw3.h
+#  PROJ4_INCLUDES    - where to find proj_api.h
 #  PROJ4_LIBRARIES   - List of libraries when using proj.4.
 #  PROJ4_FOUND       - True if proj.4 found.
 
