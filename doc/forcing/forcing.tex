@@ -309,10 +309,11 @@ files.
 \label{sec:time-bounds}
 \index{Time!bounds}
 
-PISM interprets climate forcing data as piecewise-constant in time. A forcing file can specify time bounds corresponding to each record by following the CF (Climate and Forecasting) meta-data conventions.
+PISM interprets climate forcing data as piecewise-constant in time. A forcing
+file is required to contain time bounds corresponding to each record.
 
-The \texttt{ncdump -h} output from a conforming file would look similar to the
-following:
+PISM follows the CF (Climate and Forecasting) meta-data conventions. The
+\texttt{ncdump -h} output from a conforming file would look similar to:
 \begin{verbatim}
 netcdf forcing {
 dimensions:

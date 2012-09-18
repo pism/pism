@@ -45,7 +45,11 @@ def prepare_file(fname, x, y):
     ps.standard_parallel = 71.0
     nc.Conventions = "CF-1.3"
 
-    return (nc, t_var)
+    nc.createDimension("nv", size=2)
+    t_bounds = nc.createVariable('time_bounds', 'f4', ('time', 'nv'))
+    nc.variables['time'].bounds = 'time_bounds'
+
+    return (nc, t_var, t_bounds)
 
 input_temp = "air_temp.nc"
 input_precip = "precipitation.nc"
@@ -72,8 +76,8 @@ else:
 output_temp = "ar4_temp_anomaly.nc"
 output_precip = "ar4_precip_anomaly.nc"
 
-nc_temp_out, t_temp = prepare_file(output_temp, x, y)
-nc_precip_out, t_precip = prepare_file(output_precip, x, y)
+nc_temp_out, t_temp, t_temp_bounds = prepare_file(output_temp, x, y)
+nc_precip_out, t_precip, t_precip_bounds = prepare_file(output_precip, x, y)
 
 temp = nc_temp_out.createVariable("air_temp_anomaly", 'f', dimensions=("time", "y", "x"))
 temp.units = "Kelvin"
@@ -92,6 +96,8 @@ precip.description = "AR4 precipitation anomaly"
 print "  averaging monthly temperature data to give annual mean"
 for year in arange(years):
     t_temp[year] = year + 0.5
+    t_temp_bounds[year,0] = year
+    t_temp_bounds[year,1] = year + 1
     temp[year,:,:] = zeros((y.size, x.size))
 
     for month in arange(12):
@@ -104,6 +110,8 @@ for year in arange(years):
 print "  averaging monthly precipitation data to give annual mean"
 for year in arange(years):
     t_precip[year] = year + 0.5
+    t_precip_bounds[year,0] = year
+    t_precip_bounds[year,1] = year + 1
     precip[year,:,:] = zeros((y.size, x.size))
 
     for month in arange(12):
