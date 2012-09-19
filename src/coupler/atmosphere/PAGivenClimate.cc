@@ -58,7 +58,9 @@ PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   // applying January mass balance throughout the year.
   ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
 
-  ierr = temp.at_time(t); CHKERRQ(ierr);
+  // Average so that the mean_annual_temp() may be reported correctly (at least
+  // in the "-surface pdd" case).
+  ierr = temp.average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }
