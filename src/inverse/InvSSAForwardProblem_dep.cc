@@ -27,6 +27,8 @@
 #include <cmath>
 #include "pism_options.hh"
 
+#include "pism_petsc32_compat.hh"
+
 /*! \brief Allocate PETSC structures needed for solving the various linearized
 problems associated with the forward problem. */
 PetscErrorCode InvSSAForwardProblem_dep::allocate_ksp()
