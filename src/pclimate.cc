@@ -46,6 +46,8 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   PIO nc(grid.com, grid.rank, "netcdf3");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  // filename should point to a PISM output file, which is guaranteed to have
+  // land_ice_thickness in it.
   ierr = nc.inq_grid("land_ice_thickness", &grid, NOT_PERIODIC); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 

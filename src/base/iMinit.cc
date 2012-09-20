@@ -313,12 +313,17 @@ PetscErrorCode IceModel::grid_setup() {
 
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
+    bool var_exists = false;
     for (unsigned int i = 0; i < names.size(); ++i) {
-      ierr = nc.inq_grid(names[i], &grid, NOT_PERIODIC);
-      if (ierr == 0) break;
+      ierr = nc.inq_var(names[i], var_exists); CHKERRQ(ierr);
+
+      if (var_exists == true) {
+        ierr = nc.inq_grid(names[i], &grid, NOT_PERIODIC); CHKERRQ(ierr);
+        break;
+      }
     }
 
-    if (ierr != 0) {
+    if (var_exists == false) {
       PetscPrintf(grid.com, "PISM ERROR: file %s has neither enthalpy nor temperature in it!\n",
                   filename.c_str());
 
