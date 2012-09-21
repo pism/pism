@@ -6,13 +6,13 @@ MPIEXEC=$2
 # Test name:
 echo "Test #24: Hooke flow law regression."
 # The list of files to delete when done.
-files="flowtable.txt diff.txt"
+files="flowtable-24.txt diff-24.txt"
 
 rm -f $files
 
-$PISM_PATH/flowlaw_test -flow_law hooke > flowtable.txt
+$PISM_PATH/flowlaw_test -flow_law hooke > flowtable-24.txt
 # compare results
-diff flowtable.txt - > diff.txt <<END-OF-OUTPUT
+diff flowtable-24.txt - > diff-24.txt <<END-OF-OUTPUT
 flow law:   "hooke"
 pressure = 1.785e+07 Pa = (hydrostatic at depth 2000.00 m)
 flowtable:

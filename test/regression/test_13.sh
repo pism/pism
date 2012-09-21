@@ -6,11 +6,11 @@ MPIEXEC=$2
 # Test name:
 echo "Test #13: enthalpy symmetry near the base (pisms -no_cold)."
 # The list of files to delete when done.
-files="simp_exper.nc"
+files="simp_exper-13.nc"
 
 rm -f $files
 # run pisms
-$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 4100 -Mx 12 -My 12 -o_size big -no_cold
+$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 4100 -Mx 12 -My 12 -o_size big -no_cold -o simp_exper-13.nc
 
 /usr/bin/env python <<EOF
 try:
@@ -20,7 +20,7 @@ except:
 from numpy import abs, arange
 from sys import exit
 
-nc = NC("simp_exper.nc", 'r')
+nc = NC("simp_exper-13.nc", 'r')
 var = nc.variables['enthalpy']
 n = 12; m = 12; tol = 1e-3
 

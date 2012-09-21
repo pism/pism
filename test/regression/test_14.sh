@@ -8,12 +8,12 @@ set -x
 # Test name:
 echo "Test #14: verif test E regression: isothermal SIA with sliding."
 # The list of files to delete when done.
-files="test_14-E-out.txt verify.nc verify.nc~"
+files="test_14-E-out.txt"
 
 rm -f $files
 
 # run test E
-OPTS="-test E -y 100 -o_size small -verbose 1 -Mbz 1"
+OPTS="-test E -y 100 -o_size none -verbose 1 -Mbz 1"
 $PISM_PATH/pismv -Mx 21 -My 21 -Mz 3 $OPTS  > test_14-E-out.txt
 $PISM_PATH/pismv -Mx 41 -My 41 -Mz 3 $OPTS >> test_14-E-out.txt
 

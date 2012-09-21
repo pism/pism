@@ -6,13 +6,13 @@ MPIEXEC=$2
 # Test name:
 echo "Test #21: Paterson-Budd flow law regression."
 # The list of files to delete when done.
-files="flowtable.txt diff.txt"
+files="flowtable-21.txt diff-21.txt"
 
 rm -f $files
 
-$PISM_PATH/flowlaw_test -flow_law pb > flowtable.txt
+$PISM_PATH/flowlaw_test -flow_law pb > flowtable-21.txt
 # compare results
-diff flowtable.txt - > diff.txt <<END-OF-OUTPUT
+diff flowtable-21.txt - > diff-21.txt <<END-OF-OUTPUT
 flow law:   "pb"
 pressure = 1.785e+07 Pa = (hydrostatic at depth 2000.00 m)
 flowtable:

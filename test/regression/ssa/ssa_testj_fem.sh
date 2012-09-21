@@ -17,22 +17,22 @@ then
 fi
 
 # List of files to remove when done:
-files="foo.nc foo.nc~ test-J-out.txt"
+files="foo-fem-j.nc foo-fem-j.nc~ test-J-out-fem.txt"
 
 rm -f $files
 
 set -e
 
-OPTS="-verbose 1 -ssa_method fem -o foo.nc -ksp_type cg"
+OPTS="-verbose 1 -ssa_method fem -o foo-fem-j.nc -ksp_type cg"
 
 # do stuff
-$MPIEXEC_COMMAND $PISM_PATH/ssa_testj${EXT} -Mx 61 -My 61 $OPTS > test-J-out.txt
-$MPIEXEC_COMMAND $PISM_PATH/ssa_testj${EXT} -Mx 121 -My 121 $OPTS >> test-J-out.txt
+$MPIEXEC_COMMAND $PISM_PATH/ssa_testj${EXT} -Mx 61 -My 61 $OPTS > test-J-out-fem.txt
+$MPIEXEC_COMMAND $PISM_PATH/ssa_testj${EXT} -Mx 121 -My 121 $OPTS >> test-J-out-fem.txt
 
 set +e
 
 # Check results:
-diff test-J-out.txt -  <<END-OF-OUTPUT
+diff test-J-out-fem.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
                 0.1709      0.05526    0.1679    0.0540    0.0934    0.0285

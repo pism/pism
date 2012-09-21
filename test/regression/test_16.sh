@@ -6,12 +6,12 @@ MPIEXEC=$2
 # Test name:
 echo "Test #16: verif test L regression: isothermal SIA with non-flat bed."
 # The list of files to delete when done.
-files="test_16-L-out.txt verify.nc verify.nc~"
+files="test_16-L-out.txt"
 
 rm -f $files
 
 # run test L
-OPTS="-test L -Mbz 1 -Mz 31 -y 1000 -o_size small -verbose 1"
+OPTS="-test L -Mbz 1 -Mz 31 -y 1000 -o_size none -verbose 1"
 $PISM_PATH/pismv -Mx 31 -My 31 $OPTS   > test_16-L-out.txt
 $PISM_PATH/pismv -Mx 41 -My 41 $OPTS  >> test_16-L-out.txt
 

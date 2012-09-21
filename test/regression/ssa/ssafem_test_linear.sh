@@ -17,22 +17,22 @@ then
 fi
 
 # List of files to remove when done:
-files="foo.nc foo.nc~ test-out.txt"
+files="foo-fem-linear.nc foo-fem-linear.nc~ test-out-linear.txt"
 
 rm -f $files
 
 set -e
 
-OPTS="-verbose 1 -ssa_method fem -o foo.nc -ksp_type cg"
+OPTS="-verbose 1 -ssa_method fem -o foo-fem-linear.nc -ksp_type cg"
 
 # do stuff
-$MPIEXEC_COMMAND $PISM_PATH/ssa_test_linear${EXT} -Mx 61 -My 61 $OPTS > test-out.txt
-$MPIEXEC_COMMAND $PISM_PATH/ssa_test_linear${EXT} -Mx 121 -My 121 $OPTS >> test-out.txt
+$MPIEXEC_COMMAND $PISM_PATH/ssa_test_linear${EXT} -Mx 61 -My 61 $OPTS > test-out-linear.txt
+$MPIEXEC_COMMAND $PISM_PATH/ssa_test_linear${EXT} -Mx 121 -My 121 $OPTS >> test-out-linear.txt
 
 set +e
 
 # Check results:
-diff test-out.txt -  <<END-OF-OUTPUT
+diff test-out-linear.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
                 0.4207      0.00319    0.4207    0.0444    0.1884    0.0093

@@ -4,31 +4,31 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 echo "Test # 9: 3D regridding from files with different variable orders."
-files="foo.nc bar.nc baz.nc"
+files="foo-09.nc bar-09.nc baz-09.nc"
 
-OPTS="-Mx 61 -My 61 -Mz 21 -Lz 4000 -regrid_file foo.nc -regrid_vars topg,litho_temp,thk,bwat,enthalpy -y 0"
+OPTS="-Mx 61 -My 61 -Mz 21 -Lz 4000 -regrid_file foo-09.nc -regrid_vars topg,litho_temp,thk,bwat,enthalpy -y 0"
 
 rm -f $files
 
 set -e -x
 
 # Create a file to bootstrap from (with a non-trivial bed topography):
-$MPIEXEC -n 1 $PISM_PATH/pisms -eisII I -Mx 51 -My 60 -Mz 21 -Mbz 21 -Lbz 1000 -y 0 -o foo.nc
+$MPIEXEC -n 1 $PISM_PATH/pisms -eisII I -Mx 51 -My 60 -Mz 21 -Mbz 21 -Lbz 1000 -y 0 -o foo-09.nc
 
 # Bootstrap from this file and run for 0 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr -boot_file foo.nc $OPTS -o bar.nc
+$MPIEXEC -n 2 $PISM_PATH/pismr -boot_file foo-09.nc $OPTS -o bar-09.nc
 
-# Change the variable order in foo.nc to z,y,x:
-ncpdq -O -a z,y,x foo.nc foo.nc
+# Change the variable order in foo-09.nc to z,y,x:
+ncpdq -O -a z,y,x foo-09.nc foo-09.nc
 
 # Bootstrap from this file and run for 0 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr -boot_file foo.nc $OPTS -o baz.nc
+$MPIEXEC -n 2 $PISM_PATH/pismr -boot_file foo-09.nc $OPTS -o baz-09.nc
 
 set +e
 set +x
 
-# Compare bar.nc and baz.nc:
-$PISM_PATH/nccmp.py bar.nc baz.nc
+# Compare bar-09.nc and baz-09.nc:
+$PISM_PATH/nccmp.py bar-09.nc baz-09.nc
 if [ $? != 0 ];
 then
     exit 1

@@ -4,20 +4,20 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 echo "Test # 3: no information loss on -y 0 runs (ignoring diagnostics)."
-files="foo.nc bar.nc"
+files="foo-03.nc bar-03.nc"
 
 OPTS="-o_size small "
 
 set -e -x
 
 # Create a file to start from:
-$MPIEXEC -n 2 $PISM_PATH/pisms -no_cold -y 1000 $OPTS -o foo.nc
+$MPIEXEC -n 2 $PISM_PATH/pisms -no_cold -y 1000 $OPTS -o foo-03.nc
 
 # Run for 0 years:
-$MPIEXEC -n 2 $PISM_PATH/pismr -i foo.nc -y 0 $OPTS -o bar.nc
+$MPIEXEC -n 2 $PISM_PATH/pismr -i foo-03.nc -y 0 $OPTS -o bar-03.nc
 
 # Compare, excluding irrelevant diagnostic variables:
-$PISM_PATH/nccmp.py foo.nc bar.nc
+$PISM_PATH/nccmp.py foo-03.nc bar-03.nc
 if [ $? != 0 ];
 then
     exit 1
