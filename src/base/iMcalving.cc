@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2012 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@ PetscErrorCode IceModel::eigenCalving() {
   const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid.com, "######### eigenCalving() start \n");    CHKERRQ(ierr);
-  
+
   PetscScalar
     my_discharge_flux = 0,
     discharge_flux = 0;
@@ -103,7 +103,7 @@ PetscErrorCode IceModel::eigenCalving() {
       // find partially filled or empty grid boxes on the icefree ocean, which
       // have floating ice neighbors after massContExplicitStep (mask not updated)
 
-      bool floating_e = (vH(i + 1, j) > 0.0 && (vbed(i + 1, j) < (sea_level - ice_rho / ocean_rho*vH(i + 1, j)))), 
+      bool floating_e = (vH(i + 1, j) > 0.0 && (vbed(i + 1, j) < (sea_level - ice_rho / ocean_rho*vH(i + 1, j)))),
 	   floating_w = (vH(i - 1, j) > 0.0 && (vbed(i - 1, j) < (sea_level - ice_rho / ocean_rho*vH(i - 1, j)))),
            floating_n = (vH(i, j + 1) > 0.0 && (vbed(i, j + 1) < (sea_level - ice_rho / ocean_rho*vH(i, j + 1)))),
            floating_s = (vH(i, j - 1) > 0.0 && (vbed(i, j - 1) < (sea_level - ice_rho / ocean_rho*vH(i, j - 1))));
@@ -210,7 +210,6 @@ PetscErrorCode IceModel::eigenCalving() {
         if(vHref(i, j) < 0.0) { // i.e. terminal floating ice grid cell has calved off completely.
           // We do not account for further calving ice-inwards!
           // Alternatively CFL criterion for time stepping could be adjusted to maximum of calving rate.
-          // ierr = verbPrintf(2, grid.com, "!!!!! calving front would even retreat further at point %d, %d with volume %.2f \n",i,j,-vHref(i, j));    CHKERRQ(ierr);
           vHref(i, j) = 0.0;
         }
       }
@@ -224,7 +223,7 @@ PetscErrorCode IceModel::eigenCalving() {
   ierr = vPrinStrain1.end_access(); CHKERRQ(ierr);
   ierr = vPrinStrain2.end_access(); CHKERRQ(ierr);
   ierr = vDiffCalvRate.end_access(); CHKERRQ(ierr);
-  
+
   ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   cumulative_discharge_flux     += discharge_flux     * factor;
@@ -245,7 +244,7 @@ PetscErrorCode IceModel::eigenCalving() {
 PetscErrorCode IceModel::calvingAtThickness() {
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid.com, "######### calvingAtThickness() start\n");    CHKERRQ(ierr);
-  
+
   PetscScalar
     my_discharge_flux = 0,
     discharge_flux = 0;
@@ -285,7 +284,7 @@ PetscErrorCode IceModel::calvingAtThickness() {
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
-  
+
   ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   cumulative_discharge_flux     += discharge_flux     * factor;
@@ -298,12 +297,11 @@ PetscErrorCode IceModel::calvingAtThickness() {
 
 
 
-//! \brief This calculates the CFL timestep according to the calving rate based on principal strain rates ("eigencalving" with constant K).
-
+//! \brief This calculates the CFL timestep according to the calving rate based
+//! on principal strain rates ("eigencalving" with constant K).
 PetscErrorCode IceModel::dt_from_eigenCalving() {
   const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
-  ierr = verbPrintf(4, grid.com, "######### dt_from_eigenCalving() start \n");    CHKERRQ(ierr);
 
   // is ghost communication really needed here?
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
@@ -311,10 +309,9 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
   ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vMask.endGhostComm(); CHKERRQ(ierr);
 
-  double ocean_rho = config.get("sea_water_density");
-  double ice_rho = config.get("ice_density");
-
-  const PetscScalar eigenCalvFactor = config.get("eigen_calving_K");
+  double ocean_rho = config.get("sea_water_density"),
+    ice_rho = config.get("ice_density"),
+    eigenCalvFactor = config.get("eigen_calving_K");
 
   PetscReal sea_level = 0;
 
@@ -326,7 +323,7 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
     PetscPrintf(grid.com,
       "PISMPIK_ERROR: -eigen_calving using a non-square grid cell does not work (yet);\n"
       "               since it has no direction!!!\n, dx = %f, dy = %f, rel. diff = %f",
-      dx,dy,PetscAbs(dx - dy)/PetscMax(dx,dy));
+      dx, dy, PetscAbs(dx - dy) / PetscMax(dx, dy));
     PISMEnd();
   }
 
@@ -366,24 +363,24 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
       if (ice_free_ocean && next_to_floating) {
 
 	  PetscScalar calvrateHorizontal = 0.0,
-                      eigenCalvOffset = 0.0; 
+                      eigenCalvOffset = 0.0;
 
 	  if ( mask.floating_ice(i + offset, j) && !mask.ice_margin(i + offset, j)) {
 	    eigen1 += vPrinStrain1(i + offset, j);
 	    eigen2 += vPrinStrain2(i + offset, j);
 	    M += 1;
           }
-	  if ( mask.floating_ice(i - offset, j) && !mask.ice_margin(i - offset, j)){
+	  if ( mask.floating_ice(i - offset, j) && !mask.ice_margin(i - offset, j)) {
 	    eigen1 += vPrinStrain1(i - offset, j);
 	    eigen2 += vPrinStrain2(i - offset, j);
 	    M += 1;
           }
-	  if ( mask.floating_ice(i, j + offset) && !mask.ice_margin(i , j + offset)){
+	  if ( mask.floating_ice(i, j + offset) && !mask.ice_margin(i , j + offset)) {
 	    eigen1 += vPrinStrain1(i, j + offset);
 	    eigen2 += vPrinStrain2(i, j + offset);
 	    M += 1;
           }
-	  if ( mask.floating_ice(i, j - offset) && !mask.ice_margin(i , j - offset)){
+	  if ( mask.floating_ice(i, j - offset) && !mask.ice_margin(i , j - offset)) {
 	    eigen1 += vPrinStrain1(i, j - offset);
 	    eigen2 += vPrinStrain2(i, j - offset);
 	    M += 1;
@@ -421,13 +418,17 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
   ierr = PISMGlobalMax(&my_maxCalvingRate, &maxCalvingRate, grid.com); CHKERRQ(ierr);
 
   PetscScalar denom = maxCalvingRate/dx;
-  denom += (0.01/secpera)/(dx + dy);  // make sure it's pos.
+  denom += (0.01/secpera)/(dx + dy);  // make sure it's positive
   dt_from_eigencalving = 1.0/denom;
- 
-  ierr = verbPrintf(2, grid.com, "!!!!! c_rate = %.0f m/a ( dt=%.5f a ) at point %d, %d with mean_c=%.0f m/a over %.0f cells \n",maxCalvingRate*secpera,dt_from_eigencalving/secpera,i0,j0,meancalvrate*secpera,cratecounter);    CHKERRQ(ierr);
-	 
-  dt_from_eigencalving = PetscMax(dt_from_eigencalving,dt_from_eigencalving_min);
-	
+
+  ierr = verbPrintf(2, grid.com,
+                    "!!!!! c_rate = %.0f m/a ( dt=%.5f a ) at point %d, %d with mean_c=%.0f m/a over %.0f cells \n",
+                    maxCalvingRate*secpera,
+                    dt_from_eigencalving/secpera,
+                    i0, j0, meancalvrate*secpera, cratecounter); CHKERRQ(ierr);
+
+  dt_from_eigencalving = PetscMax(dt_from_eigencalving, dt_from_eigencalving_min);
+
   return 0;
 }
 

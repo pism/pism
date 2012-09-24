@@ -283,6 +283,9 @@ protected:
 template <typename T>
 struct planeStar {
   T ij, e, w, n, s;
+  void set(T input) {
+    ij = e = w = n = s = input;
+  }
 };
 
 class IceModelVec2S;

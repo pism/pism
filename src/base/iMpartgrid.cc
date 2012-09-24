@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Torsten Albrecht and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012 Torsten Albrecht and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,7 @@
 //! Compute staggered grid velocities according to mask and regular grid velocities.
 /*!
   In the finite volume interpretation, these are normal velocities at the faces
-  of the cell.  The method avoids differencing velocities from ice free ocean locations.
+  of the cell.  The method avoids using velocities from ice free ocean cells.
 */
 PetscErrorCode IceModel::cell_interface_velocities(bool do_part_grid,
                                                    int i, int j,
@@ -84,12 +84,12 @@ PetscErrorCode IceModel::cell_interface_velocities(bool do_part_grid,
     //avoid ice flux from the shelf onto the ice free land (better would be: ask for bed(i+1,j)>h(i,j))
     if (M.ice_free_land(i + 1, j)) vel.e = 0.0 ;
     if (M.ice_free_land(i - 1, j)) vel.w = 0.0 ;
-    if (M.ice_free_land(i ,j + 1)) vel.n = 0.0 ;   
+    if (M.ice_free_land(i ,j + 1)) vel.n = 0.0 ;
     if (M.ice_free_land(i ,j - 1)) vel.s = 0.0 ;
   } else if (M.ice_free_land(i, j) && M.next_to_floating_ice(i, j)) {
     if (M.floating_ice(i + 1, j)) vel.e = 0.0 ;
     if (M.floating_ice(i - 1, j)) vel.w = 0.0 ;
-    if (M.floating_ice(i ,j + 1)) vel.n = 0.0 ;   
+    if (M.floating_ice(i ,j + 1)) vel.n = 0.0 ;
     if (M.floating_ice(i ,j - 1)) vel.s = 0.0 ;
   }
 
