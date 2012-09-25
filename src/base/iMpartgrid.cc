@@ -35,6 +35,7 @@
   of the cell.  The method avoids using velocities from ice free ocean cells.
 */
 PetscErrorCode IceModel::cell_interface_velocities(bool do_part_grid,
+                                                   bool dirichlet_bc,
                                                    int i, int j,
                                                    planeStar<PetscScalar> &vel) {
   PetscErrorCode ierr;
@@ -91,6 +92,15 @@ PetscErrorCode IceModel::cell_interface_velocities(bool do_part_grid,
     if (M.floating_ice(i - 1, j)) vel.w = 0.0 ;
     if (M.floating_ice(i ,j + 1)) vel.n = 0.0 ;
     if (M.floating_ice(i ,j - 1)) vel.s = 0.0 ;
+  }
+
+  // In cells adjacent to Dirichlet BC locations staggered velocities
+  // have to be set to prescribed values:
+  if (dirichlet_bc && vBCMask.as_int(i,j) == 0) {
+    if (vBCMask.as_int(i+1,j) == 1) vel.e = vBCvel(i + 1, j).u;
+    if (vBCMask.as_int(i-1,j) == 1) vel.w = vBCvel(i - 1, j).u;
+    if (vBCMask.as_int(i,j+1) == 1) vel.n = vBCvel(i, j + 1).v;
+    if (vBCMask.as_int(i,j-1) == 1) vel.s = vBCvel(i, j - 1).v;
   }
 
   return 0;

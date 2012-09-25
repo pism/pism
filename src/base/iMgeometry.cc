@@ -313,136 +313,165 @@ PetscErrorCode IceModel::massContExplicitStep() {
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-      planeStar<int> M = vMask.int_star(i, j);
-      double divQ = 0.0;   // the divergence term
+      // Divergence terms:
+      double divQ_SIA = 0.0, divQ_SSA = 0.0;
 
       // Source terms:
       double
         surface_mass_balance = acab(i, j),
         meltrate_grounded = 0.0,
         meltrate_floating = 0.0,
-        partgrid_flux     = 0.0,
-        compensatory_flux = 0.0;
-
-      // get diffusive flux
-      planeStar<PetscScalar> Q;
-      ierr = cell_interface_diffusive_flux(*Qdiff, i, j, Q); CHKERRQ(ierr);
-
-      // get non-diffusive velocities according to old or -part_grid scheme
-      planeStar<PetscScalar> v;
-      ierr = cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
+        part_grid_flux     = 0.0;
 
       if (include_bmr_in_continuity) {
         meltrate_floating = shelfbmassflux(i, j);
         meltrate_grounded = vbmr(i, j);
       }
 
+      // Compute divergence terms:
+      {
+        // Get the diffusive flux
+        planeStar<PetscScalar> Q;
+        ierr = cell_interface_diffusive_flux(*Qdiff, i, j, Q); CHKERRQ(ierr);
+        // staggered grid Div(Q) for diffusive non-sliding SIA deformation part:
+        //    Qdiff = - D grad h
+        divQ_SIA = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
+
+        // Get the non-diffusive velocities according to old or -part_grid scheme
+        planeStar<PetscScalar> v;
+        ierr = cell_interface_velocities(do_part_grid,
+                                         dirichlet_bc,
+                                         i, j, v); CHKERRQ(ierr);
+
+        // membrane stress (and/or basal sliding) part: upwind by staggered grid
+        // PIK method;  this is   \nabla \cdot [(u, v) H]
+        divQ_SSA += ( v.e * (v.e > 0 ? vH(i, j) : vH(i + 1, j))
+                      - v.w * (v.w > 0 ? vH(i - 1, j) : vH(i, j)) ) / dx;
+        divQ_SSA += ( v.n * (v.n > 0 ? vH(i, j) : vH(i, j + 1))
+                      - v.s * (v.s > 0 ? vH(i, j - 1) : vH(i, j)) ) / dy;
+      }
+
+      // Different geometric (cell) arrangements:
+
       if (mask.grounded(i, j)) {
         meltrate_floating = 0.0;
         // both cases (icy and ice-free) are the same
       } else if (mask.floating_ice(i, j)) {
+
+        // Turn off grounded basal melt rate, use both SMB and sub-shelf melt
+        // rate.
         meltrate_grounded = 0.0;
 
         // interior of a shelf:
         if (mask.next_to_grounded_ice(i, j) == false)
-          Q.set(0.0);
-        // a shelf near the grounding line may get a contrubution from the
-        // grounded part of the ice sheet.
+          divQ_SIA = 0.0;
+        // A shelf near the grounding line may get a deformational flow
+        // contrubution from the grounded part of the ice sheet.
 
-        // Use both SMB and sub-shelf melt rate
       } else if (mask.ice_free_ocean(i, j)) {
+
         meltrate_grounded = 0.0;
 
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
         // parameterization
         if (do_part_grid && mask.next_to_floating_ice(i, j)) {
 
-          PetscReal H_average = get_average_thickness(do_redist, M, vH.star(i, j));
+          // Add the flow contribution to this partially filled cell.
+          vHref(i, j) += -(divQ_SIA + divQ_SSA) * dt;
 
-          const PetscScalar coverageRatio = vHref(i, j) / H_average;
+          PetscReal H_average = get_average_thickness(do_redist,
+                                                      vMask.int_star(i, j),
+                                                      vH.star(i, j)),
+            coverage_ratio = vHref(i, j) / H_average;
 
-          if (coverageRatio > 1.0) {
+          if (coverage_ratio >= 1.0) {
             // A partially filled grid cell is now considered to be full.
             if (do_redist)
               vHresidual(i, j) = vHref(i, j) - H_average; // residual ice thickness
 
             vHref(i, j) = 0.0;
 
-            Q.set(0.0);
-            partgrid_flux = H_average / dt;
+            part_grid_flux = H_average;
             // use both SMB and sub-shelf melt rate
           }
+
+          divQ_SIA = 0;
+          divQ_SSA = 0;
+
           // end of "if (do_part_grid ...)"
         } else if (mask.next_to_grounded_ice(i, j)) {
-          // Use Q, SMB and sub-shelf melt rate.
+          // Use divQ, SMB and sub-shelf melt rate.
         } else {
-          // ice-free ocean away from either floating or grounded ice
-          Q.set(0.0);
+          // ice-free ocean away from either floating or grounded ice, or next
+          // to floating ice with part_grid "off"
+          divQ_SIA = 0.0;
+          divQ_SSA = 0.0;
           meltrate_floating = 0.0;
           surface_mass_balance = 0.0;
         }
 
+        // FIXME: an ice-free ocean cell may have both floating and grounded
+        // icy neighbors.
+
       } // end of "if (mask.ice_free_ocean(i, j))"
 
       // Dirichlet BC case (should go last to override previous settings):
-      if (dirichlet_bc) {
-        // In cells adjacent to Dirichlet BC locations staggered velocities
-        // have to be set to prescribed values:
-        if (vBCMask.as_int(i,j) == 0) {
-          if (vBCMask.as_int(i+1,j) == 1) v.e = vBCvel(i + 1, j).u;
-          if (vBCMask.as_int(i-1,j) == 1) v.w = vBCvel(i - 1, j).u;
-          if (vBCMask.as_int(i,j+1) == 1) v.n = vBCvel(i, j + 1).v;
-          if (vBCMask.as_int(i,j-1) == 1) v.s = vBCvel(i, j - 1).v;
-        } else {
-          // At Dirichlet BC locations there is no flow and no contribution
-          // from source terms:
-          Q.set(0.0);              // no deformational (SIA) flow
-          v.set(0.0);              // no advective flow
-          surface_mass_balance = 0.0;
-          meltrate_grounded    = 0.0;
-          meltrate_floating    = 0.0;
+      if (dirichlet_bc && vBCMask.as_int(i,j) == 1) {
+        // At Dirichlet BC locations there is no flow and no contribution
+        // from source terms:
+        divQ_SIA = 0;
+        divQ_SSA = 0;
+        surface_mass_balance = 0.0;
+        meltrate_grounded    = 0.0;
+        meltrate_floating    = 0.0;
+        part_grid_flux       = 0.0;
+      }
+
+      vHnew(i, j) += (dt * (surface_mass_balance // accumulation/ablation
+                            - meltrate_grounded // basal melt rate (grounded)
+                            - meltrate_floating // sub-shelf melt rate
+                            - (divQ_SIA + divQ_SSA)) // flux divergence
+                      + part_grid_flux); // corresponds to a cell becoming "full"
+
+      if (vHnew(i, j) < 0.0) {
+        my_nonneg_rule_flux += -vHnew(i, j);
+
+        // this has to go *after* accounting above!
+        vHnew(i, j) = 0.0;
+      }
+
+      // accounting:
+      {
+        my_grounded_basal_ice_flux -= meltrate_grounded;
+        my_sub_shelf_ice_flux -= meltrate_floating;
+        my_surface_ice_flux += surface_mass_balance;
+      }
+
+      // "Calving" mechanisms
+
+      // FIXME: we should update the mask first and then do calving. These
+      // should go into separate methods (and it's OK to loop over the grid again).
+      {
+        // the following conditionals, both -ocean_kill and -float_kill, are also applied in
+        //   IceModel::computeMax2DSlidingSpeed() when determining CFL
+
+        // force zero thickness at points which were originally ocean (if "-ocean_kill");
+        //   this is calving at original calving front location
+        if ( do_ocean_kill && ocean_kill_mask.as_int(i, j) == 1) {
+          my_ocean_kill_flux += -vHnew(i, j);
+
+          // this has to go *after* accounting above!
+          vHnew(i, j) = 0.0;
         }
-      }
 
-      // staggered grid Div(Q) for diffusive non-sliding SIA deformation part:
-      //    Qdiff = - D grad h
-      divQ = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
-      // membrane stress (and/or basal sliding) part: upwind by staggered grid
-      // PIK method;  this is   \nabla \cdot [(u, v) H]
-      divQ += ( v.e * (v.e > 0 ? vH(i, j) : vH(i + 1, j))
-                - v.w * (v.w > 0 ? vH(i - 1, j) : vH(i, j)) ) / dx;
-      divQ += ( v.n * (v.n > 0 ? vH(i, j) : vH(i, j + 1))
-                - v.s * (v.s > 0 ? vH(i, j - 1) : vH(i, j)) ) / dy;
+        // force zero thickness at points which are floating (if "-float_kill");
+        //   this is calving at grounding line
+        if ( floating_ice_killed && mask.ocean(i, j) ) { // FIXME: *was* ocean???
+          my_float_kill_flux += -vHnew(i, j);
 
-      vHnew(i, j) += dt * (surface_mass_balance // accumulation/ablation
-                           + partgrid_flux      // corresponds to a cell becoming "full"
-                           - meltrate_grounded  // basal melt rate (grounded)
-                           - meltrate_floating  // sub-shelf melt rate
-                           - divQ               // flux divergence
-                           );
-
-      if (vHnew(i, j) < 0.0)
-        compensatory_flux = - vHnew(i, j);
-
-      // the following conditionals, both -ocean_kill and -float_kill, are also applied in
-      //   IceModel::computeMax2DSlidingSpeed() when determining CFL
-
-      // force zero thickness at points which were originally ocean (if "-ocean_kill");
-      //   this is calving at original calving front location
-      if ( do_ocean_kill && ocean_kill_mask.as_int(i, j) == 1) {
-        my_ocean_kill_flux += -vHnew(i, j);
-
-        // this has to go *after* accounting above!
-        vHnew(i, j) = 0.0;
-      }
-
-      // force zero thickness at points which are floating (if "-float_kill");
-      //   this is calving at grounding line
-      if ( floating_ice_killed && mask.ocean(i, j) ) { // FIXME: *was* ocean???
-        my_float_kill_flux += -vHnew(i, j);
-
-        // this has to go *after* accounting above!
-        vHnew(i, j) = 0.0;
+          // this has to go *after* accounting above!
+          vHnew(i, j) = 0.0;
+        }
       }
 
       // Track cumulative surface mass balance. Note that this keeps track of
@@ -451,8 +480,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
         climatic_mass_balance_cumulative(i, j) += acab(i, j) * dt;
       }
 
-    } // end of the inner for loop
-  } // end of the outer for loop
+    } // end of the inner (j) for loop
+  } // end of the outer (i) for loop
 
   ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);

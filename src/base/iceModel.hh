@@ -371,6 +371,7 @@ protected:
 
   // see iMpartgrid.cc
   virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
+                                                   bool dirichlet_bc,
                                                    int i, int j,
                                                    planeStar<PetscScalar> &vel_output);
   PetscReal get_average_thickness(bool do_redist, planeStar<int> M,

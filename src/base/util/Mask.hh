@@ -139,22 +139,19 @@ public:
   //! \brief Ice-free margin (ice-free, at least one of four neighbors has ice).
   inline bool next_to_ice(int i, int j)
   {
-    return ice_free(i, j) &&
-      (icy(i + 1, j) || icy(i - 1, j) || icy(i, j + 1) || icy(i, j - 1));
+    return (icy(i + 1, j) || icy(i - 1, j) || icy(i, j + 1) || icy(i, j - 1));
   }
 
   //! \brief Ice-free margin (ice-free, at least one of four neighbors has floating ice).
   inline bool next_to_floating_ice(int i, int j)
   {
-    return ice_free(i, j) &&
-      (floating_ice(i + 1, j) || floating_ice(i - 1, j) || floating_ice(i, j + 1) || floating_ice(i, j - 1));
+    return (floating_ice(i + 1, j) || floating_ice(i - 1, j) || floating_ice(i, j + 1) || floating_ice(i, j - 1));
   }
 
   //! \brief Ice-free margin (ice-free, at least one of four neighbors has grounded ice).
   inline bool next_to_grounded_ice(int i, int j)
   {
-    return ice_free(i, j) &&
-      (grounded_ice(i + 1, j) || grounded_ice(i - 1, j) || grounded_ice(i, j + 1) || grounded_ice(i, j - 1));
+    return (grounded_ice(i + 1, j) || grounded_ice(i - 1, j) || grounded_ice(i, j + 1) || grounded_ice(i, j - 1));
   }
 
  //! \brief belongs to margin of an ice shelf but has ice free land neighbor.

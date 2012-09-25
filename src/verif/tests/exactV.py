@@ -4,14 +4,14 @@
 # implementing C version for PISM verification.
 
 from pylab import *
-from os import system
+import subprocess
 
 try:
     from netCDF4 import Dataset as NC
 except:
     from netCDF3 import Dataset as NC
 
-def permute(variable, output_order = ('t', 'z', 'zb', 'y', 'x')):
+def permute(variable, output_order = ('time', 'z', 'zb', 'y', 'x')):
     """Permute dimensions of a NetCDF variable to match the output storage order."""
     input_dimensions = variable.dimensions
 
@@ -73,12 +73,14 @@ def plot_xc(t_years):
     plot([x, x], [y_min, y_max], '--g')
 
 def run_pismv(Mx, run_length, options, output):
-    system("pismv -test V -y %f -Mx %d %s -o %s" % (run_length, Mx, options, output))
+    command = "pismv -test V -y %f -Mx %d %s -o %s" % (run_length, Mx, options, output)
+    print "Running %s" % command
+    subprocess.call(command, shell=True)
 
 def plot_pism_results(figure_number, filename, figure_title, color):
     nc = NC(filename)
 
-    time = nc.variables['t'][0]
+    time = nc.variables['time'][0]/secpera # convert to years
 
     thk = permute(nc.variables['thk'])[0,1,2:]
     ubar_ssa = permute(nc.variables['cbar'])[0,1,2:]
@@ -94,7 +96,7 @@ def plot_pism_results(figure_number, filename, figure_title, color):
     subplot(211)
     title(figure_title)
     plot(x_nc, H(x_nc*1000.0), color='black', linestyle='dashed')
-    plot(x_nc, thk, color=color)
+    plot(x_nc, thk, color=color, linewidth=2)
     plot_xc(time)
     ylabel("Ice thickness, m")
     axis(xmin=0, xmax=400, ymax=600)
@@ -102,7 +104,7 @@ def plot_pism_results(figure_number, filename, figure_title, color):
 
     subplot(212)
     plot(x_nc, v(x_nc*1000.0) * secpera, color='black', linestyle='dashed')
-    plot(x_nc, ubar_ssa, color=color)
+    plot(x_nc, ubar_ssa, color=color, linewidth=2)
     plot_xc(time)
     axis(xmin=0, xmax=400, ymax=1000)
     xlabel("km")
@@ -114,15 +116,15 @@ def plot_pism_results(figure_number, filename, figure_title, color):
 options = "-ssa_method fd -cfbc -part_grid -Lx 250"
 
 run_pismv(101, 300, options, "out.nc")
-plot_pism_results(1, "out.nc", "Figure 6 (b)", 'blue')
+plot_pism_results(1, "out.nc", "Figure 6 (b) (-part_grid)", 'blue')
 
 run_pismv(101, 300, options + " -max_dt 1", "out.nc")
-plot_pism_results(1, "out.nc", "Figure 6 (b)", 'green')
+plot_pism_results(1, "out.nc", "Figure 6 (b) (-part_grid)", 'green')
 
 run_pismv(101, 300, options + " -part_redist", "out.nc")
-plot_pism_results(2, "out.nc", "Figure 6 (c)", 'blue')
+plot_pism_results(2, "out.nc", "Figure 6 (c) (-part_grid -part_redist)", 'blue')
 
 run_pismv(101, 300, options + " -part_redist -max_dt 1", "out.nc")
-plot_pism_results(2, "out.nc", "Figure 6 (c)", 'green')
+plot_pism_results(2, "out.nc", "Figure 6 (c) (-part_grid -part_redist)", 'green')
 
 show()

@@ -71,6 +71,7 @@ protected:
   virtual PetscErrorCode allocate_basal_yield_stress();
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
+                                                   bool dirichlet_bc,
                                                    int i, int j,
                                                    planeStar<PetscScalar> &vel_output);
   virtual PetscErrorCode cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
@@ -407,13 +408,16 @@ PetscErrorCode IceRegionalModel::cell_interface_diffusive_flux(IceModelVec2Stag 
  * This disables advective (SSA) flow in the no_model_strip.
  */
 PetscErrorCode IceRegionalModel::cell_interface_velocities(bool do_part_grid,
+                                                           bool dirichlet_bc,
                                                            int i, int j,
                                                            planeStar<PetscScalar> &v) {
   PetscErrorCode  ierr;
   if (no_model_mask(i, j) > 0.5) {
     v.e = v.w = v.n = v.s = 0;
   } else {
-    ierr = IceModel::cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
+    ierr = IceModel::cell_interface_velocities(do_part_grid,
+                                               dirichlet_bc,
+                                               i, j, v); CHKERRQ(ierr);
   }
 
   return 0;
