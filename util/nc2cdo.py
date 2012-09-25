@@ -239,5 +239,7 @@ if __name__ == "__main__":
         nc.history = histstr + nc.history
     else:
         nc.history = histstr
+    ## Write projection attribute
+    nc.projection = proj.srs
     ## Close file    
     nc.close()
