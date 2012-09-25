@@ -230,26 +230,27 @@ PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
   PetscScalar
     // totals over the processor's domain:
-    my_grounded_basal_ice_flux = 0,
-    my_float_kill_flux = 0,
-    my_nonneg_rule_flux = 0,
-    my_ocean_kill_flux = 0,
-    my_sub_shelf_ice_flux = 0,
-    my_surface_ice_flux = 0,
+    proc_grounded_basal_ice_flux = 0,
+    proc_float_kill_flux = 0,
+    proc_nonneg_rule_flux = 0,
+    proc_ocean_kill_flux = 0,
+    proc_sub_shelf_ice_flux = 0,
+    proc_surface_ice_flux = 0,
     // totals over all processors:
-    sub_shelf_ice_flux = 0,
-    grounded_basal_ice_flux = 0,
-    float_kill_flux = 0,
-    nonneg_rule_flux = 0,
-    ocean_kill_flux = 0,
-    surface_ice_flux = 0;
+    total_sub_shelf_ice_flux = 0,
+    total_grounded_basal_ice_flux = 0,
+    total_float_kill_flux = 0,
+    total_nonneg_rule_flux = 0,
+    total_ocean_kill_flux = 0,
+    total_surface_ice_flux = 0;
 
   const PetscScalar dx = grid.dx, dy = grid.dy;
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed"),
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     compute_cumulative_climatic_mass_balance = config.get_flag("compute_cumulative_climatic_mass_balance");
-    
+
+  // FIXME: do_stresses should be removed from this IceModel method.
   bool do_stresses = config.get_flag("do_stresses");
   if (do_stresses) {
     ierr = stress_balance->get_2D_stresses(txx, tyy, txy); CHKERRQ(ierr);
@@ -321,7 +322,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
         surface_mass_balance = acab(i, j),
         meltrate_grounded = 0.0,
         meltrate_floating = 0.0,
-        part_grid_flux     = 0.0;
+        part_grid_flux    = 0.0,
+        ocean_kill_flux   = 0.0,
+        float_kill_flux   = 0.0,
+        nonneg_rule_flux  = 0.0;
 
       if (include_bmr_in_continuity) {
         meltrate_floating = shelfbmassflux(i, j);
@@ -377,7 +381,14 @@ PetscErrorCode IceModel::massContExplicitStep() {
         if (do_part_grid && mask.next_to_floating_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
-          vHref(i, j) += -(divQ_SIA + divQ_SSA) * dt;
+          vHref(i, j) += -divQ_SSA * dt;
+          if (vHref(i, j) < 0) {
+            ierr = verbPrintf(3, grid.com,
+                              "PISM WARNING: negative Href at (%d,%d)\n",
+                              i, j); CHKERRQ(ierr);
+
+            vHref(i, j) = 0;
+          }
 
           PetscReal H_average = get_average_thickness(do_redist,
                                                       vMask.int_star(i, j),
@@ -434,17 +445,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
                       + part_grid_flux); // corresponds to a cell becoming "full"
 
       if (vHnew(i, j) < 0.0) {
-        my_nonneg_rule_flux += -vHnew(i, j);
+        nonneg_rule_flux = -vHnew(i, j);
 
         // this has to go *after* accounting above!
         vHnew(i, j) = 0.0;
-      }
-
-      // accounting:
-      {
-        my_grounded_basal_ice_flux -= meltrate_grounded;
-        my_sub_shelf_ice_flux -= meltrate_floating;
-        my_surface_ice_flux += surface_mass_balance;
       }
 
       // "Calving" mechanisms
@@ -458,7 +462,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         // force zero thickness at points which were originally ocean (if "-ocean_kill");
         //   this is calving at original calving front location
         if ( do_ocean_kill && ocean_kill_mask.as_int(i, j) == 1) {
-          my_ocean_kill_flux += -vHnew(i, j);
+          ocean_kill_flux = -vHnew(i, j);
 
           // this has to go *after* accounting above!
           vHnew(i, j) = 0.0;
@@ -467,7 +471,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         // force zero thickness at points which are floating (if "-float_kill");
         //   this is calving at grounding line
         if ( floating_ice_killed && mask.ocean(i, j) ) { // FIXME: *was* ocean???
-          my_float_kill_flux += -vHnew(i, j);
+          float_kill_flux = -vHnew(i, j);
 
           // this has to go *after* accounting above!
           vHnew(i, j) = 0.0;
@@ -478,6 +482,30 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // cumulative acab at all the grid cells (including ice-free cells).
       if (compute_cumulative_climatic_mass_balance) {
         climatic_mass_balance_cumulative(i, j) += acab(i, j) * dt;
+      }
+
+      // accounting:
+      {
+        proc_grounded_basal_ice_flux -= meltrate_grounded;
+        proc_sub_shelf_ice_flux -= meltrate_floating;
+        proc_surface_ice_flux += surface_mass_balance;
+        proc_float_kill_flux += float_kill_flux;
+        proc_ocean_kill_flux += ocean_kill_flux;
+        proc_nonneg_rule_flux += nonneg_rule_flux;
+      }
+
+      // error checking:
+      double delta_1 = vHnew(i,j) - vH(i,j);
+      double delta_2 = ((surface_mass_balance
+                         - meltrate_floating
+                         - meltrate_grounded
+                         - divQ_SIA
+                         - divQ_SSA) * dt
+                        + ocean_kill_flux
+                        + float_kill_flux
+                        + nonneg_rule_flux);
+      if (PetscAbs(delta_1 - delta_2)/PetscAbs(delta_1) > 1e-3) {
+        // do something
       }
 
     } // end of the inner (j) for loop
@@ -514,26 +542,53 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // flux accounting
   {
-    ierr = PISMGlobalSum(&my_grounded_basal_ice_flux,     &grounded_basal_ice_flux,     grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&my_float_kill_flux,    &float_kill_flux,    grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&my_nonneg_rule_flux,   &nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&my_ocean_kill_flux,    &ocean_kill_flux,    grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&my_sub_shelf_ice_flux, &sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&my_surface_ice_flux,   &surface_ice_flux,   grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&proc_grounded_basal_ice_flux, &total_grounded_basal_ice_flux, grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&proc_float_kill_flux,    &total_float_kill_flux,    grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&proc_nonneg_rule_flux,   &total_nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&proc_ocean_kill_flux,    &total_ocean_kill_flux,    grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&proc_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&proc_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
 
     // FIXME: use corrected cell areas (when available)
     PetscScalar factor = config.get("ice_density") * (dx * dy);
 
     // these are computed using accumulation/ablation or melt rates, so we need
     // to multiply by dt
-    cumulative_grounded_basal_ice_flux += grounded_basal_ice_flux * factor * dt;
-    cumulative_sub_shelf_ice_flux += sub_shelf_ice_flux * factor * dt;
-    cumulative_surface_ice_flux   += surface_ice_flux   * factor * dt;
+    cumulative_grounded_basal_ice_flux += total_grounded_basal_ice_flux * factor * dt;
+    cumulative_sub_shelf_ice_flux += total_sub_shelf_ice_flux * factor * dt;
+    cumulative_surface_ice_flux   += total_surface_ice_flux   * factor * dt;
     // these are computed using ice thickness and are "cumulative" already
-    cumulative_float_kill_flux    += float_kill_flux    * factor;
-    cumulative_nonneg_rule_flux   += nonneg_rule_flux   * factor;
-    cumulative_ocean_kill_flux    += ocean_kill_flux    * factor;
+    cumulative_float_kill_flux    += total_float_kill_flux    * factor;
+    cumulative_nonneg_rule_flux   += total_nonneg_rule_flux   * factor;
+    cumulative_ocean_kill_flux    += total_ocean_kill_flux    * factor;
   } //FIXME: flux reporting not yet adjusted to part_grid scheme
+
+  // error checking
+  {
+    IceModelVec2S tmp;
+    ierr = tmp.create(grid, "name", false); CHKERRQ(ierr);
+
+    ierr = vHnew.add(-1.0, vH, tmp); CHKERRQ(ierr);
+    PetscScalar delta_1, delta_2,
+      factor = config.get("ice_density") * (dx * dy);
+    ierr = tmp.sum(delta_1); CHKERRQ(ierr);
+    delta_1 *= factor;          // convert to kg
+    delta_2 = ((total_surface_ice_flux
+               + total_grounded_basal_ice_flux
+               + total_sub_shelf_ice_flux) * dt
+               + total_nonneg_rule_flux
+               + total_float_kill_flux
+               + total_ocean_kill_flux) * factor;
+
+    double difference = PetscAbs(delta_1 - delta_2),
+      denominator = PetscMax(PetscAbs(delta_1), PetscAbs(delta_2));
+
+    if (difference / denominator > 1e-8 && denominator > 0.0) {
+        PetscPrintf(grid.com, "\nDrat!\nDiscrepancy = %e (%f %%)\n\n",
+                    difference,
+                    difference / denominator * 100);
+    }
+  }
 
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);

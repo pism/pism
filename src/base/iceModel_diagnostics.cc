@@ -1159,7 +1159,6 @@ IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivoltemp", time_dimension_name);
 
   ts->set_units("m3", "");
