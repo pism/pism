@@ -50,7 +50,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   if (config.get_flag("kill_icebergs")) {
     ierr = killIceBergs(); CHKERRQ(ierr);
   }
-  
+
   if (config.get_flag("sub_groundingline")) {
     ierr = sub_gl_position(); CHKERRQ(ierr);
   }
@@ -122,19 +122,216 @@ PetscErrorCode IceModel::update_surface_elevation() {
   return 0;
 }
 
-//! \brief Computes diffusive (SIA) fluxes through interfaces of a computational cell.
+//! \brief Adjust ice flow through interfaces of the cell i,j.
 /*!
- * In IceModel this does nothing. This computation is isolated to aid regional modeling.
- */
-PetscErrorCode IceModel::cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
-                                                       planeStar<PetscScalar> &Q_output) {
-  Q_output.e = Qstag(i, j, 0);
-  Q_output.n = Qstag(i, j, 1);
-  Q_output.w = Qstag(i-1, j, 0);
-  Q_output.s = Qstag(i, j-1, 1);
+ *
+ * From the point of view of the code solving the mass continuity equation
+ * there are 4 kinds of cells: "grounded ice", "floating ice", "ice-free land",
+ * and "ice-free ocean". This makes 16 kinds of interfaces between grid cells.
 
-  return 0;
+ * In some of the cases PISM computes a SIA flux (or the SSA velocity) across
+ * an interface that ice should not cross. (A silly example: there should be no
+ * flow between two adjacent ice-free cells, even if a stress balance solver
+ * computes velocity components for the whole computational domain. Please see
+ * comments below for more examples.)
+
+ * Note that 6 cases are paired. This is crucial: to be consistent (and
+ * conserve mass) the interface between A and B has to get the same treatment
+ * as the one between B and A.
+ */
+static void adjust_flow(planeStar<int> mask,
+                        planeStar<PetscScalar> &SSA_velocity,
+                        planeStar<PetscScalar> &SIA_flux) {
+
+
+  // Prepare to loop over neighbors:
+  // directions
+  PISM_Direction dirs[] = {North, East, South, West};
+  // mask values
+  int mask_current = mask.ij;
+  Mask M;
+
+  // Loop over neighbors:
+  for (int n = 0; n < 4; ++n) {
+    PISM_Direction direction = dirs[n];
+    int mask_neighbor = mask[direction];
+
+    // Case 1: Flow between grounded_ice and grounded_ice.
+    if (M.grounded_ice(mask_current) && M.grounded_ice(mask_neighbor)) {
+      // no adjustment; kept for completeness
+    }
+
+
+    // Cases 2 and 3: Flow between grounded_ice and floating_ice.
+    if ((M.grounded_ice(mask_current) && M.floating_ice(mask_neighbor)) ||
+        (M.floating_ice(mask_current) && M.grounded_ice(mask_neighbor))) {
+      // no adjustment
+    }
+
+
+    // Cases 4 and 5: Flow between grounded_ice and ice_free_land.
+    if ((M.grounded_ice(mask_current) && M.ice_free_land(mask_neighbor)) ||
+        (M.ice_free_land(mask_current) && M.grounded_ice(mask_neighbor))) {
+      // no adjustment
+    }
+
+
+    // Cases 6 and 7: Flow between grounded_ice and ice_free_ocean.
+    if ((M.grounded_ice(mask_current) && M.ice_free_ocean(mask_neighbor)) ||
+        (M.ice_free_ocean(mask_current) && M.grounded_ice(mask_neighbor))) {
+      // no adjustment
+    }
+
+    // Case 8: Flow between floating_ice and floating_ice.
+    if (M.floating_ice(mask_current) && M.floating_ice(mask_neighbor)) {
+      // disable SIA flow
+      SIA_flux[direction] = 0.0;
+    }
+
+
+    // Cases 9 and 10: Flow between floating_ice and ice_free_land.
+    if ((M.floating_ice(mask_current) && M.ice_free_land(mask_neighbor)) ||
+        (M.ice_free_land(mask_current) && M.floating_ice(mask_neighbor))) {
+      // disable all flow
+
+      // This ensures that an ice shelf does not climb up a cliff.
+
+      // FIXME: we should check surface elevations instead of using the mask,
+      // to allow an ice shelf to advance up a coast gradually rising from the
+      // sea level (or similar).
+
+      SIA_flux[direction] = 0.0;
+      SSA_velocity[direction] = 0.0;
+    }
+
+
+    // Cases 11 and 12: Flow between floating_ice and ice_free_ocean.
+    if ((M.floating_ice(mask_current) && M.ice_free_ocean(mask_neighbor)) ||
+        (M.ice_free_ocean(mask_current) && M.floating_ice(mask_neighbor))) {
+
+      SIA_flux[direction] = 0.0;
+
+      // The SSA flow may be later adjusted by the code implementing the
+      // partially-filled cell parameterization.
+    }
+
+    // Case 13: Flow between ice_free_land and ice_free_land.
+    if (M.ice_free_land(mask_current) && M.ice_free_land(mask_neighbor)) {
+
+      SIA_flux[direction] = 0.0;
+      SSA_velocity[direction] = 0.0;
+    }
+
+
+    // Cases 14 and 15: Flow between ice_free_land and ice_free_ocean.
+    if ((M.ice_free_land(mask_current) && M.ice_free_ocean(mask_neighbor)) ||
+        (M.ice_free_ocean(mask_current) && M.ice_free_land(mask_neighbor))) {
+
+      SIA_flux[direction] = 0.0;
+      SSA_velocity[direction] = 0.0;
+    }
+
+    // Case 16: Flow between ice_free_ocean and ice_free_ocean.
+    if (M.ice_free_ocean(mask_current) && M.ice_free_ocean(mask_neighbor)) {
+
+      SIA_flux[direction] = 0.0;
+      SSA_velocity[direction] = 0.0;
+    }
+  } // end of the loop over neighbors (n)
+
 }
+
+void IceModel::cell_interface_fluxes(bool dirichlet_bc,
+                                     int i, int j,
+                                     planeStar<PISMVector2> input_velocity,
+                                     planeStar<PetscScalar> input_flux,
+                                     planeStar<PetscScalar> &output_velocity,
+                                     planeStar<PetscScalar> &output_flux) {
+
+  planeStar<int> mask = vMask.int_star(i,j);
+  PISM_Direction dirs[4] = {North, East, South, West};
+  Mask M;
+
+  planeStar<int> bc_mask;
+  planeStar<PISMVector2> bc_velocity;
+  if (dirichlet_bc) {
+    bc_mask = vBCMask.int_star(i,j);
+    bc_velocity = vBCvel.star(i,j);
+  }
+
+  output_velocity.ij = 0.0;
+  output_flux.ij = 0.0;
+
+  for (int n = 0; n < 4; ++n) {
+    PISM_Direction direction = dirs[n];
+    int mask_current = mask.ij,
+      mask_neighbor = mask[direction];
+
+    // The input_flux is already on the staggered grid, so the can just
+    // copy it to output_flux:
+    output_flux[direction] = input_flux[direction];
+
+    // both sides of the interface are icy
+    if (M.icy(mask_current) && M.icy(mask_neighbor)) {
+      if (direction == East || direction == West)
+        output_velocity[direction] = 0.5 * (input_velocity.ij.u + input_velocity[direction].u);
+      else
+        output_velocity[direction] = 0.5 * (input_velocity.ij.v + input_velocity[direction].v);
+    }
+
+    // icy cell next to an ice-free cell
+    if (M.icy(mask_current) && M.ice_free(mask_neighbor)) {
+      if (direction == East || direction == West)
+        output_velocity[direction] = input_velocity.ij.u;
+      else
+        output_velocity[direction] = input_velocity.ij.v;
+    }
+
+    // ice-free cell next to icy cell
+    if (M.ice_free(mask_current) && M.icy(mask_neighbor)) {
+      if (direction == East || direction == West)
+        output_velocity[direction] = input_velocity[direction].u;
+      else
+        output_velocity[direction] = input_velocity[direction].v;
+    }
+
+    // both sides of the interface are ice-free
+    if (M.ice_free(mask_current) && M.ice_free(mask_neighbor))
+      output_velocity[direction] = 0.0;
+
+    // The Dirichlet B.C. case:
+    if (dirichlet_bc) {
+
+      if (bc_mask.ij == 1) {
+
+        if (direction == East || direction == West)
+          output_velocity[direction] = bc_velocity.ij.u;
+        else                    // North or South
+          output_velocity[direction] = bc_velocity.ij.v;
+
+      } else if (bc_mask.ij == 0) {
+
+        if (bc_mask[direction] == 1) {
+
+          if (direction == East || direction == West)
+            output_velocity[direction] = bc_velocity[direction].u;
+          else                  // North or South
+            output_velocity[direction] = bc_velocity[direction].v;
+
+        }
+
+      } else {
+        // Can't happen.
+      }
+
+    } // end of "if (dirichlet_bc)"
+
+  } // end of the loop over neighbors
+
+  adjust_flow(mask, output_velocity, output_flux);
+
+}
+
 
 
 
@@ -236,19 +433,30 @@ PetscErrorCode IceModel::massContExplicitStep() {
     proc_ocean_kill_flux = 0,
     proc_sub_shelf_ice_flux = 0,
     proc_surface_ice_flux = 0,
+    proc_sum_divQ_SIA = 0,
+    proc_sum_divQ_SSA = 0,
+    proc_H_to_Href_flux = 0,
+    proc_Href_to_H_flux = 0,
     // totals over all processors:
     total_sub_shelf_ice_flux = 0,
     total_grounded_basal_ice_flux = 0,
     total_float_kill_flux = 0,
     total_nonneg_rule_flux = 0,
     total_ocean_kill_flux = 0,
-    total_surface_ice_flux = 0;
+    total_surface_ice_flux = 0,
+    total_sum_divQ_SIA = 0,
+    total_sum_divQ_SSA = 0,
+    total_H_to_Href_flux = 0,
+    total_Href_to_H_flux = 0;
 
   const PetscScalar dx = grid.dx, dy = grid.dy;
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed"),
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     compute_cumulative_climatic_mass_balance = config.get_flag("compute_cumulative_climatic_mass_balance");
+
+  // FIXME: use corrected cell areas (when available)
+  PetscScalar factor = config.get("ice_density") * (dx * dy);
 
   // FIXME: do_stresses should be removed from this IceModel method.
   bool do_stresses = config.get_flag("do_stresses");
@@ -272,7 +480,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   IceModelVec2V *vel_advective;
   ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr);
-  IceModelVec2V vel = *vel_advective; // just an alias
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.begin_access(); CHKERRQ(ierr);
@@ -322,7 +529,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
         surface_mass_balance = acab(i, j),
         meltrate_grounded = 0.0,
         meltrate_floating = 0.0,
-        part_grid_flux    = 0.0,
+        H_to_Href_flux = 0.0,
+        Href_to_H_flux    = 0.0,
         ocean_kill_flux   = 0.0,
         float_kill_flux   = 0.0,
         nonneg_rule_flux  = 0.0;
@@ -332,20 +540,16 @@ PetscErrorCode IceModel::massContExplicitStep() {
         meltrate_grounded = vbmr(i, j);
       }
 
+      planeStar<PetscScalar> Q, v;
+      cell_interface_fluxes(dirichlet_bc, i, j,
+                            vel_advective->star(i, j), Qdiff->star(i, j),
+                            v, Q);
+
       // Compute divergence terms:
       {
-        // Get the diffusive flux
-        planeStar<PetscScalar> Q;
-        ierr = cell_interface_diffusive_flux(*Qdiff, i, j, Q); CHKERRQ(ierr);
         // staggered grid Div(Q) for diffusive non-sliding SIA deformation part:
         //    Qdiff = - D grad h
         divQ_SIA = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
-
-        // Get the non-diffusive velocities according to old or -part_grid scheme
-        planeStar<PetscScalar> v;
-        ierr = cell_interface_velocities(do_part_grid,
-                                         dirichlet_bc,
-                                         i, j, v); CHKERRQ(ierr);
 
         // membrane stress (and/or basal sliding) part: upwind by staggered grid
         // PIK method;  this is   \nabla \cdot [(u, v) H]
@@ -355,33 +559,23 @@ PetscErrorCode IceModel::massContExplicitStep() {
                       - v.s * (v.s > 0 ? vH(i, j - 1) : vH(i, j)) ) / dy;
       }
 
-      // Different geometric (cell) arrangements:
+      // Set source terms
 
-      if (mask.grounded(i, j)) {
+      // Basal melt:
+      if (mask.grounded(i,j)) {
         meltrate_floating = 0.0;
-        // both cases (icy and ice-free) are the same
-      } else if (mask.floating_ice(i, j)) {
-
-        // Turn off grounded basal melt rate, use both SMB and sub-shelf melt
-        // rate.
+      } else {
         meltrate_grounded = 0.0;
+      }
 
-        // interior of a shelf:
-        if (mask.next_to_grounded_ice(i, j) == false)
-          divQ_SIA = 0.0;
-        // A shelf near the grounding line may get a deformational flow
-        // contrubution from the grounded part of the ice sheet.
-
-      } else if (mask.ice_free_ocean(i, j)) {
-
-        meltrate_grounded = 0.0;
-
+      if (mask.ice_free_ocean(i, j)) {
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
         // parameterization
         if (do_part_grid && mask.next_to_floating_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
-          vHref(i, j) += -divQ_SSA * dt;
+          H_to_Href_flux = -(divQ_SSA + divQ_SIA) * dt;
+          vHref(i, j) += H_to_Href_flux;
           if (vHref(i, j) < 0) {
             ierr = verbPrintf(3, grid.com,
                               "PISM WARNING: negative Href at (%d,%d)\n",
@@ -402,47 +596,43 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
             vHref(i, j) = 0.0;
 
-            part_grid_flux = H_average;
-            // use both SMB and sub-shelf melt rate
+            Href_to_H_flux = H_average;
+
+            // A cell that became "full" experiences both SMB and basal melt.
+          } else {
+            surface_mass_balance = 0.0;
+            meltrate_floating    = 0.0;
           }
 
-          divQ_SIA = 0;
-          divQ_SSA = 0;
+          // In this case the SSA flux goes into the Href variable and does not
+          // directly contribute to ice thickness at this location.
+          proc_sum_divQ_SIA += - divQ_SIA;
+          proc_sum_divQ_SSA += - divQ_SSA;
+          divQ_SIA = divQ_SSA = 0;
+        }  else { // end of "if (part_grid...)
 
-          // end of "if (do_part_grid ...)"
-        } else if (mask.next_to_grounded_ice(i, j)) {
-          // Use divQ, SMB and sub-shelf melt rate.
-        } else {
-          // ice-free ocean away from either floating or grounded ice, or next
-          // to floating ice with part_grid "off"
-          divQ_SIA = 0.0;
-          divQ_SSA = 0.0;
-          meltrate_floating = 0.0;
+          // Standard ice-free ocean case:
           surface_mass_balance = 0.0;
+          meltrate_floating    = 0.0;
         }
+      } // end of "if (ice_free_ocean)"
 
-        // FIXME: an ice-free ocean cell may have both floating and grounded
-        // icy neighbors.
-
-      } // end of "if (mask.ice_free_ocean(i, j))"
 
       // Dirichlet BC case (should go last to override previous settings):
       if (dirichlet_bc && vBCMask.as_int(i,j) == 1) {
-        // At Dirichlet BC locations there is no flow and no contribution
-        // from source terms:
-        divQ_SIA = 0;
-        divQ_SSA = 0;
         surface_mass_balance = 0.0;
         meltrate_grounded    = 0.0;
         meltrate_floating    = 0.0;
-        part_grid_flux       = 0.0;
+        Href_to_H_flux       = 0.0;
+        divQ_SIA             = 0.0;
+        divQ_SSA             = 0.0;
       }
 
       vHnew(i, j) += (dt * (surface_mass_balance // accumulation/ablation
                             - meltrate_grounded // basal melt rate (grounded)
                             - meltrate_floating // sub-shelf melt rate
                             - (divQ_SIA + divQ_SSA)) // flux divergence
-                      + part_grid_flux); // corresponds to a cell becoming "full"
+                      + Href_to_H_flux); // corresponds to a cell becoming "full"
 
       if (vHnew(i, j) < 0.0) {
         nonneg_rule_flux = -vHnew(i, j);
@@ -487,25 +677,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // accounting:
       {
         proc_grounded_basal_ice_flux -= meltrate_grounded;
-        proc_sub_shelf_ice_flux -= meltrate_floating;
-        proc_surface_ice_flux += surface_mass_balance;
-        proc_float_kill_flux += float_kill_flux;
-        proc_ocean_kill_flux += ocean_kill_flux;
-        proc_nonneg_rule_flux += nonneg_rule_flux;
-      }
-
-      // error checking:
-      double delta_1 = vHnew(i,j) - vH(i,j);
-      double delta_2 = ((surface_mass_balance
-                         - meltrate_floating
-                         - meltrate_grounded
-                         - divQ_SIA
-                         - divQ_SSA) * dt
-                        + ocean_kill_flux
-                        + float_kill_flux
-                        + nonneg_rule_flux);
-      if (PetscAbs(delta_1 - delta_2)/PetscAbs(delta_1) > 1e-3) {
-        // do something
+        proc_sub_shelf_ice_flux      -= meltrate_floating;
+        proc_surface_ice_flux        += surface_mass_balance;
+        proc_float_kill_flux         += float_kill_flux;
+        proc_ocean_kill_flux         += ocean_kill_flux;
+        proc_nonneg_rule_flux        += nonneg_rule_flux;
+        proc_sum_divQ_SIA += - divQ_SIA;
+        proc_sum_divQ_SSA += - divQ_SSA;
+        proc_H_to_Href_flux -= H_to_Href_flux;
+        proc_Href_to_H_flux += Href_to_H_flux;
       }
 
     } // end of the inner (j) for loop
@@ -548,45 +728,78 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = PISMGlobalSum(&proc_ocean_kill_flux,    &total_ocean_kill_flux,    grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&proc_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&proc_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
-
-    // FIXME: use corrected cell areas (when available)
-    PetscScalar factor = config.get("ice_density") * (dx * dy);
+    ierr = PISMGlobalSum(&proc_sum_divQ_SIA,       &total_sum_divQ_SIA,       grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&proc_sum_divQ_SSA,       &total_sum_divQ_SSA,       grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&proc_Href_to_H_flux,     &total_Href_to_H_flux,     grid.com); CHKERRQ(ierr);
+    ierr = PISMGlobalSum(&proc_H_to_Href_flux,     &total_H_to_Href_flux,     grid.com); CHKERRQ(ierr);
 
     // these are computed using accumulation/ablation or melt rates, so we need
     // to multiply by dt
     cumulative_grounded_basal_ice_flux += total_grounded_basal_ice_flux * factor * dt;
     cumulative_sub_shelf_ice_flux += total_sub_shelf_ice_flux * factor * dt;
     cumulative_surface_ice_flux   += total_surface_ice_flux   * factor * dt;
+    cumulative_sum_divQ_SIA       += total_sum_divQ_SIA       * factor * dt;
+    cumulative_sum_divQ_SSA       += total_sum_divQ_SSA       * factor * dt;
     // these are computed using ice thickness and are "cumulative" already
     cumulative_float_kill_flux    += total_float_kill_flux    * factor;
     cumulative_nonneg_rule_flux   += total_nonneg_rule_flux   * factor;
     cumulative_ocean_kill_flux    += total_ocean_kill_flux    * factor;
+    cumulative_Href_to_H_flux     += total_Href_to_H_flux     * factor;
+    cumulative_H_to_Href_flux     += total_H_to_Href_flux     * factor;
   } //FIXME: flux reporting not yet adjusted to part_grid scheme
 
   // error checking
+  if (0)
   {
-    IceModelVec2S tmp;
-    ierr = tmp.create(grid, "name", false); CHKERRQ(ierr);
+    ierr = vHnew.add(-1.0, vH, vWork2d[1]); CHKERRQ(ierr);
+    PetscScalar delta_mass, sum_flux;
+    ierr = vWork2d[1].sum(delta_mass); CHKERRQ(ierr);
+    delta_mass *= factor;          // convert to kg
+    sum_flux = (dt * (total_surface_ice_flux
+                      + total_grounded_basal_ice_flux
+                      + total_sub_shelf_ice_flux)
+                + total_nonneg_rule_flux
+                + total_float_kill_flux
+                + total_ocean_kill_flux
+                + total_H_to_Href_flux
+                + total_Href_to_H_flux) * factor;
 
-    ierr = vHnew.add(-1.0, vH, tmp); CHKERRQ(ierr);
-    PetscScalar delta_1, delta_2,
-      factor = config.get("ice_density") * (dx * dy);
-    ierr = tmp.sum(delta_1); CHKERRQ(ierr);
-    delta_1 *= factor;          // convert to kg
-    delta_2 = ((total_surface_ice_flux
-               + total_grounded_basal_ice_flux
-               + total_sub_shelf_ice_flux) * dt
-               + total_nonneg_rule_flux
-               + total_float_kill_flux
-               + total_ocean_kill_flux) * factor;
+    double difference = PetscAbs(delta_mass - sum_flux);
 
-    double difference = PetscAbs(delta_1 - delta_2),
-      denominator = PetscMax(PetscAbs(delta_1), PetscAbs(delta_2));
+    total_sum_divQ_SIA *= factor * dt;
+    total_sum_divQ_SSA *= factor * dt;
 
-    if (difference / denominator > 1e-8 && denominator > 0.0) {
-        PetscPrintf(grid.com, "\nDrat!\nDiscrepancy = %e (%f %%)\n\n",
-                    difference,
-                    difference / denominator * 100);
+    if (PetscAbs(total_sum_divQ_SIA) + PetscAbs(total_sum_divQ_SSA) > 0) {
+      PetscPrintf(grid.com,
+                  "\nDrat!\n"
+                  "sum(divQ_SIA)                       = %e\n"
+                  "sum(divQ_SSA)                       = %e\n"
+                  "delta(mass)                         = %f\n"
+                  "sum(flux)                           = %f\n"
+                  "delta(mass) - sum(flux)             = %e\n"
+                  "delta(mass) - sum(flux) - sum(divQ) = %e\n"
+                  "surface_flux                        = %f\n"
+                  "basal_melt_flux                     = %f\n"
+                  "sub_shelf_melt_flux                 = %f\n"
+                  "nonneg_flux                         = %f\n"
+                  "ocean_kill_flux                     = %f\n"
+                  "float_kill_flux                     = %f\n"
+                  "H_to_Href_flux                      = %f\n"
+                  "Href_to_H_flux                      = %f\n",
+                  total_sum_divQ_SIA,
+                  total_sum_divQ_SSA,
+                  delta_mass,
+                  sum_flux,
+                  difference,
+                  difference - PetscAbs(total_sum_divQ_SIA + total_sum_divQ_SSA),
+                  total_surface_ice_flux * factor * dt,
+                  total_grounded_basal_ice_flux * factor * dt,
+                  total_sub_shelf_ice_flux * factor * dt,
+                  total_nonneg_rule_flux * factor,
+                  total_ocean_kill_flux  * factor,
+                  total_float_kill_flux * factor,
+                  total_H_to_Href_flux * factor,
+                  total_Href_to_H_flux * factor);
     }
   }
 

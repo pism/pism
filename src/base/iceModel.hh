@@ -274,7 +274,11 @@ protected:
     cumulative_nonneg_rule_flux,
     cumulative_ocean_kill_flux,
     cumulative_sub_shelf_ice_flux,
-    cumulative_surface_ice_flux;
+    cumulative_surface_ice_flux,
+    cumulative_sum_divQ_SIA,
+    cumulative_sum_divQ_SSA,
+    cumulative_Href_to_H_flux,
+    cumulative_H_to_Href_flux;
   PetscInt    skipCountDown;
 
   // physical parameters used frequently enough to make looking up via
@@ -349,8 +353,12 @@ protected:
   virtual PetscErrorCode updateSurfaceElevationAndMask();
   virtual PetscErrorCode update_mask();
   virtual PetscErrorCode update_surface_elevation();
-  virtual PetscErrorCode cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
-                                                       planeStar<PetscScalar> &Q_output);
+  virtual void cell_interface_fluxes(bool dirichlet_bc,
+                                     int i, int j,
+                                     planeStar<PISMVector2> input_velocity,
+                                     planeStar<PetscScalar> input_flux,
+                                     planeStar<PetscScalar> &output_velocity,
+                                     planeStar<PetscScalar> &output_flux);
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode sub_gl_position();
 
@@ -370,10 +378,6 @@ protected:
   virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
 
   // see iMpartgrid.cc
-  virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
-                                                   bool dirichlet_bc,
-                                                   int i, int j,
-                                                   planeStar<PetscScalar> &vel_output);
   PetscReal get_average_thickness(bool do_redist, planeStar<int> M,
                                   planeStar<PetscScalar> H);
   virtual PetscErrorCode redistResiduals();

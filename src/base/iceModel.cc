@@ -115,6 +115,10 @@ void IceModel::reset_counters() {
   cumulative_ocean_kill_flux = 0;
   cumulative_sub_shelf_ice_flux = 0;
   cumulative_surface_ice_flux = 0;
+  cumulative_sum_divQ_SIA = 0;
+  cumulative_sum_divQ_SSA = 0;
+  cumulative_Href_to_H_flux = 0;
+  cumulative_H_to_Href_flux = 0;
 }
 
 

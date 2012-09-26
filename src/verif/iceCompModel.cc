@@ -1340,17 +1340,20 @@ PetscErrorCode IceCompModel::test_V_init() {
   PetscReal upstream_velocity = convert(300.0, "m/year", "m/second"),
     upstream_thk = 600.0;
 
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vBCMask.begin_access(); CHKERRQ(ierr);
   ierr = vBCvel.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (i <= 2) {
+        vMask(i,j) = MASK_FLOATING;
         vBCMask(i,j) = 1;
         vBCvel(i,j).u  = upstream_velocity;
         vBCvel(i,j).v  = 0;
         vH(i, j) = upstream_thk;
       } else {
+        vMask(i,j) = MASK_ICE_FREE_OCEAN;
         vBCMask(i,j) = 0;
         vBCvel(i,j).u  = 0;
         vBCvel(i,j).v  = 0;
@@ -1361,6 +1364,7 @@ PetscErrorCode IceCompModel::test_V_init() {
   ierr = vBCvel.end_access(); CHKERRQ(ierr);
   ierr = vBCMask.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = vBCMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vBCMask.endGhostComm(); CHKERRQ(ierr);
@@ -1370,6 +1374,9 @@ PetscErrorCode IceCompModel::test_V_init() {
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }

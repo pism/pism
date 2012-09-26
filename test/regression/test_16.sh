@@ -10,6 +10,9 @@ files="test_16-L-out.txt"
 
 rm -f $files
 
+set -x
+set -e
+
 # run test L
 OPTS="-test L -Mbz 1 -Mz 31 -y 1000 -o_size none -verbose 1"
 $PISM_PATH/pismv -Mx 31 -My 31 $OPTS   > test_16-L-out.txt
