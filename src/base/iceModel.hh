@@ -123,6 +123,9 @@ class IceModel {
   friend class IceModel_discharge_flux;
   friend class IceModel_cumulative_discharge_flux;
   friend class IceModel_max_hor_vel;
+  friend class IceModel_sum_divQ_flux;
+  friend class IceModel_H_to_Href_flux;
+  friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
@@ -359,6 +362,9 @@ protected:
                                      planeStar<PetscScalar> input_flux,
                                      planeStar<PetscScalar> &output_velocity,
                                      planeStar<PetscScalar> &output_flux);
+  virtual void adjust_flow(planeStar<int> mask,
+                           planeStar<PetscScalar> &SSA_velocity,
+                           planeStar<PetscScalar> &SIA_flux);
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode sub_gl_position();
 

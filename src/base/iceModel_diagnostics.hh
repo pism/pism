@@ -444,6 +444,33 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
+//! \brief Reports the mass flux from the mass tracked using ice thickness
+//! (thk) to the mass tracked using Href.
+class IceModel_H_to_Href_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_H_to_Href_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
+//! \brief Reports the mass flux from the mass tracked using Href to the mass
+//! tracked using ice thickness (thk).
+class IceModel_Href_to_H_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_Href_to_H_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
+//! \brief Reports the sum(div Q) flux (to diagnose issues in the mass
+//! transport scheme).
+class IceModel_sum_divQ_flux : public PISMTSDiag<IceModel>
+{
+public:
+  IceModel_sum_divQ_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+};
+
 
 #endif  /* _ICEMODEL_DIAGNOSTICS_H_ */
 

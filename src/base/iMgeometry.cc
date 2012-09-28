@@ -139,10 +139,9 @@ PetscErrorCode IceModel::update_surface_elevation() {
  * conserve mass) the interface between A and B has to get the same treatment
  * as the one between B and A.
  */
-static void adjust_flow(planeStar<int> mask,
-                        planeStar<PetscScalar> &SSA_velocity,
-                        planeStar<PetscScalar> &SIA_flux) {
-
+void IceModel::adjust_flow(planeStar<int> mask,
+                           planeStar<PetscScalar> &SSA_velocity,
+                           planeStar<PetscScalar> &SIA_flux) {
 
   // Prepare to loop over neighbors:
   // directions
@@ -331,8 +330,6 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
   adjust_flow(mask, output_velocity, output_flux);
 
 }
-
-
 
 
 //! Update the thickness from the diffusive flux and sliding velocity, and the surface and basal mass balance rates.
@@ -746,61 +743,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
     cumulative_ocean_kill_flux    += total_ocean_kill_flux    * factor;
     cumulative_Href_to_H_flux     += total_Href_to_H_flux     * factor;
     cumulative_H_to_Href_flux     += total_H_to_Href_flux     * factor;
-  } //FIXME: flux reporting not yet adjusted to part_grid scheme
-
-  // error checking
-  if (0)
-  {
-    ierr = vHnew.add(-1.0, vH, vWork2d[1]); CHKERRQ(ierr);
-    PetscScalar delta_mass, sum_flux;
-    ierr = vWork2d[1].sum(delta_mass); CHKERRQ(ierr);
-    delta_mass *= factor;          // convert to kg
-    sum_flux = (dt * (total_surface_ice_flux
-                      + total_grounded_basal_ice_flux
-                      + total_sub_shelf_ice_flux)
-                + total_nonneg_rule_flux
-                + total_float_kill_flux
-                + total_ocean_kill_flux
-                + total_H_to_Href_flux
-                + total_Href_to_H_flux) * factor;
-
-    double difference = PetscAbs(delta_mass - sum_flux);
-
-    total_sum_divQ_SIA *= factor * dt;
-    total_sum_divQ_SSA *= factor * dt;
-
-    if (PetscAbs(total_sum_divQ_SIA) + PetscAbs(total_sum_divQ_SSA) > 0) {
-      PetscPrintf(grid.com,
-                  "\nDrat!\n"
-                  "sum(divQ_SIA)                       = %e\n"
-                  "sum(divQ_SSA)                       = %e\n"
-                  "delta(mass)                         = %f\n"
-                  "sum(flux)                           = %f\n"
-                  "delta(mass) - sum(flux)             = %e\n"
-                  "delta(mass) - sum(flux) - sum(divQ) = %e\n"
-                  "surface_flux                        = %f\n"
-                  "basal_melt_flux                     = %f\n"
-                  "sub_shelf_melt_flux                 = %f\n"
-                  "nonneg_flux                         = %f\n"
-                  "ocean_kill_flux                     = %f\n"
-                  "float_kill_flux                     = %f\n"
-                  "H_to_Href_flux                      = %f\n"
-                  "Href_to_H_flux                      = %f\n",
-                  total_sum_divQ_SIA,
-                  total_sum_divQ_SSA,
-                  delta_mass,
-                  sum_flux,
-                  difference,
-                  difference - PetscAbs(total_sum_divQ_SIA + total_sum_divQ_SSA),
-                  total_surface_ice_flux * factor * dt,
-                  total_grounded_basal_ice_flux * factor * dt,
-                  total_sub_shelf_ice_flux * factor * dt,
-                  total_nonneg_rule_flux * factor,
-                  total_ocean_kill_flux  * factor,
-                  total_float_kill_flux * factor,
-                  total_H_to_Href_flux * factor,
-                  total_Href_to_H_flux * factor);
-    }
   }
 
   // finally copy vHnew into vH and communicate ghosted values
