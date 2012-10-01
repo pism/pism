@@ -162,4 +162,12 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! \brief Reports the principal strain rates.
+class PSB_strain_rates : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_strain_rates(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 #endif /* _PISMSTRESSBALANCE_DIAGNOSTICS_H_ */

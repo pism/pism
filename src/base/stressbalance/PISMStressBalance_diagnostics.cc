@@ -45,7 +45,7 @@ void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["wvelsurf"] = new PSB_wvelsurf(this, grid, *variables);
   dict["wvel_rel"] = new PSB_wvel_rel(this, grid, *variables);
   dict["taud_mag"] = new PSB_taud_mag(this, grid, *variables);
-
+  dict["strain_rates"] = new PSB_strain_rates(this, grid, *variables);
 
   stress_balance->get_diagnostics(dict);
   modifier->get_diagnostics(dict);
@@ -942,6 +942,43 @@ PetscErrorCode PSB_strainheat::compute(IceModelVec* &output) {
   ierr = model->get_volumetric_strain_heating(tmp); CHKERRQ(ierr);
 
   ierr = tmp->copy_to(*result); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+PSB_strain_rates::PSB_strain_rates(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+  dof = 2;
+  vars.resize(dof);
+
+  // set metadata:
+  vars[0].init_2d("eigen1", grid);
+  vars[1].init_2d("eigen2", grid);
+
+  set_attrs("first eigenvalue of the horizontal, vertically-integrated strain rate tensor",
+            "", "s-1", "s-1", 0);
+  set_attrs("second eigenvalue of the horizontal, vertically-integrated strain rate tensor",
+            "", "s-1", "s-1", 1);
+}
+
+PetscErrorCode PSB_strain_rates::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S e1, e2;;
+  IceModelVec2Stag *result;
+
+  ierr = e1.create(grid, "e1", false); CHKERRQ(ierr);
+  ierr = e2.create(grid, "e2", false); CHKERRQ(ierr);
+
+  result = new IceModelVec2Stag;
+  ierr = result->create(grid, "e", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+
+  ierr = model->get_principal_strain_rates(e1, e2); CHKERRQ(ierr);
+
+  ierr = result->set_component(0, e1); CHKERRQ(ierr);
+  ierr = result->set_component(1, e2); CHKERRQ(ierr);
 
   output = result;
   return 0;

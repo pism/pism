@@ -255,7 +255,7 @@ PISM uses the Gregorian calendar to compute lengths of months and years. In
 this case the \emph{reference date} mentioned in section \ref{sec:i-format}
 \textbf{is} used. Use the \intextoption{reference_date} option or the
 configuration parameter with the same name to set it. (And see \emph{PISM's
-  climate forcing components} for more details.
+  climate forcing components} for more details.)
 
 Times given using \texttt{-extra_times} are interpreted as endpoints of reporting intervals. This implies that \texttt{0:1:10} will produce 10 records and \emph{not} 11.
 
@@ -354,6 +354,7 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{schoofs_theta} & \textsl{1} &  multiplier $\theta$ in \cite{Schoofbasaltopg2003} \\
     \texttt{shelfbmassflux} & \textsl{m / year} & ice mass flux from ice shelf base (positive flux is loss from ice shelf) \\
     \texttt{shelfbtemp} & \textsl{Kelvin} & absolute temperature at ice shelf base \\
+    \texttt{strain_rates} & \textsl{1/s} & eigenvalues of the horizontal, vertically-integrated strain rate tensor \\
     \texttt{tauc} & \textsl{Pa} & yield stress for basal till (plastic or pseudo-plastic model) \\
     \texttt{taud} & \textsl{Pa} & driving shear stress at the base of ice, X and Y components \\
     \texttt{taud_mag} & \textsl{Pa} &  magnitude of the driving shear stress at the base of ice \\
