@@ -632,8 +632,18 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, string my_name, bool loca
   name = my_name;
 
   vars.resize(dof);
-  for (int j = 0; j < dof; ++j) {
-    vars[j].init_2d(my_name, my_grid);
+
+  if (dof == 1) {
+    vars[0].init_2d(my_name, my_grid);
+  } else {
+
+    for (int j = 0; j < dof; ++j) {
+      char tmp[TEMPORARY_STRING_LENGTH];
+
+      snprintf(tmp, TEMPORARY_STRING_LENGTH, "%s[%d]",
+               name.c_str(), j);
+      vars[j].init_2d(tmp, my_grid);
+    }
   }
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
@@ -702,56 +712,15 @@ PetscErrorCode IceModelVec2S::multiply_by(IceModelVec &x) {
 
 
 // IceModelVec2Stag
-
-PetscErrorCode  IceModelVec2Stag::create(IceGrid &my_grid, string my_short_name, bool local,
-					 int stencil_width) {
-
-  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local,
-					     stencil_width, dof); CHKERRQ(ierr);
-  string s_name = name;
-  vars[0].init_2d(s_name + "[0]", my_grid);
-  vars[1].init_2d(s_name + "[1]", my_grid);
-
-  return 0;
-}
-
-PetscErrorCode  IceModelVec2Stag::begin_access() {
+PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, string my_short_name, bool my_has_ghosts,
+                                        int stencil_width) {
   PetscErrorCode ierr;
-#if (PISM_DEBUG==1)
-  ierr = checkAllocated(); CHKERRQ(ierr);
 
-  if (access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec::begin_access(): access_counter < 0");
-#endif
-
-  if (access_counter == 0) {
-    ierr = DMDAVecGetArrayDOF(da, v, &array); CHKERRQ(ierr);
-  }
-
-  access_counter++;
+  ierr = IceModelVec2::create(my_grid, my_short_name, my_has_ghosts, stencil_width, dof); CHKERRQ(ierr);
 
   return 0;
 }
 
-//! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
-PetscErrorCode  IceModelVec2Stag::end_access() {
-  PetscErrorCode ierr;
-  access_counter--;
-
-#if (PISM_DEBUG==1)
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec::end_access(): access_counter < 0");
-#endif
-
-  if (access_counter == 0) {
-    ierr = DMDAVecRestoreArrayDOF(da, v, &array); CHKERRQ(ierr);
-    array = NULL;
-  }
-
-  return 0;
-}
 
 PetscErrorCode IceModelVec2Stag::get_array(PetscScalar*** &a) {
   PetscErrorCode ierr;
@@ -803,46 +772,3 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) {
   return 0;
 }
 
-//! \brief Computes the norm of both components.
-PetscErrorCode IceModelVec2Stag::norm_all(NormType n, PetscReal &result0, PetscReal &result1) {
-  PetscErrorCode ierr;
-  PetscReal *norm_result;
-
-  norm_result = new PetscReal[dof];
-
-  ierr = VecStrideNormAll(v, n, norm_result); CHKERRQ(ierr);
-
-  if (localp) {
-    // needs a reduce operation; use PISMGlobalMax if NORM_INFINITY,
-    //   otherwise PISMGlobalSum; carefully in NORM_2 case
-    if (n == NORM_1_AND_2) {
-      SETERRQ1(grid->com, 1, 
-         "IceModelVec2Stag::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))\n",
-         name.c_str());
-    } else if (n == NORM_1) {
-      ierr = PISMGlobalSum(&norm_result[0], &result0, grid->com); CHKERRQ(ierr);
-      ierr = PISMGlobalSum(&norm_result[1], &result1, grid->com); CHKERRQ(ierr);
-    } else if (n == NORM_2) {
-      norm_result[0] = PetscSqr(norm_result[0]);  // undo sqrt in VecNorm before sum
-      ierr = PISMGlobalSum(&norm_result[0], &result0, grid->com); CHKERRQ(ierr);
-      result0 = sqrt(result0);
-
-      norm_result[1] = PetscSqr(norm_result[1]);  // undo sqrt in VecNorm before sum
-      ierr = PISMGlobalSum(&norm_result[1], &result1, grid->com); CHKERRQ(ierr);
-      result1 = sqrt(result1);
-    } else if (n == NORM_INFINITY) {
-      ierr = PISMGlobalMax(&norm_result[0], &result0, grid->com); CHKERRQ(ierr);
-      ierr = PISMGlobalMax(&norm_result[1], &result1, grid->com); CHKERRQ(ierr);
-    } else {
-      SETERRQ1(grid->com, 2, "IceModelVec::norm(...): unknown NormType (called as %s.norm(...))\n",
-         name.c_str());
-    }
-  } else {
-    result0 = norm_result[0];
-    result1 = norm_result[1];
-  }
-
-  delete [] norm_result;
-
-  return 0;
-}

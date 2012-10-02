@@ -179,6 +179,7 @@ public:
 
   virtual PetscErrorCode  range(PetscReal &min, PetscReal &max);
   virtual PetscErrorCode  norm(NormType n, PetscReal &out);
+  virtual PetscErrorCode  norm_all(NormType n, vector<PetscReal> &result);
   virtual PetscErrorCode  add(PetscScalar alpha, IceModelVec &x);
   virtual PetscErrorCode  add(PetscScalar alpha, IceModelVec &x, IceModelVec &result);
   virtual PetscErrorCode  squareroot();
@@ -255,6 +256,7 @@ protected:
     da_stencil_width;           //!< stencil width supported by the DA
   DM           da;
   bool         localp;          //!< localp == true means "has ghosts"
+  bool begin_end_access_use_dof;
 
   //! It is a map, because a temporary IceModelVec can be used to view
   //! different quantities, and a pointer because "shallow copies" should have
@@ -274,6 +276,7 @@ protected:
 
   //! \brief Check the array indices and warn if they are out of range.
   void check_array_indices(int i, int j);
+  void check_array_indices(int i, int j, int k);
   virtual PetscErrorCode reset_attrs(int N);
   virtual PetscErrorCode get_interp_context(string filename, LocalInterpCtx* &lic);
 };
@@ -291,8 +294,9 @@ struct planeStar {
 
   //! Get the element corresponding to a given direction.
   //! Use foo.ij to get the value at i,j.
-  T& operator[](PISM_Direction direction) {
+  inline T& operator[](PISM_Direction direction) {
     switch (direction) {
+    default:                    // just to silence the warning
     case North:
       return n;
     case East:
@@ -322,9 +326,15 @@ public:
   // component-wise access:
   virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
-protected:
+  inline PetscScalar& operator() (int i, int j, int k) {
+#if (PISM_DEBUG == 1)
+    check_array_indices(i, j, k);
+#endif
+    return static_cast<PetscScalar***>(array)[i][j][k];
+  }
   virtual PetscErrorCode create(IceGrid &my_grid, string my_short_name, bool has_ghosts,
                                 int stencil_width, int dof);
+protected:
   PetscErrorCode get_component(int n, Vec result);
   PetscErrorCode set_component(int n, Vec source);
 };
@@ -334,7 +344,7 @@ class IceModelVec2S : public IceModelVec2 {
   friend class IceModelVec2V;
   friend class IceModelVec2Stag;
 public:
-  IceModelVec2S() {}
+  IceModelVec2S() { begin_end_access_use_dof = false; }
   IceModelVec2S(const IceModelVec2S &other) : IceModelVec2(other) {}
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
@@ -563,27 +573,22 @@ public:
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
-//! Uses dof=2 storage. Does \b not support input and output. This class is
-//! identical to IceModelVec2V, except that components are not called \c u and
-//! \c v (to avoid confusion).
+//! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
+//! components are not called \c u and \c v (to avoid confusion).
 class IceModelVec2Stag : public IceModelVec2 {
 public:
-  IceModelVec2Stag() { dof = 2; vars.resize(dof); }
+  IceModelVec2Stag() : IceModelVec2() {
+    dof = 2;
+    vars.resize(dof);
+    begin_end_access_use_dof = true;
+  }
   IceModelVec2Stag(const IceModelVec2Stag &other) : IceModelVec2(other) {}
   using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, string my_name, bool has_ghosts, int width = 1);
-  virtual PetscErrorCode get_array(PetscScalar*** &a);
-  virtual PetscErrorCode begin_access();
-  virtual PetscErrorCode end_access();
-  inline PetscScalar& operator() (int i, int j, int k) {
-#if (PISM_DEBUG == 1)
-    check_array_indices(i, j);
-#endif
-    return static_cast<PetscScalar***>(array)[i][j][k];
-  }
-  virtual PetscErrorCode norm_all(NormType n, PetscReal &result0, PetscReal &result1);
+  virtual PetscErrorCode create(IceGrid &my_grid, string my_short_name, bool has_ghosts,
+                                int stencil_width = 1);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2V &result);
+  virtual PetscErrorCode get_array(PetscScalar*** &a);
 
   //! Returns the values at interfaces of the cell i,j using the staggered grid.
   /*! The ij member of the return value is set to 0, since it has no meaning in
@@ -619,9 +624,6 @@ public:
   virtual ~IceModelVec3D();
 public:
 
-  virtual PetscErrorCode  begin_access();
-  virtual PetscErrorCode  end_access();
-
   PetscErrorCode  setColumn(PetscInt i, PetscInt j, PetscScalar c);
   PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsOUT);
@@ -649,7 +651,8 @@ protected:
 class IceModelVec3 : public IceModelVec3D {
 public:
   IceModelVec3() {}
-  IceModelVec3(const IceModelVec3 &other) : IceModelVec3D(other) {}
+  IceModelVec3(const IceModelVec3 &other) : IceModelVec3D(other)
+  { begin_end_access_use_dof = true; }
   virtual ~IceModelVec3() {}
 
   virtual PetscErrorCode create(IceGrid &mygrid, string my_short_name,

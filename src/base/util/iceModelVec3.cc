@@ -107,43 +107,6 @@ PetscErrorCode IceModelVec3D::destroy() {
   return 0;
 }
 
-PetscErrorCode  IceModelVec3D::begin_access() {
-  PetscErrorCode ierr;
-#if (PISM_DEBUG==1)
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec3D::begin_access(): access_counter < 0");
-#endif
-
-  if (access_counter == 0) {
-    ierr = DMDAVecGetArrayDOF(da, v, &array); CHKERRQ(ierr);
-  }
-
-  access_counter++;
-
-  return 0;
-}
-
-PetscErrorCode  IceModelVec3D::end_access() {
-  PetscErrorCode ierr;
-  access_counter--;
-
-#if (PISM_DEBUG==1)
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec3D::end_access(): access_counter < 0");
-#endif
-
-  if (access_counter == 0) {
-    ierr = DMDAVecRestoreArrayDOF(da, v, &array); CHKERRQ(ierr);
-    array = NULL;
-  }
-
-  return 0;
-}
-
 PetscErrorCode  IceModelVec3D::beginGhostCommTransfer(IceModelVec3D &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
