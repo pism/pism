@@ -16,8 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#if (PISM_HAVE_FFTW==1)
-
 #include "PISMBedDef.hh"
 #include "PIO.hh"
 #include "PISMTime.hh"
@@ -283,7 +281,3 @@ PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
 
   return 0;
 }
-
-#else // PISM_HAVE_FFTW
-#error "PISM build system error: Lingle and Clark bed deformation model requires FFTW3."
-#endif

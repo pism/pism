@@ -129,15 +129,22 @@ add_library (pismbase
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 
 # Bed deformation models.
-add_library (pismearth
-  earth/PBLingleClark.cc
+set(PISMEARTH_SRC
   earth/PBPointwiseIsostasy.cc
   earth/PISMBedDef.cc
-  earth/cubature.c
-  earth/deformation.cc
-  earth/greens.cc
-  earth/matlablike.cc
-)
+  )
+
+if (FFTW_FOUND)
+  list (APPEND PISMEARTH_SRC
+    earth/PBLingleClark.cc
+    earth/deformation.cc
+    earth/greens.cc
+    earth/cubature.c
+    earth/matlablike.cc
+    )
+endif()
+
+add_library(pismearth ${PISMEARTH_SRC})
 target_link_libraries (pismearth pismutil)
 
 # Disable compiler warnings for cubature.c (source file not by PISM authors)
@@ -233,17 +240,21 @@ if (NOT Pism_BUILD_DEBIAN_PACKAGE)
 endif ()
 
 if (Pism_BUILD_EXTRA_EXECS)
-  set (SIMPLE_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
-  foreach (EXEC ${SIMPLE_EXECS})
+  set (EXTRA_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
+  foreach (EXEC ${EXTRA_EXECS})
     add_executable (${EXEC} verif/tests/${EXEC}.c)
     target_link_libraries (${EXEC} pismverif)
   endforeach (EXEC)
 
-  add_executable (tryLCbd earth/tryLCbd.cc)
-  target_link_libraries (tryLCbd pismearth pismrevision)
+  if (FFTW_FOUND)
+    add_executable (tryLCbd earth/tryLCbd.cc)
+    target_link_libraries (tryLCbd pismearth pismrevision)
+    list (APPEND EXTRA_EXECS tryLCbd)
+  endif()
 
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil pismrevision)
+  list (APPEND EXTRA_EXECS btutest)
 
   set (netcdf_test_libraries pismutil ${NETCDF_LIBRARIES} ${PETSC_LIBRARIES} ${MPI_LIBRARIES})
 
@@ -258,7 +269,7 @@ if (Pism_BUILD_EXTRA_EXECS)
    PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
 
   install (TARGETS
-    ${SIMPLE_EXECS} tryLCbd btutest 
+    ${EXTRA_EXECS}
     RUNTIME DESTINATION ${Pism_BIN_DIR}
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})

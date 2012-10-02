@@ -170,11 +170,7 @@ if (Pism_GPROF_FLAGS)
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 endif ()
 
-if (${FFTW_FOUND})
-  include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH} ${FFTW_INCLUDES})
-else ()
-  include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
-endif ()
+include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
 
 set (Pism_EXTERNAL_LIBS
   ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
@@ -187,7 +183,7 @@ endif()
 # Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=1)
-  include_directories (${FFTW_INCLUDE_DIRS})
+  include_directories (${FFTW_INCLUDE_DIRS} ${FFTW_INCLUDES})
   list (APPEND Pism_EXTERNAL_LIBS ${FFTW_LIBRARIES})
 else (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=0)

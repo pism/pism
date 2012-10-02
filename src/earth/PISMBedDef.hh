@@ -21,7 +21,6 @@
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
-#include "deformation.hh"
 
 //! PISM bed deformation model (base class).
 /*! Unlike other PISMComponent_TS derived classes, the update() method of
@@ -63,6 +62,7 @@ protected:
 
 #if (PISM_HAVE_FFTW==1)
 #include <fftw3.h>
+#include "deformation.hh"
 
 //! A wrapper class around BedDeformLC.
 class PBLingleClark : public PISMBedDef {
