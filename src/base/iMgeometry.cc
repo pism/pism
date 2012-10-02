@@ -26,7 +26,7 @@
 #include "PISMSurface.hh"
 #include "PISMStressBalance.hh"
 
-//! \file iMgeometry.cc Methods of IceModel with update and maintain consistency of ice sheet geometry.
+//! \file iMgeometry.cc Methods of IceModel which update and maintain consistency of ice sheet geometry.
 
 
 //! Update the surface elevation and the flow-type mask when the geometry has changed.
@@ -266,7 +266,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
     int mask_current = mask.ij,
       mask_neighbor = mask[direction];
 
-    // The input_flux is already on the staggered grid, so the can just
+    // The input_flux is already on the staggered grid, so we can just
     // copy it to output_flux:
     output_flux[direction] = input_flux[direction];
 
@@ -526,7 +526,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         surface_mass_balance = acab(i, j),
         meltrate_grounded = 0.0,
         meltrate_floating = 0.0,
-        H_to_Href_flux = 0.0,
+        H_to_Href_flux    = 0.0,
         Href_to_H_flux    = 0.0,
         ocean_kill_flux   = 0.0,
         float_kill_flux   = 0.0,
@@ -548,7 +548,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         //    Qdiff = - D grad h
         divQ_SIA = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
 
-        // membrane stress (and/or basal sliding) part: upwind by staggered grid
+        // plug flow part (i.e. basal sliding; from SSA): upwind by staggered grid
         // PIK method;  this is   \nabla \cdot [(u, v) H]
         divQ_SSA += ( v.e * (v.e > 0 ? vH(i, j) : vH(i + 1, j))
                       - v.w * (v.w > 0 ? vH(i - 1, j) : vH(i, j)) ) / dx;
