@@ -166,7 +166,9 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
     // using linear interpolation.
     //ierr = vHav.set(0.0); CHKERRQ(ierr);
     ierr = vHref.set(0.0); CHKERRQ(ierr);
-    if (config.get_flag("part_redist")) { ierr = vHresidual.set(0.0); CHKERRQ(ierr); }
+    if (config.get_flag("part_redist")) {
+      ierr = vHresidual.set(0.0); CHKERRQ(ierr);
+    }
   }
 
   if (config.get_flag("kill_icebergs")) {
@@ -175,9 +177,7 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
   }
 
   if (config.get_flag("do_eigen_calving")) {
-    // will be updated in updateSurfaceElevationAndMask()
-    ierr = vPrinStrain1.set(0.0); CHKERRQ(ierr);
-    ierr = vPrinStrain2.set(0.0); CHKERRQ(ierr);
+    ierr = strain_rates.set(0.0); CHKERRQ(ierr);
   }
 
   if (config.get_flag("ssa_dirichlet_bc")) {

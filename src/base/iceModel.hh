@@ -212,29 +212,19 @@ protected:
   PISMVars variables;
 
   // state variables and some diagnostics/internals
-  IceModelVec2S
-        vh,		//!< ice surface elevation; ghosted
-        vH,		//!< ice thickness; ghosted
-        vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
-        vbwat,		//!< thickness of the basal meltwater; ghosted
-        vbmr,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
-        vLongitude,	//!< Longitude; ghosted to compute cell areas
-        vLatitude,	//!< Latitude; ghosted to compute cell areas
-        vbed,		//!< bed topography; ghosted
-        vuplift,	//!< bed uplift rate; no ghosts
-        vGhf,		//!< geothermal flux; no ghosts
-        bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
-                        //!< ghosted to be able to compute tauc "redundantly"
-
-        vHref,          //!< accumulated mass advected to a partially filled grid cell
-        vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
-        vPrinStrain1,   //!< major principal component of horizontal strain-rate tensor
-        vPrinStrain2,   //!< minor principal component of horizontal strain-rate tensor
-        
-        txx,   //!< deviatoric stress in x-direction
-        tyy,   //!< deviatoric stress in y-direction
-        txy,   //!< deviatoric shear stress
-
+  IceModelVec2S vh,		//!< ice surface elevation; ghosted
+    vH,		//!< ice thickness; ghosted
+    vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
+    vbwat,		//!< thickness of the basal meltwater; ghosted
+    vbmr,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
+    vLongitude,	//!< Longitude; ghosted to compute cell areas
+    vLatitude,	//!< Latitude; ghosted to compute cell areas
+    vbed,		//!< bed topography; ghosted
+    vuplift,	//!< bed uplift rate; no ghosts
+    vGhf,		//!< geothermal flux; no ghosts
+    bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
+    vHref,          //!< accumulated mass advected to a partially filled grid cell
+    vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
     acab,		//!< accumulation/ablation rate; no ghosts
     climatic_mass_balance_cumulative,    //!< cumulative acab
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
@@ -243,8 +233,9 @@ protected:
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
     cell_area;		//!< cell areas (computed using the WGS84 datum)
 
-	
- 
+  IceModelVec2 strain_rates, //!< major and minor principal components of horizontal strain-rate tensor
+    deviatoric_stresses;     //!< deviatoric stresses
+
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
                          //!< grounded_ice, floating_ice, ice_free_ocean
     ocean_kill_mask,     //!< mask used by the -ocean_kill code 

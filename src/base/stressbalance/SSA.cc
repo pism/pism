@@ -269,14 +269,15 @@ Note: strain rates will be derived from SSA velocities, using ghosts when
 necessary. Both implementations (SSAFD and SSAFEM) call
 beginGhostComm()/endGhostComm() to ensure that ghost values are up to date.
  */
-PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
-                                                   IceModelVec2S &result_e2) {
+PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2 &result) {
   PetscErrorCode ierr;
   PetscScalar    dx = grid.dx, dy = grid.dy;
 
+  if (result.get_dof() != 2)
+    SETERRQ(grid.com, 1, "result.get_dof() == 2 is required");
+
   ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result_e1.begin_access(); CHKERRQ(ierr);
-  ierr = result_e2.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
 
   Mask M;
   ierr = mask->begin_access(); CHKERRQ(ierr);
@@ -287,8 +288,8 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
       if ( PetscAbs(velocity(i,j).u) < 1e-9 ||
            PetscAbs(velocity(i,j).v) < 1e-9) {
         // FIXME: should the condition above be "m.icy(i,j) == false"?
-        result_e1(i,j) = 0.0;
-        result_e2(i,j) = 0.0;
+        result(i,j,0) = 0.0;
+        result(i,j,1) = 0.0;
         continue;
       }
 
@@ -341,15 +342,14 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
         B   = 0.5 * (u_x - v_y),
         Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
         q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
-      result_e1(i,j) = A + q;
-      result_e2(i,j) = A - q; // q >= 0 so e1 >= e2
+      result(i,j,0) = A + q;
+      result(i,j,1) = A - q; // q >= 0 so e1 >= e2
 
     } // j
   }   // i
 
   ierr = velocity.end_access(); CHKERRQ(ierr);
-  ierr = result_e1.end_access(); CHKERRQ(ierr);
-  ierr = result_e2.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
 
   ierr = mask->end_access(); CHKERRQ(ierr);
   return 0;
@@ -572,17 +572,18 @@ PetscErrorCode SSA::write_variables(set<string> vars, string filename) {
   return 0;
 }
 
-PetscErrorCode SSA::compute_2D_stresses(IceModelVec2S &result_Txx,
-                                        IceModelVec2S &result_Tyy,
-                                        IceModelVec2S &result_Txy) {
+//! \brief Compute 2D deviatoric stresses.
+/*! Note: IceModelVec2 result has to have dof == 3. */
+PetscErrorCode SSA::compute_2D_stresses(IceModelVec2 &result) {
   PetscErrorCode ierr;
   PetscScalar    dx = grid.dx, dy = grid.dy;
 
+  if (result.get_dof() != 3)
+    SETERRQ(grid.com, 1, "result.get_dof() == 3 is required");
+
   ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result_Txx.begin_access(); CHKERRQ(ierr);
-  ierr = result_Tyy.begin_access(); CHKERRQ(ierr);
-  ierr = result_Txy.begin_access(); CHKERRQ(ierr);
-  
+  ierr = result.begin_access(); CHKERRQ(ierr);
+
   PetscScalar hardness = pow(config.get("ice_softness"),-1.0/config.get("Glen_exponent"));
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -591,9 +592,9 @@ PetscErrorCode SSA::compute_2D_stresses(IceModelVec2S &result_Txx,
       if ( PetscAbs(velocity(i,j).u) < 1e-9 ||
            PetscAbs(velocity(i,j).v) < 1e-9 ) {
         // FIXME: should the condition above be "m.icy(i,j) == false"?
-        result_Txx(i,j)=0.0;
-        result_Tyy(i,j)=0.0;
-        result_Txy(i,j)=0.0;
+        result(i,j,0)=0.0;
+        result(i,j,1)=0.0;
+        result(i,j,2)=0.0;
         continue;
       }
 
@@ -607,17 +608,15 @@ PetscErrorCode SSA::compute_2D_stresses(IceModelVec2S &result_Txx,
       PetscScalar nu = flow_law->effective_viscosity(hardness, u_x, u_y, v_x, v_y);
 
       //get deviatoric stresses
-      result_Txx(i,j)=nu*u_x;
-      result_Tyy(i,j)=nu*v_y;
-      result_Txy(i,j)=0.5*nu*(u_y+v_x);
+      result(i,j,0) = nu*u_x;
+      result(i,j,1) = nu*v_y;
+      result(i,j,2) = 0.5*nu*(u_y+v_x);
 
     } // j
   }   // i
 
   ierr = velocity.end_access(); CHKERRQ(ierr);
-  ierr = result_Txx.end_access(); CHKERRQ(ierr);
-  ierr = result_Tyy.end_access(); CHKERRQ(ierr);
-  ierr = result_Txy.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

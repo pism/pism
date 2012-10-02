@@ -80,13 +80,11 @@ public:
   virtual PetscErrorCode get_D2(IceModelVec2S* &result)
   { result = &D2; return 0; }
 
-  virtual PetscErrorCode compute_principal_strain_rates(
-                IceModelVec2S &/*result_e1*/, IceModelVec2S &/*result_e2*/)
-  { SETERRQ(grid.com, 1,"not implemented in base class"); return 0; }
+  virtual PetscErrorCode compute_principal_strain_rates(IceModelVec2 &/*result*/)
+  { SETERRQ(grid.com, 1,"not implemented in base class"); }
 
-  virtual PetscErrorCode compute_2D_stresses(
-              IceModelVec2S &/*result_Txx*/, IceModelVec2S &/*result_Tyy*/, IceModelVec2S &/*result_Txy*/)
-  { SETERRQ(grid.com,1,"not implemented in base class"); return 0; }
+  virtual PetscErrorCode compute_2D_stresses(IceModelVec2 &/*result*/)
+  { SETERRQ(grid.com,1,"not implemented in base class"); }
 
 
   // helpers:
@@ -118,9 +116,9 @@ protected:
 
 //! Returns zero velocity field, zero friction heating, and zero for D^2.
 /*!
-This derived class might be used in the non-sliding SIA approximation.
-This implementation ignores any basal resistance fields (e.g. yield stress from
-the IceModel or other user of this class).
+  This derived class is used in the non-sliding SIA approximation. This
+  implementation ignores any basal resistance fields (e.g. yield stress from
+  the IceModel or other user of this class).
  */
 class SSB_Trivial : public ShallowStressBalance
 {

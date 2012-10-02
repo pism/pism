@@ -458,7 +458,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   // FIXME: do_stresses should be removed from this IceModel method.
   bool do_stresses = config.get_flag("do_stresses");
   if (do_stresses) {
-    ierr = stress_balance->get_2D_stresses(txx, tyy, txy); CHKERRQ(ierr);
+    ierr = stress_balance->get_2D_stresses(deviatoric_stresses); CHKERRQ(ierr);
   }
 
   if (surface != NULL) {
@@ -764,7 +764,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (config.get_flag("do_eigen_calving") && config.get_flag("use_ssa_velocity")) {
     bool dteigencalving = config.get_flag("cfl_eigencalving");
     if (!dteigencalving){ // calculation of strain rates has been done in iMadaptive.cc already
-      ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
+      ierr = stress_balance->get_principal_strain_rates(strain_rates); CHKERRQ(ierr);
     }
     ierr = eigenCalving(); CHKERRQ(ierr);
   }

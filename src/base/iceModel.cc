@@ -380,36 +380,39 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   if (config.get_flag("do_eigen_calving") == true) {
-    ierr = vPrinStrain1.create(grid, "edot_1", true); CHKERRQ(ierr);
-    ierr = vPrinStrain1.set_attrs("internal", 
+
+    ierr = strain_rates.create(grid, "edot", true,
+                               2, // stencil width, has to match or exceed the "offset" in eigenCalving
+                               2); CHKERRQ(ierr);
+
+    ierr = strain_rates.set_name("edot_1", 0); CHKERRQ(ierr);
+    ierr = strain_rates.set_attrs("internal",
                                   "major principal component of horizontal strain-rate",
-                                  "1/s", ""); CHKERRQ(ierr);
-    ierr = variables.add(vPrinStrain1); CHKERRQ(ierr);
-    ierr = vPrinStrain2.create(grid, "edot_2", true); CHKERRQ(ierr);
-    ierr = vPrinStrain2.set_attrs("internal",
+                                  "1/s", "", 0); CHKERRQ(ierr);
+
+    ierr = strain_rates.set_name("edot_2", 1); CHKERRQ(ierr);
+    ierr = strain_rates.set_attrs("internal",
                                   "minor principal component of horizontal strain-rate",
-                                  "1/s", ""); CHKERRQ(ierr);
-    ierr = variables.add(vPrinStrain2); CHKERRQ(ierr);
+                                  "1/s", "", 1); CHKERRQ(ierr);
   }
-  
+
   if (config.get_flag("do_stresses")== true) {
-    ierr = txx.create(grid, "sigma_xx", true); CHKERRQ(ierr);
-    ierr = txx.set_attrs("internal", 
-                                   "deviatoric stress in x direction",
-                                   "Pa", ""); CHKERRQ(ierr);
-    ierr = variables.add(txx); CHKERRQ(ierr);
-    ierr = tyy.create(grid, "sigma_yy", true); CHKERRQ(ierr);
-    ierr = tyy.set_attrs("internal", 
-                                   "deviatoric stress in y direction",
-                                   "Pa", ""); CHKERRQ(ierr);
-    ierr = variables.add(tyy); CHKERRQ(ierr);
-    ierr = txy.create(grid, "sigma_xy", true); CHKERRQ(ierr);
-    ierr = txy.set_attrs("internal", 
-                                   "deviatoric shear stress",
-                                   "Pa", ""); CHKERRQ(ierr);
-    ierr = variables.add(txy); CHKERRQ(ierr);
+    // FIXME: this should be removed from IceModel.
+    ierr = deviatoric_stresses.create(grid, "sigma", false, 1, 3); CHKERRQ(ierr);
+
+    ierr = deviatoric_stresses.set_name("sigma_xx", 0); CHKERRQ(ierr);
+    ierr = deviatoric_stresses.set_attrs("diagnostic", "deviatoric stress in X direction",
+                                         "Pa", "", 0); CHKERRQ(ierr);
+
+    ierr = deviatoric_stresses.set_name("sigma_yy", 1); CHKERRQ(ierr);
+    ierr = deviatoric_stresses.set_attrs("diagnostic", "deviatoric stress in Y direction",
+                                         "Pa", "", 1); CHKERRQ(ierr);
+
+    ierr = deviatoric_stresses.set_name("sigma_xy", 2); CHKERRQ(ierr);
+    ierr = deviatoric_stresses.set_attrs("diagnostic", "deviatoric shear stress",
+                                         "Pa", "", 2); CHKERRQ(ierr);
   }
-  
+
 
   if (config.get_flag("ssa_dirichlet_bc") == true) {
     // bc_locations
