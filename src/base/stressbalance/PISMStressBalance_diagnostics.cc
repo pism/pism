@@ -46,6 +46,7 @@ void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["wvel_rel"] = new PSB_wvel_rel(this, grid, *variables);
   dict["taud_mag"] = new PSB_taud_mag(this, grid, *variables);
   dict["strain_rates"] = new PSB_strain_rates(this, grid, *variables);
+  dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, grid, *variables);
 
   stress_balance->get_diagnostics(dict);
   modifier->get_diagnostics(dict);
@@ -974,6 +975,39 @@ PetscErrorCode PSB_strain_rates::compute(IceModelVec* &output) {
   ierr = model->get_principal_strain_rates(*result); CHKERRQ(ierr);
 
   output = result;
+  return 0;
+}
+
+PSB_deviatoric_stresses::PSB_deviatoric_stresses(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+  dof = 3;
+  vars.resize(dof);
+
+  // set metadata:
+  vars[0].init_2d("sigma_xx", grid);
+  vars[1].init_2d("sigma_yy", grid);
+  vars[2].init_2d("sigma_xy", grid);
+
+  set_attrs("deviatoric stress in X direction", "", "Pa", "Pa", 0);
+  set_attrs("deviatoric stress in Y direction", "", "Pa", "Pa", 1);
+  set_attrs("deviatoric shear stress", "", "Pa", "Pa", 2);
+
+}
+
+PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2 *result;
+
+  result = new IceModelVec2;
+  ierr = result->create(grid, "strain_rates", false, 1, 3); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[2], 2); CHKERRQ(ierr);
+
+  ierr = model->get_2D_stresses(*result); CHKERRQ(ierr);
+
+  output = result;
+
   return 0;
 }
 

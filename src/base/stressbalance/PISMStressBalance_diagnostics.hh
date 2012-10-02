@@ -170,4 +170,12 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! \brief Reports deviatoric stresses.
+class PSB_deviatoric_stresses : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_deviatoric_stresses(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 #endif /* _PISMSTRESSBALANCE_DIAGNOSTICS_H_ */

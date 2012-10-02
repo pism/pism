@@ -396,24 +396,6 @@ PetscErrorCode IceModel::createVecs() {
                                   "1/s", "", 1); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("do_stresses")== true) {
-    // FIXME: this should be removed from IceModel.
-    ierr = deviatoric_stresses.create(grid, "sigma", false, 1, 3); CHKERRQ(ierr);
-
-    ierr = deviatoric_stresses.set_name("sigma_xx", 0); CHKERRQ(ierr);
-    ierr = deviatoric_stresses.set_attrs("diagnostic", "deviatoric stress in X direction",
-                                         "Pa", "", 0); CHKERRQ(ierr);
-
-    ierr = deviatoric_stresses.set_name("sigma_yy", 1); CHKERRQ(ierr);
-    ierr = deviatoric_stresses.set_attrs("diagnostic", "deviatoric stress in Y direction",
-                                         "Pa", "", 1); CHKERRQ(ierr);
-
-    ierr = deviatoric_stresses.set_name("sigma_xy", 2); CHKERRQ(ierr);
-    ierr = deviatoric_stresses.set_attrs("diagnostic", "deviatoric shear stress",
-                                         "Pa", "", 2); CHKERRQ(ierr);
-  }
-
-
   if (config.get_flag("ssa_dirichlet_bc") == true) {
     // bc_locations
     ierr = vBCMask.create(grid, "bcflag", true, WIDE_STENCIL); CHKERRQ(ierr);

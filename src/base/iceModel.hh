@@ -233,8 +233,7 @@ protected:
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
     cell_area;		//!< cell areas (computed using the WGS84 datum)
 
-  IceModelVec2 strain_rates, //!< major and minor principal components of horizontal strain-rate tensor
-    deviatoric_stresses;     //!< deviatoric stresses
+  IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
 
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
                          //!< grounded_ice, floating_ice, ice_free_ocean

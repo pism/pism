@@ -455,12 +455,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   // FIXME: use corrected cell areas (when available)
   PetscScalar factor = config.get("ice_density") * (dx * dy);
 
-  // FIXME: do_stresses should be removed from this IceModel method.
-  bool do_stresses = config.get_flag("do_stresses");
-  if (do_stresses) {
-    ierr = stress_balance->get_2D_stresses(deviatoric_stresses); CHKERRQ(ierr);
-  }
-
   if (surface != NULL) {
     ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
   } else { SETERRQ(grid.com, 1, "PISM ERROR: surface == NULL"); }
