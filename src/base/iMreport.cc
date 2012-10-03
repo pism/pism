@@ -30,11 +30,9 @@
 
 //!  Computes volume and area of ice sheet, for reporting purposes.
 /*!
-Also computes ice volumes in the three mask regions SHEET, DRAGGING, FLOATING.
+  Communication done for global max and global sum.
 
-Communication done for global max and global sum.
-
-Returns area in units of m^2 and volume in m^3.
+  Returns area in units of m^2 and volume in m^3.
  */
 PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea) {
 
@@ -66,9 +64,11 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea) {
 
 
 /*!
-Computes fraction of the base which is melted.
+  Computes fraction of the base which is melted.
 
-Communication occurs here.
+  Communication occurs here.
+
+  FIXME: energyStats should use cell_area(i,j).
  */
 PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac) {
   PetscErrorCode    ierr;
@@ -111,8 +111,10 @@ PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac) 
 
 
 /*!
-Computes fraction of the ice which is as old as the start of the run (original).
-Communication occurs here.
+  Computes fraction of the ice which is as old as the start of the run (original).
+  Communication occurs here.
+
+  FIXME: ageStats should use cell_area(i,j).
  */
 PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
   PetscErrorCode  ierr;
@@ -314,16 +316,31 @@ PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     volume=0.0;
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vH(i,j) > 0)
-        volume += vH(i,j) * cell_area(i,j);
+
+  {
+    ierr = vH.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (vH(i,j) > 0)
+          volume += vH(i,j) * cell_area(i,j);
+      }
     }
+    ierr = vH.end_access(); CHKERRQ(ierr);
   }
+
+  // Add the volume of the ice in Href:
+  if (config.get_flag("part_grid")) {
+    ierr = vHref.begin_access(); CHKERRQ(ierr);
+    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+        volume += vHref(i,j) * cell_area(i,j);
+      }
+    }
+    ierr = vHref.end_access(); CHKERRQ(ierr);
+  }
+
   ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
