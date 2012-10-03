@@ -163,9 +163,8 @@ if (Pism_ADD_FPIC)
 endif ()
 
 # set Pism_DEFAULT_CONFIG_FILE
-if (NOT Pism_DEFAULT_CONFIG_FILE)
-  set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc")
-endif ()
+set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc" CACHE STRING "" FORCE)
+mark_as_advanced (Pism_DEFAULT_CONFIG_FILE)
 file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 if (Pism_PEDANTIC_WARNINGS)
@@ -193,11 +192,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     CACHE PATH "Python extension module installation directory." )
 endif ()
 
-if (${FFTW_FOUND})
-  include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH} ${FFTW_INCLUDES})
-else ()
-  include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
-endif ()
+include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
 
 set (Pism_EXTERNAL_LIBS
   ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
@@ -210,7 +205,7 @@ endif()
 # Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=1)
-  include_directories (${FFTW_INCLUDE_DIRS})
+  include_directories (${FFTW_INCLUDE_DIRS} ${FFTW_INCLUDES})
   list (APPEND Pism_EXTERNAL_LIBS ${FFTW_LIBRARIES})
 else (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=0)

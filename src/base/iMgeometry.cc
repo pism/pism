@@ -62,7 +62,9 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 PetscErrorCode IceModel::update_mask() {
   PetscErrorCode ierr;
 
-  if (ocean == PETSC_NULL) {  SETERRQ(grid.com, 1, "PISM ERROR: ocean == PETSC_NULL");  }
+  if (ocean == PETSC_NULL) {
+    SETERRQ(grid.com, 1, "PISM ERROR: ocean == PETSC_NULL");
+  }
   PetscReal sea_level;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
@@ -80,9 +82,9 @@ PetscErrorCode IceModel::update_mask() {
     } // inner for loop (j)
   } // outer for loop (i)
 
-  ierr =         vH.end_access(); CHKERRQ(ierr);
-  ierr =       vbed.end_access(); CHKERRQ(ierr);
-  ierr =      vMask.end_access(); CHKERRQ(ierr);
+  ierr =    vH.end_access(); CHKERRQ(ierr);
+  ierr =  vbed.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -98,9 +100,9 @@ PetscErrorCode IceModel::update_surface_elevation() {
 
   GeometryCalculator gc(sea_level, config);
 
-  ierr =    vh.begin_access();    CHKERRQ(ierr);
-  ierr =    vH.begin_access();    CHKERRQ(ierr);
-  ierr =  vbed.begin_access();  CHKERRQ(ierr);
+  ierr =    vh.begin_access(); CHKERRQ(ierr);
+  ierr =    vH.begin_access(); CHKERRQ(ierr);
+  ierr =  vbed.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   PetscInt GHOSTS = 2;
@@ -114,10 +116,10 @@ PetscErrorCode IceModel::update_surface_elevation() {
     }
   }
 
-  ierr =         vh.end_access(); CHKERRQ(ierr);
-  ierr =         vH.end_access(); CHKERRQ(ierr);
-  ierr =       vbed.end_access(); CHKERRQ(ierr);
-  ierr =      vMask.end_access(); CHKERRQ(ierr);
+  ierr =    vh.end_access(); CHKERRQ(ierr);
+  ierr =    vH.end_access(); CHKERRQ(ierr);
+  ierr =  vbed.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -138,6 +140,10 @@ PetscErrorCode IceModel::update_surface_elevation() {
  * Note that 6 cases are paired. This is crucial: to be consistent (and
  * conserve mass) the interface between A and B has to get the same treatment
  * as the one between B and A.
+ *
+ * @param[in] mask Mask used to check for icy/ice-free and floatation
+ * @param[in,out] SSA_velocity SSA velocity to be adjusted
+ * @param[in,out] SIA_flux SIA flux to be adjusted
  */
 void IceModel::adjust_flow(planeStar<int> mask,
                            planeStar<PetscScalar> &SSA_velocity,
@@ -155,9 +161,15 @@ void IceModel::adjust_flow(planeStar<int> mask,
     PISM_Direction direction = dirs[n];
     int mask_neighbor = mask[direction];
 
+    // Only one of the cases below applies at any given time/location, so
+    // "continuing" the for-loop allows us to avoid checking conditions we know
+    // will fail. This also means that the code executed in *all* cases should
+    // go here and not after if-conditions.
+
     // Case 1: Flow between grounded_ice and grounded_ice.
     if (M.grounded_ice(mask_current) && M.grounded_ice(mask_neighbor)) {
       // no adjustment; kept for completeness
+      continue;
     }
 
 
@@ -165,6 +177,7 @@ void IceModel::adjust_flow(planeStar<int> mask,
     if ((M.grounded_ice(mask_current) && M.floating_ice(mask_neighbor)) ||
         (M.floating_ice(mask_current) && M.grounded_ice(mask_neighbor))) {
       // no adjustment
+      continue;
     }
 
 
@@ -172,6 +185,7 @@ void IceModel::adjust_flow(planeStar<int> mask,
     if ((M.grounded_ice(mask_current) && M.ice_free_land(mask_neighbor)) ||
         (M.ice_free_land(mask_current) && M.grounded_ice(mask_neighbor))) {
       // no adjustment
+      continue;
     }
 
 
@@ -179,12 +193,14 @@ void IceModel::adjust_flow(planeStar<int> mask,
     if ((M.grounded_ice(mask_current) && M.ice_free_ocean(mask_neighbor)) ||
         (M.ice_free_ocean(mask_current) && M.grounded_ice(mask_neighbor))) {
       // no adjustment
+      continue;
     }
 
     // Case 8: Flow between floating_ice and floating_ice.
     if (M.floating_ice(mask_current) && M.floating_ice(mask_neighbor)) {
       // disable SIA flow
       SIA_flux[direction] = 0.0;
+      continue;
     }
 
 
@@ -201,6 +217,7 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
       SIA_flux[direction] = 0.0;
       SSA_velocity[direction] = 0.0;
+      continue;
     }
 
 
@@ -212,6 +229,7 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
       // The SSA flow may be later adjusted by the code implementing the
       // partially-filled cell parameterization.
+      continue;
     }
 
     // Case 13: Flow between ice_free_land and ice_free_land.
@@ -219,6 +237,7 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
       SIA_flux[direction] = 0.0;
       SSA_velocity[direction] = 0.0;
+      continue;
     }
 
 
@@ -228,6 +247,7 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
       SIA_flux[direction] = 0.0;
       SSA_velocity[direction] = 0.0;
+      continue;
     }
 
     // Case 16: Flow between ice_free_ocean and ice_free_ocean.
@@ -235,17 +255,44 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
       SIA_flux[direction] = 0.0;
       SSA_velocity[direction] = 0.0;
+      continue;
     }
   } // end of the loop over neighbors (n)
 
 }
 
+//! \brief Compute fluxes through interfaces of a cell i,j.
+/*!
+ * This method implements two steps:
+ *
+ * 1) Compute SSA velocities through interfaces of a cell by averaging values
+ * from regular grid neighbors, making sure that velocities from ice-free areas
+ * are not used.
+ *
+ * Note that the input parameter \c input_velocity contains both components of
+ * the velocity field in the neighborhood of i,j, while \c output_velocity
+ * contains \b scalars: projections of velocity vectors onto normals to
+ * corresponding cell interfaces.
+ *
+ * The SIA flux \c input_flux is computed on the staggered grid by SIAFD, so
+ * the loop below just copies it to \c output_flux.
+ *
+ * 2) Adjust the flow using the mask by calling adjust_flow().
+ *
+ * @param[in] dirichlet_bc true if Dirichlet B.C. are set.
+ * @param[in] i i-index of the current cell
+ * @param[in] j j-index of the current cell
+ * @param[in] in_SSA_velocity SSA velocity on the regular grid in the neighborhood of i,j
+ * @param[in] in_SIA_flux SIA flux on the staggered grid (at interfaces of the cell i,j)
+ * @param[out] out_SSA_velocity SSA velocities through interfaces of the cell i,j
+ * @param[out] out_SIA_flux SIA flux through interfaces of the cell i,j
+ */
 void IceModel::cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
-                                     planeStar<PISMVector2> input_velocity,
-                                     planeStar<PetscScalar> input_flux,
-                                     planeStar<PetscScalar> &output_velocity,
-                                     planeStar<PetscScalar> &output_flux) {
+                                     planeStar<PISMVector2> in_SSA_velocity,
+                                     planeStar<PetscScalar> in_SIA_flux,
+                                     planeStar<PetscScalar> &out_SSA_velocity,
+                                     planeStar<PetscScalar> &out_SIA_flux) {
 
   planeStar<int> mask = vMask.int_star(i,j);
   PISM_Direction dirs[4] = {North, East, South, West};
@@ -258,76 +305,88 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
     bc_velocity = vBCvel.star(i,j);
   }
 
-  output_velocity.ij = 0.0;
-  output_flux.ij = 0.0;
+  out_SSA_velocity.ij = 0.0;
+  out_SIA_flux.ij = 0.0;
 
   for (int n = 0; n < 4; ++n) {
     PISM_Direction direction = dirs[n];
     int mask_current = mask.ij,
       mask_neighbor = mask[direction];
 
-    // The input_flux is already on the staggered grid, so we can just
-    // copy it to output_flux:
-    output_flux[direction] = input_flux[direction];
+    // The in_SIA_flux is already on the staggered grid, so we can just
+    // copy it to out_SIA_flux:
+    out_SIA_flux[direction] = in_SIA_flux[direction];
 
-    // both sides of the interface are icy
+    // Compute the out_SSA_velocity (SSA):
     if (M.icy(mask_current) && M.icy(mask_neighbor)) {
-      if (direction == East || direction == West)
-        output_velocity[direction] = 0.5 * (input_velocity.ij.u + input_velocity[direction].u);
-      else
-        output_velocity[direction] = 0.5 * (input_velocity.ij.v + input_velocity[direction].v);
-    }
 
-    // icy cell next to an ice-free cell
-    if (M.icy(mask_current) && M.ice_free(mask_neighbor)) {
+      // Case 1: both sides of the interface are icy
       if (direction == East || direction == West)
-        output_velocity[direction] = input_velocity.ij.u;
+        out_SSA_velocity[direction] = 0.5 * (in_SSA_velocity.ij.u + in_SSA_velocity[direction].u);
       else
-        output_velocity[direction] = input_velocity.ij.v;
-    }
+        out_SSA_velocity[direction] = 0.5 * (in_SSA_velocity.ij.v + in_SSA_velocity[direction].v);
 
-    // ice-free cell next to icy cell
-    if (M.ice_free(mask_current) && M.icy(mask_neighbor)) {
+    } else if (M.icy(mask_current) && M.ice_free(mask_neighbor)) {
+
+      // Case 2: icy cell next to an ice-free cell
       if (direction == East || direction == West)
-        output_velocity[direction] = input_velocity[direction].u;
+        out_SSA_velocity[direction] = in_SSA_velocity.ij.u;
       else
-        output_velocity[direction] = input_velocity[direction].v;
-    }
+        out_SSA_velocity[direction] = in_SSA_velocity.ij.v;
 
-    // both sides of the interface are ice-free
-    if (M.ice_free(mask_current) && M.ice_free(mask_neighbor))
-      output_velocity[direction] = 0.0;
+    } else if (M.ice_free(mask_current) && M.icy(mask_neighbor)) {
+
+      // Case 3: ice-free cell next to icy cell
+      if (direction == East || direction == West)
+        out_SSA_velocity[direction] = in_SSA_velocity[direction].u;
+      else
+        out_SSA_velocity[direction] = in_SSA_velocity[direction].v;
+
+    } else if (M.ice_free(mask_current) && M.ice_free(mask_neighbor)) {
+
+      // Case 4: both sides of the interface are ice-free
+      out_SSA_velocity[direction] = 0.0;
+
+    }
 
     // The Dirichlet B.C. case:
     if (dirichlet_bc) {
 
-      if (bc_mask.ij == 1) {
+      if (bc_mask.ij == 1 && bc_mask[direction] == 1) {
 
+        // Case 1: both sides of the interface are B.C. locations: average from
+        // the regular grid onto the staggered grid.
         if (direction == East || direction == West)
-          output_velocity[direction] = bc_velocity.ij.u;
+          out_SSA_velocity[direction] = 0.5 * (bc_velocity.ij.u + bc_velocity[direction].u);
+        else
+          out_SSA_velocity[direction] = 0.5 * (bc_velocity.ij.v + bc_velocity[direction].v);
+
+      } else if (bc_mask.ij == 1 && bc_mask[direction] == 0) {
+
+        // Case 2: at a Dirichlet B.C. location
+        if (direction == East || direction == West)
+          out_SSA_velocity[direction] = bc_velocity.ij.u;
         else                    // North or South
-          output_velocity[direction] = bc_velocity.ij.v;
+          out_SSA_velocity[direction] = bc_velocity.ij.v;
 
-      } else if (bc_mask.ij == 0) {
+      } else if (bc_mask.ij == 0 && bc_mask[direction] == 1) {
 
-        if (bc_mask[direction] == 1) {
-
-          if (direction == East || direction == West)
-            output_velocity[direction] = bc_velocity[direction].u;
-          else                  // North or South
-            output_velocity[direction] = bc_velocity[direction].v;
-
-        }
+        // Case 3: next to a Dirichlet B.C. location
+        if (direction == East || direction == West)
+          out_SSA_velocity[direction] = bc_velocity[direction].u;
+        else                  // North or South
+          out_SSA_velocity[direction] = bc_velocity[direction].v;
 
       } else {
-        // Can't happen.
+        // Case 4: elsewhere.
+        // No Dirichlet B.C. adjustment here.
       }
 
     } // end of "if (dirichlet_bc)"
 
   } // end of the loop over neighbors
 
-  adjust_flow(mask, output_velocity, output_flux);
+  adjust_flow(mask, out_SSA_velocity, out_SIA_flux);
 
 }
 
@@ -393,9 +452,6 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
   relations, specifically the mechanisms turned-on by options \c -ocean_kill and
   \c -float_kill.
 
-  The rate of thickness change \f$\partial H/\partial t\f$ is computed and saved,
-  as is the rate of volume loss or gain.
-
 We also compute total ice fluxes in kg s-1 at 3 interfaces:
 
   \li the ice-atmosphere interface: gets surface mass balance rate from
@@ -415,36 +471,36 @@ corresponding change from the beginning to the end of the time-step.
 FIXME:  The calving rate can be computed by post-processing:
 dimassdt = surface_ice_flux + basal_ice_flux + sub_shelf_ice_flux + discharge_flux_mass_rate + nonneg_rule_flux
 
-Removed commented-out code using the coverage ration to compute the surface
-mass balance contribution (to reduce clutter). Please see the commit 26330a7
-and earlier.
+Removed commented-out code using the coverage ratio to compute the surface mass
+balance contribution (to reduce clutter). Please see the commit 26330a7 and
+earlier. (CK)
 
 */
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
   PetscScalar
     // totals over the processor's domain:
-    proc_grounded_basal_ice_flux = 0,
+    proc_H_to_Href_flux = 0,
+    proc_Href_to_H_flux = 0,
     proc_float_kill_flux = 0,
+    proc_grounded_basal_ice_flux = 0,
     proc_nonneg_rule_flux = 0,
     proc_ocean_kill_flux = 0,
     proc_sub_shelf_ice_flux = 0,
-    proc_surface_ice_flux = 0,
     proc_sum_divQ_SIA = 0,
     proc_sum_divQ_SSA = 0,
-    proc_H_to_Href_flux = 0,
-    proc_Href_to_H_flux = 0,
+    proc_surface_ice_flux = 0,
     // totals over all processors:
-    total_sub_shelf_ice_flux = 0,
-    total_grounded_basal_ice_flux = 0,
+    total_H_to_Href_flux = 0,
+    total_Href_to_H_flux = 0,
     total_float_kill_flux = 0,
+    total_grounded_basal_ice_flux = 0,
     total_nonneg_rule_flux = 0,
     total_ocean_kill_flux = 0,
-    total_surface_ice_flux = 0,
+    total_sub_shelf_ice_flux = 0,
     total_sum_divQ_SIA = 0,
     total_sum_divQ_SSA = 0,
-    total_H_to_Href_flux = 0,
-    total_Href_to_H_flux = 0;
+    total_surface_ice_flux = 0;
 
   const PetscScalar dx = grid.dx, dy = grid.dy;
   bool do_ocean_kill = config.get_flag("ocean_kill"),
@@ -538,11 +594,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       // Compute divergence terms:
       {
-        // staggered grid Div(Q) for diffusive non-sliding SIA deformation part:
-        //    Qdiff = - D grad h
+        // Staggered grid Div(Q) for diffusive non-sliding SIA deformation part:
+        // divQ_SIA = - D grad h
         divQ_SIA = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
 
-        // plug flow part (i.e. basal sliding; from SSA): upwind by staggered grid
+        // Plug flow part (i.e. basal sliding; from SSA): upwind by staggered grid
         // PIK method;  this is   \nabla \cdot [(u, v) H]
         divQ_SSA += ( v.e * (v.e > 0 ? vH(i, j) : vH(i + 1, j))
                       - v.w * (v.w > 0 ? vH(i - 1, j) : vH(i, j)) ) / dx;
@@ -572,6 +628,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
                               "PISM WARNING: negative Href at (%d,%d)\n",
                               i, j); CHKERRQ(ierr);
 
+            // Note: this adds mass!
+            nonneg_rule_flux += vHref(i, j);
             vHref(i, j) = 0;
           }
 
@@ -626,7 +684,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
                       + Href_to_H_flux); // corresponds to a cell becoming "full"
 
       if (vHnew(i, j) < 0.0) {
-        nonneg_rule_flux = -vHnew(i, j);
+        nonneg_rule_flux += -vHnew(i, j);
 
         // this has to go *after* accounting above!
         vHnew(i, j) = 0.0;

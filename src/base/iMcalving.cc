@@ -70,6 +70,7 @@ PetscErrorCode IceModel::eigenCalving() {
   }
 
   // Distance (grid cells) from calving front where strain rate is evaluated
+  // Note: the strain_rates field has to have stencil width of at least 'offset'.
   PetscInt offset = 2;
 
   MaskQuery mask(vMask);

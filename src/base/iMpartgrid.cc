@@ -91,7 +91,6 @@ PetscErrorCode IceModel::redistResiduals() {
 // This routine carries-over the ice mass when using -part_redist option, one step in the loop.
 PetscErrorCode IceModel::calculateRedistResiduals() {
   PetscErrorCode ierr;
-  ierr = verbPrintf(4, grid.com, "######### calculateRedistResiduals() start\n"); CHKERRQ(ierr);
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
