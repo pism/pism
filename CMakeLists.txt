@@ -19,6 +19,11 @@ if (INSTALL_PREFIX_LENGTH)
   message (STATUS "Setting PISM install prefix to ${CMAKE_INSTALL_PREFIX}.")
 endif()
 
+# Define the directory structure.
+set (Pism_BIN_DIR "bin")
+set (Pism_LIB_DIR "lib/pism")
+set (Pism_DOC_DIR "share/doc/pism")
+
 # Set Pism_DEFAULT_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX).
 pism_check_build_dir_location()
 set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc" CACHE STRING "" FORCE)
@@ -123,10 +128,6 @@ option (Pism_BUILD_PYTHON_BINDINGS "Build (experimental) python bindings" OFF)
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
-
-set (Pism_BIN_DIR "bin")
-set (Pism_LIB_DIR "lib/pism")
-set (Pism_DOC_DIR "share/doc/pism")
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 pism_use_rpath()
