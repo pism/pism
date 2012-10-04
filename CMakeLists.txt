@@ -5,12 +5,6 @@ list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
 set (Pism_BRANCH "development")
 
-# set Pism_DEFAULT_CONFIG_FILE
-pism_check_build_dir_location()
-set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc" CACHE STRING "" FORCE)
-mark_as_advanced (Pism_DEFAULT_CONFIG_FILE)
-file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
-
 # Set Pism_REVISION_TAG
 pism_set_revision_tag()
 message(STATUS "Configuring PISM version '${Pism_REVISION_TAG}'")
@@ -24,6 +18,12 @@ if (INSTALL_PREFIX_LENGTH)
   set (CMAKE_INSTALL_PREFIX $ENV{PISM_INSTALL_PREFIX} CACHE PATH "PISM install prefix" FORCE)
   message (STATUS "Setting PISM install prefix to ${CMAKE_INSTALL_PREFIX}.")
 endif()
+
+# Set Pism_DEFAULT_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX).
+pism_check_build_dir_location()
+set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc" CACHE STRING "" FORCE)
+mark_as_advanced (Pism_DEFAULT_CONFIG_FILE)
+file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 if (NOT Pism_MANUAL_BUILD)
 
@@ -193,11 +193,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     CACHE PATH "Python extension module installation directory." )
 endif ()
 
-if (${FFTW_FOUND})
-  include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH} ${FFTW_INCLUDES})
-else ()
-  include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
-endif ()
+include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
 
 set (Pism_EXTERNAL_LIBS
   ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
@@ -210,7 +206,7 @@ endif()
 # Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=1)
-  include_directories (${FFTW_INCLUDE_DIRS})
+  include_directories (${FFTW_INCLUDE_DIRS} ${FFTW_INCLUDES})
   list (APPEND Pism_EXTERNAL_LIBS ${FFTW_LIBRARIES})
 else (FFTW_FOUND)
   add_definitions (-DPISM_HAVE_FFTW=0)

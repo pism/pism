@@ -105,12 +105,10 @@ public:
   // for the calving, etc.:
 
   //! \brief Get the largest and smallest eigenvalues of the strain rate tensor.
-  virtual PetscErrorCode get_principal_strain_rates(
-                IceModelVec2S &result_e1, IceModelVec2S &result_e2);
-                
+  virtual PetscErrorCode get_principal_strain_rates(IceModelVec2 &result);
+
   //! \brief Get the components of the 2D deviatoric stress tensor.
-  virtual PetscErrorCode get_2D_stresses(
-               IceModelVec2S &result_Txx, IceModelVec2S &result_Tyy, IceModelVec2S &result_Txy);
+  virtual PetscErrorCode get_2D_stresses(IceModelVec2 &result);
 
   //! \brief Produce a report string for the standard output.
   virtual PetscErrorCode stdout_report(string &result);
@@ -129,9 +127,8 @@ public:
   { return modifier; }
 protected:
   virtual PetscErrorCode allocate();
-  virtual PetscErrorCode compute_vertical_velocity(
-                IceModelVec3 *u, IceModelVec3 *v, IceModelVec2S *bmr,
-                IceModelVec3 &result);
+  virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
+                                                   IceModelVec2S *bmr, IceModelVec3 &result);
 
   PISMVars *variables;
 

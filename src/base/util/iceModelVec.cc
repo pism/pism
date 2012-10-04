@@ -30,6 +30,7 @@ IceModelVec::IceModelVec() {
   da = PETSC_NULL;
   da_stencil_width = 1;
   dof = 1;			// default
+  begin_end_access_use_dof = true;
 
   grid = PETSC_NULL;
 
@@ -66,6 +67,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   da = other.da;
   da_stencil_width = other.da_stencil_width;
   dof = other.dof;
+  begin_end_access_use_dof = other.begin_end_access_use_dof;
 
   grid = other.grid;
 
@@ -780,7 +782,12 @@ PetscErrorCode  IceModelVec::begin_access() {
 #endif
 
   if (access_counter == 0) {
-    ierr = DMDAVecGetArray(da, v, &array); CHKERRQ(ierr);
+
+    if (begin_end_access_use_dof == true) {
+      ierr = DMDAVecGetArrayDOF(da, v, &array); CHKERRQ(ierr);
+    } else {
+      ierr = DMDAVecGetArray(da, v, &array); CHKERRQ(ierr);
+    }
   }
 
   access_counter++;
@@ -803,7 +810,12 @@ PetscErrorCode  IceModelVec::end_access() {
 
   access_counter--;
   if (access_counter == 0) {
-    ierr = DMDAVecRestoreArray(da, v, &array); CHKERRQ(ierr);
+    if (begin_end_access_use_dof == true) {
+      ierr = DMDAVecRestoreArrayDOF(da, v, &array);
+      CHKERRQ(ierr);
+    } else {
+      ierr = DMDAVecRestoreArray(da, v, &array); CHKERRQ(ierr);
+    }
     array = NULL;
   }
 
@@ -958,12 +970,17 @@ PetscErrorCode IceModelVec::has_nan() {
 }
 
 void IceModelVec::check_array_indices(int i, int j) {
+  check_array_indices(i, j, 0);
+}
+
+void IceModelVec::check_array_indices(int i, int j, int k) {
   PetscReal ghost_width = 0;
   if (localp) ghost_width = da_stencil_width;
   if ((i < grid->xs - ghost_width) ||
       (i > grid->xs + grid->xm + ghost_width) ||
       (j < grid->ys - ghost_width) ||
-      (j > grid->ys + grid->ym + ghost_width)) {
+      (j > grid->ys + grid->ym + ghost_width) ||
+      (k < 0) || (k >= dof)) {
     PetscPrintf(grid->com, "ERROR: indices out of range accessing array '%s'. "
                 "It will probably segfault.\n", name.c_str());
   }
@@ -1009,6 +1026,58 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
       scatter = true;
     }
   }
+}
+
+//! \brief Computes the norm of all components.
+PetscErrorCode IceModelVec::norm_all(NormType n, vector<PetscReal> &result) {
+  PetscErrorCode ierr;
+  PetscReal *norm_result;
+
+  norm_result = new PetscReal[dof];
+  result.resize(dof);
+
+  ierr = VecStrideNormAll(v, n, norm_result); CHKERRQ(ierr);
+
+  if (localp) {
+    // needs a reduce operation; use PISMGlobalMax if NORM_INFINITY,
+    //   otherwise PISMGlobalSum; carefully in NORM_2 case
+    if (n == NORM_1_AND_2) {
+      SETERRQ1(grid->com, 1, 
+         "IceModelVec::norm_all(...): NORM_1_AND_2 not implemented (called as %s.norm_all(...))\n",
+         name.c_str());
+    } else if (n == NORM_1) {
+
+      for (int k = 0; k < dof; ++k) {
+        ierr = PISMGlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+      }
+
+    } else if (n == NORM_2) {
+
+      for (int k = 0; k < dof; ++k) {
+        norm_result[k] = PetscSqr(norm_result[k]);  // undo sqrt in VecNorm before sum
+        ierr = PISMGlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        result[k] = sqrt(result[k]);
+      }
+
+    } else if (n == NORM_INFINITY) {
+      for (int k = 0; k < dof; ++k) {
+        ierr = PISMGlobalMax(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+      }
+    } else {
+      SETERRQ1(grid->com, 2, "IceModelVec::norm_all(...): unknown NormType (called as %s.norm_all(...))\n",
+         name.c_str());
+    }
+  } else {
+
+    for (int k = 0; k < dof; ++k) {
+      result[k] = norm_result[k];
+    }
+
+  }
+
+  delete [] norm_result;
+
+  return 0;
 }
 
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/

@@ -225,7 +225,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
 
     bool dteigencalving = config.get_flag("cfl_eigencalving");
     if (dteigencalving) {
-      ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
+      ierr = stress_balance->get_principal_strain_rates(strain_rates); CHKERRQ(ierr);
       ierr = dt_from_eigenCalving(); CHKERRQ(ierr);
       if (dt_from_eigencalving < dt) {
         dt = dt_from_eigencalving;

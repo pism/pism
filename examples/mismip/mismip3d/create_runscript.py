@@ -141,7 +141,7 @@ print '# Standard experiment:'
 print '$python createSetup_Stnd.py -a $accumrate -r $resolution > Stnd.out'
 print 'interval=$(($integration_time_stnd/50))'
 print ''
-print '$pismr -boot_file MISMIP3D_stnd_initialSetup.nc -Mx $Mx -My 3 -Mz 15 -Lz 6000 $subgl -cold $modelopt -ssa_flow_law isothermal_glen -no_energy -ssa_sliding  -pseudo_plastic -gradient eta -pseudo_plastic_q 0.333333333 -tauc 1.0e7 -hold_tauc -pseudo_plastic_uthreshold 3.155693e+07 -ocean_kill -config_override MISMIP3D_conf.nc -ssa_method fd -cfbc -part_grid -ksp_rtol 1e-7 -ys 0 -ye $integration_time_stnd -options_left -skip -skip_max 10 -stress_output -extra_file ex_Stnd.nc -extra_times 0:50:$integration_time_stnd -extra_vars thk,topg,cbar,cflx,mask,dHdt,usurf,hardav,velbase,velsurf,velbar,wvelbase,wvelsurf,sigma_xx,sigma_yy,sigma_xy,climatic_mass_balance$gl_mask -ts_file ts_Stnd.nc -ts_times 0:50:$integration_time_stnd -o Stnd.nc -o_order zyx -o_size big >> Stnd.out'
+print '$pismr -boot_file MISMIP3D_stnd_initialSetup.nc -Mx $Mx -My 3 -Mz 15 -Lz 6000 $subgl -cold $modelopt -ssa_flow_law isothermal_glen -no_energy -ssa_sliding  -pseudo_plastic -gradient eta -pseudo_plastic_q 0.333333333 -tauc 1.0e7 -hold_tauc -pseudo_plastic_uthreshold 3.155693e+07 -ocean_kill -config_override MISMIP3D_conf.nc -ssa_method fd -cfbc -part_grid -ksp_rtol 1e-7 -ys 0 -ye $integration_time_stnd -options_left -skip -skip_max 10 -extra_file ex_Stnd.nc -extra_times 0:50:$integration_time_stnd -extra_vars thk,topg,cbar,cflx,mask,dHdt,usurf,hardav,velbase,velsurf,velbar,wvelbase,wvelsurf,deviatoric_stresses,climatic_mass_balance$gl_mask -ts_file ts_Stnd.nc -ts_times 0:50:$integration_time_stnd -o Stnd.nc -o_order zyx -o_size big >> Stnd.out'
 
 
 print ''

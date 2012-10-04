@@ -1003,7 +1003,7 @@ a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
 PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) {
   PetscErrorCode ierr;
 
-  PetscReal nuNorm[2], nuChange[2];
+  vector<PetscReal> nuNorm, nuChange;
 
   const PetscScalar area = grid.dx * grid.dy;
 #define MY_NORM     NORM_1
@@ -1011,8 +1011,8 @@ PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) 
   // Test for change in nu
   ierr = nuH_old.add(-1, nuH); CHKERRQ(ierr);
 
-  ierr = nuH_old.norm_all(MY_NORM, nuChange[0], nuChange[1]); CHKERRQ(ierr);
-  ierr =     nuH.norm_all(MY_NORM, nuNorm[0],   nuNorm[1]);   CHKERRQ(ierr);
+  ierr = nuH_old.norm_all(MY_NORM, nuChange); CHKERRQ(ierr);
+  ierr =     nuH.norm_all(MY_NORM, nuNorm);   CHKERRQ(ierr);
 
   nuChange[0] *= area;
   nuChange[1] *= area;
@@ -1021,6 +1021,7 @@ PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) 
 
   norm_change = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
   norm = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));
+
   return 0;
 }
 

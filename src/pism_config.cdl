@@ -123,9 +123,6 @@ netcdf pism_config {
     pism_config:sub_groundingline  = "false";
     pism_config:sub_groundingline_doc = "The Pattyn et al. interpolation scheme expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
 
-    pism_config:do_stresses = "no";
-    pism_config:do_stresses_doc = "Calculation of stress field for output.";
-
 
     // parameters:
 
