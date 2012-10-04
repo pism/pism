@@ -5,6 +5,12 @@ list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
 set (Pism_BRANCH "development")
 
+# set Pism_DEFAULT_CONFIG_FILE
+pism_check_build_dir_location()
+set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc" CACHE STRING "" FORCE)
+mark_as_advanced (Pism_DEFAULT_CONFIG_FILE)
+file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
+
 # Set Pism_REVISION_TAG
 pism_set_revision_tag()
 message(STATUS "Configuring PISM version '${Pism_REVISION_TAG}'")
@@ -161,12 +167,6 @@ if (Pism_ADD_FPIC)
     set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
   endif()
 endif ()
-
-# set Pism_DEFAULT_CONFIG_FILE
-if (NOT Pism_DEFAULT_CONFIG_FILE)
-  set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc")
-endif ()
-file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 if (Pism_PEDANTIC_WARNINGS)
   pism_set_pedantic_flags()

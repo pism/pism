@@ -104,3 +104,18 @@ macro(pism_set_pedantic_flags)
   set (CMAKE_C_FLAGS_DEBUG "-g ${PEDANTIC_CFLAGS}")
   set (CMAKE_CXX_FLAGS_DEBUG "-g ${PEDANTIC_CXXFLAGS}")
 endmacro(pism_set_pedantic_flags)
+
+# Make sure that we don't create .petscrc in $HOME, because this would affect
+# all PISM runs by the current user.
+macro(pism_check_build_dir_location)
+  file (TO_CMAKE_PATH $ENV{HOME} home_dir)
+  file (TO_CMAKE_PATH ${PROJECT_BINARY_DIR} build_dir)
+
+  if (${home_dir} STREQUAL ${build_dir})
+    message (FATAL_ERROR
+      "\n"
+      "The build directory is the same as your $HOME!\n"
+      "Buiding PISM here would result in a big mess. "
+      "Please create a special build directory and run cmake from there.\n")
+  endif()
+endmacro()
