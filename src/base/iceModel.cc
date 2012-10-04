@@ -422,7 +422,7 @@ PetscErrorCode IceModel::createVecs() {
     for (int j = 0; j < 2; ++j) {
       ierr = vBCvel.set_attr("valid_min",  convert(-1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
       ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
-      ierr = vBCvel.set_attr("_FillValue", convert(2e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("_FillValue", convert(config.get("fill_value"), "m/year", "m/s"), j); CHKERRQ(ierr);
     }
     //just for diagnostics...
     ierr = variables.add(vBCvel); CHKERRQ(ierr);

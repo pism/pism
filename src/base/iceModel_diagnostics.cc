@@ -264,7 +264,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   vars[0].init_2d("hardav", grid);
 
-  const PetscScalar power = 1.0 / model->config.get("Glen_exponent");
+  const PetscScalar power = 1.0 / grid.config.get("Glen_exponent");
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
 
@@ -272,13 +272,13 @@ IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
             unitstr, unitstr, 0);
 
   vars[0].set("valid_min", 0);
-  vars[0].set("_FillValue", -0.01);
+  vars[0].set("_FillValue", grid.config.get("fill_value"));
 }
 
 //! \brief Computes vertically-averaged ice hardness.
 PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  const PetscScalar fillval = -0.01;
+  const PetscScalar fillval = grid.config.get("fill_value");
   PetscScalar *Eij; // columns of enthalpy values
 
   IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->get_flow_law();
@@ -488,8 +488,8 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, PISMVars &my_vars)
 
 PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  bool cold_mode = model->config.get_flag("do_cold_ice_methods");
-  PetscReal melting_point_temp = model->config.get("water_melting_point_temperature");
+  bool cold_mode = grid.config.get_flag("do_cold_ice_methods");
+  PetscReal melting_point_temp = grid.config.get("water_melting_point_temperature");
 
   // update vertical levels (in case the grid was extended
   vars[0].set_levels(grid.zlevels);
@@ -559,8 +559,8 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m, IceGrid &g, PISMVars &my_v
 PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
-  bool cold_mode = model->config.get_flag("do_cold_ice_methods");
-  PetscReal melting_point_temp = model->config.get("water_melting_point_temperature");
+  bool cold_mode = grid.config.get_flag("do_cold_ice_methods");
+  PetscReal melting_point_temp = grid.config.get("water_melting_point_temperature");
 
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "temp_pa_base", false); CHKERRQ(ierr);
@@ -620,7 +620,7 @@ IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m, IceGrid &g, PISMVars &
 
   set_attrs("ice enthalpy at 1m below the ice surface", "",
             "J kg-1", "J kg-1", 0);
-  vars[0].set("_FillValue", -0.01);
+  vars[0].set("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_enthalpysurf::compute(IceModelVec* &output) {
@@ -630,7 +630,7 @@ PetscErrorCode IceModel_enthalpysurf::compute(IceModelVec* &output) {
   ierr = result->create(grid, "enthalpysurf", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
-  PetscScalar fill_value = -0.01;
+  PetscScalar fill_value = grid.config.get("fill_value");
 
   // compute levels corresponding to 1 m below the ice surface:
 
@@ -668,7 +668,7 @@ IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m, IceGrid &g, PISMVars &
 
   set_attrs("ice enthalpy at the base of ice", "",
             "J kg-1", "J kg-1", 0);
-  vars[0].set("_FillValue", -0.01);
+  vars[0].set("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_enthalpybase::compute(IceModelVec* &output) {
@@ -680,7 +680,7 @@ PetscErrorCode IceModel_enthalpybase::compute(IceModelVec* &output) {
 
   ierr = model->Enth3.getHorSlice(*result, 0.0); CHKERRQ(ierr);  // z=0 slice
 
-  ierr = result->mask_by(model->vH, -0.01); CHKERRQ(ierr);
+  ierr = result->mask_by(model->vH, grid.config.get("fill_value")); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -695,7 +695,7 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g, PISMVars &my_vars)
 
   set_attrs("ice temperature at the base of ice", "",
             "K", "K", 0);
-  vars[0].set("_FillValue", -0.01);
+  vars[0].set("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
@@ -728,7 +728,7 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
                                      (*result)(i,j));
         CHKERRQ(ierr);
       } else {
-        (*result)(i,j) = -0.01;
+        (*result)(i,j) = grid.config.get("fill_value");
       }
     }
   }
@@ -749,7 +749,7 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g, PISMVars &my_vars)
 
   set_attrs("ice temperature at 1m below the ice surface", "",
             "K", "K", 0);
-  vars[0].set("_FillValue", -0.01);
+  vars[0].set("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
@@ -781,7 +781,7 @@ PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
                                      pressure,
                                      (*result)(i,j)); CHKERRQ(ierr);
       } else {
-        (*result)(i,j) = -0.01;
+        (*result)(i,j) = grid.config.get("fill_value");
       }
     }
   }
@@ -817,7 +817,7 @@ PetscErrorCode IceModel_liqfrac::compute(IceModelVec* &output) {
   ierr = result->create(grid, "liqfrac", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
-  bool cold_mode = model->config.get_flag("do_cold_ice_methods");
+  bool cold_mode = grid.config.get_flag("do_cold_ice_methods");
 
   if (cold_mode) {
     ierr = result->set(0.0); CHKERRQ(ierr);
@@ -831,14 +831,13 @@ PetscErrorCode IceModel_liqfrac::compute(IceModelVec* &output) {
 
 IceModel_tempicethk::IceModel_tempicethk(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
-  PetscScalar fill_value = -0.01;
 
   // set metadata:
   vars[0].init_2d("tempicethk", grid);
 
   set_attrs("temperate ice thickness (total column content)", "",
             "m", "m", 0);
-  vars[0].set("_FillValue", fill_value);
+  vars[0].set("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
@@ -881,8 +880,7 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
   ierr = model->vH.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
 
-  PetscScalar fill_value = -0.01;
-  ierr = result->mask_by(model->vH, fill_value); CHKERRQ(ierr);
+  ierr = result->mask_by(model->vH, grid.config.get("fill_value")); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -890,14 +888,13 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
 
 IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
-  PetscScalar fill_value = -0.01;
 
   // set metadata:
   vars[0].init_2d("tempicethk_basal", grid);
 
   set_attrs("thickness of the basal layer of temperate ice", "",
             "m", "m", 0);
-  vars[0].set("_FillValue", fill_value);
+  vars[0].set("_FillValue", grid.config.get("fill_value"));
 }
 
 /*!
@@ -910,7 +907,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   ierr = result->create(grid, "tempicethk_basal", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
-  PetscScalar *Enth, fill_value = -0.01;
+  PetscScalar *Enth;
   EnthalpyConverter *EC = model->EC;
 
   ierr = result->begin_access(); CHKERRQ(ierr);
@@ -977,7 +974,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   ierr = model->vH.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
 
-  ierr = result->mask_by(model->vH, fill_value); CHKERRQ(ierr);
+  ierr = result->mask_by(model->vH, grid.config.get("fill_value")); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -1813,7 +1810,7 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
 
   vars[0].set("valid_min",  convert(-1e6, "m/year", "m/s"));
   vars[0].set("valid_max",  convert( 1e6, "m/year", "m/s"));
-  vars[0].set("_FillValue", convert( 2e6, "m/year", "m/s"));
+  vars[0].set("_FillValue", convert( grid.config.get("fill_value"), "m/year", "m/s"));
   vars[0].set_string("cell_methods", "time: mean");
 
   last_ice_thickness.create(grid, "last_ice_thickness", false);

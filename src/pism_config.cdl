@@ -436,8 +436,6 @@ netcdf pism_config {
     pism_config:tauc_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for tauc_parameterization type 'trunc'";
 
 
-    // THESE CONSTANTS MAY DUPLICATE, AND MAY SUPERSEDE, CONSTANTS IN materials.cc
-
     pism_config:beta_CC = 7.9e-8;
     pism_config:beta_CC_doc = "K Pa-1; Clausius-Clapeyron constant [\\ref Luethi2002]";
 
@@ -655,4 +653,7 @@ netcdf pism_config {
 
    pism_config:backup_interval = 1.0;
    pism_config:backup_interval_doc = "hours; wall-clock time between automatic backups";
+
+   pism_config:fill_value = -2e9;
+   pism_config:fill_valus_doc = "_FillValue used when saving diagnostic quantities";
 }

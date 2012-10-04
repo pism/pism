@@ -53,7 +53,7 @@ PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
-  ierr = model->bed_smoother->get_theta(*surface, model->config.get("Glen_exponent"),
+  ierr = model->bed_smoother->get_theta(*surface, grid.config.get("Glen_exponent"),
                                         WIDE_STENCIL, result); CHKERRQ(ierr);
 
   output = result;

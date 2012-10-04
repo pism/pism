@@ -658,7 +658,7 @@ PYS_bwp::PYS_bwp(PISMMohrCoulombYieldStress *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   vars[0].init_2d("bwp", grid);
   set_attrs("subglacial (pore) water pressure", "", "Pa", "Pa", 0);
-  vars[0].set("_FillValue", -0.01);
+  vars[0].set("_FillValue", grid.config.get("fill_value"));
   vars[0].set("valid_min", 0);
 }
 
@@ -677,7 +677,7 @@ PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
   const PetscScalar
-    fillval   = -0.01;
+    fillval   = grid.config.get("fill_value");
 
   ierr = model->ice_thickness->begin_access(); CHKERRQ(ierr);
   ierr = model->basal_water_thickness->begin_access(); CHKERRQ(ierr);

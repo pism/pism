@@ -78,10 +78,10 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ierr = vel_bc.set_attr("valid_max", convert( 1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
   ierr = vel_bc.set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
   ierr = vel_bc.set_attr("valid_max", convert( 1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("_FillValue",convert( 2e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("_FillValue",convert( 2e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("_FillValue",convert(config.get("fill_value"), "m/year", "m/s"), 0); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("_FillValue",convert(config.get("fill_value"), "m/year", "m/s"), 1); CHKERRQ(ierr);
   vel_bc.write_in_glaciological_units = true;
-  ierr = vel_bc.set(convert(2e6, "m/year", "m/second")); CHKERRQ(ierr);
+  ierr = vel_bc.set(convert(config.get("fill_value"), "m/year", "m/s")); CHKERRQ(ierr);
   
   // grounded_dragging_floating integer mask
   ierr = ice_mask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
