@@ -285,55 +285,49 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2 &result) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      if ( PetscAbs(velocity(i,j).u) < 1e-9 ||
-           PetscAbs(velocity(i,j).v) < 1e-9) {
-        // FIXME: should the condition above be "m.icy(i,j) == false"?
+      planeStar<int> m = mask->int_star(i,j);
+
+      if (M.ice_free(m.ij)) {
         result(i,j,0) = 0.0;
         result(i,j,1) = 0.0;
         continue;
       }
 
-      const PetscInt
-        M_e = mask->as_int(i + 1,j),
-        M_w = mask->as_int(i - 1,j),
-        M_n = mask->as_int(i,j + 1),
-        M_s = mask->as_int(i,j - 1);
+      planeStar<PISMVector2> U = velocity.star(i,j);
 
       //centered difference scheme; strain in units s-1
       PetscScalar
-        u_x = (velocity(i+1,j).u - velocity(i-1,j).u) / (2 * dx),
-        u_y = (velocity(i,j+1).u - velocity(i,j-1).u) / (2 * dy),
-        v_x = (velocity(i+1,j).v - velocity(i-1,j).v) / (2 * dx),
-        v_y = (velocity(i,j+1).v - velocity(i,j-1).v) / (2 * dy);
-
-
+        u_x = (U[East].u  - U[West].u)  / (2 * dx),
+        u_y = (U[North].u - U[South].u) / (2 * dy),
+        v_x = (U[East].v  - U[West].v)  / (2 * dx),
+        v_y = (U[North].v - U[South].v) / (2 * dy);
 
       //inward scheme at the ice-shelf
       //SSA velocity exists depending on mask (newly filled grid cells are not taken into account)
 
-      if (M.ice_free(M_e)) {
-        u_x = (velocity(i,j).u - velocity(i-1,j).u) / dx;
-        v_x = (velocity(i,j).v - velocity(i-1,j).v) / dx;
+      if (M.ice_free(m.e)) {
+        u_x = (U.ij.u - U[West].u) / dx;
+        v_x = (U.ij.v - U[West].v) / dx;
       }
-      if (M.ice_free(M_w)) {
-        u_x = (velocity(i+1,j).u - velocity(i,j).u) / dx;
-        v_x = (velocity(i+1,j).v - velocity(i,j).v) / dx;
+      if (M.ice_free(m.w)) {
+        u_x = (U[East].u - U.ij.u) / dx;
+        v_x = (U[East].v - U.ij.v) / dx;
       }
-      if (M.ice_free(M_n)) {
-        u_y = (velocity(i,j).u - velocity(i,j-1).u) / dy;
-        v_y = (velocity(i,j).v - velocity(i,j-1).v) / dy;
+      if (M.ice_free(m.n)) {
+        u_y = (U.ij.u - U[South].u) / dy;
+        v_y = (U.ij.v - U[South].v) / dy;
       }
-      if (M.ice_free(M_s)) {
-        u_y = (velocity(i,j+1).u - velocity(i,j).u) / dy;
-        v_y = (velocity(i,j+1).v - velocity(i,j).v) / dy;
+      if (M.ice_free(m.s)) {
+        u_y = (U[North].u - U.ij.u) / dy;
+        v_y = (U[North].v - U.ij.v) / dy;
       }
 
       // ice nose case
-      if (M.ice_free(M_s) && M.ice_free(M_n)) {
+      if (M.ice_free(m.s) && M.ice_free(m.n)) {
         u_y = 0.0;
         v_y = 0.0;
       }
-      if (M.ice_free(M_e) && M.ice_free(M_w)) {
+      if (M.ice_free(m.e) && M.ice_free(m.w)) {
         u_x = 0.0;
         v_x = 0.0;
       }
