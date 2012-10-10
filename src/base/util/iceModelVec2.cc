@@ -551,7 +551,7 @@ PetscErrorCode IceModelVec2::get_component(int N, Vec result) {
 
 
   ierr = DMDAVecRestoreArray(grid->da2, result, &tmp_res); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(da,        v,      &tmp_v); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(da, v, &tmp_v); CHKERRQ(ierr);
 
   return 0;
 }
@@ -579,7 +579,7 @@ PetscErrorCode IceModelVec2::set_component(int N, Vec source) {
       a_dof[i][j][N] = src[i][j];
 
   ierr = DMDAVecRestoreArray(grid->da2, source, &tmp_src); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(da,        v,      &tmp_v); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(da, v, &tmp_v); CHKERRQ(ierr);
 
   return 0;
 }
