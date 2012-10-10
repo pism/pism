@@ -2,8 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
-from getopt import getopt, GetoptError
-from sys import argv, exit
+from argparse import ArgumentParser
 
 # Import all necessary modules here so that if it fails, it fails early.
 try:
@@ -11,26 +10,26 @@ try:
 except:
     import netCDF3 as NC
 
-# process command line arguments
-try:
-    opts, args = getopt(argv[1:], "", ["pism-output="])
-    # defaults:
-    pism_output = "out.nc"
-    for opt, arg in opts:
-        if opt in ("--pism-output"):
-            pism_output = arg
-except GetoptError:
-    print """
-Options:
-   --pism-output=<PISM output .nc file>:  specifies the NetCDF file with PISM output
-"""
-    exit(-1)
+# Set up the option parser
+parser = ArgumentParser()
+parser.description = "A script to plot results of the ROSS example."
+parser.add_argument("FILE", nargs='*')
 
+options = parser.parse_args()
+args = options.FILE
 
+if len(args) == 1:
+    pism_output = args[0]
+else:
+    print("wrong number of arguments, 1 expected, %i given" % int(len(args)))
+    import sys
+    exit(1)
+    
 try:
     nc = NC.Dataset(pism_output, 'r')
 except:
-    print "file %s missing; use --pism-output=foo.nc to read from foo.nc" % pism_output
+    print("file %s not found" % pism_output)
+    import sys
     exit(1)
 
 
