@@ -261,13 +261,63 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
 
   if (!variable_exists) {
     ierr = PetscPrintf(com,
-		      "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
+                       "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
 		       short_name.c_str(),
 		       strings["standard_name"].c_str(), filename.c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
 
+  // Sanity check: the variable in an input file should have the expected
+  // number of spatial dimensions.
+  {
+    // Set of spatial dimensions this field has.
+    std::set<int> axes;
+    axes.insert(X_AXIS);
+    axes.insert(Y_AXIS);
+    if (dimensions["z"].empty() == false) {
+      axes.insert(Z_AXIS);
+    }
+
+    vector<string> input_dims;
+    int ndims = 0;                 // number of spatial dimensions (input file)
+    size_t matching_dim_count = 0; // number of matching dimensions
+
+    ierr = nc.inq_vardims(name_found, input_dims);
+    vector<string>::iterator j = input_dims.begin();
+    while (j != input_dims.end()) {
+      AxisType tmp;
+      ierr = nc.inq_dimtype(*j, tmp); CHKERRQ(ierr);
+
+      if (tmp != T_AXIS)
+        ++ndims;
+
+      if (axes.find(tmp) != axes.end())
+        ++matching_dim_count;
+
+      ++j;
+    }
+
+
+    if (axes.size() != matching_dim_count) {
+
+      // Join input dimension names:
+      j = input_dims.begin();
+      string tmp = *j++;
+      while (j != input_dims.end())
+        tmp += string(", ") + *j++;
+
+      // Print the error message and stop:
+      PetscPrintf(com,
+                  "PISM ERROR: found the %dD variable %s(%s) in '%s' while trying to read\n"
+                  "            '%s' ('%s'), which is %d-dimensional.\n",
+                  ndims, name_found.c_str(), tmp.c_str(), filename.c_str(),
+                  short_name.c_str(), strings["long_name"].c_str(),
+                  static_cast<int>(axes.size()));
+      PISMEnd();
+
+    }
+  }
   ierr = nc.get_vec(grid, name_found, nlevels, time, v); CHKERRQ(ierr);
 
   bool input_has_units;
