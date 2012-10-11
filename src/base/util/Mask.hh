@@ -136,19 +136,19 @@ public:
       (ice_free(i + 1, j) || ice_free(i - 1, j) || ice_free(i, j + 1) || ice_free(i, j - 1));
   }
 
-  //! \brief Ice-free margin (ice-free, at least one of four neighbors has ice).
+  //! \brief Ice-free margin (at least one of four neighbors has ice).
   inline bool next_to_ice(int i, int j)
   {
     return (icy(i + 1, j) || icy(i - 1, j) || icy(i, j + 1) || icy(i, j - 1));
   }
 
-  //! \brief Ice-free margin (ice-free, at least one of four neighbors has floating ice).
+  //! \brief Ice-free margin (at least one of four neighbors has floating ice).
   inline bool next_to_floating_ice(int i, int j)
   {
     return (floating_ice(i + 1, j) || floating_ice(i - 1, j) || floating_ice(i, j + 1) || floating_ice(i, j - 1));
   }
 
-  //! \brief Ice-free margin (ice-free, at least one of four neighbors has grounded ice).
+  //! \brief Ice-free margin (at least one of four neighbors has grounded ice).
   inline bool next_to_grounded_ice(int i, int j)
   {
     return (grounded_ice(i + 1, j) || grounded_ice(i - 1, j) || grounded_ice(i, j + 1) || grounded_ice(i, j - 1));

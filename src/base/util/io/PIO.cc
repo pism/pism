@@ -593,8 +593,6 @@ PetscErrorCode PIO::def_dim(string name, long int length, map<string,string> att
     ierr = nc->put_att_text(name, att_name, att_value); CHKERRQ(ierr);
   }
 
-  ierr = nc->enddef(); CHKERRQ(ierr);
-
   return 0;
 }
 

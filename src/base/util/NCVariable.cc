@@ -1398,6 +1398,7 @@ PetscErrorCode NCTimeseries::define(const PIO &nc, PISM_IO_Type nctype, bool) {
   if (exists == false) {
     vector<string> dims(1);
     dims[0] = dimension_name;
+    ierr = nc.redef(); CHKERRQ(ierr);
     ierr = nc.def_var(short_name, nctype, dims); CHKERRQ(ierr);
   }
 
