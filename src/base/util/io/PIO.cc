@@ -413,12 +413,8 @@ PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid, Periodicity periodi
 
   grid_info input;
 
-  ierr = this->inq_grid_info(var_name, input);
-  // Close the file and return 1 if the variable could not be found. We don't
-  // use CHKERRQ(ierr) to let the caller handle this error.
-  if (ierr != 0) {
-    return 1;
-  }
+  // The following call may fail because var_name does not exist. (And this is fatal!)
+  ierr = this->inq_grid_info(var_name, input); CHKERRQ(ierr);
 
   // if we have no vertical grid information, create a fake 2-level vertical grid.
   if (input.z.size() < 2) {
@@ -523,9 +519,9 @@ PetscErrorCode PIO::inq_grid_info(string name, grid_info &g) const {
   // try "name" as the standard_name first, then as the short name:
   ierr = this->inq_var(name, name, exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
-  if (exists == false) {
-    return 1;
-  }
+  if (exists == false)
+    SETERRQ2(com, 1, "Could not find variable %s in %s", name.c_str(),
+             this->inq_filename().c_str());
 
   ierr = nc->inq_vardimid(name_found, dims); CHKERRQ(ierr);
 
@@ -1166,7 +1162,9 @@ PetscErrorCode PIO::get_vara_double(string variable_name,
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  return nc->get_vara_double(variable_name, start, count, ip);
+  ierr = nc->get_vara_double(variable_name, start, count, ip); CHKERRQ(ierr);
+
+  return 0;
 }
 
 
@@ -1178,7 +1176,9 @@ PetscErrorCode PIO::put_vara_double(string variable_name,
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  return nc->put_vara_double(variable_name, start, count, op);
+  ierr = nc->put_vara_double(variable_name, start, count, op); CHKERRQ(ierr);
+
+  return 0;
 }
 
 PetscErrorCode PIO::get_varm_double(string variable_name,
@@ -1189,7 +1189,9 @@ PetscErrorCode PIO::get_varm_double(string variable_name,
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  return nc->get_varm_double(variable_name, start, count, imap, ip);
+  ierr = nc->get_varm_double(variable_name, start, count, imap, ip); CHKERRQ(ierr);
+
+  return 0;
 }
 
 
@@ -1201,6 +1203,8 @@ PetscErrorCode PIO::put_varm_double(string variable_name,
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  return nc->put_varm_double(variable_name, start, count, imap, op);
+  ierr = nc->put_varm_double(variable_name, start, count, imap, op); CHKERRQ(ierr);
+
+  return 0;
 }
 

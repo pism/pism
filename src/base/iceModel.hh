@@ -123,6 +123,9 @@ class IceModel {
   friend class IceModel_discharge_flux;
   friend class IceModel_cumulative_discharge_flux;
   friend class IceModel_max_hor_vel;
+  friend class IceModel_sum_divQ_flux;
+  friend class IceModel_H_to_Href_flux;
+  friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
@@ -209,35 +212,29 @@ protected:
   PISMVars variables;
 
   // state variables and some diagnostics/internals
-  IceModelVec2S
-        vh,		//!< ice surface elevation; ghosted
-        vH,		//!< ice thickness; ghosted
-        vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
-        vbwat,		//!< thickness of the basal meltwater; ghosted
-        vbmr,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
-        vLongitude,	//!< Longitude; ghosted to compute cell areas
-        vLatitude,	//!< Latitude; ghosted to compute cell areas
-        vbed,		//!< bed topography; ghosted
-        vuplift,	//!< bed uplift rate; no ghosts
-        vGhf,		//!< geothermal flux; no ghosts
-        bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
-                        //!< ghosted to be able to compute tauc "redundantly"
-
-        vHref,          //!< accumulated mass advected to a partially filled grid cell
-        vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
-        vPrinStrain1,   //!< major principal component of horizontal strain-rate tensor
-        vPrinStrain2,   //!< minor principal component of horizontal strain-rate tensor
-
+  IceModelVec2S vh,		//!< ice surface elevation; ghosted
+    vH,		//!< ice thickness; ghosted
+    vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
+    vbwat,		//!< thickness of the basal meltwater; ghosted
+    vbmr,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
+    vLongitude,	//!< Longitude; ghosted to compute cell areas
+    vLatitude,	//!< Latitude; ghosted to compute cell areas
+    vbed,		//!< bed topography; ghosted
+    vuplift,	//!< bed uplift rate; no ghosts
+    vGhf,		//!< geothermal flux; no ghosts
+    bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
+    vHref,          //!< accumulated mass advected to a partially filled grid cell
+    vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
     acab,		//!< accumulation/ablation rate; no ghosts
     acab_cumulative,    //!< cumulative acab
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
-    cell_area;		//!< cell areas (computed using the WGS84 datum)
-
+    cell_area,		//!< cell areas (computed using the WGS84 datum)
+    vPrinStrain1,   //!< major principal component of horizontal strain-rate tensor
+    vPrinStrain2;   //!< minor principal component of horizontal strain-rate tensor
 	
- 
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
                          //!< grounded_ice, floating_ice, ice_free_ocean
     ocean_kill_mask,     //!< mask used by the -ocean_kill code 
@@ -268,7 +265,11 @@ protected:
     cumulative_nonneg_rule_flux,
     cumulative_ocean_kill_flux,
     cumulative_sub_shelf_ice_flux,
-    cumulative_surface_ice_flux;
+    cumulative_surface_ice_flux,
+    cumulative_sum_divQ_SIA,
+    cumulative_sum_divQ_SSA,
+    cumulative_Href_to_H_flux,
+    cumulative_H_to_Href_flux;
   PetscInt    skipCountDown;
 
   // physical parameters used frequently enough to make looking up via
@@ -343,8 +344,15 @@ protected:
   virtual PetscErrorCode updateSurfaceElevationAndMask();
   virtual PetscErrorCode update_mask();
   virtual PetscErrorCode update_surface_elevation();
-  virtual PetscErrorCode cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
-                                                       planeStar<PetscScalar> &Q_output);
+  virtual void cell_interface_fluxes(bool dirichlet_bc,
+                                     int i, int j,
+                                     planeStar<PISMVector2> input_velocity,
+                                     planeStar<PetscScalar> input_flux,
+                                     planeStar<PetscScalar> &output_velocity,
+                                     planeStar<PetscScalar> &output_flux);
+  virtual void adjust_flow(planeStar<int> mask,
+                           planeStar<PetscScalar> &SSA_velocity,
+                           planeStar<PetscScalar> &SIA_flux);
   virtual PetscErrorCode massContExplicitStep();
 
   // see iMhydrology.cc
@@ -363,9 +371,6 @@ protected:
   virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
 
   // see iMpartgrid.cc
-  virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
-                                                   int i, int j,
-                                                   planeStar<PetscScalar> &vel_output);
   PetscReal get_average_thickness(bool do_redist, planeStar<int> M,
                                   planeStar<PetscScalar> H);
   virtual PetscErrorCode redistResiduals();

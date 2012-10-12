@@ -91,7 +91,9 @@ PetscErrorCode IceModel::init_diagnostics() {
   ts_diagnostics["cumulative_float_kill_flux"]    = new IceModel_cumulative_float_kill_flux(this, grid, variables);
   ts_diagnostics["discharge_flux"]    = new IceModel_discharge_flux(this, grid, variables);
   ts_diagnostics["cumulative_discharge_flux"]    = new IceModel_cumulative_discharge_flux(this, grid, variables);
-
+  ts_diagnostics["H_to_Href_flux"] = new IceModel_H_to_Href_flux(this, grid, variables);
+  ts_diagnostics["Href_to_H_flux"] = new IceModel_Href_to_H_flux(this, grid, variables);
+  ts_diagnostics["sum_divQ_flux"]  = new IceModel_sum_divQ_flux(this, grid, variables);
 
   // Get diagnostics supported by the stress balance object:
   stress_balance->get_diagnostics(diagnostics);
@@ -1159,7 +1161,6 @@ IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivoltemp", time_dimension_name);
 
   ts->set_units("m3", "");
@@ -1980,6 +1981,67 @@ PetscErrorCode IceModel_max_hor_vel::update(PetscReal a, PetscReal b) {
   double gmaxu = model->gmaxu, gmaxv = model->gmaxv;
 
   ierr = ts->append(gmaxu > gmaxv ? gmaxu : gmaxv, a, b); CHKERRQ(ierr);
+
+  return 0;
+}
+
+IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMTSDiag<IceModel>(m, g, my_vars) {
+  // set metadata:
+  ts = new DiagnosticTimeseries(&grid, "H_to_Href_flux", time_dimension_name);
+
+  ts->set_units("kg s-1", "kg s-1");
+  ts->set_dimension_units(time_units, "");
+  ts->set_attr("long_name", "mass flux from thk to Href");
+  ts->rate_of_change = true;
+}
+
+PetscErrorCode IceModel_H_to_Href_flux::update(PetscReal a, PetscReal b) {
+  PetscErrorCode ierr;
+
+  ierr = ts->append(model->cumulative_H_to_Href_flux, a, b); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMTSDiag<IceModel>(m, g, my_vars) {
+  // set metadata:
+  ts = new DiagnosticTimeseries(&grid, "Href_to_H_flux", time_dimension_name);
+
+  ts->set_units("kg s-1", "kg s-1");
+  ts->set_dimension_units(time_units, "");
+  ts->set_attr("long_name", "mass flux from Href to thk");
+  ts->rate_of_change = true;
+}
+
+PetscErrorCode IceModel_Href_to_H_flux::update(PetscReal a, PetscReal b) {
+  PetscErrorCode ierr;
+
+  ierr = ts->append(model->cumulative_Href_to_H_flux, a, b); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+
+IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMTSDiag<IceModel>(m, g, my_vars) {
+  // set metadata:
+  ts = new DiagnosticTimeseries(&grid, "sum_divQ_flux", time_dimension_name);
+
+  ts->set_units("kg s-1", "kg s-1");
+  ts->set_dimension_units(time_units, "");
+  ts->set_attr("long_name", "sum(divQ)");
+  ts->rate_of_change = true;
+}
+
+PetscErrorCode IceModel_sum_divQ_flux::update(PetscReal a, PetscReal b) {
+  PetscErrorCode ierr;
+
+  ierr = ts->append(model->cumulative_sum_divQ_SIA + model->cumulative_sum_divQ_SSA,
+                    a, b); CHKERRQ(ierr);
 
   return 0;
 }

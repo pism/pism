@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -116,9 +116,6 @@ protected:
 
   // using Van der Veen's exact solution to test CFBC and the part-grid code
   PetscErrorCode test_V_init();
-  PetscErrorCode test_V_set_thickness_bc();
-  IceModelVec2Int bc_mask;
-  IceModelVec2V bc_vel;
 
 private:
   PetscScalar        f;       // ratio of ice density to bedrock density

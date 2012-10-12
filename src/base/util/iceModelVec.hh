@@ -269,10 +269,30 @@ protected:
 };
 
 
+enum PISM_Direction {North = 0, East, South, West};
+
 //! \brief Star stencil points (in the map-plane).
 template <typename T>
 struct planeStar {
   T ij, e, w, n, s;
+  void set(T input) {
+    ij = e = w = n = s = input;
+  }
+
+  //! Get the element corresponding to a given direction.
+  //! Use foo.ij to get the value at i,j.
+  T& operator[](PISM_Direction direction) {
+    switch (direction) {
+    case North:
+      return n;
+    case East:
+      return e;
+    case South:
+      return s;
+    case West:
+      return w;
+    }
+  }
 };
 
 class IceModelVec2S;
@@ -554,6 +574,29 @@ public:
   virtual PetscErrorCode norm_all(NormType n, PetscReal &result0, PetscReal &result1);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2V &result);
+
+  //! Returns the values at interfaces of the cell i,j using the staggered grid.
+  /*! The ij member of the return value is set to 0, since it has no meaning in
+    this context.
+   */
+  inline planeStar<PetscScalar> star(int i, int j) {
+#if (PISM_DEBUG==1)
+    check_array_indices(i, j);
+    check_array_indices(i+1, j);
+    check_array_indices(i-1, j);
+    check_array_indices(i, j+1);
+    check_array_indices(i, j-1);
+#endif
+    planeStar<PetscScalar> result;
+
+    result.ij = 0.0;             // has no meaning in this context
+    result.e =  operator()(i, j, 0);
+    result.w =  operator()(i-1, j, 0);
+    result.n =  operator()(i, j, 1);
+    result.s =  operator()(i, j-1, 1);
+
+    return result;
+  }
 };
 
 //! \brief A virtual class collecting methods common to ice and bedrock 3D

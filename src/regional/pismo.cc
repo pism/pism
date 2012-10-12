@@ -70,11 +70,12 @@ protected:
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_basal_yield_stress();
   virtual PetscErrorCode massContExplicitStep();
-  virtual PetscErrorCode cell_interface_velocities(bool do_part_grid,
-                                                   int i, int j,
-                                                   planeStar<PetscScalar> &vel_output);
-  virtual PetscErrorCode cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
-                                                       planeStar<PetscScalar> &Q_output);
+  virtual void cell_interface_fluxes(bool dirichlet_bc,
+                                     int i, int j,
+                                     planeStar<PISMVector2> input_velocity,
+                                     planeStar<PetscScalar> input_flux,
+                                     planeStar<PetscScalar> &output_velocity,
+                                     planeStar<PetscScalar> &output_flux);
   virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
                                                  PetscScalar* bulgeCount);
   virtual PetscErrorCode setFromOptions();
@@ -376,7 +377,7 @@ PetscErrorCode IceRegionalModel::massContExplicitStep() {
   PetscErrorCode ierr;
 
   // This ensures that no_model_mask is available in
-  // IceRegionalModel::cell_interface_diffusive_flux() below.
+  // IceRegionalModel::cell_interface_fluxes() below.
   ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
 
   ierr = IceModel::massContExplicitStep(); CHKERRQ(ierr);
@@ -386,37 +387,32 @@ PetscErrorCode IceRegionalModel::massContExplicitStep() {
   return 0;
 }
 
-//! \brief Computes diffusive (SIA) fluxes through interfaces of a computational cell.
-/*!
- * This disables diffusive (SIA) flow in the no_model_strip.
- */
-PetscErrorCode IceRegionalModel::cell_interface_diffusive_flux(IceModelVec2Stag &Qstag, int i, int j,
-                                                               planeStar<PetscScalar> &Q_output) {
-  PetscErrorCode ierr;
-  if (no_model_mask(i, j) > 0.5) {
-    Q_output.e = Q_output.w = Q_output.n = Q_output.s = 0;
-  } else {
-    ierr = IceModel::cell_interface_diffusive_flux(Qstag, i, j, Q_output); CHKERRQ(ierr);
+void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
+                                             int i, int j,
+                                             planeStar<PISMVector2> input_velocity,
+                                             planeStar<PetscScalar> input_flux,
+                                             planeStar<PetscScalar> &output_velocity,
+                                             planeStar<PetscScalar> &output_flux) {
+
+  IceModel::cell_interface_fluxes(dirichlet_bc, i, j,
+                                  input_velocity,
+                                  input_flux,
+                                  output_velocity,
+                                  output_flux);
+
+  planeStar<int> nmm = no_model_mask.int_star(i,j);
+  PISM_Direction dirs[4] = {North, East, South, West};
+
+  for (int n = 0; n < 4; ++n) {
+    PISM_Direction direction = dirs[n];
+
+      if ((nmm.ij == 1) ||
+          (nmm.ij == 0 && nmm[direction] == 1)) {
+      output_velocity[direction] = 0.0;
+      output_flux[direction] = 0.0;
+    }
   }
-
-  return 0;
-}
-
-//! \brief Computes advective velocities through cell interfaces.
-/*!
- * This disables advective (SSA) flow in the no_model_strip.
- */
-PetscErrorCode IceRegionalModel::cell_interface_velocities(bool do_part_grid,
-                                                           int i, int j,
-                                                           planeStar<PetscScalar> &v) {
-  PetscErrorCode  ierr;
-  if (no_model_mask(i, j) > 0.5) {
-    v.e = v.w = v.n = v.s = 0;
-  } else {
-    ierr = IceModel::cell_interface_velocities(do_part_grid, i, j, v); CHKERRQ(ierr);
-  }
-
-  return 0;
+  //
 }
 
 PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,

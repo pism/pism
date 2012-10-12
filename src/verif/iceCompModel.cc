@@ -80,21 +80,6 @@ PetscErrorCode IceCompModel::createVecs() {
   ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
 
-  if (testname == 'V') {
-    ierr = bc_mask.create(grid, "bc_mask", false); CHKERRQ(ierr);
-    ierr = bc_mask.set_attrs("model_state", "SSA Dirichlet BC locations", "", ""); CHKERRQ(ierr);
-    bc_mask.time_independent = true;
-    ierr = variables.add(bc_mask); CHKERRQ(ierr);
-
-    ierr = bc_vel.create(grid, "_bc", false); CHKERRQ(ierr);
-    ierr = bc_vel.set_attrs("model_state", "X-component of the SSA Dirichlet BC", "m s-1", "", 0); CHKERRQ(ierr);
-    ierr = bc_vel.set_attrs("model_state", "Y-component of the SSA Dirichlet BC", "m s-1", "", 1); CHKERRQ(ierr);
-    bc_vel.time_independent = true;
-    ierr = bc_vel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-    bc_vel.write_in_glaciological_units = true;
-    ierr = variables.add(bc_vel); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
@@ -220,6 +205,8 @@ PetscErrorCode IceCompModel::setFromOptions() {
 
     // this certainly is not a "dry silumation"
     config.set_flag("is_dry_simulation", false);
+
+    config.set_flag("ssa_dirichlet_bc", true);
   }
 
   config.set_flag("do_cold_ice_methods", true);
@@ -917,7 +904,7 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
     dt_force = config.get("maximum_time_step_years", "years", "seconds");
 
   // these have no changing boundary conditions or comp sources:
-  if (strchr("AEBKLO",testname) != NULL)
+  if (strchr("AEBKLOV",testname) != NULL)
     return 0;
 
   switch (testname) {
@@ -929,9 +916,6 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
   case 'F':
   case 'G':
     ierr = getCompSourcesTestFG();  // see iCMthermo.cc
-    break;
-  case 'V':
-    ierr = test_V_set_thickness_bc(); CHKERRQ(ierr);
     break;
   default:  SETERRQ(grid.com, 1,"only tests CDHFG have comp source update at start time step\n");
   }
@@ -1353,48 +1337,46 @@ PetscErrorCode IceCompModel::test_V_init() {
   ierr = vbed.set(-1000); CHKERRQ(ierr);
 
   // set SSA boundary conditions:
-  PetscReal upstream_velocity = convert(300.0, "m/year", "m/second");
+  PetscReal upstream_velocity = convert(300.0, "m/year", "m/second"),
+    upstream_thk = 600.0;
 
-  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = bc_vel.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (i <= 2) {
-        bc_mask(i,j) = 1;
-        bc_vel(i,j).u  = upstream_velocity;
-        bc_vel(i,j).v  = 0;
-      } else {
-        bc_mask(i,j) = 0;
-        bc_vel(i,j).u  = 0;
-        bc_vel(i,j).v  = 0;
-      }
-    }
-  }
-  ierr = bc_vel.end_access(); CHKERRQ(ierr);
-  ierr = bc_mask.end_access(); CHKERRQ(ierr);
-
-  ShallowStressBalance *ssa = stress_balance->get_stressbalance(); CHKERRQ(ierr);
-  ierr = ssa->set_boundary_conditions(bc_mask, bc_vel); CHKERRQ(ierr);
-
-  return 0;
-}
-
-//! \brief Reset upstream thickness B.C.
-PetscErrorCode IceCompModel::test_V_set_thickness_bc() {
-  PetscErrorCode ierr;
-  PetscReal upstream_thk = 600.0;
-
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vBCMask.begin_access(); CHKERRQ(ierr);
+  ierr = vBCvel.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (i <= 2) {
-        vH(i,j) = upstream_thk;
+        vMask(i,j) = MASK_FLOATING;
+        vBCMask(i,j) = 1;
+        vBCvel(i,j).u  = upstream_velocity;
+        vBCvel(i,j).v  = 0;
+        vH(i, j) = upstream_thk;
+      } else {
+        vMask(i,j) = MASK_ICE_FREE_OCEAN;
+        vBCMask(i,j) = 0;
+        vBCvel(i,j).u  = 0;
+        vBCvel(i,j).v  = 0;
+        vH(i, j) = 0;
       }
     }
   }
+  ierr = vBCvel.end_access(); CHKERRQ(ierr);
+  ierr = vBCMask.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+
+  ierr = vBCMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vBCMask.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = vBCvel.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vBCvel.endGhostComm(); CHKERRQ(ierr);
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+
   return 0;
 }

@@ -195,6 +195,12 @@ protected:
   PetscErrorCode compute_horizontal_coordinates();
   PetscErrorCode compute_fine_vertical_grid();
   PetscErrorCode init_interpolation();
+
+private:
+  // Hide copy constructor / assignment operator.
+  IceGrid(IceGrid const &);
+  IceGrid & operator=(IceGrid const &);
+
 };
 
 #endif	/* __grid_hh */
