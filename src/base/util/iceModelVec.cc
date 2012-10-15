@@ -531,6 +531,10 @@ PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
   Vec g;
   LocalInterpCtx *lic = NULL;
 
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", name.c_str()); CHKERRQ(ierr);
+  }
+
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
 
   if (lic != NULL) {
@@ -566,6 +570,10 @@ PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
   PetscErrorCode ierr;
   Vec g;
   LocalInterpCtx *lic = NULL;
+
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", name.c_str()); CHKERRQ(ierr);
+  }
 
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
 
@@ -672,10 +680,6 @@ PetscErrorCode IceModelVec::set_metadata(NCSpatialVariable &var, int N) {
 PetscErrorCode IceModelVec::write(string filename) {
   PetscErrorCode ierr;
 
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Writing %s...\n", name.c_str()); CHKERRQ(ierr);
-  }
-
   ierr = write(filename, output_data_type); CHKERRQ(ierr);
 
   return 0;
@@ -685,6 +689,10 @@ PetscErrorCode IceModelVec::write(string filename) {
 PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   Vec g;
+
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Writing %s...\n", name.c_str()); CHKERRQ(ierr);
+  }
 
   if (dof != 1)
     SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1");
