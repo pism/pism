@@ -157,6 +157,10 @@ PetscErrorCode IceModelVec2::write(string filename, PISM_IO_Type nctype) {
     return 0;
   }
 
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Writing %s...\n", name.c_str()); CHKERRQ(ierr);
+  }
+
   ierr = DMCreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
 
   for (int j = 0; j < dof; ++j) {
@@ -179,6 +183,10 @@ PetscErrorCode IceModelVec2::read(string filename, const unsigned int time) {
   if ((dof == 1) && (localp == false)) {
     ierr = IceModelVec::read(filename, time); CHKERRQ(ierr);
     return 0;
+  }
+
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Reading %s...\n", name.c_str()); CHKERRQ(ierr);
   }
 
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -212,7 +220,11 @@ PetscErrorCode IceModelVec2::regrid(string filename, bool critical, int start) {
     ierr = IceModelVec::regrid(filename, critical, start); CHKERRQ(ierr);
     return 0;
   }
-  
+
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", name.c_str()); CHKERRQ(ierr);
+  }
+
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
   if (lic != NULL) {
     lic->start[0] = start;
@@ -249,7 +261,11 @@ PetscErrorCode IceModelVec2::regrid(string filename, PetscScalar default_value) 
     ierr = IceModelVec::regrid(filename, default_value); CHKERRQ(ierr);
     return 0;
   }
-  
+
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", name.c_str()); CHKERRQ(ierr);
+  }
+
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
   if (lic != NULL) {
     lic->report_range = report_range;
