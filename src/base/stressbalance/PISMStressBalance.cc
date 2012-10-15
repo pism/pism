@@ -21,6 +21,8 @@
 #include "SSB_Modifier.hh"
 #include "PISMOcean.hh"
 #include "IceGrid.hh"
+#include "PISMVars.hh"
+#include "Mask.hh"
 
 PISMStressBalance::PISMStressBalance(IceGrid &g,
                                      ShallowStressBalance *sb,
@@ -220,17 +222,23 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
                                                             IceModelVec2S *bmr,
                                                             IceModelVec3 &result) {
   PetscErrorCode ierr;
-  const PetscScalar dx = grid.dx, dy = grid.dy;
+  IceModelVec2Int *mask;
+
+  mask = dynamic_cast<IceModelVec2Int*>(variables->get("mask"));
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+
+  MaskQuery m(*mask);
 
   ierr = u->begin_access(); CHKERRQ(ierr);
   ierr = v->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
 
   if (bmr) {
     ierr = bmr->begin_access(); CHKERRQ(ierr);
   }
 
-  PetscScalar *w_ij, *u_im1, *u_ip1, *v_jm1, *v_jp1;
+  PetscScalar *w_ij, *u_ij, *u_im1, *u_ip1, *v_ij, *v_jm1, *v_jp1;
 
   PetscReal my_w_max = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -238,38 +246,82 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
       ierr = result.getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
 
       ierr = u->getInternalColumn(i-1,j,&u_im1); CHKERRQ(ierr);
+      ierr = u->getInternalColumn(i,j,  &u_ij); CHKERRQ(ierr);
       ierr = u->getInternalColumn(i+1,j,&u_ip1); CHKERRQ(ierr);
 
       ierr = v->getInternalColumn(i,j-1,&v_jm1); CHKERRQ(ierr);
+      ierr = v->getInternalColumn(i,j,  &v_ij); CHKERRQ(ierr);
       ierr = v->getInternalColumn(i,j+1,&v_jp1); CHKERRQ(ierr);
 
-      // at the base:
+      double west = 1, east = 1,
+        south = 1, north = 1,
+        D_x = 0,                // 1/(dx), 1/(2dx), or 0
+        D_y = 0;                // 1/(dy), 1/(2dy), or 0
+
+      // Switch between second-order centered differences in the interior and
+      // first-order one-sided differences at ice margins.
+
+      // x-derivative of u
+      {
+        if ((m.floating_ice(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.floating_ice(i+1,j)))
+          east = 0;
+        if ((m.floating_ice(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.floating_ice(i-1,j)))
+          west = 0;
+
+        if (east + west > 0)
+          D_x = 1.0 / (grid.dx * (east + west));
+        else
+          D_x = 0.0;
+      }
+
+      // y-derivative of v
+      {
+        if ((m.floating_ice(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.floating_ice(i,j+1)))
+          north = 0;
+        if ((m.floating_ice(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.floating_ice(i,j-1)))
+          south = 0;
+
+        if (north + south > 0)
+          D_y = 1.0 / (grid.dy * (north + south));
+        else
+          D_y = 0.0;
+      }
+
+      // at the base: include the basal melt rate
       if (bmr) {
         w_ij[0] = - (*bmr)(i,j);
       } else {
         w_ij[0] = 0.0;
       }
       my_w_max = PetscMax(my_w_max, PetscAbs(w_ij[0]));
-      
+
+      double u_x = D_x * (west * (u_ij[0] - u_im1[0]) + east * (u_ip1[0] - u_ij[0])),
+        v_y = D_y * (south * (v_ij[0] - v_jm1[0]) + north * (v_jp1[0] - v_ij[0]));
+
       // within the ice and above:
-      PetscScalar OLDintegrand
-             = (u_ip1[0] - u_im1[0]) / (2.0*dx) + (v_jp1[0] - v_jm1[0]) / (2.0*dy);
+      PetscScalar old_integrand = u_x + v_y;
       for (PetscInt k = 1; k < grid.Mz; ++k) {
-        const PetscScalar NEWintegrand
-             = (u_ip1[k] - u_im1[k]) / (2.0*dx) + (v_jp1[k] - v_jm1[k]) / (2.0*dy);
+        u_x = D_x * (west  * (u_ij[k] - u_im1[k]) + east  * (u_ip1[k] - u_ij[k]));
+        v_y = D_y * (south * (v_ij[k] - v_jm1[k]) + north * (v_jp1[k] - v_ij[k]));
+        const PetscScalar new_integrand = u_x + v_y;
+
         const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
-        w_ij[k] = w_ij[k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
-        OLDintegrand = NEWintegrand;
+
+        w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
+
+        old_integrand = new_integrand;
 
         my_w_max = PetscMax(my_w_max, PetscAbs(w_ij[k]));
       }
-    }
-  }
+
+    } // j-loop
+  }   // i-loop
 
   if (bmr) {
     ierr = bmr->end_access(); CHKERRQ(ierr);
   }
 
+  ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = u->end_access(); CHKERRQ(ierr);
   ierr = v->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);

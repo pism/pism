@@ -415,6 +415,8 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
     ice_rho = config.get("ice_density");
   bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
+  bool new_grad_code = config.get_flag("new_gradient_code");
+
   ierr =   surface->begin_access();    CHKERRQ(ierr);
   ierr =       bed->begin_access();  CHKERRQ(ierr);
   ierr =      mask->begin_access();  CHKERRQ(ierr);
@@ -477,10 +479,12 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             // x-derivative
             {
               double west = 1, east = 1;
-              if ((m.grounded(i,j) && m.ocean(i+1,j)) || (m.ocean(i,j) && m.grounded(i+1,j)))
-                east = 0;
-              if ((m.grounded(i,j) && m.ocean(i-1,j)) || (m.ocean(i,j) && m.grounded(i-1,j)))
-                west = 0;
+              if (new_grad_code) {
+                if ((m.grounded(i,j) && m.ocean(i+1,j)) || (m.ocean(i,j) && m.grounded(i+1,j)))
+                  east = 0;
+                if ((m.grounded(i,j) && m.ocean(i-1,j)) || (m.ocean(i,j) && m.grounded(i-1,j)))
+                  west = 0;
+              }
 
               if (east + west > 0)
                 h_x = 1.0 / (west + east) * (west * surface->diff_x_stagE(i-1,j) +
@@ -492,10 +496,12 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             // y-derivative
             {
               double south = 1, north = 1;
-              if ((m.grounded(i,j) && m.ocean(i,j+1)) || (m.ocean(i,j) && m.grounded(i,j+1)))
-                north = 0;
-              if ((m.grounded(i,j) && m.ocean(i,j-1)) || (m.ocean(i,j) && m.grounded(i,j-1)))
-                south = 0;
+              if (new_grad_code) {
+                if ((m.grounded(i,j) && m.ocean(i,j+1)) || (m.ocean(i,j) && m.grounded(i,j+1)))
+                  north = 0;
+                if ((m.grounded(i,j) && m.ocean(i,j-1)) || (m.ocean(i,j) && m.grounded(i,j-1)))
+                  south = 0;
+              }
 
               if (north + south > 0)
                 h_y = 1.0 / (south + north) * (south * surface->diff_y_stagN(i,j-1) +
