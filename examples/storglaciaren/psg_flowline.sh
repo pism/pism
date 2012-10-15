@@ -165,7 +165,7 @@ echo
 $PISM_DO flowline.py -c -o $OUTNAME $OUTNAMEFULL
 
 
-COUPLER_ELEV="-surface elevation -artm -6,0,1395,1400 -acab -3,2.5.,1200,1450,1615 -acab_limits -3,0"
+COUPLER_ELEV="-surface elevation -ice_surface_temp -6,0,1395,1400 -climatic_mass_balance -3,2.5.,1200,1450,1615 -climatic_mass_balance_limits -3,0"
 
 STARTYEAR=0
 RUNLENGTH=25

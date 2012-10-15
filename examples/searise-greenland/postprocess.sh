@@ -52,15 +52,15 @@ for NAME in "${MODEL}_G_D3_C1_E0" \
   echo "(postprocess.sh)    copying from name ${NAME}_raw_y*.nc and removing unreported fields ..."
   # create draft of deliverable file:
   ncks -O ${NAME}_raw_y*.nc -o ${NAME}_full.nc
-  # calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
-  ncap2 -O -s '*sz_idt=time.size();  acab[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(climatic_mass_balance_cumulative(idt,:,:)-climatic_mass_balance_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7;}' ${NAME}_full.nc ${NAME}_full.nc
+  # calculate yearly-averages of climatic_mass_balance and dHdt using ncap2 sleight of hand.
+  ncap2 -O -s '*sz_idt=time.size();  climatic_mass_balance[$time,$x,$y]= 0.f; dHdt[$time,$x,$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {climatic_mass_balance(idt,:,:)=(climatic_mass_balance_cumulative(idt,:,:)-climatic_mass_balance_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*3.15569259747e7;}' ${NAME}_full.nc ${NAME}_full.nc
   # adjust meta data for new fields
-  ncatted -a units,acab,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
-      -a long_name,acab,o,c,"surface mass balance" \
+  ncatted -a units,climatic_mass_balance,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
+      -a long_name,climatic_mass_balance,o,c,"surface mass balance" \
       -a long_name,dHdt,o,c,"rate of change of ice thickness" \
-      -a grid_mapping,acab,o,c,"mapping" \
+      -a grid_mapping,climatic_mass_balance,o,c,"mapping" \
       -a grid_mapping,dHdt,o,c,"mapping" \
-      -a cell_methods,acab,o,c,"time: mean (interval: 1 year)" \
+      -a cell_methods,climatic_mass_balance,o,c,"time: mean (interval: 1 year)" \
       -a cell_methods,dHdt,o,c,"time: mean (interval: 1 year)" ${NAME}_full.nc
   # We keep the "full" files for record
   # select every fifth year, don't copy climatic_mass_balance_cumulative,tempicethk_basal,tauc,cbase,csurf,diffusivity,pism_overrides

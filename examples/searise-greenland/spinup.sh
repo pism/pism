@@ -323,24 +323,23 @@ $PISM_DO $cmd
 echo
 echo "$SCRIPTNAME  some postprocessing"
 echo
-# calculate yearly-averages of acab and dHdt using ncap2 sleight of hand.
-ncap2_script="*sz_idt=time.size(); acab[\$time,\$x,\$y]= 0.f; dHdt[\$time,\$x,\$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {acab(idt,:,:)=(climatic_mass_balance_cumulative(idt,:,:)-climatic_mass_balance_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}"
-
-$PISM_DO ncap2 -O -s "$ncap2_script" $EXNAME $EXNAME
+# calculate yearly-averages of climatic_mass_balance and dHdt using ncap2 sleight of hand.
+cmd="ncap2 -O -s '*sz_idt=time.size(); climatic_mass_balance[\$time,\$x,\$y]= 0.f; dHdt[\$time,\$x,\$y]= 0.f; for(*idt=1 ; idt<sz_idt ; idt++) {climatic_mass_balance(idt,:,:)=(climatic_mass_balance_cumulative(idt,:,:)-climatic_mass_balance_cumulative(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA; dHdt(idt,:,:)=(thk(idt,:,:)-thk(idt-1,:,:))/(time(idt)-time(idt-1))*$SECPERA;}' $EXNAME $EXNAME"
+$PISM_DO $cmd
 
 echo
 # adjust meta data for new fields
-$PISM_DO ncatted -a units,acab,o,c,"m year-1" -a units,dHdt,o,c,"m year-1" \
-      -a long_name,acab,o,c,"surface mass balance" \
-      -a long_name,dHdt,o,c,"rate of change of ice thickness" \
-      -a grid_mapping,acab,o,c,"mapping" \
-      -a grid_mapping,dHdt,o,c,"mapping" \
-      -a cell_methods,acab,o,c,"time: mean (interval: $EXFSTEP years)" \
-      -a cell_methods,dHdt,o,c,"time: mean (interval: $EXFSTEP years)" $EXNAME
-
+cmd="ncatted -a units,climatic_mass_balance,o,c,'m year-1' -a units,dHdt,o,c,'m year-1' \
+      -a long_name,climatic_mass_balance,o,c,'surface mass balance' \
+      -a long_name,dHdt,o,c,'rate of change of ice thickness' \
+      -a grid_mapping,climatic_mass_balance,o,c,'mapping' \
+      -a grid_mapping,dHdt,o,c,'mapping' \
+      -a cell_methods,climatic_mass_balance,o,c,'time: mean (interval: $EXFSTEP years)' \
+      -a cell_methods,dHdt,o,c,'time: mean (interval: $EXFSTEP years)' $EXNAME"
+$PISM_DO $cmd
 echo
-# now extract last acab record
-cmd="ncks -A -v acab -d time,$ENDTIME. $EXNAME $OUTNAME"
+# now extract last climatic_mass_balance record
+cmd="ncks -A -v climatic_mass_balance -d time,$ENDTIME. $EXNAME $OUTNAME"
 $PISM_DO $cmd
 
 echo
