@@ -441,12 +441,12 @@ PetscErrorCode IceModel::createVecs() {
   acab.write_in_glaciological_units = true;
   acab.set_attr("comment", "positive values correspond to ice gain");
 
-  if (config.get_flag("compute_cumulative_acab")) {
-    ierr = acab_cumulative.create(grid, "acab_cumulative", false); CHKERRQ(ierr);
-    ierr = acab_cumulative.set_attrs("diagnostic",
-                                     "cumulative ice-equivalent surface mass balance",
-                                     "m", ""); CHKERRQ(ierr);
-    ierr = variables.add(acab_cumulative); CHKERRQ(ierr);
+  if (config.get_flag("compute_cumulative_climatic_mass_balance")) {
+    ierr = climatic_mass_balance_cumulative.create(grid, "climatic_mass_balance_cumulative", false); CHKERRQ(ierr);
+    ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
+                                                      "cumulative ice-equivalent surface mass balance",
+                                                      "m", ""); CHKERRQ(ierr);
+    ierr = variables.add(climatic_mass_balance_cumulative); CHKERRQ(ierr);
   }
 
   // annual mean air temperature at "ice surface", at level below all firn

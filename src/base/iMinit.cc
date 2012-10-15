@@ -515,8 +515,8 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("compute_cumulative_acab")) {
-    ierr = acab_cumulative.set(0.0); CHKERRQ(ierr);
+  if (config.get_flag("compute_cumulative_climatic_mass_balance")) {
+    ierr = climatic_mass_balance_cumulative.set(0.0); CHKERRQ(ierr);
   }
 
   ierr = compute_cell_areas(); CHKERRQ(ierr);

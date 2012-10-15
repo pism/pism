@@ -58,7 +58,7 @@ For the rest of this example, we assume you have a workstation with 8 cores, but
 The script \texttt{spinup.sh} starts by ``bootstrapping.''  This term describes the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the evolving, time-dependent ice dynamics model.  In fact the first 100 model year run commanded by \texttt{spinup.sh} is this:
 \small
 \begin{verbatim}
-mpiexec -n 8 pismr -config_override searise_config.nc -acab_cumulative \
+mpiexec -n 8 pismr -config_override searise_config.nc -climatic_mass_balance_cumulative \
   -skip -skip_max 10 -boot_file pism_Greenland_5km_v1.1.nc -Mx 76 -My 141 \
   -Lz 4000 -Lbz 2000 -Mz 101 -Mbz 11 -z_spacing equal \
   -atmosphere searise_greenland -surface pdd -ocean_kill \
@@ -111,9 +111,9 @@ The actual paleo-climate-driven spin-up starts from model state \texttt{g20km_st
 Significantly, we start using a more complete ice dynamics model with sliding controlled by a membrane stress balance, the SIA+SSA hybrid model described in section \ref{sec:dynamics}.  This is turned on with option ``\texttt{-ssa_sliding}''.  Also, we turn on a bed deformation model; the option is ``\texttt{-bed_def lc}''.  These options are discussed in section \ref{sec:modeling-choices}.  The command itself (do \verb|PISM_DO=echo ./spinup.sh 8| to see) is
 \small
 \begin{verbatim}
-mpiexec -n 8 pismr -config_override searise_config.nc -acab_cumulative -skip -skip_max 10 \
-  -i g20km_steady.nc -ssa_sliding -thk_eff -topg_to_phi 5.0,20.0,-300.0,700.0 -bed_def lc \
-  -atmosphere searise_greenland,delta_T -surface pdd -paleo_precip pism_dT.nc \
+mpiexec -n 8 pismr -config_override searise_config.nc -climatic_mass_balance_cumulative \
+  -skip -skip_max 10 -i g20km_steady.nc -ssa_sliding -thk_eff -topg_to_phi 5.0,20.0,-300.0,700.0 \
+  -bed_def lc -atmosphere searise_greenland,delta_T -surface pdd -paleo_precip pism_dT.nc \
   -atmosphere_delta_T_file pism_dT.nc \
   -ocean constant,delta_SL -ocean_delta_SL_file pism_dSL.nc -ocean_kill pism_Greenland_5km_v1.1.nc \
   -ts_file ts_g20km_m5000a.nc -ts_times -125000:yearly:-5000 -extra_file ex_g20km_m5000a.nc \

@@ -50,8 +50,8 @@ PetscErrorCode IceModel::init_diagnostics() {
   diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid, variables);
   diagnostics["dHdt"]             = new IceModel_dHdt(this, grid, variables);
 
-  if (config.get_flag("compute_cumulative_acab")) {
-    diagnostics["acab_cumulative"]  = new IceModel_acab_cumulative(this, grid, variables);
+  if (config.get_flag("compute_cumulative_climatic_mass_balance")) {
+    diagnostics["climatic_mass_balance_cumulative"]  = new IceModel_climatic_mass_balance_cumulative(this, grid, variables);
   }
 
   ts_diagnostics["ivol"]          = new IceModel_ivol(this, grid, variables);
@@ -983,7 +983,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_acab_cumulative::IceModel_acab_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
+IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
@@ -993,15 +993,15 @@ IceModel_acab_cumulative::IceModel_acab_cumulative(IceModel *m, IceGrid &g, PISM
             "m", "m", 0);
 }
 
-PetscErrorCode IceModel_acab_cumulative::compute(IceModelVec* &output) {
+PetscErrorCode IceModel_climatic_mass_balance_cumulative::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "acab_cumulative", false); CHKERRQ(ierr);
+  ierr = result->create(grid, "climatic_mass_balance_cumulative", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
   result->write_in_glaciological_units = true;
 
-  ierr = result->copy_from(model->acab_cumulative); CHKERRQ(ierr);
+  ierr = result->copy_from(model->climatic_mass_balance_cumulative); CHKERRQ(ierr);
 
   output = result;
   return 0;
