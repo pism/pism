@@ -656,7 +656,4 @@ netcdf pism_config {
 
    pism_config:fill_value = -2e9;
    pism_config:fill_valus_doc = "_FillValue used when saving diagnostic quantities";
-
-   pism_config:new_gradient_code = "no";
-   pism_config:new_gradient_code_doc = "Use the new surface gradient code?";
 }
