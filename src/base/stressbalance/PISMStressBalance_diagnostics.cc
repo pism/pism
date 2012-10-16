@@ -396,7 +396,7 @@ PSB_wvel::PSB_wvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
 PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec3 *result, *u3, *v3, *w3;
-  IceModelVec2S *bed, *uplift;
+  IceModelVec2S *bed, *uplift, *thickness;
   PetscScalar *u, *v, *w, *res;
 
   result = new IceModelVec3;
@@ -409,8 +409,12 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   uplift = dynamic_cast<IceModelVec2S*>(variables.get("tendency_of_bedrock_altitude"));
   if (uplift == NULL) SETERRQ(grid.com, 1, "tendency_of_bedrock_altitude is not available");
 
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
@@ -425,8 +429,16 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
       ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
       ierr = result->getInternalColumn(i, j, &res); CHKERRQ(ierr);
 
-      for (PetscInt k = 0; k < grid.Mz; ++k)
+      int ks = grid.kBelowHeight((*thickness)(i,j));
+
+      // in the ice:
+      for (int k = 0; k <= ks ; k++) {
 	res[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+      }
+      // above the ice:
+      for (int k = ks+1; k < grid.Mz ; k++) {
+        res[k] = 0.0;
+      }
     }
   }
 
@@ -436,6 +448,7 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = u3->end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
+  ierr = thickness->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
