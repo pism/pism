@@ -73,6 +73,7 @@ if (PDFLATEX_COMPILER)
   if (Pism_BUILD_DOCS)
     install (FILES
       "${CMAKE_CURRENT_BINARY_DIR}/userman/manual.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/forcing/forcing.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/installation.pdf"
       DESTINATION ${Pism_DOC_DIR})
 
