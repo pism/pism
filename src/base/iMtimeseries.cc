@@ -66,7 +66,10 @@ PetscErrorCode IceModel::init_timeseries() {
 
   save_ts = true;
 
-  ierr = parse_times(grid.com, config, times, ts_times);
+  ierr = parse_times(grid.com, config, times,
+                     grid.time->start(),
+                     grid.time->end(),
+                     ts_times);
   if (ierr != 0) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -ts_times argument failed.\n"); CHKERRQ(ierr);
     PISMEnd();
@@ -214,7 +217,10 @@ PetscErrorCode IceModel::init_extras() {
     return 0;
   }
 
-  ierr = parse_times(grid.com, config, times, extra_times);
+  ierr = parse_times(grid.com, config, times,
+                     grid.time->start(),
+                     grid.time->end(),
+                     extra_times);
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: parsing the -extra_times argument failed.\n");
     PISMEnd();

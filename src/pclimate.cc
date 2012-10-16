@@ -394,7 +394,10 @@ int main(int argc, char *argv[]) {
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-    ierr = parse_times(grid.com, config, tmp, times);
+    ierr = parse_times(grid.com, config, tmp,
+                       grid.time->start(),
+                       grid.time->end(),
+                       times);
     if (ierr != 0) {
       PetscPrintf(grid.com, "PISM ERROR: parsing the -times argument failed.\n");
       PISMEnd();

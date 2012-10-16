@@ -126,7 +126,8 @@ vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
 
   If it is a comma-separated list, converts to double (with error-checking).
  */
-PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string str, vector<double> &result) {
+PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string str,
+                           double run_start, double run_end, vector<double> &result) {
   PetscErrorCode ierr;
   int N;
 
@@ -161,7 +162,41 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
         result[j] = convert(a + delta*j, "years", "seconds");
     }
 
-  } else {			// it's a list of times
+  } else if (str == "daily" || str == "monthly" || str == "yearly") {
+
+    utUnit unit;
+    string unit_str = "seconds since " + config.get_string("reference_date");
+
+    // scan the units:
+    int err = utScan(unit_str.c_str(), &unit);
+    if (err != 0) {
+      PetscPrintf(com, "PISM ERROR: invalid units specification: %s\n",
+                  unit_str.c_str());
+      PISMEnd();
+    }
+
+    // get the 'year' out of the reference date:
+    int reference_year, start_year, end_year, tmp1;
+    float tmp2;
+    utCalendar(0, &unit, &reference_year,
+               &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+
+    // get the year at the start of the run
+    utCalendar(run_start, &unit, &start_year,
+               &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+
+    // get the year at the end of the run
+    utCalendar(run_end, &unit, &end_year,
+               &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+
+    result = compute_times(com, config,
+                           start_year - reference_year,
+                           end_year - reference_year,
+                           str);
+    
+  } else if (str.find(',') != string::npos) {			// it's a list of times
+    // a list will always contain a comma because at least two numbers are
+    // needed to specify reporting intervals
     istringstream arg(str);
     string tmp;
 
@@ -180,6 +215,9 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
 	result.push_back(convert(d, "years", "seconds"));
     }
     sort(result.begin(), result.end());
+  } else {
+    PetscPrintf(com, "PISM ERROR: Can't parse %s", str.c_str());
+    PISMEnd();
   }
 
   return 0;
