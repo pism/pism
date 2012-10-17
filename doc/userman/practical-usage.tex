@@ -135,7 +135,7 @@ PISM's signal handling.)
     \textbf{Option} & \textbf{Description} \\
     \midrule
     \fileopt{ts_file} & Specifies the file to save to.\\
-    \timeopt{ts_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+    \timeopt{ts_times} & Specifies times to save at as a MATLAB-style range $a:\Delta t:b$, a comma-separated list, or a keyword (\texttt{daily}, \texttt{monthly}, \texttt{yearly}). See section \ref{sec:saving-spat-vari}. \\
     \listopt{ts_vars} & Comma-separated list of variables, see
     tables~\ref{tab:time-series-1}~and~\ref{tab:time-series-2}. Omitting this
     option is equivalent to listing the \emph{all} variables.\\
@@ -256,6 +256,16 @@ this case the \emph{reference date} mentioned in section \ref{sec:i-format}
 \textbf{is} used. Use the \intextoption{reference_date} option or the
 configuration parameter with the same name to set it. (And see \emph{PISM's
   climate forcing components} for more details.)
+
+It is frequently desirable to save diagnostic quantities at regular intervals for the whole duration of the run; options \intextoption{extra_times}, \intextoption{ts_times}, and \intextoption{save_times} provide a shortcut. For example, use \texttt{-extra_times yearly} to save at the end of every year.
+
+This is especially useful when using a climate forcing file to set run duration:
+\begin{verbatim}
+$ pismr -i foo.nc -surface given -surface_given_file climate.nc \
+        -calendar gregorian -time_file climate.nc \
+        -extra_times monthly -extra_file ex.nc -extra_vars thk
+\end{verbatim} %$
+will save ice thickness at the end of every month while running PISM for the duration of climate forcing data in \texttt{climate.nc}.
 
 Times given using \texttt{-extra_times} are interpreted as endpoints of reporting intervals. This implies that \texttt{0:1:10} will produce 10 records and \emph{not} 11.
 
