@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -142,8 +142,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
   bool paramSet;
   ierr = PISMOptionsReal("-Tmin", "T min, Kelvin",
 			 T_min, paramSet); CHKERRQ(ierr);
-  ierr = PISMOptionsReal("-Tmax", "T max, Kelvin",
-			 T_max, paramSet); CHKERRQ(ierr);
 
   PetscReal myMmax = convert(M_max, "m/s", "m/year"),
     mySb = S_b * secpera / 1e3,

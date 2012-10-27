@@ -470,7 +470,7 @@ PetscErrorCode IceModel::model_state_setup() {
   string filename;
 
   // Check if we are initializing from a PISM output file:
-  ierr = PISMOptionsString("-i", "Specifies a PISM input file",
+  ierr = PISMOptionsString("-i", "Specifies the PISM input file",
 			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
@@ -515,8 +515,26 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("compute_cumulative_climatic_mass_balance")) {
-    ierr = climatic_mass_balance_cumulative.set(0.0); CHKERRQ(ierr);
+  if (climatic_mass_balance_cumulative.was_created()) {
+    if (i_set) {
+      ierr = verbPrintf(2, grid.com,
+                        "* Trying to read cumulative climatic mass balance from '%s'...\n",
+                        filename.c_str()); CHKERRQ(ierr);
+      ierr = climatic_mass_balance_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+    } else {
+      ierr = climatic_mass_balance_cumulative.set(0.0); CHKERRQ(ierr);
+    }
+  }
+
+  if (ocean_kill_flux_2D_cumulative.was_created()) {
+    if (i_set) {
+      ierr = verbPrintf(2, grid.com,
+                        "* Trying to read cumulative ocean kill flux from '%s'...\n",
+                        filename.c_str()); CHKERRQ(ierr);
+      ierr = ocean_kill_flux_2D_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+    } else {
+      ierr = ocean_kill_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
+    }
   }
 
   ierr = compute_cell_areas(); CHKERRQ(ierr);
@@ -897,7 +915,7 @@ PetscErrorCode IceModel::init_ocean_kill() {
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if ((*tmp)(i, j) > 0 || m.grounded(i, j) )
+      if ((*tmp)(i, j) > 0 || m.grounded(i, j) ) // FIXME: use GeometryCalculator
         ocean_kill_mask(i, j) = 0;
       else
         ocean_kill_mask(i, j) = 1;

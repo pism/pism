@@ -222,7 +222,7 @@ PetscErrorCode IceModel::eigenCalving() {
 
   ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
-  cumulative_discharge_flux     += discharge_flux     * factor;
+  discharge_flux_cumulative     += discharge_flux     * factor;
 
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
@@ -283,7 +283,7 @@ PetscErrorCode IceModel::calvingAtThickness() {
 
   ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
-  cumulative_discharge_flux     += discharge_flux     * factor;
+  discharge_flux_cumulative     += discharge_flux     * factor;
 
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);

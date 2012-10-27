@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2012 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -276,7 +276,7 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
   
   ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
-  cumulative_discharge_flux     += discharge_flux     * factor;
+  discharge_flux_cumulative     += discharge_flux     * factor;
 
   ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vMask.endGhostComm(); CHKERRQ(ierr);
@@ -459,7 +459,7 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   
   ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
-  cumulative_discharge_flux     += discharge_flux     * factor;
+  discharge_flux_cumulative     += discharge_flux     * factor;
 
   if (vpik)  // actually get output from PetscSynchronizedPrintf()
     PetscSynchronizedFlush(grid.com);
