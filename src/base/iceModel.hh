@@ -85,6 +85,8 @@ class IceModel {
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
   friend class IceModel_climatic_mass_balance_cumulative;
+  friend class IceModel_ocean_kill_flux_2D;
+  friend class IceModel_ocean_kill_flux_2D_cumulative;
   friend class IceModel_dHdt;
   // scalar:
   friend class IceModel_ivol;
@@ -109,19 +111,19 @@ class IceModel {
   friend class IceModel_dt;
   friend class IceModel_max_diffusivity;
   friend class IceModel_surface_flux;
-  friend class IceModel_cumulative_surface_flux;
+  friend class IceModel_surface_flux_cumulative;
   friend class IceModel_grounded_basal_flux;
-  friend class IceModel_cumulative_grounded_basal_flux;
+  friend class IceModel_grounded_basal_flux_cumulative;
   friend class IceModel_sub_shelf_flux;
-  friend class IceModel_cumulative_sub_shelf_flux;
+  friend class IceModel_sub_shelf_flux_cumulative;
   friend class IceModel_nonneg_flux;
-  friend class IceModel_cumulative_nonneg_flux;
+  friend class IceModel_nonneg_flux_cumulative;
   friend class IceModel_ocean_kill_flux;
-  friend class IceModel_cumulative_ocean_kill_flux;
+  friend class IceModel_ocean_kill_flux_cumulative;
   friend class IceModel_float_kill_flux;
-  friend class IceModel_cumulative_float_kill_flux;
+  friend class IceModel_float_kill_flux_cumulative;
   friend class IceModel_discharge_flux;
-  friend class IceModel_cumulative_discharge_flux;
+  friend class IceModel_discharge_flux_cumulative;
   friend class IceModel_max_hor_vel;
   friend class IceModel_sum_divQ_flux;
   friend class IceModel_H_to_Href_flux;
@@ -227,6 +229,7 @@ protected:
     vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
     acab,		//!< accumulation/ablation rate; no ghosts
     climatic_mass_balance_cumulative,    //!< cumulative acab
+    ocean_kill_flux_2D_cumulative,       //!< cumulative ocean kill flux
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
@@ -261,17 +264,17 @@ protected:
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, dt_from_eigencalving,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
-    cumulative_grounded_basal_ice_flux,
-    cumulative_float_kill_flux,
-    cumulative_discharge_flux,
-    cumulative_nonneg_rule_flux,
-    cumulative_ocean_kill_flux,
-    cumulative_sub_shelf_ice_flux,
-    cumulative_surface_ice_flux,
-    cumulative_sum_divQ_SIA,
-    cumulative_sum_divQ_SSA,
-    cumulative_Href_to_H_flux,
-    cumulative_H_to_Href_flux;
+    grounded_basal_ice_flux_cumulative,
+    float_kill_flux_cumulative,
+    discharge_flux_cumulative,
+    nonneg_rule_flux_cumulative,
+    ocean_kill_flux_cumulative,
+    sub_shelf_ice_flux_cumulative,
+    surface_ice_flux_cumulative,
+    sum_divQ_SIA_cumulative,
+    sum_divQ_SSA_cumulative,
+    Href_to_H_flux_cumulative,
+    H_to_Href_flux_cumulative;
   PetscInt    skipCountDown;
 
   // physical parameters used frequently enough to make looking up via

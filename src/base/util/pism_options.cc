@@ -696,7 +696,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
 
   // Output
-  ierr = config.flag_from_option("climatic_mass_balance_cumulative", "compute_cumulative_climatic_mass_balance"); CHKERRQ(ierr);
   ierr = config.flag_from_option("f3d", "force_full_diagnostics"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("o_order", "output_variable_order",

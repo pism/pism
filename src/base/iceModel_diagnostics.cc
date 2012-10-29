@@ -50,8 +50,13 @@ PetscErrorCode IceModel::init_diagnostics() {
   diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid, variables);
   diagnostics["dHdt"]             = new IceModel_dHdt(this, grid, variables);
 
-  if (config.get_flag("compute_cumulative_climatic_mass_balance")) {
-    diagnostics["climatic_mass_balance_cumulative"]  = new IceModel_climatic_mass_balance_cumulative(this, grid, variables);
+  if (climatic_mass_balance_cumulative.was_created()) {
+    diagnostics["climatic_mass_balance_cumulative"] = new IceModel_climatic_mass_balance_cumulative(this, grid, variables);
+  }
+
+  if (ocean_kill_flux_2D_cumulative.was_created()) {
+    diagnostics["ocean_kill_flux_cumulative"] = new IceModel_ocean_kill_flux_2D_cumulative(this, grid, variables);
+    diagnostics["ocean_kill_flux"] = new IceModel_ocean_kill_flux_2D(this, grid, variables);
   }
 
   ts_diagnostics["ivol"]          = new IceModel_ivol(this, grid, variables);
@@ -78,19 +83,19 @@ PetscErrorCode IceModel::init_diagnostics() {
   ts_diagnostics["max_hor_vel"]   = new IceModel_max_hor_vel(this, grid, variables);
 
   ts_diagnostics["surface_ice_flux"]   = new IceModel_surface_flux(this, grid, variables);
-  ts_diagnostics["cumulative_surface_ice_flux"]   = new IceModel_cumulative_surface_flux(this, grid, variables);
+  ts_diagnostics["surface_ice_flux_cumulative"]   = new IceModel_surface_flux_cumulative(this, grid, variables);
   ts_diagnostics["grounded_basal_ice_flux"]     = new IceModel_grounded_basal_flux(this, grid, variables);
-  ts_diagnostics["cumulative_grounded_basal_ice_flux"]     = new IceModel_cumulative_grounded_basal_flux(this, grid, variables);
+  ts_diagnostics["grounded_basal_ice_flux_cumulative"]     = new IceModel_grounded_basal_flux_cumulative(this, grid, variables);
   ts_diagnostics["sub_shelf_ice_flux"] = new IceModel_sub_shelf_flux(this, grid, variables);
-  ts_diagnostics["cumulative_sub_shelf_ice_flux"] = new IceModel_cumulative_sub_shelf_flux(this, grid, variables);
+  ts_diagnostics["sub_shelf_ice_flux_cumulative"] = new IceModel_sub_shelf_flux_cumulative(this, grid, variables);
   ts_diagnostics["nonneg_rule_flux"]   = new IceModel_nonneg_flux(this, grid, variables);
-  ts_diagnostics["cumulative_nonneg_rule_flux"]   = new IceModel_cumulative_nonneg_flux(this, grid, variables);
+  ts_diagnostics["nonneg_rule_flux_cumulative"]   = new IceModel_nonneg_flux_cumulative(this, grid, variables);
   ts_diagnostics["ocean_kill_flux"]    = new IceModel_ocean_kill_flux(this, grid, variables);
-  ts_diagnostics["cumulative_ocean_kill_flux"]    = new IceModel_cumulative_ocean_kill_flux(this, grid, variables);
+  ts_diagnostics["ocean_kill_flux_cumulative"]    = new IceModel_ocean_kill_flux_cumulative(this, grid, variables);
   ts_diagnostics["float_kill_flux"]    = new IceModel_float_kill_flux(this, grid, variables);
-  ts_diagnostics["cumulative_float_kill_flux"]    = new IceModel_cumulative_float_kill_flux(this, grid, variables);
+  ts_diagnostics["float_kill_flux_cumulative"]    = new IceModel_float_kill_flux_cumulative(this, grid, variables);
   ts_diagnostics["discharge_flux"]    = new IceModel_discharge_flux(this, grid, variables);
-  ts_diagnostics["cumulative_discharge_flux"]    = new IceModel_cumulative_discharge_flux(this, grid, variables);
+  ts_diagnostics["discharge_flux_cumulative"]    = new IceModel_discharge_flux_cumulative(this, grid, variables);
   ts_diagnostics["H_to_Href_flux"] = new IceModel_H_to_Href_flux(this, grid, variables);
   ts_diagnostics["Href_to_H_flux"] = new IceModel_Href_to_H_flux(this, grid, variables);
   ts_diagnostics["sum_divQ_flux"]  = new IceModel_sum_divQ_flux(this, grid, variables);
@@ -984,7 +989,7 @@ IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumula
   : PISMDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("cumulative_climatic_mass_balance", grid);
+  vars[0].init_2d("climatic_mass_balance_cumulative", grid);
 
   set_attrs("cumulative ice-equivalent climatic mass balance", "",
             "m", "m", 0);
@@ -1003,6 +1008,103 @@ PetscErrorCode IceModel_climatic_mass_balance_cumulative::compute(IceModelVec* &
   output = result;
   return 0;
 }
+
+IceModel_ocean_kill_flux_2D_cumulative::IceModel_ocean_kill_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("ocean_kill_flux_cumulative", grid);
+
+  set_attrs("cumulative calving flux due to the ocean_kill mechanism", "",
+            "kg", "Gt", 0);
+}
+
+PetscErrorCode IceModel_ocean_kill_flux_2D_cumulative::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "ocean_kill_flux_cumulative", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = result->copy_from(model->ocean_kill_flux_2D_cumulative); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+IceModel_ocean_kill_flux_2D::IceModel_ocean_kill_flux_2D(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+  // set metadata:
+  vars[0].init_2d("ocean_kill_flux", grid);
+
+  set_attrs("calving flux due to the ocean_kill mechanism", "",
+            "kg/s", "kg/s", 0);
+
+  last_ocean_kill_flux_cumulative.create(grid, "last_ocean_kill_flux_cumulative", false);
+  last_ocean_kill_flux_cumulative.set_attrs("internal",
+                                            "cumulative ocean kill flux "
+                                            "at the time of the last report of ocean_kill_flux",
+                                            "kg", "");
+
+  last_report_time = GSL_NAN;
+}
+
+PetscErrorCode IceModel_ocean_kill_flux_2D::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "ocean_kill_flux", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  if (gsl_isnan(last_report_time)) {
+    ierr = result->set(0.0); CHKERRQ(ierr);
+  } else {
+
+    ierr = result->begin_access(); CHKERRQ(ierr);
+    ierr = last_ocean_kill_flux_cumulative.begin_access(); CHKERRQ(ierr);
+    ierr = model->ocean_kill_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+
+    PetscReal dt = grid.time->current() - last_report_time;
+    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+        (*result)(i, j) = (model->ocean_kill_flux_2D_cumulative(i, j) - last_ocean_kill_flux_cumulative(i, j)) / dt;
+      }
+    }
+
+    ierr = model->ocean_kill_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
+    ierr = last_ocean_kill_flux_cumulative.end_access(); CHKERRQ(ierr);
+    ierr = result->end_access(); CHKERRQ(ierr);
+
+  }
+
+  // Save the cumulative ocean kill flux and the corresponding time:
+  ierr = this->update_cumulative(); CHKERRQ(ierr);
+
+  output = result;
+
+  return 0;
+}
+
+PetscErrorCode IceModel_ocean_kill_flux_2D::update_cumulative() {
+  PetscErrorCode ierr;
+  ierr = model->ocean_kill_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+  ierr = last_ocean_kill_flux_cumulative.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      last_ocean_kill_flux_cumulative(i, j) = model->ocean_kill_flux_2D_cumulative(i, j);
+    }
+  }
+
+  ierr = last_ocean_kill_flux_cumulative.end_access(); CHKERRQ(ierr);
+  ierr = model->ocean_kill_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
+
+  last_report_time = grid.time->current();
+
+  return 0;
+}
+
 
 IceModel_ivol::IceModel_ivol(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
@@ -1500,29 +1602,29 @@ PetscErrorCode IceModel_surface_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_surface_ice_flux;
+  value = model->surface_ice_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
   return 0;
 }
 
-IceModel_cumulative_surface_flux::IceModel_cumulative_surface_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_surface_ice_flux", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "surface_ice_flux_cumulative", time_dimension_name);
 
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "cumulative total over ice domain of top surface ice mass flux");
 }
 
-PetscErrorCode IceModel_cumulative_surface_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_surface_flux_cumulative::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_surface_ice_flux;
+  value = model->surface_ice_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1545,29 +1647,29 @@ PetscErrorCode IceModel_grounded_basal_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_grounded_basal_ice_flux;
+  value = model->grounded_basal_ice_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
   return 0;
 }
 
-IceModel_cumulative_grounded_basal_flux::IceModel_cumulative_grounded_basal_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_grounded_basal_ice_flux", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "grounded_basal_ice_flux_cumulative", time_dimension_name);
 
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "cumulative total grounded basal mass flux");
 }
 
-PetscErrorCode IceModel_cumulative_grounded_basal_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_grounded_basal_flux_cumulative::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_grounded_basal_ice_flux;
+  value = model->grounded_basal_ice_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1590,29 +1692,29 @@ PetscErrorCode IceModel_sub_shelf_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_sub_shelf_ice_flux;
+  value = model->sub_shelf_ice_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
   return 0;
 }
 
-IceModel_cumulative_sub_shelf_flux::IceModel_cumulative_sub_shelf_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_sub_shelf_ice_flux", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux_cumulative", time_dimension_name);
 
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "cumulative total sub-shelf ice flux");
 }
 
-PetscErrorCode IceModel_cumulative_sub_shelf_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_sub_shelf_flux_cumulative::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_sub_shelf_ice_flux;
+  value = model->sub_shelf_ice_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1635,29 +1737,29 @@ PetscErrorCode IceModel_nonneg_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_nonneg_rule_flux;
+  value = model->nonneg_rule_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
   return 0;
 }
 
-IceModel_cumulative_nonneg_flux::IceModel_cumulative_nonneg_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_nonneg_flux", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "nonneg_flux_cumulative", time_dimension_name);
 
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "cumulative 'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
 }
 
-PetscErrorCode IceModel_cumulative_nonneg_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_nonneg_flux_cumulative::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_nonneg_rule_flux;
+  value = model->nonneg_rule_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1680,29 +1782,29 @@ PetscErrorCode IceModel_ocean_kill_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_ocean_kill_flux;
+  value = model->ocean_kill_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
   return 0;
 }
 
-IceModel_cumulative_ocean_kill_flux::IceModel_cumulative_ocean_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+IceModel_ocean_kill_flux_cumulative::IceModel_ocean_kill_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_ocean_kill_flux", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "ocean_kill_flux_cumulative", time_dimension_name);
 
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "cumulative -ocean_kill flux");
 }
 
-PetscErrorCode IceModel_cumulative_ocean_kill_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_ocean_kill_flux_cumulative::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_ocean_kill_flux;
+  value = model->ocean_kill_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1725,29 +1827,29 @@ PetscErrorCode IceModel_float_kill_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_float_kill_flux;
+  value = model->float_kill_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
   return 0;
 }
 
-IceModel_cumulative_float_kill_flux::IceModel_cumulative_float_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+IceModel_float_kill_flux_cumulative::IceModel_float_kill_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_float_kill_flux", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "float_kill_flux_cumulative", time_dimension_name);
 
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "cumulative -float_kill flux");
 }
 
-PetscErrorCode IceModel_cumulative_float_kill_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_float_kill_flux_cumulative::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_float_kill_flux;
+  value = model->float_kill_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1770,29 +1872,29 @@ PetscErrorCode IceModel_discharge_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_discharge_flux;
+  value = model->discharge_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
   return 0;
 }
 
-IceModel_cumulative_discharge_flux::IceModel_cumulative_discharge_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
+IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "cumulative_discharge_flux", time_dimension_name);
+  ts = new DiagnosticTimeseries(&grid, "discharge_flux_cumulative", time_dimension_name);
 
   ts->set_units("kg", "");
   ts->set_dimension_units(time_units, "");
   ts->set_attr("long_name", "cumulative discharge (calving etc.) flux");
 }
 
-PetscErrorCode IceModel_cumulative_discharge_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_discharge_flux_cumulative::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
   PetscReal value;
 
-  value = model->cumulative_discharge_flux;
+  value = model->discharge_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1996,7 +2098,7 @@ IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m, IceGrid &g, PISMVa
 PetscErrorCode IceModel_H_to_Href_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
 
-  ierr = ts->append(model->cumulative_H_to_Href_flux, a, b); CHKERRQ(ierr);
+  ierr = ts->append(model->H_to_Href_flux_cumulative, a, b); CHKERRQ(ierr);
 
   return 0;
 }
@@ -2016,7 +2118,7 @@ IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m, IceGrid &g, PISMVa
 PetscErrorCode IceModel_Href_to_H_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
 
-  ierr = ts->append(model->cumulative_Href_to_H_flux, a, b); CHKERRQ(ierr);
+  ierr = ts->append(model->Href_to_H_flux_cumulative, a, b); CHKERRQ(ierr);
 
   return 0;
 }
@@ -2037,7 +2139,7 @@ IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m, IceGrid &g, PISMVars
 PetscErrorCode IceModel_sum_divQ_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
 
-  ierr = ts->append(model->cumulative_sum_divQ_SIA + model->cumulative_sum_divQ_SSA,
+  ierr = ts->append(model->sum_divQ_SIA_cumulative + model->sum_divQ_SSA_cumulative,
                     a, b); CHKERRQ(ierr);
 
   return 0;

@@ -198,7 +198,7 @@ PetscErrorCode IceModel::init_extras() {
     ierr = PISMOptionsString("-extra_times", "Specifies times to save at",
 			     times, extra_times_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsString("-extra_vars", "Spacifies a comma-separated list of variables to save",
+    ierr = PISMOptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
 			     vars, extra_vars_set); CHKERRQ(ierr);
 
     ierr = PISMOptionsIsSet("-extra_split", "Specifies whether to save to separate files",

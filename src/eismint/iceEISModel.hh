@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,7 @@ protected:
   char        expername;
   virtual PetscErrorCode set_expername_from_options();
 
-  PetscScalar M_max, R_el, T_min, T_max, S_b, S_T;
+  PetscScalar M_max, R_el, T_min, S_b, S_T;
 
   virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
   virtual PetscErrorCode generateMoundTopography();   // for experiments K,L

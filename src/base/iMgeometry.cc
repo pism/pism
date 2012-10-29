@@ -506,7 +506,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed"),
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
-    compute_cumulative_climatic_mass_balance = config.get_flag("compute_cumulative_climatic_mass_balance");
+    compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),
+    compute_cumulative_ocean_kill_flux = ocean_kill_flux_2D_cumulative.was_created();
 
   // FIXME: use corrected cell areas (when available)
   PetscScalar factor = config.get("ice_density") * (dx * dy);
@@ -561,6 +562,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   if (compute_cumulative_climatic_mass_balance) {
     ierr = climatic_mass_balance_cumulative.begin_access(); CHKERRQ(ierr);
+  }
+
+  if (compute_cumulative_ocean_kill_flux) {
+    ierr = ocean_kill_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
   }
 
   MaskQuery mask(vMask);
@@ -700,8 +705,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
         // force zero thickness at points which were originally ocean (if "-ocean_kill");
         //   this is calving at original calving front location
-        if ( do_ocean_kill && ocean_kill_mask.as_int(i, j) == 1) {
+        if (do_ocean_kill && ocean_kill_mask.as_int(i, j) == 1) {
           ocean_kill_flux = -vHnew(i, j);
+
+          if (compute_cumulative_ocean_kill_flux)
+            ocean_kill_flux_2D_cumulative(i,j) += -vHnew(i,j) * factor; // factor=dx*dy*rho
 
           // this has to go *after* accounting above!
           vHnew(i, j) = 0.0;
@@ -749,6 +757,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 
+  if (compute_cumulative_ocean_kill_flux) {
+    ierr = ocean_kill_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
+  }
+
   if (compute_cumulative_climatic_mass_balance) {
     ierr = climatic_mass_balance_cumulative.end_access(); CHKERRQ(ierr);
   }
@@ -784,17 +796,17 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
     // these are computed using accumulation/ablation or melt rates, so we need
     // to multiply by dt
-    cumulative_grounded_basal_ice_flux += total_grounded_basal_ice_flux * factor * dt;
-    cumulative_sub_shelf_ice_flux += total_sub_shelf_ice_flux * factor * dt;
-    cumulative_surface_ice_flux   += total_surface_ice_flux   * factor * dt;
-    cumulative_sum_divQ_SIA       += total_sum_divQ_SIA       * factor * dt;
-    cumulative_sum_divQ_SSA       += total_sum_divQ_SSA       * factor * dt;
+    grounded_basal_ice_flux_cumulative += total_grounded_basal_ice_flux * factor * dt;
+    sub_shelf_ice_flux_cumulative += total_sub_shelf_ice_flux * factor * dt;
+    surface_ice_flux_cumulative   += total_surface_ice_flux   * factor * dt;
+    sum_divQ_SIA_cumulative       += total_sum_divQ_SIA       * factor * dt;
+    sum_divQ_SSA_cumulative       += total_sum_divQ_SSA       * factor * dt;
     // these are computed using ice thickness and are "cumulative" already
-    cumulative_float_kill_flux    += total_float_kill_flux    * factor;
-    cumulative_nonneg_rule_flux   += total_nonneg_rule_flux   * factor;
-    cumulative_ocean_kill_flux    += total_ocean_kill_flux    * factor;
-    cumulative_Href_to_H_flux     += total_Href_to_H_flux     * factor;
-    cumulative_H_to_Href_flux     += total_H_to_Href_flux     * factor;
+    float_kill_flux_cumulative    += total_float_kill_flux    * factor;
+    nonneg_rule_flux_cumulative   += total_nonneg_rule_flux   * factor;
+    ocean_kill_flux_cumulative    += total_ocean_kill_flux    * factor;
+    Href_to_H_flux_cumulative     += total_Href_to_H_flux     * factor;
+    H_to_Href_flux_cumulative     += total_H_to_Href_flux     * factor;
   }
 
   // finally copy vHnew into vH and communicate ghosted values

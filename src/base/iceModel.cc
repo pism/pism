@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <sstream>
 #include <petscdmda.h>
 
 #include "iceModel.hh"
@@ -108,17 +109,17 @@ void IceModel::reset_counters() {
   maxdt_temporary = dt = dt_force = 0.0;
   skipCountDown = 0;
 
-  cumulative_grounded_basal_ice_flux = 0;
-  cumulative_float_kill_flux = 0;
-  cumulative_discharge_flux = 0;
-  cumulative_nonneg_rule_flux = 0;
-  cumulative_ocean_kill_flux = 0;
-  cumulative_sub_shelf_ice_flux = 0;
-  cumulative_surface_ice_flux = 0;
-  cumulative_sum_divQ_SIA = 0;
-  cumulative_sum_divQ_SSA = 0;
-  cumulative_Href_to_H_flux = 0;
-  cumulative_H_to_Href_flux = 0;
+  grounded_basal_ice_flux_cumulative = 0;
+  float_kill_flux_cumulative = 0;
+  discharge_flux_cumulative = 0;
+  nonneg_rule_flux_cumulative = 0;
+  ocean_kill_flux_cumulative = 0;
+  sub_shelf_ice_flux_cumulative = 0;
+  surface_ice_flux_cumulative = 0;
+  sum_divQ_SIA_cumulative = 0;
+  sum_divQ_SSA_cumulative = 0;
+  Href_to_H_flux_cumulative = 0;
+  H_to_Href_flux_cumulative = 0;
 }
 
 
@@ -454,14 +455,6 @@ PetscErrorCode IceModel::createVecs() {
   acab.write_in_glaciological_units = true;
   acab.set_attr("comment", "positive values correspond to ice gain");
 
-  if (config.get_flag("compute_cumulative_climatic_mass_balance")) {
-    ierr = climatic_mass_balance_cumulative.create(grid, "climatic_mass_balance_cumulative", false); CHKERRQ(ierr);
-    ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
-                                     "cumulative ice-equivalent surface mass balance",
-                                     "m", ""); CHKERRQ(ierr);
-    ierr = variables.add(climatic_mass_balance_cumulative); CHKERRQ(ierr);
-  }
-
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
   ierr = artm.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
@@ -500,6 +493,39 @@ PetscErrorCode IceModel::createVecs() {
   // PROPOSED standard name = ice_shelf_basal_temperature
   // do not add; boundary models are in charge here
   // ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
+
+  // take care of 2D cumulative fluxes: we need to allocate special storage it
+  // the user asked for climatic_mass_balance_cumulative or
+  // ocean_kill_flux_cumulative
+
+  string vars;
+  bool extra_vars_set;
+  ierr = PISMOptionsString("-extra_vars", "", vars, extra_vars_set); CHKERRQ(ierr);
+  if (extra_vars_set) {
+    istringstream arg(vars);
+    string var_name;
+    set<string> ex_vars;
+
+    while (getline(arg, var_name, ','))
+      ex_vars.insert(var_name);
+
+    if (set_contains(ex_vars, "climatic_mass_balance_cumulative")) {
+      ierr = climatic_mass_balance_cumulative.create(grid, "climatic_mass_balance_cumulative", false); CHKERRQ(ierr);
+      ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
+                                                        "cumulative ice-equivalent surface mass balance",
+                                                        "m", ""); CHKERRQ(ierr);
+    }
+
+    if (set_contains(ex_vars, "ocean_kill_flux_cumulative") ||
+        set_contains(ex_vars, "ocean_kill_flux")) {
+      ierr = ocean_kill_flux_2D_cumulative.create(grid, "ocean_kill_flux_cumulative", false); CHKERRQ(ierr);
+      ierr = ocean_kill_flux_2D_cumulative.set_attrs("diagnostic",
+                                                     "cumulative calving flux due to the -ocean_kill mechanism",
+                                                     "kg", ""); CHKERRQ(ierr);
+      ierr = ocean_kill_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ocean_kill_flux_2D_cumulative.write_in_glaciological_units = true;
+    }
+  }
 
   return 0;
 }
