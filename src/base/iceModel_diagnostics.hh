@@ -432,6 +432,19 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! \brief Computes ocean_kill_flux, the calving flux due to the "-ocean_kill"
+//! mechanism.
+class IceModel_ocean_kill_flux_2D : public PISMDiag<IceModel>
+{
+public:
+  IceModel_ocean_kill_flux_2D(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual PetscErrorCode update_cumulative();
+protected:
+  IceModelVec2S last_ocean_kill_flux_cumulative;
+  PetscReal last_report_time;
+};
+
 //! \brief Computes dHdt, the ice thickness rate of change.
 class IceModel_dHdt : public PISMDiag<IceModel>
 {

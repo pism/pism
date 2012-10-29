@@ -516,7 +516,8 @@ PetscErrorCode IceModel::createVecs() {
                                                         "m", ""); CHKERRQ(ierr);
     }
 
-    if (set_contains(ex_vars, "ocean_kill_flux_cumulative")) {
+    if (set_contains(ex_vars, "ocean_kill_flux_cumulative") ||
+        set_contains(ex_vars, "ocean_kill_flux")) {
       ierr = ocean_kill_flux_2D_cumulative.create(grid, "ocean_kill_flux_cumulative", false); CHKERRQ(ierr);
       ierr = ocean_kill_flux_2D_cumulative.set_attrs("diagnostic",
                                                      "cumulative calving flux due to the -ocean_kill mechanism",

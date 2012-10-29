@@ -85,6 +85,7 @@ class IceModel {
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
   friend class IceModel_climatic_mass_balance_cumulative;
+  friend class IceModel_ocean_kill_flux_2D;
   friend class IceModel_ocean_kill_flux_2D_cumulative;
   friend class IceModel_dHdt;
   // scalar:
