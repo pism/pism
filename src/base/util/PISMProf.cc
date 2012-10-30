@@ -145,12 +145,13 @@ PetscErrorCode PISMProf::save_report(string filename) {
     if (name == "unknown")
       continue;
 
-    double time = events[j].total_time;
+    double time = events[j].total_time,
+      max_time = 0;
 
-    PISMGlobalMax(&time, &time, com);
+    PISMGlobalMax(&time, &max_time, com);
 
     // ignore events that took less than 0.001 seconds
-    if (time < 1e-3)
+    if (max_time < 1e-3)
       continue;
 
     ierr = save_report(j, nc, name); CHKERRQ(ierr);
