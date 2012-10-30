@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "InvSSATikhonovLCL.hh"
+#include "pism_petsc32_compat.hh"
 #include <assert.h>
 
 typedef IceModelVec2S  DesignVec;
@@ -70,7 +71,7 @@ PetscErrorCode InvSSATikhonovLCL::construct() {
 
   DM da;
   ierr = m_ssaforward.get_da(&da); CHKERRQ(ierr);
-  ierr = DMGetMatrix(da, "baij", &m_Jstate); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(da, "baij", &m_Jstate); CHKERRQ(ierr);
 
   PetscInt nLocalNodes  = grid.xm*grid.ym;
   PetscInt nGlobalNodes = grid.Mx*grid.My;
