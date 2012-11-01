@@ -74,7 +74,13 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     ierr = delta_T->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
     ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
     CHKERRQ(ierr);
-    ierr = delta_T->read(delta_T_file, grid.time->use_reference_date()); CHKERRQ(ierr);
+
+    PIO nc(grid.com, grid.rank, "netcdf3");
+    ierr = nc.open(delta_T_file, PISM_NOWRITE); CHKERRQ(ierr);
+    {
+      ierr = delta_T->read(nc, grid.time->use_reference_date()); CHKERRQ(ierr);
+    }
+    ierr = nc.close(); CHKERRQ(ierr);
   }
 
   return 0;

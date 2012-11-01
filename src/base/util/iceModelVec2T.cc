@@ -145,7 +145,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(grid->com, grid->rank, "netcdf3");
+  PIO nc(grid->com, grid->rank, "netcdf3"); // FIXME!!!
   string name_found;
   bool exists, found_by_standard_name;
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
@@ -175,7 +175,6 @@ PetscErrorCode IceModelVec2T::init(string fname) {
       break;
     }
   }
-  ierr = nc.close(); CHKERRQ(ierr);
 
   if (time_found) {
     // we're found the time dimension
@@ -183,10 +182,10 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     time_dimension.init(dimname, dimname, grid->com, grid->rank);
 
     ierr = time_dimension.set_units(grid->time->units()); CHKERRQ(ierr);
-    ierr = time_dimension.read(filename, grid->time->use_reference_date(), time); CHKERRQ(ierr);
+    ierr = time_dimension.read(nc, grid->time->use_reference_date(), time); CHKERRQ(ierr);
 
     string bounds_name;
-    ierr = time_dimension.get_bounds_name(filename, bounds_name);
+    ierr = time_dimension.get_bounds_name(nc, bounds_name);
 
     if (time.size() > 1) {
       if (!bounds_name.empty()) {
@@ -195,7 +194,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
         tb.init(bounds_name, dimname, grid->com, grid->rank);
         ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
 
-        ierr = tb.read(filename, grid->time->use_reference_date(), time_bounds); CHKERRQ(ierr);
+        ierr = tb.read(nc, grid->time->use_reference_date(), time_bounds); CHKERRQ(ierr);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval
@@ -234,7 +233,9 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     PISMEnd();
   }
 
-  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  ierr = get_interp_context(nc, lic); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -336,18 +337,23 @@ PetscErrorCode IceModelVec2T::update(int start) {
     report_range = true;
   }
 
+  PIO nc(grid->com, grid->rank, "netcdf3"); // FIXME!!!
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
   for (int j = 0; j < missing; ++j) {
     if (lic != NULL) {
       lic->start[0] = start + j;
       lic->report_range = report_range;
     }
 
-    ierr = vars[0].regrid(filename.c_str(), lic, true, false, 0.0, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(nc, lic, true, false, 0.0, v); CHKERRQ(ierr);
 
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %f...\n",
 		      name.c_str(), start + j, time[start + j]);
     ierr = set_record(kept + j); CHKERRQ(ierr);
   }
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }

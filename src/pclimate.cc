@@ -224,10 +224,11 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
   // append == false, check_dims == true
-  ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = mapping.write(filename); CHKERRQ(ierr);
-  ierr = global_attrs.write(filename); CHKERRQ(ierr);
+  ierr = mapping.write(nc); CHKERRQ(ierr);
+  ierr = global_attrs.write(nc); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   if (times.size() > 1000) {
     PetscPrintf(grid.com, "PCLIMATE ERROR: refuse to write more than 1000 times!");

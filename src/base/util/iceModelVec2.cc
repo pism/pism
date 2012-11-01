@@ -143,7 +143,7 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, PetscScalar fill) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::write(string filename, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec2::write(const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -153,7 +153,7 @@ PetscErrorCode IceModelVec2::write(string filename, PISM_IO_Type nctype) {
 
   // The simplest case:
   if ((dof == 1) && (localp == false)) {
-    ierr = IceModelVec::write(filename, nctype); CHKERRQ(ierr);
+    ierr = IceModelVec::write(nc, nctype); CHKERRQ(ierr);
     return 0;
   }
 
@@ -168,8 +168,7 @@ PetscErrorCode IceModelVec2::write(string filename, PISM_IO_Type nctype) {
 
     ierr = IceModelVec2::get_component(j, tmp); CHKERRQ(ierr);
 
-    ierr = vars[j].write(filename, nctype,
-			 write_in_glaciological_units, tmp);
+    ierr = vars[j].write(nc, nctype, write_in_glaciological_units, tmp);
   }
 
   // Clean up:
@@ -177,11 +176,11 @@ PetscErrorCode IceModelVec2::write(string filename, PISM_IO_Type nctype) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::read(string filename, const unsigned int time) {
+PetscErrorCode IceModelVec2::read(const PIO &nc, const unsigned int time) {
   PetscErrorCode ierr;
 
   if ((dof == 1) && (localp == false)) {
-    ierr = IceModelVec::read(filename, time); CHKERRQ(ierr);
+    ierr = IceModelVec::read(nc, time); CHKERRQ(ierr);
     return 0;
   }
 
@@ -196,7 +195,7 @@ PetscErrorCode IceModelVec2::read(string filename, const unsigned int time) {
   ierr = DMCreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
 
   for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].read(filename, time, tmp); CHKERRQ(ierr);
+    ierr = vars[j].read(nc, time, tmp); CHKERRQ(ierr);
     ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
   }
   
@@ -212,12 +211,12 @@ PetscErrorCode IceModelVec2::read(string filename, const unsigned int time) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::regrid(string filename, bool critical, int start) {
+PetscErrorCode IceModelVec2::regrid(const PIO &nc, bool critical, int start) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
 
   if ((dof == 1) && (localp == false)) {
-    ierr = IceModelVec::regrid(filename, critical, start); CHKERRQ(ierr);
+    ierr = IceModelVec::regrid(nc, critical, start); CHKERRQ(ierr);
     return 0;
   }
 
@@ -225,7 +224,7 @@ PetscErrorCode IceModelVec2::regrid(string filename, bool critical, int start) {
     ierr = PetscPrintf(grid->com, "  Regridding %s...\n", name.c_str()); CHKERRQ(ierr);
   }
 
-  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  ierr = get_interp_context(nc, lic); CHKERRQ(ierr);
   if (lic != NULL) {
     lic->start[0] = start;
     lic->report_range = report_range;
@@ -236,7 +235,7 @@ PetscErrorCode IceModelVec2::regrid(string filename, bool critical, int start) {
   ierr = DMCreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
 
   for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, lic, critical, false, 0.0, tmp); CHKERRQ(ierr);
+    ierr = vars[j].regrid(nc, lic, critical, false, 0.0, tmp); CHKERRQ(ierr);
     ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
   }
 
@@ -253,12 +252,12 @@ PetscErrorCode IceModelVec2::regrid(string filename, bool critical, int start) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::regrid(string filename, PetscScalar default_value) {
+PetscErrorCode IceModelVec2::regrid(const PIO &nc, PetscScalar default_value) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
 
   if ((dof == 1) && (localp == false)) {
-    ierr = IceModelVec::regrid(filename, default_value); CHKERRQ(ierr);
+    ierr = IceModelVec::regrid(nc, default_value); CHKERRQ(ierr);
     return 0;
   }
 
@@ -266,7 +265,7 @@ PetscErrorCode IceModelVec2::regrid(string filename, PetscScalar default_value) 
     ierr = PetscPrintf(grid->com, "  Regridding %s...\n", name.c_str()); CHKERRQ(ierr);
   }
 
-  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  ierr = get_interp_context(nc, lic); CHKERRQ(ierr);
   if (lic != NULL) {
     lic->report_range = report_range;
   }
@@ -276,7 +275,7 @@ PetscErrorCode IceModelVec2::regrid(string filename, PetscScalar default_value) 
   ierr = DMCreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
 
   for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, lic, false, true, default_value, tmp); CHKERRQ(ierr);
+    ierr = vars[j].regrid(nc, lic, false, true, default_value, tmp); CHKERRQ(ierr);
     ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
   }
 

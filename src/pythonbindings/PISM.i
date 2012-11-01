@@ -305,6 +305,9 @@ namespace std {
 %rename(regrid_with_default) IceModelVec::regrid(string, PetscScalar);
 %rename(regrid_with_critical) IceModelVec::regrid(string, bool);
 %rename(regrid_with_critical_and_start) IceModelVec::regrid(string, bool, int);
+%rename(regrid_with_default_pio) IceModelVec::regrid(const PIO&, PetscScalar);
+%rename(regrid_with_critical_pio) IceModelVec::regrid(const PIO&, bool);
+%rename(regrid_with_critical_and_start_pio) IceModelVec::regrid(const PIO&, bool, int);
 %extend IceModelVec
 {
   %pythoncode {
@@ -317,6 +320,7 @@ namespace std {
 %rename(regrid_with_default) IceModelVec2::regrid(string, PetscScalar);
 %rename(regrid_with_critical) IceModelVec2::regrid(string, bool);
 %rename(regrid_with_critical_and_start) IceModelVec2::regrid(string, bool, int);
+%rename(read_with_pio) IceModelVec2::read(const PIO&, unsigned int const);
 %extend IceModelVec2
 {
   %pythoncode {

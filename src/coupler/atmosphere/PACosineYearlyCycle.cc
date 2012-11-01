@@ -109,7 +109,13 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
     A->set_dimension_units(grid.time->units(), "");
     A->set_attr("long_name", "cosine yearly cycle amplitude scaling");
 
-    ierr = A->read(scaling_file, grid.time->use_reference_date()); CHKERRQ(ierr);
+    PIO nc(grid.com, grid.rank, "netcdf3");
+    ierr = nc.open(scaling_file, PISM_NOWRITE); CHKERRQ(ierr);
+    {
+      ierr = A->read(nc, grid.time->use_reference_date()); CHKERRQ(ierr);
+    }
+    ierr = nc.close(); CHKERRQ(ierr);
+
   } else {
     if (A != NULL)
       delete A;

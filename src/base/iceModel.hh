@@ -187,7 +187,7 @@ public:
   virtual PetscErrorCode initFromFile(string);
   virtual PetscErrorCode writeFiles(string default_filename);
   virtual PetscErrorCode write_model_state(string filename);
-  virtual PetscErrorCode write_metadata(string filename, bool write_mapping = true);
+  virtual PetscErrorCode write_metadata(const PIO &nc, bool write_mapping = true);
   virtual PetscErrorCode write_variables(string filename, set<string> vars,
 					 PISM_IO_Type nctype);
 protected:

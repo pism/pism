@@ -99,20 +99,20 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
 }
 
 //! \brief Write metadata (global attributes, overrides and mapping parameters) to a file.
-PetscErrorCode IceModel::write_metadata(string filename, bool write_mapping) {
+PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping) {
   PetscErrorCode ierr;
 
   if (write_mapping) {
-    ierr = mapping.write(filename); CHKERRQ(ierr);
+    ierr = mapping.write(nc); CHKERRQ(ierr);
   }
 
-  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(nc); CHKERRQ(ierr);
 
   bool override_used;
   ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
   if (override_used) {
     overrides.update_from(config);
-    ierr = overrides.write(filename); CHKERRQ(ierr);
+    ierr = overrides.write(nc); CHKERRQ(ierr);
   }
 
   return 0;
@@ -128,11 +128,11 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(time_name, config.get_string("calendar"), grid.time->CF_units()); CHKERRQ(ierr);
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
   // Write metadata *before* variables:
+  ierr = write_metadata(nc); CHKERRQ(ierr);
 
-  ierr = write_metadata(filename); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
@@ -730,9 +730,10 @@ PetscErrorCode IceModel::init_snapshots() {
       ierr = nc.def_time(config.get_string("time_dimension_name"),
                          config.get_string("calendar"),
                          grid.time->CF_units()); CHKERRQ(ierr);
-      ierr = nc.close(); CHKERRQ(ierr);
 
-      ierr = write_metadata(filename); CHKERRQ(ierr);
+      ierr = write_metadata(nc); CHKERRQ(ierr);
+
+      ierr = nc.close(); CHKERRQ(ierr);
 
       snapshots_file_is_ready = true;
     }
@@ -817,10 +818,11 @@ PetscErrorCode IceModel::write_backup() {
                      config.get_string("calendar"),
                      grid.time->CF_units()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
   // Write metadata *before* variables:
-  ierr = write_metadata(backup_filename); CHKERRQ(ierr);
+  ierr = write_metadata(nc); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write_variables(backup_filename, backup_vars, PISM_DOUBLE); CHKERRQ(ierr);
 

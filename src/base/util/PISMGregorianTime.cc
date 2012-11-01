@@ -96,7 +96,6 @@ PetscErrorCode PISMGregorianTime::init_from_file(string filename) {
       PISMEnd();
     }
   }
-  ierr = nc.close(); CHKERRQ(ierr);
 
   // set the reference date:
   {
@@ -117,19 +116,21 @@ PetscErrorCode PISMGregorianTime::init_from_file(string filename) {
     bounds.set_units("seconds");
 
     // do *not* use the reference date
-    ierr = bounds.read(filename, false, time); CHKERRQ(ierr);
+    ierr = bounds.read(nc, false, time); CHKERRQ(ierr);
   } else {
     // use the time axis
     time_axis.init(time_name, time_name, com, rank);
     time_axis.set_units("seconds");
 
     // do *not* use the reference date
-    ierr = time_axis.read(filename, false, time); CHKERRQ(ierr);
+    ierr = time_axis.read(nc, false, time); CHKERRQ(ierr);
   }
 
   run_start = time[0];
   run_end = time[time.size() - 1];
   time_in_seconds = run_start;
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }

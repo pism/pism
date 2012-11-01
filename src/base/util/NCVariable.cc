@@ -53,14 +53,11 @@ int NCVariable::get_ndims() const {
 
 
 //! \brief Read attributes from a file.
-PetscErrorCode NCVariable::read_attributes(string filename) {
+PetscErrorCode NCVariable::read_attributes(const PIO &nc) {
   PetscErrorCode ierr;
   bool variable_exists, found_by_std_name;
   string name_found;
   int nattrs;
-  PIO nc(com, rank, "netcdf3");
-
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   ierr = nc.inq_var(short_name, strings["standard_name"], variable_exists,
                     name_found, found_by_std_name); CHKERRQ(ierr);
@@ -69,7 +66,7 @@ PetscErrorCode NCVariable::read_attributes(string filename) {
     ierr = PetscPrintf(com,
 		       "PISM ERROR: variable %s was not found in %s.\n"
 		       "            Exiting...\n",
-		       short_name.c_str(), filename.c_str()); CHKERRQ(ierr);
+		       short_name.c_str(), nc.inq_filename().c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -96,8 +93,6 @@ PetscErrorCode NCVariable::read_attributes(string filename) {
       doubles[attname] = values;
     }
   } // end of for (int j = 0; j < nattrs; ++j)
-
-  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -236,22 +231,63 @@ void NCSpatialVariable::set_levels(const vector<double> &levels) {
   nlevels = (int)zlevels.size();
 }
 
+/*
+PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v) {
+  PetscErrorCode ierr;
+  PIO nc(grid->com, grid->rank, "netcdf3");
+
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
+  ierr = this->read(nc, time, v); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode NCSpatialVariable::write(string filename, PISM_IO_Type nctype,
+					bool write_in_glaciological_units, Vec v) {
+  PetscErrorCode ierr;
+  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
+
+  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
+
+  ierr = this->write(nc, nctype, write_in_glaciological_units, v); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
+					 bool critical, bool set_default_value,
+					 PetscScalar default_value,
+					 Vec v) {
+  PetscErrorCode ierr;
+  PIO nc(grid->com, grid->rank, "netcdf3");
+
+  // Open the file
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
+  ierr = this->regrid(nc, lic, critical, set_default_value, default_value, v); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+*/
 
 //! Read a variable from a file into a \b global Vec v.
 /*! This also converts the data from input units to internal units if needed.
  */
-PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v) {
+PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) {
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, "netcdf3");
 
   if (grid == NULL)
     SETERRQ(com, 1, "NCVariable::read: grid is NULL.");
 
   if (grid->da2 == PETSC_NULL)
     SETERRQ(com, 1, "NCVariable::read: grid.da2 is NULL.");
-
-  // Open the file:
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   // Find the variable:
   string name_found;
@@ -263,7 +299,7 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
     ierr = PetscPrintf(com,
                        "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
 		       short_name.c_str(),
-		       strings["standard_name"].c_str(), filename.c_str());
+		       strings["standard_name"].c_str(), nc.inq_filename().c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -311,7 +347,7 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
       PetscPrintf(com,
                   "PISM ERROR: found the %dD variable %s(%s) in '%s' while trying to read\n"
                   "            '%s' ('%s'), which is %d-dimensional.\n",
-                  input_ndims, name_found.c_str(), tmp.c_str(), filename.c_str(),
+                  input_ndims, name_found.c_str(), tmp.c_str(), nc.inq_filename().c_str(),
                   short_name.c_str(), strings["long_name"].c_str(),
                   static_cast<int>(axes.size()));
       PISMEnd();
@@ -340,7 +376,6 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
   // Convert data:
   ierr = change_units(v, &input_units, &units); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -348,18 +383,13 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
 /*!
   Defines a variable and converts the units if needed.
  */
-PetscErrorCode NCSpatialVariable::write(string filename, PISM_IO_Type nctype,
-					bool write_in_glaciological_units, Vec v) {
+PetscErrorCode NCSpatialVariable::write(const PIO &nc, PISM_IO_Type nctype,
+                                        bool write_in_glaciological_units, Vec v) {
   PetscErrorCode ierr;
-  bool exists;
-  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
-
-  // FIXME: move the file aside if it is present already
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
 
   // find or define the variable
   string name_found;
-  bool found_by_standard_name;
+  bool exists, found_by_standard_name;
   ierr = nc.inq_var(short_name, strings["standard_name"],
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
@@ -379,7 +409,6 @@ PetscErrorCode NCSpatialVariable::write(string filename, PISM_IO_Type nctype,
     ierr = change_units(v, &glaciological_units, &units); CHKERRQ(ierr); // restore the units
   }
 
-  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -388,13 +417,10 @@ PetscErrorCode NCSpatialVariable::write(string filename, PISM_IO_Type nctype,
   \li stops if critical == true and the variable was not found
   \li sets \c v to \c default_value if \c set_default_value == true and the variable was not found
  */
-PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
-					 bool critical, bool set_default_value,
-					 PetscScalar default_value,
-					 Vec v) {
-  bool exists;
+PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
+                                         bool critical, bool set_default_value,
+                                         PetscScalar default_value, Vec v) {
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, "netcdf3");
 
   if (grid == NULL)
     SETERRQ(com, 1, "NCVariable::regrid: grid is NULL.");
@@ -402,11 +428,8 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
   if (grid->da2 == PETSC_NULL)
     SETERRQ(com, 1, "NCVariable::regrid: grid.da2 is NULL.");
 
-  // Open the file
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-
   // Find the variable
-  bool found_by_standard_name;
+  bool exists, found_by_standard_name;
   string name_found;
   ierr = nc.inq_var(short_name, strings["standard_name"],
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
@@ -415,7 +438,7 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
     if (critical) {		// if it's critical, print an error message and stop
       ierr = PetscPrintf(com,
 			"PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
-			 short_name.c_str(), filename.c_str());
+			 short_name.c_str(), nc.inq_filename().c_str());
       CHKERRQ(ierr);
       PISMEnd();
     }
@@ -483,9 +506,10 @@ PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
     }
   } // end of if(exists)
 
-  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
+
+
 
 //! Read the valid range information from a file.
 /*! Reads \c valid_min, \c valid_max and \c valid_range attributes; if \c
@@ -955,26 +979,50 @@ bool NCVariable::is_valid(PetscScalar a) const {
   return true;
 }
 
+
+PetscErrorCode NCConfigVariable::read(string filename) {
+  PetscErrorCode ierr;
+  PIO nc(com, rank, "netcdf3");
+
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
+  ierr = this->read(nc); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode NCConfigVariable::write(string filename) {
+  PetscErrorCode ierr;
+  PIO nc(com, rank, "netcdf3");
+
+  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
+
+  ierr = this->write(nc); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
 //! Read boolean flags and double parameters from a NetCDF file.
 /*!
   Erases all the present parameters before reading.
  */
-PetscErrorCode NCConfigVariable::read(string filename) {
+PetscErrorCode NCConfigVariable::read(const PIO &nc) {
 
-  PetscErrorCode ierr = this->read_attributes(filename); CHKERRQ(ierr);
+  PetscErrorCode ierr = this->read_attributes(nc); CHKERRQ(ierr);
 
-  config_filename = filename;
+  config_filename = nc.inq_filename();
 
   return 0;
 }
 
 //! Write a config variable to a file (with all its attributes).
-PetscErrorCode NCConfigVariable::write(string filename) {
+PetscErrorCode NCConfigVariable::write(const PIO &nc) {
   PetscErrorCode ierr;
   bool variable_exists;
-  PIO nc(com, rank, "netcdf3");
-
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append
 
   ierr = nc.inq_var(short_name, variable_exists); CHKERRQ(ierr);
 
@@ -983,8 +1031,6 @@ PetscErrorCode NCConfigVariable::write(string filename) {
   } else {
     ierr = write_attributes(nc, PISM_DOUBLE, false); CHKERRQ(ierr); 
   }
-
-  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1304,13 +1350,11 @@ void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-PetscErrorCode NCTimeseries::read(string filename, bool use_reference_date,
+PetscErrorCode NCTimeseries::read(const PIO &nc, bool use_reference_date,
                                   vector<double> &data) {
 
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
   bool variable_exists;
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   // Find the variable:
   string name_found;
@@ -1322,7 +1366,7 @@ PetscErrorCode NCTimeseries::read(string filename, bool use_reference_date,
     ierr = PetscPrintf(com,
 		      "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
 		       short_name.c_str(),
-		       strings["standard_name"].c_str(), filename.c_str());
+		       strings["standard_name"].c_str(), nc.inq_filename().c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -1334,7 +1378,7 @@ PetscErrorCode NCTimeseries::read(string filename, bool use_reference_date,
     ierr = PetscPrintf(com,
 		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
 		       "            but a time-series variable can only depend on 1 dimension.\n",
-		       short_name.c_str(), filename.c_str(), dims.size()); CHKERRQ(ierr);
+		       short_name.c_str(), nc.inq_filename().c_str(), dims.size()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -1375,18 +1419,14 @@ PetscErrorCode NCTimeseries::read(string filename, bool use_reference_date,
 
   ierr = change_units(data, &input_units, &units); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
-
   return 0;
 }
 
-PetscErrorCode NCTimeseries::get_bounds_name(string filename, string &result) {
+PetscErrorCode NCTimeseries::get_bounds_name(const PIO &nc, string &result) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
   bool exists, found_by_standard_name;
   string name_found;
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var(short_name, strings["standard_name"],
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
   if (exists) {
@@ -1394,7 +1434,6 @@ PetscErrorCode NCTimeseries::get_bounds_name(string filename, string &result) {
   } else {
     result.clear();
   }
-  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1458,14 +1497,11 @@ PetscErrorCode NCTimeseries::define(const PIO &nc, PISM_IO_Type nctype, bool) {
 }
 
 //! \brief Write a time-series \c data to a file.
-PetscErrorCode NCTimeseries::write(string filename, size_t start,
+PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
 				   vector<double> &data, PISM_IO_Type nctype) {
 
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
   bool variable_exists = false;
-
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
 
   ierr = nc.inq_var(short_name, variable_exists); CHKERRQ(ierr);
   if (!variable_exists) {
@@ -1481,19 +1517,19 @@ PetscErrorCode NCTimeseries::write(string filename, size_t start,
 		       static_cast<unsigned int>(start),
 		       static_cast<unsigned int>(data.size()), data); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
-
   // restore internal units:
   ierr = change_units(data, &glaciological_units, &units); CHKERRQ(ierr);
   return 0;
 }
 
 //! \brief Write a single value of a time-series to a file.
-PetscErrorCode NCTimeseries::write(string filename, size_t start,
+PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
 				   double data, PISM_IO_Type nctype) {
   vector<double> tmp(1);
   tmp[0] = data;
-  return write(filename, start, tmp, nctype);
+  PetscErrorCode ierr = write(nc, start, tmp, nctype); CHKERRQ(ierr);
+
+  return 0;
 }
 
 //! Convert \c data.
@@ -1541,16 +1577,13 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, ut
 }
 
 //! \brief Read global attributes from a file.
-PetscErrorCode NCGlobalAttributes::read(string filename) {
+PetscErrorCode NCGlobalAttributes::read(const PIO &nc) {
   PetscErrorCode ierr;
   int nattrs;
-  PIO nc(com, rank, "netcdf3");
 
   strings.clear();
   doubles.clear();
-  config_filename = filename;
-
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  config_filename = nc.inq_filename();
 
   ierr = nc.inq_nattrs("PISM_GLOBAL", nattrs); CHKERRQ(ierr);
 
@@ -1573,21 +1606,14 @@ PetscErrorCode NCGlobalAttributes::read(string filename) {
     }
   } // end of for (int j = 0; j < nattrs; ++j)
 
-  ierr = nc.close(); CHKERRQ(ierr);
-
   return 0;
 }
 
 //! Writes global attributes to a file by calling write_attributes().
-PetscErrorCode NCGlobalAttributes::write(string filename) {
+PetscErrorCode NCGlobalAttributes::write(const PIO &nc) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
-
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append
 
   ierr = write_attributes(nc, PISM_DOUBLE, false); CHKERRQ(ierr);
-
-  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1651,12 +1677,10 @@ void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIIn
   ndims = 2;
 }
 
-PetscErrorCode NCTimeBounds::read(string filename, bool use_reference_date,
+PetscErrorCode NCTimeBounds::read(const PIO &nc, bool use_reference_date,
                                   vector<double> &data) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
   bool variable_exists;
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   // Find the variable:
   ierr = nc.inq_var(short_name, variable_exists); CHKERRQ(ierr);
@@ -1664,7 +1688,7 @@ PetscErrorCode NCTimeBounds::read(string filename, bool use_reference_date,
   if (!variable_exists) {
     ierr = PetscPrintf(com,
 		      "PISM ERROR: Can't find '%s' in '%s'.\n",
-		       short_name.c_str(), filename.c_str());
+		       short_name.c_str(), nc.inq_filename().c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -1676,7 +1700,8 @@ PetscErrorCode NCTimeBounds::read(string filename, bool use_reference_date,
     ierr = PetscPrintf(com,
 		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
 		       "            but a time-bounds variable can only depend on 2 dimension.\n",
-		       short_name.c_str(), filename.c_str(), dims.size()); CHKERRQ(ierr);
+		       short_name.c_str(),
+                       nc.inq_filename().c_str(), dims.size()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -1692,7 +1717,7 @@ PetscErrorCode NCTimeBounds::read(string filename, bool use_reference_date,
                 "PISM ERROR: A time-bounds variable has to have exactly 2 bounds per time record.\n"
                 "            Please check that the dimension corresponding to 'number of vertices' goes\n"
                 "            last in the 'ncdump -h %s' output.\n",
-                filename.c_str());
+                nc.inq_filename().c_str());
     PISMEnd();
   }
 
@@ -1727,7 +1752,7 @@ PetscErrorCode NCTimeBounds::read(string filename, bool use_reference_date,
 
   if (! variable_exists) {
     PetscPrintf(com, "PISM ERROR: Can't find '%s' in %s.\n",
-                dimension_name.c_str(), filename.c_str());
+                dimension_name.c_str(), nc.inq_filename().c_str());
     PISMEnd();
   }
 
@@ -1746,17 +1771,12 @@ PetscErrorCode NCTimeBounds::read(string filename, bool use_reference_date,
 
   ierr = change_units(data, &input_units, &units); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
-
   return 0;
 }
 
-PetscErrorCode NCTimeBounds::write(string filename, size_t s, vector<double> &data, PISM_IO_Type nctype) {
+PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t s, vector<double> &data, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
   bool variable_exists = false;
-
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
 
   ierr = nc.inq_var(short_name, variable_exists); CHKERRQ(ierr);
   if (!variable_exists) {
@@ -1776,19 +1796,19 @@ PetscErrorCode NCTimeBounds::write(string filename, size_t s, vector<double> &da
 
   ierr = nc.put_vara_double(short_name, start, count, &data[0]); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
-
   // restore internal units:
   ierr = change_units(data, &glaciological_units, &units); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode NCTimeBounds::write(string filename, size_t start, double a, double b, PISM_IO_Type nctype) {
+PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t start, double a, double b, PISM_IO_Type nctype) {
   vector<double> tmp(2);
   tmp[0] = a;
   tmp[1] = b;
-  return write(filename, start, tmp, nctype);
+  PetscErrorCode ierr = write(nc, start, tmp, nctype); CHKERRQ(ierr);
+
+  return 0;
 }
 
 PetscErrorCode NCTimeBounds::change_units(vector<double> &data, utUnit *from, utUnit *to) {

@@ -31,17 +31,25 @@ public:
   virtual void init_2d(string name, IceGrid &g);
   virtual void init_3d(string name, IceGrid &g, vector<double> &zlevels);
   virtual void set_levels(const vector<double> &levels);
-  virtual PetscErrorCode read(string filename, unsigned int time, Vec v);
   virtual PetscErrorCode reset();
-  virtual PetscErrorCode write(string filename, PISM_IO_Type nctype,
+  virtual PetscErrorCode read(const PIO &file, unsigned int time, Vec v);
+  virtual PetscErrorCode write(const PIO &file, PISM_IO_Type nctype,
 			       bool write_in_glaciological_units, Vec v);
-  virtual PetscErrorCode regrid(string filename, LocalInterpCtx *lic,
+  virtual PetscErrorCode regrid(const PIO &file, LocalInterpCtx *lic,
 				bool critical, bool set_default_value,
 				PetscScalar default_value, Vec v);
   virtual PetscErrorCode to_glaciological_units(Vec v);
 
   PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype,
                         bool write_in_glaciological_units);
+
+  // The following three are deprecated.
+  // virtual PetscErrorCode read(string filename, unsigned int time, Vec v);
+  // virtual PetscErrorCode write(string filename, PISM_IO_Type nctype,
+  //       		       bool write_in_glaciological_units, Vec v);
+  // virtual PetscErrorCode regrid(string filename, LocalInterpCtx *lic,
+  //       			bool critical, bool set_default_value,
+  //       			PetscScalar default_value, Vec v);
 
   mutable map<string,string> dimensions,
     x_attrs, y_attrs, z_attrs;
