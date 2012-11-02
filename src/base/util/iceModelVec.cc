@@ -650,6 +650,19 @@ PetscErrorCode IceModelVec::read_attributes(const PIO &nc, int N) {
   return 0;
 }
 
+PetscErrorCode IceModelVec::read_attributes(string filename, int N) {
+  PIO nc(grid->com, grid->rank, "netcdf3");
+  PetscErrorCode ierr;
+
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
+  ierr = this->read_attributes(nc, N); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
 
 //! \brief Returns a copy of a NCSpatialVariable object containing metadata for
 //! the compoment N.

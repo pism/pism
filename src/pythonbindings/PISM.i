@@ -321,6 +321,7 @@ namespace std {
 %rename(regrid_with_critical) IceModelVec2::regrid(string, bool);
 %rename(regrid_with_critical_and_start) IceModelVec2::regrid(string, bool, int);
 %rename(read_with_pio) IceModelVec2::read(const PIO&, unsigned int const);
+%rename(read_attributes_with_pio) IceModelVec::read_attributes(const PIO&, int);
 %extend IceModelVec2
 {
   %pythoncode {
