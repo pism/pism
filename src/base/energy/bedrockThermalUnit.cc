@@ -244,11 +244,11 @@ PetscErrorCode PISMBedThermalUnit::define_variables(
   return 0;
 }
 
-PetscErrorCode PISMBedThermalUnit::write_variables(set<string> vars, string filename) {
+PetscErrorCode PISMBedThermalUnit::write_variables(set<string> vars, const PIO &nc) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.string_attr("short_name"))) {
-      ierr = temp.write(filename.c_str()); CHKERRQ(ierr); 
+      ierr = temp.write(nc); CHKERRQ(ierr); 
     }
   }
   return 0;

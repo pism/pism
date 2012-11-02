@@ -36,7 +36,7 @@ public:
 					  PetscReal *ts, PetscReal *values);
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
   IceModelVec2S *usurf, *lat;

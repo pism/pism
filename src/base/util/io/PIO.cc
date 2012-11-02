@@ -576,7 +576,8 @@ PetscErrorCode PIO::inq_grid_info(string name, grid_info &g) const {
 PetscErrorCode PIO::def_dim(string name, long int length, map<string,string> attrs) const {
   PetscErrorCode ierr;
 
-  ierr = nc->redef(); CHKERRQ(ierr);
+  ierr = nc->redef();
+  CHKERRQ(ierr);
 
   ierr = nc->def_dim(name, length); CHKERRQ(ierr);
 
@@ -746,7 +747,9 @@ PetscErrorCode PIO::put_att_text(string var_name, string att_name, string value)
 
   ierr = nc->redef(); CHKERRQ(ierr);
 
-  ierr = nc->put_att_text(var_name, att_name, value); CHKERRQ(ierr);
+  string tmp = value + "\0";    // ensure that the string is null-terminated
+
+  ierr = nc->put_att_text(var_name, att_name, tmp); CHKERRQ(ierr);
 
   return 0;
 }

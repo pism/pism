@@ -427,7 +427,7 @@ PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO 
 
 }
 
-PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string filename) {
+PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -437,31 +437,31 @@ PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string file
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
     vars.erase("ice_surface_temp");
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = climatic_mass_balance.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = climatic_mass_balance.write(nc); CHKERRQ(ierr);
     vars.erase("climatic_mass_balance");
   }
 
   if (set_contains(vars, "saccum")) {
-    ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = accumulation_rate.write(nc); CHKERRQ(ierr);
     vars.erase("saccum");
   }
 
   if (set_contains(vars, "smelt")) {
-    ierr = melt_rate.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = melt_rate.write(nc); CHKERRQ(ierr);
     vars.erase("smelt");
   }
 
   if (set_contains(vars, "srunoff")) {
-    ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = runoff_rate.write(nc); CHKERRQ(ierr);
     vars.erase("srunoff");
   }
 
-  ierr = PISMSurfaceModel::write_variables(vars, filename); CHKERRQ(ierr);
+  ierr = PISMSurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }

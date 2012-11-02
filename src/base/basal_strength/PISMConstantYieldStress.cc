@@ -73,9 +73,9 @@ PetscErrorCode PISMConstantYieldStress::define_variables(set<string> vars, const
 }
 
 
-PetscErrorCode PISMConstantYieldStress::write_variables(set<string> vars, string filename) {
+PetscErrorCode PISMConstantYieldStress::write_variables(set<string> vars, const PIO &nc) {
   if (set_contains(vars, "tauc")) {
-    PetscErrorCode ierr = tauc.write(filename); CHKERRQ(ierr);
+    PetscErrorCode ierr = tauc.write(nc); CHKERRQ(ierr);
   }
   return 0;
 }

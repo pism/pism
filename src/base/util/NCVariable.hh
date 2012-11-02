@@ -139,6 +139,8 @@ protected:
 */
 class NCGlobalAttributes : public NCConfigVariable {
 public:
+  using NCConfigVariable::read;
+  using NCConfigVariable::write;
   virtual PetscErrorCode read(const PIO &nc);
   virtual PetscErrorCode write(const PIO &nc);
 

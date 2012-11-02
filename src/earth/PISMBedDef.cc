@@ -67,11 +67,11 @@ PetscErrorCode PISMBedDef::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode PISMBedDef::write_variables(set<string> vars, string filename) {
+PetscErrorCode PISMBedDef::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "topg_initial")) {
-    ierr = topg_initial.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = topg_initial.write(nc); CHKERRQ(ierr);
   }
 
   return 0;

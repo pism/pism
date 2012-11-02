@@ -43,14 +43,6 @@ public:
   PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype,
                         bool write_in_glaciological_units);
 
-  // The following three are deprecated.
-  // virtual PetscErrorCode read(string filename, unsigned int time, Vec v);
-  // virtual PetscErrorCode write(string filename, PISM_IO_Type nctype,
-  //       		       bool write_in_glaciological_units, Vec v);
-  // virtual PetscErrorCode regrid(string filename, LocalInterpCtx *lic,
-  //       			bool critical, bool set_default_value,
-  //       			PetscScalar default_value, Vec v);
-
   mutable map<string,string> dimensions,
     x_attrs, y_attrs, z_attrs;
   bool time_independent;        //!< a variable in a NetCDF file will not

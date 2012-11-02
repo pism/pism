@@ -48,7 +48,7 @@ public:
   virtual void add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &/*result*/) {}
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/, PISM_IO_Type /*nctype*/)
   { return 0; }
-  virtual PetscErrorCode write_variables(set<string>, string)
+  virtual PetscErrorCode write_variables(set<string>, const PIO &)
   { return 0; }
 
   // Does not have an atmosphere model.

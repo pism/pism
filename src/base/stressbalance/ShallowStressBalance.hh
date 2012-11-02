@@ -141,7 +141,7 @@ public:
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 };
 

@@ -231,52 +231,6 @@ void NCSpatialVariable::set_levels(const vector<double> &levels) {
   nlevels = (int)zlevels.size();
 }
 
-/*
-PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v) {
-  PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, "netcdf3");
-
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-
-  ierr = this->read(nc, time, v); CHKERRQ(ierr);
-
-  ierr = nc.close(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode NCSpatialVariable::write(string filename, PISM_IO_Type nctype,
-					bool write_in_glaciological_units, Vec v) {
-  PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
-
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
-
-  ierr = this->write(nc, nctype, write_in_glaciological_units, v); CHKERRQ(ierr);
-
-  ierr = nc.close(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
-					 bool critical, bool set_default_value,
-					 PetscScalar default_value,
-					 Vec v) {
-  PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, "netcdf3");
-
-  // Open the file
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-
-  ierr = this->regrid(nc, lic, critical, set_default_value, default_value, v); CHKERRQ(ierr);
-
-  ierr = nc.close(); CHKERRQ(ierr);
-
-  return 0;
-}
-*/
-
 //! Read a variable from a file into a \b global Vec v.
 /*! This also converts the data from input units to internal units if needed.
  */

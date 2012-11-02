@@ -297,9 +297,9 @@ PetscErrorCode PISMMohrCoulombYieldStress::define_variables(set<string> vars, co
 }
 
 
-PetscErrorCode PISMMohrCoulombYieldStress::write_variables(set<string> vars, string filename) {
+PetscErrorCode PISMMohrCoulombYieldStress::write_variables(set<string> vars, const PIO &nc) {
   if (set_contains(vars, "tillphi")) {
-    PetscErrorCode ierr = till_phi.write(filename); CHKERRQ(ierr);
+    PetscErrorCode ierr = till_phi.write(nc); CHKERRQ(ierr);
   }
   return 0;
 }

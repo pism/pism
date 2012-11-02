@@ -33,9 +33,9 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/);
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
   PetscErrorCode compute_uplift(PetscScalar dt_beddef);

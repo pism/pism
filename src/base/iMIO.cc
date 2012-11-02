@@ -132,16 +132,16 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
   // Write metadata *before* variables:
   ierr = write_metadata(nc); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  ierr = write_model_state(nc);  CHKERRQ(ierr);
 
-  ierr = write_model_state(filename);  CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
-PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
+PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
 					 PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
@@ -150,28 +150,8 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
 
   // Define all the variables:
   {
-    string output_format = grid.config.get_string("output_format");
-
-    // This is a kludge: for some reason defining variables using PnetCDF takes
-    // a very, very long time. It uses the NetCDF-3 file format though, so we
-    // *override* this setting here and a) define variables using NetCDF-3 and
-    // then b) write data using PnetCDF.
-    //
-    // I suspect that dimension and variable lookup is to blame: PISM does not
-    // store dimension/variable IDs and looks them up every time they are
-    // needed. A simple test executable (pism_netcdf_test) does not have this
-    // issue.
-    //
-    // Note: variable metadata has nothing to do with this -- increasing header
-    // padding does not help.
-    // if (output_format == "pnetcdf")
-    //   output_format = "netcdf3";
-
-    PIO nc(grid.com, grid.rank, output_format);
-    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
-
-    set<string>::iterator i = vars.begin();
-    while (i != vars.end()) {
+    set<string>::iterator i;
+    for (i = vars.begin(); i != vars.end(); ++i) {
       v = variables.get(*i);
 
       if (v != NULL) {
@@ -189,8 +169,6 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
           ierr = diag->define(nc); CHKERRQ(ierr);
         }
       }
-
-      ++i;
     }
 
     if (beddef != NULL) {
@@ -216,20 +194,16 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
     } else {
       SETERRQ(grid.com, 1,"PISM ERROR: surface == NULL");
     }
+
     if (ocean != NULL) {
       ierr = ocean->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
       SETERRQ(grid.com, 1,"PISM ERROR: ocean == NULL");
     }
 
-    ierr = nc.close(); CHKERRQ(ierr);
   }
-
   grid.profiler->end(event_output_define);
 
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
-
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   // Write all the IceModel variables:
   set<string>::iterator i;
   for (i = vars.begin(); i != vars.end();) {
@@ -244,42 +218,40 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
                                 // found (and saved)
     }
   }
-  ierr = nc.close(); CHKERRQ(ierr);
 
   // Write bed-deformation-related variables:
   if (beddef != NULL) {
-    ierr = beddef->write_variables(vars, filename); CHKERRQ(ierr);
+    ierr = beddef->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   // Write PISMBedThermalUnit variables:
   if (btu != NULL) {
-    ierr = btu->write_variables(vars, filename); CHKERRQ(ierr);
+    ierr = btu->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   if (basal_yield_stress != NULL) {
-    ierr = basal_yield_stress->write_variables(vars, filename); CHKERRQ(ierr);
+    ierr = basal_yield_stress->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   // Write stress balance-related variables:
   if (stress_balance != NULL) {
-    ierr = stress_balance->write_variables(vars, filename); CHKERRQ(ierr);
+    ierr = stress_balance->write_variables(vars, nc); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 1,"PISM ERROR: stress_balance == NULL");
   }
 
   // Ask boundary models to write their variables:
   if (surface != NULL) {
-    ierr = surface->write_variables(vars, filename); CHKERRQ(ierr);
+    ierr = surface->write_variables(vars, nc); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 1,"PISM ERROR: surface == NULL");
   }
   if (ocean != NULL) {
-    ierr = ocean->write_variables(vars, filename); CHKERRQ(ierr);
+    ierr = ocean->write_variables(vars, nc); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 1,"PISM ERROR: ocean == NULL");
   }
 
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   // All the remaining names in vars must be of diagnostic quantities.
   for (i = vars.begin(); i != vars.end();) {
     PISMDiagnostic *diag = diagnostics[*i];
@@ -300,8 +272,6 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
     }
   }
 
-  ierr = nc.close(); CHKERRQ(ierr);
-
   // FIXME: we need a way of figuring out if a sub-model did or did not write
   // something.
 
@@ -319,7 +289,7 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
 }
 
 
-PetscErrorCode IceModel::write_model_state(string filename) {
+PetscErrorCode IceModel::write_model_state(const PIO &nc) {
   PetscErrorCode ierr;
   string o_size = get_output_size("-o_size");
 
@@ -352,7 +322,7 @@ PetscErrorCode IceModel::write_model_state(string filename) {
     output_vars.insert("cts");
   }
 
-  ierr = write_variables(filename, output_vars, PISM_DOUBLE);
+  ierr = write_variables(nc, output_vars, PISM_DOUBLE); CHKERRQ(ierr);
 
   return 0;
 }
@@ -730,7 +700,6 @@ PetscErrorCode IceModel::init_snapshots() {
              grid.time->date(saving_after).c_str());
 
     if (!snapshots_file_is_ready) {
-
       // Prepare the snapshots file:
       ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
       ierr = nc.def_time(config.get_string("time_dimension_name"),
@@ -739,17 +708,17 @@ PetscErrorCode IceModel::init_snapshots() {
 
       ierr = write_metadata(nc); CHKERRQ(ierr);
 
-      ierr = nc.close(); CHKERRQ(ierr);
-
       snapshots_file_is_ready = true;
+    } else {
+      ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append==true
     }
 
-    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append==true
     ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
     ierr = nc.append_history(tmp); CHKERRQ(ierr); // append the history
-    ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = write_variables(filename, snapshot_vars, PISM_DOUBLE);
+    ierr = write_variables(nc, snapshot_vars, PISM_DOUBLE);
+
+    ierr = nc.close(); CHKERRQ(ierr);
 
     grid.profiler->end(event_snapshots);
 
@@ -828,9 +797,9 @@ PetscErrorCode IceModel::write_backup() {
   // Write metadata *before* variables:
   ierr = write_metadata(nc); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  ierr = write_variables(nc, backup_vars, PISM_DOUBLE); CHKERRQ(ierr);
 
-  ierr = write_variables(backup_filename, backup_vars, PISM_DOUBLE); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
   // Also flush time-series:
   ierr = flush_timeseries(); CHKERRQ(ierr);

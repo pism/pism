@@ -607,11 +607,11 @@ PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, PISM_IO_Ty
 }
 
 
-PetscErrorCode SSA::write_variables(set<string> vars, string filename) {
+PetscErrorCode SSA::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {
-    ierr = velocity.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = velocity.write(nc); CHKERRQ(ierr);
   }
 
   return 0;

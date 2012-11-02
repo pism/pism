@@ -412,11 +412,9 @@ PetscErrorCode IceModel::write_extras() {
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 
   if (!extra_file_is_ready) {
-
     // default behavior is to move the file aside if it exists already; option allows appending
     bool append;
     ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
-
     // Prepare the file:
     ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
@@ -427,15 +425,13 @@ PetscErrorCode IceModel::write_extras() {
 
     ierr = write_metadata(nc); CHKERRQ(ierr); 
 
-    ierr = nc.close(); CHKERRQ(ierr);
-
     extra_file_is_ready = true;
-
+  } else {
+    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   }
 
   unsigned int time_length = 0;
 
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"),
                         grid.time->current()); CHKERRQ(ierr);
   ierr = nc.inq_dimlen(config.get_string("time_dimension_name"), time_length); CHKERRQ(ierr);
@@ -446,9 +442,9 @@ PetscErrorCode IceModel::write_extras() {
   ierr = timestamp.write(nc, static_cast<size_t>(time_length - 1),
                          wall_clock_hours); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  ierr = write_variables(nc, extra_vars, PISM_FLOAT);  CHKERRQ(ierr);
 
-  ierr = write_variables(filename, extra_vars, PISM_FLOAT);  CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
   // flush time-series buffers
   ierr = flush_timeseries(); CHKERRQ(ierr);
