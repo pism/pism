@@ -121,11 +121,11 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping) {
 
 PetscErrorCode IceModel::dumpToFile(string filename) {
   PetscErrorCode ierr;
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid.com, grid.rank, config.get_string("output_format"));
 
   // Prepare the file
   string time_name = config.get_string("time_dimension_name");
-  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
   ierr = nc.def_time(time_name, config.get_string("calendar"), grid.time->CF_units()); CHKERRQ(ierr);
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
 
@@ -164,8 +164,8 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
     //
     // Note: variable metadata has nothing to do with this -- increasing header
     // padding does not help.
-    if (output_format == "pnetcdf")
-      output_format = "netcdf3";
+    // if (output_format == "pnetcdf")
+    //   output_format = "netcdf3";
 
     PIO nc(grid.com, grid.rank, output_format);
     ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
@@ -227,20 +227,24 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
 
   grid.profiler->end(event_output_define);
 
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+
+  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   // Write all the IceModel variables:
-  set<string>::iterator i = vars.begin();
-  while (i != vars.end()) {
+  set<string>::iterator i;
+  for (i = vars.begin(); i != vars.end();) {
     v = variables.get(*i);
 
     if (v == NULL) {
       ++i;
     } else {
-      ierr = v->write(filename); CHKERRQ(ierr); // use the default data type
+      ierr = v->write(nc); CHKERRQ(ierr); // use the default data type
 
       vars.erase(i++);		// note that it only erases variables that were
                                 // found (and saved)
     }
   }
+  ierr = nc.close(); CHKERRQ(ierr);
 
   // Write bed-deformation-related variables:
   if (beddef != NULL) {
@@ -275,9 +279,9 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
     SETERRQ(grid.com, 1,"PISM ERROR: ocean == NULL");
   }
 
+  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   // All the remaining names in vars must be of diagnostic quantities.
-  i = vars.begin();
-  while (i != vars.end()) {
+  for (i = vars.begin(); i != vars.end();) {
     PISMDiagnostic *diag = diagnostics[*i];
 
     if (diag == NULL)
@@ -288,13 +292,15 @@ PetscErrorCode IceModel::write_variables(string filename, set<string> vars,
       ierr = diag->compute(v); CHKERRQ(ierr);
 
       v->write_in_glaciological_units = true;
-      ierr = v->write(filename, PISM_FLOAT); CHKERRQ(ierr); // diagnostic quantities are always written in float
+      ierr = v->write(nc, PISM_FLOAT); CHKERRQ(ierr); // diagnostic quantities are always written in float
 
       delete v;
 
       vars.erase(i++);
     }
   }
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   // FIXME: we need a way of figuring out if a sub-model did or did not write
   // something.
