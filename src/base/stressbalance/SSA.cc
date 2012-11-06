@@ -477,9 +477,11 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             // x-derivative
             {
               double west = 1, east = 1;
-              if ((m.grounded(i,j) && m.ocean(i+1,j)) || (m.ocean(i,j) && m.grounded(i+1,j)))
+              if ((m.grounded(i,j) && m.ocean(i+1,j)) || (m.ocean(i,j) && m.grounded(i+1,j)) ||
+                  (m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j)) )
                 east = 0;
-              if ((m.grounded(i,j) && m.ocean(i-1,j)) || (m.ocean(i,j) && m.grounded(i-1,j)))
+              if ((m.grounded(i,j) && m.ocean(i-1,j)) || (m.ocean(i,j) && m.grounded(i-1,j)) ||
+                  (m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j)) )
                 west = 0;
 
               if (east + west > 0)
@@ -492,9 +494,11 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             // y-derivative
             {
               double south = 1, north = 1;
-              if ((m.grounded(i,j) && m.ocean(i,j+1)) || (m.ocean(i,j) && m.grounded(i,j+1)))
+              if ((m.grounded(i,j) && m.ocean(i,j+1)) || (m.ocean(i,j) && m.grounded(i,j+1)) ||
+                  (m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1)))
                 north = 0;
-              if ((m.grounded(i,j) && m.ocean(i,j-1)) || (m.ocean(i,j) && m.grounded(i,j-1)))
+              if ((m.grounded(i,j) && m.ocean(i,j-1)) || (m.ocean(i,j) && m.grounded(i,j-1)) ||
+                  (m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1)))
                 south = 0;
 
               if (north + south > 0)

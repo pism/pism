@@ -238,10 +238,10 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
           const double ice_pressure = ice_rho * standard_gravity * H_ij,
                        H_ij2        = H_ij*H_ij;
-          double ocean_pressure,
-                 h_ij = 0.0,
-                 tdx  = taud(i,j).u,
-                 tdy  = taud(i,j).v;
+                double ocean_pressure;
+                 //h_ij = 0.0,
+                 //tdx  = taud(i,j).u,
+                 //tdy  = taud(i,j).v;
 
           if ((*bed)(i,j) < (sea_level - (ice_rho / ocean_rho) * H_ij)) {
             //calving front boundary condition for floating shelf
@@ -249,14 +249,14 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             // this is not really the ocean_pressure, but the difference between
             // ocean_pressure and isotrop.normal stresses (=pressure) from within
             // the ice
-	    h_ij = (1.0 - ice_rho / ocean_rho) * H_ij;
-						
-	    // what is the force balance of an iceshelf facing a bedrock wall?! 
-	    // this is not relevant as long as we ask only for ice_free_ocean neighbors
-	    //if ((aPP==0 && (*bed)(i+1,j)>h_ij) || (aMM==0 && (*bed)(i-1,j)>h_ij) ||
-	    //    (bPP==0 && (*bed)(i,j+1)>h_ij) || (bMM==0 && (*bed)(i,j-1)>h_ij)){
-	    //  ocean_pressure = 0.0; 
-	    //}
+            //h_ij = (1.0 - ice_rho / ocean_rho) * H_ij;
+
+           // what is the force balance of an iceshelf facing a bedrock wall?! 
+           // this is not relevant as long as we ask only for ice_free_ocean neighbors
+           //if ((aPP==0 && (*bed)(i+1,j)>h_ij) || (aMM==0 && (*bed)(i-1,j)>h_ij) ||
+           //    (bPP==0 && (*bed)(i,j+1)>h_ij) || (bMM==0 && (*bed)(i,j-1)>h_ij)){
+           //  ocean_pressure = 0.0; 
+           //}
 
           } else {
             if( (*bed)(i,j) >= sea_level) {
@@ -265,30 +265,30 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
               ocean_pressure = 0.5 * ice_rho * standard_gravity * H_ij2;
               // this is not 'zero' because the isotrop.normal stresses
               // (=pressure) from within the ice figures on RHS
-	      h_ij = H_ij;
+              //h_ij = H_ij;
             } else {
               // boundary condition for marine terminating glacier
               ocean_pressure = 0.5 * ice_rho * standard_gravity *
                 (H_ij2 - (ocean_rho / ice_rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
-	      h_ij = H_ij + (*bed)(i,j) - sea_level;
+              //h_ij = H_ij + (*bed)(i,j) - sea_level;
             }
           }
 
           //here we take the direct gradient at the boundary (not centered)
 
-          if (aPP == 0 && aMM == 1) tdx = ice_pressure*h_ij / dx;
-          else if (aMM == 0 && aPP == 1) tdx = -ice_pressure*h_ij / dx;
-          else if (aPP == 0 && aMM == 0) tdx = 0; //in case of some kind of ice nose, or ice bridge
+          //if (aPP == 0 && aMM == 1) tdx = ice_pressure*h_ij / dx;
+          //else if (aMM == 0 && aPP == 1) tdx = -ice_pressure*h_ij / dx;
+          //else if (aPP == 0 && aMM == 0) tdx = 0; //in case of some kind of ice nose, or ice bridge
 
-          if (bPP == 0 && bMM == 1) tdy = ice_pressure*h_ij / dy;
-          else if (bMM == 0 && bPP == 1) tdy = -ice_pressure*h_ij / dy;
-          else if (bPP == 0 && bMM == 0) tdy = 0;
+          //if (bPP == 0 && bMM == 1) tdy = ice_pressure*h_ij / dy;
+          //else if (bMM == 0 && bPP == 1) tdy = -ice_pressure*h_ij / dy;
+          //else if (bPP == 0 && bMM == 0) tdy = 0;
 
           // Note that if the current cell is "marginal" but not a CFBC
           // location, the following two lines are equaivalent to the "usual
           // case" below.
-          rhs_uv[i][j].u = tdx - (aMM - aPP)*ocean_pressure / dx;
-          rhs_uv[i][j].v = tdy - (bMM - bPP)*ocean_pressure / dy;
+          rhs_uv[i][j].u = taud(i,j).u + (aMM - aPP)*ocean_pressure / dx;
+          rhs_uv[i][j].v = taud(i,j).v + (bMM - bPP)*ocean_pressure / dy;
 
           continue;
         } // end of "if (is_marginal(i, j))"
