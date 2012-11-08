@@ -24,7 +24,7 @@ target_link_libraries (pismstressbalance pismutil pismflowlaws pismrevision)
 install (TARGETS pismstressbalance DESTINATION ${Pism_LIB_DIR})
 
 if (Pism_BUILD_EXTRA_EXECS)
-  add_executable (siafd_test siafd_test.cc ../../verif/tests/exactTestsFG.c ../basal_strength/basal_resistance.cc)
+  add_executable (siafd_test siafd_test.cc ../../verif/tests/exactTestsFG.c ../basalstrength/basal_resistance.cc)
   target_link_libraries (siafd_test pismstressbalance)
 
   # add_executable (blatter_test blatter_test.cc ../basal_strength/basal_resistance.cc)
@@ -37,3 +37,4 @@ if (Pism_BUILD_EXTRA_EXECS)
 endif ()
 
 add_subdirectory (ssa_tests)
+

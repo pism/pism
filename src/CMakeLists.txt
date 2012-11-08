@@ -5,7 +5,7 @@ include_directories (
   base/util/io
   base/energy
   base/rheology
-  base/basal_strength
+  base/basalstrength
   earth
   coupler
   coupler/atmosphere
@@ -123,9 +123,9 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc
-  base/basal_strength/PISMMohrCoulombYieldStress.cc
-  base/basal_strength/PISMConstantYieldStress.cc
-  base/basal_strength/basal_resistance.cc
+  base/basalstrength/PISMMohrCoulombYieldStress.cc
+  base/basalstrength/PISMConstantYieldStress.cc
+  base/basalstrength/basal_resistance.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 
@@ -281,3 +281,4 @@ add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (regional)
 add_subdirectory (pythonbindings)
+
