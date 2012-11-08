@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler
+// Copyright (C) 2011, 2012 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -49,8 +49,9 @@ PetscErrorCode IceModel::diffuse_bwat() {
   if (oneM4R <= 0.0) {
     SETERRQ(grid.com, 1,
        "PISM ERROR: diffuse_bwat() requires 1 - 2Rx - 2Ry <= 0 and an explicit step;\n"
-       "  current timestep means this method is unstable; believed so rare that\n"
-       "  timestep restriction is not part of the adaptive scheme ... ENDING!\n");
+       "  current timestep would cause this method to be unstable; this event is believed\n"
+       "  to be so rare that the timestep restriction is not part of the adaptive scheme\n"
+       "ENDING!\n\n");
   }
 
   // communicate ghosted values so neighbors are valid;
