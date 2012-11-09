@@ -72,12 +72,14 @@ for m = 1:M
     end
   end
   % update a2
-  a2new(1) = 0.0;  % left b.c.  a(0,t) = 0
+  % left b.c.  a(0,t) = 0 so q(0,t) = 0
+  % q(x=0) = 0 but there *is* a dx/2 cell:
+  a2new(1) = a2(1) - 2 * nu * (q(1) - 0) + dt;
   for j = 2:N
     a2new(j) = a2(j) - nu * (q(j) - q(j-1)) + dt;
   end
-  %a2new(N+1) = a2(N+1) + 2 * nu * (dx + q(N));  % set by criterion that a2sum is conserved
-  a2new(N+1) = a2new(N); % punt
+  % need q(x=L); there *is* a dx/2 cell:
+  a2new(N+1) = a2(N+1) - 2 * nu * (vv(x(N+1),L) * a2(N+1) - q(N)) + dt;
   a2 = a2new;
   a2sum(m+1) = (dx/2) * [1 repmat([2],1,N-1) 1] * a2';  % trap rule (finite vol)
 end

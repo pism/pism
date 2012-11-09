@@ -1,11 +1,13 @@
 This is a place to put under-development "tracer module" stuff.
 
-A "tracer module" is going to be (presumably) a PISM class which uses
-the velocity field produced by the rest of PISM to advect around tracers
-like
-  * ice age
-  * fracture density (compare Albrecht & Levermann, 2011 (to appear))
-A key idea is that these tracers do not diffuse.
+A "tracer module" is going to be a PISM class which uses
+the velocity field produced by the stress balance parts of PISM.
+That velocity field advects tracers like
+  * 3D ice age (relevant to validation-by-isochrone and also grain size)
+  * 3D isotopic ratios (see S. Jamieson email 6 Nov. 2012)
+  * 2D fracture density (compare Albrecht & Levermann, 2012)
+
+A key idea is that these tracers *do not* diffuse.
 
 This PISM class will presumably take advantage of the fact that the
 ice velocity field in 3D is incompressible, namely
@@ -19,10 +21,12 @@ of the fact that we can imagine
   q = (u,v,w) A
 is a "conserved flux", up to changes from the r.h.s.
 
-But note that a related class might also address the 3D enthalpy problem
-(in which the there is vertical conduction but there is pure advection
-in horizontal directions.  And a related class might address the 2D
-(map-plane) pure advection problem actually addressed by Albrecht &
-Levermann, 2011 (to appear), in which the map-plane 2D velocity field
-is not incompressible (i.e. div (bar u,bar v) is not zero generally).
+A closely-related class might also address the 3D enthalpy problem
+in which the there is vertical conduction and advection but only advection
+in horizontal directions.
+
+A derived class might be appropriate to a 2D (map-plane) advection problem
+like that in Albrecht & Levermann (2012).  Here the map-plane 2D velocity field,
+i.e. the vertical average of the 3D velocity field, is not incompressible;
+generally div (bar u,bar v) is not zero.
 
