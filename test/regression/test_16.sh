@@ -22,11 +22,11 @@ $PISM_PATH/pismv -Mx 41 -My 41 $OPTS  >> test_16-L-out.txt
 diff test_16-L-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.029956  143.583244    3.835807    0.002941
+               0.030776  143.588296    3.831056    0.002931
 NUM ERRORS DONE
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.080578  154.548155    3.830053    0.002503
+               0.080931  154.556842    3.827645    0.002495
 NUM ERRORS DONE
 END-OF-OUTPUT
 

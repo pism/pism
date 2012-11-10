@@ -160,29 +160,13 @@ int PISMNC4File::inq_unlimdim(string &result) const {
 // var
 int PISMNC4File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
   vector<int> dimids;
-  int stat, varid, dimid_unlimited;
-  vector<size_t> chunk_sizes;
-  bool time_dependent = false;
-
-  // Find the unlimited dimension (will set "unlimited" to -1 if it does not
-  // exist). This assumes that a PISM output file can have at most one
-  // unlimited dimension (time).
-  stat = nc_inq_unlimdim(ncid, &dimid_unlimited); check(stat);
+  int stat, varid;
 
   vector<string>::iterator j;
   for (j = dims.begin(); j != dims.end(); ++j) {
     int dimid = -1;
     stat = nc_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
     dimids.push_back(dimid);
-
-    if (dimid == dimid_unlimited) {
-      chunk_sizes.push_back(1);
-      time_dependent = true;
-    } else {
-      size_t tmp;
-      stat = nc_inq_dimlen(ncid, dimid, &tmp); check(stat);
-      chunk_sizes.push_back(tmp);
-    }
   }
 
   stat = nc_def_var(ncid, name.c_str(), pism_type_to_nc_type(nctype),
@@ -198,12 +182,6 @@ int PISMNC4File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
     fprintf(stderr, "\n");
   }
 #endif
-
-  if (time_dependent) {
-    stat = nc_def_var_chunking(ncid, varid, NC_CHUNKED, &chunk_sizes[0]); check(stat);
-  } else {
-    stat = nc_def_var_chunking(ncid, varid, NC_CONTIGUOUS, NULL); check(stat);
-  }
 
   return stat;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -254,12 +254,6 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
 
   const string method = config.get_string("surface_gradient_method");
 
-  if ((method != "eta") && (method != "mahaffy") && (method != "haseloff")) {
-    verbPrintf(1, grid.com,
-      "PISM ERROR: value of surface_gradient_method, option -gradient, not valid ... ending\n");
-    PISMEnd();
-  }
-
   if (method == "eta") {
 
     ierr = surface_gradient_eta(h_x, h_y); CHKERRQ(ierr);
@@ -273,7 +267,10 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
     ierr = surface_gradient_mahaffy(h_x, h_y); CHKERRQ(ierr);
 
   } else {
-    SETERRQ(grid.com, 1, "can't happen");
+    verbPrintf(1, grid.com,
+               "PISM ERROR: value of surface_gradient_method, option -gradient %s, not valid ... ending\n",
+               method.c_str());
+    PISMEnd();
   }
 
   return 0;

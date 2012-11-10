@@ -451,7 +451,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             // Special case for verification tests.
             h_x = surface->diff_x_p(i,j);
             h_y = surface->diff_y_p(i,j);
-          } else {
+          } else {              // general case
 
             // To compute the x-derivative we use
             // * away from the grounding line -- 2nd order centered difference
@@ -467,19 +467,13 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             // difference is not used and 1 if it is.
             //
             // The y derivative is handled the same way.
-            //
-            // FIXME: we need to fix the way we compute the driving stress at a
-            // terminus that lies below the sea level. The surface elevation
-            // (variable usurf, "surface" here) is set to max(sea_level, topg)
-            // in ice-free areas, so the surface slope a terminus like this one
-            // "sees" is lower than it should be.
 
             // x-derivative
             {
               double west = 1, east = 1;
-              if ((m.grounded(i,j) && m.ocean(i+1,j)) || (m.ocean(i,j) && m.grounded(i+1,j)))
+              if ((m.grounded(i,j) && m.floating_ice(i+1,j)) || (m.floating_ice(i,j) && m.grounded(i+1,j)))
                 east = 0;
-              if ((m.grounded(i,j) && m.ocean(i-1,j)) || (m.ocean(i,j) && m.grounded(i-1,j)))
+              if ((m.grounded(i,j) && m.floating_ice(i-1,j)) || (m.floating_ice(i,j) && m.grounded(i-1,j)))
                 west = 0;
 
               if (east + west > 0)
@@ -492,9 +486,9 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             // y-derivative
             {
               double south = 1, north = 1;
-              if ((m.grounded(i,j) && m.ocean(i,j+1)) || (m.ocean(i,j) && m.grounded(i,j+1)))
+              if ((m.grounded(i,j) && m.floating_ice(i,j+1)) || (m.floating_ice(i,j) && m.grounded(i,j+1)))
                 north = 0;
-              if ((m.grounded(i,j) && m.ocean(i,j-1)) || (m.ocean(i,j) && m.grounded(i,j-1)))
+              if ((m.grounded(i,j) && m.floating_ice(i,j-1)) || (m.floating_ice(i,j) && m.grounded(i,j-1)))
                 south = 0;
 
               if (north + south > 0)
@@ -504,40 +498,15 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
                 h_y = 0.0;
             }
 
-          }
+          } // end of "general case"
 
-	  // for floating shear margin we calculate inward scheme along ice free bedrock
-	  bool ShearMarginE = (thk(i+1,j)<1.0 && (*bed)(i+1,j)>0.0),
-	       ShearMarginW = (thk(i-1,j)<1.0 && (*bed)(i-1,j)>0.0),
-	       ShearMarginN = (thk(i,j+1)<1.0 && (*bed)(i,j+1)>0.0),
-	       ShearMarginS = (thk(i,j-1)<1.0 && (*bed)(i,j-1)>0.0);
-	
-	  bool shearMargin = (ShearMarginE || ShearMarginW || ShearMarginN || ShearMarginS);
-	
-	
-	  if (shearMargin) {	
-		
-	    if (ShearMarginE && !ShearMarginW)
-	      h_x = ((*surface)(i,j) - (*surface)(i-1,j)) / grid.dx;
-	    else if (ShearMarginW && !ShearMarginE)
-	      h_x = ((*surface)(i+1,j) - (*surface)(i,j)) / grid.dx;
-	    else if (ShearMarginW && ShearMarginE)
-	      h_x = 0.0;
-		
-	    if (ShearMarginN && !ShearMarginS)
-	      h_y = ((*surface)(i,j) - (*surface)(i,j-1)) / grid.dy;
-	    else if (ShearMarginS && !ShearMarginN)
-	      h_y = ((*surface)(i,j+1) - (*surface)(i,j)) / grid.dy;
-	    else if (ShearMarginN && ShearMarginS)
-	      h_y = 0.0;
-	  }
-        }
+        } // end of "floating or eta transformation is not used"
 
         result(i,j).u = - pressure * h_x;
         result(i,j).v = - pressure * h_y;
-      }
-    }
-  }
+      } // end of "(pressure > 0)"
+    } // inner loop (j)
+  } // outer loop (i)
 
   ierr =        thk.end_access(); CHKERRQ(ierr);
   ierr =       bed->end_access(); CHKERRQ(ierr);

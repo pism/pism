@@ -46,8 +46,10 @@ PetscErrorCode SIAFD::allocate() {
     snprintf(namestr, sizeof(namestr), "work_vector_2d_%d", i);
     ierr = work_2d[i].set_name(namestr); CHKERRQ(ierr);
 
-    snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
-    ierr = work_2d_stag[i].set_name(namestr); CHKERRQ(ierr);
+    for (int j = 0; j < 2; ++j) {
+      snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d_%d", i, j);
+      ierr = work_2d_stag[i].set_name(namestr, j); CHKERRQ(ierr);
+    }
   }
 
   ierr = delta[0].create(grid, "delta_0", true); CHKERRQ(ierr);
@@ -189,12 +191,6 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
 
   const string method = config.get_string("surface_gradient_method");
 
-  if ((method != "eta") && (method != "mahaffy") && (method != "haseloff")) {
-    verbPrintf(1, grid.com,
-      "PISM ERROR: value of surface_gradient_method, option -gradient, not valid ... ending\n");
-    PISMEnd();
-  }
-
   if (method == "eta") {
 
     ierr = surface_gradient_eta(h_x, h_y); CHKERRQ(ierr);
@@ -208,7 +204,10 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
     ierr = surface_gradient_mahaffy(h_x, h_y); CHKERRQ(ierr);
 
   } else {
-    SETERRQ(grid.com, 1, "can't happen");
+    verbPrintf(1, grid.com,
+               "PISM ERROR: value of surface_gradient_method, option '-gradient %s', not valid ... ending\n",
+               method.c_str());
+    PISMEnd();
   }
 
   return 0;
@@ -290,95 +289,6 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
   return 0;
 }
 
-//! \brief Compute the ice surface gradient using Marianne Haseloff's approach.
-/*!
- * Deals correctly with adjacent ice-free points with bed elevations which are
- * above the surface of the ice
- */
-PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
-
-  const PetscScalar Hicefree = 0.0;  // standard for ice-free, in Haseloff
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
-
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
-
-  PetscScalar **h, **b, **H;
-  ierr = bed->get_array(b); CHKERRQ(ierr);
-  ierr = thickness->get_array(H); CHKERRQ(ierr);
-  ierr = surface->get_array(h); CHKERRQ(ierr);
-  for (PetscInt o=0; o<2; o++) {
-
-    PetscInt GHOSTS = 1;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        if (o==0) {     // If I-offset
-          const bool icefreeP  = (H[i][j]     <= Hicefree),
-            icefreeE  = (H[i+1][j]   <= Hicefree),
-            icefreeN  = (H[i][j+1]   <= Hicefree),
-            icefreeS  = (H[i][j-1]   <= Hicefree),
-            icefreeNE = (H[i+1][j+1] <= Hicefree),
-            icefreeSE = (H[i+1][j-1] <= Hicefree);
-
-          PetscScalar hhE = h[i+1][j];  // east pseudo-surface elevation
-          if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
-          h_x(i,j,o) = (hhE - h[i][j]) / dx;
-
-          PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
-          if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
-          PetscScalar hhS  = h[i][j-1];  // south pseudo-surface elevation
-          if (icefreeS  && (b[i][j-1]   > h[i][j]    ))  hhS  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i][j-1]  ))  hhS  = h[i][j];
-          PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
-          if (icefreeNE && (b[i+1][j+1] > h[i+1][j]  ))  hhNE = h[i+1][j];
-          if (icefreeE  && (b[i+1][j]   > h[i+1][j+1]))  hhNE = h[i+1][j];
-          PetscScalar hhSE = h[i+1][j-1];// southeast pseudo-surface elevation
-          if (icefreeSE && (b[i+1][j-1] > h[i+1][j]  ))  hhSE = h[i+1][j];
-          if (icefreeE  && (b[i+1][j]   > h[i+1][j-1]))  hhSE = h[i+1][j];
-          h_y(i,j,o) = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
-        } else {        // J-offset
-          const bool icefreeP  = (H[i][j]     <= Hicefree),
-            icefreeN  = (H[i][j+1]   <= Hicefree),
-            icefreeE  = (H[i+1][j]   <= Hicefree),
-            icefreeW  = (H[i-1][j]   <= Hicefree),
-            icefreeNE = (H[i+1][j+1] <= Hicefree),
-            icefreeNW = (H[i-1][j+1] <= Hicefree);
-
-          PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
-          if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
-          h_y(i,j,o) = (hhN - h[i][j]) / dy;
-
-          PetscScalar hhE  = h[i+1][j];  // east pseudo-surface elevation
-          if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
-          PetscScalar hhW  = h[i-1][j];  // west pseudo-surface elevation
-          if (icefreeW  && (b[i-1][j]   > h[i][j]    ))  hhW  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i-1][j]  ))  hhW  = h[i][j];
-          PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
-          if (icefreeNE && (b[i+1][j+1] > h[i][j+1]  ))  hhNE = h[i][j+1];
-          if (icefreeN  && (b[i][j+1]   > h[i+1][j+1]))  hhNE = h[i][j+1];
-          PetscScalar hhNW = h[i-1][j+1];// northwest pseudo-surface elevation
-          if (icefreeNW && (b[i-1][j+1] > h[i][j+1]  ))  hhNW = h[i][j+1];
-          if (icefreeN  && (b[i][j+1]   > h[i-1][j+1]))  hhNW = h[i][j+1];
-          h_x(i,j,o) = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
-        }
-
-      } // j
-    }   // i
-  }     // o
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr =       bed->end_access(); CHKERRQ(ierr);
-  ierr =   surface->end_access(); CHKERRQ(ierr);
-
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
-
-  return 0;
-}
 
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
@@ -414,6 +324,186 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
 
   return 0;
 }
+
+//! \brief Compute the ice surface gradient using a modification of Marianne Haseloff's approach.
+/*!
+ * The original code deals correctly with adjacent ice-free points with bed
+ * elevations which are above the surface of the ice nearby. This is done by
+ * setting surface gradient at the margin to zero at such locations.
+ *
+ * This code also deals with shelf fronts: sharp surface elevation change at
+ * the ice shelf front would otherwise cause abnormally high diffusivity
+ * values, which forces PISM to take shorter time-steps than necessary. (Note
+ * that the mass continuity code does not use SIA fluxes in floating areas.)
+ * This is done by assuming that the ice surface near shelf fronts is
+ * horizontal (i.e. here the surface gradient is set to zero also).
+ *
+ * The code below uses an interpretation of the standard Mahaffy scheme. We
+ * compute components of the surface gradient at staggered grid locations. The
+ * field h_x stores the x-component on the i-offset and j-offset grids, h_y ---
+ * the y-component.
+ *
+ * The Mahaffy scheme for the x-component at grid points on the i-offset grid
+ * (offset in the x-direction) is just the centered finite difference using
+ * adjacent regular-grid points. (Similarly for the y-component at j-offset
+ * locations.)
+ *
+ * Mahaffy's prescription for computing the y-component on the i-offset can be
+ * interpreted as:
+ *
+ * \i compute the y-component at four surrounding j-offset staggered grid locations,
+ * \i compute the average of these four.
+ *
+ * The code below does just that.
+ *
+ * \i The first double for-loop computes x-components at i-offset locations and
+ * y-components at j-offset locations. Each computed number is assigned a
+ * weight (w_i and w_j) that is used below
+ *
+ * \i The second double for-loop computes x-components at j-offset locations
+ * and y-components at i-offset locations as averages of quantities computed
+ * earlier. The weight are used to keep track of the number of values used in
+ * the averaging process.
+ *
+ * This method communicates ghost values of h_x and h_y. They cannot be
+ * computed locally because the first loop uses width=2 stencil of surface,
+ * mask, and bed to compute values at all grid points including width=1 ghosts,
+ * then the second loop uses width=1 stencil to compute local values. (In other
+ * words, a purely local computation would require width=3 stencil of surface,
+ * mask, and bed fields.)
+ */
+PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+  PetscErrorCode ierr;
+  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+  IceModelVec2S &h = *surface, &b = *bed,
+    &w_i = work_2d[0], &w_j = work_2d[1]; // averaging weights
+
+  MaskQuery m(*mask);
+
+  ierr = h_x.begin_access(); CHKERRQ(ierr);
+  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  ierr = w_i.begin_access(); CHKERRQ(ierr);
+  ierr = w_j.begin_access(); CHKERRQ(ierr);
+
+  ierr = h.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = b.begin_access(); CHKERRQ(ierr);
+  PetscInt GHOSTS = 1;
+  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+
+      // x-derivative, i-offset
+      {
+        if ((m.floating_ice(i,j) && m.ice_free_ocean(i+1,j)) ||
+            (m.ice_free_ocean(i,j) && m.floating_ice(i+1,j))) {
+          // marine margin
+          h_x(i,j,0) = 0;
+          w_i(i,j)   = 0;
+        } else if ((m.icy(i,j) && m.ice_free(i+1,j) && b(i+1,j) > h(i,j)) ||
+                   (m.ice_free(i,j) && m.icy(i+1,j) && b(i,j) > h(i+1,j))) {
+          // ice next to a "cliff"
+          h_x(i,j,0) = 0.0;
+          w_i(i,j)   = 0;
+        } else {
+          // default case
+          h_x(i,j,0) = (h(i+1,j) - h(i,j)) / dx;
+          w_i(i,j)   = 1;
+        }
+      }
+
+      // y-derivative, j-offset
+      {
+        if ((m.floating_ice(i,j) && m.ice_free_ocean(i,j+1)) ||
+            (m.ice_free_ocean(i,j) && m.floating_ice(i,j+1))) {
+          // marine margin
+          h_y(i,j,1) = 0.0;
+          w_j(i,j)   = 0.0;
+        } else if ((m.icy(i,j) && m.ice_free(i,j+1) && b(i,j+1) > h(i,j)) ||
+                   (m.ice_free(i,j) && m.icy(i,j+1) && b(i,j) > h(i,j+1))) {
+          // ice next to a "cliff"
+          h_y(i,j,1) = 0.0;
+          w_j(i,j)   = 0.0;
+        } else {
+          // default case
+          h_y(i,j,1) = (h(i,j+1) - h(i,j)) / dy;
+          w_j(i,j)   = 1.0;
+        }
+      }
+    } // inner loop (j)
+  } // outer loop (i)
+  ierr = b.end_access(); CHKERRQ(ierr);
+  ierr = h.end_access(); CHKERRQ(ierr);
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      // x-derivative, j-offset
+      {
+        if (w_j(i,j) > 0) {
+          double W = w_i(i,j) + w_i(i-1,j) + w_i(i-1,j+1) + w_i(i,j+1);
+          if (W > 0)
+            h_x(i,j,1) = 1.0/W * (h_x(i,j,0) + h_x(i-1,j,0) + h_x(i-1,j+1,0) + h_x(i,j+1,0));
+          else
+            h_x(i,j,1) = 0.0;
+        } else {
+          if (m.icy(i,j)) {
+            double W = w_i(i,j) + w_i(i-1,j);
+            if (W > 0)
+              h_x(i,j,1) = 1.0/W * (h_x(i,j,0) + h_x(i-1,j,0));
+            else
+              h_x(i,j,1) = 0.0;
+          } else {
+            double W = w_i(i,j+1) + w_i(i-1,j+1);
+            if (W > 0)
+              h_x(i,j,1) = 1.0/W * (h_x(i-1,j+1,0) + h_x(i,j+1,0));
+            else
+              h_x(i,j,1) = 0.0;
+          }
+        }
+      } // end of "x-derivative, j-offset"
+
+      // y-derivative, i-offset
+      {
+        if (w_i(i,j) > 0) {
+          double W = w_j(i,j) + w_j(i,j-1) + w_j(i+1,j-1) + w_j(i+1,j);
+          if (W > 0)
+            h_y(i,j,0) = 1.0/W * (h_y(i,j,1) + h_y(i,j-1,1) + h_y(i+1,j-1,1) + h_y(i+1,j,1));
+          else
+            h_y(i,j,0) = 0.0;
+        } else {
+          if (m.icy(i,j)) {
+            double W = w_j(i,j) + w_j(i,j-1);
+            if (W > 0)
+              h_y(i,j,0) = 1.0/W * (h_y(i,j,1) + h_y(i,j-1,1));
+            else
+              h_y(i,j,0) = 0.0;
+          } else {
+            double W = w_j(i+1,j-1) + w_j(i+1,j);
+            if (W > 0)
+              h_y(i,j,0) = 1.0/W * (h_y(i+1,j-1,1) + h_y(i+1,j,1));
+            else
+              h_y(i,j,0) = 0.0;
+          }
+        }
+      } // end of "y-derivative, i-offset"
+    }   // inner loop (j)
+  }     // outer loop (i)
+
+
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = w_j.end_access(); CHKERRQ(ierr);
+  ierr = w_i.end_access(); CHKERRQ(ierr);
+  ierr = h_y.end_access(); CHKERRQ(ierr);
+  ierr = h_x.end_access(); CHKERRQ(ierr);
+
+  ierr = h_x.beginGhostComm(); CHKERRQ(ierr);
+  ierr = h_x.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = h_y.beginGhostComm(); CHKERRQ(ierr);
+  ierr = h_y.endGhostComm(); CHKERRQ(ierr);
+
+  return 0;
+}
+
 
 //! \brief Compute the SIA flux. If fast == false, also store delta on the staggered grid.
 /*!
