@@ -126,8 +126,8 @@ PetscErrorCode PISMGregorianTime::init_from_file(string filename) {
     ierr = time_axis.read(nc, false, time); CHKERRQ(ierr);
   }
 
-  run_start = time[0];
-  run_end = time[time.size() - 1];
+  run_start = time.front();
+  run_end = time.back();
   time_in_seconds = run_start;
 
   ierr = nc.close(); CHKERRQ(ierr);

@@ -25,9 +25,10 @@
 #include "NCVariable.hh"
 #include "PISMTime.hh"
 #include "PISMNC3File.hh"
+#include "PISMNC4_Quilt.hh"
 
 #if (PISM_PARALLEL_NETCDF4==1)
-#include "PISMNC4File.hh"
+#include "PISMNC4_Par.hh"
 #endif
 
 #if (PISM_PNETCDF==1)
@@ -38,6 +39,7 @@ PIO::PIO(MPI_Comm c, int r, string mode) {
   com = c;
   rank = r;
   shallow_copy = false;
+  m_mode = mode;
 
   // Initialize UDUNITS if needed
   if (utIsInit() == 0) {
@@ -49,10 +51,12 @@ PIO::PIO(MPI_Comm c, int r, string mode) {
 
   if (mode == "netcdf3") {
     nc = new PISMNC3File(com, rank);
+  } else if (mode == "quilt") {
+    nc = new PISMNC4_Quilt(com, rank);
   }
 #if (PISM_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
-    nc = new PISMNC4File(com, rank);
+    nc = new PISMNC4_Par(com, rank);
   }
 #endif
 #if (PISM_PNETCDF==1)
@@ -72,6 +76,7 @@ PIO::PIO(const PIO &other) {
   com = other.com;
   rank = other.rank;
   nc = other.nc;
+  m_mode = other.m_mode;
 
   shallow_copy = true;
 }
@@ -99,7 +104,7 @@ PetscErrorCode PIO::open(string filename, int mode, bool append) {
   // opening for writing
 
   if (append == false) {
-    ierr = move_if_exists(filename); CHKERRQ(ierr);
+    ierr = nc->move_if_exists(filename); CHKERRQ(ierr);
 
     ierr = nc->create(filename);
     if (ierr != 0) {
@@ -525,8 +530,18 @@ PetscErrorCode PIO::inq_grid_info(string name, grid_info &g) const {
 
   ierr = nc->inq_vardimid(name_found, dims); CHKERRQ(ierr);
 
-  int ndims = (int)dims.size();
-  for (int i = 0; i < ndims; ++i) {
+  // use "global" dimensions (as opposed to dimensions of a patch)
+  if (m_mode == "quilt") {
+    for (unsigned int i = 0; i < dims.size(); ++i) {
+      if (dims[i] == "x_patch")
+        dims[i] = "x";
+
+      if (dims[i] == "y_patch")
+        dims[i] = "y";
+    }
+  }
+
+  for (unsigned int i = 0; i < dims.size(); ++i) {
     string dimname = dims[i];
 
     AxisType dimtype = UNKNOWN_AXIS;
@@ -633,7 +648,8 @@ PetscErrorCode PIO::put_1d_var(string name, unsigned int s, unsigned int c,
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  ierr = nc->put_vara_double(name, start, count, &data[0]); CHKERRQ(ierr);
+  ierr = nc->put_vara_double(name, start, count,
+                             const_cast<double*>(&data[0])); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1053,44 +1069,6 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out, Loc
   return 0;
 }
 
-//! \brief Moves the file aside (file.nc -> file.nc~).
-/*!
- * Note: only processor 0 does the renaming.
- */
-PetscErrorCode PIO::move_if_exists(string filename) {
-  PetscErrorCode ierr;
-
-  if (rank == 0) {
-    bool exists = false;
-
-    // Check if the file exists:
-    if (FILE *f = fopen(filename.c_str(), "r")) {
-      fclose(f);
-      exists = true;
-    } else {
-      exists = false;
-    }
-
-    if (exists) {
-      string tmp = filename + "~";
-
-      ierr = rename(filename.c_str(), tmp.c_str());
-      if (ierr != 0) {
-        ierr = verbPrintf(1, com, "PISM ERROR: can't move '%s' to '%s'.\n",
-                          filename.c_str(), tmp.c_str());
-        PISMEnd();
-      }
-      ierr = verbPrintf(2, com,
-                        "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
-                        filename.c_str(), tmp.c_str());
-
-    }
-
-  }
-
-
-  return 0;
-}
 
 PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
                                             int x_start, int x_count,
@@ -1172,7 +1150,7 @@ PetscErrorCode PIO::get_vara_double(string variable_name,
 PetscErrorCode PIO::put_vara_double(string variable_name,
                                     vector<unsigned int> start,
                                     vector<unsigned int> count,
-                                    const double *op) const {
+                                    double *op) const {
   PetscErrorCode ierr;
 
   ierr = nc->enddef(); CHKERRQ(ierr);
@@ -1199,7 +1177,7 @@ PetscErrorCode PIO::get_varm_double(string variable_name,
 PetscErrorCode PIO::put_varm_double(string variable_name,
                                     vector<unsigned int> start,
                                     vector<unsigned int> count,
-                                    vector<unsigned int> imap, const double *op) const {
+                                    vector<unsigned int> imap, double *op) const {
   PetscErrorCode ierr;
 
   ierr = nc->enddef(); CHKERRQ(ierr);
@@ -1209,3 +1187,7 @@ PetscErrorCode PIO::put_varm_double(string variable_name,
   return 0;
 }
 
+void PIO::set_local_extent(unsigned int xs, unsigned int xm,
+                           unsigned int ys, unsigned int ym) const {
+  nc->set_local_extent(xs, xm, ys, ym);
+}

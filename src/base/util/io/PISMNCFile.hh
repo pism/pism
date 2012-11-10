@@ -104,6 +104,10 @@ public:
 
   virtual int inq_unlimdim(string &result) const = 0;
 
+  virtual int inq_dimname(int j, string &result) const = 0;
+
+  virtual int inq_ndims(int &result) const = 0;
+
   // var
   virtual int def_var(string name, PISM_IO_Type nctype, vector<string> dims) const = 0;
 
@@ -115,7 +119,7 @@ public:
   virtual int put_vara_double(string variable_name,
                               vector<unsigned int> start,
                               vector<unsigned int> count,
-                              const double *op) const = 0;
+                              double *op) const = 0;
 
   virtual int get_varm_double(string variable_name,
                               vector<unsigned int> start,
@@ -125,7 +129,7 @@ public:
   virtual int put_varm_double(string variable_name,
                               vector<unsigned int> start,
                               vector<unsigned int> count,
-                              vector<unsigned int> imap, const double *op) const = 0;
+                              vector<unsigned int> imap, double *op) const = 0;
 
   virtual int inq_nvars(int &result) const = 0;
 
@@ -136,6 +140,8 @@ public:
   virtual int inq_varid(string variable_name, bool &exists) const = 0;
 
   virtual int inq_varname(unsigned int j, string &result) const = 0;
+
+  virtual int inq_vartype(string variable_name, PISM_IO_Type &result) const = 0;
 
   // att
   virtual int get_att_double(string variable_name, string att_name, vector<double> &result) const = 0;
@@ -157,6 +163,11 @@ public:
 
   string get_filename() const;
 
+  void set_local_extent(unsigned int xs, unsigned int xm,
+                        unsigned int ys, unsigned int ym) const;
+
+  virtual int move_if_exists(string filename, int rank_to_use = 0);
+
 protected:
 
   void check(int return_code) const;
@@ -167,6 +178,7 @@ protected:
   int ncid;
   string filename;
   mutable bool define_mode;
+  mutable int m_xs, m_xm, m_ys, m_ym;
 };
 
 #endif /* _PISMNCWRAPPER_H_ */

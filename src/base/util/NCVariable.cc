@@ -347,6 +347,8 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, PISM_IO_Type nctype,
   ierr = nc.inq_var(short_name, strings["standard_name"],
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
+  nc.set_local_extent(grid->xs, grid->xm, grid->ys, grid->ym);
+
   if (!exists) {
     ierr = define(nc, nctype, write_in_glaciological_units); CHKERRQ(ierr);
     name_found = short_name;
@@ -795,6 +797,8 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, PISM_IO_Type nctype,
   ierr = nc.inq_var(short_name, exists); CHKERRQ(ierr);
   if (exists)
     return 0;
+
+  nc.set_local_extent(grid->xs, grid->xm, grid->ys, grid->ym);
 
   ierr = define_dimensions(nc); CHKERRQ(ierr);
 

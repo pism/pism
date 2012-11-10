@@ -19,6 +19,7 @@
 #include "PISMNCFile.hh"
 
 #include <cstdio>               // fprintf, stderr
+#include "pism_const.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -31,6 +32,7 @@ PISMNCFile::PISMNCFile(MPI_Comm c, int r)
   : rank(r), com(c) {
   ncid = -1;
   define_mode = false;
+  m_xs = m_xm = m_ys = m_ym = -1;
 }
 
 PISMNCFile::~PISMNCFile() {
@@ -52,4 +54,51 @@ void PISMNCFile::check(int return_code) const {
   if (return_code != NC_NOERR) {
     fprintf(stderr, "NC_ERR: %s\n", nc_strerror(return_code));
   }
+}
+
+void PISMNCFile::set_local_extent(unsigned int xs, unsigned int xm,
+                                  unsigned int ys, unsigned int ym) const {
+  m_xs = xs;
+  m_xm = xm;
+  m_ys = ys;
+  m_ym = ym;
+}
+
+//! \brief Moves the file aside (file.nc -> file.nc~).
+/*!
+ * Note: only processor 0 does the renaming.
+ */
+int PISMNCFile::move_if_exists(string file_to_move, int rank_to_use) {
+  int stat;
+
+  if (rank == rank_to_use) {
+    bool exists = false;
+
+    // Check if the file exists:
+    if (FILE *f = fopen(file_to_move.c_str(), "r")) {
+      fclose(f);
+      exists = true;
+    } else {
+      exists = false;
+    }
+
+    if (exists) {
+      string tmp = file_to_move + "~";
+
+      stat = rename(file_to_move.c_str(), tmp.c_str());
+      if (stat != 0) {
+        printf("PISM ERROR: can't move '%s' to '%s'.\n", file_to_move.c_str(), tmp.c_str());
+        return stat;
+      }
+
+      if (getVerbosityLevel() >= 2) {
+        printf("PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
+               file_to_move.c_str(), tmp.c_str());
+      }
+
+    }
+
+  }
+
+  return 0;
 }

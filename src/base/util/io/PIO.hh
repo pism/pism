@@ -140,7 +140,7 @@ public:
   virtual PetscErrorCode put_vara_double(string variable_name,
                                          vector<unsigned int> start,
                                          vector<unsigned int> count,
-                                         const double *op) const;
+                                         double *op) const;
 
   virtual PetscErrorCode get_varm_double(string variable_name,
                                          vector<unsigned int> start,
@@ -150,15 +150,17 @@ public:
   virtual PetscErrorCode put_varm_double(string variable_name,
                                          vector<unsigned int> start,
                                          vector<unsigned int> count,
-                                         vector<unsigned int> imap, const double *op) const;
+                                         vector<unsigned int> imap, double *op) const;
 
+  void set_local_extent(unsigned int xs, unsigned int xm,
+                        unsigned int ys, unsigned int ym) const;
 protected:
   MPI_Comm com;
   int rank;
+  string m_mode;
   bool shallow_copy;
   PISMNCFile *nc;
 
-  virtual PetscErrorCode move_if_exists(string filename);
   PetscErrorCode compute_start_and_count(string name, int t_start,
                                          int x_start, int x_count,
                                          int y_start, int y_count,

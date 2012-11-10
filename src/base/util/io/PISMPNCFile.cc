@@ -163,6 +163,26 @@ int PISMPNCFile::inq_unlimdim(string &result) const {
   return stat;
 }
 
+int PISMPNCFile::inq_dimname(int j, string &result) const {
+  int stat;
+  char dimname[NC_MAX_NAME];
+  memset(dimname, 0, NC_MAX_NAME);
+
+  stat = ncmpi_inq_dimname(ncid, j, dimname); check(stat);
+
+  result = dimname;
+
+  return stat;
+}
+
+
+int PISMPNCFile::inq_ndims(int &result) const {
+  int stat;
+
+  stat = ncmpi_inq_ndims(ncid, &result); check(stat);
+
+  return stat;
+}
 
 int PISMPNCFile::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
   vector<int> dimids;
@@ -206,7 +226,7 @@ int PISMPNCFile::get_vara_double(string variable_name,
 int PISMPNCFile::put_vara_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 const double *op) const {
+                                 double *op) const {
   vector<unsigned int> dummy;
   return this->put_var_double(variable_name,
                               start, count, dummy, op, false);
@@ -225,7 +245,7 @@ int PISMPNCFile::get_varm_double(string variable_name,
 int PISMPNCFile::put_varm_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 vector<unsigned int> imap, const double *op) const {
+                                 vector<unsigned int> imap, double *op) const {
   return this->put_var_double(variable_name,
                               start, count, imap, op, true);
 }
@@ -312,6 +332,19 @@ int PISMPNCFile::inq_varname(unsigned int j, string &result) const {
   result = varname;
 
   return stat;
+}
+
+int PISMPNCFile::inq_vartype(string variable_name, PISM_IO_Type &result) const {
+  int stat, varid;
+  nc_type var_type;
+
+  stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+
+  stat = ncmpi_inq_vartype(ncid, varid, &var_type); check(stat);
+
+  result = nc_type_to_pism_type(var_type);
+
+  return 0;
 }
 
 

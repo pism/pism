@@ -226,6 +226,40 @@ int PISMNC3File::inq_unlimdim(string &result) const {
   return stat;
 }
 
+int PISMNC3File::inq_dimname(int j, string &result) const {
+  int stat;
+  char dimname[NC_MAX_NAME];
+  memset(dimname, 0, NC_MAX_NAME);
+
+  if (rank == 0) {
+    stat = nc_inq_dimname(ncid, j, dimname); check(stat);
+  }
+
+  MPI_Barrier(com);
+
+  MPI_Bcast(&stat,   1, MPI_INT, 0, com);
+  MPI_Bcast(dimname, NC_MAX_NAME, MPI_CHAR, 0, com);
+
+  result = dimname;
+
+  return stat;
+}
+
+
+int PISMNC3File::inq_ndims(int &result) const {
+  int stat;
+
+  if (rank == 0) {
+    stat = nc_inq_ndims(ncid, &result); check(stat);
+  }
+
+  MPI_Barrier(com);
+  MPI_Bcast(&result, 1, MPI_INT, 0, com);
+  MPI_Bcast(&stat,   1, MPI_INT,      0, com);
+
+  return stat;
+}
+
 
 //! \brief Define a variable.
 int PISMNC3File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
@@ -386,7 +420,7 @@ int PISMNC3File::get_var_double(string variable_name,
 int PISMNC3File::put_varm_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 vector<unsigned int> imap, const double *op) const {
+                                 vector<unsigned int> imap, double *op) const {
   return this->put_var_double(variable_name,
                               start, count, imap, op, true);
 }
@@ -394,7 +428,7 @@ int PISMNC3File::put_varm_double(string variable_name,
 int PISMNC3File::put_vara_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 const double *op) const {
+                                 double *op) const {
   vector<unsigned int> dummy;
   return this->put_var_double(variable_name,
                               start, count, dummy, op, false);
@@ -642,6 +676,27 @@ int PISMNC3File::inq_varname(unsigned int j, string &result) const {
   MPI_Bcast(varname, NC_MAX_NAME, MPI_CHAR, 0, com);
 
   result = varname;
+
+  return stat;
+}
+
+int PISMNC3File::inq_vartype(string variable_name, PISM_IO_Type &result) const {
+  int stat, tmp;
+
+  if (rank == 0) {
+    nc_type var_type;
+    stat = nc_inq_varid(ncid, variable_name.c_str(), &tmp); check(stat);
+    stat = nc_inq_vartype(ncid, tmp, &var_type); check(stat);
+
+    tmp = var_type;
+  }
+
+  MPI_Barrier(com);
+
+  MPI_Bcast(&stat,   1, MPI_INT, 0, com);
+  MPI_Bcast(&tmp,    1, MPI_INT, 0, com);
+
+  result = nc_type_to_pism_type(tmp);
 
   return stat;
 }
