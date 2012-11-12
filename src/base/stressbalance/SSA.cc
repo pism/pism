@@ -371,8 +371,8 @@ PetscErrorCode SSA::compute_basal_frictional_heating(IceModelVec2S &result) {
       } else {
         const PetscScalar 
           C = basal.drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v),
-	  basal_stress_x = - C * velocity(i,j).u,
-	  basal_stress_y = - C * velocity(i,j).v;
+              basal_stress_x = - C * velocity(i,j).u,
+              basal_stress_y = - C * velocity(i,j).v;
         result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
       }
     }
@@ -507,34 +507,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
               else
                 h_y = 0.0;
             }
-
           }
-
-	  // for floating shear margin we calculate inward scheme along ice free bedrock
-	  bool ShearMarginE = (thk(i+1,j)<1.0 && (*bed)(i+1,j)>0.0),
-	       ShearMarginW = (thk(i-1,j)<1.0 && (*bed)(i-1,j)>0.0),
-	       ShearMarginN = (thk(i,j+1)<1.0 && (*bed)(i,j+1)>0.0),
-	       ShearMarginS = (thk(i,j-1)<1.0 && (*bed)(i,j-1)>0.0);
-	
-	  bool shearMargin = (ShearMarginE || ShearMarginW || ShearMarginN || ShearMarginS);
-	
-	
-	  if (shearMargin) {	
-		
-	    if (ShearMarginE && !ShearMarginW)
-	      h_x = ((*surface)(i,j) - (*surface)(i-1,j)) / grid.dx;
-	    else if (ShearMarginW && !ShearMarginE)
-	      h_x = ((*surface)(i+1,j) - (*surface)(i,j)) / grid.dx;
-	    else if (ShearMarginW && ShearMarginE)
-	      h_x = 0.0;
-		
-	    if (ShearMarginN && !ShearMarginS)
-	      h_y = ((*surface)(i,j) - (*surface)(i,j-1)) / grid.dy;
-	    else if (ShearMarginS && !ShearMarginN)
-	      h_y = ((*surface)(i,j+1) - (*surface)(i,j)) / grid.dy;
-	    else if (ShearMarginN && ShearMarginS)
-	      h_y = 0.0;
-	  }
         }
 
         result(i,j).u = - pressure * h_x;
