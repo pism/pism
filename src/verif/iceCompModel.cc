@@ -481,19 +481,23 @@ PetscErrorCode IceCompModel::initTestL() {
   const int  MM = grid.xm * grid.ym;
 
   std::vector<rgrid> rrv(MM);  // destructor at end of scope
-  for (PetscInt i = 0; i < grid.xm; i++) {
-    for (PetscInt j = 0; j < grid.ym; j++) {
-      const PetscInt  k = i * grid.ym + j;
-      rrv[k].i = i + grid.xs;  rrv[k].j = j + grid.ys;
+  int k = 0;
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      rrv[k].i = i;
+      rrv[k].j = j;
       rrv[k].r = grid.radius(i,j);
+
+      k += 1;
     }
   }
+
   std::sort(rrv.begin(), rrv.end(), rgridReverseSort()); // so rrv[k].r > rrv[k+1].r
 
   // get soln to test L at these radii; solves ODE only once (on each processor)
   double *rr, *HH, *bb, *aa;
   rr = new double[MM];
-  for (PetscInt k = 0; k < MM; k++)
+  for (k = 0; k < MM; k++)
     rr[k] = rrv[k].r;
   HH = new double[MM];  bb = new double[MM];  aa = new double[MM];
   ierr = exactL_list(rr, MM, HH, bb, aa);
@@ -523,7 +527,7 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
-  for (PetscInt k = 0; k < MM; k++) {
+  for (k = 0; k < MM; k++) {
     H    [rrv[k].i][rrv[k].j] = HH[k];
     bed  [rrv[k].i][rrv[k].j] = bb[k];
     accum[rrv[k].i][rrv[k].j] = aa[k];
