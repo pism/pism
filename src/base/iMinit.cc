@@ -85,12 +85,23 @@ PetscErrorCode IceModel::set_grid_defaults() {
   names.push_back("bedrock_altitude");
   names.push_back("thk");
   names.push_back("topg");
+  bool grid_info_found = false;
   for (unsigned int i = 0; i < names.size(); ++i) {
-    ierr = nc.inq_grid_info(names[i], input);
-    if (ierr == 0) break;
+
+    ierr = nc.inq_var(names[i], grid_info_found); CHKERRQ(ierr);
+    if (grid_info_found == false) {
+      string dummy1;
+      bool dummy2;
+      ierr = nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2); CHKERRQ(ierr);
+    }
+
+    if (grid_info_found) {
+      ierr = nc.inq_grid_info(names[i], input); CHKERRQ(ierr);
+      break;
+    }
   }
 
-  if (ierr != 0) {
+  if (grid_info_found == false) {
     PetscPrintf(grid.com, "ERROR: no geometry information found in '%s'.\n",
                 filename.c_str());
     PISMEnd();
