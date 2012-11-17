@@ -16,8 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <netcdf.h>
 #include "PISMNC4_Serial.hh"
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
+#include <netcdf.h>
 
 int PISMNC4_Serial::open(string fname, int mode) {
   int stat;

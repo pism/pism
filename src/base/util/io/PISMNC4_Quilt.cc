@@ -19,6 +19,12 @@
 #include "PISMNC4_Quilt.hh"
 #include <assert.h>
 #include "pism_const.hh"
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
 #include <netcdf.h>
 
 static string patch_filename(string input, int mpi_rank) {

@@ -21,6 +21,11 @@
 #include <cstring>		// memset
 #include <cstdio>		// stderr, fprintf
 
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
 #include <netcdf.h>
 
 #include "pism_type_conversion.hh"

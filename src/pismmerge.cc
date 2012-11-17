@@ -21,10 +21,16 @@
 #include "PISMNC4_Serial.hh"
 #include <string>
 #include <cstdio>
-#include <netcdf.h>
 #include <stdlib.h>
 #include <map>
 #include <assert.h>
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
+#include <netcdf.h>
 
 using namespace std;
 
