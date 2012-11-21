@@ -45,9 +45,9 @@ static string patch_filename(string input, int mpi_rank) {
 int PISMNC4_Quilt::open(string fname, int mode) {
   int stat;
 
-  filename = patch_filename(fname, rank);
+  m_filename = patch_filename(fname, rank);
 
-  stat = nc_open(filename.c_str(), mode, &ncid); check(stat);
+  stat = nc_open(m_filename.c_str(), mode, &ncid); check(stat);
 
   define_mode = false;
 
@@ -58,9 +58,9 @@ int PISMNC4_Quilt::open(string fname, int mode) {
 int PISMNC4_Quilt::create(string fname) {
   int stat;
 
-  filename = patch_filename(fname, rank);
+  m_filename = patch_filename(fname, rank);
 
-  stat = nc_create(filename.c_str(), NC_NETCDF4, &ncid); check(stat);
+  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &ncid); check(stat);
 
   define_mode = true;
 
@@ -74,7 +74,7 @@ int PISMNC4_Quilt::close() {
 
   ncid = -1;
 
-  filename.clear();
+  m_filename.clear();
 
   return global_stat(stat);
 }

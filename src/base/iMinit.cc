@@ -69,7 +69,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // overridden later, in IceModel::set_grid_from_options()).
 
   // Determine the grid extent from a bootstrapping file:
-  PIO nc(grid.com, grid.rank, "netcdf3"); // OK to use netcdf3, we read very little data here.
+  PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
   bool x_dim_exists, y_dim_exists, t_exists;
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -274,7 +274,7 @@ PetscErrorCode IceModel::grid_setup() {
 			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+    PIO nc(grid, grid.config.get_string("output_format"));
     string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output

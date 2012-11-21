@@ -35,7 +35,12 @@
 #include "PISMPNCFile.hh"
 #endif
 
-PIO::PIO(MPI_Comm c, int r, string mode) {
+#if (PISM_HDF5==1)
+#include "PISMNC4_HDF5.hh"
+#endif
+
+//! \brief The code shared by different PIO constructors.
+void PIO::constructor(MPI_Comm c, int r, string mode) {
   com = c;
   rank = r;
   shallow_copy = false;
@@ -64,12 +69,26 @@ PIO::PIO(MPI_Comm c, int r, string mode) {
     nc = new PISMPNCFile(com, rank);
   }
 #endif
+#if (PISM_HDF5==1)
+  else if (mode == "hdf5") {
+    nc = new PISMNC4_HDF5(com, rank);
+  }
+#endif
   else {
     nc = NULL;
     PetscPrintf(com, "PISM ERROR: output format '%s' is not supported.\n",
                 mode.c_str());
     PISMEnd();
   }
+}
+
+PIO::PIO(MPI_Comm c, int r, string mode) {
+  constructor(c, r, mode);
+}
+
+PIO::PIO(IceGrid &grid, string mode) {
+  constructor(grid.com, grid.rank, mode);
+  set_local_extent(grid.xs, grid.xm, grid.ys, grid.ym);
 }
 
 PIO::PIO(const PIO &other) {

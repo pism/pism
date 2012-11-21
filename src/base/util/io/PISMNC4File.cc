@@ -49,7 +49,7 @@ int PISMNC4File::close() {
 
   ncid = -1;
 
-  filename.clear();
+  m_filename.clear();
 
   return stat;
 }
@@ -171,7 +171,7 @@ int PISMNC4File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
 
 #if (PISM_DEBUG==1)
   if (stat != NC_NOERR) {
-    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", filename.c_str(),
+    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", m_filename.c_str(),
             name.c_str());
     for (unsigned int k = 0; k < dims.size(); ++k) {
       fprintf(stderr, "%s(%d), ", dims[k].c_str(), dimids[k]);

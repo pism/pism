@@ -28,9 +28,9 @@
 int PISMNC4_Serial::open(string fname, int mode) {
   int stat;
 
-  filename = fname;
+  m_filename = fname;
 
-  stat = nc_open(filename.c_str(), mode, &ncid);
+  stat = nc_open(m_filename.c_str(), mode, &ncid);
 
   define_mode = false;
 
@@ -40,9 +40,9 @@ int PISMNC4_Serial::open(string fname, int mode) {
 int PISMNC4_Serial::create(string fname) {
   int stat;
 
-  filename = fname;
+  m_filename = fname;
 
-  stat = nc_create(filename.c_str(), NC_NETCDF4, &ncid);
+  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &ncid);
 
   define_mode = true;
 

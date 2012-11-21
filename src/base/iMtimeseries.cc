@@ -104,7 +104,7 @@ PetscErrorCode IceModel::init_timeseries() {
     }
   }
 
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid, "netcdf3");      // Use NetCDF-3 to write time-series.
   ierr = nc.open(ts_filename, PISM_WRITE, append); CHKERRQ(ierr);
 
   ierr = write_metadata(nc, false); CHKERRQ(ierr);
@@ -319,7 +319,7 @@ PetscErrorCode IceModel::init_extras() {
 //! Write spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::write_extras() {
   PetscErrorCode ierr;
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid, grid.config.get_string("output_format"));
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
 				 // value is never used, because saving_after
 				 // is only used if save_now == true, and in

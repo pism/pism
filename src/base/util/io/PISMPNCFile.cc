@@ -46,9 +46,9 @@ int PISMPNCFile::open(string fname, int mode) {
 
   init_hints();
 
-  filename = fname;
+  m_filename = fname;
 
-  stat = ncmpi_open(com, filename.c_str(), mode, mpi_info, &ncid); check(stat);
+  stat = ncmpi_open(com, m_filename.c_str(), mode, mpi_info, &ncid); check(stat);
 
   define_mode = false;
 
@@ -61,9 +61,9 @@ int PISMPNCFile::create(string fname) {
 
   init_hints();
 
-  filename = fname;
+  m_filename = fname;
 
-  stat = ncmpi_create(com, filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
+  stat = ncmpi_create(com, m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
                       mpi_info, &ncid); check(stat);
   define_mode = true;
 
@@ -76,7 +76,7 @@ int PISMPNCFile::close() {
 
   ncid = -1;
 
-  filename.clear();
+  m_filename.clear();
 
   return stat;
 }
@@ -200,7 +200,7 @@ int PISMPNCFile::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
 
 #if (PISM_DEBUG==1)
   if (stat != NC_NOERR) {
-    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", filename.c_str(),
+    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", m_filename.c_str(),
             name.c_str());
     for (unsigned int k = 0; k < dims.size(); ++k) {
       fprintf(stderr, "%s(%d), ", dims[k].c_str(), dimids[k]);

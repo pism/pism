@@ -145,7 +145,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(grid->com, grid->rank, "netcdf3"); // FIXME!!!
+  PIO nc(*grid, "netcdf3"); // FIXME!!!
   string name_found;
   bool exists, found_by_standard_name;
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
@@ -337,7 +337,7 @@ PetscErrorCode IceModelVec2T::update(int start) {
     report_range = true;
   }
 
-  PIO nc(grid->com, grid->rank, "netcdf3"); // FIXME!!!
+  PIO nc(*grid, "netcdf3"); // FIXME!!!
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   for (int j = 0; j < missing; ++j) {

@@ -50,6 +50,7 @@ if (NOT Pism_MANUAL_BUILD)
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
   find_package (PNetCDF)
+  find_package (HDF5 COMPONENTS C HL)
 
   # Try to find netcdf_par.h. We assume that NetCDF was compiled with
   # parallel I/O if this header is present.
@@ -66,6 +67,14 @@ if (NOT Pism_MANUAL_BUILD)
     message(STATUS "Note: PnetCDF was found. Enabling PnetCDF-based parallel I/O.")
     option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." ON)
   else ()
+    message(STATUS "Note: PnetCDF was not found.")
+  endif()
+
+  if (HDF5_FOUND AND HDF5_IS_PARALLEL)
+    message(STATUS "Found parallel HDF5. Enabling HDF5-based I/O.")
+    option(Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." ON)
+  else()
+    message(STATUS "Parallel HDF5 was not found.")
   endif()
 
   # use the PETSc compiler as a hint when looking for an MPI compiler
@@ -194,8 +203,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     CACHE PATH "Python extension module installation directory." )
 endif ()
 
-include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
-
 set (Pism_EXTERNAL_LIBS
   ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
 
@@ -203,6 +210,13 @@ if (Pism_USE_PNETCDF)
   include_directories (${PNETCDF_INCLUDES})
   list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
 endif()
+
+if (Pism_USE_PARALLEL_HDF5)
+  include_directories (${HDF5_C_INCLUDE_DIR})
+  list (APPEND Pism_EXTERNAL_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+endif()
+
+include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
 
 # Build the Lingle-Clark bed deformation model if FFTW was found
 if (FFTW_FOUND)

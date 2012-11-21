@@ -47,6 +47,7 @@ class PIO
 {
 public:
   PIO(MPI_Comm com, int rank, string mode);
+  PIO(IceGrid &g, string mode);
   PIO(const PIO &other);
   virtual ~PIO();
 
@@ -172,6 +173,8 @@ protected:
   PetscErrorCode k_below(double z, const vector<double> &zlevels) const;
 
   PetscErrorCode regrid(IceGrid *grid, const vector<double> &zlevels_out, LocalInterpCtx *lic, Vec g) const;
+private:
+  void constructor(MPI_Comm com, int rank, string mode);
 };
 
 #endif /* _PIO_H_ */

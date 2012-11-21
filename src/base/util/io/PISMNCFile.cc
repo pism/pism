@@ -40,7 +40,7 @@ PISMNCFile::~PISMNCFile() {
 }
 
 string PISMNCFile::get_filename() const {
-  return filename;
+  return m_filename;
 }
 
 int PISMNCFile::put_att_double(string variable_name, string att_name, PISM_IO_Type nctype, double value) const {

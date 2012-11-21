@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
       ++j;
     }
 
-    PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
+    PIO pio(grid, grid.config.get_string("output_format"));
 
     string time_name = config.get_string("time_dimension_name");
     ierr = pio.open(outname, PISM_WRITE); CHKERRQ(ierr);

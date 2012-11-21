@@ -170,13 +170,13 @@ public:
 
 protected:
 
-  void check(int return_code) const;
+  virtual void check(int return_code) const;
 
   int rank;
   MPI_Comm com;
 
   int ncid;
-  string filename;
+  string m_filename;
   mutable bool define_mode;
   mutable int m_xs, m_xm, m_ys, m_ym;
 };

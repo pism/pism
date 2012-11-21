@@ -27,9 +27,9 @@ int PISMNC4_Par::open(string fname, int mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  filename = fname;
+  m_filename = fname;
 
-  stat = nc_open_par(filename.c_str(),
+  stat = nc_open_par(m_filename.c_str(),
                      mode | NC_MPIIO,
                      com, info, &ncid);
 
@@ -42,9 +42,9 @@ int PISMNC4_Par::create(string fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  filename = fname;
+  m_filename = fname;
 
-  stat = nc_create_par(filename.c_str(),
+  stat = nc_create_par(m_filename.c_str(),
                        NC_NETCDF4 | NC_MPIIO,
                        com, info, &ncid);
   define_mode = true;

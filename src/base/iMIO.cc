@@ -121,7 +121,7 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping) {
 
 PetscErrorCode IceModel::dumpToFile(string filename) {
   PetscErrorCode ierr;
-  PIO nc(grid.com, grid.rank, config.get_string("output_format"));
+  PIO nc(grid, config.get_string("output_format"));
 
   // Prepare the file
   string time_name = config.get_string("time_dimension_name");
@@ -337,7 +337,7 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
   */
 PetscErrorCode IceModel::initFromFile(string filename) {
   PetscErrorCode  ierr;
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
                     filename.c_str()); CHKERRQ(ierr);
@@ -645,85 +645,85 @@ PetscErrorCode IceModel::init_snapshots() {
 }
 
   //! Writes a snapshot of the model state (if necessary)
-  PetscErrorCode IceModel::write_snapshot() {
-    PetscErrorCode ierr;
-    PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
-    double saving_after = -1.0e30; // initialize to avoid compiler warning; this
-    // value is never used, because saving_after
-    // is only used if save_now == true, and in
-    // this case saving_after is guaranteed to be
-    // initialized. See the code below.
-    char filename[PETSC_MAX_PATH_LEN];
+PetscErrorCode IceModel::write_snapshot() {
+  PetscErrorCode ierr;
+  PIO nc(grid, grid.config.get_string("output_format"));
+  double saving_after = -1.0e30; // initialize to avoid compiler warning; this
+  // value is never used, because saving_after
+  // is only used if save_now == true, and in
+  // this case saving_after is guaranteed to be
+  // initialized. See the code below.
+  char filename[PETSC_MAX_PATH_LEN];
 
-    // determine if the user set the -save_times and -save_file options
-    if (!save_snapshots)
-      return 0;
+  // determine if the user set the -save_times and -save_file options
+  if (!save_snapshots)
+    return 0;
 
-    // do we need to save *now*?
-    if ( (grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size()) ) {
-      saving_after = snapshot_times[current_snapshot];
+  // do we need to save *now*?
+  if ( (grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size()) ) {
+    saving_after = snapshot_times[current_snapshot];
 
-      while ((current_snapshot < snapshot_times.size()) &&
-             (snapshot_times[current_snapshot] <= grid.time->current()))
-        current_snapshot++;
-    } else {
-      // we don't need to save now, so just return
-      return 0;
-    }
-
-    grid.profiler->begin(event_snapshots);
-
-    // flush time-series buffers
-    ierr = flush_timeseries(); CHKERRQ(ierr);
-
-    if (split_snapshots) {
-      snapshots_file_is_ready = false;	// each snapshot is written to a separate file
-      snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
-               snapshots_filename.c_str(), grid.time->date().c_str());
-    } else {
-      strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
-    }
-
-    ierr = verbPrintf(2, grid.com,
-                      "\nsaving snapshot to %s at %s, for time-step goal %s\n\n",
-                      filename, grid.time->date().c_str(),
-                      grid.time->date(saving_after).c_str());
-    CHKERRQ(ierr);
-
-    // create line for history in .nc file, including time of write
-
-    string date_str = pism_timestamp();
-    char tmp[TEMPORARY_STRING_LENGTH];
-    snprintf(tmp, TEMPORARY_STRING_LENGTH,
-             "%s: %s snapshot at %s, for time-step goal %s\n",
-             date_str.c_str(), executable_short_name.c_str(), grid.time->date().c_str(),
-             grid.time->date(saving_after).c_str());
-
-    if (!snapshots_file_is_ready) {
-      // Prepare the snapshots file:
-      ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
-      ierr = nc.def_time(config.get_string("time_dimension_name"),
-                         config.get_string("calendar"),
-                         grid.time->CF_units()); CHKERRQ(ierr);
-
-      ierr = write_metadata(nc); CHKERRQ(ierr);
-
-      snapshots_file_is_ready = true;
-    } else {
-      ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append==true
-    }
-
-    ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
-    ierr = nc.append_history(tmp); CHKERRQ(ierr); // append the history
-
-    ierr = write_variables(nc, snapshot_vars, PISM_DOUBLE);
-
-    ierr = nc.close(); CHKERRQ(ierr);
-
-    grid.profiler->end(event_snapshots);
-
+    while ((current_snapshot < snapshot_times.size()) &&
+           (snapshot_times[current_snapshot] <= grid.time->current()))
+      current_snapshot++;
+  } else {
+    // we don't need to save now, so just return
     return 0;
   }
+
+  grid.profiler->begin(event_snapshots);
+
+  // flush time-series buffers
+  ierr = flush_timeseries(); CHKERRQ(ierr);
+
+  if (split_snapshots) {
+    snapshots_file_is_ready = false;	// each snapshot is written to a separate file
+    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
+             snapshots_filename.c_str(), grid.time->date().c_str());
+  } else {
+    strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+  }
+
+  ierr = verbPrintf(2, grid.com,
+                    "\nsaving snapshot to %s at %s, for time-step goal %s\n\n",
+                    filename, grid.time->date().c_str(),
+                    grid.time->date(saving_after).c_str());
+  CHKERRQ(ierr);
+
+  // create line for history in .nc file, including time of write
+
+  string date_str = pism_timestamp();
+  char tmp[TEMPORARY_STRING_LENGTH];
+  snprintf(tmp, TEMPORARY_STRING_LENGTH,
+           "%s: %s snapshot at %s, for time-step goal %s\n",
+           date_str.c_str(), executable_short_name.c_str(), grid.time->date().c_str(),
+           grid.time->date(saving_after).c_str());
+
+  if (!snapshots_file_is_ready) {
+    // Prepare the snapshots file:
+    ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
+    ierr = nc.def_time(config.get_string("time_dimension_name"),
+                       config.get_string("calendar"),
+                       grid.time->CF_units()); CHKERRQ(ierr);
+
+    ierr = write_metadata(nc); CHKERRQ(ierr);
+
+    snapshots_file_is_ready = true;
+  } else {
+    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append==true
+  }
+
+  ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
+  ierr = nc.append_history(tmp); CHKERRQ(ierr); // append the history
+
+  ierr = write_variables(nc, snapshot_vars, PISM_DOUBLE);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  grid.profiler->end(event_snapshots);
+
+  return 0;
+}
 
   //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
   PetscErrorCode IceModel::init_backups() {
@@ -757,7 +757,7 @@ PetscErrorCode IceModel::init_snapshots() {
 PetscErrorCode IceModel::write_backup() {
   PetscErrorCode ierr;
   double wall_clock_hours;
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   if (grid.rank == 0) {
     PetscLogDouble current_time;

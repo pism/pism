@@ -651,7 +651,7 @@ PetscErrorCode IceModelVec::read_attributes(const PIO &nc, int N) {
 }
 
 PetscErrorCode IceModelVec::read_attributes(string filename, int N) {
-  PIO nc(grid->com, grid->rank, "netcdf3");
+  PIO nc(*grid, "netcdf3");
   PetscErrorCode ierr;
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
@@ -727,7 +727,7 @@ PetscErrorCode IceModelVec::write(const PIO &nc, PISM_IO_Type nctype) {
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 PetscErrorCode IceModelVec::dump(const char filename[]) {
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
+  PIO nc(*grid, grid->config.get_string("output_format"));
 
   // append = false, check_dimensions = true
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
@@ -1110,7 +1110,7 @@ PetscErrorCode IceModelVec::write(string filename) {
 PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
+  PIO nc(*grid, grid->config.get_string("output_format"));
 
   ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
 
@@ -1124,7 +1124,7 @@ PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
 PetscErrorCode IceModelVec::read(string filename, unsigned int time) {
   PetscErrorCode ierr;
 
-  PIO nc(grid->com, grid->rank, "netcdf3");
+  PIO nc(*grid, "netcdf3");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -1138,7 +1138,7 @@ PetscErrorCode IceModelVec::read(string filename, unsigned int time) {
 PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
   PetscErrorCode ierr;
 
-  PIO nc(grid->com, grid->rank, "netcdf3");
+  PIO nc(*grid, "netcdf3");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -1152,7 +1152,7 @@ PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
 PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
   PetscErrorCode ierr;
 
-  PIO nc(grid->com, grid->rank, "netcdf3");
+  PIO nc(*grid, "netcdf3");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
