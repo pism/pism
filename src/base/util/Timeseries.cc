@@ -381,7 +381,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
 }
 PetscErrorCode DiagnosticTimeseries::init(string filename) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
+  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
@@ -413,7 +413,7 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
   //! Writes data to a file.
 PetscErrorCode DiagnosticTimeseries::flush() {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
+  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
   unsigned int len = 0;
 
   // return cleanly if this DiagnosticTimeseries object was created but never

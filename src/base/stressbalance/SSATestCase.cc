@@ -274,7 +274,7 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
   global_attributes.set_string("source", string("PISM ") + PISM_Revision);
 
   // Find the number of records in this file:
-  PIO nc(grid, "netcdf3");
+  PIO nc(grid, "guess_format");
   ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr); // append == true
   ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
 

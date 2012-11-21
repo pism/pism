@@ -570,3 +570,19 @@ int PISMNC4File::get_put_var_double(string variable_name,
 
   return stat;
 }
+
+string PISMNC4File::get_format() const {
+  int format, stat;
+
+  stat = nc_inq_format(ncid, &format); check(stat);
+
+  switch(format) {
+  case NC_FORMAT_CLASSIC:
+  case NC_FORMAT_64BIT:
+    return "netcdf3";
+  case NC_FORMAT_NETCDF4:
+  case NC_FORMAT_NETCDF4_CLASSIC:
+  default:
+    return "netcdf4";
+  }
+}

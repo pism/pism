@@ -103,6 +103,7 @@ public:
   // misc
   int set_fill(int fillmode, int &old_modep) const;
 
+  virtual string get_format() const;
 private:
   int get_var_double(string variable_name,
                      vector<unsigned int> start,

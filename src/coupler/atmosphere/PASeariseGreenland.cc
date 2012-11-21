@@ -75,7 +75,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
     CHKERRQ(ierr);
 
-    PIO nc(grid, "netcdf3");
+    PIO nc(grid, "netcdf3");    // OK to use netcdf3
     ierr = nc.open(delta_T_file, PISM_NOWRITE); CHKERRQ(ierr);
     {
       ierr = delta_T->read(nc, grid.time->use_reference_date()); CHKERRQ(ierr);

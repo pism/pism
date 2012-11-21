@@ -163,6 +163,8 @@ public:
 
   string get_filename() const;
 
+  virtual string get_format() const = 0;
+
   void set_local_extent(unsigned int xs, unsigned int xm,
                         unsigned int ys, unsigned int ym) const;
 

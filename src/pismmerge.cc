@@ -49,13 +49,13 @@ void check(int return_code) {
 string patch_filename(string input, int mpi_rank) {
   char tmp[TEMPORARY_STRING_LENGTH];
 
+  snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
+
   string::size_type n = input.find("RANK");
   if (n != string::npos) {
-    snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
     input.replace(n, 4, tmp);
   } else {
-    snprintf(tmp, TEMPORARY_STRING_LENGTH, "%s-%04d.nc", input.c_str(), mpi_rank);
-    input = tmp;
+    input = pism_filename_add_suffix(input, "-", tmp);
   }
 
   return input;

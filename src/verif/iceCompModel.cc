@@ -1046,7 +1046,7 @@ PetscErrorCode IceCompModel::reportErrors() {
   string filename;
   bool netcdf_report, append;
   NCTimeseries err;
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid.com, grid.rank, "netcdf3"); // OK to use netcdf3
 
   ierr = PISMOptionsString("-report_file", "NetCDF error report file",
                            filename, netcdf_report); CHKERRQ(ierr);

@@ -100,6 +100,7 @@ public:
   // misc
   virtual int set_fill(int fillmode, int &old_modep) const;
 
+  virtual string get_format() const;
 protected:
   virtual int set_access_mode(int varid, bool mapped) const;
   virtual int get_put_var_double(string variable_name,

@@ -1138,3 +1138,7 @@ void PISMNC4_HDF5::check(int return_code) const {
     H5Eclear(H5E_DEFAULT);
   }
 }
+
+string PISMNC4_HDF5::get_format() const {
+  return "netcdf4";
+}

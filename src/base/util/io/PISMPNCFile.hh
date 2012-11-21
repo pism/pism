@@ -105,6 +105,8 @@ public:
   // misc
   int set_fill(int fillmode, int &old_modep) const;
 
+  virtual string get_format() const;
+
   vector<string> mpi_io_hints;
 protected:
   void check(int return_code) const;

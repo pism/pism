@@ -32,7 +32,7 @@ static char help[] =
 static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
-  PIO nc(grid, "netcdf3");
+  PIO nc(grid, "guess_format");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_grid("bedrock_altitude", &grid, NOT_PERIODIC); CHKERRQ(ierr);

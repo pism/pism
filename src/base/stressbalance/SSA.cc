@@ -95,7 +95,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   if (i_set) {
     bool dont_read_initial_guess, u_ssa_found, v_ssa_found;
     unsigned int start;
-    PIO nc(grid, "netcdf3");
+    PIO nc(grid, "guess_format");
 
     ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 

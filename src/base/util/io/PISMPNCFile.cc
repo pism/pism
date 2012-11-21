@@ -505,7 +505,7 @@ int PISMPNCFile::inq_atttype(string variable_name, string att_name, PISM_IO_Type
     stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = ncmpi_inq_atttype(ncid, varid, att_name.c_str(), &tmp); check(stat);
+  stat = ncmpi_inq_atttype(ncid, varid, att_name.c_str(), &tmp);
   if (stat == NC_ENOTATT) {
     tmp = NC_NAT;
   } else {
@@ -658,3 +658,6 @@ void PISMPNCFile::init_hints() {
 
 }
 
+string PISMPNCFile::get_format() const {
+  return "netcdf3";
+}

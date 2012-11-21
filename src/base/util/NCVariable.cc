@@ -936,7 +936,7 @@ bool NCVariable::is_valid(PetscScalar a) const {
 
 PetscErrorCode NCConfigVariable::read(string filename) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
+  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -949,7 +949,7 @@ PetscErrorCode NCConfigVariable::read(string filename) {
 
 PetscErrorCode NCConfigVariable::write(string filename) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3");
+  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
 
   ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
 

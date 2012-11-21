@@ -71,7 +71,7 @@ PetscErrorCode PISMGregorianTime::init_from_file(string filename) {
   bool exists;
 
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  PIO nc(com, rank, "netcdf3");
+  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var(time_name, exists); CHKERRQ(ierr);

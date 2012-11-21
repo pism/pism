@@ -104,6 +104,7 @@ public:
   // misc
   virtual int set_fill(int fillmode, int &old_modep) const;
 
+  virtual string get_format() const;
 protected:
   virtual void check(int return_code) const;
 

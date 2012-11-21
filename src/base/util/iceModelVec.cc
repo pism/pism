@@ -651,7 +651,7 @@ PetscErrorCode IceModelVec::read_attributes(const PIO &nc, int N) {
 }
 
 PetscErrorCode IceModelVec::read_attributes(string filename, int N) {
-  PIO nc(*grid, "netcdf3");
+  PIO nc(*grid, "netcdf3");     // OK to use netcdf3
   PetscErrorCode ierr;
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
@@ -1124,7 +1124,7 @@ PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
 PetscErrorCode IceModelVec::read(string filename, unsigned int time) {
   PetscErrorCode ierr;
 
-  PIO nc(*grid, "netcdf3");
+  PIO nc(*grid, "guess_format");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -1138,7 +1138,7 @@ PetscErrorCode IceModelVec::read(string filename, unsigned int time) {
 PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
   PetscErrorCode ierr;
 
-  PIO nc(*grid, "netcdf3");
+  PIO nc(*grid, "guess_format");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -1152,7 +1152,7 @@ PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
 PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
   PetscErrorCode ierr;
 
-  PIO nc(*grid, "netcdf3");
+  PIO nc(*grid, "guess_format");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 

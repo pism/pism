@@ -154,13 +154,14 @@ public:
                                          vector<unsigned int> imap, double *op) const;
 
   void set_local_extent(unsigned int xs, unsigned int xm,
-                        unsigned int ys, unsigned int ym) const;
+                        unsigned int ys, unsigned int ym);
 protected:
   MPI_Comm com;
   int rank;
   string m_mode;
   bool shallow_copy;
   PISMNCFile *nc;
+  int m_xs, m_xm, m_ys, m_ym;
 
   PetscErrorCode compute_start_and_count(string name, int t_start,
                                          int x_start, int x_count,
@@ -173,6 +174,8 @@ protected:
   PetscErrorCode k_below(double z, const vector<double> &zlevels) const;
 
   PetscErrorCode regrid(IceGrid *grid, const vector<double> &zlevels_out, LocalInterpCtx *lic, Vec g) const;
+
+  PetscErrorCode detect_mode(string filename);
 private:
   void constructor(MPI_Comm com, int rank, string mode);
 };
