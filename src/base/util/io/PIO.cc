@@ -44,7 +44,9 @@ static PISMNCFile* create_backend(MPI_Comm com, int rank, string mode) {
   if (mode == "netcdf3") {
     return new PISMNC3File(com, rank);
   } else if (mode == "quilt") {
-    return new PISMNC4_Quilt(com, rank);
+    return new PISMNC4_Quilt(com, rank, false);
+  } else if (mode == "quilt-with-compression") {
+    return new PISMNC4_Quilt(com, rank, true);
   }
 #if (PISM_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
@@ -150,7 +152,7 @@ PetscErrorCode PIO::detect_mode(string filename) {
 
     if (nc != NULL) {
       m_mode = modes[j];
-      stat = verbPrintf(2, com,
+      stat = verbPrintf(3, com,
                         "  - Using the %s backend to read from %s...\n",
                         modes[j].c_str(), filename.c_str()); CHKERRQ(stat);
       break;

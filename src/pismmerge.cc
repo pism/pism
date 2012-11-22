@@ -46,16 +46,18 @@ void check(int return_code) {
 }
 
 //! \brief Computes the file name corresponding to a patch written by mpi_rank.
-string patch_filename(string input, int mpi_rank) {
+static string patch_filename(string input, int mpi_rank) {
   char tmp[TEMPORARY_STRING_LENGTH];
 
   snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
 
   string::size_type n = input.find("RANK");
   if (n != string::npos) {
+    snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
     input.replace(n, 4, tmp);
   } else {
-    input = pism_filename_add_suffix(input, "-", tmp);
+    snprintf(tmp, TEMPORARY_STRING_LENGTH, "-rank%04d", mpi_rank);
+    input = pism_filename_add_suffix(input, tmp, "");
   }
 
   return input;
@@ -67,7 +69,7 @@ string output_filename(string input) {
   if (n != string::npos) {
     input.replace(n, 4, "ALL");
   } else {
-    input += "-ALL.nc";
+    input = pism_filename_add_suffix(input, "-ALL", "");
   }
 
   return input;
@@ -227,14 +229,14 @@ int patch_geometry(PISMNC4_Serial &input, int &xs, int &ys,
     printf("ERROR: x_patch:patch_offset does not exist or has the wrong length.\n");
     PISMEnd();
   }
-  xs = tmp[0];
+  xs = (int)tmp[0];
 
   stat = input.get_att_double("y_patch", "patch_offset", tmp);
   if (stat != 0 || tmp.size() != 1) {
     printf("ERROR: y_patch:patch_offset does not exist or has the wrong length.\n");
     PISMEnd();
   }
-  ys = tmp[0];
+  ys = (int)tmp[0];
 
   stat = input.inq_dimlen("x_patch", xm); check(stat);
   stat = input.inq_dimlen("y_patch", ym); check(stat);

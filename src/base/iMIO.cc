@@ -49,8 +49,6 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
     config_out;
   bool o_set, dump_config;
 
-  grid.profiler->begin(event_output);
-
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
@@ -77,8 +75,6 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
   if (dump_config) {
     ierr = config.write(config_out); CHKERRQ(ierr);
   }
-
-  grid.profiler->end(event_output);
 
 #ifdef PISM_PROFILE
   bool flag;
@@ -145,6 +141,8 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
 					 PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
+
+  grid.profiler->begin(event_output);
 
   grid.profiler->begin(event_output_define);
 
@@ -284,6 +282,8 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
     }
     ierr = verbPrintf(threshold, grid.com, "\n"); CHKERRQ(ierr);
   }
+
+  grid.profiler->end(event_output);
 
   return 0;
 }

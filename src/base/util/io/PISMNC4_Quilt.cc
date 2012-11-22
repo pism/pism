@@ -34,9 +34,11 @@ static string patch_filename(string input, int mpi_rank) {
 
   string::size_type n = input.find("RANK");
   if (n != string::npos) {
+    snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
     input.replace(n, 4, tmp);
   } else {
-    input = pism_filename_add_suffix(input, "-", tmp);
+    snprintf(tmp, TEMPORARY_STRING_LENGTH, "-rank%04d", mpi_rank);
+    input = pism_filename_add_suffix(input, tmp, "");
   }
 
   return input;
@@ -127,7 +129,7 @@ int PISMNC4_Quilt::def_var(string name, PISM_IO_Type nctype, vector<string> dims
   stat = PISMNC4File::def_var(name, nctype, dims); check(stat);
 
   // Compress 2D and 3D variables
-  if (dims.size() > 1) {
+  if (m_compress && dims.size() > 1) {
     int varid;
 
     stat = nc_inq_varid(ncid, name.c_str(), &varid); check(stat);

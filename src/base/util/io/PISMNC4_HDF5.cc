@@ -183,7 +183,7 @@ static unsigned int compute_stripe_size(MPI_Comm com, int xm, int ym) {
   MPI_Allreduce(&ym, &max_ym, 1, MPI_INT, MPI_MAX, com);
 
   // round the chunk size up to the nearest megabyte
-  stripe_size = ceil(static_cast<double>(sizeof(double) * max_xm * max_ym) / (1024.0 * 1024.0));
+  stripe_size = (unsigned int)ceil(static_cast<double>(sizeof(double) * max_xm * max_ym) / (1024.0 * 1024.0));
 
   // don't use stipes of more that 32 Mbytes
   if (stripe_size > 32)
