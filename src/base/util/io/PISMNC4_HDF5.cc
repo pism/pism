@@ -16,10 +16,27 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Defining H5_NO_DEPRECATED_SYMBOLS is supposed to be enough
+// to select the v1.8 HDF5 API even if the library was built
+// with v1.6 API set as the default...
+#define H5_NO_DEPRECATED_SYMBOLS 1
+
+// but we need the following seven lines because of a bug in H5version.h. :-(
+#define H5Dopen_vers 2
+#define H5Dcreate_vers 2
+#define H5Eprint_vers 2
+#define H5Eclear_vers 2
+#define H5Eget_auto_vers 2
+#define H5Eset_auto_vers 2
+#define H5E_auto_t_vers 2
+
 #include <hdf5.h>
 #include <hdf5_hl.h>
+
+
 #include <assert.h>
 #include <cmath>
+#include <stdlib.h>
 
 #define TEMPORARY_STRING_LENGTH 32768
 
