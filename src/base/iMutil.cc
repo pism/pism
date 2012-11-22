@@ -155,7 +155,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 //! Get time and user/host name and add it to the given string.
 PetscErrorCode  IceModel::stampHistory(string str) {
 
-  global_attributes.prepend_history(pism_username_prefix() + (str + "\n"));
+  global_attributes.prepend_history(pism_username_prefix(grid.com) + (str + "\n"));
   
   return 0;
 }

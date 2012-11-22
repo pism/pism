@@ -218,7 +218,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   global_attrs.set_string("source", string("pclimate ") + PISM_Revision);
 
   // Create a string with space-separated command-line arguments:
-  string history = pism_username_prefix() + pism_args_string();
+  string history = pism_username_prefix(com) + pism_args_string();
 
   global_attrs.prepend_history(history);
 

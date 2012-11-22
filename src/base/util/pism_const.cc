@@ -181,7 +181,7 @@ string pism_timestamp() {
 }
 
 //! Creates a string with the user name, hostname and the time-stamp (for history strings).
-string pism_username_prefix() {
+string pism_username_prefix(MPI_Comm com) {
   PetscErrorCode ierr;
 
   char username[50];
@@ -196,7 +196,14 @@ string pism_username_prefix() {
   ostringstream message;
   message << username << "@" << hostname << " " << pism_timestamp() << ": ";
 
-  return message.str();
+  string result = message.str();
+  int length = result.size();
+  MPI_Bcast(&length, 1, MPI_INT, 0, com);
+
+  result.resize(length);
+  MPI_Bcast(&result[0], length, MPI_CHAR, 0, com);
+
+  return result;
 }
 
 //! \brief Uses argc and argv to create the string with current PISM
