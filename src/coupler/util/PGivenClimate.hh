@@ -115,22 +115,22 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode write_variables(set<string> vars, string fname)
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc)
   {
     PetscErrorCode ierr;
 
     if (set_contains(vars, temp_name)) {
-      ierr = temp.write(fname.c_str()); CHKERRQ(ierr);
+      ierr = temp.write(nc); CHKERRQ(ierr);
       vars.erase(temp_name);
     }
 
     if (set_contains(vars, mass_flux_name)) {
-      ierr = mass_flux.write(fname.c_str()); CHKERRQ(ierr);
+      ierr = mass_flux.write(nc); CHKERRQ(ierr);
       vars.erase(mass_flux_name);
     }
 
     if (Model::input_model != NULL) {
-      ierr = Model::input_model->write_variables(vars, fname); CHKERRQ(ierr);
+      ierr = Model::input_model->write_variables(vars, nc); CHKERRQ(ierr);
     }
 
     return 0;

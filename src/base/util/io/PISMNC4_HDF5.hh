@@ -16,18 +16,23 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMNC4FILE_H_
-#define _PISMNC4FILE_H_
+#ifndef _PISMNC4_HDF5_H_
+#define _PISMNC4_HDF5_H_
+
+#include <hdf5.h>
 
 #include "PISMNCFile.hh"
 
-class PISMNC4File : public PISMNCFile
-{
+class PISMNC4_HDF5 : public PISMNCFile {
 public:
-  PISMNC4File(MPI_Comm com, int rank);
-  virtual ~PISMNC4File();
+  PISMNC4_HDF5(MPI_Comm com, int rank);
+  virtual ~PISMNC4_HDF5();
 
   // open/create/close
+  virtual int open(string filename, int mode);
+
+  virtual int create(string filename);
+
   virtual int close();
 
   // redef/enddef
@@ -81,14 +86,13 @@ public:
 
   virtual int inq_varname(unsigned int j, string &result) const;
 
-  int inq_vartype(string variable_name, PISM_IO_Type &result) const;
+  virtual int inq_vartype(string variable_name, PISM_IO_Type &result) const;
 
   // att
   virtual int get_att_double(string variable_name, string att_name, vector<double> &result) const;
 
   virtual int get_att_text(string variable_name, string att_name, string &result) const;
 
-  using PISMNCFile::put_att_double;
   virtual int put_att_double(string variable_name, string att_name, PISM_IO_Type xtype, vector<double> &data) const;
 
   virtual int put_att_text(string variable_name, string att_name, string value) const;
@@ -102,13 +106,9 @@ public:
 
   virtual string get_format() const;
 protected:
-  virtual int set_access_mode(int varid, bool mapped) const;
-  virtual int get_put_var_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
-                                 vector<unsigned int> imap, double *ip,
-                                 bool get,
-                                 bool mapped) const;
+  virtual void check(int return_code) const;
+
+  hid_t file_id;
 };
 
-#endif /* _PISMNC4FILE_H_ */
+#endif /* _PISMNC4_HDF5_H_ */

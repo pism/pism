@@ -355,11 +355,11 @@ PetscErrorCode PISMStressBalance::define_variables(set<string> vars, const PIO &
 }
 
 
-PetscErrorCode PISMStressBalance::write_variables(set<string> vars, string filename) {
+PetscErrorCode PISMStressBalance::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
-  ierr = stress_balance->write_variables(vars, filename); CHKERRQ(ierr);
-  ierr = modifier->write_variables(vars, filename); CHKERRQ(ierr);
+  ierr = stress_balance->write_variables(vars, nc); CHKERRQ(ierr);
+  ierr = modifier->write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }

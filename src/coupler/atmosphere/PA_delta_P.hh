@@ -38,7 +38,7 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(set<string> vars, string file);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
 protected:
   NCSpatialVariable air_temp, precipitation;

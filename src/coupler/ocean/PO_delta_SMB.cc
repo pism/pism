@@ -87,7 +87,7 @@ PetscErrorCode PO_delta_SMB::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode PO_delta_SMB::write_variables(set<string> vars, string file) {
+PetscErrorCode PO_delta_SMB::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 
@@ -98,7 +98,7 @@ PetscErrorCode PO_delta_SMB::write_variables(set<string> vars, string file) {
 
     ierr = tmp.set_metadata(shelfbtemp, 0); CHKERRQ(ierr);
     ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(file.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
     vars.erase("shelfbtemp");
   }
 
@@ -110,11 +110,11 @@ PetscErrorCode PO_delta_SMB::write_variables(set<string> vars, string file) {
     ierr = tmp.set_metadata(shelfbmassflux, 0); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;
     ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(file.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
     vars.erase("shelfbmassflux");
   }
 
-  ierr = input_model->write_variables(vars, file); CHKERRQ(ierr);
+  ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }

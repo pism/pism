@@ -41,6 +41,8 @@ set(PISMUTIL_SRC
   base/util/io/LocalInterpCtx.cc
   base/util/io/PIO.cc
   base/util/io/PISMNC3File.cc
+  base/util/io/PISMNC4File.cc
+  base/util/io/PISMNC4_Quilt.cc
   base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
   base/util/pism_default_config.cc
@@ -53,7 +55,7 @@ set(PISMUTIL_SRC
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=1")
-  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4File.cc)
+  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4_Par.cc)
 else()
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=0")
 endif()
@@ -65,6 +67,15 @@ if (Pism_USE_PNETCDF)
 else()
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=0")
 endif()
+
+# Check if HDF5-based parallel I/O is enabled. If so, set compiler flags and add a source code file.
+if (Pism_USE_PARALLEL_HDF5)
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_HDF5=1")
+  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4_HDF5.cc)
+else()
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_HDF5=0")
+endif()
+
 
 # The list of headers included in PIO.cc depends on parallel I/O settings.
 # These flags determine which headers are included.
@@ -205,6 +216,9 @@ target_link_libraries (pismv pismverif pismbase)
 add_executable (pclimate pclimate.cc)
 target_link_libraries (pclimate pismboundary pismrevision)
 
+add_executable (pismmerge pismmerge.cc base/util/io/PISMNC4_Serial.cc)
+target_link_libraries (pismmerge pismutil pismrevision)
+
 find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
 mark_as_advanced(NCGEN_PROGRAM)
 
@@ -215,7 +229,7 @@ add_custom_command (OUTPUT pism_config.nc
 add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
-  pismr pisms pismv pclimate ## executables
+  pismr pisms pismv pclimate pismmerge ## executables
   pismutil pismverif pismbase pismflowlaws pismearth pismudunits # libraries
   RUNTIME DESTINATION ${Pism_BIN_DIR}
   LIBRARY DESTINATION ${Pism_LIB_DIR}

@@ -48,6 +48,10 @@ public:
 
   int inq_unlimdim(string &result) const;
 
+  int inq_dimname(int j, string &result) const;
+
+  int inq_ndims(int &result) const;
+
   // var
   int def_var(string name, PISM_IO_Type nctype, vector<string> dims) const;
 
@@ -59,7 +63,7 @@ public:
   int put_vara_double(string variable_name,
                       vector<unsigned int> start,
                       vector<unsigned int> count,
-                      const double *op) const;
+                      double *op) const;
 
   int get_varm_double(string variable_name,
                       vector<unsigned int> start,
@@ -69,7 +73,7 @@ public:
   int put_varm_double(string variable_name,
                       vector<unsigned int> start,
                       vector<unsigned int> count,
-                      vector<unsigned int> imap, const double *op) const;
+                      vector<unsigned int> imap, double *op) const;
 
   int inq_nvars(int &result) const;
 
@@ -81,6 +85,7 @@ public:
 
   int inq_varname(unsigned int j, string &result) const;
 
+  int inq_vartype(string variable_name, PISM_IO_Type &result) const;
   // att
   int get_att_double(string variable_name, string att_name, vector<double> &result) const;
 
@@ -98,6 +103,7 @@ public:
   // misc
   int set_fill(int fillmode, int &old_modep) const;
 
+  virtual string get_format() const;
 private:
   int get_var_double(string variable_name,
                      vector<unsigned int> start,

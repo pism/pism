@@ -46,9 +46,9 @@ int PISMPNCFile::open(string fname, int mode) {
 
   init_hints();
 
-  filename = fname;
+  m_filename = fname;
 
-  stat = ncmpi_open(com, filename.c_str(), mode, mpi_info, &ncid); check(stat);
+  stat = ncmpi_open(com, m_filename.c_str(), mode, mpi_info, &ncid); check(stat);
 
   define_mode = false;
 
@@ -61,9 +61,9 @@ int PISMPNCFile::create(string fname) {
 
   init_hints();
 
-  filename = fname;
+  m_filename = fname;
 
-  stat = ncmpi_create(com, filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
+  stat = ncmpi_create(com, m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
                       mpi_info, &ncid); check(stat);
   define_mode = true;
 
@@ -76,7 +76,7 @@ int PISMPNCFile::close() {
 
   ncid = -1;
 
-  filename.clear();
+  m_filename.clear();
 
   return stat;
 }
@@ -163,6 +163,26 @@ int PISMPNCFile::inq_unlimdim(string &result) const {
   return stat;
 }
 
+int PISMPNCFile::inq_dimname(int j, string &result) const {
+  int stat;
+  char dimname[NC_MAX_NAME];
+  memset(dimname, 0, NC_MAX_NAME);
+
+  stat = ncmpi_inq_dimname(ncid, j, dimname); check(stat);
+
+  result = dimname;
+
+  return stat;
+}
+
+
+int PISMPNCFile::inq_ndims(int &result) const {
+  int stat;
+
+  stat = ncmpi_inq_ndims(ncid, &result); check(stat);
+
+  return stat;
+}
 
 int PISMPNCFile::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
   vector<int> dimids;
@@ -180,7 +200,7 @@ int PISMPNCFile::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
 
 #if (PISM_DEBUG==1)
   if (stat != NC_NOERR) {
-    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", filename.c_str(),
+    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", m_filename.c_str(),
             name.c_str());
     for (unsigned int k = 0; k < dims.size(); ++k) {
       fprintf(stderr, "%s(%d), ", dims[k].c_str(), dimids[k]);
@@ -206,7 +226,7 @@ int PISMPNCFile::get_vara_double(string variable_name,
 int PISMPNCFile::put_vara_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 const double *op) const {
+                                 double *op) const {
   vector<unsigned int> dummy;
   return this->put_var_double(variable_name,
                               start, count, dummy, op, false);
@@ -225,7 +245,7 @@ int PISMPNCFile::get_varm_double(string variable_name,
 int PISMPNCFile::put_varm_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 vector<unsigned int> imap, const double *op) const {
+                                 vector<unsigned int> imap, double *op) const {
   return this->put_var_double(variable_name,
                               start, count, imap, op, true);
 }
@@ -312,6 +332,19 @@ int PISMPNCFile::inq_varname(unsigned int j, string &result) const {
   result = varname;
 
   return stat;
+}
+
+int PISMPNCFile::inq_vartype(string variable_name, PISM_IO_Type &result) const {
+  int stat, varid;
+  nc_type var_type;
+
+  stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+
+  stat = ncmpi_inq_vartype(ncid, varid, &var_type); check(stat);
+
+  result = nc_type_to_pism_type(var_type);
+
+  return 0;
 }
 
 
@@ -472,7 +505,7 @@ int PISMPNCFile::inq_atttype(string variable_name, string att_name, PISM_IO_Type
     stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = ncmpi_inq_atttype(ncid, varid, att_name.c_str(), &tmp); check(stat);
+  stat = ncmpi_inq_atttype(ncid, varid, att_name.c_str(), &tmp);
   if (stat == NC_ENOTATT) {
     tmp = NC_NAT;
   } else {
@@ -625,3 +658,6 @@ void PISMPNCFile::init_hints() {
 
 }
 
+string PISMPNCFile::get_format() const {
+  return "netcdf3";
+}

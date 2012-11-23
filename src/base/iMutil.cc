@@ -131,6 +131,8 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   // MYPPH stands for "model years per processor hour"
   mypph = grid.time->seconds_to_years(grid.time->current() - grid.time->start()) / proc_hours;
 
+  MPI_Bcast(&mypph, 1, MPI_DOUBLE, 0, grid.com);
+
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
   PetscLogDouble flops, my_flops;
@@ -155,7 +157,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 //! Get time and user/host name and add it to the given string.
 PetscErrorCode  IceModel::stampHistory(string str) {
 
-  global_attributes.prepend_history(pism_username_prefix() + (str + "\n"));
+  global_attributes.prepend_history(pism_username_prefix(grid.com) + (str + "\n"));
   
   return 0;
 }

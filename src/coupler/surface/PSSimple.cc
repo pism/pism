@@ -91,7 +91,7 @@ PetscErrorCode PSSimple::define_variables(set<string> vars, const PIO &nc, PISM_
   return 0;
 }
 
-PetscErrorCode PSSimple::write_variables(set<string> vars, string filename) {
+PetscErrorCode PSSimple::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -101,7 +101,7 @@ PetscErrorCode PSSimple::write_variables(set<string> vars, string filename) {
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
 
     vars.erase("ice_surface_temp");
   }
@@ -113,12 +113,12 @@ PetscErrorCode PSSimple::write_variables(set<string> vars, string filename) {
 
     ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
 
     vars.erase("climatic_mass_balance");
   }
 
-  ierr = PISMSurfaceModel::write_variables(vars, filename); CHKERRQ(ierr);
+  ierr = PISMSurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }

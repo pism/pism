@@ -207,17 +207,26 @@ public:
   virtual PetscErrorCode  rename(const string &short_name, const string &long_name,
                                  const string &standard_name, int component = 0);
   virtual PetscErrorCode  set_intent(string pism_intent, int component = 0);
+  virtual PetscErrorCode  read_attributes(const PIO &nc, int component = 0);
   virtual PetscErrorCode  read_attributes(string filename, int component = 0);
   virtual NCSpatialVariable get_metadata(int N = 0);
   virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);
   virtual PetscErrorCode  define(const PIO &nc, PISM_IO_Type output_datatype);
+
   virtual PetscErrorCode  write(string filename);
   virtual PetscErrorCode  write(string filename, PISM_IO_Type nctype);
-  virtual PetscErrorCode  dump(const char filename[]);
   virtual PetscErrorCode  read(string filename, unsigned int time);
   virtual PetscErrorCode  regrid(string filename, bool critical, int start = 0);
   virtual PetscErrorCode  regrid(string filename, PetscScalar default_value);
+
+  virtual PetscErrorCode  write(const PIO &nc);
+  virtual PetscErrorCode  write(const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode  read(const PIO &nc, unsigned int time);
+  virtual PetscErrorCode  regrid(const PIO &nc, bool critical, int start = 0);
+  virtual PetscErrorCode  regrid(const PIO &nc, PetscScalar default_value);
+
+  virtual PetscErrorCode  dump(const char filename[]);
 
   virtual PetscErrorCode  begin_access();
   virtual PetscErrorCode  end_access();
@@ -278,7 +287,7 @@ protected:
   void check_array_indices(int i, int j);
   void check_array_indices(int i, int j, int k);
   virtual PetscErrorCode reset_attrs(int N);
-  virtual PetscErrorCode get_interp_context(string filename, LocalInterpCtx* &lic);
+  virtual PetscErrorCode get_interp_context(const PIO &nc, LocalInterpCtx* &lic);
 };
 
 
@@ -319,10 +328,12 @@ public:
   virtual PetscErrorCode view(PetscInt viewer_size);
   virtual PetscErrorCode view(PetscViewer v1, PetscViewer v2);
   using IceModelVec::write;
-  virtual PetscErrorCode write(string filename, PISM_IO_Type nctype);
-  virtual PetscErrorCode read(string filename, const unsigned int time);
-  virtual PetscErrorCode regrid(string filename, bool critical, int start = 0);
-  virtual PetscErrorCode regrid(string filename, PetscScalar default_value);
+  using IceModelVec::read;
+  using IceModelVec::regrid;
+  virtual PetscErrorCode write(const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode read(const PIO &nc, const unsigned int time);
+  virtual PetscErrorCode regrid(const PIO &nc, bool critical, int start = 0);
+  virtual PetscErrorCode regrid(const PIO &nc, PetscScalar default_value);
   // component-wise access:
   virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2S &source);

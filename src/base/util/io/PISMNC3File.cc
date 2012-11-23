@@ -39,7 +39,7 @@ PISMNC3File::~PISMNC3File() {
     if (rank == 0) {
       nc_close(ncid);
       fprintf(stderr, "PISMNC3File::~PISMNC3File: NetCDF file %s is still open\n",
-              filename.c_str());
+              m_filename.c_str());
     }
     ncid = -1;
   }
@@ -49,10 +49,10 @@ PISMNC3File::~PISMNC3File() {
 int PISMNC3File::open(string fname, int mode) {
   int stat;
 
-  filename = fname;
+  m_filename = fname;
 
   if (rank == 0) {
-    stat = nc_open(filename.c_str(), mode, &ncid);
+    stat = nc_open(m_filename.c_str(), mode, &ncid);
   }
 
   MPI_Barrier(com);
@@ -68,10 +68,10 @@ int PISMNC3File::open(string fname, int mode) {
 int PISMNC3File::create(string fname) {
   int stat;
 
-  filename = fname;
+  m_filename = fname;
 
   if (rank == 0) {
-    stat = nc_create(filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &ncid);
+    stat = nc_create(m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &ncid);
   }
 
   MPI_Barrier(com);
@@ -96,7 +96,7 @@ int PISMNC3File::close() {
   MPI_Bcast(&ncid, 1, MPI_INT, 0, com);
   MPI_Bcast(&stat, 1, MPI_INT, 0, com);
 
-  filename.clear();
+  m_filename.clear();
 
   return stat;
 }
@@ -222,6 +222,40 @@ int PISMNC3File::inq_unlimdim(string &result) const {
   MPI_Bcast(dimname, NC_MAX_NAME, MPI_CHAR, 0, com);
 
   result = dimname;
+
+  return stat;
+}
+
+int PISMNC3File::inq_dimname(int j, string &result) const {
+  int stat;
+  char dimname[NC_MAX_NAME];
+  memset(dimname, 0, NC_MAX_NAME);
+
+  if (rank == 0) {
+    stat = nc_inq_dimname(ncid, j, dimname); check(stat);
+  }
+
+  MPI_Barrier(com);
+
+  MPI_Bcast(&stat,   1, MPI_INT, 0, com);
+  MPI_Bcast(dimname, NC_MAX_NAME, MPI_CHAR, 0, com);
+
+  result = dimname;
+
+  return stat;
+}
+
+
+int PISMNC3File::inq_ndims(int &result) const {
+  int stat;
+
+  if (rank == 0) {
+    stat = nc_inq_ndims(ncid, &result); check(stat);
+  }
+
+  MPI_Barrier(com);
+  MPI_Bcast(&result, 1, MPI_INT, 0, com);
+  MPI_Bcast(&stat,   1, MPI_INT,      0, com);
 
   return stat;
 }
@@ -386,7 +420,7 @@ int PISMNC3File::get_var_double(string variable_name,
 int PISMNC3File::put_varm_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 vector<unsigned int> imap, const double *op) const {
+                                 vector<unsigned int> imap, double *op) const {
   return this->put_var_double(variable_name,
                               start, count, imap, op, true);
 }
@@ -394,7 +428,7 @@ int PISMNC3File::put_varm_double(string variable_name,
 int PISMNC3File::put_vara_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 const double *op) const {
+                                 double *op) const {
   vector<unsigned int> dummy;
   return this->put_var_double(variable_name,
                               start, count, dummy, op, false);
@@ -499,7 +533,7 @@ int PISMNC3File::put_var_double(string variable_name,
         fprintf(stderr, "NetCDF call nc_put_var?_double failed with return code %d, '%s'\n",
                 stat, nc_strerror(stat));
         fprintf(stderr, "while writing '%s' to '%s'\n",
-                variable_name.c_str(), filename.c_str());
+                variable_name.c_str(), m_filename.c_str());
 
         for (int k = 0; k < ndims; ++k)
           fprintf(stderr, "start[%d] = %d\n", k, start[k]);
@@ -642,6 +676,27 @@ int PISMNC3File::inq_varname(unsigned int j, string &result) const {
   MPI_Bcast(varname, NC_MAX_NAME, MPI_CHAR, 0, com);
 
   result = varname;
+
+  return stat;
+}
+
+int PISMNC3File::inq_vartype(string variable_name, PISM_IO_Type &result) const {
+  int stat, tmp;
+
+  if (rank == 0) {
+    nc_type var_type;
+    stat = nc_inq_varid(ncid, variable_name.c_str(), &tmp); check(stat);
+    stat = nc_inq_vartype(ncid, tmp, &var_type); check(stat);
+
+    tmp = var_type;
+  }
+
+  MPI_Barrier(com);
+
+  MPI_Bcast(&stat,   1, MPI_INT, 0, com);
+  MPI_Bcast(&tmp,    1, MPI_INT, 0, com);
+
+  result = nc_type_to_pism_type(tmp);
 
   return stat;
 }
@@ -894,4 +949,24 @@ int PISMNC3File::set_fill(int fillmode, int &old_modep) const {
   MPI_Bcast(&stat, 1, MPI_INT, 0, com);
 
   return stat;
+}
+
+string PISMNC3File::get_format() const {
+  int format;
+
+  if (rank == 0) {
+    int stat = nc_inq_format(ncid, &format); check(stat);
+  }
+  MPI_Barrier(com);
+  MPI_Bcast(&format, 1, MPI_INT, 0, com);
+
+  switch(format) {
+  case NC_FORMAT_CLASSIC:
+  case NC_FORMAT_64BIT:
+    return "netcdf3";
+  case NC_FORMAT_NETCDF4:
+  case NC_FORMAT_NETCDF4_CLASSIC:
+  default:
+    return "netcdf4";
+  }
 }

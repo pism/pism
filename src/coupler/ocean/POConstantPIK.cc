@@ -172,7 +172,7 @@ PetscErrorCode POConstantPIK::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode POConstantPIK::write_variables(set<string> vars, string filename) {
+PetscErrorCode POConstantPIK::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 
@@ -183,7 +183,7 @@ PetscErrorCode POConstantPIK::write_variables(set<string> vars, string filename)
 
     ierr = tmp.set_metadata(shelfbtemp, 0); CHKERRQ(ierr);
     ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
@@ -194,7 +194,7 @@ PetscErrorCode POConstantPIK::write_variables(set<string> vars, string filename)
     ierr = tmp.set_metadata(shelfbmassflux, 0); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;
     ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
   }
 
   return 0;

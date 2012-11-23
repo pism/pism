@@ -69,7 +69,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // overridden later, in IceModel::set_grid_from_options()).
 
   // Determine the grid extent from a bootstrapping file:
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
   bool x_dim_exists, y_dim_exists, t_exists;
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -285,7 +285,7 @@ PetscErrorCode IceModel::grid_setup() {
 			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+    PIO nc(grid, "guess_format");
     string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output
@@ -852,14 +852,14 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
 
-  // Make sure that we use the output_variable_order that works with NetCDF-4
-  // parallel I/O. (For two reasons: it is faster and it will probably hang if
-  // it is not "xyz".)
-
-  if (config.get_string("output_format") == "netcdf4_parallel" &&
+  // Make sure that we use the output_variable_order that works with NetCDF-4,
+  // "quilt", and HDF5 parallel I/O. (For different reasons, but mainly because
+  // it is faster.)
+  string o_format = config.get_string("output_format");
+  if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
       config.get_string("output_variable_order") != "xyz") {
     PetscPrintf(grid.com,
-                "PISM ERROR: -o_format netcdf4_parallel requires -o_order xyz.\n");
+                "PISM ERROR: output formats netcdf4_parallel, quilt, and hdf5 require -o_order xyz.\n");
     PISMEnd();
   }
 
@@ -872,7 +872,7 @@ PetscErrorCode IceModel::misc_setup() {
 
   event_beddef  = grid.profiler->create("bed_def",  "time spent updating the bed deformation model");
 
-  event_output    = grid.profiler->create("output", "time spent writing an output file");
+  event_output    = grid.profiler->create("output", "time spent writing output files");
   event_output_define = grid.profiler->create("output_define", "time spent defining variables");
   event_snapshots = grid.profiler->create("snapshots", "time spent writing snapshots");
   event_backups   = grid.profiler->create("backups", "time spent writing backups");

@@ -274,64 +274,65 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
   global_attributes.set_string("source", string("PISM ") + PISM_Revision);
 
   // Find the number of records in this file:
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid, "guess_format");
   ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr); // append == true
   ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(nc); CHKERRQ(ierr);
 
   // Write the dimension variable:
   err.init("N", "N", grid.com, grid.rank);
-  ierr = err.write(filename, (size_t)start, (double)(start + 1), PISM_INT); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, (double)(start + 1), PISM_INT); CHKERRQ(ierr);
 
   // Always write grid parameters:
   err.short_name = "dx";
   ierr = err.set_units("meters"); CHKERRQ(ierr);
-  ierr = err.write(filename, (size_t)start, grid.dx); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, grid.dx); CHKERRQ(ierr);
   err.short_name = "dy";
-  ierr = err.write(filename, (size_t)start, grid.dy); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, grid.dy); CHKERRQ(ierr);
 
   // Always write the test name:
   err.reset();
   err.short_name = "test";
-  ierr = err.write(filename, (size_t)start, testname[0], PISM_BYTE); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, testname[0], PISM_BYTE); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "max_velocity";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum ice velocity magnitude error");
-  ierr = err.write(filename, (size_t)start, max_vector); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, max_vector); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "relative_velocity";
   ierr = err.set_units("percent"); CHKERRQ(ierr);
   err.set_string("long_name", "relative ice velocity magnitude error");
-  ierr = err.write(filename, (size_t)start, rel_vector); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, rel_vector); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "maximum_u";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
-  ierr = err.write(filename, (size_t)start, max_u); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, max_u); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "maximum_v";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
-  ierr = err.write(filename, (size_t)start, max_v); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, max_v); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "average_u";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the X-component of the ice velocity");
-  ierr = err.write(filename, (size_t)start, avg_u); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, avg_u); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "average_v";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
-  ierr = err.write(filename, (size_t)start, avg_v); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, avg_v); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -350,7 +351,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
   PetscErrorCode ierr;
 
   // Write results to an output file:
-  PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO pio(grid, grid.config.get_string("output_format"));
   ierr = pio.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = pio.def_time(config.get_string("time_dimension_name"),
                       config.get_string("calendar"),

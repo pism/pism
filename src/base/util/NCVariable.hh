@@ -82,7 +82,7 @@ public:
    */
   map<string, vector<double> > doubles; //!< scalar and array attributes
 
-  virtual PetscErrorCode read_attributes(string filename);
+  virtual PetscErrorCode read_attributes(const PIO &nc);
 
   virtual PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype,
                                 bool write_in_glaciological_units = true) = 0;
@@ -105,8 +105,12 @@ class NCConfigVariable : public NCVariable {
 public:
   virtual PetscErrorCode print(PetscInt verbosity_threshhold) const;
   virtual PetscErrorCode print() const { print(4); return 0; };
+  virtual PetscErrorCode read(const PIO &nc);
+  virtual PetscErrorCode write(const PIO &nc);
+
   virtual PetscErrorCode read(string filename);
   virtual PetscErrorCode write(string filename);
+
   virtual string get_config_filename() const;
   virtual double get(string) const;
   virtual double get(string name, string u1, string u2) const;
@@ -135,8 +139,14 @@ protected:
 */
 class NCGlobalAttributes : public NCConfigVariable {
 public:
-  virtual PetscErrorCode read(string filename);
-  virtual PetscErrorCode write(string filename);
+  using NCConfigVariable::read;
+  using NCConfigVariable::write;
+  virtual PetscErrorCode read(const PIO &nc);
+  virtual PetscErrorCode write(const PIO &nc);
+
+  // virtual PetscErrorCode read(string filename);
+  // virtual PetscErrorCode write(string filename);
+
   virtual void prepend_history(string message);
   virtual void set_from_config(const NCConfigVariable &input);
 protected:
@@ -148,11 +158,17 @@ class NCTimeseries : public NCVariable {
 public:
   string dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
   void    init(string name, string dim_name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode read(string filename, bool use_reference_date, vector<double> &data);
-  virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
-  virtual PetscErrorCode write(string filename, size_t start, double data, PISM_IO_Type nctype = PISM_DOUBLE);
+
+  virtual PetscErrorCode read(const PIO &nc, bool use_reference_date, vector<double> &data);
+  virtual PetscErrorCode write(const PIO &nc, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
+  virtual PetscErrorCode write(const PIO &nc, size_t start, double data, PISM_IO_Type nctype = PISM_DOUBLE);
+
+  // virtual PetscErrorCode read(string filename, bool use_reference_date, vector<double> &data);
+  // virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
+  // virtual PetscErrorCode write(string filename, size_t start, double data, PISM_IO_Type nctype = PISM_DOUBLE);
+
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
-  virtual PetscErrorCode get_bounds_name(string filename, string &result);
+  virtual PetscErrorCode get_bounds_name(const PIO &nc, string &result);
   virtual PetscErrorCode report_range(vector<double> &data);
 
   virtual PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype, bool);
@@ -162,9 +178,14 @@ class NCTimeBounds : public NCVariable
 {
 public:
   void init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode read(string filename, bool use_reference_date, vector<double> &data);
-  virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
-  virtual PetscErrorCode write(string filename, size_t start, double a, double b, PISM_IO_Type nctype = PISM_DOUBLE);
+  virtual PetscErrorCode read(const PIO &nc, bool use_reference_date, vector<double> &data);
+  virtual PetscErrorCode write(const PIO &nc, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
+  virtual PetscErrorCode write(const PIO &nc, size_t start, double a, double b, PISM_IO_Type nctype = PISM_DOUBLE);
+
+  // virtual PetscErrorCode read(string filename, bool use_reference_date, vector<double> &data);
+  // virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
+  // virtual PetscErrorCode write(string filename, size_t start, double a, double b, PISM_IO_Type nctype = PISM_DOUBLE);
+
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
 
   virtual PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype, bool);

@@ -62,7 +62,7 @@ public:
                                           PISM_IO_Type /*nctype*/);
 
   //! Writes requested fields to a file.
-  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
   //! \brief Set the vertically-averaged ice velocity boundary condition.
   /*!

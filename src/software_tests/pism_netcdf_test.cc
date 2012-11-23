@@ -1,6 +1,6 @@
 #include "PISMPNCFile.hh"
 #include "PISMNC3File.hh"
-#include "PISMNC4File.hh"
+#include "PISMNC4_Par.hh"
 #include "PISMProf.hh"
 #include "pism_options.hh"
 
@@ -141,7 +141,7 @@ int main(int argc, char**argv) {
       }
 #if (PISM_PARALLEL_NETCDF4==1)
       else if (mode == "netcdf4") {
-        nc = new PISMNC4File(mpi_comm, mpi_rank);
+        nc = new PISMNC4_Par(mpi_comm, mpi_rank);
       }
 #endif
 #if (PISM_PNETCDF==1)

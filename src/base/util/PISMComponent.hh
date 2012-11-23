@@ -125,7 +125,7 @@ public:
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/) = 0;
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO& /*nc*/) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
@@ -216,10 +216,10 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode write_variables(set<string> vars, string filename)
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+      PetscErrorCode ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
     }
     return 0;
   }

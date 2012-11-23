@@ -471,7 +471,7 @@ int main(int argc, char *argv[]) {
                         &vH, u_sia, v_sia, w_sia, sigma); CHKERRQ(ierr);
 
     // Write results to an output file:
-    PIO pio(grid.com, grid.rank, "netcdf3");
+    PIO pio(grid, "guess_format");
 
     ierr = pio.open(output_file, PISM_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(config.get_string("time_dimension_name"),

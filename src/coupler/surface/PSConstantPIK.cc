@@ -137,15 +137,15 @@ PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const PIO &nc, 
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::write_variables(set<string> vars, string filename) {
+PetscErrorCode PSConstantPIK::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ierr = ice_surface_temp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = ice_surface_temp.write(nc); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = climatic_mass_balance.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = climatic_mass_balance.write(nc); CHKERRQ(ierr);
   }
 
   return 0;

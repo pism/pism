@@ -95,7 +95,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   if (i_set) {
     bool dont_read_initial_guess, u_ssa_found, v_ssa_found;
     unsigned int start;
-    PIO nc(grid.com, grid.rank, "netcdf3");
+    PIO nc(grid, "guess_format");
 
     ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 
@@ -576,11 +576,11 @@ PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, PISM_IO_Ty
 }
 
 
-PetscErrorCode SSA::write_variables(set<string> vars, string filename) {
+PetscErrorCode SSA::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {
-    ierr = velocity.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = velocity.write(nc); CHKERRQ(ierr);
   }
 
   return 0;

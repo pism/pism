@@ -87,7 +87,7 @@ PetscErrorCode PAConstantPIK::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::write_variables(set<string> vars, string filename) {
+PetscErrorCode PAConstantPIK::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {
@@ -97,15 +97,15 @@ PetscErrorCode PAConstantPIK::write_variables(set<string> vars, string filename)
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "precipitation")) {
-    ierr = precipitation.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = precipitation.write(nc); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "air_temp")) {
-    ierr = air_temp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = air_temp.write(nc); CHKERRQ(ierr);
   }
 
   return 0;

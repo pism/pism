@@ -33,7 +33,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
   //! This method implements the parameterization.
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
