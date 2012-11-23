@@ -246,6 +246,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
     grid.Ly = (y_range[1] - y_range[0]) / 2.0;
   }
 
+  grid.check_parameters();
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid.compute_vertical_levels();    CHKERRQ(ierr);
 
