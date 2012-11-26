@@ -358,17 +358,17 @@ PetscErrorCode SSATestCase::write(const string &filename)
   ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
   ierr = pio.close(); CHKERRQ(ierr);
 
-  ierr = surface.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = thickness.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = bc_mask.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = tauc.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = bed.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = enthalpy.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = vel_bc.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = surface.write(filename); CHKERRQ(ierr);
+  ierr = thickness.write(filename); CHKERRQ(ierr);
+  ierr = bc_mask.write(filename); CHKERRQ(ierr);
+  ierr = tauc.write(filename); CHKERRQ(ierr);
+  ierr = bed.write(filename); CHKERRQ(ierr);
+  ierr = enthalpy.write(filename); CHKERRQ(ierr);
+  ierr = vel_bc.write(filename); CHKERRQ(ierr);
 
   IceModelVec2V *vel_ssa;
   ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
-  ierr = vel_ssa->write(filename.c_str()); CHKERRQ(ierr);
+  ierr = vel_ssa->write(filename); CHKERRQ(ierr);
 
   IceModelVec2V exact;
   ierr = exact.create(grid, "_exact", false); CHKERRQ(ierr);
@@ -388,7 +388,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
     }
   }
   ierr = exact.end_access(); CHKERRQ(ierr);
-  ierr = exact.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = exact.write(filename); CHKERRQ(ierr);
 
   return 0;
 }

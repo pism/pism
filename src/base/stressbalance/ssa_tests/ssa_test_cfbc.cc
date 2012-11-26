@@ -33,10 +33,9 @@ static char help[] =
 #include "SSATestCase.hh"
 #include "pism_options.hh"
 
-const double H0 = 600;          // meters
-const double V0 = 300/secpera;  // 300 meters/year
+const double H0 = 600;          // grounding line thickness (meters)
+const double V0 = 300/secpera;  // grounding line vertically-averaged velocity (300 meters/year)
 const double C  = 2.45e-18;     // "typical constant ice parameter"
-const double T  = 400;          // time used to compute the calving front location
 
 // thickness profile in the van der Veen solution
 static double H_exact(double x)
@@ -44,13 +43,6 @@ static double H_exact(double x)
   const double Q0 = V0*H0;
   return pow(4 * C / Q0 * x + 1/pow(H0, 4), -0.25);
 }
-
-// theoretical location of the calving front
-// static double x_cfbc(double t)
-// {
-//   const double Q0 = V0*H0;
-//   return Q0 / (4*C) * (pow(3*C*t + 1/pow(H0,3),4.0/3.0) - 1/pow(H0,4));
-// }
 
 // velocity profile; corresponds to constant flux
 static double u_exact(double x)
@@ -91,9 +83,11 @@ PetscErrorCode SSATestCaseCFBC::initializeGrid(PetscInt Mx, PetscInt My)
 PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 {
 
-  config.set_flag("compute_surf_grad_inward_ssa", true); 
-  config.set_flag("calving_front_stress_boundary_condition", true); 
+  config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
+  config.set_flag("compute_surf_grad_inward_ssa", true);
+  config.set_flag("calving_front_stress_boundary_condition", true);
   config.set_string("ssa_flow_law", "isothermal_glen");
+  config.set_string("output_variable_order", "zyx");
 
   basal = new IceBasalResistancePlasticLaw(
          config.get("plastic_regularization", "1/year", "1/second"),
@@ -102,9 +96,6 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
          config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
 
   enthalpyconverter = new EnthalpyConverter(config);
-
-  config.set_flag("ssa_flow_law", "isothermal_glen");
-  config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
 
   return 0;
 }
@@ -131,7 +122,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar x = grid.x[i];
 
-      if (x <= 0) {
+      if (i != grid.Mx - 1) {
         thickness(i, j) = H_exact(x + grid.Lx);
         ice_mask(i, j)  = MASK_FLOATING;
       } else {
@@ -139,7 +130,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
         ice_mask(i, j)  = MASK_ICE_FREE_OCEAN;
       }
 
-      surface(i,j) = (1.0 - ice_rho / ocean_rho) * thickness(i, j); // FIXME issue #15
+      surface(i,j) = (1.0 - ice_rho / ocean_rho) * thickness(i, j);
 
       if (i == 0) {
         bc_mask(i, j)  = 1;
@@ -177,11 +168,11 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   return 0;
 }
 
-PetscErrorCode SSATestCaseCFBC::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
+PetscErrorCode SSATestCaseCFBC::exactSolution(PetscInt i, PetscInt /*j*/,
                                               PetscReal x, PetscReal /*y*/,
                                               PetscReal *u, PetscReal *v)
 {
-  if (x <= 0) {
+  if (i != grid.Mx - 1) {
     *u = u_exact(x + grid.Lx);
   } else {
     *u = 0;
@@ -248,7 +239,7 @@ int main(int argc, char *argv[]) {
     SSATestCaseCFBC testcase(com,rank,size,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report("CFBC"); CHKERRQ(ierr);
+    ierr = testcase.report("V"); CHKERRQ(ierr);
     ierr = testcase.write(output_file);
   }
 
