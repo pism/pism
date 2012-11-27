@@ -371,8 +371,8 @@ PetscErrorCode SSA::compute_basal_frictional_heating(IceModelVec2S &result) {
       } else {
         const PetscScalar 
           C = basal.drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v),
-	  basal_stress_x = - C * velocity(i,j).u,
-	  basal_stress_y = - C * velocity(i,j).v;
+              basal_stress_x = - C * velocity(i,j).u,
+              basal_stress_y = - C * velocity(i,j).v;
         result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
       }
     }
@@ -471,9 +471,11 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             // x-derivative
             {
               double west = 1, east = 1;
-              if ((m.grounded(i,j) && m.floating_ice(i+1,j)) || (m.floating_ice(i,j) && m.grounded(i+1,j)))
+              if ((m.grounded(i,j) && m.floating_ice(i+1,j)) || (m.floating_ice(i,j) && m.grounded(i+1,j)) ||
+                  (m.icy(i,j) && m.ice_free(i+1,j)))
                 east = 0;
-              if ((m.grounded(i,j) && m.floating_ice(i-1,j)) || (m.floating_ice(i,j) && m.grounded(i-1,j)))
+              if ((m.grounded(i,j) && m.floating_ice(i-1,j)) || (m.floating_ice(i,j) && m.grounded(i-1,j)) ||
+                  (m.icy(i,j) && m.ice_free(i-1,j)))
                 west = 0;
 
               if (east + west > 0)
@@ -486,9 +488,11 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             // y-derivative
             {
               double south = 1, north = 1;
-              if ((m.grounded(i,j) && m.floating_ice(i,j+1)) || (m.floating_ice(i,j) && m.grounded(i,j+1)))
+              if ((m.grounded(i,j) && m.floating_ice(i,j+1)) || (m.floating_ice(i,j) && m.grounded(i,j+1)) ||
+                  (m.icy(i,j) && m.ice_free(i,j+1)))
                 north = 0;
-              if ((m.grounded(i,j) && m.floating_ice(i,j-1)) || (m.floating_ice(i,j) && m.grounded(i,j-1)))
+              if ((m.grounded(i,j) && m.floating_ice(i,j-1)) || (m.floating_ice(i,j) && m.grounded(i,j-1)) ||
+                  (m.icy(i,j) && m.ice_free(i,j-1)))
                 south = 0;
 
               if (north + south > 0)

@@ -200,9 +200,6 @@ PetscErrorCode IceCompModel::setFromOptions() {
     // do use the SSA solver
     config.set_flag("use_ssa_velocity", true);
 
-    // compute surface gradient inward
-    config.set_flag("compute_surf_grad_inward_ssa", true);
-
     // this certainly is not a "dry silumation"
     config.set_flag("is_dry_simulation", false);
 
