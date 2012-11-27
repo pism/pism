@@ -84,7 +84,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 {
 
   config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
-  config.set_flag("compute_surf_grad_inward_ssa", true);
+  config.set_flag("compute_surf_grad_inward_ssa", false);
   config.set_flag("calving_front_stress_boundary_condition", true);
   config.set_string("ssa_flow_law", "isothermal_glen");
   config.set_string("output_variable_order", "zyx");
