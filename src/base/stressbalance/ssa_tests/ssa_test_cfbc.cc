@@ -160,6 +160,9 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   ierr = bc_mask.beginGhostComm(); CHKERRQ(ierr);
   ierr = bc_mask.endGhostComm(); CHKERRQ(ierr);
 
+  ierr = ice_mask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = ice_mask.endGhostComm(); CHKERRQ(ierr);
+
   ierr = vel_bc.beginGhostComm(); CHKERRQ(ierr);
   ierr = vel_bc.endGhostComm(); CHKERRQ(ierr);
 
