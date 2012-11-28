@@ -679,6 +679,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   grid.profiler->end(event_energy);
 
+  //   FIXME:  here is where a call to the PISMHydrology::update() method should
+  //   occur, and replace the following call to diffuse_bwat()
   // finally, diffuse the stored basal water once per energy step, if it is requested
   if (do_energy_step && config.get_flag("do_diffuse_bwat")) {
     ierr = diffuse_bwat(); CHKERRQ(ierr);

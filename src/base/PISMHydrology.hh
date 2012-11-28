@@ -20,16 +20,25 @@
 #define _PISMHYDROLOGY_H_
 
 #include "PISMComponent.hh"
-class IceModelVec2S;
+#include "iceModelVec.hh"
 
 //! \brief The PISM subglacial hydrology model interface.
-// FIXME: perhaps this will be a virtual base class
-// FIXME: it is timestepping (PISMComponent_ts?) but will not use PISM's main timestepping
-class PISMHydrology : public PISMComponent_Diag
+/*!
+This is a timestepping component (PISMComponent_TS) but it does not use PISM's
+main timestepping.  Rather, when update() is called it advances its internal time
+to the new goal t+dt using its own internal time steps.
+
+Perhaps this will be a virtual base class.  There are two prospective implementations,
+one being the old bwat diffusion currently implemented in iMhydrology.cc and the
+other being the new van Pelt & Bueler model documented at
+  https://github.com/bueler/hydrolakes
+
+For now, it is just implementing the new model.
+ */
+class PISMHydrology : public PISMComponent_TS
 {
 public:
-  PISMHydrology(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_Diag(g, conf) {}
+  PISMHydrology(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PISMHydrology() {}
 
 /* FIXME:
@@ -40,20 +49,43 @@ public:
   \li write_variables(), which writes data itself.
 */
 
-  virtual PetscErrorCode init_steady(IceModelVec2S W0);
+  virtual PetscErrorCode init(PISMVars &vars);
 
-  // FIXME: caution.  this updates at each call and thus should not be called repeatedly
-  virtual PetscErrorCode update_water_and_pressure(PetscScalar dt);
+  using PISMComponent_TS::update;
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
-  virtual PetscErrorCode get_water_thickness(IceModelVec2S &result);
+  virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result);
 
-  virtual PetscErrorCode get_water_pressure(IceModelVec2S &result);
+  virtual PetscErrorCode water_pressure(IceModelVec2S &result);
 
 protected:
-  IceModelVec2S W, P;  // this model's state
-  IceModelVec2S *bed, *thickness, *surface; // pointers into IceModel; fields describe ice
-  IceModelVec2V *Ubase;  // ice sliding velocity in IceModel
-  IceModelVec2S Po, cbase, alph, beta;  // sliding speed, overburden, components of water velocity
+  // this model's state
+  IceModelVec2S W,      // water layer thickness
+                P;      // water pressure
+  // this model's auxiliary variables
+  IceModelVec2S Po,     // overburden pressure
+                cbase,  // sliding speed of overlying ice
+                psi,    // hydraulic potential
+                alph,   // east-staggered x-component of water velocity
+                beta;   // north-staggered y-component of water velocity
+  // this model's workspace variables
+  IceModelVec2S Wnew, Pnew;
+  // pointers into IceModel; these describe the ice sheet
+  IceModelVec2S *bed,   // bedrock elevation
+                *thk,   // ice thickness
+                *surf;  // ice surface elevation
+  IceModelVec2V *Ubase; // ice sliding velocity
+
+  PISMVars *variables;
+
+  PetscReal standard_gravity, ice_density, fresh_water_density;
+  PetscReal c1, c2, K, Aglen, nglen, Wr, c0, E0, Y0;
+
+  virtual PetscErrorCode allocate();
+  virtual PetscErrorCode update_ice_functions();
+  virtual PetscErrorCode P_from_W_steady();
+  virtual PetscErrorCode V_components_from_P_bed();
+
 };
 
 #endif /* _PISMHYDROLOGY_H_ */
