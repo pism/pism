@@ -71,6 +71,7 @@ SKIPTENKM=100
 SKIPSEVENKM=100
 SKIPFIVEKM=200
 
+GRID=$FIFTEENKMGRID
 SKIP=$SKIPFIFTEENKM
 
 SIA_ENHANCEMENT="-sia_e 5.6"
@@ -107,7 +108,7 @@ RESNAME=${RESDIR}$stage.nc
 RUNTIME=100 
 echo
 echo "$SCRIPTNAME  bootstrapping plus short SIA run for $RUNTIME a"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -boot_file ${INNAME} $FIFTEENKMGRID \
+cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -boot_file ${INNAME} $GRID \
 	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -ocean_kill \
 	-y $RUNTIME -o $RESNAME"
 $DO $cmd
