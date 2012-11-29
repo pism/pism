@@ -65,9 +65,10 @@ protected:
   // this model's auxiliary variables
   IceModelVec2S Po,     // overburden pressure
                 cbase,  // sliding speed of overlying ice
-                psi,    // hydraulic potential
-                alph,   // east-staggered x-component of water velocity
-                beta;   // north-staggered y-component of water velocity
+                psi;    // hydraulic potential
+  IceModelVec2Stag V;   // components are
+                        //   V(i,j,0) = alpha(i,j) = east-face  x-component of water velocity
+                        //   V(i,j,1) = beta(i,j)  = north-face y-component of water velocity
   // this model's workspace variables
   IceModelVec2S Wnew, Pnew;
   // pointers into IceModel; these describe the ice sheet
@@ -82,9 +83,10 @@ protected:
   PetscReal c1, c2, K, Aglen, nglen, Wr, c0, E0, Y0;
 
   virtual PetscErrorCode allocate();
-  virtual PetscErrorCode update_ice_functions();
-  virtual PetscErrorCode P_from_W_steady();
-  virtual PetscErrorCode V_components_from_P_bed();
+
+  virtual PetscErrorCode update_ice_functions(IceModelVec2S &result_Po, IceModelVec2S &result_cbase);
+  virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
+  virtual PetscErrorCode V_components(IceModelVec2Stag &result);
 
 };
 

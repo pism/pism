@@ -86,15 +86,10 @@ PetscErrorCode PISMHydrology::allocate() {
                          "m s-1", ""); CHKERRQ(ierr);
   ierr = cbase.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
-  ierr = alph.create(grid, "x-component-water-velocity", false); CHKERRQ(ierr);
-  ierr = alph.set_attrs("internal",
-                    "east-staggered x-component of water velocity in subglacial water layer",
-                    "m s-1", ""); CHKERRQ(ierr);
-
-  ierr = beta.create(grid, "y-component-water-velocity", false); CHKERRQ(ierr);
-  ierr = beta.set_attrs("internal",
-                    "north-staggered y-component of water velocity in subglacial water layer",
-                    "m s-1", ""); CHKERRQ(ierr);
+  ierr = V.create(grid, "water-velocity", true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = V.set_attrs("internal",
+                     "cell face-centered (staggered) components of water velocity in subglacial water layer",
+                     "m s-1", ""); CHKERRQ(ierr);
 
   ierr = Wnew.create(grid, "Wnew-internal", false); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
@@ -117,7 +112,8 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 
   variables = &vars;
 
-  ierr = verbPrintf(2, grid.com, "* Initializing the vanPelt-Bueler subglacial hydrology model...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+    "* Initializing the vanPelt-Bueler subglacial hydrology model...\n"); CHKERRQ(ierr);
 
   bed = dynamic_cast<IceModelVec2S*>(vars.get("topg"));
   if (bed == NULL) SETERRQ(grid.com, 1, "topg is not available");
@@ -130,9 +126,6 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 
   Ubase = dynamic_cast<IceModelVec2V*>(vars.get("Ubase-NOTIONAL"));
   if (Ubase == NULL) SETERRQ(grid.com, 1, "Ubase-NOTIONAL is not available ... IT DOES NOT EXIST");
-
-  // from current ice geometry/velocity variables, initialize Po and cbase
-  ierr = update_ice_functions(); CHKERRQ(ierr);
 
   // get the water layer thickness from the context if present
   IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
@@ -147,23 +140,23 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   if (P_input != NULL) {
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
   } else {
-    ierr = P_from_W_steady(); CHKERRQ(ierr);
+    ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
 
   return 0;
 }
 
 
-PetscErrorCode PISMHydrology::P_from_W_steady() {
+PetscErrorCode PISMHydrology::P_from_W_steady(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscReal CC = c1 / (c2 * Aglen),
             powglen = 1.0/nglen,
             sb, Wratio;
 
   ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = P.begin_access(); CHKERRQ(ierr);
   ierr = Po.begin_access(); CHKERRQ(ierr);
   ierr = cbase.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       sb     = pow(CC * cbase(i,j),powglen);
@@ -171,55 +164,59 @@ PetscErrorCode PISMHydrology::P_from_W_steady() {
       // in cases where steady state is actually possible this will
       //   come out positive, but otherwise we should get underpressure P=0,
       //   and that is what it yields
-      P(i,j) = PetscMax( 0.0,Po(i,j) - sb * pow(Wratio,powglen) );
+      result(i,j) = PetscMax( 0.0,Po(i,j) - sb * pow(Wratio,powglen) );
     }
   }
   ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = P.end_access(); CHKERRQ(ierr);
   ierr = Po.end_access(); CHKERRQ(ierr);
   ierr = cbase.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 
-/*! Does this:
-<code>
-  % bed slope components onto staggered grid
-  dbdx = (b(2:end,:) - b(1:end-1,:)) / dx;
-  dbdy = (b(:,2:end) - b(:,1:end-1)) / dy;
-  % grad pressure
-  dPdx = (P(2:end,:) - P(1:end-1,:)) / dx;
-  dPdy = (P(:,2:end) - P(:,1:end-1)) / dy;
-  % velocity  V = - c0 grad P - K grad b = (alphV,betaV)
-  alphV = - p.c0 * dPdx - p.K * dbdx;
-  betaV = - p.c0 * dPdy - p.K * dbdy;
-</code>
- */
-PetscErrorCode PISMHydrology::V_components_from_P_bed() {
+PetscErrorCode PISMHydrology::V_components(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
+  PetscReal dbdx, dbdy, dPdx, dPdy;
 
-  // FIXME
+  ierr = P.begin_access(); CHKERRQ(ierr);
+  ierr = bed->begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
+      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
+      dPdx = (P(i+1,j) - P(i,j)) / grid.dx;
+      dPdy = (P(i,j+1) - P(i,j)) / grid.dy;
+      result(i,j,0) = - c0 * dPdx - K * dbdx;
+      result(i,j,1) = - c0 * dPdy - K * dbdy;
+    }
+  }
+  ierr = P.end_access(); CHKERRQ(ierr);
+  ierr = bed->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode PISMHydrology::update_ice_functions() {
+PetscErrorCode PISMHydrology::update_ice_functions(IceModelVec2S &result_Po,
+                                                   IceModelVec2S &result_cbase) {
   PetscErrorCode ierr;
 
   ierr = thk->begin_access(); CHKERRQ(ierr);
   ierr = Ubase->begin_access(); CHKERRQ(ierr);
-  ierr = Po.begin_access(); CHKERRQ(ierr);
-  ierr = cbase.begin_access(); CHKERRQ(ierr);
+  ierr = result_Po.begin_access(); CHKERRQ(ierr);
+  ierr = result_cbase.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      Po(i,j) = ice_density * standard_gravity * (*thk)(i,j);
-      cbase(i,j) = sqrt((*Ubase)(i,j).u * (*Ubase)(i,j).u + (*Ubase)(i,j).v * (*Ubase)(i,j).v);
+      result_Po(i,j) = ice_density * standard_gravity * (*thk)(i,j);
+      result_cbase(i,j) = sqrt((*Ubase)(i,j).u * (*Ubase)(i,j).u + (*Ubase)(i,j).v * (*Ubase)(i,j).v);
     }
   }
   ierr = thk->end_access(); CHKERRQ(ierr);
   ierr = Ubase->end_access(); CHKERRQ(ierr);
-  ierr = Po.end_access(); CHKERRQ(ierr);
-  ierr = cbase.end_access(); CHKERRQ(ierr);
+  ierr = result_Po.end_access(); CHKERRQ(ierr);
+  ierr = result_cbase.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -234,25 +231,31 @@ PetscErrorCode PISMHydrology::update(PetscReal my_t, PetscReal my_dt) {
   ierr = W.endGhostComm(); CHKERRQ(ierr);
   ierr = P.endGhostComm(); CHKERRQ(ierr);
 
-  ierr = V_components_from_P_bed(); CHKERRQ(ierr);  // fills alph and beta
+  // from current ice geometry/velocity variables, initialize Po and cbase
+  ierr = update_ice_functions(Po,cbase); CHKERRQ(ierr);
 
-  PetscScalar Wij;
-  ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = Wnew.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      Wij = W(i,j);
-      //inputdepth = dt * Phi(i,j);
-      //dtlapW = mux * (Wea(i,j) * (W(i+1,j)-Wij) - Wea(i-1,j) * (Wij-W(i-1,j))) + ...
-      //         muy * (Wno(i,j) * (W(i,j+1)-Wij) - Wno(i,j-1) * (Wij-W(i,j-1)));
-      //Wnew(i,j) = Wij - FIXME + dtlapW + inputdepth;
-      Wnew(i,j) = Wij;
+  for (PetscInt m=1; m<10; m++) { // FIXME: fake hydrology time-stepping loop
+    ierr = V_components(V); CHKERRQ(ierr);  // fills alph and beta
+
+    PetscScalar Wij;
+    ierr = W.begin_access(); CHKERRQ(ierr);
+    ierr = Wnew.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        Wij = W(i,j);
+        //inputdepth = dt * Phi(i,j);
+        //dtlapW = mux * (Wea(i,j) * (W(i+1,j)-Wij) - Wea(i-1,j) * (Wij-W(i-1,j))) + ...
+        //         muy * (Wno(i,j) * (W(i,j+1)-Wij) - Wno(i,j-1) * (Wij-W(i,j-1)));
+        //Wnew(i,j) = Wij - FIXME + dtlapW + inputdepth;
+        Wnew(i,j) = Wij;
+      }
     }
-  }
-  ierr = Wnew.end_access(); CHKERRQ(ierr);
-  ierr = W.end_access(); CHKERRQ(ierr);
+    ierr = Wnew.end_access(); CHKERRQ(ierr);
+    ierr = W.end_access(); CHKERRQ(ierr);
 
-  // FIXME:  time step of P equation
+    // FIXME:  time step of P equation
+
+  } // end of hydrology model time-stepping loop
 
   return 0;
 }
