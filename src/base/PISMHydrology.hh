@@ -24,15 +24,19 @@
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
-This is a timestepping component (PISMComponent_TS) but it does not use PISM's
-main timestepping.  Rather, when update() is called it advances its internal time
-to the new goal t+dt using its own internal time steps.
+THIS IS A DRAFT!!
+
+PISMHydrology is a timestepping component (PISMComponent_TS) but it does not use
+PISM's main ice dynamics time steps.  Rather, when update() is called it advances
+its internal time to the new goal t+dt using its own internal time steps, and
+using the ice geometry and basal sliding velocity as time-independent (i.e.
+explicit or one-way coupled) fields.  Thus the frequency of coupling is determined
+by the agent that calls the update() method.
 
 Perhaps this will be a virtual base class.  There are two prospective implementations,
 one being the old bwat diffusion currently implemented in iMhydrology.cc and the
 other being the new van Pelt & Bueler model documented at
   https://github.com/bueler/hydrolakes
-
 For now, it is just implementing the new model.
  */
 class PISMHydrology : public PISMComponent_TS
@@ -66,15 +70,19 @@ protected:
   IceModelVec2S Po,     // overburden pressure
                 cbase,  // sliding speed of overlying ice
                 psi;    // hydraulic potential
-  IceModelVec2Stag V;   // components are
-                        //   V(i,j,0) = alpha(i,j) = east-face  x-component of water velocity
-                        //   V(i,j,1) = beta(i,j)  = north-face y-component of water velocity
+  IceModelVec2Int known;// mask for (boundary) locations where subglacial hydrology state is known
+  IceModelVec2Stag V,   // components are
+                        //   V(i,j,0) = alpha(i,j) = east-edge centered  x-component of water velocity
+                        //   V(i,j,1) = beta(i,j)  = north-edge centered y-component of water velocity
+                   Wstag,// edge-centered (staggered) W values (averaged from regular)
+                   Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
   IceModelVec2S Wnew, Pnew;
-  // pointers into IceModel; these describe the ice sheet
+  // pointers into IceModel; these describe the ice sheet and the source
   IceModelVec2S *bed,   // bedrock elevation
                 *thk,   // ice thickness
-                *surf;  // ice surface elevation
+                *usurf, // ice surface elevation
+                *bmelt; // ice sheet basal melt rate
   IceModelVec2V *Ubase; // ice sliding velocity
 
   PISMVars *variables;
@@ -86,7 +94,7 @@ protected:
 
   virtual PetscErrorCode update_ice_functions(IceModelVec2S &result_Po, IceModelVec2S &result_cbase);
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
-  virtual PetscErrorCode V_components(IceModelVec2Stag &result);
+  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
 
 };
 
