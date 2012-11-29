@@ -40,7 +40,7 @@ public:
   }
 
   IceModelVec2V &solution() {
-    return velocity;
+    return m_velocity;
   }
 
   InvTaucParameterization & tauc_param() {

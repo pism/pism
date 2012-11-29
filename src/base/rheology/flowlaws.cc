@@ -367,7 +367,7 @@ PetscReal GoldsbyKohlstedtIce::hardness_parameter(PetscReal enthalpy, PetscReal 
 
   // FIXME: The following is a re-implementation of the Paterson-Budd relation
   // for the hardness parameter. This should not be here, but we currently need
-  // ice hardness to compute the strain heating. See SIAFD::compute_sigma().
+  // ice hardness to compute the strain heating. See SIAFD::compute_volumetric_strain_heating().
   EC->getPATemp(enthalpy, pressure, T_pa);
 
   if (T_pa < crit_temp) {

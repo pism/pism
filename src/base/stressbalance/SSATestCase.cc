@@ -182,7 +182,7 @@ PetscErrorCode SSATestCase::report(string testname) {
 
 
   IceModelVec2V *vel_ssa;
-  ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
+  ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
   ierr = vel_ssa->begin_access(); CHKERRQ(ierr);
 
   PetscScalar exactvelmax = 0, gexactvelmax = 0;
@@ -368,7 +368,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
   ierr = vel_bc.write(filename); CHKERRQ(ierr);
 
   IceModelVec2V *vel_ssa;
-  ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
+  ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
   ierr = vel_ssa->write(filename); CHKERRQ(ierr);
 
   IceModelVec2V exact;

@@ -99,7 +99,7 @@ PetscErrorCode PISMStressBalance::update(bool fast) {
 
   ierr = stress_balance->update(fast); CHKERRQ(ierr);
 
-  ierr = stress_balance->get_advective_2d_velocity(velocity_2d); CHKERRQ(ierr); 
+  ierr = stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr); 
   ierr = stress_balance->get_D2(D2); CHKERRQ(ierr);
 
   ierr = modifier->update(velocity_2d, D2, fast); CHKERRQ(ierr);
@@ -113,9 +113,9 @@ PetscErrorCode PISMStressBalance::update(bool fast) {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::get_advective_2d_velocity(IceModelVec2V* &result) {
+PetscErrorCode PISMStressBalance::get_2D_advective_velocity(IceModelVec2V* &result) {
   PetscErrorCode ierr;
-  ierr = stress_balance->get_advective_2d_velocity(result); CHKERRQ(ierr);
+  ierr = stress_balance->get_2D_advective_velocity(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -163,15 +163,17 @@ PetscErrorCode PISMStressBalance::get_volumetric_strain_heating(IceModelVec3* &r
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::get_principal_strain_rates(IceModelVec2 &result) {
+PetscErrorCode PISMStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
+                                                                    IceModelVec2 &result) {
   PetscErrorCode ierr;
-  ierr = stress_balance->compute_principal_strain_rates(result); CHKERRQ(ierr);
+  ierr = stress_balance->compute_2D_principal_strain_rates(velocity, mask, result); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::get_2D_stresses(IceModelVec2 &result) {
+PetscErrorCode PISMStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
+                                                      IceModelVec2 &result) {
   PetscErrorCode ierr;
-  ierr = stress_balance->compute_2D_stresses(result); CHKERRQ(ierr);
+  ierr = stress_balance->compute_2D_stresses(velocity, mask, result); CHKERRQ(ierr);
   return 0;
 }
 

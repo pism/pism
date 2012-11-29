@@ -655,7 +655,7 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   PetscScalar     **H, **accum, dummy;
   PISMVector2     **bvel;
   IceModelVec2V *vel_adv;
-  ierr = stress_balance->get_advective_2d_velocity(vel_adv); CHKERRQ(ierr);
+  ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
 
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
@@ -855,7 +855,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
     SETERRQ(grid.com, 1,"basal velocity errors only computable for test E\n");
 
   IceModelVec2V *vel_adv;
-  ierr = stress_balance->get_advective_2d_velocity(vel_adv); CHKERRQ(ierr);
+  ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
 
   ierr = vel_adv->get_array(bvel); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);

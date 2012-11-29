@@ -113,13 +113,13 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
 
-  ierr = velocity.begin_access(); CHKERRQ(ierr);
+  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
   ierr = basal_frictional_heating.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       if (m.ocean(i,j)) {
-        velocity(i,j).u = 0.0;
-        velocity(i,j).v = 0.0;
+        m_velocity(i,j).u = 0.0;
+        m_velocity(i,j).v = 0.0;
         basal_frictional_heating(i,j) = 0.0;
       } else {
         // basal velocity from SIA-type sliding law: not recommended!
@@ -142,18 +142,18 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
         basalC = basalVelocitySIA(myx, myy, H, T,
                                   alpha, mu_sliding,
                                   minimum_temperature_for_sliding);
-        velocity(i,j).u = - basalC * myhx;
-        velocity(i,j).v = - basalC * myhy;
+        m_velocity(i,j).u = - basalC * myhx;
+        m_velocity(i,j).v = - basalC * myhy;
         // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
         // in ice streams this result will be *overwritten* by
         //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
         const PetscScalar P = ice_rho * standard_gravity * H;
-        basal_frictional_heating(i,j) = - (P * myhx) * velocity(i,j).u - (P * myhy) * velocity(i,j).v;
+        basal_frictional_heating(i,j) = - (P * myhx) * m_velocity(i,j).u - (P * myhy) * m_velocity(i,j).v;
       }
     }
   }
 
-  ierr = velocity.end_access(); CHKERRQ(ierr);
+  ierr = m_velocity.end_access(); CHKERRQ(ierr);
   ierr = basal_frictional_heating.end_access(); CHKERRQ(ierr);
 
   ierr = h_y.end_access(); CHKERRQ(ierr);
@@ -164,8 +164,8 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
-  ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
-  ierr = velocity.endGhostComm(); CHKERRQ(ierr);
+  ierr = m_velocity.beginGhostComm(); CHKERRQ(ierr);
+  ierr = m_velocity.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }

@@ -976,14 +976,31 @@ PSB_strain_rates::PSB_strain_rates(PISMStressBalance *m, IceGrid &g, PISMVars &m
 PetscErrorCode PSB_strain_rates::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2 *result;
+  IceModelVec *velbar;
+  IceModelVec2Int *mask;
+  PSB_velbar diag(model, grid, variables);
 
   result = new IceModelVec2;
   ierr = result->create(grid, "strain_rates", false, 1, 2); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
 
-  ierr = model->get_principal_strain_rates(*result); CHKERRQ(ierr);
+  mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
+  ierr = diag.compute(velbar); CHKERRQ(ierr);
+  IceModelVec2V *v_tmp = dynamic_cast<IceModelVec2V*>(velbar);
+  if (v_tmp == NULL) SETERRQ(grid.com, 1, "velbar is expected to be an IceModelVec2V");
+
+  IceModelVec2V velbar_with_ghosts;
+  ierr = velbar_with_ghosts.create(grid, "velbar", true); CHKERRQ(ierr);
+
+  // copy_from communicates ghosts
+  ierr = velbar_with_ghosts.copy_from(*v_tmp); CHKERRQ(ierr);
+
+  ierr = model->compute_2D_principal_strain_rates(velbar_with_ghosts, *mask, *result); CHKERRQ(ierr);
+
+  delete velbar;
   output = result;
   return 0;
 }
@@ -1007,6 +1024,9 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(PISMStressBalance *m, IceGrid &
 PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2 *result;
+  IceModelVec *velbar;
+  IceModelVec2Int *mask;
+  PSB_velbar diag(model, grid, variables);
 
   result = new IceModelVec2;
   ierr = result->create(grid, "strain_rates", false, 1, 3); CHKERRQ(ierr);
@@ -1014,7 +1034,20 @@ PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
   ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[2], 2); CHKERRQ(ierr);
 
-  ierr = model->get_2D_stresses(*result); CHKERRQ(ierr);
+  mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+
+  ierr = diag.compute(velbar); CHKERRQ(ierr);
+  IceModelVec2V *v_tmp = dynamic_cast<IceModelVec2V*>(velbar);
+  if (v_tmp == NULL) SETERRQ(grid.com, 1, "velbar is expected to be an IceModelVec2V");
+
+  IceModelVec2V velbar_with_ghosts;
+  ierr = velbar_with_ghosts.create(grid, "velbar", true); CHKERRQ(ierr);
+
+  // copy_from communicates ghosts
+  ierr = velbar_with_ghosts.copy_from(*v_tmp); CHKERRQ(ierr);
+
+  ierr = model->compute_2D_stresses(velbar_with_ghosts, *mask, *result); CHKERRQ(ierr);
 
   output = result;
 

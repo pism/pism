@@ -139,7 +139,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
   ierr = compute_diffusive_flux(h_x, h_y, diffusive_flux, fast); CHKERRQ(ierr);
 
   if (!fast) {
-    ierr = compute_sigma(D2_input, h_x, h_y); CHKERRQ(ierr);
+    ierr = compute_volumetric_strain_heating(D2_input, h_x, h_y); CHKERRQ(ierr);
 
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
   }
@@ -533,7 +533,7 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
  * \f[D = \int_b^h\delta(z)(h-z)dz. \f]
  *
  * The advantage is that it is then possible to avoid re-evaluating \f$F(z)\f$
- * (which is computationally expensive) in strain heating (see compute_sigma())
+ * (which is computationally expensive) in strain heating (see compute_volumetric_strain_heating())
  * and horizontal ice velocity (see compute_3d_horizontal_velocity())
  * computations.
  *
@@ -824,9 +824,9 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
  * \param[in] h_x the X-component of the surface gradient, on the staggered grid
  * \param[in] h_y the Y-component of the surface gradient, on the staggered grid
  */
-PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
-                                    IceModelVec2Stag &h_x,
-                                    IceModelVec2Stag &h_y) {
+PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
+                                                        IceModelVec2Stag &h_x,
+                                                        IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
   PetscScalar *sigma_ij, *delta_ij, *E;
 

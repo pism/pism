@@ -861,7 +861,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_T_rhs( PISMVector2 **gvel, Pet
   }
 
   // Start access of Dirichlet data, if present.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
   }
 
@@ -897,7 +897,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_T_rhs( PISMVector2 **gvel, Pet
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
-      if(bc_locations && vel_bc) {
+      if(bc_locations && m_vel_bc) {
         dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
         for (k=0; k<4; k++) {
           if (PismIntMask(local_bc_mask[k]) == 1) { // Dirichlet node
@@ -945,7 +945,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_T_rhs( PISMVector2 **gvel, Pet
 
   // Until now we have not touched rows in the residual corresponding to Dirichlet data.
   // We fix this now.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -977,7 +977,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_TStarA_rhs( PISMVector2 **R, P
   }
 
   // Start access of Dirichlet data, if present.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
   }
 
@@ -1006,7 +1006,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_TStarA_rhs( PISMVector2 **R, P
 
 
   // Set rows in the residual corresponding to Dirichlet data to zero.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {

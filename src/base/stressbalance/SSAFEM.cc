@@ -115,7 +115,7 @@ PetscErrorCode SSAFEM::init(PISMVars &vars) {
   // If we are not restarting from a PISM file, "velocity" is identically zero,
   // and the call below clears SSAX.
 
-  ierr = velocity.copy_to(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
 
   // Store coefficient data at the quadrature points.
   ierr = cacheQuadPtValues(); CHKERRQ(ierr);
@@ -229,9 +229,9 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason)
   }
 
   // Extract the solution back from SSAX to velocity and communicate.
-  ierr = velocity.copy_from(SSAX); CHKERRQ(ierr);
-  ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
-  ierr = velocity.endGhostComm(); CHKERRQ(ierr);
+  ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.beginGhostComm(); CHKERRQ(ierr);
+  ierr = m_velocity.endGhostComm(); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(NULL,"-ssa_view_solution",&flg);CHKERRQ(ierr);
   if (flg) {
@@ -469,9 +469,9 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
   }
 
   // Start access of Dirichlet data, if present.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
-    ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr);
+    ierr = m_vel_bc->get_array(BC_vel); CHKERRQ(ierr);
   }
 
   // Jacobian times weights for quadrature.
@@ -507,7 +507,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
-      if(bc_locations && vel_bc) {
+      if(bc_locations && m_vel_bc) {
         dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
         FixDirichletValues(local_bc_mask,BC_vel,x,dofmap);
       }
@@ -549,7 +549,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
 
   // Until now we have not touched rows in the residual corresponding to Dirichlet data.
   // We fix this now.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -561,7 +561,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
       }
     }
     ierr = bc_locations->end_access();CHKERRQ(ierr);
-    ierr = vel_bc->end_access(); CHKERRQ(ierr);
+    ierr = m_vel_bc->end_access(); CHKERRQ(ierr);
   }
 
   PetscBool monitorFunction;
@@ -602,9 +602,9 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
   ierr = MatZeroEntries(Jac);CHKERRQ(ierr);
 
   // Start access to Dirichlet data if present.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
-    ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr);
+    ierr = m_vel_bc->get_array(BC_vel); CHKERRQ(ierr);
   }
 
   // Jacobian times weights for quadrature.
@@ -647,7 +647,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
-      if(bc_locations && vel_bc) {
+      if(bc_locations && m_vel_bc) {
         dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
         FixDirichletValues(local_bc_mask,BC_vel,x,dofmap);
       }
@@ -711,7 +711,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
   // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
   // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
   // columns previously, the symmetry of the Jacobian matrix is preserved.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
         if (bc_locations->as_int(i,j) == 1) {
@@ -728,8 +728,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
   if(bc_locations) {
     ierr = bc_locations->end_access();CHKERRQ(ierr);
   }
-  if(vel_bc) {
-    ierr = vel_bc->end_access(); CHKERRQ(ierr);
+  if(m_vel_bc) {
+    ierr = m_vel_bc->end_access(); CHKERRQ(ierr);
   }
 
   ierr = MatAssemblyBegin(Jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);

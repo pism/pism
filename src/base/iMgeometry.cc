@@ -527,7 +527,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = stress_balance->get_diffusive_flux(Qdiff); CHKERRQ(ierr);
 
   IceModelVec2V *vel_advective;
-  ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr);
+  ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.begin_access(); CHKERRQ(ierr);
@@ -828,7 +828,9 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (config.get_flag("do_eigen_calving") && config.get_flag("use_ssa_velocity")) {
     bool dteigencalving = config.get_flag("cfl_eigencalving");
     if (!dteigencalving){ // calculation of strain rates has been done in iMadaptive.cc already
-      ierr = stress_balance->get_principal_strain_rates(strain_rates); CHKERRQ(ierr);
+      IceModelVec2V *ssa_velocity;
+      ierr = stress_balance->get_2D_advective_velocity(ssa_velocity); CHKERRQ(ierr);
+      ierr = stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, vMask, strain_rates); CHKERRQ(ierr);
     }
     ierr = eigenCalving(); CHKERRQ(ierr);
   }

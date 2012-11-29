@@ -144,7 +144,7 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
   D_max = 0.0;
 
   // strain heating
-  ierr = compute_sigma(D2_input, Sigma); CHKERRQ(ierr);
+  ierr = compute_volumetric_strain_heating(D2_input, Sigma); CHKERRQ(ierr);
 
   return 0;
 }
@@ -158,7 +158,7 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
  * - surface gradient on the staggered grid
  * - ice thickness relative to the smoothed bed
  */
-PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3 &result) {
+PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *D2_input, IceModelVec3 &result) {
   PetscErrorCode ierr;
   PetscScalar *E, *sigma;
   const PetscReal

@@ -83,8 +83,8 @@ protected:
                                                         IceModelVec3 &u_out, IceModelVec3 &v_out);
 
   virtual PetscErrorCode compute_I();
-  virtual PetscErrorCode compute_sigma(IceModelVec2S *D2_input, IceModelVec2Stag &h_x,
-                                       IceModelVec2Stag &h_y);
+  virtual PetscErrorCode compute_volumetric_strain_heating(IceModelVec2S *D2_input, IceModelVec2Stag &h_x,
+                                                           IceModelVec2Stag &h_y);
 
   virtual PetscScalar grainSizeVostok(PetscScalar age) const;
 

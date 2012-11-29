@@ -112,8 +112,8 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   // The FD solver does not support direct specification of a driving stress;
   // a surface elevation must be explicitly given.
   if(surface == NULL) {
-    SETERRQ(grid.com, 1, "The finite difference SSA solver requires a surface elevation.\
-An explicit driving stress was specified instead and cannot be used.");
+    SETERRQ(grid.com, 1, "The finite difference SSA solver requires a surface elevation."
+            "An explicit driving stress was specified instead and cannot be used.");
   }
 
   ierr = verbPrintf(2,grid.com,
@@ -181,10 +181,10 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   ierr = taud.begin_access(); CHKERRQ(ierr);
   ierr = DMDAVecGetArray(SSADA, rhs, &rhs_uv); CHKERRQ(ierr);
 
-  bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+  bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc"); // FIXME: bedrock_boundary is a misleading name
 
-  if (vel_bc && bc_locations) {
-    ierr = vel_bc->begin_access(); CHKERRQ(ierr);
+  if (m_vel_bc && bc_locations) {
+    ierr = m_vel_bc->begin_access(); CHKERRQ(ierr);
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
 
@@ -197,9 +197,9 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-      if (vel_bc && (bc_locations->as_int(i, j) == 1)) {
-        rhs_uv[i][j].u = scaling * (*vel_bc)(i, j).u;
-        rhs_uv[i][j].v = scaling * (*vel_bc)(i, j).v;
+      if (m_vel_bc && (bc_locations->as_int(i, j) == 1)) {
+        rhs_uv[i][j].u = scaling * (*m_vel_bc)(i, j).u;
+        rhs_uv[i][j].v = scaling * (*m_vel_bc)(i, j).v;
         continue;
       }
 
@@ -228,16 +228,15 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             if (M.ice_free_ocean(M_e)) aPP = 0;
             if (M.ice_free_ocean(M_w)) aMM = 0;
             if (M.ice_free_ocean(M_n)) bPP = 0;
-            if (M.ice_free_ocean(M_s)) bMM = 0;}
-	  else {
+            if (M.ice_free_ocean(M_s)) bMM = 0;
+          } else {
             if (M.ice_free(M_e)) aPP = 0;
             if (M.ice_free(M_w)) aMM = 0;
             if (M.ice_free(M_n)) bPP = 0;
             if (M.ice_free(M_s)) bMM = 0;
           }
 
-          const double ice_pressure = ice_rho * standard_gravity * H_ij,
-                       H_ij2        = H_ij*H_ij;
+          const double H_ij2        = H_ij*H_ij;
                 double ocean_pressure;
 
           if ((*bed)(i,j) < (sea_level - (ice_rho / ocean_rho) * H_ij)) {
@@ -294,9 +293,9 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     ierr = mask->end_access(); CHKERRQ(ierr);
   }
 
-  if (vel_bc && bc_locations) {
+  if (m_vel_bc && bc_locations) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
-    ierr = vel_bc->end_access(); CHKERRQ(ierr);
+    ierr = m_vel_bc->end_access(); CHKERRQ(ierr);
   }
 
   ierr = taud.end_access(); CHKERRQ(ierr);
@@ -388,7 +387,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   // shortcut:
-  IceModelVec2V &vel = velocity;
+  IceModelVec2V &vel = m_velocity;
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
@@ -401,9 +400,9 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   Mask M;
 
-  const bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+  const bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc"); // FIXME: bedrock_boundary is a misleading name
 
-  if (vel_bc && bc_locations) {
+  if (m_vel_bc && bc_locations) {
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
   
@@ -426,7 +425,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // Handle the easy case: provided Dirichlet boundary conditions
-      if (vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
+      if (m_vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
         // set diagonal entry to one (scaled); RHS entry will be known velocity;
         ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
         continue;
@@ -637,7 +636,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     }
   }
 
-  if (vel_bc && bc_locations) {
+  if (m_vel_bc && bc_locations) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
   }
   
@@ -734,7 +733,7 @@ PetscErrorCode SSAFD::solve() {
   // this has no units; epsilon goes up by this ratio when previous value failed
   const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
 
-  ierr = velocity.copy_to(velocity_old); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to(m_velocity_old); CHKERRQ(ierr);
 
   // computation of RHS only needs to be done once; does not depend on
   // solution; but matrix changes under nonlinear iteration (loop over k below)
@@ -811,10 +810,10 @@ PetscErrorCode SSAFD::solve() {
 
       // Communicate so that we have stencil width for evaluation of effective
       //   viscosity on next "outer" iteration (and geometry etc. if done):
-      ierr = velocity.copy_from(SSAX); CHKERRQ(ierr);
+      ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
 
-      ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
-      ierr = velocity.endGhostComm(); CHKERRQ(ierr);
+      ierr = m_velocity.beginGhostComm(); CHKERRQ(ierr);
+      ierr = m_velocity.endGhostComm(); CHKERRQ(ierr);
 
       // update viscosity and check for viscosity convergence
       ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
@@ -843,7 +842,7 @@ PetscErrorCode SSAFD::solve() {
 	 "WARNING: Effective viscosity not converged after %d outer iterations\n"
 	 "\twith epsilon=%8.2e. Retrying with epsilon multiplied by %8.2e.\n",
 	 ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
-       ierr = velocity.copy_from(velocity_old); CHKERRQ(ierr);
+       ierr = m_velocity.copy_from(m_velocity_old); CHKERRQ(ierr);
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
        ierr = verbPrintf(1,grid.com,
@@ -871,16 +870,16 @@ PetscErrorCode SSAFD::solve() {
   if (getVerbosityLevel() >= 2)
     stdout_ssa = "  SSA: " + stdout_ssa;
 
-  if (config.get_flag("write_ssa_system_to_matlab")) {
+  if (dump_system_matlab) {
     ierr = writeSSAsystemMatlab(); CHKERRQ(ierr);
   }
 
   if (config.get_flag("scalebrutalSet")){
     const PetscScalar sliding_scale_brutalFactor = config.get("sliding_scale_brutal");
-    ierr = velocity.scale(sliding_scale_brutalFactor); CHKERRQ(ierr);
+    ierr = m_velocity.scale(sliding_scale_brutalFactor); CHKERRQ(ierr);
 
-    ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
-    ierr = velocity.endGhostComm(); CHKERRQ(ierr);
+    ierr = m_velocity.beginGhostComm(); CHKERRQ(ierr);
+    ierr = m_velocity.endGhostComm(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -1039,7 +1038,7 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
         }
 
         result(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
-                                                       &grid.zlevels[0], E); CHKERRQ(ierr);
+                                                    &grid.zlevels[0], E); CHKERRQ(ierr);
       } // o
     }   // j
   }     // i
@@ -1098,13 +1097,19 @@ its minimum is at least \f$\epsilon\f$.  This regularization constant is an argu
 In this implementation we set \f$\nu H\f$ to a constant anywhere the ice is
 thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
+
+Note that this code (unlike the gravitational driving stress computation, for
+example) does not use first-order differences near ice margins. There are two
+reasons. 1) When CFBC is "on", values of nuH at ice margins are not used in the
+matrix assembly. 2) When CFBC is "off", the velocity field used in this
+computation is continuous across ice margins.
 */
 PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal epsilon) {
   PetscErrorCode ierr;
   PISMVector2 **uv;
 
   ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = velocity.get_array(uv); CHKERRQ(ierr);
+  ierr = m_velocity.get_array(uv); CHKERRQ(ierr);
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
@@ -1156,7 +1161,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
         result(i,j,o) *= nu_enhancement_scaling;
 
         // We ensure that nuH is bounded below by a positive constant.
-//OLD WAY before 4/5/12:       result(i,j,o) = PetscMax(epsilon,result(i,j,o));
         result(i,j,o) += epsilon;
 
       } // j
@@ -1166,7 +1170,7 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr = hardness.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = velocity.end_access(); CHKERRQ(ierr);
+  ierr = m_velocity.end_access(); CHKERRQ(ierr);
 
   // Some communication
   ierr = result.beginGhostComm(); CHKERRQ(ierr);
@@ -1237,7 +1241,7 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
  *
  * If one of the diagonal neighbors is ice-free we don't use the CFBC, but we
  * do need to compute weights used in the SSA discretization (see
- * assemble_matrix()) to avoid differentiating across interfaces between icy
+ * assemble_matrix()) to avoid differencing across interfaces between icy
  * and ice-free cells.
  *
  * This method ensures that checks in assemble_rhs() and assemble_matrix() are

@@ -163,12 +163,6 @@ public:
   //! Add pointers to diagnostic quantities to a dictionary.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 
-  using ShallowStressBalance::compute_principal_strain_rates;
-  virtual PetscErrorCode compute_principal_strain_rates(IceModelVec2 &result);
-
-  using ShallowStressBalance::compute_2D_stresses;
-  virtual PetscErrorCode compute_2D_stresses(IceModelVec2 &result);
-
 protected:
   virtual PetscErrorCode allocate();
 
@@ -188,7 +182,7 @@ protected:
   IceModelVec2S *thickness, *tauc, *surface, *bed;
   IceModelVec2S *driving_stress_x;
   IceModelVec2S *driving_stress_y;
-  IceModelVec2V taud, velocity_old;
+  IceModelVec2V taud, m_velocity_old;
   IceModelVec3 *enthalpy;
   IceModelVec2S *gl_mask;
 
