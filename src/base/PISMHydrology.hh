@@ -56,7 +56,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   using PISMComponent_TS::update;
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
   virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result);
 
@@ -92,9 +92,17 @@ protected:
 
   virtual PetscErrorCode allocate();
 
-  virtual PetscErrorCode update_ice_functions(IceModelVec2S &result_Po, IceModelVec2S &result_cbase);
+  virtual PetscErrorCode check_bounds();
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
+  virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
+
+  virtual PetscErrorCode update_ice_functions(IceModelVec2S &result_Po, IceModelVec2S &result_cbase);
+
+  virtual PetscErrorCode adaptive_time_step(PetscReal t_current, PetscReal t_end, 
+                                            PetscReal &dt_result);
 
 };
 

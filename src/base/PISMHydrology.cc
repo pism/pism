@@ -166,13 +166,51 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 }
 
 
+//! Check bounds on W and P and fail with message if not satisfied.
+/*!
+Checks \f$0 \le W\f$ and \f$0 \le P \le P_o\f$.
+ */
+PetscErrorCode PISMHydrology::check_bounds() {
+  PetscErrorCode ierr;
+
+  ierr = W.begin_access(); CHKERRQ(ierr);
+  ierr = P.begin_access(); CHKERRQ(ierr);
+  ierr = Po.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (W(i,j) < 0.0) {
+        PetscPrintf(grid.com,
+           "PISM ERROR: negative subglacial water layer thickness W(i,j) = %.3f m < 0.0 at (i,j)=(%d,%d)\n"
+           "ENDING ... \n\n", W(i,j),i,j);
+        PISMEnd();
+      }
+      if (P(i,j) < 0.0) {
+        PetscPrintf(grid.com,
+           "PISM ERROR: negative subglacial water pressure P(i,j) = %.3f Pa < 0.0 at (i,j)=(%d,%d)\n"
+           "ENDING ... \n\n", P(i,j),i,j);
+        PISMEnd();
+      }
+      if (P(i,j) > Po(i,j)) {
+        PetscPrintf(grid.com,
+           "PISM ERROR: subglacial water pressure P(i,j) = %.3f Pa exceeds overburden pressure\n"
+           "            Po(i,j) = %.3f Pa at (i,j)=(%d,%d)\n"
+           "ENDING ... \n\n", P(i,j),Po(i,j),i,j);
+        PISMEnd();
+      }
+    }
+  }
+  ierr = W.end_access(); CHKERRQ(ierr);
+  ierr = P.end_access(); CHKERRQ(ierr);
+  ierr = Po.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Compute functional relationship P(W) which applies only in steady state.
 /*!
 This will be used in initialization when P is otherwise unknown, and
 in verification and/or reporting.  It is not used during time-dependent
-model runs.
-
-To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
+model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
  */
 PetscErrorCode PISMHydrology::P_from_W_steady(IceModelVec2S &result) {
   PetscErrorCode ierr;
@@ -216,17 +254,87 @@ PetscErrorCode PISMHydrology::velocity_staggered(IceModelVec2Stag &result) {
   ierr = P.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  // FIXME because this will be evaluated at i+1,j and i,j+1, compute as GHOSTS=1 ??
+
+SETERRQ(grid.com,1,"not implemented");
+  // FIXME because this will be evaluated at i-1,j and i,j-1, compute as GHOSTS=1 ??
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
-      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
-      dPdx = (P(i+1,j) - P(i,j)) / grid.dx;
-      dPdy = (P(i,j+1) - P(i,j)) / grid.dy;
+      dbdx = ((*bed)(i+1,j  ) - (*bed)(i,j)) / grid.dx;
+      dbdy = ((*bed)(i  ,j+1) - (*bed)(i,j)) / grid.dy;
+      dPdx = (P(i+1,j  ) - P(i,j)) / grid.dx;
+      dPdy = (P(i  ,j+1) - P(i,j)) / grid.dy;
       result(i,j,0) = - c0 * dPdx - K * dbdx;
       result(i,j,1) = - c0 * dPdy - K * dbdy;
     }
   }
+  ierr = P.end_access(); CHKERRQ(ierr);
+  ierr = bed->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Average the regular grid water thickness to values at the center of cell edges.
+PetscErrorCode PISMHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
+  PetscErrorCode ierr;
+  ierr = W.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+
+SETERRQ(grid.com,1,"not implemented");
+  // FIXME because this will be evaluated at i-1,j and i,j-1, compute as GHOSTS=1 ??
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j  ));
+      result(i,j,1) = 0.5 * (W(i,j) + W(i  ,j+1));
+    }
+  }
+  ierr = W.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Compute Q = V W at edge-centers (staggered grid) by first-order upwinding.
+PetscErrorCode PISMHydrology::advective_fluxes(IceModelVec2Stag &result) {
+  PetscErrorCode ierr;
+  ierr = W.begin_access(); CHKERRQ(ierr);
+  ierr = V.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+
+SETERRQ(grid.com,1,"not implemented");
+  // FIXME because this will be evaluated at i-1,j and i,j-1, compute as GHOSTS=1 ??
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j  );
+      result(i,j,1) = (V(i,j,1) >= 0.0) ? V(i,j,1) * W(i,j) :  V(i,j,1) * W(i,  j+1);
+    }
+  }
+  ierr = W.end_access(); CHKERRQ(ierr);
+  ierr = V.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Get the hydraulic potential from bedrock topography and current state variables.
+/*!
+Computes \f$\psi = P + \rho_w g (b + W)\f$.
+ */
+PetscErrorCode PISMHydrology::hydraulic_potential(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  ierr = W.begin_access(); CHKERRQ(ierr);
+  ierr = P.begin_access(); CHKERRQ(ierr);
+  ierr = bed->begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+
+SETERRQ(grid.com,1,"not implemented");
+  // FIXME because this will be evaluated at i+1,j and i-1,j and i,j-1 and i,j+1 compute as GHOSTS=1 ??
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      result(i,j) = P(i,j) + fresh_water_density * standard_gravity * ((*bed)(i,j) + W(i,j));
+    }
+  }
+  ierr = W.end_access(); CHKERRQ(ierr);
   ierr = P.end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
@@ -258,15 +366,53 @@ PetscErrorCode PISMHydrology::update_ice_functions(IceModelVec2S &result_Po,
 }
 
 
-PetscErrorCode PISMHydrology::update(PetscReal my_t, PetscReal my_dt) {
+//! Compute dt = min[t_end-t_current, dtCFL, dtDIFFW, dtDIFFP], the adaptive time step.
+PetscErrorCode PISMHydrology::adaptive_time_step(PetscReal t_current, PetscReal t_end, 
+                                                 PetscReal &dt_result) {
+  PetscErrorCode ierr;
+  PetscReal dtmax, dtCFL, dtDIFFW, dtDIFFP, maxW, maxH;
+
+SETERRQ(grid.com,1,"not implemented");
+
+  // FIXME: need series of global maxes
+  // FIXME?: dtCFL can be infinity if velocity is zero because P and b are constant
+  //dtCFL = 0.5 / (max(max(abs(alphV)))/dx + max(max(abs(betaV)))/dy);
+
+  //maxW = max(max(max(Wea)),max(max(Wno))) + 0.001;
+  //dtDIFFW = 0.25 / (p.K * maxW * (1/dx^2 + 1/dy^2));
+
+  //maxH = max(max(h-b)) + 2 * p.E0;  % regularized: forces dtDIFFP < dtDIFFW
+  dtDIFFP = (fresh_water_density * E0 / (ice_density * maxH)) * dtDIFFW;
+
+  dtmax = (1.0/12.0) * secpera;  // FIXME: need better dtmax
+
+  // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
+  dt_result = PetscMin(t_end - t_current, dtmax);
+  dt_result = PetscMin(dt_result, dtCFL);
+  dt_result = PetscMin(dt_result, dtDIFFW);
+  dt_result = PetscMin(dt_result, dtDIFFP);
+
+  return 0;
+}
+
+
+//! Update the model state variables W,P by running the subglacial hydrology model.
+/*!
+Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
+is generally on the order of months to years.  This hydrology model will take its
+own shorter time steps, perhaps hours to weeks.
+ */
+PetscErrorCode PISMHydrology::update(PetscReal icet, PetscReal icedt) {
   PetscErrorCode ierr;
 
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time
   //   interval on which we are solving
-  if ((fabs(my_t - t) < 1e-6) && (fabs(my_dt - dt) < 1e-6))
+  if ((fabs(icet - t) < 1e-6) && (fabs(icedt - dt) < 1e-6))
     return 0;
-  t = my_t; dt = my_dt;
+  // update PISMComponent times: t = current time, t+dt = target time
+  t = icet;
+  dt = icedt;
 
   // make sure W,P have valid ghosts before starting hydrology steps
   ierr = W.beginGhostComm(); CHKERRQ(ierr);
@@ -277,19 +423,21 @@ PetscErrorCode PISMHydrology::update(PetscReal my_t, PetscReal my_dt) {
   // from current ice geometry/velocity variables, initialize Po and cbase
   ierr = update_ice_functions(Po,cbase); CHKERRQ(ierr);
 
-  PetscReal ht, hdt, // hydrology model time and time step
-            Wij;
+  PetscReal ht, hdt; // hydrology model time and time step
   while (ht < t + dt) {
-    // FIXME ierr = check_bounds(); CHKERRQ(ierr);
+    ierr = check_bounds(); CHKERRQ(ierr);
 
     ierr = velocity_staggered(V); CHKERRQ(ierr);
-    // FIXME ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
+    ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
 
-    // FIXME ierr = adaptive_time_step(hdt); CHKERRQ(ierr);
+    ierr = adaptive_time_step(ht, t+dt, hdt); CHKERRQ(ierr);
 
-    // FIXME ierr = hydraulic_potential(psi); CHKERRQ(ierr);
+    ierr = hydraulic_potential(psi); CHKERRQ(ierr);
+
+SETERRQ(grid.com,1,"not implemented");
     // FIXME ierr = known_state_mask(known); CHKERRQ(ierr);
 
+    // update Pnew from time step
     PetscReal  pux = c0 / (grid.dx * grid.dx),
                puy = c0 / (grid.dy * grid.dy),
                Open, Close, divflux, Ptmp;
@@ -329,27 +477,39 @@ PetscErrorCode PISMHydrology::update(PetscReal my_t, PetscReal my_dt) {
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = known.end_access(); CHKERRQ(ierr);
 
+SETERRQ(grid.com,1,"not implemented");
     // FIXME: start transfer Pnew into P
 
-    // FIXME ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
+    ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
 
+    // update Wnew from time step
+    PetscReal  wux = K / (grid.dx * grid.dx),
+               wuy = K / (grid.dy * grid.dy),
+               divadflux, diffW;
     ierr = W.begin_access(); CHKERRQ(ierr);
+    ierr = Wstag.begin_access(); CHKERRQ(ierr);
+    ierr = Qstag.begin_access(); CHKERRQ(ierr);
+    ierr = bmelt->begin_access(); CHKERRQ(ierr);
     ierr = Wnew.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        Wij = W(i,j);
-        //inputdepth = dt * Phi(i,j);
-        //dtlapW = mux * (Wea(i,j) * (W(i+1,j)-Wij) - Wea(i-1,j) * (Wij-W(i-1,j))) + ...
-        //         muy * (Wno(i,j) * (W(i,j+1)-Wij) - Wno(i,j-1) * (Wij-W(i,j-1)));
-        //Wnew(i,j) = Wij - FIXME + dtlapW + inputdepth;
-        Wnew(i,j) = Wij;
+        divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
+                    + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
+        diffW =   wux * (Wstag(i,j,0) * (W(i+1,j  ) - W(i,j)) - Wstag(i-1,j  ,0) * (W(i,j) - W(i-1,  j)))
+                + wuy * (Wstag(i,j,1) * (W(i  ,j+1) - W(i,j)) - Wstag(i  ,j-1,1) * (W(i,j) - W(i  ,j-1)));
+        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + (*bmelt)(i,j));
       }
     }
-    ierr = Wnew.end_access(); CHKERRQ(ierr);
     ierr = W.end_access(); CHKERRQ(ierr);
+    ierr = Wstag.end_access(); CHKERRQ(ierr);
+    ierr = Qstag.end_access(); CHKERRQ(ierr);
+    ierr = bmelt->end_access(); CHKERRQ(ierr);
+    ierr = Wnew.end_access(); CHKERRQ(ierr);
 
-    // FIXME:  time step of P equation
+SETERRQ(grid.com,1,"not implemented");
+    // FIXME: start transfer Wnew into W
 
+    ht += hdt;
   } // end of hydrology model time-stepping loop
 
   return 0;
@@ -360,6 +520,7 @@ PetscErrorCode PISMHydrology::water_layer_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = W.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
+
 
 PetscErrorCode PISMHydrology::water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr = P.copy_to(result); CHKERRQ(ierr);
