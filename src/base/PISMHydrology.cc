@@ -371,20 +371,26 @@ PetscErrorCode PISMHydrology::adaptive_time_step(PetscReal t_current, PetscReal 
                                                  PetscReal &dt_result) {
   PetscErrorCode ierr;
   PetscReal dtmax, dtCFL, dtDIFFW, dtDIFFP, maxW, maxH;
+  PetscReal tmp[2];
 
-SETERRQ(grid.com,1,"not implemented");
-
-  // FIXME: need series of global maxes
   // FIXME?: dtCFL can be infinity if velocity is zero because P and b are constant
-  //dtCFL = 0.5 / (max(max(abs(alphV)))/dx + max(max(abs(betaV)))/dy);
+  // Matlab: dtCFL = 0.5 / (max(max(abs(alphV)))/dx + max(max(abs(betaV)))/dy);
+  ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr);
+  dtCFL = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy);
 
-  //maxW = max(max(max(Wea)),max(max(Wno))) + 0.001;
-  //dtDIFFW = 0.25 / (p.K * maxW * (1/dx^2 + 1/dy^2));
+  // Matlab: maxW = max(max(max(Wea)),max(max(Wno))) + 0.001;
+  ierr = Wstag.absmaxcomponents(tmp); CHKERRQ(ierr);
+  maxW = PetscMax(tmp[0],tmp[1]) + 0.001;
+  // Matlab: dtDIFFW = 0.25 / (p.K * maxW * (1/dx^2 + 1/dy^2));
+  dtDIFFW = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
+  dtDIFFW = 0.25 / (K * maxW * dtDIFFW);
 
-  //maxH = max(max(h-b)) + 2 * p.E0;  % regularized: forces dtDIFFP < dtDIFFW
+  // Matlab: dtDIFFP = (p.rhow * p.E0 / (p.rhoi * maxH)) * dtDIFFW;
+  ierr = thk->max(maxH); CHKERRQ(ierr);
+  maxH += 2.0 * E0; // regularized: forces dtDIFFP < dtDIFFW
   dtDIFFP = (fresh_water_density * E0 / (ice_density * maxH)) * dtDIFFW;
 
-  dtmax = (1.0/12.0) * secpera;  // FIXME: need better dtmax
+  dtmax = (1.0/12.0) * secpera;  // FIXME: need better dtmax than fixed at 1 month
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
   dt_result = PetscMin(t_end - t_current, dtmax);
