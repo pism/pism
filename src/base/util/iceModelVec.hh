@@ -376,6 +376,7 @@ public:
   virtual PetscErrorCode sum(PetscScalar &result);
   virtual PetscErrorCode min(PetscScalar &result);
   virtual PetscErrorCode max(PetscScalar &result);
+  virtual PetscErrorCode absmax(PetscScalar &result);
   virtual PetscScalar diff_x(int i, int j);
   virtual PetscScalar diff_y(int i, int j);
   virtual PetscScalar diff_x_stagE(int i, int j);
@@ -600,6 +601,7 @@ public:
   virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2V &result);
   virtual PetscErrorCode get_array(PetscScalar*** &a);
+  virtual PetscErrorCode absmaxcomponents(PetscScalar* z);
 
   //! Returns the values at interfaces of the cell i,j using the staggered grid.
   /*! The ij member of the return value is set to 0, since it has no meaning in

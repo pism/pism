@@ -523,6 +523,22 @@ PetscErrorCode IceModelVec2S::max(PetscScalar &result) {
 }
 
 
+//! Finds maximum over all the absolute values in an IceModelVec2S object.  Ignores ghosts.
+PetscErrorCode IceModelVec2S::absmax(PetscScalar &result) {
+  PetscErrorCode ierr;
+  ierr = begin_access(); CHKERRQ(ierr);
+  PetscScalar my_result = 0.0;
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      my_result = PetscMax(my_result,PetscAbs((*this)(i,j)));
+    }
+  }
+  ierr = end_access(); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Finds minimum over all the values in an IceModelVec2S object.  Ignores ghosts.
 PetscErrorCode IceModelVec2S::min(PetscScalar &result) {
   PetscErrorCode ierr;
@@ -787,3 +803,23 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) {
   return 0;
 }
 
+
+//! For each component, finds the maximum over all the absolute values.  Ignores ghosts.
+/*!
+Assumes z is allocated.
+ */
+PetscErrorCode IceModelVec2Stag::absmaxcomponents(PetscScalar* z) {
+  PetscErrorCode ierr;
+  PetscScalar my_z[2] = {0.0, 0.0};
+  ierr = begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      my_z[0] = PetscMax(my_z[0],PetscAbs((*this)(i,j,0)));
+      my_z[1] = PetscMax(my_z[1],PetscAbs((*this)(i,j,1)));
+    }
+  }
+  ierr = end_access(); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&(my_z[0]), &(z[0]), grid->com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&(my_z[1]), &(z[1]), grid->com); CHKERRQ(ierr);
+  return 0;
+}
