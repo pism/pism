@@ -161,6 +161,37 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars, PISMStressBalance &sb) {
 }
 
 
+void PISMHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
+  result["bwat"] = W.get_metadata();
+  result["bwp"]  = P.get_metadata();
+}
+
+
+PetscErrorCode PISMHydrology::define_variables(set<string> vars, const PIO &nc,
+                                                 PISM_IO_Type nctype) {
+  PetscErrorCode ierr;
+  if (set_contains(vars, "bwat")) {
+    ierr = W.define(nc, nctype); CHKERRQ(ierr);
+  }
+  if (set_contains(vars, "bwp")) {
+    ierr = P.define(nc, nctype); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
+PetscErrorCode PISMHydrology::write_variables(set<string> vars, const PIO &nc) {
+  PetscErrorCode ierr;
+  if (set_contains(vars, "bwat")) {
+    ierr = W.write(nc); CHKERRQ(ierr);
+  }
+  if (set_contains(vars, "bwp")) {
+    ierr = P.write(nc); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
 //! Check bounds on W and P and fail with message if not satisfied.
 /*!
 Checks \f$0 \le W\f$ and \f$0 \le P \le P_o\f$.

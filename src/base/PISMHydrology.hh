@@ -46,21 +46,22 @@ public:
   PISMHydrology(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PISMHydrology() {}
 
-/* FIXME:
-  A PISM component needs to implement the following I/O methods:
-  \li add_vars_to_output(), which adds variable names to the list of fields that need
-  to be written.
-  \li define_variables(), which defines variables to be written and writes variable metadata.
-  \li write_variables(), which writes data itself.
-*/
-
+  virtual PetscErrorCode init(PISMVars &vars) {
+    PetscPrintf(grid.com,
+           "PISM ERROR: unable to initialize and allocate PISMHydrology object without\n"
+           "            an instance of PISMStressBalance\n");
+    PISMEnd();
+  }
   virtual PetscErrorCode init(PISMVars &vars, PISMStressBalance &sb);
+
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
   using PISMComponent_TS::update;
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
   virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result);
-
   virtual PetscErrorCode water_pressure(IceModelVec2S &result);
 
 protected:
