@@ -19,8 +19,9 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
-#include "PISMComponent.hh"
 #include "iceModelVec.hh"
+#include "PISMComponent.hh"
+#include "PISMStressBalance.hh"
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
@@ -53,7 +54,7 @@ public:
   \li write_variables(), which writes data itself.
 */
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(PISMVars &vars, PISMStressBalance &sb);
 
   using PISMComponent_TS::update;
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
@@ -83,11 +84,11 @@ protected:
                 *thk,   // ice thickness
                 *usurf, // ice surface elevation
                 *bmelt; // ice sheet basal melt rate
-  IceModelVec2V *Ubase; // ice sliding velocity
 
   PISMVars *variables;
+  PISMStressBalance* stressbalance;
 
-  PetscReal standard_gravity, ice_density, fresh_water_density;
+  PetscReal standard_gravity, ice_density, fresh_water_density, sea_water_density;
   PetscReal c1, c2, K, Aglen, nglen, Wr, c0, E0, Y0;
 
   virtual PetscErrorCode allocate();
@@ -98,6 +99,7 @@ protected:
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
   virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
+  virtual PetscErrorCode known_state_mask(IceModelVec2Int &result);
 
   virtual PetscErrorCode update_ice_functions(IceModelVec2S &result_Po, IceModelVec2S &result_cbase);
 
