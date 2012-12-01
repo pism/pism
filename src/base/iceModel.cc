@@ -28,6 +28,7 @@
 #include "PISMOcean.hh"
 #include "PISMBedDef.hh"
 #include "bedrockThermalUnit.hh"
+#include "PISMHydrology.hh"
 #include "PISMYieldStress.hh"
 #include "basal_resistance.hh"
 #include "enthalpyConverter.hh"
@@ -54,6 +55,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   signal(SIGUSR1, pism_signal_handler);
   signal(SIGUSR2, pism_signal_handler);
 
+  subglacial_hydrology = NULL;
   basal_yield_stress = NULL;
   basal = NULL;
 
@@ -151,6 +153,7 @@ IceModel::~IceModel() {
   delete surface;
   delete beddef;
 
+  delete subglacial_hydrology;
   delete basal_yield_stress;
   delete basal;
   delete EC;

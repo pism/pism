@@ -33,6 +33,7 @@
 #include "PISMBedDef.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
+#include "PISMHydrology.hh"
 #include "PISMMohrCoulombYieldStress.hh"
 #include "PISMConstantYieldStress.hh"
 #include "bedrockThermalUnit.hh"
@@ -718,6 +719,20 @@ PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
   return 0;
 }
 
+//! \brief Decide which subglacial hydrology model to use.
+PetscErrorCode IceModel::allocate_subglacial_hydrology() {
+  PetscErrorCode ierr;
+
+  if (subglacial_hydrology != NULL) // indicates it has already been allocated
+    return 0;
+
+  // FIXME: construct here according to user options including -diffuse_bwat
+  //subglacial_hydrology = new PISMHydrology(grid, config);
+
+  return 0;
+}
+
+
 //! \brief Decide which basal yield stress model to use.
 PetscErrorCode IceModel::allocate_basal_yield_stress() {
   PetscErrorCode ierr;
@@ -779,6 +794,9 @@ PetscErrorCode IceModel::allocate_submodels() {
   ierr = allocate_basal_resistance_law(); CHKERRQ(ierr);
 
   ierr = allocate_stressbalance(); CHKERRQ(ierr);
+
+  // this has to happen after allocate_stressbalance() is called
+  ierr = allocate_subglacial_hydrology(); CHKERRQ(ierr);
 
   ierr = allocate_basal_yield_stress(); CHKERRQ(ierr);
 

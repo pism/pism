@@ -49,6 +49,7 @@ file containing a complete model state, versus bootstrapping).
 // forward declarations
 class IceGrid;
 class EnthalpyConverter;
+class PISMHydrology;
 class PISMYieldStress;
 class IceBasalResistancePlasticLaw;
 class PISMStressBalance;
@@ -143,6 +144,7 @@ public:
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_bed_deformation();
   virtual PetscErrorCode allocate_bedrock_thermal_unit();
+  virtual PetscErrorCode allocate_subglacial_hydrology();
   virtual PetscErrorCode allocate_basal_yield_stress();
 
   virtual PetscErrorCode init_couplers();
@@ -199,6 +201,7 @@ protected:
     &overrides;			 //!< flags and parameters overriding config, see -config_override
   NCGlobalAttributes    global_attributes;
 
+  PISMHydrology   *subglacial_hydrology;
   PISMYieldStress *basal_yield_stress;
   IceBasalResistancePlasticLaw *basal;
 
