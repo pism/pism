@@ -151,6 +151,7 @@ IceModel::~IceModel() {
   delete surface;
   delete beddef;
 
+  delete basal_yield_stress;
   delete basal;
   delete EC;
   delete btu;
