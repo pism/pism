@@ -21,7 +21,7 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     \txtopt{o_size}{[small, medium, big]} & Chooses the ``size'' of the output file to produce.
     Possible options are \texttt{none} (\emph{no} output file at all), \texttt{small} (only variables necessary to restart
     PISM), \texttt{medium} (the default, includes some diagnostic quantities)
-    and \texttt{big} (writes all the variables mentioned in tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
+    and \texttt{big} (writes all the variables mentioned in tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
     \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa}
     and \texttt{vbar_ssa} velocities saved by a previous
     \texttt{-ssa_floating_only} or \texttt{-ssa_sliding} run. \\
@@ -234,7 +234,7 @@ will run for 10000 years, saving the magnitude of horizontal velocities at the
 ice surface and at the base of ice every 10 years. Times are specified using a
 comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras}
 for all the options corresponding to this feature;
-tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}
+tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3}
 list all the variable choices.
 
 The list of available diagnostic quantities depends on the model setup. For
@@ -282,7 +282,7 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \fileopt{extra_file} & Specifies the file to save to; should be different from the output \texttt{o} file.\\
     \timeopt{extra_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
     \listopt{extra_vars} & Comma-separated list of variables, see
-    tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}\\
+    tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3} \\
     \intextoption{extra_split} & Save to separate files, similar to \texttt{-save_split}\\
     \intextoption{extra_append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \intextoption{extra_split} is set. \\
     \bottomrule
@@ -384,10 +384,29 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{velsurf} & \textsl{m / year} &  horizontal velocity of ice at ice surface in the X and Y directions\\
     \texttt{wvelbase} & \textsl{m / year} &  vertical velocity of ice at the base of ice, relative to the geoid \\
     \texttt{wvelsurf} & \textsl{m / year} &  vertical velocity of ice at ice surface, relative to the geoid \\
+   \multicolumn{3}{c}{Continued in Table \ref{tab:two-d-diagnostics-3}}\\
   \bottomrule
   \end{tabular}
   \caption{2D diagnostic quantities, part 2}
   \label{tab:two-d-diagnostics-2}
+\end{table}
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
+    \toprule
+    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
+    \midrule
+    \multicolumn{3}{c}{Continued from Table \ref{tab:two-d-diagnostics-2}}\\
+    \texttt{ocean_kill_flux} & \textsl{kg / s} & calving flux due to the ``\texttt{-ocean_kill}'' mechanism \\
+    \texttt{ocean_kill_flux_cumulative} & \textsl{Gt} & cumulative version of \texttt{ocean_kill_flux} \\
+    \texttt{nonneg_flux_cumulative} & \textsl{Gt} & cumulative numerical flux created by enforcing non-negativity of ice thickness \\
+    \texttt{grounded_basal_flux_cumulative} & \textsl{Gt} & cumulative basal flux into the ice in grounded areas \\
+    \texttt{floating_basal_flux_cumulative} & \textsl{Gt} & cumulative basal flux into the ice in floating areas \\
+  \bottomrule
+  \end{tabular}
+  \caption{2D diagnostic quantities, part 3}
+  \label{tab:two-d-diagnostics-3}
 \end{table}
 
 
@@ -480,7 +499,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 \subsection{Run-time diagnostic viewers}
 \label{sec:diagnostic-viewers}
 \optsection{Run-time diagnostic viewers}
-Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.  All the quantities listed in tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2} are available.  Additionally, a couple of diagnostic quantities are \emph{only} available as run-time viewers; these are shown in table \ref{tab:special-diag-viewers}.
+Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.  All the quantities listed in tables~~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3} are available.  Additionally, a couple of diagnostic quantities are \emph{only} available as run-time viewers; these are shown in table \ref{tab:special-diag-viewers}.
 
 Note that (for performance and implementation reasons) map viewers
 are transposed.
@@ -491,7 +510,7 @@ are transposed.
     \small
     \textbf{Option} & \textbf{Description}\\
     \midrule
-    \listopt{view_map} & Turns on map-plane views of one or several variables, see tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}  \\
+    \listopt{view_map} & Turns on map-plane views of one or several variables, see tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3}  \\
     \txtopt{view_size}{number} & desired viewer size, in pixels\\
     \listopt{view_sounding} &Turns on sounding viewers showing values in a column\\
     \txtopt{id}{row} & Sounding row-index\\
@@ -507,7 +526,7 @@ are transposed.
 \label{tab:diag-viewers}
 \end{table}
 The option \texttt{-view_map} shows map-plane views of 2D fields and surface
-and basal views of 3D fields (see tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~and~\ref{tab:two-d-diagnostics-2}); for example:
+and basal views of 3D fields (see tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3}); for example:
 \begin{verbatim}
 $ pismr -i input.nc -y 1000 -o output.nc -view_map thk,tempsurf
 \end{verbatim}
