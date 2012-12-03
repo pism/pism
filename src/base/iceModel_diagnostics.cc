@@ -32,6 +32,11 @@
 #include "bedrockThermalUnit.hh"
 
 PetscErrorCode IceModel::init_diagnostics() {
+  bool print_list_and_stop = false;
+
+  PetscErrorCode ierr = PISMOptionsIsSet("-list_diagnostics",
+                                         "List available diagnostic quantities and stop",
+                                         print_list_and_stop); CHKERRQ(ierr);
 
   // Add IceModel diagnostics:
   diagnostics["cts"]              = new IceModel_cts(this, grid, variables);
@@ -50,24 +55,29 @@ PetscErrorCode IceModel::init_diagnostics() {
   diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid, variables);
   diagnostics["dHdt"]             = new IceModel_dHdt(this, grid, variables);
 
-  if (climatic_mass_balance_cumulative.was_created()) {
+  if (climatic_mass_balance_cumulative.was_created() ||
+      print_list_and_stop) {
     diagnostics["climatic_mass_balance_cumulative"] = new IceModel_climatic_mass_balance_cumulative(this, grid, variables);
   }
 
-  if (ocean_kill_flux_2D_cumulative.was_created()) {
+  if (ocean_kill_flux_2D_cumulative.was_created() ||
+      print_list_and_stop) {
     diagnostics["ocean_kill_flux_cumulative"] = new IceModel_ocean_kill_flux_2D_cumulative(this, grid, variables);
     diagnostics["ocean_kill_flux"] = new IceModel_ocean_kill_flux_2D(this, grid, variables);
   }
 
-  if (nonneg_flux_2D_cumulative.was_created()) {
+  if (nonneg_flux_2D_cumulative.was_created() ||
+      print_list_and_stop) {
     diagnostics["nonneg_flux_cumulative"] = new IceModel_nonneg_flux_2D_cumulative(this, grid, variables);
   }
 
-  if (grounded_basal_flux_2D_cumulative.was_created()) {
+  if (grounded_basal_flux_2D_cumulative.was_created() ||
+      print_list_and_stop) {
     diagnostics["grounded_basal_flux_cumulative"] = new IceModel_grounded_basal_flux_2D_cumulative(this, grid, variables);
   }
 
-  if (floating_basal_flux_2D_cumulative.was_created()) {
+  if (floating_basal_flux_2D_cumulative.was_created() ||
+      print_list_and_stop) {
     diagnostics["floating_basal_flux_cumulative"] = new IceModel_floating_basal_flux_2D_cumulative(this, grid, variables);
   }
 
@@ -130,11 +140,6 @@ PetscErrorCode IceModel::init_diagnostics() {
     basal_yield_stress->get_diagnostics(diagnostics);
   }
 
-  bool print_list_and_stop = false;
-
-  PetscErrorCode ierr = PISMOptionsIsSet("-list_diagnostics",
-                                         "List available diagnostic quantities and stop",
-                                         print_list_and_stop); CHKERRQ(ierr);
   if (print_list_and_stop) {
     ierr = list_diagnostics(); CHKERRQ(ierr);
 
