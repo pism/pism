@@ -25,8 +25,6 @@
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
-THIS IS A DRAFT!!
-
 PISMHydrology is a timestepping component (PISMComponent_TS) but it does not use
 PISM's main ice dynamics time steps.  Rather, when update() is called it advances
 its internal time to the new goal t+dt using its own internal time steps, and
@@ -34,21 +32,44 @@ using the ice geometry and basal sliding velocity as time-independent (i.e.
 explicit or one-way coupled) fields.  Thus the frequency of coupling is determined
 by the agent that calls the update() method.
 
-Perhaps this will be a virtual base class.  There are two prospective implementations,
+This is a virtual base class.  There are two prospective implementations,
 one being the old bwat diffusion currently implemented in iMhydrology.cc and the
 other being the new van Pelt & Bueler model documented at
   https://github.com/bueler/hydrolakes
 For now, it is just implementing the new model.
  */
-class PISMHydrology : public PISMComponent_TS
-{
+class PISMHydrology : public PISMComponent_TS {
 public:
-  PISMHydrology(IceGrid &g, const NCConfigVariable &conf);
+  PISMHydrology(IceGrid &g, const NCConfigVariable &conf) : PISMComponent_TS(g, conf) {}
   virtual ~PISMHydrology() {}
+
+  virtual PetscErrorCode init(PISMVars &vars) = 0;
+
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) = 0;
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype) = 0;
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc) = 0;
+
+  using PISMComponent_TS::update;
+  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
+
+  virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode water_pressure(IceModelVec2S &result) = 0;
+};
+
+
+//! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
+/*!
+This implements the new van Pelt & Bueler model documented at
+  https://github.com/bueler/hydrolakes
+ */
+class PISMDistributedHydrology : public PISMHydrology {
+public:
+  PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PISMDistributedHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars) {
     PetscPrintf(grid.com,
-           "PISM ERROR: unable to initialize and allocate PISMHydrology object without\n"
+           "PISM ERROR: unable to initialize and allocate PISMDistributedHydrology object without\n"
            "            an instance of PISMStressBalance\n");
     PISMEnd();
   }
@@ -106,7 +127,6 @@ protected:
 
   virtual PetscErrorCode adaptive_time_step(PetscReal t_current, PetscReal t_end, 
                                             PetscReal &dt_result);
-
 };
 
 #endif /* _PISMHYDROLOGY_H_ */
