@@ -500,6 +500,7 @@ private:
   int event_step,		//!< total time spent doing time-stepping
     event_velocity,		//!< total velocity computation
     event_energy,		//!< energy balance computation
+    event_hydrology,		//!< subglacial hydrology computation
     event_mass,			//!< mass continuity computation
     event_age,			//!< age computation
     event_beddef,		//!< bed deformation step
