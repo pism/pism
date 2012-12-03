@@ -57,6 +57,13 @@ public:
 };
 
 
+/* for PISMDiffusebwatHydrology:
+  // finally, diffuse the stored basal water once per energy step, if it is requested
+  //if (do_energy_step && config.get_flag("do_diffuse_bwat")) {
+  //  ierr = diffuse_bwat(); CHKERRQ(ierr);
+  //}
+*/
+
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
 /*!
 This implements the new van Pelt & Bueler model documented at
