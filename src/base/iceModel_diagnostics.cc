@@ -59,6 +59,18 @@ PetscErrorCode IceModel::init_diagnostics() {
     diagnostics["ocean_kill_flux"] = new IceModel_ocean_kill_flux_2D(this, grid, variables);
   }
 
+  if (nonneg_flux_2D_cumulative.was_created()) {
+    diagnostics["nonneg_flux_cumulative"] = new IceModel_nonneg_flux_2D_cumulative(this, grid, variables);
+  }
+
+  if (grounded_basal_flux_2D_cumulative.was_created()) {
+    diagnostics["grounded_basal_flux_cumulative"] = new IceModel_grounded_basal_flux_2D_cumulative(this, grid, variables);
+  }
+
+  if (floating_basal_flux_2D_cumulative.was_created()) {
+    diagnostics["floating_basal_flux_cumulative"] = new IceModel_floating_basal_flux_2D_cumulative(this, grid, variables);
+  }
+
   ts_diagnostics["ivol"]          = new IceModel_ivol(this, grid, variables);
   ts_diagnostics["slvol"]         = new IceModel_slvol(this, grid, variables);
   ts_diagnostics["divoldt"]       = new IceModel_divoldt(this, grid, variables);
@@ -2144,3 +2156,80 @@ PetscErrorCode IceModel_sum_divQ_flux::update(PetscReal a, PetscReal b) {
 
   return 0;
 }
+
+
+IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("nonneg_flux_cumulative", grid);
+
+  set_attrs("cumulative non-negative rule (thk >= 0) flux (positive means ice gain)",
+            "",                 // no standard name
+            "kg", "Gt", 0);
+}
+
+PetscErrorCode IceModel_nonneg_flux_2D_cumulative::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "nonneg_flux_cumulative", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = result->copy_from(model->nonneg_flux_2D_cumulative); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("grounded_basal_flux_cumulative", grid);
+
+  set_attrs("cumulative grounded basal flux (positive means ice gain)",
+            "",                 // no standard name
+            "kg", "Gt", 0);
+}
+
+PetscErrorCode IceModel_grounded_basal_flux_2D_cumulative::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "grounded_basal_flux_cumulative", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = result->copy_from(model->grounded_basal_flux_2D_cumulative); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("floating_basal_flux_cumulative", grid);
+
+  set_attrs("cumulative floating basal flux (positive means ice gain)",
+            "",                 // no standard name
+            "kg", "Gt", 0);
+}
+
+PetscErrorCode IceModel_floating_basal_flux_2D_cumulative::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "floating_basal_flux_cumulative", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = result->copy_from(model->floating_basal_flux_2D_cumulative); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+

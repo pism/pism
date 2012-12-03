@@ -492,6 +492,32 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
+//! \brief Reports the 2D cumulative (numerical) flux due to enforcing
+//! non-negativity of ice thickness.
+class IceModel_nonneg_flux_2D_cumulative : public PISMDiag<IceModel>
+{
+public:
+  IceModel_nonneg_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
+//! \brief Reports the 2D cumulative grounded basal flux.
+class IceModel_grounded_basal_flux_2D_cumulative : public PISMDiag<IceModel>
+{
+public:
+  IceModel_grounded_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the 2D cumulative floating basal flux.
+class IceModel_floating_basal_flux_2D_cumulative : public PISMDiag<IceModel>
+{
+public:
+  IceModel_floating_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 
 #endif  /* _ICEMODEL_DIAGNOSTICS_H_ */
 

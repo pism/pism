@@ -529,6 +529,38 @@ PetscErrorCode IceModel::createVecs() {
       ierr = ocean_kill_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
       ocean_kill_flux_2D_cumulative.write_in_glaciological_units = true;
     }
+
+    if (set_contains(ex_vars, "grounded_basal_flux_cumulative")) {
+      ierr = grounded_basal_flux_2D_cumulative.create(grid, "grounded_basal_flux_cumulative", false); CHKERRQ(ierr);
+      ierr = grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
+                                                         "cumulative basal flux into the ice "
+                                                         "in grounded areas (positive means ice gain)",
+                                                         "kg", ""); CHKERRQ(ierr);
+      grounded_basal_flux_2D_cumulative.time_independent = false;
+      ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
+    }
+
+    if (set_contains(ex_vars, "floating_basal_flux_cumulative")) {
+      ierr = floating_basal_flux_2D_cumulative.create(grid, "floating_basal_flux_cumulative", false); CHKERRQ(ierr);
+      ierr = floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
+                                                         "cumulative basal flux into the ice "
+                                                         "in floating areas (positive means ice gain)",
+                                                         "kg", ""); CHKERRQ(ierr);
+      floating_basal_flux_2D_cumulative.time_independent = false;
+      ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
+    }
+
+    if (set_contains(ex_vars, "nonneg_flux_cumulative")) {
+      ierr = nonneg_flux_2D_cumulative.create(grid, "nonneg_flux_cumulative", false); CHKERRQ(ierr);
+      ierr = nonneg_flux_2D_cumulative.set_attrs("diagnostic",
+                                                 "cumulative nonnegative rule flux (positive means ice gain)",
+                                                 "kg", ""); CHKERRQ(ierr);
+      nonneg_flux_2D_cumulative.time_independent = false;
+      ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
+    }
   }
 
   return 0;

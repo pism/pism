@@ -507,7 +507,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
     floating_ice_killed = config.get_flag("floating_ice_killed"),
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),
-    compute_cumulative_ocean_kill_flux = ocean_kill_flux_2D_cumulative.was_created();
+    compute_cumulative_ocean_kill_flux = ocean_kill_flux_2D_cumulative.was_created(),
+    compute_cumulative_nonneg_flux = nonneg_flux_2D_cumulative.was_created(),
+    compute_cumulative_grounded_basal_flux = grounded_basal_flux_2D_cumulative.was_created(),
+    compute_cumulative_floating_basal_flux = floating_basal_flux_2D_cumulative.was_created();
 
   // FIXME: use corrected cell areas (when available)
   PetscScalar factor = config.get("ice_density") * (dx * dy);
@@ -566,6 +569,18 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   if (compute_cumulative_ocean_kill_flux) {
     ierr = ocean_kill_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+  }
+
+  if (compute_cumulative_nonneg_flux) {
+    ierr = nonneg_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+  }
+
+  if (compute_cumulative_grounded_basal_flux) {
+    ierr = grounded_basal_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+  }
+
+  if (compute_cumulative_floating_basal_flux) {
+    ierr = floating_basal_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
   }
 
   MaskQuery mask(vMask);
@@ -691,6 +706,9 @@ PetscErrorCode IceModel::massContExplicitStep() {
       if (vHnew(i, j) < 0.0) {
         nonneg_rule_flux += -vHnew(i, j);
 
+        if (compute_cumulative_nonneg_flux)
+          nonneg_flux_2D_cumulative(i, j) += nonneg_rule_flux * factor; // factor=dx*dy*rho
+
         // this has to go *after* accounting above!
         vHnew(i, j) = 0.0;
       }
@@ -709,7 +727,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
           ocean_kill_flux = -vHnew(i, j);
 
           if (compute_cumulative_ocean_kill_flux)
-            ocean_kill_flux_2D_cumulative(i,j) += -vHnew(i,j) * factor; // factor=dx*dy*rho
+            ocean_kill_flux_2D_cumulative(i,j) += ocean_kill_flux * factor; // factor=dx*dy*rho
 
           // this has to go *after* accounting above!
           vHnew(i, j) = 0.0;
@@ -731,7 +749,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
         climatic_mass_balance_cumulative(i, j) += acab(i, j) * dt;
       }
 
-      // accounting:
+      if (compute_cumulative_grounded_basal_flux) {
+        grounded_basal_flux_2D_cumulative(i, j) += -meltrate_grounded * dt;
+      }
+
+      if (compute_cumulative_floating_basal_flux) {
+        floating_basal_flux_2D_cumulative(i, j) += -meltrate_floating * dt;
+      }
+
+      // time-series accounting:
       {
         proc_grounded_basal_ice_flux -= meltrate_grounded;
         proc_sub_shelf_ice_flux      -= meltrate_floating;
@@ -756,6 +782,18 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
+
+  if (compute_cumulative_grounded_basal_flux) {
+    ierr = grounded_basal_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
+  }
+
+  if (compute_cumulative_floating_basal_flux) {
+    ierr = floating_basal_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
+  }
+
+  if (compute_cumulative_nonneg_flux) {
+    ierr = nonneg_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
+  }
 
   if (compute_cumulative_ocean_kill_flux) {
     ierr = ocean_kill_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
