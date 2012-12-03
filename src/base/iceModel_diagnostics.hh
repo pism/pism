@@ -190,27 +190,11 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
-//! \brief Computes the temperate ice volume fraction.
-class IceModel_ivoltempf : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_ivoltempf(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
 //! \brief Computes the total volume of the cold ice.
 class IceModel_ivolcold : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_ivolcold(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
-//! \brief Computes the cold ice volume fraction.
-class IceModel_ivolcoldf : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_ivolcoldf(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
@@ -222,27 +206,11 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
-//! \brief Computes the temperate ice area fraction.
-class IceModel_iareatempf : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_iareatempf(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
 //! \brief Computes the total area of the cold ice.
 class IceModel_iareacold : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_iareacold(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
-//! \brief Computes the cold ice area fraction.
-class IceModel_iareacoldf : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_iareacoldf(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 

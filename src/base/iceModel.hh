@@ -97,15 +97,11 @@ class IceModel {
   friend class IceModel_imass;
   friend class IceModel_dimassdt;
   friend class IceModel_ivoltemp;
-  friend class IceModel_ivoltempf;
   friend class IceModel_ivolcold;
-  friend class IceModel_ivolcoldf;
   friend class IceModel_ivolg;
   friend class IceModel_ivolf;
   friend class IceModel_iareatemp;
-  friend class IceModel_iareatempf;
   friend class IceModel_iareacold;
-  friend class IceModel_iareacoldf;
   friend class IceModel_ienthalpy;
   friend class IceModel_iareag;
   friend class IceModel_iareaf;

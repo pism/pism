@@ -88,15 +88,11 @@ PetscErrorCode IceModel::init_diagnostics() {
   ts_diagnostics["imass"]         = new IceModel_imass(this, grid, variables);
   ts_diagnostics["dimassdt"]      = new IceModel_dimassdt(this, grid, variables);
   ts_diagnostics["ivoltemp"]      = new IceModel_ivoltemp(this, grid, variables);
-  //ts_diagnostics["ivoltempf"]     = new IceModel_ivoltempf(this, grid, variables);
   ts_diagnostics["ivolcold"]      = new IceModel_ivolcold(this, grid, variables);
-  //ts_diagnostics["ivolcoldf"]     = new IceModel_ivolcoldf(this, grid, variables);
   ts_diagnostics["ivolg"]         = new IceModel_ivolg(this, grid, variables);
   ts_diagnostics["ivolf"]         = new IceModel_ivolf(this, grid, variables);
   ts_diagnostics["iareatemp"]     = new IceModel_iareatemp(this, grid, variables);
-  //ts_diagnostics["iareatempf"]    = new IceModel_iareatempf(this, grid, variables);
   ts_diagnostics["iareacold"]     = new IceModel_iareacold(this, grid, variables);
-  //ts_diagnostics["iareacoldf"]    = new IceModel_iareacoldf(this, grid, variables);
   ts_diagnostics["iareag"]        = new IceModel_iareag(this, grid, variables);
   ts_diagnostics["iareaf"]        = new IceModel_iareaf(this, grid, variables);
   ts_diagnostics["dt"]            = new IceModel_dt(this, grid, variables);
@@ -1175,7 +1171,6 @@ IceModel_divoldt::IceModel_divoldt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  // set metadata:
   ts = new DiagnosticTimeseries(&grid, "divoldt", time_dimension_name);
 
   ts->set_units("m3 s-1", "");
@@ -1296,37 +1291,6 @@ PetscErrorCode IceModel_ivoltemp::update(PetscReal a, PetscReal b) {
   return 0;
 }
 
-IceModel_ivoltempf::IceModel_ivoltempf(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
-
-  // set metadata:
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "ivoltempf", time_dimension_name);
-
-  ts->set_units("1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "temperate ice volume fraction");
-  ts->set_attr("valid_min", 0.0);
-  ts->set_attr("valid_max", 1.0);
-}
-
-PetscErrorCode IceModel_ivoltempf::update(PetscReal a, PetscReal b) {
-  PetscErrorCode ierr;
-  PetscReal value, ivol;
-
-  ierr = model->compute_ice_volume(ivol); CHKERRQ(ierr);
-  ierr = model->compute_ice_volume_temperate(value); CHKERRQ(ierr);
-
-  if (ivol > 0) {
-    value /= ivol;
-  } else {
-    value = 0;
-  }
-
-  ierr = ts->append(value, a, b); CHKERRQ(ierr);
-
-  return 0;
-}
 
 IceModel_ivolcold::IceModel_ivolcold(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
@@ -1352,37 +1316,6 @@ PetscErrorCode IceModel_ivolcold::update(PetscReal a, PetscReal b) {
   return 0;
 }
 
-IceModel_ivolcoldf::IceModel_ivolcoldf(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
-
-  // set metadata:
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "ivolcoldf", time_dimension_name);
-
-  ts->set_units("1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "cold ice volume fraction");
-  ts->set_attr("valid_min", 0.0);
-  ts->set_attr("valid_max", 1.0);
-}
-
-PetscErrorCode IceModel_ivolcoldf::update(PetscReal a, PetscReal b) {
-  PetscErrorCode ierr;
-  PetscReal value, ivol;
-
-  ierr = model->compute_ice_volume(ivol); CHKERRQ(ierr);
-  ierr = model->compute_ice_volume_cold(value); CHKERRQ(ierr);
-
-  if (ivol > 0) {
-    value /= ivol;
-  } else {
-    value = 0;
-  }
-
-  ierr = ts->append(value, a, b); CHKERRQ(ierr);
-
-  return 0;
-}
 IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
@@ -1407,42 +1340,9 @@ PetscErrorCode IceModel_iareatemp::update(PetscReal a, PetscReal b) {
   return 0;
 }
 
-IceModel_iareatempf::IceModel_iareatempf(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
-
-  // set metadata:
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "iareatempf", time_dimension_name);
-
-  ts->set_units("1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "fraction of ice-covered area where basal ice is temperate");
-  ts->set_attr("valid_min", 0.0);
-  ts->set_attr("valid_max", 1.0);
-}
-
-PetscErrorCode IceModel_iareatempf::update(PetscReal a, PetscReal b) {
-  PetscErrorCode ierr;
-  PetscReal value, iarea;
-
-  ierr = model->compute_ice_area(iarea); CHKERRQ(ierr);
-  ierr = model->compute_ice_area_temperate(value); CHKERRQ(ierr);
-
-  if (iarea > 0) {
-    value /= iarea;
-  } else {
-    value = 0;
-  }
-
-  ierr = ts->append(value, a, b); CHKERRQ(ierr);
-
-  return 0;
-}
-
 IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
-  // set metadata:
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareacold", time_dimension_name);
 
@@ -1457,38 +1357,6 @@ PetscErrorCode IceModel_iareacold::update(PetscReal a, PetscReal b) {
   PetscReal value;
 
   ierr = model->compute_ice_area_cold(value); CHKERRQ(ierr);
-
-  ierr = ts->append(value, a, b); CHKERRQ(ierr);
-
-  return 0;
-}
-
-IceModel_iareacoldf::IceModel_iareacoldf(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
-
-  // set metadata:
-  // set metadata:
-  ts = new DiagnosticTimeseries(&grid, "iareacoldf", time_dimension_name);
-
-  ts->set_units("1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "fraction of ice-covered area where basal ice is cold");
-  ts->set_attr("valid_min", 0.0);
-  ts->set_attr("valid_max", 1.0);
-}
-
-PetscErrorCode IceModel_iareacoldf::update(PetscReal a, PetscReal b) {
-  PetscErrorCode ierr;
-  PetscReal value, iarea;
-
-  ierr = model->compute_ice_area(iarea); CHKERRQ(ierr);
-  ierr = model->compute_ice_area_cold(value); CHKERRQ(ierr);
-
-  if (iarea > 0) {
-    value /= iarea;
-  } else {
-    value = 0;
-  }
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
