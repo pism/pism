@@ -53,9 +53,9 @@ PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
 
 PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  variables = &vars;
   ierr = verbPrintf(2, grid.com,
     "* Initializing the till-can subglacial hydrology model...\n"); CHKERRQ(ierr);
+  variables = &vars;
   thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
   if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available");
   bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
@@ -224,10 +224,22 @@ PISMDiffusebwatHydrology::PISMDiffusebwatHydrology(IceGrid &g, const NCConfigVar
 }
 
 
+PetscErrorCode PISMDiffusebwatHydrology::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = PISMTillCanHydrology::init(vars); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+    "  using the diffusive water layer variant ...\n"); CHKERRQ(ierr);
+  return 0;
+}
+
+
 PetscErrorCode PISMDiffusebwatHydrology::allocateWnew() {
   PetscErrorCode ierr;
   // also need temporary space during update
-  ierr = Wnew.create(grid, "Wnew-internal", false); CHKERRQ(ierr);
+  //FIXME: shouldn't I be able to do this?  gives error
+  //   "makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='Wnew-internal')!"
+  //ierr = Wnew.create(grid, "Wnew-internal", false); CHKERRQ(ierr);
+  ierr = Wnew.create(grid, "Wnew-internal", true, 1); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
                      "new thickness of subglacial water layer during update",
                      "m", ""); CHKERRQ(ierr);

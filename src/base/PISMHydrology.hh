@@ -90,6 +90,8 @@ public:
   PISMDiffusebwatHydrology(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PISMDiffusebwatHydrology() {}
 
+  virtual PetscErrorCode init(PISMVars &vars);
+
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
 protected:
