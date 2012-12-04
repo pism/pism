@@ -26,4 +26,6 @@ add_library (pisminverse
 
 target_link_libraries (pisminverse pismbase pismutil)
 
-install (TARGETS pisminverse DESTINATION ${Pism_LIB_DIR})
+if (${BUILD_SHARED_LIBS})
+  install (TARGETS pisminverse DESTINATION ${Pism_LIB_DIR})
+endif()

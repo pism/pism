@@ -45,7 +45,7 @@ endmacro()
 
 if (PDFLATEX_COMPILER)
   # Only offer to build docs if LaTeX is found.
-  option (Pism_BUILD_DOCS "Build PISM PDF documentation" OFF)
+  option (Pism_BUILD_PDFS "Build PISM PDF documentation" OFF)
 
   # copy PISM-related macros, creating the revision tag
   configure_file(pism-macros.tex pism-macros.tex @ONLY)
@@ -70,14 +70,14 @@ if (PDFLATEX_COMPILER)
 
   add_subdirectory(forcing)
 
-  if (Pism_BUILD_DOCS)
+  if (Pism_BUILD_PDFS)
     install (FILES
       "${CMAKE_CURRENT_BINARY_DIR}/userman/manual.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/forcing/forcing.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/installation.pdf"
       DESTINATION ${Pism_DOC_DIR})
 
-  endif ()                      # if Pism_BUILD_DOCS
+  endif ()                      # if Pism_BUILD_PDFS
 endif ()                        # if PDFLATEX_COMPILER
 
 add_subdirectory(manpages)
