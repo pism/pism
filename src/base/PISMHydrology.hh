@@ -25,18 +25,12 @@
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
-PISMHydrology is a timestepping component (PISMComponent_TS) but it does not use
+PISMHydrology is a timestepping component (PISMComponent_TS) but it generally does not use
 PISM's main ice dynamics time steps.  Rather, when update() is called it advances
 its internal time to the new goal t+dt using its own internal time steps, and
-using the ice geometry and basal sliding velocity as time-independent (i.e.
+using the ice geometry and (possibly) basal sliding velocity as time-independent (i.e.
 explicit or one-way coupled) fields.  Thus the frequency of coupling is determined
 by the agent that calls the update() method.
-
-This is a virtual base class.  There are two prospective implementations,
-one being the old bwat diffusion currently implemented in iMhydrology.cc and the
-other being the new van Pelt & Bueler model documented at
-  https://github.com/bueler/hydrolakes
-For now, it is just implementing the new model.
  */
 class PISMHydrology : public PISMComponent_TS {
 public:
@@ -57,12 +51,53 @@ public:
 };
 
 
-/* for PISMDiffusebwatHydrology:
-  // finally, diffuse the stored basal water once per energy step, if it is requested
-  //if (do_energy_step && config.get_flag("do_diffuse_bwat")) {
-  //  ierr = diffuse_bwat(); CHKERRQ(ierr);
-  //}
-*/
+
+//! \brief The subglacial hydrology model from Bueler & Brown (2009) but without contrived water diffusion.
+class PISMTillCanHydrology : public PISMHydrology {
+public:
+  PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PISMTillCanHydrology() {}
+
+  virtual PetscErrorCode init(PISMVars &vars);
+
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+
+  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+
+  virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result);
+  virtual PetscErrorCode water_pressure(IceModelVec2S &result);
+
+protected:
+  // this model's state
+  IceModelVec2S W;      // water layer thickness
+
+  // pointers into IceModel; these describe the ice sheet and the source
+  IceModelVec2S *thk,   // ice thickness
+                *bmelt; // ice sheet basal melt rate
+  PISMVars *variables;
+
+  virtual PetscErrorCode allocate();
+
+  virtual PetscErrorCode check_W_bounds();
+};
+
+
+//! \brief The subglacial hydrology model from Bueler & Brown (2009) WITH the contrived water diffusion.
+class PISMDiffusebwatHydrology : public PISMTillCanHydrology {
+public:
+  PISMDiffusebwatHydrology(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PISMDiffusebwatHydrology() {}
+
+  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+
+protected:
+  IceModelVec2S Wnew;      // water layer thickness, temporary during update
+  virtual PetscErrorCode allocate();
+};
+
+
 
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
 /*!
@@ -74,11 +109,12 @@ public:
   PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PISMDistributedHydrology() {}
 
-  virtual PetscErrorCode init(PISMVars &vars) {
+  virtual PetscErrorCode init(PISMVars &/*vars*/) {
     PetscPrintf(grid.com,
            "PISM ERROR: unable to initialize and allocate PISMDistributedHydrology object without\n"
            "            an instance of PISMStressBalance\n");
     PISMEnd();
+    return 0;
   }
   virtual PetscErrorCode init(PISMVars &vars, PISMStressBalance &sb);
 
@@ -86,7 +122,6 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
-  using PISMComponent_TS::update;
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
   virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result);

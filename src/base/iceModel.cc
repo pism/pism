@@ -714,6 +714,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   grid.profiler->end(event_energy);
 
+  // FIXME: remove diffuse_bwat() and this call once PISMHydrology really done:
+  if (do_energy_step && config.get_flag("do_diffuse_bwat")) {
+    ierr = diffuse_bwat(); CHKERRQ(ierr);
+  }
+
   grid.profiler->begin(event_hydrology);
 
   //! \li update the state variables in the subglacial hydrology model (typically

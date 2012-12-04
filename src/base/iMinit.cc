@@ -726,7 +726,6 @@ PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
 
 //! \brief Decide which subglacial hydrology model to use.
 PetscErrorCode IceModel::allocate_subglacial_hydrology() {
-  PetscErrorCode ierr;
 
   if (subglacial_hydrology != NULL) // indicates it has already been allocated
     return 0;
@@ -737,13 +736,12 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
   if (disthydro || lakeshydro || diffbwat) {
     if (int(disthydro) + int(lakeshydro) + int(diffbwat) > 1) {
       PetscPrintf(grid.com,
-         "\n\nPISM ERROR:  Option combination giving do_distributed_hydrology==true\n"
-         "do_diffuse_bwat==true is not allowed.  Use one or zero options?\n\n");
+         "\n\nPISM ERROR:  Option combination with more than one hydrology submodel\n"
+         "   choice is not allowed.  Use one or zero options.\n\n");
       PISMEnd();
     }
     if (diffbwat) {
-      //FIXME: subglacial_hydrology = new PISMDiffuseBwatHydrology(grid, config);
-      SETERRQ(grid.com,1,"PISMDiffuseBwatHydrology not implemented\n");
+      subglacial_hydrology = new PISMDiffusebwatHydrology(grid, config);
     } else if (lakeshydro) {
       //FIXME: subglacial_hydrology = new PISMLakesHydrology(grid, config);
       SETERRQ(grid.com,1,"PISMLakesHydrology not implemented\n");
@@ -752,8 +750,7 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
       subglacial_hydrology = new PISMDistributedHydrology(grid, config);
     }
   } else {
-    //FIXME: subglacial_hydrology = new PISMTillCanHydrology(grid, config);
-    SETERRQ(grid.com,1,"PISMTillCanHydrology not implemented\n");
+    subglacial_hydrology = new PISMTillCanHydrology(grid, config);
   }
 
   return 0;

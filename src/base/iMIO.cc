@@ -28,6 +28,7 @@
 #include "PISMBedDef.hh"
 #include "bedrockThermalUnit.hh"
 #include "PISMYieldStress.hh"
+#include "PISMHydrology.hh"
 #include "PISMStressBalance.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
@@ -187,6 +188,10 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
       SETERRQ(grid.com, 1,"PISM ERROR: stress_balance == NULL");
     }
 
+    if (subglacial_hydrology != NULL) {
+      ierr = subglacial_hydrology->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
     if (surface != NULL) {
       ierr = surface->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
@@ -236,6 +241,10 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
     ierr = stress_balance->write_variables(vars, nc); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 1,"PISM ERROR: stress_balance == NULL");
+  }
+
+  if (subglacial_hydrology != NULL) {
+    ierr = subglacial_hydrology->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   // Ask boundary models to write their variables:
