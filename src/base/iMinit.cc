@@ -969,7 +969,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
 
   choices.insert("none");
   choices.insert("iso");
-#if (PISM_HAVE_FFTW==1)
+#if (PISM_USE_FFTW==1)
   choices.insert("lc");
 #endif
 
@@ -990,7 +990,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
     return 0;
   }
 
-#if (PISM_HAVE_FFTW==1)
+#if (PISM_USE_FFTW==1)
   if ((model == "lc") && (beddef == NULL)) {
     beddef = new PBLingleClark(grid, config);
     return 0;

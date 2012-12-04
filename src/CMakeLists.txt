@@ -54,26 +54,26 @@ set(PISMUTIL_SRC
 
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=1")
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=1")
   list(APPEND PISMUTIL_SRC base/util/io/PISMNC4_Par.cc)
 else()
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=0")
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=0")
 endif()
 
 # Check if PnetCDF parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PNETCDF)
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=1")
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=1")
   list(APPEND PISMUTIL_SRC base/util/io/PISMPNCFile.cc)
 else()
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=0")
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=0")
 endif()
 
 # Check if HDF5-based parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_HDF5)
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_HDF5=1")
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_HDF5=1")
   list(APPEND PISMUTIL_SRC base/util/io/PISMNC4_HDF5.cc)
 else()
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_HDF5=0")
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_HDF5=0")
 endif()
 
 
@@ -147,7 +147,7 @@ set(PISMEARTH_SRC
   earth/PISMBedDef.cc
   )
 
-if (FFTW_FOUND)
+if (Pism_USE_FFTW)
   list (APPEND PISMEARTH_SRC
     earth/PBLingleClark.cc
     earth/deformation.cc
@@ -266,7 +266,7 @@ if (Pism_BUILD_EXTRA_EXECS)
     target_link_libraries (${EXEC} pismverif)
   endforeach (EXEC)
 
-  if (FFTW_FOUND)
+  if (Pism_USE_FFTW)
     add_executable (tryLCbd earth/tryLCbd.cc)
     target_link_libraries (tryLCbd pismearth pismrevision)
     list (APPEND EXTRA_EXECS tryLCbd)

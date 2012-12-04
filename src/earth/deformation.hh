@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011 Ed Bueler
+// Copyright (C) 2007--2009, 2011, 2012 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include "NCVariable.hh"
 #include <petscvec.h>
-#if (PISM_HAVE_FFTW)
+#if (PISM_USE_FFTW==1)
 #include <fftw3.h>
 #endif
 

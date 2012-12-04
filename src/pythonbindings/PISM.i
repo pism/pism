@@ -38,7 +38,7 @@
 #include "inverse/H1NormFunctional.hh"
 #include "inverse/MeanSquareFunctional.hh"
 #include "inverse/InvSSATikhonovGN.hh"
-#if(PISM_HAS_TAO)
+#if (PISM_USE_TAO==1)
 #include "inverse/TaoUtil.hh"
 #include "inverse/InvSSATikhonov.hh"
 #include "inverse/InvSSATikhonovLCL.hh"
@@ -576,7 +576,7 @@ namespace std {
 %include "inverse/InvSSAForwardProblem_dep.hh"
 %include "inverse/InvSSATikhonovGN.hh"
 
-#if(PISM_HAS_TAO)
+#if (PISM_USE_TAO==1)
 %ignore TaoConvergedReasons;
 %shared_ptr(TAOTerminationReason)
 %include "inverse/TaoUtil.hh"

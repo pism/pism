@@ -125,6 +125,7 @@ macro(pism_check_build_dir_location)
 endmacro()
 
 macro(pism_find_prerequisites)
+  # PETSc
   find_package (PETSc)
   if (NOT PETSC_FOUND)
     get_filename_component(pcc ${PETSC_COMPILER} REALPATH)
@@ -140,6 +141,7 @@ macro(pism_find_prerequisites)
     message(FATAL_ERROR  "PISM configuration failed: PETSc was not found.")
   endif()
 
+  # MPI
   # Use the PETSc compiler as a hint when looking for an MPI compiler
   # FindMPI.cmake changed between 2.8.4 and 2.8.5, so we try to support both...
   if (${CMAKE_VERSION} VERSION_LESS "2.8.5")
@@ -156,24 +158,24 @@ macro(pism_find_prerequisites)
     find_package (MPI REQUIRED)
   endif()
 
-  mark_as_advanced(file_cmd MPI_LIBRARY MPI_EXTRA_LIBRARY 
-    CMAKE_OSX_ARCHITECTURES CMAKE_OSX_DEPLOYMENT_TARGET CMAKE_OSX_SYSROOT MAKE_EXECUTABLE)
-
+  # Other required libraries
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
+
+  # Optional libraries
   find_package (PNetCDF)
   find_package (HDF5 COMPONENTS C HL)
-  mark_as_advanced(HDF5_DIR)
   find_package (FFTW)
   find_package (PROJ4)
-
+  find_package (TAO)
   # Try to find netcdf_par.h. We assume that NetCDF was compiled with
   # parallel I/O if this header is present.
   find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
-  mark_as_advanced(NETCDF_PAR_H)
+
+  # Set default values for build options
   if (NOT NETCDF_PAR_H)
-    message(STATUS "Selected NetCDF library does not support parallel I/O.")
     set (Pism_USE_PARALLEL_NETCDF4 OFF CACHE BOOL "Enables parallel NetCDF-4 I/O." FORCE)
+    message(STATUS "Selected NetCDF library does not support parallel I/O.")
   endif()
 
   if (NOT PNETCDF_FOUND)
@@ -188,17 +190,28 @@ macro(pism_find_prerequisites)
   endif()
 
   if (NOT FFTW_FOUND)
-    set (Pism_USE_FFTW OFF CACHE BOOL "Use FFTW in the bed deformation code." FORCE)
-    message (STATUS "FFTW was not found.")
+    set (Pism_USE_FFTW OFF CACHE BOOL "Use FFTW-3 in the bed deformation code." FORCE)
   endif ()
 
   if (NOT PROJ4_FOUND)
     set (Pism_USE_PROJ4 OFF CACHE BOOL "Use Proj.4 to compute cell areas, longitude, and latitude." FORCE)
   endif()
 
+  if (NOT TAO_FOUND)
+    set (Pism_USE_TAO OFF CACHE BOOL "Use TAO in inverse solvers." FORCE)
+    message(STATUS  "TAO not found. Inverse solvers using the TAO library will not be built.")
+  endif()
 
-  set (Pism_EXTERNAL_LIBS
-    ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
+  # Use option values to set compiler and linker flags
+  set (Pism_EXTERNAL_LIBS "")
+
+  # Put HDF5 includes near the beginning of the list. (It is possible that the system has
+  # more than one HDF5 library installed--- one serial, built with NetCDF, and one parallel.
+  # We want to use the latter.)
+  if (Pism_USE_PARALLEL_HDF5)
+    include_directories (${HDF5_C_INCLUDE_DIR})
+    list (APPEND Pism_EXTERNAL_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+  endif()
 
   # optional
   if (Pism_USE_FFTW)
@@ -211,21 +224,23 @@ macro(pism_find_prerequisites)
     list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
   endif()
 
-  if (Pism_USE_PARALLEL_HDF5)
-    include_directories (${HDF5_C_INCLUDE_DIR})
-    list (APPEND Pism_EXTERNAL_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
-  endif()
-
   if (Pism_USE_PNETCDF)
     include_directories (${PNETCDF_INCLUDES})
     list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
   endif()
 
-  find_package(TAO)
-  if (NOT TAO_FOUND)
-    message(STATUS  "TAO not found. Inverse solvers using the TAO library will not be built.")
+  if (Pism_USE_TAO)
+    include_directories (${TAO_INCLUDE_DIRS})
+    list (APPEND Pism_EXTERNAL_LIBS ${TAO_LIBRARIES})
   endif()
-  mark_as_advanced(TAO_DIR)
 
+  # Set include and library directories for *required* libraries.
   include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
+  list (APPEND Pism_EXTERNAL_LIBS
+    ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
+
+  # Hide distracting CMake variables
+  mark_as_advanced(file_cmd MPI_LIBRARY MPI_EXTRA_LIBRARY
+    CMAKE_OSX_ARCHITECTURES CMAKE_OSX_DEPLOYMENT_TARGET CMAKE_OSX_SYSROOT
+    MAKE_EXECUTABLE HDF5_DIR TAO_DIR TAO_INCLUDE_DIRS NETCDF_PAR_H)
 endmacro()

@@ -29,6 +29,7 @@ option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitu
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." ON)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." ON)
 option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." ON)
+option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
 
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
@@ -79,6 +80,8 @@ if (Pism_GPROF_FLAGS)
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 endif ()
 
+# Look for libraries using find_package(...), etc. Run CMake with -DPism_LOOK_FOR_LIBRARIES=OFF
+# to build on systems that rely on the module system to set all compiler and linker flags.
 if (Pism_LOOK_FOR_LIBRARIES)
   pism_find_prerequisites()
 endif()
@@ -98,26 +101,25 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     CACHE PATH "Python extension module installation directory." )
 endif ()
 
-# Build the Lingle-Clark bed deformation model if FFTW was found
+# Build the Lingle-Clark bed deformation model if we have FFTW-3.
 if (Pism_USE_FFTW)
-  add_definitions (-DPISM_HAVE_FFTW=1)
+  add_definitions (-DPISM_USE_FFTW=1)
 else()
-  add_definitions (-DPISM_HAVE_FFTW=0)
+  add_definitions (-DPISM_USE_FFTW=0)
 endif()
 
-# Do cell area computations the right way if proj.4 was found.
+# Do cell area computations the right way if we have proj.4.
 if (Pism_USE_PROJ4)
-  add_definitions (-DPISM_HAVE_PROJ4=1)
+  add_definitions (-DPISM_USE_PROJ4=1)
 else()
-  add_definitions (-DPISM_HAVE_PROJ4=0)
+  add_definitions (-DPISM_USE_PROJ4=0)
 endif()
 
-if (TAO_FOUND)
-  include_directories (${TAO_INCLUDE_DIRS})
-  list (APPEND Pism_EXTERNAL_LIBS ${TAO_LIBRARIES})
-  add_definitions (-DPISM_HAS_TAO=1)
+# Use TAO in inverse solvers.
+if (Pism_USE_TAO)
+  add_definitions (-DPISM_USE_TAO=1)
 else()
-  add_definitions (-DPISM_HAS_TAO=0)
+  add_definitions (-DPISM_USE_TAO=0)
 endif()
 
 add_custom_target (etags

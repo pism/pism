@@ -60,7 +60,7 @@ protected:
   IceModelVec2S thk_last;	//!< last ice thickness
 };
 
-#if (PISM_HAVE_FFTW==1)
+#if (PISM_USE_FFTW==1)
 #include <fftw3.h>
 #include "deformation.hh"
 
@@ -88,6 +88,6 @@ protected:
     upliftp0;			//!< bed uplift
   BedDeformLC bdLC;
 };
-#endif	// PISM_HAVE_FFTW
+#endif	// PISM_USE_FFTW
 
 #endif	// __PISMBedDef_hh
