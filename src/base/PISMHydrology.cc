@@ -279,13 +279,25 @@ PetscErrorCode PISMDiffusebwatHydrology::update(PetscReal icet, PetscReal icedt)
       "   ... NN = %d > 1 ... THIS IS BELIEVED TO BE RARE\n",NN);
   }
 
-  // assume ghosts are valid at start of time step
-
   hdt = dt / NN;
   PetscReal  Rx = K * dt / (grid.dx * grid.dx),
              Ry = K * dt / (grid.dy * grid.dy),
              oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
   for (PetscInt n=0; n<NN; ++n) {
+    ierr = W.begin_access(); CHKERRQ(ierr);
+    ierr = bmelt->begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        W(i,j) = W(i,j) + ((*bmelt)(i,j) - bwat_decay_rate) * icedt;
+        W(i,j) = PetscMax(0.0, PetscMin(bwat_max, W(i,j)) );
+      }
+    }
+    ierr = W.end_access(); CHKERRQ(ierr);
+    ierr = bmelt->end_access(); CHKERRQ(ierr);
+
+    ierr = W.beginGhostComm(); CHKERRQ(ierr);
+    ierr = W.endGhostComm(); CHKERRQ(ierr);
+
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wnew.begin_access(); CHKERRQ(ierr);
     ierr = bmelt->begin_access(); CHKERRQ(ierr);
@@ -293,8 +305,7 @@ PetscErrorCode PISMDiffusebwatHydrology::update(PetscReal icet, PetscReal icedt)
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         Wnew(i,j) = oneM4R * W(i,j) + Rx * (W(i+1,j  ) + W(i-1,j  ))
                                     + Ry * (W(i  ,j+1) + W(i  ,j-1));
-        Wnew(i,j) = Wnew(i,j) + ((*bmelt)(i,j) - bwat_decay_rate) * icedt;
-        Wnew(i,j) = PetscMax(0.0, PetscMin(bwat_max, Wnew(i,j)) );
+        // no check of bounds here because maximum principle applies to step
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
