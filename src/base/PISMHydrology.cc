@@ -39,9 +39,9 @@ PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
   PetscErrorCode ierr;
   // model state variables
   if (Whasghosts) {
-    ierr = W.create(grid, "bwat-tillcan", true, 1); CHKERRQ(ierr);
+    ierr = W.create(grid, "bwattillcan", true, 1); CHKERRQ(ierr);
   } else {
-    ierr = W.create(grid, "bwat-tillcan", false); CHKERRQ(ierr);
+    ierr = W.create(grid, "bwattillcan", false); CHKERRQ(ierr);
   }
   ierr = W.set_attrs("model_state",
                      "thickness of subglacial water layer",
@@ -72,14 +72,14 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
 
 
 void PISMTillCanHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["bwat-tillcan"] = W.get_metadata();
+  result["bwattillcan"] = W.get_metadata();
   IceModelVec2S tmp;
-  tmp.create(grid, "bwp-tillcan", false);
+  tmp.create(grid, "bwptillcan", false);
   tmp.set_attrs("diagnostic",
                        "pressure of water in subglacial layer",
                        "Pa", "");
   tmp.set_attr("valid_min", 0.0);
-  result["bwp-tillcan"] = tmp.get_metadata();
+  result["bwptillcan"] = tmp.get_metadata();
   // destructor called on tmp when we go out of scope here
 }
 
@@ -87,12 +87,12 @@ void PISMTillCanHydrology::add_vars_to_output(string /*keyword*/, map<string,NCS
 PetscErrorCode PISMTillCanHydrology::define_variables(set<string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwat-tillcan")) {
+  if (set_contains(vars, "bwattillcan")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwp-tillcan")) {
+  if (set_contains(vars, "bwptillcan")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "bwp-tillcan", false); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "bwptillcan", false); CHKERRQ(ierr);
     ierr = tmp.set_attrs("diagnostic",
                      "pressure of water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
@@ -106,12 +106,12 @@ PetscErrorCode PISMTillCanHydrology::define_variables(set<string> vars, const PI
 
 PetscErrorCode PISMTillCanHydrology::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwat-tillcan")) {
+  if (set_contains(vars, "bwattillcan")) {
     ierr = W.write(nc); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwp-tillcan")) {
+  if (set_contains(vars, "bwptillcan")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "bwp-tillcan", false); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "bwptillcan", false); CHKERRQ(ierr);
     ierr = tmp.set_attrs("diagnostic",
                      "pressure of water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
@@ -239,7 +239,7 @@ PetscErrorCode PISMDiffusebwatHydrology::allocateWnew() {
   //FIXME: shouldn't I be able to do this?  gives error
   //   "makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='Wnew-internal')!"
   //ierr = Wnew.create(grid, "Wnew-internal", false); CHKERRQ(ierr);
-  ierr = Wnew.create(grid, "Wnew-internal", true, 1); CHKERRQ(ierr);
+  ierr = Wnew.create(grid, "Wnew_internal", true, 1); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
                      "new thickness of subglacial water layer during update",
                      "m", ""); CHKERRQ(ierr);
@@ -345,58 +345,58 @@ PetscErrorCode PISMDistributedHydrology::allocate() {
   PetscErrorCode ierr;
 
   // model state variables; need ghosts
-  ierr = W.create(grid, "bwat-distributed", true, 1); CHKERRQ(ierr);
+  ierr = W.create(grid, "bwatdistributed", true, 1); CHKERRQ(ierr);
   ierr = W.set_attrs("model_state",
                      "thickness of subglacial water layer",
                      "m", ""); CHKERRQ(ierr);
   ierr = W.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = P.create(grid, "bwp-distributed", true, 1); CHKERRQ(ierr);
+  ierr = P.create(grid, "bwpdistributed", true, 1); CHKERRQ(ierr);
   ierr = P.set_attrs("model_state",
                      "pressure of water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
   ierr = P.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
   // auxiliary variables which NEED ghosts
-  ierr = psi.create(grid, "hydraulic-potential", true, 1); CHKERRQ(ierr);
+  ierr = psi.create(grid, "hydraulic_potential", true, 1); CHKERRQ(ierr);
   ierr = psi.set_attrs("internal",
                        "hydraulic potential of water in subglacial layer",
                        "Pa", ""); CHKERRQ(ierr);
-  ierr = known.create(grid, "known-hydro-mask", true, 1); CHKERRQ(ierr);
+  ierr = known.create(grid, "known_hydro_mask", true, 1); CHKERRQ(ierr);
   ierr = known.set_attrs("internal",
                        "mask for where subglacial hydrology state is known",
                        "", ""); CHKERRQ(ierr);
-  ierr = Wstag.create(grid, "W-staggered", true, 1); CHKERRQ(ierr);
+  ierr = Wstag.create(grid, "W_staggered", true, 1); CHKERRQ(ierr);
   ierr = Wstag.set_attrs("internal",
                      "cell face-centered (staggered) values of water layer thickness",
                      "m", ""); CHKERRQ(ierr);
-  ierr = Qstag.create(grid, "advection-flux", true, 1); CHKERRQ(ierr);
+  ierr = Qstag.create(grid, "advection_flux", true, 1); CHKERRQ(ierr);
   ierr = Qstag.set_attrs("internal",
                      "cell face-centered (staggered) components of advective subglacial water flux",
                      "m2 s-1", ""); CHKERRQ(ierr);
 
   // auxiliary variables which do not need ghosts
-  ierr = Po.create(grid, "ice-overburden-pressure", false); CHKERRQ(ierr);
+  ierr = Po.create(grid, "ice_overburden_pressure", false); CHKERRQ(ierr);
   ierr = Po.set_attrs("internal",
                       "ice overburden pressure seen by subglacial water layer",
                       "Pa", ""); CHKERRQ(ierr);
   ierr = Po.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = cbase.create(grid, "ice-sliding-speed", false); CHKERRQ(ierr);
+  ierr = cbase.create(grid, "ice_sliding_speed", false); CHKERRQ(ierr);
   ierr = cbase.set_attrs("internal",
                          "ice sliding speed seen by subglacial water layer",
                          "m s-1", ""); CHKERRQ(ierr);
   ierr = cbase.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = V.create(grid, "water-velocity", false); CHKERRQ(ierr);
+  ierr = V.create(grid, "water_velocity", false); CHKERRQ(ierr);
   ierr = V.set_attrs("internal",
                      "cell face-centered (staggered) components of water velocity in subglacial water layer",
                      "m s-1", ""); CHKERRQ(ierr);
 
   // temporaries during update; do not need ghosts
-  ierr = Wnew.create(grid, "Wnew-internal", false); CHKERRQ(ierr);
+  ierr = Wnew.create(grid, "Wnew_internal", false); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
                      "new thickness of subglacial water layer during update",
                      "m", ""); CHKERRQ(ierr);
   ierr = Wnew.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = Pnew.create(grid, "Pnew-internal", false); CHKERRQ(ierr);
+  ierr = Pnew.create(grid, "Pnew_internal", false); CHKERRQ(ierr);
   ierr = Pnew.set_attrs("internal",
                      "new subglacial water pressure during update",
                      "Pa", ""); CHKERRQ(ierr);
@@ -448,18 +448,18 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars, PISMStressBalance 
 
 
 void PISMDistributedHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["bwat-distributed"] = W.get_metadata();
-  result["bwp-distributed"]  = P.get_metadata();
+  result["bwatdistributed"] = W.get_metadata();
+  result["bwpdistributed"]  = P.get_metadata();
 }
 
 
 PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwat-distributed")) {
+  if (set_contains(vars, "bwatdistributed")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwp-distributed")) {
+  if (set_contains(vars, "bwpdistributed")) {
     ierr = P.define(nc, nctype); CHKERRQ(ierr);
   }
   return 0;
@@ -468,10 +468,10 @@ PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, cons
 
 PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwat-distributed")) {
+  if (set_contains(vars, "bwatdistributed")) {
     ierr = W.write(nc); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwp-distributed")) {
+  if (set_contains(vars, "bwpdistributed")) {
     ierr = P.write(nc); CHKERRQ(ierr);
   }
   return 0;
@@ -885,5 +885,4 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
 
   return 0;
 }
-
 
