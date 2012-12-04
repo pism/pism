@@ -30,6 +30,7 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_topgsmooth;
   friend class SIAFD_thksmooth;
   friend class SIAFD_diffusivity;
+  friend class SIAFD_diffusivity_staggered;
   friend class SIAFD_h_x;
   friend class SIAFD_h_y;
 public:
@@ -89,6 +90,7 @@ protected:
   virtual PetscScalar grainSizeVostok(PetscScalar age) const;
 
   virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result);
+  virtual PetscErrorCode compute_diffusivity_staggered(IceModelVec2Stag &result);
 
   // pointers to input fields:
   IceModelVec2S *bed, *thickness, *surface;
@@ -154,6 +156,14 @@ class SIAFD_diffusivity : public PISMDiag<SIAFD>
 {
 public:
   SIAFD_diffusivity(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Compute diffusivity of the SIA flow (on the staggered grid).
+class SIAFD_diffusivity_staggered : public PISMDiag<SIAFD>
+{
+public:
+  SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
