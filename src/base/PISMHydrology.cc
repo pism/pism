@@ -22,12 +22,12 @@
 #include "Mask.hh"
 
 
-PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf)
+PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf, bool Whasghosts)
     : PISMHydrology(g, conf)
 {
     thk   = NULL;
     bmelt  = NULL;
-    if (allocate() != 0) {
+    if (allocate(Whasghosts) != 0) {
       PetscPrintf(grid.com,
         "PISM ERROR: allocation failed in PISMTillCanHydrology constructor.\n");
       PISMEnd();
@@ -35,10 +35,14 @@ PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &c
 }
 
 
-PetscErrorCode PISMTillCanHydrology::allocate() {
+PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
   PetscErrorCode ierr;
-  // model state variables; don't need ghosts
-  ierr = W.create(grid, "bwat-tillcan", false); CHKERRQ(ierr);
+  // model state variables
+  if (Whasghosts) {
+    ierr = W.create(grid, "bwat-tillcan", true, 1); CHKERRQ(ierr);
+  } else {
+    ierr = W.create(grid, "bwat-tillcan", false); CHKERRQ(ierr);
+  }
   ierr = W.set_attrs("model_state",
                      "thickness of subglacial water layer",
                      "m", ""); CHKERRQ(ierr);
@@ -210,28 +214,18 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
 
 
 PISMDiffusebwatHydrology::PISMDiffusebwatHydrology(IceGrid &g, const NCConfigVariable &conf)
-    : PISMTillCanHydrology(g, conf)
+    : PISMTillCanHydrology(g, conf, true)
 {
-  // so PISMTillCanHydrology::allocate() has already happened; here we revise
-  //FIXME: we ATTEMPT to revise because this method is not available
-  W.destroy();
-
-  if (allocate() != 0) {
+  if (allocateWnew() != 0) {
     PetscPrintf(grid.com,
-      "PISM ERROR: allocation failed in PISMDiffusebwatHydrology constructor.\n");
+      "PISM ERROR: allocation of Wnew failed in PISMDiffusebwatHydrology constructor.\n");
     PISMEnd();
   }
 }
 
 
-PetscErrorCode PISMDiffusebwatHydrology::allocate() {
+PetscErrorCode PISMDiffusebwatHydrology::allocateWnew() {
   PetscErrorCode ierr;
-  // model state variables; DO need ghosts for diffusebwat mechanism
-  ierr = W.create(grid, "bwat-tillcan", true, 1); CHKERRQ(ierr);
-  ierr = W.set_attrs("model_state",
-                     "thickness of subglacial water layer",
-                     "m", ""); CHKERRQ(ierr);
-  ierr = W.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   // also need temporary space during update
   ierr = Wnew.create(grid, "Wnew-internal", false); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",

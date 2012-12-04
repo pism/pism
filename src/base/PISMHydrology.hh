@@ -55,7 +55,7 @@ public:
 //! \brief The subglacial hydrology model from Bueler & Brown (2009) but without contrived water diffusion.
 class PISMTillCanHydrology : public PISMHydrology {
 public:
-  PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf);
+  PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf, bool Whasghosts);
   virtual ~PISMTillCanHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
@@ -78,7 +78,7 @@ protected:
                 *bmelt; // ice sheet basal melt rate
   PISMVars *variables;
 
-  virtual PetscErrorCode allocate();
+  virtual PetscErrorCode allocate(bool Whasghosts);
 
   virtual PetscErrorCode check_W_bounds();
 };
@@ -94,7 +94,7 @@ public:
 
 protected:
   IceModelVec2S Wnew;      // water layer thickness, temporary during update
-  virtual PetscErrorCode allocate();
+  virtual PetscErrorCode allocateWnew();
 };
 
 

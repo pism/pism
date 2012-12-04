@@ -750,7 +750,7 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
       subglacial_hydrology = new PISMDistributedHydrology(grid, config);
     }
   } else {
-    subglacial_hydrology = new PISMTillCanHydrology(grid, config);
+    subglacial_hydrology = new PISMTillCanHydrology(grid, config, false);
   }
 
   return 0;
