@@ -34,4 +34,6 @@ add_library (pismboundary
   )
 target_link_libraries (pismboundary pismutil)
 
-install (TARGETS pismboundary DESTINATION ${Pism_LIB_DIR})
+if (${BUILD_SHARED_LIBS})
+  install (TARGETS pismboundary DESTINATION ${Pism_LIB_DIR})
+endif()

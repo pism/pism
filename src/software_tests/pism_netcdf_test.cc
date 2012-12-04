@@ -139,12 +139,12 @@ int main(int argc, char**argv) {
       if (mode == "netcdf3") {
         nc = new PISMNC3File(mpi_comm, mpi_rank);
       }
-#if (PISM_PARALLEL_NETCDF4==1)
+#if (PISM_USE_PARALLEL_NETCDF4==1)
       else if (mode == "netcdf4") {
         nc = new PISMNC4_Par(mpi_comm, mpi_rank);
       }
 #endif
-#if (PISM_PNETCDF==1)
+#if (PISM_USE_PNETCDF==1)
       else if (mode == "pnetcdf") {
         nc = new PISMPNCFile(mpi_comm, mpi_rank);
       }

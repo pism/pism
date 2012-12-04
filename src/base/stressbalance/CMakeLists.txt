@@ -21,7 +21,9 @@ add_library (pismstressbalance
 )
 target_link_libraries (pismstressbalance pismutil pismflowlaws pismrevision)
 
-install (TARGETS pismstressbalance DESTINATION ${Pism_LIB_DIR})
+if (${BUILD_SHARED_LIBS})
+  install (TARGETS pismstressbalance DESTINATION ${Pism_LIB_DIR})
+endif()
 
 if (Pism_BUILD_EXTRA_EXECS)
   add_executable (siafd_test siafd_test.cc ../../verif/tests/exactTestsFG.c ../basalstrength/basal_resistance.cc)

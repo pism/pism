@@ -338,7 +338,7 @@ public:
   virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
   inline PetscScalar& operator() (int i, int j, int k) {
-#if (PISM_DEBUG == 1)
+#if (PISM_DEBUG==1)
     check_array_indices(i, j, k);
 #endif
     return static_cast<PetscScalar***>(array)[i][j][k];
@@ -549,7 +549,7 @@ public:
   virtual PetscErrorCode get_array(PISMVector2 ** &a);
   virtual PetscErrorCode magnitude(IceModelVec2S &result);
   inline PISMVector2& operator()(int i, int j) {
-#if (PISM_DEBUG == 1)
+#if (PISM_DEBUG==1)
     check_array_indices(i, j);
 #endif
     return static_cast<PISMVector2**>(array)[i][j];

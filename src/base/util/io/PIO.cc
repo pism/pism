@@ -28,15 +28,15 @@
 #include "PISMNC4_Quilt.hh"
 #include <assert.h>
 
-#if (PISM_PARALLEL_NETCDF4==1)
+#if (PISM_USE_PARALLEL_NETCDF4==1)
 #include "PISMNC4_Par.hh"
 #endif
 
-#if (PISM_PNETCDF==1)
+#if (PISM_USE_PNETCDF==1)
 #include "PISMPNCFile.hh"
 #endif
 
-#if (PISM_HDF5==1)
+#if (PISM_USE_HDF5==1)
 #include "PISMNC4_HDF5.hh"
 #endif
 
@@ -48,17 +48,17 @@ static PISMNCFile* create_backend(MPI_Comm com, int rank, string mode) {
   } else if (mode == "quilt-with-compression") {
     return new PISMNC4_Quilt(com, rank, true);
   }
-#if (PISM_PARALLEL_NETCDF4==1)
+#if (PISM_USE_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
     return new PISMNC4_Par(com, rank);
   }
 #endif
-#if (PISM_PNETCDF==1)
+#if (PISM_USE_PNETCDF==1)
   else if (mode == "pnetcdf") {
     return new PISMPNCFile(com, rank);
   }
 #endif
-#if (PISM_HDF5==1)
+#if (PISM_USE_HDF5==1)
   else if (mode == "hdf5") {
     return new PISMNC4_HDF5(com, rank);
   }

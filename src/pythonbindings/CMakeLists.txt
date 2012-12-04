@@ -65,12 +65,12 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)
 
     SET(CMAKE_SWIG_FLAGS "")
-    if(TAO_FOUND)
+    if(Pism_USE_TAO)
       # I'd like to set CMAKE_SWIG_FLAGS from the CXX_DEFINES but 
-      # I can't figure out how to do this, so we just set PISM_HAS_TAO
+      # I can't figure out how to do this, so we just set PISM_USE_TAO
       # explicitly
-      SET(CMAKE_SWIG_FLAGS -DPISM_HAS_TAO=1 )
-    endif(TAO_FOUND)
+      SET(CMAKE_SWIG_FLAGS -DPISM_USE_TAO=1 )
+    endif()
 
     set_source_files_properties(PISM.i PROPERTIES
       CPLUSPLUS ON
@@ -113,7 +113,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       PATTERN ".svn" EXCLUDE
     )
 
-# The python code snippit below returns 1 if python can 
+# The python code snippet below returns 1 if python can
 # import a PISM and if the directory of said PISM matches
 # the place we are about to install PISM python.  If the return
 # value is not 1, we print a message stating how to set your PYTHONPATH.
