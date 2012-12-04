@@ -113,7 +113,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       PATTERN ".svn" EXCLUDE
     )
 
-# The python code snippit below returns 1 if python can 
+# The python code snippet below returns 1 if python can
 # import a PISM and if the directory of said PISM matches
 # the place we are about to install PISM python.  If the return
 # value is not 1, we print a message stating how to set your PYTHONPATH.

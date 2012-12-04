@@ -140,13 +140,15 @@ install (PROGRAMS
   DESTINATION ${Pism_BIN_DIR})
 
 # Install some python-based pieces of PISM
-install (PROGRAMS
-  examples/python/ssa_forward.py
-  examples/python/sia_forward.py
-  examples/inverse/make_synth_ssa.py
-  examples/inverse/vel2tauc.py
-  examples/inverse/verify_ssa_inv.py
-  DESTINATION ${Pism_BIN_DIR} )
+if (Pism_BUILD_PYTHON_BINDINGS)
+  install (PROGRAMS
+    examples/python/ssa_forward.py
+    examples/python/sia_forward.py
+    examples/inverse/make_synth_ssa.py
+    examples/inverse/vel2tauc.py
+    examples/inverse/verify_ssa_inv.py
+    DESTINATION ${Pism_BIN_DIR} )
+endif()
 
 add_subdirectory (src)
 
