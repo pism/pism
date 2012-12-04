@@ -76,6 +76,7 @@ protected:
   // pointers into IceModel; these describe the ice sheet and the source
   IceModelVec2S *thk,   // ice thickness
                 *bmelt; // ice sheet basal melt rate
+  IceModelVec2Int *mask;// floating, grounded, etc. mask
   PISMVars *variables;
 
   virtual PetscErrorCode allocate(bool Whasghosts);

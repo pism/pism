@@ -56,14 +56,19 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
     "* Initializing the till-can subglacial hydrology model...\n"); CHKERRQ(ierr);
   variables = &vars;
+
   thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
   if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available");
   bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
   if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available");
+  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+
   // initialize water layer thickness from the context if present, otherwise zero
   IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
   if (W_input != NULL) {
     ierr = W.copy_from(*W_input); CHKERRQ(ierr);
+    // FIXME: what about regrid case under -boot_file?
   } else {
     ierr = W.set(0.0); CHKERRQ(ierr);
   }
@@ -201,14 +206,23 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
             bwat_decay_rate = config.get("bwat_decay_rate");
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = bmelt->begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  MaskQuery m(*mask);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      W(i,j) = W(i,j) + ((*bmelt)(i,j) - bwat_decay_rate) * icedt;
-      W(i,j) = PetscMax(0.0, PetscMin(bwat_max, W(i,j)) );
+      if (m.grounded_ice(i, j)) {
+        W(i,j) = W(i,j) + ((*bmelt)(i,j) - bwat_decay_rate) * icedt;
+        W(i,j) = PetscMax(0.0, PetscMin(bwat_max, W(i,j)) );
+      } else if (m.ice_free_land(i,j)) {
+        W(i,j) = 0.0;
+      } else { // floating or ocean cases
+        W(i,j) = bwat_max;
+      }
     }
   }
   ierr = W.end_access(); CHKERRQ(ierr);
   ierr = bmelt->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -248,6 +262,17 @@ PetscErrorCode PISMDiffusebwatHydrology::allocateWnew() {
 }
 
 
+//! Explicit time step for diffusion of subglacial water layer bwat.
+/*!
+See equation (11) in \ref BBssasliding , namely
+  \f[W_t = K \nabla^2 W.\f]
+The diffusion constant \f$K\f$ is chosen so that the fundamental solution (Green's
+function) of this equation has standard deviation \f$\sigma=L\f$ at time t=\c diffusion_time.
+Note that \f$2 \sigma^2 = 4 K t\f$.
+
+The time step restriction for the explicit method for this equation is believed
+to be so rare that if it is triggered there is a stdout warning.
+ */
 PetscErrorCode PISMDiffusebwatHydrology::update(PetscReal icet, PetscReal icedt) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(icet - t) < 1e-6) && (fabs(icedt - dt) < 1e-6))
@@ -286,14 +311,23 @@ PetscErrorCode PISMDiffusebwatHydrology::update(PetscReal icet, PetscReal icedt)
   for (PetscInt n=0; n<NN; ++n) {
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = bmelt->begin_access(); CHKERRQ(ierr);
+    ierr = mask->begin_access(); CHKERRQ(ierr);
+    MaskQuery m(*mask);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        W(i,j) = W(i,j) + ((*bmelt)(i,j) - bwat_decay_rate) * icedt;
-        W(i,j) = PetscMax(0.0, PetscMin(bwat_max, W(i,j)) );
+        if (m.grounded_ice(i, j)) {
+          W(i,j) = W(i,j) + ((*bmelt)(i,j) - bwat_decay_rate) * icedt;
+          W(i,j) = PetscMax(0.0, PetscMin(bwat_max, W(i,j)) );
+        } else if (m.ice_free_land(i,j)) {
+          W(i,j) = 0.0;
+        } else { // floating or ocean cases
+          W(i,j) = bwat_max;
+        }
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
     ierr = bmelt->end_access(); CHKERRQ(ierr);
+    ierr = mask->end_access(); CHKERRQ(ierr);
 
     ierr = W.beginGhostComm(); CHKERRQ(ierr);
     ierr = W.endGhostComm(); CHKERRQ(ierr);
