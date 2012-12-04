@@ -724,7 +724,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   ierr = subglacial_hydrology->update(grid.time->current(), dt); CHKERRQ(ierr);
-  ierr = subglacial_hydrology->water_layer_thickness(vbwat); CHKERRQ(ierr);
+  //ierr = subglacial_hydrology->water_layer_thickness(vbwat); CHKERRQ(ierr);
 
   grid.profiler->end(event_hydrology);
 
