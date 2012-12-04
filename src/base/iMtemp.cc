@@ -22,6 +22,7 @@
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "PISMStressBalance.hh"
+#include "PISMHydrology.hh"
 #include "bedrockThermalUnit.hh"
 #include "pism_options.hh"
 
@@ -111,7 +112,7 @@ This method should be kept because it is worth having alternative physics, and
 
     An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
-    In this procedure four scalar fields are modified: vbwat, vbmr, and vWork3d.
+    In this procedure two scalar fields are modified: vbmr and vWork3d.
     But vbmr will never need to communicate ghosted values (horizontal stencil
     neighbors).  The ghosted values for T3 are updated from the values in vWork3d in the
     communication done by energyStep().
@@ -165,8 +166,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     //   or bedrock can be lower than surface temperature
     const PetscScalar bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice_c;
 
-    const PetscReal bwat_decay_rate = config.get("bwat_decay_rate");  // m s-1
-
     PetscScalar *Tnew;
     // pointers to values in current column
     system.u     = new PetscScalar[fMz];
@@ -183,7 +182,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = system.initAllColumns(); CHKERRQ(ierr);
 
     // now get map-plane fields, starting with coupler fields
-    PetscScalar  **bwat, **basalMeltRate;
+    PetscScalar  **basalMeltRate;
 
     if (surface != PETSC_NULL) {
       ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
@@ -206,15 +205,24 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
       SETERRQ(grid.com, 3,"PISM ERROR: PISMBedThermalUnit* btu == PETSC_NULL in temperatureStep()");
     }
 
+    IceModelVec2S bwatcurr = vWork2d[1];
+    ierr = bwatcurr.set_attrs("internal", "current amount of basal water", "m", ""); CHKERRQ(ierr);
+    ierr = bwatcurr.set_glaciological_units("m");
+    if (subglacial_hydrology) {
+      ierr = subglacial_hydrology->water_layer_thickness(bwatcurr); CHKERRQ(ierr);
+    } else {
+      SETERRQ(grid.com, 3,"PISM ERROR: PISMHydrology* subglacial_hydrology is NULL in temperatureStep()");
+    }
+
     ierr = artm.begin_access(); CHKERRQ(ierr);
     ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
     ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
     ierr = vH.begin_access(); CHKERRQ(ierr);
-    ierr = vbwat.get_array(bwat); CHKERRQ(ierr);
     ierr = vbmr.get_array(basalMeltRate); CHKERRQ(ierr);
     ierr = vMask.begin_access(); CHKERRQ(ierr);
     ierr = G0.begin_access(); CHKERRQ(ierr);
+    ierr = bwatcurr.begin_access(); CHKERRQ(ierr);
 
     IceModelVec2S *Rb;            // basal frictional heating
     ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
@@ -236,8 +244,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     PetscInt myLowTempCount = 0;
     PetscInt maxLowTempCount = static_cast<PetscInt>(config.get("max_low_temp_count"));
     PetscReal globalMinAllowedTemp = config.get("global_min_allowed_temp");
-
-    PetscReal bwat_max = config.get("bwat_max");
 
     MaskQuery mask(vMask);
 
@@ -298,7 +304,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         }	// end of "if there are enough points in ice to bother ..."
 
         // prepare for melting/refreezing
-        PetscScalar bwatnew = bwat[i][j];
+        PetscScalar bwatnew = bwatcurr(i,j);
 
         // insert solution for generic ice segments
         for (PetscInt k=1; k <= ks; k++) {
@@ -357,8 +363,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           }
           if (Tnew[0] < artm(i,j) - bulgeMax) {
             Tnew[0] = artm(i,j) - bulgeMax;   bulgeCount++;   }
-        } else {
-          bwatnew = 0.0;
         }
 
         // set to air temp above ice
@@ -369,28 +373,22 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         // transfer column into vWork3d; communication later
         ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
-        // basalMeltRate[][] is rate of mass loss at bottom of ice; finalize it and bwat
+        // basalMeltRate[][] is rate of mass loss at bottom of ice; finalize it
         //   note massContExplicitStep() calls PISMOceanCoupler; FIXME: does there
         //   need to be a check that shelfbmassflux(i,j) is up to date?
         if (mask.ocean(i,j)) {
           if (mask.icy(i,j)) {
             // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
             basalMeltRate[i][j] = shelfbmassflux(i,j); // set by PISMOceanCoupler
-            // if floating ice is present assume maximally saturated till to avoid "shock" if
-            //   grounding line advances
-            bwat[i][j] = bwat_max;
           } else {
             basalMeltRate[i][j] = 0.0;
-            bwat[i][j] = 0.0;
           }
         } else {
-          // basalMeltRate is rate of change of bwat[][];  can be negative
+          // basalMeltRate is rate of change of bwat;  can be negative
           //   (subglacial water freezes-on); note this rate is calculated
-          //   *before* limiting bwat.
-          basalMeltRate[i][j] = (bwatnew - bwat[i][j]) / dt_TempAge;
-          // model loss to undetermined exterior:
-          bwatnew -= bwat_decay_rate * dt_TempAge;
-          bwat[i][j] = PetscMin(bwat_max, PetscMax(bwatnew, 0.0));
+          //   *before* limiting or other nontrivial modelling of bwat,
+          //   which is PISMHydrology's job
+          basalMeltRate[i][j] = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
         }
 
     }
@@ -400,9 +398,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vbwat.end_access(); CHKERRQ(ierr);
   ierr = Rb->end_access(); CHKERRQ(ierr);
   ierr = G0.end_access(); CHKERRQ(ierr);
+  ierr = bwatcurr.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);
 
   ierr = artm.end_access(); CHKERRQ(ierr);

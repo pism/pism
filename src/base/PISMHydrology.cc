@@ -26,7 +26,8 @@ PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &c
     : PISMHydrology(g, conf)
 {
     thk   = NULL;
-    bmelt  = NULL;
+    bmelt = NULL;
+    mask  = NULL;
     if (allocate(Whasghosts) != 0) {
       PetscPrintf(grid.com,
         "PISM ERROR: allocation failed in PISMTillCanHydrology constructor.\n");
@@ -39,9 +40,9 @@ PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
   PetscErrorCode ierr;
   // model state variables
   if (Whasghosts) {
-    ierr = W.create(grid, "bwattillcan", true, 1); CHKERRQ(ierr);
+    ierr = W.create(grid, "bwat", true, 1); CHKERRQ(ierr);
   } else {
-    ierr = W.create(grid, "bwattillcan", false); CHKERRQ(ierr);
+    ierr = W.create(grid, "bwat", false); CHKERRQ(ierr);
   }
   ierr = W.set_attrs("model_state",
                      "thickness of subglacial water layer",
@@ -77,14 +78,14 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
 
 
 void PISMTillCanHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["bwattillcan"] = W.get_metadata();
+  result["bwat"] = W.get_metadata();
   IceModelVec2S tmp;
-  tmp.create(grid, "bwptillcan", false);
+  tmp.create(grid, "bwp", false);
   tmp.set_attrs("diagnostic",
                        "pressure of water in subglacial layer",
                        "Pa", "");
   tmp.set_attr("valid_min", 0.0);
-  result["bwptillcan"] = tmp.get_metadata();
+  result["bwp"] = tmp.get_metadata();
   // destructor called on tmp when we go out of scope here
 }
 
@@ -92,12 +93,12 @@ void PISMTillCanHydrology::add_vars_to_output(string /*keyword*/, map<string,NCS
 PetscErrorCode PISMTillCanHydrology::define_variables(set<string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwattillcan")) {
+  if (set_contains(vars, "bwat")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwptillcan")) {
+  if (set_contains(vars, "bwp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "bwptillcan", false); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "bwp", false); CHKERRQ(ierr);
     ierr = tmp.set_attrs("diagnostic",
                      "pressure of water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
@@ -111,12 +112,12 @@ PetscErrorCode PISMTillCanHydrology::define_variables(set<string> vars, const PI
 
 PetscErrorCode PISMTillCanHydrology::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwattillcan")) {
+  if (set_contains(vars, "bwat")) {
     ierr = W.write(nc); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwptillcan")) {
+  if (set_contains(vars, "bwp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "bwptillcan", false); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "bwp", false); CHKERRQ(ierr);
     ierr = tmp.set_attrs("diagnostic",
                      "pressure of water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);

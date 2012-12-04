@@ -311,13 +311,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = bedtoptemp.set_glaciological_units("K");
   ierr = variables.add(bedtoptemp); CHKERRQ(ierr);
 
-  // effective thickness of subglacial melt water
-  ierr = vbwat.create(grid, "bwat", true, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = vbwat.set_attrs("model_state", "(effective) thickness of subglacial melt water",
-                         "m", ""); CHKERRQ(ierr);
-  ierr = vbwat.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = variables.add(vbwat); CHKERRQ(ierr);
-
   if (config.get_flag("use_ssa_velocity") || config.get_flag("do_blatter")) {
     // yield stress for basal till (plastic or pseudo-plastic model)
     ierr = vtauc.create(grid, "tauc", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -714,17 +707,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   grid.profiler->end(event_energy);
 
-  // FIXME: remove diffuse_bwat() and this call once PISMHydrology really done:
-  if (do_energy_step && config.get_flag("do_diffuse_bwat")) {
-    ierr = diffuse_bwat(); CHKERRQ(ierr);
-  }
-
   grid.profiler->begin(event_hydrology);
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   ierr = subglacial_hydrology->update(grid.time->current(), dt); CHKERRQ(ierr);
-  //ierr = subglacial_hydrology->water_layer_thickness(vbwat); CHKERRQ(ierr);
 
   grid.profiler->end(event_hydrology);
 

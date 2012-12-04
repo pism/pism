@@ -149,8 +149,6 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
                            config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
   ierr =       vbed.regrid(filename,  
                            config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
-  ierr =      vbwat.regrid(filename,  
-                           config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
   ierr =       vbmr.regrid(filename,  
                            config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
   ierr =       vGhf.regrid(filename,  

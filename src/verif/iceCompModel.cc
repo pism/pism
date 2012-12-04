@@ -344,7 +344,6 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   ierr = vbmr.set(0.0); CHKERRQ(ierr); // this is the correct initialization for
                                        // Test O (and every other Test; they
                                        // all generate zero basal melt rate)
-  ierr = vbwat.set(0.0); CHKERRQ(ierr); // ditto
 
   // Test-specific initialization:
   switch (testname) {

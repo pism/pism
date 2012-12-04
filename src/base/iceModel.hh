@@ -219,7 +219,6 @@ protected:
   IceModelVec2S vh,		//!< ice surface elevation; ghosted
     vH,		//!< ice thickness; ghosted
     vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
-    vbwat,		//!< thickness of the basal meltwater; ghosted
     vbmr,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
     vLongitude,	//!< Longitude; ghosted to compute cell areas
     vLatitude,	//!< Latitude; ghosted to compute cell areas
@@ -365,9 +364,6 @@ protected:
                            planeStar<PetscScalar> &SIA_flux);
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode sub_gl_position();
-
-  // see iMhydrology.cc
-  virtual PetscErrorCode diffuse_bwat();
 
   // see iMicebergs.cc
   virtual PetscErrorCode killIceBergs();           // call this one to do proper sequence
