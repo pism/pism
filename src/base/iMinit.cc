@@ -528,6 +528,11 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
   }
 
+  if (subglacial_hydrology) {
+    // FIXME: this should fail for PISMDistributedHydrology, which needs stress_balance
+    ierr = subglacial_hydrology->init(variables); CHKERRQ(ierr);
+  }
+
   if (climatic_mass_balance_cumulative.was_created()) {
     if (i_set) {
       ierr = verbPrintf(2, grid.com,
@@ -726,8 +731,30 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
   if (subglacial_hydrology != NULL) // indicates it has already been allocated
     return 0;
 
-  // FIXME: construct here according to user options including -diffuse_bwat
-  //subglacial_hydrology = new PISMHydrology(grid, config);
+  bool disthydro  = config.get_flag("do_distributed_hydrology"),
+       lakeshydro = config.get_flag("do_lakes_hydrology"),
+       diffbwat   = config.get_flag("do_diffuse_bwat");
+  if (disthydro || lakeshydro || diffbwat) {
+    if (int(disthydro) + int(lakeshydro) + int(diffbwat) > 1) {
+      PetscPrintf(grid.com,
+         "\n\nPISM ERROR:  Option combination giving do_distributed_hydrology==true\n"
+         "do_diffuse_bwat==true is not allowed.  Use one or zero options?\n\n");
+      PISMEnd();
+    }
+    if (diffbwat) {
+      //FIXME: subglacial_hydrology = new PISMDiffuseBwatHydrology(grid, config);
+      SETERRQ(grid.com,1,"PISMDiffuseBwatHydrology not implemented\n");
+    } else if (lakeshydro) {
+      //FIXME: subglacial_hydrology = new PISMLakesHydrology(grid, config);
+      SETERRQ(grid.com,1,"PISMLakesHydrology not implemented\n");
+    } else {
+      verbPrintf(2,grid.com,"[[[PISMDistributedHydrologyMSG: allocating]]]\n");
+      subglacial_hydrology = new PISMDistributedHydrology(grid, config);
+    }
+  } else {
+    //FIXME: subglacial_hydrology = new PISMTillCanHydrology(grid, config);
+    SETERRQ(grid.com,1,"PISMTillCanHydrology not implemented\n");
+  }
 
   return 0;
 }
@@ -795,10 +822,10 @@ PetscErrorCode IceModel::allocate_submodels() {
 
   ierr = allocate_stressbalance(); CHKERRQ(ierr);
 
+  ierr = allocate_basal_yield_stress(); CHKERRQ(ierr);
+
   // this has to happen after allocate_stressbalance() is called
   ierr = allocate_subglacial_hydrology(); CHKERRQ(ierr);
-
-  ierr = allocate_basal_yield_stress(); CHKERRQ(ierr);
 
   ierr = allocate_bedrock_thermal_unit(); CHKERRQ(ierr);
 
@@ -886,6 +913,7 @@ PetscErrorCode IceModel::misc_setup() {
   event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");
 
   event_energy  = grid.profiler->create("energy",   "time spent inside energy time-stepping");
+  event_hydrology = grid.profiler->create("hydrology",   "time spent inside hydrology time-stepping");
   event_age     = grid.profiler->create("age",      "time spent inside age time-stepping");
   event_mass    = grid.profiler->create("masscont", "time spent inside mass continuity time-stepping");
 

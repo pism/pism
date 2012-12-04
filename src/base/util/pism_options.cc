@@ -555,6 +555,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("cold", "do_cold_ice_methods"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("diffuse_bwat", "do_diffuse_bwat"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("lakes_hydrology", "do_lakes_hydrology"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("distributed_hydrology", "do_distributed_hydrology"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
