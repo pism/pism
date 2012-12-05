@@ -9,7 +9,6 @@ add_library (pismstressbalance
   SIAFD.cc
   SIAFD_diagnostics.cc
   SSA.cc
-  SSA_diagnostics.cc
   SSAFD.cc
   SSAFEM.cc
   FETools.cc

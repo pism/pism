@@ -66,6 +66,9 @@ public:
   virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
+  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &result)
+  { return result.set(0.0); }
+
 protected:
   virtual PetscErrorCode allocate();
 
