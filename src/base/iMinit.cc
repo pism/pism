@@ -524,13 +524,13 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = btu->init(variables); CHKERRQ(ierr);
   }
 
-  if (basal_yield_stress) {
-    ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
+  if (subglacial_hydrology) {
+    ierr = subglacial_hydrology->init(variables); CHKERRQ(ierr);
   }
 
-  if (subglacial_hydrology) {
-    // FIXME: this should fail for PISMDistributedHydrology, which needs stress_balance
-    ierr = subglacial_hydrology->init(variables); CHKERRQ(ierr);
+  // basal_yield_stress->init() needs bwat so this must happen after subglacial_hydrology->init()
+  if (basal_yield_stress) {
+    ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
   }
 
   if (climatic_mass_balance_cumulative.was_created()) {
@@ -819,10 +819,10 @@ PetscErrorCode IceModel::allocate_submodels() {
 
   ierr = allocate_stressbalance(); CHKERRQ(ierr);
 
-  ierr = allocate_basal_yield_stress(); CHKERRQ(ierr);
-
-  // this has to happen after allocate_stressbalance() is called
+  // this has to happen *after* allocate_stressbalance()
   ierr = allocate_subglacial_hydrology(); CHKERRQ(ierr);
+
+  ierr = allocate_basal_yield_stress(); CHKERRQ(ierr);
 
   ierr = allocate_bedrock_thermal_unit(); CHKERRQ(ierr);
 
