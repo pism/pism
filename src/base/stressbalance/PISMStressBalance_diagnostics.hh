@@ -145,12 +145,21 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Computes the driving shear stress at the base of ice
-//! (diagnostically).
+//! \brief Computes the magnitude of the driving shear stress at the base of
+//! ice (diagnostically).
 class PSB_taud_mag : public PISMDiag<PISMStressBalance>
 {
 public:
   PSB_taud_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes the driving shear stress at the base of ice
+//! (diagnostically).
+class PSB_taud : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_taud(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

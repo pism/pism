@@ -81,6 +81,8 @@ public:
   virtual PetscErrorCode get_D2(IceModelVec2S* &result)
   { result = &D2; return 0; }
 
+  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud) = 0;
+
   virtual PetscErrorCode compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                            IceModelVec2 &result);
 
@@ -140,6 +142,9 @@ public:
   virtual void add_vars_to_output(string /*keyword*/,
                                   map<string,NCSpatialVariable> &/*result*/)
   { }
+
+  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &result)
+  { return result.set(0.0); }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.

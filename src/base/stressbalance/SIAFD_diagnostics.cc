@@ -22,6 +22,7 @@
 
 void SIAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["diffusivity"] = new SIAFD_diffusivity(this, grid, *variables);
+  dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this, grid, *variables);
   dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, grid, *variables);
   dict["thksmooth"] = new SIAFD_thksmooth(this, grid, *variables);
   dict["topgsmooth"] = new SIAFD_topgsmooth(this, grid, *variables);
@@ -141,6 +142,37 @@ PetscErrorCode SIAFD_diffusivity::compute(IceModelVec* &output) {
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
   ierr = model->compute_diffusivity(*result); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SIAFD>(m, g, my_vars) {
+
+  // set metadata:
+  dof = 2;
+  vars.resize(dof);
+  vars[0].init_2d("diffusivity_i", grid);
+  vars[1].init_2d("diffusivity_j", grid);
+
+  set_attrs("diffusivity of SIA mass continuity equation on the staggered grid (i-offset)", "",
+            "m2 s-1", "m2 s-1", 0);
+  set_attrs("diffusivity of SIA mass continuity equation on the staggered grid (j-offset)", "",
+            "m2 s-1", "m2 s-1", 1);
+}
+
+PetscErrorCode SIAFD_diffusivity_staggered::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2Stag *result;
+
+  result = new IceModelVec2Stag;
+  ierr = result->create(grid, "diffusivity", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = model->compute_diffusivity_staggered(*result); CHKERRQ(ierr);
 
   output = result;
   return 0;

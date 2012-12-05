@@ -41,6 +41,7 @@ this command fails: \dotfile stressbalance-out.dot
 class PISMStressBalance : public PISMComponent_Diag
 {
   friend class PSB_taud_mag;
+  friend class PSB_taud;
 public:
   PISMStressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
                     PISMOceanModel *ocean, const NCConfigVariable &config);

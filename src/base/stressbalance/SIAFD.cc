@@ -730,8 +730,26 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
  */
 PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  // delta on the staggered grid:
   IceModelVec2Stag D_stag = work_2d_stag[0];
+
+  ierr = this->compute_diffusivity_staggered(D_stag); CHKERRQ(ierr);
+
+  ierr = D_stag.beginGhostComm(); CHKERRQ(ierr);
+  ierr = D_stag.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = D_stag.staggered_to_regular(result); CHKERRQ(ierr);
+
+  return 0;
+}
+
+/*!
+ * \brief Computes the diffusivity of the SIA mass continuity equation on the
+ * staggered grid (for debugging).
+ */
+PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
+  PetscErrorCode ierr;
+
+  // delta on the staggered grid:
   PetscScalar *delta_ij;
   IceModelVec2S thk_smooth = work_2d[0];
 
@@ -781,11 +799,6 @@ PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   ierr = delta[1].end_access(); CHKERRQ(ierr);
   ierr = delta[0].end_access(); CHKERRQ(ierr);
   ierr = thk_smooth.end_access(); CHKERRQ(ierr);
-
-  ierr = D_stag.beginGhostComm(); CHKERRQ(ierr);
-  ierr = D_stag.endGhostComm(); CHKERRQ(ierr);
-
-  ierr = D_stag.staggered_to_regular(result); CHKERRQ(ierr);
 
   return 0;
 }

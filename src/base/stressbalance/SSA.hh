@@ -160,17 +160,13 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
-  //! Add pointers to diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
-
+  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 protected:
   virtual PetscErrorCode allocate();
 
   virtual PetscErrorCode deallocate();
 
   virtual PetscErrorCode solve()  = 0;
-
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 
   virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2S &result);
 
@@ -194,14 +190,6 @@ protected:
 
   // profiling
   int event_ssa;
-};
-
-//! \brief Computes the driving stress (taud).
-class SSA_taud : public PISMDiag<SSA>
-{
-public:
-  SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars);
-  PetscErrorCode compute(IceModelVec* &result);
 };
 
 #endif /* _SSA_H_ */
