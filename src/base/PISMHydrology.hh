@@ -108,17 +108,10 @@ This implements the new van Pelt & Bueler model documented at
  */
 class PISMDistributedHydrology : public PISMHydrology {
 public:
-  PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf);
+  PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf, PISMStressBalance *sb);
   virtual ~PISMDistributedHydrology() {}
 
-  virtual PetscErrorCode init(PISMVars &/*vars*/) {
-    PetscPrintf(grid.com,
-           "PISM ERROR: unable to initialize and allocate PISMDistributedHydrology object without\n"
-           "            an instance of PISMStressBalance\n");
-    PISMEnd();
-    return 0;
-  }
-  virtual PetscErrorCode init(PISMVars &vars, PISMStressBalance &sb);
+  virtual PetscErrorCode init(PISMVars &vars);
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
@@ -151,7 +144,6 @@ protected:
                 *usurf, // ice surface elevation
                 *bmelt; // ice sheet basal melt rate
 
-  PISMVars *variables;
   PISMStressBalance* stressbalance;
 
   PetscReal standard_gravity, ice_density, fresh_water_density, sea_water_density;

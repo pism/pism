@@ -747,7 +747,7 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
       SETERRQ(grid.com,1,"PISMLakesHydrology not implemented\n");
     } else {
       verbPrintf(2,grid.com,"[[[PISMDistributedHydrologyMSG: allocating]]]\n");
-      subglacial_hydrology = new PISMDistributedHydrology(grid, config);
+      subglacial_hydrology = new PISMDistributedHydrology(grid, config, stress_balance);
     }
   } else {
     subglacial_hydrology = new PISMTillCanHydrology(grid, config, false);

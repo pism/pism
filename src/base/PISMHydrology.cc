@@ -74,7 +74,10 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
     ierr = W.set(0.0); CHKERRQ(ierr);
   }
 
-  vars.add(W);
+  if (vars.get("bwat") == NULL) { // since init() will get called twice, *we*
+                                  //   might have already added "bwat"
+    ierr = vars.add(W); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -356,13 +359,16 @@ PetscErrorCode PISMDiffusebwatHydrology::update(PetscReal icet, PetscReal icedt)
 }
 
 
-PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf)
+PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf,
+                                                   PISMStressBalance *sb)
     : PISMHydrology(g, conf)
 {
     bed   = NULL;
     thk   = NULL;
     usurf  = NULL;
     bmelt  = NULL;
+
+    stressbalance = sb;
 
     if (allocate() != 0) {
       PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor.\n");
@@ -454,10 +460,8 @@ PetscErrorCode PISMDistributedHydrology::allocate() {
 }
 
 
-PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars, PISMStressBalance &sb) {
+PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
-
-  stressbalance = &sb;
 
   ierr = verbPrintf(2, grid.com,
     "* Initializing the vanPelt-Bueler subglacial hydrology model...\n"); CHKERRQ(ierr);
@@ -490,6 +494,12 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars, PISMStressBalance 
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
 
+  if (vars.get("bwat") == NULL) {
+    ierr = vars.add(W); CHKERRQ(ierr);
+  }
+  if (vars.get("bwp") == NULL) {
+    ierr = vars.add(P); CHKERRQ(ierr);
+  }
   return 0;
 }
 
