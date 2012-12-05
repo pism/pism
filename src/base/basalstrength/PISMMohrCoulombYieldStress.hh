@@ -21,6 +21,7 @@
 
 #include "PISMDiagnostic.hh"
 #include "PISMYieldStress.hh"
+#include "PISMHydrology.hh"
 #include "iceModelVec.hh"
 
 //! Parameters used by the basal water pressure model.
@@ -38,7 +39,7 @@ class PISMMohrCoulombYieldStress : public PISMYieldStress
 {
   friend class PYS_bwp;
 public:
-  PISMMohrCoulombYieldStress(IceGrid &g, const NCConfigVariable &conf)
+  PISMMohrCoulombYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro)
     : PISMYieldStress(g, conf)
   {
     sliding_scale = -1.0;
@@ -47,6 +48,8 @@ public:
     ice_thickness = NULL;
     bed_topography = NULL;
     mask = NULL;
+
+    hydrology = hydro;
 
     if (allocate() != 0) {
       PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMYieldStress constructor.\n");
@@ -86,12 +89,13 @@ public:
 protected:
   PetscReal standard_gravity, ice_density,
     till_pw_fraction, bwat_max, sliding_scale, till_c_0;
-  IceModelVec2S till_phi, tauc;
+  IceModelVec2S till_phi, tauc, bwat_copy;
   IceModelVec2S *basal_water_thickness, *basal_melt_rate, *ice_thickness,
     *bed_topography;
   IceModelVec2Int *mask;
   BWPparams p;
   PISMVars *variables;
+  PISMHydrology *hydrology;
 
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode topg_to_phi();

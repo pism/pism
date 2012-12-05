@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMMohrCoulombYieldStress.hh"
+#include "PISMHydrology.hh"
 #include "PISMVars.hh"
 #include "pism_options.hh"
 #include "Mask.hh"
@@ -55,6 +56,11 @@ PetscErrorCode PISMMohrCoulombYieldStress::allocate() {
   ierr = tauc.set_attrs("diagnostic",
                         "yield stress for basal till (plastic or pseudo-plastic model)",
                         "Pa", ""); CHKERRQ(ierr);
+
+  ierr = bwat_copy.create(grid, "tauc", true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = bwat_copy.set_attrs("internal",
+                "basal water layer thickness (as used by PISMMohrCoulombYieldStress)",
+                "m", ""); CHKERRQ(ierr);
 
   return 0;
 }
@@ -344,10 +350,16 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   const PetscScalar
     high_tauc = config.get("high_tauc");
 
+  if (hydrology) {
+    ierr = hydrology->water_layer_thickness(bwat_copy); CHKERRQ(ierr);
+  } else {
+    SETERRQ(grid.com, 3,"PISM ERROR: PISMHydrology* subglacial_hydrology is NULL in PISMMohrCoulombYieldStress::update()");
+  }
+
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
-  ierr = basal_water_thickness->begin_access(); CHKERRQ(ierr);
+  ierr = bwat_copy.begin_access(); CHKERRQ(ierr);
   ierr = basal_melt_rate->begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
 
@@ -375,7 +387,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
       } else { // grounded and there is some ice
         const PetscScalar
           p_over = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME issue #15
-          p_w    = basal_water_pressure(p_over, (*basal_water_thickness)(i, j),
+          p_w    = basal_water_pressure(p_over, bwat_copy(i, j),
                                         (*basal_melt_rate)(i, j),
                                         (*ice_thickness)(i, j)),
           N      = effective_pressure_on_till(p_over, p_w);
@@ -390,7 +402,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = till_phi.end_access(); CHKERRQ(ierr);
   ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
-  ierr = basal_water_thickness->end_access(); CHKERRQ(ierr);
+  ierr = bwat_copy.end_access(); CHKERRQ(ierr);
 
 /* scale tauc if desired:
 A scale factor of \f$A\f$ is intended to increase basal sliding rate by
