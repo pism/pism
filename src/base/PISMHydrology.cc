@@ -22,7 +22,8 @@
 #include "Mask.hh"
 
 
-PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf, bool Whasghosts)
+PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf,
+                                           bool Whasghosts)
     : PISMHydrology(g, conf)
 {
     thk   = NULL;
@@ -56,7 +57,6 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
     "* Initializing the till-can subglacial hydrology model...\n"); CHKERRQ(ierr);
-  variables = &vars;
 
   thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
   if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available");
@@ -73,6 +73,8 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   } else {
     ierr = W.set(0.0); CHKERRQ(ierr);
   }
+
+  vars.add(W);
   return 0;
 }
 
@@ -455,7 +457,6 @@ PetscErrorCode PISMDistributedHydrology::allocate() {
 PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars, PISMStressBalance &sb) {
   PetscErrorCode ierr;
 
-  variables = &vars;
   stressbalance = &sb;
 
   ierr = verbPrintf(2, grid.com,
