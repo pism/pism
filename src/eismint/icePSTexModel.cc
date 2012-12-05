@@ -327,7 +327,7 @@ PetscErrorCode IcePSTexModel::allocate_basal_yield_stress() {
   if (basal_yield_stress != NULL)
     return 0;
 
-  basal_yield_stress = new PSTYieldStress(grid, config, exper_chosen, exper_chosen_name);
+  basal_yield_stress = new PSTYieldStress(grid, config, subglacial_hydrology, exper_chosen, exper_chosen_name);
   
   return 0;
 }

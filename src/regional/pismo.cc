@@ -269,7 +269,7 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
     if (hold_tauc) {
       basal_yield_stress = new PISMConstantYieldStress(grid, config);
     } else {
-      basal_yield_stress = new PISMRegionalDefaultYieldStress(grid, config);
+      basal_yield_stress = new PISMRegionalDefaultYieldStress(grid, config, subglacial_hydrology);
     }
   }
   

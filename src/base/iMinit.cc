@@ -774,7 +774,7 @@ PetscErrorCode IceModel::allocate_basal_yield_stress() {
     if (hold_tauc) {
       basal_yield_stress = new PISMConstantYieldStress(grid, config);
     } else {
-      basal_yield_stress = new PISMMohrCoulombYieldStress(grid, config);
+      basal_yield_stress = new PISMMohrCoulombYieldStress(grid, config, subglacial_hydrology);
     }
   }
 
@@ -822,6 +822,7 @@ PetscErrorCode IceModel::allocate_submodels() {
   // this has to happen *after* allocate_stressbalance()
   ierr = allocate_subglacial_hydrology(); CHKERRQ(ierr);
 
+  // this has to happen *after* allocate_subglacial_hydrology()
   ierr = allocate_basal_yield_stress(); CHKERRQ(ierr);
 
   ierr = allocate_bedrock_thermal_unit(); CHKERRQ(ierr);

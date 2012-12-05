@@ -25,6 +25,7 @@
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "PISMMohrCoulombYieldStress.hh"
+#include "PISMHydrology.hh"
 
 
 //! \brief A version of the SIA stress balance with tweaks for outlet glacier
@@ -61,8 +62,8 @@ protected:
 class PISMRegionalDefaultYieldStress : public PISMMohrCoulombYieldStress
 {
 public:
-  PISMRegionalDefaultYieldStress(IceGrid &g, const NCConfigVariable &conf)
-    : PISMMohrCoulombYieldStress(g, conf) {}
+  PISMRegionalDefaultYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro)
+    : PISMMohrCoulombYieldStress(g, conf, hydro) {}
   virtual ~PISMRegionalDefaultYieldStress() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
