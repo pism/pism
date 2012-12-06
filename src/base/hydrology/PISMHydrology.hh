@@ -188,7 +188,6 @@ protected:
                 *bmelt; // ice sheet basal melt rate
 
   PetscReal standard_gravity, ice_density, fresh_water_density, sea_water_density;
-  PetscReal K, c0;
 
   virtual PetscErrorCode allocate();
 

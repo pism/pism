@@ -43,10 +43,6 @@ PISMLakesHydrology::PISMLakesHydrology(IceGrid &g, const NCConfigVariable &conf)
     standard_gravity = config.get("standard_gravity");
     fresh_water_density = config.get("fresh_water_density");
     sea_water_density = config.get("sea_water_density");
-
-    // FIXME: should be configurable
-    K     = 1.0e-2;     // m s-1;  FIXME:  want Kmax or Kmin according to W > Wr ?
-    c0    = K / (fresh_water_density * standard_gravity); // constant in velocity formula
 }
 
 
@@ -268,6 +264,7 @@ PetscErrorCode PISMLakesHydrology::hydraulic_potential(IceModelVec2S &result) {
 
 //! Compute a mask with states 0=unknown (active) location, 1=icefree, 2=floating.
 PetscErrorCode PISMLakesHydrology::known_state_mask(IceModelVec2Int &result) {
+//FIXME: use PISM's existing mask?
   PetscErrorCode ierr;
   PetscReal hij, bij, Hfloat,
             rr = ice_density / fresh_water_density,
@@ -300,18 +297,24 @@ PetscErrorCode PISMLakesHydrology::known_state_mask(IceModelVec2Int &result) {
 
 //! Get the advection velocity V at the center of cell edges.
 /*!
-Computes the advection velocity \f$V=V(\nabla P,\nabla b)\f$ on the
-staggered (face-centered) grid.  If V = (alpha,beta) in components
+Computes the advection velocity \f$\mathbf{V}=\mathbf{V}(\nabla P,\nabla b)\f$
+on the staggered (face-centered) grid.  If V = (alpha,beta) in components
 then we have <code> result(i,j,0) = alpha(i+1/2,j) </code> and
 <code> result(i,j,1) = beta(i,j+1/2) </code>
 
-Formula is
+The advection velocity is given by the formula
+  \f[ \mathbf{V} = - \frac{K}{\rho_w g} \nabla P - K \nabla b \f]
+where \f$\mathbf{V}\f$ is the lateral water velocity, \f$P\f$ is the water
+pressure, and \f$b\f$ is the bedrock elevation.
 
 Calls water_pressure() method to get water pressure.
  */
 PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
-  PetscReal dbdx, dbdy, dPdx, dPdy;
+  PetscReal dbdx, dbdy, dPdx, dPdy, K, c0;
+  // FIXME:  want Kmax or Kmin according to W > Wr ?
+  K  = config.get("subglacial_hydrologic_conductivity");
+  c0 = K / (fresh_water_density * standard_gravity);
   ierr = water_pressure(Pwork); CHKERRQ(ierr);  // does update ghosts
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
@@ -377,8 +380,10 @@ PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal &dt_result,
                   PetscReal &dt_DIFFW_result) {
   PetscErrorCode ierr;
-  PetscReal dtmax, dtCFL, maxW;
+  PetscReal dtmax, dtCFL, maxW, K;
   PetscReal tmp[2];
+  // FIXME:  want Kmax or Kmin according to W > Wr ?
+  K  = config.get("subglacial_hydrologic_conductivity");
   // fixme?: dtCFL can be infinity if velocity is zero because P and b are constant
   // Matlab: dtCFL = 0.5 / (max(max(abs(alphV)))/dx + max(max(abs(betaV)))/dy);
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr);
@@ -442,7 +447,6 @@ PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVar
     // FIXME: should be configurable
     c1    = 0.500;      // m-1
     c2    = 0.040;      // [pure]
-    K     = 1.0e-2;     // m s-1;  want Kmax or Kmin according to W > Wr
     Aglen = 3.1689e-24; // Pa-3 s-1; ice softness
     nglen = 3.0;
     Wr    = 1.0;        // m
@@ -591,6 +595,9 @@ PetscErrorCode PISMDistributedHydrology::check_bounds() {
 
 //! Compute functional relationship P(W) which applies only in steady state.
 /*!
+In steady state in this model, water pressure is determined by a balance of
+cavitation (opening) caused by sliding and creep closure.
+
 This will be used in initialization when P is otherwise unknown, and
 in verification and/or reporting.  It is not used during time-dependent
 model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
@@ -600,7 +607,6 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
   PetscReal CC = c1 / (c2 * Aglen),
             powglen = 1.0/nglen,
             sb, Wratio;
-
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = Po.begin_access(); CHKERRQ(ierr);
   ierr = cbase.begin_access(); CHKERRQ(ierr);
@@ -686,7 +692,12 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   ierr = update_overburden(Po); CHKERRQ(ierr);
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
-  PetscReal ht, hdt; // hydrology model time and time step
+  PetscReal ht, hdt, // hydrology model time and time step
+            K, c0;
+  // FIXME:  want Kmax or Kmin according to W > Wr ?
+  K  = config.get("subglacial_hydrologic_conductivity");
+  c0 = K / (fresh_water_density * standard_gravity);
+
   while (ht < t + dt) {
     ierr = check_bounds(); CHKERRQ(ierr);
 

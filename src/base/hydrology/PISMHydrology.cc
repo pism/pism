@@ -315,7 +315,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
              Ry = K * dt / (grid.dy * grid.dy),
              oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
   for (PetscInt n=0; n<NN; ++n) {
-    // time-splitting: first. Euler step on source terms
+    // time-splitting: first, Euler step on source terms
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = bmelt->begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
