@@ -743,10 +743,8 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
     if (diffbwat) {
       subglacial_hydrology = new PISMDiffusebwatHydrology(grid, config);
     } else if (lakeshydro) {
-      //FIXME: subglacial_hydrology = new PISMLakesHydrology(grid, config);
-      SETERRQ(grid.com,1,"PISMLakesHydrology not implemented\n");
+      subglacial_hydrology = new PISMLakesHydrology(grid, config);
     } else {
-      verbPrintf(2,grid.com,"[[[PISMDistributedHydrologyMSG: allocating]]]\n");
       subglacial_hydrology = new PISMDistributedHydrology(grid, config, stress_balance);
     }
   } else {

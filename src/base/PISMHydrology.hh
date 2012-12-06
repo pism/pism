@@ -75,7 +75,8 @@ The paper [\ref BBssasliding] used a model with contrived diffusion
 in the basal layer.  It is implemented in the derived class PISMDiffusebwat.
 
 See [\ref BBssasliding] and [\ref Tulaczyketal2000b].  See this URL for a talk
-where the "till-can" metaphor is illustrated:  http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
+where the "till-can" metaphor is illustrated:
+  http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
  */
 class PISMTillCanHydrology : public PISMHydrology {
 public:
@@ -129,16 +130,31 @@ protected:
 
 
 
-//! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
+//! \brief A subglacial hydrology model which assumes water pressure is a fixed fraction of (or is equal to) overburden pressure.  Suitable for locations of subglacial lakes.
 /*!
-This implements the new van Pelt & Bueler model documented at the repo (currently
-private):
-  https://github.com/bueler/hydrolakes
+This model was promised in Bueler's talk at IGS 2012 Fairbanks:
+  http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
+
+This model conserves water and transports it in the map-plane.
+
+If water builds up signficantly (i.e. 10s to 100s of meters) then the resulting
+lakes diffuse instead of becoming infinitely deep, even if there is a local
+minimum of the hydraulic potential (i.e. the overburden pressure plus the
+bed geometry).
+
+This model should be tested in -no_mass cases (i.e. with static ice geometry) first.
+
+The state space of this model is only the water layer thickness \f$W\f$, as with
+PISMTillCanHydrology and PISMDiffusebwatHydrology.
+
+For more complete modeling where the water pressure is determined by a physical
+model for the opening and closing of cavities, and where the state space is
+both W and P, use PISMDistributedHydrology.
  */
-class PISMDistributedHydrology : public PISMHydrology {
+class PISMLakesHydrology : public PISMHydrology {
 public:
-  PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf, PISMStressBalance *sb);
-  virtual ~PISMDistributedHydrology() {}
+  PISMLakesHydrology(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PISMLakesHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -153,11 +169,9 @@ public:
 
 protected:
   // this model's state
-  IceModelVec2S W,      // water layer thickness
-                P;      // water pressure
+  IceModelVec2S W;      // water layer thickness
   // this model's auxiliary variables
   IceModelVec2S Po,     // overburden pressure
-                cbase,  // sliding speed of overlying ice
                 psi;    // hydraulic potential
   IceModelVec2Int known;// mask for (boundary) locations where subglacial hydrology state is known
   IceModelVec2Stag V,   // components are
@@ -166,32 +180,80 @@ protected:
                    Wstag,// edge-centered (staggered) W values (averaged from regular)
                    Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S Wnew, Pnew;
+  IceModelVec2S Wnew;
   // pointers into IceModel; these describe the ice sheet and the source
   IceModelVec2S *bed,   // bedrock elevation
                 *thk,   // ice thickness
                 *usurf, // ice surface elevation
                 *bmelt; // ice sheet basal melt rate
 
-  PISMStressBalance* stressbalance;
-
   PetscReal standard_gravity, ice_density, fresh_water_density, sea_water_density;
-  PetscReal c1, c2, K, Aglen, nglen, Wr, c0, E0, Y0;
+  PetscReal K, c0;
 
   virtual PetscErrorCode allocate();
 
-  virtual PetscErrorCode check_bounds();
-  virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
+  virtual PetscErrorCode check_Wpositive();
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
   virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode known_state_mask(IceModelVec2Int &result);
 
-  virtual PetscErrorCode update_ice_functions(IceModelVec2S &result_Po, IceModelVec2S &result_cbase);
+  virtual PetscErrorCode update_overburden(IceModelVec2S &result);
 
-  virtual PetscErrorCode adaptive_time_step(PetscReal t_current, PetscReal t_end, 
-                                            PetscReal &dt_result);
+  virtual PetscErrorCode adaptive_for_W_evolution(
+                           PetscReal t_current, PetscReal t_end, PetscReal &dt_result,
+                           PetscReal &dt_DIFFW_result);
+  virtual PetscErrorCode adaptive_for_W_evolution(
+                           PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
+
+private:
+  IceModelVec2S Pwork;  // workspace, not a state variable
+};
+
+
+//! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
+/*!
+This implements the new van Pelt & Bueler model documented at the repo (currently
+private):
+  https://github.com/bueler/hydrolakes
+ */
+class PISMDistributedHydrology : public PISMLakesHydrology {
+public:
+  PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf, PISMStressBalance *sb);
+  virtual ~PISMDistributedHydrology() {}
+
+  virtual PetscErrorCode init(PISMVars &vars);
+
+  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+
+  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+
+  virtual PetscErrorCode water_pressure(IceModelVec2S &result);
+
+protected:
+  // this model's state, in addition to what is in PISMLakesHydrology
+  IceModelVec2S P;      // water pressure
+  // this model's auxiliary variables, in addition ...
+  IceModelVec2S cbase;  // sliding speed of overlying ice
+  // this model's workspace variables, in addition
+  IceModelVec2S Pnew;
+
+  // need to get basal sliding velocity (thus speed):
+  PISMStressBalance* stressbalance;
+
+  PetscReal c1, c2, Aglen, nglen, Wr, E0, Y0;
+
+  virtual PetscErrorCode allocatePstuff();
+
+  virtual PetscErrorCode check_bounds();
+  virtual PetscErrorCode update_cbase(IceModelVec2S &result);
+  virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
+
+  virtual PetscErrorCode adaptive_for_WandP_evolution(
+                           PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
 };
 
 #endif /* _PISMHYDROLOGY_H_ */
