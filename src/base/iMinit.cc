@@ -726,34 +726,19 @@ PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
 
 //! \brief Decide which subglacial hydrology model to use.
 PetscErrorCode IceModel::allocate_subglacial_hydrology() {
-
   if (subglacial_hydrology != NULL) // indicates it has already been allocated
     return 0;
-
-  bool disthydro  = config.get_flag("do_distributed_hydrology"),
-       lakeshydro = config.get_flag("do_lakes_hydrology"),
-       diffbwat   = config.get_flag("do_diffuse_bwat");
-  if (disthydro || lakeshydro || diffbwat) {
-    if (int(disthydro) + int(lakeshydro) + int(diffbwat) > 1) {
-      PetscPrintf(grid.com,
-         "\n\nPISM ERROR:  Option combination with more than one hydrology submodel\n"
-         "   choice is not allowed.  Use one or zero options.\n\n");
-      PISMEnd();
-    }
-    if (diffbwat) {
-      subglacial_hydrology = new PISMDiffusebwatHydrology(grid, config);
-    } else if (lakeshydro) {
-      subglacial_hydrology = new PISMLakesHydrology(grid, config);
-    } else {
-      subglacial_hydrology = new PISMDistributedHydrology(grid, config, stress_balance);
-    }
-  } else {
+  if      (config.get_string("hydrology_model") == "tillcan")
     subglacial_hydrology = new PISMTillCanHydrology(grid, config, false);
-  }
-
+  else if (config.get_string("hydrology_model") == "diffuseonly")
+    subglacial_hydrology = new PISMDiffuseOnlyHydrology(grid, config);
+  else if (config.get_string("hydrology_model") == "lakes")
+    subglacial_hydrology = new PISMLakesHydrology(grid, config);
+  else if (config.get_string("hydrology_model") == "distributed")
+    subglacial_hydrology = new PISMDistributedHydrology(grid, config, stress_balance);
+  else { SETERRQ(grid.com,1,"unknown value for 'hydrology_model'"); }
   return 0;
 }
-
 
 //! \brief Decide which basal yield stress model to use.
 PetscErrorCode IceModel::allocate_basal_yield_stress() {

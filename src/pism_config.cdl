@@ -105,14 +105,8 @@ netcdf pism_config {
     pism_config:ssa_dirichlet_bc = "no";
     pism_config:ssa_dirichlet_bc_doc = "apply SSA velocity Dirichlet boundary condition";
 
-    pism_config:do_diffuse_bwat = "no";
-    pism_config:do_diffuse_bwat_doc = "Do explicit time stepping of equation (11) in [\\ref BBssasliding] to diffuse the layer of stored basal water (bwat).  Normally bwat affects the basal values of the internal energy (enthalpy or temperature) field and it affects the strength of the subglacial layer (the basal stress).";
-
-    pism_config:do_lakes_hydrology = "no";
-    pism_config:do_lakes_hydrology_doc = "Use the under-development minimal distributed subglacial hydrology model that can handle lakes: psi = (hydraulic potential) = (overburden pressure) + rhow g (bed + water_layer_thickness).";
-
-    pism_config:do_distributed_hydrology = "no";
-    pism_config:do_distributed_hydrology_doc = "Use the under-development van Pelt & Bueler subglacial hydrology model based on a system of linked cavities.";
+    pism_config:hydrology_model = "tillcan";
+    pism_config:hydrology_model_doc = "Choose the hydrology sub-model from 'tillcan', 'diffuseonly', 'lakes', 'distributed'.  These models determine the evolution of the subglacial water layer thickness (bwat) and pressure (bwp).  Normally bwat affects the basal values of the internal energy (enthalpy or temperature) field, and bwat, bwp determine the strength of the subglacial layer (the basal shearstress).  The 'tillcan' model (default) does not move water laterally; roughly it is the undrained plastic till model of [\\ref Tulaczyketal2000b].  The 'diffuseonly' model is documented in [\\ref BBssasliding]; see equation (11).  Neither 'tillcan' nor 'diffuseonly' are mass-conserving.  The 'lakes' model is an under-development, mass-conserving, minimal distributed subglacial hydrology model that can model the locations of subglacial lakes; here the pressure is a fixed fraction of overburden.  The 'distributed' model is an under-development, mass-conserving, distributed subglacial hydrology model that models the physical opening and closing of linked cavities on an area averaged basis; pressure evolves nontrivially.  The 'lakes' and 'distributed' models may make PISM run pretty slowly because of the fast time-scale for liquid water movement.";
 
     pism_config:use_linear_in_temperature_heat_capacity = "no";
     pism_config:use_linear_in_temperature_heat_capacity_doc = "If yes, use varcEnthalpyConverter class to convert (internally) temperature to/from enthalpy.  It is based on equation (4.39) in [\\ref GreveBlatter2009].  Otherwise use default class EnthalpyConverter which has temperature-independent (i.e. constant) specific heat capacity, set by constant ice_specific_heat_capacity.";
