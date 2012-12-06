@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 Maria Martin and Ed Bueler
+# Copyright (C) 2009-2012 Maria Martin and Ed Bueler
 ##################################################################################
 # Spinup of Antarctic ice sheet model using data from Anne Le Brocq (from SeaRISE wiki).
 # Uses PIK physics and enthalpy model (see Publications at www.pism-docs.org) 
@@ -71,8 +71,10 @@ SKIPTENKM=100
 SKIPSEVENKM=100
 SKIPFIVEKM=200
 
-GRID=$FIFTEENKMGRID
-SKIP=$SKIPFIFTEENKM
+# these coarse grid defaults are for development/regression runs, not
+# "production" or science
+GRID=$THIRTYKMGRID
+SKIP=$SKIPTHIRTYKM
 
 SIA_ENHANCEMENT="-sia_e 5.6"
 
