@@ -233,18 +233,18 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
 }
 
 
-PISMDiffusebwatHydrology::PISMDiffusebwatHydrology(IceGrid &g, const NCConfigVariable &conf)
+PISMDiffuseOnlyHydrology::PISMDiffuseOnlyHydrology(IceGrid &g, const NCConfigVariable &conf)
     : PISMTillCanHydrology(g, conf, true)
 {
   if (allocateWnew() != 0) {
     PetscPrintf(grid.com,
-      "PISM ERROR: allocation of Wnew failed in PISMDiffusebwatHydrology constructor.\n");
+      "PISM ERROR: allocation of Wnew failed in PISMDiffuseOnlyHydrology constructor.\n");
     PISMEnd();
   }
 }
 
 
-PetscErrorCode PISMDiffusebwatHydrology::init(PISMVars &vars) {
+PetscErrorCode PISMDiffuseOnlyHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = PISMTillCanHydrology::init(vars); CHKERRQ(ierr);
   ierr = verbPrintf(2, grid.com,
@@ -253,7 +253,7 @@ PetscErrorCode PISMDiffusebwatHydrology::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PISMDiffusebwatHydrology::allocateWnew() {
+PetscErrorCode PISMDiffuseOnlyHydrology::allocateWnew() {
   PetscErrorCode ierr;
   // also need temporary space during update
   //FIXME: shouldn't I be able to do this?  gives error
@@ -279,7 +279,7 @@ Note that \f$2 \sigma^2 = 4 K t\f$.
 The time step restriction for the explicit method for this equation is believed
 to be so rare that if it is triggered there is a stdout warning.
  */
-PetscErrorCode PISMDiffusebwatHydrology::update(PetscReal icet, PetscReal icedt) {
+PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(icet - t) < 1e-6) && (fabs(icedt - dt) < 1e-6))
     return 0;
@@ -306,7 +306,7 @@ PetscErrorCode PISMDiffusebwatHydrology::update(PetscReal icet, PetscReal icedt)
 
   if (NN > 1) {
     verbPrintf(2,grid.com,
-      "PISMDiffusebwatHydrology WARNING: more than one time step per ice dynamics time step\n"
+      "PISMDiffuseOnlyHydrology WARNING: more than one time step per ice dynamics time step\n"
       "   ... NN = %d > 1 ... THIS IS BELIEVED TO BE RARE\n",NN);
   }
 

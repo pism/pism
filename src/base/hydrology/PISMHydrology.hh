@@ -72,7 +72,7 @@ is useful for computing a till yield stress based on a time-integrated basal
 melt rate.
 
 The paper [\ref BBssasliding] used a model with contrived diffusion
-in the basal layer.  It is implemented in the derived class PISMDiffusebwat.
+in the basal layer.  It is implemented in the derived class PISMDiffuseOnlyHydrology.
 
 See [\ref BBssasliding] and [\ref Tulaczyketal2000b].  See this URL for a talk
 where the "till-can" metaphor is illustrated:
@@ -114,10 +114,10 @@ protected:
 Implements the full model in [\ref BBssasliding], including the diffusion which
 is equation (11).
  */
-class PISMDiffusebwatHydrology : public PISMTillCanHydrology {
+class PISMDiffuseOnlyHydrology : public PISMTillCanHydrology {
 public:
-  PISMDiffusebwatHydrology(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PISMDiffusebwatHydrology() {}
+  PISMDiffuseOnlyHydrology(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PISMDiffuseOnlyHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -145,7 +145,7 @@ bed geometry).
 This model should be tested in -no_mass cases (i.e. with static ice geometry) first.
 
 The state space of this model is only the water layer thickness \f$W\f$, as with
-PISMTillCanHydrology and PISMDiffusebwatHydrology.
+PISMTillCanHydrology and PISMDiffuseOnlyHydrology.
 
 For more complete modeling where the water pressure is determined by a physical
 model for the opening and closing of cavities, and where the state space is
