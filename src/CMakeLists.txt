@@ -6,6 +6,7 @@ include_directories (
   base/energy
   base/rheology
   base/basalstrength
+  base/hydrology
   earth
   coupler
   coupler/atmosphere
@@ -136,8 +137,8 @@ add_library (pismbase
   base/basalstrength/PISMMohrCoulombYieldStress.cc
   base/basalstrength/PISMConstantYieldStress.cc
   base/basalstrength/basal_resistance.cc
-  base/PISMHydrology.cc
-  base/PISMDistributedHydrology.cc
+  base/hydrology/PISMHydrology.cc
+  base/hydrology/PISMDistributedHydrology.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 
