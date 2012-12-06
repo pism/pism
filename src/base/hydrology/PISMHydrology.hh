@@ -171,9 +171,7 @@ protected:
   // this model's state
   IceModelVec2S W;      // water layer thickness
   // this model's auxiliary variables
-  IceModelVec2S Po,     // overburden pressure
-                psi;    // hydraulic potential
-  IceModelVec2Int known;// mask for (boundary) locations where subglacial hydrology state is known
+  IceModelVec2S psi;    // hydraulic potential
   IceModelVec2Stag V,   // components are
                         //   V(i,j,0) = alpha(i,j) = east-edge centered  x-component of water velocity
                         //   V(i,j,1) = beta(i,j)  = north-edge centered y-component of water velocity
@@ -186,19 +184,18 @@ protected:
                 *thk,   // ice thickness
                 *usurf, // ice surface elevation
                 *bmelt; // ice sheet basal melt rate
+  IceModelVec2Int *mask; // ice geometry type mask
 
   PetscReal standard_gravity, ice_density, fresh_water_density, sea_water_density;
 
   virtual PetscErrorCode allocate();
 
   virtual PetscErrorCode check_Wpositive();
+  virtual PetscErrorCode update_overburden(IceModelVec2S &result);
+  virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
-  virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
-  virtual PetscErrorCode known_state_mask(IceModelVec2Int &result);
-
-  virtual PetscErrorCode update_overburden(IceModelVec2S &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result,
@@ -236,7 +233,8 @@ protected:
   // this model's state, in addition to what is in PISMLakesHydrology
   IceModelVec2S P;      // water pressure
   // this model's auxiliary variables, in addition ...
-  IceModelVec2S cbase;  // sliding speed of overlying ice
+  IceModelVec2S Po,     // overburden pressure
+                cbase;  // sliding speed of overlying ice
   // this model's workspace variables, in addition
   IceModelVec2S Pnew;
 
