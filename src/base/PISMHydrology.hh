@@ -25,12 +25,22 @@
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
-PISMHydrology is a timestepping component (PISMComponent_TS) but it generally does not use
-PISM's main ice dynamics time steps.  Rather, when update() is called it advances
-its internal time to the new goal t+dt using its own internal time steps, and
-using the ice geometry and (possibly) basal sliding velocity as time-independent (i.e.
-explicit or one-way coupled) fields.  Thus the frequency of coupling is determined
-by the agent that calls the update() method.
+This is a virtual base class.  The PISM default model is a derived class:
+PISMTillCanHydrology.  Greatly-improved but computationally expensive mass-
+conserving models are in PISMLakesHydrology and PISMDistributedHydrology.
+
+PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
+short physical timescales associated to liquid water moving under a glacier,
+PISMHydrology derived classes will generally not use PISM's main ice dynamics
+time steps.  Instead, when PISMHydrology::update() is called it advances its
+internal time to the new goal t+dt using its own internal time steps.
+
+Generally these subglacial hydrology models will use the ice geometry and/or
+the basal sliding velocity.  These ice fields are normally treated as
+time-independent during the update() call for the interval [t,t+dt].  Said
+another way, the coupling is one-way during the update() call.  The frequency
+with which the coupling becomes two-way is determined by the agent that calls
+the update() method, which is generally IceModel.
  */
 class PISMHydrology : public PISMComponent_TS {
 public:
@@ -51,8 +61,22 @@ public:
 };
 
 
-
 //! \brief The subglacial hydrology model from Bueler & Brown (2009) but without contrived water diffusion.
+/*!
+The name "till-can" comes from the following mental image:  Each map-plane cell
+under the glacier or ice sheet does not communicate with the next cell; i.e.
+there are "can walls" separating the cells.  The cans are "open-topped" in the
+sense that they fill up to level bwat_max.  Any water exceeding bwat_max "spills
+over the sides" and disappears.  Thus this model is not mass conserving, but it
+is useful for computing a till yield stress based on a time-integrated basal
+melt rate.
+
+The paper [\ref BBssasliding] used a model with contrived diffusion
+in the basal layer.  It is implemented in the derived class PISMDiffusebwat.
+
+See [\ref BBssasliding] and [\ref Tulaczyketal2000b].  See this URL for a talk
+where the "till-can" metaphor is illustrated:  http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
+ */
 class PISMTillCanHydrology : public PISMHydrology {
 public:
   PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf, bool Whasghosts);
@@ -85,6 +109,10 @@ protected:
 
 
 //! \brief The subglacial hydrology model from Bueler & Brown (2009) WITH the contrived water diffusion.
+/*!
+Implements the full model in [\ref BBssasliding], including the diffusion which
+is equation (11).
+ */
 class PISMDiffusebwatHydrology : public PISMTillCanHydrology {
 public:
   PISMDiffusebwatHydrology(IceGrid &g, const NCConfigVariable &conf);
@@ -103,7 +131,8 @@ protected:
 
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
 /*!
-This implements the new van Pelt & Bueler model documented at
+This implements the new van Pelt & Bueler model documented at the repo (currently
+private):
   https://github.com/bueler/hydrolakes
  */
 class PISMDistributedHydrology : public PISMHydrology {
