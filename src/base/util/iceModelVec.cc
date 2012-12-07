@@ -176,6 +176,11 @@ PetscErrorCode  IceModelVec::destroy() {
     map_viewers = NULL;
   }
 
+#if (PISM_DEBUG==1)
+  if (access_counter != 0)
+    SETERRQ(grid->com, 1, "begin_access() and end_access() calls are not matched (access_counter != 0)");
+#endif
+
   return 0;
 }
 

@@ -369,6 +369,7 @@ PetscErrorCode IceModelVec2T::discard(int number) {
       for (PetscInt k = 0; k < N; ++k)
 	a3[i][j][k] = a3[i][j][k + number];
   ierr = end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
   
   return 0;
 }
@@ -384,6 +385,7 @@ PetscErrorCode IceModelVec2T::set_record(int n) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       a3[i][j][n] = a2[i][j];
   ierr = end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -398,6 +400,7 @@ PetscErrorCode IceModelVec2T::get_record(int n) {
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       a2[i][j] = a3[i][j][n];
+  ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
@@ -519,6 +522,7 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       a2[i][j] = a3[i][j][k] * (1 - lambda) + a3[i][j][k + 1] * lambda;
   ierr = end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -597,15 +601,14 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   PetscErrorCode ierr;
   PetscScalar **a2;
 
-  ierr = begin_access(); CHKERRQ(ierr);
-  ierr = get_array(a2);
+  ierr = get_array(a2);         // calls begin_access()
   for (PetscInt   i = grid->xs; i < grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j) {
       ierr = average(i, j, my_t, my_dt, a2[i][j]); CHKERRQ(ierr);
     }
   }
-
   ierr = end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 
