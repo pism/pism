@@ -161,6 +161,8 @@ public:
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
+
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
 protected:
   virtual PetscErrorCode allocate();
 
@@ -190,6 +192,25 @@ protected:
 
   // profiling
   int event_ssa;
+};
+
+
+//! \brief Computes the magnitude of the driving shear stress at the base of
+//! ice (diagnostically).
+class SSA_taud_mag : public PISMDiag<SSA>
+{
+public:
+  SSA_taud_mag(SSA *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes the driving shear stress at the base of ice
+//! (diagnostically).
+class SSA_taud : public PISMDiag<SSA>
+{
+public:
+  SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 #endif /* _SSA_H_ */

@@ -187,8 +187,6 @@ PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *D2
           PetscReal depth = thk - grid.zlevels[k],
             pressure = ice_rho * standard_gravity * depth, // FIXME issue #15
           // Account for the enhancement factor.
-          //   Note, enhancement factor is not used in SSA anyway.
-          //   Should we get rid of it completely?  If not, what is most consistent here?
             BofT    = flow_law->hardness_parameter(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
           sigma[k] = 2.0 * BofT * pow((*D2_input)(i,j), Sig_pow);
         }

@@ -66,8 +66,10 @@ public:
   virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &result)
-  { return result.set(0.0); }
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+    dict["taud"] = new SSB_taud(this, grid, *variables);
+    dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
+  }
 
 protected:
   virtual PetscErrorCode allocate();

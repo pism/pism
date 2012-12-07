@@ -44,8 +44,6 @@ void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["wvelbase"] = new PSB_wvelbase(this, grid, *variables);
   dict["wvelsurf"] = new PSB_wvelsurf(this, grid, *variables);
   dict["wvel_rel"] = new PSB_wvel_rel(this, grid, *variables);
-  dict["taud"]     = new PSB_taud(this, grid, *variables);
-  dict["taud_mag"] = new PSB_taud_mag(this, grid, *variables);
   dict["strain_rates"] = new PSB_strain_rates(this, grid, *variables);
   dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, grid, *variables);
 
@@ -830,63 +828,6 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_taud::PSB_taud(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
-
-  dof = 2;
-  vars.resize(dof);
-  // set metadata:
-  vars[0].init_2d("taud_x", grid);
-  vars[1].init_2d("taud_y", grid);
-
-  set_attrs("X-component of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 0);
-  set_attrs("Y-component of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 1);
-}
-
-PetscErrorCode PSB_taud::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-
-  IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
-
-  ierr = model->stress_balance->compute_driving_stress(*result); CHKERRQ(ierr);
-
-  output = result;
-  return 0;
-}
-
-PSB_taud_mag::PSB_taud_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
-
-  // set metadata:
-  vars[0].init_2d("taud_mag", grid);
-
-  set_attrs("magnitude of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 0);
-}
-
-PetscErrorCode PSB_taud_mag::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-
-  // Allocate memory:
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "taud_mag", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  result->write_in_glaciological_units = true;
-
-  IceModelVec2V taud;
-  ierr = taud.create(grid, "taud", false); CHKERRQ(ierr);
-  ierr = model->stress_balance->compute_driving_stress(taud); CHKERRQ(ierr);
-
-  ierr = taud.magnitude(*result); CHKERRQ(ierr);
-
-  output = result;
-  return 0;
-}
 
 PSB_strainheat::PSB_strainheat(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {

@@ -487,3 +487,79 @@ PetscErrorCode SSA::write_variables(set<string> vars, const PIO &nc) {
 
   return 0;
 }
+
+void SSA::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+    dict["taud"] = new SSA_taud(this, grid, *variables);
+    dict["taud_mag"] = new SSA_taud_mag(this, grid, *variables);
+}
+
+SSA_taud::SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SSA>(m, g, my_vars) {
+
+  dof = 2;
+  vars.resize(dof);
+  // set metadata:
+  vars[0].init_2d("taud_x", grid);
+  vars[1].init_2d("taud_y", grid);
+
+  set_attrs("X-component of the driving shear stress at the base of ice", "",
+            "Pa", "Pa", 0);
+  set_attrs("Y-component of the driving shear stress at the base of ice", "",
+            "Pa", "Pa", 1);
+
+  for (int k = 0; k < dof; ++k)
+    vars[k].set_string("comment",
+                       "this is the driving stress used by the SSA solver");
+}
+
+PetscErrorCode SSA_taud::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2V *result = new IceModelVec2V;
+  ierr = result->create(grid, "result", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+
+  ierr = model->compute_driving_stress(*result); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+SSA_taud_mag::SSA_taud_mag(SSA *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SSA>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("taud_mag", grid);
+
+  set_attrs("magnitude of the driving shear stress at the base of ice", "",
+            "Pa", "Pa", 0);
+  vars[0].set_string("comment",
+                     "this is the magnitude of the driving stress used by the SSA solver");
+}
+
+PetscErrorCode SSA_taud_mag::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  // Allocate memory:
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "taud_mag", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  IceModelVec* tmp;
+  SSA_taud diag(model, grid, variables);
+
+  ierr = diag.compute(tmp);
+
+  IceModelVec2V *taud = dynamic_cast<IceModelVec2V*>(tmp);
+  if (taud == NULL)
+    SETERRQ(grid.com, 1, "expected an IceModelVec2V, but dynamic_cast failed");
+
+  ierr = taud->magnitude(*result); CHKERRQ(ierr);
+
+  delete tmp;
+
+  output = result;
+  return 0;
+}

@@ -18,6 +18,7 @@
 
 #include "ShallowStressBalance.hh"
 #include "Mask.hh"
+#include "PISMVars.hh"
 
 //! \brief Allocate a shallow stress balance object.
 PetscErrorCode ShallowStressBalance::allocate() {
@@ -253,5 +254,110 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = mask.end_access(); CHKERRQ(ierr);
 
+  return 0;
+}
+
+SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+
+  dof = 2;
+  vars.resize(dof);
+  // set metadata:
+  vars[0].init_2d("taud_x", grid);
+  vars[1].init_2d("taud_y", grid);
+
+  set_attrs("X-component of the driving shear stress at the base of ice", "",
+            "Pa", "Pa", 0);
+  set_attrs("Y-component of the driving shear stress at the base of ice", "",
+            "Pa", "Pa", 1);
+
+  for (int k = 0; k < dof; ++k)
+    vars[k].set_string("comment",
+                       "this field is purely diagnostic (not used by the model)");
+}
+
+/*!
+ * The driving stress computed here is not used by the model, so this
+ * implementation intentionally does not use the eta-transformation or special
+ * cases at ice margins.
+ */
+PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *thickness, *surface;
+
+  IceModelVec2V *result = new IceModelVec2V;
+  ierr = result->create(grid, "result", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+
+  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
+
+  PetscReal standard_gravity = grid.config.get("standard_gravity"),
+    ice_density = grid.config.get("ice_density");
+
+  ierr =    result->begin_access(); CHKERRQ(ierr);
+  ierr =   surface->begin_access(); CHKERRQ(ierr);
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      PetscScalar pressure = ice_density * standard_gravity * (*thickness)(i,j);
+      if (pressure <= 0.0) {
+        (*result)(i,j).u = 0.0;
+        (*result)(i,j).v = 0.0;
+      } else {
+        (*result)(i,j).u = - pressure * surface->diff_x_p(i,j);
+        (*result)(i,j).v = - pressure * surface->diff_y_p(i,j);
+      }
+    }
+  }
+
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr =   surface->end_access(); CHKERRQ(ierr);
+  ierr =    result->end_access(); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("taud_mag", grid);
+
+  set_attrs("magnitude of the driving shear stress at the base of ice", "",
+            "Pa", "Pa", 0);
+  vars[0].set_string("comment",
+                     "this field is purely diagnostic (not used by the model)");
+}
+
+PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  // Allocate memory:
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "taud_mag", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  IceModelVec* tmp;
+  SSB_taud diag(model, grid, variables);
+
+  ierr = diag.compute(tmp);
+
+  IceModelVec2V *taud = dynamic_cast<IceModelVec2V*>(tmp);
+  if (taud == NULL)
+    SETERRQ(grid.com, 1, "expected an IceModelVec2V, but dynamic_cast failed");
+
+  ierr = taud->magnitude(*result); CHKERRQ(ierr);
+
+  delete tmp;
+
+  output = result;
   return 0;
 }

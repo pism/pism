@@ -526,6 +526,7 @@ namespace std {
 %include "LocalInterpCtx.hh"
 %include "rheology/flowlaws.hh"
 %include "enthalpyConverter.hh"
+%template(PISMDiag_ShallowStressBalance) PISMDiag<ShallowStressBalance>;
 %include "stressbalance/ShallowStressBalance.hh"
 %include "SSB_Modifier.hh"
 %template(PISMDiag_SIAFD) PISMDiag<SIAFD>;

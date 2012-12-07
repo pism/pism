@@ -24,6 +24,7 @@
 #include "IceGrid.hh"
 #include "flowlaws.hh"
 #include "flowlaw_factory.hh"
+#include <PISMDiagnostic.hh>
 
 class PISMVars;
 class IceFlowLaw;
@@ -81,8 +82,6 @@ public:
   virtual PetscErrorCode get_D2(IceModelVec2S* &result)
   { result = &D2; return 0; }
 
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud) = 0;
-
   virtual PetscErrorCode compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                            IceModelVec2 &result);
 
@@ -115,6 +114,23 @@ protected:
   PetscReal max_u, max_v;
 };
 
+//! \brief Computes the gravitational driving stress (diagnostically).
+class SSB_taud : public PISMDiag<ShallowStressBalance>
+{
+public:
+  SSB_taud(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes the magnitude of the gravitational driving stress
+//! (diagnostically).
+class SSB_taud_mag : public PISMDiag<ShallowStressBalance>
+{
+public:
+  SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 
 //! Returns zero velocity field, zero friction heating, and zero for D^2.
 /*!
@@ -143,8 +159,10 @@ public:
                                   map<string,NCSpatialVariable> &/*result*/)
   { }
 
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &result)
-  { return result.set(0.0); }
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+    dict["taud"] = new SSB_taud(this, grid, *variables);
+    dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
+  }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
