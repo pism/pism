@@ -22,6 +22,7 @@
 #include "iceModelVec.hh"
 #include "PISMComponent.hh"
 #include "PISMStressBalance.hh"
+#include "PISMDiagnostic.hh"
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
@@ -50,6 +51,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars) = 0;
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) = 0;
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype) = 0;
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc) = 0;
 
@@ -58,8 +60,17 @@ public:
 
   virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result) = 0;
   virtual PetscErrorCode water_pressure(IceModelVec2S &result) = 0;
+protected:
+  PISMVars *variables;
 };
 
+//! \brief Reports the pressure of the water in the subglacial layer.
+class PISMHydrology_bwp : public PISMDiag<PISMHydrology>
+{
+public:
+  PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
 
 //! \brief The subglacial hydrology model from Bueler & Brown (2009) but without contrived water diffusion.
 /*!
@@ -222,6 +233,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 

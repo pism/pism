@@ -21,6 +21,9 @@
 #include "pism_options.hh"
 #include "Mask.hh"
 
+void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
+}
 
 PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf,
                                            bool Whasghosts)
@@ -58,10 +61,14 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
     "* Initializing the till-can subglacial hydrology model...\n"); CHKERRQ(ierr);
 
+  variables = &vars;
+
   thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
   if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available");
+
   bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
   if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available");
+
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
@@ -78,20 +85,13 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
                                   //   might have already added "bwat"
     ierr = vars.add(W); CHKERRQ(ierr);
   }
+
   return 0;
 }
 
 
 void PISMTillCanHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
   result["bwat"] = W.get_metadata();
-  IceModelVec2S tmp;
-  tmp.create(grid, "bwp", false);
-  tmp.set_attrs("diagnostic",
-                       "pressure of water in subglacial layer",
-                       "Pa", "");
-  tmp.set_attr("valid_min", 0.0);
-  result["bwp"] = tmp.get_metadata();
-  // destructor called on tmp when we go out of scope here
 }
 
 
@@ -101,16 +101,6 @@ PetscErrorCode PISMTillCanHydrology::define_variables(set<string> vars, const PI
   if (set_contains(vars, "bwat")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwp")) {
-    IceModelVec2S tmp;
-    ierr = tmp.create(grid, "bwp", false); CHKERRQ(ierr);
-    ierr = tmp.set_attrs("diagnostic",
-                     "pressure of water in subglacial layer",
-                     "Pa", ""); CHKERRQ(ierr);
-    ierr = tmp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-    ierr = tmp.define(nc, nctype); CHKERRQ(ierr);
-    // destructor called on tmp when we go out of scope here
-  }
   return 0;
 }
 
@@ -119,17 +109,6 @@ PetscErrorCode PISMTillCanHydrology::write_variables(set<string> vars, const PIO
   PetscErrorCode ierr;
   if (set_contains(vars, "bwat")) {
     ierr = W.write(nc); CHKERRQ(ierr);
-  }
-  if (set_contains(vars, "bwp")) {
-    IceModelVec2S tmp;
-    ierr = tmp.create(grid, "bwp", false); CHKERRQ(ierr);
-    ierr = tmp.set_attrs("diagnostic",
-                     "pressure of water in subglacial layer",
-                     "Pa", ""); CHKERRQ(ierr);
-    ierr = tmp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-    ierr = water_pressure(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
-    // destructor called on tmp when we go out of scope here
   }
   return 0;
 }
@@ -247,7 +226,6 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
   ierr = mask->end_access(); CHKERRQ(ierr);
   return 0;
 }
-
 
 PISMDiffuseOnlyHydrology::PISMDiffuseOnlyHydrology(IceGrid &g, const NCConfigVariable &conf)
     : PISMTillCanHydrology(g, conf, true)
@@ -379,3 +357,27 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
   return 0;
 }
 
+
+PISMHydrology_bwp::PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<PISMHydrology>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("bwp", grid);
+
+  set_attrs("pressure of water in subglacial layer", "",
+            "Pa", "Pa", 0);
+}
+
+PetscErrorCode PISMHydrology_bwp::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "bwp", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = model->water_pressure(*result); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}

@@ -23,6 +23,7 @@
 
 #include "PISMBedDef.hh"
 #include "PISMYieldStress.hh"
+#include "PISMHydrology.hh"
 #include "PISMStressBalance.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
@@ -119,22 +120,26 @@ PetscErrorCode IceModel::init_diagnostics() {
   ts_diagnostics["sum_divQ_flux"]  = new IceModel_sum_divQ_flux(this, grid, variables);
 
   // Get diagnostics supported by the stress balance object:
-  stress_balance->get_diagnostics(diagnostics);
+  if (stress_balance != NULL)
+    stress_balance->get_diagnostics(diagnostics);
 
   // Get diagnostics supported by the surface model:
-  surface->get_diagnostics(diagnostics);
+  if (surface != NULL)
+    surface->get_diagnostics(diagnostics);
 
   // Get diagnostics supported by the ocean model:
-  ocean->get_diagnostics(diagnostics);
+  if (ocean != NULL)
+    ocean->get_diagnostics(diagnostics);
 
   // Get diagnostics supported by the bed deformation model:
-  if (beddef) {
+  if (beddef != NULL)
     beddef->get_diagnostics(diagnostics);
-  }
 
-  if (basal_yield_stress) {
+  if (basal_yield_stress != NULL)
     basal_yield_stress->get_diagnostics(diagnostics);
-  }
+
+  if (subglacial_hydrology != NULL)
+    subglacial_hydrology->get_diagnostics(diagnostics);
 
   if (print_list_and_stop) {
     ierr = list_diagnostics(); CHKERRQ(ierr);
@@ -169,6 +174,9 @@ PetscErrorCode IceModel::list_diagnostics() {
 
     if (basal_yield_stress != NULL)
       basal_yield_stress->add_vars_to_output("big", list);
+
+    if (subglacial_hydrology != NULL)
+      subglacial_hydrology->add_vars_to_output("big", list);
 
     if (stress_balance != NULL)
       stress_balance->add_vars_to_output("big", list);

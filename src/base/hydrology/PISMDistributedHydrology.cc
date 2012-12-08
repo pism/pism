@@ -133,13 +133,6 @@ PetscErrorCode PISMLakesHydrology::init(PISMVars &vars) {
 
 void PISMLakesHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
   result["bwat"] = W.get_metadata();
-  IceModelVec2S tmp;
-  tmp.create(grid, "bwp", false);
-  tmp.set_attrs("diagnostic","pressure of water in subglacial layer",
-                "Pa", "");
-  tmp.set_attr("valid_min", 0.0);
-  result["bwp"] = tmp.get_metadata();
-  // destructor called on tmp when we go out of scope here
 }
 
 
@@ -149,16 +142,6 @@ PetscErrorCode PISMLakesHydrology::define_variables(set<string> vars, const PIO 
   if (set_contains(vars, "bwat")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwp")) {
-    IceModelVec2S tmp;
-    ierr = tmp.create(grid, "bwp", false); CHKERRQ(ierr);
-    ierr = tmp.set_attrs("diagnostic",
-                     "pressure of water in subglacial layer",
-                     "Pa", ""); CHKERRQ(ierr);
-    ierr = tmp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-    ierr = tmp.define(nc, nctype); CHKERRQ(ierr);
-    // destructor called on tmp when we go out of scope here
-  }
   return 0;
 }
 
@@ -167,17 +150,6 @@ PetscErrorCode PISMLakesHydrology::write_variables(set<string> vars, const PIO &
   PetscErrorCode ierr;
   if (set_contains(vars, "bwat")) {
     ierr = W.write(nc); CHKERRQ(ierr);
-  }
-  if (set_contains(vars, "bwp")) {
-    IceModelVec2S tmp;
-    ierr = tmp.create(grid, "bwp", false); CHKERRQ(ierr);
-    ierr = tmp.set_attrs("diagnostic",
-                     "pressure of water in subglacial layer",
-                     "Pa", ""); CHKERRQ(ierr);
-    ierr = tmp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-    ierr = water_pressure(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
-    // destructor called on tmp when we go out of scope here
   }
   return 0;
 }
@@ -536,7 +508,7 @@ PetscErrorCode PISMDistributedHydrology::allocatePstuff() {
   PetscErrorCode ierr;
 
   // additional variables beyond PISMLakesHydrology::allocate()
-  ierr = P.create(grid, "bwpdistributed", true, 1); CHKERRQ(ierr);
+  ierr = P.create(grid, "bwp", true, 1); CHKERRQ(ierr);
   ierr = P.set_attrs("model_state",
                      "pressure of water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
@@ -592,26 +564,23 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   if (vars.get("bwat") == NULL) {
     ierr = vars.add(W); CHKERRQ(ierr);
   }
-  if (vars.get("bwp") == NULL) {
-    ierr = vars.add(P); CHKERRQ(ierr);
-  }
   return 0;
 }
 
 
 void PISMDistributedHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["bwatdistributed"] = W.get_metadata();
-  result["bwpdistributed"]  = P.get_metadata();
+  result["bwat"] = W.get_metadata();
+  result["bwp"]  = P.get_metadata();
 }
 
 
 PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwatdistributed")) {
+  if (set_contains(vars, "bwat")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwpdistributed")) {
+  if (set_contains(vars, "bwp")) {
     ierr = P.define(nc, nctype); CHKERRQ(ierr);
   }
   return 0;
@@ -620,10 +589,10 @@ PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, cons
 
 PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwatdistributed")) {
+  if (set_contains(vars, "bwat")) {
     ierr = W.write(nc); CHKERRQ(ierr);
   }
-  if (set_contains(vars, "bwpdistributed")) {
+  if (set_contains(vars, "bwp")) {
     ierr = P.write(nc); CHKERRQ(ierr);
   }
   return 0;
@@ -883,3 +852,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   return 0;
 }
 
+void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {
+  // do nothing (we will write bwp using the P data member)
+}
