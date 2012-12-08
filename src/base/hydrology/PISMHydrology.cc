@@ -148,16 +148,29 @@ where \f$\lambda\f$=till_pw_fraction, \f$P_o = \rho_i g H\f$, \f$W_{crit}\f$=hyd
  */
 PetscErrorCode PISMTillCanHydrology::water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = result.set_attrs("diagnostic",
-                     "pressure of water in subglacial layer",
-                     "Pa", ""); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = check_W_bounds(); CHKERRQ(ierr); // check:  W \le hydrology_bwat_max = Wcrit
-  ierr = result.copy_from(W); CHKERRQ(ierr);
-  ierr = result.scale(1.0/config.get("hydrology_bwat_max")); CHKERRQ(ierr); // = max{1,W/Wcrit}
-  ierr = result.multiply_by((*thk)); CHKERRQ(ierr); // = H max{1,W/Wcrit}
-  ierr = result.scale(config.get("ice_density") * config.get("standard_gravity")); CHKERRQ(ierr);
-  ierr = result.scale(config.get("till_pw_fraction")); CHKERRQ(ierr); // P = lambda rhoi g H max{1,W/Wcrit}
+
+#if (PISM_DEBUG==1)
+  ierr = check_W_bounds(); CHKERRQ(ierr); // check:  W \le bwat_max = Wcrit
+#endif
+
+  double bwat_max = config.get("hydrology_bwat_max"),
+    till_pw_fraction = config.get("till_pw_fraction"),
+    standard_gravity = config.get("standard_gravity"),
+    ice_density = config.get("ice_density");
+
+  ierr = W.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = thk->begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      result(i,j) = till_pw_fraction * ice_density * standard_gravity * (*thk)(i,j) * (W(i,j) / bwat_max);
+    }
+  }
+
+  ierr = thk->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = W.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
