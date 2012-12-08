@@ -76,8 +76,6 @@ public:
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
-
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
 
@@ -105,14 +103,6 @@ protected:
                                          PetscReal bmr, PetscReal thk);
   virtual PetscReal effective_pressure_on_till(PetscReal p_overburden,
                                                PetscReal b_basal_water);
-};
-
-//! \brief Computes basal (pore) water pressure using a highly-simplified model.
-class PYS_bwp : public PISMDiag<PISMMohrCoulombYieldStress>
-{
-public:
-  PYS_bwp(PISMMohrCoulombYieldStress *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 #endif /* _PISMMOHRCOULOMBYIELDSTRESS_H_ */

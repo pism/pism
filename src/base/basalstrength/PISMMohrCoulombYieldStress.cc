@@ -288,12 +288,6 @@ void PISMMohrCoulombYieldStress::add_vars_to_output(string /*keyword*/, map<stri
   result["tillphi"] = till_phi.get_metadata();
 }
 
-
-void PISMMohrCoulombYieldStress::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  dict["bwp"] = new PYS_bwp(this, grid, *variables);
-}
-
-
 PetscErrorCode PISMMohrCoulombYieldStress::define_variables(set<string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
   if (set_contains(vars, "tillphi")) {
@@ -662,67 +656,6 @@ PetscScalar PISMMohrCoulombYieldStress::basal_water_pressure(PetscReal p_overbur
 PetscReal PISMMohrCoulombYieldStress::effective_pressure_on_till(PetscReal p_overburden,
                                                              PetscReal p_basal_water) {
   return p_overburden - p_basal_water;
-}
-
-PYS_bwp::PYS_bwp(PISMMohrCoulombYieldStress *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMMohrCoulombYieldStress>(m, g, my_vars) {
-
-  // set metadata:
-  vars[0].init_2d("bwp", grid);
-  set_attrs("subglacial (pore) water pressure", "", "Pa", "Pa", 0);
-  vars[0].set("_FillValue", grid.config.get("fill_value"));
-  vars[0].set("valid_min", 0);
-}
-
-
-/*!
-Calls PISMMohrCoulombYieldStress::basal_water_pressure() to actually compute it.
-
-Result is set to invalid (_FillValue) where the ice is floating, there being
-no meaning to the above calculation.
- */
-PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bwp", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-
-  const PetscScalar
-    fillval   = grid.config.get("fill_value");
-
-  ierr = model->ice_thickness->begin_access(); CHKERRQ(ierr);
-  ierr = model->basal_water_thickness->begin_access(); CHKERRQ(ierr);
-  ierr = model->basal_melt_rate->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscReal thk = (*model->ice_thickness)(i, j);
-      if (thk > 0.0) {
-        PetscReal ice_thickness = (*model->ice_thickness)(i, j),
-          // FIXME issue #15
-          p_overburden = ice_thickness * model->ice_density * model->standard_gravity;
-
-        (*result)(i,j) = model->basal_water_pressure(p_overburden,
-                                                     (*model->basal_water_thickness)(i,j),
-                                                     (*model->basal_melt_rate)(i,j),
-                                                     ice_thickness);
-      } else { // put negative value below valid range
-        (*result)(i,j) = fillval;
-      }
-    }
-  }
-  ierr = model->ice_thickness->end_access(); CHKERRQ(ierr);
-  ierr = model->basal_water_thickness->end_access(); CHKERRQ(ierr);
-  ierr = model->basal_melt_rate->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-
-  MaskQuery m(*model->mask);
-
-  ierr = m.fill_where_floating(*result, fillval); CHKERRQ(ierr);
-
-  output = result;
-  return 0;
 }
 
 PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
