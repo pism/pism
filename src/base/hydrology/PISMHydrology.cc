@@ -144,7 +144,7 @@ PetscErrorCode PISMTillCanHydrology::water_layer_thickness(IceModelVec2S &result
 //! Computes pressure diagnostically.
 /*!
   \f[ P = \lambda P_o \max\{1,W / W_{crit}\} \f]
-where \f$\lambda\f$=till_pw_fraction, \f$P_o = \rho_i g H\f$, \f$W_{crit}\f$=bwat_max.
+where \f$\lambda\f$=till_pw_fraction, \f$P_o = \rho_i g H\f$, \f$W_{crit}\f$=hydrology_bwat_max.
  */
 PetscErrorCode PISMTillCanHydrology::water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
@@ -152,9 +152,9 @@ PetscErrorCode PISMTillCanHydrology::water_pressure(IceModelVec2S &result) {
                      "pressure of water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
   ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = check_W_bounds(); CHKERRQ(ierr); // check:  W \le bwat_max = Wcrit
+  ierr = check_W_bounds(); CHKERRQ(ierr); // check:  W \le hydrology_bwat_max = Wcrit
   ierr = result.copy_from(W); CHKERRQ(ierr);
-  ierr = result.scale(1.0/config.get("bwat_max")); CHKERRQ(ierr); // = max{1,W/Wcrit}
+  ierr = result.scale(1.0/config.get("hydrology_bwat_max")); CHKERRQ(ierr); // = max{1,W/Wcrit}
   ierr = result.multiply_by((*thk)); CHKERRQ(ierr); // = H max{1,W/Wcrit}
   ierr = result.scale(config.get("ice_density") * config.get("standard_gravity")); CHKERRQ(ierr);
   ierr = result.scale(config.get("till_pw_fraction")); CHKERRQ(ierr); // P = lambda rhoi g H max{1,W/Wcrit}
@@ -163,11 +163,11 @@ PetscErrorCode PISMTillCanHydrology::water_pressure(IceModelVec2S &result) {
 
 
 /*!
-Checks \f$0 \le W \le W_{crit} =\f$bwat_max.
+Checks \f$0 \le W \le W_{crit} =\f$hydrology_bwat_max.
  */
 PetscErrorCode PISMTillCanHydrology::check_W_bounds() {
   PetscErrorCode ierr;
-  PetscReal bwat_max = config.get("bwat_max");
+  PetscReal bwat_max = config.get("hydrology_bwat_max");
   ierr = W.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -181,7 +181,7 @@ PetscErrorCode PISMTillCanHydrology::check_W_bounds() {
       if (W(i,j) > bwat_max) {
         PetscPrintf(grid.com,
            "PISMTillCanHydrology ERROR: subglacial water layer thickness W(i,j) = %.6f m exceeds\n"
-           "            bmelt_max = %.6f at (i,j)=(%d,%d)\n"
+           "            hydrology_bwat_max = %.6f at (i,j)=(%d,%d)\n"
            "ENDING ... \n\n", W(i,j),bwat_max,i,j);
         PISMEnd();
       }
@@ -192,13 +192,13 @@ PetscErrorCode PISMTillCanHydrology::check_W_bounds() {
 }
 
 
-//! Update the water thickness from bmelt input, bwat_max, and decay rate.
+//! Update the water thickness from input (melt and drainage from ice above), the upper bound on water amount, and the decay rate.
 /*!
 Solves on explicit (forward Euler) step of the integration
   \f[ \frac{dW}{dt} = \text{bmelt} - C \f]
 but subject to the inequalities
   \f[ 0 \le W \le W_{crit} \f]
-where \f$C=\f$bwat_decay_rate and \f$W_{crit}\f$=bwat_max. 
+where \f$C=\f$hydrology_bwat_decay_rate and \f$W_{crit}\f$=hydrology_bwat_max. 
  */
 PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
   // if asked for the identical time interval as last time, then do nothing
@@ -208,8 +208,10 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
   dt = icedt;
 
   PetscErrorCode ierr;
-  PetscReal bwat_max        = config.get("bwat_max"),
-            bwat_decay_rate = config.get("bwat_decay_rate");
+  PetscReal bwat_max        = config.get("hydrology_bwat_max"),
+            bwat_decay_rate = config.get("hydrology_bwat_decay_rate");
+  bool      use_const       = config.get_flag("hydrology_use_const_bmelt");
+  PetscReal const_bmelt     = config.get("hydrology_const_bmelt");
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = bmelt->begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
@@ -217,7 +219,8 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (m.grounded_ice(i, j)) {
-        W(i,j) = W(i,j) + ((*bmelt)(i,j) - bwat_decay_rate) * icedt;
+        PetscReal input = (use_const) ? const_bmelt : (*bmelt)(i,j);
+        W(i,j) = W(i,j) + (input - bwat_decay_rate) * icedt;
         W(i,j) = PetscMax(0.0, PetscMin(bwat_max, W(i,j)) );
       } else if (m.ice_free_land(i,j)) {
         W(i,j) = 0.0;
@@ -287,17 +290,19 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
   dt = icedt;
 
   PetscErrorCode ierr;
-  const PetscReal L = config.get("bwat_diffusion_distance");
+  const PetscReal L = config.get("hydrology_bwat_diffusion_distance");
   if (L <= 0.0)  {
     ierr = PISMTillCanHydrology::update(icet,icedt); CHKERRQ(ierr);
     return 0;
   }
 
   const PetscReal
-    diffusion_time  = config.get("bwat_diffusion_time", "years", "seconds"), // convert to seconds
-    bwat_max        = config.get("bwat_max"),
-    bwat_decay_rate = config.get("bwat_decay_rate"),
+    diffusion_time  = config.get("hydrology_bwat_diffusion_time", "years", "seconds"), // convert to seconds
+    bwat_max        = config.get("hydrology_bwat_max"),
+    bwat_decay_rate = config.get("hydrology_bwat_decay_rate"),
     K               = L * L / (2.0 * diffusion_time);
+  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
+  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
   PetscReal hdt;
   PetscInt NN;
   hdt = (1.0 / (grid.dx*grid.dx)) + (1.0 / (grid.dy*grid.dy));
@@ -323,7 +328,8 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (m.grounded_ice(i, j)) {
-          W(i,j) = W(i,j) + ((*bmelt)(i,j) - bwat_decay_rate) * icedt;
+          PetscReal input = (use_const) ? const_bmelt : (*bmelt)(i,j);
+          W(i,j) = W(i,j) + (input - bwat_decay_rate) * icedt;
           W(i,j) = PetscMax(0.0, PetscMin(bwat_max, W(i,j)) );
         } else if (m.ice_free_land(i,j)) {
           W(i,j) = 0.0;
@@ -343,7 +349,6 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
     // time-splitting: second, diffusion by first-order explicit
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wnew.begin_access(); CHKERRQ(ierr);
-    ierr = bmelt->begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         Wnew(i,j) = oneM4R * W(i,j) + Rx * (W(i+1,j  ) + W(i-1,j  ))
@@ -353,7 +358,6 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
     }
     ierr = W.end_access(); CHKERRQ(ierr);
     ierr = Wnew.end_access(); CHKERRQ(ierr);
-    ierr = bmelt->end_access(); CHKERRQ(ierr);
 
     // maybe unneeded: valid ghosts for future actions
     ierr = Wnew.beginGhostComm(W); CHKERRQ(ierr);

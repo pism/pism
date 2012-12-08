@@ -282,7 +282,7 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
   PetscErrorCode ierr;
   PetscReal dbdx, dbdy, dPdx, dPdy, K, c0;
   // FIXME:  want Kmax or Kmin according to W > Wr ?
-  K  = config.get("subglacial_hydraulic_conductivity");
+  K  = config.get("hydrology_hydraulic_conductivity");
   c0 = K / (fresh_water_density * standard_gravity);
   ierr = water_pressure(Pwork); CHKERRQ(ierr);  // does update ghosts
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
@@ -352,7 +352,7 @@ PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
   PetscReal dtmax, dtCFL, maxW, K;
   PetscReal tmp[2];
   // FIXME:  want Kmax or Kmin according to W > Wr ?
-  K  = config.get("subglacial_hydraulic_conductivity");
+  K  = config.get("hydrology_hydraulic_conductivity");
   // fixme?: dtCFL can be infinity if velocity is zero because P and b are constant
   // Matlab: dtCFL = 0.5 / (max(max(abs(alphV)))/dx + max(max(abs(betaV)))/dy);
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr);
@@ -409,9 +409,11 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   MaskQuery M(*mask);
 
   PetscReal ht = t, hdt, // hydrology model time and time step
-            K = config.get("subglacial_hydraulic_conductivity"), // FIXME: want Kmax or Kmin according to W > Wr ?
+            K = config.get("hydrology_hydraulic_conductivity"), // FIXME: want Kmax or Kmin according to W > Wr ?
             my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0,
             dA = grid.dx * grid.dy;
+  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
+  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
   PetscInt hydrocount = 0; // count hydrology time steps
 
 //ierr = PetscPrintf(grid.com, "starting PISMLakesHydrology::update() time-stepping loop\n"); CHKERRQ(ierr);
@@ -455,7 +457,8 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
                          - Wstag(i-1,j  ,0) * (W(i,j) - W(i-1,  j)) )
                 + wuy * ( Wstag(i,j,1) * (W(i  ,j+1) - W(i,j))
                          - Wstag(i  ,j-1,1) * (W(i,j) - W(i  ,j-1)) );
-        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + (*bmelt)(i,j));
+        PetscReal input = (use_const) ? const_bmelt : (*bmelt)(i,j);
+        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + input);
         if (M.ice_free_land(i,j)) {
           my_icefreelost += Wnew(i,j) * dA * fresh_water_density; // FIXME: mult by cell area?
           Wnew(i,j) = 0.0;
@@ -769,8 +772,11 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   PetscReal ht, hdt, // hydrology model time and time step
             K, c0;
   // FIXME:  want Kmax or Kmin according to W > Wr ?
-  K  = config.get("subglacial_hydraulic_conductivity");
+  K  = config.get("hydrology_hydraulic_conductivity");
   c0 = K / (fresh_water_density * standard_gravity);
+
+  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
+  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
 
   while (ht < t + dt) {
     ierr = check_bounds(); CHKERRQ(ierr);
@@ -818,7 +824,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           divflux += puy * ( Wstag(i,j,1) * (psi(i,j+1) - psi(i,j))
                          - Wstag(i,j-1,1) * (psi(i,j) - psi(i,j-1)) );
         // candidate for update
-        Ptmp = P(i,j) + (hdt * Po(i,j) / E0) * ( divflux + Close - Open + (*bmelt)(i,j) );
+        PetscReal input = (use_const) ? const_bmelt : (*bmelt)(i,j);
+        Ptmp = P(i,j) + (hdt * Po(i,j) / E0) * ( divflux + Close - Open + input );
         // projection:
         Pnew(i,j) = PetscMin(PetscMax(0.0, Ptmp), Po(i,j));
       }
