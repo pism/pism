@@ -145,10 +145,6 @@ PetscErrorCode IceModel::set_output_size(string option,
 			 description, choices,
 			 default_value, keyword, flag); CHKERRQ(ierr);
 
-
-  if (config.get_flag("force_full_diagnostics"))
-    keyword = "big";
-
   // Add all the model-state variables:
   set<string> vars = variables.keys();
 

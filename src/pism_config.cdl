@@ -99,9 +99,6 @@ netcdf pism_config {
 
     pism_config:compute_surf_grad_inward_ssa = "no";
 
-    pism_config:force_full_diagnostics = "no";
-    pism_config:force_full_diagnostics_doc = "Force full diagnostic output (adds 3D velocity fields and velocity components at the surface";
-
     pism_config:ssa_dirichlet_bc = "no";
     pism_config:ssa_dirichlet_bc_doc = "apply SSA velocity Dirichlet boundary condition";
 
