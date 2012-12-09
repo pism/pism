@@ -570,6 +570,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                  "hydrology_use_const_bmelt"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_const_bmelt",
                                    "hydrology_const_bmelt"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_hydraulic_conductivity",
+                                   "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
 
   // Time-stepping
   ierr = config.keyword_from_option("calendar", "calendar",

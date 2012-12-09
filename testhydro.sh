@@ -16,6 +16,7 @@ fi
 $MPIDO ${PATHTO}pismr -i start.nc -hydrology tillcan     -y 20 -o tillcan.nc
 $MPIDO ${PATHTO}pismr -i start.nc -hydrology diffuseonly -y 20 -o diffuse.nc
 $MPIDO ${PATHTO}pismr -i start.nc -hydrology lakes       -y 20 -o lakes.nc
+$MPIDO ${PATHTO}pismr -i start.nc -hydrology lakes -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -y 20 -o lakes_const.nc
 #$MPIDO ${PATHTO}pismr -i start.nc -hydrology distributed -y 20 -o distributed.nc
 
 #set +v
