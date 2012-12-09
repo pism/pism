@@ -29,21 +29,10 @@
 PISMLakesHydrology::PISMLakesHydrology(IceGrid &g, const NCConfigVariable &conf)
     : PISMHydrology(g, conf)
 {
-    bed   = NULL;
-    thk   = NULL;
-    usurf = NULL;
-    mask  = NULL;
-    bmelt = NULL;
-
     if (allocate() != 0) {
       PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMLakesHydrology constructor.\n");
       PISMEnd();
     }
-
-    ice_density = config.get("ice_density");
-    standard_gravity = config.get("standard_gravity");
-    fresh_water_density = config.get("fresh_water_density");
-    sea_water_density = config.get("sea_water_density");
 }
 
 
@@ -83,6 +72,10 @@ PetscErrorCode PISMLakesHydrology::allocate() {
                      "m s-1", ""); CHKERRQ(ierr);
 
   // temporaries during update; do not need ghosts
+  ierr = input.create(grid, "input_hydro", false); CHKERRQ(ierr);
+  ierr = input.set_attrs("internal",
+                         "workspace for input into subglacial water layer",
+                         "m s-1", ""); CHKERRQ(ierr);
   //FIXME: ought to be able to do this (issue #109):
   //  ierr = Wnew.create(grid, "Wnew_internal", false); CHKERRQ(ierr);
   ierr = Wnew.create(grid, "Wnew_internal", true, 1); CHKERRQ(ierr);
@@ -97,25 +90,9 @@ PetscErrorCode PISMLakesHydrology::allocate() {
 
 PetscErrorCode PISMLakesHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
-
   ierr = verbPrintf(2, grid.com,
     "* Initializing the subglacial-lakes-suitable subglacial hydrology model...\n"); CHKERRQ(ierr);
-
-  bed = dynamic_cast<IceModelVec2S*>(vars.get("topg"));
-  if (bed == NULL) SETERRQ(grid.com, 1, "topg is not available");
-
-  thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
-  if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available");
-
-  usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
-  if (usurf == NULL) SETERRQ(grid.com, 1, "usurf is not available");
-
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
-
-  bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
-  if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available");
-
+  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
   // initialize water layer thickness from the context if present, otherwise zero
   IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
   if (W_input != NULL) {
@@ -123,7 +100,6 @@ PetscErrorCode PISMLakesHydrology::init(PISMVars &vars) {
   } else {
     ierr = W.set(0.0); CHKERRQ(ierr);
   }
-
   if (vars.get("bwat") == NULL) {
     ierr = vars.add(W); CHKERRQ(ierr);
   }
@@ -204,7 +180,7 @@ PetscErrorCode PISMLakesHydrology::update_overburden(IceModelVec2S &result) {
   PetscErrorCode ierr;
   // P_o = rho_i g H
   ierr = result.copy_from(*thk); CHKERRQ(ierr);
-  ierr = result.scale(ice_density * standard_gravity); CHKERRQ(ierr);
+  ierr = result.scale(config.get("ice_density") * config.get("standard_gravity")); CHKERRQ(ierr);
   return 0;
 }
 
@@ -217,6 +193,8 @@ Calls water_pressure() method to get water pressure.
  */
 PetscErrorCode PISMLakesHydrology::hydraulic_potential(IceModelVec2S &result) {
   PetscErrorCode ierr;
+  PetscReal fresh_water_density = config.get("fresh_water_density"),
+            standard_gravity    = config.get("standard_gravity");
   ierr = water_pressure(Pwork); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
@@ -255,7 +233,7 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
   PetscReal dbdx, dbdy, dPdx, dPdy, K, c0;
   // FIXME:  want Kmax or Kmin according to W > Wr ?
   K  = config.get("hydrology_hydraulic_conductivity");
-  c0 = K / (fresh_water_density * standard_gravity);
+  c0 = K / (config.get("fresh_water_density") * config.get("standard_gravity"));
   ierr = water_pressure(Pwork); CHKERRQ(ierr);  // does update ghosts
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
@@ -374,6 +352,8 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   t = icet;
   dt = icedt;
 
+  ierr = get_input_rate(input); CHKERRQ(ierr);
+
   // make sure W has valid ghosts before starting hydrology steps
   ierr = W.beginGhostComm(); CHKERRQ(ierr);
   ierr = W.endGhostComm(); CHKERRQ(ierr);
@@ -381,11 +361,10 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   MaskQuery M(*mask);
 
   PetscReal ht = t, hdt, // hydrology model time and time step
+            fresh_water_density = config.get("fresh_water_density"),
             K = config.get("hydrology_hydraulic_conductivity"), // FIXME: want Kmax or Kmin according to W > Wr ?
             my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0,
             dA = grid.dx * grid.dy;
-  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
-  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
   PetscInt hydrocount = 0; // count hydrology time steps
 
 //ierr = PetscPrintf(grid.com, "starting PISMLakesHydrology::update() time-stepping loop\n"); CHKERRQ(ierr);
@@ -419,7 +398,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = mask->begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
-    ierr = bmelt->begin_access(); CHKERRQ(ierr);
+    ierr = input.begin_access(); CHKERRQ(ierr);
     ierr = Wnew.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -429,8 +408,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
                          - Wstag(i-1,j  ,0) * (W(i,j) - W(i-1,  j)) )
                 + wuy * ( Wstag(i,j,1) * (W(i  ,j+1) - W(i,j))
                          - Wstag(i  ,j-1,1) * (W(i,j) - W(i  ,j-1)) );
-        PetscReal input = (use_const) ? const_bmelt : (*bmelt)(i,j);
-        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + input);
+        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + input(i,j));
         if (M.ice_free_land(i,j)) {
           my_icefreelost += Wnew(i,j) * dA * fresh_water_density; // FIXME: mult by cell area?
           Wnew(i,j) = 0.0;
@@ -447,7 +425,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = mask->end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = Qstag.end_access(); CHKERRQ(ierr);
-    ierr = bmelt->end_access(); CHKERRQ(ierr);
+    ierr = input.end_access(); CHKERRQ(ierr);
     ierr = Wnew.end_access(); CHKERRQ(ierr);
 
     // transfer Wnew into W
@@ -487,11 +465,6 @@ PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVar
       PISMEnd();
     }
 
-    ice_density = config.get("ice_density");
-    standard_gravity = config.get("standard_gravity");
-    fresh_water_density = config.get("fresh_water_density");
-    sea_water_density = config.get("sea_water_density");
-
     // initialize using constants from van Pelt & Bueler preprint
     // FIXME: should be configurable
     c1    = 0.500;      // m-1
@@ -529,40 +502,15 @@ PetscErrorCode PISMDistributedHydrology::allocatePstuff() {
 
 PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
-
   ierr = verbPrintf(2, grid.com,
     "* Initializing the vanPelt-Bueler subglacial hydrology model...\n"); CHKERRQ(ierr);
-
-  bed = dynamic_cast<IceModelVec2S*>(vars.get("topg"));
-  if (bed == NULL) SETERRQ(grid.com, 1, "topg is not available");
-
-  thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
-  if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available");
-
-  usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
-  if (usurf == NULL) SETERRQ(grid.com, 1, "usurf is not available");
-
-  bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
-  if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available");
-
-  // initialize water layer thickness from the context if present, otherwise zero
-  IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
-  if (W_input != NULL) {
-    ierr = W.copy_from(*W_input); CHKERRQ(ierr);
-  } else {
-    ierr = W.set(0.0); CHKERRQ(ierr);
-  }
-
+  ierr = PISMLakesHydrology::init(vars); CHKERRQ(ierr);
   // initialize the water pressure from the context if present, otherwise steady P(W)
   IceModelVec2S *P_input = dynamic_cast<IceModelVec2S*>(vars.get("bwp"));
   if (P_input != NULL) {
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
   } else {
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
-  }
-
-  if (vars.get("bwat") == NULL) {
-    ierr = vars.add(W); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -702,7 +650,7 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
   // Matlab: dtDIFFP = (p.rhow * p.E0 / (p.rhoi * maxH)) * dtDIFFW;
   ierr = thk->max(maxH); CHKERRQ(ierr);
   maxH += 2.0 * E0; // regularized: forces dtDIFFP < dtDIFFW
-  dtDIFFP = (fresh_water_density * E0 / (ice_density * maxH)) * dtDIFFW;
+  dtDIFFP = (config.get("fresh_water_density") * E0 / (config.get("ice_density") * maxH)) * dtDIFFW;
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
   dt_result = PetscMin(dt_result, dtDIFFP);
@@ -728,6 +676,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   t = icet;
   dt = icedt;
 
+  ierr = get_input_rate(input); CHKERRQ(ierr);
+
   // make sure W,P have valid ghosts before starting hydrology steps
   ierr = W.beginGhostComm(); CHKERRQ(ierr);
   ierr = P.beginGhostComm(); CHKERRQ(ierr);
@@ -742,10 +692,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             K, c0;
   // FIXME:  want Kmax or Kmin according to W > Wr ?
   K  = config.get("hydrology_hydraulic_conductivity");
-  c0 = K / (fresh_water_density * standard_gravity);
-
-  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
-  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
+  c0 = K / (config.get("fresh_water_density") * config.get("standard_gravity"));
 
   while (ht < t + dt) {
     ierr = check_bounds(); CHKERRQ(ierr);
@@ -776,7 +723,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = cbase.begin_access(); CHKERRQ(ierr);
     ierr = psi.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
-    ierr = bmelt->begin_access(); CHKERRQ(ierr);
+    ierr = input.begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
     ierr = Pnew.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -793,8 +740,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           divflux += puy * ( Wstag(i,j,1) * (psi(i,j+1) - psi(i,j))
                          - Wstag(i,j-1,1) * (psi(i,j) - psi(i,j-1)) );
         // candidate for update
-        PetscReal input = (use_const) ? const_bmelt : (*bmelt)(i,j);
-        Ptmp = P(i,j) + (hdt * Po(i,j) / E0) * ( divflux + Close - Open + input );
+        Ptmp = P(i,j) + (hdt * Po(i,j) / E0) * ( divflux + Close - Open + input(i,j) );
         // projection:
         Pnew(i,j) = PetscMin(PetscMax(0.0, Ptmp), Po(i,j));
       }
@@ -804,7 +750,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = cbase.end_access(); CHKERRQ(ierr);
     ierr = Pnew.end_access(); CHKERRQ(ierr);
     ierr = psi.end_access(); CHKERRQ(ierr);
-    ierr = bmelt->end_access(); CHKERRQ(ierr);
+    ierr = input.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
@@ -820,7 +766,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
-    ierr = bmelt->begin_access(); CHKERRQ(ierr);
+    ierr = input.begin_access(); CHKERRQ(ierr);
     ierr = Wnew.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -830,13 +776,13 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
                          - Wstag(i-1,j  ,0) * (W(i,j) - W(i-1,  j)) )
                 + wuy * ( Wstag(i,j,1) * (W(i  ,j+1) - W(i,j))
                          - Wstag(i  ,j-1,1) * (W(i,j) - W(i  ,j-1)) );
-        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + (*bmelt)(i,j));
+        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + input(i,j));
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = Qstag.end_access(); CHKERRQ(ierr);
-    ierr = bmelt->end_access(); CHKERRQ(ierr);
+    ierr = input.end_access(); CHKERRQ(ierr);
     ierr = Wnew.end_access(); CHKERRQ(ierr);
 
     // start transfer Wnew into W

@@ -21,17 +21,63 @@
 #include "pism_options.hh"
 #include "Mask.hh"
 
+
+PetscErrorCode PISMHydrology::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(4, grid.com,
+    "entering initializer for base class PISMHydrology ...\n"); CHKERRQ(ierr);
+
+  variables = &vars;
+
+  thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
+  if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available to PISMHydrology");
+
+  bed = dynamic_cast<IceModelVec2S*>(vars.get("topg"));
+  if (bed == NULL) SETERRQ(grid.com, 1, "topg is not available to PISMHydrology");
+
+  bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
+  if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available to PISMHydrology");
+
+  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available to PISMHydrology");
+
+  return 0;
+}
+
+
 void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
 }
+
+
+//! Compute the water input rate into the basal hydrology layer according to configuration and mask.
+PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
+  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
+  ierr = bmelt->begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  MaskQuery m(*mask);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (m.icy(i, j))
+        result(i,j) = (use_const) ? const_bmelt : (*bmelt)(i,j);
+      else
+        result(i,j) = 0.0;
+    }
+  }
+  ierr = bmelt->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
 
 PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf,
                                            bool Whasghosts)
     : PISMHydrology(g, conf)
 {
-    thk   = NULL;
-    bmelt = NULL;
-    mask  = NULL;
     if (allocate(Whasghosts) != 0) {
       PetscPrintf(grid.com,
         "PISM ERROR: allocation failed in PISMTillCanHydrology constructor.\n");
@@ -42,6 +88,11 @@ PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &c
 
 PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
   PetscErrorCode ierr;
+  // workspace
+  ierr = input.create(grid, "input_hydro", false); CHKERRQ(ierr);
+  ierr = input.set_attrs("internal",
+                         "workspace for input into subglacial water layer",
+                         "m s-1", ""); CHKERRQ(ierr);
   // model state variables
   if (Whasghosts) {
     ierr = W.create(grid, "bwat", true, 1); CHKERRQ(ierr);
@@ -60,18 +111,7 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
     "* Initializing the till-can subglacial hydrology model...\n"); CHKERRQ(ierr);
-
-  variables = &vars;
-
-  thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
-  if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available");
-
-  bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
-  if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available");
-
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
-
+  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
   // initialize water layer thickness from the context if present, otherwise zero
   IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
   if (W_input != NULL) {
@@ -80,12 +120,10 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   } else {
     ierr = W.set(0.0); CHKERRQ(ierr);
   }
-
   if (vars.get("bwat") == NULL) { // since init() will get called twice, *we*
                                   //   might have already added "bwat"
     ierr = vars.add(W); CHKERRQ(ierr);
   }
-
   return 0;
 }
 
@@ -200,19 +238,19 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
   dt = icedt;
 
   PetscErrorCode ierr;
+
+  ierr = get_input_rate(input); CHKERRQ(ierr);
+
   PetscReal bwat_max        = config.get("hydrology_bwat_max"),
             bwat_decay_rate = config.get("hydrology_bwat_decay_rate");
-  bool      use_const       = config.get_flag("hydrology_use_const_bmelt");
-  PetscReal const_bmelt     = config.get("hydrology_const_bmelt");
   ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = bmelt->begin_access(); CHKERRQ(ierr);
+  ierr = input.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   MaskQuery m(*mask);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (m.grounded_ice(i, j)) {
-        PetscReal input = (use_const) ? const_bmelt : (*bmelt)(i,j);
-        W(i,j) = W(i,j) + (input - bwat_decay_rate) * icedt;
+        W(i,j) = W(i,j) + (input(i,j) - bwat_decay_rate) * icedt;
         W(i,j) = PetscMax(0.0, PetscMin(bwat_max, W(i,j)) );
       } else if (m.ice_free_land(i,j)) {
         W(i,j) = 0.0;
@@ -222,10 +260,11 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
     }
   }
   ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = bmelt->end_access(); CHKERRQ(ierr);
+  ierr = input.end_access(); CHKERRQ(ierr);
   ierr = mask->end_access(); CHKERRQ(ierr);
   return 0;
 }
+
 
 PISMDiffuseOnlyHydrology::PISMDiffuseOnlyHydrology(IceGrid &g, const NCConfigVariable &conf)
     : PISMTillCanHydrology(g, conf, true)
@@ -235,15 +274,6 @@ PISMDiffuseOnlyHydrology::PISMDiffuseOnlyHydrology(IceGrid &g, const NCConfigVar
       "PISM ERROR: allocation of Wnew failed in PISMDiffuseOnlyHydrology constructor.\n");
     PISMEnd();
   }
-}
-
-
-PetscErrorCode PISMDiffuseOnlyHydrology::init(PISMVars &vars) {
-  PetscErrorCode ierr;
-  ierr = PISMTillCanHydrology::init(vars); CHKERRQ(ierr);
-  ierr = verbPrintf(2, grid.com,
-    "  using the diffusive water layer variant ...\n"); CHKERRQ(ierr);
-  return 0;
 }
 
 
@@ -258,6 +288,15 @@ PetscErrorCode PISMDiffuseOnlyHydrology::allocateWnew() {
                      "new thickness of subglacial water layer during update",
                      "m", ""); CHKERRQ(ierr);
   ierr = Wnew.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode PISMDiffuseOnlyHydrology::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = PISMTillCanHydrology::init(vars); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+    "  using the diffusive water layer variant ...\n"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -292,8 +331,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
     bwat_max        = config.get("hydrology_bwat_max"),
     bwat_decay_rate = config.get("hydrology_bwat_decay_rate"),
     K               = L * L / (2.0 * diffusion_time);
-  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
-  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
+
   PetscReal hdt;
   PetscInt NN;
   hdt = (1.0 / (grid.dx*grid.dx)) + (1.0 / (grid.dy*grid.dy));
@@ -306,6 +344,8 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
       "   ... NN = %d > 1 ... THIS IS BELIEVED TO BE RARE\n",NN);
   }
 
+  ierr = get_input_rate(input); CHKERRQ(ierr);
+
   hdt = dt / NN;
   PetscReal  Rx = K * dt / (grid.dx * grid.dx),
              Ry = K * dt / (grid.dy * grid.dy),
@@ -313,14 +353,13 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
   for (PetscInt n=0; n<NN; ++n) {
     // time-splitting: first, Euler step on source terms
     ierr = W.begin_access(); CHKERRQ(ierr);
-    ierr = bmelt->begin_access(); CHKERRQ(ierr);
+    ierr = input.begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
     MaskQuery m(*mask);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (m.grounded_ice(i, j)) {
-          PetscReal input = (use_const) ? const_bmelt : (*bmelt)(i,j);
-          W(i,j) = W(i,j) + (input - bwat_decay_rate) * icedt;
+          W(i,j) = W(i,j) + (input(i,j) - bwat_decay_rate) * icedt;
           W(i,j) = PetscMax(0.0, PetscMin(bwat_max, W(i,j)) );
         } else if (m.ice_free_land(i,j)) {
           W(i,j) = 0.0;
@@ -330,7 +369,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
-    ierr = bmelt->end_access(); CHKERRQ(ierr);
+    ierr = input.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
     // valid ghosts for diffusion below
@@ -368,6 +407,7 @@ PISMHydrology_bwp::PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_
             "Pa", "Pa", 0);
 }
 
+
 PetscErrorCode PISMHydrology_bwp::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
@@ -381,3 +421,4 @@ PetscErrorCode PISMHydrology_bwp::compute(IceModelVec* &output) {
   output = result;
   return 0;
 }
+

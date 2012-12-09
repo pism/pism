@@ -29,7 +29,7 @@ for dx in ("100","50","25"):
   bwatvar = nc.variables["bwat"]
   #print bwatvar
   bwat = asarray(squeeze(bwatvar[:])).transpose()
-  print "  max = %9.3f, av = %8.3f" % (bwat.max(),bwat.sum()/(x.size*y.size))
+  print "  [bwat stats:  max = %9.3f m, av = %8.3f m]" % (bwat.max(),bwat.sum()/(x.size*y.size))
 
   print "generating pcolor() image ..."
   pcolor(x/1000.0,y/1000.0,bwat,vmax=650.0)

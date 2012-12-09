@@ -45,10 +45,16 @@ the update() method, which is generally IceModel.
  */
 class PISMHydrology : public PISMComponent_TS {
 public:
-  PISMHydrology(IceGrid &g, const NCConfigVariable &conf) : PISMComponent_TS(g, conf) {}
+  PISMHydrology(IceGrid &g, const NCConfigVariable &conf) : PISMComponent_TS(g, conf) {
+    thk   = NULL;
+    bed   = NULL;
+    bmelt = NULL;
+    mask  = NULL;
+    variables = NULL;
+  }
   virtual ~PISMHydrology() {}
 
-  virtual PetscErrorCode init(PISMVars &vars) = 0;
+  virtual PetscErrorCode init(PISMVars &vars);
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) = 0;
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
@@ -60,9 +66,17 @@ public:
 
   virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result) = 0;
   virtual PetscErrorCode water_pressure(IceModelVec2S &result) = 0;
+
 protected:
+  // pointers into IceModel; these describe the ice sheet and the source
+  IceModelVec2S *thk,   // ice thickness
+                *bed,   // bed elevation (not all models need this)
+                *bmelt; // ice sheet basal melt rate
+  IceModelVec2Int *mask;// floating, grounded, etc. mask
   PISMVars *variables;
+  virtual PetscErrorCode get_input_rate(IceModelVec2S &result);
 };
+
 
 //! \brief Reports the pressure of the water in the subglacial layer.
 class PISMHydrology_bwp : public PISMDiag<PISMHydrology>
@@ -108,11 +122,8 @@ public:
 protected:
   // this model's state
   IceModelVec2S W;      // water layer thickness
-
-  // pointers into IceModel; these describe the ice sheet and the source
-  IceModelVec2S *thk,   // ice thickness
-                *bmelt; // ice sheet basal melt rate
-  IceModelVec2Int *mask;// floating, grounded, etc. mask
+  // this model's workspace
+  IceModelVec2S input;
 
   virtual PetscErrorCode allocate(bool Whasghosts);
 
@@ -189,15 +200,7 @@ protected:
                    Wstag,// edge-centered (staggered) W values (averaged from regular)
                    Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S Wnew;
-  // pointers into IceModel; these describe the ice sheet and the source
-  IceModelVec2S *bed,   // bedrock elevation
-                *thk,   // ice thickness
-                *usurf, // ice surface elevation
-                *bmelt; // ice sheet basal melt rate
-  IceModelVec2Int *mask; // ice geometry type mask
-
-  PetscReal standard_gravity, ice_density, fresh_water_density, sea_water_density;
+  IceModelVec2S input, Wnew;
 
   virtual PetscErrorCode allocate();
 
