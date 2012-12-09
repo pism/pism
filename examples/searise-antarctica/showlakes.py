@@ -11,43 +11,67 @@ except:
 
 nameroot = "lakes"
 
-for dx in ("100","50","25"):
+for dx in ("100","50","25", "15", "10", "5"):
   basename = nameroot + dx + "km"
   filename = basename + ".nc"
+  print "%s: looking for file ..." % filename
   try:
     nc = NC(filename, 'r')
   except:
-    print "can't read from file '%s' ... ENDING" % filename
-    exit(-1)
-  print "loading 'bwat' from %s ..." % filename
+    print "  can't read from file ..."
+    continue
 
   xvar = nc.variables["x"]
   yvar = nc.variables["y"]
   x = asarray(squeeze(xvar[:]))
   y = asarray(squeeze(yvar[:]))
 
-  bwatvar = nc.variables["bwat"]
-  #print bwatvar
-  bwat = asarray(squeeze(bwatvar[:])).transpose()
-  print "  [bwat stats:  max = %9.3f m, av = %8.3f m]" % (bwat.max(),bwat.sum()/(x.size*y.size))
+  for varname in ("bwat", "bwp", "psi"):   # psi must go after bwat, bwp
+    print "  %s:  generating pcolor() image ..." % varname
+    try:
+      if varname == "psi":
+        var = nc.variables["topg"]
+      else:
+        var = nc.variables[varname]
+    except:
+      print "variable '%s' not found ... continuing ..." % varname
+      continue
 
-  print "generating pcolor() image ..."
-  pcolor(x/1000.0,y/1000.0,bwat,vmax=650.0)
-  colorbar()
-  #axis('equal')
-  gca().set_aspect('equal')
-  gca().autoscale(tight=True)
-  xlabel('x  (km)')
-  ylabel('y  (km)')
+    data = asarray(squeeze(var[:])).transpose()
+
+    if varname == "bwat":
+      bwatdata = data.copy()
+    if varname == "bwp":
+      bwpdata = data.copy()
+
+    if varname == "psi":
+      # psi = bwp + rho_w g (topg + bwat)
+      data = bwpdata + 1000.0 * 9.81 * (data + bwatdata)
+
+    if varname == "bwat":
+      units = "m"
+      barmin = 0.0
+      barmax = 650.0
+      scale = 1.0
+    else:
+      units = "bar"
+      barmin = -20.0
+      barmax = 360.0
+      scale = 1.0e5
+
+    print "       [stats:  max = %9.3f %s, av = %8.3f %s]" % \
+          (data.max()/scale,units,data.sum()/(scale*x.size*y.size),units)
+    pcolor(x/1000.0,y/1000.0,data/scale,vmin=barmin,vmax=barmax)
+    colorbar()
+    gca().set_aspect('equal')
+    gca().autoscale(tight=True)
+    xlabel('x  (km)')
+    ylabel('y  (km)')
+    dxpad = "%03d" % int(dx)
+    pngfilename = varname + "_" + dxpad + "km" + ".png"
+    print "    saving figure in %s ..." % pngfilename
+    savefig(pngfilename, dpi=300, bbox_inches='tight')
+    close()
 
   nc.close()
-
-  if len(dx)==3:
-    pngfilename = "bwat_" + dx + "km" + ".png"
-  else:
-    pngfilename = "bwat_" + "0" + dx + "km" + ".png"
-  print "saving figure in %s ..." % pngfilename
-  savefig(pngfilename, dpi=300, bbox_inches='tight')
-  #show()
-  close()
 
