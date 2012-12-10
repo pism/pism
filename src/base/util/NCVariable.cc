@@ -148,7 +148,7 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
     SETERRQ2(com, 1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());
   }
-  
+
   if (utConvert(&units, &glaciological_units, &a, &b) == UT_ECONVERT) {
     SETERRQ3(com, 1, "PISM ERROR: NCVariable '%s': attempted to set glaciological units to '%s', which is not compatible with '%s'.\n",
 	     short_name.c_str(), new_units.c_str(), units_string.c_str());
@@ -404,7 +404,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
       utConvert(&units, &glaciological_units, &slope, &intercept);
       tmp = intercept + slope*default_value;
 
-      ierr = verbPrintf(2, com, 
+      ierr = verbPrintf(2, com,
 			"  absent %s / %-10s\n"
                         "         %s \\ not found; using default constant %7.2f (%s)\n",
 			short_name.c_str(),
@@ -414,7 +414,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
       CHKERRQ(ierr);
       ierr = VecSet(v, default_value); CHKERRQ(ierr);
     } else {			// otherwise leave it alone
-      ierr = verbPrintf(2, com, 
+      ierr = verbPrintf(2, com,
 			"  absent %s / %-10s\n"
                         "         %s \\ not found; continuing without setting it\n",
 			short_name.c_str(),
@@ -682,14 +682,14 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   if (has("standard_name")) {
 
     if (found_by_standard_name) {
-      ierr = verbPrintf(2, com, 
+      ierr = verbPrintf(2, com,
 			" %s / standard_name=%-10s\n"
                         "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 			short_name.c_str(),
 			strings["standard_name"].c_str(), spacer.c_str(), min, max,
 			strings["glaciological_units"].c_str()); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(2, com, 
+      ierr = verbPrintf(2, com,
 			" %s / WARNING! standard_name=%s is missing, found by short_name\n"
                         "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 			short_name.c_str(),
@@ -699,7 +699,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 
   } else {
 
-    ierr = verbPrintf(2, com, 
+    ierr = verbPrintf(2, com,
 		      " %s / %-10s\n"
                       "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 		      short_name.c_str(),
@@ -760,7 +760,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
   dimname = dimensions["x"];
   ierr = nc.inq_dim(dimname, exists); CHKERRQ(ierr);
   if (!exists) {
-    ierr = nc.def_dim(dimname, grid->Mx, x_attrs); CHKERRQ(ierr); 
+    ierr = nc.def_dim(dimname, grid->Mx, x_attrs); CHKERRQ(ierr);
     ierr = nc.put_dim(dimname, grid->x); CHKERRQ(ierr);
   }
 
@@ -768,7 +768,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
   dimname = dimensions["y"];
   ierr = nc.inq_dim(dimname, exists); CHKERRQ(ierr);
   if (!exists) {
-    ierr = nc.def_dim(dimname, grid->My, y_attrs); CHKERRQ(ierr); 
+    ierr = nc.def_dim(dimname, grid->My, y_attrs); CHKERRQ(ierr);
     ierr = nc.put_dim(dimname, grid->y); CHKERRQ(ierr);
   }
 
@@ -777,7 +777,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
   if (dimname.empty() == false) {
     ierr = nc.inq_dim(dimname, exists); CHKERRQ(ierr);
     if (!exists) {
-      ierr = nc.def_dim(dimname, nlevels, z_attrs); CHKERRQ(ierr); 
+      ierr = nc.def_dim(dimname, nlevels, z_attrs); CHKERRQ(ierr);
       ierr = nc.put_dim(dimname, zlevels); CHKERRQ(ierr);
     }
   }
@@ -803,7 +803,7 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, PISM_IO_Type nctype,
     z = dimensions["z"],
     t = dimensions["t"];
 
-  ierr = nc.redef(); CHKERRQ(ierr); 
+  ierr = nc.redef(); CHKERRQ(ierr);
 
   if (!time_independent) {
     dims.push_back(t);
@@ -933,6 +933,15 @@ bool NCVariable::is_valid(PetscScalar a) const {
   return true;
 }
 
+NCConfigVariable::NCConfigVariable() {
+  options_left_set = false;
+  PISMOptionsIsSet("-options_left", options_left_set);
+}
+
+NCConfigVariable::~NCConfigVariable() {
+  warn_about_unused_parameters();
+}
+
 
 PetscErrorCode NCConfigVariable::read(string filename) {
   PetscErrorCode ierr;
@@ -983,7 +992,7 @@ PetscErrorCode NCConfigVariable::write(const PIO &nc) {
   if (!variable_exists) {
     ierr = define(nc, PISM_BYTE, false); CHKERRQ(ierr);
   } else {
-    ierr = write_attributes(nc, PISM_DOUBLE, false); CHKERRQ(ierr); 
+    ierr = write_attributes(nc, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
 
   return 0;
@@ -994,7 +1003,7 @@ PetscErrorCode NCConfigVariable::define(const PIO &nc, PISM_IO_Type type, bool) 
   int ierr;
   bool exists;
 
-  ierr = nc.inq_var(short_name, exists); CHKERRQ(ierr); 
+  ierr = nc.inq_var(short_name, exists); CHKERRQ(ierr);
   if (exists)
     return 0;
 
@@ -1003,14 +1012,12 @@ PetscErrorCode NCConfigVariable::define(const PIO &nc, PISM_IO_Type type, bool) 
   vector<string> dims;
   ierr = nc.def_var(short_name, type, dims); CHKERRQ(ierr);
 
-  ierr = write_attributes(nc, PISM_DOUBLE, false); CHKERRQ(ierr); 
+  ierr = write_attributes(nc, PISM_DOUBLE, false); CHKERRQ(ierr);
 
   return 0;
 }
 
-//! Returns a \c double parameter. Stops if it was not found.
-double NCConfigVariable::get(string name) const {
-
+double NCConfigVariable::get_quiet(string name) const {
   if (doubles.find(name) != doubles.end()) {
     return NCVariable::get(name);
   } else {
@@ -1022,21 +1029,24 @@ double NCConfigVariable::get(string name) const {
   return 0;			// can't happen
 }
 
-double NCConfigVariable::get(string name, string u1, string u2) const {
-  return convert(this->get(name), u1.c_str(), u2.c_str());
+string NCConfigVariable::get_string_quiet(string name) const {
+  map<string,string>::const_iterator j = strings.find(name);
+  if (j != strings.end())
+    return j->second;
+  else {
+    PetscPrintf(com,
+		"PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
+		name.c_str(), config_filename.c_str());
+    PISMEnd();
+  }
+
+  return string();		// will never happen
 }
 
-
-//! Returns a boolean flag by name. Unset flags are treated as if they are set to 'false'.
-/*!
-  Strings "false", "no", "off" are interpreted as 'false'; "true", "on", "yes" -- as 'true'.
-
-  Any other string produces an error.
- */
-bool NCConfigVariable::get_flag(string name) const {
-
+bool NCConfigVariable::get_flag_quiet(string name) const {
   map<string,string>::const_iterator j = strings.find(name);
   if (j != strings.end()) {
+
     const string &value = j->second;
 
     if ((value == "false") ||
@@ -1064,26 +1074,48 @@ bool NCConfigVariable::get_flag(string name) const {
   return true;			// will never happen
 }
 
+
+//! Returns a \c double parameter. Stops if it was not found.
+double NCConfigVariable::get(string name) const {
+  if (options_left_set)
+    parameters_used.insert(name);
+
+  return this->get_quiet(name);
+}
+
+double NCConfigVariable::get(string name, string u1, string u2) const {
+  // always use get() (*not* _quiet) here
+  return convert(this->get(name), u1.c_str(), u2.c_str());
+}
+
+
+//! Returns a boolean flag by name. Unset flags are treated as if they are set to 'false'.
+/*!
+  Strings "false", "no", "off" are interpreted as 'false'; "true", "on", "yes" -- as 'true'.
+
+  Any other string produces an error.
+ */
+bool NCConfigVariable::get_flag(string name) const {
+  if (options_left_set)
+    parameters_used.insert(name);
+
+  return this->get_flag_quiet(name);
+}
+
 //! \brief Get a string attribute by name.
 string NCConfigVariable::get_string(string name) const {
+  if (options_left_set)
+    parameters_used.insert(name);
 
-  map<string,string>::const_iterator j = strings.find(name);
-  if (j != strings.end())
-    return j->second;
-  else {
-    PetscPrintf(com,
-		"PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
-		name.c_str(), config_filename.c_str());
-    PISMEnd();
-  }
-
-  return string();		// will never happen
+  return this->get_string_quiet(name);
 }
 
 //! Set a value of a boolean flag.
 void NCConfigVariable::set_flag(string name, bool value) {
-  if (value) strings[name] = "true";
-  else       strings[name] = "false";
+  if (value)
+    strings[name] = "true";
+  else
+    strings[name] = "false";
 }
 
 //! Write attributes to a NetCDF variable. All attributes are equal here.
@@ -1123,18 +1155,18 @@ PetscErrorCode NCConfigVariable::write_attributes(const PIO &nc, PISM_IO_Type nc
   \li if -foo is set, calls set_flag("foo", true),
 
   \li if -no_foo is set, calls set_flag("foo", false),
-  
+
   \li if both are set, prints an error message and stops,
 
   \li if none, does nothing.
-  
+
  */
 PetscErrorCode NCConfigVariable::flag_from_option(string name, string flag) {
   PetscErrorCode ierr;
   bool foo = false,
     no_foo = false;
 
-  ierr = PISMOptionsIsSet("-" + name, get_string(flag + "_doc"), foo); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-" + name, get_string_quiet(flag + "_doc"), foo); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-no_" + name, no_foo); CHKERRQ(ierr);
 
   if (foo && no_foo) {
@@ -1144,10 +1176,10 @@ PetscErrorCode NCConfigVariable::flag_from_option(string name, string flag) {
   }
 
   if (foo)
-    set_flag(flag, true);
+    set_flag_from_option(flag, true);
 
   if (no_foo)
-    set_flag(flag, false);
+    set_flag_from_option(flag, false);
 
   return 0;
 }
@@ -1164,29 +1196,31 @@ PetscErrorCode NCConfigVariable::flag_from_option(string name, string flag) {
  */
 PetscErrorCode NCConfigVariable::scalar_from_option(string name, string parameter) {
   PetscErrorCode ierr;
-  PetscReal value = get(parameter);
+  PetscReal value = get_quiet(parameter);
   bool flag;
-  
+
   ierr = PISMOptionsReal("-" + name,
-			 get_string(parameter + "_doc"),
+			 get_string_quiet(parameter + "_doc"),
 			 value, flag); CHKERRQ(ierr);
-  if (flag)
-    this->set(parameter, value);
-  
+  if (flag) {
+    this->set_scalar_from_option(parameter, value);
+  }
+
   return 0;
 }
 
 PetscErrorCode NCConfigVariable::string_from_option(string name, string parameter) {
   PetscErrorCode ierr;
-  string value = get_string(parameter);
+  string value = get_string_quiet(parameter);
   bool flag;
-  
+
   ierr = PISMOptionsString("-" + name,
-                           get_string(parameter + "_doc"),
+                           get_string_quiet(parameter + "_doc"),
                            value, flag); CHKERRQ(ierr);
-  if (flag)
-    this->set_string(parameter, value);
-  
+  if (flag) {
+    this->set_string_from_option(parameter, value);
+  }
+
   return 0;
 }
 
@@ -1201,7 +1235,7 @@ PetscErrorCode NCConfigVariable::keyword_from_option(string name,
                                                      string choices_list) {
   PetscErrorCode ierr;
   istringstream arg(choices_list);
-  std::set<string> choices;     // the method "set(...)" is getting in the way here
+  std::set<string> choices;     // resolve the name clash: "this->set(...)" vs. "std::set"
   string keyword, tmp;
   bool flag;
 
@@ -1210,15 +1244,51 @@ PetscErrorCode NCConfigVariable::keyword_from_option(string name,
     choices.insert(tmp);
 
   ierr = PISMOptionsList(com, "-" + name,
-                         get_string(parameter + "_doc"),
+                         get_string_quiet(parameter + "_doc"),
 			 choices,
-                         get_string(parameter), keyword, flag); CHKERRQ(ierr);
+                         get_string_quiet(parameter), keyword, flag); CHKERRQ(ierr);
 
-  if (flag)
-    this->set_string(parameter, keyword);
+  if (flag) {
+    this->set_string_from_option(parameter, keyword);
+  }
 
   return 0;
 }
+
+PetscErrorCode NCConfigVariable::set_flag_from_option(string name, bool value) {
+
+  parameters_set.insert(name);
+
+  this->set_flag(name, value);
+
+  return 0;
+}
+
+PetscErrorCode NCConfigVariable::set_scalar_from_option(string name, double value) {
+
+  parameters_set.insert(name);
+
+  this->set(name, value);
+
+  return 0;
+}
+
+PetscErrorCode NCConfigVariable::set_string_from_option(string name, string value) {
+
+  parameters_set.insert(name);
+
+  this->set_string(name, value);
+
+  return 0;
+}
+
+PetscErrorCode NCConfigVariable::set_keyword_from_option(string name, string value) {
+
+  this->set_string_from_option(name, value);
+
+  return 0;
+}
+
 
 //! Print all the attributes of a configuration variable.
 PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
@@ -1246,7 +1316,7 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
     vector<double> values = j->second;
 
     if (values.empty()) continue;
-    
+
     if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
       // use scientific notation if a number is big or small
       ierr = verbPrintf(vt, com, "  %s = %12.3e\n",
@@ -1256,6 +1326,21 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
 		        name.c_str(), values[0]); CHKERRQ(ierr);
     }
 
+  }
+
+  std::set<string>::const_iterator k;
+  string output;
+
+  for (k = parameters_set.begin(); k != parameters_set.end(); ++k) {
+    if (k == parameters_set.begin())
+      output += *k;
+    else
+      output += string(", ") + (*k);
+  }
+
+  if (output.empty() == false) {
+    ierr = verbPrintf(vt, com, "PISM flags and parameters set from the command line:\n  %s\n",
+                      output.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
@@ -1269,12 +1354,16 @@ string NCConfigVariable::get_config_filename() const {
 //! Imports values from the other config variable, silently overwriting present values.
 void NCConfigVariable::import_from(const NCConfigVariable &other) {
   map<string, vector<double> >::const_iterator j;
-  for (j = other.doubles.begin(); j != other.doubles.end(); ++j)
+  for (j = other.doubles.begin(); j != other.doubles.end(); ++j) {
     doubles[j->first] = j->second;
+    parameters_set.insert(j->first);
+  }
 
   map<string,string>::const_iterator k;
-  for (k = other.strings.begin(); k != other.strings.end(); ++k)
+  for (k = other.strings.begin(); k != other.strings.end(); ++k) {
     strings[k->first] = k->second;
+    parameters_set.insert(j->first);
+  }
 }
 
 //! Update values from the other config variable, overwriting present values but avoiding adding new ones.
@@ -1283,18 +1372,42 @@ void NCConfigVariable::update_from(const NCConfigVariable &other) {
   map<string, vector<double> >::const_iterator i;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
     i = other.doubles.find(j->first);
-    if (i != other.doubles.end())
+    if (i != other.doubles.end()) {
       j->second = i->second;
+      parameters_set.insert(j->first);
+    }
   }
 
   map<string,string>::iterator k;
   map<string,string>::const_iterator m;
   for (k = strings.begin(); k != strings.end(); ++k) {
     m = other.strings.find(k->first);
-    if (m != other.strings.end())
+    if (m != other.strings.end()) {
       k->second = m->second;
+      parameters_set.insert(k->first);
+    }
   }
 }
+
+PetscErrorCode NCConfigVariable::warn_about_unused_parameters() const {
+  PetscErrorCode ierr;
+
+  if (options_left_set == false)
+    return 0;
+
+  std::set<string>::const_iterator k;
+  for (k = parameters_set.begin(); k != parameters_set.end(); ++k) {
+    if (parameters_used.find(*k) == parameters_used.end()) {
+      ierr = verbPrintf(2, com,
+                        "PISM WARNING: flag or parameter \"%s\" was set but was not used!\n",
+                        k->c_str()); CHKERRQ(ierr);
+
+    }
+  }
+
+  return 0;
+}
+
 
 //! \brief Initialize the time-series object.
 void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
@@ -1410,7 +1523,7 @@ PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
 
   string spacer(short_name.size(), ' ');
 
-  ierr = verbPrintf(2, com, 
+  ierr = verbPrintf(2, com,
 		    "  FOUND  %s / %-60s\n"
                     "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
 		    short_name.c_str(),
@@ -1814,7 +1927,7 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, PISM_IO_Type nctype, bool) {
   vector<string> dims;
   bool exists;
 
-  ierr = nc.inq_var(short_name, exists); CHKERRQ(ierr); 
+  ierr = nc.inq_var(short_name, exists); CHKERRQ(ierr);
   if (exists)
     return 0;
 
