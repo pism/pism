@@ -1332,6 +1332,10 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
   string output;
 
   for (k = parameters_set.begin(); k != parameters_set.end(); ++k) {
+
+    if (ends_with(*k, "_doc"))
+      continue;
+
     if (k == parameters_set.begin())
       output += *k;
     else
@@ -1362,7 +1366,7 @@ void NCConfigVariable::import_from(const NCConfigVariable &other) {
   map<string,string>::const_iterator k;
   for (k = other.strings.begin(); k != other.strings.end(); ++k) {
     strings[k->first] = k->second;
-    parameters_set.insert(j->first);
+    parameters_set.insert(k->first);
   }
 }
 
@@ -1374,7 +1378,6 @@ void NCConfigVariable::update_from(const NCConfigVariable &other) {
     i = other.doubles.find(j->first);
     if (i != other.doubles.end()) {
       j->second = i->second;
-      parameters_set.insert(j->first);
     }
   }
 
@@ -1384,7 +1387,6 @@ void NCConfigVariable::update_from(const NCConfigVariable &other) {
     m = other.strings.find(k->first);
     if (m != other.strings.end()) {
       k->second = m->second;
-      parameters_set.insert(k->first);
     }
   }
 }
@@ -1397,6 +1399,10 @@ PetscErrorCode NCConfigVariable::warn_about_unused_parameters() const {
 
   std::set<string>::const_iterator k;
   for (k = parameters_set.begin(); k != parameters_set.end(); ++k) {
+
+    if (ends_with(*k, "_doc"))
+      continue;
+
     if (parameters_used.find(*k) == parameters_used.end()) {
       ierr = verbPrintf(2, com,
                         "PISM WARNING: flag or parameter \"%s\" was set but was not used!\n",
