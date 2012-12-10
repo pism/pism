@@ -726,17 +726,20 @@ PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
 
 //! \brief Decide which subglacial hydrology model to use.
 PetscErrorCode IceModel::allocate_subglacial_hydrology() {
+  string hydrology_model = config.get_string("hydrology_model");
+
   if (subglacial_hydrology != NULL) // indicates it has already been allocated
     return 0;
-  if      (config.get_string("hydrology_model") == "tillcan")
+  if      (hydrology_model == "tillcan")
     subglacial_hydrology = new PISMTillCanHydrology(grid, config, false);
-  else if (config.get_string("hydrology_model") == "diffuseonly")
+  else if (hydrology_model == "diffuseonly")
     subglacial_hydrology = new PISMDiffuseOnlyHydrology(grid, config);
-  else if (config.get_string("hydrology_model") == "lakes")
+  else if (hydrology_model == "lakes")
     subglacial_hydrology = new PISMLakesHydrology(grid, config);
-  else if (config.get_string("hydrology_model") == "distributed")
+  else if (hydrology_model == "distributed")
     subglacial_hydrology = new PISMDistributedHydrology(grid, config, stress_balance);
   else { SETERRQ(grid.com,1,"unknown value for 'hydrology_model'"); }
+
   return 0;
 }
 
@@ -770,15 +773,7 @@ PetscErrorCode IceModel::allocate_basal_resistance_law() {
   if (basal != NULL)
     return 0;
 
-  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till");
-  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
-    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/s"),
-    plastic_regularization = config.get("plastic_regularization", "1/year", "1/second");
-
-  basal = new IceBasalResistancePlasticLaw(plastic_regularization,
-                                           do_pseudo_plastic_till,
-                                           pseudo_plastic_q,
-                                           pseudo_plastic_uthreshold);
+  basal = new IceBasalResistancePlasticLaw(config);
 
   return 0;
 }

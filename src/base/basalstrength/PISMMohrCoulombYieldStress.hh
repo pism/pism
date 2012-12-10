@@ -37,7 +37,6 @@ struct BWPparams {
 //! \brief PISM's default basal yield stress model.
 class PISMMohrCoulombYieldStress : public PISMYieldStress
 {
-  friend class PYS_bwp;
 public:
   PISMMohrCoulombYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro)
     : PISMYieldStress(g, conf)
@@ -67,7 +66,7 @@ public:
     ice_density = config.get("ice_density");
     standard_gravity = config.get("standard_gravity");
     till_c_0 = config.get("till_c_0", "kPa", "Pa");
-    bwat_max = config.get("bwat_max");
+    bwat_max = config.get("hydrology_bwat_max");
   }
 
   virtual ~PISMMohrCoulombYieldStress() {}
