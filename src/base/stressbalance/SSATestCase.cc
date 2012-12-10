@@ -173,7 +173,8 @@ PetscErrorCode SSATestCase::report(string testname) {
   PetscScalar gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
     gmaxuerr = 0.0, gmaxverr = 0.0;
 
-  if (config.get_flag("do_pseudo_plastic_till")) {
+  if (config.get_flag("do_pseudo_plastic_till") &&
+      config.get("pseudo_plastic_q") != 1.0) {
     ierr = verbPrintf(1,grid.com, 
                     "WARNING: numerical errors not valid for pseudo-plastic till\n"); CHKERRQ(ierr);
   }

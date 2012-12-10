@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,13 +20,17 @@
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
 
-IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(
-             PetscScalar regularizationConstant, bool pseudoPlastic,
-             PetscScalar pseudoExponent, PetscScalar pseudoUThreshold) {
-  plastic_regularize = regularizationConstant;
-  pseudo_plastic = pseudoPlastic;
-  pseudo_q = pseudoExponent;
-  pseudo_u_threshold = pseudoUThreshold;
+IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const NCConfigVariable &config) {
+  plastic_regularize = config.get("plastic_regularization", "1/year", "1/second");
+  pseudo_plastic = config.get_flag("do_pseudo_plastic_till");
+
+  if (pseudo_plastic == true) {
+    pseudo_q = config.get("pseudo_plastic_q");
+    pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
+  } else {
+    pseudo_q = 0.0;             // irrelevant
+    pseudo_u_threshold = 0.0;   // irrelevant
+  }
 }
 
 PetscErrorCode IceBasalResistancePlasticLaw::printInfo(int verbthresh, MPI_Comm com) {

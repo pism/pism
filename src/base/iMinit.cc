@@ -725,15 +725,7 @@ PetscErrorCode IceModel::allocate_basal_resistance_law() {
   if (basal != NULL)
     return 0;
 
-  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till");
-  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
-    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/s"),
-    plastic_regularization = config.get("plastic_regularization", "1/year", "1/second");
-
-  basal = new IceBasalResistancePlasticLaw(plastic_regularization,
-                                           do_pseudo_plastic_till,
-                                           pseudo_plastic_q,
-                                           pseudo_plastic_uthreshold);
+  basal = new IceBasalResistancePlasticLaw(config);
 
   return 0;
 }

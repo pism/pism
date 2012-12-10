@@ -141,8 +141,6 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 
   const PetscScalar adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
 
-  const PetscInt skip_max = static_cast<PetscInt>(config.get("skip_max"));
-
   const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
 
   ierr = stress_balance->get_max_diffusivity(gDmax); CHKERRQ(ierr);
@@ -152,6 +150,7 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
   if (do_skip && (skipCountDown == 0)) {
+    const PetscInt skip_max = static_cast<PetscInt>(config.get("skip_max"));
     const PetscScalar  conservativeFactor = 0.95;
     // typically "dt" in next line is from CFL for advection in temperature equation,
     //   but in fact it might be from other restrictions, e.g. CFL for mass continuity
