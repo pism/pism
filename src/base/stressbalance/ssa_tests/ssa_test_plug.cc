@@ -90,13 +90,8 @@ PetscErrorCode SSATestCasePlug::initializeGrid(PetscInt Mx,PetscInt My)
 
 PetscErrorCode SSATestCasePlug::initializeSSAModel()
 {
-  // The following is irrelevant because tauc=0
-  PetscScalar linear_q = 1.;
-  basal = new IceBasalResistancePlasticLaw(
-         config.get("plastic_regularization", "1/year", "1/second"),
-         true, // do not force a pure-plastic law
-         linear_q,
-         config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
+  // Configuration parameters used by IceBasalResistancePlasticLaw are irrelevant because tauc=0
+  basal = new IceBasalResistancePlasticLaw(config);
 
   // Enthalpy converter is irrelevant (but still required) for this test.
   enthalpyconverter = new EnthalpyConverter(config);

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -40,12 +40,8 @@ class testi(PISM.ssa.SSAExactTestCase):
 
   def _initPhysics(self):
     config = self.config
-    do_pseudo_plastic = True
-    plastic_q = 0.
-    basal = PISM.IceBasalResistancePlasticLaw(
-      config.get("plastic_regularization","1/year","1/second"),
-      do_pseudo_plastic, plastic_q,
-      config.get("pseudo_plastic_uthreshold","1/year","1/second"));
+    config.set_flag("do_pseudo_plastic_till", False)
+    basal = PISM.IceBasalResistancePlasticLaw(config)
 
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);

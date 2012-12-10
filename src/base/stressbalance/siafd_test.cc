@@ -430,11 +430,7 @@ int main(int argc, char *argv[]) {
 
     // This is never used (but it is a required argument of the
     // PISMStressBalance constructor).
-    IceBasalResistancePlasticLaw basal(
-           config.get("plastic_regularization", "1/year", "1/second"), 
-           config.get_flag("do_pseudo_plastic_till"),
-           config.get("pseudo_plastic_q"),
-           config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
+    IceBasalResistancePlasticLaw basal(config);
 
     // Create the SIA solver object:
 

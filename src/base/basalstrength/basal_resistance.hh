@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define __basal_resistance_hh
 
 #include <petscsys.h>
+#include "NCVariable.hh"
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!
@@ -28,8 +29,7 @@ viscous till to purely plastic till.
  */
 class IceBasalResistancePlasticLaw {
 public:
-  IceBasalResistancePlasticLaw(PetscScalar regularizationConstant, bool pseudoPlastic,
-                   PetscScalar pseudoExponent, PetscScalar pseudoUThreshold);
+  IceBasalResistancePlasticLaw(const NCConfigVariable &config);
   virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar tauc,
                            PetscScalar vx, PetscScalar vy);

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -63,11 +63,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     config.set_flag("compute_surf_grad_inward_ssa", True);
     config.set_flag("calving_front_stress_boundary_condition", True);
 
-    basal = PISM.IceBasalResistancePlasticLaw(
-           config.get("plastic_regularization", "1/year", "1/second"),
-           config.get_flag("do_pseudo_plastic_till"),
-           config.get("pseudo_plastic_q"),
-           config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
+    basal = PISM.IceBasalResistancePlasticLaw(config)
 
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
