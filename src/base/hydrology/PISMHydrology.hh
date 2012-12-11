@@ -65,6 +65,7 @@ public:
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
 
   virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
   virtual PetscErrorCode water_pressure(IceModelVec2S &result) = 0;
 
 protected:
@@ -205,7 +206,6 @@ protected:
   virtual PetscErrorCode allocate();
 
   virtual PetscErrorCode check_Wpositive();
-  virtual PetscErrorCode update_overburden(IceModelVec2S &result);
   virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);

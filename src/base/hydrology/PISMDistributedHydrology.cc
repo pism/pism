@@ -172,19 +172,6 @@ PetscErrorCode PISMLakesHydrology::water_pressure(IceModelVec2S &result) {
 }
 
 
-//! Update the overburden pressure from ice thickness.
-/*!
-Accesses thk from PISMVars, which points into IceModel.
- */
-PetscErrorCode PISMLakesHydrology::update_overburden(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  // P_o = rho_i g H
-  ierr = result.copy_from(*thk); CHKERRQ(ierr);
-  ierr = result.scale(config.get("ice_density") * config.get("standard_gravity")); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Get the hydraulic potential from bedrock topography and current state variables.
 /*!
 Computes \f$\psi = P + \rho_w g (b + W)\f$.

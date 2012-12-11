@@ -50,6 +50,20 @@ void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
 }
 
 
+//! Update the overburden pressure from ice thickness.
+/*!
+Uses the standard hydrostatic (shallow) approximation of overburden pressure,
+  \f[ P_0 = \rho_i g H \f]
+Accesses H=thk from PISMVars, which points into IceModel.
+ */
+PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  ierr = result.copy_from(*thk); CHKERRQ(ierr);
+  ierr = result.scale(config.get("ice_density") * config.get("standard_gravity")); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Compute the water input rate into the basal hydrology layer according to configuration and mask.
 PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
   PetscErrorCode ierr;
