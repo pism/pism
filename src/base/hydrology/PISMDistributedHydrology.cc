@@ -166,7 +166,7 @@ where \f$\lambda\f$=till_pw_fraction and \f$P_o\f$ is the overburden pressure.
  */
 PetscErrorCode PISMLakesHydrology::water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = update_overburden(result); CHKERRQ(ierr);
+  ierr = overburden_pressure(result); CHKERRQ(ierr);
   ierr = result.scale(config.get("till_pw_fraction")); CHKERRQ(ierr);
   return 0;
 }
@@ -672,7 +672,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   ierr = P.endGhostComm(); CHKERRQ(ierr);
 
   // from current ice geometry/velocity variables, initialize Po and cbase
-  ierr = update_overburden(Po); CHKERRQ(ierr);
+  ierr = overburden_pressure(Po); CHKERRQ(ierr);
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
   PetscReal ht, hdt, // hydrology model time and time step
