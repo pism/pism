@@ -52,7 +52,7 @@ public:
   virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
                                   PetscScalar *drag, PetscScalar *ddrag) const;
 protected:
-  PetscReal pseudo_q, pseudo_u_threshold;
+  PetscReal pseudo_q, pseudo_u_threshold, sliding_scale;
 };
 
 #endif /* __basal_resistance_hh */

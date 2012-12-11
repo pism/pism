@@ -63,6 +63,7 @@ IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const NCC
   : IceBasalResistancePlasticLaw(config) {
   pseudo_q = config.get("pseudo_plastic_q");
   pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
+  sliding_scale = config.get("sliding_scale_factor_reduces_tauc");
 }
 
 PetscErrorCode IceBasalResistancePseudoPlasticLaw::printInfo(int verbthresh, MPI_Comm com) {
@@ -102,11 +103,42 @@ The linearly-viscous till case pseudo_q = 1.0 is allowed, in which case
 is also allowed; note that there is still a regularization with data member
 plastic_regularize.
  */
+/*! One can scale tauc if desired:
+
+A scale factor of \f$A\f$ is intended to increase basal sliding rate by
+\f$A\f$.  It would have exactly this effect \e if the driving stress were
+\e hypothetically completely held by the basal resistance.  Thus this scale factor
+is used to reduce (if \c -sliding_scale \f$A\f$ with \f$A > 1\f$) or increase
+(if \f$A < 1\f$) the value of the (pseudo-) yield stress \c tauc.  The concept
+behind this is described at
+http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
+
+Specifically, the concept behind this mechanism is to suppose equality of driving
+and basal shear stresses,
+    \f[ \rho g H \nabla h = \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}. \f]
+(<i>For emphasis:</i> The membrane stress held by the ice itself is missing from
+this incomplete stress balance.)  Thus the pseudo yield stress
+\f$\tau_c\f$ would be related to the sliding speed \f$|\mathbf{U}|\f$ by
+  \f[ |\mathbf{U}| = \frac{C}{\tau_c^{1/q}} \f]
+for some (geometry-dependent) constant \f$C\f$.  Multiplying \f$|\mathbf{U}|\f$
+by \f$A\f$ in this equation corresponds to dividing \f$\tau_c\f$ by \f$A^q\f$.
+
+  Note that the mechanism has no effect whatsoever if
+\f$q=0\f$, which is the purely plastic case. In that case there is \e no direct
+relation between the yield stress and the sliding velocity, and the difference
+between the driving stress and the yield stress is entirely held by the membrane
+stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1\f$.)
+*/
 PetscScalar IceBasalResistancePseudoPlasticLaw::drag(PetscScalar tauc,
                                                      PetscScalar vx, PetscScalar vy) {
   const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
-  return tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+  if (sliding_scale > 0.0) {
+    double Aq = pow(sliding_scale, pseudo_q);
+    return (tauc / Aq) * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+  } else {
+    return tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+  }
 }
 
 
@@ -116,7 +148,12 @@ void IceBasalResistancePseudoPlasticLaw::dragWithDerivative(PetscReal tauc, Pets
 {
   const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
-  *d = tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+  if (sliding_scale > 0.0) {
+    double Aq = pow(sliding_scale, pseudo_q);
+    *d = (tauc / Aq) * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+  } else {
+    *d =  tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+  }
 
   if (dd)
     *dd = (pseudo_q - 1) * (*d) / magreg2;
