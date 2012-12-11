@@ -9,11 +9,11 @@ SeaRISE submission.  Most of the modeling in this example is explained in
 Getting and preprocessing the data
 ---------
 
-To use, first we download the data and do the preprocessing by calling one
+First download the data and do the preprocessing by calling the `preprocess.sh`
 script.  The downloaded files `Antarctica_5km_dev1.0.nc` (105 MB) and
 `ANT_climate_forcing_2004_2098_v3.nc` (1.1 GB) are described at
 <http://websrv.cs.umt.edu/isis/index.php/Present_Day_Antarctica>.
-This step downloads with `wget` and uses NCO to preprocess to PISM-ready
+This script downloads with `wget` and uses NCO to preprocess to PISM-ready
 condition:
 
     $ ./preprocess.sh
