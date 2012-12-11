@@ -99,7 +99,6 @@ read-in-from-file state or with a default constant value from the config file.
 PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
 {
   PetscErrorCode ierr;
-  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q");
   bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set,
     tauc_to_phi_set;
   string filename;
@@ -134,25 +133,6 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
                             bootstrap); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-tauc_to_phi", "Compute tillphi as a function of tauc and the rest of the model state",
                             tauc_to_phi_set); CHKERRQ(ierr);
-    bool scaleSet = false;
-    double slidescale = 0.0;
-    ierr = PISMOptionsReal("-sliding_scale",
-                           "Divides pseudo-plastic tauc (yield stress) by given factor;"
-                           " this would increase sliding by given factor in absence of membrane stresses",
-                           slidescale, scaleSet); CHKERRQ(ierr);
-    if (scaleSet) { // only modify config if option set; otherwise leave alone
-      if (slidescale > 0.0) {
-        ierr = verbPrintf(2, grid.com,
-                          "option -sliding_scale read; pseudo yield stress tauc will be divided by %.4f to\n"
-                          "  cause notional sliding speed-up by given factor %.4f ...\n",
-                          pow(slidescale, pseudo_plastic_q), slidescale);  CHKERRQ(ierr);
-        sliding_scale = slidescale;
-      } else {
-        ierr = verbPrintf(1, grid.com,
-                          "PISM WARNING: negative or zero value given for option -sliding_scale ignored\n");
-        CHKERRQ(ierr);
-      }
-    }
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -397,35 +377,6 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   ierr = till_phi.end_access(); CHKERRQ(ierr);
   ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
   ierr = bwat_copy.end_access(); CHKERRQ(ierr);
-
-/* scale tauc if desired:
-A scale factor of \f$A\f$ is intended to increase basal sliding rate by
-\f$A\f$.  It would have exactly this effect \e if the driving stress were
-\e hypothetically completely held by the basal resistance.  Thus this scale factor
-is used to reduce (if \c -sliding_scale \f$A\f$ with \f$A > 1\f$) or increase
-(if \f$A < 1\f$) the value of the (pseudo-) yield stress \c tauc.  The concept
-behind this is described at
-http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
-Specifically, the concept behind this mechanism is to suppose equality of driving
-and basal shear stresses,
-    \f[ \rho g H \nabla h = \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}. \f]
-(<i>For emphasis:</i> The membrane stress held by the ice itself is missing from
-this incomplete stress balance.)  Thus the pseudo yield stress
-\f$\tau_c\f$ would be related to the sliding speed \f$|\mathbf{U}|\f$ by
-  \f[ |\mathbf{U}| = \frac{C}{\tau_c^{1/q}} \f]
-for some (geometry-dependent) constant \f$C\f$.  Multiplying \f$|\mathbf{U}|\f$
-by \f$A\f$ in this equation corresponds to dividing \f$\tau_c\f$ by \f$A^q\f$.
-The current method sets-up the mechanism, and updateYieldStressUsingBasalWater()
-actually computes it.  Note that the mechanism has no effect whatsoever if
-\f$q=0\f$, which is the purely plastic case. In that case there is \e no direct
-relation between the yield stress and the sliding velocity, and the difference
-between the driving stress and the yield stress is entirely held by the membrane
-stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1\f$.)
-*/
-  if (sliding_scale > 0.0) {
-    const PetscScalar q = config.get("pseudo_plastic_q");
-    tauc.scale(1.0 / pow(sliding_scale, q));
-  }
 
   return 0;
 }

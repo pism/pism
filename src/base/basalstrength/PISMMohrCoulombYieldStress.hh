@@ -41,7 +41,6 @@ public:
   PISMMohrCoulombYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro)
     : PISMYieldStress(g, conf)
   {
-    sliding_scale = -1.0;
     basal_water_thickness = NULL;
     basal_melt_rate = NULL;
     ice_thickness = NULL;
@@ -85,7 +84,7 @@ public:
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 protected:
   PetscReal standard_gravity, ice_density,
-    till_pw_fraction, bwat_max, sliding_scale, till_c_0;
+    till_pw_fraction, bwat_max, till_c_0;
   IceModelVec2S till_phi, tauc, bwat_copy;
   IceModelVec2S *basal_water_thickness, *basal_melt_rate, *ice_thickness,
     *bed_topography;
