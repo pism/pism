@@ -136,11 +136,7 @@ class testi_run(PISM.invert_ssa.InvSSARun):
 
   def _initPhysics(self):
     config = self.config
-    basal = PISM.IceBasalResistancePlasticLaw(
-         config.get("plastic_regularization") / PISM.secpera,
-         config.get_flag("do_pseudo_plastic_till"),
-         config.get("pseudo_plastic_q"),
-         config.get("pseudo_plastic_uthreshold") / PISM.secpera);
+    basal = PISM.IceBasalResistancePlasticLaw(config)
 
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);

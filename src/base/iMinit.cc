@@ -773,7 +773,10 @@ PetscErrorCode IceModel::allocate_basal_resistance_law() {
   if (basal != NULL)
     return 0;
 
-  basal = new IceBasalResistancePlasticLaw(config);
+  if (config.get_flag("do_pseudo_plastic_till") == true)
+    basal = new IceBasalResistancePseudoPlasticLaw(config);
+  else
+    basal = new IceBasalResistancePlasticLaw(config);
 
   return 0;
 }

@@ -89,7 +89,10 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
   config.set_string("ssa_flow_law", "isothermal_glen");
   config.set_string("output_variable_order", "zyx");
 
-  basal = new IceBasalResistancePlasticLaw(config);
+  if (config.get_flag("do_pseudo_plastic_till") == true)
+      basal = new IceBasalResistancePseudoPlasticLaw(config);
+  else
+      basal = new IceBasalResistancePlasticLaw(config);
 
   enthalpyconverter = new EnthalpyConverter(config);
 

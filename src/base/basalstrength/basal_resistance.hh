@@ -30,16 +30,29 @@ viscous till to purely plastic till.
 class IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePlasticLaw(const NCConfigVariable &config);
+  virtual ~IceBasalResistancePlasticLaw() {}
   virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar tauc,
                            PetscScalar vx, PetscScalar vy);
   // Also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
   virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
                                   PetscScalar *drag, PetscScalar *ddrag) const;
-  virtual ~IceBasalResistancePlasticLaw() {}
+protected:
+  double plastic_regularize;
+};
 
-  PetscReal   plastic_regularize, pseudo_q, pseudo_u_threshold;
-  bool pseudo_plastic;
+class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
+public:
+  IceBasalResistancePseudoPlasticLaw(const NCConfigVariable &config);
+  virtual ~IceBasalResistancePseudoPlasticLaw() {}
+  virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
+  virtual PetscScalar drag(PetscScalar tauc,
+                           PetscScalar vx, PetscScalar vy);
+  // Also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
+  virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
+                                  PetscScalar *drag, PetscScalar *ddrag) const;
+protected:
+  PetscReal pseudo_q, pseudo_u_threshold;
 };
 
 #endif /* __basal_resistance_hh */

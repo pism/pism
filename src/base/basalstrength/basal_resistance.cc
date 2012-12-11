@@ -20,40 +20,68 @@
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
 
-IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const NCConfigVariable &config) {
-  plastic_regularize = config.get("plastic_regularization", "1/year", "1/second");
-  pseudo_plastic = config.get_flag("do_pseudo_plastic_till");
+/* Purely plastic */
 
-  if (pseudo_plastic == true) {
-    pseudo_q = config.get("pseudo_plastic_q");
-    pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
-  } else {
-    pseudo_q = 0.0;             // irrelevant
-    pseudo_u_threshold = 0.0;   // irrelevant
-  }
+IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const NCConfigVariable &config) {
+  plastic_regularize = config.get("plastic_regularization", "m/year", "m/second");
 }
 
 PetscErrorCode IceBasalResistancePlasticLaw::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
-  if (pseudo_plastic == PETSC_TRUE) {
-    if (pseudo_q == 1.0) {
-      ierr = verbPrintf(verbthresh, com, 
-        "Using linearly viscous till with u_threshold = %.2f m/a.\n", 
-                        convert(pseudo_u_threshold, "m/s", "m/year")); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(verbthresh, com, 
-        "Using pseudo-plastic till with eps = %10.5e m/a, q = %.4f,"
-        " and u_threshold = %.2f m/a.\n", 
-                        convert(plastic_regularize, "m/s", "m/year"),
-                        pseudo_q,
-                        convert(pseudo_u_threshold, "m/s", "m/year")); 
-        CHKERRQ(ierr);
-    }
+  ierr = verbPrintf(verbthresh, com, 
+                    "Using purely plastic till with eps = %10.5e m/a.\n",
+                    convert(plastic_regularize, "m/s", "m/year")); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Compute the drag coefficient for the basal shear stress.
+PetscScalar IceBasalResistancePlasticLaw::drag(PetscScalar tauc,
+                                               PetscScalar vx, PetscScalar vy) {
+  const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+
+  return tauc / sqrt(magreg2);
+}
+
+//! Compute the drag coefficient and its derivative with respect to \f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) \f$
+void IceBasalResistancePlasticLaw::dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
+						      PetscScalar *d, PetscScalar *dd) const
+{
+  const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
+
+  *d = tauc / sqrt(magreg2);
+
+  if (dd)
+    *dd = -1 * (*d) / magreg2;
+
+}
+
+/* Pseudo-plastic */
+
+IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const NCConfigVariable &config)
+  : IceBasalResistancePlasticLaw(config) {
+  pseudo_q = config.get("pseudo_plastic_q");
+  pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
+}
+
+PetscErrorCode IceBasalResistancePseudoPlasticLaw::printInfo(int verbthresh, MPI_Comm com) {
+  PetscErrorCode ierr;
+
+  if (pseudo_q == 1.0) {
+    ierr = verbPrintf(verbthresh, com, 
+                      "Using linearly viscous till with u_threshold = %.2f m/a.\n", 
+                      convert(pseudo_u_threshold, "m/s", "m/year")); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(verbthresh, com, 
-      "Using purely plastic till with eps = %10.5e m/a.\n",
-                      convert(plastic_regularize, "m/s", "m/year")); CHKERRQ(ierr);
+                      "Using pseudo-plastic till with eps = %10.5e m/a, q = %.4f,"
+                      " and u_threshold = %.2f m/a.\n", 
+                      convert(plastic_regularize, "m/s", "m/year"),
+                      pseudo_q,
+                      convert(pseudo_u_threshold, "m/s", "m/year")); 
+    CHKERRQ(ierr);
   }
+
   return 0;
 }
 
@@ -74,26 +102,23 @@ The linearly-viscous till case pseudo_q = 1.0 is allowed, in which case
 is also allowed; note that there is still a regularization with data member
 plastic_regularize.
  */
-PetscScalar IceBasalResistancePlasticLaw::drag(PetscScalar tauc,
-                                   PetscScalar vx, PetscScalar vy) {
+PetscScalar IceBasalResistancePseudoPlasticLaw::drag(PetscScalar tauc,
+                                                     PetscScalar vx, PetscScalar vy) {
   const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
-  if (pseudo_plastic == PETSC_TRUE) {
-    return tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
-  } else { // pure plastic, but regularized
-    return tauc / sqrt(magreg2);
-  }
+
+  return tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
 }
 
-// Derivative of drag with respect to \f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) \f$
-void IceBasalResistancePlasticLaw::dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
-						      PetscScalar *d, PetscScalar *dd) const
+
+//! Compute the drag coefficient and its derivative with respect to \f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) \f$
+void IceBasalResistancePseudoPlasticLaw::dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
+                                                            PetscScalar *d, PetscScalar *dd) const
 {
   const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
-  if (pseudo_plastic == PETSC_TRUE) {
-    *d = tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
-    if (dd) *dd = (pseudo_q - 1) * *d / magreg2;
-  } else { // pure plastic, but regularized
-    *d = tauc / sqrt(magreg2);
-    if (dd) *dd = -1 * *d / magreg2;
-  }
+
+  *d = tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+
+  if (dd)
+    *dd = (pseudo_q - 1) * (*d) / magreg2;
+
 }
