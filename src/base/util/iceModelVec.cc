@@ -873,34 +873,58 @@ PetscErrorCode  IceModelVec::endGhostComm() {
 //! Starts the communication of ghost points to IceModelVec destination.
 PetscErrorCode  IceModelVec::beginGhostComm(IceModelVec &destination) {
   PetscErrorCode ierr;
-  if (!localp) {
-    SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')",
-               name.c_str());
-  }
-
-  if (!destination.localp) {
-    SETERRQ(grid->com, 1, "IceModelVec::beginGhostComm(): destination has to be local.");
-  }
 
   ierr = checkAllocated(); CHKERRQ(ierr);
-  ierr = DMDALocalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+
+  if (localp && destination.localp) {
+    ierr = DMDALocalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp && destination.localp == false) {
+    ierr = DMLocalToGlobalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp == false && destination.localp) {
+    ierr = DMGlobalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp == false && destination.localp == false) {
+    SETERRQ1(grid->com, 1, "makes no sense to communicate ghosts for two GLOBAL IceModelVecs! (has name='%s')",
+             name.c_str());
+  }
+
   return 0;
 }
 
 //! Ends the communication of ghost points to IceModelVec destination.
 PetscErrorCode  IceModelVec::endGhostComm(IceModelVec &destination) {
   PetscErrorCode ierr;
-  if (!localp) {
-    SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')\n",
-               name.c_str());
-  }
-
-  if (!destination.localp) {
-    SETERRQ(grid->com, 1, "IceModelVec::beginGhostComm(): destination has to be local.");
-  }
 
   ierr = checkAllocated(); CHKERRQ(ierr);
-  ierr = DMDALocalToLocalEnd(da, v, INSERT_VALUES, destination.v); CHKERRQ(ierr);
+
+  if (localp && destination.localp) {
+    ierr = DMDALocalToLocalEnd(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp && destination.localp == false) {
+    ierr = DMLocalToGlobalEnd(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp == false && destination.localp) {
+    ierr = DMGlobalToLocalEnd(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp == false && destination.localp == false) {
+    SETERRQ1(grid->com, 1, "makes no sense to communicate ghosts for two GLOBAL IceModelVecs! (has name='%s')",
+             name.c_str());
+  }
+
   return 0;
 }
 
