@@ -25,18 +25,18 @@
 //! \file PISMYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
 /*! \file PISMYieldStress.cc
 The output variable of this submodel is \c tauc, the pseudo-plastic yield stress
-field that is used in the ShallowStressBalance (=SSA in 2011) objects.
+field that is used in the ShallowStressBalance objects.
 
 In the default implementation PISMMohrCoulombYieldStress [\ref BBssasliding], the
 "dry" strength of the (notional) till is a state variable, but private to the
 submodel, namely \c tillphi.
 
-Its initialization is nontrivial: either -topg_to_phi
-heuristic or inverse modeling (to be implemented ...). Currently \c tillphi does
-not evolve during the run.
+Its initialization is nontrivial: either \c -topg_to_phi  heuristic or inverse
+modeling so that \c tillphi can be read-in at the beginning of the run. Currently
+\c tillphi does not evolve during the run.
 
-This submodel uses \c bwat as an input at each update.  Basal water pressure
-\c bwp is computed from \c bwat, then that pressure is combined with tillphi
+This submodel uses a pointer to a PISMHydrology instance to get the basal water
+pressure.  Then the effective pressure is combined with tillphi
 to compute an updated \c tauc by the Mohr-Coulomb criterion.
 
 This submodel is inactive in floating areas.
@@ -57,11 +57,16 @@ PetscErrorCode PISMMohrCoulombYieldStress::allocate() {
                         "yield stress for basal till (plastic or pseudo-plastic model)",
                         "Pa", ""); CHKERRQ(ierr);
 
-  ierr = bwat_copy.create(grid, "tauc", true, grid.max_stencil_width); CHKERRQ(ierr);
-  ierr = bwat_copy.set_attrs("internal",
-                "basal water layer thickness (as used by PISMMohrCoulombYieldStress)",
-                "m", ""); CHKERRQ(ierr);
-
+  ierr = bwp.create(grid, "bwp-in-PISMYieldStress",
+                    true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = bwp.set_attrs("internal",
+                       "copy of basal water pressure held by PISMMohrCoulombYieldStress",
+                       "Pa", ""); CHKERRQ(ierr);
+  ierr = Po.create(grid, "overburden_pressure-in-PISMYieldStress",
+                    true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = Po.set_attrs("internal",
+                       "copy of overburden pressure held by PISMMohrCoulombYieldStress",
+                       "Pa", ""); CHKERRQ(ierr);
   return 0;
 }
 
@@ -72,17 +77,20 @@ The pseudo-plastic till basal resistance model is governed by this power law
 equation,
     \f[ \tau_b = - \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}, \f]
 where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$ is the basal shear stress and
-\f$U=(u,v)\f$ is the sliding velocity.  We call the scalar field
-\f$\tau_c(t,x,y)\f$ the \e pseudo \e yield \e stress.  The constant
-\f$U_{\mathtt{th}}\f$ is the \e threshhold \e speed, and \f$q\f$ is the \e pseudo
-\e plasticity \e exponent.  See IceBasalResistancePlasticLaw::drag().  See also
-basal_material_yield_stress() and basal_water_pressure() for important model equations.
+\f$U=(u,v)\f$ is the sliding velocity.
 
-The strength of the saturated till material is modeled by a Mohr-Coulomb
-relation [\ref Paterson, \ref SchoofStream],
+We call the scalar field \f$\tau_c(t,x,y)\f$ the \e yield \e stress even when
+the power \f$q\f$ is not zero; when that power is zero the formula describes
+a plastic material with an actual yield stress.  The constant
+\f$U_{\mathtt{th}}\f$ is the \e threshhold \e speed, and \f$q\f$ is the \e pseudo
+\e plasticity \e exponent.  The current class computes this yield stress field.
+See also IceBasalResistancePlasticLaw::drag().
+
+The strength of the saturated till material, the yield stress, is modeled by a
+Mohr-Coulomb relation [\ref Paterson, \ref SchoofStream],
     \f[   \tau_c = c_0 + (\tan \varphi) N, \f]
-where \f$N = \rho g H - p_w\f$ is the effective pressure on the till (see
-basal_water_pressure()),
+where \f$N = P_o - P\f$ is the effective pressure on the till (see
+PISMHydrology::basal_water_pressure()),
 
 The determination of the till friction angle \f$\varphi(x,y)\f$  is important.
 It is assumed in this default model to be a
@@ -99,7 +107,6 @@ read-in-from-file state or with a default constant value from the config file.
 PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
 {
   PetscErrorCode ierr;
-  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q");
   bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set,
     tauc_to_phi_set;
   string filename;
@@ -108,15 +115,6 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
   variables = &vars;
 
   ierr = verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n"); CHKERRQ(ierr);
-
-  basal_water_thickness = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
-  if (basal_water_thickness == NULL) SETERRQ(grid.com, 1, "bwat is not available");
-
-  basal_melt_rate = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
-  if (basal_melt_rate == NULL) SETERRQ(grid.com, 1, "bmelt is not available");
-
-  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (ice_thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   bed_topography = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
   if (bed_topography == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
@@ -134,25 +132,6 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
                             bootstrap); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-tauc_to_phi", "Compute tillphi as a function of tauc and the rest of the model state",
                             tauc_to_phi_set); CHKERRQ(ierr);
-    bool scaleSet = false;
-    double slidescale = 0.0;
-    ierr = PISMOptionsReal("-sliding_scale",
-                           "Divides pseudo-plastic tauc (yield stress) by given factor;"
-                           " this would increase sliding by given factor in absence of membrane stresses",
-                           slidescale, scaleSet); CHKERRQ(ierr);
-    if (scaleSet) { // only modify config if option set; otherwise leave alone
-      if (slidescale > 0.0) {
-        ierr = verbPrintf(2, grid.com,
-                          "option -sliding_scale read; pseudo yield stress tauc will be divided by %.4f to\n"
-                          "  cause notional sliding speed-up by given factor %.4f ...\n",
-                          pow(slidescale, pseudo_plastic_q), slidescale);  CHKERRQ(ierr);
-        sliding_scale = slidescale;
-      } else {
-        ierr = verbPrintf(1, grid.com,
-                          "PISM WARNING: negative or zero value given for option -sliding_scale ignored\n");
-        CHKERRQ(ierr);
-      }
-    }
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -304,18 +283,20 @@ PetscErrorCode PISMMohrCoulombYieldStress::write_variables(set<string> vars, con
   return 0;
 }
 
-//! Update the till yield stress for use in the the pseudo-plastic till SSA
-//! model, see IceBasalResistancePlasticLaw.
+
+//! Update the till yield stress for use in the pseudo-plastic till basal stress
+//! model.  See also IceBasalResistancePlasticLaw.
 /*!
-Updates based on modeled basal water pressure.  We implement
+Updates yield stress \f$\tau_c\f$ based on modeled basal water pressure.  We implement
 formula (2.4) in [\ref SchoofStream], the Mohr-Coulomb criterion:
-    \f[   \tau_c = \mu (\rho g H - p_w), \f]
-where \f$\tau_c\f$ is the till yield stress, \f$\rho g H\f$ is the ice over-burden
-pressure (in the shallow approximation), \f$p_w\f$ is the modeled
-pore (=basal) water pressure, and \f$\mu\f$ is a strength coefficient for the
-mineral till (at least, it is independent of \f$p_w\f$).  The difference
-    \f[   N = \rho g H - p_w   \f]
-is the effective pressure on the till.
+    \f[   \tau_c = \mu (P_o - P), \f]
+where \f$\tau_c\f$ is the till yield stress, \f$P_o\f$ is the ice over-burden
+pressure, \f$P\f$ is the modeled basal water pressure, and \f$\mu\f$ is a
+strength coefficient for the mineral till (at least, it is independent of
+\f$p_w\f$).  The difference
+    \f[   N = P_o - P   \f]
+is the effective pressure on the till.  Both \f$P_o,P\f$ are provided by
+PISMHydrology.
 
 We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
 and by expressing the coefficient as the tangent of a till friction angle
@@ -323,11 +304,6 @@ and by expressing the coefficient as the tangent of a till friction angle
     \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
 Option  \c -plastic_c0 controls it \f$c_0\f$; see [\ref Paterson] table 8.1
 regarding values.
-
-The major concern with this is the model for basal water pressure \f$p_w\f$.
-See basal_water_pressure().  See also [\ref BBssasliding] for a discussion
-of a complete model using these tools.
-
  */
 PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
@@ -345,16 +321,17 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
     high_tauc = config.get("high_tauc");
 
   if (hydrology) {
-    ierr = hydrology->water_layer_thickness(bwat_copy); CHKERRQ(ierr);
+    ierr = hydrology->water_pressure(bwp); CHKERRQ(ierr);
+    ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   } else {
-    SETERRQ(grid.com, 3,"PISM ERROR: PISMHydrology* subglacial_hydrology is NULL in PISMMohrCoulombYieldStress::update()");
+    SETERRQ(grid.com, 3,
+            "PISM ERROR: PISMHydrology* hydrology is NULL in PISMMohrCoulombYieldStress::update()");
   }
 
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
-  ierr = bwat_copy.begin_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate->begin_access(); CHKERRQ(ierr);
+  ierr = bwp.begin_access(); CHKERRQ(ierr);
+  ierr = Po.begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
 
   MaskQuery m(*mask);
@@ -362,9 +339,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   PetscInt GHOSTS = grid.max_stencil_width;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-
       if (use_ssa_when_grounded == false) {
-
         if (m.grounded(i, j)) {
           // large yield stress if grounded and -ssa_floating_only is set
           tauc(i, j) = high_tauc;
@@ -373,19 +348,12 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
         }
         continue;
       }
-
       if (m.ocean(i, j)) {
         tauc(i, j) = 0.0;
       } else if (m.ice_free(i, j)) {
         tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
-        const PetscScalar
-          p_over = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME issue #15
-          p_w    = basal_water_pressure(p_over, bwat_copy(i, j),
-                                        (*basal_melt_rate)(i, j),
-                                        (*ice_thickness)(i, j)),
-          N      = effective_pressure_on_till(p_over, p_w);
-
+        const PetscScalar N = Po(i,j) - bwp(i,j);
         tauc(i, j) = till_c_0 + N * tan((pi/180.0) * till_phi(i, j));
       }
     }
@@ -393,46 +361,17 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
 
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = tauc.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = till_phi.end_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
-  ierr = bwat_copy.end_access(); CHKERRQ(ierr);
-
-/* scale tauc if desired:
-A scale factor of \f$A\f$ is intended to increase basal sliding rate by
-\f$A\f$.  It would have exactly this effect \e if the driving stress were
-\e hypothetically completely held by the basal resistance.  Thus this scale factor
-is used to reduce (if \c -sliding_scale \f$A\f$ with \f$A > 1\f$) or increase
-(if \f$A < 1\f$) the value of the (pseudo-) yield stress \c tauc.  The concept
-behind this is described at
-http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
-Specifically, the concept behind this mechanism is to suppose equality of driving
-and basal shear stresses,
-    \f[ \rho g H \nabla h = \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}. \f]
-(<i>For emphasis:</i> The membrane stress held by the ice itself is missing from
-this incomplete stress balance.)  Thus the pseudo yield stress
-\f$\tau_c\f$ would be related to the sliding speed \f$|\mathbf{U}|\f$ by
-  \f[ |\mathbf{U}| = \frac{C}{\tau_c^{1/q}} \f]
-for some (geometry-dependent) constant \f$C\f$.  Multiplying \f$|\mathbf{U}|\f$
-by \f$A\f$ in this equation corresponds to dividing \f$\tau_c\f$ by \f$A^q\f$.
-The current method sets-up the mechanism, and updateYieldStressUsingBasalWater()
-actually computes it.  Note that the mechanism has no effect whatsoever if
-\f$q=0\f$, which is the purely plastic case. In that case there is \e no direct
-relation between the yield stress and the sliding velocity, and the difference
-between the driving stress and the yield stress is entirely held by the membrane
-stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1\f$.)
-*/
-  if (sliding_scale > 0.0) {
-    const PetscScalar q = config.get("pseudo_plastic_q");
-    tauc.scale(1.0 / pow(sliding_scale, q));
-  }
-
+  ierr = bwp.end_access(); CHKERRQ(ierr);
+  ierr = Po.end_access(); CHKERRQ(ierr);
   return 0;
 }
+
 
 PetscErrorCode PISMMohrCoulombYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
   return tauc.copy_to(result);
 }
+
 
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
 /*!
@@ -541,131 +480,21 @@ PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
 }
 
 
-//! \brief Compute modeled pressure in subglacial liquid water using thickness
-//! of subglacial water layer.
-/*!
-Main inputs are \c p_overburden and \c bwat, the thickness of basal water.
-
-It can also use \c bmr, the basal melt rate and \c thk, the ice thickness, in
-modifications of the basic model.
-
-The output is \f$p_w\f$ the basal water pressure.
-
-The basic model is
-\f{align*}
-  p_{over} = \rho g H, \\
-  p_w = \alpha\, \frac{W}{W_{\text{max}}}\, p_{over}
-\f}
-where
-  - \f$\rho\f$ is the ice density (ice_density) and \f$g\f$ is gravity,
-  - \f$H\f$ is the ice thickness (thk),
-  - \f$p_{over}\f$ is the ice overburden pressure,
-  - \f$\alpha\f$ is the till pore water fraction (till_pw_fraction),
-  - \f$W\f$ is the effective thickness of subglacial melt water (bwat), and
-  - \f$W_{\text{max}}\f$ is the maximum allowed value for \f$W\f$ (bwat_max).
-
-If flags \c p.usebmr or \c p.usethkeff are set then this formula is modified;
-see the code below for details.
-
-Because both \c bmr and \c bwat are zero at points where base of ice is
-below the pressure-melting temperature, the modeled basal water pressure is
-zero when the base is frozen.
-
-Several options control the water pressure model:
-  - \c -[no_]\c bmr_enhance  toggle the basal melt rate dependency in water
-                           pressure; DEFAULT IS OFF
-  - \c -bmr_enhance_scale  sets the value; defaults to 0.10, since 10 cm/a is
-                           a significant enough level of basal melt rate to
-                           cause weakening effect for saturated till;
-                           argument is in m/a; must set \c -bmr_enhance for this
-                           to have effect
-  - \c -plastic_pwfrac     controls parameter till_pw_fraction
-  - \c -[no_]\c thk_eff    toggle the thickness effect: for smaller thicknesses there
-                           is a reduction in basal water pressure, a conceptual
-                           near-margin drainage mechanism; DEFAULT IS OFF
-  - \c -thk_eff_reduced    factor by which basal water pressure is reduced; default is
-                           0.97; must set \c -thk_eff for this to have effect
-  - \c -thk_eff_H_high     maximum thickness at which effect is applied; default
-                           is 2000 m; must set \c -thk_eff for this to have
-                           any effect
-  - \c -thk_eff_H_low      thickness at which thickness effect is full strength;
-                           default is 1000 m; must set \c -thk_eff for this to
-                           have any effect
-
-If the effective pressure on the subglacial layer is needed, then these lines are
-recommended for this purpose:
-\verbatim
-  p_over = ice_rho * standard_gravity * thk;  // overburden pressure
-  p_eff  = p_over - basal_water_pressure(p_over, bwat, bmr, thk);
-\endverbatim
-
-The inequality \c bwat \f$\le\f$ \c bwat_max is required at input, and an
-error is thrown if not.
-
-Regarding the physics, compare the water pressure computed by formula (4) in
-[\ref Ritzetal2001], where the pressure is a function of sea level and bed
-elevation.  A method using "elevation of the bed at the grounding line",
-as in [\ref LingleBrown1987] is not implementable because that elevation is
-at an unknowable location.  (We are not doing a flow line model!)
- */
-PetscScalar PISMMohrCoulombYieldStress::basal_water_pressure(PetscReal p_overburden, PetscReal bwat,
-                                                             PetscReal bmr, PetscReal thk) {
-  if (bwat > bwat_max + 1.0e-6) {
-    PetscPrintf(grid.com,
-                "PISM ERROR:  bwat = %12.8f exceeds bwat_max = %12.8f\n"
-                "  in PISMMohrCoulombYieldStress::basal_water_pressure()\n",bwat,bwat_max);
-    PISMEnd();
-  }
-
-  // The model: note 0 <= p_pw <= till_pw_fraction * p_overburden because  0 <= bwat <= bwat_max
-  PetscScalar p_pw = till_pw_fraction * (bwat / bwat_max) * p_overburden;
-
-  // The remaining is fiddles.
-
-  if (p.usebmr) {
-    // add to pressure from instantaneous basal melt rate;
-    //   note  (additional) <= (1.0 - till_pw_fraction) * p_overburden so
-    //   0 <= p_pw <= p_overburden
-    p_pw += ( 1.0 - exp( - PetscMax(0.0,bmr) / p.bmr_scale ) )
-      * (1.0 - till_pw_fraction) * p_overburden;
-  }
-
-  if (p.usethkeff) {
-    // ice thickness is surrogate for distance to margin; near margin the till
-    //   is presumably better drained so we reduce the water pressure
-    if (thk < p.thkeff_H_high) {
-      if (thk <= p.thkeff_H_low) {
-        p_pw *= p.thkeff_reduce;
-      } else {
-        // case Hlow < thk < Hhigh; use linear to connect (Hlow, reduced * p_pw)
-        //   to (Hhigh, 1.0 * p_w)
-        p_pw *= p.thkeff_reduce
-          + (1.0 - p.thkeff_reduce)
-          * (thk - p.thkeff_H_low) / (p.thkeff_H_high - p.thkeff_H_low);
-      }
-    }
-  }
-
-  return p_pw;
-}
-
-//! \brief Computes the effective pressure on till.
-/*!
- * This is (conceptually) the hydrology model.
- */
-PetscReal PISMMohrCoulombYieldStress::effective_pressure_on_till(PetscReal p_overburden,
-                                                             PetscReal p_basal_water) {
-  return p_overburden - p_basal_water;
-}
-
 PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   PetscErrorCode ierr;
 
+  if (hydrology) {
+    ierr = hydrology->water_pressure(bwp); CHKERRQ(ierr);
+    ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
+  } else {
+    SETERRQ(grid.com, 3,
+            "PISM ERROR: PISMHydrology* hydrology is NULL in PISMMohrCoulombYieldStress::tauc_to_phi()");
+  }
+
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
-  ierr = basal_water_thickness->begin_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate->begin_access(); CHKERRQ(ierr);
+  ierr = Po.begin_access(); CHKERRQ(ierr);
+  ierr = bwp.begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
 
   MaskQuery m(*mask);
@@ -679,16 +508,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
       } else if (m.ice_free(i, j)) {
         // no change
       } else { // grounded and there is some ice
-        const PetscReal
-          p_overburden = ice_density * standard_gravity * (*ice_thickness)(i, j), // FIXME issue #15
-          p_w = basal_water_pressure(p_overburden,
-                                     (*basal_water_thickness)(i, j),
-                                     (*ice_thickness)(i, j),
-                                     (*basal_melt_rate)(i, j));
-          PetscReal N = effective_pressure_on_till(p_overburden, p_w);
-
-        N = PetscMax(N, 0.01);  // guard against dividing by zero
-
+        const PetscScalar N = Po(i,j) - bwp(i,j);
         till_phi(i, j) = 180.0/pi * atan((tauc(i, j) - till_c_0) / N);
       }
     }
@@ -696,10 +516,9 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
 
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = tauc.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = till_phi.end_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
-  ierr = basal_water_thickness->end_access(); CHKERRQ(ierr);
+  ierr = Po.end_access(); CHKERRQ(ierr);
+  ierr = bwp.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

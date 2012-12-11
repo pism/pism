@@ -542,12 +542,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("varc", "use_linear_in_temperature_heat_capacity");  CHKERRQ(ierr);
   ierr = config.flag_from_option("vark", "use_temperature_dependent_thermal_conductivity");  CHKERRQ(ierr);
 
-  // see getBasalWaterPressure()
-  ierr = config.flag_from_option("bmr_enhance",
-                                 "bmr_enhance_basal_water_pressure"); CHKERRQ(ierr);
-  // in units m a-1 :
-  ierr = config.scalar_from_option("bmr_enhance_scale", "bmr_enhance_scale"); CHKERRQ(ierr);
-
   ierr = config.flag_from_option("bmr_in_cont", "include_bmr_in_continuity"); CHKERRQ(ierr);
 
   // if set, use old IceModel::temperatureStep(), and set enthalpy as though
@@ -661,15 +655,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   // threshold; at this velocity tau_c is basal shear stress
   ierr = config.scalar_from_option("pseudo_plastic_uthreshold", "pseudo_plastic_uthreshold"); CHKERRQ(ierr);
-
-  // If set, makes the thickness affect the pore_pressure; near margin there is
-  // a reduction in basal water pressure, a conceptual drainage mechanism
-  ierr = config.flag_from_option("thk_eff", "thk_eff_basal_water_pressure"); CHKERRQ(ierr);
-  // next two in  m  :
-  ierr = config.scalar_from_option("thk_eff_H_high","thk_eff_H_high");  CHKERRQ(ierr);
-  ierr = config.scalar_from_option("thk_eff_H_low","thk_eff_H_low");  CHKERRQ(ierr);
-  // pure number :
-  ierr = config.scalar_from_option("thk_eff_reduced","thk_eff_reduced");  CHKERRQ(ierr);
   
   ierr = config.flag_from_option("subgl", "sub_groundingline"); CHKERRQ(ierr);
 

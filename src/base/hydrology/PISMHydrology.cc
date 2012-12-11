@@ -58,6 +58,7 @@ Accesses H=thk from PISMVars, which points into IceModel.
  */
 PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
+  // FIXME issue #15
   ierr = result.copy_from(*thk); CHKERRQ(ierr);
   ierr = result.scale(config.get("ice_density") * config.get("standard_gravity")); CHKERRQ(ierr);
   return 0;

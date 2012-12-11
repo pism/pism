@@ -111,7 +111,7 @@ Significantly, we start using a more complete ice dynamics model with sliding co
 \small
 \begin{verbatim}
 mpiexec -n 8 pismr -config_override searise_config.nc -climatic_mass_balance_cumulative -skip -skip_max 10 \
-  -i g20km_steady.nc -ssa_sliding -thk_eff -topg_to_phi 5.0,20.0,-300.0,700.0 -bed_def lc \
+  -i g20km_steady.nc -ssa_sliding -topg_to_phi 5.0,20.0,-300.0,700.0 -bed_def lc \
   -atmosphere searise_greenland,delta_T -surface pdd -paleo_precip pism_dT.nc \
   -atmosphere_delta_T_file pism_dT.nc \
   -ocean constant,delta_SL -ocean_delta_SL_file pism_dSL.nc -ocean_kill pism_Greenland_5km_v1.1.nc \
