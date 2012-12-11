@@ -18,6 +18,7 @@
 
 #include <pnetcdf.h>
 #include <sstream>
+#include <string.h>
 
 #include "PISMPNCFile.hh"
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
