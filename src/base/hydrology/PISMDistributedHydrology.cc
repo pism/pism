@@ -76,9 +76,7 @@ PetscErrorCode PISMLakesHydrology::allocate() {
   ierr = input.set_attrs("internal",
                          "workspace for input into subglacial water layer",
                          "m s-1", ""); CHKERRQ(ierr);
-  //FIXME: ought to be able to do this (issue #109):
-  //  ierr = Wnew.create(grid, "Wnew_internal", false); CHKERRQ(ierr);
-  ierr = Wnew.create(grid, "Wnew_internal", true, 1); CHKERRQ(ierr);
+  ierr = Wnew.create(grid, "Wnew_internal", false); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
                      "new thickness of subglacial water layer during update",
                      "m", ""); CHKERRQ(ierr);

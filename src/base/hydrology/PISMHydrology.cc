@@ -295,10 +295,7 @@ PISMDiffuseOnlyHydrology::PISMDiffuseOnlyHydrology(IceGrid &g, const NCConfigVar
 PetscErrorCode PISMDiffuseOnlyHydrology::allocateWnew() {
   PetscErrorCode ierr;
   // also need temporary space during update
-  //FIXME: shouldn't I be able to do this?  gives error
-  //   "makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='Wnew-internal')!"
-  //ierr = Wnew.create(grid, "Wnew-internal", false); CHKERRQ(ierr);
-  ierr = Wnew.create(grid, "Wnew_internal", true, 1); CHKERRQ(ierr);
+  ierr = Wnew.create(grid, "Wnew-internal", false); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
                      "new thickness of subglacial water layer during update",
                      "m", ""); CHKERRQ(ierr);
