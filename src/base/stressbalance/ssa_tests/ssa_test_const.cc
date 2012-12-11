@@ -88,8 +88,9 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
 {
   config.set_flag("do_pseudo_plastic_till", true);
   config.set("pseudo_plastic_q", basal_q);
+
   // Use a pseudo-plastic law with a constant q determined at run time
-  basal = new IceBasalResistancePlasticLaw(config);
+  basal = new IceBasalResistancePseudoPlasticLaw(config);
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);

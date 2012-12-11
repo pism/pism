@@ -14,10 +14,10 @@ from PISM.sipletools import PISMLocalVector as PLV
 # siple.reporting.add_logger(pism_print_logger)
 # siple.reporting.set_pause_callback(pism_pause)
 
-p_schoof = 4.0/3.0   # = 1 + 1/n 
+p_schoof = 4.0/3.0   # = 1 + 1/n
 
-rms_error = 2.754712829589844 #m/a # invParams.pointwise_error_size from conv_rate.py run when relative_noise_level is set to 1%     
-#rms_error /= PISM.secpera # m/s 
+rms_error = 2.754712829589844 #m/a # invParams.pointwise_error_size from conv_rate.py run when relative_noise_level is set to 1%
+#rms_error /= PISM.secpera # m/s
 
 ssa_l2_coeff = 1.
 ssa_h1_coeff = 0.
@@ -31,12 +31,12 @@ Ly = 80.e3 # meters
 Mx = 61
 My = 121  #int(Mx/Lx * Ly)
 
-B = 7. * (PISM.secpera)**(1./3) * 1.e5 # units have to be kg, m, sec in PISM 
+B = 7. * (PISM.secpera)**(1./3) * 1.e5 # units have to be kg, m, sec in PISM
 
 def testi_tauc(grid,ice,tauc):
   xzero = -20.e3
   yzero = 30.e3
-  xsig = 1.e8 # = 2*\sigma^2 where \sigma is the std                               
+  xsig = 1.e8 # = 2*\sigma^2 where \sigma is the std
   ysig = xsig
   with PISM.util.Access(comm=tauc):
     for (i,j) in grid.points():
@@ -53,20 +53,17 @@ class testi_run(InvSSARun):
 
   def _initGrid(self):
     Mx=self.Mx; My=self.My
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NONE); # NONE makes a non-periodic grid                           
+    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NONE); # NONE makes a non-periodic grid
 
   def _initPhysics(self):
     config = self.config
-    basal = PISM.IceBasalResistancePlasticLaw(
-         config.get("plastic_regularization") / PISM.secpera,
-         config.get_flag("do_pseudo_plastic_till"),
-         config.get("pseudo_plastic_q"),
-         config.get("pseudo_plastic_uthreshold") / PISM.secpera);
-    basal.pseudo_plastic = 'yes'
-    basal.pseudo_q = 1
-    basal.pseudo_u_threshold = 1 # so that tau_b = tauc * u                        
+    config.set_flag("do_pseudo_plastic_till", True)
+    config.set("pseudo_plastic_q", 1.0);
+    config.set("pseudo_plastic_uthreshold", 1.0/PISM.secpera) # so that tau_b = tauc * u
 
-    # irrelevant       
+    basal = PISM.IceBasalResistancePseudoPlasticLaw(config)
+
+    # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
     ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
@@ -167,7 +164,7 @@ grid = testi.grid
 tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
 testi_tauc(grid,testi.modeldata.ice,tauc_true)
 
-# Convert tauc_true to zeta_true               
+# Convert tauc_true to zeta_true
 if config.get_string('inv_ssa_tauc_param')=='ident':
   zeta_true = tauc_true
 else:
@@ -177,8 +174,8 @@ else:
     for (i,j) in grid.points():
       zeta_true[i,j] = tauc_param.fromTauc(tauc_true[i,j])
 
-# Send the true yeild stress through the forward problem to               
-# get at true velocity field.         
+# Send the true yeild stress through the forward problem to
+# get at true velocity field.
 u_true = PISM.util.standard2dVelocityVec(grid,name="_true")
 forward_problem.F(PLV(zeta_true),out=PLV(u_true))
 
@@ -201,7 +198,7 @@ else:
   with PISM.util.Access(nocomm=[tauc],comm=[zeta]):
     for (i,j) in grid.points():
       zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
-      
+
 if test_adjoint:
   d = PLV(pismssaforward.randVectorS(grid,1e5))
   r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera))
@@ -209,7 +206,7 @@ if test_adjoint:
   siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
   exit(0)
 
-# Determine the inversion algorithm, and set up its arguments.               
+# Determine the inversion algorithm, and set up its arguments.
 if method == "ign":
   Solver = InvertSSAIGN
 else:
@@ -228,17 +225,17 @@ params.verbose   = True
 params.deriv_eps = 0.
 
 
-# Run the inversion               
+# Run the inversion
 solver=Solver(forward_problem,params=params)
 if do_plotting:
   solver.addIterationListener(TestIPlotListener(grid))
 if do_pause:
   solver.addIterationListener(pauseListener)
 
-rms_error /= PISM.secpera # m/s                   
+rms_error /= PISM.secpera # m/s
 (zeta,u) = solver.solve(zeta,u_true,rms_error)
 
-# Convert back from zeta to tauc 
+# Convert back from zeta to tauc
 if config.get_string('inv_ssa_tauc_param')=='ident':
   tauc = zeta
 else:
@@ -246,7 +243,7 @@ else:
     for (i,j) in grid.points():
       (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
 
-# Write solution out to netcdf file               
+# Write solution out to netcdf file
 testi.write(output_file)
 tauc.write(output_file)
 tauc_true.write(output_file)

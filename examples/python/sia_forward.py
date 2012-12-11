@@ -52,11 +52,7 @@ if is_regional:
 grid = PISM.Context().newgrid()
 PISM.util.init_grid_from_file(grid,input_file,periodicity);
 
-basal = PISM.IceBasalResistancePlasticLaw(
-       config.get("plastic_regularization") / PISM.secpera,
-       config.get_flag("do_pseudo_plastic_till"),
-       config.get("pseudo_plastic_q"),
-       config.get("pseudo_plastic_uthreshold") / PISM.secpera);  
+basal = PISM.IceBasalResistancePlasticLaw(config)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 if PISM.getVerbosityLevel() >3:

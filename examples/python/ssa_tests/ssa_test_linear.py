@@ -35,7 +35,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     config = self.config
     config.set_flag("do_pseudo_plastic_till", True)
     config.set("pseudo_plastic_q", 1.0)
-    basal = PISM.IceBasalResistancePlasticLaw(config)
+    basal = PISM.IceBasalResistancePseudoPlasticLaw(config)
 
     enthalpyconverter = PISM.EnthalpyConverter(config)
 
