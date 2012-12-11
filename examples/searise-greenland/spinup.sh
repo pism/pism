@@ -178,7 +178,7 @@ COUPLER_FTT="-atmosphere searise_greenland,delta_T -surface pdd,forcing -paleo_p
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
 
-FULLPHYS="-ssa_sliding -thk_eff ${TILLPHI}"
+FULLPHYS="-ssa_sliding ${TILLPHI}"
 
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
