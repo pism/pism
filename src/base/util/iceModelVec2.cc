@@ -167,11 +167,10 @@ PetscErrorCode IceModelVec2::write(const PIO &nc, PISM_IO_Type nctype) {
   ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
 
   ierr = DMCreateGlobalVector(da2, &tmp); CHKERRQ(ierr);
+
   if (getVerbosityLevel() > 3) {
     ierr = PetscPrintf(grid->com, "  Writing %s...\n", name.c_str()); CHKERRQ(ierr);
   }
-
-  ierr = DMCreateGlobalVector(da2, &tmp); CHKERRQ(ierr);
 
   for (int j = 0; j < dof; ++j) {
     vars[j].time_independent = time_independent;

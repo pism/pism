@@ -132,8 +132,6 @@ public:
   const NCConfigVariable &config;
   MPI_Comm    com;
   PetscMPIInt rank, size;
-  map<int,DM> dms;
-
   int    xs,               //!< starting x-index of a processor sub-domain
     xm,                         //!< number of grid points (in the x-direction) in a processor sub-domain
     ys,                         //!< starting y-index of a processor sub-domain
@@ -142,7 +140,7 @@ public:
   vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
 
   vector<double> x,             //!< x-coordinates of grid points
-    y;          //!< y-coordinates of grid points
+    y;                          //!< y-coordinates of grid points
 
   // Fine vertical grid and the interpolation setup:
   vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
@@ -161,16 +159,16 @@ public:
     dzMAX;                      //!< maximal vertical spacing of the storage grid in the ice
 
   PetscScalar x0,               //!< x-coordinate of the grid center
-    y0;	   //!< y-coordinate of the grid center
+    y0;                         //!< y-coordinate of the grid center
 
   PetscScalar Lx, //!< half width of the ice model grid in x-direction (m)
-    Ly; //!< half width of the ice model grid in y-direction (m)
+    Ly;           //!< half width of the ice model grid in y-direction (m)
 
   int    Mx, //!< number of grid points in the x-direction
-    My; //!< number of grid points in the y-direction
+    My;      //!< number of grid points in the y-direction
 
   int    Nx, //!< number of processors in the x-direction
-    Ny; //!< number of processors in the y-direction
+    Ny;      //!< number of processors in the y-direction
 
   vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
     procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
@@ -190,6 +188,7 @@ public:
   PISMProf *profiler;           //!< PISM profiler object; allows tracking how long a computation takes
   PISMTime *time;               //!< The time management object (hides calendar computations)
 protected:
+  map<int,DM> dms;
   PetscScalar lambda;	 //!< quadratic vertical spacing parameter
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
   PetscErrorCode compute_horizontal_coordinates();
@@ -199,7 +198,7 @@ protected:
   PetscErrorCode create_dm(PetscInt da_dof, PetscInt stencil_width, DM &result);
   void destroy_dms();
 
-  int index(int, int);
+  int dm_key(int, int);
 private:
   // Hide copy constructor / assignment operator.
   IceGrid(IceGrid const &);

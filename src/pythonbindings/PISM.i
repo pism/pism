@@ -447,7 +447,7 @@ namespace std {
     }
 }
 
-/* This is needed to wpar IceGrid::get_dm() */
+/* This is needed to wrap IceGrid::get_dm() */
 %apply DM &OUTPUT {DM &result};
 
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 

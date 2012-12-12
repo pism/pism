@@ -750,7 +750,7 @@ PetscErrorCode IceGrid::get_dm(PetscInt da_dof, PetscInt stencil_width, DM &resu
     SETERRQ(com, 3, "Invalid stencil_width argument");
   }
 
-  int j = this->index(da_dof, stencil_width);
+  int j = this->dm_key(da_dof, stencil_width);
 
   if (dms[j] == PETSC_NULL) {
     ierr = this->create_dm(da_dof, stencil_width, result); CHKERRQ(ierr);
@@ -793,6 +793,7 @@ PetscErrorCode IceGrid::create_dm(PetscInt da_dof, PetscInt stencil_width, DM &r
   return 0;
 }
 
-int IceGrid::index(int da_dof, int stencil_width) {
+// Computes the key corresponding to the DM with given dof and stencil_width.
+int IceGrid::dm_key(int da_dof, int stencil_width) {
   return 10000 * da_dof + stencil_width;
 }
