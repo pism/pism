@@ -48,6 +48,7 @@ public:
   PISMHydrology(IceGrid &g, const NCConfigVariable &conf) : PISMComponent_TS(g, conf) {
     thk   = NULL;
     bed   = NULL;
+    cellarea = NULL;
     bmelt = NULL;
     mask  = NULL;
     variables = NULL;
@@ -72,10 +73,13 @@ protected:
   // pointers into IceModel; these describe the ice sheet and the source
   IceModelVec2S *thk,   // ice thickness
                 *bed,   // bed elevation (not all models need this)
+                *cellarea, // projection-dependent area of each cell, used in mass reporting
                 *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
   PISMVars *variables;
   virtual PetscErrorCode get_input_rate(IceModelVec2S &result);
+  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
+                            PetscReal &icefreelost, PetscReal &oceanlost, PetscReal &negativegain);
 };
 
 
@@ -147,7 +151,7 @@ public:
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
 protected:
-  IceModelVec2S Wnew;      // water layer thickness, temporary during update
+  IceModelVec2S Wnew;  // new value at update
   virtual PetscErrorCode allocateWnew();
 };
 

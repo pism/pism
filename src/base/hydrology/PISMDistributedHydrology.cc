@@ -29,10 +29,10 @@
 PISMLakesHydrology::PISMLakesHydrology(IceGrid &g, const NCConfigVariable &conf)
     : PISMHydrology(g, conf)
 {
-    if (allocate() != 0) {
-      PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMLakesHydrology constructor.\n");
-      PISMEnd();
-    }
+  if (allocate() != 0) {
+    PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMLakesHydrology constructor.\n");
+    PISMEnd();
+  }
 }
 
 
@@ -344,12 +344,11 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   ierr = W.endGhostComm(); CHKERRQ(ierr);
 
   MaskQuery M(*mask);
-
   PetscReal ht = t, hdt, // hydrology model time and time step
-            fresh_water_density = config.get("fresh_water_density"),
-            K = config.get("hydrology_hydraulic_conductivity"), // FIXME: want Kmax or Kmin according to W > Wr ?
-            my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0,
-            dA = grid.dx * grid.dy;
+            // FIXME: want Kmax or Kmin according to W > Wr ?
+            K = config.get("hydrology_hydraulic_conductivity");
+  PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0,
+            delta_icefree, delta_ocean, delta_neggain;
   PetscInt hydrocount = 0; // count hydrology time steps
 
 //ierr = PetscPrintf(grid.com, "starting PISMLakesHydrology::update() time-stepping loop\n"); CHKERRQ(ierr);
@@ -373,14 +372,12 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = Qstag.endGhostComm(); CHKERRQ(ierr);
 
     ierr = adaptive_for_W_evolution(ht, t+dt, hdt); CHKERRQ(ierr);
-//ierr = PetscPrintf(grid.com, "adaptive...() reports hdt = %.6f seconds = %.6f years\n",hdt,hdt/secpera); CHKERRQ(ierr);
 
     // update Wnew from time step
     PetscReal  wux = K / (grid.dx * grid.dx),  // FIXME if K is variable
                wuy = K / (grid.dy * grid.dy),
                divadflux, diffW;
     ierr = W.begin_access(); CHKERRQ(ierr);
-    ierr = mask->begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
     ierr = input.begin_access(); CHKERRQ(ierr);
@@ -394,24 +391,18 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
                 + wuy * ( Wstag(i,j,1) * (W(i  ,j+1) - W(i,j))
                          - Wstag(i  ,j-1,1) * (W(i,j) - W(i  ,j-1)) );
         Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + input(i,j));
-        if (M.ice_free_land(i,j)) {
-          my_icefreelost += Wnew(i,j) * dA * fresh_water_density; // FIXME: mult by cell area?
-          Wnew(i,j) = 0.0;
-        } else if (M.ocean(i,j)) {
-          my_oceanlost += Wnew(i,j) * dA * fresh_water_density; // FIXME: mult by cell area?
-          Wnew(i,j) = 0.0;
-        } else if (Wnew(i,j) < 0.0) {
-          my_negativegain += -Wnew(i,j) * dA * fresh_water_density; // FIXME: mult by cell area?
-          Wnew(i,j) = 0.0;
-        }
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
-    ierr = mask->end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = Qstag.end_access(); CHKERRQ(ierr);
     ierr = input.end_access(); CHKERRQ(ierr);
     ierr = Wnew.end_access(); CHKERRQ(ierr);
+
+    ierr = boundary_mass_changes(Wnew,delta_icefree,delta_ocean,delta_neggain); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
 
     // transfer Wnew into W
     ierr = Wnew.beginGhostComm(W); CHKERRQ(ierr);
@@ -420,14 +411,8 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  // lost mass over whole glacier/ice sheet
-  PetscReal icefreelost, oceanlost, negativegain;
-  ierr = PISMGlobalSum(&my_icefreelost, &icefreelost, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&my_oceanlost, &oceanlost, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&my_negativegain, &negativegain, grid.com); CHKERRQ(ierr);
-
   ierr = verbPrintf(2, grid.com,
-    " 'lakes' distributed hydrology:  %d steps with average dt = %.6f years;  mass losses:\n"
+    " 'lakes' distributed hydrology summary:  %d steps with average dt = %.6f years;  mass losses:\n"
     "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
     hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
   return 0;
@@ -718,10 +703,10 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
         Close = c2 * Aglen * pow(Po(i,j) - P(i,j),nglen) * (W(i,j) + Y0);
         // divergence of flux
         divflux = 0;
-        //FIXME if (!known.as_int(i+1,j) && !known.as_int(i-1,j))
+        //(FIXME: to match conserve.m) if (!known.as_int(i+1,j) && !known.as_int(i-1,j))
           divflux += pux * ( Wstag(i,j,0) * (psi(i+1,j) - psi(i,j))
                          - Wstag(i-1,j,0) * (psi(i,j) - psi(i-1,j)) );
-        //FIXME if (!known.as_int(i,j+1) && !known.as_int(i,j-1))
+        //(FIXME: to match conserve.m) if (!known.as_int(i,j+1) && !known.as_int(i,j-1))
           divflux += puy * ( Wstag(i,j,1) * (psi(i,j+1) - psi(i,j))
                          - Wstag(i,j-1,1) * (psi(i,j) - psi(i,j-1)) );
         // candidate for update
