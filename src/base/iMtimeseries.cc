@@ -66,7 +66,10 @@ PetscErrorCode IceModel::init_timeseries() {
 
   save_ts = true;
 
-  ierr = parse_times(grid.com, config, times, ts_times);
+  ierr = parse_times(grid.com, config, times,
+                     grid.time->start(),
+                     grid.time->end(),
+                     ts_times);
   if (ierr != 0) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -ts_times argument failed.\n"); CHKERRQ(ierr);
     PISMEnd();
@@ -101,11 +104,13 @@ PetscErrorCode IceModel::init_timeseries() {
     }
   }
 
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid, "netcdf3");      // Use NetCDF-3 to write time-series.
   ierr = nc.open(ts_filename, PISM_WRITE, append); CHKERRQ(ierr);
+
+  ierr = write_metadata(nc, false); CHKERRQ(ierr);
+
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write_metadata(ts_filename, false); CHKERRQ(ierr);
 
   // set the output file:
   map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
@@ -195,7 +200,7 @@ PetscErrorCode IceModel::init_extras() {
     ierr = PISMOptionsString("-extra_times", "Specifies times to save at",
 			     times, extra_times_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsString("-extra_vars", "Spacifies a comma-separated list of variables to save",
+    ierr = PISMOptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
 			     vars, extra_vars_set); CHKERRQ(ierr);
 
     ierr = PISMOptionsIsSet("-extra_split", "Specifies whether to save to separate files",
@@ -214,7 +219,10 @@ PetscErrorCode IceModel::init_extras() {
     return 0;
   }
 
-  ierr = parse_times(grid.com, config, times, extra_times);
+  ierr = parse_times(grid.com, config, times,
+                     grid.time->start(),
+                     grid.time->end(),
+                     extra_times);
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: parsing the -extra_times argument failed.\n");
     PISMEnd();
@@ -311,7 +319,7 @@ PetscErrorCode IceModel::init_extras() {
 //! Write spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::write_extras() {
   PetscErrorCode ierr;
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid, grid.config.get_string("output_format"));
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
 				 // value is never used, because saving_after
 				 // is only used if save_now == true, and in
@@ -404,11 +412,9 @@ PetscErrorCode IceModel::write_extras() {
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 
   if (!extra_file_is_ready) {
-
     // default behavior is to move the file aside if it exists already; option allows appending
     bool append;
     ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
-
     // Prepare the file:
     ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
@@ -416,29 +422,29 @@ PetscErrorCode IceModel::write_extras() {
                        grid.time->CF_units()); CHKERRQ(ierr);
     ierr = nc.put_att_text(config.get_string("time_dimension_name"),
                            "bounds", "time_bounds"); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = write_metadata(filename); CHKERRQ(ierr); 
+    ierr = write_metadata(nc); CHKERRQ(ierr); 
 
     extra_file_is_ready = true;
-
+  } else {
+    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   }
 
   unsigned int time_length = 0;
 
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"),
                         grid.time->current()); CHKERRQ(ierr);
   ierr = nc.inq_dimlen(config.get_string("time_dimension_name"), time_length); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = extra_bounds.write(filename, static_cast<size_t>(time_length - 1),
+  ierr = extra_bounds.write(nc, static_cast<size_t>(time_length - 1),
                             last_extra, grid.time->current()); CHKERRQ(ierr);
 
-  ierr = timestamp.write(filename, static_cast<size_t>(time_length - 1),
+  ierr = timestamp.write(nc, static_cast<size_t>(time_length - 1),
                          wall_clock_hours); CHKERRQ(ierr);
 
-  ierr = write_variables(filename, extra_vars, PISM_FLOAT);  CHKERRQ(ierr);
+  ierr = write_variables(nc, extra_vars, PISM_FLOAT);  CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   // flush time-series buffers
   ierr = flush_timeseries(); CHKERRQ(ierr);

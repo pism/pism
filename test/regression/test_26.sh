@@ -8,13 +8,13 @@ set -x
 # Test name:
 echo "Test #26: Cold part of Paterson-Budd flow law regression."
 # The list of files to delete when done.
-files="flowtable.txt diff.txt"
+files="flowtable-26.txt diff-26.txt"
 
 rm -f $files
 
-$PISM_PATH/flowlaw_test -flow_law arr > flowtable.txt
+$PISM_PATH/flowlaw_test -flow_law arr > flowtable-26.txt
 # compare results
-diff flowtable.txt - > diff.txt <<END-OF-OUTPUT
+diff flowtable-26.txt - > diff-26.txt <<END-OF-OUTPUT
 flow law:   "arr"
 pressure = 1.785e+07 Pa = (hydrostatic at depth 2000.00 m)
 flowtable:

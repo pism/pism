@@ -554,8 +554,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   //   ice is cold
   ierr = config.flag_from_option("cold", "do_cold_ice_methods"); CHKERRQ(ierr);
 
-  ierr = config.flag_from_option("diffuse_bwat", "do_diffuse_bwat"); CHKERRQ(ierr);
-
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
 
@@ -565,6 +563,15 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
   ierr = config.flag_from_option("energy", "do_energy"); CHKERRQ(ierr);
   ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);
+  ierr = config.keyword_from_option("hydrology", "hydrology_model",
+                                    "tillcan,diffuseonly,lakes,distributed"); CHKERRQ(ierr);
+
+  ierr = config.flag_from_option("hydrology_use_const_bmelt",
+                                 "hydrology_use_const_bmelt"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_const_bmelt",
+                                   "hydrology_const_bmelt"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_hydraulic_conductivity",
+                                   "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
 
   // Time-stepping
   ierr = config.keyword_from_option("calendar", "calendar",
@@ -578,15 +585,12 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("count_steps", "count_time_steps"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);
 
-	// evaluates the adaptive timestep based on a CFL criterion with respect to the eigenCalving rate
-  ierr = config.flag_from_option("cfl_eigencalving", "cfl_eigencalving"); CHKERRQ(ierr);
-
 
   // SIA
   ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("gradient", "surface_gradient_method",
-                                    "eta,haseloff,mahaffy"); CHKERRQ(ierr);
+                                    "eta,haseloff,mahaffy,new"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("sia_e", "sia_enhancement_factor"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_e", "ssa_enhancement_factor"); CHKERRQ(ierr);
@@ -608,10 +612,31 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   ierr = config.flag_from_option("ssa_dirichlet_bc", "ssa_dirichlet_bc"); CHKERRQ(ierr);
   ierr = config.flag_from_option("cfbc", "calving_front_stress_boundary_condition"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("brutal_sliding", "scalebrutalSet"); CHKERRQ(ierr);
 
+  // Basal sliding fiddles
+  ierr = config.flag_from_option("brutal_sliding", "scalebrutalSet"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr); 
- 
+
+  ierr = config.scalar_from_option("sliding_scale", "sliding_scale_factor_reduces_tauc"); CHKERRQ(ierr);
+
+  // SSA Inversion
+
+  ierr = config.keyword_from_option("inv_method","inv_ssa_method",
+                                    "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn");
+  CHKERRQ(ierr);
+
+  ierr = config.keyword_from_option("inv_ssa_tauc_param",
+                                    "inv_ssa_tauc_param","ident,trunc,square,exp"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("rms_error","inv_ssa_target_rms_misfit"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("tikhonov_penalty","tikhonov_penalty_weight"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("tikhonov_atol","tikhonov_atol"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("tikhonov_rtol","tikhonov_rtol"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("tikhonov_ptol","tikhonov_ptol"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("inv_ssa_cL2","inv_ssa_cL2"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("inv_ssa_cH1","inv_ssa_cH1"); CHKERRQ(ierr);
 
   // Basal strength
 
@@ -648,6 +673,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.scalar_from_option("thk_eff_H_low","thk_eff_H_low");  CHKERRQ(ierr);
   // pure number :
   ierr = config.scalar_from_option("thk_eff_reduced","thk_eff_reduced");  CHKERRQ(ierr);
+  
+  ierr = config.flag_from_option("subgl", "sub_groundingline"); CHKERRQ(ierr);
 
   // Ice shelves
 
@@ -657,7 +684,9 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   ierr = config.scalar_from_option("nuBedrock", "nuBedrock"); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-nuBedrock", flag);  CHKERRQ(ierr);
-  if (flag)  config.set_flag("nuBedrockSet", true);
+  if (flag) {
+    config.set_flag_from_option("nuBedrockSet", true);
+  }
 
 
   // Calving
@@ -672,20 +701,19 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("thickness_calving", "do_thickness_calving"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("calving_at_thickness", "calving_at_thickness"); CHKERRQ(ierr);
 
+  // evaluates the adaptive timestep based on a CFL criterion with respect to the eigenCalving rate
+  ierr = config.flag_from_option("cfl_eigencalving", "cfl_eigencalving"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("eigen_calving_K", "eigen_calving_K"); CHKERRQ(ierr);
   ierr = config.flag_from_option("eigen_calving", "do_eigen_calving"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
 
   // Output
-  ierr = config.flag_from_option("acab_cumulative", "compute_cumulative_acab"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("f3d", "force_full_diagnostics"); CHKERRQ(ierr);
-
   ierr = config.keyword_from_option("o_order", "output_variable_order",
                                     "xyz,yxz,zyx"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("o_format", "output_format",
-                                    "netcdf3,netcdf4_parallel,pnetcdf"); CHKERRQ(ierr);
+                                    "netcdf3,quilt,quilt-with-compression,netcdf4_parallel,pnetcdf,hdf5"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
                                    "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);
@@ -702,33 +730,36 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   // Shortcuts
 
-  if (getVerbosityLevel() > 2)  config.set_flag("verbose_pik_messages", true);
-
   // option "-pik" turns on a suite of PISMPIK effects (but not -eigen_calving)
   ierr = PISMOptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms", flag); CHKERRQ(ierr);
   if (flag) {
-    config.set_flag("calving_front_stress_boundary_condition", true);
-    config.set_flag("part_grid", true);
-    config.set_flag("part_redist", true);
-    config.set_flag("kill_icebergs", true);
+    config.set_flag_from_option("calving_front_stress_boundary_condition", true);
+    config.set_flag_from_option("part_grid", true);
+    config.set_flag_from_option("part_redist", true);
+    config.set_flag_from_option("kill_icebergs", true);
   }
 
   // kill_icebergs requires part_grid
   if (config.get_flag("kill_icebergs")) {
-    config.set_flag("part_grid", true);
+    config.set_flag_from_option("part_grid", true);
+
+    if (getVerbosityLevel() > 2) {
+      config.set_flag_from_option("verbose_pik_messages", true);
+    }
   }
+
   
   ierr = PISMOptionsIsSet("-ssa_floating_only", flag);  CHKERRQ(ierr);
   if (flag) {
-    config.set_flag("use_ssa_velocity", true);
-    config.set_flag("use_ssa_when_grounded", false);
+    config.set_flag_from_option("use_ssa_velocity", true);
+    config.set_flag_from_option("use_ssa_when_grounded", false);
   }
 
   // check -ssa_sliding
   ierr = PISMOptionsIsSet("-ssa_sliding", flag);  CHKERRQ(ierr);
   if (flag) {
-    config.set_flag("use_ssa_velocity", true);
-    config.set_flag("use_ssa_when_grounded", true);
+    config.set_flag_from_option("use_ssa_velocity", true);
+    config.set_flag_from_option("use_ssa_when_grounded", true);
   }
 
   return 0;

@@ -32,7 +32,7 @@ static char help[] =
 static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid, "guess_format");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_grid("bedrock_altitude", &grid, NOT_PERIODIC); CHKERRQ(ierr);
@@ -177,11 +177,7 @@ int main(int argc, char *argv[]) {
 
     // This is never used (but it is a required argument of the
     // PISMStressBalance constructor).
-    IceBasalResistancePlasticLaw basal(
-           config.get("plastic_regularization", "1/year", "1/second"),
-           config.get_flag("do_pseudo_plastic_till"),
-           config.get("pseudo_plastic_q"),
-           config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
+    IceBasalResistancePlasticLaw basal(config);
 
     // POConstant ocean(grid, config);
 
@@ -195,7 +191,7 @@ int main(int argc, char *argv[]) {
     ierr = blatter.update(false); CHKERRQ(ierr);
 
     // Write results to an output file:
-    PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
+    PIO pio(grid, grid.config.get_string("output_format"));
 
     ierr = pio.open(output_file, PISM_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(config.get_string("time_dimension_name"),

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2012  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,145 +16,90 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _INVSSAFORWARDPROBLEM_H_
-#define _INVSSAFORWARDPROBLEM_H_
+#ifndef INVSSAFORWARDPROBLEM_HH_4AEVR4Z
+#define INVSSAFORWARDPROBLEM_HH_4AEVR4Z
+
 
 #include "SSAFEM.hh"
 #include "InvTaucParameterization.hh"
 
-//! \file 
-//! \brief Class for implementing the hard parts of a 'siple' 
-// NonlinearForwardProblem for the SSA.
-/*!\file
-Discussion goes here about what the forward problem is, what its
-linearization (T) is, what the adjoint of said linearization (T^*)
-is, and the inner products.
-*/
-
-//! Forward problem for the map from yeild stress to velocities in the SSA
 class InvSSAForwardProblem : public SSAFEM
 {
-
 public:
 
   InvSSAForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
     EnthalpyConverter &e, InvTaucParameterization &tp,
-                 const NCConfigVariable &c)
-           : SSAFEM(g,b,e,c),
-             m_KSP(0), m_KSP_B(0), m_MatA(0), m_MatB(0),
-             m_VecU(0), m_VecZ2(0),
-             m_VecZ(0), m_VecRHS2(0),
-             m_VecV(0), m_VecRHS(0),
-             m_misfit_weight(NULL),
-             m_misfit_element_mask(NULL),
-             m_zeta_fixed_locations(NULL),
-             m_tauc_param(tp),
-             m_reassemble_T_matrix_needed(true),
-             m_forward_F_needed(true)
-  {
-    PetscErrorCode ierr = allocate_ksp();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: InvSSAForwardProblem allocation failed.\n");
-      PISMEnd();
-    }    
-    ierr = allocate_store();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: InvSSAForwardProblem allocation failed.\n");
-      PISMEnd();
-    }    
-  };
+    const NCConfigVariable &c);
 
-  virtual ~InvSSAForwardProblem()
-  {
-    deallocate_store();
-    deallocate_ksp();
-  }
+  virtual ~InvSSAForwardProblem();
 
-  virtual PetscErrorCode init(PISMVars &vars);
-
-  PetscErrorCode set_initial_velocity_guess(IceModelVec2V &v);
-
-  virtual PetscErrorCode set_zeta_fixed_locations(IceModelVec2Int &locations)
+  virtual PetscErrorCode set_tauc_fixed_locations(IceModelVec2Int &locations)
   { 
-    m_zeta_fixed_locations = &locations;
+    m_fixed_tauc_locations = &locations;
     return 0;
   }
 
-  PetscErrorCode set_zeta(IceModelVec2S &zeta );
+  IceModelVec2V &solution() {
+    return m_velocity;
+  }
 
-  PetscErrorCode setup_vars();
+  InvTaucParameterization & tauc_param() {
+    return m_tauc_param;
+  }
 
-  PetscErrorCode solveF(IceModelVec2V &result);
+  PetscErrorCode set_zeta( IceModelVec2S &zeta);
 
-  PetscErrorCode solveT( IceModelVec2S &d, IceModelVec2V &result);
+  PetscErrorCode linearize_at( IceModelVec2S &zeta, TerminationReason::Ptr &reason);
 
-  PetscErrorCode solveTStar( IceModelVec2V &r, IceModelVec2S &result);
+  PetscErrorCode assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
+  PetscErrorCode assemble_residual(IceModelVec2V &u, Vec R);
 
-  PetscErrorCode domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscScalar *OUTPUT);
+  PetscErrorCode assemble_jacobian_state(IceModelVec2V &u, Mat J);
 
-  PetscErrorCode rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscScalar *OUTPUT);
+  PetscErrorCode apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta,IceModelVec2V &du);
+  PetscErrorCode apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, Vec du);
+  PetscErrorCode apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, PISMVector2 **du_a);
 
-  PetscErrorCode domainIP(Vec a, Vec b, PetscScalar *OUTPUT);
+  PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,IceModelVec2S &dzeta);
+  PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta);
+  PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,PetscReal **dzeta);
 
-  PetscErrorCode rangeIP(Vec a, Vec b, PetscScalar *OUTPUT);
+  PetscErrorCode apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du);
+  PetscErrorCode apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);
 
+  PetscErrorCode get_da(DM *da) {
+    *da = SSADA;
+    return 0;
+  }
+  
 protected:
-  PetscErrorCode allocate_ksp();  
 
-  PetscErrorCode deallocate_ksp();
+  PetscErrorCode construct();
+  PetscErrorCode destruct();
 
-  PetscErrorCode allocate_store();  
+  IceGrid &m_grid;
 
-  PetscErrorCode deallocate_store();
+  IceModelVec2S   *m_zeta;
+  IceModelVec2S   m_dzeta_local;
 
-  PetscErrorCode domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT);
-
-  PetscErrorCode rangeIP_core(PISMVector2 **A, PISMVector2**B, PetscScalar *OUTPUT);
-  
-  PetscErrorCode solveF_core();
-
-  PetscErrorCode assemble_T_matrix();
-
-  PetscErrorCode assemble_DomainNorm_matrix();
-
-  PetscErrorCode assemble_T_rhs( PISMVector2 **gvel, PetscReal **gdtau, PISMVector2 **grhs);
-
-  PetscErrorCode assemble_TStarA_rhs( PISMVector2 **R, PISMVector2 **RHS);
-
-  PetscErrorCode assemble_TStarB_rhs( PISMVector2 **Z, PISMVector2 **U, PetscScalar **RHS );
-
-  PetscErrorCode compute_range_l2_area(PetscScalar *OUTPUT);
-  
-  // PetscErrorCode assemble_TStar_rhs();
-
-  KSP m_KSP, m_KSP_B;
-  //! Matrices involved in T and T*
-  Mat m_MatA, m_MatB;
-  Vec m_VecU;
-  //! Left- and right-hand side for linear vector problems.
-  Vec m_VecZ2, m_VecZ, m_VecRHS2;
-  //! Left- and right-hand side for linear scalar problems.
-  Vec m_VecV, m_VecRHS;
-
-  // Optional weight for a weighted L2 norm in the range.
-  IceModelVec2S *m_misfit_weight;
-
-  // Optional list of elements to be included in the misfit computation.
-  IceModelVec2Int *m_misfit_element_mask;
-
-  // Locations where zeta is not allowed to change.
-  IceModelVec2Int *m_zeta_fixed_locations;
-
-  // Store for values of dtauc_dzeta at the quad points.
-  
-  PetscReal *m_dtauc_dzeta_store;
-
-  PetscReal m_range_l2_area;
+  IceModelVec2Int *m_fixed_tauc_locations;
 
   InvTaucParameterization &m_tauc_param;
 
-  bool m_reassemble_T_matrix_needed, m_forward_F_needed;
+  IceModelVec2V  m_du_global;
+  IceModelVec2V  m_du_local;
+
+  FEElementMap m_element_index;
+  FEQuadrature m_quadrature;
+  FEDOFMap     m_dofmap;
+
+  KSP  m_ksp;
+  Mat  m_J_state;
+
+  SNESConvergedReason m_reason;
+
+  bool m_rebuild_J_state;
 };
 
-//_INVSSAFORWARDPROBLEM_H_
-#endif 
+
+#endif /* end of include guard: INVSSAFORWARDPROBLEM_HH_4AEVR4Z */

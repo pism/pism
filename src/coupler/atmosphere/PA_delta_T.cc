@@ -110,7 +110,7 @@ PetscErrorCode PA_delta_T::define_variables(set<string> vars, const PIO &nc,
 }
 
 
-PetscErrorCode PA_delta_T::write_variables(set<string> vars, string output_filename) {
+PetscErrorCode PA_delta_T::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -120,7 +120,7 @@ PetscErrorCode PA_delta_T::write_variables(set<string> vars, string output_filen
 
     ierr = mean_annual_temp(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(output_filename); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
 
     vars.erase("air_temp");
   }
@@ -128,17 +128,17 @@ PetscErrorCode PA_delta_T::write_variables(set<string> vars, string output_filen
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
     ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(output_filename); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
 
     vars.erase("precipitation");
   }
 
-  ierr = input_model->write_variables(vars, output_filename); CHKERRQ(ierr);
+  ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }

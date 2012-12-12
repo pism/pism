@@ -37,6 +37,7 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
                         "Kelvin", ""); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                        "m s-1", ""); CHKERRQ(ierr);
+  ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ierr = temp.init(filename); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);
@@ -52,8 +53,14 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
 PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-  ierr = temp.at_time(t); CHKERRQ(ierr);
+  // Annualized PDD may take steps spanning several time-intervals of forcing
+  // data, so we need to compute the average to avoid making mistakes such as
+  // applying January mass balance throughout the year.
+  ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
+
+  // Average so that the mean_annual_temp() may be reported correctly (at least
+  // in the "-surface pdd" case).
+  ierr = temp.average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }

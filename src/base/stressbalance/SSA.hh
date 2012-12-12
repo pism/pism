@@ -158,23 +158,17 @@ public:
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
-  //! Add pointers to diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 
-  using ShallowStressBalance::compute_principal_strain_rates;
-  virtual PetscErrorCode compute_principal_strain_rates(
-                IceModelVec2S &result_e1, IceModelVec2S &result_e2);
-
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
 protected:
   virtual PetscErrorCode allocate();
 
   virtual PetscErrorCode deallocate();
 
   virtual PetscErrorCode solve()  = 0;
-
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 
   virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2S &result);
 
@@ -186,8 +180,9 @@ protected:
   IceModelVec2S *thickness, *tauc, *surface, *bed;
   IceModelVec2S *driving_stress_x;
   IceModelVec2S *driving_stress_y;
-  IceModelVec2V taud, velocity_old;
+  IceModelVec2V taud, m_velocity_old;
   IceModelVec3 *enthalpy;
+  IceModelVec2S *gl_mask;
 
   string stdout_ssa;
 
@@ -199,12 +194,23 @@ protected:
   int event_ssa;
 };
 
-//! \brief Computes the driving stress (taud).
+
+//! \brief Computes the magnitude of the driving shear stress at the base of
+//! ice (diagnostically).
+class SSA_taud_mag : public PISMDiag<SSA>
+{
+public:
+  SSA_taud_mag(SSA *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes the driving shear stress at the base of ice
+//! (diagnostically).
 class SSA_taud : public PISMDiag<SSA>
 {
 public:
   SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars);
-  PetscErrorCode compute(IceModelVec* &result);
+  virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 #endif /* _SSA_H_ */

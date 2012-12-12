@@ -200,6 +200,11 @@ protected:
   void destroy_dms();
 
   int index(int, int);
+private:
+  // Hide copy constructor / assignment operator.
+  IceGrid(IceGrid const &);
+  IceGrid & operator=(IceGrid const &);
+
 };
 
 #endif	/* __grid_hh */

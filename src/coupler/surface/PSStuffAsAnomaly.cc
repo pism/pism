@@ -165,15 +165,15 @@ PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const PIO &n
   return 0;
 }
 
-PetscErrorCode PSStuffAsAnomaly::write_variables(set<string> vars, string fname) {
+PetscErrorCode PSStuffAsAnomaly::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ierr = temp.write(fname); CHKERRQ(ierr);
+    ierr = temp.write(nc); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = mass_flux.write(fname); CHKERRQ(ierr);
+    ierr = mass_flux.write(nc); CHKERRQ(ierr);
   }
 
   // ensure that no one overwrites these two
@@ -181,7 +181,7 @@ PetscErrorCode PSStuffAsAnomaly::write_variables(set<string> vars, string fname)
   vars.erase("climatic_mass_balance");
 
   if (input_model != NULL) {
-    ierr = input_model->write_variables(vars, fname); CHKERRQ(ierr);
+    ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   return 0;

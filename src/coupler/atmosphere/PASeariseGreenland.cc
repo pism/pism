@@ -74,7 +74,13 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     ierr = delta_T->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
     ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
     CHKERRQ(ierr);
-    ierr = delta_T->read(delta_T_file, grid.time->use_reference_date()); CHKERRQ(ierr);
+
+    PIO nc(grid, "netcdf3");    // OK to use netcdf3
+    ierr = nc.open(delta_T_file, PISM_NOWRITE); CHKERRQ(ierr);
+    {
+      ierr = delta_T->read(nc, grid.time->use_reference_date()); CHKERRQ(ierr);
+    }
+    ierr = nc.close(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -86,12 +92,8 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precipitation(IceModelVec2S &result) {
   ierr = PAYearlyCycle::mean_precipitation(result); CHKERRQ(ierr);
 
   if ((delta_T != NULL) && paleo_precipitation_correction) {
-    string history = "added the paleo-precipitation correction\n" + result.string_attr("history");
-
     PetscReal precipexpfactor = config.get("precip_exponential_factor_for_temperature");
     ierr = result.scale(exp( precipexpfactor * (*delta_T)(t + 0.5 * dt) )); CHKERRQ(ierr);
-
-    ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }
 
   return 0;

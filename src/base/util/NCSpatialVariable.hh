@@ -31,11 +31,11 @@ public:
   virtual void init_2d(string name, IceGrid &g);
   virtual void init_3d(string name, IceGrid &g, vector<double> &zlevels);
   virtual void set_levels(const vector<double> &levels);
-  virtual PetscErrorCode read(string filename, unsigned int time, Vec v);
   virtual PetscErrorCode reset();
-  virtual PetscErrorCode write(string filename, PISM_IO_Type nctype,
+  virtual PetscErrorCode read(const PIO &file, unsigned int time, Vec v);
+  virtual PetscErrorCode write(const PIO &file, PISM_IO_Type nctype,
 			       bool write_in_glaciological_units, Vec v);
-  virtual PetscErrorCode regrid(string filename, LocalInterpCtx *lic,
+  virtual PetscErrorCode regrid(const PIO &file, LocalInterpCtx *lic,
 				bool critical, bool set_default_value,
 				PetscScalar default_value, Vec v);
   virtual PetscErrorCode to_glaciological_units(Vec v);
@@ -54,7 +54,7 @@ protected:
   IceGrid *grid;
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
-  PetscErrorCode check_range(Vec v);
+  PetscErrorCode check_range(string filename, Vec v);
   PetscErrorCode define_dimensions(const PIO &nc);
 };
 

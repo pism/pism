@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011 Constantine Khroulev
+// Copyright (C) 2009--2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 
 IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   dof = 2;
+  begin_end_access_use_dof = false;
   vars.resize(dof);
 
   reset_attrs(0);
@@ -35,11 +36,10 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, string my_short_name, bo
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local,
 					     stencil_width, dof); CHKERRQ(ierr);
 
-  string s_name = my_short_name;
-  vars[0].init_2d("u" + s_name, my_grid);
-  vars[1].init_2d("v" + s_name, my_grid);
+  vars[0].init_2d("u" + my_short_name, my_grid);
+  vars[1].init_2d("v" + my_short_name, my_grid);
 
-  name = "vel" + string(my_short_name);
+  name = "vel" + my_short_name;
 
   return 0;
 }

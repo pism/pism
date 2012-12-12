@@ -309,10 +309,11 @@ files.
 \label{sec:time-bounds}
 \index{Time!bounds}
 
-PISM interprets climate forcing data as piecewise-constant in time. A forcing file can specify time bounds corresponding to each record by following the CF (Climate and Forecasting) meta-data conventions.
+PISM interprets climate forcing data as piecewise-constant in time. A forcing
+file is required to contain time bounds corresponding to each record.
 
-The \texttt{ncdump -h} output from a conforming file would look similar to the
-following:
+PISM follows the CF (Climate and Forecasting) meta-data conventions. The
+\texttt{ncdump -h} output from a conforming file would look similar to:
 \begin{verbatim}
 netcdf forcing {
 dimensions:
@@ -856,8 +857,9 @@ Note: this surface model \emph{ignores} the atmosphere model selection made usin
   \end{tabular}
 \end{center}
 
-The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is
-based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+The default PDD model used by PISM, turned on by option \texttt{-surface pdd}, is based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+
+By default, PISM computes the number of PDD, accumulation and ablation at each time-step. To do this calculation on an annual basis instead, option \texttt{-pdd_annualize} should be used. This becomes particularly important when using annually-variable climate inputs and sub-annual time-steps.
 
 Our PDD implementation is meant to be used with an atmosphere model
 implementing a cosine yearly cycle such as \texttt{searise_greenland} (section

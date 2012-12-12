@@ -5,7 +5,8 @@ include_directories (
   base/util/io
   base/energy
   base/rheology
-  base/basal_strength
+  base/basalstrength
+  base/hydrology
   earth
   coupler
   coupler/atmosphere
@@ -41,29 +42,41 @@ set(PISMUTIL_SRC
   base/util/io/LocalInterpCtx.cc
   base/util/io/PIO.cc
   base/util/io/PISMNC3File.cc
+  base/util/io/PISMNC4File.cc
+  base/util/io/PISMNC4_Quilt.cc
   base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
   base/util/pism_default_config.cc
   base/util/pism_options.cc
+  base/util/TerminationReason.cc
   base/util/time_options.cc
   base/varcEnthalpyConverter.cc
   )
 
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=1")
-  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4File.cc)
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=1")
+  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4_Par.cc)
 else()
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PARALLEL_NETCDF4=0")
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=0")
 endif()
 
 # Check if PnetCDF parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PNETCDF)
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=1")
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=1")
   list(APPEND PISMUTIL_SRC base/util/io/PISMPNCFile.cc)
 else()
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_PNETCDF=0")
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=0")
 endif()
+
+# Check if HDF5-based parallel I/O is enabled. If so, set compiler flags and add a source code file.
+if (Pism_USE_PARALLEL_HDF5)
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_HDF5=1")
+  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4_HDF5.cc)
+else()
+  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_HDF5=0")
+endif()
+
 
 # The list of headers included in PIO.cc depends on parallel I/O settings.
 # These flags determine which headers are included.
@@ -108,7 +121,6 @@ add_library (pismbase
   base/iMenergy.cc
   base/iMenthalpy.cc
   base/iMgeometry.cc
-  base/iMhydrology.cc
   base/iMicebergs.cc
   base/iMinit.cc
   base/iMIO.cc
@@ -122,22 +134,31 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc
-  base/basal_strength/PISMMohrCoulombYieldStress.cc
-  base/basal_strength/PISMConstantYieldStress.cc
-  base/basal_strength/basal_resistance.cc
+  base/basalstrength/PISMMohrCoulombYieldStress.cc
+  base/basalstrength/PISMConstantYieldStress.cc
+  base/basalstrength/basal_resistance.cc
+  base/hydrology/PISMHydrology.cc
+  base/hydrology/PISMDistributedHydrology.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 
 # Bed deformation models.
-add_library (pismearth
-  earth/PBLingleClark.cc
+set(PISMEARTH_SRC
   earth/PBPointwiseIsostasy.cc
   earth/PISMBedDef.cc
-  earth/cubature.c
-  earth/deformation.cc
-  earth/greens.cc
-  earth/matlablike.cc
-)
+  )
+
+if (Pism_USE_FFTW)
+  list (APPEND PISMEARTH_SRC
+    earth/PBLingleClark.cc
+    earth/deformation.cc
+    earth/greens.cc
+    earth/cubature.c
+    earth/matlablike.cc
+    )
+endif()
+
+add_library(pismearth ${PISMEARTH_SRC})
 target_link_libraries (pismearth pismutil)
 
 # Disable compiler warnings for cubature.c (source file not by PISM authors)
@@ -197,7 +218,10 @@ target_link_libraries (pismv pismverif pismbase)
 add_executable (pclimate pclimate.cc)
 target_link_libraries (pclimate pismboundary pismrevision)
 
-find_program (NCGEN_PROGRAM "ncgen")
+add_executable (pismmerge pismmerge.cc base/util/io/PISMNC4_Serial.cc)
+target_link_libraries (pismmerge pismutil pismrevision)
+
+find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
 mark_as_advanced(NCGEN_PROGRAM)
 
 add_custom_command (OUTPUT pism_config.nc
@@ -206,44 +230,52 @@ add_custom_command (OUTPUT pism_config.nc
 )
 add_custom_target (pism_config DEPENDS pism_config.nc)
 
+# Install libraries only if BUILD_SHARED_LIBS is ON.
+if (${BUILD_SHARED_LIBS})
+  install (TARGETS
+    pismutil pismverif pismbase pismflowlaws pismearth pismudunits # libraries
+    LIBRARY DESTINATION ${Pism_LIB_DIR}
+    ARCHIVE DESTINATION ${Pism_LIB_DIR})
+endif ()
+
+# Always install executables.
 install (TARGETS
-  pismr pisms pismv pclimate ## executables
-  pismutil pismverif pismbase pismflowlaws pismearth pismudunits # libraries
-  RUNTIME DESTINATION ${Pism_BIN_DIR}
-  LIBRARY DESTINATION ${Pism_LIB_DIR}
-  ARCHIVE DESTINATION ${Pism_LIB_DIR})
+  pismr pisms pismv pclimate pismmerge ## executables
+  RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 install (FILES
   "udunits/pismudunits.dat"
   "${PROJECT_BINARY_DIR}/pism_config.nc"
   DESTINATION ${Pism_LIB_DIR})
 
-if (NOT Pism_BUILD_DEBIAN_PACKAGE)
-  # miscellaneous executables needed by software tests
-  add_executable (flowlaw_test
-    software_tests/flowlaw_test.cc)
-  target_link_libraries (flowlaw_test pismutil pismflowlaws)
-  install (TARGETS flowlaw_test RUNTIME DESTINATION ${Pism_BIN_DIR})
-  
-  add_executable (bedrough_test
-    software_tests/bedrough_test.cc
-    base/stressbalance/PISMBedSmoother.cc)
-  target_link_libraries (bedrough_test pismutil)
-  install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
-endif ()
+# miscellaneous executables needed by software tests
+add_executable (flowlaw_test
+  software_tests/flowlaw_test.cc)
+target_link_libraries (flowlaw_test pismutil pismflowlaws)
+install (TARGETS flowlaw_test RUNTIME DESTINATION ${Pism_BIN_DIR})
+
+add_executable (bedrough_test
+  software_tests/bedrough_test.cc
+  base/stressbalance/PISMBedSmoother.cc)
+target_link_libraries (bedrough_test pismutil)
+install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 if (Pism_BUILD_EXTRA_EXECS)
-  set (SIMPLE_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
-  foreach (EXEC ${SIMPLE_EXECS})
+  set (EXTRA_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
+  foreach (EXEC ${EXTRA_EXECS})
     add_executable (${EXEC} verif/tests/${EXEC}.c)
     target_link_libraries (${EXEC} pismverif)
   endforeach (EXEC)
 
-  add_executable (tryLCbd earth/tryLCbd.cc)
-  target_link_libraries (tryLCbd pismearth pismrevision)
+  if (Pism_USE_FFTW)
+    add_executable (tryLCbd earth/tryLCbd.cc)
+    target_link_libraries (tryLCbd pismearth pismrevision)
+    list (APPEND EXTRA_EXECS tryLCbd)
+  endif()
 
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil pismrevision)
+  list (APPEND EXTRA_EXECS btutest)
 
   set (netcdf_test_libraries pismutil ${NETCDF_LIBRARIES} ${PETSC_LIBRARIES} ${MPI_LIBRARIES})
 
@@ -258,14 +290,15 @@ if (Pism_BUILD_EXTRA_EXECS)
    PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
 
   install (TARGETS
-    ${SIMPLE_EXECS} tryLCbd btutest 
+    ${EXTRA_EXECS}
     RUNTIME DESTINATION ${Pism_BIN_DIR}
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
 endif (Pism_BUILD_EXTRA_EXECS)
 
+add_subdirectory (inverse)
 add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (regional)
-add_subdirectory (inverse)
 add_subdirectory (pythonbindings)
+

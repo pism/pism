@@ -6,12 +6,12 @@ MPIEXEC=$2
 # Test name:
 echo "Test #15: verif test C regression: isothermal SIA w. time-dependent SMB."
 # The list of files to delete when done.
-files="test_15-C-out.txt verify.nc verify.nc~"
+files="test_15-C-out.txt"
 
 rm -f $files
 
 # run test C
-OPTS="-test C -Mbz 1 -Mz 31 -y 5000 -o_size small -verbose 1"
+OPTS="-test C -Mbz 1 -Mz 31 -y 5000 -o_size none -verbose 1"
 $PISM_PATH/pismv -Mx 31 -My 31 $OPTS  > test_15-C-out.txt
 $PISM_PATH/pismv -Mx 41 -My 41 $OPTS >> test_15-C-out.txt
 

@@ -30,6 +30,7 @@ IceModelVec::IceModelVec() {
   da = PETSC_NULL;
   da_stencil_width = 1;
   dof = 1;			// default
+  begin_end_access_use_dof = true;
 
   grid = PETSC_NULL;
 
@@ -66,6 +67,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   da_stencil_width = other.da_stencil_width;
   dof = other.dof;
   da = other.da;
+  begin_end_access_use_dof = other.begin_end_access_use_dof;
 
   grid = other.grid;
 
@@ -155,6 +157,11 @@ PetscErrorCode  IceModelVec::destroy() {
     delete map_viewers;
     map_viewers = NULL;
   }
+
+#if (PISM_DEBUG==1)
+  if (access_counter != 0)
+    SETERRQ(grid->com, 1, "begin_access() and end_access() calls are not matched (access_counter != 0)");
+#endif
 
   return 0;
 }
@@ -361,6 +368,10 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
   return 0;
 }
 
+Vec IceModelVec::get_vec() {
+  return v;
+}
+
 //! Sets the variable name to \c name and resets metadata.
 PetscErrorCode  IceModelVec::set_name(string new_name, int N) {
   reset_attrs(N);
@@ -468,13 +479,10 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 /*!
  * Sets lic to NULL if the variable was not found.
  */
-PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* &lic) {
+PetscErrorCode IceModelVec::get_interp_context(const PIO &nc, LocalInterpCtx* &lic) {
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, "netcdf3");
   bool exists, found_by_std_name;
   string name_found;
-
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
                     exists, name_found, found_by_std_name); CHKERRQ(ierr);
@@ -493,21 +501,23 @@ PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* 
 
   }
 
-  ierr = nc.close(); CHKERRQ(ierr);
-
   return 0;
 }
 
 
-//! Gets an IceModelVec from a file \c filename, interpolating onto the current grid.
+//! Gets an IceModelVec from a file \c nc, interpolating onto the current grid.
 /*! Stops if the variable was not found and \c critical == true.
  */
-PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
+PetscErrorCode IceModelVec::regrid(const PIO &nc, bool critical, int start) {
   PetscErrorCode ierr;
   Vec g;
   LocalInterpCtx *lic = NULL;
 
-  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", name.c_str()); CHKERRQ(ierr);
+  }
+
+  ierr = get_interp_context(nc, lic); CHKERRQ(ierr);
 
   if (lic != NULL) {
     lic->start[0] = start;
@@ -520,14 +530,14 @@ PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
   if (localp) {
     ierr = DMCreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(nc, lic, critical, false, 0.0, g); CHKERRQ(ierr);
 
     ierr = DMGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DMGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(&g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(nc, lic, critical, false, 0.0, v); CHKERRQ(ierr);
   }
 
   delete lic;
@@ -535,15 +545,19 @@ PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
   return 0;
 }
 
-//! Gets an IceModelVec from a file \c filename, interpolating onto the current grid.
+//! Gets an IceModelVec from a file \c nc, interpolating onto the current grid.
 /*! Sets all the values to \c default_value if the variable was not found.
  */
-PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
+PetscErrorCode IceModelVec::regrid(const PIO &nc, PetscScalar default_value) {
   PetscErrorCode ierr;
   Vec g;
   LocalInterpCtx *lic = NULL;
 
-  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", name.c_str()); CHKERRQ(ierr);
+  }
+
+  ierr = get_interp_context(nc, lic); CHKERRQ(ierr);
 
   if (lic != NULL) {
     lic->report_range = report_range;
@@ -555,14 +569,14 @@ PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
   if (localp) {
     ierr = DMCreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = vars[0].regrid(filename, lic, false, true, default_value, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(nc, lic, false, true, default_value, g); CHKERRQ(ierr);
 
     ierr = DMGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DMGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(&g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].regrid(filename, lic, false, true, default_value, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(nc, lic, false, true, default_value, v); CHKERRQ(ierr);
   }
 
   delete lic;
@@ -571,7 +585,7 @@ PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
 }
 
 //! Reads appropriate NetCDF variable(s) into an IceModelVec.
-PetscErrorCode IceModelVec::read(string filename, const unsigned int time) {
+PetscErrorCode IceModelVec::read(const PIO &nc, const unsigned int time) {
   PetscErrorCode ierr;
   Vec g;
 
@@ -585,14 +599,14 @@ PetscErrorCode IceModelVec::read(string filename, const unsigned int time) {
   if (localp) {
     ierr = DMCreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = vars[0].read(filename, time, g); CHKERRQ(ierr);
+    ierr = vars[0].read(nc, time, g); CHKERRQ(ierr);
 
     ierr = DMGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DMGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(&g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].read(filename, time, v); CHKERRQ(ierr);
+    ierr = vars[0].read(nc, time, v); CHKERRQ(ierr);
   }
 
   return 0;
@@ -610,15 +624,30 @@ PetscErrorCode IceModelVec::define(const PIO &nc, PISM_IO_Type output_datatype) 
   return 0;
 }
 
-//! \brief Read attributes from the corresponding variable in \c filename.
+//! \brief Read attributes from the corresponding variable in \c nc.
 /*! Note that unline read() and regrid(), this method does not use the standard
   name to find the variable to read attributes from.
  */
-PetscErrorCode IceModelVec::read_attributes(string filename, int N) {
+PetscErrorCode IceModelVec::read_attributes(const PIO &nc, int N) {
   if (N < 0 || N >= dof)
     SETERRQ(grid->com, 1, "invalid N (>= dof)");
 
-  return vars[N].read_attributes(filename);
+  PetscErrorCode ierr = vars[N].read_attributes(nc); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec::read_attributes(string filename, int N) {
+  PIO nc(*grid, "netcdf3");     // OK to use netcdf3
+  PetscErrorCode ierr;
+
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
+  ierr = this->read_attributes(nc, N); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
 }
 
 
@@ -645,22 +674,22 @@ PetscErrorCode IceModelVec::set_metadata(NCSpatialVariable &var, int N) {
 }
 
 //! Writes an IceModelVec to a NetCDF file using the default output data type.
-PetscErrorCode IceModelVec::write(string filename) {
+PetscErrorCode IceModelVec::write(const PIO &nc) {
   PetscErrorCode ierr;
 
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Writing %s...\n", name.c_str()); CHKERRQ(ierr);
-  }
-
-  ierr = write(filename, output_data_type); CHKERRQ(ierr);
+  ierr = write(nc, output_data_type); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec::write(const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   Vec g;
+
+  if (getVerbosityLevel() > 3) {
+    ierr = PetscPrintf(grid->com, "  Writing %s...\n", name.c_str()); CHKERRQ(ierr);
+  }
 
   if (dof != 1)
     SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1");
@@ -672,11 +701,11 @@ PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
     ierr = DMLocalToGlobalBegin(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
     ierr = DMLocalToGlobalEnd(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
 
-    ierr = vars[0].write(filename, nctype, write_in_glaciological_units, g); CHKERRQ(ierr);
+    ierr = vars[0].write(nc, nctype, write_in_glaciological_units, g); CHKERRQ(ierr);
 
     ierr = VecDestroy(&g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].write(filename, nctype, write_in_glaciological_units, v); CHKERRQ(ierr);
+    ierr = vars[0].write(nc, nctype, write_in_glaciological_units, v); CHKERRQ(ierr);
   }
 
   return 0;
@@ -685,7 +714,7 @@ PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 PetscErrorCode IceModelVec::dump(const char filename[]) {
   PetscErrorCode ierr;
-  PIO nc(grid->com, grid->rank, grid->config.get_string("output_format"));
+  PIO nc(*grid, grid->config.get_string("output_format"));
 
   // append = false, check_dimensions = true
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
@@ -694,9 +723,10 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
                      grid->time->units()); CHKERRQ(ierr);
   ierr = nc.append_time(grid->config.get_string("time_dimension_name"),
                         grid->time->current()); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write(filename, PISM_DOUBLE); CHKERRQ(ierr);
+  ierr = write(nc, PISM_DOUBLE); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -758,7 +788,12 @@ PetscErrorCode  IceModelVec::begin_access() {
 #endif
 
   if (access_counter == 0) {
-    ierr = DMDAVecGetArray(da, v, &array); CHKERRQ(ierr);
+
+    if (begin_end_access_use_dof == true) {
+      ierr = DMDAVecGetArrayDOF(da, v, &array); CHKERRQ(ierr);
+    } else {
+      ierr = DMDAVecGetArray(da, v, &array); CHKERRQ(ierr);
+    }
   }
 
   access_counter++;
@@ -781,7 +816,12 @@ PetscErrorCode  IceModelVec::end_access() {
 
   access_counter--;
   if (access_counter == 0) {
-    ierr = DMDAVecRestoreArray(da, v, &array); CHKERRQ(ierr);
+    if (begin_end_access_use_dof == true) {
+      ierr = DMDAVecRestoreArrayDOF(da, v, &array);
+      CHKERRQ(ierr);
+    } else {
+      ierr = DMDAVecRestoreArray(da, v, &array); CHKERRQ(ierr);
+    }
     array = NULL;
   }
 
@@ -815,34 +855,58 @@ PetscErrorCode  IceModelVec::endGhostComm() {
 //! Starts the communication of ghost points to IceModelVec destination.
 PetscErrorCode  IceModelVec::beginGhostComm(IceModelVec &destination) {
   PetscErrorCode ierr;
-  if (!localp) {
-    SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')",
-               name.c_str());
-  }
-
-  if (!destination.localp) {
-    SETERRQ(grid->com, 1, "IceModelVec::beginGhostComm(): destination has to be local.");
-  }
 
   ierr = checkAllocated(); CHKERRQ(ierr);
-  ierr = DMDALocalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+
+  if (localp && destination.localp) {
+    ierr = DMDALocalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp && destination.localp == false) {
+    ierr = DMLocalToGlobalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp == false && destination.localp) {
+    ierr = DMGlobalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp == false && destination.localp == false) {
+    SETERRQ1(grid->com, 1, "makes no sense to communicate ghosts for two GLOBAL IceModelVecs! (has name='%s')",
+             name.c_str());
+  }
+
   return 0;
 }
 
 //! Ends the communication of ghost points to IceModelVec destination.
 PetscErrorCode  IceModelVec::endGhostComm(IceModelVec &destination) {
   PetscErrorCode ierr;
-  if (!localp) {
-    SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')\n",
-               name.c_str());
-  }
-
-  if (!destination.localp) {
-    SETERRQ(grid->com, 1, "IceModelVec::beginGhostComm(): destination has to be local.");
-  }
 
   ierr = checkAllocated(); CHKERRQ(ierr);
-  ierr = DMDALocalToLocalEnd(da, v, INSERT_VALUES, destination.v); CHKERRQ(ierr);
+
+  if (localp && destination.localp) {
+    ierr = DMDALocalToLocalEnd(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp && destination.localp == false) {
+    ierr = DMLocalToGlobalEnd(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp == false && destination.localp) {
+    ierr = DMGlobalToLocalEnd(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (localp == false && destination.localp == false) {
+    SETERRQ1(grid->com, 1, "makes no sense to communicate ghosts for two GLOBAL IceModelVecs! (has name='%s')",
+             name.c_str());
+  }
+
   return 0;
 }
 
@@ -936,12 +1000,17 @@ PetscErrorCode IceModelVec::has_nan() {
 }
 
 void IceModelVec::check_array_indices(int i, int j) {
+  check_array_indices(i, j, 0);
+}
+
+void IceModelVec::check_array_indices(int i, int j, int k) {
   PetscReal ghost_width = 0;
   if (localp) ghost_width = da_stencil_width;
   if ((i < grid->xs - ghost_width) ||
       (i > grid->xs + grid->xm + ghost_width) ||
       (j < grid->ys - ghost_width) ||
-      (j > grid->ys + grid->ym + ghost_width)) {
+      (j > grid->ys + grid->ym + ghost_width) ||
+      (k < 0) || (k >= dof)) {
     PetscPrintf(grid->com, "ERROR: indices out of range accessing array '%s'. "
                 "It will probably segfault.\n", name.c_str());
   }
@@ -988,6 +1057,124 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
     }
   }
 }
+
+//! \brief Computes the norm of all components.
+PetscErrorCode IceModelVec::norm_all(NormType n, vector<PetscReal> &result) {
+  PetscErrorCode ierr;
+  PetscReal *norm_result;
+
+  norm_result = new PetscReal[dof];
+  result.resize(dof);
+
+  ierr = VecStrideNormAll(v, n, norm_result); CHKERRQ(ierr);
+
+  if (localp) {
+    // needs a reduce operation; use PISMGlobalMax if NORM_INFINITY,
+    //   otherwise PISMGlobalSum; carefully in NORM_2 case
+    if (n == NORM_1_AND_2) {
+      SETERRQ1(grid->com, 1, 
+         "IceModelVec::norm_all(...): NORM_1_AND_2 not implemented (called as %s.norm_all(...))\n",
+         name.c_str());
+    } else if (n == NORM_1) {
+
+      for (int k = 0; k < dof; ++k) {
+        ierr = PISMGlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+      }
+
+    } else if (n == NORM_2) {
+
+      for (int k = 0; k < dof; ++k) {
+        norm_result[k] = PetscSqr(norm_result[k]);  // undo sqrt in VecNorm before sum
+        ierr = PISMGlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        result[k] = sqrt(result[k]);
+      }
+
+    } else if (n == NORM_INFINITY) {
+      for (int k = 0; k < dof; ++k) {
+        ierr = PISMGlobalMax(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+      }
+    } else {
+      SETERRQ1(grid->com, 2, "IceModelVec::norm_all(...): unknown NormType (called as %s.norm_all(...))\n",
+         name.c_str());
+    }
+  } else {
+
+    for (int k = 0; k < dof; ++k) {
+      result[k] = norm_result[k];
+    }
+
+  }
+
+  delete [] norm_result;
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec::write(string filename) {
+  PetscErrorCode ierr;
+
+  ierr = this->write(filename, output_data_type); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
+  PetscErrorCode ierr;
+
+  PIO nc(*grid, grid->config.get_string("output_format"));
+
+  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
+
+  ierr = this->write(nc, nctype); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec::read(string filename, unsigned int time) {
+  PetscErrorCode ierr;
+
+  PIO nc(*grid, "guess_format");
+
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
+  ierr = this->read(nc, time); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
+  PetscErrorCode ierr;
+
+  PIO nc(*grid, "guess_format");
+
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
+  ierr = this->regrid(nc, critical, start); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
+  PetscErrorCode ierr;
+
+  PIO nc(*grid, "guess_format");
+
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
+  ierr = this->regrid(nc, default_value); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/
 

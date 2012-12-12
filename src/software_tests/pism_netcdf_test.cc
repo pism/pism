@@ -1,6 +1,6 @@
 #include "PISMPNCFile.hh"
 #include "PISMNC3File.hh"
-#include "PISMNC4File.hh"
+#include "PISMNC4_Par.hh"
 #include "PISMProf.hh"
 #include "pism_options.hh"
 
@@ -50,7 +50,8 @@ int main(int argc, char**argv) {
       event_define = profiler.create("define", "time spent defining variables"),
       event_write = profiler.create("write", "time spent writing data"),
       event_close = profiler.create("close", "time spent closing the file"),
-      event_close_reopen = profiler.create("close_reopen", "time spent closing/re-opening the file");
+      event_close_reopen = profiler.create("close_reopen", "time spent closing/re-opening the file"),
+      event_wait = profiler.create("wait", "time spent waiting for MPI_Barrier");
 
     // Initialize the grid and create non-random data to write:
 
@@ -58,6 +59,8 @@ int main(int argc, char**argv) {
     // the size of the local block of data:
     int Mx = 801, My = 801, Mz = 201, n_vars = 4;
 
+    ierr = PISMOptionsString("-o", "Basename of the output file",
+                             basename, flag); CHKERRQ(ierr);
     ierr = PISMOptionsInt("-Mx", "Number of grid points in the x-direction (for each block)",
                           Mx, flag); CHKERRQ(ierr);
     ierr = PISMOptionsInt("-My", "Number of grid points in the y-direction (for each block)",
@@ -105,6 +108,10 @@ int main(int argc, char**argv) {
       }
       profiler.end(event_alloc);
 
+      profiler.begin(event_wait);
+      profiler.barrier();
+      profiler.end(event_wait);
+
       profiler.begin(event_fill);
       {
         for (int i = 0; i < Mx; ++i) {
@@ -132,12 +139,12 @@ int main(int argc, char**argv) {
       if (mode == "netcdf3") {
         nc = new PISMNC3File(mpi_comm, mpi_rank);
       }
-#if (PISM_PARALLEL_NETCDF4==1)
+#if (PISM_USE_PARALLEL_NETCDF4==1)
       else if (mode == "netcdf4") {
-        nc = new PISMNC4File(mpi_comm, mpi_rank);
+        nc = new PISMNC4_Par(mpi_comm, mpi_rank);
       }
 #endif
-#if (PISM_PNETCDF==1)
+#if (PISM_USE_PNETCDF==1)
       else if (mode == "pnetcdf") {
         nc = new PISMPNCFile(mpi_comm, mpi_rank);
       }
@@ -156,6 +163,10 @@ int main(int argc, char**argv) {
 
       printf("mpi_name: %s rank: %d: using %s\n", mpi_name, mpi_rank, mode.c_str());
 
+      profiler.begin(event_wait);
+      profiler.barrier();
+      profiler.end(event_wait);
+
       profiler.begin(event_output);
       {
         profiler.begin(event_create);
@@ -165,6 +176,10 @@ int main(int argc, char**argv) {
           ierr = nc->set_fill(PISM_NOFILL, old_fill); CHKERRQ(ierr);
         }
         profiler.end(event_create);
+
+        profiler.begin(event_wait);
+        profiler.barrier();
+        profiler.end(event_wait);
 
         profiler.begin(event_define);
         {
@@ -190,6 +205,10 @@ int main(int argc, char**argv) {
         }
         profiler.end(event_define);
 
+        profiler.begin(event_wait);
+        profiler.barrier();
+        profiler.end(event_wait);
+
         profiler.begin(event_close_reopen);
         if (close_and_reopen) {
           ierr = nc->close(); CHKERRQ(ierr);
@@ -197,6 +216,10 @@ int main(int argc, char**argv) {
           ierr = nc->open(basename + ".nc", PISM_WRITE); CHKERRQ(ierr);
         }
         profiler.end(event_close_reopen);
+
+        profiler.begin(event_wait);
+        profiler.barrier();
+        profiler.end(event_wait);
 
         profiler.begin(event_write);
         {
@@ -221,6 +244,10 @@ int main(int argc, char**argv) {
           }
         }
         profiler.end(event_write);
+
+        profiler.begin(event_wait);
+        profiler.barrier();
+        profiler.end(event_wait);
 
         profiler.begin(event_close);
         {

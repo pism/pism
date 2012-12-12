@@ -65,27 +65,42 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)
 
     SET(CMAKE_SWIG_FLAGS "")
-    SET(SWIG_MODULE_NAME "cpp")
+    if(Pism_USE_TAO)
+      # I'd like to set CMAKE_SWIG_FLAGS from the CXX_DEFINES but 
+      # I can't figure out how to do this, so we just set PISM_USE_TAO
+      # explicitly
+      SET(CMAKE_SWIG_FLAGS -DPISM_USE_TAO=1 )
+    endif()
 
     set_source_files_properties(PISM.i PROPERTIES
       CPLUSPLUS ON
       SWIG_MODULE_NAME cpp)
 
     set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps}) # has to be set *before* calling SWIG_ADD_MODULE
-
-    SWIG_ADD_MODULE(${SWIG_MODULE_NAME} python PISM.i pism_python.cc pism_python_signal.cpp)
-    SWIG_LINK_LIBRARIES(${SWIG_MODULE_NAME}
-      ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES} )
+    
+    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc pism_python_signal.cpp)
+    SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES} )
 
     # Disable compiler warnings:
     SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
       PROPERTIES COMPILE_FLAGS "-w")
 
-    get_target_property(SWIG_MODULE_LOCATION ${SWIG_MODULE_cpp_REAL_NAME} LOCATION)
+    SWIG_ADD_MODULE(petsc_version python petsc_version.i petsc_version.cc)
+    SWIG_LINK_LIBRARIES(petsc_version ${PYTHON_LIBRARY})
+
+    # Disable compiler warnings:
+    SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
+      PROPERTIES COMPILE_FLAGS "-w")
+
+    get_target_property(SWIG_cpp_LOCATION ${SWIG_MODULE_cpp_REAL_NAME} LOCATION)
+    get_target_property(SWIG_petsc_version_LOCATION ${SWIG_MODULE_petsc_version_REAL_NAME} LOCATION)
 
     # Install Python .py files
     install(FILES
-      ${SWIG_MODULE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_MODULE_NAME}.py
+      ${SWIG_cpp_LOCATION}
+      ${SWIG_petsc_version_LOCATION}
+      ${CMAKE_CURRENT_BINARY_DIR}/cpp.py
+      ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py
       DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}/PISM
       COMPONENT RuntimeLibraries
     )
@@ -98,7 +113,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       PATTERN ".svn" EXCLUDE
     )
 
-# The python code snippit below returns 1 if python can 
+# The python code snippet below returns 1 if python can
 # import a PISM and if the directory of said PISM matches
 # the place we are about to install PISM python.  If the return
 # value is not 1, we print a message stating how to set your PYTHONPATH.
@@ -120,8 +135,10 @@ endif()
 
 add_custom_target (install_python_bindings_in_the_build_directory ALL
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/site-packages/ ${CMAKE_BINARY_DIR}
-  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_MODULE_LOCATION} ${CMAKE_BINARY_DIR}/PISM/
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_MODULE_NAME}.py ${CMAKE_BINARY_DIR}/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_cpp_LOCATION} ${CMAKE_BINARY_DIR}/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_petsc_version_LOCATION} ${CMAKE_BINARY_DIR}/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${CMAKE_BINARY_DIR}/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${CMAKE_BINARY_DIR}/PISM/
   VERBATIM
   DEPENDS ${SWIG_MODULE_cpp_REAL_NAME})
 

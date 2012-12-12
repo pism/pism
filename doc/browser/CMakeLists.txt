@@ -4,8 +4,6 @@ find_package(Doxygen)
 
 # PISM Source Code Browsers
 if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
-  option (Pism_BUILD_BROWSER "Build source code browsers if LaTeX, doxygen and dot are installed" OFF)
-
   set (browser_helpers
     initialization-sequence.dot
     config_doc.py
@@ -30,7 +28,7 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
 
   # copy doxyfile_base, changing some things along the way:
   configure_file(doxyfile_base doxyfile_base)
-  
+
   # Generate the list of references
   add_custom_command (OUTPUT references.txt
     COMMAND ./doxybib.py
@@ -46,13 +44,13 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-  # Generate the browser
+  # Generate the "base" browser
   add_custom_target (browser_base
     COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_base
     DEPENDS pism_config.txt references.txt doxyfile_base
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-  # Create a compressed "base" browser
+  # Create the compressed "base" browser
   add_custom_target (browser_base.tgz
     COMMAND tar -czf browser_base.tgz html
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/base)
@@ -63,31 +61,21 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   configure_file(doxyfile_util doxyfile_util)
   configure_file (util_main.txt util_main.txt)
 
-  # Generate the util browser
+  # Generate the "util" browser
   add_custom_target (browser_util
     COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_util
     DEPENDS doxyfile_util
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-  # Create a compressed Util browser
+  # Create the compressed "util" browser
   add_custom_target (browser_util.tgz
     COMMAND tar -czf browser_util.tgz html
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/util)
 
   add_dependencies(browser_util.tgz browser_util)
 
-  # Install if Pism_BUILD_BROWSER is set
-  if (Pism_BUILD_BROWSER)
-    add_custom_target (browsers ALL)
-    add_dependencies (browsers browser_base browser_util)
-
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/base/html
-      DESTINATION ${Pism_DOC_DIR}/base
-      PATTERN "*.md5" EXCLUDE)
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/util/html
-      DESTINATION ${Pism_DOC_DIR}/util
-      PATTERN "*.md5" EXCLUDE)
-  endif ()
+  add_custom_target (browsers)
+  add_dependencies (browsers browser_base browser_util)
 
 endif ()
 

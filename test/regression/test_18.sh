@@ -6,12 +6,12 @@ MPIEXEC=$2
 # Test name:
 echo "Test #18: verif test K regression: cold ice method, bedrock thermal layer."
 # The list of files to delete when done.
-files="test-K-out.txt verify.nc verify.nc~"
+files="test-K-out.txt"
 
 rm -f $files
 
 # run test K
-OPTS="-test K -Mx 4 -My 4 -y 13000.0 -Lbz 1000 -z_spacing equal -verbose 1 -o_size small"
+OPTS="-test K -Mx 4 -My 4 -y 13000.0 -Lbz 1000 -z_spacing equal -verbose 1 -o_size none"
 $PISM_PATH/pismv -Mz 41 -Mbz 11 -max_dt 60.0 $OPTS  > test-K-out.txt
 $PISM_PATH/pismv -Mz 81 -Mbz 21 -max_dt 30.0 $OPTS >> test-K-out.txt
 

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -19,10 +19,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-import sys, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
-
 import PISM, math
 
 L=50.e3; #// 50km half-width
@@ -37,12 +33,9 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
   def _initPhysics(self):
     config = self.config
-    linear_q = 1.
-    basal = PISM.IceBasalResistancePlasticLaw(
-           config.get("plastic_regularization","1/year","1/second"),
-           True, # do not force pure plastic
-           linear_q,
-           config.get("pseudo_plastic_uthreshold","1/year","1/second"));
+    config.set_flag("do_pseudo_plastic_till", True)
+    config.set("pseudo_plastic_q", 1.0)
+    basal = PISM.IceBasalResistancePseudoPlasticLaw(config)
 
     enthalpyconverter = PISM.EnthalpyConverter(config)
 

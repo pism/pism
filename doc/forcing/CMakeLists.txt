@@ -7,3 +7,4 @@ configure_file(../pism-macros.tex pism-macros.tex @ONLY)
 configure_file (../ice_bib.bib ice-bib.bib COPYONLY)
 
 pism_latex_document(forcing "forcing.tex" "pdd-movie.png;dT-movie.png;data-flow.pdf")
+add_dependencies(forcing manual)

@@ -70,9 +70,6 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   } else {
     ierr = precipitation.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
-  string precip_history = "read from " + precip_filename + "\n";
-
-  ierr = precipitation.set_attr("history", precip_history); CHKERRQ(ierr);
 
   air_temp_snapshot.init_2d("air_temp_snapshot", grid);
   air_temp_snapshot.set_string("pism_intent", "diagnostic");
@@ -117,7 +114,7 @@ PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, 
 }
 
 
-PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename) {
+PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {
@@ -127,19 +124,19 @@ PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename)
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(filename); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "air_temp_mean_annual")) {
-    ierr = air_temp_mean_annual.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = air_temp_mean_annual.write(nc); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "air_temp_mean_july")) {
-    ierr = air_temp_mean_july.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = air_temp_mean_july.write(nc); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "precipitation")) {
-    ierr = precipitation.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = precipitation.write(nc); CHKERRQ(ierr);
   }
 
   return 0;

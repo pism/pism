@@ -25,6 +25,7 @@
 #include "PISMBedDef.hh"
 #include "bedrockThermalUnit.hh"
 #include "PISMYieldStress.hh"
+#include "PISMHydrology.hh"
 #include "PISMStressBalance.hh"
 #include "PISMOcean.hh"
 #include "PISMSurface.hh"
@@ -144,10 +145,6 @@ PetscErrorCode IceModel::set_output_size(string option,
 			 description, choices,
 			 default_value, keyword, flag); CHKERRQ(ierr);
 
-
-  if (config.get_flag("force_full_diagnostics"))
-    keyword = "big";
-
   // Add all the model-state variables:
   set<string> vars = variables.keys();
 
@@ -205,6 +202,9 @@ PetscErrorCode IceModel::set_output_size(string option,
   // Ask the stress balance module to add more variables:
   if (stress_balance != NULL)
     stress_balance->add_vars_to_output(keyword, list);
+
+  if (subglacial_hydrology != NULL)
+    subglacial_hydrology->add_vars_to_output(keyword, list);
 
   // Ask ocean and surface models to add more variables to the list:
   if (ocean != NULL)

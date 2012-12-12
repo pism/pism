@@ -78,10 +78,10 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ierr = vel_bc.set_attr("valid_max", convert( 1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
   ierr = vel_bc.set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
   ierr = vel_bc.set_attr("valid_max", convert( 1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("_FillValue",convert( 2e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("_FillValue",convert( 2e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("_FillValue",convert(config.get("fill_value"), "m/year", "m/s"), 0); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("_FillValue",convert(config.get("fill_value"), "m/year", "m/s"), 1); CHKERRQ(ierr);
   vel_bc.write_in_glaciological_units = true;
-  ierr = vel_bc.set(convert(2e6, "m/year", "m/second")); CHKERRQ(ierr);
+  ierr = vel_bc.set(convert(config.get("fill_value"), "m/year", "m/s")); CHKERRQ(ierr);
   
   // grounded_dragging_floating integer mask
   ierr = ice_mask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -173,7 +173,8 @@ PetscErrorCode SSATestCase::report(string testname) {
   PetscScalar gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
     gmaxuerr = 0.0, gmaxverr = 0.0;
 
-  if (config.get_flag("do_pseudo_plastic_till")) {
+  if (config.get_flag("do_pseudo_plastic_till") &&
+      config.get("pseudo_plastic_q") != 1.0) {
     ierr = verbPrintf(1,grid.com, 
                     "WARNING: numerical errors not valid for pseudo-plastic till\n"); CHKERRQ(ierr);
   }
@@ -182,7 +183,7 @@ PetscErrorCode SSATestCase::report(string testname) {
 
 
   IceModelVec2V *vel_ssa;
-  ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
+  ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
   ierr = vel_ssa->begin_access(); CHKERRQ(ierr);
 
   PetscScalar exactvelmax = 0, gexactvelmax = 0;
@@ -274,64 +275,65 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
   global_attributes.set_string("source", string("PISM ") + PISM_Revision);
 
   // Find the number of records in this file:
-  PIO nc(grid.com, grid.rank, "netcdf3");
-  ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr); // append == true
+  PIO nc(grid, "netcdf3");      // OK to use NetCDF3.
+  ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
   ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(nc); CHKERRQ(ierr);
 
   // Write the dimension variable:
   err.init("N", "N", grid.com, grid.rank);
-  ierr = err.write(filename, (size_t)start, (double)(start + 1), PISM_INT); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, (double)(start + 1), PISM_INT); CHKERRQ(ierr);
 
   // Always write grid parameters:
   err.short_name = "dx";
   ierr = err.set_units("meters"); CHKERRQ(ierr);
-  ierr = err.write(filename, (size_t)start, grid.dx); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, grid.dx); CHKERRQ(ierr);
   err.short_name = "dy";
-  ierr = err.write(filename, (size_t)start, grid.dy); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, grid.dy); CHKERRQ(ierr);
 
   // Always write the test name:
   err.reset();
   err.short_name = "test";
-  ierr = err.write(filename, (size_t)start, testname[0], PISM_BYTE); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, testname[0], PISM_BYTE); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "max_velocity";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum ice velocity magnitude error");
-  ierr = err.write(filename, (size_t)start, max_vector); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, max_vector); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "relative_velocity";
   ierr = err.set_units("percent"); CHKERRQ(ierr);
   err.set_string("long_name", "relative ice velocity magnitude error");
-  ierr = err.write(filename, (size_t)start, rel_vector); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, rel_vector); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "maximum_u";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
-  ierr = err.write(filename, (size_t)start, max_u); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, max_u); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "maximum_v";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
-  ierr = err.write(filename, (size_t)start, max_v); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, max_v); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "average_u";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the X-component of the ice velocity");
-  ierr = err.write(filename, (size_t)start, avg_u); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, avg_u); CHKERRQ(ierr);
 
   err.reset();
   err.short_name = "average_v";
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
-  ierr = err.write(filename, (size_t)start, avg_v); CHKERRQ(ierr);
+  ierr = err.write(nc, (size_t)start, avg_v); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -350,7 +352,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
   PetscErrorCode ierr;
 
   // Write results to an output file:
-  PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO pio(grid, grid.config.get_string("output_format"));
   ierr = pio.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = pio.def_time(config.get_string("time_dimension_name"),
                       config.get_string("calendar"),
@@ -358,17 +360,17 @@ PetscErrorCode SSATestCase::write(const string &filename)
   ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
   ierr = pio.close(); CHKERRQ(ierr);
 
-  ierr = surface.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = thickness.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = bc_mask.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = tauc.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = bed.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = enthalpy.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = vel_bc.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = surface.write(filename); CHKERRQ(ierr);
+  ierr = thickness.write(filename); CHKERRQ(ierr);
+  ierr = bc_mask.write(filename); CHKERRQ(ierr);
+  ierr = tauc.write(filename); CHKERRQ(ierr);
+  ierr = bed.write(filename); CHKERRQ(ierr);
+  ierr = enthalpy.write(filename); CHKERRQ(ierr);
+  ierr = vel_bc.write(filename); CHKERRQ(ierr);
 
   IceModelVec2V *vel_ssa;
-  ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
-  ierr = vel_ssa->write(filename.c_str()); CHKERRQ(ierr);
+  ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
+  ierr = vel_ssa->write(filename); CHKERRQ(ierr);
 
   IceModelVec2V exact;
   ierr = exact.create(grid, "_exact", false); CHKERRQ(ierr);
@@ -388,7 +390,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
     }
   }
   ierr = exact.end_access(); CHKERRQ(ierr);
-  ierr = exact.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = exact.write(filename); CHKERRQ(ierr);
 
   return 0;
 }

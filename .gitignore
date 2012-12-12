@@ -1,11 +1,12 @@
 .gitignore
-build/
+build*/
 *.nc
 *~
 *.dat
 *.o
 *.petsc
 *.petsc.info
+*.pyc
 out.*
 examples/**/*.png
 examples/**/*.zip

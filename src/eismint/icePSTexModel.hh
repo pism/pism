@@ -70,8 +70,8 @@ protected:
 class PSTYieldStress : public PISMMohrCoulombYieldStress
 {
 public:
-  PSTYieldStress(IceGrid &g, const NCConfigVariable &conf, int e, string name)
-    : PISMMohrCoulombYieldStress(g, conf),
+  PSTYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro, int e, string name)
+    : PISMMohrCoulombYieldStress(g, conf, hydro),
       experiment(e), experiment_name(name) {}
   virtual ~PSTYieldStress() {}
 

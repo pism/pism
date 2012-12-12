@@ -139,7 +139,7 @@ TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
 FULLPHYS="-ssa_sliding -thk_eff $TILLPHI"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -bed_def lc -config_override $PISM_CONFIG $FULLPHYS $PIKOPTIONS -acab_cumulative"
+PISM="${PISM_PREFIX}${PISM_EXEC} -bed_def lc -config_override $PISM_CONFIG $FULLPHYS $PIKOPTIONS -climatic_mass_balance_cumulative"
 
 echo "$SCRIPTNAME         tillphi = '$TILLPHI'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
@@ -149,7 +149,7 @@ echo
 echo "$SCRIPTNAME control coupler = '$COUPLER_CTRL'"
 echo "$SCRIPTNAME     AR4 coupler = '$COUPLER_AR4'"
 
-expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,acab_cumulative,cbase,csurf,tempicethk_basal,tauc,temppabase"
+expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,mask,velsurf,wvelsurf,velbase,wvelbase,tempsurf,tempbase,diffusivity,climatic_mass_balance_cumulative,cbase,csurf,tempicethk_basal,tauc,temppabase"
 tspackage="-ts_vars ivol,iareag,iareaf"
 
 STARTTIME=0

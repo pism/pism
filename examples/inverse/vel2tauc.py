@@ -18,150 +18,12 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import sys, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
-import numpy as np
-import os, math
-
 import PISM
-from PISM.invert_ssa import SSAForwardProblem, InvertSSANLCG, InvertSSAIGN, \
-tauc_param_factory, LinearPlotListener, PlotListener 
-from PISM.sipletools import pism_print_logger, pism_pause, pauseListener, \
-CaptureLogger, CarefulCaptureLogger
-from PISM.sipletools import PISMLocalVector as PLV
+import PISM.invert_ssa
+import numpy as np
+import sys, os, math
 
-import siple
-
-siple.reporting.clear_loggers()
-siple.reporting.add_logger(pism_print_logger)
-siple.reporting.set_pause_callback(pism_pause)
-
-default_ssa_l2_coeff = 1.
-default_ssa_h1_coeff = 0.
-default_rms_error = 100
-
-
-class Vel2Tauc(PISM.ssa.SSAFromInputFile):
-  def __init__(self,input_filename,inv_data_filename,tauc_param):
-    PISM.ssa.SSAFromInputFile.__init__(self,input_filename)
-    self.tauc_param = tauc_param;
-    self.inv_data_filename = inv_data_filename
-
-  def _setFromOptions(self):
-    PISM.ssa.SSAFromInputFile._setFromOptions(self)
-    for o in PISM.OptionsGroup(PISM.Context().com,"","Vel2Tauc"):
-      self.using_zeta_fixed_mask = PISM.optionsFlag("-use_zeta_fixed_mask","Keep tauc constant except where grounded ice is present",default=False)
-
-  def _initGrid(self):
-    # The implementation in PISM.ssa.SSAFromInputFile uses a non-periodic
-    # grid only if the run is regional and "ssa_method=fem" in the config
-    # file.  For inversions, we always use an FEM type method, so for
-    # regional inversions, we always use a non-periodic grid.
-    periodicity = PISM.XY_PERIODIC
-    if self.is_regional:
-      periodicity=PISM.NOT_PERIODIC
-    PISM.util.init_grid_from_file(self.grid,self.boot_file,periodicity);
-
-  def setup(self):
-
-    PISM.ssa.SSAFromInputFile.setup(self)
-
-    vecs = self.modeldata.vecs
-
-    self.ssa.init(vecs.asPISMVars())
-
-    if vecs.has('vel_bc'):
-      self.ssa.set_boundary_conditions(vecs.bc_mask,vecs.vel_bc)
-
-    if vecs.has('zeta_fixed_mask') and self.using_zeta_fixed_mask:
-      self.ssa.set_zeta_fixed_locations(vecs.zeta_fixed_mask)
-
-    # FIXME: Fix this lousy name
-    self.ssa.setup_vars()
-
-
-  def _initSSACoefficients(self):
-    self._allocStdSSACoefficients()
-    
-    # Read PISM SSA related state variables
-
-    vecs = self.modeldata.vecs
-    thickness = vecs.thickness; bed = vecs.bed; enthalpy = vecs.enthalpy
-    mask = vecs.ice_mask; surface = vecs.surface
-
-    # Read in the PISM state variables that are used directly in the SSA solver
-    for v in [thickness, bed, enthalpy]:
-      v.regrid(self.boot_file,True)
-  
-    # variables mask and surface are computed from the geometry previously read
-    sea_level = 0 # FIXME setFromOption?
-    gc = PISM.GeometryCalculator(sea_level, self.config)
-    gc.compute(bed,thickness,mask,surface)
-
-    if self.is_regional:
-      vecs.add( PISM.util.standardNoModelMask(self.grid), 'no_model_mask' )
-      vecs.no_model_mask.regrid(self.boot_file,True)
-      vecs.add( vecs.surface, 'usurfstore')
-      vecs.setPISMVarsName('usurfstore','usurfstore')
-
-    if self.config.get_flag('ssa_dirichlet_bc'):
-      vecs.add( PISM.util.standard2dVelocityVec( self.grid, name='_ssa_bc', desc='SSA velocity boundary condition',intent='intent' ), "vel_ssa_bc" )
-      has_u_ssa_bc = PISM.util.fileHasVariable(self.boot_file,'u_ssa_bc');
-      has_v_ssa_bc = PISM.util.fileHasVariable(self.boot_file,'v_ssa_bc');
-      if (not has_u_ssa_bc) or (not has_v_ssa_bc):
-        PISM.verbPrintf(2,grid.com, "Input file '%s' missing Dirichlet boundary data u/v_ssa_bc; using zero default instead." % self.boot_file)
-        vecs.vel_ssa_bc.set(0.)
-      else:
-        vecs.vel_ssa_bc.regrid(self.boot_file,True)
-
-      if self.is_regional:
-        vecs.add( vecs.no_model_mask, 'bc_mask')
-      else:
-        vecs.add( PISM.util.standardBCMask( self.grid ), 'bc_mask' )
-        bc_mask_name = vecs.bc_mask.string_attr("name")
-        if PISM.util.fileHasVariable(self.boot_file,bc_mask_name):
-          vecs.bc_mask.regrid(self.boot_file,True)          
-        else:
-          PISM.verbPrintf(2,grid.com,"Input file '%s' missing Dirichlet location mask '%s'.  Default to no Dirichlet locations." %(self.boot_file,bc_mask_name))
-          vecs.bc_mask.set(0)
-      # We call this variable 'bc_mask' in the python code, it is called
-      # 'bcflag' when passed between pism components, and it has yet
-      # another name when written out to a file.  Anyway, we flag its
-      # export to PISMVars name here.
-      vecs.setPISMVarsName('bc_mask','bcflag')
-
-    vecs.add( PISM.util.standardVelocityMisfitWeight(self.grid) )
-    weight = vecs.vel_misfit_weight
-    weight.regrid(self.inv_data_filename,True)
-
-    if PISM.util.fileHasVariable(self.inv_data_filename,'misfit_element_mask'):
-      vecs.add( PISM.util.standardMisfitElementMask(self.grid) )
-      vecs.misfit_element_mask.regrid(self.inv_data_filename,True)
-    else:
-      raise Exception()
-
-    zeta_fixed_mask = PISM.IceModelVec2Int()
-    zeta_fixed_mask.create(self.grid, 'zeta_fixed_mask', True, self.grid.max_stencil_width);
-    zeta_fixed_mask.set_attrs("model_state", "tauc_unchanging integer mask", "", "");
-    mask_values=[0,1]
-    zeta_fixed_mask.set_attr("flag_values", mask_values);
-    zeta_fixed_mask.set_attr("flag_meanings","tauc_changable tauc_unchangeable");
-    zeta_fixed_mask.output_data_type = PISM.PISM_BYTE;
-    
-    zeta_fixed_mask.set(1);
-    with PISM.util.Access(comm=zeta_fixed_mask,nocomm=mask):
-      mq = PISM.MaskQuery(mask)
-      for (i,j) in self.grid.points():
-        if mq.grounded_ice(i,j):
-          zeta_fixed_mask[i,j] = 0;
-    vecs.add(zeta_fixed_mask)
-
-  def _constructSSA(self):
-    md = self.modeldata
-    vecs  = self.modeldata.vecs
-    return PISM.InvSSAForwardProblem(md.grid,md.basal,md.enthalpyconverter,self.tauc_param,self.config)
-
+class Vel2Tauc(PISM.invert_ssa.InvSSAFromInputFile):
 
   def write(self,filename,append=False):
     if not append:
@@ -172,198 +34,169 @@ class Vel2Tauc(PISM.ssa.SSAFromInputFile):
 
       pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
       pio.open(filename,PISM.NC_WRITE,True) #append mode!
-      
+
       self.modeldata.vecs.write(filename)
       pio.close()
 
-class ZetaSaver:
-  """Iteration listener used to save a copy of the current value
-  of zeta (i.e. parameterized tauc) at each iteration during an inversion."""
-  def __init__(self,output_filename):
-    self.output_filename = output_filename
-
-  def __call__(self,inverse_solver,count,x,Fx,y,r):
-    zeta = x.core()
-    # The solver doesn't care what the name of zeta is, and we
-    # want it called 'zeta_inv' in the output file, so we rename it.
-    zeta.rename('zeta_inv', 'last iteration of parameterized basal yeild stress computed by inversion','')
-    zeta.write(self.output_filename)
-
-class Vel2TaucPlotListener(PlotListener):
-  def __init__(self,grid,Vmax,method):
-    PlotListener.__init__(self,grid)
-    self.Vmax = Vmax
-    self.rank = grid.rank
-    self.l2_weight = None
-    self.l2_weight_init = False
-    self.figure =None
-    self.method = method
-
-  def __call__(self,inverse_solver,count,x,y,d,r,*args):
-    if self.l2_weight_init == False:
-      vecs = inverse_solver.forward_problem.ssarun.modeldata.vecs;
-      self.l2_weight=self.tz_scalar.communicate(vecs.vel_misfit_weight)
-      self.l2_weight_init = True
-    PlotListener.__call__(self,inverse_solver,count,x,y,d,r,*args)
-
-  def iteration(self,inverse_solver,count,x,Fx,y,d,r,arg_extra,*args):      
-
-    import matplotlib.pyplot as pp
-
-    if self.figure is None:
-      self.figure = pp.figure()
-    else:
-      pp.figure(self.figure.number)
-
-    l2_weight=self.l2_weight
-
-    pp.clf()
-    
-    V = self.Vmax
-
-    pp.subplot(2,3,1)
-    rx = l2_weight*r[0,:,:]
-    rx = np.maximum(rx,-V)
-    rx = np.minimum(rx,V)
-    pp.imshow(rx,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.title('r_x')
-    pp.jet()
-
-    pp.subplot(2,3,4)
-    ry = l2_weight*r[1,:,:]
-    ry = np.maximum(ry,-V)
-    ry = np.minimum(ry,V)
-    pp.imshow(ry,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.title('r_y')
-    pp.jet()
-    
-    
-    if self.method == 'ign':
-      Td = arg_extra
-      pp.subplot(2,3,2)
-      Tdx = Td[0,:,:]
-      pp.imshow(Tdx,origin='lower',interpolation='nearest')
-      pp.colorbar()
-      pp.title('Td_x')
-      pp.jet()
-
-      pp.subplot(2,3,5)
-      Tdy = Td[1,:,:]
-      pp.imshow(Tdy,origin='lower',interpolation='nearest')
-      pp.colorbar()
-      pp.title('Td_y')
-      pp.jet()
-    else:
-      TStarR = arg_extra
-      pp.subplot(2,3,2)
-      pp.imshow(TStarR,origin='lower',interpolation='nearest')
-      pp.colorbar()
-      pp.title('TStarR')
-      pp.jet()
-
-    d *= -1
-    pp.subplot(2,3,3)      
-    pp.imshow(d,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.jet()
-    pp.title('-d')
-
-    pp.subplot(2,3,6)      
-    pp.imshow(x,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.jet()
-    pp.title('zeta')
-    
-    pp.ion()
-    pp.show()
-
-class MonitorAdjoint:
-  def __init__(self):
-    self.Td = None
-    self.TStarR = None
-
-  def __call__(self,inverse_solver,count,x,Fx,y,d,r,*args):
-    fp = inverse_solver.forward_problem
-    self.Td=fp.T(d,self.Td)
-    self.TStarR=forward_problem.TStar(r,out=self.TStarR)
-    ip1 = fp.domainIP(d,self.TStarR)
-    ip2 = fp.rangeIP(self.Td,r)
-    siple.reporting.msg("adjoint test: <Td,r>=%g <d,T^*r>=%g (percent error %g)",ip1,ip2,(abs(ip1-ip2))/max(abs(ip1),abs(ip2)))
-
-class MonitorAdjointLin:
-  def __init__(self):
-    self.Td = None
-    self.TStarR = None
-
-  def __call__(self,inverse_solver,count,x,y,d,r,*args):
-    fp = inverse_solver.forward_problem
-    self.Td=fp.T(d,self.Td)
-    self.TStarR=forward_problem.TStar(r,out=self.TStarR)
-    ip1 = fp.domainIP(d,self.TStarR)
-    ip2 = fp.rangeIP(self.Td,r)
-    siple.reporting.msg("adjoint test: <Td,r>=%g <d,T^*r>=%g (percent error %g)",ip1,ip2,(abs(ip1-ip2))/max(abs(ip1),abs(ip2)))
-
-
-class Vel2TaucLinPlotListener(LinearPlotListener):
+class Vel2TaucPlotListener(PISM.invert_ssa.PlotListener):
   def __init__(self,grid,Vmax):
-    LinearPlotListener.__init__(self,grid)
+    PISM.invert_ssa.PlotListener.__init__(self,grid)
     self.Vmax = Vmax
     self.l2_weight = None
     self.l2_weight_init = False
-    self.figure =None
 
-  def __call__(self,inverse_solver,count,x,y,d,r,*args):
+  def __call__(self,inverse_solver,count,data):
+
+    if self.l2_weight_init == False:
+      vecs = inverse_solver.ssarun.modeldata.vecs;
+      self.l2_weight=self.toproczero(vecs.vel_misfit_weight)
+      self.l2_weight_init = True
+
+    method = inverse_solver.method
+
+    r=self.toproczero(data.r)
+    Td = None
+    if data.has_key('Td'): Td = self.toproczero(data.Td)
+    TStarR = None
+    if data.has_key('TStarR'): TStarR = self.toproczero(data.TStarR)
+    d = None
+    if data.has_key('d'): d = self.toproczero(data.d)
+    zeta = self.toproczero(data.zeta)      
+
+    if self.grid.rank == 0:
+      import matplotlib.pyplot as pp
+    
+      pp.figure(self.figure())
+
+      l2_weight=self.l2_weight
+
+      pp.clf()
+    
+      V = self.Vmax
+
+      pp.subplot(2,3,1)
+      rx = l2_weight*r[0,:,:]*PISM.secpera
+      rx = np.maximum(rx,-V)
+      rx = np.minimum(rx,V)
+      pp.imshow(rx,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.title('r_x')
+      pp.jet()
+
+      pp.subplot(2,3,4)
+      ry = l2_weight*r[1,:,:]*PISM.secpera
+      ry = np.maximum(ry,-V)
+      ry = np.minimum(ry,V)
+      pp.imshow(ry,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.title('r_y')
+      pp.jet()
+    
+    
+      if method == 'ign':
+        pp.subplot(2,3,2)
+        Tdx = Td[0,:,:]*PISM.secpera
+        pp.imshow(Tdx,origin='lower',interpolation='nearest')
+        pp.colorbar()
+        pp.title('Td_x')
+        pp.jet()
+
+        pp.subplot(2,3,5)
+        Tdy = Td[1,:,:]*PISM.secpera
+        pp.imshow(Tdy,origin='lower',interpolation='nearest')
+        pp.colorbar()
+        pp.title('Td_y')
+        pp.jet()
+      elif method == 'sd' or method == 'nlcg':
+        pp.subplot(2,3,2)
+        pp.imshow(TStarR,origin='lower',interpolation='nearest')
+        pp.colorbar()
+        pp.title('TStarR')
+        pp.jet()
+
+      if d is not None:
+        d *= -1
+        pp.subplot(2,3,3)      
+        pp.imshow(d,origin='lower',interpolation='nearest')
+        pp.colorbar()
+        pp.jet()
+        pp.title('-d')
+
+      pp.subplot(2,3,6)
+      pp.imshow(zeta,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.jet()
+      pp.title('zeta')
+    
+      pp.ion()
+      pp.show()
+
+class Vel2TaucLinPlotListener(PISM.invert_ssa.PlotListener):
+  def __init__(self,grid,Vmax):
+    PISM.invert_ssa.PlotListener.__init__(self,grid)
+    self.Vmax = Vmax
+    self.l2_weight = None
+    self.l2_weight_init = False
+
+  def __call__(self,inverse_solver,count,data):
     # On the first go-around, extract the l2_weight vector onto 
     # processor zero.
     if self.l2_weight_init == False:
-      vecs = inverse_solver.forward_problem.ssarun.modeldata.vecs;
-      self.l2_weight=self.tz_scalar.communicate(vecs.vel_misfit_weight)
+      vecs = inverse_solver.ssarun.modeldata.vecs;
+      self.l2_weight = self.toproczero(vecs.vel_misfit_weight)
       self.l2_init = True
-    LinearPlotListener.__call__(self,solver,count,x,y,d,r,*args)
-
-  def iteration(self,inverse_solver,count,x,y,d,r,*args):      
-    import matplotlib.pyplot as pp
-
-    if self.figure is None:
-      self.figure = pp.figure()
-    else:
-      pp.figure(self.figure.number)
 
     l2_weight=self.l2_weight
+    r = self.toproczero(data.r)
+    d = self.toproczero(data.d)
 
-    pp.clf()
+    if self.grid.rank == 0:
+      import matplotlib.pyplot as pp
+      pp.figure(self.figure())
+      pp.clf()
     
-    V = self.Vmax
-    pp.subplot(1,3,1)
-    rx = l2_weight*r[0,:,:]
-    rx = np.maximum(rx,-V)
-    rx = np.minimum(rx,V)
-    pp.imshow(rx,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.title('ru')
-    pp.jet()
+      V = self.Vmax
+      pp.subplot(1,3,1)
+      rx = l2_weight*r[0,:,:]
+      rx = np.maximum(rx,-V)
+      rx = np.minimum(rx,V)
+      pp.imshow(rx,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.title('ru')
+      pp.jet()
     
-    pp.subplot(1,3,2)
-    ry = l2_weight*r[1,:,:]
-    ry = np.maximum(ry,-V)
-    ry = np.minimum(ry,V)
-    pp.imshow(ry,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.title('rv')
-    pp.jet()
+      pp.subplot(1,3,2)
+      ry = l2_weight*r[1,:,:]
+      ry = np.maximum(ry,-V)
+      ry = np.minimum(ry,V)
+      pp.imshow(ry,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.title('rv')
+      pp.jet()
     
-    d *= -1
-    pp.subplot(1,3,3)      
-    pp.imshow(d,origin='lower',interpolation='nearest')
-    pp.colorbar()
-    pp.jet()
-    pp.title('-d')
+      d *= -1
+      pp.subplot(1,3,3)      
+      pp.imshow(d,origin='lower',interpolation='nearest')
+      pp.colorbar()
+      pp.jet()
+      pp.title('-d')
     
-    pp.ion()
-    pp.show()
+      pp.ion()
+      pp.show()
 
+def adjustTauc(mask,tauc):
+  """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
+
+  grid = mask.get_grid()
+  high_tauc = grid.config.get("high_tauc")
+
+  with PISM.util.Access(comm=tauc,nocomm=mask):
+    mq = PISM.MaskQuery(mask)
+    for (i,j) in grid.points():
+      if mq.ocean(i,j):
+        tauc[i,j] = 0;
+      elif mq.ice_free(i,j):
+        tauc[i,j] = high_tauc
 
 ## Main code starts here
 if __name__ == "__main__":
@@ -406,40 +239,41 @@ if __name__ == "__main__":
 
     inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-    method = PISM.optionsList(context.com,"-inv_method","Inversion algorithm",["nlcg","ign","sd"],"ign")
-    rms_error = PISM.optionsReal("-rms_error","RMS velocity error",default=default_rms_error)
-    tauc_param_type = PISM.optionsList(context.com,"-tauc_param","zeta->tauc parameterization",["ident","square","exp","trunc"],"ident")
-    ssa_l2_coeff = PISM.optionsReal("-ssa_l2_coeff","L2 coefficient for domain inner product",default=default_ssa_l2_coeff)
-    ssa_h1_coeff = PISM.optionsReal("-ssa_h1_coeff","H1 coefficient for domain inner product",default=default_ssa_h1_coeff)
+
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
     do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
     ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
     do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
-    use_tauc_prior = PISM.optionsFlag("-use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
+    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
+
     monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
-    is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
     prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
-    
+
+    is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
+
+
+  inv_method = config.get_string("inv_ssa_method")
+  
+  
   if output_filename is None:
     output_filename = "vel2tauc_"+os.path.basename(input_filename)    
 
   saving_inv_data = (inv_data_filename != output_filename)
 
-  config.set_string("inv_ssa_tauc_param",tauc_param_type)
-  config.set("inv_ssa_domain_l2_coeff",ssa_l2_coeff)
-  config.set("inv_ssa_domain_h1_coeff",ssa_h1_coeff)
-
-  tauc_param = tauc_param_factory.create(tauc_param_type,config)
-
   PISM.setVerbosityLevel(verbosity)
-  vel2tauc = Vel2Tauc(input_filename,inv_data_filename,tauc_param)
+  vel2tauc = Vel2Tauc(input_filename,inv_data_filename)
   vel2tauc.setup()
+  tauc_param = vel2tauc.tauc_param
+  solver = PISM.invert_ssa.InvSSASolver(vel2tauc)
 
-  forward_problem = SSAForwardProblem(vel2tauc)
+  # if forward_type == 'classic':
+  #   forward_problem = SSAForwardProblem(vel2tauc)
+  # else:
+  #   forward_problem = SSAForwardProblemFIXME(vel2tauc)
 
   modeldata = vel2tauc.modeldata
   vecs = modeldata.vecs
@@ -447,19 +281,28 @@ if __name__ == "__main__":
 
   # Determine the prior guess for tauc. This can be one of 
   # a) tauc from the input file (default)
-  # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
+  # b) tauc_prior from the inv_datafile if -inv_use_tauc_prior is set
   tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
   tauc = PISM.util.standardYieldStressVec(grid)
   if use_tauc_prior:
-    tauc_prior.regrid(inv_data_filename,True)
+    tauc_prior.regrid(inv_data_filename,critical=True)
+    vecs.add(tauc_prior,writing=saving_inv_data)
   else:
     if not PISM.util.fileHasVariable(input_filename,"tauc"):
       PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
       exit(1)
     tauc.regrid(input_filename,True)
     tauc_prior.copy_from(tauc)
-  vecs.add(tauc_prior,writing=saving_inv_data)
+    vecs.add(tauc_prior,writing=True)
+
+  adjustTauc(vecs.ice_mask,tauc_prior)
+
+  # Convert tauc_prior -> zeta_prior
+  zeta_prior = PISM.IceModelVec2S();
+  zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, PISM.util.WIDE_STENCIL)
+  tauc_param.convertFromTauc(tauc_prior,zeta_prior)
+  vecs.add(zeta_prior,writing=True)
 
   # If the inverse data file has a variable tauc_true, this is probably
   # a synthetic inversion.  We'll load it now so that it will get written
@@ -469,7 +312,6 @@ if __name__ == "__main__":
     tauc_true.regrid(inv_data_filename,True)
     tauc_true.read_attributes(inv_data_filename)
     vecs.add(tauc_true,writing=saving_inv_data)
-
 
   # Determine the initial guess for zeta.  If we are not
   # restarting, we convert tauc_prior to zeta.  If we are restarting,
@@ -483,30 +325,36 @@ if __name__ == "__main__":
       exit(1)
     zeta.regrid(output_filename,True)
   else:
-    if config.get_string('inv_ssa_tauc_param')=='ident':
-      zeta.copy_from(tauc_prior)
-    else:
-      with PISM.util.Access(nocomm=tauc_prior,comm=zeta):
-        for (i,j) in grid.points():
-          zeta[i,j] = tauc_param.fromTauc(tauc_prior[i,j])
-  vecs.add(zeta,writing=True) # Ensure that the last value of zeta will
-                              # be written out
-
+    zeta.copy_from(zeta_prior)
 
   if test_adjoint:
-    d = PISM.sipletools.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL)
-    # If we're fixing some tauc values, we need to ensure that we don't
-    # move in a direction 'd' that changes those values in this test.
-    if vel2tauc.using_zeta_fixed_mask:
-      zeta_fixed_mask = vecs.zeta_fixed_mask
-      with PISM.util.Access(comm=d, nocomm=zeta_fixed_mask):
-        for (i,j) in grid.points():
-          if zeta_fixed_mask[i,j] != 0:
-            d[i,j] = 0;
-    r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL))
-    (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),r,3)
-    siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
-    exit(0)
+    if solver.method.startswith('tikhonov') and solver.method != 'tikhonov_gn':
+      PISM.logging.logMessage("option -inv_test_adjoint cannot be used with inverse method %s",solver.method)
+      exit(1)
+
+    if solver.method == 'tikhonov_gn':
+      pass
+    else:
+      import numpy as np
+      (seed,seed_set) = PISM.optionsIntWasSet("-inv_test_adjoint_seed","")
+      if seed_set:
+        np.random.seed(seed+PISM.Context().rank)
+      d = PISM.util.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL)
+      # If we're fixing some tauc values, we need to ensure that we don't
+      # move in a direction 'd' that changes those values in this test.
+      if vel2tauc.using_zeta_fixed_mask:
+        zeta_fixed_mask = vecs.zeta_fixed_mask
+        with PISM.util.Access(comm=d, nocomm=zeta_fixed_mask):
+          for (i,j) in grid.points():
+            if zeta_fixed_mask[i,j] != 0:
+              d[i,j] = 0;
+      r = PISM.util.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL)
+      from PISM.sipletools import PISMLocalVector as PLV
+      forward_problem = solver.forward_problem
+      (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),PLV(r),3)
+      PISM.logging.logMessage("domainip %.10g rangeip %.10g\n" % (domainIP,rangeIP) )
+      PISM.logging.logMessage("relative error %.10g\n" % abs((domainIP-rangeIP)/domainIP))
+      exit(0)
 
   vel_ssa_observed = None
   vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed',stencil_width=2)
@@ -530,17 +378,14 @@ if __name__ == "__main__":
     vel_ssa_observed.add(-1,vel_sia_observed)
     vecs.add(vel_ssa_observed,writing=True)
 
-  # We establish a logger which will save siple logging messages.  If we 
-  # are restarting, and not in append mode, we need to
-  # construct the logger now so that it can extract any prior siple_logs
-  # from the old output file before we clobber it. 
-  logger = None
-
+  # Establish a logger which will save logging messages to the output file.  
+  logger = PISM.logging.CaptureLogger(output_filename,'vel2tauc_log');
+  PISM.logging.add_logger(logger)
+  if append_mode or do_restart:
+    logger.readOldLog()
+  
   # Prep the output file from the grid so that we can save zeta to it during the runs.
   if not append_mode:
-    if do_restart:
-      logger = CarefulCaptureLogger(output_filename);
-      
     pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
     pio.open(output_filename,PISM.NC_WRITE,False)
     pio.def_time(grid.config.get_string("time_dimension_name"),
@@ -549,86 +394,91 @@ if __name__ == "__main__":
     pio.close()
   zeta.write(output_filename)
 
+
   # Log the command line to the output file now so that we have a record of
   # what was attempted
   PISM.util.writeProvenance(output_filename)    
 
-  # If we haven't set up the aforementioned logger yet, it's safe to do so now.
-  if logger is None: logger = CarefulCaptureLogger(output_filename);
-
-
-
-  # Determine the inversion algorithm, and set up its arguments, and construct
-  # the solver
-  if method == "ign":
-    Solver = InvertSSAIGN
-  else:
-    Solver = InvertSSANLCG
-    
-  params=Solver.defaultParameters()
-  if method == "sd":
-    params.steepest_descent = True
-    params.ITER_MAX=10000
-  elif method =="ign":
-    params.linearsolver.ITER_MAX=10000
-    params.linearsolver.verbose = True
-    params.thetaMax=ign_theta
-  if ls_verbose:
-    params.linesearch.verbose = True
-  params.verbose   = True
-  params.deriv_eps = 0.
-  solver=Solver(forward_problem,params=params)  
-
-  
   # Attach various iteration listeners to the solver as needed for:
   # Plotting
   if do_plotting:
-    solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax,method))
-    if method=='ign':
+    solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax))
+    if solver.method=='ign':
       solver.addLinearIterationListener(Vel2TaucLinPlotListener(grid,Vmax))
   if monitor_adjoint:
-    solver.addIterationListener(MonitorAdjoint())
-    if method=='ign':
-      solver.addLinearIterationListener(MonitorAdjointLin())
+    solver.addIterationListener(PISM.invert_ssa.MonitorAdjoint())
+    if solver.method=='ign':
+      solver.addLinearIterationListener(PISM.invert_ssa.MonitorAdjointLin())
   # Pausing
   if do_pause:
-    solver.addIterationListener(pauseListener)            
+    solver.addIterationListener(PISM.invert_ssa.pauseListener)
+  # Progress reporting
+  progress_reporter = None
+  if inv_method.startswith('tik'):
+    progress_reporter = PISM.invert_ssa.PrintTikhonovProgress()
+  else:
+    progress_reporter = PISM.invert_ssa.PrintRMSMisfit()
+  if progress_reporter is not None:
+    solver.addIterationListener(progress_reporter)
+
   # Saving the current iteration
-  solver.addXUpdateListener(ZetaSaver(output_filename)) 
+  solver.addXUpdateListener(PISM.invert_ssa.ZetaSaver(output_filename)) 
 
   # Solver is set up.  Give the user's prep module a chance to do any final
   # setup.
   
   if prep_module is not None:
     exec "import %s as user_prep_module" % prep_module
-    user_prep_module.prep_solver(solver,method)
-
+    user_prep_module.prep_solver(solver)
 
   # Run the inverse solver!
   if do_restart:
-    siple.reporting.msg('************** Restarting inversion. ****************')
+    PISM.logging.logMessage('************** Restarting inversion. ****************\n')
   else:
-    siple.reporting.msg('============== Starting inversion. ==================')  
-  rms_error /= PISM.secpera # m/s
-  (zeta,u) = solver.solve(zeta,vel_ssa_observed,rms_error)
+    PISM.logging.logMessage('============== Starting inversion. ==================\n')  
+
+  # Try solving
+  reason = solver.solveInverse(zeta_prior,vel_ssa_observed,zeta);
+  if reason.failed():
+    PISM.logging.logError("Inverse solve FAILURE:\n%s\n" % reason.nested_description(1));
+    quit()
+
+  PISM.logging.logMessage("Inverse solve success (%s)!\n" % reason.description());
+
+  (zeta,u) = solver.inverseSolution()
 
   # Convert back from zeta to tauc
-  if config.get_string('inv_ssa_tauc_param')=='ident':
-    tauc.copy_from(zeta)
-  else:
-    with PISM.util.Access(nocomm=zeta,comm=tauc):
-      for (i,j) in grid.points():
-        (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
-        if tauc[i,j] < 0:
-          print 'negative tauc', tauc[i,j], zeta[i,j]
+  tauc_param.convertToTauc(zeta,tauc)
 
   # It may be that a 'tauc' was read in earlier.  We replace it with
   # our newly generated one.
   if vecs.has('tauc'): vecs.remove('tauc')
   vecs.add(tauc,writing=True)
 
+  vecs.add(zeta,writing=True)
+
   u.rename("_ssa_inv","SSA velocity computed by inversion","")
   vecs.add(u,writing=True)
+
+  residual = PISM.util.standard2dVelocityVec(grid,name='_inv_ssa_residual')
+  residual.copy_from(u)
+  residual.add(-1,vel_ssa_observed);
+  
+  r_mag = PISM.IceModelVec2S();
+  r_mag.create(grid,"inv_ssa_residual", PISM.kNoGhosts,0);
+  
+  r_mag.set_attrs("diagnostic","magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
+            "m s-1", "inv_ssa_residual", 0);
+  r_mag.set_attr("_FillValue", PISM.convert(-0.01,'m/year','m/s'));
+  r_mag.set_attr("valid_min", 0.0);
+  r_mag.set_glaciological_units("m a-1")
+  r_mag.write_in_glaciological_units = True
+
+  residual.magnitude(r_mag)
+  r_mag.mask_by(vecs.thickness)
+  
+  vecs.add(residual,writing=True)
+  vecs.add(r_mag,writing=True)
 
   # Write solution out to netcdf file
   vel2tauc.write(output_filename,append=append_mode)
@@ -636,3 +486,7 @@ if __name__ == "__main__":
   # the output file.  So we rewrite the siple log.
   if not append_mode:
     logger.write(output_filename)
+
+  # Save the misfit history
+  if progress_reporter is not None:
+    progress_reporter.write(output_filename)

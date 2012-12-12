@@ -21,6 +21,8 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 
+#include "pism_petsc32_compat.hh"
+
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                    EnthalpyConverter &ec, const NCConfigVariable &c)
 {
@@ -36,10 +38,33 @@ PetscErrorCode SSAFEM::allocate_fem() {
   earth_grav = config.get("standard_gravity");
   m_beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
 
-  ierr = DMCreateGlobalVector(SSADA, &r);CHKERRQ(ierr);
-  ierr = DMGetMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
+  ierr = SNESCreate(grid.com, &snes);CHKERRQ(ierr);
 
-  ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
+  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
+  // methods via SSAFEFunction and SSAFEJ
+  callback_data.da = SSADA;
+  callback_data.ssa = this;
+  ierr = DMDASetLocalFunction(SSADA, (DMDALocalFunction1)SSAFEFunction); CHKERRQ(ierr);
+  ierr = DMDASetLocalJacobian(SSADA, (DMDALocalFunction1)SSAFEJacobian); CHKERRQ(ierr);
+
+#if PISM_PETSC32_COMPAT==1
+  Mat J;
+  Vec r;
+  ierr = DMGetMatrix(SSADA, "baij",  &J); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(SSADA, &r); CHKERRQ(ierr);
+
+  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data); CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data); CHKERRQ(ierr);
+
+  // Thanks to reference counting these two are destroyed during the SNESDestroy() call below.
+  ierr = MatDestroy(&J); CHKERRQ(ierr);
+  ierr = VecDestroy(&r); CHKERRQ(ierr);
+#else
+  ierr = DMSetMatType(SSADA, "baij"); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(SSADA, &callback_data); CHKERRQ(ierr);
+#endif
+
+  ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
 
   // Default of maximum 200 iterations; possibly overridded by commandline
   PetscInt snes_max_it = 200;
@@ -69,9 +94,7 @@ PetscErrorCode SSAFEM::deallocate_fem() {
   PetscErrorCode ierr;
 
   ierr = SNESDestroy(&snes);CHKERRQ(ierr);
-  delete feStore;
-  ierr = VecDestroy(&r); CHKERRQ(ierr);
-  ierr = MatDestroy(&J); CHKERRQ(ierr);
+  delete[] feStore;
 
   return 0;
 }
@@ -92,7 +115,10 @@ PetscErrorCode SSAFEM::init(PISMVars &vars) {
   // If we are not restarting from a PISM file, "velocity" is identically zero,
   // and the call below clears SSAX.
 
-  ierr = velocity.copy_to(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
+
+  // Store coefficient data at the quadrature points.
+  ierr = cacheQuadPtValues(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -115,8 +141,56 @@ PetscErrorCode SSAFEM::setFromOptions()
   PetscFunctionReturn(0);
 }
 
-//! Solve the SSA.
+//! Solve the SSA.  The FEM solver exchanges time for memory by computing
+//! the value of the various coefficients at each of the quadrature points
+//! only once.  When running in an ice-model context, at each time step,
+//! SSA::update is called, which calls SSAFEM::solve.  Since coefficients
+//! have generally changed between timesteps, we need to recompute coefficeints
+//! at the quad points. On the other hand, in the context of inversion, 
+//! coefficients will not change between iteration and there is no need to
+//! recompute the values at the quad points.  So there are two different solve
+//! methods, SSAFEM::solve() and SSAFEM::solve_nocache().  The only difference
+//! is that SSAFEM::solve() recomputes the cached values of the coefficients at
+//! quadrature points before calling SSAFEM::solve_nocache().
 PetscErrorCode SSAFEM::solve()
+{
+  PetscErrorCode ierr;
+
+  // Set up the system to solve (store coefficient data at the quadrature points):
+  ierr = cacheQuadPtValues(); CHKERRQ(ierr);
+
+  TerminationReason::Ptr reason;
+  ierr = solve_nocache(reason); CHKERRQ(ierr);
+  if(reason->failed())
+  {
+    SETERRQ1(grid.com, 1,
+    "SSAFEM solve failed to converge (SNES reason %s)\n\n", reason->description().c_str());
+  }
+  else if(getVerbosityLevel() > 2)
+  {
+    stdout_ssa += "SSAFEM converged (SNES reason ";
+    stdout_ssa += reason->description();
+    stdout_ssa += ")\n";
+  }
+  
+  return 0;
+}
+
+PetscErrorCode SSAFEM::solve(TerminationReason::Ptr &reason)
+{
+  PetscErrorCode ierr;
+
+  // Set up the system to solve (store coefficient data at the quadrature points):
+  ierr = cacheQuadPtValues(); CHKERRQ(ierr);
+
+  ierr = solve_nocache(reason); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+//! Solve the SSA without first recomputing the values of coefficients at quad
+//! points.  See the disccusion of SSAFEM::solve for more discussion.
+PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason)
 {
   PetscErrorCode ierr;
   PetscViewer    viewer;
@@ -139,44 +213,25 @@ PetscErrorCode SSAFEM::solve()
     ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
 
-  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  // methods via SSAFEFunction and SSAFEJ
-  ierr = DMDASetLocalFunction(SSADA,(DMDALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
-  ierr = DMDASetLocalJacobian(SSADA,(DMDALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
-  callback_data.da = SSADA;  callback_data.ssa = this;
-  ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
-  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
-
   stdout_ssa.clear();
   if (getVerbosityLevel() >= 2)
     stdout_ssa = "  SSA: ";
-
-  // Set up the system to solve (store coefficient data at the quadrature points):
-  ierr = setup(); CHKERRQ(ierr);
 
   // Solve:
   ierr = SNESSolve(snes,NULL,SSAX);CHKERRQ(ierr);
 
   // See if it worked.
-  SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason( snes, &reason); CHKERRQ(ierr);
-  if(reason < 0)
-  {
-    SETERRQ1(grid.com, 1,
-      "SSAFEM solve failed to converge (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
-  }
-  else if(getVerbosityLevel() > 2)
-  {
-    stdout_ssa += "SSAFEM converged (SNES reason ";
-    stdout_ssa += SNESConvergedReasons[reason];
-    stdout_ssa += ")\n";
+  SNESConvergedReason snes_reason;
+  ierr = SNESGetConvergedReason( snes, &snes_reason); CHKERRQ(ierr);
+  reason.reset(new SNESTerminationReason(snes_reason));
+  if(reason->failed()) {
+    return 0;
   }
 
   // Extract the solution back from SSAX to velocity and communicate.
-  ierr = velocity.copy_from(SSAX); CHKERRQ(ierr);
-  ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
-  ierr = velocity.endGhostComm(); CHKERRQ(ierr);
+  ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.beginGhostComm(); CHKERRQ(ierr);
+  ierr = m_velocity.endGhostComm(); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(NULL,"-ssa_view_solution",&flg);CHKERRQ(ierr);
   if (flg) {
@@ -195,7 +250,7 @@ any geometry or temperature related coefficients have changed. The method
 stores the values of the coefficients at the quadrature points of each
 element so that these interpolated values do not need to be computed
 during each outer iteration of the nonlinear solve.*/
-PetscErrorCode SSAFEM::setup()
+PetscErrorCode SSAFEM::cacheQuadPtValues()
 {
   PetscReal      **h,
                  **H,
@@ -220,19 +275,19 @@ PetscErrorCode SSAFEM::setup()
 
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
   bool driving_stress_explicit;
-  if(surface != NULL) {
-    driving_stress_explicit = false;
-    ierr = surface->get_array(h);CHKERRQ(ierr);
-  } else {
+  if( (driving_stress_x != NULL) && (driving_stress_y != NULL) ) {
     driving_stress_explicit = true;
     ierr = driving_stress_x->get_array(ds_x);CHKERRQ(ierr);
     ierr = driving_stress_y->get_array(ds_y);CHKERRQ(ierr);
-  }
+  } else {
+    // The class SSA ensures in this case that 'surface' is available
+    driving_stress_explicit = false;
+    ierr = surface->get_array(h);CHKERRQ(ierr);
+  } 
 
   ierr = thickness->get_array(H);CHKERRQ(ierr);
   ierr = bed->get_array(topg);CHKERRQ(ierr);
   ierr = tauc->get_array(tauc_array);CHKERRQ(ierr);
-
 
   PetscInt xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
@@ -308,11 +363,11 @@ PetscErrorCode SSAFEM::setup()
       }
     }
   }
-  if(surface != NULL) {
-    ierr = surface->end_access();CHKERRQ(ierr);
-  } else {
+  if(driving_stress_explicit) {
     ierr = driving_stress_x->end_access();CHKERRQ(ierr);
     ierr = driving_stress_y->end_access();CHKERRQ(ierr);
+  } else {
+    ierr = surface->end_access();CHKERRQ(ierr);
   }
   ierr = thickness->end_access();CHKERRQ(ierr);
   ierr = bed->end_access();CHKERRQ(ierr);
@@ -414,9 +469,9 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
   }
 
   // Start access of Dirichlet data, if present.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
-    ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr);
+    ierr = m_vel_bc->get_array(BC_vel); CHKERRQ(ierr);
   }
 
   // Jacobian times weights for quadrature.
@@ -452,7 +507,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
-      if(bc_locations && vel_bc) {
+      if(bc_locations && m_vel_bc) {
         dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
         FixDirichletValues(local_bc_mask,BC_vel,x,dofmap);
       }
@@ -494,7 +549,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
 
   // Until now we have not touched rows in the residual corresponding to Dirichlet data.
   // We fix this now.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -506,7 +561,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
       }
     }
     ierr = bc_locations->end_access();CHKERRQ(ierr);
-    ierr = vel_bc->end_access(); CHKERRQ(ierr);
+    ierr = m_vel_bc->end_access(); CHKERRQ(ierr);
   }
 
   PetscBool monitorFunction;
@@ -547,9 +602,9 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
   ierr = MatZeroEntries(Jac);CHKERRQ(ierr);
 
   // Start access to Dirichlet data if present.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
-    ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr);
+    ierr = m_vel_bc->get_array(BC_vel); CHKERRQ(ierr);
   }
 
   // Jacobian times weights for quadrature.
@@ -592,7 +647,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
-      if(bc_locations && vel_bc) {
+      if(bc_locations && m_vel_bc) {
         dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
         FixDirichletValues(local_bc_mask,BC_vel,x,dofmap);
       }
@@ -656,7 +711,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
   // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
   // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
   // columns previously, the symmetry of the Jacobian matrix is preserved.
-  if (bc_locations && vel_bc) {
+  if (bc_locations && m_vel_bc) {
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
         if (bc_locations->as_int(i,j) == 1) {
@@ -673,8 +728,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
   if(bc_locations) {
     ierr = bc_locations->end_access();CHKERRQ(ierr);
   }
-  if(vel_bc) {
-    ierr = vel_bc->end_access(); CHKERRQ(ierr);
+  if(m_vel_bc) {
+    ierr = m_vel_bc->end_access(); CHKERRQ(ierr);
   }
 
   ierr = MatAssemblyBegin(Jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -703,7 +758,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
   }
 
   ierr = MatSetOption(Jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
-
+  ierr = MatSetOption(Jac,MAT_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

@@ -65,11 +65,13 @@ PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],..
 
 void endPrintRank();
 
-void PISMEnd()  __attribute__((noreturn));
-void PISMEndQuiet()  __attribute__((noreturn));
+//void PISMEnd()  __attribute__((noreturn));
+//void PISMEndQuiet()  __attribute__((noreturn));
+void PISMEnd();
+void PISMEndQuiet();
 
 string pism_timestamp();
-string pism_username_prefix();
+string pism_username_prefix(MPI_Comm com);
 string pism_args_string();
 string pism_filename_add_suffix(string filename, string separator, string suffix);
 

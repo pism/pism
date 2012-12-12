@@ -1,4 +1,4 @@
-/* Copyright (C) 2010-2011 Jed Brown, Ed Bueler and Constantine Khroulev */
+/* Copyright (C) 2010-2012 Jed Brown, Ed Bueler and Constantine Khroulev */
 
 /* This file is part of PISM. */
 
@@ -20,6 +20,10 @@
 
 #include "THI.hh"
 #include "THItools.hh"
+#include "pism_const.hh"        // PetscObjectTypeCompare redefinition for PETSc < 3.3
+
+#include "pism_petsc32_compat.hh"
+
 static PetscClassId THI_COOKIE;
 
 struct _p_THI {
@@ -849,8 +853,8 @@ PetscErrorCode THISetup(MPI_Comm comm, DM pism_da2, PetscReal Lx, PetscReal Ly,
      * provide lower-triangular entries without setting this option. */
     Mat B = dmmg[i]->B;
     PetscBool flg1, flg2;
-    ierr = PetscTypeCompare((PetscObject)B, MATSEQSBAIJ, &flg1);CHKERRQ(ierr);
-    ierr = PetscTypeCompare((PetscObject)B, MATMPISBAIJ, &flg2);CHKERRQ(ierr);
+    ierr = PetscObjectTypeCompare((PetscObject)B, MATSEQSBAIJ, &flg1);CHKERRQ(ierr);
+    ierr = PetscObjectTypeCompare((PetscObject)B, MATMPISBAIJ, &flg2);CHKERRQ(ierr);
     if (flg1 || flg2) {
       ierr = MatSetOption(B, MAT_IGNORE_LOWER_TRIANGULAR, PETSC_TRUE);CHKERRQ(ierr);
     }

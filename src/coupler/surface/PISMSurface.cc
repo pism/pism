@@ -109,11 +109,11 @@ PetscErrorCode PISMSurfaceModel::define_variables(set<string> vars, const PIO &n
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::write_variables(set<string> vars, string filename) {
+PetscErrorCode PISMSurfaceModel::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {
-    ierr = atmosphere->write_variables(vars, filename); CHKERRQ(ierr);
+    ierr = atmosphere->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   return 0;

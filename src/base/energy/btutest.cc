@@ -289,19 +289,21 @@ int main(int argc, char *argv[]) {
       ++j;
     }
 
-    PIO pio(grid.com, grid.rank, grid.config.get_string("output_format"));
+    PIO pio(grid, grid.config.get_string("output_format"));
 
     string time_name = config.get_string("time_dimension_name");
     ierr = pio.open(outname, PISM_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(time_name, config.get_string("calendar"),
                         grid.time->CF_units()); CHKERRQ(ierr);
     ierr = pio.append_time(time_name, grid.time->end()); CHKERRQ(ierr);
-    ierr = btu.define_variables(vars, pio, PISM_DOUBLE); CHKERRQ(ierr);
-    ierr = pio.close(); CHKERRQ(ierr);
 
-    ierr = btu.write_variables(vars, outname); CHKERRQ(ierr);
-    ierr = bedtoptemp->write(outname.c_str()); CHKERRQ(ierr);
-    ierr = ghf->write(outname.c_str()); CHKERRQ(ierr);
+    ierr = btu.define_variables(vars, pio, PISM_DOUBLE); CHKERRQ(ierr);
+    ierr = btu.write_variables(vars, pio); CHKERRQ(ierr);
+
+    ierr = bedtoptemp->write(pio); CHKERRQ(ierr);
+    ierr = ghf->write(pio); CHKERRQ(ierr);
+
+    ierr = pio.close(); CHKERRQ(ierr);
 
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done.\n"); CHKERRQ(ierr);

@@ -104,11 +104,11 @@ public:
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
 protected:
-  PetscErrorCode compute_sigma(IceModelVec2S *D2_input, IceModelVec3 &result);
+  PetscErrorCode compute_volumetric_strain_heating(IceModelVec2S *D2_input, IceModelVec3 &result);
   IceModelVec3 *enthalpy;
   IceModelVec2S *thickness;
 };

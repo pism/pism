@@ -107,43 +107,6 @@ PetscErrorCode IceModelVec3D::destroy() {
   return 0;
 }
 
-PetscErrorCode  IceModelVec3D::begin_access() {
-  PetscErrorCode ierr;
-#if (PISM_DEBUG==1)
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec3D::begin_access(): access_counter < 0");
-#endif
-
-  if (access_counter == 0) {
-    ierr = DMDAVecGetArrayDOF(da, v, &array); CHKERRQ(ierr);
-  }
-
-  access_counter++;
-
-  return 0;
-}
-
-PetscErrorCode  IceModelVec3D::end_access() {
-  PetscErrorCode ierr;
-  access_counter--;
-
-#if (PISM_DEBUG==1)
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec3D::end_access(): access_counter < 0");
-#endif
-
-  if (access_counter == 0) {
-    ierr = DMDAVecRestoreArrayDOF(da, v, &array); CHKERRQ(ierr);
-    array = NULL;
-  }
-
-  return 0;
-}
-
 PetscErrorCode  IceModelVec3D::beginGhostCommTransfer(IceModelVec3D &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
@@ -320,7 +283,7 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar
 //! Gets a map-plane star stencil directly from the storage grid.
 PetscErrorCode IceModelVec3::getPlaneStar(PetscInt i, PetscInt j, PetscInt k,
 						  planeStar<PetscScalar> *star) {
-#if (PISM_DEBUG == 1)
+#if (PISM_DEBUG==1)
   check_array_indices(i, j);
 #endif
 
@@ -338,7 +301,7 @@ PetscErrorCode IceModelVec3::getPlaneStar(PetscInt i, PetscInt j, PetscInt k,
 //! Gets a map-plane star stencil on the fine vertical grid.
 PetscErrorCode IceModelVec3::getPlaneStar_fine(PetscInt i, PetscInt j, PetscInt k,
 					       planeStar<PetscScalar> *star) {
-#if (PISM_DEBUG == 1)
+#if (PISM_DEBUG==1)
   check_array_indices(i, j);
 #endif
 
@@ -376,7 +339,7 @@ the \f$z\f$ values in \c levelsIN.
  */
 PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
 					    PetscScalar *result) {
-#if (PISM_DEBUG == 1)
+#if (PISM_DEBUG==1)
   PetscErrorCode ierr = checkAllocated(); CHKERRQ(ierr);
   check_array_indices(i, j);
 #endif
@@ -414,7 +377,7 @@ Return array \c valsOUT must be an allocated array of \c grid.Mz_fine scalars
  */
 PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt ks,
 					       PetscScalar *result) {
-#if (PISM_DEBUG == 1)
+#if (PISM_DEBUG==1)
   check_array_indices(i, j);
 #endif
 
@@ -572,7 +535,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &gsurf, PetscScalar
 
 
 PetscErrorCode  IceModelVec3D::getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsPTR) {
-#if (PISM_DEBUG == 1)
+#if (PISM_DEBUG==1)
   check_array_indices(i, j);
 #endif
   PetscScalar ***arr = (PetscScalar***) array;
@@ -582,7 +545,7 @@ PetscErrorCode  IceModelVec3D::getInternalColumn(PetscInt i, PetscInt j, PetscSc
 
 
 PetscErrorCode  IceModelVec3D::setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN) {
-#if (PISM_DEBUG == 1)
+#if (PISM_DEBUG==1)
   check_array_indices(i, j);
 #endif
   PetscScalar ***arr = (PetscScalar***) array;
@@ -731,7 +694,7 @@ PetscErrorCode IceModelVec3D::view_sounding(int i, int j, PetscViewer my_viewer)
   PetscErrorCode ierr;
   PetscScalar *ivals;
 
-#if (PISM_DEBUG == 1)
+#if (PISM_DEBUG==1)
     check_array_indices(i, j);
 #endif
 

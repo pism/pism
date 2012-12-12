@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2012 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include "SSA.hh"
 #include "FETools.hh"
 #include <petscsnes.h>
-
+#include "TerminationReason.hh"
 
 //! Storage for SSA coefficients at a quadrature point.
 struct FEStoreNode {
@@ -67,7 +67,7 @@ class SSAFEM : public SSA
 public:
   SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b,
          EnthalpyConverter &e, const NCConfigVariable &c)
-    : SSA(g,b,e,c), element_index(g)
+  : SSA(g,b,e,c), element_index(g)
   {
     quadrature.init(grid);
     PetscErrorCode ierr = allocate_fem();
@@ -84,8 +84,9 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
+  virtual PetscErrorCode cacheQuadPtValues();
+
 protected:
-  PetscErrorCode setup();
 
   virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,
                                              const PISMVector2 *,const PetscReal[],
@@ -103,6 +104,10 @@ protected:
   virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const PISMVector2 **xg, Mat J);
 
   virtual PetscErrorCode solve();
+
+  virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
+
+  virtual PetscErrorCode solve_nocache(TerminationReason::Ptr &reason);
   
   virtual PetscErrorCode setFromOptions();
 
@@ -110,8 +115,6 @@ protected:
   // objects used internally
   IceModelVec2S hardav;         // vertically-averaged ice hardness
   SSAFEM_SNESCallbackData callback_data;
-  Mat J;
-  Vec r;
 
   SNES         snes;
   FEStoreNode *feStore;

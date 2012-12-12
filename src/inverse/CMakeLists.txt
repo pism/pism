@@ -1,8 +1,28 @@
 # Classes for inverse problems.
-add_library (pisminverse
-  ./InvTaucParameterization.cc
-  ./InvSSAForwardProblem.cc
-  )
+
+set(PISM_INVERSE_SOURCES
+./InvTaucParameterization.cc
+./InvSSAForwardProblem.cc
+./InvSSAForwardProblem_dep.cc
+./Functional.cc
+./L2NormFunctional.cc
+./H1NormFunctional.cc
+./MeanSquareFunctional.cc
+./TwoBlockVec.cc
+./InvSSATikhonovGN.cc  
+)
+
+if(Pism_USE_TAO)
+  list (APPEND PISM_INVERSE_SOURCES
+    ./TaoUtil.cc
+    ./InvSSATikhonov.cc
+    ./InvSSATikhonovLCL.cc
+    )
+endif()
+
+add_library (pisminverse ${PISM_INVERSE_SOURCES})
 target_link_libraries (pisminverse pismbase pismutil)
 
-install (TARGETS pisminverse DESTINATION ${Pism_LIB_DIR})
+if (${BUILD_SHARED_LIBS})
+  install (TARGETS pisminverse DESTINATION ${Pism_LIB_DIR})
+endif()

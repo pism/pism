@@ -163,6 +163,12 @@ def plot_tests(nc, list_of_tests):
             plot_errors(nc, 'dz', ["maximum_basal_melt_rate"],
                         'O', "basal melt rate errors")
 
+        # test V: plot only the u component
+        if test_name == 'V':
+            plot_errors(nc, 'dx', ["relative_velocity"],
+                        test_name, "relative velocity errors")
+            plot_errors(nc, 'dx', ["maximum_u", "average_u"],
+                        test_name, "velocity errors")
 def print_help():
     print """Usage:
 -i            specifies an input file, a result of running pismv (or vfnow.py)

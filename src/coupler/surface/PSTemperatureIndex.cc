@@ -211,9 +211,14 @@ PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt
       my_dt = dt_atmosphere;
   }
 
-  if (my_dt > 0)
+  if (my_dt > 0) {
     restrict = true;
-  else
+
+    // try to avoid very small time steps:
+    // (Necessary when driving this PDD model with monthly data, for example.)
+    if (pdd_annualize && PetscAbs(my_t + my_dt - next_pdd_update) < 1)
+      my_dt = next_pdd_update - my_t;
+  } else
     restrict = false;
 
   return 0;
@@ -266,11 +271,8 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   PetscInt Nseries;
   ierr = mbscheme->getNForTemperatureSeries(my_t, my_dt, Nseries); CHKERRQ(ierr);
 
-  PetscReal one_year = convert(1.0, "years", "seconds");
-
   // time since the beginning of the year, in seconds
-  const PetscScalar tseries = grid.time->mod(my_t, one_year),
-    dtseries = my_dt / ((PetscScalar) (Nseries - 1));
+  const PetscScalar dtseries = my_dt / ((PetscScalar) (Nseries - 1));
 
   // times for the air temperature time-series, in years:
   vector<PetscScalar> ts(Nseries), T(Nseries);
@@ -328,12 +330,12 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
       }
       PetscScalar pddsum = mbscheme->getPDDSumFromTemperatureTimeSeries(
                                   sigma, base_pddThresholdTemp,
-                                  tseries, dtseries, &T[0], Nseries);
+                                  my_t, dtseries, &T[0], Nseries);
 
       // use the temperature time series to remove the rainfall from the precipitation
       PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
                                   climatic_mass_balance(i,j), // precipitation rate (input)
-                                  tseries, dtseries, &T[0], Nseries);
+                                  my_t, dtseries, &T[0], Nseries);
 
       // use degree-day factors, and number of PDDs, and the snow precipitation, to
       //   get surface mass balance (and diagnostics: accumulation, melt, runoff)
@@ -376,13 +378,7 @@ PetscErrorCode PSTemperatureIndex::ice_surface_mass_flux(IceModelVec2S &result) 
 
 
 PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = atmosphere->mean_annual_temp(result); CHKERRQ(ierr);
-
-  string history = result.string_attr("history");
-  history = "re-interpreted mean annual near-surface air temperature as instantaneous ice temperature at the ice surface\n" + history;
-  ierr = result.set_attr("history", history); CHKERRQ(ierr);
-
+  PetscErrorCode ierr = atmosphere->mean_annual_temp(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -431,7 +427,7 @@ PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO 
 
 }
 
-PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string filename) {
+PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -441,31 +437,31 @@ PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string file
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
-    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = tmp.write(nc); CHKERRQ(ierr);
     vars.erase("ice_surface_temp");
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = climatic_mass_balance.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = climatic_mass_balance.write(nc); CHKERRQ(ierr);
     vars.erase("climatic_mass_balance");
   }
 
   if (set_contains(vars, "saccum")) {
-    ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = accumulation_rate.write(nc); CHKERRQ(ierr);
     vars.erase("saccum");
   }
 
   if (set_contains(vars, "smelt")) {
-    ierr = melt_rate.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = melt_rate.write(nc); CHKERRQ(ierr);
     vars.erase("smelt");
   }
 
   if (set_contains(vars, "srunoff")) {
-    ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = runoff_rate.write(nc); CHKERRQ(ierr);
     vars.erase("srunoff");
   }
 
-  ierr = PISMSurfaceModel::write_variables(vars, filename); CHKERRQ(ierr);
+  ierr = PISMSurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011, 2012 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "iceModel.hh"
 #include "IceGrid.hh"
 
-#if (PISM_HAVE_PROJ4==1)
+#if (PISM_USE_PROJ4==1)
 
 #include <proj_api.h>
 
@@ -136,7 +136,7 @@ PetscErrorCode IceModel::compute_cell_areas() {
   return 0;
 }
 
-#elif (PISM_HAVE_PROJ4==0)      // no proj.4
+#elif (PISM_USE_PROJ4==0)      // no proj.4
 
 PetscErrorCode IceModel::compute_cell_areas() {
   PetscErrorCode ierr;
@@ -147,6 +147,6 @@ PetscErrorCode IceModel::compute_cell_areas() {
   return 0;
 }
 
-#else  // PISM_HAVE_PROJ4 is not set
-#error "PISM build system error: PISM_HAVE_PROJ4 is not set."
+#else  // PISM_USE_PROJ4 is not set
+#error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif

@@ -171,10 +171,10 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   if (i_set) {
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
-    PIO nc(grid.com, grid.rank, "netcdf3");
+    PIO nc(grid, "guess_format");
 
     ierr = nc.open(input_file, PISM_NOWRITE); CHKERRQ(ierr);
-    
+
     bool exists;
     ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
 
@@ -244,11 +244,11 @@ PetscErrorCode PISMBedThermalUnit::define_variables(
   return 0;
 }
 
-PetscErrorCode PISMBedThermalUnit::write_variables(set<string> vars, string filename) {
+PetscErrorCode PISMBedThermalUnit::write_variables(set<string> vars, const PIO &nc) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.string_attr("short_name"))) {
-      ierr = temp.write(filename.c_str()); CHKERRQ(ierr); 
+      ierr = temp.write(nc); CHKERRQ(ierr); 
     }
   }
   return 0;

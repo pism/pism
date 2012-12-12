@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 Maria Martin and Ed Bueler
+# Copyright (C) 2009-2012 Maria Martin and Ed Bueler
 ##################################################################################
 # Spinup of Antarctic ice sheet model using data from Anne Le Brocq (from SeaRISE wiki).
 # Uses PIK physics and enthalpy model (see Publications at www.pism-docs.org) 
@@ -71,31 +71,34 @@ SKIPTENKM=100
 SKIPSEVENKM=100
 SKIPFIVEKM=200
 
-SKIP=$SKIPFIFTEENKM
+# these coarse grid defaults are for development/regression runs, not
+# "production" or science
+GRID=$THIRTYKMGRID
+SKIP=$SKIPTHIRTYKM
 
-SIA_ENHANCEMENT="-e 5.6"
+SIA_ENHANCEMENT="-sia_e 5.6"
 
 #PIK-stuff; notes:
 # 1)   '-pik' = '-cfbc -part_grid -part_redist -kill_icebergs'
 # 2)   -meltfactor_pik 5e-3 is default when using -ocean pik
-PIKPHYS="-ssa_method fd -e_ssa 0.6 -pik -eigen_calving 2.0e18 -calving_at_thickness 50.0"
+PIKPHYS="-ssa_method fd -ssa_e 0.6 -pik -eigen_calving -eigen_calving_K 2.0e18 -thickness_calving -calving_at_thickness 50.0"
 #PIKPHYS_COUPLING="-atmosphere pik -ocean pik -meltfactor_pik 1.5e-2"
-PIKPHYS_COUPLING="-atmosphere constant -surface simple -ocean pik -meltfactor_pik 1.5e-2"
+PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANAME -surface simple -ocean pik -meltfactor_pik 1.5e-2"
 
 # sliding related options:
-PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.97"
-TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
+PARAMS="-pseudo_plastic -pseudo_plastic_q 0.25 -plastic_pwfrac 0.97"
+TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
 #TILLPHI="-topg_to_phi 5.0,20.0,-1000.0,0.0,10.0" # as in Martin et al 2012
-FULLPHYS="-ssa_sliding -thk_eff $PARAMS $TILLPHI"
+FULLPHYS="-ssa_sliding -thk_eff -diffuse_bwat $PARAMS $TILLPHI"
 
+# use these KSP "diverged" errors occur
+STRONGKSP="-ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
 
 
 echo "$SCRIPTNAME             PISM = $PISM_EXEC"
 echo "$SCRIPTNAME         FULLPHYS = $FULLPHYS"
 echo "$SCRIPTNAME          PIKPHYS = $PIKPHYS"
 echo "$SCRIPTNAME PIKPHYS_COUPLING = $PIKPHYS_COUPLING"
-
-
 
 
 # #######################################
@@ -107,7 +110,7 @@ RESNAME=${RESDIR}$stage.nc
 RUNTIME=100 
 echo
 echo "$SCRIPTNAME  bootstrapping plus short SIA run for $RUNTIME a"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -skip $SKIP -boot_file ${INNAME} $FIFTEENKMGRID \
+cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -boot_file ${INNAME} $GRID \
 	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -ocean_kill \
 	-y $RUNTIME -o $RESNAME"
 $DO $cmd
@@ -148,11 +151,12 @@ exfilepackage="-extra_times 0:1000:$RUNTIME -extra_vars thk,usurf,cbase,cbar,mas
 
 echo
 echo "$SCRIPTNAME  run into steady state with constant climate forcing for $RUNTIME a"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -skip $SKIP -i $INNAME \
+cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i $INNAME \
 	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
 	-ys 0 -y $RUNTIME \
 	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 	-extra_file $EXTRANAME $exfilepackage \
+	$STRONGKSP \
 	-o $RESNAME -o_size big"
 $DO $cmd
 #exit # <-- uncomment to stop here
@@ -178,6 +182,7 @@ $DO $cmd
 #	-ys 0 -y $RUNTIME \
 #	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 #	-extra_file $EXTRANAME $exfilepackage \
+#	$STRONGKSP \
 #	-o $RESNAME -o_size big"
 #	
 #echo $DO $cmd 
@@ -205,6 +210,7 @@ $DO $cmd
 #	-ys 0 -y $RUNTIME \
 #	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 #	-extra_file $EXTRANAME $exfilepackage \
+#	$STRONGKSP \
 #	-o $RESNAME -o_size big"
 #	
 #echo $DO $cmd 
@@ -232,6 +238,7 @@ $DO $cmd
 #	-ys 0 -y $RUNTIME \
 #	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
 #	-extra_file $EXTRANAME $exfilepackage \
+#	$STRONGKSP \
 #	-o $RESNAME -o_size big"
 #	
 #echo $DO $cmd 

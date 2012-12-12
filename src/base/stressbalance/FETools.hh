@@ -30,8 +30,8 @@
 //! \file 
 //! \brief Classes for implementing the Finite Element Method on an IceGrid.
 /*! \file
-We assume that the reader has a basic understanding of the finite element method
-at the level of ?????.  The following is a reminder of the method that also
+We assume that the reader has a basic understanding of the finite element method.
+The following is a reminder of the method that also
 gives the background for the how to implement it on an IceGrid with the tools in this 
 module.
 
@@ -427,5 +427,37 @@ protected:
   PISMVector2 m_tmpVector[Nk];
 };
 
+class DirichletData {
+public:
+  DirichletData();
+  ~DirichletData();
+  PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2V *values, PetscReal weight);
+  PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2S *values, PetscReal weight);
+  PetscErrorCode init( IceModelVec2Int *indices);
+  void constrain( FEDOFMap &dofmap );
+  void update( FEDOFMap &dofmap, PISMVector2* x_e );
+  void update( FEDOFMap &dofmap, PetscReal* x_e );
+  void updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e );
+  void updateHomogeneous( FEDOFMap &dofmap, PetscReal* x_e );
+  void fixResidual( PISMVector2 **x, PISMVector2 **r);
+  void fixResidual( PetscReal **x, PetscReal **r);
+  void fixResidualHomogeneous( PISMVector2 **r);
+  void fixResidualHomogeneous( PetscReal **r);
+  PetscErrorCode fixJacobian2V( Mat J);
+  PetscErrorCode fixJacobian2S( Mat J);
+  operator bool() {
+    return m_indices != NULL;
+  }
+  PetscErrorCode finish();
+protected:
+  
+  PetscReal m_indices_e[FEQuadrature::Nk];
+  IceModelVec2Int *m_indices;
+  IceModelVec     *m_values;
+
+  PetscReal      **m_pIndices;
+  void           **m_pValues;
+  PetscReal        m_weight;
+};
 
 #endif/* _FETOOLS_H_*/

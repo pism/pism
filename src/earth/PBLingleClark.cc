@@ -16,8 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#if (PISM_HAVE_FFTW==1)
-
 #include "PISMBedDef.hh"
 #include "PIO.hh"
 #include "PISMTime.hh"
@@ -173,7 +171,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
     topg_exists, topg_initial_exists, regrid_vars_set;
   string boot_filename, regrid_filename;
-  PIO nc(grid.com, grid.rank, "netcdf3");
+  PIO nc(grid, "guess_format");
 
   ierr = PISMOptionsIsSet("-regrid_bed_special",
                           "Correct topg when switching to a different grid",
@@ -291,7 +289,3 @@ PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
 
   return 0;
 }
-
-#else // PISM_HAVE_FFTW
-#error "PISM build system error: Lingle and Clark bed deformation model requires FFTW3."
-#endif

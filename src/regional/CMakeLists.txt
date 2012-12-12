@@ -3,7 +3,10 @@ add_library (pismregional
   ./regional.cc
   )
 target_link_libraries (pismregional pismbase)
-install (TARGETS pismregional DESTINATION ${Pism_LIB_DIR})
+
+if (${BUILD_SHARED_LIBS})
+  install (TARGETS pismregional DESTINATION ${Pism_LIB_DIR})
+endif()
 
 
 

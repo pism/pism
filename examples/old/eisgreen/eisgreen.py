@@ -150,7 +150,7 @@ latvar = ncfile.createVariable('lat', 'f4', dimensions=('y', 'x'))
 hvar = ncfile.createVariable('usurf', 'f4', dimensions=('y', 'x'))
 thkvar = ncfile.createVariable('thk', 'f4', dimensions=('y', 'x'))
 bedvar = ncfile.createVariable('topg', 'f4', dimensions=('y', 'x'), fill_value=topg_fill_value) 
-accvar = ncfile.createVariable('precip', 'f4', dimensions=('y', 'x'))
+accvar = ncfile.createVariable('precipitation', 'f4', dimensions=('y', 'x'))
 bheatflxvar = ncfile.createVariable('bheatflx', 'f4', dimensions=('y', 'x'))
 
 # set the attributes of the variables

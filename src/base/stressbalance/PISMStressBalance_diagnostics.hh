@@ -145,20 +145,27 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Computes the driving shear stress at the base of ice
-//! (diagnostically).
-class PSB_taud_mag : public PISMDiag<PISMStressBalance>
-{
-public:
-  PSB_taud_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
 //! \brief Reports the volumetric strain heating.
 class PSB_strainheat : public PISMDiag<PISMStressBalance>
 {
 public:
   PSB_strainheat(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the principal strain rates.
+class PSB_strain_rates : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_strain_rates(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports deviatoric stresses.
+class PSB_deviatoric_stresses : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_deviatoric_stresses(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

@@ -21,7 +21,7 @@
 #include "FETools.hh"
 #include "flowlaws.hh"
 #include "IceGrid.hh"
-
+#include <assert.h>
 const FEShapeQ1::ShapeFunctionSpec FEShapeQ1::shapeFunction[FEShapeQ1::Nk] = 
 {FEShapeQ1::shape0, FEShapeQ1::shape1, FEShapeQ1::shape2, FEShapeQ1::shape3};
 
@@ -419,3 +419,277 @@ int PismIntMask(PetscScalar maskvalue) {
   return static_cast<int>(floor(maskvalue + 0.5));
 }
 
+DirichletData::DirichletData() : 
+m_indices(NULL), m_values(NULL), m_weight(1) {  
+}
+
+DirichletData::~DirichletData() {
+  if(m_indices != NULL) {
+    PetscErrorCode ierr;
+    ierr = verbPrintf(1,m_indices->get_grid()->com, "Warning: DirichletData destructing with IceModelVecs still accessed.  Looks like DirichletData::finish() was not called.");
+      CHKERRCONTINUE(ierr);
+  }
+}
+
+PetscErrorCode DirichletData::init(IceModelVec2Int *indices, IceModelVec2V *values, PetscReal weight) {
+  PetscErrorCode ierr;
+  m_indices = indices;
+  m_values  = values;
+  m_weight  = weight;
+  
+  if( m_indices != NULL) {
+    ierr = m_indices->get_array(m_pIndices); CHKERRQ(ierr);    
+  } else {
+    m_indices = NULL;
+    m_pIndices = NULL;
+  }
+
+  if( values != NULL) {
+    ierr = values->get_array(reinterpret_cast<PISMVector2 ** &>(m_pValues)); CHKERRQ(ierr);    
+  } else {
+    m_values = NULL;
+    m_pValues = NULL;
+  }
+  
+  return 0;
+}
+
+PetscErrorCode DirichletData::init(IceModelVec2Int *indices, IceModelVec2S *values, PetscReal weight) {
+  PetscErrorCode ierr;
+  m_indices = indices;
+  m_values  = values;
+  m_weight  = weight;
+  
+  if( m_indices != NULL) {
+    ierr = m_indices->get_array(m_pIndices); CHKERRQ(ierr);    
+  } else {
+    m_indices = NULL;
+    m_pIndices = NULL;
+  }
+
+  if( values != NULL) {
+    ierr = values->get_array(reinterpret_cast<PetscReal ** &>(m_pValues)); CHKERRQ(ierr);    
+  } else {
+    m_values = NULL;
+    m_pValues = NULL;
+  }
+  
+  return 0;
+}
+
+
+PetscErrorCode DirichletData::init(IceModelVec2Int *indices ) {
+  PetscErrorCode ierr;
+
+  m_values  = NULL;
+  m_pValues  = NULL;
+  m_weight  = 1;
+  
+  m_indices = indices;
+  if( m_indices != NULL) {
+    ierr = m_indices->get_array(m_pIndices); CHKERRQ(ierr);    
+  } else {
+    m_indices = NULL;
+    m_pIndices = NULL;
+  }
+
+  return 0;
+}
+
+PetscErrorCode DirichletData::finish() {
+  PetscErrorCode ierr;
+  if(m_indices) {
+    ierr = m_indices->end_access(); CHKERRQ(ierr);
+    m_indices = NULL;
+    m_pIndices = NULL;
+  }
+ 
+  if(m_values) {
+    ierr = m_values->end_access(); CHKERRQ(ierr);
+    m_values = NULL;
+    m_pValues = NULL;
+  }
+  return 0;
+}
+void DirichletData::constrain( FEDOFMap &dofmap ) {
+  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
+  for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+      // Mark any kind of Dirichlet node as not to be touched
+      dofmap.markRowInvalid(k);
+      dofmap.markColInvalid(k);
+    }
+  }
+}
+
+void DirichletData::update( FEDOFMap &dofmap, PISMVector2* x_e ) {
+#if (PISM_DEBUG==1)
+  assert(m_values != NULL);
+#endif
+  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
+  PISMVector2 **pValues = reinterpret_cast<PISMVector2 **>(m_pValues);
+  for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+      PetscInt i, j;
+      dofmap.localToGlobal(k,&i,&j);
+      x_e[k].u = pValues[i][j].u;
+      x_e[k].v = pValues[i][j].v;
+    }
+  }
+}
+
+void DirichletData::update( FEDOFMap &dofmap, PetscReal* x_e ) {
+#if (PISM_DEBUG==1)
+  assert(m_values != NULL);
+#endif
+
+  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
+  PetscReal **pValues = reinterpret_cast<PetscReal **>(m_pValues);
+  for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+      PetscInt i, j;
+      dofmap.localToGlobal(k,&i,&j);
+      x_e[k] = pValues[i][j];
+    }
+  }
+}
+
+
+void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e ) {
+  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
+  for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+      x_e[k].u = 0;
+      x_e[k].v = 0;
+    }
+  }
+}
+
+void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PetscReal* x_e ) {
+  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
+  for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+      x_e[k] = 0.;
+    }
+  }
+}
+
+void DirichletData::fixResidual( PISMVector2 **x, PISMVector2 **r) {
+#if (PISM_DEBUG==1)
+  assert(m_values != NULL);
+#endif
+
+  IceGrid &grid = *m_indices->get_grid();
+  PISMVector2 **pValues = reinterpret_cast<PISMVector2 **>(m_pValues);
+  
+  PetscInt i,j;
+  // For each node that we own:
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+          // Enforce explicit dirichlet data.
+          r[i][j].u = m_weight * (x[i][j].u - pValues[i][j].u);
+          r[i][j].v = m_weight * (x[i][j].v - pValues[i][j].v);
+      }
+    }
+  }
+}
+
+void DirichletData::fixResidualHomogeneous(  PISMVector2 **r) {
+  IceGrid &grid = *m_indices->get_grid();
+  
+  PetscInt i,j;
+  // For each node that we own:
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+          // Enforce explicit dirichlet data.
+          r[i][j].u = 0;
+          r[i][j].v = 0;
+      }
+    }
+  }
+}
+
+void DirichletData::fixResidual( PetscReal **x, PetscReal **r) {
+#if (PISM_DEBUG==1)
+  assert(m_values != NULL);
+#endif
+
+  IceGrid &grid = *m_indices->get_grid();
+  
+  PetscInt i,j;
+  
+  PetscReal **pValues = reinterpret_cast<PetscReal **>(m_pValues);
+  // For each node that we own:
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+          // Enforce explicit dirichlet data.
+          r[i][j] = m_weight * (x[i][j] - pValues[i][j]);
+      }
+    }
+  }
+}
+
+void DirichletData::fixResidualHomogeneous(  PetscReal **r) {
+  IceGrid &grid = *m_indices->get_grid();
+  
+  PetscInt i,j;
+  // For each node that we own:
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+          // Enforce explicit dirichlet data.
+          r[i][j] = 0;
+      }
+    }
+  }
+}
+
+
+PetscErrorCode DirichletData::fixJacobian2V(Mat J) {
+  PetscInt i,j;
+  PetscErrorCode ierr;
+  IceGrid &grid = *m_indices->get_grid();
+
+  // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
+  // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
+  // columns previously, the symmetry of the Jacobian matrix is preserved.
+
+  const PetscReal ident[4] = {m_weight,0,0,m_weight};
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+        MatStencil row;
+        // Transpose shows up here!
+        row.j = i; row.i = j;
+        ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,ident,ADD_VALUES); CHKERRQ(ierr);
+      }
+    }
+  }
+  return 0;
+}
+
+PetscErrorCode DirichletData::fixJacobian2S(Mat J) {
+  PetscInt i,j;
+  PetscErrorCode ierr;
+  IceGrid &grid = *m_indices->get_grid();
+
+  // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
+  // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
+  // columns previously, the symmetry of the Jacobian matrix is preserved.
+
+  const PetscReal ident = m_weight;
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (m_indices->as_int(i,j) == 1) {
+        MatStencil row;
+        // Transpose shows up here!
+        row.j = i; row.i = j;
+        ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,&ident,ADD_VALUES); CHKERRQ(ierr);
+      }
+    }
+  }
+  return 0;
+}

@@ -26,13 +26,14 @@
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
-#include "BlatterStressBalance.hh"
+#include "PISMStressBalance.hh"
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
 #include "PISMBedDef.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
+#include "PISMHydrology.hh"
 #include "PISMMohrCoulombYieldStress.hh"
 #include "PISMConstantYieldStress.hh"
 #include "bedrockThermalUnit.hh"
@@ -69,7 +70,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // overridden later, in IceModel::set_grid_from_options()).
 
   // Determine the grid extent from a bootstrapping file:
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
   bool x_dim_exists, y_dim_exists, t_exists;
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -85,12 +86,23 @@ PetscErrorCode IceModel::set_grid_defaults() {
   names.push_back("bedrock_altitude");
   names.push_back("thk");
   names.push_back("topg");
+  bool grid_info_found = false;
   for (unsigned int i = 0; i < names.size(); ++i) {
-    ierr = nc.inq_grid_info(names[i], input);
-    if (ierr == 0) break;
+
+    ierr = nc.inq_var(names[i], grid_info_found); CHKERRQ(ierr);
+    if (grid_info_found == false) {
+      string dummy1;
+      bool dummy2;
+      ierr = nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2); CHKERRQ(ierr);
+    }
+
+    if (grid_info_found) {
+      ierr = nc.inq_grid_info(names[i], input); CHKERRQ(ierr);
+      break;
+    }
   }
 
-  if (ierr != 0) {
+  if (grid_info_found == false) {
     PetscPrintf(grid.com, "ERROR: no geometry information found in '%s'.\n",
                 filename.c_str());
     PISMEnd();
@@ -130,18 +142,12 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = PISMOptionsIsSet("-Mx", Mx_set); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-My", My_set); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-Mz", Mz_set); CHKERRQ(ierr);
-  if ( !(Mx_set && My_set && Mz_set) ) {
+  ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
+  if ( !(Mx_set && My_set && Mz_set && Lz_set) ) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: All of -boot_file, -Mx, -My, -Mz are required for bootstrapping.\n");
+		       "PISM ERROR: All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.\n");
     CHKERRQ(ierr);
     PISMEnd();
-  }
-
-  ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
-  if ( !Lz_set ) {
-    ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: -Lz is not set; trying to deduce it using the bootstrapping file...\n");
-    CHKERRQ(ierr);
   }
 
   return 0;
@@ -235,6 +241,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
     grid.Ly = (y_range[1] - y_range[0]) / 2.0;
   }
 
+  grid.check_parameters();
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid.compute_vertical_levels();    CHKERRQ(ierr);
 
@@ -274,7 +281,7 @@ PetscErrorCode IceModel::grid_setup() {
 			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+    PIO nc(grid, "guess_format");
     string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output
@@ -313,12 +320,17 @@ PetscErrorCode IceModel::grid_setup() {
 
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
+    bool var_exists = false;
     for (unsigned int i = 0; i < names.size(); ++i) {
-      ierr = nc.inq_grid(names[i], &grid, NOT_PERIODIC);
-      if (ierr == 0) break;
+      ierr = nc.inq_var(names[i], var_exists); CHKERRQ(ierr);
+
+      if (var_exists == true) {
+        ierr = nc.inq_grid(names[i], &grid, NOT_PERIODIC); CHKERRQ(ierr);
+        break;
+      }
     }
 
-    if (ierr != 0) {
+    if (var_exists == false) {
       PetscPrintf(grid.com, "PISM ERROR: file %s has neither enthalpy nor temperature in it!\n",
                   filename.c_str());
 
@@ -465,7 +477,7 @@ PetscErrorCode IceModel::model_state_setup() {
   string filename;
 
   // Check if we are initializing from a PISM output file:
-  ierr = PISMOptionsString("-i", "Specifies a PISM input file",
+  ierr = PISMOptionsString("-i", "Specifies the PISM input file",
 			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
@@ -506,12 +518,35 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = btu->init(variables); CHKERRQ(ierr);
   }
 
+  if (subglacial_hydrology) {
+    ierr = subglacial_hydrology->init(variables); CHKERRQ(ierr);
+  }
+
+  // basal_yield_stress->init() needs bwat so this must happen after subglacial_hydrology->init()
   if (basal_yield_stress) {
     ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("compute_cumulative_acab")) {
-    ierr = acab_cumulative.set(0.0); CHKERRQ(ierr);
+  if (climatic_mass_balance_cumulative.was_created()) {
+    if (i_set) {
+      ierr = verbPrintf(2, grid.com,
+                        "* Trying to read cumulative climatic mass balance from '%s'...\n",
+                        filename.c_str()); CHKERRQ(ierr);
+      ierr = climatic_mass_balance_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+    } else {
+      ierr = climatic_mass_balance_cumulative.set(0.0); CHKERRQ(ierr);
+    }
+  }
+
+  if (ocean_kill_flux_2D_cumulative.was_created()) {
+    if (i_set) {
+      ierr = verbPrintf(2, grid.com,
+                        "* Trying to read cumulative ocean kill flux from '%s'...\n",
+                        filename.c_str()); CHKERRQ(ierr);
+      ierr = ocean_kill_flux_2D_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+    } else {
+      ierr = ocean_kill_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
+    }
   }
 
   ierr = compute_cell_areas(); CHKERRQ(ierr);
@@ -630,7 +665,9 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   // up (there is no switch saying "do the hybrid").
   if (stress_balance == NULL) {
     if (do_blatter) {
-      stress_balance = new BlatterStressBalance(grid, ocean, config);
+      PetscPrintf(grid.com, "Blatter solver is disabled for now.\n");
+      PISMEnd();
+      // stress_balance = new BlatterStressBalance(grid, ocean, config);
     } else {
       ShallowStressBalance *my_stress_balance;
       if (use_ssa_velocity) {
@@ -681,6 +718,25 @@ PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
   return 0;
 }
 
+//! \brief Decide which subglacial hydrology model to use.
+PetscErrorCode IceModel::allocate_subglacial_hydrology() {
+  string hydrology_model = config.get_string("hydrology_model");
+
+  if (subglacial_hydrology != NULL) // indicates it has already been allocated
+    return 0;
+  if      (hydrology_model == "tillcan")
+    subglacial_hydrology = new PISMTillCanHydrology(grid, config, false);
+  else if (hydrology_model == "diffuseonly")
+    subglacial_hydrology = new PISMDiffuseOnlyHydrology(grid, config);
+  else if (hydrology_model == "lakes")
+    subglacial_hydrology = new PISMLakesHydrology(grid, config);
+  else if (hydrology_model == "distributed")
+    subglacial_hydrology = new PISMDistributedHydrology(grid, config, stress_balance);
+  else { SETERRQ(grid.com,1,"unknown value for 'hydrology_model'"); }
+
+  return 0;
+}
+
 //! \brief Decide which basal yield stress model to use.
 PetscErrorCode IceModel::allocate_basal_yield_stress() {
   PetscErrorCode ierr;
@@ -698,7 +754,7 @@ PetscErrorCode IceModel::allocate_basal_yield_stress() {
     if (hold_tauc) {
       basal_yield_stress = new PISMConstantYieldStress(grid, config);
     } else {
-      basal_yield_stress = new PISMMohrCoulombYieldStress(grid, config);
+      basal_yield_stress = new PISMMohrCoulombYieldStress(grid, config, subglacial_hydrology);
     }
   }
 
@@ -711,15 +767,10 @@ PetscErrorCode IceModel::allocate_basal_resistance_law() {
   if (basal != NULL)
     return 0;
 
-  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till");
-  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
-    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/s"),
-    plastic_regularization = config.get("plastic_regularization", "1/year", "1/second");
-
-  basal = new IceBasalResistancePlasticLaw(plastic_regularization,
-                                           do_pseudo_plastic_till,
-                                           pseudo_plastic_q,
-                                           pseudo_plastic_uthreshold);
+  if (config.get_flag("do_pseudo_plastic_till") == true)
+    basal = new IceBasalResistancePseudoPlasticLaw(config);
+  else
+    basal = new IceBasalResistancePlasticLaw(config);
 
   return 0;
 }
@@ -743,6 +794,10 @@ PetscErrorCode IceModel::allocate_submodels() {
 
   ierr = allocate_stressbalance(); CHKERRQ(ierr);
 
+  // this has to happen *after* allocate_stressbalance()
+  ierr = allocate_subglacial_hydrology(); CHKERRQ(ierr);
+
+  // this has to happen *after* allocate_subglacial_hydrology()
   ierr = allocate_basal_yield_stress(); CHKERRQ(ierr);
 
   ierr = allocate_bedrock_thermal_unit(); CHKERRQ(ierr);
@@ -816,14 +871,14 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
 
-  // Make sure that we use the output_variable_order that works with NetCDF-4
-  // parallel I/O. (For two reasons: it is faster and it will probably hang if
-  // it is not "xyz".)
-
-  if (config.get_string("output_format") == "netcdf4_parallel" &&
+  // Make sure that we use the output_variable_order that works with NetCDF-4,
+  // "quilt", and HDF5 parallel I/O. (For different reasons, but mainly because
+  // it is faster.)
+  string o_format = config.get_string("output_format");
+  if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
       config.get_string("output_variable_order") != "xyz") {
     PetscPrintf(grid.com,
-                "PISM ERROR: -o_format netcdf4_parallel requires -o_order xyz.\n");
+                "PISM ERROR: output formats netcdf4_parallel, quilt, and hdf5 require -o_order xyz.\n");
     PISMEnd();
   }
 
@@ -831,12 +886,13 @@ PetscErrorCode IceModel::misc_setup() {
   event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");
 
   event_energy  = grid.profiler->create("energy",   "time spent inside energy time-stepping");
+  event_hydrology = grid.profiler->create("hydrology",   "time spent inside hydrology time-stepping");
   event_age     = grid.profiler->create("age",      "time spent inside age time-stepping");
   event_mass    = grid.profiler->create("masscont", "time spent inside mass continuity time-stepping");
 
   event_beddef  = grid.profiler->create("bed_def",  "time spent updating the bed deformation model");
 
-  event_output    = grid.profiler->create("output", "time spent writing an output file");
+  event_output    = grid.profiler->create("output", "time spent writing output files");
   event_output_define = grid.profiler->create("output_define", "time spent defining variables");
   event_snapshots = grid.profiler->create("snapshots", "time spent writing snapshots");
   event_backups   = grid.profiler->create("backups", "time spent writing backups");
@@ -866,13 +922,13 @@ PetscErrorCode IceModel::init_ocean_kill() {
 
   if (filename.empty()) {
     ierr = verbPrintf(2, grid.com,
-                      "* Using ice thickness at the beginning of the run\n"
-                      "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
+       "* Option -ocean_kill seen: using ice thickness at the beginning of the run\n"
+       "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
     tmp = &vH;
   } else {
     ierr = verbPrintf(2, grid.com,
-                      "* Setting fixed calving front location using ice thickness from '%s'.\n",
-                      filename.c_str()); CHKERRQ(ierr);
+       "* Option -ocean_kill seen: setting fixed calving front location using\n"
+       "  ice thickness from '%s'.\n",filename.c_str()); CHKERRQ(ierr);
 
     ierr = thickness.create(grid, "thk", false); CHKERRQ(ierr);
     ierr = thickness.set_attrs("temporary", "land ice thickness",
@@ -890,7 +946,7 @@ PetscErrorCode IceModel::init_ocean_kill() {
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if ((*tmp)(i, j) > 0 || m.grounded(i, j) )
+      if ((*tmp)(i, j) > 0 || m.grounded(i, j) ) // FIXME: use GeometryCalculator
         ocean_kill_mask(i, j) = 0;
       else
         ocean_kill_mask(i, j) = 1;
@@ -914,7 +970,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
 
   choices.insert("none");
   choices.insert("iso");
-#if (PISM_HAVE_FFTW==1)
+#if (PISM_USE_FFTW==1)
   choices.insert("lc");
 #endif
 
@@ -935,7 +991,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
     return 0;
   }
 
-#if (PISM_HAVE_FFTW==1)
+#if (PISM_USE_FFTW==1)
   if ((model == "lc") && (beddef == NULL)) {
     beddef = new PBLingleClark(grid, config);
     return 0;

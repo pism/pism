@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <sstream>
 #include <petscdmda.h>
 
 #include "iceModel.hh"
@@ -27,6 +28,7 @@
 #include "PISMOcean.hh"
 #include "PISMBedDef.hh"
 #include "bedrockThermalUnit.hh"
+#include "PISMHydrology.hh"
 #include "PISMYieldStress.hh"
 #include "basal_resistance.hh"
 #include "enthalpyConverter.hh"
@@ -53,6 +55,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   signal(SIGUSR1, pism_signal_handler);
   signal(SIGUSR2, pism_signal_handler);
 
+  subglacial_hydrology = NULL;
   basal_yield_stress = NULL;
   basal = NULL;
 
@@ -108,13 +111,17 @@ void IceModel::reset_counters() {
   maxdt_temporary = dt = dt_force = 0.0;
   skipCountDown = 0;
 
-  cumulative_basal_ice_flux = 0;
-  cumulative_float_kill_flux = 0;
-  cumulative_discharge_flux = 0;
-  cumulative_nonneg_rule_flux = 0;
-  cumulative_ocean_kill_flux = 0;
-  cumulative_sub_shelf_ice_flux = 0;
-  cumulative_surface_ice_flux = 0;
+  grounded_basal_ice_flux_cumulative = 0;
+  float_kill_flux_cumulative = 0;
+  discharge_flux_cumulative = 0;
+  nonneg_rule_flux_cumulative = 0;
+  ocean_kill_flux_cumulative = 0;
+  sub_shelf_ice_flux_cumulative = 0;
+  surface_ice_flux_cumulative = 0;
+  sum_divQ_SIA_cumulative = 0;
+  sum_divQ_SSA_cumulative = 0;
+  Href_to_H_flux_cumulative = 0;
+  H_to_Href_flux_cumulative = 0;
 }
 
 
@@ -146,6 +153,8 @@ IceModel::~IceModel() {
   delete surface;
   delete beddef;
 
+  delete subglacial_hydrology;
+  delete basal_yield_stress;
   delete basal;
   delete EC;
   delete btu;
@@ -234,6 +243,15 @@ PetscErrorCode IceModel::createVecs() {
 
   }
 
+  if (config.get_flag("sub_groundingline")) {
+    ierr = gl_mask.create(grid, "gl_mask", false); CHKERRQ(ierr);
+    ierr = gl_mask.set_attrs("internal",
+                             "fractional grounded/floating mask (floating=0, grounded=1)",
+                             "", ""); CHKERRQ(ierr);
+    ierr = variables.add(gl_mask); CHKERRQ(ierr);
+
+  }
+
   // grounded_dragging_floating integer mask
   if(config.get_flag("do_eigen_calving")) {
     ierr = vMask.create(grid, "mask", true, 3); CHKERRQ(ierr); 
@@ -292,14 +310,6 @@ PetscErrorCode IceModel::createVecs() {
                               "K", ""); CHKERRQ(ierr);
   ierr = bedtoptemp.set_glaciological_units("K");
   ierr = variables.add(bedtoptemp); CHKERRQ(ierr);
-
-  // effective thickness of subglacial melt water
-  ierr = vbwat.create(grid, "bwat", true, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = vbwat.set_attrs("model_state", "effective thickness of subglacial melt water",
-                         "m", ""); CHKERRQ(ierr);
-  ierr = vbwat.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = vbwat.set_attr("valid_max", config.get("bwat_max")); CHKERRQ(ierr);
-  ierr = variables.add(vbwat); CHKERRQ(ierr);
 
   if (config.get_flag("use_ssa_velocity") || config.get_flag("do_blatter")) {
     // yield stress for basal till (plastic or pseudo-plastic model)
@@ -367,16 +377,20 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   if (config.get_flag("do_eigen_calving") == true) {
-    ierr = vPrinStrain1.create(grid, "edot_1", true); CHKERRQ(ierr);
-    ierr = vPrinStrain1.set_attrs("internal", 
+
+    ierr = strain_rates.create(grid, "edot", true,
+                               2, // stencil width, has to match or exceed the "offset" in eigenCalving
+                               2); CHKERRQ(ierr);
+
+    ierr = strain_rates.set_name("edot_1", 0); CHKERRQ(ierr);
+    ierr = strain_rates.set_attrs("internal",
                                   "major principal component of horizontal strain-rate",
-                                  "1/s", ""); CHKERRQ(ierr);
-    ierr = variables.add(vPrinStrain1); CHKERRQ(ierr);
-    ierr = vPrinStrain2.create(grid, "edot_2", true); CHKERRQ(ierr);
-    ierr = vPrinStrain2.set_attrs("internal",
+                                  "1/s", "", 0); CHKERRQ(ierr);
+
+    ierr = strain_rates.set_name("edot_2", 1); CHKERRQ(ierr);
+    ierr = strain_rates.set_attrs("internal",
                                   "minor principal component of horizontal strain-rate",
-                                  "1/s", ""); CHKERRQ(ierr);
-    ierr = variables.add(vPrinStrain2); CHKERRQ(ierr);
+                                  "1/s", "", 1); CHKERRQ(ierr);
   }
 
   if (config.get_flag("ssa_dirichlet_bc") == true) {
@@ -405,7 +419,7 @@ PetscErrorCode IceModel::createVecs() {
     for (int j = 0; j < 2; ++j) {
       ierr = vBCvel.set_attr("valid_min",  convert(-1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
       ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
-      ierr = vBCvel.set_attr("_FillValue", convert(2e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("_FillValue", convert(config.get("fill_value"), "m/year", "m/s"), j); CHKERRQ(ierr);
     }
     //just for diagnostics...
     ierr = variables.add(vBCvel); CHKERRQ(ierr);
@@ -436,14 +450,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   acab.write_in_glaciological_units = true;
   acab.set_attr("comment", "positive values correspond to ice gain");
-
-  if (config.get_flag("compute_cumulative_acab")) {
-    ierr = acab_cumulative.create(grid, "acab_cumulative", false); CHKERRQ(ierr);
-    ierr = acab_cumulative.set_attrs("diagnostic",
-                                     "cumulative ice-equivalent surface mass balance",
-                                     "m", ""); CHKERRQ(ierr);
-    ierr = variables.add(acab_cumulative); CHKERRQ(ierr);
-  }
 
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
@@ -483,6 +489,71 @@ PetscErrorCode IceModel::createVecs() {
   // PROPOSED standard name = ice_shelf_basal_temperature
   // do not add; boundary models are in charge here
   // ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
+
+  // take care of 2D cumulative fluxes: we need to allocate special storage it
+  // the user asked for climatic_mass_balance_cumulative or
+  // ocean_kill_flux_cumulative
+
+  string vars;
+  bool extra_vars_set;
+  ierr = PISMOptionsString("-extra_vars", "", vars, extra_vars_set); CHKERRQ(ierr);
+  if (extra_vars_set) {
+    istringstream arg(vars);
+    string var_name;
+    set<string> ex_vars;
+
+    while (getline(arg, var_name, ','))
+      ex_vars.insert(var_name);
+
+    if (set_contains(ex_vars, "climatic_mass_balance_cumulative")) {
+      ierr = climatic_mass_balance_cumulative.create(grid, "climatic_mass_balance_cumulative", false); CHKERRQ(ierr);
+      ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
+                                                        "cumulative ice-equivalent surface mass balance",
+                                                        "m", ""); CHKERRQ(ierr);
+    }
+
+    if (set_contains(ex_vars, "ocean_kill_flux_cumulative") ||
+        set_contains(ex_vars, "ocean_kill_flux")) {
+      ierr = ocean_kill_flux_2D_cumulative.create(grid, "ocean_kill_flux_cumulative", false); CHKERRQ(ierr);
+      ierr = ocean_kill_flux_2D_cumulative.set_attrs("diagnostic",
+                                                     "cumulative calving flux due to the -ocean_kill mechanism",
+                                                     "kg", ""); CHKERRQ(ierr);
+      ierr = ocean_kill_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ocean_kill_flux_2D_cumulative.write_in_glaciological_units = true;
+    }
+
+    if (set_contains(ex_vars, "grounded_basal_flux_cumulative")) {
+      ierr = grounded_basal_flux_2D_cumulative.create(grid, "grounded_basal_flux_cumulative", false); CHKERRQ(ierr);
+      ierr = grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
+                                                         "cumulative basal flux into the ice "
+                                                         "in grounded areas (positive means ice gain)",
+                                                         "kg", ""); CHKERRQ(ierr);
+      grounded_basal_flux_2D_cumulative.time_independent = false;
+      ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
+    }
+
+    if (set_contains(ex_vars, "floating_basal_flux_cumulative")) {
+      ierr = floating_basal_flux_2D_cumulative.create(grid, "floating_basal_flux_cumulative", false); CHKERRQ(ierr);
+      ierr = floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
+                                                         "cumulative basal flux into the ice "
+                                                         "in floating areas (positive means ice gain)",
+                                                         "kg", ""); CHKERRQ(ierr);
+      floating_basal_flux_2D_cumulative.time_independent = false;
+      ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
+    }
+
+    if (set_contains(ex_vars, "nonneg_flux_cumulative")) {
+      ierr = nonneg_flux_2D_cumulative.create(grid, "nonneg_flux_cumulative", false); CHKERRQ(ierr);
+      ierr = nonneg_flux_2D_cumulative.set_attrs("diagnostic",
+                                                 "cumulative nonnegative rule flux (positive means ice gain)",
+                                                 "kg", ""); CHKERRQ(ierr);
+      nonneg_flux_2D_cumulative.time_independent = false;
+      ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
+    }
+  }
 
   return 0;
 }
@@ -636,10 +707,13 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   grid.profiler->end(event_energy);
 
-  // finally, diffuse the stored basal water once per energy step, if it is requested
-  if (do_energy_step && config.get_flag("do_diffuse_bwat")) {
-    ierr = diffuse_bwat(); CHKERRQ(ierr);
-  }
+  grid.profiler->begin(event_hydrology);
+
+  //! \li update the state variables in the subglacial hydrology model (typically
+  //!  water thickness and sometimes pressure)
+  ierr = subglacial_hydrology->update(grid.time->current(), dt); CHKERRQ(ierr);
+
+  grid.profiler->end(event_hydrology);
 
   grid.profiler->begin(event_mass);
 

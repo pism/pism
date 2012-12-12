@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -17,11 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-
-import sys, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
 
 import PISM
 
@@ -42,14 +37,8 @@ class test_plug(PISM.ssa.SSAExactTestCase):
   def _initPhysics(self):
     config = self.config
     
-    #// The following is irrelevant because tauc=0
-    linear_q = 1.;
-    basal = PISM.IceBasalResistancePlasticLaw(
-          config.get("plastic_regularization","1/year","1/second"),
-          True, #// do not force a pure-plastic law
-          linear_q,
-          config.get("pseudo_plastic_uthreshold","1/year","1/second") );
-
+    # Configuration flags and parameters used by this call are irrelevant because tauc == 0.
+    basal = PISM.IceBasalResistancePlasticLaw(config)
 
     #// Enthalpy converter is irrelevant for this test.
     enthalpyconverter = PISM.EnthalpyConverter(config);

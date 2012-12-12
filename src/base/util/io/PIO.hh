@@ -47,6 +47,7 @@ class PIO
 {
 public:
   PIO(MPI_Comm com, int rank, string mode);
+  PIO(IceGrid &g, string mode);
   PIO(const PIO &other);
   virtual ~PIO();
 
@@ -140,7 +141,7 @@ public:
   virtual PetscErrorCode put_vara_double(string variable_name,
                                          vector<unsigned int> start,
                                          vector<unsigned int> count,
-                                         const double *op) const;
+                                         double *op) const;
 
   virtual PetscErrorCode get_varm_double(string variable_name,
                                          vector<unsigned int> start,
@@ -150,15 +151,18 @@ public:
   virtual PetscErrorCode put_varm_double(string variable_name,
                                          vector<unsigned int> start,
                                          vector<unsigned int> count,
-                                         vector<unsigned int> imap, const double *op) const;
+                                         vector<unsigned int> imap, double *op) const;
 
+  void set_local_extent(unsigned int xs, unsigned int xm,
+                        unsigned int ys, unsigned int ym);
 protected:
   MPI_Comm com;
   int rank;
+  string m_mode;
   bool shallow_copy;
   PISMNCFile *nc;
+  int m_xs, m_xm, m_ys, m_ym;
 
-  virtual PetscErrorCode move_if_exists(string filename);
   PetscErrorCode compute_start_and_count(string name, int t_start,
                                          int x_start, int x_count,
                                          int y_start, int y_count,
@@ -170,6 +174,10 @@ protected:
   PetscErrorCode k_below(double z, const vector<double> &zlevels) const;
 
   PetscErrorCode regrid(IceGrid *grid, const vector<double> &zlevels_out, LocalInterpCtx *lic, Vec g) const;
+
+  PetscErrorCode detect_mode(string filename);
+private:
+  void constructor(MPI_Comm com, int rank, string mode);
 };
 
 #endif /* _PIO_H_ */

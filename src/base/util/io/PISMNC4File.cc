@@ -18,12 +18,15 @@
 
 #include "PISMNC4File.hh"
 
-extern "C" {
-#include <netcdf_par.h>
-}
-
 #include <cstring>		// memset
 #include <cstdio>		// stderr, fprintf
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
+#include <netcdf.h>
 
 #include "pism_type_conversion.hh"
 
@@ -38,34 +41,6 @@ PISMNC4File::~PISMNC4File() {
 
 // open/create/close
 
-int PISMNC4File::open(string fname, int mode) {
-  MPI_Info info = MPI_INFO_NULL;
-  int stat;
-
-  filename = fname;
-
-  stat = nc_open_par(filename.c_str(),
-                     mode | NC_MPIIO,
-                     com, info, &ncid); check(stat);
-
-  define_mode = false;
-
-  return stat;
-}
-
-int PISMNC4File::create(string fname) {
-  MPI_Info info = MPI_INFO_NULL;
-  int stat;
-
-  filename = fname;
-
-  stat = nc_create_par(filename.c_str(),
-                       NC_NETCDF4 | NC_MPIIO,
-                       com, info, &ncid); check(stat);
-  define_mode = true;
-
-  return stat;
-}
 
 int PISMNC4File::close() {
   int stat;
@@ -74,7 +49,7 @@ int PISMNC4File::close() {
 
   ncid = -1;
 
-  filename.clear();
+  m_filename.clear();
 
   return stat;
 }
@@ -157,6 +132,28 @@ int PISMNC4File::inq_unlimdim(string &result) const {
   return stat;
 }
 
+int PISMNC4File::inq_dimname(int j, string &result) const {
+  int stat;
+  char dimname[NC_MAX_NAME];
+  memset(dimname, 0, NC_MAX_NAME);
+
+  stat = nc_inq_dimname(ncid, j, dimname); check(stat);
+
+  result = dimname;
+
+  return stat;
+}
+
+
+int PISMNC4File::inq_ndims(int &result) const {
+  int stat;
+
+  stat = nc_inq_ndims(ncid, &result); check(stat);
+
+  return stat;
+}
+
+
 // var
 int PISMNC4File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
   vector<int> dimids;
@@ -174,7 +171,7 @@ int PISMNC4File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
 
 #if (PISM_DEBUG==1)
   if (stat != NC_NOERR) {
-    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", filename.c_str(),
+    fprintf(stderr, "def_var: filename = %s, var = %s, dims:", m_filename.c_str(),
             name.c_str());
     for (unsigned int k = 0; k < dims.size(); ++k) {
       fprintf(stderr, "%s(%d), ", dims[k].c_str(), dimids[k]);
@@ -190,8 +187,10 @@ int PISMNC4File::get_varm_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
                                  vector<unsigned int> imap, double *op) const {
-  return this->get_var_double(variable_name,
-                              start, count, imap, op, true);
+  return this->get_put_var_double(variable_name,
+                                  start, count, imap, op,
+                                  true /*get*/,
+                                  true /*mapped*/);
 }
 
 int PISMNC4File::get_vara_double(string variable_name,
@@ -199,149 +198,34 @@ int PISMNC4File::get_vara_double(string variable_name,
                                  vector<unsigned int> count,
                                  double *op) const {
   vector<unsigned int> dummy;
-  return this->get_var_double(variable_name,
-                              start, count, dummy, op, false);
+  return this->get_put_var_double(variable_name,
+                                  start, count, dummy, op,
+                                  true /*get*/,
+                                  false /*not mapped*/);
 }
 
-int PISMNC4File::get_var_double(string variable_name,
-                                vector<unsigned int> start,
-                                vector<unsigned int> count,
-                                vector<unsigned int> imap, double *ip,
-                                bool mapped) const {
-  int stat, varid, ndims = static_cast<int>(start.size());
-
-#if (PISM_DEBUG==1)
-  if (mapped) {
-    if (start.size() != count.size() ||
-        start.size() != imap.size()) {
-      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  } else {
-    if (start.size() != count.size()) {
-      fprintf(stderr, "start and count arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  }
-#endif
-
-  if (mapped == false)
-    imap.resize(ndims);
-
-  vector<size_t> nc_start(ndims), nc_count(ndims);
-  vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
-
-  stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
-
-  for (int j = 0; j < ndims; ++j) {
-    nc_start[j] = start[j];
-    nc_count[j] = count[j];
-    nc_imap[j]  = imap[j];
-    nc_stride[j] = 1;
-  }
-
-
-  if (mapped) {
-    // Use independent parallel access mode because it works. It would be
-    // better to use collective mode, but I/O performance is ruined by
-    // "mapping" anyway.
-
-    stat = nc_var_par_access(ncid, varid, NC_INDEPENDENT); check(stat);
-
-    stat = nc_get_varm_double(ncid, varid,
-                              &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                              ip); check(stat);
-  } else {
-    // Use collective parallel access mode because it is faster (and because it
-    // works in this case).
-
-    stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
-
-    stat = nc_get_vara_double(ncid, varid,
-                              &nc_start[0], &nc_count[0],
-                              ip); check(stat);
-  }
-
-  return stat;
-}
 
 int PISMNC4File::put_varm_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 vector<unsigned int> imap, const double *op) const {
-  return this->put_var_double(variable_name,
-                              start, count, imap, op, true);
+                                 vector<unsigned int> imap, double *op) const {
+  return this->get_put_var_double(variable_name,
+                                  start, count, imap, op,
+                                  false /*put*/,
+                                  true /*mapped*/);
 }
 
 int PISMNC4File::put_vara_double(string variable_name,
                                  vector<unsigned int> start,
                                  vector<unsigned int> count,
-                                 const double *op) const {
+                                 double *op) const {
   vector<unsigned int> dummy;
-  return this->put_var_double(variable_name,
-                              start, count, dummy, op, false);
+  return this->get_put_var_double(variable_name,
+                                  start, count, dummy, op,
+                                  false /*put*/,
+                                  false /*not mapped*/);
 }
 
-int PISMNC4File::put_var_double(string variable_name,
-                                vector<unsigned int> start,
-                                vector<unsigned int> count,
-                                vector<unsigned int> imap, const double *op,
-                                bool mapped) const {
-  int stat, varid, ndims = static_cast<int>(start.size());
-
-#if (PISM_DEBUG==1)
-  if (mapped) {
-    if (start.size() != count.size() ||
-        start.size() != imap.size()) {
-      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  } else {
-    if (start.size() != count.size()) {
-      fprintf(stderr, "start and count arrays have to have the same size\n");
-      return NC_EINVAL;           // invalid argument error code
-    }
-  }
-#endif
-
-  if (mapped == false)
-    imap.resize(ndims);
-
-  vector<size_t> nc_start(ndims), nc_count(ndims);
-  vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
-
-  stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
-
-  for (int j = 0; j < ndims; ++j) {
-    nc_start[j] = start[j];
-    nc_count[j] = count[j];
-    nc_imap[j]  = imap[j];
-    nc_stride[j] = 1;
-  }
-
-  if (mapped) {
-    // Use independent parallel access mode because it works. It would be
-    // better to use collective mode, but I/O performance is ruined by
-    // "mapping" anyway.
-
-    stat = nc_var_par_access(ncid, varid, NC_INDEPENDENT); check(stat);
-
-    stat = nc_put_varm_double(ncid, varid,
-                              &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                              op); check(stat);
-  } else {
-    // Use collective parallel access mode because it is faster (and because it
-    // works in this case).
-
-    stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
-
-    stat = nc_put_vara_double(ncid, varid,
-                              &nc_start[0], &nc_count[0],
-                              op); check(stat);
-  }
-
-  return stat;
-}
 
 int PISMNC4File::inq_nvars(int &result) const {
   int stat;
@@ -421,6 +305,20 @@ int PISMNC4File::inq_varname(unsigned int j, string &result) const {
 
   return stat;
 }
+
+int PISMNC4File::inq_vartype(string variable_name, PISM_IO_Type &result) const {
+  int stat, varid;
+  nc_type var_type;
+
+  stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+
+  stat = nc_inq_vartype(ncid, varid, &var_type); check(stat);
+
+  result = nc_type_to_pism_type(var_type);
+
+  return 0;
+}
+
 
 // att
 
@@ -599,3 +497,92 @@ int PISMNC4File::set_fill(int fillmode, int &old_modep) const {
   return stat;
 }
 
+int PISMNC4File::set_access_mode(int, bool) const {
+  return 0;
+}
+
+int PISMNC4File::get_put_var_double(string variable_name,
+                                    vector<unsigned int> start,
+                                    vector<unsigned int> count,
+                                    vector<unsigned int> imap,
+                                    double *op,
+                                    bool get,
+                                    bool mapped) const {
+  int stat, varid, ndims = static_cast<int>(start.size());
+
+#if (PISM_DEBUG==1)
+  if (mapped) {
+    if (start.size() != count.size() ||
+        start.size() != imap.size()) {
+      fprintf(stderr, "start, count and imap arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+  } else {
+    if (start.size() != count.size()) {
+      fprintf(stderr, "start and count arrays have to have the same size\n");
+      return NC_EINVAL;           // invalid argument error code
+    }
+  }
+#endif
+
+  if (mapped == false)
+    imap.resize(ndims);
+
+  vector<size_t> nc_start(ndims), nc_count(ndims);
+  vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
+
+  stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+
+  for (int j = 0; j < ndims; ++j) {
+    nc_start[j] = start[j];
+    nc_count[j] = count[j];
+    nc_imap[j]  = imap[j];
+    nc_stride[j] = 1;
+  }
+
+  if (mapped) {
+
+    stat = set_access_mode(varid, mapped);
+
+    if (get == true) {
+      stat = nc_get_varm_double(ncid, varid,
+                                &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+                                op); check(stat);
+    } else {
+      stat = nc_put_varm_double(ncid, varid,
+                                &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+                                op); check(stat);
+    }
+  } else {
+
+    stat = set_access_mode(varid, mapped);
+
+    if (get == true) {
+      stat = nc_get_vara_double(ncid, varid,
+                                &nc_start[0], &nc_count[0],
+                                op); check(stat);
+    } else {
+      stat = nc_put_vara_double(ncid, varid,
+                                &nc_start[0], &nc_count[0],
+                                op); check(stat);
+    }
+  }
+
+  return stat;
+}
+
+string PISMNC4File::get_format() const {
+  int format, stat;
+
+  stat = nc_inq_format(ncid, &format); check(stat);
+
+  switch(format) {
+  case NC_FORMAT_CLASSIC:
+  case NC_FORMAT_64BIT:
+    return "netcdf3";
+  case NC_FORMAT_NETCDF4:
+  case NC_FORMAT_NETCDF4_CLASSIC:
+  default:
+    return "netcdf4";
+  }
+}

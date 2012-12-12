@@ -82,12 +82,9 @@ PetscErrorCode SSATestCaseExp::initializeGrid(PetscInt Mx,PetscInt My)
 PetscErrorCode SSATestCaseExp::initializeSSAModel()
 {
   // Use a pseudo-plastic law with linear till
-  PetscScalar linear_q = 1.;
-  basal = new IceBasalResistancePlasticLaw(
-         config.get("plastic_regularization", "1/year", "1/second"),
-         true, // do not force a pure-plastic law
-         linear_q,
-         config.get("pseudo_plastic_uthreshold", "m/year", "m/second"));
+  config.set_flag("do_pseudo_plastic_till", true);
+  config.set("pseudo_plastic_q", 1.0);
+  basal = new IceBasalResistancePseudoPlasticLaw(config);
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);

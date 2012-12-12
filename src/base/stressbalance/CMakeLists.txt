@@ -9,28 +9,33 @@ add_library (pismstressbalance
   SIAFD.cc
   SIAFD_diagnostics.cc
   SSA.cc
-  SSA_diagnostics.cc
   SSAFD.cc
-  SSAFEM.cc  
+  SSAFEM.cc
   FETools.cc
   FEEvaluator.cc
   SSATestCase.cc
   SIA_Sliding.cc
-  BlatterStressBalance.cc
-  THI.cc
+#  BlatterStressBalance.cc
+#  THI.cc
 )
 target_link_libraries (pismstressbalance pismutil pismflowlaws pismrevision)
 
-install (TARGETS pismstressbalance DESTINATION ${Pism_LIB_DIR})
+if (${BUILD_SHARED_LIBS})
+  install (TARGETS pismstressbalance DESTINATION ${Pism_LIB_DIR})
+endif()
 
 if (Pism_BUILD_EXTRA_EXECS)
-  add_executable (siafd_test siafd_test.cc ../../verif/tests/exactTestsFG.c ../basal_strength/basal_resistance.cc)
+  add_executable (siafd_test siafd_test.cc ../../verif/tests/exactTestsFG.c ../basalstrength/basal_resistance.cc)
   target_link_libraries (siafd_test pismstressbalance)
 
-  add_executable (blatter_test blatter_test.cc ../basal_strength/basal_resistance.cc)
-  target_link_libraries (blatter_test pismstressbalance)
+  # add_executable (blatter_test blatter_test.cc ../basal_strength/basal_resistance.cc)
+  # target_link_libraries (blatter_test pismstressbalance)
 
-  install (TARGETS siafd_test blatter_test DESTINATION ${Pism_BIN_DIR})
+  install (TARGETS
+    siafd_test
+#    blatter_test
+    DESTINATION ${Pism_BIN_DIR})
 endif ()
 
 add_subdirectory (ssa_tests)
+

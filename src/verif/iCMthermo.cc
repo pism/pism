@@ -729,7 +729,6 @@ PetscErrorCode IceCompModel::initTestsKO() {
   ierr = vbed.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.042); CHKERRQ(ierr);
   ierr = vH.set(3000.0); CHKERRQ(ierr);
-  ierr = vbwat.set(0.0); CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
   ierr = fillTemperatureSolnTestsKO(); CHKERRQ(ierr);

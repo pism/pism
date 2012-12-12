@@ -38,7 +38,7 @@ public:
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, string fname);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
 protected:
   IceModelVec2S mass_flux, mass_flux_0, mass_flux_input,

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -19,10 +19,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-import sys, petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
-
 import PISM, math
 
 m_schoof = 10;        # (pure number)
@@ -40,16 +36,12 @@ class testi(PISM.ssa.SSAExactTestCase):
     Mx = self.Mx; My = self.My;
     Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
     Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NONE);
+    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NOT_PERIODIC);
 
   def _initPhysics(self):
     config = self.config
-    do_pseudo_plastic = True
-    plastic_q = 0.
-    basal = PISM.IceBasalResistancePlasticLaw(
-      config.get("plastic_regularization","1/year","1/second"),
-      do_pseudo_plastic, plastic_q,
-      config.get("pseudo_plastic_uthreshold","1/year","1/second"));
+    config.set_flag("do_pseudo_plastic_till", False)
+    basal = PISM.IceBasalResistancePlasticLaw(config)
 
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);

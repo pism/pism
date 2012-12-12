@@ -145,7 +145,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(grid->com, grid->rank, "netcdf3");
+  PIO nc(*grid, "guess_format");
   string name_found;
   bool exists, found_by_standard_name;
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
@@ -175,7 +175,6 @@ PetscErrorCode IceModelVec2T::init(string fname) {
       break;
     }
   }
-  ierr = nc.close(); CHKERRQ(ierr);
 
   if (time_found) {
     // we're found the time dimension
@@ -183,30 +182,37 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     time_dimension.init(dimname, dimname, grid->com, grid->rank);
 
     ierr = time_dimension.set_units(grid->time->units()); CHKERRQ(ierr);
-    ierr = time_dimension.read(filename, grid->time->use_reference_date(), time); CHKERRQ(ierr);
+    ierr = time_dimension.read(nc, grid->time->use_reference_date(), time); CHKERRQ(ierr);
 
     string bounds_name;
-    ierr = time_dimension.get_bounds_name(filename, bounds_name);
+    ierr = time_dimension.get_bounds_name(nc, bounds_name);
 
-    if (!bounds_name.empty()) {
-      // read time bounds data from a file
-      NCTimeBounds tb;
-      tb.init(bounds_name, dimname, grid->com, grid->rank);
-      ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
+    if (time.size() > 1) {
+      if (!bounds_name.empty()) {
+        // read time bounds data from a file
+        NCTimeBounds tb;
+        tb.init(bounds_name, dimname, grid->com, grid->rank);
+        ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
 
-      ierr = tb.read(filename, grid->time->use_reference_date(), time_bounds); CHKERRQ(ierr);
-    } else {
-      // compute fake time bounds data
+        ierr = tb.read(nc, grid->time->use_reference_date(), time_bounds); CHKERRQ(ierr);
 
-      time_bounds.resize(2 * time.size());
-
-      time_bounds[0] = time.front() - 1; // this value does not matter because
-                                         // we use constant-in-time extrapolation
-      time_bounds[1] = time.front();
-      for (unsigned int i = 1; i < time.size(); ++i) {
-        time_bounds[2 * i]     = time[i-1];
-        time_bounds[2 * i + 1] = time[i];
+        // time bounds data overrides the time variable: we make t[j] be the
+        // right end-point of the j-th interval
+        for (unsigned int k = 0; k < time.size(); ++k)
+          time[k] = time_bounds[2*k + 1];
+      } else {
+        // no time bounds attribute
+        PetscPrintf(grid->com,
+                    "PISM ERROR: Variable '%s' does not have the time_bounds attribute.\n"
+                    "  Cannot use time-dependent forcing data '%s' (%s) without time bounds.\n",
+                    dimname.c_str(),  vars[0].get_string("long_name").c_str(), vars[0].short_name.c_str());
+        PISMEnd();
       }
+    } else {
+      // only one time record; set fake time bounds:
+      time_bounds.resize(2);
+      time_bounds[0] = time[0] - 1;
+      time_bounds[1] = time[0] + 1;
     }
 
   } else {
@@ -218,7 +224,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     // set fake time bounds:
     time_bounds.resize(2);
     time_bounds[0] = -1;
-    time_bounds[1] =  0;
+    time_bounds[1] =  1;
   }
   
   if (!is_increasing(time)) {
@@ -227,7 +233,9 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     PISMEnd();
   }
 
-  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  ierr = get_interp_context(nc, lic); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -290,12 +298,15 @@ PetscErrorCode IceModelVec2T::update(int start) {
     SETERRQ1(grid->com, 1, "IceModelVec2T::update(int start): start = %d is invalid", start);
 
   int missing = PetscMin(n_records, time_size - start);
-  
+
+  if (start == first)
+    return 0;                   // nothing to do
+
   int kept = 0;
   if (first >= 0) {
     int last = first + (N - 1);
     if ((N > 0) && (start >= first) && (start <= last)) {
-      int discarded = start - first; 
+      int discarded = start - first;
       kept = last - start + 1;
       ierr = discard(discarded); CHKERRQ(ierr);
       missing -= kept;
@@ -312,7 +323,7 @@ PetscErrorCode IceModelVec2T::update(int start) {
   
   N = kept + missing;
 
-  if (this->get_nlevels() > 1 || getVerbosityLevel() > 4) {
+  if (this->get_n_records() > 1 || getVerbosityLevel() > 4) {
     ierr = verbPrintf(2, grid->com,
                       "  reading \"%s\" into buffer\n"
                       "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
@@ -326,18 +337,23 @@ PetscErrorCode IceModelVec2T::update(int start) {
     report_range = true;
   }
 
+  PIO nc(*grid, "guess_format");
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+
   for (int j = 0; j < missing; ++j) {
     if (lic != NULL) {
       lic->start[0] = start + j;
       lic->report_range = report_range;
     }
 
-    ierr = vars[0].regrid(filename.c_str(), lic, true, false, 0.0, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(nc, lic, true, false, 0.0, v); CHKERRQ(ierr);
 
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %f...\n",
 		      name.c_str(), start + j, time[start + j]);
     ierr = set_record(kept + j); CHKERRQ(ierr);
   }
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -347,6 +363,9 @@ PetscErrorCode IceModelVec2T::discard(int number) {
   PetscErrorCode ierr;
   PetscScalar **a2, ***a3;
 
+  if (number == 0)
+    return 0;
+
   N -= number;
 
   ierr = get_array(a2); CHKERRQ(ierr);
@@ -355,6 +374,7 @@ PetscErrorCode IceModelVec2T::discard(int number) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       for (PetscInt k = 0; k < N; ++k)
 	a3[i][j][k] = a3[i][j][k + number];
+  ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
   
   return 0;
@@ -371,6 +391,7 @@ PetscErrorCode IceModelVec2T::set_record(int n) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       a3[i][j][n] = a2[i][j];
   ierr = end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -385,6 +406,7 @@ PetscErrorCode IceModelVec2T::get_record(int n) {
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       a2[i][j] = a3[i][j][n];
+  ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
@@ -506,6 +528,7 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       a2[i][j] = a3[i][j][k] * (1 - lambda) + a3[i][j][k + 1] * lambda;
   ierr = end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -521,6 +544,10 @@ PetscErrorCode IceModelVec2T::interp(int i, int j, int number,
   int last = first + (N - 1);
 
   for (int k = 0; k < number; ++k) {
+
+    if (k > 0 && ts[k] < ts[k-1])
+      mcurr = first; // reset the mcurr index: ts are not increasing!
+
     // extrapolate on the left:
     if (ts[k] <= time[first]) {
       values[k] = a3[i][j][0];
@@ -580,15 +607,14 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   PetscErrorCode ierr;
   PetscScalar **a2;
 
-  ierr = begin_access(); CHKERRQ(ierr);
-  ierr = get_array(a2);
+  ierr = get_array(a2);         // calls begin_access()
   for (PetscInt   i = grid->xs; i < grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j) {
       ierr = average(i, j, my_t, my_dt, a2[i][j]); CHKERRQ(ierr);
     }
   }
-
   ierr = end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 

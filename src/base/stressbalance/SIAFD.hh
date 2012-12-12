@@ -30,6 +30,7 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_topgsmooth;
   friend class SIAFD_thksmooth;
   friend class SIAFD_diffusivity;
+  friend class SIAFD_diffusivity_staggered;
   friend class SIAFD_h_x;
   friend class SIAFD_h_y;
 public:
@@ -63,7 +64,7 @@ public:
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
 protected:
@@ -83,12 +84,13 @@ protected:
                                                         IceModelVec3 &u_out, IceModelVec3 &v_out);
 
   virtual PetscErrorCode compute_I();
-  virtual PetscErrorCode compute_sigma(IceModelVec2S *D2_input, IceModelVec2Stag &h_x,
-                                       IceModelVec2Stag &h_y);
+  virtual PetscErrorCode compute_volumetric_strain_heating(IceModelVec2S *D2_input, IceModelVec2Stag &h_x,
+                                                           IceModelVec2Stag &h_y);
 
   virtual PetscScalar grainSizeVostok(PetscScalar age) const;
 
   virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result);
+  virtual PetscErrorCode compute_diffusivity_staggered(IceModelVec2Stag &result);
 
   // pointers to input fields:
   IceModelVec2S *bed, *thickness, *surface;
@@ -154,6 +156,14 @@ class SIAFD_diffusivity : public PISMDiag<SIAFD>
 {
 public:
   SIAFD_diffusivity(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Compute diffusivity of the SIA flow (on the staggered grid).
+class SIAFD_diffusivity_staggered : public PISMDiag<SIAFD>
+{
+public:
+  SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
