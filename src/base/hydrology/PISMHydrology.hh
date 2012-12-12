@@ -131,8 +131,18 @@ protected:
   IceModelVec2S input;
 
   virtual PetscErrorCode allocate(bool Whasghosts);
-
   virtual PetscErrorCode check_W_bounds();
+
+  virtual PetscReal pointwise_update(PetscReal my_W, PetscReal dWinput, PetscReal dWdecay, PetscReal Wmax) {
+    my_W += dWinput;       // if this makes my_W negative then we leave it for reporting
+    // avoids having the decay rate contribution reported as an icefree or floating mass loss:
+    if (dWdecay < my_W)    // case where my_W is largish and decay rate reduces it
+      my_W -= dWdecay;
+    else if (my_W >= 0.0)  // case where decay rate would go past zero ... don't allow that
+      my_W = 0.0;
+    my_W = PetscMin(Wmax, my_W);  // overflows top of "can" and we lose it
+    return my_W;
+  }
 };
 
 

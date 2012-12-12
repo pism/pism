@@ -298,7 +298,7 @@ PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
   // Matlab: dtDIFFW = 0.25 / (p.K * maxW * (1/dx^2 + 1/dy^2));
   dt_DIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
   dt_DIFFW_result = 0.25 / (K * maxW * dt_DIFFW_result);
-  dtmax = (1.0/12.0) * secpera;  // fixme?: need better dtmax than fixed at 1 month
+  dtmax = 1.0 * secpera;  // FIXME: dtmax fixed at 1 year?  make configurable?
   // dt = min([te-t dtmax dtCFL dtDIFFW]);
   dt_result = PetscMin(t_end - t_current, dtmax);
   dt_result = PetscMin(dt_result, dtCFL);
@@ -351,7 +351,6 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
             delta_icefree, delta_ocean, delta_neggain;
   PetscInt hydrocount = 0; // count hydrology time steps
 
-//ierr = PetscPrintf(grid.com, "starting PISMLakesHydrology::update() time-stepping loop\n"); CHKERRQ(ierr);
   while (ht < t + dt) {
     hydrocount++;
     ierr = check_Wpositive(); CHKERRQ(ierr);
@@ -374,7 +373,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = adaptive_for_W_evolution(ht, t+dt, hdt); CHKERRQ(ierr);
 
     // update Wnew from time step
-    PetscReal  wux = K / (grid.dx * grid.dx),  // FIXME if K is variable
+    PetscReal  wux = K / (grid.dx * grid.dx),  // FIXME needs change if K is variable
                wuy = K / (grid.dy * grid.dy),
                divadflux, diffW;
     ierr = W.begin_access(); CHKERRQ(ierr);
@@ -412,7 +411,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   } // end of hydrology model time-stepping loop
 
   ierr = verbPrintf(2, grid.com,
-    " 'lakes' distributed hydrology summary:  %d steps with average dt = %.6f years;  mass losses:\n"
+    " 'lakes' distributed hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
     "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
     hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
   return 0;

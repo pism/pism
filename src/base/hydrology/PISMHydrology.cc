@@ -69,6 +69,17 @@ PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
 
 
 //! Compute the water input rate into the basal hydrology layer according to configuration and mask.
+/*!
+This method crops the (energy-conservation and sub-shelf-melt-coupler
+computed) basal melt rate to the ice-covered region.  It also reads the
+\c -hydrology_use_const_bmelt option.
+
+Note that the input rate is (for now) assumed to be constant in time \e during the
+PISMHydrology::update() actions.
+
+(This method could, potentially, add separate en- and supra-glacial drainage
+contributions to the basal melt rates computed at the lower surface of the ice.)
+ */
 PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
   PetscErrorCode ierr;
   bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
@@ -92,13 +103,14 @@ PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
 }
 
 
-//! Update the water thickness (typically Wnew) based on boundary requirements.  Do mass accounting.
+//! Update the water thickness based on boundary requirements.  Do mass accounting.
 /*!
 At ice free locations and ocean locations we require that the water thickness
 is zero at the end of each time step.  Also we require that any negative water
-thicknesses be set to zero (projection).  This method takes care of these
-requirements by altering Wnew appropriately.  And we account for the mass changes that
-these actions represent.
+thicknesses be set to zero (i.e. projection to enforce \f$W\ge 0\f$).
+
+This method takes care of these requirements by altering Wnew appropriately.
+And we account for the mass changes that these alterations represent.
  */
 PetscErrorCode PISMHydrology::boundary_mass_changes(IceModelVec2S &Wnew,
             PetscReal &icefreelost, PetscReal &oceanlost, PetscReal &negativegain) {
@@ -112,15 +124,18 @@ PetscErrorCode PISMHydrology::boundary_mass_changes(IceModelVec2S &Wnew,
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscReal dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-      if (M.ice_free_land(i,j)) {
-        my_icefreelost += Wnew(i,j) * dmassdz;
-        Wnew(i,j) = 0.0;
-      } else if (M.ocean(i,j)) {
-        my_oceanlost += Wnew(i,j) * dmassdz;
-        Wnew(i,j) = 0.0;
-      } else if (Wnew(i,j) < 0.0) {
+      if (Wnew(i,j) < 0.0) {
         my_negativegain += -Wnew(i,j) * dmassdz;
         Wnew(i,j) = 0.0;
+      }
+      if  (Wnew(i,j) > 0.0) {
+        if (M.ice_free_land(i,j)) {
+          my_icefreelost += Wnew(i,j) * dmassdz;
+          Wnew(i,j) = 0.0;
+        } else if (M.ocean(i,j)) {
+          my_oceanlost += Wnew(i,j) * dmassdz;
+          Wnew(i,j) = 0.0;
+        }
       }
     }
   }
@@ -133,7 +148,9 @@ PetscErrorCode PISMHydrology::boundary_mass_changes(IceModelVec2S &Wnew,
   ierr = PISMGlobalSum(&my_oceanlost, &oceanlost, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalSum(&my_negativegain, &negativegain, grid.com); CHKERRQ(ierr);
 
-  ierr = verbPrintf(3, grid.com,
+  // this reporting is redundant for the simpler models but shows short time step
+  // reporting for nontrivially-distributed (possibly adaptive) hydrology models
+  ierr = verbPrintf(4, grid.com,
     "mass losses in hydrology time step:\n"
     "   land margin loss = %.3e kg, ocean margin loss = %.3e kg, (W<0) gain = %.3e kg\n",
     icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
@@ -145,11 +162,11 @@ PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &c
                                            bool Whasghosts)
     : PISMHydrology(g, conf)
 {
-    if (allocate(Whasghosts) != 0) {
-      PetscPrintf(grid.com,
-        "PISM ERROR: allocation failed in PISMTillCanHydrology constructor.\n");
-      PISMEnd();
-    }
+  if (allocate(Whasghosts) != 0) {
+    PetscPrintf(grid.com,
+      "PISM ERROR: allocation failed in PISMTillCanHydrology constructor.\n");
+    PISMEnd();
+  }
 }
 
 
@@ -237,22 +254,19 @@ PetscErrorCode PISMTillCanHydrology::water_pressure(IceModelVec2S &result) {
   ierr = check_W_bounds(); CHKERRQ(ierr); // check:  W \le bwat_max = Wcrit
 #endif
 
+  ierr = overburden_pressure(result); CHKERRQ(ierr);
+
   double bwat_max = config.get("hydrology_bwat_max"),
-    till_pw_fraction = config.get("till_pw_fraction"),
-    standard_gravity = config.get("standard_gravity"),
-    ice_density = config.get("ice_density");
+    till_pw_fraction = config.get("till_pw_fraction");
 
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = thk->begin_access(); CHKERRQ(ierr);
-
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j) = till_pw_fraction * ice_density * standard_gravity * (*thk)(i,j) * (W(i,j) / bwat_max);
+      // P = lambda (W/W_0) P_o
+      result(i,j) = till_pw_fraction * (W(i,j) / bwat_max) * result(i,j);
     }
   }
-
-  ierr = thk->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = W.end_access(); CHKERRQ(ierr);
   return 0;
@@ -294,8 +308,8 @@ PetscErrorCode PISMTillCanHydrology::check_W_bounds() {
 Solves on explicit (forward Euler) step of the integration
   \f[ \frac{dW}{dt} = \text{bmelt} - C \f]
 but subject to the inequalities
-  \f[ 0 \le W \le W_{crit} \f]
-where \f$C=\f$hydrology_bwat_decay_rate and \f$W_{crit}\f$=hydrology_bwat_max. 
+  \f[ 0 \le W \le W_0 \f]
+where \f$C=\f$hydrology_bwat_decay_rate and \f$W_0\f$=hydrology_bwat_max.
  */
 PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
   // if asked for the identical time interval as last time, then do nothing
@@ -316,16 +330,14 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
   ierr = input.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if FIXME ((input(i,j) >= 0) &* icedt > - bwat_decay_rate * icedt)
-        W(i,j) = W(i,j) + (input(i,j) - bwat_decay_rate) * icedt;
-      else
-        W(i,j) = W(i,j) + input(i,j) * icedt;
-      W(i,j) = PetscMin(bwat_max, W(i,j));
+      W(i,j) = pointwise_update(W(i,j), input(i,j) * icedt, bwat_decay_rate * icedt, bwat_max);
     }
   }
   ierr = W.end_access(); CHKERRQ(ierr);
   ierr = input.end_access(); CHKERRQ(ierr);
 
+  // following should *not* alter W, and it should report all zeros by design;
+  // this hydrology is *not* distributed
   ierr = boundary_mass_changes(W,icefreelost,oceanlost,negativegain); CHKERRQ(ierr);
   ierr = verbPrintf(2, grid.com,
     " 'tillcan' hydrology mass losses:\n"
@@ -369,7 +381,8 @@ PetscErrorCode PISMDiffuseOnlyHydrology::init(PISMVars &vars) {
 
 //! Explicit time step for diffusion of subglacial water layer bwat.
 /*!
-See equation (11) in \ref BBssasliding , namely
+This model adds a contrived lateral diffusion to the PISMTillCanHydrology
+model.  See equation (11) in \ref BBssasliding , namely
   \f[W_t = K \nabla^2 W.\f]
 The diffusion constant \f$K\f$ is chosen so that the fundamental solution (Green's
 function) of this equation has standard deviation \f$\sigma=L\f$ at time t=\c diffusion_time.
@@ -423,11 +436,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = input.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (W(i,j) > (input(i,j) - bwat_decay_rate) * icedt)
-          W(i,j) = W(i,j) + (input(i,j) - bwat_decay_rate) * icedt;
-        else
-          W(i,j) = W(i,j) + input(i,j) * icedt;
-        W(i,j) = PetscMin(bwat_max, W(i,j));
+        W(i,j) = pointwise_update(W(i,j), input(i,j) * icedt, bwat_decay_rate * icedt, bwat_max);
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
