@@ -54,7 +54,7 @@ protected:
   IceGrid *grid;
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
-  PetscErrorCode check_range(Vec v);
+  PetscErrorCode check_range(string filename, Vec v);
   PetscErrorCode define_dimensions(const PIO &nc);
 };
 
