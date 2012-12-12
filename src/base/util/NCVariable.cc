@@ -451,7 +451,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
     ierr = read_valid_range(nc, name_found); CHKERRQ(ierr);
 
     // Check the range and warn the user if needed:
-    ierr = check_range(v); CHKERRQ(ierr);
+    ierr = check_range(nc.inq_filename(), v); CHKERRQ(ierr);
 
     if (lic->report_range) {
       // We can report the success, and the range now:
@@ -711,13 +711,15 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 }
 
 //! Check if the range of a \b global Vec \c v is in the range specified by valid_min and valid_max attributes.
-PetscErrorCode NCSpatialVariable::check_range(Vec v) {
+PetscErrorCode NCSpatialVariable::check_range(string filename, Vec v) {
   PetscScalar min, max;
   PetscErrorCode ierr;
+  bool failed = false;
 
   if (grid == NULL)
     SETERRQ(com, 1, "NCVariable::check_range: grid is NULL.");
 
+  // Vec v is always global here (so VecMin and VecMax work as expected)
   ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
 
@@ -726,27 +728,40 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
   if (has("valid_min") && has("valid_max")) {
     double valid_min = get("valid_min"),
       valid_max = get("valid_max");
-    if ((min < valid_min) || (max > valid_max))
-      ierr = verbPrintf(2, com,
-			"PISM WARNING: some values of '%s' are outside the valid range [%f, %f] (%s)\n",
-			short_name.c_str(), valid_min, valid_max, units_string.c_str()); CHKERRQ(ierr);
+    if ((min < valid_min) || (max > valid_max)) {
+      ierr = PetscPrintf(com,
+                         "PISM ERROR: some values of '%s' are outside the valid range [%f, %f] (%s).\n",
+                         short_name.c_str(), valid_min, valid_max, units_string.c_str()); CHKERRQ(ierr);
+      failed = true;
+    }
 
   } else if (has("valid_min")) {
     double valid_min = get("valid_min");
     if (min < valid_min) {
-      ierr = verbPrintf(2, com,
-			"PISM WARNING: some values of '%s' are less than the valid minimum %f (%s)\n",
-			short_name.c_str(), valid_min, units_string.c_str()); CHKERRQ(ierr);
+      ierr = PetscPrintf(com,
+                         "PISM ERROR: some values of '%s' are less than the valid minimum (%f %s).\n",
+                         short_name.c_str(), valid_min, units_string.c_str()); CHKERRQ(ierr);
+      failed = true;
     }
 
   } else if (has("valid_max")) {
     double valid_max = get("valid_max");
     if (max > valid_max) {
-      ierr = verbPrintf(2, com,
-			"PISM WARNING: some values of '%s' are greater than the valid maximum %f (%s)\n",
-			short_name.c_str(), valid_max, units_string.c_str()); CHKERRQ(ierr);
+      ierr = PetscPrintf(com,
+                         "PISM ERROR: some values of '%s' are greater than the valid maximum (%f %s).\n",
+                         short_name.c_str(), valid_max, units_string.c_str()); CHKERRQ(ierr);
+      failed = true;
     }
   }
+
+  if (failed == true) {
+    PetscPrintf(com,
+                "            Please inspect variable '%s' in '%s' and replace offending entries.\n"
+                "            PISM will stop now.\n",
+                short_name.c_str(), filename.c_str());
+    PISMEnd();
+  }
+
   return 0;
 }
 

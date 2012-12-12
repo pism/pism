@@ -24,7 +24,7 @@
 #include "NCVariable.hh"
 
 PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
-  static const PetscReal gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=500000, p=1e6;
+  static const PetscReal gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=400000, p=1e6;
   PetscReal ref = flow_law->flow(s, E, p, gs[0]);
   for (int i=1; i<4; i++) {
     if (flow_law->flow(s, E, p, gs[i]) != ref) return PETSC_TRUE;

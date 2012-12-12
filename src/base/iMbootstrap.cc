@@ -127,6 +127,7 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
     ierr = verbPrintf(2, grid.com, 
 		      "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
   }
+
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
 		      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
@@ -140,6 +141,7 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
   if (!lonExists) {
     ierr = vLongitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
   }
+
   ierr =  vLatitude.regrid(filename, false); CHKERRQ(ierr);
   if (!latExists) {
     ierr = vLatitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
@@ -186,22 +188,15 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
     ierr = vBCvel.regrid(filename,  0.0); CHKERRQ(ierr);
   }
 
-  bool Lz_set;
-  ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
-  if ( !Lz_set ) {
-    PetscReal thk_min, thk_max;
-    ierr = vH.range(thk_min, thk_max); CHKERRQ(ierr);
+  // check if Lz is valid
+  PetscReal thk_min, thk_max;
+  ierr = vH.range(thk_min, thk_max); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2, grid.com,
-		      "  Setting Lz to 1.5 * max(ice thickness) = %3.3f meters...\n",
-		      1.5 * thk_max);
-
-
-    grid.Lz = 1.5 * thk_max;
-
-    ierr = grid.compute_vertical_levels();
-
-    CHKERRQ(ierr);
+  if (thk_max > grid.Lz) {
+    PetscPrintf(grid.com,
+                "PISM ERROR: Max. ice thickness (%3.3f m) exceeds the height of the computational domain (%3.3f m).\n"
+                "            Exiting...\n", thk_max, grid.Lz);
+    PISMEnd();
   }
 
   return 0;

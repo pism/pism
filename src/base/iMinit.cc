@@ -142,18 +142,12 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = PISMOptionsIsSet("-Mx", Mx_set); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-My", My_set); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-Mz", Mz_set); CHKERRQ(ierr);
-  if ( !(Mx_set && My_set && Mz_set) ) {
+  ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
+  if ( !(Mx_set && My_set && Mz_set && Lz_set) ) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: All of -boot_file, -Mx, -My, -Mz are required for bootstrapping.\n");
+		       "PISM ERROR: All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.\n");
     CHKERRQ(ierr);
     PISMEnd();
-  }
-
-  ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
-  if ( !Lz_set ) {
-    ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: -Lz is not set; trying to deduce it using the bootstrapping file...\n");
-    CHKERRQ(ierr);
   }
 
   return 0;
