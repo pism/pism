@@ -46,7 +46,7 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); 
 
   ierr = verbPrintf(2, grid.com,
-		    "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
+                    "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
 
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
@@ -82,7 +82,7 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
+                    "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
 
   // Fill 3D fields using heuristics:
   ierr = bootstrap_3d(); CHKERRQ(ierr);
@@ -100,12 +100,12 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
   PIO nc(grid.com, grid.rank, "netcdf3");
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com, 
-		    "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
 
   // report on resulting computational box, rescale grid, actually create a
   // local interpolation context
-  ierr = verbPrintf(2, grid.com, 
+  ierr = verbPrintf(2, grid.com,
                     "  rescaling computational box for ice from -boot_file file and\n"
                     "    user options to dimensions:\n"
                     "    [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
@@ -113,7 +113,7 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
                     (grid.x0 + grid.Lx)/1000.0,
                     (grid.y0 - grid.Ly)/1000.0,
                     (grid.y0 + grid.Ly)/1000.0,
-                    grid.Lz); 
+                    grid.Lz);
   CHKERRQ(ierr);
 
   string usurf_name;
@@ -132,40 +132,41 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
   // setting to default values appropriately
 
   if (maskExists) {
-    ierr = verbPrintf(2, grid.com, 
-		      "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
-  }
-  if (hExists) {
-    ierr = verbPrintf(2, grid.com, 
-		      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
-		      CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com,
+                      "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2, grid.com, 
-		    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
+  if (hExists) {
+    ierr = verbPrintf(2, grid.com,
+                      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
+    CHKERRQ(ierr);
+  }
+
+  ierr = verbPrintf(2, grid.com,
+                    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
 
   ierr = vLongitude.regrid(filename, false); CHKERRQ(ierr);
   if (!lonExists) {
     ierr = vLongitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
   }
+
   ierr =  vLatitude.regrid(filename, false); CHKERRQ(ierr);
   if (!latExists) {
     ierr = vLatitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
   }
 
-  ierr =         vH.regrid(filename, 
-                           config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
-  ierr =       vbed.regrid(filename,  
-                           config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
-  ierr =      vbwat.regrid(filename,  
-                           config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
-  ierr =       vbmr.regrid(filename,  
-                           config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
-  ierr =       vGhf.regrid(filename,  
-                           config.get("bootstrapping_geothermal_flux_value_no_var"));
-  CHKERRQ(ierr);
-  ierr =    vuplift.regrid(filename,  
-                           config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
+  ierr = vH.regrid(filename,
+                   config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
+  ierr = vbed.regrid(filename,
+                     config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
+  ierr = vbwat.regrid(filename,
+                      config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
+  ierr = vbmr.regrid(filename,
+                     config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
+  ierr = vGhf.regrid(filename,
+                     config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
+  ierr = vuplift.regrid(filename,
+                        config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
   if (config.get_flag("part_grid")) {
     // if part_grid is "on", set fields tracking contents of partially-filled
@@ -203,19 +204,28 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
     ierr = vH.range(thk_min, thk_max); CHKERRQ(ierr);
 
     ierr = verbPrintf(2, grid.com,
-		      "  Setting Lz to 1.5 * max(ice thickness) = %3.3f meters...\n",
-		      1.5 * thk_max);
-
+                      "  Setting Lz to 1.5 * max(ice thickness) = %3.3f meters...\n",
+                      1.5 * thk_max);
 
     grid.Lz = 1.5 * thk_max;
-
-    ierr = grid.compute_vertical_levels();
-
-    CHKERRQ(ierr);
   }
+
+  // check if Lz is valid
+  PetscReal thk_min, thk_max;
+  ierr = vH.range(thk_min, thk_max); CHKERRQ(ierr);
+
+  if (thk_max > grid.Lz) {
+    PetscPrintf(grid.com,
+                "PISM ERROR: Max. ice thickness (%3.3f m) exceeds the height of the computational domain (%3.3f m).\n"
+                "            Exiting...\n", thk_max, grid.Lz);
+    PISMEnd();
+  }
+
+  ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
 
   return 0;
 }
+
 
 PetscErrorCode IceModel::bootstrap_3d() {
   PetscErrorCode ierr;
@@ -223,19 +233,19 @@ PetscErrorCode IceModel::bootstrap_3d() {
   // set the initial age of the ice if appropriate
   if (config.get_flag("do_age")) {
     ierr = verbPrintf(2, grid.com, 
-      "  setting initial age to %.4f years\n", config.get("initial_age_of_ice_years"));
-      CHKERRQ(ierr);
-      tau3.set(config.get("initial_age_of_ice_years", "years", "seconds"));
+                      "  setting initial age to %.4f years\n", config.get("initial_age_of_ice_years"));
+    CHKERRQ(ierr);
+    tau3.set(config.get("initial_age_of_ice_years", "years", "seconds"));
   }
   
   ierr = verbPrintf(2, grid.com, 
-     "  filling in ice and bedrock temperatures using surface temps and quartic guess\n");
-     CHKERRQ(ierr);
+                    "  filling in ice and bedrock temperatures using surface temps and quartic guess\n");
+  CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods") == false) {
     ierr = verbPrintf(2, grid.com,
-		      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+                      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
     CHKERRQ(ierr);
   }
 
@@ -244,43 +254,43 @@ PetscErrorCode IceModel::bootstrap_3d() {
 
 //! Create a temperature field within ice and bedrock from given surface temperature and geothermal flux maps.
 /*!
-In bootstrapping we need to guess about the temperature within the ice and
-bedrock if surface temperature and geothermal flux maps are given. This rule is
-heuristic but seems to work well anyway. Full bootstrapping will start from the
-temperature computed by this procedure and then run for a long time (e.g.
-\f$10^5\f$ years), with fixed geometry, to get closer to thermomechanically
-coupled equilibrium. See the part of the <i>User's Manual</i> on
-EISMINT-Greenland.
+  In bootstrapping we need to guess about the temperature within the ice and
+  bedrock if surface temperature and geothermal flux maps are given. This rule is
+  heuristic but seems to work well anyway. Full bootstrapping will start from the
+  temperature computed by this procedure and then run for a long time (e.g.
+  \f$10^5\f$ years), with fixed geometry, to get closer to thermomechanically
+  coupled equilibrium. See the part of the <i>User's Manual</i> on
+  EISMINT-Greenland.
 
-Consider a horizontal grid point <tt>i,j</tt>. Suppose the surface temperature
-\f$T_s\f$ and the geothermal flux \f$g\f$ are given at that grid point. Within
-the corresponding column, denote the temperature by \f$T(z)\f$ for some
-elevation \f$z\f$ above the base of the ice. (Note ice corresponds to \f$z>0\f$
-while bedrock has \f$z<0\f$.) Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is
-above the top of the ice (at \f$z=H\f$).
+  Consider a horizontal grid point <tt>i,j</tt>. Suppose the surface temperature
+  \f$T_s\f$ and the geothermal flux \f$g\f$ are given at that grid point. Within
+  the corresponding column, denote the temperature by \f$T(z)\f$ for some
+  elevation \f$z\f$ above the base of the ice. (Note ice corresponds to \f$z>0\f$
+  while bedrock has \f$z<0\f$.) Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is
+  above the top of the ice (at \f$z=H\f$).
 
-Within the ice, set
-\f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
-where \f$\alpha,\beta\f$ are chosen so that
-\f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
-and 
-\f[\frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
+  Within the ice, set
+  \f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
+  where \f$\alpha,\beta\f$ are chosen so that
+  \f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
+  and 
+  \f[\frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
 
-The point of the second condition is our observation that, in observed ice, the
-rate of decrease in ice temperature with elevation is significantly decreased
-at only one quarter of the ice thickness above the base.
+  The point of the second condition is our observation that, in observed ice, the
+  rate of decrease in ice temperature with elevation is significantly decreased
+  at only one quarter of the ice thickness above the base.
 
-The temperature within the ice is not allowed to exceed the pressure-melting
-temperature.
+  The temperature within the ice is not allowed to exceed the pressure-melting
+  temperature.
 
-Note that the above heuristic rule for ice determines \f$T(0)\f$. Within the
-bedrock our rule is that the rate of change with depth is exactly the
-geothermal flux:
-\f[T(z) = T(0) - \frac{g}{k_r} z.\f]
-Note that \f$z\f$ here is negative, so the temperature increases as one goes
-down into the bed.
+  Note that the above heuristic rule for ice determines \f$T(0)\f$. Within the
+  bedrock our rule is that the rate of change with depth is exactly the
+  geothermal flux:
+  \f[T(z) = T(0) - \frac{g}{k_r} z.\f]
+  Note that \f$z\f$ here is negative, so the temperature increases as one goes
+  down into the bed.
 
-FIXME issue #15
+  FIXME issue #15
 */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
@@ -330,13 +340,13 @@ PetscErrorCode IceModel::putTempAtDepth() {
         T[k] = artm(i,j);
       
       if (!do_cold) {
-	for (PetscInt k = 0; k < grid.Mz; ++k) {
-	  const PetscScalar depth = HH - grid.zlevels[k];
-	  const PetscScalar pressure = 
-	    EC->getPressureFromDepth(depth);
-	  // reuse T to store enthalpy; assume that the ice is cold
-	  ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
-	}
+        for (PetscInt k = 0; k < grid.Mz; ++k) {
+          const PetscScalar depth = HH - grid.zlevels[k];
+          const PetscScalar pressure = 
+            EC->getPressureFromDepth(depth);
+          // reuse T to store enthalpy; assume that the ice is cold
+          ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
+        }
       }
 
       ierr = result->setInternalColumn(i,j,T); CHKERRQ(ierr);
