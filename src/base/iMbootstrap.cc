@@ -188,22 +188,6 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
     ierr = vBCvel.regrid(filename,  0.0); CHKERRQ(ierr);
   }
 
-  bool Lz_set;
-  ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
-  if ( !Lz_set ) {
-    PetscReal thk_min, thk_max;
-    ierr = vH.range(thk_min, thk_max); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2, grid.com,
-		      "  Setting Lz to 1.5 * max(ice thickness) = %3.3f meters...\n",
-		      1.5 * thk_max);
-
-
-    grid.Lz = 1.5 * thk_max;
-
-    ierr = grid.compute_vertical_levels();
-
-    CHKERRQ(ierr);
   // check if Lz is valid
   PetscReal thk_min, thk_max;
   ierr = vH.range(thk_min, thk_max); CHKERRQ(ierr);

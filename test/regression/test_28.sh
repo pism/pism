@@ -16,7 +16,7 @@ set -e
 # create a (complete) dataset to bootstrap from:
 $MPIEXEC -n 2 $PISM_PATH/pisms -y 100 -o foo-28.nc
 
-OPTS="-boot_file foo-28.nc -Mx 61 -My 61 -Mz 11 -y 10"
+OPTS="-boot_file foo-28.nc -Mx 61 -My 61 -Mz 11 -y 10 -Lz 1000"
 # bootstrap and run for 100 years:
 $MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o bar-28.nc
 
