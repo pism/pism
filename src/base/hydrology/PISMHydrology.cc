@@ -415,7 +415,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
   PetscInt NN;
   hdt = (1.0 / (grid.dx*grid.dx)) + (1.0 / (grid.dy*grid.dy));
   hdt = 1.0 / (2.0 * K * hdt);
-  NN = ceil(dt / hdt);
+  NN = int(ceil(dt / hdt));
   hdt = dt / NN;
   if (NN > 1) {
     verbPrintf(2,grid.com,

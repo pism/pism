@@ -59,7 +59,7 @@ PetscErrorCode PISMLakesHydrology::allocate() {
   ierr = Qstag.set_attrs("internal",
                      "cell face-centered (staggered) components of advective subglacial water flux",
                      "m2 s-1", ""); CHKERRQ(ierr);
-  ierr = Pwork.create(grid, "water_pressure_workspace", true, t); CHKERRQ(ierr);
+  ierr = Pwork.create(grid, "water_pressure_workspace", true, 1); CHKERRQ(ierr);
   ierr = Pwork.set_attrs("internal",
                       "work space for modeled subglacial water pressure",
                       "Pa", ""); CHKERRQ(ierr);
