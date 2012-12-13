@@ -71,12 +71,11 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
   My  = static_cast<PetscInt>(config.get("grid_My"));
   Mz  = static_cast<PetscInt>(config.get("grid_Mz"));
 
-  Nx = Ny = 0;			// will be set to a correct value in createDA()
+  Nx = Ny = 0;			// will be set to a correct value in allocate()
   initial_Mz = 0;		// will be set to a correct value in
 				// IceModel::check_maximum_thickness()
 
   max_stencil_width = 2;
-  da2 = PETSC_NULL;
 
   Mz_fine = 0;
 
@@ -96,9 +95,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
 
 IceGrid::~IceGrid() {
-  if (da2 != PETSC_NULL) {
-    DMDestroy(&da2);
-  }
+  destroy_dms();
 
   delete time;
   delete profiler;
@@ -309,7 +306,7 @@ void IceGrid::compute_ownership_ranges() {
   }
 }
 
-//! \brief Create the PETSc DA \c da2 for the horizontal grid. Determine how
+//! \brief Create the PETSc DM for the horizontal grid. Determine how
 //! the horizontal grid is divided among processors.
 /*!
   This procedure should only be called after the parameters describing the
@@ -319,7 +316,7 @@ void IceGrid::compute_ownership_ranges() {
   read to determine the parameters, and any conflicts must have been resolved.
 
   This method contains the "fundamental" transpose: "My,Mx" instead of "Mx,My"
-  in the DACreate2d call; this transpose allows us to index arrays by "[i][j]"
+  in the DMDACreate2d call; this transpose allows us to index arrays by "[i][j]"
   (where 'i' corresponds to 'x' and 'j' to 'y') and be consistent about
   meanings of 'x', 'y', 'u' and 'v'.
 
@@ -328,53 +325,41 @@ void IceGrid::compute_ownership_ranges() {
   This choice should be virtually invisible, unless you're using DALocalInfo
   structures.
 
-  See IceModelVec3 for creation of three-dimensional DAs.
-
   \note PETSc order: x in columns, y in rows, indexing as array[y][x]. PISM
   order: x in rows, y in columns, indexing as array[x][y].
  */
-PetscErrorCode IceGrid::createDA() {
+PetscErrorCode IceGrid::allocate() {
   PetscErrorCode ierr;
 
   if (Mx < 3) {
-    SETERRQ(com, 1, "IceGrid::createDA(): Mx has to be at least 3.");
+    SETERRQ(com, 1, "IceGrid::allocate(): Mx has to be at least 3.");
   }
 
   if (My < 3) {
-    SETERRQ(com, 2, "IceGrid::createDA(): My has to be at least 3.");
+    SETERRQ(com, 2, "IceGrid::allocate(): My has to be at least 3.");
   }
 
   if (Lx <= 0) {
-    SETERRQ(com, 3, "IceGrid::createDA(): Lx has to be positive.");
+    SETERRQ(com, 3, "IceGrid::allocate(): Lx has to be positive.");
   }
 
   if (Ly <= 0) {
-    SETERRQ(com, 3, "IceGrid::createDA(): Ly has to be positive.");
+    SETERRQ(com, 3, "IceGrid::allocate(): Ly has to be positive.");
   }
 
-  if (da2 != PETSC_NULL)
-    SETERRQ(com, 1, "IceGrid::createDA(): da2 != PETSC_NULL");
+  DM tmp;
 
-  // Transpose:
-  ierr = DMDACreate2d(com,
-                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-                      DMDA_STENCIL_BOX,
-                      My, Mx,
-                      Ny, Nx,
-                      1, max_stencil_width, // dof, stencil width
-                      &procs_y[0], &procs_x[0],
-                      &da2);
+  ierr = this->get_dm(1, max_stencil_width, tmp);
   if (ierr != 0) {
-    PetscErrorCode ierr2;
-    ierr2 = verbPrintf(1, com,
-		       "PISM ERROR: can't distribute the %d x %d grid across %d processors...\n"
-		       "Exiting...\n", Mx, My, ierr);
-    CHKERRQ(ierr2);
+    ierr = PetscPrintf(com,
+                       "PISM ERROR: can't distribute the %d x %d grid across %d processors...\n"
+                       "Exiting...\n", Mx, My, size);
+    CHKERRQ(ierr);
     PISMEnd();
   }
 
   DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(da2, &info); CHKERRQ(ierr);
+  ierr = DMDAGetLocalInfo(tmp, &info); CHKERRQ(ierr);
   // this continues the fundamental transpose
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
@@ -382,56 +367,6 @@ PetscErrorCode IceGrid::createDA() {
   profiler->Nx = Nx;
   profiler->Ny = Ny;
   profiler->set_grid_size(xm*ym);
-
-  return 0;
-}
-
-//! \brief A version allowing to specify the grid distribution across processors.
-/*!
- * \param my_procs_x Number of processors in the X-direction
- * \param my_procs_y Number of processors in the Y-direction
- * \param lx The array containing numbers of grid points per processor in the X-direction
- * \param ly The array containing numbers of grid points per processor in the Y-direction
- *
- * \note my_procs_x times my_procs_y has to be equal to size
- * \note lx has to add up to Mx.
- * \note ly has to add up to My.
- */
-PetscErrorCode IceGrid::createDA(PetscInt my_procs_x, PetscInt my_procs_y,
-				 PetscInt* &lx, PetscInt* &ly) {
-  PetscErrorCode ierr;
-
-  if (da2 != PETSC_NULL) {
-    ierr = DMDestroy(&da2); CHKERRQ(ierr);
-  }
-
-  // Transpose:
-  ierr = DMDACreate2d(com,
-                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-                      DMDA_STENCIL_BOX,
-                      My, Mx,
-                      my_procs_y, my_procs_x,
-                      1, max_stencil_width, // dof, stencil width
-                      ly, lx, &da2);
-  if (ierr != 0) {
-    PetscErrorCode ierr2;
-    ierr2 = verbPrintf(1, com,
-		       "PISM ERROR: can't distribute the %d x %d grid across %d processors...\n"
-		       "Exiting...\n", Mx, My, size);
-    CHKERRQ(ierr2);
-    PISMEnd();
-  }
-  
- CHKERRQ(ierr);
-
-  DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(da2, &info); CHKERRQ(ierr);
-  // this continues the fundamental transpose
-  xs = info.ys; xm = info.ym;
-  ys = info.xs; ym = info.xm;
-
-  profiler->Nx = Nx;
-  profiler->Ny = Ny;
 
   return 0;
 }
@@ -693,7 +628,7 @@ PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, string title, PetscV
 
   ierr = compute_viewer_size(viewer_size, X, Y); CHKERRQ(ierr);
 
-  // note we reverse x <-> y; see IceGrid::createDA() for original reversal
+  // note we reverse x <-> y; see IceGrid::allocate() for original reversal
   ierr = PetscViewerDrawOpen(com, PETSC_NULL, title.c_str(),
 			     PETSC_DECIDE, PETSC_DECIDE, Y, X, &viewer);  CHKERRQ(ierr);
 
@@ -804,3 +739,61 @@ void IceGrid::check_parameters() {
 
 }
 
+PetscErrorCode IceGrid::get_dm(PetscInt da_dof, PetscInt stencil_width, DM &result) {
+  PetscErrorCode ierr;
+
+  if (da_dof < 0 || da_dof > 10000) {
+    SETERRQ(com, 3, "Invalid da_dof argument");
+  }
+
+  if (stencil_width < 0 || stencil_width > 10000) {
+    SETERRQ(com, 3, "Invalid stencil_width argument");
+  }
+
+  int j = this->dm_key(da_dof, stencil_width);
+
+  if (dms[j] == PETSC_NULL) {
+    ierr = this->create_dm(da_dof, stencil_width, result); CHKERRQ(ierr);
+
+    dms[j] = result;
+  } else {
+    result = dms[j];
+  }
+
+  return 0;
+}
+
+void IceGrid::destroy_dms() {
+
+  map<int, DM>::iterator j = dms.begin();
+  while (j != dms.end()) {
+    DMDestroy(&j->second);
+
+    ++j;
+  }
+
+}
+
+PetscErrorCode IceGrid::create_dm(PetscInt da_dof, PetscInt stencil_width, DM &result) {
+  PetscErrorCode ierr;
+
+  ierr = verbPrintf(3, com,
+		    "* Creating a DM with dof=%d and stencil_width=%d...\n",
+                    da_dof, stencil_width); CHKERRQ(ierr);
+
+  ierr = DMDACreate2d(com,
+                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                      DMDA_STENCIL_BOX,
+                      My, Mx, // N, M
+                      Ny, Nx, // n, m
+                      da_dof, stencil_width,
+                      &procs_y[0], &procs_x[0], // ly, lx
+                      &result); CHKERRQ(ierr);
+
+  return 0;
+}
+
+// Computes the key corresponding to the DM with given dof and stencil_width.
+int IceGrid::dm_key(int da_dof, int stencil_width) {
+  return 10000 * da_dof + stencil_width;
+}

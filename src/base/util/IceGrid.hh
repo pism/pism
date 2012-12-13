@@ -22,6 +22,7 @@
 #include <petscdmda.h>
 #include <vector>
 #include <string>
+#include <map>
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -108,9 +109,7 @@ public:
 
   PetscErrorCode report_parameters();
 
-  PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
-  PetscErrorCode createDA(int procs_x, int procs_y,
-			  int* &lx, int* &ly);
+  PetscErrorCode allocate();  // destructor checks if DA was created, and destroys
   PetscErrorCode set_vertical_levels(vector<double> z_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
@@ -128,12 +127,11 @@ public:
   int       kBelowHeight(PetscScalar height);
   PetscErrorCode create_viewer(int viewer_size, string title, PetscViewer &viewer);
   PetscReal      radius(int i, int j);
+  PetscErrorCode get_dm(PetscInt dm_dof, PetscInt stencil_width, DM &result);
 
   const NCConfigVariable &config;
   MPI_Comm    com;
   PetscMPIInt rank, size;
-  DM          da2;
-
   int    xs,               //!< starting x-index of a processor sub-domain
     xm,                         //!< number of grid points (in the x-direction) in a processor sub-domain
     ys,                         //!< starting y-index of a processor sub-domain
@@ -142,7 +140,7 @@ public:
   vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
 
   vector<double> x,             //!< x-coordinates of grid points
-    y;          //!< y-coordinates of grid points
+    y;                          //!< y-coordinates of grid points
 
   // Fine vertical grid and the interpolation setup:
   vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
@@ -161,16 +159,16 @@ public:
     dzMAX;                      //!< maximal vertical spacing of the storage grid in the ice
 
   PetscScalar x0,               //!< x-coordinate of the grid center
-    y0;	   //!< y-coordinate of the grid center
+    y0;                         //!< y-coordinate of the grid center
 
   PetscScalar Lx, //!< half width of the ice model grid in x-direction (m)
-    Ly; //!< half width of the ice model grid in y-direction (m)
+    Ly;           //!< half width of the ice model grid in y-direction (m)
 
   int    Mx, //!< number of grid points in the x-direction
-    My; //!< number of grid points in the y-direction
+    My;      //!< number of grid points in the y-direction
 
   int    Nx, //!< number of processors in the x-direction
-    Ny; //!< number of processors in the y-direction
+    Ny;      //!< number of processors in the y-direction
 
   vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
     procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
@@ -190,12 +188,17 @@ public:
   PISMProf *profiler;           //!< PISM profiler object; allows tracking how long a computation takes
   PISMTime *time;               //!< The time management object (hides calendar computations)
 protected:
+  map<int,DM> dms;
   PetscScalar lambda;	 //!< quadratic vertical spacing parameter
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
   PetscErrorCode compute_horizontal_coordinates();
   PetscErrorCode compute_fine_vertical_grid();
   PetscErrorCode init_interpolation();
 
+  PetscErrorCode create_dm(PetscInt da_dof, PetscInt stencil_width, DM &result);
+  void destroy_dms();
+
+  int dm_key(int, int);
 private:
   // Hide copy constructor / assignment operator.
   IceGrid(IceGrid const &);
