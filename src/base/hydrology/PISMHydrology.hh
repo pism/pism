@@ -208,19 +208,17 @@ protected:
   // this model's state
   IceModelVec2S W;      // water layer thickness
   // this model's auxiliary variables
-  IceModelVec2S psi;    // hydraulic potential
   IceModelVec2Stag V,   // components are
                         //   V(i,j,0) = alpha(i,j) = east-edge centered  x-component of water velocity
                         //   V(i,j,1) = beta(i,j)  = north-edge centered y-component of water velocity
                    Wstag,// edge-centered (staggered) W values (averaged from regular)
                    Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S input, Wnew;
+  IceModelVec2S input, Wnew, Pwork;
 
   virtual PetscErrorCode allocate();
 
   virtual PetscErrorCode check_Wpositive();
-  virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
@@ -230,9 +228,6 @@ protected:
                            PetscReal &dt_DIFFW_result);
   virtual PetscErrorCode adaptive_for_W_evolution(
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
-
-private:
-  IceModelVec2S Pwork;  // workspace, not a state variable
 };
 
 
@@ -262,24 +257,25 @@ protected:
   // this model's state, in addition to what is in PISMLakesHydrology
   IceModelVec2S P;      // water pressure
   // this model's auxiliary variables, in addition ...
-  IceModelVec2S Po,     // overburden pressure
-                cbase;  // sliding speed of overlying ice
-  // this model's workspace variables, in addition
-  IceModelVec2S Pnew;
+  IceModelVec2S psi,    // hydraulic potential
+                cbase,  // sliding speed of overlying ice
+                Pnew;   // pressure during update
 
   // need to get basal sliding velocity (thus speed):
   PISMStressBalance* stressbalance;
 
-  PetscReal c1, c2, Aglen, nglen, Wr, E0, Y0;
-
-  virtual PetscErrorCode allocatePstuff();
-
+  virtual PetscErrorCode allocate_nontrivial_pressure();
   virtual PetscErrorCode check_bounds();
+  virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode update_cbase(IceModelVec2S &result);
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
 
   virtual PetscErrorCode adaptive_for_WandP_evolution(
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
+
+private:
+  // FIXME: these need to be configurable
+  PetscReal c1, c2, Aglen, nglen, Wr, E0, Y0;
 };
 
 #endif /* _PISMHYDROLOGY_H_ */
