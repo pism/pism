@@ -20,6 +20,9 @@
 #include "PISMVars.hh"
 #include "pism_options.hh"
 #include "Mask.hh"
+#include "flowlaws.hh"
+#include "ShallowStressBalance.hh"
+#include "PISMStressBalance.hh"
 
 
 /************************************/
@@ -392,6 +395,17 @@ PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVar
 {
     stressbalance = sb;
 
+//FIXME:  we need A and n from glen aspects of current flow law.  get them through this method?:
+    ShallowStressBalance *ssb = stressbalance->get_stressbalance();
+    IceFlowLaw *flowlaw = ssb->get_flow_law();
+
+    //nglen = 3.0;
+    nglen = flowlaw->exponent();
+
+    Aglen = 3.1689e-24; // Pa-3 s-1; ice softness
+    //FIXME: want to do this but how to get myE, myp?:
+    //Aglen = flowlaw->softness_parameter(myE,myp);
+
     if (allocate_nontrivial_pressure() != 0) {
       PetscPrintf(grid.com,
         "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor.\n");
@@ -402,8 +416,6 @@ PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVar
     // FIXME: should be configurable
     c1    = 0.500;      // m-1
     c2    = 0.040;      // [pure]
-    Aglen = 3.1689e-24; // Pa-3 s-1; ice softness
-    nglen = 3.0;
     Wr    = 1.0;        // m
     E0    = 1.0;        // m; what is optimal?
     Y0    = 0.001;      // m; regularization
