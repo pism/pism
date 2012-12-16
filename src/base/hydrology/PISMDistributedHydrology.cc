@@ -686,8 +686,10 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     // update Pnew from time step
     PetscReal  pux = c0 / (grid.dx * grid.dx),
                puy = c0 / (grid.dy * grid.dy),
-               Open, Close, divflux, Ptmp;
+               Open, Close, divflux;
     ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
+
+    MaskQuery M(*mask);
 
     ierr = P.begin_access(); CHKERRQ(ierr);
     ierr = W.begin_access(); CHKERRQ(ierr);
@@ -705,16 +707,20 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
         Close = c2 * Aglen * pow(Pwork(i,j) - P(i,j),nglen) * (W(i,j) + Y0);
         // divergence of flux
         divflux = 0;
-        //(FIXME: to match conserve.m) if (!known.as_int(i+1,j) && !known.as_int(i-1,j))
+        const bool knowne = (M.ice_free_land(i+1,j) || M.ocean(i+1,j)),
+                   knownw = (M.ice_free_land(i-1,j) || M.ocean(i-1,j)),
+                   knownn = (M.ice_free_land(i,j+1) || M.ocean(i,j+1)),
+                   knowns = (M.ice_free_land(i,j-1) || M.ocean(i,j-1));
+        if (!knowne && !knownw)
           divflux += pux * ( Wstag(i,j,0) * (psi(i+1,j) - psi(i,j))
                          - Wstag(i-1,j,0) * (psi(i,j) - psi(i-1,j)) );
-        //(FIXME: to match conserve.m) if (!known.as_int(i,j+1) && !known.as_int(i,j-1))
+        if (!knownn && !knowns)
           divflux += puy * ( Wstag(i,j,1) * (psi(i,j+1) - psi(i,j))
                          - Wstag(i,j-1,1) * (psi(i,j) - psi(i,j-1)) );
         // candidate for update
-        Ptmp = P(i,j) + (hdt * Pwork(i,j) / E0) * ( divflux + Close - Open + input(i,j) );
-        // projection:
-        Pnew(i,j) = PetscMin(PetscMax(0.0, Ptmp), Pwork(i,j));
+        Pnew(i,j) = P(i,j) + (hdt * Pwork(i,j) / E0) * ( divflux + Close - Open + input(i,j) );
+        // projection to enforce  0 <= P <= P_o
+        Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pwork(i,j));
       }
     }
     ierr = P.end_access(); CHKERRQ(ierr);
