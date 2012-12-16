@@ -272,10 +272,6 @@ protected:
 
   virtual PetscErrorCode adaptive_for_WandP_evolution(
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
-
-private:
-  // FIXME: these need to be configurable
-  PetscReal c1, c2, Wr, E0, Y0;
 };
 
 #endif /* _PISMHYDROLOGY_H_ */

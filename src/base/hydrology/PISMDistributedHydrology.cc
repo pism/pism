@@ -394,20 +394,11 @@ PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVar
     : PISMLakesHydrology(g, conf)
 {
     stressbalance = sb;
-
     if (allocate_nontrivial_pressure() != 0) {
       PetscPrintf(grid.com,
         "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor.\n");
       PISMEnd();
     }
-
-    // initialize using constants from van Pelt & Bueler preprint
-    // FIXME: should be configurable
-    c1    = 0.500;      // m-1
-    c2    = 0.040;      // [pure]
-    Wr    = 1.0;        // m
-    E0    = 1.0;        // m; what is optimal?
-    Y0    = 0.001;      // m; regularization
 }
 
 
@@ -566,8 +557,11 @@ model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
  */
 PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PetscReal CC = c1 / (c2 * config.get("ice_softness")),
+  PetscReal CC = config.get("hydrology_cavitation_opening_coefficient") /
+                    (config.get("hydrology_creep_closure_coefficient") * config.get("ice_softness")),
             powglen = 1.0 / config.get("Glen_exponent"),
+            Wr = config.get("hydrology_roughness_scale"),
+            Y0 = config.get("hydrology_lower_bound_creep_regularization"),
             sb, Wratio;
   ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
@@ -613,7 +607,8 @@ PetscErrorCode PISMDistributedHydrology::update_cbase(IceModelVec2S &result_cbas
 PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal &dt_result) {
   PetscErrorCode ierr;
-  PetscReal dtDIFFW, dtDIFFP, maxH;
+  PetscReal dtDIFFW, dtDIFFP, maxH,
+            E0 = config.get("hydrology_diffusive_closure_regularization");
   ierr = adaptive_for_W_evolution(t_current,t_end,dt_result,dtDIFFW); CHKERRQ(ierr);
 
   // Matlab: dtDIFFP = (p.rhow * p.E0 / (p.rhoi * maxH)) * dtDIFFW;
@@ -661,7 +656,12 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             K  = config.get("hydrology_hydraulic_conductivity"),
             c0 = K / (config.get("fresh_water_density") * config.get("standard_gravity")),
             nglen = config.get("Glen_exponent"),
-            Aglen = config.get("ice_softness");
+            Aglen = config.get("ice_softness"),
+            c1 = config.get("hydrology_cavitation_opening_coefficient"),
+            c2 = config.get("hydrology_creep_closure_coefficient"),
+            Wr = config.get("hydrology_roughness_scale"),
+            Y0 = config.get("hydrology_lower_bound_creep_regularization"),
+            E0 = config.get("hydrology_diffusive_closure_regularization");
 
   while (ht < t + dt) {
     ierr = check_bounds(); CHKERRQ(ierr);

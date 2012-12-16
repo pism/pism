@@ -195,6 +195,12 @@ netcdf pism_config {
     pism_config:beta_ice_free_bedrock = 1.8e9;
     pism_config:beta_ice_free_bedrock_doc = "Pa s m-1; value is for ice stream E from [\\ref HulbeMacAyeal]; thus sliding velocity, but we hope it doesn't matter much; at 100 m a-1 the linear sliding law gives 57040 Pa basal shear stress";
 
+    pism_config:hydrology_use_const_bmelt = "no";
+    pism_config:hydrology_use_const_bmelt_doc = "if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology_const_bmelt";
+
+    pism_config:hydrology_const_bmelt = 3.168876461e-10;
+    pism_config:hydrology_const_bmelt_doc = "m s-1; = 1 cm per year of melt; only used if hydrology_use_const_bmelt = 'yes'";
+
     pism_config:hydrology_bwat_max = 2.0;
     pism_config:hydrology_bwat_max_doc = "m; maximum thickness of the basal melt water layer; used by PISMTillCanHydrology and derived models; not used by some hydrology models";
 
@@ -208,13 +214,22 @@ netcdf pism_config {
     pism_config:hydrology_bwat_diffusion_time_doc = "years; diffusion time for melt water thickness; only used by hydrology model 'diffuseonly'=PISMDiffuseOnlyHydrology";
 
     pism_config:hydrology_hydraulic_conductivity = 1.0e-2;
-    pism_config:hydrology_hydraulic_conductivity_doc = "m s-1;  lateral conductivity, in Darcy's law, for subglacial water layer; not used by some hydrology models";
+    pism_config:hydrology_hydraulic_conductivity_doc = "m s-1; K in notes; lateral conductivity, in Darcy's law, for subglacial water layer; not used by some hydrology models";
 
-    pism_config:hydrology_use_const_bmelt = "no";
-    pism_config:hydrology_use_const_bmelt_doc = "if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology_const_bmelt";
+    pism_config:hydrology_roughness_scale = 1.0;
+    pism_config:hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale determining maximum amount of cavitation opening in PISMDistributedHydrology";
 
-    pism_config:hydrology_const_bmelt = 3.168876461e-10;
-    pism_config:hydrology_const_bmelt_doc = "m s-1; = 1 cm per year of melt; only used if hydrology_use_const_bmelt = 'yes'";
+    pism_config:hydrology_cavitation_opening_coefficient = 0.5;
+    pism_config:hydrology_cavitation_opening_coefficient_doc = "m-1; c_1 in notes; coefficient of cavitation opening term in evolution of layer thickness in PISMDistributedHydrology";
+
+    pism_config:hydrology_creep_closure_coefficient = 0.04;
+    pism_config:hydrology_creep_closure_coefficient_doc = "[pure]; c_2 in notes; coefficient of creep closure term in evolution of layer thickness in PISMDistributedHydrology";
+
+    pism_config:hydrology_lower_bound_creep_regularization = 0.001;
+    pism_config:hydrology_lower_bound_creep_regularization_doc = "m; Y_0 in notes; creep closure term in evolution of layer thickness remains positive (active) even at zero water if this is positive; in PISMDistributedHydrology";
+
+    pism_config:hydrology_diffusive_closure_regularization = 1.0;
+    pism_config:hydrology_diffusive_closure_regularization_doc = "m; E_0 in notes; diffusive closure would become elliptic closure if this went to zero; in PISMDistributedHydrology";
 
     pism_config:minimum_temperature_for_sliding = 273.0;
     pism_config:minimum_temperature_for_sliding_doc = "K; This is less than water_melting_point_temperature.  If ice base is above this value then decide to do SIA sliding, if that mechanism is active at all.";
