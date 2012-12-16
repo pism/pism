@@ -275,7 +275,7 @@ protected:
 
 private:
   // FIXME: these need to be configurable
-  PetscReal c1, c2, Aglen, nglen, Wr, E0, Y0;
+  PetscReal c1, c2, Wr, E0, Y0;
 };
 
 #endif /* _PISMHYDROLOGY_H_ */

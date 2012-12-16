@@ -395,17 +395,6 @@ PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVar
 {
     stressbalance = sb;
 
-//FIXME:  we need A and n from glen aspects of current flow law.  get them through this method?:
-    ShallowStressBalance *ssb = stressbalance->get_stressbalance();
-    IceFlowLaw *flowlaw = ssb->get_flow_law();
-
-    //nglen = 3.0;
-    nglen = flowlaw->exponent();
-
-    Aglen = 3.1689e-24; // Pa-3 s-1; ice softness
-    //FIXME: want to do this but how to get myE, myp?:
-    //Aglen = flowlaw->softness_parameter(myE,myp);
-
     if (allocate_nontrivial_pressure() != 0) {
       PetscPrintf(grid.com,
         "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor.\n");
@@ -577,8 +566,8 @@ model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
  */
 PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PetscReal CC = c1 / (c2 * Aglen),
-            powglen = 1.0/nglen,
+  PetscReal CC = c1 / (c2 * config.get("ice_softness")),
+            powglen = 1.0 / config.get("Glen_exponent"),
             sb, Wratio;
   ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
@@ -668,10 +657,11 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
   PetscReal ht, hdt, // hydrology model time and time step
-            K, c0;
-  // FIXME:  want Kmax or Kmin according to W > Wr ?
-  K  = config.get("hydrology_hydraulic_conductivity");
-  c0 = K / (config.get("fresh_water_density") * config.get("standard_gravity"));
+            // FIXME:  want Kmax or Kmin according to W > Wr ?
+            K  = config.get("hydrology_hydraulic_conductivity"),
+            c0 = K / (config.get("fresh_water_density") * config.get("standard_gravity")),
+            nglen = config.get("Glen_exponent"),
+            Aglen = config.get("ice_softness");
 
   while (ht < t + dt) {
     ierr = check_bounds(); CHKERRQ(ierr);
