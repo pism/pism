@@ -447,6 +447,9 @@ namespace std {
     }
 }
 
+/* This is needed to wrap IceGrid::get_dm() */
+%apply DM &OUTPUT {DM &result};
+
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 
 // be a more elegant solution using SWIG_From(int) and so forth that I'm not familiar with.  The
 // following works for now.

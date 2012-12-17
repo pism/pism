@@ -64,9 +64,9 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, string my_name,
 
   zlevels = levels;
   n_levels = (int)zlevels.size();
-
   da_stencil_width = stencil_width;
-  ierr = create_2d_da(da, n_levels, da_stencil_width); CHKERRQ(ierr);
+
+  ierr = grid->get_dm(this->n_levels, this->da_stencil_width, da); CHKERRQ(ierr);
 
   if (local) {
     ierr = DMCreateLocalVector(da, &v); CHKERRQ(ierr);
@@ -441,14 +441,17 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, PetscScalar z) {
   PetscErrorCode ierr;
   PetscScalar    **slice_val;
 
+  DM da2;
+  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+
   ierr = begin_access(); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(grid->da2, gslice, &slice_val); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da2, gslice, &slice_val); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
       slice_val[i][j] = getValZ(i,j,z);
     }
   }
-  ierr = DMDAVecRestoreArray(grid->da2, gslice, &slice_val); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da2, gslice, &slice_val); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
@@ -494,8 +497,12 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &gsurf, IceModelVec
 PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2S &myH) {
   PetscErrorCode ierr;
   PetscScalar    **H, **surf_val;
+
+  DM da2;
+  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+
   ierr = begin_access(); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da2, gsurf, &surf_val); CHKERRQ(ierr);
   ierr = myH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
@@ -503,7 +510,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2S &myH) {
     }
   }
   ierr = myH.end_access(); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da2, gsurf, &surf_val); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -629,8 +636,8 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   for (int i = 0; i < dof; ++i)
     vars[0].set_levels(zlevels);
 
-  ierr = create_2d_da(da_new, n_levels, da_stencil_width); CHKERRQ(ierr);
-  
+  ierr = grid->get_dm(this->n_levels, this->da_stencil_width, da_new); CHKERRQ(ierr);
+
   if (localp) {
     ierr = DMCreateLocalVector(da_new, &v_new); CHKERRQ(ierr);
   } else {
@@ -651,12 +658,12 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   ierr = DMDAVecRestoreArrayDOF(da, v, &a_old); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArrayDOF(da_new, v_new, &a_new); CHKERRQ(ierr);
 
-  // Deallocate old DA and Vec:
+  // Deallocate old Vec:
   ierr = VecDestroy(&v); CHKERRQ(ierr);
   v = v_new;
-
-  ierr = DMDestroy(&da); CHKERRQ(ierr);
   da = da_new;
+
+  // IceGrid will dispose of the old DA
 
   // de-allocate the sounding buffer because we'll need a bigger one
   if (sounding_buffer != NULL) {

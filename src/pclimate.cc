@@ -53,7 +53,7 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
 
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
-  ierr = grid.createDA(); CHKERRQ(ierr);
+  ierr = grid.allocate(); CHKERRQ(ierr);
   return 0;
 }
 

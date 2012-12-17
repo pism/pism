@@ -412,7 +412,7 @@ PetscErrorCode init_shallow_grid(IceGrid &grid, PetscReal Lx,
   grid.compute_ownership_ranges();
   ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-  ierr = grid.createDA(); CHKERRQ(ierr);
+  ierr = grid.allocate(); CHKERRQ(ierr);
 
   return 0;
 }

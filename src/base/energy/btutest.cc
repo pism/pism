@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
     ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
     ierr = grid.time->init(); CHKERRQ(ierr);
-    ierr = grid.createDA(); CHKERRQ(ierr);
+    ierr = grid.allocate(); CHKERRQ(ierr);
 
     // allocate tools and IceModelVecs
     PISMVars variables;

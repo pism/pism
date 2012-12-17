@@ -43,9 +43,12 @@ PetscErrorCode InvSSAForwardProblem_dep::allocate_ksp()
   ierr = DMCreateGlobalVector(SSADA, &m_VecRHS2); CHKERRQ(ierr);
 
   // Storage for scalar unknowns.
-  ierr = DMCreateMatrix(grid.da2, "baij", &m_MatB); CHKERRQ(ierr);
-  ierr = DMCreateGlobalVector(grid.da2, &m_VecRHS); CHKERRQ(ierr);
-  ierr = DMCreateGlobalVector(grid.da2, &m_VecV); CHKERRQ(ierr);
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+
+  ierr = DMCreateMatrix(da2, "baij", &m_MatB); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da2, &m_VecRHS); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da2, &m_VecV); CHKERRQ(ierr);
 
   ierr = KSPCreate(grid.com, &m_KSP); CHKERRQ(ierr);
   PetscReal ksp_rtol = 1e-12;
@@ -478,9 +481,13 @@ PetscErrorCode InvSSAForwardProblem_dep::solveTStar( IceModelVec2V &residual, Ic
   // Assemble the right-hand side for the second step.
   ierr = DMDAVecGetArray(SSADA,m_VecZ,&Z); CHKERRQ(ierr);
   ierr = DMDAVecGetArray(SSADA,m_VecU,&U); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(grid.da2,m_VecRHS,&RHS); CHKERRQ(ierr);
+
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+
+  ierr = DMDAVecGetArray(da2,m_VecRHS,&RHS); CHKERRQ(ierr);
   ierr = assemble_TStarB_rhs(Z,U,RHS); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(grid.da2,m_VecRHS,&RHS); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da2,m_VecRHS,&RHS); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArray(SSADA,m_VecU,&U); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArray(SSADA,m_VecZ,&Z); CHKERRQ(ierr);
 
@@ -619,11 +626,15 @@ PetscErrorCode InvSSAForwardProblem_dep::domainIP(Vec a, Vec b, PetscScalar *OUT
 {
   PetscErrorCode ierr;
   PetscScalar **A, **B;
-  ierr = DMDAVecGetArray(grid.da2,a,&A); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(grid.da2,b,&B); CHKERRQ(ierr);
+
+  DM da2;
+  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+
+  ierr = DMDAVecGetArray(da2,a,&A); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da2,b,&B); CHKERRQ(ierr);
   ierr = domainIP_core(A,B,OUTPUT);
-  ierr = DMDAVecRestoreArray(grid.da2,a,&A); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(grid.da2,b,&B); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da2,a,&A); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da2,b,&B); CHKERRQ(ierr);
   return 0;
 }
 PetscErrorCode InvSSAForwardProblem_dep::domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscScalar *OUTPUT)

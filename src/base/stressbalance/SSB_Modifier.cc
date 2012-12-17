@@ -132,8 +132,8 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
 
   // Communicate to get ghosts (needed to compute w):
   ierr = u.beginGhostComm(); CHKERRQ(ierr);
-  ierr = v.beginGhostComm(); CHKERRQ(ierr);
   ierr = u.endGhostComm(); CHKERRQ(ierr);
+  ierr = v.beginGhostComm(); CHKERRQ(ierr);
   ierr = v.endGhostComm(); CHKERRQ(ierr);
 
   ierr = PISMGlobalMax(&my_u_max, &u_max, grid.com); CHKERRQ(ierr);

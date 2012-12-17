@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -265,11 +265,12 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = u3->beginGhostComm(); CHKERRQ(ierr);
-  ierr = v3->beginGhostComm(); CHKERRQ(ierr);
-
   ierr = T3.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = u3->beginGhostComm(); CHKERRQ(ierr);
   ierr = u3->endGhostComm(); CHKERRQ(ierr);
+
+  ierr = v3->beginGhostComm(); CHKERRQ(ierr);
   ierr = v3->endGhostComm(); CHKERRQ(ierr);
 
   return 0;

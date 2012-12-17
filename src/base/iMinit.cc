@@ -246,7 +246,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   ierr = grid.compute_vertical_levels();    CHKERRQ(ierr);
 
   // At this point all the fields except for da2, xs, xm, ys, ym should be
-  // filled. We're ready to call grid.createDA().
+  // filled. We're ready to call grid.allocate().
   return 0;
 }
 
@@ -443,7 +443,7 @@ PetscErrorCode IceModel::grid_setup() {
 
   grid.check_parameters();
 
-  ierr = grid.createDA(); CHKERRQ(ierr);
+  ierr = grid.allocate(); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 

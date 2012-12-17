@@ -41,7 +41,7 @@ static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
 
-  ierr = grid.createDA(); CHKERRQ(ierr);
+  ierr = grid.allocate(); CHKERRQ(ierr);
 
   ierr = grid.printInfo(1); CHKERRQ(ierr);
 

@@ -240,9 +240,6 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   if (grid == NULL)
     SETERRQ(com, 1, "NCVariable::read: grid is NULL.");
 
-  if (grid->da2 == PETSC_NULL)
-    SETERRQ(com, 1, "NCVariable::read: grid.da2 is NULL.");
-
   // Find the variable:
   string name_found;
   bool found_by_standard_name = false, variable_exists = false;
@@ -378,9 +375,6 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
 
   if (grid == NULL)
     SETERRQ(com, 1, "NCVariable::regrid: grid is NULL.");
-
-  if (grid->da2 == PETSC_NULL)
-    SETERRQ(com, 1, "NCVariable::regrid: grid.da2 is NULL.");
 
   // Find the variable
   bool exists, found_by_standard_name;

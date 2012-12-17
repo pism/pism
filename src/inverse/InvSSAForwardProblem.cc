@@ -328,9 +328,12 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec
 PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta) {
   PetscErrorCode ierr;
   PetscReal **dzeta_a;
-  ierr = DMDAVecGetArray(m_grid.da2,dzeta,&dzeta_a); CHKERRQ(ierr);
+  DM da2;
+  ierr = m_grid.get_dm(1, m_grid.max_stencil_width, da2); CHKERRQ(ierr);
+
+  ierr = DMDAVecGetArray(da2,dzeta,&dzeta_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design_transpose(u,du,dzeta_a);CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(m_grid.da2,dzeta,&dzeta_a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da2,dzeta,&dzeta_a); CHKERRQ(ierr);
   return 0;
 }
 
