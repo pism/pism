@@ -133,7 +133,10 @@ netcdf pism_config {
     pism_config:bootstrapping_uplift_value_no_var_doc = "m s-1; uplift value to use if dbdt variable is absent in bootstrapping file";
 
     pism_config:bootstrapping_bwat_value_no_var = 0.0;
-    pism_config:bootstrapping_bwat_value_no_var_doc = "m; basal melt water effective thickness value to use if variable bwat is absent in bootstrapping file";
+    pism_config:bootstrapping_bwat_value_no_var_doc = "m; basal water thickness value to use if variable bwat is absent in bootstrapping file";
+
+    pism_config:bootstrapping_bwp_value_no_var = 0.0;
+    pism_config:bootstrapping_bwp_value_no_var_doc = "Pa; basal water pressure value to use if variable bwp is absent in bootstrapping file; most hydrology models do not use this value because bwp is diagnostic";
 
     pism_config:bootstrapping_bmelt_value_no_var = 0.0;
     pism_config:bootstrapping_bmelt_value_no_var_doc = "m s-1; basal melt rate value to use if variable bmelt is absent in bootstrapping file";

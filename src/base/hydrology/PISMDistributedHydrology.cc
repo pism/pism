@@ -94,8 +94,6 @@ PetscErrorCode PISMLakesHydrology::init(PISMVars &vars) {
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool i_set, bootstrap;
-  string filename;
-  int start;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'lakes' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
@@ -108,6 +106,8 @@ PetscErrorCode PISMLakesHydrology::init(PISMVars &vars) {
   if (W_input != NULL) { // a variable called "bwat" is already in context
     ierr = W.copy_from(*W_input); CHKERRQ(ierr);
   } else if (i_set || bootstrap) {
+    string filename;
+    int start;
     ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
     if (i_set) {
       ierr = W.read(filename, start); CHKERRQ(ierr);
@@ -458,14 +458,52 @@ PetscErrorCode PISMDistributedHydrology::allocate_nontrivial_pressure() {
 PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
-    "* Initializing the vanPelt-Bueler subglacial hydrology model...\n"); CHKERRQ(ierr);
-  ierr = PISMLakesHydrology::init(vars); CHKERRQ(ierr);
-  // initialize the water pressure from the context if present, otherwise steady P(W)
+    "* Initializing the vanPelt-Bueler distributed (linked-cavities) subglacial hydrology model...\n");
+    CHKERRQ(ierr);
+
+  ierr = PISMLakesHydrology::init(vars); CHKERRQ(ierr); // handles initialization of bwat = W
+
+  // initialize water pressure P from the context if present,
+  //   otherwise from -i or -boot_file, otherwise with constant value
+  bool i_set, bootstrap, init_P_from_steady;
+  ierr = PetscOptionsBegin(grid.com, "",
+            "Options controlling the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
+                            bootstrap); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-init_P_from_steady",
+                            "initialize P from formula P(W) which applies in steady state",
+                            init_P_from_steady); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   IceModelVec2S *P_input = dynamic_cast<IceModelVec2S*>(vars.get("bwp"));
-  if (P_input != NULL) {
+  if (P_input != NULL) { // a variable called "bwp" is already in context
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
+  } else if (i_set || bootstrap) {
+    string filename;
+    int start;
+    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+    if (i_set) {
+      ierr = P.read(filename, start); CHKERRQ(ierr);
+    } else {
+      ierr = P.regrid(filename,
+                      config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);
+    }
   } else {
+    ierr = P.set(config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);
+  }
+
+  // whether or not we could initialize from file, we could be asked to regrid from file
+  ierr = regrid(P); CHKERRQ(ierr);
+
+  if (init_P_from_steady) { // if so, overwrite all the other stuff
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
+  }
+
+  // add bwp to the variables in the context if it is not already there
+  if (vars.get("bwp") == NULL) {
+    ierr = vars.add(P); CHKERRQ(ierr);
   }
   return 0;
 }

@@ -232,8 +232,6 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool i_set, bootstrap;
-  string filename;
-  int start;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'tillcan' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
@@ -246,6 +244,8 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   if (W_input != NULL) { // a variable called "bwat" is already in context
     ierr = W.copy_from(*W_input); CHKERRQ(ierr);
   } else if (i_set || bootstrap) {
+    string filename;
+    int start;
     ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
     if (i_set) {
       ierr = W.read(filename, start); CHKERRQ(ierr);
