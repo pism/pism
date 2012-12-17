@@ -41,20 +41,26 @@ extern "C"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-/* exit status could be one of these; returned zero indicates success */
-#define TESTP_NOT_DONE       8966
-#define TESTP_NOT_DECREASING 8967
-#define TESTP_INVALID_METHOD 8968
-#define TESTP_NO_LIST        8969
+/* exit status could be one of these; return of zero indicates success */
+#define TESTP_R_OUT_OF_RANGE 78465
+#define TESTP_NOT_DONE       78466
+#define TESTP_NOT_DECREASING 78467
+#define TESTP_INVALID_METHOD 78468
+#define TESTP_NO_LIST        78469
+
+/* determines range on which W(r) is valid in Test P */
+#define R0       25000.0       /* m */
+#define L        0.9 * R0      /* m */
 
 int exactP(double r, double *h, double *magvb, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* r in meters,  r >= 0 */
+   /* r in meters,  0 <= r <= L */
+   /* returns h (m), magvb (m s-1), W (m) */
 
 int exactP_list(double *r, int N, double *h, double *magvb, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* N values r[0] > r[1] > ... > r[N-1]  (_decreasing_)
-      assumes r, h, magvb, W are _allocated_ length N arrays  */
+   /* 1. assumes N values L >= r[0] > r[1] > ... > r[N-1] >= 0  (_decreasing_)
+      2. assumes r, h, magvb, W are _allocated_ length N arrays  */
 
 #ifdef __cplusplus
 }
