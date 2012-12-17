@@ -57,6 +57,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
+  virtual PetscErrorCode regrid(IceModelVec2S &myvar);
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) = 0;
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype) = 0;
@@ -90,6 +91,7 @@ public:
   PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
+
 
 //! \brief The subglacial hydrology model from Bueler & Brown (2009) but without contrived water diffusion.
 /*!

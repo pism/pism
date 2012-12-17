@@ -88,15 +88,41 @@ PetscErrorCode PISMLakesHydrology::allocate() {
 PetscErrorCode PISMLakesHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
-    "* Initializing the subglacial-lakes-suitable subglacial hydrology model...\n"); CHKERRQ(ierr);
+    "* Initializing the subglacial-lakes-type subglacial hydrology model...\n"); CHKERRQ(ierr);
   ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
-  // initialize water layer thickness from the context if present, otherwise zero
-  IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
-  if (W_input != NULL) {
-    ierr = W.copy_from(*W_input); CHKERRQ(ierr);
-  } else {
-    ierr = W.set(0.0); CHKERRQ(ierr);
+
+  // initialize water layer thickness from the context if present,
+  //   otherwise from -i or -boot_file, otherwise with constant value
+  bool i_set, bootstrap;
+  string filename;
+  int start;
+  ierr = PetscOptionsBegin(grid.com, "",
+            "Options controlling the 'lakes' subglacial hydrology model", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
+                            bootstrap); CHKERRQ(ierr);
   }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
+  if (W_input != NULL) { // a variable called "bwat" is already in context
+    ierr = W.copy_from(*W_input); CHKERRQ(ierr);
+  } else if (i_set || bootstrap) {
+    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+    if (i_set) {
+      ierr = W.read(filename, start); CHKERRQ(ierr);
+    } else {
+      ierr = W.regrid(filename,
+                      config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
+    }
+  } else {
+    ierr = W.set(config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
+  }
+
+  // whether or not we could initialize from file, we could be asked to regrid from file
+  ierr = regrid(W); CHKERRQ(ierr);
+
+  // add bwat to the variables in the context if it is not already there
   if (vars.get("bwat") == NULL) {
     ierr = vars.add(W); CHKERRQ(ierr);
   }

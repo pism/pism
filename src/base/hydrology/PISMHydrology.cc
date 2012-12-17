@@ -53,6 +53,38 @@ void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
 }
 
 
+PetscErrorCode PISMHydrology::regrid(IceModelVec2S &myvar) {
+  PetscErrorCode ierr;
+  bool regrid_file_set, regrid_vars_set;
+  string regrid_file;
+  vector<string> regrid_vars;
+
+  ierr = PetscOptionsBegin(grid.com, "", "PISMHydrology regridding options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-regrid_file", "regridding file name",
+                             regrid_file, regrid_file_set); CHKERRQ(ierr);
+    ierr = PISMOptionsStringArray("-regrid_vars", "comma-separated list of regridding variables",
+                                  "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  // stop if the user did not ask to regrid at all
+  if (!regrid_file_set)
+    return 0;
+  // stop if the user did not ask to regrid myvar
+  set<string> vars;
+  for (unsigned int i = 0; i < regrid_vars.size(); ++i)
+    vars.insert(regrid_vars[i]);
+  if (!set_contains(vars, myvar.string_attr("short_name")))
+    return 0;
+  // otherwise, actually regrid
+  ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
+                    myvar.string_attr("short_name").c_str(), regrid_file.c_str()); CHKERRQ(ierr);
+  ierr = myvar.regrid(regrid_file, true); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Update the overburden pressure from ice thickness.
 /*!
 Uses the standard hydrostatic (shallow) approximation of overburden pressure,
@@ -194,18 +226,42 @@ PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
 PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
-    "* Initializing the till-can subglacial hydrology model...\n"); CHKERRQ(ierr);
+    "* Initializing the 'tillcan' subglacial hydrology model...\n"); CHKERRQ(ierr);
   ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
-  // initialize water layer thickness from the context if present, otherwise zero
-  IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
-  if (W_input != NULL) {
-    ierr = W.copy_from(*W_input); CHKERRQ(ierr);
-    // FIXME: what about regrid case under -boot_file?
-  } else {
-    ierr = W.set(0.0); CHKERRQ(ierr);
+
+  // initialize water layer thickness from the context if present,
+  //   otherwise from -i or -boot_file, otherwise with constant value
+  bool i_set, bootstrap;
+  string filename;
+  int start;
+  ierr = PetscOptionsBegin(grid.com, "",
+            "Options controlling the 'tillcan' subglacial hydrology model", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
+                            bootstrap); CHKERRQ(ierr);
   }
-  if (vars.get("bwat") == NULL) { // since init() will get called twice, *we*
-                                  //   might have already added "bwat"
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
+  if (W_input != NULL) { // a variable called "bwat" is already in context
+    ierr = W.copy_from(*W_input); CHKERRQ(ierr);
+  } else if (i_set || bootstrap) {
+    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+    if (i_set) {
+      ierr = W.read(filename, start); CHKERRQ(ierr);
+    } else {
+      ierr = W.regrid(filename,
+                      config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
+    }
+  } else {
+    ierr = W.set(config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
+  }
+
+  // whether or not we could initialize from file, we could be asked to regrid from file
+  ierr = regrid(W); CHKERRQ(ierr);
+
+  // add bwat to the variables in the context if it is not already there
+  if (vars.get("bwat") == NULL) {
     ierr = vars.add(W); CHKERRQ(ierr);
   }
   return 0;
