@@ -19,6 +19,8 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
+#include <assert.h>
+
 #include "iceModelVec.hh"
 #include "PISMComponent.hh"
 #include "PISMStressBalance.hh"
@@ -135,15 +137,28 @@ protected:
   virtual PetscErrorCode allocate(bool Whasghosts);
   virtual PetscErrorCode check_W_bounds();
 
-  virtual PetscReal pointwise_update(PetscReal my_W, PetscReal dWinput, PetscReal dWdecay, PetscReal Wmax) {
+  //! \brief Updates the basal water layer thickness (in meters) at a grid cell.
+  /*!
+   * @param[in] my_W water layer thickness before the update
+   * @param[in] dWinput change in water amount due do melt/refreeze (can be of either sign)
+   * @param[in] dWdecay change in water amount due to the "decay" mechanism (non-negative)
+   * @param[in] Wmax maximum allowed water layer thickness
+   *
+   * @returns The new basal water thickness, \f$ W \f$. Note that \f$ W \f$
+   * computed here may be negative due to refreeze, but not due to the gradual decay.
+   */
+  PetscReal pointwise_update(PetscReal my_W, PetscReal dWinput, PetscReal dWdecay, PetscReal Wmax) {
+    assert(dWdecay >= 0);
+
     my_W += dWinput;       // if this makes my_W negative then we leave it for reporting
+
     // avoids having the decay rate contribution reported as an icefree or floating mass loss:
     if (dWdecay < my_W)    // case where my_W is largish and decay rate reduces it
       my_W -= dWdecay;
     else if (my_W >= 0.0)  // case where decay rate would go past zero ... don't allow that
       my_W = 0.0;
-    my_W = PetscMin(Wmax, my_W);  // overflows top of "can" and we lose it
-    return my_W;
+
+    return PetscMin(Wmax, my_W);  // overflows top of "can" and we lose it
   }
 };
 
