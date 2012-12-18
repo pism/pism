@@ -34,7 +34,7 @@
 
 /* major model parameters: */
 #define Aglen    3.1689e-24    /* Pa-3 s-1 */
-#define K        1.0e-2        /* m s-1 */
+#define K        0.01          /* m s-1 */
 #define Wr       1.0           /* m */
 #define c1       0.500         /* m-1 */
 #define c2       0.040         /* [pure] */
@@ -44,10 +44,35 @@
 #define Y0       0.001         /* m */
 
 /* specific to exact solution */
-#define Phi0     0.020         /* m a-1 */
+#define Phi0     (0.020 / SperA) /* m s-1 */
 #define h0       500.0         /* m */
-#define v0       100.0 / SperA /* m s-1 */
+#define v0       (100.0 / SperA) /* m s-1 */
 #define R1       5000.0        /* m */
+
+
+int getsb(double r, double *sb, double *dsbdr) {
+  double CC, CZ, CD, zz;
+  if (r < R1) {
+    *sb    = 0.0;
+    *dsbdr = 0.0;
+  } else {
+    CC     = pow( (c1 * v0) / (c2 * Aglen * pow((R0 - R1),5.0)) , (1.0/3.0) );
+    *sb    = CC * pow(r - R1, (5.0/3.0));
+    *dsbdr = (5.0/3.0) * CC * pow(r - R1, (2.0/3.0));
+  }
+  return 0;
+}
+
+
+double criticalW(double r) {
+  double h = h0 * (1.0 - (r/R0) * (r/R0)),
+         Po = rhoi * g * h,
+         sb, dsb, sbcube, Pocube;
+  getsb(r,&sb,&dsb);
+  sbcube = sb * sb * sb;
+  Pocube = Po * Po * Po;
+  return ((sbcube * Wr - Pocube * Y0) / (sbcube + Pocube));
+}
 
 
 int funcP(double r, const double W[], double f[], void *params) {
@@ -59,35 +84,30 @@ int funcP(double r, const double W[], double f[], void *params) {
   Assumes Glen power n=3.
   */
 
-  double sb, dsb, CC, CD, CZ, zz, dPo, tmp1, c0, vphi0, numer, denom;
+  double sb, dsb, dPo, tmp1, c0, vphi0, numer, denom;
 
   if (params == NULL) {} /* quash warning "unused parameters" */
 
-  if ((r >= 0.0) && (r <= L)) {
-    if (r < R1) {
-      sb  = 0.0;
-      dsb = 0.0;
-    } else {
-      CC  = c1 / (c2 * Aglen);
-      /* vb = v0 * (r - R1).^5 / (R0-R1)^5   and   sb = (CC * vb)^(1/3) */
-      CZ  = pow(CC * v0, 1.0/3.0);
-      zz  = pow((r - R1) / (R0 - R1), 1.0/3.0);
-      sb  = CZ * pow(zz,5.0);
-      CD  = (5.0 * CZ) / (3.0 * (R0 - R1));
-      dsb = CD * zz * zz;
-    }
-    dPo   = - (2.0 * rhoi * g * h0 / (R0*R0)) * r;
-    numer = dsb * (W[0] + Y0) * (Wr - W[0]);
-    tmp1  = pow(W[0] + Y0,4.0/3.0) * pow(Wr - W[0],2.0/3.0);
+  if (r < 0.0) {
+    f[0] = 0.0;  /* place-holder */
+    return TESTP_R_NEGATIVE;
+  } else if (r > L) {
+    f[0] = 0.0;  /* place-holder */
+    return TESTP_R_EXCEEDS_L;
+  } else {
+    getsb(r,&sb,&dsb);
+    /*printf("r = %.3f (m), sb = %.3f (bar), dsbdr = %.3f (Pa m-1)\n",r,sb/1e5,dsb);*/
+    /*printf("r = %.3f (m), W = %.3f (m), W_c = %.3f (m)\n",r,W[0],criticalW(r));*/
+    /*printf("  r = %.3f (m), W = %.3f (m)\n",r,W[0]);*/
     c0    = K / (rhow * g);
     vphi0 = Phi0 / (2 * c0);
-    numer = numer - ( vphi0 * r / W[0] + dPo) * tmp1;
+    dPo   = - (2.0 * rhoi * g * h0 / (R0*R0)) * r;
+    tmp1  = pow(W[0] + Y0,4.0/3.0) * pow(Wr - W[0],2.0/3.0);
+    numer = dsb * (W[0] + Y0) * (Wr - W[0]);
+    numer = numer - ( vphi0 * r / W[0] + dPo ) * tmp1;
     denom = (1.0/3.0) * (Wr + Y0) * sb + rhow * g * tmp1;
     f[0] = numer / denom;
     return GSL_SUCCESS;
-  } else {
-    f[0] = 0.0;  /* place-holder */
-    return TESTP_R_OUT_OF_RANGE;
   }
 }
 
@@ -96,8 +116,8 @@ double initialconditionW() {
   /* in notes: return value is W_c(L^-) */
   double hL, vbL, PoL, sbL;
   hL  = h0 * (1.0 - (L/R0) * (L/R0));
-  vbL = v0 * pow( (L - R1) / (R0-R1) ,5.0);
   PoL = rhoi * g * hL;
+  vbL = v0 * pow( (L - R1) / (R0-R1) ,5.0);
   sbL = pow( c1 * vbL / (c2 * Aglen) ,1.0/3.0);
   return (pow(sbL,3.0) * Wr - pow(PoL,3.0) * Y0) / (pow(sbL,3.0) + pow(PoL,3.0));
 }
@@ -107,7 +127,7 @@ double initialconditionW() {
    is believed to be predictable and accurate */
 int getW(double *r, int N, double *W,
          const double EPS_ABS, const double EPS_REL, const int ode_method) {
-   /* solves ODE for W(r), the exact soluiton
+   /* solves ODE for W(r), the exact solution
       r and W must be allocated vectors of length N; r[] must be decreasing */
 
    int i, count;
@@ -124,8 +144,8 @@ int getW(double *r, int N, double *W,
    if (N < 1) return TESTP_NO_LIST;
    for (i = 1; i<N; i++) {
      if (r[i] > r[i-1]) return TESTP_NOT_DECREASING;
-     if (r[i] < 0.0)    return TESTP_R_OUT_OF_RANGE;
-     if (r[i] > L)     return TESTP_R_OUT_OF_RANGE;
+     if (r[i] < 0.0)    return TESTP_R_NEGATIVE;
+     if (r[i] > L)      return TESTP_R_EXCEEDS_L;
    }
 
    /* setup for GSL ODE solver; following step choices don't need Jacobian,
@@ -160,6 +180,12 @@ int getW(double *r, int N, double *W,
      while (rr > r[count]) {
        step = r[count] - rr;
        status = gsl_odeiv_evolve_apply(e, c, s, &sys, &rr, r[count], &step, &W[count]);
+       if (W[count] > Wr) {
+         return TESTP_W_EXCEEDS_WR;
+       }
+       if (W[count] < criticalW(r[count])) {
+         return TESTP_W_BELOW_WCRIT;
+       }
        if (status != GSL_SUCCESS)   break;
      }
    }
@@ -171,15 +197,18 @@ int getW(double *r, int N, double *W,
 }
 
 
-int exactP(double r, double *h, double *magvb, double *W,
+int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
-  if (r > L)   return TESTP_R_OUT_OF_RANGE;
-  if (r < 0.0) return TESTP_R_OUT_OF_RANGE;
+  if (r < 0.0) return TESTP_R_NEGATIVE;
+  if (r > L)   return TESTP_R_EXCEEDS_L;
 
   *h = h0 * (1.0 - (r/R0) * (r/R0));
   if (r > R1)
     *magvb = v0 * pow((r - R1)/(R0 - R1),5.0);
+  else
+    *magvb = 0.0;
+  *Wcrit = criticalW(r);
 
   return getW(&r,1,W,EPS_ABS,EPS_REL,ode_method);
 }
