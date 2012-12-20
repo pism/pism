@@ -308,6 +308,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   const PetscScalar minThickEtaTransform = 5.0; // m
   const PetscScalar dx=grid.dx, dy=grid.dy;
 
+  bool cfbc = config.get_flag("calving_front_stress_boundary_condition");
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
   PetscReal standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
@@ -370,11 +371,20 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             {
               double west = 1, east = 1;
               if ((m.grounded(i,j) && m.floating_ice(i+1,j)) || (m.floating_ice(i,j) && m.grounded(i+1,j)) ||
-                  (m.icy(i,j) && m.ice_free(i+1,j)))
+                  (m.floating_ice(i,j) && m.ice_free_ocean(i+1,j)))
                 east = 0;
               if ((m.grounded(i,j) && m.floating_ice(i-1,j)) || (m.floating_ice(i,j) && m.grounded(i-1,j)) ||
-                  (m.icy(i,j) && m.ice_free(i-1,j)))
+                  (m.floating_ice(i,j) && m.ice_free_ocean(i-1,j)))
                 west = 0;
+
+              // This driving stress computation has to match the calving front
+              // stress boundary condition in SSAFD::assemble_rhs().
+	      if (cfbc) {
+		if (m.icy(i,j) && m.ice_free(i+1,j))
+		  east = 0;
+		if (m.icy(i,j) && m.ice_free(i-1,j))
+		  west = 0;
+	      }
 
               if (east + west > 0)
                 h_x = 1.0 / (west + east) * (west * surface->diff_x_stagE(i-1,j) +
@@ -387,11 +397,20 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
             {
               double south = 1, north = 1;
               if ((m.grounded(i,j) && m.floating_ice(i,j+1)) || (m.floating_ice(i,j) && m.grounded(i,j+1)) ||
-                  (m.icy(i,j) && m.ice_free(i,j+1)))
+                  (m.floating_ice(i,j) && m.ice_free_ocean(i,j+1)))
                 north = 0;
               if ((m.grounded(i,j) && m.floating_ice(i,j-1)) || (m.floating_ice(i,j) && m.grounded(i,j-1)) ||
-                  (m.icy(i,j) && m.ice_free(i,j-1)))
+                  (m.floating_ice(i,j) && m.ice_free_ocean(i,j-1)))
                 south = 0;
+
+              // This driving stress computation has to match the calving front
+              // stress boundary condition in SSAFD::assemble_rhs().
+	      if (cfbc) {
+		if (m.icy(i,j) && m.ice_free(i,j+1))
+		  north = 0;
+		if (m.icy(i,j) && m.ice_free(i,j-1))
+		  south = 0;
+	      }
 
               if (north + south > 0)
                 h_y = 1.0 / (south + north) * (south * surface->diff_y_stagN(i,j-1) +

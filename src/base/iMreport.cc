@@ -74,29 +74,28 @@ PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac) 
   PetscErrorCode    ierr;
   PetscScalar       meltarea = 0.0, temp0 = 0.0;
   const PetscScalar a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
-
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  IceModelVec2S &Enthbase = vWork2d[0];
 
   // use Enth3 to get stats
-  ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
-  PetscScalar **Enthbase;
-  ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
+  ierr = Enth3.getHorSlice(Enthbase, 0.0); CHKERRQ(ierr);  // z=0 slice
+
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = Enthbase.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vH(i,j) > 0) {
 	// accumulate area of base which is at melt point
-	if (EC->isTemperate(Enthbase[i][j], EC->getPressureFromDepth(vH(i,j)) )) // FIXME issue #15
+	if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(vH(i,j)) )) // FIXME issue #15
 	  meltarea += a;
       }
       // if you happen to be at center, record absolute basal temp there
       if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-	ierr = EC->getAbsTemp(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)), temp0); // FIXME issue #15
+	ierr = EC->getAbsTemp(Enthbase(i,j),EC->getPressureFromDepth(vH(i,j)), temp0); // FIXME issue #15
 	CHKERRQ(ierr);
       }
     }
   }
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-
+  ierr = Enthbase.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   // communication
@@ -478,21 +477,22 @@ PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
+  IceModelVec2S &Enthbase = vWork2d[0];
 
-  ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
-  PetscScalar **Enthbase;
-  ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
+  ierr = Enth3.getHorSlice(Enthbase, 0.0); CHKERRQ(ierr);  // z=0 slice
 
+  ierr = Enthbase.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ( (vH(i,j) > 0) && (EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) ) // FIXME issue #15
+      if ( (vH(i,j) > 0) && (EC->isTemperate(Enthbase(i,j),EC->getPressureFromDepth(vH(i,j)))) ) // FIXME issue #15
         area += cell_area(i,j);
     }
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = Enthbase.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -502,21 +502,22 @@ PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area_cold(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
+  IceModelVec2S &Enthbase = vWork2d[0];
 
-  ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
-  PetscScalar **Enthbase;
-  ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
+  ierr = Enth3.getHorSlice(Enthbase, 0.0); CHKERRQ(ierr);  // z=0 slice
 
+  ierr = Enthbase.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ( (vH(i,j) > 0) && (!EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) ) // FIXME issue #15
+      if ( (vH(i,j) > 0) && (!EC->isTemperate(Enthbase(i,j),EC->getPressureFromDepth(vH(i,j)))) ) // FIXME issue #15
         area += cell_area(i,j);
     }
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = Enthbase.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
