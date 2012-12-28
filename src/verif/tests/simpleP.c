@@ -21,7 +21,10 @@
 /*  STANDARD DIALOGUE:
 
 $ ./simpleP
-FIXME
+Enter  r  (in km; 0 <= r <= L = 22.5;  e.g. 20.0):   20.0
+Results from Test P:
+    h = 180.0000 (m)  Po = 16.06878 (bar)  |vb| = 23.73047 (m a-1)
+    W_c = 0.58184968 (m)  W = 0.67507258 (m)
 
 */
 
@@ -37,7 +40,7 @@ int main() {
   double EPS_ABS[] = { 1.0e-12, 1.0e-9,  1.0e-7  };
   double EPS_REL[] = { 1.0e-15, 1.0e-14, 1.0e-11 };
 
-  printf("Enter  r  (in km; e.g. 10.0):   ");
+  printf("Enter  r  (in km; 0 <= r <= L = %.1f;  e.g. 20.0):   ",L/1000.0);
   scanret = scanf("%lf",&r);
   if (scanret != 1) {
     printf("... input error; exiting\n");
@@ -58,17 +61,16 @@ int main() {
 
 #define COMMENTARY 0
 #if COMMENTARY
-  printf("(*COMMENTARY*\n Above were produced with RK Dormand-Prince (8,9) method\n"
-         " and default (tight) tolerances EPS_ABS = %.1e, EPS_REL = %.1e.\n",
+  char*  methodnames[4] = { "rk8pd", "rk2", "rkf45", "rkck" };
+  printf("\nAbove were produced with RK Dormand-Prince (8,9) method\n"
+         "and default (tight) tolerances EPS_ABS = %.1e, EPS_REL = %.1e.\n",
          EPS_ABS[0],EPS_REL[0]);
-  printf("Here is a table of values using alternative methods (1=rk8pd,2=rk2,3=rkf45,4=rkck)\n"
-         "and tolerances.\n\n");
+  printf("Here is a table of values using alternative methods and tolerances.\n\n");
   int method,i,j;
   for (method=1; method<5; method++) {
-    printf("method = %d:\n",method);
+    printf("method = %d = %s:\n",method,methodnames[method-1]);
     for (i=0; i<3; i++) {
-      printf("    EPS_ABS = %.1e;  EPS_REL = %.1e,  %.1e,  %.1e\n",
-             EPS_ABS[i],EPS_REL[0],EPS_REL[1],EPS_REL[2]);
+      printf("    EPS_ABS = %.1e\n",EPS_ABS[i]);
       for (j=0; j<3; j++) {
         ierr = exactP(r*1000.0,&h,&magvb,&Wcrit,&W,EPS_ABS[i],EPS_REL[j],method);
         if (ierr) {
@@ -76,11 +78,10 @@ int main() {
           error_message_testP(ierr);
           return 1;
         }
-        printf("        W = %.14f (m)\n",W);
+        printf("        EPS_REL = %.1e:   W = %.14f\n",EPS_REL[j],W);
       }
     }
   }
-  printf(" *END COMMENTARY*)\n");
 #endif
 
   return 0;

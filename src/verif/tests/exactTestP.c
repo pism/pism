@@ -76,12 +76,12 @@ double criticalW(double r) {
 
 
 int funcP(double r, const double W[], double f[], void *params) {
-  /* Computes RHS f(r,W) for differential equation:
+  /* Computes RHS f(r,W) for differential equation as given in dampnotes.pdf
+  at https://github.com/bueler/hydrolakes:
       dW
-      -- = f(r,W) = FIXME
+      -- = f(r,W)
       dr
-  Compare doublediff.m at https://github.com/bueler/hydrolakes
-  Assumes Glen power n=3.
+  Compare doublediff.m.  Assumes Glen power n=3.
   */
 
   double sb, dsb, dPo, tmp1, c0, vphi0, numer, denom;
@@ -109,8 +109,8 @@ int funcP(double r, const double W[], double f[], void *params) {
 }
 
 
+/* Computes initial condition W(r=L) = W_c(L^-). */
 double initialconditionW() {
-  /* in notes: return value is W_c(L^-) */
   double hL, PoL, sbL;
   hL  = h0 * (1.0 - (L/R0) * (L/R0));
   PoL = rhoi * g * hL;
@@ -130,6 +130,9 @@ int getW(double *r, int N, double *W,
    int i, count;
    int status = TESTP_NOT_DONE;
    double rr, hstart;
+   const gsl_odeiv2_step_type* Tpossible[4] =
+           { gsl_odeiv2_step_rk8pd, gsl_odeiv2_step_rk2,
+             gsl_odeiv2_step_rkf45, gsl_odeiv2_step_rkck };
    const gsl_odeiv2_step_type *T;
 
    /* check first: we have a list, r is decreasing, r is in range [0,R0] */
@@ -141,22 +144,11 @@ int getW(double *r, int N, double *W,
    }
 
    /* setup for GSL ODE solver; these choices don't need Jacobian */
-   switch (ode_method) {
-     case 1:
-       T = gsl_odeiv2_step_rk8pd;
-       break;
-     case 2:
-       T = gsl_odeiv2_step_rk2;
-       break;
-     case 3:
-       T = gsl_odeiv2_step_rkf45;
-       break;
-     case 4:
-       T = gsl_odeiv2_step_rkck;
-       break;
-     default:
-       printf("INVALID ode_method in getW(): must be 1,2,3,4\n");
-       return TESTP_INVALID_METHOD;
+   if ((ode_method > 0) && (ode_method < 5))
+     T = Tpossible[ode_method-1];
+   else {
+     printf("INVALID ode_method in getW(): must be 1,2,3,4\n");
+     return TESTP_INVALID_METHOD;
    }
 
    gsl_odeiv2_system  sys = {funcP, NULL, 1, NULL};  /* Jac-free method and no params */
