@@ -130,12 +130,16 @@ int getW(double *r, int N, double *W,
    int i, count;
    int status = TESTP_NOT_DONE;
    double rr, hstart;
-   const gsl_odeiv2_step_type* Tpossible[4] =
-           { gsl_odeiv2_step_rk8pd, gsl_odeiv2_step_rk2,
-             gsl_odeiv2_step_rkf45, gsl_odeiv2_step_rkck };
+   const gsl_odeiv2_step_type* Tpossible[4];
    const gsl_odeiv2_step_type *T;
+   gsl_odeiv2_system sys = {funcP, NULL, 1, NULL};  /* Jac-free method and no params */
+   gsl_odeiv2_driver *d;
 
    /* setup for GSL ODE solver; these choices don't need Jacobian */
+   Tpossible[0] = gsl_odeiv2_step_rk8pd;
+   Tpossible[1] = gsl_odeiv2_step_rk2;
+   Tpossible[2] = gsl_odeiv2_step_rkf45;
+   Tpossible[3] = gsl_odeiv2_step_rkck;
    if ((ode_method > 0) && (ode_method < 5))
      T = Tpossible[ode_method-1];
    else {
@@ -143,9 +147,8 @@ int getW(double *r, int N, double *W,
      return TESTP_INVALID_METHOD;
    }
 
-   gsl_odeiv2_system  sys = {funcP, NULL, 1, NULL};  /* Jac-free method and no params */
    hstart = (L - r[0]) < 1000.0 ? (r[0] - L) : -1000.0;
-   gsl_odeiv2_driver *d = gsl_odeiv2_driver_alloc_y_new(&sys, T, hstart, EPS_ABS, EPS_REL);
+   d = gsl_odeiv2_driver_alloc_y_new(&sys, T, hstart, EPS_ABS, EPS_REL);
 
    /* initial conditions: (r,W) = (L,W_c(L^-));  r decreases from L toward 0 */
    rr = L;
