@@ -23,7 +23,7 @@
 $ ./simpleP
 Enter  r  (in km; 0 <= r <= L = 22.5;  e.g. 20.0):   20.0
 Results from Test P:
-    h = 180.0000 (m)  Po = 16.06878 (bar)  |vb| = 23.73047 (m a-1)
+    h = 180.0000 (m)  Po = 16.06878 (bar)  |vb| = 46.26644 (m a-1)
     W_c = 0.58184968 (m)  W = 0.67507258 (m)
 
 */

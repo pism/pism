@@ -187,7 +187,7 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
 
   *h = h0 * (1.0 - (r/R0) * (r/R0));
   if (r > R1)
-    *magvb = v0 * pow((r - R1)/(R0 - R1),5.0);
+    *magvb = v0 * pow((r - R1)/(L - R1),5.0);
   else
     *magvb = 0.0;
   *Wcrit = criticalW(r);
