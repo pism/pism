@@ -130,6 +130,7 @@ int getW(double *r, int N, double *W,
    int i, count;
    int status = TESTP_NOT_DONE;
    double rr, hstart;
+   const gsl_odeiv2_step_type *T;
 
    /* check first: we have a list, r is decreasing, r is in range [0,R0] */
    if (N < 1) return TESTP_NO_LIST;
@@ -139,15 +140,33 @@ int getW(double *r, int N, double *W,
      if (r[i] < 0.0)     return TESTP_R_NEGATIVE;
    }
 
+   /* setup for GSL ODE solver; these choices don't need Jacobian */
+   switch (ode_method) {
+     case 1:
+       T = gsl_odeiv2_step_rk8pd;
+       break;
+     case 2:
+       T = gsl_odeiv2_step_rk2;
+       break;
+     case 3:
+       T = gsl_odeiv2_step_rkf45;
+       break;
+     case 4:
+       T = gsl_odeiv2_step_rkck;
+       break;
+     default:
+       printf("INVALID ode_method in getW(): must be 1,2,3,4\n");
+       return TESTP_INVALID_METHOD;
+   }
+
    gsl_odeiv2_system  sys = {funcP, NULL, 1, NULL};  /* Jac-free method and no params */
    hstart = (L - r[0]) < 1000.0 ? (r[0] - L) : -1000.0;
-   gsl_odeiv2_driver *d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd,
-                                                        hstart, 1e-12, 0.0);
+   gsl_odeiv2_driver *d = gsl_odeiv2_driver_alloc_y_new(&sys, T, hstart, EPS_ABS, EPS_REL);
 
    /* initial conditions: (r,W) = (R0,W_c(L^-));  r decreases from L toward 0 */
    rr = L;
    for (count = 0; count < N; count++) {
-     /* generally use value at end of last interval as initial guess */
+     /* except at start, use value at end of last interval as initial value for subinterval */
      W[count] = (count == 0) ? initialconditionW() : W[count-1];
      while (rr > r[count]) {
        status = gsl_odeiv2_driver_apply(d, &rr, r[count], &(W[count]));

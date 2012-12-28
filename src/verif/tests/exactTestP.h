@@ -55,8 +55,13 @@ extern "C"
 
 int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* r in meters,  0 <= r <= L */
-   /* returns h (m), magvb (m s-1), W_c (m), W (m) */
+   /* Input r in meters,  0 <= r <= L.
+      ode_method = 1  : rk8pd is Runge-Kutta Prince-Dormand (8,9) [default]
+                   2  : rk2   is Runge-Kutta (2,3)
+                   3  : rkf45 is Runge-Kutta-Felberg (4,5)
+                   4  : rkck  is Runge-Kutta Cash-Karp (4,5)
+      None of these are implicit.  The Jacobian has not been implemented.
+      Returns h (m), magvb (m s-1), W_c (m), W (m). */
 
 
 /* exit status of exactP_list() could be one of the above or one of these or zero for success */
