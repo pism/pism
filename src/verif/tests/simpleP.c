@@ -84,6 +84,25 @@ int main() {
   }
 #endif
 
+#define PLOTTABLE 0
+#if PLOTTABLE
+  printf("\nHere is a plottable table of values r, Wcrit, W:\n");
+  int k;
+  const int N = 200;
+  double rr[N], hh[N], magvbvb[N], WWcrit[N], WW[N];
+  for (k=0; k<N; k++)
+    rr[k] = (double)(N - k - 1) * L / ((double)N);
+  ierr = exactP_list(rr,N,hh,magvbvb,WWcrit,WW,EPS_ABS[0],EPS_REL[0],1);
+  if (ierr) {
+    printf("\n\nsimpleP ENDING because of ERROR from exactP():\n");
+    error_message_testP(ierr);
+    return 1;
+  }
+  printf("      r (km)    Wcrit (m)        W (m)\n\n");
+  for (k=0; k<N; k++)
+    printf("%12.6f %12.9f %12.9f\n",rr[k]/1000.0,WWcrit[k],WW[k]);  
+#endif
+
   return 0;
 }
 

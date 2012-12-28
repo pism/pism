@@ -135,14 +135,6 @@ int getW(double *r, int N, double *W,
              gsl_odeiv2_step_rkf45, gsl_odeiv2_step_rkck };
    const gsl_odeiv2_step_type *T;
 
-   /* check first: we have a list, r is decreasing, r is in range [0,R0] */
-   if (N < 1) return TESTP_NO_LIST;
-   if (r[0] >= L) return TESTP_R_EXCEEDS_L;
-   for (i = 1; i<N; i++) {
-     if (r[i] >= r[i-1]) return TESTP_LIST_NOT_DECREASING;
-     if (r[i] < 0.0)     return TESTP_R_NEGATIVE;
-   }
-
    /* setup for GSL ODE solver; these choices don't need Jacobian */
    if ((ode_method > 0) && (ode_method < 5))
      T = Tpossible[ode_method-1];
@@ -155,21 +147,21 @@ int getW(double *r, int N, double *W,
    hstart = (L - r[0]) < 1000.0 ? (r[0] - L) : -1000.0;
    gsl_odeiv2_driver *d = gsl_odeiv2_driver_alloc_y_new(&sys, T, hstart, EPS_ABS, EPS_REL);
 
-   /* initial conditions: (r,W) = (R0,W_c(L^-));  r decreases from L toward 0 */
+   /* initial conditions: (r,W) = (L,W_c(L^-));  r decreases from L toward 0 */
    rr = L;
    for (count = 0; count < N; count++) {
      /* except at start, use value at end of last interval as initial value for subinterval */
      W[count] = (count == 0) ? initialconditionW() : W[count-1];
      while (rr > r[count]) {
        status = gsl_odeiv2_driver_apply(d, &rr, r[count], &(W[count]));
+       if (status != GSL_SUCCESS) {
+         printf("gsl_odeiv2_driver_apply() returned status = %d\n",status);
+         break;
+       }
        if (W[count] > Wr) {
          return TESTP_W_EXCEEDS_WR;
        } else if (W[count] < criticalW(r[count])) {
          return TESTP_W_BELOW_WCRIT;
-       }
-       if (status != GSL_SUCCESS) {
-         printf("gsl_odeiv2_driver_apply() returned status = %d\n",status);
-         break;
        }
      }
    }
@@ -194,39 +186,36 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
   if (r == L) {
     *W = initialconditionW();
     return 0;
-  } else {
+  } else
     return getW(&r,1,W,EPS_ABS,EPS_REL,ode_method);
-  }
 }
 
 
-#if 0
-int exactP_list(double *r, int N, double *h, double *magvb, double *W, 
+
+int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W, 
                 const double EPS_ABS, const double EPS_REL, const int ode_method) {
-  /* N values r[0] > r[1] > ... > r[N-1]  (decreasing)
-     assumes r, h, magvb, W are allocated length N arrays  */
 
-  double *W;
-  int stat, i;
-
-  W = (double *) malloc((size_t)N * sizeof(double)); /* temporary arrays */
-
-  /* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
-     believed to be predictable and accurate */
-FIXME  stat = getW(r,N,FIXME,1.0e-12,0.0,1);
-  if (stat != GSL_SUCCESS) {
-    return stat;
+  int i;
+  
+  /* check first: we have a list, r is decreasing, r is in range [0,L) */
+  if (N < 1) return TESTP_NO_LIST;
+  if (r[0] >= L) return TESTP_R_EXCEEDS_L;
+  for (i = 1; i<N; i++) {
+    if (r[i] >= r[i-1]) return TESTP_LIST_NOT_DECREASING;
+    if (r[i] < 0.0)     return TESTP_R_NEGATIVE;
   }
 
-  for (i = 0; i < N; i++) {
-    h[i] = FIXME
-    magvb[i] = FIXME
+  for (i = 0; i<N; i++) {
+    h[i] = h0 * (1.0 - (r[i]/R0) * (r[i]/R0));
+    if (r[i] > R1)
+      magvb[i] = v0 * pow((r[i] - R1)/(L - R1),5.0);
+    else
+      magvb[i] = 0.0;
+    Wcrit[i] = criticalW(r[i]);
   }
 
-  free(W);
-  return 0;
+  return getW(r,N,W,EPS_ABS,EPS_REL,ode_method);
 }
-#endif
 
 
 int error_message_testP(int status) {
