@@ -37,7 +37,7 @@ int main() {
   const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
 
   double EPS_ABS[] = { 1.0e-12, 1.0e-9, 1.0e-7 };
-  double EPS_REL[] = { 0.0, 1.0e-14, 1.0e-11 }; 
+  double EPS_REL[] = { 1.0e-15, 1.0e-14, 1.0e-11 };
   
   printf("Enter  r  (in km; e.g. 0.0):   ");
   scanret = scanf("%lf",&r);
@@ -46,7 +46,7 @@ int main() {
     return 1;
   }
 
-  exactL(r*1000.0,&H,&b,&a,EPS_ABS[0],EPS_REL[0],1);
+  exactL(r*1000.0,&H,&b,&a,EPS_ABS[0],EPS_REL[0],4);
 
   printf("Results from Test L:\n");
   printf("     H = %11.5f (m)   b = %10.5f (m)   a = %8.5f (m/a)\n",
@@ -54,49 +54,44 @@ int main() {
 
 #define COMMENTARY 0
 #if COMMENTARY
-  printf("(*COMMENTARY*\n Above were produced with RK Cash-Karp method and default (tight) tolerances\n");
+  printf("\nAbove were produced with RK Cash-Karp (4,5) method and default tolerances\n");
   printf(" EPS_ABS = %e, EPS_REL = %e.\n",EPS_ABS[0],EPS_REL[0]);
   printf(" Here is a table of values of H using alternative methods and tolerances:\n");
   int method,i,j; 
   for (method=1; method<5; method++) {
-    printf("   method = %d  (1=rkck,2=rk2,3=rk4,4=rk8pd):\n",method);  
+    printf("   method = %d  (1=rk8pd,2=rk2,3=rkf45,4=rkck):\n",method);
     for (i=0; i<3; i++) {
       for (j=0; j<3; j++) {
-        if ((method == 2) && (j == 0)) {
-          printf("     EPS_ABS = %e, EPS_REL = %e:    <method hangs for this EPS_REL>\n",
-                 EPS_ABS[i],EPS_REL[j]);
-        } else {
-          exactL(r*1000.0,&H,&b,&a,EPS_ABS[i],EPS_REL[j],method);
-          printf("     EPS_ABS = %e, EPS_REL = %e:    H = %17.11f\n",EPS_ABS[i],EPS_REL[j],H);
-        }
+        exactL(r*1000.0,&H,&b,&a,EPS_ABS[i],EPS_REL[j],method);
+        printf("     EPS_ABS = %e, EPS_REL = %e:    H = %17.11f\n",EPS_ABS[i],EPS_REL[j],H);
       }
     }
   }
-  printf(" *END COMMENTARY*)\n");
 #endif
 
-
-#define GRAPHABLE 0
-#if GRAPHABLE
-/*
-    produce profile and bed graphs from this data.
-    e.g. saving output in file "rHba.sce", editing out above stuff, 
-    running scilab, do "exec('rHba.sce')" in scilab   
-*/
+#define PLOTTABLE 0
+#if PLOTTABLE
 #define N 751
+  printf("\nHere is a plottable table of values r, H, b, a:\n");
+  /* run and plot in Matlab:
+  $ ./simpleL >& foo.txt   # and then enter r
+  $ [EDIT foo.txt TO REMOVE FIRST LINES]
+  $ matlab
+  >> load foo.txt
+  >> plot(foo(:,1),foo(:,3),foo(:,1),foo(:,2)+foo(:,3))
+  >> grid on,  xlabel('r  (km)'),  ylabel('elevation  (m)')
+  */
   int k;
-  double rr[N];
-  double HH[N],bb[N],aa[N];
+  const double L = 750.0e3;
+  double rr[N], HH[N], bb[N], aa[N];
   for (k= 0; k<N; k++) {
-    rr[k] = 750000.0 - 1000.0 * k;
+    rr[k] = L * (N - k - 1) / (N-1);
   }
   exactL_list(rr,N,HH,bb,aa);
-  printf("\n  rHba = [\n");
   for (k = 0; k<N; k++) {
     printf("%10.3f  %11.5f  %10.5f  %8.5f\n",
            rr[k]/1000.0,HH[k],bb[k],aa[k]*secpera);
   }
-  printf("];\n\n plot(rHba(:,1),rHba(:,2)+rHba(:,3),rHba(:,1),rHba(:,3))\n");
 #endif
 
   return 0;

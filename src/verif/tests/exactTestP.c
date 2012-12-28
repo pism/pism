@@ -166,7 +166,7 @@ int getW(double *r, int N, double *W,
      }
    }
 
-   gsl_odeiv2_driver_free (d);
+   gsl_odeiv2_driver_free(d);
    return status;
 }
 
@@ -196,7 +196,6 @@ int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, doubl
                 const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
   int i;
-  
   /* check first: we have a list, r is decreasing, r is in range [0,L) */
   if (N < 1) return TESTP_NO_LIST;
   if (r[0] >= L) return TESTP_R_EXCEEDS_L;

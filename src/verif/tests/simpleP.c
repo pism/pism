@@ -87,13 +87,16 @@ int main() {
 #define PLOTTABLE 0
 #if PLOTTABLE
   printf("\nHere is a plottable table of values r, Wcrit, W:\n");
-  /* plot in Matlab:
-     load foo.txt   % contains only the table
-     figure(1)      % profile
-     plot(foo(:,1),foo(:,2)),  grid on,  xlabel('r  (km)'),  ylabel('h  (m)')
-     figure(2)      % water amount
-     plot(foo(:,1),foo(:,3),'-',foo(:,1),foo(:,4),'--')
-     legend('W_{crit}(r)','W(r)'),  grid on,  xlabel('r  (km)')
+  /* run and plot in Matlab:
+  $ ./simpleP >& foo.txt   # and then enter r
+  $ [EDIT foo.txt TO REMOVE FIRST LINES]
+  $ matlab
+  >> load foo.txt
+  >> figure(1)      % profile
+  >> plot(foo(:,1),foo(:,2)),  grid on,  xlabel('r  (km)'),  ylabel('h  (m)')
+  >> figure(2)      % water amount
+  >> plot(foo(:,1),foo(:,3),'-',foo(:,1),foo(:,4),'--')
+  >> legend('W_{crit}(r)','W(r)'),  grid on,  xlabel('r  (km)')
   */
   int k;
   const int N = 300;
