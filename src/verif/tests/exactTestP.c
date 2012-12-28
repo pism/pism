@@ -24,7 +24,7 @@
 #include <math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_matrix.h>
-#include <gsl/gsl_odeiv.h>
+#include <gsl/gsl_odeiv2.h>
 #include "exactTestP.h"
 
 #define SperA    31556926.0    /* seconds per year; 365.2422 days */
@@ -44,7 +44,7 @@
 #define Y0       0.001         /* m */
 
 /* specific to exact solution */
-#define Phi0     (0.020 / SperA) /* m s-1 */
+#define Phi0     (0.20 / SperA) /* m s-1 */
 #define h0       500.0         /* m */
 #define v0       (100.0 / SperA) /* m s-1 */
 #define R1       5000.0        /* m */
@@ -56,7 +56,7 @@ int getsb(double r, double *sb, double *dsbdr) {
     *sb    = 0.0;
     *dsbdr = 0.0;
   } else {
-    CC     = pow( (c1 * v0) / (c2 * Aglen * pow((R0 - R1),5.0)) , (1.0/3.0) );
+    CC     = pow( (c1 * v0) / (c2 * Aglen * pow((L - R1),5.0)) , (1.0/3.0) );
     *sb    = CC * pow(r - R1, (5.0/3.0));
     *dsbdr = (5.0/3.0) * CC * pow(r - R1, (2.0/3.0));
   }
@@ -96,9 +96,6 @@ int funcP(double r, const double W[], double f[], void *params) {
     return TESTP_R_EXCEEDS_L;
   } else {
     getsb(r,&sb,&dsb);
-    /*printf("r = %.3f (m), sb = %.3f (bar), dsbdr = %.3f (Pa m-1)\n",r,sb/1e5,dsb);*/
-    /*printf("r = %.3f (m), W = %.3f (m), W_c = %.3f (m)\n",r,W[0],criticalW(r));*/
-    /*printf("  r = %.3f (m), W = %.3f (m)\n",r,W[0]);*/
     c0    = K / (rhow * g);
     vphi0 = Phi0 / (2 * c0);
     dPo   = - (2.0 * rhoi * g * h0 / (R0*R0)) * r;
@@ -114,63 +111,38 @@ int funcP(double r, const double W[], double f[], void *params) {
 
 double initialconditionW() {
   /* in notes: return value is W_c(L^-) */
-  double hL, vbL, PoL, sbL;
+  double hL, PoL, sbL;
   hL  = h0 * (1.0 - (L/R0) * (L/R0));
   PoL = rhoi * g * hL;
-  vbL = v0 * pow( (L - R1) / (R0-R1) ,5.0);
-  sbL = pow( c1 * vbL / (c2 * Aglen) ,1.0/3.0);
+  sbL = pow( c1 * v0 / (c2 * Aglen), 1.0/3.0);
   return (pow(sbL,3.0) * Wr - pow(PoL,3.0) * Y0) / (pow(sbL,3.0) + pow(PoL,3.0));
 }
 
 
-/* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
-   is believed to be predictable and accurate */
+/* Solves ODE for W(r), the exact solution.  Input r[] and output W[] must be
+allocated vectors of length N.  Input r[] must be decreasing.  The combination
+EPS_ABS = 1e-12, EPS_REL=0.0, method = RK Dormand-Prince O(8)/O(9)
+is believed for now to be predictable and accurate.  Note hstart is negative
+so that the ODE solver does negative steps.  Assumes
+   0 <= r[N-1] < r[N-2] < ... < r[1] < r[0] < L.                            */
 int getW(double *r, int N, double *W,
          const double EPS_ABS, const double EPS_REL, const int ode_method) {
-   /* solves ODE for W(r), the exact solution
-      r and W must be allocated vectors of length N; r[] must be decreasing */
-
    int i, count;
-   const gsl_odeiv_step_type* T;
    int status = TESTP_NOT_DONE;
-   double rr, step;
-
-   gsl_odeiv_step*    s;
-   gsl_odeiv_control* c;
-   gsl_odeiv_evolve*  e;
-   gsl_odeiv_system   sys = {funcP, NULL, 1, NULL};  /* Jac-free method and no params */
+   double rr, hstart;
 
    /* check first: we have a list, r is decreasing, r is in range [0,R0] */
    if (N < 1) return TESTP_NO_LIST;
+   if (r[0] >= L) return TESTP_R_EXCEEDS_L;
    for (i = 1; i<N; i++) {
-     if (r[i] > r[i-1]) return TESTP_NOT_DECREASING;
-     if (r[i] < 0.0)    return TESTP_R_NEGATIVE;
-     if (r[i] > L)      return TESTP_R_EXCEEDS_L;
+     if (r[i] >= r[i-1]) return TESTP_LIST_NOT_DECREASING;
+     if (r[i] < 0.0)     return TESTP_R_NEGATIVE;
    }
 
-   /* setup for GSL ODE solver; following step choices don't need Jacobian,
-      but should we chose one that does?  */
-   switch (ode_method) {
-     case 1:
-       T = gsl_odeiv_step_rkck;
-       break;
-     case 2:
-       T = gsl_odeiv_step_rk2;
-       break;
-     case 3:
-       T = gsl_odeiv_step_rk4;
-       break;
-     case 4:
-       T = gsl_odeiv_step_rk8pd;
-       break;
-     default:
-       printf("INVALID ode_method in getW() for Test P: must be 1,2,3,4\n");
-       return TESTP_INVALID_METHOD;
-   }
-
-   s = gsl_odeiv_step_alloc(T, (size_t)1);     /* one scalar ode */
-   c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
-   e = gsl_odeiv_evolve_alloc((size_t)1);    /* one scalar ode */
+   gsl_odeiv2_system  sys = {funcP, NULL, 1, NULL};  /* Jac-free method and no params */
+   hstart = (L - r[0]) < 1000.0 ? (r[0] - L) : -1000.0;
+   gsl_odeiv2_driver *d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd,
+                                                        hstart, 1e-12, 0.0);
 
    /* initial conditions: (r,W) = (R0,W_c(L^-));  r decreases from L toward 0 */
    rr = L;
@@ -178,21 +150,20 @@ int getW(double *r, int N, double *W,
      /* generally use value at end of last interval as initial guess */
      W[count] = (count == 0) ? initialconditionW() : W[count-1];
      while (rr > r[count]) {
-       step = r[count] - rr;
-       status = gsl_odeiv_evolve_apply(e, c, s, &sys, &rr, r[count], &step, &W[count]);
+       status = gsl_odeiv2_driver_apply(d, &rr, r[count], &(W[count]));
        if (W[count] > Wr) {
          return TESTP_W_EXCEEDS_WR;
-       }
-       if (W[count] < criticalW(r[count])) {
+       } else if (W[count] < criticalW(r[count])) {
          return TESTP_W_BELOW_WCRIT;
        }
-       if (status != GSL_SUCCESS)   break;
+       if (status != GSL_SUCCESS) {
+         printf("gsl_odeiv2_driver_apply() returned status = %d\n",status);
+         break;
+       }
      }
    }
 
-   gsl_odeiv_evolve_free(e);
-   gsl_odeiv_control_free(c);
-   gsl_odeiv_step_free(s);
+   gsl_odeiv2_driver_free (d);
    return status;
 }
 
@@ -240,4 +211,37 @@ FIXME  stat = getW(r,N,FIXME,1.0e-12,0.0,1);
   return 0;
 }
 #endif
+
+
+int error_message_testP(int status) {
+  switch (status) {
+    case TESTP_R_EXCEEDS_L:
+      printf("error in Test P: r exceeds L\n");
+      break;
+    case TESTP_R_NEGATIVE:
+      printf("error in Test P: r < 0\n");
+      break;
+    case TESTP_W_EXCEEDS_WR:
+      printf("error in Test P: W > W_r\n");
+      break;
+    case TESTP_W_BELOW_WCRIT:
+      printf("error in Test P: W < W_crit\n");
+      break;
+    case TESTP_INVALID_METHOD:
+      printf("error in Test P: invalid choice for ODE method\n");
+      break;
+    case TESTP_NOT_DONE:
+      printf("error in Test P: ODE integrator not done\n");
+      break;
+    case TESTP_NO_LIST:
+      printf("error in Test P: no list of r values at input to exactP_list()\n");
+      break;
+    case TESTP_LIST_NOT_DECREASING:
+      printf("error in Test P: input list of r values to exactP_list() is not decreasing\n");
+      break;
+    default:
+      if (status > 0) printf("unknown error status in Test P\n");
+  }
+  return 0;
+}
 

@@ -41,29 +41,34 @@ extern "C"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-/* exit status could be one of these; return of zero indicates success */
-#define TESTP_R_EXCEEDS_L    78462
-#define TESTP_R_NEGATIVE     78463
-#define TESTP_W_EXCEEDS_WR   78464
-#define TESTP_W_BELOW_WCRIT  78465
-#define TESTP_NOT_DONE       78466
-#define TESTP_NOT_DECREASING 78467
-#define TESTP_INVALID_METHOD 78468
-#define TESTP_NO_LIST        78469
-
 /* determines range on which W(r) is valid in Test P */
 #define R0       25000.0       /* m */
 #define L        0.9 * R0      /* m */
+
+/* exit status of exactP() could be one of these; return of zero indicates success */
+#define TESTP_R_EXCEEDS_L         78462
+#define TESTP_R_NEGATIVE          78463
+#define TESTP_W_EXCEEDS_WR        78464
+#define TESTP_W_BELOW_WCRIT       78465
+#define TESTP_INVALID_METHOD      78466
+#define TESTP_NOT_DONE            78467
 
 int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
    /* r in meters,  0 <= r <= L */
    /* returns h (m), magvb (m s-1), W_c (m), W (m) */
 
+
+/* exit status of exactP_list() could be one of the above or one of these or zero for success */
+#define TESTP_NO_LIST             78482
+#define TESTP_LIST_NOT_DECREASING 78483
+
 int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
    /* 1. assumes N values L >= r[0] > r[1] > ... > r[N-1] >= 0  (_decreasing_)
       2. assumes r, h, magvb, Wcrit, W are _allocated_ length N arrays  */
+
+int error_message_testP(int status);
 
 #ifdef __cplusplus
 }

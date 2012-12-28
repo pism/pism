@@ -50,5 +50,5 @@ simpleP : simpleP.o exactTestP.o
 .PHONY: clean
 clean:
 	@rm -f *.o simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK \
-	           simpleL simpleM simpleN simpleO simple P
+	           simpleL simpleM simpleN simpleO simpleP
 
