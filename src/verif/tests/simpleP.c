@@ -87,8 +87,16 @@ int main() {
 #define PLOTTABLE 0
 #if PLOTTABLE
   printf("\nHere is a plottable table of values r, Wcrit, W:\n");
+  /* plot in Matlab:
+     load foo.txt   % contains only the table
+     figure(1)      % profile
+     plot(foo(:,1),foo(:,2)),  grid on,  xlabel('r  (km)'),  ylabel('h  (m)')
+     figure(2)      % water amount
+     plot(foo(:,1),foo(:,3),'-',foo(:,1),foo(:,4),'--')
+     legend('W_{crit}(r)','W(r)'),  grid on,  xlabel('r  (km)')
+  */
   int k;
-  const int N = 200;
+  const int N = 300;
   double rr[N], hh[N], magvbvb[N], WWcrit[N], WW[N];
   for (k=0; k<N; k++)
     rr[k] = (double)(N - k - 1) * L / ((double)N);
@@ -98,9 +106,9 @@ int main() {
     error_message_testP(ierr);
     return 1;
   }
-  printf("      r (km)    Wcrit (m)        W (m)\n\n");
+  printf("      r (km)           h (m)     Wcrit (m)         W (m)\n\n");
   for (k=0; k<N; k++)
-    printf("%12.6f %12.9f %12.9f\n",rr[k]/1000.0,WWcrit[k],WW[k]);  
+    printf("%12.6f %15.9f %13.9f %13.9f\n",rr[k]/1000.0,hh[k],WWcrit[k],WW[k]);
 #endif
 
   return 0;
