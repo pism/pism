@@ -191,13 +191,18 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
   else
     *magvb = 0.0;
   *Wcrit = criticalW(r);
-
-  return getW(&r,1,W,EPS_ABS,EPS_REL,ode_method);
+  if (r == L) {
+    *W = initialconditionW();
+    return 0;
+  } else {
+    return getW(&r,1,W,EPS_ABS,EPS_REL,ode_method);
+  }
 }
+
 
 #if 0
 int exactP_list(double *r, int N, double *h, double *magvb, double *W, 
-           const double EPS_ABS, const double EPS_REL, const int ode_method);
+                const double EPS_ABS, const double EPS_REL, const int ode_method) {
   /* N values r[0] > r[1] > ... > r[N-1]  (decreasing)
      assumes r, h, magvb, W are allocated length N arrays  */
 

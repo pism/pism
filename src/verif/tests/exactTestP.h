@@ -69,7 +69,7 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
 #define TESTP_LIST_NOT_DECREASING 78483
 
 int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W,
-           const double EPS_ABS, const double EPS_REL, const int ode_method);
+                const double EPS_ABS, const double EPS_REL, const int ode_method);
    /* 1. assumes N values L >= r[0] > r[1] > ... > r[N-1] >= 0  (_decreasing_)
       2. assumes r, h, magvb, Wcrit, W are _allocated_ length N arrays  */
 
