@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-FIXME
+# FIXME:  for now you need   $ ln -s ../../util/PISMNC.py
+
 
 #PLAN:  From this script generate list of r values for PISM map-plane grid of
 #  given dims Mx x My.  Save this as ascii foo.txt.  Write short C program to make new
@@ -13,61 +14,53 @@ FIXME
 #    nccmp.py -v bwat,bwp end.nc start.nc difftestP.nc
 #  and collect norms etc. for difftestP.nc.
 
+from numpy import *
 from sys import exit, argv, stderr
 from os import system
-from numpy import squeeze, abs, diff
+from PISMNC import PISMDataset
 
-try:
-    from netCDF3 import Dataset as NC
-except:
-    from netCDF4 import Dataset as NC
+if len(argv)<2:
+  pism_path="."
+else:
+  pism_path=argv[1]
+if len(argv)<3:
+  mpiexec=""   # or: mpiexec = "mpiexec -n 1"
+else:
+  mpiexec=argv[2]
 
-pism_path=argv[1]
-mpiexec=argv[2]
+#stderr.write("Testing: temperature continuity at ice-bed interface (polythermal case).\n")
+#cmd = "%s %s/pismv -test F -y 10 -verbose 1 -o bar-temp-continuity.nc" % (mpiexec, pism_path)
+#stderr.write(cmd + '\n')
+#e = system(cmd)
+#if e != 0:
+#  exit(1)
 
-stderr.write("Testing: temperature continuity at ice-bed interface (polythermal case).\n")
+Lx = 25.0e3  # outside L = 22.5 km
+Mx = 51      # 1 km grid
 
-cmd = "%s %s/pismv -test F -y 10 -verbose 1 -o bar-temp-continuity.nc" % (mpiexec, pism_path)
-stderr.write(cmd + '\n')
+x = linspace(-Lx, Lx, Mx)
+xx, yy = meshgrid(x, x)
 
-e = system(cmd)
-if e != 0:
-  exit(1)
+nc = PISMDataset("foo.nc", 'w')
+nc.create_dimensions(x, x, time_dependent = True, use_time_bounds = True)
 
-deltas = []
-dts = [200, 100]
-for dt in dts:
-    cmd = "%s %s/pisms -eisII B -y 5000 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -no_cold -regrid_file bar-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo-temp-continuity.nc -o_size big" % (mpiexec, pism_path, dt)
-    stderr.write(cmd + '\n')
+nc.define_2d_field("bwat", time_dependent = False,
+                   attrs = {"long_name"   : "thickness of basal water layer",
+                            "comment"     : "for now a test variable",
+                            "valid_range" : (0.0, 1.0e6)})
 
-    e = system(cmd)
-    if e != 0:
-        exit(1)
+nc.write("bwat", (xx + Lx) / (2.0*Lx), time_dependent = False)  # silly test
 
-    e = system("ncks -O -v temp -d z,0 foo-temp-continuity.nc temp-temp-continuity.nc")
-    if e != 0:
-        exit(1)
+nc.close()
 
-    e = system("ncks -O -v litho_temp -d zb,10 foo-temp-continuity.nc litho_temp-temp-continuity.nc")
-    if e != 0:
-        exit(1)
+#plan: get list rr which is sorted version of sqrt(xx*xx + yy*yy)
+#      write this list as ascii file rvalues.txt
+#      call ../../src/verif/tests/convertP to convert this to testPresults.txt
+#      put this back onto cartesian grid and save a new .nc file which PISM can run
+#      do "pismr -hydrology distributed" run
+#      compare input and output .nc from this run using nccmp.py because values should be steady
 
-    nc1 = NC("temp-temp-continuity.nc")
-    nc2 = NC("litho_temp-temp-continuity.nc")
+#system("rm foo-temp-continuity.nc foo-temp-continuity.nc~ bar-temp-continuity.nc temp-temp-continuity.nc litho_temp-temp-continuity.nc")
 
-    temp = squeeze(nc1.variables['temp'][:])
-    litho_temp = squeeze(nc2.variables['litho_temp'][:])
-
-    deltas.append(abs(temp - litho_temp).max())
-
-# these deltas are observed to decrease O(dt^1) approximately, which is expected from theory
-for (dt, delta) in zip(dts, deltas):
-    stderr.write("dt = %f, delta = %f\n" % (dt, delta))
-
-# the only test is whether they decrease; no rate measured
-if any(diff(deltas) > 0):
-    exit(1)
-
-system("rm foo-temp-continuity.nc foo-temp-continuity.nc~ bar-temp-continuity.nc temp-temp-continuity.nc litho_temp-temp-continuity.nc")
 exit(0)
 
