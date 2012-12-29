@@ -42,8 +42,8 @@ extern "C"
 */
 
 /* determines range on which W(r) is valid in Test P */
-#define R0       25000.0       /* m */
-#define L        0.9 * R0      /* m */
+#define TESTP_R0       25000.0         /* m */
+#define TESTP_L        0.9 * TESTP_R0  /* m */
 
 /* exit status of exactP() could be one of these; return of zero indicates success */
 #define TESTP_R_EXCEEDS_L         78462
@@ -55,7 +55,7 @@ extern "C"
 
 int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* Input r in meters,  0 <= r <= L.
+   /* Input r in meters,  0 <= r <= TESTP_L.
       ode_method = 1  : rk8pd is Runge-Kutta Prince-Dormand (8,9) [default]
                    2  : rk2   is Runge-Kutta (2,3)
                    3  : rkf45 is Runge-Kutta-Felberg (4,5)

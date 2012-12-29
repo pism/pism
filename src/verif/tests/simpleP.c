@@ -21,7 +21,7 @@
 /*  STANDARD DIALOGUE:
 
 $ ./simpleP
-Enter  r  (in km; 0 <= r <= L = 22.5;  e.g. 20.0):   20.0
+Enter  r  (in km; 0 <= r <= TESTP_L = 22.5):   20.0
 Results from Test P:
     h = 180.0000 (m)  Po = 16.06878 (bar)  |vb| = 46.26644 (m a-1)
     W_c = 0.58184968 (m)  W = 0.67507258 (m)
@@ -40,7 +40,7 @@ int main() {
   double EPS_ABS[] = { 1.0e-12, 1.0e-9,  1.0e-7  };
   double EPS_REL[] = { 1.0e-15, 1.0e-14, 1.0e-11 };
 
-  printf("Enter  r  (in km; 0 <= r <= L = %.1f;  e.g. 20.0):   ",L/1000.0);
+  printf("Enter  r  (in km; 0 <= r <= TESTP_L = %.1f):   ",TESTP_L/1000.0);
   scanret = scanf("%lf",&r);
   if (scanret != 1) {
     printf("... input error; exiting\n");
@@ -102,7 +102,7 @@ int main() {
   const int N = 300;
   double rr[N], hh[N], magvbvb[N], WWcrit[N], WW[N];
   for (k=0; k<N; k++)
-    rr[k] = (double)(N - k - 1) * L / ((double)N);
+    rr[k] = (double)(N - k - 1) * TESTP_L / ((double)N);
   ierr = exactP_list(rr,N,hh,magvbvb,WWcrit,WW,EPS_ABS[0],EPS_REL[0],1);
   if (ierr) {
     printf("\n\nsimpleP ENDING because of ERROR from exactP():\n");

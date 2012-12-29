@@ -56,7 +56,7 @@ int getsb(double r, double *sb, double *dsbdr) {
     *sb    = 0.0;
     *dsbdr = 0.0;
   } else {
-    CC     = pow( (c1 * v0) / (c2 * Aglen * pow((L - R1),5.0)) , (1.0/3.0) );
+    CC     = pow( (c1 * v0) / (c2 * Aglen * pow((TESTP_L - R1),5.0)) , (1.0/3.0) );
     *sb    = CC * pow(r - R1, (5.0/3.0));
     *dsbdr = (5.0/3.0) * CC * pow(r - R1, (2.0/3.0));
   }
@@ -65,7 +65,7 @@ int getsb(double r, double *sb, double *dsbdr) {
 
 
 double criticalW(double r) {
-  double h = h0 * (1.0 - (r/R0) * (r/R0)),
+  double h = h0 * (1.0 - (r/TESTP_R0) * (r/TESTP_R0)),
          Po = rhoi * g * h,
          sb, dsb, sbcube, Pocube;
   getsb(r,&sb,&dsb);
@@ -91,14 +91,14 @@ int funcP(double r, const double W[], double f[], void *params) {
   if (r < 0.0) {
     f[0] = 0.0;  /* place-holder */
     return TESTP_R_NEGATIVE;
-  } else if (r > L) {
+  } else if (r > TESTP_L) {
     f[0] = 0.0;  /* place-holder */
     return TESTP_R_EXCEEDS_L;
   } else {
     getsb(r,&sb,&dsb);
     c0    = K / (rhow * g);
     vphi0 = Phi0 / (2 * c0);
-    dPo   = - (2.0 * rhoi * g * h0 / (R0*R0)) * r;
+    dPo   = - (2.0 * rhoi * g * h0 / (TESTP_R0*TESTP_R0)) * r;
     tmp1  = pow(W[0] + Y0,4.0/3.0) * pow(Wr - W[0],2.0/3.0);
     numer = dsb * (W[0] + Y0) * (Wr - W[0]);
     numer = numer - ( vphi0 * r / W[0] + dPo ) * tmp1;
@@ -112,7 +112,7 @@ int funcP(double r, const double W[], double f[], void *params) {
 /* Computes initial condition W(r=L) = W_c(L^-). */
 double initialconditionW() {
   double hL, PoL, sbL;
-  hL  = h0 * (1.0 - (L/R0) * (L/R0));
+  hL  = h0 * (1.0 - (TESTP_L/TESTP_R0) * (TESTP_L/TESTP_R0));
   PoL = rhoi * g * hL;
   sbL = pow( c1 * v0 / (c2 * Aglen), 1.0/3.0);
   return (pow(sbL,3.0) * Wr - pow(PoL,3.0) * Y0) / (pow(sbL,3.0) + pow(PoL,3.0));
@@ -147,11 +147,11 @@ int getW(double *r, int N, double *W,
      return TESTP_INVALID_METHOD;
    }
 
-   hstart = (L - r[0]) < 1000.0 ? (r[0] - L) : -1000.0;
+   hstart = (TESTP_L - r[0]) < 1000.0 ? (r[0] - TESTP_L) : -1000.0;
    d = gsl_odeiv2_driver_alloc_y_new(&sys, T, hstart, EPS_ABS, EPS_REL);
 
    /* initial conditions: (r,W) = (L,W_c(L^-));  r decreases from L toward 0 */
-   rr = L;
+   rr = TESTP_L;
    for (count = 0; count < N; count++) {
      /* except at start, use value at end of last interval as initial value for subinterval */
      W[count] = (count == 0) ? initialconditionW() : W[count-1];
@@ -178,15 +178,15 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
   if (r < 0.0) return TESTP_R_NEGATIVE;
-  if (r > L)   return TESTP_R_EXCEEDS_L;
+  if (r > TESTP_L)   return TESTP_R_EXCEEDS_L;
 
-  *h = h0 * (1.0 - (r/R0) * (r/R0));
+  *h = h0 * (1.0 - (r/TESTP_R0) * (r/TESTP_R0));
   if (r > R1)
-    *magvb = v0 * pow((r - R1)/(L - R1),5.0);
+    *magvb = v0 * pow((r - R1)/(TESTP_L - R1),5.0);
   else
     *magvb = 0.0;
   *Wcrit = criticalW(r);
-  if (r == L) {
+  if (r == TESTP_L) {
     *W = initialconditionW();
     return 0;
   } else
@@ -201,16 +201,16 @@ int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, doubl
   int i;
   /* check first: we have a list, r is decreasing, r is in range [0,L) */
   if (N < 1) return TESTP_NO_LIST;
-  if (r[0] >= L) return TESTP_R_EXCEEDS_L;
+  if (r[0] >= TESTP_L) return TESTP_R_EXCEEDS_L;
   for (i = 1; i<N; i++) {
     if (r[i] >= r[i-1]) return TESTP_LIST_NOT_DECREASING;
     if (r[i] < 0.0)     return TESTP_R_NEGATIVE;
   }
 
   for (i = 0; i<N; i++) {
-    h[i] = h0 * (1.0 - (r[i]/R0) * (r[i]/R0));
+    h[i] = h0 * (1.0 - (r[i]/TESTP_R0) * (r[i]/TESTP_R0));
     if (r[i] > R1)
-      magvb[i] = v0 * pow((r[i] - R1)/(L - R1),5.0);
+      magvb[i] = v0 * pow((r[i] - R1)/(TESTP_L - R1),5.0);
     else
       magvb[i] = 0.0;
     Wcrit[i] = criticalW(r[i]);
@@ -223,7 +223,7 @@ int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, doubl
 int error_message_testP(int status) {
   switch (status) {
     case TESTP_R_EXCEEDS_L:
-      printf("error in Test P: r exceeds L\n");
+      printf("error in Test P: r exceeds L = TESTP_L\n");
       break;
     case TESTP_R_NEGATIVE:
       printf("error in Test P: r < 0\n");
