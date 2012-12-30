@@ -65,9 +65,6 @@ int main ( int argc, char *argv[] ) {
     if (rr[k] < 0.0) {
       printf("ERROR rr[%d] = %.e is negative; exiting\n",k,rr[k]);  return 1;
     }
-    if (rr[k] >= TESTP_L) {
-      printf("ERROR rr[%d] = %.e exceeds TESTP_L; exiting\n",k,rr[k]);  return 1;
-    }
     if ((k>0) && (rr[k] > rr[k-1])) {
       printf("ERROR rr[] not decreasing at k=%d; exiting\n",k);  return 1;
     }
