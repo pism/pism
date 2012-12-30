@@ -89,26 +89,35 @@ PetscErrorCode PISMLakesHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
     "* Initializing the subglacial-lakes-type subglacial hydrology model...\n"); CHKERRQ(ierr);
-  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
-
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  bool i_set, bootstrap;
+  bool i, bootstrap;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'lakes' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-i", "PISM input file", i); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  // does not produce confusing messages in derived classes:
+  ierr = init_actions(vars,i,bootstrap); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode PISMLakesHydrology::init_actions(PISMVars &vars, bool i_set, bool bootstrap_set) {
+  PetscErrorCode ierr;
+
+  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
+
   IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
   if (W_input != NULL) { // a variable called "bwat" is already in context
     ierr = W.copy_from(*W_input); CHKERRQ(ierr);
-  } else if (i_set || bootstrap) {
+  } else if (i_set || bootstrap_set) {
     string filename;
     int start;
-    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+    ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
     if (i_set) {
       ierr = W.read(filename, start); CHKERRQ(ierr);
     } else {
@@ -403,7 +412,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   } // end of hydrology model time-stepping loop
 
   ierr = verbPrintf(2, grid.com,
-    " 'lakes' distributed hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
+    " 'lakes' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
     "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
     hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
   return 0;
@@ -461,29 +470,30 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
     "* Initializing the vanPelt-Bueler distributed (linked-cavities) subglacial hydrology model...\n");
     CHKERRQ(ierr);
 
-  ierr = PISMLakesHydrology::init(vars); CHKERRQ(ierr); // handles initialization of bwat = W
-
-  // initialize water pressure P from the context if present,
-  //   otherwise from -i or -boot_file, otherwise with constant value
-  bool i_set, bootstrap, init_P_from_steady;
+  // initialize water layer thickness and wate pressure from the context if present,
+  //   otherwise from -i or -boot_file, otherwise with constant values
+  bool i_set, bootstrap_set,  init_P_from_steady;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
-                            bootstrap); CHKERRQ(ierr);
+                            bootstrap_set); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-init_P_from_steady",
                             "initialize P from formula P(W) which applies in steady state",
                             init_P_from_steady); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  ierr = PISMLakesHydrology::init_actions(vars,i_set,bootstrap_set); CHKERRQ(ierr);
+
   IceModelVec2S *P_input = dynamic_cast<IceModelVec2S*>(vars.get("bwp"));
   if (P_input != NULL) { // a variable called "bwp" is already in context
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
-  } else if (i_set || bootstrap) {
+  } else if (i_set || bootstrap_set) {
     string filename;
     int start;
-    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+    ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
     if (i_set) {
       ierr = P.read(filename, start); CHKERRQ(ierr);
     } else {
@@ -726,8 +736,12 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             Wr = config.get("hydrology_roughness_scale"),
             Y0 = config.get("hydrology_lower_bound_creep_regularization"),
             E0 = config.get("hydrology_diffusive_closure_regularization");
+  PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0,
+            delta_icefree, delta_ocean, delta_neggain;
+  PetscInt hydrocount = 0; // count hydrology time steps
 
   while (ht < t + dt) {
+    hydrocount++;
     ierr = check_bounds(); CHKERRQ(ierr);
 
     ierr = hydraulic_potential(psi); CHKERRQ(ierr);
@@ -827,6 +841,11 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = input.end_access(); CHKERRQ(ierr);
     ierr = Wnew.end_access(); CHKERRQ(ierr);
 
+    ierr = boundary_mass_changes(Wnew,delta_icefree,delta_ocean,delta_neggain); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
+
     // transfer Wnew into W
     ierr = Wnew.beginGhostComm(W); CHKERRQ(ierr);
     ierr = Wnew.endGhostComm(W); CHKERRQ(ierr);
@@ -834,6 +853,10 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
+  ierr = verbPrintf(2, grid.com,
+    " 'distribued' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
+    "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
+    hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
   return 0;
 }
 

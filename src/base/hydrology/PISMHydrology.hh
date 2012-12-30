@@ -234,6 +234,7 @@ protected:
   IceModelVec2S input, Wnew, Pwork;
 
   virtual PetscErrorCode allocate();
+  virtual PetscErrorCode init_actions(PISMVars &vars, bool i_set, bool bootstrap_set);
 
   virtual PetscErrorCode check_Wpositive();
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
