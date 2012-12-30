@@ -119,6 +119,16 @@ double initialconditionW() {
 }
 
 
+double psteady(double W, double magvb, double Po) {
+  double sbcube, frac, P;
+  sbcube = c1 * fabs(magvb) / (c2 * Aglen);
+  frac = (W < Wr) ? (Wr - W) / (W + Y0) : 0.0;
+  P = Po - pow(sbcube * frac, 1.0/3.0);
+  if (P < 0.0)  P = 0.0;
+  return P;
+}
+
+
 /* Solves ODE for W(r), the exact solution.  Input r[] and output W[] must be
 allocated vectors of length N.  Input r[] must be decreasing.  The combination
 EPS_ABS = 1e-12, EPS_REL=0.0, method = RK Dormand-Prince O(8)/O(9)
@@ -174,15 +184,17 @@ int getW(double *r, int N, double *W,
 }
 
 
-int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
+int exactP(double r, double *h, double *magvb, double *Wcrit, double *W, double *P,
            const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
+  int status;
   if (r < 0.0) return TESTP_R_NEGATIVE;
   if (r > TESTP_L) {
     *h     = 0.0;
     *magvb = 0.0;
     *Wcrit = 0.0;
     *W     = 0.0;
+    *P     = 0.0;
     return 0;
   }
 
@@ -192,19 +204,29 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
   else
     *magvb = 0.0;
   *Wcrit = criticalW(r);
+
   if (r == TESTP_L) {
     *W = initialconditionW();
+    *P = psteady(*W, *magvb, rhoi * g * (*h));
     return 0;
-  } else
-    return getW(&r,1,W,EPS_ABS,EPS_REL,ode_method);
+  } else {
+    status = getW(&r,1,W,EPS_ABS,EPS_REL,ode_method);
+    if (status) {
+      *P = 0;
+      return status;
+    } else {
+      *P = psteady(*W, *magvb, rhoi * g * (*h));
+      return 0;
+    }
+  }
 }
 
 
 
-int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W, 
+int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W, double *P,
                 const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
-  int i, M;
+  int i, M, status;
   /* check first: we have a list, r is decreasing, r is in range [0,L) */
   if (N < 1) return TESTP_NO_LIST;
   for (i = 0; i<N; i++) {
@@ -218,6 +240,7 @@ int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, doubl
       magvb[M] = 0.0;
       Wcrit[M] = 0.0;
       W[M]     = 0.0;
+      P[M]     = 0.0;
       M++;
   }
 
@@ -230,7 +253,18 @@ int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, doubl
     Wcrit[i] = criticalW(r[i]);
   }
 
-  return getW(&(r[M]),N-M,&(W[M]),EPS_ABS,EPS_REL,ode_method);
+  status = getW(&(r[M]),N-M,&(W[M]),EPS_ABS,EPS_REL,ode_method);
+
+  if (status) {
+    for (i = M; i<N; i++)
+      P[i] = 0.0;
+    return status;
+  } else {
+    for (i = M; i<N; i++)
+      P[i] = psteady(W[i], magvb[i], rhoi * g * h[i]);
+    return 0;
+  }
+
 }
 
 

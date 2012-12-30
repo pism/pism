@@ -23,8 +23,8 @@
 $ ./simpleP
 Enter  r  (in km; 0 <= r <= TESTP_L = 22.5):   20.0
 Results from Test P:
-    h = 180.0000 (m)  Po = 16.06878 (bar)  |vb| = 46.26644 (m a-1)
-    W_c = 0.58184968 (m)  W = 0.67507258 (m)
+    h = 180.0000 (m)  Po = 16.0687800 (bar)  |vb| = 46.26644 (m a-1)
+    W_c = 0.58184968 (m)  W = 0.67507258 (m)  P = 2.0086731 (bar)
 
 */
 
@@ -33,7 +33,7 @@ Results from Test P:
 
 int main() {
 
-  double       r, h, magvb, Wcrit, W;
+  double       r, h, magvb, Wcrit, W, P;
   int          scanret, ierr;
   const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
 
@@ -47,7 +47,7 @@ int main() {
     return 1;
   }
 
-  ierr = exactP(r*1000.0,&h,&magvb,&Wcrit,&W,EPS_ABS[0],EPS_REL[0],1);
+  ierr = exactP(r*1000.0,&h,&magvb,&Wcrit,&W,&P,EPS_ABS[0],EPS_REL[0],1);
   if (ierr) {
     printf("\n\nsimpleP ENDING because of ERROR from exactP():\n");
     error_message_testP(ierr);
@@ -55,9 +55,9 @@ int main() {
   }
 
   printf("Results from Test P:\n");
-  printf("    h = %.4f (m)  Po = %.5f (bar)  |vb| = %.5f (m a-1)\n"
-         "    W_c = %.8f (m)  W = %.8f (m)\n",
-         h,910.0*9.81*h/1.0e5,magvb*secpera,Wcrit,W);
+  printf("    h = %.4f (m)  Po = %.7f (bar)  |vb| = %.5f (m a-1)\n"
+         "    W_c = %.8f (m)  W = %.8f (m)  P = %.7f (bar)\n",
+         h,910.0*9.81*h/1.0e5,magvb*secpera,Wcrit,W,P/1.0e5);
 
 #define COMMENTARY 0
 #if COMMENTARY
@@ -72,7 +72,7 @@ int main() {
     for (i=0; i<3; i++) {
       printf("    EPS_ABS = %.1e\n",EPS_ABS[i]);
       for (j=0; j<3; j++) {
-        ierr = exactP(r*1000.0,&h,&magvb,&Wcrit,&W,EPS_ABS[i],EPS_REL[j],method);
+        ierr = exactP(r*1000.0,&h,&magvb,&Wcrit,&W,&P,EPS_ABS[i],EPS_REL[j],method);
         if (ierr) {
           printf("\n\nsimpleP ENDING because of ERROR from exactP():\n");
           error_message_testP(ierr);
@@ -93,25 +93,26 @@ int main() {
   $ matlab
   >> load foo.txt
   >> figure(1)      % profile
-  >> plot(foo(:,1),foo(:,2)),  grid on,  xlabel('r  (km)'),  ylabel('h  (m)')
+  >> plot(foo(:,1),910.0*9.81*foo(:,2)/1.0e5,foo(:,1),foo(:,5)), grid on, xlabel('r  (km)')
+  >> legend('P_o(r)','P(r)'),  ylabel('pressure  (bar)')
   >> figure(2)      % water amount
-  >> plot(foo(:,1),foo(:,3),'-',foo(:,1),foo(:,4),'--')
-  >> legend('W_{crit}(r)','W(r)'),  grid on,  xlabel('r  (km)')
+  >> plot(foo(:,1),foo(:,3),'-',foo(:,1),foo(:,4),'--'),  grid on,  xlabel('r  (km)')
+  >> legend('W_{crit}(r)','W(r)'),  ylabel('water thickness  (m)')
   */
   int k;
   const int N = 300;
-  double rr[N], hh[N], magvbvb[N], WWcrit[N], WW[N];
+  double rr[N], hh[N], magvbvb[N], WWcrit[N], WW[N], PP[N];
   for (k=0; k<N; k++)
     rr[k] = (double)(N - k - 1) * TESTP_L / ((double)N);
-  ierr = exactP_list(rr,N,hh,magvbvb,WWcrit,WW,EPS_ABS[0],EPS_REL[0],1);
+  ierr = exactP_list(rr,N,hh,magvbvb,WWcrit,WW,PP,EPS_ABS[0],EPS_REL[0],1);
   if (ierr) {
     printf("\n\nsimpleP ENDING because of ERROR from exactP():\n");
     error_message_testP(ierr);
     return 1;
   }
-  printf("      r (km)           h (m)     Wcrit (m)         W (m)\n\n");
+  printf("      r (km)           h (m)     Wcrit (m)         W (m)       P (bar)\n\n");
   for (k=0; k<N; k++)
-    printf("%12.6f %15.9f %13.9f %13.9f\n",rr[k]/1000.0,hh[k],WWcrit[k],WW[k]);
+    printf("%12.6f %15.9f %13.9f %13.9f %13.9f\n",rr[k]/1000.0,hh[k],WWcrit[k],WW[k],PP[k]/1.0e5);
 #endif
 
   return 0;

@@ -24,8 +24,8 @@
 #include "exactTestP.h"
 
 int main ( int argc, char *argv[] ) {
-  double *rr, *hh, *magvbvb, *WWcrit, *WW;
-  int    N, k, scanret;
+  double *rr, *hh, *magvbvb, *WWcrit, *WW, *PP;
+  int    N, k, status;
   FILE   *infile, *outfile;
 
   const double EPS_ABS = 1.0e-12,
@@ -43,16 +43,16 @@ int main ( int argc, char *argv[] ) {
   }
 
   /* read N = (number of radius values) and allocate */
-  scanret = fscanf(infile,"%d",&N);
-  if (scanret == EOF) {
+  status = fscanf(infile,"%d",&N);
+  if (status == EOF) {
     printf("ERROR can't read N; exiting\n");  return 1;
   }
   rr = (double *) malloc((size_t)N * sizeof(double));
 
   /* read the values */
   for (k=0; k<N; k++) {
-    scanret = fscanf(infile,"%lf",&(rr[k]));
-    if ((scanret == EOF) && (k<N-1)) {
+    status = fscanf(infile,"%lf",&(rr[k]));
+    if ((status == EOF) && (k<N-1)) {
       printf("ERROR reading r fails at k=%d; exiting\n", k);  return 1;
     }
   }
@@ -71,15 +71,16 @@ int main ( int argc, char *argv[] ) {
   }
   printf("  rr[0] = %.3f >= rr[1] >= ... >= rr[%d] = %.3f\n",rr[0],N-1,rr[N-1]);
 
-  /* now compute h, magvb, Wcrit, W */
+  /* now compute h, magvb, Wcrit, W, P */
   hh = (double *) malloc((size_t)N * sizeof(double));
   magvbvb = (double *) malloc((size_t)N * sizeof(double));
   WWcrit = (double *) malloc((size_t)N * sizeof(double));
   WW = (double *) malloc((size_t)N * sizeof(double));
-  k = exactP_list(rr,N,hh,magvbvb,WWcrit,WW,EPS_ABS,EPS_REL,1);  /* use Dormand-Prince (8,9) */
-  if (k) {
+  PP = (double *) malloc((size_t)N * sizeof(double));
+  status = exactP_list(rr,N,hh,magvbvb,WWcrit,WW,PP,EPS_ABS,EPS_REL,1);  /* use Dormand-Prince (8,9) */
+  if (status) {
     printf("ERROR exactP_list() returned an error:\n");
-    error_message_testP(k);
+    error_message_testP(status);
     return 1;
   }
 
@@ -90,16 +91,13 @@ int main ( int argc, char *argv[] ) {
   }
   fprintf(outfile,"%d\n",N);
   for (k=0; k<N; k++) {
-    fprintf(outfile,"%17.10f %17.12f %17.10e %17.12f %17.12f\n",
-            rr[k],hh[k],magvbvb[k],WWcrit[k],WW[k]);
-/*    if (scanret) {
-      printf( "ERROR could not write k=%d line of results to %s\n", k, argv[2]);  return 1;
-    }*/
+    fprintf(outfile,"%17.10f %17.12f %17.10e %17.12f %17.12f %17.10e\n",
+            rr[k],hh[k],magvbvb[k],WWcrit[k],WW[k],PP[k]);
   }
   fclose(outfile);
   printf("results successfully written to file %s\n", argv[2]);
 
-  free(rr);  free(hh);  free(magvbvb);  free(WWcrit);  free(WW);
+  free(rr);  free(hh);  free(magvbvb);  free(WWcrit);  free(WW);  free(PP);
 
   return 0;
 }

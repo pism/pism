@@ -52,7 +52,7 @@ extern "C"
 #define TESTP_INVALID_METHOD      78466
 #define TESTP_NOT_DONE            78467
 
-int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
+int exactP(double r, double *h, double *magvb, double *Wcrit, double *W, double *P,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
    /* Input r in meters,  0 <= r.
       ode_method = 1  : rk8pd is Runge-Kutta Prince-Dormand (8,9) [default]
@@ -60,14 +60,14 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
                    3  : rkf45 is Runge-Kutta-Felberg (4,5)
                    4  : rkck  is Runge-Kutta Cash-Karp (4,5)
       None of these are implicit.  The Jacobian has not been implemented.
-      Returns h (m), magvb (m s-1), W_c (m), W (m). */
+      Returns h (m), magvb (m s-1), W_c (m), W (m), P (Pa). */
 
 
 /* exit status of exactP_list() could be one of the above or one of these or zero for success */
 #define TESTP_NO_LIST             78482
 #define TESTP_LIST_NOT_DECREASING 78483
 
-int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W,
+int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W, double *P,
                 const double EPS_ABS, const double EPS_REL, const int ode_method);
    /* 1. assumes N values r[0] > r[1] > ... > r[N-1] >= 0  (_decreasing_)
       2. assumes r, h, magvb, Wcrit, W are _allocated_ length N arrays  */
