@@ -5,13 +5,6 @@
 #   $ (cd ../../src/verif/tests/ && make convertP)
 #   $ ln -s ../../src/verif/tests/convertP
 
-#PLAN:  construction of a PISM input file (-boot_file)
-#  with fields x,y,thk,bwat,bwp.  Then run
-#    pismr -boot_file inputforP.nc -Mx 51 -My 51 -Mz 11 -Lz 4000 -hydrology distributed -y 20 -no_mass -no_energy -o end.nc  
-#  Then compare
-#    nccmp.py -v bwat,bwp end.nc inputforP.nc difftestP.nc
-#  and collect norms etc. for difftestP.nc.
-
 import numpy as np
 from sys import exit, argv, stderr
 from os import system
@@ -35,6 +28,7 @@ x = np.linspace(-Lx, Lx, Mx)
 xx, yy = np.meshgrid(x, x)
 h = np.zeros(np.shape(xx))
 W = np.zeros(np.shape(xx))
+P = np.zeros(np.shape(xx))
 
 # create 1D array of tuples (r,j,k), sorted by r-value
 dtype = [('r', float), ('j', int), ('k', int)]
@@ -65,8 +59,9 @@ for n in range(len(r)):
   tmp = fl.readline().split()
   j = r[n]['j']
   k = r[n]['k']
-  h[j,k] = float(tmp[1])
-  W[j,k] = float(tmp[4])
+  h[j,k] = float(tmp[1])   # ice thickness in m
+  W[j,k] = float(tmp[4])   # water thickness in m
+  P[j,k] = float(tmp[5])   # water pressure in Pa
 fl.close()
 system('rm exactforP.txt')
 
@@ -94,6 +89,10 @@ nc.define_2d_field("bwat", time_dependent = False,
                    attrs = {"long_name"   : "thickness of basal water layer",
                             "units"       : "m",
                             "valid_range" : (0.0, 1.0e6)})
+nc.define_2d_field("bwp", time_dependent = False,
+                   attrs = {"long_name"   : "water pressure in basal water layer",
+                            "units"       : "Pa",
+                            "valid_range" : (0.0, 1.0e9)})
 
 # fill with constants
 nc.write("topg", 0.0*xx, time_dependent = False)
@@ -102,20 +101,27 @@ nc.write("ice_surface_temp", 260.0*np.ones(np.shape(xx)), time_dependent = False
 
 nc.write("thk", h, time_dependent = False)
 nc.write("bwat", W, time_dependent = False)
+nc.write("bwp", P, time_dependent = False)
 
-#FIXME: need to write BWP
+#FIXME  need to write velocity components for SSA boundary conditions
 
 nc.close()
 
 print "NetCDF file %s written" % "inputforP.nc"
 
-cmd = "%s %s/pismr -boot_file inputforP.nc -Mx 51 -My 51 -Mz 11 -Lz 4000 -hydrology distributed -y 20 -no_mass -no_energy -o end.nc" % (mpiexec, pism_path)
+cmd = "%s %s/pismr -boot_file inputforP.nc -Mx 51 -My 51 -Mz 11 -Lz 4000 -hydrology distributed -y 1.0 -max_dt 0.1 -no_mass -no_energy -ssa_sliding -o end.nc" % (mpiexec, pism_path)
+# FIXME probably need ssabc ish option
+
 stderr.write(cmd + '\n')
 e = system(cmd)
 if e != 0:
   exit(1)
 
 #system("rm inputforP.nc")
+
+#FIXME:  need to compare
+#    nccmp.py -v bwat,bwp end.nc inputforP.nc difftestP.nc
+#  and collect norms etc. for difftestP.nc.
 
 exit(0)
 
