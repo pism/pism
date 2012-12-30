@@ -92,8 +92,8 @@ int funcP(double r, const double W[], double f[], void *params) {
     f[0] = 0.0;  /* place-holder */
     return TESTP_R_NEGATIVE;
   } else if (r > TESTP_L) {
-    f[0] = 0.0;  /* place-holder */
-    return TESTP_R_EXCEEDS_L;
+    f[0] = 0.0;
+    return GSL_SUCCESS;
   } else {
     getsb(r,&sb,&dsb);
     c0    = K / (rhow * g);
@@ -124,7 +124,7 @@ allocated vectors of length N.  Input r[] must be decreasing.  The combination
 EPS_ABS = 1e-12, EPS_REL=0.0, method = RK Dormand-Prince O(8)/O(9)
 is believed for now to be predictable and accurate.  Note hstart is negative
 so that the ODE solver does negative steps.  Assumes
-   0 <= r[N-1] < r[N-2] < ... < r[1] < r[0] < L.                            */
+   0 <= r[N-1] <= r[N-2] <= ... <= r[1] <= r[0] <= L.                            */
 int getW(double *r, int N, double *W,
          const double EPS_ABS, const double EPS_REL, const int ode_method) {
    int i, count;
@@ -147,7 +147,7 @@ int getW(double *r, int N, double *W,
      return TESTP_INVALID_METHOD;
    }
 
-   hstart = (TESTP_L - r[0]) < 1000.0 ? (r[0] - TESTP_L) : -1000.0;
+   hstart = -1000.0;
    d = gsl_odeiv2_driver_alloc_y_new(&sys, T, hstart, EPS_ABS, EPS_REL);
 
    /* initial conditions: (r,W) = (L,W_c(L^-));  r decreases from L toward 0 */
@@ -178,7 +178,13 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
   if (r < 0.0) return TESTP_R_NEGATIVE;
-  if (r > TESTP_L)   return TESTP_R_EXCEEDS_L;
+  if (r > TESTP_L) {
+    *h     = 0.0;
+    *magvb = 0.0;
+    *Wcrit = 0.0;
+    *W     = 0.0;
+    return 0;
+  }
 
   *h = h0 * (1.0 - (r/TESTP_R0) * (r/TESTP_R0));
   if (r > R1)
@@ -198,16 +204,24 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
 int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W, 
                 const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
-  int i;
+  int i, M;
   /* check first: we have a list, r is decreasing, r is in range [0,L) */
   if (N < 1) return TESTP_NO_LIST;
-  if (r[0] >= TESTP_L) return TESTP_R_EXCEEDS_L;
-  for (i = 1; i<N; i++) {
-    if (r[i] >= r[i-1]) return TESTP_LIST_NOT_DECREASING;
-    if (r[i] < 0.0)     return TESTP_R_NEGATIVE;
+  for (i = 0; i<N; i++) {
+    if ((i > 0) && (r[i] > r[i-1])) return TESTP_LIST_NOT_DECREASING;
+    if (r[i] < 0.0)  return TESTP_R_NEGATIVE;
   }
 
-  for (i = 0; i<N; i++) {
+  M = 0;
+  while (r[M] > TESTP_L) {
+      h[M]     = 0.0;
+      magvb[M] = 0.0;
+      Wcrit[M] = 0.0;
+      W[M]     = 0.0;
+      M++;
+  }
+
+  for (i = M; i<N; i++) {
     h[i] = h0 * (1.0 - (r[i]/TESTP_R0) * (r[i]/TESTP_R0));
     if (r[i] > R1)
       magvb[i] = v0 * pow((r[i] - R1)/(TESTP_L - R1),5.0);
@@ -216,15 +230,12 @@ int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, doubl
     Wcrit[i] = criticalW(r[i]);
   }
 
-  return getW(r,N,W,EPS_ABS,EPS_REL,ode_method);
+  return getW(&(r[M]),N-M,&(W[M]),EPS_ABS,EPS_REL,ode_method);
 }
 
 
 int error_message_testP(int status) {
   switch (status) {
-    case TESTP_R_EXCEEDS_L:
-      printf("error in Test P: r exceeds L = TESTP_L\n");
-      break;
     case TESTP_R_NEGATIVE:
       printf("error in Test P: r < 0\n");
       break;

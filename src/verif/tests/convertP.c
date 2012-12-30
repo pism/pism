@@ -68,11 +68,11 @@ int main ( int argc, char *argv[] ) {
     if (rr[k] >= TESTP_L) {
       printf("ERROR rr[%d] = %.e exceeds TESTP_L; exiting\n",k,rr[k]);  return 1;
     }
-    if ((k>0) && (rr[k] >= rr[k-1])) {
+    if ((k>0) && (rr[k] > rr[k-1])) {
       printf("ERROR rr[] not decreasing at k=%d; exiting\n",k);  return 1;
     }
   }
-  printf("  rr[0] = %.3f > rr[1] > ... > rr[%d] = %.3f\n",rr[0],N-1,rr[N-1]);
+  printf("  rr[0] = %.3f >= rr[1] >= ... >= rr[%d] = %.3f\n",rr[0],N-1,rr[N-1]);
 
   /* now compute h, magvb, Wcrit, W */
   hh = (double *) malloc((size_t)N * sizeof(double));

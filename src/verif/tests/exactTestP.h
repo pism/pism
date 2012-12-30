@@ -46,7 +46,6 @@ extern "C"
 #define TESTP_L        0.9 * TESTP_R0  /* m */
 
 /* exit status of exactP() could be one of these; return of zero indicates success */
-#define TESTP_R_EXCEEDS_L         78462
 #define TESTP_R_NEGATIVE          78463
 #define TESTP_W_EXCEEDS_WR        78464
 #define TESTP_W_BELOW_WCRIT       78465
@@ -55,7 +54,7 @@ extern "C"
 
 int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
            const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* Input r in meters,  0 <= r <= TESTP_L.
+   /* Input r in meters,  0 <= r.
       ode_method = 1  : rk8pd is Runge-Kutta Prince-Dormand (8,9) [default]
                    2  : rk2   is Runge-Kutta (2,3)
                    3  : rkf45 is Runge-Kutta-Felberg (4,5)
@@ -70,7 +69,7 @@ int exactP(double r, double *h, double *magvb, double *Wcrit, double *W,
 
 int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W,
                 const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* 1. assumes N values L > r[0] > r[1] > ... > r[N-1] >= 0  (_decreasing_)
+   /* 1. assumes N values r[0] > r[1] > ... > r[N-1] >= 0  (_decreasing_)
       2. assumes r, h, magvb, Wcrit, W are _allocated_ length N arrays  */
 
 int error_message_testP(int status);
