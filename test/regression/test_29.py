@@ -26,9 +26,15 @@ Mx = 51      # 1 km grid
 
 x = np.linspace(-Lx, Lx, Mx)
 xx, yy = np.meshgrid(x, x)
+
 h = np.zeros(np.shape(xx))
 W = np.zeros(np.shape(xx))
 P = np.zeros(np.shape(xx))
+
+magvb = np.zeros(np.shape(xx))
+bcflag = np.ones(np.shape(xx))
+u_ssa_bc = np.zeros(np.shape(xx))
+v_ssa_bc = np.zeros(np.shape(xx))
 
 # create 1D array of tuples (r,j,k), sorted by r-value
 dtype = [('r', float), ('j', int), ('k', int)]
@@ -59,9 +65,10 @@ for n in range(len(r)):
   tmp = fl.readline().split()
   j = r[n]['j']
   k = r[n]['k']
-  h[j,k] = float(tmp[1])   # ice thickness in m
-  W[j,k] = float(tmp[4])   # water thickness in m
-  P[j,k] = float(tmp[5])   # water pressure in Pa
+  h[j,k] = float(tmp[1])     # ice thickness in m
+  magvb[j,k] = float(tmp[2]) # sliding speed in m s-1
+  W[j,k] = float(tmp[4])     # water thickness in m
+  P[j,k] = float(tmp[5])     # water pressure in Pa
 fl.close()
 system('rm exactforP.txt')
 
@@ -72,27 +79,34 @@ nc.create_dimensions(x, x, time_dependent = True, use_time_bounds = True)
 nc.define_2d_field("thk", time_dependent = False,
                    attrs = {"long_name"   : "ice thickness",
                             "units"       : "m",
-                            "valid_range" : (0.0, 1.0e6)})
+                            "valid_min"   : 0.0})
 nc.define_2d_field("topg", time_dependent = False,
                    attrs = {"long_name"   : "bedrock topography",
-                            "units"       : "m",
-                            "valid_range" : (-1.0e6, 1.0e6)})
+                            "units"       : "m"})
 nc.define_2d_field("climatic_mass_balance", time_dependent = False,
                    attrs = {"long_name"   : "climatic mass balance for -surface given",
-                            "units"       : "m year-1",
-                            "valid_range" : (-1.0e6, 1.0e6)})
+                            "units"       : "m year-1"})
 nc.define_2d_field("ice_surface_temp", time_dependent = False,
                    attrs = {"long_name"   : "ice surface temp (K) for -surface given",
                             "units"       : "Kelvin",
-                            "valid_range" : (0.0, 1.0e6)})
+                            "valid_min"   : 0.0})
 nc.define_2d_field("bwat", time_dependent = False,
                    attrs = {"long_name"   : "thickness of basal water layer",
                             "units"       : "m",
-                            "valid_range" : (0.0, 1.0e6)})
+                            "valid_min"   : 0.0})
 nc.define_2d_field("bwp", time_dependent = False,
                    attrs = {"long_name"   : "water pressure in basal water layer",
                             "units"       : "Pa",
-                            "valid_range" : (0.0, 1.0e9)})
+                            "valid_min"   : 0.0})
+
+nc.define_2d_field("bcflag", time_dependent = False,
+                   attrs = {"long_name"   : "if =1, apply u_ssa_bc and v_ssa_bc as sliding velocity"})
+nc.define_2d_field("u_ssa_bc", time_dependent = False,
+                   attrs = {"long_name"   : "x-component of prescribed sliding velocity",
+                            "units"       : "m s-1"})
+nc.define_2d_field("v_ssa_bc", time_dependent = False,
+                   attrs = {"long_name"   : "y-component of prescribed sliding velocity",
+                            "units"       : "m s-1"})
 
 # fill with constants
 nc.write("topg", 0.0*xx, time_dependent = False)
@@ -103,13 +117,17 @@ nc.write("thk", h, time_dependent = False)
 nc.write("bwat", W, time_dependent = False)
 nc.write("bwp", P, time_dependent = False)
 
+nc.write("bcflag", bcflag, time_dependent = False)
+FIXME: u_ssa_bc, v_ssa_bc
+
 #FIXME  need to write velocity components for SSA boundary conditions
+#       following examples/ross/
 
 nc.close()
 
 print "NetCDF file %s written" % "inputforP.nc"
 
-cmd = "%s %s/pismr -boot_file inputforP.nc -Mx 51 -My 51 -Mz 11 -Lz 4000 -hydrology distributed -y 1.0 -max_dt 0.1 -no_mass -no_energy -ssa_sliding -o end.nc" % (mpiexec, pism_path)
+cmd = "%s %s/pismr -boot_file inputforP.nc -Mx 51 -My 51 -Mz 11 -Lz 4000 -hydrology distributed -y 1.0 -max_dt 0.1 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path)
 # FIXME probably need ssabc ish option
 
 stderr.write(cmd + '\n')
