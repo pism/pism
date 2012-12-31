@@ -54,6 +54,7 @@ PetscErrorCode PISMLakesHydrology::allocate() {
   ierr = Wstag.set_attrs("internal",
                      "cell face-centered (staggered) values of water layer thickness",
                      "m", ""); CHKERRQ(ierr);
+  ierr = Wstag.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = Qstag.create(grid, "advection_flux", true, 1); CHKERRQ(ierr);
   ierr = Qstag.set_attrs("internal",
                      "cell face-centered (staggered) components of advective subglacial water flux",
@@ -224,7 +225,7 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
   // FIXME:  want Kmax or Kmin according to W > Wr ?
   K  = config.get("hydrology_hydraulic_conductivity");
   c0 = K / (config.get("fresh_water_density") * config.get("standard_gravity"));
-  ierr = water_pressure(Pwork); CHKERRQ(ierr);  // does update ghosts
+  ierr = water_pressure(Pwork); CHKERRQ(ierr);  // yes, it updates ghosts
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -293,17 +294,16 @@ PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
   PetscReal tmp[2];
   // FIXME:  want Kmax or Kmin according to W > Wr ?
   K  = config.get("hydrology_hydraulic_conductivity");
-  // fixme?: dtCFL can be infinity if velocity is zero because P and b are constant
   // Matlab: dtCFL = 0.5 / (max(max(abs(alphV)))/dx + max(max(abs(betaV)))/dy);
-  ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr);
-  dtCFL = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy);
+  ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
+  dtCFL = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy + 3.1689e-15); // regularize with eps = (1 cm/a) / (100km)
   // Matlab: maxW = max(max(max(Wea)),max(max(Wno))) + 0.001;
   ierr = Wstag.absmaxcomponents(tmp); CHKERRQ(ierr);
   maxW = PetscMax(tmp[0],tmp[1]) + 0.001;
   // Matlab: dtDIFFW = 0.25 / (p.K * maxW * (1/dx^2 + 1/dy^2));
   dt_DIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
   dt_DIFFW_result = 0.25 / (K * maxW * dt_DIFFW_result);
-  dtmax = 1.0 * secpera;  // FIXME: dtmax fixed at 1 year?  make configurable?
+  dtmax = config.get("hydrology_maximum_time_step_years") * secpera;
   // dt = min([te-t dtmax dtCFL dtDIFFW]);
   dt_result = PetscMin(t_end - t_current, dtmax);
   dt_result = PetscMin(dt_result, dtCFL);
