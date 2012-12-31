@@ -854,7 +854,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   } // end of hydrology model time-stepping loop
 
   ierr = verbPrintf(2, grid.com,
-    " 'distribued' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
+    " 'distributed' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
     "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
     hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
   return 0;

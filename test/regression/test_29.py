@@ -10,19 +10,27 @@ from sys import exit, argv, stderr
 from os import system
 from PISMNC import PISMDataset
 
+# example:  ./test_29.py ../../build "mpiexec -n 4" 101
+
 if len(argv)<2:
   pism_path="."
 else:
   pism_path=argv[1]
+
 if len(argv)<3:
-  mpiexec=""   # or: mpiexec = "mpiexec -n 1"
+  mpiexec=""
 else:
   mpiexec=argv[2]
+
+if len(argv)<4:
+  Mx = 51     # generates 1 km grid
+else:
+  Mx = int(argv[3])
 
 stderr.write("Testing: Test P verification of '-hydrology distributed'.\n")
 
 Lx = 25.0e3  # outside L = 22.5 km
-Mx = 51      # 1 km grid
+Phi0 = 0.20  # 20 cm a-1 basal melt rate
 
 x = np.linspace(-Lx, Lx, Mx)
 xx, yy = np.meshgrid(x, x)
@@ -31,10 +39,20 @@ h = np.zeros(np.shape(xx))
 W = np.zeros(np.shape(xx))
 P = np.zeros(np.shape(xx))
 
-magvb = np.zeros(np.shape(xx))
+def radially_outward(mag, x, y):
+  """return components of a vector field  V(x,y)  which is radially-outward from
+the origin and has magnitude mag"""
+  r = np.sqrt(x*x + y*y)
+  if r == 0.0:
+    return (0.0, 0.0)
+  vx = mag * x / r
+  vy = mag * y / r
+  return (vx, vy)
+
 bcflag = np.ones(np.shape(xx))
-u_ssa_bc = np.zeros(np.shape(xx))
-v_ssa_bc = np.zeros(np.shape(xx))
+magvb = np.zeros(np.shape(xx))
+ussa = np.zeros(np.shape(xx))
+vssa = np.zeros(np.shape(xx))
 
 # create 1D array of tuples (r,j,k), sorted by r-value
 dtype = [('r', float), ('j', int), ('k', int)]
@@ -67,6 +85,7 @@ for n in range(len(r)):
   k = r[n]['k']
   h[j,k] = float(tmp[1])     # ice thickness in m
   magvb[j,k] = float(tmp[2]) # sliding speed in m s-1
+  ussa[j,k], vssa[j,k] = radially_outward(magvb[j,k],xx[j,k],yy[j,k])
   W[j,k] = float(tmp[4])     # water thickness in m
   P[j,k] = float(tmp[5])     # water pressure in Pa
 fl.close()
@@ -79,17 +98,25 @@ nc.create_dimensions(x, x, time_dependent = True, use_time_bounds = True)
 nc.define_2d_field("thk", time_dependent = False,
                    attrs = {"long_name"   : "ice thickness",
                             "units"       : "m",
-                            "valid_min"   : 0.0})
+                            "valid_min"   : 0.0,
+                            "standard_name" : "land_ice_thickness"})
 nc.define_2d_field("topg", time_dependent = False,
                    attrs = {"long_name"   : "bedrock topography",
-                            "units"       : "m"})
+                            "units"       : "m",
+                            "standard_name" : "bedrock_altitude"})
 nc.define_2d_field("climatic_mass_balance", time_dependent = False,
                    attrs = {"long_name"   : "climatic mass balance for -surface given",
-                            "units"       : "m year-1"})
+                            "units"       : "m year-1",
+                            "standard_name" : "land_ice_surface_specific_mass_balance"})
 nc.define_2d_field("ice_surface_temp", time_dependent = False,
                    attrs = {"long_name"   : "ice surface temp (K) for -surface given",
                             "units"       : "Kelvin",
                             "valid_min"   : 0.0})
+nc.define_2d_field("bmelt", time_dependent = False,
+                   attrs = {"long_name"   : "basal melt rate",
+                            "units"       : "m year-1",
+                            "standard_name" : "land_ice_basal_melt_rate"})
+
 nc.define_2d_field("bwat", time_dependent = False,
                    attrs = {"long_name"   : "thickness of basal water layer",
                             "units"       : "m",
@@ -111,35 +138,35 @@ nc.define_2d_field("v_ssa_bc", time_dependent = False,
 # fill with constants
 nc.write("topg", 0.0*xx, time_dependent = False)
 nc.write("climatic_mass_balance", 0.0*xx, time_dependent = False)
-nc.write("ice_surface_temp", 260.0*np.ones(np.shape(xx)), time_dependent = False)
+nc.write("ice_surface_temp", 260.0 * np.ones(np.shape(xx)), time_dependent = False)
+nc.write("bmelt", Phi0 * np.ones(np.shape(xx)), time_dependent = False)
 
 nc.write("thk", h, time_dependent = False)
 nc.write("bwat", W, time_dependent = False)
 nc.write("bwp", P, time_dependent = False)
 
 nc.write("bcflag", bcflag, time_dependent = False)
-FIXME: u_ssa_bc, v_ssa_bc
-
-#FIXME  need to write velocity components for SSA boundary conditions
-#       following examples/ross/
+nc.write("u_ssa_bc", ussa, time_dependent = False)
+nc.write("v_ssa_bc", vssa, time_dependent = False)
 
 nc.close()
 
 print "NetCDF file %s written" % "inputforP.nc"
 
-cmd = "%s %s/pismr -boot_file inputforP.nc -Mx 51 -My 51 -Mz 11 -Lz 4000 -hydrology distributed -y 1.0 -max_dt 0.1 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path)
-# FIXME probably need ssabc ish option
+cmd = "%s %s/pismr -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -y 1.0 -max_dt 0.1 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path, Mx, Mx)
 
 stderr.write(cmd + '\n')
 e = system(cmd)
 if e != 0:
   exit(1)
 
-#system("rm inputforP.nc")
+system("rm -f diffP.nc")
+system("ncdiff -v bwat,bwp end.nc inputforP.nc diffP.nc")
 
-#FIXME:  need to compare
-#    nccmp.py -v bwat,bwp end.nc inputforP.nc difftestP.nc
-#  and collect norms etc. for difftestP.nc.
+#FIXME report on or measure difference
+
+#cleanup:
+#system("rm inputforP.nc end.nc diffP.nc")
 
 exit(0)
 
