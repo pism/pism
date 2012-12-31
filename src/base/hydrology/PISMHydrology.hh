@@ -34,16 +34,15 @@ conserving models are in PISMLakesHydrology and PISMDistributedHydrology.
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
 short physical timescales associated to liquid water moving under a glacier,
-PISMHydrology derived classes will generally not use PISM's main ice dynamics
-time steps.  Instead, when PISMHydrology::update() is called it advances its
-internal time to the new goal t+dt using its own internal time steps.
+PISMHydrology derived classes may not use PISM's main ice dynamics time steps.
+Instead, when (a derived class) PISMHydrology::update() is called it may advance
+its internal time to the new goal t+dt using its own internal time steps.
 
-Generally these subglacial hydrology models will use the ice geometry and/or
-the basal sliding velocity.  These ice fields are normally treated as
-time-independent during the update() call for the interval [t,t+dt].  Said
-another way, the coupling is one-way during the update() call.  The frequency
-with which the coupling becomes two-way is determined by the agent that calls
-the update() method, which is generally IceModel.
+Generally these subglacial hydrology models will use the ice geometry, basal
+energy fields like basal melt rate, and the basal sliding velocity from IceModel
+and other PISM classes.  These fields are normally treated as constant in time
+during the update() call for the interval [t,t+dt].  Thus the coupling is
+one-way during the update() call.
  */
 class PISMHydrology : public PISMComponent_TS {
 public:
@@ -80,6 +79,7 @@ protected:
                 *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
   PISMVars *variables;
+  bool report_mass_accounting;
   virtual PetscErrorCode get_input_rate(IceModelVec2S &result);
   virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
                             PetscReal &icefreelost, PetscReal &oceanlost, PetscReal &negativegain);
@@ -95,7 +95,7 @@ public:
 };
 
 
-//! \brief The subglacial hydrology model from Bueler & Brown (2009) but without contrived water diffusion.
+//! \brief The subglacial hydrology model from Bueler & Brown (2009) WITHOUT contrived water diffusion.
 /*!
 The name "till-can" comes from the following mental image:  Each map-plane cell
 under the glacier or ice sheet does not communicate with the next cell; i.e.
@@ -105,12 +105,12 @@ over the sides" and disappears.  Thus this model is not mass conserving, but it
 is useful for computing a till yield stress based on a time-integrated basal
 melt rate.
 
-The paper [\ref BBssasliding] used a model with contrived diffusion
-in the basal layer.  It is implemented in the derived class PISMDiffuseOnlyHydrology.
-
 See [\ref BBssasliding] and [\ref Tulaczyketal2000b].  See this URL for a talk
 where the "till-can" metaphor is illustrated:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
+
+The paper [\ref BBssasliding] used this model but with contrived diffusion of
+the water.  It is implemented in the derived class PISMDiffuseOnlyHydrology.
  */
 class PISMTillCanHydrology : public PISMHydrology {
 public:
@@ -144,10 +144,10 @@ protected:
    * @param[in] dWdecay change in water amount due to the "decay" mechanism (non-negative)
    * @param[in] Wmax maximum allowed water layer thickness
    *
-   * @returns The new basal water thickness, \f$ W \f$. Note that \f$ W \f$
+   * @returns The new basal water thickness, W.  Note that W
    * computed here may be negative due to refreeze, but not due to the gradual decay.
    */
-  PetscReal pointwise_update(PetscReal my_W, PetscReal dWinput, PetscReal dWdecay, PetscReal Wmax) {
+  inline PetscReal pointwise_update(PetscReal my_W, PetscReal dWinput, PetscReal dWdecay, PetscReal Wmax) {
     assert(dWdecay >= 0);
 
     my_W += dWinput;       // if this makes my_W negative then we leave it for reporting
@@ -163,10 +163,10 @@ protected:
 };
 
 
-//! \brief The subglacial hydrology model from Bueler & Brown (2009) WITH the contrived water diffusion.
+//! \brief The subglacial hydrology model from Bueler & Brown (2009) WITH contrived water diffusion.
 /*!
-Implements the full model in [\ref BBssasliding], including the diffusion which
-is equation (11).
+Implements the full model in [\ref BBssasliding], including the diffusion in
+equation (11).
  */
 class PISMDiffuseOnlyHydrology : public PISMTillCanHydrology {
 public:
@@ -186,24 +186,25 @@ protected:
 
 //! \brief A subglacial hydrology model which assumes water pressure is a fixed fraction of (or is equal to) overburden pressure.  Suitable for locations of subglacial lakes.
 /*!
-This model was promised in Bueler's talk at IGS 2012 Fairbanks:
+This model conserves water and transports it in the map-plane.  It was promised
+in Bueler's talk at IGS 2012 Fairbanks:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
 
-This model conserves water and transports it in the map-plane.
+Subglacial lakes will occur in this model at local minimum of the hydraulic
+potential (i.e. a linear combination of overburden pressure, the bed elevation,
+and the water layer thickness).  Note that in this model the hydraulic potential
+is the potential of the top of the aquifer.  Thus if water builds up
+significantly (e.g. 10s of meters or more) then the resulting lakes diffuse
+instead of becoming infinitely deep (i.e. we avoid delta functions at the minima
+of the hydraulic potential).
 
-If water builds up signficantly (i.e. 10s to 100s of meters) then the resulting
-lakes diffuse instead of becoming infinitely deep, even if there is a local
-minimum of the hydraulic potential (i.e. the overburden pressure plus the
-bed geometry).
+This model should generall be tested using static ice geometry first, i.e. using
+option -no_mass.
 
-This model should be tested in -no_mass cases (i.e. with static ice geometry) first.
-
-The state space of this model is only the water layer thickness \f$W\f$, as with
-PISMTillCanHydrology and PISMDiffuseOnlyHydrology.
-
-For more complete modeling where the water pressure is determined by a physical
-model for the opening and closing of cavities, and where the state space is
-both W and P, use PISMDistributedHydrology.
+As with PISMTillCanHydrology and PISMDiffuseOnlyHydrology, the state space
+includes only the water layer thickness W.  For more complete modeling where the
+water pressure is determined by a physical model for the opening and closing of
+cavities, and where the state space is both W and P, use PISMDistributedHydrology.
  */
 class PISMLakesHydrology : public PISMHydrology {
 public:
@@ -254,6 +255,10 @@ protected:
 This implements the new van Pelt & Bueler model documented at the repo (currently
 private):
   https://github.com/bueler/hydrolakes
+Unlike PISMLakesHydrology, the water pressure P is a state variable, and there
+are modeled mechanisms for cavity geometry evolution, including creep closure
+and opening through sliding ("cavitation").  Because of cavitation, this model
+needs access to a PISMStressBalance object.
  */
 class PISMDistributedHydrology : public PISMLakesHydrology {
 public:

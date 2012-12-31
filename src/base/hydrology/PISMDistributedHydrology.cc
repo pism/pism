@@ -411,10 +411,12 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  ierr = verbPrintf(2, grid.com,
-    " 'lakes' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
-    "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
-    hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
+  if (report_mass_accounting) {
+    ierr = verbPrintf(2, grid.com,
+      " 'lakes' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
+      "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
+      hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -853,10 +855,12 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
-  ierr = verbPrintf(2, grid.com,
-    " 'distributed' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
-    "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
-    hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
+  if (report_mass_accounting) {
+    ierr = verbPrintf(2, grid.com,
+      " 'distributed' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
+      "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
+      hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
+  }
   return 0;
 }
 

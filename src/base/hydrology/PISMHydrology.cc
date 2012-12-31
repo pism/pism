@@ -25,7 +25,16 @@
 PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid.com,
-    "entering initializer for base class PISMHydrology ...\n"); CHKERRQ(ierr);
+    "entering PISMHydrology::init() ...\n"); CHKERRQ(ierr);
+
+  ierr = PetscOptionsBegin(grid.com, "",
+            "Options controlling the base class PISMHydrology", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsIsSet("-report_mass_accounting",
+                            "stdout report on mass accounting in hydrology models",
+                            report_mass_accounting); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   variables = &vars;
 
@@ -160,14 +169,13 @@ PetscErrorCode PISMHydrology::boundary_mass_changes(IceModelVec2S &Wnew,
         my_negativegain += -Wnew(i,j) * dmassdz;
         Wnew(i,j) = 0.0;
       }
-      if  (Wnew(i,j) > 0.0) {
-        if (M.ice_free_land(i,j)) {
-          my_icefreelost += Wnew(i,j) * dmassdz;
-          Wnew(i,j) = 0.0;
-        } else if (M.ocean(i,j)) {
-          my_oceanlost += Wnew(i,j) * dmassdz;
-          Wnew(i,j) = 0.0;
-        }
+      if (M.ice_free_land(i,j) && (Wnew(i,j) > 0.0)) {
+        my_icefreelost += Wnew(i,j) * dmassdz;
+        Wnew(i,j) = 0.0;
+      }
+      if (M.ocean(i,j) && (Wnew(i,j) > 0.0)) {
+        my_oceanlost += Wnew(i,j) * dmassdz;
+        Wnew(i,j) = 0.0;
       }
     }
   }
@@ -183,8 +191,8 @@ PetscErrorCode PISMHydrology::boundary_mass_changes(IceModelVec2S &Wnew,
   // this reporting is redundant for the simpler models but shows short time step
   // reporting for nontrivially-distributed (possibly adaptive) hydrology models
   ierr = verbPrintf(4, grid.com,
-    "mass losses in hydrology time step:\n"
-    "   land margin loss = %.3e kg, ocean margin loss = %.3e kg, (W<0) gain = %.3e kg\n",
+    "  mass losses in hydrology time step:\n"
+    "     land margin loss = %.3e kg, ocean margin loss = %.3e kg, (W<0) gain = %.3e kg\n",
     icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
   return 0;
 }
@@ -204,12 +212,10 @@ PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &c
 
 PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
   PetscErrorCode ierr;
-  // workspace
   ierr = input.create(grid, "input_hydro", false); CHKERRQ(ierr);
   ierr = input.set_attrs("internal",
                          "workspace for input into subglacial water layer",
                          "m s-1", ""); CHKERRQ(ierr);
-  // model state variables
   if (Whasghosts) {
     ierr = W.create(grid, "bwat", true, 1); CHKERRQ(ierr);
   } else {
@@ -340,7 +346,7 @@ PetscErrorCode PISMTillCanHydrology::check_W_bounds() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (W(i,j) < 0.0) {
         PetscPrintf(grid.com,
-           "PISMTillCanHydrology ERROR: disallowed negative subglacial water layer thickness W(i,j) = %.6f m\n"
+           "PISMTillCanHydrology ERROR: negative subglacial water layer thickness W(i,j) = %.6f m\n"
            "            at (i,j)=(%d,%d)\n"
            "ENDING ... \n\n", W(i,j),i,j);
         PISMEnd();
@@ -359,9 +365,9 @@ PetscErrorCode PISMTillCanHydrology::check_W_bounds() {
 }
 
 
-//! Update the water thickness from input (melt and drainage from ice above), the upper bound on water amount, and the decay rate.
+//! Update the water thickness.
 /*!
-Solves on explicit (forward Euler) step of the integration
+Does an explicit (forward Euler) step of the integration
   \f[ \frac{dW}{dt} = \text{bmelt} - C \f]
 but subject to the inequalities
   \f[ 0 \le W \le W_0 \f]
@@ -395,10 +401,12 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
   // following should *not* alter W, and it should report all zeros by design;
   // this hydrology is *not* distributed
   ierr = boundary_mass_changes(W,icefreelost,oceanlost,negativegain); CHKERRQ(ierr);
-  ierr = verbPrintf(2, grid.com,
-    " 'tillcan' hydrology mass losses:\n"
-    "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
-    icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
+  if (report_mass_accounting) {
+    ierr = verbPrintf(2, grid.com,
+      " 'tillcan' hydrology mass losses:\n"
+      "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
+      icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -480,7 +488,6 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
   }
 
   ierr = get_input_rate(input); CHKERRQ(ierr);
-
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0;
 
   PetscReal  Rx = K * hdt / (grid.dx * grid.dx),
@@ -516,10 +523,12 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Wnew.end_access(); CHKERRQ(ierr);
 
     ierr = boundary_mass_changes(Wnew,icefreelost,oceanlost,negativegain); CHKERRQ(ierr);
-    ierr = verbPrintf(2, grid.com,
-      " 'diffuseonly' hydrology mass losses:\n"
-      "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
-      icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
+    if (report_mass_accounting) {
+      ierr = verbPrintf(2, grid.com,
+        " 'diffuseonly' hydrology mass losses:\n"
+        "     ice free land lost = %.3e kg, ocean lost = %.3e kg, negative bmelt gain = %.3e kg\n",
+        icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
+    }
 
     ierr = Wnew.beginGhostComm(W); CHKERRQ(ierr);
     ierr = Wnew.endGhostComm(W); CHKERRQ(ierr);
