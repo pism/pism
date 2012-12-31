@@ -18,7 +18,7 @@ VERTGRID="-Lz 5000 -Lbz 2000 -Mz 51 -Mbz 21 -z_spacing equal"
 
 OPTIONS="-sia_e 5.6 -atmosphere given -atmosphere_given_file pism_Antarctica_5km.nc -surface simple -ocean pik -meltfactor_pik 1.5e-2 -ocean_kill"
 
-HYDRO="-hydrology lakes -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -hydrology_hydraulic_conductivity 1.0e-3"
+HYDRO="-hydrology lakes -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -hydrology_hydraulic_conductivity 1.0e-3 -report_mass_accounting"
 
 DURATION=20000
 
@@ -43,8 +43,8 @@ TENKMGRID="-Mx 600 -My 600"
 FIVEKMGRID="-Mx 1200 -My 1200"
 
 # first three regenerate results from IGS talk:
-dorun "$HUNDREDKMGRID" 100km
-dorun "$FIFTYKMGRID" 50km
+#dorun "$HUNDREDKMGRID" 100km
+#dorun "$FIFTYKMGRID" 50km
 dorun "$TWENTYFIVEKMGRID" 25km
 
 # these are more expensive, naturally
