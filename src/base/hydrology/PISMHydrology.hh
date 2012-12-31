@@ -247,6 +247,8 @@ protected:
                            PetscReal &dt_DIFFW_result);
   virtual PetscErrorCode adaptive_for_W_evolution(
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
+
+  PetscErrorCode raw_update_W(PetscReal hdt);
 };
 
 
