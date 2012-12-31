@@ -26,7 +26,7 @@ $MPIDO ${PATHTO}pismr -i start.nc -hydrology diffuseonly -report_mass_accounting
 #$MPIDO ${PATHTO}pismr -i lakes.nc -hydrology lakes       -y 0.001 -o continuelakes.nc
 $MPIDO ${PATHTO}pismr -i start.nc -hydrology lakes -report_mass_accounting -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -y 20 -o lakes_const.nc
 
-#$MPIDO ${PATHTO}pismr -i start.nc -hydrology distributed -y 20 -o distributed.nc
+#$MPIDO ${PATHTO}pismr -i start.nc -ssa_sliding -tauc 1.0e6 -hold_tauc -hydrology distributed -report_mass_accounting -init_P_from_steady -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -y 20 -o distributed_const.nc
 
 #set +v
 
