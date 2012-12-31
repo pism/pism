@@ -727,7 +727,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   // from current ice geometry/velocity variables, initialize Po and cbase
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
-  PetscReal ht, hdt, // hydrology model time and time step
+  PetscReal ht = t, hdt, // hydrology model time and time step
             // FIXME:  want Kmax or Kmin according to W > Wr ?
             K  = config.get("hydrology_hydraulic_conductivity"),
             c0 = K / (config.get("fresh_water_density") * config.get("standard_gravity")),
