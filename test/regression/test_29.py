@@ -153,7 +153,7 @@ nc.close()
 
 print "NetCDF file %s written" % "inputforP.nc"
 
-cmd = "%s %s/pismr -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -y 1.0 -max_dt 0.1 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path, Mx, Mx)
+cmd = "%s %s/pismr -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path, Mx, Mx)
 
 stderr.write(cmd + '\n')
 e = system(cmd)
