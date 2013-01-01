@@ -167,9 +167,9 @@ system("rm -f diffP.nc")
 
 #FIXME this ain't elegant
 system("ncdiff -v bwat,bwp end.nc inputforP.nc diffP.nc")
-system(r"ncap2 -O -s'errbwat=avg(abs(bwat));errbwp=avg(abs(bwp))' diffP.nc diffP.nc")
-system(r"ncdump -v errbwat diffP.nc |grep 'errbwat ='")
-system(r"ncdump -v errbwp  diffP.nc |grep 'errbwp ='")
+system(r"ncap2 -O -s'averrbwat=avg(abs(bwat));averrbwp=avg(abs(bwp));maxerrbwat=max(abs(bwat));maxerrbwp=max(abs(bwp));' diffP.nc diffP.nc")
+system(r"ncdump -v averrbwat,maxerrbwat diffP.nc |grep 'errbwat ='")
+system(r"ncdump -v averrbwp,maxerrbwp diffP.nc |grep 'errbwp ='")
 
 #cleanup:
 #system("rm test29.nc inputforP.nc end.nc foo.txt diffP.nc")

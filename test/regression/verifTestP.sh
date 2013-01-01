@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#for M in 26 51 101 201;
-for M in 26 51 101 201;
+NN=4  # number of processors
+
+for MM in 11 21 41 81 161 321;
 do
   rm -f foo.txt
-  ./test_29.py ../../buildbwp "mpiexec -n 4" $M &> foo.txt
-  echo "results for M=${M}:"
-  cat foo.txt |grep errbwat
-  cat foo.txt |grep errbwp
+  ./test_29.py ../../buildbwp "mpiexec -n ${NN}" $MM &> foo.txt
+  echo "results for Mx=My=${MM}:"
+  cat foo.txt |grep errbw
 done
 
