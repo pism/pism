@@ -2,37 +2,37 @@ netcdf pism_overrides {
     variables:
     byte pism_overrides;
 
+    pism_overrides:standard_gravity = 9.81;
+    pism_overrides:standard_gravity_doc = "m s-2; = g";
+
     pism_overrides:ice_density = 910.0;
-    pism_overrides:ice_density_doc = "kg m-3; ";
+    pism_overrides:ice_density_doc = "kg m-3; = rho_i";
 
     pism_overrides:fresh_water_density = 1000.0;
-    pism_overrides:fresh_water_density_doc = "kg m-3; ";
-
-    pism_overrides:standard_gravity = 9.81;
-    pism_overrides:standard_gravity_doc = "m s-2; ";
+    pism_overrides:fresh_water_density_doc = "kg m-3; = rho_w";
 
     pism_overrides:Glen_exponent = 3.0;
-    pism_overrides:Glen_exponent_doc = "; ";
+    pism_overrides:Glen_exponent_doc = "; = n";
 
     pism_overrides:ice_softness = 3.1689e-24;
-    pism_overrides:ice_softness_doc = "; NOT EQUAL TO DEFAULT";
+    pism_overrides:ice_softness_doc = "; NOT EQUAL TO PISM DEFAULT; = A";
 
     pism_overrides:hydrology_hydraulic_conductivity = 1.0e-2;
-    pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; ";
+    pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K";
 
     pism_overrides:hydrology_roughness_scale = 1.0;
-    pism_overrides:hydrology_roughness_scale_doc = "m; ";
+    pism_overrides:hydrology_roughness_scale_doc = "m; = W_r";
 
     pism_overrides:hydrology_cavitation_opening_coefficient = 0.500;
-    pism_overrides:hydrology_cavitation_opening_coefficient_doc = "m-1; ";
+    pism_overrides:hydrology_cavitation_opening_coefficient_doc = "m-1; = c_1";
 
     pism_overrides:hydrology_creep_closure_coefficient = 0.040;
-    pism_overrides:hydrology_creep_closure_coefficient_doc = "; ";
+    pism_overrides:hydrology_creep_closure_coefficient_doc = "; = c_2";
 
     pism_overrides:hydrology_diffusive_closure_regularization = 1.0;
-    pism_overrides:hydrology_diffusive_closure_regularization_doc = "m; ";
+    pism_overrides:hydrology_diffusive_closure_regularization_doc = "m; = E_0";
 
     pism_overrides:hydrology_lower_bound_creep_regularization = 0.001;
-    pism_overrides:hydrology_lower_bound_creep_regularization_doc = "m; ";
+    pism_overrides:hydrology_lower_bound_creep_regularization_doc = "m; = Y_0";
 
 }
