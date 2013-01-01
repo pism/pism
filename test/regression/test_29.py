@@ -12,6 +12,9 @@ from PISMNC import PISMDataset
 
 # example:  ./test_29.py ../../build "mpiexec -n 4" 101
 
+# generate config file
+system("ncgen -o test29.nc test29.cdl")
+
 if len(argv)<2:
   pism_path="."
 else:
@@ -153,7 +156,7 @@ nc.close()
 
 print "NetCDF file %s written" % "inputforP.nc"
 
-cmd = "%s %s/pismr -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path, Mx, Mx)
+cmd = "%s %s/pismr -config_override test29.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path, Mx, Mx)
 
 stderr.write(cmd + '\n')
 e = system(cmd)
@@ -161,12 +164,15 @@ if e != 0:
   exit(1)
 
 system("rm -f diffP.nc")
-system("ncdiff -v bwat,bwp end.nc inputforP.nc diffP.nc")
 
-#FIXME report on or measure difference
+#FIXME this ain't elegant
+system("ncdiff -v bwat,bwp end.nc inputforP.nc diffP.nc")
+system(r"ncap2 -O -s'errbwat=avg(abs(bwat));errbwp=avg(abs(bwp))' diffP.nc diffP.nc")
+system(r"ncdump -v errbwat diffP.nc |grep 'errbwat ='")
+system(r"ncdump -v errbwp  diffP.nc |grep 'errbwp ='")
 
 #cleanup:
-#system("rm inputforP.nc end.nc diffP.nc")
+#system("rm test29.nc inputforP.nc end.nc foo.txt diffP.nc")
 
 exit(0)
 
