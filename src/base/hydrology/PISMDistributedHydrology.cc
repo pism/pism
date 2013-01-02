@@ -32,6 +32,7 @@
 PISMLakesHydrology::PISMLakesHydrology(IceGrid &g, const NCConfigVariable &conf)
     : PISMHydrology(g, conf)
 {
+  no_model_mask = NULL;
   if (allocate() != 0) {
     PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMLakesHydrology constructor.\n");
     PISMEnd();
@@ -103,6 +104,17 @@ PetscErrorCode PISMLakesHydrology::init(PISMVars &vars) {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   // does not produce confusing messages in derived classes:
   ierr = init_actions(vars,i,bootstrap); CHKERRQ(ierr);
+
+  // see if no_model_mask is available; it may be NULL but we proceed
+  no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
+  if (no_model_mask == NULL) {
+    ierr = verbPrintf(2, grid.com,
+       "  no_model_mask is NOT available to PISMLakesHydrology ... proceeding ..."); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com,
+       "  no_model_mask FOUND by PISMLakesHydrology so we use it ..."); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -199,6 +211,7 @@ where \f$\lambda\f$=till_pw_fraction and \f$P_o\f$ is the overburden pressure.
  */
 PetscErrorCode PISMLakesHydrology::water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
+  // ierr = verbPrintf(1,grid.com,"in PISMLakesHydrology::water_pressure()\n"); CHKERRQ(ierr);
   ierr = overburden_pressure(result); CHKERRQ(ierr);
   ierr = result.scale(config.get("till_pw_fraction")); CHKERRQ(ierr);
   return 0;
@@ -225,22 +238,50 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
   // FIXME:  want Kmax or Kmin according to W > Wr ?
   K  = config.get("hydrology_hydraulic_conductivity");
   c0 = K / (config.get("fresh_water_density") * config.get("standard_gravity"));
+
   ierr = water_pressure(Pwork); CHKERRQ(ierr);  // yes, it updates ghosts
+
+  if (no_model_mask == NULL) { // try again ..
+    no_model_mask = dynamic_cast<IceModelVec2Int*>(variables->get("no_model_mask"));
+    if (no_model_mask != NULL) {
+      ierr = verbPrintf(2, grid.com,
+         "  no_model_mask FOUND by PISMLakesHydrology::velocity_staggered() so we use it ...");
+         CHKERRQ(ierr);
+    }
+  }
+
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
+  if (no_model_mask != NULL) {
+    ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
+  }
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       dPdx = (Pwork(i+1,j  ) - Pwork(i,j)) / grid.dx;
       dPdy = (Pwork(i  ,j+1) - Pwork(i,j)) / grid.dy;
       dbdx = ((*bed)(i+1,j  ) - (*bed)(i,j)) / grid.dx;
       dbdy = ((*bed)(i  ,j+1) - (*bed)(i,j)) / grid.dy;
-      result(i,j,0) = - c0 * dPdx - K * dbdx;
-      result(i,j,1) = - c0 * dPdy - K * dbdy;
+      if (no_model_mask != NULL) {
+        if (((*no_model_mask)(i,j) >= 0.5) || ((*no_model_mask)(i+1,j) >= 0.5))
+          result(i,j,0) = 0.0;
+        else
+          result(i,j,0) = - c0 * dPdx - K * dbdx;
+        if (((*no_model_mask)(i,j) >= 0.5) || ((*no_model_mask)(i,j+1) >= 0.5))
+          result(i,j,1) = 0.0;
+        else
+          result(i,j,1) = - c0 * dPdy - K * dbdy;
+      } else {
+        result(i,j,0) = - c0 * dPdx - K * dbdx;
+        result(i,j,1) = - c0 * dPdy - K * dbdy;
+      }
     }
   }
   ierr = Pwork.end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
+  if (no_model_mask != NULL) {
+    ierr = no_model_mask->end_access(); CHKERRQ(ierr);
+  }
   ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -249,6 +290,7 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
 //! Average the regular grid water thickness to values at the center of cell edges.
 PetscErrorCode PISMLakesHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
+
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
@@ -334,6 +376,7 @@ PetscErrorCode PISMLakesHydrology::raw_update_W(PetscReal hdt) {
                wux = K / (grid.dx * grid.dx),  // FIXME needs change if K is variable
                wuy = K / (grid.dy * grid.dy),
                divadflux, diffW;
+
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
@@ -565,7 +608,9 @@ PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const
 
 //! Copies the P state variable which is the modeled water pressure.
 PetscErrorCode PISMDistributedHydrology::water_pressure(IceModelVec2S &result) {
-  PetscErrorCode ierr = P.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr;
+  //ierr = verbPrintf(1,grid.com,"in PISMDistributedHydrology::water_pressure()\n"); CHKERRQ(ierr);
+  ierr = P.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -716,9 +761,9 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
 
   if (report_mass_accounting) {
     ierr = verbPrintf(2,grid.com,
-            "   [%.5e  %.6f  %.6f  %.6f   -->  dt = %.6f (a)]\n",
-            maxV*secpera, dtCFL/secpera, dtDIFFW/secpera, dtDIFFP/secpera, dt_result/secpera);
-            CHKERRQ(ierr);
+            "   [%.5e  %.6f  %.6f  %.6f   -->  dt = %.8f (a)  (at  t = %.8f (a))]\n",
+            maxV*secpera, dtCFL/secpera, dtDIFFW/secpera, dtDIFFP/secpera,
+            dt_result/secpera, t_current/secpera); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -805,6 +850,9 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = input.begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
+    if (no_model_mask != NULL) {
+      ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
+    }
     ierr = Pwork.begin_access(); CHKERRQ(ierr);
     ierr = Pnew.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -823,12 +871,25 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
                      knownw = (M.ice_free_land(i-1,j) || M.ocean(i-1,j)),
                      knownn = (M.ice_free_land(i,j+1) || M.ocean(i,j+1)),
                      knowns = (M.ice_free_land(i,j-1) || M.ocean(i,j-1));
+          PetscReal dpsie = psi(i+1,j) - psi(i,j),
+                    dpsiw = psi(i,j)   - psi(i-1,j),
+                    dpsin = psi(i,j+1) - psi(i,j),
+                    dpsis = psi(i,j)   - psi(i,j-1);
+          if (no_model_mask != NULL) {
+            const bool nomodelij = ((*no_model_mask)(i,j) >= 0.5);
+            if (nomodelij || ((*no_model_mask)(i+1,j) >= 0.5))
+              dpsie = 0.0;
+            if (nomodelij || ((*no_model_mask)(i-1,j) >= 0.5))
+              dpsiw = 0.0;
+            if (nomodelij || ((*no_model_mask)(i,j+1) >= 0.5))
+              dpsin = 0.0;
+            if (nomodelij || ((*no_model_mask)(i,j-1) >= 0.5))
+              dpsis = 0.0;
+          }
           if (!knowne && !knownw)
-            divflux += pux * ( Wstag(i,j,0) * (psi(i+1,j) - psi(i,j))
-                           - Wstag(i-1,j,0) * (psi(i,j) - psi(i-1,j)) );
+            divflux += pux * ( Wstag(i,j,0) * dpsie - Wstag(i-1,j,0) * dpsiw );
           if (!knownn && !knowns)
-            divflux += puy * ( Wstag(i,j,1) * (psi(i,j+1) - psi(i,j))
-                           - Wstag(i,j-1,1) * (psi(i,j) - psi(i,j-1)) );
+            divflux += puy * ( Wstag(i,j,1) * dpsin - Wstag(i,j-1,1) * dpsis );
           // candidate for update
           Pnew(i,j) = P(i,j) + (hdt * Pwork(i,j) / E0) * ( divflux + Close - Open + input(i,j) );
           // projection to enforce  0 <= P <= P_o
@@ -845,6 +906,9 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = input.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
+    if (no_model_mask != NULL) {
+      ierr = no_model_mask->end_access(); CHKERRQ(ierr);
+    }
 
     // transfer Pnew into P; note Wstag, Qstag unaffected in Wnew update below
     ierr = Pnew.beginGhostComm(P); CHKERRQ(ierr);

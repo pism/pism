@@ -231,6 +231,8 @@ protected:
                         //   V(i,j,1) = beta(i,j)  = north-edge centered y-component of water velocity
                    Wstag,// edge-centered (staggered) W values (averaged from regular)
                    Qstag;// edge-centered (staggered) advection fluxes
+  // if available, we use this regional tool:
+  IceModelVec2Int *no_model_mask;
   // this model's workspace variables
   IceModelVec2S input, Wnew, Pwork;
 

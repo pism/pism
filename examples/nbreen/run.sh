@@ -24,11 +24,18 @@ pismexec="pismo -no_model_strip 1.0"
 
 YY=5
 
-#FIXME:  need to add outline, outside of which W is reset to zero
-#  (at least, that is the behavior in hydrolakes/matlab/doublediff.m)
-#  runs generate over-large velocities (at least) from differencing
-#  bed topography and pressure across periodic boundary
-#  (at least, that is avoided in hydrolakes/matlab/doublediff.m)
+#FIXME:   For now, runs generate over-large velocities and (locally) too-large water
+# depths in areas of thick ice.  Compared to hydrolakes/matlab/nbreenwater.m, that is.
+# This behavior may be because topg is different (subsample versus interpolate).
+# But here are possible actions:
+#  1. Add outline, outside of which W is reset to zero.
+#  (that is the behavior in hydrolakes/matlab/doublediff.m)
+#  2. [DONE.  At this point the velocities are NOT too large but the too-large
+#  water thickness issue remains.]  Avoid differencing bed topography and pressure
+#  across the periodic boundary by using a no_model_mask strip near boundary of
+#  computational domain.
+#  (such differencing is avoided in hydrolakes/matlab/doublediff.m)
+#  3. provide the water velocity diagnostically
 
 mpiexec -n $NN $pismexec -boot_file pismnbreen.nc $physics $hydro \
   $grid -max_dt 0.1 -y $YY -o nbreen_y${YY}_${dx}m.nc
