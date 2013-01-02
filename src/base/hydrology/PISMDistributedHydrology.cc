@@ -288,26 +288,28 @@ PetscErrorCode PISMLakesHydrology::advective_fluxes(IceModelVec2Stag &result) {
 //! Compute the adaptive time step for evolution of W.
 PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal &dt_result,
-                  PetscReal &dt_DIFFW_result) {
+                  PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result) {
   PetscErrorCode ierr;
-  PetscReal dtmax, dtCFL, maxW, K;
+  PetscReal dtmax, maxW, K;
   PetscReal tmp[2];
   // FIXME:  want Kmax or Kmin according to W > Wr ?
   K  = config.get("hydrology_hydraulic_conductivity");
   // Matlab: dtCFL = 0.5 / (max(max(abs(alphV)))/dx + max(max(abs(betaV)))/dy);
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
-  dtCFL = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy + 3.1689e-15); // regularize with eps = (1 cm/a) / (100km)
+  maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
+  // regularize with eps = (1 cm/a) / (100km) :
+  dtCFL_result = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy); // is regularization needed?
   // Matlab: maxW = max(max(max(Wea)),max(max(Wno))) + 0.001;
   ierr = Wstag.absmaxcomponents(tmp); CHKERRQ(ierr);
   maxW = PetscMax(tmp[0],tmp[1]) + 0.001;
   // Matlab: dtDIFFW = 0.25 / (p.K * maxW * (1/dx^2 + 1/dy^2));
-  dt_DIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
-  dt_DIFFW_result = 0.25 / (K * maxW * dt_DIFFW_result);
+  dtDIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
+  dtDIFFW_result = 0.25 / (K * maxW * dtDIFFW_result);
   dtmax = config.get("hydrology_maximum_time_step_years") * secpera;
   // dt = min([te-t dtmax dtCFL dtDIFFW]);
   dt_result = PetscMin(t_end - t_current, dtmax);
-  dt_result = PetscMin(dt_result, dtCFL);
-  dt_result = PetscMin(dt_result, dt_DIFFW_result);
+  dt_result = PetscMin(dt_result, dtCFL_result);
+  dt_result = PetscMin(dt_result, dtDIFFW_result);
   return 0;
 }
 
@@ -317,9 +319,10 @@ Call this version if you don't need the dt associated to the diffusion term.
  */
 PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal &dt_result) {
-  PetscReal discard;
+  PetscReal discard1, discard2, discard3;
   PetscErrorCode ierr = adaptive_for_W_evolution(
-                             t_current, t_end, dt_result, discard); CHKERRQ(ierr);
+                             t_current, t_end, dt_result,
+                             discard1, discard2, discard3); CHKERRQ(ierr);
   return 0;
 }
 
@@ -698,9 +701,10 @@ PetscErrorCode PISMDistributedHydrology::update_cbase(IceModelVec2S &result_cbas
 PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal &dt_result) {
   PetscErrorCode ierr;
-  PetscReal dtDIFFW, dtDIFFP, maxH,
+  PetscReal maxV, dtCFL, dtDIFFW, dtDIFFP, maxH,
             E0 = config.get("hydrology_diffusive_closure_regularization");
-  ierr = adaptive_for_W_evolution(t_current,t_end,dt_result,dtDIFFW); CHKERRQ(ierr);
+
+  ierr = adaptive_for_W_evolution(t_current,t_end,dt_result,maxV,dtCFL,dtDIFFW); CHKERRQ(ierr);
 
   // Matlab: dtDIFFP = (p.rhow * p.E0 / (p.rhoi * maxH)) * dtDIFFW;
   ierr = thk->max(maxH); CHKERRQ(ierr);
@@ -709,6 +713,13 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
   dt_result = PetscMin(dt_result, dtDIFFP);
+
+  if (report_mass_accounting) {
+    ierr = verbPrintf(2,grid.com,
+            "   [%.5e  %.6f  %.6f  %.6f   -->  dt = %.6f (a)]\n",
+            maxV*secpera, dtCFL/secpera, dtDIFFW/secpera, dtDIFFP/secpera, dt_result/secpera);
+            CHKERRQ(ierr);
+  }
   return 0;
 }
 

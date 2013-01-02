@@ -244,7 +244,7 @@ protected:
 
   virtual PetscErrorCode adaptive_for_W_evolution(
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result,
-                           PetscReal &dt_DIFFW_result);
+                           PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result);
   virtual PetscErrorCode adaptive_for_W_evolution(
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
 

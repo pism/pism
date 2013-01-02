@@ -22,7 +22,13 @@ hydro="-hydrology distributed -report_mass_accounting"
 
 pismexec="pismo -no_model_strip 1.0"
 
-YY=1
+YY=5
+
+#FIXME:  need to add outline, outside of which W is reset to zero
+#  (at least, that is the behavior in hydrolakes/matlab/doublediff.m)
+#  runs generate over-large velocities (at least) from differencing
+#  bed topography and pressure across periodic boundary
+#  (at least, that is avoided in hydrolakes/matlab/doublediff.m)
 
 mpiexec -n $NN $pismexec -boot_file pismnbreen.nc $physics $hydro \
   $grid -max_dt 0.1 -y $YY -o nbreen_y${YY}_${dx}m.nc
