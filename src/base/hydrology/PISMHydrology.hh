@@ -217,10 +217,14 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
   virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result);
   virtual PetscErrorCode water_pressure(IceModelVec2S &result);
+
+  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
 
 protected:
   // this model's state
@@ -240,7 +244,6 @@ protected:
   virtual PetscErrorCode init_actions(PISMVars &vars, bool i_set, bool bootstrap_set);
 
   virtual PetscErrorCode check_Wpositive();
-  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
@@ -251,6 +254,15 @@ protected:
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
 
   PetscErrorCode raw_update_W(PetscReal hdt);
+};
+
+
+//! \brief Reports the staggered-grid components of the water in the subglacial layer.
+class PISMLakesHydrology_bwatvel : public PISMDiag<PISMLakesHydrology>
+{
+public:
+  PISMLakesHydrology_bwatvel(PISMLakesHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 
@@ -272,7 +284,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 

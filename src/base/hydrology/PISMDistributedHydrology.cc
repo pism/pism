@@ -176,6 +176,11 @@ PetscErrorCode PISMLakesHydrology::write_variables(set<string> vars, const PIO &
 }
 
 
+void PISMLakesHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
+}
+
+
 //! Check W >= 0 and fails with message if not satisfied.
 PetscErrorCode PISMLakesHydrology::check_Wpositive() {
   PetscErrorCode ierr;
@@ -474,6 +479,37 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   return 0;
 }
 
+
+PISMLakesHydrology_bwatvel::PISMLakesHydrology_bwatvel(PISMLakesHydrology *m, IceGrid &g, PISMVars &my_vars)
+    : PISMDiag<PISMLakesHydrology>(m, g, my_vars) {
+
+  // set metadata:
+  dof = 2;
+  vars.resize(2);
+  vars[0].init_2d("bwatvel[0]", grid);
+  vars[1].init_2d("bwatvel[1]", grid);
+
+  set_attrs("velocity of water in subglacial layer, i-offset", "",
+            "m s-1", "m year-1", 0);
+  set_attrs("velocity of water in subglacial layer, j-offset", "",
+            "m s-1", "m year-1", 1);
+}
+
+
+PetscErrorCode PISMLakesHydrology_bwatvel::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2Stag *result = new IceModelVec2Stag;
+  ierr = result->create(grid, "bwatvel", true); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = model->velocity_staggered(*result); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
 
 
 /************************************/
@@ -938,6 +974,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   return 0;
 }
 
-void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {
-  // do nothing (we will write bwp using the P data member)
+void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  PISMLakesHydrology::get_diagnostics(dict);
 }
+
