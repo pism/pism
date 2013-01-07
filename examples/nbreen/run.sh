@@ -1,50 +1,61 @@
 #!/bin/bash
 
-NN=4
+# format:
+#   run.sh PROCS GRID DURATION
+# so example usage is
+#   $ ./run.sh 4 500 5 >& out.nbreen_y5_500m &
 
-dx=125
-myMx=264
-myMy=207
+if [ $# -lt 3 ] ; then
+  echo "run.sh ERROR: needs three arguments"
+  echo "  example usage: 'run.sh 4 500 5' for 4 processors and 500 m grid and 5 year run"
+  exit
+fi
 
-#dx=250
-#myMx=133
-#myMy=104
+NN="$1"
 
-#dx=500
-#myMx=67
-#myMy=52
+if [ "$2" -eq "500" ]; then
+  dx=500
+  myMx=67
+  myMy=52
+elif [ "$2" -eq "250" ]; then
+  dx=250
+  myMx=133
+  myMy=104
+elif [ "$2" -eq "125" ]; then
+  dx=125
+  myMx=264
+  myMy=207
+else
+  echo "invalid second argument: must be in {125,250,500}"
+  exit
+fi
 
-YY=5
+YY="$3"
+
+# the following is what I want but issue #125 arises:
+#pismexec="pismo -no_model_strip 1.0"
+
+pismexec="pismr"
+
+data=pismnbreen.nc
 
 grid="-Mx $myMx -My $myMy -Mz 11 -z_spacing equal -Lz 600"
 
-physics="-config_override nbreen_config.nc -no_mass -no_energy"
+climate="-surface given -surface_given_file $data"
 
-#FIXME:  want distributed but need basal sliding to be established; for now revert to lakes
-#hydro="-hydrology distributed -report_mass_accounting"
-hydro="-hydrology lakes -report_mass_accounting"
+physics="-config_override nbreen_config.nc -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc"
 
-pismexec="pismo -no_model_strip 1.0"
-
-diag="-extra_times 0:0.1:$YY -extra_vars bmelt,bwat,bwp,bwatvel"
+# alternatives
+hydrodist="-hydrology distributed -report_mass_accounting"
+hydrolakes="-hydrology lakes -report_mass_accounting"
 
 oname=nbreen_y${YY}_${dx}m.nc
-output="-extra_file extras_$oname -o $oname"
+
+diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars cbase,bmelt,bwat,bwp,bwatvel"
+
+output="-o $oname"
 
 
-#FIXME:   For now, runs generate over-large velocities and (locally) too-large water
-# depths in areas of thick ice.  Compared to hydrolakes/matlab/nbreenwater.m, that is.
-# This behavior may be because topg is different (subsample versus interpolate).
-# But here are possible actions:
-#  1. Add outline, outside of which W is reset to zero.
-#  (that is the behavior in hydrolakes/matlab/doublediff.m)
-#  2. [DONE.  At this point the velocities are NOT too large but the too-large
-#  water thickness issue remains.]  Avoid differencing bed topography and pressure
-#  across the periodic boundary by using a no_model_mask strip near boundary of
-#  computational domain.
-#  (such differencing is avoided in hydrolakes/matlab/doublediff.m)
-#  3. [DONE]  provide the water velocity diagnostically
-
-mpiexec -n $NN $pismexec -boot_file pismnbreen.nc $physics $hydro \
-  $grid -max_dt 0.1 -y $YY $diag $output
+mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydrodist \
+  $grid -max_dt 0.1 -y $YY $diagnostics $output
 
