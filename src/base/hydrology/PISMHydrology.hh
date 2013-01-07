@@ -225,6 +225,7 @@ public:
   virtual PetscErrorCode water_pressure(IceModelVec2S &result);
 
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode velocity_staggered_whereWpositive(IceModelVec2Stag &result);
 
 protected:
   // this model's state

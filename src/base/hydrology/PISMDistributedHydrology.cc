@@ -310,6 +310,28 @@ PetscErrorCode PISMLakesHydrology::water_thickness_staggered(IceModelVec2Stag &r
 }
 
 
+//! Only give nonzero velocity where Wstag > 0.0.
+/*! Assumes Wstag is up to date with up to date ghosts.
+ */
+PetscErrorCode PISMLakesHydrology::velocity_staggered_whereWpositive(IceModelVec2Stag &result) {
+  PetscErrorCode ierr;
+  ierr = velocity_staggered(result); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = Wstag.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (Wstag(i,j,0) <= 0.0)
+        result(i,j,0) = 0.0;
+      if (Wstag(i,j,1) <= 0.0)
+        result(i,j,1) = 0.0;
+    }
+  }
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = Wstag.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Compute Q = V W at edge-centers (staggered grid) by first-order upwinding.
 /*!
 The field W must have valid ghost values, but V does not need them.
@@ -442,11 +464,12 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     hydrocount++;
     ierr = check_Wpositive(); CHKERRQ(ierr);
 
-    ierr = velocity_staggered(V); CHKERRQ(ierr);
-
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.beginGhostComm(); CHKERRQ(ierr);
     ierr = Wstag.endGhostComm(); CHKERRQ(ierr);
+
+    ierr = velocity_staggered_whereWpositive(V); CHKERRQ(ierr);
+    //ierr = velocity_staggered(V); CHKERRQ(ierr);
 
     // to get Qstag, W needs valid ghosts
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
@@ -505,7 +528,7 @@ PetscErrorCode PISMLakesHydrology_bwatvel::compute(IceModelVec* &output) {
   ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
   result->write_in_glaciological_units = true;
 
-  ierr = model->velocity_staggered(*result); CHKERRQ(ierr);
+  ierr = model->velocity_staggered_whereWpositive(*result); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -797,7 +820,7 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
 
   if (report_mass_accounting) {
     ierr = verbPrintf(2,grid.com,
-            "   [%.5e  %.6f  %.6f  %.6f   -->  dt = %.8f (a)  (at  t = %.8f (a))]\n",
+            "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
             maxV*secpera, dtCFL/secpera, dtDIFFW/secpera, dtDIFFP/secpera,
             dt_result/secpera, t_current/secpera); CHKERRQ(ierr);
   }
@@ -857,11 +880,12 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = psi.beginGhostComm(); CHKERRQ(ierr);
     ierr = psi.endGhostComm(); CHKERRQ(ierr);
 
-    ierr = velocity_staggered(V); CHKERRQ(ierr);
-
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.beginGhostComm(); CHKERRQ(ierr);
     ierr = Wstag.endGhostComm(); CHKERRQ(ierr);
+
+    ierr = velocity_staggered_whereWpositive(V); CHKERRQ(ierr);
+    //ierr = velocity_staggered(V); CHKERRQ(ierr);
 
     // to get Qstag, W needs valid ghosts
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
@@ -869,7 +893,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Qstag.endGhostComm(); CHKERRQ(ierr);
 
     ierr = adaptive_for_WandP_evolution(ht, t+dt, hdt); CHKERRQ(ierr);
-    //verbPrintf(1,grid.com,"adaptive_for_WandP_evolution() reports hdt = %.8f years\n",hdt/secpera);
 
     // update Pnew from time step
     PetscReal  pux = c0 / (grid.dx * grid.dx),
