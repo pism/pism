@@ -920,6 +920,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           Pnew(i,j) = 0.0;
         else if (M.ocean(i,j))
           Pnew(i,j) = Pwork(i,j);
+        else if (W(i,j) <= 0.0)
+          Pnew(i,j) = Pwork(i,j);
         else {
           // opening and closure terms in pressure equation
           Open = PetscMax(0.0,c1 * cbase(i,j) * (Wr - W(i,j)));
