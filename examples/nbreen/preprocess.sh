@@ -24,6 +24,18 @@ ncap2 -O -s "where(usurf>900.0) bmelt=0.0" $PISMDATA $PISMDATA
 ncap2 -O -s "where(nbreen<=0.5) bmelt=0.0" $PISMDATA $PISMDATA
 ncatted -O -a units,bmelt,m,c,"m year-1" $PISMDATA
 
+
+
+
+FIXME:  DOH!  we need 50 m/a sliding through mechanism:
+nc.write("bcflag", bcflag, time_dependent = False)
+nc.write("u_ssa_bc", ussa, time_dependent = False)
+nc.write("v_ssa_bc", vssa, time_dependent = False)
+-ssa_sliding -ssa_dirichlet_bc
+
+
+
+
 CONF=nbreen_config
 echo "creating PISM-readable config override file $CONF.nc ..."
 rm -f $CONF.nc

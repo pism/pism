@@ -2,17 +2,17 @@
 
 NN=4
 
-#dx=125
-#myMx=264
-#myMy=207
+dx=125
+myMx=264
+myMy=207
 
 #dx=250
 #myMx=133
 #myMy=104
 
-dx=500
-myMx=67
-myMy=52
+#dx=500
+#myMx=67
+#myMy=52
 
 YY=5
 
@@ -20,13 +20,16 @@ grid="-Mx $myMx -My $myMy -Mz 11 -z_spacing equal -Lz 600"
 
 physics="-config_override nbreen_config.nc -no_mass -no_energy"
 
-hydro="-hydrology distributed -report_mass_accounting"
+#FIXME:  want distributed but need basal sliding to be established; for now revert to lakes
+#hydro="-hydrology distributed -report_mass_accounting"
+hydro="-hydrology lakes -report_mass_accounting"
 
 pismexec="pismo -no_model_strip 1.0"
 
-oname=nbreen_y${YY}_${dx}m.nc
+diag="-extra_times 0:0.1:$YY -extra_vars bmelt,bwat,bwp,bwatvel"
 
-diag="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars bmelt,bwat,bwp,bwatvel"
+oname=nbreen_y${YY}_${dx}m.nc
+output="-extra_file extras_$oname -o $oname"
 
 
 #FIXME:   For now, runs generate over-large velocities and (locally) too-large water
@@ -43,5 +46,5 @@ diag="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars bmelt,bwat,bw
 #  3. [DONE]  provide the water velocity diagnostically
 
 mpiexec -n $NN $pismexec -boot_file pismnbreen.nc $physics $hydro \
-  $grid -max_dt 0.1 -y $YY $diag -o $oname
+  $grid -max_dt 0.1 -y $YY $diag $output
 

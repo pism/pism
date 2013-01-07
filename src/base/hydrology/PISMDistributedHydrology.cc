@@ -178,6 +178,7 @@ PetscErrorCode PISMLakesHydrology::write_variables(set<string> vars, const PIO &
 
 void PISMLakesHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
+  //FIXME: add bwp (so we can compare to PISMDistributedHydrology results)
 }
 
 
