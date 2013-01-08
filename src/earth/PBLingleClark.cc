@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -201,17 +201,15 @@ PetscErrorCode PBLingleClark::correct_topg() {
   }
 
   // Stop if the user asked to regrid topg (in this case no correction is necessary).
-  vector<string> regrid_vars;
-  ierr = PISMOptionsStringArray("-regrid_vars", "Specifies regridding variables", "",
-                                regrid_vars, regrid_vars_set); CHKERRQ(ierr);
+  set<string> regrid_vars;
+  ierr = PISMOptionsStringSet("-regrid_vars", "Specifies regridding variables", "",
+                              regrid_vars, regrid_vars_set); CHKERRQ(ierr);
 
   if (regrid_vars_set) {
-    for (unsigned int i = 0; i < regrid_vars.size(); ++i) {
-      if (regrid_vars[i] == "topg") {
-        ierr = verbPrintf(2, grid.com,
-                          "  Bed elevation correction requested, but -regrid_vars contains topg...\n"); CHKERRQ(ierr);
-        return 0;
-      }
+    if (set_contains(regrid_vars, "topg")) {
+      ierr = verbPrintf(2, grid.com,
+                        "  Bed elevation correction requested, but -regrid_vars contains topg...\n"); CHKERRQ(ierr);
+      return 0;
     }
   }
 

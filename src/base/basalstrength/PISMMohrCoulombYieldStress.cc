@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 PISM Authors
+// Copyright (C) 2004--2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -235,25 +235,21 @@ PetscErrorCode PISMMohrCoulombYieldStress::regrid() {
   PetscErrorCode ierr;
   bool regrid_file_set, regrid_vars_set;
   string regrid_file;
-  vector<string> regrid_vars;
+  set<string> regrid_vars;
 
   ierr = PetscOptionsBegin(grid.com, "", "PISMMohrCoulombYieldStress regridding options", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsString("-regrid_file", "regridding file name",
                              regrid_file, regrid_file_set); CHKERRQ(ierr);
-    ierr = PISMOptionsStringArray("-regrid_vars", "comma-separated list of regridding variables",
-                                  "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
+    ierr = PISMOptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
+                                "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (! regrid_file_set) return 0;
 
-  set<string> vars;
-  for (unsigned int i = 0; i < regrid_vars.size(); ++i)
-    vars.insert(regrid_vars[i]);
-
   // stop if the user did not ask to regrid tillphi
-  if (!set_contains(vars, till_phi.string_attr("short_name")))
+  if (!set_contains(regrid_vars, till_phi.string_attr("short_name")))
     return 0;
 
   ierr = till_phi.regrid(regrid_file, true); CHKERRQ(ierr);

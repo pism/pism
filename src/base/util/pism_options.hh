@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -38,6 +38,8 @@ PetscErrorCode PISMOptionsString(string option, string text,
 				 string &result, bool &flag, bool allow_empty_arg = false);
 PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_value,
 				      vector<string>& result, bool &flag);
+PetscErrorCode PISMOptionsStringSet(string opt, string text, string default_value,
+                                    set<string>& result, bool &flag);
 
 PetscErrorCode PISMOptionsInt(string option, string text,
 			      PetscInt &result, bool &is_set);

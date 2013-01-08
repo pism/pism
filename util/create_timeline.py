@@ -73,6 +73,7 @@ cdftime = utime(time_units, time_calendar)
 # command-line argument.
 pdict = {}
 pdict['SECONDLY'] = rrule.SECONDLY
+pdict['MINUTELY'] = rrule.MINUTELY
 pdict['HOURLY'] = rrule.HOURLY
 pdict['DAILY'] = rrule.DAILY
 pdict['WEEKLY'] = rrule.WEEKLY
@@ -80,33 +81,37 @@ pdict['MONTHLY'] = rrule.MONTHLY
 pdict['YEARLY'] = rrule.YEARLY
 prule = pdict[periodicity]
 
+# reference date from command-line argument
 r = time_units.split(' ')[2].split('-')
 refdate = datetime(int(r[0]), int(r[1]), int(r[2]))
 
-
+# create list with dates from start_date until end_date with
+# periodicity prule.
 bnds_datelist = list(rrule.rrule(prule, dtstart=start_date, until=end_date))
 
-# calculate the days since refdate, including refdate
+# calculate the days since refdate, including refdate, with time being the
+# mid-point value:
+# time[n] = (bnds[n] + bnds[n+1]) / 2
 bnds_interval_since_refdate = cdftime.date2num(bnds_datelist)
 time_interval_since_refdate = (bnds_interval_since_refdate[0:-1] +
                                np.diff(bnds_interval_since_refdate) / 2)
-# set a fill value
-fill_value = np.nan
 
 # create a new dimension for bounds only if it does not yet exist
-dim = "time"
-if dim not in nc.dimensions.keys():
-    nc.createDimension(dim)
+time_dim = "time"
+if time_dim not in nc.dimensions.keys():
+    nc.createDimension(time_dim)
 
 # create a new dimension for bounds only if it does not yet exist
-dim = "tbnds"
-if dim not in nc.dimensions.keys():
-    nc.createDimension(dim, 2)
+bnds_dim = "nb2"
+if bnds_dim not in nc.dimensions.keys():
+    nc.createDimension(bnds_dim, 2)
 
+# variable names consistent with PISM
 time_var_name = "time"
-bnds_var_name = "time_bounds"
+bnds_var_name = "time_bnds"
 
-time_var = nc.createVariable(time_var_name, 'f', dimensions=("time"))
+# create time variable
+time_var = nc.createVariable(time_var_name, 'd', dimensions=(time_dim))
 time_var[:] = time_interval_since_refdate
 time_var.bounds = bnds_var_name
 time_var.units = time_units
@@ -114,7 +119,8 @@ time_var.calendar = time_calendar
 time_var.standard_name = time_var_name
 time_var.axis = "T"
 
-time_bnds_var = nc.createVariable(bnds_var_name, 'f', dimensions=("time", "tbnds"))
+# create time bounds variable
+time_bnds_var = nc.createVariable(bnds_var_name, 'd', dimensions=(time_dim, bnds_dim))
 time_bnds_var[:,0] = bnds_interval_since_refdate[0:-1]
 time_bnds_var[:,1] = bnds_interval_since_refdate[1::]
 

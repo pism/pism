@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -322,6 +322,24 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
       result.push_back(word);
 
     flag = false;
+  }
+
+  return 0;
+}
+
+//! Process a command-line option and return a set of strings.
+PetscErrorCode PISMOptionsStringSet(string opt, string text, string default_value,
+                                    set<string>& result, bool &flag) {
+  vector<string> tmp;
+  PetscErrorCode ierr;
+
+  ierr = PISMOptionsStringArray(opt, text, default_value, tmp, flag); CHKERRQ(ierr);
+
+  result.clear();
+  vector<string>::iterator j = tmp.begin();
+  while(j != tmp.end()) {
+    result.insert(*j);
+    ++j;
   }
 
   return 0;
