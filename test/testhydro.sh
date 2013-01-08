@@ -13,11 +13,8 @@ fi
 
 # only goal of this test script is to *LOOK* at the results; verification is another matter
 
-#$MPIDO ${PATHTO}pismr -i start.nc                        -y 20 -o tillcandefault.nc
-
 $MPIDO ${PATHTO}pismr -i start.nc -hydrology tillcan -ys 0 -y 20 -o tillcan.nc
-#$MPIDO ${PATHTO}pismr -boot_file tillcan.nc -hydrology tillcan -Mx 181 -My 181 -Lz 4100 -Mz 101 -ys 0 -y 0.001 -o boottillcan.nc
-#$MPIDO ${PATHTO}pismr -boot_file tillcan.nc -hydrology tillcan -Mx 181 -My 181 -Lz 4100 -Mz 101 -ys 0 -y 0.001 -regrid_file continuetillcan.nc -regrid_vars enthalpy,lithotemp,bwat,bmelt -o bootandregridtillcan.nc
+$MPIDO ${PATHTO}pismr -boot_file start.nc -hydrology tillcan -Mx 181 -My 181 -Lz 4100 -Mz 101 -ys 0 -y 2 -regrid_file tillcan.nc -regrid_vars enthalpy,lithotemp,bwat,bmelt -o bootandregridtillcan.nc
 
 $MPIDO ${PATHTO}pismr -i start.nc -hydrology diffuseonly -report_mass_accounting -ys 0 -y 20 -o diffuse.nc
 
