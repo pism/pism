@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -499,7 +499,7 @@ PetscErrorCode IceModel::initFromFile(string filename) {
     PetscErrorCode ierr;
     string filename;
     bool regrid_vars_set, regrid_file_set;
-    vector<string> vars_vector;
+    set<string> regrid_vars;
 
     if (! (dimensions == 0 ||
            dimensions == 2 ||
@@ -512,8 +512,8 @@ PetscErrorCode IceModel::initFromFile(string filename) {
       ierr = PISMOptionsString("-regrid_file", "Specifies the file to regrid from",
                                filename, regrid_file_set); CHKERRQ(ierr);
 
-      ierr = PISMOptionsStringArray("-regrid_vars", "Specifies the list of variables to regrid",
-                                    "", vars_vector, regrid_vars_set); CHKERRQ(ierr);
+      ierr = PISMOptionsStringSet("-regrid_vars", "Specifies the list of variables to regrid",
+                                  "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -527,29 +527,24 @@ PetscErrorCode IceModel::initFromFile(string filename) {
       ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
     }
 
-    set<string> vars;
-    vector<string>::iterator j;
-    for (j = vars_vector.begin(); j != vars_vector.end(); ++j)
-      vars.insert(*j);
-
-    if (vars.empty()) {
+    if (regrid_vars.empty()) {
       // defaults if user gives no regrid_vars list
-      vars.insert("litho_temp");
+      regrid_vars.insert("litho_temp");
 
       if (config.get_flag("do_age"))
-	vars.insert("age");
+	regrid_vars.insert("age");
 
       if (config.get_flag("do_cold_ice_methods"))
-        vars.insert("temp");
+        regrid_vars.insert("temp");
       else
-        vars.insert("enthalpy");
+        regrid_vars.insert("enthalpy");
     }
 
     if (dimensions == 0) {
-      ierr = regrid_variables(filename, vars, 2); CHKERRQ(ierr); 
-      ierr = regrid_variables(filename, vars, 3); CHKERRQ(ierr); 
+      ierr = regrid_variables(filename, regrid_vars, 2); CHKERRQ(ierr);
+      ierr = regrid_variables(filename, regrid_vars, 3); CHKERRQ(ierr);
     } else {
-      ierr = regrid_variables(filename, vars, dimensions); CHKERRQ(ierr); 
+      ierr = regrid_variables(filename, regrid_vars, dimensions); CHKERRQ(ierr);
     }
 
     return 0;

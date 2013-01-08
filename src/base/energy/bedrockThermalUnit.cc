@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -431,14 +431,14 @@ PetscErrorCode PISMBedThermalUnit::regrid() {
   PetscErrorCode ierr;
   bool regrid_file_set, regrid_vars_set;
   string regrid_file;
-  vector<string> regrid_vars;
+  set<string> regrid_vars;
 
   ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit regridding options", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsString("-regrid_file", "regridding file name",
                              regrid_file, regrid_file_set); CHKERRQ(ierr);
-    ierr = PISMOptionsStringArray("-regrid_vars", "comma-separated list of regridding variables",
-                                  "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
+    ierr = PISMOptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
+                                "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -448,12 +448,8 @@ PetscErrorCode PISMBedThermalUnit::regrid() {
   // stop if temp was not allocated
   if (! temp.was_created()) return 0;
 
-  set<string> vars;
-  for (unsigned int i = 0; i < regrid_vars.size(); ++i)
-    vars.insert(regrid_vars[i]);
-
   // stop if the user did not ask to regrid BTU temperature
-  if (regrid_vars_set && ! set_contains(vars, temp.string_attr("short_name")))
+  if (regrid_vars_set && ! set_contains(regrid_vars, temp.string_attr("short_name")))
     return 0;
 
   ierr = temp.regrid(regrid_file.c_str(), true); CHKERRQ(ierr);
