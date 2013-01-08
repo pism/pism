@@ -183,7 +183,6 @@ protected:
 };
 
 
-
 //! \brief A subglacial hydrology model which assumes water pressure is a fixed fraction of (or is equal to) overburden pressure.  Suitable for locations of subglacial lakes.
 /*!
 This model conserves water and transports it in the map-plane.  It was promised
@@ -258,11 +257,25 @@ protected:
 };
 
 
-//! \brief Reports the staggered-grid components of the water in the subglacial layer.
+//! \brief For PISMLakesHydrology and its derived classes, diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
 class PISMLakesHydrology_bwatvel : public PISMDiag<PISMLakesHydrology>
 {
 public:
   PISMLakesHydrology_bwatvel(PISMLakesHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
+//! \brief For PISMLakesHydrology, diagnostically reports the modeled pressure of the water in the subglacial layer.
+/*!
+Note that this is not used by PISMDistributedHydrology, in which the modeled
+pressure is a state variable.  Note that this is reporting a scalar multiple
+(till_pw_fraction) of the overburden pressure.
+ */
+class PISMLakesHydrology_bwp : public PISMDiag<PISMLakesHydrology>
+{
+public:
+  PISMLakesHydrology_bwp(PISMLakesHydrology *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

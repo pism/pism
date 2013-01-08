@@ -178,7 +178,7 @@ PetscErrorCode PISMLakesHydrology::write_variables(set<string> vars, const PIO &
 
 void PISMLakesHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
-  //FIXME: add bwp (so we can compare to PISMDistributedHydrology results)
+  dict["bwp"] = new PISMLakesHydrology_bwp(this, grid, *variables);
 }
 
 
@@ -536,6 +536,25 @@ PetscErrorCode PISMLakesHydrology_bwatvel::compute(IceModelVec* &output) {
 }
 
 
+PISMLakesHydrology_bwp::PISMLakesHydrology_bwp(PISMLakesHydrology *m, IceGrid &g, PISMVars &my_vars)
+    : PISMDiag<PISMLakesHydrology>(m, g, my_vars) {
+  vars[0].init_2d("bwp", grid);
+  set_attrs("modeled pressure of water in subglacial layer", "",
+            "Pa", "Pa", 0);
+}
+
+
+PetscErrorCode PISMLakesHydrology_bwp::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "bwatvel", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = model->water_pressure(*result); CHKERRQ(ierr);
+  output = result;
+  return 0;
+}
+
+
 /************************************/
 /***** PISMDistributedHydrology *****/
 /************************************/
@@ -790,7 +809,7 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
 Calls a PISMStressBalance method to get the vector basal velocity of the ice,
 and then computes the magnitude of that.
 
-fixme:  Is taking Ubase from the PISMStressBalance the correct method?
+FIXME:  Is taking Ubase from the PISMStressBalance the correct method?
  */
 PetscErrorCode PISMDistributedHydrology::update_cbase(IceModelVec2S &result_cbase) {
   PetscErrorCode ierr;
@@ -1001,6 +1020,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
 }
 
 void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  PISMLakesHydrology::get_diagnostics(dict);
+  dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
 }
 
