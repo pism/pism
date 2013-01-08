@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2013 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -336,8 +336,7 @@ PetscErrorCode InvSSAForwardProblem_dep::solveF(IceModelVec2V &result)
   ierr = solveF_core(); CHKERRQ(ierr);
 
   ierr = result.copy_from(SSAX); CHKERRQ(ierr);
-  ierr = result.beginGhostComm(); CHKERRQ(ierr);
-  ierr = result.endGhostComm(); CHKERRQ(ierr);
+  ierr = result.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -428,8 +427,7 @@ PetscErrorCode InvSSAForwardProblem_dep::solveT( IceModelVec2S &dtauc, IceModelV
 
   // Extract the solution and communicate.
   ierr = result.copy_from(m_VecZ2); CHKERRQ(ierr);
-  ierr = result.beginGhostComm(); CHKERRQ(ierr);
-  ierr = result.endGhostComm(); CHKERRQ(ierr);
+  ierr = result.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -505,8 +503,7 @@ PetscErrorCode InvSSAForwardProblem_dep::solveTStar( IceModelVec2V &residual, Ic
 
   // Extract the solution and communicate.
   ierr = result.copy_from(m_VecV); CHKERRQ(ierr);
-  ierr = result.beginGhostComm(); CHKERRQ(ierr);
-  ierr = result.endGhostComm(); CHKERRQ(ierr);
+  ierr = result.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }

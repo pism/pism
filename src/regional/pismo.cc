@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -118,8 +118,7 @@ PetscErrorCode IceRegionalModel::set_no_model_strip(PetscReal strip) {
 
     ierr = no_model_mask.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
 
-    ierr = no_model_mask.beginGhostComm(); CHKERRQ(ierr);
-    ierr = no_model_mask.endGhostComm(); CHKERRQ(ierr);
+    ierr = no_model_mask.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 

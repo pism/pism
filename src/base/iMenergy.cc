@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -62,11 +62,10 @@ PetscErrorCode IceModel::energyStep() {
     // new temperature values go in vTnew; also updates Hmelt:
     ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);  
 
-    ierr = T3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
-    ierr = T3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);
+    ierr = vWork3d.update_ghosts(T3); CHKERRQ(ierr);
 
-    // compute_enthalpy_cold() updates ghosts of Enth3 using a
-    // begin/endGhostComm pair. Is not optimized because this
+    // compute_enthalpy_cold() updates ghosts of Enth3 using
+    // update_ghosts(). Is not optimized because this
     // (do_cold_ice_methods) is a rare case.
     ierr = compute_enthalpy_cold(T3, Enth3);  CHKERRQ(ierr);
 
@@ -75,10 +74,9 @@ PetscErrorCode IceModel::energyStep() {
     PetscScalar myLiquifiedVol = 0.0, gLiquifiedVol;
 
     ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
-       CHKERRQ(ierr);
+    CHKERRQ(ierr);
 
-    ierr = Enth3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
-    ierr = Enth3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);
+    ierr = vWork3d.update_ghosts(Enth3); CHKERRQ(ierr);
 
     ierr = PISMGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
     if (gLiquifiedVol > 0.0) {
@@ -90,8 +88,7 @@ PetscErrorCode IceModel::energyStep() {
 
   // Both cases above update the basal melt rate field; here we update its
   // ghosts, which are needed to compute tauc locally
-  ierr = vbmr.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vbmr.endGhostComm(); CHKERRQ(ierr);
+  ierr = vbmr.update_ghosts(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 

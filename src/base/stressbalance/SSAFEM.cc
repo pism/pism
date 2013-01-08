@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2013 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -230,8 +230,7 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason)
 
   // Extract the solution back from SSAX to velocity and communicate.
   ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
-  ierr = m_velocity.beginGhostComm(); CHKERRQ(ierr);
-  ierr = m_velocity.endGhostComm(); CHKERRQ(ierr);
+  ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(NULL,"-ssa_view_solution",&flg);CHKERRQ(ierr);
   if (flg) {

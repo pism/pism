@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -425,8 +425,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
 
   if (testname == 'H') {
     ierr = vH.copy_to(vh); CHKERRQ(ierr);
@@ -533,18 +532,15 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = vbed.end_access(); CHKERRQ(ierr);
   delete [] HH;  delete [] bb;  delete [] aa;
 
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
-  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
+  ierr = vbed.update_ghosts(); CHKERRQ(ierr);
 
   // store copy of vH for "-eo" runs and for evaluating geometry errors
   ierr = vH.copy_to(vHexactL); CHKERRQ(ierr);
 
   // set surface to H+b
   ierr = vH.add(1.0, vbed, vh); CHKERRQ(ierr);
-  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+  ierr = vh.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -590,8 +586,7 @@ PetscErrorCode IceCompModel::reset_thickness_tests_AE() {
   }
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -630,21 +625,18 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
 
   if (testname == 'H') {
     ierr = vH.copy_to(vh); CHKERRQ(ierr);
     ierr = vh.scale(1-f); CHKERRQ(ierr);
     ierr = vH.copy_to(vbed); CHKERRQ(ierr);
     ierr = vbed.scale(-f); CHKERRQ(ierr);
-    ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vbed.endGhostComm(); CHKERRQ(ierr);
+    ierr = vbed.update_ghosts(); CHKERRQ(ierr);
   } else {
     ierr = vH.copy_to(vh); CHKERRQ(ierr);
   }
-  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+  ierr = vh.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -669,8 +661,7 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vel_adv->end_access(); CHKERRQ(ierr);
 
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
   return 0;
@@ -680,13 +671,11 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
 PetscErrorCode IceCompModel::fillSolnTestL() {
   PetscErrorCode  ierr;
 
-  ierr = vHexactL.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vHexactL.endGhostComm(); CHKERRQ(ierr);
+  ierr = vHexactL.update_ghosts(); CHKERRQ(ierr);
   ierr = vH.copy_from(vHexactL);
 
   ierr = vbed.add(1.0, vH, vh);	CHKERRQ(ierr); //  h = H + bed = 1 * H + bed
-  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+  ierr = vh.update_ghosts(); CHKERRQ(ierr);
 
   // note bed was filled at initialization and hasn't changed
   return 0;
@@ -1370,17 +1359,13 @@ PetscErrorCode IceCompModel::test_V_init() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = vBCMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vBCMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vBCMask.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = vBCvel.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vBCvel.endGhostComm(); CHKERRQ(ierr);
+  ierr = vBCvel.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }

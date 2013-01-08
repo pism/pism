@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -164,8 +164,7 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
-  ierr = m_velocity.beginGhostComm(); CHKERRQ(ierr);
-  ierr = m_velocity.endGhostComm(); CHKERRQ(ierr);
+  ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }

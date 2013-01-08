@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -373,8 +373,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = mask->end_access(); CHKERRQ(ierr);
 
     // valid ghosts for diffusion below
-    ierr = W.beginGhostComm(); CHKERRQ(ierr);
-    ierr = W.endGhostComm(); CHKERRQ(ierr);
+    ierr = W.update_ghosts(); CHKERRQ(ierr);
 
     // time-splitting: second, diffusion by first-order explicit
     ierr = W.begin_access(); CHKERRQ(ierr);
@@ -390,8 +389,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Wnew.end_access(); CHKERRQ(ierr);
 
     // maybe unneeded: valid ghosts for future actions
-    ierr = Wnew.beginGhostComm(W); CHKERRQ(ierr);
-    ierr = Wnew.endGhostComm(W); CHKERRQ(ierr);
+    ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
   }
   return 0;
 }

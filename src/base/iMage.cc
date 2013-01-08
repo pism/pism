@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -300,7 +300,7 @@ PetscErrorCode IceModel::ageStep() {
         for (PetscInt k=fks+1; k<fMz; k++) {
           x[k] = 0.0;
         }
-        
+
         // put solution in IceModelVec3
         ierr = vWork3d.setValColumnPL(i,j,x); CHKERRQ(ierr);
       }
@@ -314,11 +314,10 @@ PetscErrorCode IceModel::ageStep() {
   ierr = w3->end_access();  CHKERRQ(ierr);
   ierr = vWork3d.end_access();  CHKERRQ(ierr);
 
-  delete [] x;  
+  delete [] x;
   delete [] system.u;  delete [] system.v;  delete [] system.w;
 
-  ierr = tau3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
-  ierr = tau3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);
+  ierr = vWork3d.update_ghosts(tau3); CHKERRQ(ierr);
 
   return 0;
 }

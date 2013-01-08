@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2013 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -105,11 +105,8 @@ PetscErrorCode IceModel::findIceBergCandidates() {
   ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
 
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
-
-  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.update_ghosts(); CHKERRQ(ierr);
+  ierr = vIcebergMask.update_ghosts(); CHKERRQ(ierr);
 
   // set all floating points to ICEBERGMASK_ICEBERG_CAND
   MaskQuery M(vMask);
@@ -126,8 +123,7 @@ PetscErrorCode IceModel::findIceBergCandidates() {
   }
   ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
 
-  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vIcebergMask.update_ghosts(); CHKERRQ(ierr);
 
   // set borders of shelves/icebergs to ICEBERGMASK_STOP_ATTACHED or ICEBERGMASK_STOP_OCEAN respectively.
   ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
@@ -158,8 +154,8 @@ PetscErrorCode IceModel::findIceBergCandidates() {
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
 
-  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vIcebergMask.update_ghosts(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -174,8 +170,7 @@ PetscErrorCode IceModel::identifyNotAnIceBerg() {
   // in parallel computation, if the neighbour belongs to another processor
   // domain.
   // FIXME: this is probably redundant
-  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vIcebergMask.update_ghosts(); CHKERRQ(ierr);
 
   bool done = false;
   PetscInt loopcount = 0;
@@ -210,8 +205,7 @@ PetscErrorCode IceModel::identifyNotAnIceBerg() {
     }
     ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
 
-    ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
+    ierr = vIcebergMask.update_ghosts(); CHKERRQ(ierr);
 
     // We're "done" only if the iceberg mask stopped changing on *all*
     // processor sub-domains.
@@ -278,14 +272,9 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   discharge_flux_cumulative     += discharge_flux     * factor;
 
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
-
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
-
-  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.update_ghosts(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
+  ierr = vh.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -385,8 +374,7 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 
   // finally copy vHnew into vH and communicate ghosted values
-  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
+  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
 
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
@@ -422,8 +410,7 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 
-  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
+  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
 
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
@@ -464,17 +451,10 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   if (vpik)  // actually get output from PetscSynchronizedPrintf()
     PetscSynchronizedFlush(grid.com);
 
-  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
-
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
-
-  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vh.endGhostComm(); CHKERRQ(ierr);
-
-  ierr = vHref.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vHref.endGhostComm(); CHKERRQ(ierr);
+  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
+  ierr = vMask.update_ghosts(); CHKERRQ(ierr);
+  ierr = vh.update_ghosts(); CHKERRQ(ierr);
+  ierr = vHref.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }

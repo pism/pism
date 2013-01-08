@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -324,8 +324,7 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
     ierr = generateMoundTopography(); CHKERRQ(ierr);
   } 
   // communicate b in any case; it will be horizontally-differentiated
-  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.update_ghosts(); CHKERRQ(ierr);
 
   ierr = vbmr.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.042); CHKERRQ(ierr);  // EISMINT II value; J m-2 s-1

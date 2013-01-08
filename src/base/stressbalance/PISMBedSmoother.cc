@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -149,8 +149,7 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(
   if (lambda <= 0.0) {
     // smoothing completely inactive.  we transfer the original bed topg,
     //   including ghosts, to public member topgsmooth ...
-    ierr = topg.beginGhostComm(topgsmooth); CHKERRQ(ierr);
-    ierr = topg.endGhostComm(topgsmooth); CHKERRQ(ierr);
+    ierr = topg.update_ghosts(topgsmooth); CHKERRQ(ierr);
     // and we tell get_theta() to return theta=1
     Nx = -1;
     Ny = -1;
@@ -186,8 +185,7 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(
   if ((Nx < 0) || (Ny < 0)) {
     // smoothing completely inactive.  we transfer the original bed topg,
     //   including ghosts, to public member topgsmooth ...
-    ierr = topg.beginGhostComm(topgsmooth); CHKERRQ(ierr);
-    ierr = topg.endGhostComm(topgsmooth); CHKERRQ(ierr);
+    ierr = topg.update_ghosts(topgsmooth); CHKERRQ(ierr);
     return 0;
   }
 

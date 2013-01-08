@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2013 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -495,11 +495,8 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
   ierr = h_y.end_access(); CHKERRQ(ierr);
   ierr = h_x.end_access(); CHKERRQ(ierr);
 
-  ierr = h_x.beginGhostComm(); CHKERRQ(ierr);
-  ierr = h_x.endGhostComm(); CHKERRQ(ierr);
-
-  ierr = h_y.beginGhostComm(); CHKERRQ(ierr);
-  ierr = h_y.endGhostComm(); CHKERRQ(ierr);
+  ierr = h_x.update_ghosts(); CHKERRQ(ierr);
+  ierr = h_y.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -734,8 +731,7 @@ PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
 
   ierr = this->compute_diffusivity_staggered(D_stag); CHKERRQ(ierr);
 
-  ierr = D_stag.beginGhostComm(); CHKERRQ(ierr);
-  ierr = D_stag.endGhostComm(); CHKERRQ(ierr);
+  ierr = D_stag.update_ghosts(); CHKERRQ(ierr);
 
   ierr = D_stag.staggered_to_regular(result); CHKERRQ(ierr);
 
@@ -1108,10 +1104,8 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
   ierr = v_out.end_access(); CHKERRQ(ierr);
 
   // Communicate to get ghosts:
-  ierr = u_out.beginGhostComm(); CHKERRQ(ierr);
-  ierr = u_out.endGhostComm(); CHKERRQ(ierr);
-  ierr = v_out.beginGhostComm(); CHKERRQ(ierr);
-  ierr = v_out.endGhostComm(); CHKERRQ(ierr);
+  ierr = u_out.update_ghosts(); CHKERRQ(ierr);
+  ierr = v_out.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }

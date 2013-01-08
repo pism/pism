@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -69,8 +69,7 @@ PetscErrorCode add_2d(IceModelVec* const x_in, PetscScalar alpha, IceModelVec* c
   ierr = x->end_access(); CHKERRQ(ierr);
 
   if (scatter) {
-    ierr = z->beginGhostComm(); CHKERRQ(ierr);
-    ierr = z->endGhostComm(); CHKERRQ(ierr);
+    ierr = z->update_ghosts(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -105,8 +104,7 @@ PetscErrorCode copy_2d(IceModelVec* const source,
   ierr = x->end_access(); CHKERRQ(ierr);
 
   if (scatter) {
-    ierr = z->beginGhostComm(); CHKERRQ(ierr);
-    ierr = z->endGhostComm(); CHKERRQ(ierr);
+    ierr = z->update_ghosts(); CHKERRQ(ierr);
   }
 
   return 0;

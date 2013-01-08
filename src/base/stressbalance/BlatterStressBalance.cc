@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -239,10 +239,8 @@ PetscErrorCode BlatterStressBalance::mesh_to_regular_grid() {
 
   ierr = DMDAVecRestoreArray(dmmg[0]->dm, dmmg[0]->x, &U); CHKERRQ(ierr);
 
-  ierr = u.beginGhostComm(); CHKERRQ(ierr);
-  ierr = u.endGhostComm(); CHKERRQ(ierr);
-  ierr = v.beginGhostComm(); CHKERRQ(ierr);
-  ierr = v.endGhostComm(); CHKERRQ(ierr);
+  ierr = u.update_ghosts(); CHKERRQ(ierr);
+  ierr = v.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2012 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -86,8 +86,7 @@ class LocalInterpCtx;
  before the code using ghosts:
 
  \code
- ierr = var.beginGhostComm(); CHKERRQ(ierr);
- ierr = var.endGhostComm(); CHKERRQ(ierr);
+ ierr = var.update_ghosts(); CHKERRQ(ierr);
  \endcode
 
  \section imv_io Reading and writing variables
@@ -230,10 +229,8 @@ public:
 
   virtual PetscErrorCode  begin_access();
   virtual PetscErrorCode  end_access();
-  virtual PetscErrorCode  beginGhostComm();
-  virtual PetscErrorCode  endGhostComm();
-  virtual PetscErrorCode  beginGhostComm(IceModelVec &destination);
-  virtual PetscErrorCode  endGhostComm(IceModelVec &destination);
+  virtual PetscErrorCode  update_ghosts();
+  virtual PetscErrorCode  update_ghosts(IceModelVec &destination);
 
   virtual PetscErrorCode  set(PetscScalar c);
 
@@ -643,9 +640,6 @@ public:
   PetscErrorCode  view_sounding(int i, int j, PetscInt viewer_size);
   PetscErrorCode  view_sounding(int i, int j, PetscViewer v);
 
-  // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
-  virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3D &imv3_source);
-  virtual PetscErrorCode endGhostCommTransfer(IceModelVec3D &imv3_source);
   virtual PetscScalar    getValZ(PetscInt i, PetscInt j, PetscScalar z);
   virtual PetscErrorCode isLegalLevel(PetscScalar z);
 protected:

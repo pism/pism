@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2013 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -336,8 +336,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   delete [] T;
 
-  ierr = result->beginGhostComm(); CHKERRQ(ierr);
-  ierr = result->endGhostComm(); CHKERRQ(ierr);
+  ierr = result->update_ghosts(); CHKERRQ(ierr);
 
   if (do_cold) {
     ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);

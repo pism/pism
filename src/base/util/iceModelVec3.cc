@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -106,41 +106,6 @@ PetscErrorCode IceModelVec3D::destroy() {
 
   return 0;
 }
-
-PetscErrorCode  IceModelVec3D::beginGhostCommTransfer(IceModelVec3D &imv3_source) {
-  PetscErrorCode ierr;
-  if (!localp) {
-    SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
-               "  (has name='%s')\n", name.c_str());
-  }
-  if (imv3_source.localp) {
-    SETERRQ1(grid->com, 2,"source IceModelVec3 must be GLOBAL! (has name='%s')\n",
-               imv3_source.name.c_str());
-  }
-  ierr = checkAllocated(); CHKERRQ(ierr);
-  ierr = imv3_source.checkAllocated(); CHKERRQ(ierr);
-  ierr = DMGlobalToLocalBegin(da, imv3_source.v, INSERT_VALUES, v); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode  IceModelVec3D::endGhostCommTransfer(IceModelVec3D &imv3_source) {
-  PetscErrorCode ierr;
-  if (!localp) {
-    SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
-               "  (has name='%s')\n",
-               name.c_str());
-  }
-  if (imv3_source.localp) {
-    SETERRQ1(grid->com, 2,"source IceModelVec3 must be GLOBAL! (has name='%s')\n",
-               imv3_source.name.c_str());
-  }
-  ierr = checkAllocated(); CHKERRQ(ierr);
-  ierr = imv3_source.checkAllocated(); CHKERRQ(ierr);
-  ierr = DMGlobalToLocalEnd(da, imv3_source.v, INSERT_VALUES, v); CHKERRQ(ierr);
-  return 0;
-}
-
 
 PetscErrorCode  IceModelVec3D::isLegalLevel(PetscScalar z) {
   double z_min = zlevels.front(),
@@ -585,8 +550,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_valu
   // This communicates the ghosts just to update the new levels. Since this
   // only happens when the grid is extended it should not matter.
   if (localp) {
-    ierr = beginGhostComm(); CHKERRQ(ierr);
-    ierr = endGhostComm(); CHKERRQ(ierr);
+    ierr = update_ghosts(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -616,8 +580,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
   // This communicates the ghosts just to update the new levels. Since this
   // only happens when the grid is extended it should not matter.
   if (localp) {
-    ierr = beginGhostComm(); CHKERRQ(ierr);
-    ierr = endGhostComm(); CHKERRQ(ierr);
+    ierr = update_ghosts(); CHKERRQ(ierr);
   }
 
   return 0;

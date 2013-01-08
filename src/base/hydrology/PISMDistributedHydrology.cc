@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -355,8 +355,8 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   ierr = get_input_rate(input); CHKERRQ(ierr);
 
   // make sure W has valid ghosts before starting hydrology steps
-  ierr = W.beginGhostComm(); CHKERRQ(ierr);
-  ierr = W.endGhostComm(); CHKERRQ(ierr);
+  ierr = W.update_ghosts(); CHKERRQ(ierr);
+
 
   MaskQuery M(*mask);
 
@@ -373,19 +373,19 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = check_Wpositive(); CHKERRQ(ierr);
 
     ierr = hydraulic_potential(psi); CHKERRQ(ierr);
-    ierr = psi.beginGhostComm(); CHKERRQ(ierr);
-    ierr = psi.endGhostComm(); CHKERRQ(ierr);
+    ierr = psi.update_ghosts(); CHKERRQ(ierr);
+
 
     ierr = velocity_staggered(V); CHKERRQ(ierr);
 
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
-    ierr = Wstag.beginGhostComm(); CHKERRQ(ierr);
-    ierr = Wstag.endGhostComm(); CHKERRQ(ierr);
+    ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
+
 
     // to get Qstag, W needs valid ghosts
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
-    ierr = Qstag.beginGhostComm(); CHKERRQ(ierr);
-    ierr = Qstag.endGhostComm(); CHKERRQ(ierr);
+    ierr = Qstag.update_ghosts(); CHKERRQ(ierr);
+
 
     ierr = adaptive_for_W_evolution(ht, t+dt, hdt); CHKERRQ(ierr);
 //ierr = PetscPrintf(grid.com, "adaptive...() reports hdt = %.6f seconds = %.6f years\n",hdt,hdt/secpera); CHKERRQ(ierr);
@@ -429,8 +429,8 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = Wnew.end_access(); CHKERRQ(ierr);
 
     // transfer Wnew into W
-    ierr = Wnew.beginGhostComm(W); CHKERRQ(ierr);
-    ierr = Wnew.endGhostComm(W); CHKERRQ(ierr);
+    ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
+
 
     ht += hdt;
   } // end of hydrology model time-stepping loop
@@ -679,10 +679,10 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   ierr = get_input_rate(input); CHKERRQ(ierr);
 
   // make sure W,P have valid ghosts before starting hydrology steps
-  ierr = W.beginGhostComm(); CHKERRQ(ierr);
-  ierr = P.beginGhostComm(); CHKERRQ(ierr);
-  ierr = W.endGhostComm(); CHKERRQ(ierr);
-  ierr = P.endGhostComm(); CHKERRQ(ierr);
+  ierr = W.update_ghosts(); CHKERRQ(ierr);
+  ierr = P.update_ghosts(); CHKERRQ(ierr);
+
+
 
   // from current ice geometry/velocity variables, initialize Po and cbase
   ierr = update_overburden(Po); CHKERRQ(ierr);
@@ -698,21 +698,21 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = check_bounds(); CHKERRQ(ierr);
 
     ierr = hydraulic_potential(psi); CHKERRQ(ierr);
-    ierr = psi.beginGhostComm(); CHKERRQ(ierr);
+    ierr = psi.update_ghosts(); CHKERRQ(ierr);
 
     ierr = velocity_staggered(V); CHKERRQ(ierr);
 
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
-    ierr = Wstag.beginGhostComm(); CHKERRQ(ierr);
+    ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
 
     // to get Qstag, W needs valid ghosts
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
-    ierr = Qstag.beginGhostComm(); CHKERRQ(ierr);
+    ierr = Qstag.update_ghosts(); CHKERRQ(ierr);
 
     ierr = adaptive_for_WandP_evolution(ht, t+dt, hdt); CHKERRQ(ierr);
 
-    ierr = psi.endGhostComm(); CHKERRQ(ierr);
-    ierr = Wstag.endGhostComm(); CHKERRQ(ierr);
+
+
 
     // update Pnew from time step
     PetscReal  pux = c0 / (grid.dx * grid.dx),
@@ -755,9 +755,9 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = mask->end_access(); CHKERRQ(ierr);
 
     // start transfer Pnew into P; note Wstag, Qstag unaffected in Wnew update below
-    ierr = Pnew.beginGhostComm(P); CHKERRQ(ierr);
+    ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
 
-    ierr = Qstag.endGhostComm(); CHKERRQ(ierr);
+
 
     // update Wnew from time step
     PetscReal  wux = K / (grid.dx * grid.dx),
@@ -785,12 +785,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = input.end_access(); CHKERRQ(ierr);
     ierr = Wnew.end_access(); CHKERRQ(ierr);
 
-    // start transfer Wnew into W
-    ierr = Wnew.beginGhostComm(W); CHKERRQ(ierr);
-
-    // finalizes update of P, W
-    ierr = Pnew.endGhostComm(P); CHKERRQ(ierr);
-    ierr = Wnew.endGhostComm(W); CHKERRQ(ierr);
+    // transfer Wnew into W
+    ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
 
     ht += hdt;
   } // end of hydrology model time-stepping loop

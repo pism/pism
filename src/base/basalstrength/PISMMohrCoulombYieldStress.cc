@@ -481,8 +481,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
 
   // communicate ghosts so that the tauc computation can be performed locally
   // (including ghosts of tauc, that is)
-  ierr = till_phi.beginGhostComm(); CHKERRQ(ierr);
-  ierr = till_phi.endGhostComm(); CHKERRQ(ierr);
+  ierr = till_phi.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }

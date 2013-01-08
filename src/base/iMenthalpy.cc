@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2012 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2013 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -69,8 +69,8 @@ PetscErrorCode IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceMod
   ierr = temperature.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = result.beginGhostComm(); CHKERRQ(ierr);
-  ierr = result.endGhostComm(); CHKERRQ(ierr);
+  ierr = result.update_ghosts(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -108,8 +108,8 @@ PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
   ierr = liquid_water_fraction.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = result.beginGhostComm(); CHKERRQ(ierr);
-  ierr = result.endGhostComm(); CHKERRQ(ierr);
+  ierr = result.update_ghosts(); CHKERRQ(ierr);
+
   return 0;
 }
 
