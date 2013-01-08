@@ -43,19 +43,22 @@ grid="-Mx $myMx -My $myMy -Mz 11 -z_spacing equal -Lz 600"
 
 climate="-surface given -surface_given_file $data"
 
-physics="-config_override nbreen_config.nc -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc"
+physics="-config_override nbreen_config.nc -no_mass -no_energy"
 
-# alternatives
-hydrodist="-hydrology distributed -report_mass_accounting"
-hydrolakes="-hydrology lakes -report_mass_accounting"
+runpism () {
+  mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
+    $grid -max_dt 0.1 -y $YY $diagnostics -o $oname
+}
 
+# lakes run: very fast
+oname=nbreen_y${YY}_${dx}m_lakes.nc
+diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars bmelt,bwat,bwp,bwatvel"
+hydro="-hydrology lakes -report_mass_accounting"
+runpism
+
+# distributed run
 oname=nbreen_y${YY}_${dx}m.nc
-
 diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars cbase,bmelt,bwat,bwp,bwatvel"
-
-output="-o $oname"
-
-
-mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydrodist \
-  $grid -max_dt 0.1 -y $YY $diagnostics $output
+hydro="-hydrology distributed -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc"
+runpism
 
