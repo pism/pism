@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2013 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -812,8 +812,7 @@ PetscErrorCode SSAFD::solve() {
       //   viscosity on next "outer" iteration (and geometry etc. if done):
       ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
 
-      ierr = m_velocity.beginGhostComm(); CHKERRQ(ierr);
-      ierr = m_velocity.endGhostComm(); CHKERRQ(ierr);
+      ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
 
       // update viscosity and check for viscosity convergence
       ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
@@ -878,8 +877,7 @@ PetscErrorCode SSAFD::solve() {
     const PetscScalar sliding_scale_brutalFactor = config.get("sliding_scale_brutal");
     ierr = m_velocity.scale(sliding_scale_brutalFactor); CHKERRQ(ierr);
 
-    ierr = m_velocity.beginGhostComm(); CHKERRQ(ierr);
-    ierr = m_velocity.endGhostComm(); CHKERRQ(ierr);
+    ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -1173,8 +1171,7 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = m_velocity.end_access(); CHKERRQ(ierr);
 
   // Some communication
-  ierr = result.beginGhostComm(); CHKERRQ(ierr);
-  ierr = result.endGhostComm(); CHKERRQ(ierr);
+  ierr = result.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 

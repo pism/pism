@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -194,8 +194,7 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
   ierr = temperature.end_access(); CHKERRQ(ierr);
   ierr = thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = enthalpy.beginGhostComm(); CHKERRQ(ierr);
-  ierr = enthalpy.endGhostComm(); CHKERRQ(ierr);
+  ierr = enthalpy.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -250,8 +249,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr =  enthalpy->end_access(); CHKERRQ(ierr);
 
-  ierr = thickness->beginGhostComm(); CHKERRQ(ierr);
-  ierr = thickness->endGhostComm(); CHKERRQ(ierr);
+  ierr = thickness->update_ghosts(); CHKERRQ(ierr);
 
   ierr = thickness->copy_to(*surface); CHKERRQ(ierr);
 

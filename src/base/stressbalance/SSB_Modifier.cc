@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -131,10 +131,8 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
   ierr = u.end_access(); CHKERRQ(ierr);  
 
   // Communicate to get ghosts (needed to compute w):
-  ierr = u.beginGhostComm(); CHKERRQ(ierr);
-  ierr = u.endGhostComm(); CHKERRQ(ierr);
-  ierr = v.beginGhostComm(); CHKERRQ(ierr);
-  ierr = v.endGhostComm(); CHKERRQ(ierr);
+  ierr = u.update_ghosts(); CHKERRQ(ierr);
+  ierr = v.update_ghosts(); CHKERRQ(ierr);
 
   ierr = PISMGlobalMax(&my_u_max, &u_max, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalMax(&my_v_max, &v_max, grid.com); CHKERRQ(ierr);

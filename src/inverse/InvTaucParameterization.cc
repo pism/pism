@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 David Maxwell
+// Copyright (C) 2011, 2012, 2013 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -47,8 +47,7 @@ PetscErrorCode InvTaucParameterization::convertToTauc( IceModelVec2S &zeta, IceM
   ierr = zeta.end_access(); CHKERRQ(ierr);
   ierr = tauc.end_access(); CHKERRQ(ierr);
   if(communicate) {
-    ierr = tauc.beginGhostComm(); CHKERRQ(ierr);
-    ierr = tauc.endGhostComm(); CHKERRQ(ierr);
+    ierr = tauc.update_ghosts(); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -70,8 +69,7 @@ PetscErrorCode InvTaucParameterization::convertFromTauc( IceModelVec2S &tauc, Ic
   ierr = zeta.end_access(); CHKERRQ(ierr);
   ierr = tauc.end_access(); CHKERRQ(ierr);
   if(communicate) {
-    ierr = zeta.beginGhostComm(); CHKERRQ(ierr);
-    ierr = zeta.endGhostComm(); CHKERRQ(ierr);
+    ierr = zeta.update_ghosts(); CHKERRQ(ierr);
   }
   return 0;
 }

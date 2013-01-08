@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Torsten Albrecht and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Torsten Albrecht and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -150,8 +150,7 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
+  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
 
   double  ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density"),
@@ -219,11 +218,8 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
   }
 
   // finally copy vHnew into vH and communicate ghosted values
-  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
-
-  ierr = vHresidualnew.beginGhostComm(vHresidual); CHKERRQ(ierr);
-  ierr = vHresidualnew.endGhostComm(vHresidual); CHKERRQ(ierr);
+  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
+  ierr = vHresidualnew.update_ghosts(vHresidual); CHKERRQ(ierr);
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2013  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -142,8 +142,7 @@ PetscErrorCode InvSSATikhonovGN::apply_GN(Vec x, Vec y) {
   ierr = m_x.copy_from(x); CHKERRQ(ierr);
 
   ierr = m_ssaforward.apply_linearization(m_x,Tx); CHKERRQ(ierr);
-  ierr = Tx.beginGhostComm(); CHKERRQ(ierr);
-  ierr = Tx.endGhostComm(); CHKERRQ(ierr);
+  ierr = Tx.update_ghosts(); CHKERRQ(ierr);
   
   ierr = m_stateFunctional.interior_product(Tx,tmp_gS); CHKERRQ(ierr);
   
@@ -195,8 +194,7 @@ PetscErrorCode InvSSATikhonovGN::evaluateGNFunctional(DesignVec h, PetscReal *va
   PetscErrorCode ierr;
   
   ierr = m_ssaforward.apply_linearization(h,m_tmp_S1Local); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.beginGhostComm(); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.endGhostComm(); CHKERRQ(ierr);
+  ierr = m_tmp_S1Local.update_ghosts(); CHKERRQ(ierr);
   ierr = m_tmp_S1Local.add(1,m_u_diff);
   
   PetscReal sValue;
@@ -430,8 +428,7 @@ PetscErrorCode InvSSATikhonovGN::compute_dlogalpha(PetscReal *dlogalpha, Termina
 
   // S1Local contains T(h) + F(x) - u_obs, i.e. the linearized misfit field.
   ierr = m_ssaforward.apply_linearization(m_h,m_tmp_S1Local); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.beginGhostComm(); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.endGhostComm(); CHKERRQ(ierr);
+  ierr = m_tmp_S1Local.update_ghosts(); CHKERRQ(ierr);
   ierr = m_tmp_S1Local.add(1,m_u_diff); CHKERRQ(ierr);
 
   // Compute linearized discrepancy.
@@ -458,8 +455,7 @@ PetscErrorCode InvSSATikhonovGN::compute_dlogalpha(PetscReal *dlogalpha, Termina
     
     // S2Local contains T(dh/dalpha)
     ierr = m_ssaforward.apply_linearization(m_dh_dalpha,m_tmp_S2Local); CHKERRQ(ierr);
-    ierr = m_tmp_S2Local.beginGhostComm(); CHKERRQ(ierr);
-    ierr = m_tmp_S2Local.endGhostComm(); CHKERRQ(ierr);
+    ierr = m_tmp_S2Local.update_ghosts(); CHKERRQ(ierr);
 
     PetscReal ddisc_sq_dalpha_a;
     ierr = m_stateFunctional.dot(m_tmp_S2Local,m_tmp_S2Local,&ddisc_sq_dalpha_a); CHKERRQ(ierr);

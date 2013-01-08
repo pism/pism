@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2012 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -116,8 +116,8 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
     }
   }
   ierr = tauc.end_access(); CHKERRQ(ierr);
-  ierr = tauc.beginGhostComm(); CHKERRQ(ierr);
-  ierr = tauc.endGhostComm(); CHKERRQ(ierr);
+  ierr = tauc.update_ghosts(); CHKERRQ(ierr);
+
 
 
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
@@ -146,14 +146,14 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   ierr = bed.end_access(); CHKERRQ(ierr);
 
   // communicate what we have set
-  ierr = surface.beginGhostComm(); CHKERRQ(ierr);
-  ierr = surface.endGhostComm(); CHKERRQ(ierr);
-  ierr = bed.beginGhostComm(); CHKERRQ(ierr);
-  ierr = bed.endGhostComm(); CHKERRQ(ierr);
-  ierr = bc_mask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = bc_mask.endGhostComm(); CHKERRQ(ierr);
-  ierr = vel_bc.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vel_bc.endGhostComm(); CHKERRQ(ierr);
+  ierr = surface.update_ghosts(); CHKERRQ(ierr);
+
+  ierr = bed.update_ghosts(); CHKERRQ(ierr);
+
+  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
+
+  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
+
 
   ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
 

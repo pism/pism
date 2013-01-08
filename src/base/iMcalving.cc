@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2013 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,10 +40,8 @@ PetscErrorCode IceModel::eigenCalving() {
     discharge_flux = 0;
 
   // is ghost communication really needed here?
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
+  ierr = vMask.update_ghosts(); CHKERRQ(ierr);
 
   double ocean_rho = config.get("sea_water_density");
   double ice_rho = config.get("ice_density");
@@ -181,8 +179,7 @@ PetscErrorCode IceModel::eigenCalving() {
   }
   ierr = vDiffCalvRate.end_access(); CHKERRQ(ierr);
 
-  ierr = vDiffCalvRate.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vDiffCalvRate.endGhostComm(); CHKERRQ(ierr);
+  ierr = vDiffCalvRate.update_ghosts(); CHKERRQ(ierr);
 
   ierr = vDiffCalvRate.begin_access(); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
@@ -224,8 +221,7 @@ PetscErrorCode IceModel::eigenCalving() {
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   discharge_flux_cumulative     += discharge_flux     * factor;
 
-  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
+  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
 
   return 0;
 }
@@ -246,8 +242,7 @@ PetscErrorCode IceModel::calvingAtThickness() {
     discharge_flux = 0;
   const PetscScalar dx = grid.dx, dy = grid.dy;
 
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
@@ -285,8 +280,7 @@ PetscErrorCode IceModel::calvingAtThickness() {
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   discharge_flux_cumulative     += discharge_flux     * factor;
 
-  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
+  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
 
   return 0;
 }
@@ -300,10 +294,8 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
   PetscErrorCode ierr;
 
   // is ghost communication really needed here?
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.update_ghosts(); CHKERRQ(ierr);
+  ierr = vMask.update_ghosts(); CHKERRQ(ierr);
 
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density"),

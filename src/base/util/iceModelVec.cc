@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2012 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -828,8 +828,8 @@ PetscErrorCode  IceModelVec::end_access() {
   return 0;
 }
 
-//! Starts the communication of ghost points.
-PetscErrorCode  IceModelVec::beginGhostComm() {
+//! Updates ghost points.
+PetscErrorCode  IceModelVec::update_ghosts() {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')\n",
@@ -837,74 +837,37 @@ PetscErrorCode  IceModelVec::beginGhostComm() {
   }
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = DMDALocalToLocalBegin(da, v, INSERT_VALUES, v);  CHKERRQ(ierr);
-  return 0;
-}
-
-//! Ends the communication of ghost points.
-PetscErrorCode  IceModelVec::endGhostComm() {
-  PetscErrorCode ierr;
-  if (!localp) {
-    SETERRQ1(grid->com, 1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')\n",
-               name.c_str());
-  }
-  ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = DMDALocalToLocalEnd(da, v, INSERT_VALUES, v); CHKERRQ(ierr);
   return 0;
 }
 
-//! Starts the communication of ghost points to IceModelVec destination.
-PetscErrorCode  IceModelVec::beginGhostComm(IceModelVec &destination) {
+//! Scatters ghost points to IceModelVec destination.
+PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) {
   PetscErrorCode ierr;
 
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (localp && destination.localp) {
     ierr = DMDALocalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
-    return 0;
-  }
-
-  if (localp && destination.localp == false) {
-    ierr = DMLocalToGlobalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
-    return 0;
-  }
-
-  if (localp == false && destination.localp) {
-    ierr = DMGlobalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
-    return 0;
-  }
-
-  if (localp == false && destination.localp == false) {
-    SETERRQ1(grid->com, 1, "makes no sense to communicate ghosts for two GLOBAL IceModelVecs! (has name='%s')",
-             name.c_str());
-  }
-
-  return 0;
-}
-
-//! Ends the communication of ghost points to IceModelVec destination.
-PetscErrorCode  IceModelVec::endGhostComm(IceModelVec &destination) {
-  PetscErrorCode ierr;
-
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (localp && destination.localp) {
     ierr = DMDALocalToLocalEnd(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
     return 0;
   }
 
   if (localp && destination.localp == false) {
+    ierr = DMLocalToGlobalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
     ierr = DMLocalToGlobalEnd(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
     return 0;
   }
 
   if (localp == false && destination.localp) {
-    ierr = DMGlobalToLocalEnd(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    ierr = DMGlobalToLocalBegin(destination.da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(destination.da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
     return 0;
   }
 
   if (localp == false && destination.localp == false) {
-    SETERRQ1(grid->com, 1, "makes no sense to communicate ghosts for two GLOBAL IceModelVecs! (has name='%s')",
-             name.c_str());
+    SETERRQ2(grid->com, 1, "makes no sense to communicate ghosts for two GLOBAL IceModelVecs!"
+             " (name1='%s', name2='%s')", name.c_str(), destination.name.c_str());
   }
 
   return 0;

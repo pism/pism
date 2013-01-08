@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -417,8 +417,7 @@ PetscErrorCode IcePSTexModel::setBedElev() {
   ierr = vbed.end_access(); CHKERRQ(ierr);
 
   // communicate b because it will be horizontally differentiated
-  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -607,8 +606,7 @@ PetscErrorCode PSTYieldStress::init_till_phi() {
 
   // communicate ghosts so that the tauc computation can be performed locally
   // (including ghosts of tauc, that is)
-  ierr = till_phi.beginGhostComm(); CHKERRQ(ierr);
-  ierr = till_phi.endGhostComm(); CHKERRQ(ierr);
+  ierr = till_phi.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }

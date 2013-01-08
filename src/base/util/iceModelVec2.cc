@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -214,8 +214,7 @@ PetscErrorCode IceModelVec2::read(const PIO &nc, const unsigned int time) {
   // The calls above only set the values owned by a processor, so we need to
   // communicate if localp == true:
   if (localp) {
-    ierr = beginGhostComm(); CHKERRQ(ierr);
-    ierr = endGhostComm(); CHKERRQ(ierr);
+    ierr = update_ghosts(); CHKERRQ(ierr);
   }
 
   // Clean up:
@@ -257,8 +256,7 @@ PetscErrorCode IceModelVec2::regrid(const PIO &nc, bool critical, int start) {
   // The calls above only set the values owned by a processor, so we need to
   // communicate if localp == true:
   if (localp) {
-    ierr = beginGhostComm(); CHKERRQ(ierr);
-    ierr = endGhostComm(); CHKERRQ(ierr);
+    ierr = update_ghosts(); CHKERRQ(ierr);
   }
 
   // Clean up:
@@ -300,8 +298,7 @@ PetscErrorCode IceModelVec2::regrid(const PIO &nc, PetscScalar default_value) {
   // The calls above only set the values owned by a processor, so we need to
   // communicate if localp == true:
   if (localp) {
-    ierr = beginGhostComm(); CHKERRQ(ierr);
-    ierr = endGhostComm(); CHKERRQ(ierr);
+    ierr = update_ghosts(); CHKERRQ(ierr);
   }
 
   // Clean up:
@@ -754,8 +751,7 @@ static PetscErrorCode multiply_2d(IceModelVec2S* const x, IceModelVec2S* const y
   ierr = x->end_access(); CHKERRQ(ierr);
 
   if (scatter) {
-    ierr = z->beginGhostComm(); CHKERRQ(ierr);
-    ierr = z->endGhostComm(); CHKERRQ(ierr);
+    ierr = z->update_ghosts(); CHKERRQ(ierr);
   }
 
   return 0;

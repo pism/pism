@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -848,8 +848,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   }
 
   // finally copy vHnew into vH and communicate ghosted values
-  ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
+  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
 
   // the following calls are new routines adopted from PISM-PIK. The place and
   // order is not clear yet!

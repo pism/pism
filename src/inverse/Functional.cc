@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2013  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -33,12 +33,12 @@ PetscErrorCode gradientFD(Functional<IceModelVec2S> &f, IceModelVec2S &x, IceMod
       x.begin_access(); CHKERRQ(ierr);
       x(i,j) += h;
       x.end_access(); CHKERRQ(ierr);
-      x.beginGhostComm(); x.endGhostComm();
+      x.update_ghosts();
       ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
       x.begin_access(); CHKERRQ(ierr);
       x(i,j) -= h;
       x.end_access(); CHKERRQ(ierr);
-      x.beginGhostComm(); x.endGhostComm();
+      x.update_ghosts();
       gradient(i,j) = (Fh-F0)/h;
     }
   }
@@ -61,23 +61,23 @@ PetscErrorCode gradientFD(Functional<IceModelVec2V> &f, IceModelVec2V &x, IceMod
       x.begin_access(); CHKERRQ(ierr);
       x(i,j).u += h;
       x.end_access(); CHKERRQ(ierr);
-      x.beginGhostComm(); x.endGhostComm();
+      x.update_ghosts();
       ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
       x.begin_access(); CHKERRQ(ierr);
       x(i,j).u -= h;
       x.end_access(); CHKERRQ(ierr);
-      x.beginGhostComm(); x.endGhostComm();
+      x.update_ghosts();
       gradient(i,j).u = (Fh-F0)/h;
 
       x.begin_access(); CHKERRQ(ierr);
       x(i,j).v += h;
       x.end_access(); CHKERRQ(ierr);
-      x.beginGhostComm(); x.endGhostComm();
+      x.update_ghosts();
       ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
       x.begin_access(); CHKERRQ(ierr);
       x(i,j).v -= h;
       x.end_access(); CHKERRQ(ierr);
-      x.beginGhostComm(); x.endGhostComm();
+      x.update_ghosts();
       gradient(i,j).v = (Fh-F0)/h;
     }
   }
