@@ -64,32 +64,23 @@ void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
 
 PetscErrorCode PISMHydrology::regrid(IceModelVec2S &myvar) {
   PetscErrorCode ierr;
-  bool regrid_file_set, regrid_vars_set;
-  string regrid_file;
-  vector<string> regrid_vars;
+  bool file_set, vars_set;
+  string file;
+  set<string> vars;
 
   ierr = PetscOptionsBegin(grid.com, "", "PISMHydrology regridding options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-regrid_file", "regridding file name",
-                             regrid_file, regrid_file_set); CHKERRQ(ierr);
-    ierr = PISMOptionsStringArray("-regrid_vars", "comma-separated list of regridding variables",
-                                  "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-regrid_file", "regridding file name",file, file_set); CHKERRQ(ierr);
+    ierr = PISMOptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
+                                "", vars, vars_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  // stop if the user did not ask to regrid at all
-  if (!regrid_file_set)
-    return 0;
-  // stop if the user did not ask to regrid myvar
-  set<string> vars;
-  for (unsigned int i = 0; i < regrid_vars.size(); ++i)
-    vars.insert(regrid_vars[i]);
-  if (!set_contains(vars, myvar.string_attr("short_name")))
-    return 0;
-  // otherwise, actually regrid
-  ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
-                    myvar.string_attr("short_name").c_str(), regrid_file.c_str()); CHKERRQ(ierr);
-  ierr = myvar.regrid(regrid_file, true); CHKERRQ(ierr);
+  if (file_set && vars_set && set_contains(vars, myvar.string_attr("short_name"))) {
+    ierr = myvar.regrid(file, true); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
+                      myvar.string_attr("short_name").c_str(), file.c_str()); CHKERRQ(ierr);
+  }
   return 0;
 }
 
