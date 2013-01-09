@@ -547,7 +547,7 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
 
   // initialize water layer thickness and wate pressure from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant values
-  bool i_set, bootstrap_set,  init_P_from_steady;
+  bool i_set, bootstrap_set, init_P_from_steady, stripset;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
@@ -557,6 +557,10 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
     ierr = PISMOptionsIsSet("-init_P_from_steady",
                             "initialize P from formula P(W) which applies in steady state",
                             init_P_from_steady); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-hydrology_null_strip",
+                           "set the width, in km, of the strip around the edge of the computational domain in which hydrology is inactivated",
+                           stripwidth,stripset); CHKERRQ(ierr);
+    if (stripset) stripwidth *= 1.0e3;
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
