@@ -178,7 +178,7 @@ PetscErrorCode PISMLakesHydrology::write_variables(set<string> vars, const PIO &
 
 void PISMLakesHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
-  dict["bwp"] = new PISMLakesHydrology_bwp(this, grid, *variables);
+  dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
 }
 
 
@@ -532,25 +532,6 @@ PetscErrorCode PISMLakesHydrology_bwatvel::compute(IceModelVec* &output) {
 }
 
 
-PISMLakesHydrology_bwp::PISMLakesHydrology_bwp(PISMLakesHydrology *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiag<PISMLakesHydrology>(m, g, my_vars) {
-  vars[0].init_2d("bwp", grid);
-  set_attrs("modeled pressure of water in subglacial layer", "",
-            "Pa", "Pa", 0);
-}
-
-
-PetscErrorCode PISMLakesHydrology_bwp::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bwatvel", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = model->water_pressure(*result); CHKERRQ(ierr);
-  output = result;
-  return 0;
-}
-
-
 /************************************/
 /***** PISMDistributedHydrology *****/
 /************************************/
@@ -678,6 +659,11 @@ PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const
     ierr = P.write(nc); CHKERRQ(ierr);
   }
   return 0;
+}
+
+
+void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
 }
 
 
@@ -1006,9 +992,5 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
       hydrocount, (dt/hydrocount)/secpera, icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
   }
   return 0;
-}
-
-void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
 }
 

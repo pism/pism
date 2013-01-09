@@ -87,6 +87,10 @@ protected:
 
 
 //! \brief Reports the pressure of the water in the subglacial layer.
+/*!
+This is used by most derived classes of PISMHydrology but not by
+PISMDistributedHydrology, in which the modeled pressure is a state variable.
+ */
 class PISMHydrology_bwp : public PISMDiag<PISMHydrology>
 {
 public:
@@ -197,7 +201,7 @@ significantly (e.g. 10s of meters or more) then the resulting lakes diffuse
 instead of becoming infinitely deep (i.e. we avoid delta functions at the minima
 of the hydraulic potential).
 
-This model should generall be tested using static ice geometry first, i.e. using
+This model should generally be tested using static ice geometry first, i.e. using
 option -no_mass.
 
 As with PISMTillCanHydrology and PISMDiffuseOnlyHydrology, the state space
@@ -262,20 +266,6 @@ class PISMLakesHydrology_bwatvel : public PISMDiag<PISMLakesHydrology>
 {
 public:
   PISMLakesHydrology_bwatvel(PISMLakesHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief For PISMLakesHydrology, diagnostically reports the modeled pressure of the water in the subglacial layer.
-/*!
-Note that this is not used by PISMDistributedHydrology, in which the modeled
-pressure is a state variable.  Note that this is reporting a scalar multiple
-(till_pw_fraction) of the overburden pressure.
- */
-class PISMLakesHydrology_bwp : public PISMDiag<PISMLakesHydrology>
-{
-public:
-  PISMLakesHydrology_bwp(PISMLakesHydrology *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
