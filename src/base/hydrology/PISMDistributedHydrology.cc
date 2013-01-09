@@ -32,7 +32,7 @@
 PISMLakesHydrology::PISMLakesHydrology(IceGrid &g, const NCConfigVariable &conf)
     : PISMHydrology(g, conf)
 {
-  no_model_mask = NULL;
+  stripwidth = config.get("hydrology_null_strip_width");
   if (allocate() != 0) {
     PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMLakesHydrology constructor.\n");
     PISMEnd();
@@ -93,28 +93,21 @@ PetscErrorCode PISMLakesHydrology::init(PISMVars &vars) {
     "* Initializing the subglacial-lakes-type subglacial hydrology model...\n"); CHKERRQ(ierr);
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  bool i, bootstrap;
+  bool i, bootstrap, stripset;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'lakes' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsIsSet("-i", "PISM input file", i); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-hydrology_null_strip",
+                           "set the width, in km, of the strip around the edge of the computational domain in which hydrology is inactivated",
+                           stripwidth,stripset); CHKERRQ(ierr);
+    if (stripset) stripwidth *= 1.0e3;
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   // does not produce confusing messages in derived classes:
   ierr = init_actions(vars,i,bootstrap); CHKERRQ(ierr);
-
-  // see if no_model_mask is available; it may be NULL but we proceed
-  no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
-  if (no_model_mask == NULL) {
-    ierr = verbPrintf(2, grid.com,
-       "  no_model_mask is NOT available to PISMLakesHydrology ... proceeding ..."); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com,
-       "  no_model_mask FOUND by PISMLakesHydrology so we use it ..."); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
@@ -270,22 +263,10 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
 
   ierr = water_pressure(Pwork); CHKERRQ(ierr);  // yes, it updates ghosts
 
-  if (no_model_mask == NULL) { // try again ..
-    no_model_mask = dynamic_cast<IceModelVec2Int*>(variables->get("no_model_mask"));
-    if (no_model_mask != NULL) {
-      ierr = verbPrintf(2, grid.com,
-         "  no_model_mask FOUND by PISMLakesHydrology::velocity_staggered() so we use it ...");
-         CHKERRQ(ierr);
-    }
-  }
-
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
   ierr = Wstag.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  if (no_model_mask != NULL) {
-    ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
-  }
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       dPdx = (Pwork(i+1,j  ) - Pwork(i,j)) / grid.dx;
@@ -300,20 +281,15 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
         result(i,j,1) = - c0 * dPdy - K * dbdy;
       else
         result(i,j,1) = 0.0;
-      if (no_model_mask != NULL) {
-        if (((*no_model_mask)(i,j) >= 0.5) || ((*no_model_mask)(i+1,j) >= 0.5))
-          result(i,j,0) = 0.0;
-        if (((*no_model_mask)(i,j) >= 0.5) || ((*no_model_mask)(i,j+1) >= 0.5))
-          result(i,j,1) = 0.0;
-      }
+      if (in_null_strip(i,j) || in_null_strip(i+1,j))
+        result(i,j,0) = 0.0;
+      if (in_null_strip(i,j) || in_null_strip(i,j+1))
+        result(i,j,1) = 0.0;
     }
   }
   ierr = Pwork.end_access(); CHKERRQ(ierr);
   ierr = Wstag.end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
-  if (no_model_mask != NULL) {
-    ierr = no_model_mask->end_access(); CHKERRQ(ierr);
-  }
   ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -385,6 +361,8 @@ PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
 
 //! The computation of Wnew, called by update().
 PetscErrorCode PISMLakesHydrology::raw_update_W(PetscReal hdt) {
+//FIXME:    if (in_null_strip(i,j))  Wnew(i,j) = 0 should happen somewhere;
+// in boundary_mass_changes()?
     PetscErrorCode ierr;
     PetscReal  K = config.get("hydrology_hydraulic_conductivity"),
                wux = K / (grid.dx * grid.dx),  // FIXME needs change if K is variable
@@ -775,8 +753,6 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
 /*!
 Calls a PISMStressBalance method to get the vector basal velocity of the ice,
 and then computes the magnitude of that.
-
-FIXME:  Is taking Ubase from the PISMStressBalance the correct method?
  */
 PetscErrorCode PISMDistributedHydrology::update_cbase(IceModelVec2S &result_cbase) {
   PetscErrorCode ierr;
@@ -890,9 +866,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = input.begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
-    if (no_model_mask != NULL) {
-      ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
-    }
     ierr = Pwork.begin_access(); CHKERRQ(ierr);
     ierr = Pnew.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -917,15 +890,15 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
                     dpsiw = psi(i,j)   - psi(i-1,j),
                     dpsin = psi(i,j+1) - psi(i,j),
                     dpsis = psi(i,j)   - psi(i,j-1);
-          if (no_model_mask != NULL) {
-            const bool nomodelij = ((*no_model_mask)(i,j) >= 0.5);
-            if (nomodelij || ((*no_model_mask)(i+1,j) >= 0.5))
+          if (stripwidth > 0.0) {
+            const bool nullij = (in_null_strip(i,j));
+            if (nullij || in_null_strip(i+1,j))
               dpsie = 0.0;
-            if (nomodelij || ((*no_model_mask)(i-1,j) >= 0.5))
+            if (nullij || in_null_strip(i-1,j))
               dpsiw = 0.0;
-            if (nomodelij || ((*no_model_mask)(i,j+1) >= 0.5))
+            if (nullij || in_null_strip(i,j+1))
               dpsin = 0.0;
-            if (nomodelij || ((*no_model_mask)(i,j-1) >= 0.5))
+            if (nullij || in_null_strip(i,j-1))
               dpsis = 0.0;
           }
           if (!knowne && !knownw)
@@ -948,9 +921,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = input.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
-    if (no_model_mask != NULL) {
-      ierr = no_model_mask->end_access(); CHKERRQ(ierr);
-    }
 
     // transfer Pnew into P; note Wstag, Qstag unaffected in Wnew update below
     ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);

@@ -32,9 +32,6 @@ fi
 
 YY="$3"
 
-# the following is what I want but issue #125 arises:
-#pismexec="pismo -no_model_strip 1.0"
-
 pismexec="pismr"
 
 data=pismnbreen.nc
@@ -53,7 +50,7 @@ runpism () {
 # lakes run: very fast
 oname=nbreen_y${YY}_${dx}m_lakes.nc
 diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars bmelt,bwat,bwp,bwatvel"
-hydro="-hydrology lakes -report_mass_accounting"
+hydro="-hydrology lakes -hydrology_null_strip 1.0 -report_mass_accounting"
 runpism
 
 # distributed run

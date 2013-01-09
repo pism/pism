@@ -237,6 +237,9 @@ netcdf pism_config {
     pism_config:hydrology_maximum_time_step_years = 1.0;
     pism_config:hydrology_maximum_time_step_years_doc = "years; maximum allowed time step length used by PISMLakesHydrology and PISMDistributedHydrology";
 
+    pism_config:hydrology_null_strip_width = -1.0;
+    pism_config:hydrology_null_strip_width_doc = "m; if negative then mechanism is inactive; width of strip around computational domain in which water velocity and water amount are set to zero; used by PISMLakesHydrology and PISMDistributedHydrology";
+
     pism_config:minimum_temperature_for_sliding = 273.0;
     pism_config:minimum_temperature_for_sliding_doc = "K; This is less than water_melting_point_temperature.  If ice base is above this value then decide to do SIA sliding, if that mechanism is active at all.";
 

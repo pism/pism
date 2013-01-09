@@ -246,10 +246,11 @@ protected:
                         //   V(i,j,1) = beta(i,j)  = north-edge centered y-component of water velocity
                    Wstag,// edge-centered (staggered) W values (averaged from regular)
                    Qstag;// edge-centered (staggered) advection fluxes
-  // if available, we use this regional tool:
-  IceModelVec2Int *no_model_mask;
   // this model's workspace variables
   IceModelVec2S input, Wnew, Pwork;
+
+  PetscReal stripwidth; // width in m of strip around margin where V and W are set to zero;
+                        // if negative then the strip mechanism is inactive inactive
 
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode init_actions(PISMVars &vars, bool i_set, bool bootstrap_set);
@@ -265,6 +266,12 @@ protected:
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
 
   PetscErrorCode raw_update_W(PetscReal hdt);
+
+  inline bool in_null_strip(PetscInt i, PetscInt j) {
+    if (stripwidth < 0.0) return false;
+    return ((grid.x[i] <= grid.x[0] + stripwidth) || (grid.x[i] >= grid.x[grid.Mx-1] - stripwidth)
+            || (grid.y[j] <= grid.y[0] + stripwidth) || (grid.y[j] >= grid.y[grid.My-1] - stripwidth));
+  }
 };
 
 
