@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012-2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -208,6 +208,14 @@ As with PISMTillCanHydrology and PISMDiffuseOnlyHydrology, the state space
 includes only the water layer thickness W.  For more complete modeling where the
 water pressure is determined by a physical model for the opening and closing of
 cavities, and where the state space is both W and P, use PISMDistributedHydrology.
+
+If it is available, this model uses the no_model_mask variable (i.e. as used by
+pismo) in only one way.  Namely the staggered grid velocity V(i,j,0) is set to
+zero where either no_model_mask(i,j) is 1 or no_model_mask(i+1,j) is 1.  Similarly
+V(i,j,1)=0.0 if (no_model_mask(i,j)==1) || (no_model_mask(i,j+1)==1).
+
+FIXME: because of diffusion term div(K(W) W grad W) probably we should also set
+W=0 in no_model_mask region, but this requires separate mass accounting?
  */
 class PISMLakesHydrology : public PISMHydrology {
 public:
@@ -228,7 +236,6 @@ public:
   virtual PetscErrorCode water_pressure(IceModelVec2S &result);
 
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
-  virtual PetscErrorCode velocity_staggered_whereWpositive(IceModelVec2Stag &result);
 
 protected:
   // this model's state
@@ -279,6 +286,14 @@ Unlike PISMLakesHydrology, the water pressure P is a state variable, and there
 are modeled mechanisms for cavity geometry evolution, including creep closure
 and opening through sliding ("cavitation").  Because of cavitation, this model
 needs access to a PISMStressBalance object.
+
+If it is available, this model uses the no_model_mask variable (i.e. as used by
+pismo) in one additional way relative to PISMLakesHydrology.  Namely the staggered
+grid values of the gradient of the hydraulic potential is set to zero if either
+regular grid neighbor has no_model_mask==1.
+
+FIXME: see FIXME for PISMLakesHydrology zeroing of W in no_model_mask
+
  */
 class PISMDistributedHydrology : public PISMLakesHydrology {
 public:

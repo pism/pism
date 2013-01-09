@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012-2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -224,6 +224,24 @@ PetscErrorCode PISMLakesHydrology::water_pressure(IceModelVec2S &result) {
 }
 
 
+//! Average the regular grid water thickness to values at the center of cell edges.
+PetscErrorCode PISMLakesHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
+  PetscErrorCode ierr;
+
+  ierr = W.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j  ));
+      result(i,j,1) = 0.5 * (W(i,j) + W(i  ,j+1));
+    }
+  }
+  ierr = W.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Get the advection velocity V at the center of cell edges.
 /*!
 Computes the advection velocity \f$\mathbf{V}=\mathbf{V}(\nabla P,\nabla b)\f$
@@ -235,6 +253,11 @@ The advection velocity is given by the formula
   \f[ \mathbf{V} = - \frac{K}{\rho_w g} \nabla P - K \nabla b \f]
 where \f$\mathbf{V}\f$ is the lateral water velocity, \f$P\f$ is the water
 pressure, and \f$b\f$ is the bedrock elevation.
+
+If the corresponding staggered grid value of the water thickness is zero then
+that component of V is set to zero.  This does not change the flux value (which
+would be zero anyway) but it does provide the correct max velocity in the
+CFL calculation.  We assume Wstag is up-to-date with up-to-date ghosts.
 
 Calls water_pressure() method to get water pressure.
  */
@@ -257,6 +280,7 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
   }
 
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
+  ierr = Wstag.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   if (no_model_mask != NULL) {
@@ -268,67 +292,29 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
       dPdy = (Pwork(i  ,j+1) - Pwork(i,j)) / grid.dy;
       dbdx = ((*bed)(i+1,j  ) - (*bed)(i,j)) / grid.dx;
       dbdy = ((*bed)(i  ,j+1) - (*bed)(i,j)) / grid.dy;
+      if (Wstag(i,j,0) > 0.0)
+        result(i,j,0) = - c0 * dPdx - K * dbdx;
+      else
+        result(i,j,0) = 0.0;
+      if (Wstag(i,j,1) > 0.0)
+        result(i,j,1) = - c0 * dPdy - K * dbdy;
+      else
+        result(i,j,1) = 0.0;
       if (no_model_mask != NULL) {
         if (((*no_model_mask)(i,j) >= 0.5) || ((*no_model_mask)(i+1,j) >= 0.5))
           result(i,j,0) = 0.0;
-        else
-          result(i,j,0) = - c0 * dPdx - K * dbdx;
         if (((*no_model_mask)(i,j) >= 0.5) || ((*no_model_mask)(i,j+1) >= 0.5))
           result(i,j,1) = 0.0;
-        else
-          result(i,j,1) = - c0 * dPdy - K * dbdy;
-      } else {
-        result(i,j,0) = - c0 * dPdx - K * dbdx;
-        result(i,j,1) = - c0 * dPdy - K * dbdy;
       }
     }
   }
   ierr = Pwork.end_access(); CHKERRQ(ierr);
+  ierr = Wstag.end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
   if (no_model_mask != NULL) {
     ierr = no_model_mask->end_access(); CHKERRQ(ierr);
   }
   ierr = result.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Average the regular grid water thickness to values at the center of cell edges.
-PetscErrorCode PISMLakesHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
-  PetscErrorCode ierr;
-
-  ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j  ));
-      result(i,j,1) = 0.5 * (W(i,j) + W(i  ,j+1));
-    }
-  }
-  ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Only give nonzero velocity where Wstag > 0.0.
-/*! Assumes Wstag is up to date with up to date ghosts.
- */
-PetscErrorCode PISMLakesHydrology::velocity_staggered_whereWpositive(IceModelVec2Stag &result) {
-  PetscErrorCode ierr;
-  ierr = velocity_staggered(result); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = Wstag.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (Wstag(i,j,0) <= 0.0)
-        result(i,j,0) = 0.0;
-      if (Wstag(i,j,1) <= 0.0)
-        result(i,j,1) = 0.0;
-    }
-  }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = Wstag.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -467,8 +453,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
 
-    ierr = velocity_staggered_whereWpositive(V); CHKERRQ(ierr);
-    //ierr = velocity_staggered(V); CHKERRQ(ierr);
+    ierr = velocity_staggered(V); CHKERRQ(ierr);
 
     // to get Qstag, W needs valid ghosts
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
@@ -525,7 +510,7 @@ PetscErrorCode PISMLakesHydrology_bwatvel::compute(IceModelVec* &output) {
   ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
   result->write_in_glaciological_units = true;
 
-  ierr = model->velocity_staggered_whereWpositive(*result); CHKERRQ(ierr);
+  ierr = model->velocity_staggered(*result); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -882,8 +867,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
 
-    ierr = velocity_staggered_whereWpositive(V); CHKERRQ(ierr);
-    //ierr = velocity_staggered(V); CHKERRQ(ierr);
+    ierr = velocity_staggered(V); CHKERRQ(ierr);
 
     // to get Qstag, W needs valid ghosts
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
