@@ -273,7 +273,7 @@ protected:
     if (W <= Wr)
       return K0;
     else
-      return K1 + (K0 - K1) * exp((W - Wr) / Wr);
+      return K1 + (K0 - K1) * exp(- (W - Wr) / Wr);
   }
 
   inline bool in_null_strip(PetscInt i, PetscInt j) {
