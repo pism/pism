@@ -202,20 +202,18 @@ instead of becoming infinitely deep (i.e. we avoid delta functions at the minima
 of the hydraulic potential).
 
 This model should generally be tested using static ice geometry first, i.e. using
-option -no_mass.
+option -no_mass.  Use option \c -report_mass_accounting to see stdout reports
+which balance the books on this model.
 
 As with PISMTillCanHydrology and PISMDiffuseOnlyHydrology, the state space
 includes only the water layer thickness W.  For more complete modeling where the
 water pressure is determined by a physical model for the opening and closing of
 cavities, and where the state space is both W and P, use PISMDistributedHydrology.
 
-If it is available, this model uses the no_model_mask variable (i.e. as used by
-pismo) in only one way.  Namely the staggered grid velocity V(i,j,0) is set to
-zero where either no_model_mask(i,j) is 1 or no_model_mask(i+1,j) is 1.  Similarly
-V(i,j,1)=0.0 if (no_model_mask(i,j)==1) || (no_model_mask(i,j+1)==1).
-
-FIXME: because of diffusion term div(K(W) W grad W) probably we should also set
-W=0 in no_model_mask region, but this requires separate mass accounting?
+Note there is an option \c -hydrology_null_strip \c X which produces a strip of
+\c X km around the edge of the computational domain in which the water flow
+velocity is set to zero.  The water amount is also reset to zero at the end
+of each time step in this strip in an accounted way.
  */
 class PISMLakesHydrology : public PISMHydrology {
 public:
@@ -254,6 +252,10 @@ protected:
 
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode init_actions(PISMVars &vars, bool i_set, bool bootstrap_set);
+
+  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
+             PetscReal &icefreelost, PetscReal &oceanlost,
+             PetscReal &negativegain, PetscReal &nullstriplost);
 
   virtual PetscErrorCode check_Wpositive();
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
@@ -294,13 +296,9 @@ are modeled mechanisms for cavity geometry evolution, including creep closure
 and opening through sliding ("cavitation").  Because of cavitation, this model
 needs access to a PISMStressBalance object.
 
-If it is available, this model uses the no_model_mask variable (i.e. as used by
-pismo) in one additional way relative to PISMLakesHydrology.  Namely the staggered
-grid values of the gradient of the hydraulic potential is set to zero if either
-regular grid neighbor has no_model_mask==1.
-
-FIXME: see FIXME for PISMLakesHydrology zeroing of W in no_model_mask
-
+In addition to the actions within the null strip taken by PISMLakesHydrology,
+this model also sets the staggered grid values of the gradient of the hydraulic
+potential to zero if either regular grid neighbor is in the null strip.
  */
 class PISMDistributedHydrology : public PISMLakesHydrology {
 public:
