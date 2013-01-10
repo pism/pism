@@ -20,6 +20,9 @@ netcdf pism_overrides {
     pism_overrides:hydrology_hydraulic_conductivity = 1.0e-3;
     pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K";
 
+    pism_overrides:hydrology_hydraulic_conductivity_at_large_W = 1.0e-2;
+    pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K";
+
     pism_overrides:hydrology_roughness_scale = 1.0;
     pism_overrides:hydrology_roughness_scale_doc = "m; = W_r";
 

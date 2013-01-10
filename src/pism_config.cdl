@@ -216,8 +216,11 @@ netcdf pism_config {
     pism_config:hydrology_bwat_diffusion_time = 1000.0;
     pism_config:hydrology_bwat_diffusion_time_doc = "years; diffusion time for melt water thickness; only used by hydrology model 'diffuseonly'=PISMDiffuseOnlyHydrology";
 
-    pism_config:hydrology_hydraulic_conductivity = 1.0e-2;
-    pism_config:hydrology_hydraulic_conductivity_doc = "m s-1; K in notes; lateral conductivity, in Darcy's law, for subglacial water layer; not used by some hydrology models";
+    pism_config:hydrology_hydraulic_conductivity = 1.0e-3;
+    pism_config:hydrology_hydraulic_conductivity_doc = "m s-1; = K_0 in notes; lateral conductivity, in Darcy's law, for subglacial water layer; used by PISMLakesHydrology and PISMDistributedHydrology";
+
+    pism_config:hydrology_hydraulic_conductivity_at_large_W = 1.0e-2;
+    pism_config:hydrology_hydraulic_conductivity_at_large_W_doc = "m s-1; = K_1 in notes; applies exponentially in W as W goes above W_r = hydrology_roughness_scale; used by PISMLakesHydrology and PISMDistributedHydrology";
 
     pism_config:hydrology_roughness_scale = 1.0;
     pism_config:hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale determining maximum amount of cavitation opening in PISMDistributedHydrology";

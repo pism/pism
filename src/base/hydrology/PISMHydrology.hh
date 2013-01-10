@@ -269,6 +269,13 @@ protected:
 
   PetscErrorCode raw_update_W(PetscReal hdt);
 
+  inline PetscReal K_of_W(PetscReal K0, PetscReal K1, PetscReal Wr, PetscReal W) {
+    if (W <= Wr)
+      return K0;
+    else
+      return K1 + (K0 - K1) * exp((W - Wr) / Wr);
+  }
+
   inline bool in_null_strip(PetscInt i, PetscInt j) {
     if (stripwidth < 0.0) return false;
     return ((grid.x[i] <= grid.x[0] + stripwidth) || (grid.x[i] >= grid.x[grid.Mx-1] - stripwidth)
