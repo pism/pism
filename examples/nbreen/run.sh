@@ -48,10 +48,10 @@ runpism () {
 }
 
 # lakes run: very fast
-#oname=nbreen_y${YY}_${dx}m_lakes.nc
-#diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars bmelt,bwat,bwp,bwatvel"
-#hydro="-hydrology lakes -hydrology_null_strip 1.0 -report_mass_accounting"
-#runpism
+oname=nbreen_y${YY}_${dx}m_lakes.nc
+diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars bmelt,bwat,bwp,bwatvel"
+hydro="-hydrology lakes -hydrology_null_strip 1.0 -report_mass_accounting"
+runpism
 
 # distributed run
 oname=nbreen_y${YY}_${dx}m.nc
