@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Constantine Khroulev
+// Copyright (C) 2009--2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -81,10 +81,10 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, string my_short_name,
   ierr = IceModelVec2S::create(my_grid, my_short_name, false, width); CHKERRQ(ierr);
 
   // initialize the da3 member:
-  ierr = grid->get_dm(this->dof, this->da_stencil_width, da3); CHKERRQ(ierr);
+  ierr = grid->get_dm(this->n_records, this->da_stencil_width, da3); CHKERRQ(ierr);
 
   // allocate the 3D Vec:
-  ierr = DMCreateGlobalVector(da, &v3); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da3, &v3); CHKERRQ(ierr);
 
   return 0;
 }
