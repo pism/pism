@@ -47,11 +47,8 @@ simpleO : simpleO.o exactTestO.o
 simpleP : simpleP.o exactTestP.o
 	$(CC) $^ -o $@ -lm -lgsl -lgslcblas
 
-convertP : convertP.o exactTestP.o
-	$(CC) $^ -o $@ -lm -lgsl -lgslcblas
-
 .PHONY: clean
 clean:
 	@rm -f *.o *~ simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK \
-	              simpleL simpleM simpleN simpleO simpleP convertP
+	              simpleL simpleM simpleN simpleO simpleP
 
