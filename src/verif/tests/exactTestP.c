@@ -230,7 +230,11 @@ int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, doubl
   /* check first: we have a list, r is decreasing, r is in range [0,L) */
   if (N < 1) return TESTP_NO_LIST;
   for (i = 0; i<N; i++) {
-    if ((i > 0) && (r[i] > r[i-1])) return TESTP_LIST_NOT_DECREASING;
+    if ((i > 0) && (r[i] > r[i-1])) {
+      printf("error:  r[%d] = %.18e > r[%d] = %.18e\n",i,r[i],i-1,r[i-1]);
+      printf("   ... so list not decreasing ... returning error code ...\n");
+      return TESTP_LIST_NOT_DECREASING;
+    }
     if (r[i] < 0.0)  return TESTP_R_NEGATIVE;
   }
 
