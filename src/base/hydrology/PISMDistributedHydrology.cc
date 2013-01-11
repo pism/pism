@@ -195,19 +195,21 @@ PetscErrorCode PISMLakesHydrology::check_Wpositive() {
 }
 
 
-PetscErrorCode PISMLakesHydrology::boundary_mass_changes(IceModelVec2S &Wnew,
+PetscErrorCode PISMLakesHydrology::boundary_mass_changes_with_null(
+            IceModelVec2S &myWnew,
             PetscReal &icefreelost, PetscReal &oceanlost,
             PetscReal &negativegain, PetscReal &nullstriplost) {
+
   PetscErrorCode ierr;
 
-  ierr = PISMHydrology::boundary_mass_changes(Wnew,
+  ierr = PISMHydrology::boundary_mass_changes(myWnew,
             icefreelost,oceanlost,negativegain); CHKERRQ(ierr);
   if (stripwidth <= 0.0)  return 0;
 
   PetscReal fresh_water_density = config.get("fresh_water_density");
   PetscReal my_nullstriplost = 0.0;
 
-  ierr = Wnew.begin_access(); CHKERRQ(ierr);
+  ierr = myWnew.begin_access(); CHKERRQ(ierr);
   ierr = cellarea->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -218,7 +220,7 @@ PetscErrorCode PISMLakesHydrology::boundary_mass_changes(IceModelVec2S &Wnew,
       }
     }
   }
-  ierr = Wnew.end_access(); CHKERRQ(ierr);
+  ierr = myWnew.end_access(); CHKERRQ(ierr);
   ierr = cellarea->end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&my_nullstriplost, &nullstriplost, grid.com); CHKERRQ(ierr);
@@ -485,7 +487,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     // update Wnew (the actual step) from W, Wstag, Qstag, input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);
 
-    ierr = boundary_mass_changes(Wnew,delta_icefree, delta_ocean,
+    ierr = boundary_mass_changes_with_null(Wnew,delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
     icefreelost  += delta_icefree;
     oceanlost    += delta_ocean;
@@ -989,7 +991,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     // update Wnew (the actual step) from W, Wstag, Qstag, input
     ierr = PISMLakesHydrology::raw_update_W(hdt); CHKERRQ(ierr);
 
-    ierr = boundary_mass_changes(Wnew,delta_icefree, delta_ocean,
+    ierr = boundary_mass_changes_with_null(Wnew,delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
     icefreelost  += delta_icefree;
     oceanlost    += delta_ocean;

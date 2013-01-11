@@ -253,7 +253,7 @@ protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode init_actions(PISMVars &vars, bool i_set, bool bootstrap_set);
 
-  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
+  virtual PetscErrorCode boundary_mass_changes_with_null(IceModelVec2S &Wnew,
              PetscReal &icefreelost, PetscReal &oceanlost,
              PetscReal &negativegain, PetscReal &nullstriplost);
 
@@ -269,11 +269,11 @@ protected:
 
   PetscErrorCode raw_update_W(PetscReal hdt);
 
-  inline PetscReal K_of_W(PetscReal K0, PetscReal K1, PetscReal Wr, PetscReal W) {
-    if (W <= Wr)
+  inline PetscReal K_of_W(PetscReal K0, PetscReal K1, PetscReal Wr, PetscReal myW) {
+    if (myW <= Wr)
       return K0;
     else
-      return K1 + (K0 - K1) * exp(- (W - Wr) / Wr);
+      return K1 + (K0 - K1) * exp(- (myW - Wr) / Wr);
   }
 
   inline bool in_null_strip(PetscInt i, PetscInt j) {
