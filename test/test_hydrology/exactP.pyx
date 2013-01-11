@@ -7,7 +7,7 @@ cimport exactP_c
 ctypedef np.float64_t double_t
 ctypedef np.int32_t int_t
 
-def exactP_list(np.ndarray[dtype=double_t, ndim=1] r,
+def exactP_list(np.ndarray[dtype=double_t, ndim=1, mode='c'] r,
                 double_t EPS_ABS, double_t EPS_REL, int_t ode_method):
     """
     h, magvb, Wcrit, W, P = exactP_list(r, EPS_ABS, EPS_REL, ode_method)
