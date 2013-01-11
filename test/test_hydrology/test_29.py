@@ -7,10 +7,12 @@ import numpy as np
 from sys import exit, argv, stderr
 from os import system
 from PISMNC import PISMDataset
+from exactP import exactP_list
 
-# example:  ./test_29.py ../../build "mpiexec -n 4" 101
-
-stderr.write("reading options ...\n")
+# high-res and parallel example:
+#    ./test_29.py ../../build "mpiexec -n 4" 201
+# example which should suffice for regression:
+#    ./test_29.py ../../build "" 21
 
 if len(argv)<2:
   pism_path="."
@@ -29,22 +31,21 @@ else:
 
 stderr.write("Testing: Test P verification of '-hydrology distributed'.\n")
 
-stderr.write("generating test29.cdl ...\n")
-
 # generate config file
 cdlcontent = """netcdf pism_overrides {
     variables:
     byte pism_overrides;
-
     pism_overrides:ice_softness = 3.1689e-24;
-    pism_overrides:ice_softness_doc = "; NOT EQUAL TO DEFAULT";
+    pism_overrides:ice_softness_doc = "Pa-3 s-1; ice softness; NOT DEFAULT";
+    pism_overrides:hydrology_hydraulic_conductivity = 1.0e-2;
+    pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K; NOT DEFAULT";
+    pism_overrides:hydrology_hydraulic_conductivity_at_large_W = 1.0e-2;
+    pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K";
 }"""
 cdlf = file("test29.cdl","w")
 cdlf.write(cdlcontent)
 cdlf.close()
 system("ncgen -o test29.nc test29.cdl")
-
-stderr.write("creating gridded variables ...\n")
 
 Lx = 25.0e3  # outside L = 22.5 km
 Phi0 = 0.20  # 20 cm a-1 basal melt rate
@@ -71,8 +72,6 @@ magvb = np.zeros(np.shape(xx))
 ussa = np.zeros(np.shape(xx))
 vssa = np.zeros(np.shape(xx))
 
-stderr.write("sorting radial variable ...\n")
-
 # create 1D array of tuples (r,j,k), sorted by r-value
 dtype = [('r', float), ('j', int), ('k', int)]
 rr = np.empty((Mx,Mx),dtype=dtype)
@@ -82,20 +81,9 @@ for j in range(Mx):
 r = np.sort(rr.flatten(),order='r')
 r = np.flipud(r)
 
-#rrr = np.array(r[:]['r'])
-#for n in range(len(rrr)-1):
-#  print (rrr[n+1] > rrr[n])
-
-stderr.write("calling exactP_list() ...\n")
-
-from exactP import exactP_list
-exactP_list
-
 EPS_ABS = 1.0e-12
 EPS_REL = 1.0e-15
-h_r, magvb_r, Wcrit_r, W_r, P_r = exactP_list(r[:]['r'], EPS_ABS, EPS_REL, 1)
-
-print h_r
+h_r, magvb_r, Wcrit_r, W_r, P_r = exactP_list(np.array(r[:]['r']), EPS_ABS, EPS_REL, 1)
 
 # put on grid
 for n in range(len(r)):
@@ -106,8 +94,6 @@ for n in range(len(r)):
   ussa[j,k], vssa[j,k] = radially_outward(magvb[j,k],xx[j,k],yy[j,k])
   W[j,k] = W_r[n]         # water thickness in m
   P[j,k] = P_r[n]         # water pressure in Pa
-
-stderr.write("creating inputforP.nc ...\n")
 
 system('rm -f inputforP.nc')
 nc = PISMDataset("inputforP.nc", 'w')
@@ -187,7 +173,7 @@ system(r"ncdump -v averrbwat,maxerrbwat diffP.nc |grep 'errbwat ='")
 system(r"ncdump -v averrbwp,maxerrbwp diffP.nc |grep 'errbwp ='")
 
 #cleanup:
-#system("rm test29.cdl test29.nc inputforP.nc end.nc diffP.nc")
+system("rm test29.cdl test29.nc inputforP.nc end.nc diffP.nc")
 
 exit(0)
 
