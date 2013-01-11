@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 
-# FIXME:  for now need
-#   $ ln -s ../../util/PISMNC.py
+# high-res and parallel example:
+#    ./runTestP.py ../../buildbwp "mpiexec -n 4" 201
+# example which should suffice for regression:
+#    ./runTestP.py ../../buildbwp "" 21
+
+from os import system
+system("ln -sf ../../util/PISMNC.py")
 
 import numpy as np
 from sys import exit, argv, stderr
-from os import system
 from PISMNC import PISMDataset
 from exactP import exactP_list
-
-# high-res and parallel example:
-#    ./test_29.py ../../build "mpiexec -n 4" 201
-# example which should suffice for regression:
-#    ./test_29.py ../../build "" 21
 
 if len(argv)<2:
   pism_path="."
@@ -42,10 +41,10 @@ cdlcontent = """netcdf pism_overrides {
     pism_overrides:hydrology_hydraulic_conductivity_at_large_W = 1.0e-2;
     pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K";
 }"""
-cdlf = file("test29.cdl","w")
+cdlf = file("testP.cdl","w")
 cdlf.write(cdlcontent)
 cdlf.close()
-system("ncgen -o test29.nc test29.cdl")
+system("ncgen -o testP.nc testP.cdl")
 
 Lx = 25.0e3  # outside L = 22.5 km
 Phi0 = 0.20  # 20 cm a-1 basal melt rate
@@ -155,25 +154,21 @@ nc.write("v_ssa_bc", vssa, time_dependent = False)
 
 nc.close()
 
-print "NetCDF file %s written" % "inputforP.nc"
-
-cmd = "%s %s/pismr -config_override test29.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path, Mx, Mx)
+cmd = "%s %s/pismr -config_override testP.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path, Mx, Mx)
 
 stderr.write(cmd + '\n')
 e = system(cmd)
 if e != 0:
   exit(1)
 
-system("rm -f diffP.nc")
-
-#FIXME this ain't elegant
-system("ncdiff -v bwat,bwp end.nc inputforP.nc diffP.nc")
+#evaluate error using NCO
+system("ncdiff -O -v bwat,bwp end.nc inputforP.nc diffP.nc")
 system(r"ncap2 -O -s'averrbwat=avg(abs(bwat));averrbwp=avg(abs(bwp));maxerrbwat=max(abs(bwat));maxerrbwp=max(abs(bwp));' diffP.nc diffP.nc")
 system(r"ncdump -v averrbwat,maxerrbwat diffP.nc |grep 'errbwat ='")
 system(r"ncdump -v averrbwp,maxerrbwp diffP.nc |grep 'errbwp ='")
 
 #cleanup:
-system("rm test29.cdl test29.nc inputforP.nc end.nc diffP.nc")
+system("rm testP.cdl testP.nc inputforP.nc end.nc diffP.nc PISMNC.py*")
 
 exit(0)
 
