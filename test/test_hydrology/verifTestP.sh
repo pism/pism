@@ -1,7 +1,7 @@
 #!/bin/bash
 
 NN=4  # number of processors
-pismdir=../../buildbwp
+pismdir=../../builddev
 
 #for MM in 11 21 41 81 161 321;
 for MM in 11 21 41 81;
