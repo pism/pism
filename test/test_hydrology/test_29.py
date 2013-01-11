@@ -7,59 +7,60 @@ import numpy as np
 from sys import exit, argv, stderr
 from os import system
 from PISMNC import PISMDataset
-from exactP import exactP_list
+from argparse import ArgumentParser
 
-# high-res and parallel example:
-#    ./test_29.py ../../build "mpiexec -n 4" 201
-# example which should suffice for regression:
-#    ./test_29.py ../../build "" 21
+def parse_options():
+  stderr.write("reading options ...\n")
 
-if len(argv)<2:
-  pism_path="."
-else:
-  pism_path=argv[1]
+  parser = ArgumentParser()
+  parser.description = "Test P (verification of '-hydrology distributed')."
+  parser.add_argument("--pism_path", dest="PISM_PATH", default=".")
+  parser.add_argument("--mpiexec", dest="MPIEXEC", default="")
+  parser.add_argument("--Mx",dest="Mx", help="Horizontal grid size. Default corresponds to a 1km grid.", type=int, default=51)
 
-if len(argv)<3:
-  mpiexec=""
-else:
-  mpiexec=argv[2]
+  return parser.parse_args()
 
-if len(argv)<4:
-  Mx = 51     # generates 1 km grid
-else:
-  Mx = int(argv[3])
+def generate_config():
+  """Generates the config file with custom ice softness."""
 
-stderr.write("Testing: Test P verification of '-hydrology distributed'.\n")
+  stderr.write("generating test29.nc ...\n")
 
-# generate config file
-cdlcontent = """netcdf pism_overrides {
-    variables:
-    byte pism_overrides;
-    pism_overrides:ice_softness = 3.1689e-24;
-    pism_overrides:ice_softness_doc = "Pa-3 s-1; ice softness; NOT DEFAULT";
-    pism_overrides:hydrology_hydraulic_conductivity = 1.0e-2;
-    pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K; NOT DEFAULT";
-    pism_overrides:hydrology_hydraulic_conductivity_at_large_W = 1.0e-2;
-    pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K";
-}"""
-cdlf = file("test29.cdl","w")
-cdlf.write(cdlcontent)
-cdlf.close()
-system("ncgen -o test29.nc test29.cdl")
+  nc = PISMDataset("test29.nc", 'w')
+  pism_overrides = nc.createVariable("pism_overrides", 'b')
 
-Lx = 25.0e3  # outside L = 22.5 km
-Phi0 = 0.20  # 20 cm a-1 basal melt rate
+  pism_overrides.ice_softness = 3.1689e-24
+  pism_overrides.ice_softness_doc = "Pa-3 s-1; ice softness; NOT DEFAULT"
 
-x = np.linspace(-Lx, Lx, Mx)
-xx, yy = np.meshgrid(x, x)
+  pism_overrides.hydrology_hydraulic_conductivity = 1.0e-2
+  pism_overrides.hydrology_hydraulic_conductivity_doc = "m s-1; = K; NOT DEFAULT"
 
-h = np.zeros(np.shape(xx))
-W = np.zeros(np.shape(xx))
-P = np.zeros(np.shape(xx))
+  pism_overrides.hydrology_hydraulic_conductivity_at_large_W = 1.0e-2
+  pism_overrides.hydrology_hydraulic_conductivity_doc = "m s-1; = K"
+
+  nc.close()
+
+def report_drift(file1, file2):
+  "Report on the difference between two files."
+  nc1 = PISMDataset(file1)
+  nc2 = PISMDataset(file2)
+
+  for name in ("bwat", "bwp"):
+    var1 = nc1.variables[name]
+    var2 = nc2.variables[name]
+    diff = np.abs(np.squeeze(var1[:]) - np.squeeze(var2[:]))
+
+    print "Drift in %s: average = %f, max = %f [%s]" % (name, np.average(diff), np.max(diff), var1.units)
+
+def create_grid(Mx):
+  Lx = 25.0e3  # outside L = 22.5 km
+
+  x = np.linspace(-Lx, Lx, Mx)
+  xx, yy = np.meshgrid(x, x)
+  return x, x, xx, yy
 
 def radially_outward(mag, x, y):
   """return components of a vector field  V(x,y)  which is radially-outward from
-the origin and has magnitude mag"""
+  the origin and has magnitude mag"""
   r = np.sqrt(x*x + y*y)
   if r == 0.0:
     return (0.0, 0.0)
@@ -67,113 +68,150 @@ the origin and has magnitude mag"""
   vy = mag * y / r
   return (vx, vy)
 
-bcflag = np.ones(np.shape(xx))
-magvb = np.zeros(np.shape(xx))
-ussa = np.zeros(np.shape(xx))
-vssa = np.zeros(np.shape(xx))
+def compute_sorted_radii(xx, yy):
+  stderr.write("sorting radial variable ...\n")
 
-# create 1D array of tuples (r,j,k), sorted by r-value
-dtype = [('r', float), ('j', int), ('k', int)]
-rr = np.empty((Mx,Mx),dtype=dtype)
-for j in range(Mx):
-  for k in range(Mx):
-    rr[j,k] = (np.sqrt(xx[j,k]*xx[j,k]+yy[j,k]*yy[j,k]), j, k)
-r = np.sort(rr.flatten(),order='r')
-r = np.flipud(r)
+  Mx = xx.shape[0]
+  # create 1D array of tuples (r,j,k), sorted by r-value
+  dtype = [('r', float), ('j', int), ('k', int)]
+  rr = np.empty((Mx,Mx), dtype=dtype)
 
-EPS_ABS = 1.0e-12
-EPS_REL = 1.0e-15
-h_r, magvb_r, Wcrit_r, W_r, P_r = exactP_list(np.array(r[:]['r']), EPS_ABS, EPS_REL, 1)
+  for j in range(Mx):
+    for k in range(Mx):
+      rr[j,k] = (np.sqrt(xx[j,k]**2 + yy[j,k]**2), j, k)
 
-# put on grid
-for n in range(len(r)):
-  j = r[n]['j']
-  k = r[n]['k']
-  h[j,k] = h_r[n]         # ice thickness in m
-  magvb[j,k] = magvb_r[n] # sliding speed in m s-1
-  ussa[j,k], vssa[j,k] = radially_outward(magvb[j,k],xx[j,k],yy[j,k])
-  W[j,k] = W_r[n]         # water thickness in m
-  P[j,k] = P_r[n]         # water pressure in Pa
+  r = np.sort(rr.flatten(), order='r')
 
-system('rm -f inputforP.nc')
-nc = PISMDataset("inputforP.nc", 'w')
-nc.create_dimensions(x, x, time_dependent = True, use_time_bounds = True)
+  return np.flipud(r)
 
-nc.define_2d_field("thk", time_dependent = False,
-                   attrs = {"long_name"   : "ice thickness",
-                            "units"       : "m",
-                            "valid_min"   : 0.0,
-                            "standard_name" : "land_ice_thickness"})
-nc.define_2d_field("topg", time_dependent = False,
-                   attrs = {"long_name"   : "bedrock topography",
-                            "units"       : "m",
-                            "standard_name" : "bedrock_altitude"})
-nc.define_2d_field("climatic_mass_balance", time_dependent = False,
-                   attrs = {"long_name"   : "climatic mass balance for -surface given",
-                            "units"       : "m year-1",
-                            "standard_name" : "land_ice_surface_specific_mass_balance"})
-nc.define_2d_field("ice_surface_temp", time_dependent = False,
-                   attrs = {"long_name"   : "ice surface temp (K) for -surface given",
-                            "units"       : "Kelvin",
-                            "valid_min"   : 0.0})
-nc.define_2d_field("bmelt", time_dependent = False,
-                   attrs = {"long_name"   : "basal melt rate",
-                            "units"       : "m year-1",
-                            "standard_name" : "land_ice_basal_melt_rate"})
 
-nc.define_2d_field("bwat", time_dependent = False,
-                   attrs = {"long_name"   : "thickness of basal water layer",
-                            "units"       : "m",
-                            "valid_min"   : 0.0})
-nc.define_2d_field("bwp", time_dependent = False,
-                   attrs = {"long_name"   : "water pressure in basal water layer",
-                            "units"       : "Pa",
-                            "valid_min"   : 0.0})
+def generate_pism_input(x, y, xx, yy):
+  stderr.write("calling exactP_list() ...\n")
 
-nc.define_2d_field("bcflag", time_dependent = False,
-                   attrs = {"long_name"   : "if =1, apply u_ssa_bc and v_ssa_bc as sliding velocity"})
-nc.define_2d_field("u_ssa_bc", time_dependent = False,
-                   attrs = {"long_name"   : "x-component of prescribed sliding velocity",
-                            "units"       : "m s-1"})
-nc.define_2d_field("v_ssa_bc", time_dependent = False,
-                   attrs = {"long_name"   : "y-component of prescribed sliding velocity",
-                            "units"       : "m s-1"})
+  from exactP import exactP_list
 
-# fill with constants
-nc.write("topg", 0.0*xx, time_dependent = False)
-nc.write("climatic_mass_balance", 0.0*xx, time_dependent = False)
-nc.write("ice_surface_temp", 260.0 * np.ones(np.shape(xx)), time_dependent = False)
-nc.write("bmelt", Phi0 * np.ones(np.shape(xx)), time_dependent = False)
+  EPS_ABS = 1.0e-12
+  EPS_REL = 1.0e-15
 
-nc.write("thk", h, time_dependent = False)
-nc.write("bwat", W, time_dependent = False)
-nc.write("bwp", P, time_dependent = False)
+  # Wrapping r[:]['r'] in np.array() forces NumPy to make a C-contiguous copy.
+  h_r, magvb_r, Wcrit_r, W_r, P_r = exactP_list(np.array(r[:]['r']), EPS_ABS, EPS_REL, 1)
 
-nc.write("bcflag", bcflag, time_dependent = False)
-nc.write("u_ssa_bc", ussa, time_dependent = False)
-nc.write("v_ssa_bc", vssa, time_dependent = False)
+  stderr.write("creating gridded variables ...\n")
+  # put on grid
+  h = np.zeros_like(xx)
+  W = np.zeros_like(xx)
+  P = np.zeros_like(xx)
 
-nc.close()
+  bcflag = np.ones_like(xx)
+  magvb = np.zeros_like(xx)
+  ussa = np.zeros_like(xx)
+  vssa = np.zeros_like(xx)
 
-print "NetCDF file %s written" % "inputforP.nc"
+  for n,pt in enumerate(r):
+    j = pt['j']
+    k = pt['k']
+    h[j,k] = h_r[n]         # ice thickness in m
+    magvb[j,k] = magvb_r[n] # sliding speed in m s-1
+    ussa[j,k], vssa[j,k] = radially_outward(magvb[j,k], xx[j,k], yy[j,k])
+    W[j,k] = W_r[n]         # water thickness in m
+    P[j,k] = P_r[n]         # water pressure in Pa
 
-cmd = "%s %s/pismr -config_override test29.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (mpiexec, pism_path, Mx, Mx)
+  stderr.write("creating inputforP.nc ...\n")
 
-stderr.write(cmd + '\n')
-e = system(cmd)
-if e != 0:
-  exit(1)
+  system('rm -f inputforP.nc')
+  nc = PISMDataset("inputforP.nc", 'w')
+  nc.create_dimensions(x, y, time_dependent = True, use_time_bounds = True)
 
-system("rm -f diffP.nc")
+  nc.define_2d_field("thk", time_dependent = False,
+                     attrs = {"long_name"   : "ice thickness",
+                              "units"       : "m",
+                              "valid_min"   : 0.0,
+                              "standard_name" : "land_ice_thickness"})
+  nc.define_2d_field("topg", time_dependent = False,
+                     attrs = {"long_name"   : "bedrock topography",
+                              "units"       : "m",
+                              "standard_name" : "bedrock_altitude"})
+  nc.define_2d_field("climatic_mass_balance", time_dependent = False,
+                     attrs = {"long_name"   : "climatic mass balance for -surface given",
+                              "units"       : "m year-1",
+                              "standard_name" : "land_ice_surface_specific_mass_balance"})
+  nc.define_2d_field("ice_surface_temp", time_dependent = False,
+                     attrs = {"long_name"   : "ice surface temp (K) for -surface given",
+                              "units"       : "Kelvin",
+                              "valid_min"   : 0.0})
+  nc.define_2d_field("bmelt", time_dependent = False,
+                     attrs = {"long_name"   : "basal melt rate",
+                              "units"       : "m year-1",
+                              "standard_name" : "land_ice_basal_melt_rate"})
 
-#FIXME this ain't elegant
-system("ncdiff -v bwat,bwp end.nc inputforP.nc diffP.nc")
-system(r"ncap2 -O -s'averrbwat=avg(abs(bwat));averrbwp=avg(abs(bwp));maxerrbwat=max(abs(bwat));maxerrbwp=max(abs(bwp));' diffP.nc diffP.nc")
-system(r"ncdump -v averrbwat,maxerrbwat diffP.nc |grep 'errbwat ='")
-system(r"ncdump -v averrbwp,maxerrbwp diffP.nc |grep 'errbwp ='")
+  nc.define_2d_field("bwat", time_dependent = False,
+                     attrs = {"long_name"   : "thickness of basal water layer",
+                              "units"       : "m",
+                              "valid_min"   : 0.0})
+  nc.define_2d_field("bwp", time_dependent = False,
+                     attrs = {"long_name"   : "water pressure in basal water layer",
+                              "units"       : "Pa",
+                              "valid_min"   : 0.0})
 
-#cleanup:
-system("rm test29.cdl test29.nc inputforP.nc end.nc diffP.nc")
+  nc.define_2d_field("bcflag", time_dependent = False,
+                     attrs = {"long_name"   : "if =1, apply u_ssa_bc and v_ssa_bc as sliding velocity"})
+  nc.define_2d_field("u_ssa_bc", time_dependent = False,
+                     attrs = {"long_name"   : "x-component of prescribed sliding velocity",
+                              "units"       : "m s-1"})
+  nc.define_2d_field("v_ssa_bc", time_dependent = False,
+                     attrs = {"long_name"   : "y-component of prescribed sliding velocity",
+                              "units"       : "m s-1"})
 
-exit(0)
+  Phi0 = 0.20  # 20 cm a-1 basal melt rate
 
+  # fill with constants
+  nc.write("topg", 0.0*xx, time_dependent = False)
+  nc.write("climatic_mass_balance", 0.0*xx, time_dependent = False)
+  nc.write("ice_surface_temp", 260.0 * np.ones(np.shape(xx)), time_dependent = False)
+  nc.write("bmelt", Phi0 * np.ones(np.shape(xx)), time_dependent = False)
+
+  nc.write("thk", h, time_dependent = False)
+  nc.write("bwat", W, time_dependent = False)
+  nc.write("bwp", P, time_dependent = False)
+
+  nc.write("bcflag", bcflag, time_dependent = False)
+  nc.write("u_ssa_bc", ussa, time_dependent = False)
+  nc.write("v_ssa_bc", vssa, time_dependent = False)
+
+  nc.close()
+
+  print "NetCDF file %s written" % "inputforP.nc"
+
+def run_pism(opts):
+  stderr.write("Testing: Test P verification of '-hydrology distributed'.\n")
+
+  cmd = "%s %s/pismr -config_override test29.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, opts.Mx, opts.Mx)
+
+  stderr.write(cmd + '\n')
+  e = system(cmd)
+  if e != 0:
+    exit(1)
+
+# high-res and parallel example:
+#    ./test_29.py --pism_path=../../build --mpiexec="mpiexec -n 4" --Mx=201
+# example which should suffice for regression:
+#    ./test_29.py --pism_path=../../build --Mx=21
+
+if __name__ == "__main__":
+
+  opts = parse_options()
+
+  x,y,xx,yy = create_grid(opts.Mx)
+
+  r = compute_sorted_radii(xx, yy)
+
+  generate_config()
+
+  generate_pism_input(x, y, xx, yy)
+
+  run_pism(opts)
+
+  report_drift("inputforP.nc", "end.nc")
+
+  #cleanup:
+  system("rm test29.nc inputforP.nc end.nc")
