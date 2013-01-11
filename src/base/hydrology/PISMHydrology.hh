@@ -341,7 +341,8 @@ protected:
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
 
   virtual PetscErrorCode adaptive_for_WandP_evolution(
-                           PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
+                           PetscReal t_current, PetscReal t_end,
+                           PetscReal &dt_result, PetscReal &PtoCFLratio);
 };
 
 #endif /* _PISMHYDROLOGY_H_ */

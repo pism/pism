@@ -502,8 +502,9 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
 
   if (report_mass_accounting) {
     ierr = verbPrintf(2, grid.com,
-      " 'lakes' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
-      "     ice free land lost = %.3e kg, ocean lost = %.3e kg,\n"
+      " 'lakes' hydrology summary:\n"
+      "     %d hydrology sub-steps with average dt = %.6f years\n"
+      "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
       "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
       hydrocount, (dt/hydrocount)/secpera,
       icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
@@ -819,12 +820,14 @@ PetscErrorCode PISMDistributedHydrology::update_cbase(IceModelVec2S &result_cbas
 
 //! Computes the adaptive time step for this (W,P) state space model.
 PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
-                  PetscReal t_current, PetscReal t_end, PetscReal &dt_result) {
+                  PetscReal t_current, PetscReal t_end,
+                  PetscReal &dt_result, PetscReal &PtoCFLratio) {
   PetscErrorCode ierr;
   PetscReal maxV, dtCFL, dtDIFFW, dtDIFFP, maxH,
             E0 = config.get("hydrology_diffusive_closure_regularization");
 
-  ierr = adaptive_for_W_evolution(t_current,t_end,dt_result,maxV,dtCFL,dtDIFFW); CHKERRQ(ierr);
+  ierr = adaptive_for_W_evolution(t_current,t_end,
+              dt_result,maxV,dtCFL,dtDIFFW); CHKERRQ(ierr);
 
   // Matlab: dtDIFFP = (p.rhow * p.E0 / (p.rhoi * maxH)) * dtDIFFW;
   ierr = thk->max(maxH); CHKERRQ(ierr);
@@ -833,6 +836,11 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
   dt_result = PetscMin(dt_result, dtDIFFP);
+
+  if (dtDIFFP > 0.0)
+    PtoCFLratio = PetscMax(1.0, dtCFL / dtDIFFP);
+  else
+    PtoCFLratio = 1.0;
 
   ierr = verbPrintf(3,grid.com,
             "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
@@ -888,6 +896,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
   PetscInt hydrocount = 0; // count hydrology time steps
 
+  PetscReal PtoCFLratio,  // for reporting ratio of dtCFL to dtDIFFP
+            cumratio = 0.0;
   while (ht < t + dt) {
     hydrocount++;
     ierr = check_bounds(); CHKERRQ(ierr);
@@ -904,7 +914,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
     ierr = Qstag.update_ghosts(); CHKERRQ(ierr);
 
-    ierr = adaptive_for_WandP_evolution(ht, t+dt, hdt); CHKERRQ(ierr);
+    ierr = adaptive_for_WandP_evolution(ht, t+dt, hdt, PtoCFLratio); CHKERRQ(ierr);
+    cumratio += PtoCFLratio;
 
     // update Pnew from time step
     const PetscReal  pux = 1.0 / (rhow * g * grid.dx * grid.dx),
@@ -1006,10 +1017,12 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
 
   if (report_mass_accounting) {
     ierr = verbPrintf(2, grid.com,
-      " 'distributed' hydrology summary (%d hydrology sub-steps with average dt = %.6f years):\n"
-      "     ice free land lost = %.3e kg, ocean lost = %.3e kg,\n"
+      " 'distributed' hydrology summary:\n"
+      "     %d hydrology sub-steps with average dt = %.6f years\n"
+      "        (with average of %.2f sub-steps per CFL-forced step)\n"
+      "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
       "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
-      hydrocount, (dt/hydrocount)/secpera,
+      hydrocount, (dt/hydrocount)/secpera, cumratio/hydrocount,
       icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
   }
   return 0;
