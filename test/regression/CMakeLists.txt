@@ -93,6 +93,8 @@ pism_test (runtime_viewers test_27.sh)
 
 pism_test (bootstrapping_incomplete_input test_28.sh)
 
+pism_test (distributed_hydrology_regression test_29.py)
+
 
 if(Pism_BUILD_PYTHON_BINDINGS)
 

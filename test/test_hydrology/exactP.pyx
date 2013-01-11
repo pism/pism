@@ -1,8 +1,8 @@
 # -*- mode: cython -*-
 cimport numpy as np
-import numpy as np
-
 cimport exactP_c
+
+import numpy as np
 
 ctypedef np.float64_t double_t
 ctypedef np.int32_t int_t
@@ -12,7 +12,7 @@ def exactP_list(np.ndarray[dtype=double_t, ndim=1, mode='c'] r,
     """
     h, magvb, Wcrit, W, P = exactP_list(r, EPS_ABS, EPS_REL, ode_method)
     """
-    cdef np.ndarray[dtype=double_t, ndim=1] W, P, h, magvb, Wcrit
+    cdef np.ndarray[dtype=double_t, ndim=1, mode='c'] W, P, h, magvb, Wcrit
     cdef int N
 
     W = np.zeros_like(r)

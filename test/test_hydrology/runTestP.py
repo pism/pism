@@ -1,28 +1,37 @@
 #!/usr/bin/env python
-
-from os import system
-system("ln -sf ../../util/PISMNC.py")
-
+from sys import argv, exit
+import subprocess
 import numpy as np
-from sys import exit, argv, stderr
-from PISMNC import PISMDataset
 from argparse import ArgumentParser
 
+try:
+  from exactP import exactP_list
+except:
+  print "Please build the exactP module by running 'make exactP'."
+  exit(1)
+
+try:
+  from PISMNC import PISMDataset
+except:
+  subprocess.call("ln -sf ../../util/PISMNC.py", shell=True)
+  from PISMNC import PISMDataset
+
 def parse_options():
-  stderr.write("reading options ...\n")
+  print "reading options ..."
 
   parser = ArgumentParser()
   parser.description = "Test P (verification of '-hydrology distributed')."
   parser.add_argument("--pism_path", dest="PISM_PATH", default=".")
   parser.add_argument("--mpiexec", dest="MPIEXEC", default="")
   parser.add_argument("--Mx",dest="Mx", help="Horizontal grid size. Default corresponds to a 1km grid.", type=int, default=51)
+  parser.add_argument("--keep", dest="keep", action="store_true", help="Keep the generated PISM input file.")
 
   return parser.parse_args()
 
 def generate_config():
-  """Generates the config file with custom ice softness."""
+  """Generates the config file with custom ice softness and hydraulic conductivity."""
 
-  stderr.write("generating testPconfig.nc ...\n")
+  print "generating testPconfig.nc ..."
 
   nc = PISMDataset("testPconfig.nc", 'w')
   pism_overrides = nc.createVariable("pism_overrides", 'b')
@@ -68,7 +77,7 @@ def radially_outward(mag, x, y):
   return (vx, vy)
 
 def compute_sorted_radii(xx, yy):
-  stderr.write("sorting radial variable ...\n")
+  print "sorting radial variable ..."
 
   Mx = xx.shape[0]
   # create 1D array of tuples (r,j,k), sorted by r-value
@@ -85,23 +94,20 @@ def compute_sorted_radii(xx, yy):
 
 
 def generate_pism_input(x, y, xx, yy):
-  stderr.write("calling exactP_list() ...\n")
-
-  from exactP import exactP_list
+  print "calling exactP_list() ..."
 
   EPS_ABS = 1.0e-12
   EPS_REL = 1.0e-15
 
   # Wrapping r[:]['r'] in np.array() forces NumPy to make a C-contiguous copy.
-  h_r, magvb_r, Wcrit_r, W_r, P_r = exactP_list(np.array(r[:]['r']), EPS_ABS, EPS_REL, 1)
+  h_r, magvb_r, _, W_r, P_r = exactP_list(np.array(r[:]['r']), EPS_ABS, EPS_REL, 1)
 
-  stderr.write("creating gridded variables ...\n")
+  print "creating gridded variables ..."
   # put on grid
   h = np.zeros_like(xx)
   W = np.zeros_like(xx)
   P = np.zeros_like(xx)
 
-  bcflag = np.ones_like(xx)
   magvb = np.zeros_like(xx)
   ussa = np.zeros_like(xx)
   vssa = np.zeros_like(xx)
@@ -115,9 +121,8 @@ def generate_pism_input(x, y, xx, yy):
     W[j,k] = W_r[n]         # water thickness in m
     P[j,k] = P_r[n]         # water pressure in Pa
 
-  stderr.write("creating inputforP.nc ...\n")
+  print "creating inputforP.nc ..."
 
-  system('rm -f inputforP.nc')
   nc = PISMDataset("inputforP.nc", 'w')
   nc.create_dimensions(x, y, time_dependent = True, use_time_bounds = True)
 
@@ -161,35 +166,34 @@ def generate_pism_input(x, y, xx, yy):
                      attrs = {"long_name"   : "y-component of prescribed sliding velocity",
                               "units"       : "m s-1"})
 
-  Phi0 = 0.20  # 20 cm a-1 basal melt rate
+  Phi0 = 0.20                           # 20 cm a-1 basal melt rate
+  T_surface = 260                       # ice surface temperature, K
 
-  # fill with constants
-  nc.write("topg", 0.0*xx, time_dependent = False)
-  nc.write("climatic_mass_balance", 0.0*xx, time_dependent = False)
-  nc.write("ice_surface_temp", 260.0 * np.ones(np.shape(xx)), time_dependent = False)
-  nc.write("bmelt", Phi0 * np.ones(np.shape(xx)), time_dependent = False)
+  variables = {"topg" : np.zeros_like(xx),
+               "climatic_mass_balance" : np.zeros_like(xx),
+               "ice_surface_temp" : np.ones_like(xx) + T_surface,
+               "bmelt" : np.zeros_like(xx) + Phi0,
+               "thk"   : h,
+               "bwat"  : W,
+               "bwp"   : P,
+               "bcflag" : np.ones_like(xx),
+               "u_ssa_bc" : ussa,
+               "v_ssa_bc" : vssa}
 
-  nc.write("thk", h, time_dependent = False)
-  nc.write("bwat", W, time_dependent = False)
-  nc.write("bwp", P, time_dependent = False)
+  for name in variables.keys():
+    nc.write(name, variables[name])
 
-  nc.write("bcflag", bcflag, time_dependent = False)
-  nc.write("u_ssa_bc", ussa, time_dependent = False)
-  nc.write("v_ssa_bc", vssa, time_dependent = False)
-
+  nc.history = subprocess.list2cmdline(argv)
   nc.close()
-
   print "NetCDF file %s written" % "inputforP.nc"
 
 def run_pism(opts):
-  stderr.write("Testing: Test P verification of '-hydrology distributed'.\n")
+  print "Testing: Test P verification of '-hydrology distributed'."
 
   cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, opts.Mx, opts.Mx)
 
-  stderr.write(cmd + '\n')
-  e = system(cmd)
-  if e != 0:
-    exit(1)
+  print cmd
+  subprocess.call(cmd, shell=True)
 
 # high-res and parallel example:
 #    ./runTestP.py --pism_path=../../build --mpiexec="mpiexec -n 4" --Mx=201
@@ -213,4 +217,5 @@ if __name__ == "__main__":
   report_drift("inputforP.nc", "end.nc")
 
   #cleanup:
-  system("rm testPconfig.nc inputforP.nc end.nc")
+  if opts.keep == False:
+    subprocess.call("rm testPconfig.nc inputforP.nc end.nc", shell=True)
