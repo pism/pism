@@ -12,40 +12,43 @@ all : simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK simpleL simple
 #   $ ./simpleABCD
 
 simpleABCD : simpleABCD.o exactTestsABCDE.o
-	$(CC) -lm $^ -o $@
+	$(CC) $^ -o $@ -lm
 
 simpleE : simpleE.o exactTestsABCDE.o
-	$(CC) -lm $^ -o $@
+	$(CC) $^ -o $@ -lm
 
 simpleFG : simpleFG.o exactTestsFG.o
-	$(CC) -lm $^ -o $@
+	$(CC) $^ -o $@ -lm
 
 simpleH : simpleH.o exactTestH.o
-	$(CC) -lm $^ -o $@
+	$(CC) $^ -o $@ -lm
 
 simpleI : simpleI.o exactTestsIJ.o
-	$(CC) -lm $^ -o $@
+	$(CC) $^ -o $@ -lm 
 
 simpleJ : simpleJ.o exactTestsIJ.o
-	$(CC) -lm $^ -o $@
+	$(CC) $^ -o $@ -lm
 
 simpleK : simpleK.o exactTestK.o
-	$(CC) -lm $^ -o $@
+	$(CC) $^ -o $@ -lm
 
 simpleL : simpleL.o exactTestL.o
-	$(CC) -lm -lgsl -lgslcblas $^ -o $@
+	$(CC) $^ -o $@ -lm -lgsl -lgslcblas
 
 simpleM : simpleM.o exactTestM.o
-	$(CC) -lm -lgsl -lgslcblas $^ -o $@
+	$(CC) $^ -o $@ -lm -lgsl -lgslcblas
 
 simpleN : simpleN.o exactTestN.o
-	$(CC) -lm $^ -o $@
+	$(CC) $^ -o $@ -lm
 
 simpleO : simpleO.o exactTestO.o
 	$(CC) $^ -o $@
 
+simpleP : simpleP.o exactTestP.o
+	$(CC) $^ -o $@ -lm -lgsl -lgslcblas
+
 .PHONY: clean
 clean:
-	@rm -f *.o simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK \
-	           simpleL simpleM simpleN
+	@rm -f *.o *~ simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK \
+	              simpleL simpleM simpleN simpleO simpleP
 

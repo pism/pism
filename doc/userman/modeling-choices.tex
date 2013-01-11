@@ -379,19 +379,13 @@ A final note on basal sliding is in order.  Sliding in the SIA stress balance mo
 \subsection{Subglacial hydrology}  \label{subsect:subhydro}
 \optsection{Subglacial hydrology}
 
+FIXME:  this should be updated to document \intextoption{hydrology} with cases \texttt{tillcan,diffuseonly,lakes,distributed}
+
 Currently, only the most minimal possible hydrology model is implemented in PISM.  By default, the energy conservation calculation generates basal melt and that water is stored locally in the ``till'' under the ice sheet.  The output variable \texttt{bwat} is the effective thickness of this layer of liquid water.  This layer of water relates to the basal boundary condition of the conservation of energy scheme, and it is involved in computing basal water pressure and thus the till yield stress; see the previous subsection.
 
 The minimal model which is on by default is that water is added by basal melt rate, subtracted by refreeze onto the base of the ice, and it decays away in the absence of other inputs according to the configuration parameter \texttt{bwat_decay_rate}.  The amount is bounded above by the configuration constant \texttt{bwat_max}, an effective thickness.  Water above that level is lost in an unmodeled manner.
 
 There is also the option of horizontal diffusion of stored basal water in the field \texttt{bwat}.  This mechanism is normally off, but it is turned on by the option \intextoption{diffuse_bwat}.  The configuration parameters \texttt{bwat_diffusion_distance} and \texttt{bwat_diffusion_time} control the diffusivity.  See equation (11) in \cite{BBssasliding}.
-
-% undocumented options/config. parameters
-% base/iMoptions.cc:  "thk_eff" : "thk_eff_basal_water_pressure"
-% base/iMoptions.cc:  "thk_eff_H_high" : "thk_eff_H_high"
-% base/iMoptions.cc:  "thk_eff_H_low" : "thk_eff_H_low"
-% base/iMoptions.cc:  "thk_eff_reduced" : "thk_eff_reduced"
-% base/iMoptions.cc:  "bmr_enhance" : "bmr_enhance_basal_water_pressure"
-% base/iMoptions.cc:  "bmr_enhance_scale" : "bmr_enhance_scale"
 
 
 \subsection{Dealing with more difficult modeling choices}

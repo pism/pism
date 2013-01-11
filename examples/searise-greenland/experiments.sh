@@ -136,7 +136,7 @@ echo
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
 
-FULLPHYS="-ssa_sliding -thk_eff $TILLPHI"
+FULLPHYS="-ssa_sliding $TILLPHI"
 
 # cat prefix and exec together
 PISM="${PISM_PREFIX}${PISM_EXEC} -bed_def lc -config_override $PISM_CONFIG $FULLPHYS $PIKOPTIONS -climatic_mass_balance_cumulative"

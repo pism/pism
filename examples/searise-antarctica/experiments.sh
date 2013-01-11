@@ -112,7 +112,7 @@ PIKPHYS_COUPLING="-atmosphere pik -ocean pik -meltfactor_pik 1.5e-2"
 PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.97"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
 #TILLPHI="-topg_to_phi 5.0,20.0,-1000.0,0.0" # as in martin_winkelmann11
-FULLPHYS="-ssa_sliding -thk_eff $PARAMS $TILLPHI"
+FULLPHYS="-ssa_sliding -hydrology diffuseonly $PARAMS $TILLPHI"
 
 
 echo "$SCRIPTNAME             PISM = $PISM_EXEC"

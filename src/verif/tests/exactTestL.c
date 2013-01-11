@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007--2009 Ed Bueler
+   Copyright (C) 2007--2012 Ed Bueler
   
    This file is part of PISM.
   
@@ -24,7 +24,7 @@
 #include <math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_matrix.h>
-#include <gsl/gsl_odeiv.h>
+#include <gsl/gsl_odeiv2.h>
 #include "exactTestL.h"
 
 #define pi       3.1415926535897931
@@ -72,44 +72,29 @@ int getU(double *r, int N, double *u,
          const double EPS_ABS, const double EPS_REL, const int ode_method) {
    /* solves ODE for u(r)=H(r)^{8/3}, 0 <= r <= L, for test L
       r and u must be allocated vectors of length N; r[] must be decreasing */
-   int i, k, count;
-   const gsl_odeiv_step_type* T;
+   int k, count;
    int status = TESTL_NOT_DONE;
-   double rr, step;
+   double rr, hstart;
+   const gsl_odeiv2_step_type* Tpossible[4];
+   const gsl_odeiv2_step_type *T;
+   gsl_odeiv2_system sys = {funcL, NULL, 1, NULL};  /* Jac-free method and no params */
+   gsl_odeiv2_driver *d;
 
-   gsl_odeiv_step*    s;
-   gsl_odeiv_control* c;
-   gsl_odeiv_evolve*  e;
-   gsl_odeiv_system   sys = {funcL, NULL, 1, NULL};  /* Jac-free method and no params */
+   /* setup for GSL ODE solver; these choices don't need Jacobian */
+   Tpossible[0] = gsl_odeiv2_step_rk8pd;
+   Tpossible[1] = gsl_odeiv2_step_rk2;
+   Tpossible[2] = gsl_odeiv2_step_rkf45;
+   Tpossible[3] = gsl_odeiv2_step_rkck;
+   if ((ode_method > 0) && (ode_method < 5))
+     T = Tpossible[ode_method-1];
+   else {
+     printf("INVALID ode_method in getU(): must be 1,2,3,4\n");
+     return TESTL_INVALID_METHOD;
+   }
 
    /* check first: we have a list, and r is decreasing */
    if (N < 1) return TESTL_NO_LIST;
-   for (i = 1; i<N; i++) {  if (r[i] > r[i-1]) return TESTL_NOT_DECREASING;  }
-
-   /* setup for GSL ODE solver; following step choices don't need Jacobian,
-      but should we chose one that does?  */
-   switch (ode_method) {
-     case 1:
-       T = gsl_odeiv_step_rkck;
-       break;
-     case 2:
-       T = gsl_odeiv_step_rk2;
-       break;
-     case 3:
-       T = gsl_odeiv_step_rk4;
-       break;
-     case 4:
-       T = gsl_odeiv_step_rk8pd;
-       break;
-     default:
-       printf("INVALID ode_method in getU(): must be 1,2,3,4\n");
-       return TESTL_INVALID_METHOD;
-   }
-
-   s = gsl_odeiv_step_alloc(T, (size_t)1);     /* one scalar ode */
-   c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
-   e = gsl_odeiv_evolve_alloc((size_t)1);    /* one scalar ode */
-
+   for (k = 1; k<N; k++) {  if (r[k] > r[k-1]) return TESTL_NOT_DECREASING;  }
 
    /* outside of ice cap, u = 0 */
    k = 0;
@@ -118,22 +103,23 @@ int getU(double *r, int N, double *u,
      k++;
      if (k == N) return GSL_SUCCESS;
    }
+
+   /* initialize GSL ODE solver */
+   hstart = -10000.0;
+   d = gsl_odeiv2_driver_alloc_y_new(&sys, T, hstart, EPS_ABS, EPS_REL);
    
    /* initial conditions: (r,u) = (L,0);  r decreases from L */
    rr = L;
    for (count = k; count < N; count++) {
-     /* generally use value at end of last interval as initial guess */
+     /* except at start, use value at end of last interval as initial guess */
      u[count] = (count == 0) ? 0.0 : u[count-1];
      while (rr > r[count]) {
-       step = r[count] - rr;
-       status = gsl_odeiv_evolve_apply(e, c, s, &sys, &rr, r[count], &step, &u[count]);
+       status = gsl_odeiv2_driver_apply(d, &rr, r[count], &(u[count]));
        if (status != GSL_SUCCESS)   break;
      }
    }
 
-   gsl_odeiv_evolve_free(e);
-   gsl_odeiv_control_free(c);
-   gsl_odeiv_step_free(s);
+   gsl_odeiv2_driver_free(d);
    return status;
 }
 
