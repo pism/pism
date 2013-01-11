@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # format:
-#   run.sh PROCS GRID DURATION
-# so example usage is
-#   $ ./run.sh 4 500 5 >& out.nbreen_y5_500m &
+#   run.sh PROCS GRID DURATION TYPE
+# here TYPE is in {dist, lakes}
 
-if [ $# -lt 3 ] ; then
-  echo "run.sh ERROR: needs three arguments"
-  echo "  example usage: 'run.sh 4 500 5' for 4 processors and 500 m grid and 5 year run"
+if [ $# -lt 4 ] ; then
+  echo "run.sh ERROR: needs four arguments"
+  echo "  example usage: 'run.sh 4 500 5 dist' for"
+  echo "  4 processors, 500 m grid, 5 model year run, and '-hydrology distributed'"
   exit
 fi
 
@@ -32,6 +32,21 @@ fi
 
 YY="$3"
 
+if [ "$4" = "dist" ]; then
+  # distributed run
+  oname=nbreen_y${YY}_${dx}m.nc
+  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc"
+  evarlist="cbase,bmelt,bwat,bwp,bwatvel"
+elif [ "$4" = "lakes" ]; then
+  # lakes run: very fast
+  oname=nbreen_y${YY}_${dx}m_lakes.nc
+  hydro="-hydrology lakes -hydrology_null_strip 1.0 -report_mass_accounting"
+  evarlist="bmelt,bwat,bwp,bwatvel"
+else
+  echo "invalid fourth argument; must be in {dist,lakes}"
+  exit
+fi
+
 pismexec="pismr"
 
 data=pismnbreen.nc
@@ -42,20 +57,8 @@ climate="-surface given -surface_given_file $data"
 
 physics="-config_override nbreen_config.nc -no_mass -no_energy"
 
-runpism () {
-  mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
+diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars $evarlist"
+
+mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
     $grid -max_dt 0.1 -y $YY $diagnostics -o $oname
-}
-
-# lakes run: very fast
-oname=nbreen_y${YY}_${dx}m_lakes.nc
-diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars bmelt,bwat,bwp,bwatvel"
-hydro="-hydrology lakes -hydrology_null_strip 1.0 -report_mass_accounting"
-runpism
-
-# distributed run
-oname=nbreen_y${YY}_${dx}m.nc
-diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars cbase,bmelt,bwat,bwp,bwatvel"
-hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc"
-runpism
 

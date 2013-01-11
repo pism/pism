@@ -15,7 +15,7 @@ netcdf pism_overrides {
     pism_overrides:Glen_exponent_doc = "; = n";
 
     pism_overrides:ice_softness = 3.1689e-24;
-    pism_overrides:ice_softness_doc = "; NOT EQUAL TO PISM DEFAULT; = A";
+    pism_overrides:ice_softness_doc = "; = A";
 
     pism_overrides:hydrology_hydraulic_conductivity = 1.0e-3;
     pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K";
