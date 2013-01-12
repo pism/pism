@@ -39,7 +39,7 @@ if [ "$4" = "dist" ]; then
   # distributed run
   oname=nbreen_y${YY}_${dx}m.nc
   hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc"
-  evarlist="cbase,bmelt,bwat,bwp,bwatvel,bwprel"
+  evarlist="cbase,bmelt,bwat,bwp,bwatvel,bwprel,effbwp"
 elif [ "$4" = "lakes" ]; then
   # lakes run: very fast
   oname=nbreen_y${YY}_${dx}m_lakes.nc

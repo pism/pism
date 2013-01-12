@@ -173,6 +173,7 @@ void PISMLakesHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
+  dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
 }
 
 
@@ -683,6 +684,7 @@ PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const
 void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
+  dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
 }
 
 

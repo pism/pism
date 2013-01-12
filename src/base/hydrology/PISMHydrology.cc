@@ -60,6 +60,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
+  dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
 }
 
 
@@ -580,6 +581,32 @@ PetscErrorCode PISMHydrology_bwprel::compute(IceModelVec* &output) {
   }
   ierr = result->end_access(); CHKERRQ(ierr);
   ierr = Po->end_access(); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+
+PISMHydrology_effbwp::PISMHydrology_effbwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
+    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+  vars[0].init_2d("effbwp", grid);
+  set_attrs("effective pressure of water in subglacial layer (overburden pressure minus water pressure)",
+            "", "Pa", "Pa", 0);
+}
+
+
+PetscErrorCode PISMHydrology_effbwp::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *P      = new IceModelVec2S,
+                *result = new IceModelVec2S;
+  ierr = result->create(grid, "effbwp", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = P->create(grid, "P_temporary", false); CHKERRQ(ierr);
+  ierr = P->set_metadata(vars[0], 0); CHKERRQ(ierr);
+
+  ierr = model->water_pressure(*P); CHKERRQ(ierr);
+  ierr = model->overburden_pressure(*result); CHKERRQ(ierr);
+  ierr = result->add(-1.0,*P); CHKERRQ(ierr);  // result <-- result + (-1.0) P = Po - P
 
   output = result;
   return 0;

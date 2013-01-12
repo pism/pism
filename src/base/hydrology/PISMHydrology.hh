@@ -108,6 +108,15 @@ public:
 };
 
 
+//! \brief Reports the effective pressure of the water in the subglacial layer, that is, the overburden pressure minus the pressure.
+class PISMHydrology_effbwp : public PISMDiag<PISMHydrology>
+{
+public:
+  PISMHydrology_effbwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
 //! \brief The subglacial hydrology model from Bueler & Brown (2009) WITHOUT contrived water diffusion.
 /*!
 The name "till-can" comes from the following mental image:  Each map-plane cell
