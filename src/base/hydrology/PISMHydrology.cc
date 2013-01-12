@@ -59,6 +59,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 
 void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
+  dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
 }
 
 
@@ -527,25 +528,58 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
 
 
 PISMHydrology_bwp::PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMHydrology>(m, g, my_vars) {
-
-  // set metadata:
+    : PISMDiag<PISMHydrology>(m, g, my_vars) {
   vars[0].init_2d("bwp", grid);
-
-  set_attrs("pressure of water in subglacial layer", "",
-            "Pa", "Pa", 0);
+  set_attrs("pressure of water in subglacial layer", "", "Pa", "Pa", 0);
 }
 
 
 PetscErrorCode PISMHydrology_bwp::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "bwp", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
   result->write_in_glaciological_units = true;
+  ierr = model->water_pressure(*result); CHKERRQ(ierr);
+  output = result;
+  return 0;
+}
+
+
+PISMHydrology_bwprel::PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
+    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+  vars[0].init_2d("bwprel", grid);
+  set_attrs("pressure of water in subglacial layer as fraction of the overburden pressure", "",
+            "", "", 0);
+  vars[0].set("_FillValue", grid.config.get("fill_value"));
+}
+
+
+PetscErrorCode PISMHydrology_bwprel::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  PetscReal fill = grid.config.get("fill_value");
+  IceModelVec2S *Po     = new IceModelVec2S,
+                *result = new IceModelVec2S;
+  ierr = result->create(grid, "bwprel", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = Po->create(grid, "Po_temporary", false); CHKERRQ(ierr);
+  ierr = Po->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
   ierr = model->water_pressure(*result); CHKERRQ(ierr);
+  ierr = model->overburden_pressure(*Po); CHKERRQ(ierr);
+
+  ierr = result->begin_access(); CHKERRQ(ierr);
+  ierr = Po->begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ((*Po)(i,j) > 0.0)
+        (*result)(i,j) /= (*Po)(i,j);
+      else
+        (*result)(i,j) = fill;
+    }
+  }
+  ierr = result->end_access(); CHKERRQ(ierr);
+  ierr = Po->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;

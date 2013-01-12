@@ -15,14 +15,17 @@ NN="$1"
 
 if [ "$2" -eq "500" ]; then
   dx=500
+  dtmax=0.1
   myMx=67
   myMy=52
 elif [ "$2" -eq "250" ]; then
   dx=250
+  dtmax=0.1
   myMx=133
   myMy=104
 elif [ "$2" -eq "125" ]; then
   dx=125
+  dtmax=0.01  # more frequent just because so many hydrology substeps occur
   myMx=264
   myMy=207
 else
@@ -36,7 +39,7 @@ if [ "$4" = "dist" ]; then
   # distributed run
   oname=nbreen_y${YY}_${dx}m.nc
   hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc"
-  evarlist="cbase,bmelt,bwat,bwp,bwatvel"
+  evarlist="cbase,bmelt,bwat,bwp,bwatvel,bwprel"
 elif [ "$4" = "lakes" ]; then
   # lakes run: very fast
   oname=nbreen_y${YY}_${dx}m_lakes.nc
@@ -60,5 +63,5 @@ physics="-config_override nbreen_config.nc -no_mass -no_energy"
 diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars $evarlist"
 
 mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
-    $grid -max_dt 0.1 -y $YY $diagnostics -o $oname
+    $grid -max_dt $dtmax -y $YY $diagnostics -o $oname
 

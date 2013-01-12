@@ -99,6 +99,15 @@ public:
 };
 
 
+//! \brief Reports the pressure of the water in the subglacial layer as a fraction of the overburden pressure.
+class PISMHydrology_bwprel : public PISMDiag<PISMHydrology>
+{
+public:
+  PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
 //! \brief The subglacial hydrology model from Bueler & Brown (2009) WITHOUT contrived water diffusion.
 /*!
 The name "till-can" comes from the following mental image:  Each map-plane cell
