@@ -24,6 +24,10 @@
 
 PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
+  string itbfilename;  // itb = input_to_bed
+  bool itbfile_set, itbperiod_set;
+  PetscReal itbperiod_years = 0.0;
+
   ierr = verbPrintf(4, grid.com,
     "entering PISMHydrology::init() ...\n"); CHKERRQ(ierr);
 
@@ -33,10 +37,19 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
     ierr = PISMOptionsIsSet("-report_mass_accounting",
                             "stdout report on mass accounting in hydrology models",
                             report_mass_accounting); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-input_to_bed_file",
+                             "Specifies a time-dependent file with amount of water (depth per time) which should be put at the ice sheet bed at the given time",
+                             itbfilename, itbfile_set); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-input_to_bed_period",
+                           "Specifies the period (i.e. duration before repeat), in years, of -input_to_bed_file data",
+                           itbperiod_years, itbperiod_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   variables = &vars;
+
+  // the following are IceModelVec pointers into IceModel generally and are read by code in the
+  // update() method at the current PISMHydrology time
 
   thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
   if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available to PISMHydrology");
@@ -53,6 +66,39 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available to PISMHydrology");
 
+  // the following inputtobed is not related to IceModel; we must read it ourselves
+
+  if (itbfile_set) {
+    inputtobed_period = (itbperiod_set) ? grid.time->years_to_seconds(itbperiod_years) : 0.0;
+    unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
+                 n_records = 1;
+    PIO nc(grid.com, grid.rank, "netcdf3");
+    ierr = nc.open(itbfilename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_nrecords("inputtobed", "", n_records); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+    n_records = PetscMin(n_records, buffer_size);
+    if (n_records == 0) {
+      PetscPrintf(grid.com, "PISM ERROR: can't find 'inputtobed' in -input_to_bed file with name '%s'.\n",
+                  itbfilename.c_str());
+      PISMEnd();
+    }
+    ierr = verbPrintf(2,grid.com,
+      "    option -input_to_bed_file seen ...\n"
+      "    creating 'inputtobed' variable with space for n = %d records ...\n",
+      n_records); CHKERRQ(ierr);
+    inputtobed = new IceModelVec2T;
+    inputtobed->set_n_records(n_records);
+    ierr = inputtobed->create(grid, "inputtobed", false); CHKERRQ(ierr);
+    ierr = inputtobed->set_attrs("climate_forcing",
+                                 "amount of water (depth per time like bmelt) which should be put at the ice sheet bed",
+                                 "m s-1", ""); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com,
+      "    reading 'inputtobed' variable from file '%s' ...\n",itbfilename.c_str()); CHKERRQ(ierr);
+    ierr = inputtobed->init(itbfilename); CHKERRQ(ierr);
+
+//FIXME:  at some point we need to periodize the current interval?  compare
+//    PLapseRates::max_timestep() in src/coupler/util/PLapseRates.hh
+  }
   return 0;
 }
 
@@ -118,6 +164,12 @@ PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
   PetscErrorCode ierr;
   bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
   PetscReal const_bmelt = config.get("hydrology_const_bmelt");
+//FIXME: here do something like
+//    ierr = inputtobed.update(m_t, m_dt); CHKERRQ(ierr);
+//    ierr = inputtobed.at_time(m_t); CHKERRQ(ierr);
+//    ierr = inputtobed.begin_access(); CHKERRQ(ierr);
+// ...
+
   ierr = bmelt->begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -480,7 +532,9 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
       "   ... NN = %d > 1 ... THIS IS BELIEVED TO BE RARE\n",NN);
   }
 
+//FIXME: move this call inside loop so that time-dependent inputtobed can influence correctly
   ierr = get_input_rate(input); CHKERRQ(ierr);
+
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0;
 
   PetscReal  Rx = K * hdt / (grid.dx * grid.dx),

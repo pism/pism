@@ -460,6 +460,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   t = icet;
   dt = icedt;
 
+//FIXME: move this call inside loop so that time-dependent inputtobed can influence correctly
   ierr = get_input_rate(input); CHKERRQ(ierr);
 
   // make sure W has valid ghosts before starting hydrology steps
@@ -872,6 +873,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   t = icet;
   dt = icedt;
 
+//FIXME: move this call inside loop so that time-dependent inputtobed can influence correctly
   ierr = get_input_rate(input); CHKERRQ(ierr);
 
   // make sure W,P have valid ghosts before starting hydrology steps

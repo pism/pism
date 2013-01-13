@@ -22,25 +22,33 @@
 #include <assert.h>
 
 #include "iceModelVec.hh"
+#include "iceModelVec2T.hh"
 #include "PISMComponent.hh"
 #include "PISMStressBalance.hh"
 #include "PISMDiagnostic.hh"
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
-This is a virtual base class.  The PISM default model is a derived class:
-PISMTillCanHydrology.  Greatly-improved but computationally expensive mass-
-conserving models are in PISMLakesHydrology and PISMDistributedHydrology.
+This is a virtual base class.  The PISM default model PISMTillCanHydrology is a
+derived class of this one.  The PISM mass-conserving models are also derived
+classes, namely PISMLakesHydrology and its derived class
+PISMDistributedHydrology.
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
 short physical timescales associated to liquid water moving under a glacier,
-PISMHydrology derived classes may not use PISM's main ice dynamics time steps.
-Instead, when (a derived class) PISMHydrology::update() is called it may advance
-its internal time to the new goal t+dt using its own internal time steps.
+PISMHydrology derived classes generally take many substeps in PISM's major
+ice dynamics time steps.  Thus when an update() method in a PISMHydrology
+derived class is called it will advance its internal time to the new goal t+dt
+using its own internal time steps.
 
-Generally these subglacial hydrology models will use the ice geometry, basal
-energy fields like basal melt rate, and the basal sliding velocity from IceModel
-and other PISM classes.  These fields are normally treated as constant in time
+Generally PISMHydrology and derived classes use the ice geometry, the basal
+energy field which is the basal melt rate, and the basal sliding velocity.
+These come from IceModel and PISMStressBalance.  Additionally, time-dependent
+and spatially-variable water input to the basal layer, taken directly from a
+file, is possible too.  Potentially PISMSurfaceModel could supply such a
+quantity.
+
+Ice geometry and energy fields are normally treated as constant in time
 during the update() call for the interval [t,t+dt].  Thus the coupling is
 one-way during the update() call.
  */
@@ -52,6 +60,7 @@ public:
     cellarea = NULL;
     bmelt = NULL;
     mask  = NULL;
+    inputtobed = NULL;
     variables = NULL;
   }
   virtual ~PISMHydrology() {}
@@ -59,16 +68,21 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode regrid(IceModelVec2S &myvar);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
+
+  // derived classes need to have a model state, which will be the variables in this set:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) = 0;
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype) = 0;
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc) = 0;
 
+  // derived classes need to be able to update their internal state
   using PISMComponent_TS::update;
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
 
+  // regardless of the derived class model state variables, these methods
+  // need to be implemented so that PISMHydrology is useful to the outside
   virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
   virtual PetscErrorCode water_pressure(IceModelVec2S &result) = 0;
 
 protected:
@@ -78,6 +92,8 @@ protected:
                 *cellarea, // projection-dependent area of each cell, used in mass reporting
                 *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
+  IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
+  PetscReal     inputtobed_period;
   PISMVars *variables;
   bool report_mass_accounting;
   virtual PetscErrorCode get_input_rate(IceModelVec2S &result);
