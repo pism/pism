@@ -73,9 +73,9 @@ PetscErrorCode PISMLakesHydrology::allocate() {
                      "m s-1", ""); CHKERRQ(ierr);
 
   // temporaries during update; do not need ghosts
-  ierr = input.create(grid, "input_hydro", false); CHKERRQ(ierr);
-  ierr = input.set_attrs("internal",
-                         "workspace for input into subglacial water layer",
+  ierr = total_input.create(grid, "total_input_hydro", false); CHKERRQ(ierr);
+  ierr = total_input.set_attrs("internal",
+                         "workspace for total_input into subglacial water layer",
                          "m s-1", ""); CHKERRQ(ierr);
   ierr = Wnew.create(grid, "Wnew_internal", false); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
@@ -415,7 +415,7 @@ PetscErrorCode PISMLakesHydrology::raw_update_W(PetscReal hdt) {
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
-    ierr = input.begin_access(); CHKERRQ(ierr);
+    ierr = total_input.begin_access(); CHKERRQ(ierr);
     ierr = Wnew.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -429,13 +429,13 @@ PetscErrorCode PISMLakesHydrology::raw_update_W(PetscReal hdt) {
                          - Kw * Wstag(i-1,j,0) * (W(i,j) - W(i-1,j)) )
                 + wuy * (  Kn * Wstag(i,j,  1) * (W(i,j+1) - W(i,j))
                          - Ks * Wstag(i,j-1,1) * (W(i,j) - W(i,j-1)) );
-        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + input(i,j));
+        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + total_input(i,j));
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = Qstag.end_access(); CHKERRQ(ierr);
-    ierr = input.end_access(); CHKERRQ(ierr);
+    ierr = total_input.end_access(); CHKERRQ(ierr);
     ierr = Wnew.end_access(); CHKERRQ(ierr);
 
     return 0;
@@ -460,8 +460,9 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   t = icet;
   dt = icedt;
 
-//FIXME: move this call inside loop so that time-dependent inputtobed can influence correctly
-  ierr = get_input_rate(input); CHKERRQ(ierr);
+  if (inputtobed == NULL) {
+    ierr = get_input_rate(total_input); CHKERRQ(ierr);
+  }
 
   // make sure W has valid ghosts before starting hydrology steps
   ierr = W.update_ghosts(); CHKERRQ(ierr);
@@ -474,6 +475,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
 
   while (ht < t + dt) {
     hydrocount++;
+
     ierr = check_Wpositive(); CHKERRQ(ierr);
 
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
@@ -487,7 +489,11 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
 
     ierr = adaptive_for_W_evolution(ht, t+dt, hdt); CHKERRQ(ierr);
 
-    // update Wnew (the actual step) from W, Wstag, Qstag, input
+    if (inputtobed != NULL) {
+      ierr = get_input_rate_time_varying(ht,hdt,total_input); CHKERRQ(ierr);
+    }
+
+    // update Wnew (the actual step) from W, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);
 
     ierr = boundary_mass_changes_with_null(Wnew,delta_icefree, delta_ocean,
@@ -873,8 +879,9 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   t = icet;
   dt = icedt;
 
-//FIXME: move this call inside loop so that time-dependent inputtobed can influence correctly
-  ierr = get_input_rate(input); CHKERRQ(ierr);
+  if (inputtobed == NULL) {
+    ierr = get_input_rate(total_input); CHKERRQ(ierr);
+  }
 
   // make sure W,P have valid ghosts before starting hydrology steps
   ierr = W.update_ghosts(); CHKERRQ(ierr);
@@ -923,6 +930,10 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = adaptive_for_WandP_evolution(ht, t+dt, hdt, PtoCFLratio); CHKERRQ(ierr);
     cumratio += PtoCFLratio;
 
+    if (inputtobed != NULL) {
+      ierr = get_input_rate_time_varying(ht,hdt,total_input); CHKERRQ(ierr);
+    }
+
     // update Pnew from time step
     const PetscReal  pux = 1.0 / (rhow * g * grid.dx * grid.dx),
                      puy = 1.0 / (rhow * g * grid.dy * grid.dy);
@@ -938,7 +949,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = cbase.begin_access(); CHKERRQ(ierr);
     ierr = psi.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
-    ierr = input.begin_access(); CHKERRQ(ierr);
+    ierr = total_input.begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
     ierr = Pwork.begin_access(); CHKERRQ(ierr);
     ierr = Pnew.begin_access(); CHKERRQ(ierr);
@@ -986,7 +997,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             divflux += puy * ( Kn * Wstag(i,j,1) * dpsin - Ks * Wstag(i,j-1,1) * dpsis );
           }
           // candidate for update
-          Pnew(i,j) = P(i,j) + (hdt * Pwork(i,j) / E0) * ( divflux + Close - Open + input(i,j) );
+          Pnew(i,j) = P(i,j) + (hdt * Pwork(i,j) / E0) * ( divflux + Close - Open + total_input(i,j) );
           // projection to enforce  0 <= P <= P_o
           Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pwork(i,j));
         }
@@ -998,14 +1009,14 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Pnew.end_access(); CHKERRQ(ierr);
     ierr = Pwork.end_access(); CHKERRQ(ierr);
     ierr = psi.end_access(); CHKERRQ(ierr);
-    ierr = input.end_access(); CHKERRQ(ierr);
+    ierr = total_input.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
     // transfer Pnew into P; note Wstag, Qstag unaffected in Wnew update below
     ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
 
-    // update Wnew (the actual step) from W, Wstag, Qstag, input
+    // update Wnew (the actual step) from W, Wstag, Qstag, total_input
     ierr = PISMLakesHydrology::raw_update_W(hdt); CHKERRQ(ierr);
 
     ierr = boundary_mass_changes_with_null(Wnew,delta_icefree, delta_ocean,

@@ -95,9 +95,6 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
     ierr = verbPrintf(2,grid.com,
       "    reading 'inputtobed' variable from file '%s' ...\n",itbfilename.c_str()); CHKERRQ(ierr);
     ierr = inputtobed->init(itbfilename); CHKERRQ(ierr);
-
-//FIXME:  at some point we need to periodize the current interval?  compare
-//    PLapseRates::max_timestep() in src/coupler/util/PLapseRates.hh
   }
   return 0;
 }
@@ -148,27 +145,47 @@ PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
 }
 
 
-//! Compute the water input rate into the basal hydrology layer according to configuration and mask.
+//! The only reason to restrict the time step taken by the calling model (i.e. IceModel) is if there is a time-dependent input file IceModelVec2T *inputtobed.
+PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+  if (inputtobed == NULL) {
+    my_dt = -1;
+    restrict = false;
+    return 0;
+  } else {
+    PetscReal max_dt = -1;
+    //FIXME: should we "periodize" the forcing data this way?
+    //       is a reference time needed?  see PLapseRates::max_timestep()
+    my_t = grid.time->mod(my_t, inputtobed_period);
+    max_dt = inputtobed->max_timestep(my_t);
+    if (my_dt > 0) {
+      if (max_dt > 0)  my_dt = PetscMin(max_dt, my_dt);
+    } else
+      my_dt = max_dt;
+    // if the user specifies periodized forcing, limit time-steps so that PISM
+    // never tries to average data over an interval that begins in one period and
+    // ends in the next one.
+    if (inputtobed_period > 1e-6)
+      my_dt = PetscMin(my_dt, inputtobed_period - my_t);
+    restrict = (my_dt > 0);
+    return 0;
+  }
+}
+
+
+//! Compute the water input rate into the basal hydrology layer in the ice-covered region.
 /*!
-This method crops the (energy-conservation and sub-shelf-melt-coupler
-computed) basal melt rate to the ice-covered region.  It also reads the
-\c -hydrology_use_const_bmelt option.
+This method crops the basal melt rate to the ice-covered region.  It also uses
+hydrology_const_bmelt if that is requested.
 
-Note that the input rate is (for now) assumed to be constant in time \e during the
-PISMHydrology::update() actions.
-
-(This method could, potentially, add separate en- and supra-glacial drainage
-contributions to the basal melt rates computed at the lower surface of the ice.)
+In this version the input rate is assumed to be constant in time \e during the
+PISMHydrology::update() actions.  In fact only the energy-conservation-computed
+(and/or sub-shelf-melt-coupler-computed) rate is used.  Compare
+get_input_rate_time_varying().
  */
 PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
   PetscErrorCode ierr;
   bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
   PetscReal const_bmelt = config.get("hydrology_const_bmelt");
-//FIXME: here do something like
-//    ierr = inputtobed.update(m_t, m_dt); CHKERRQ(ierr);
-//    ierr = inputtobed.at_time(m_t); CHKERRQ(ierr);
-//    ierr = inputtobed.begin_access(); CHKERRQ(ierr);
-// ...
 
   ierr = bmelt->begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
@@ -182,6 +199,52 @@ PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
         result(i,j) = 0.0;
     }
   }
+  ierr = bmelt->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Compute the water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input during the update period.
+/*!
+This version is more expensive to call than get_input_rate().  It should only
+be called if (inputtobed != NULL).  This method allows the user to specify the
+total of en- and supra-glacial drainage contributions to subglacial hydrology
+in a time-dependent input file.
+
+Call this method using the current \e hydrology time step.  That is, this method
+will generally be called many times per IceModel time step.  See update() method
+in derived classes of PISMHydrology.
+ */
+PetscErrorCode PISMHydrology::get_input_rate_time_varying(
+                  PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
+  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
+
+  if (inputtobed == NULL)
+     SETERRQ(grid.com, 1,
+             "IceModelVec2T* inputtobed is NULL in get_input_rate_time_varying() ... stopping");
+
+  ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
+  ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
+
+  ierr = inputtobed->begin_access(); CHKERRQ(ierr);
+  ierr = bmelt->begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  MaskQuery m(*mask);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (m.icy(i, j)) {
+        const PetscReal mybmelt = (use_const) ? const_bmelt : (*bmelt)(i,j);
+        result(i,j) = mybmelt + (*inputtobed)(i,j);
+      } else
+        result(i,j) = 0.0;
+    }
+  }
+  ierr = inputtobed->begin_access(); CHKERRQ(ierr);
   ierr = bmelt->end_access(); CHKERRQ(ierr);
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
@@ -257,9 +320,9 @@ PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &c
 
 PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
   PetscErrorCode ierr;
-  ierr = input.create(grid, "input_hydro", false); CHKERRQ(ierr);
-  ierr = input.set_attrs("internal",
-                         "workspace for input into subglacial water layer",
+  ierr = total_input.create(grid, "total_input_hydro", false); CHKERRQ(ierr);
+  ierr = total_input.set_attrs("internal",
+                         "workspace for total input rate into subglacial water layer",
                          "m s-1", ""); CHKERRQ(ierr);
   if (Whasghosts) {
     ierr = W.create(grid, "bwat", true, 1); CHKERRQ(ierr);
@@ -427,21 +490,26 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
 
   PetscErrorCode ierr;
 
-  ierr = get_input_rate(input); CHKERRQ(ierr);
+  if (inputtobed == NULL) {
+    ierr = get_input_rate(total_input); CHKERRQ(ierr);
+  } else {
+    // in this model the hydrology time step *is* (icet,icet+icedt)
+    ierr = get_input_rate_time_varying(icet,icedt,total_input); CHKERRQ(ierr);
+  }
 
   PetscReal bwat_max        = config.get("hydrology_bwat_max"),
             bwat_decay_rate = config.get("hydrology_bwat_decay_rate");
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0;
 
   ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = input.begin_access(); CHKERRQ(ierr);
+  ierr = total_input.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      W(i,j) = pointwise_update(W(i,j), input(i,j) * icedt, bwat_decay_rate * icedt, bwat_max);
+      W(i,j) = pointwise_update(W(i,j), total_input(i,j) * icedt, bwat_decay_rate * icedt, bwat_max);
     }
   }
   ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = input.end_access(); CHKERRQ(ierr);
+  ierr = total_input.end_access(); CHKERRQ(ierr);
 
   // following should *not* alter W, and it should report all zeros by design;
   // this hydrology is *not* distributed
@@ -532,8 +600,9 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
       "   ... NN = %d > 1 ... THIS IS BELIEVED TO BE RARE\n",NN);
   }
 
-//FIXME: move this call inside loop so that time-dependent inputtobed can influence correctly
-  ierr = get_input_rate(input); CHKERRQ(ierr);
+  if (inputtobed == NULL) {
+    ierr = get_input_rate(total_input); CHKERRQ(ierr);
+  }
 
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0;
 
@@ -541,16 +610,20 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
              Ry = K * hdt / (grid.dy * grid.dy),
              oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
   for (PetscInt n=0; n<NN; ++n) {
+    if (inputtobed != NULL) {
+      ierr = get_input_rate_time_varying(icet + n * hdt, hdt, total_input); CHKERRQ(ierr);
+    }
+
     // time-splitting: first, Euler step on source terms
     ierr = W.begin_access(); CHKERRQ(ierr);
-    ierr = input.begin_access(); CHKERRQ(ierr);
+    ierr = total_input.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        W(i,j) = pointwise_update(W(i,j), input(i,j) * icedt, bwat_decay_rate * icedt, bwat_max);
+        W(i,j) = pointwise_update(W(i,j), total_input(i,j) * icedt, bwat_decay_rate * icedt, bwat_max);
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
-    ierr = input.end_access(); CHKERRQ(ierr);
+    ierr = total_input.end_access(); CHKERRQ(ierr);
 
     // valid ghosts for diffusion below
     ierr = W.update_ghosts(); CHKERRQ(ierr);

@@ -3,7 +3,7 @@
 #set -v
 
 MPIDO="mpiexec -n 4"
-PATHTO="./"
+PATHTO=""
 
 if [ "" ]; then      # zero length string is false
 #if [ "pre" ]; then  # <-- do this to create "start.n" for comparison runs

@@ -71,6 +71,8 @@ public:
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
   virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
 
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+
   // derived classes need to have a model state, which will be the variables in this set:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) = 0;
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype) = 0;
@@ -97,6 +99,8 @@ protected:
   PISMVars *variables;
   bool report_mass_accounting;
   virtual PetscErrorCode get_input_rate(IceModelVec2S &result);
+  virtual PetscErrorCode get_input_rate_time_varying(
+                  PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
   virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
                             PetscReal &icefreelost, PetscReal &oceanlost, PetscReal &negativegain);
 };
@@ -170,7 +174,7 @@ protected:
   // this model's state
   IceModelVec2S W;      // water layer thickness
   // this model's workspace
-  IceModelVec2S input;
+  IceModelVec2S total_input;
 
   virtual PetscErrorCode allocate(bool Whasghosts);
   virtual PetscErrorCode check_W_bounds();
@@ -279,7 +283,7 @@ protected:
                    Wstag,// edge-centered (staggered) W values (averaged from regular)
                    Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S input, Wnew, Pwork;
+  IceModelVec2S total_input, Wnew, Pwork;
 
   PetscReal stripwidth; // width in m of strip around margin where V and W are set to zero;
                         // if negative then the strip mechanism is inactive inactive
