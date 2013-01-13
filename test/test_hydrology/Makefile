@@ -3,7 +3,7 @@ all:
 .PHONY: clean
 
 clean:
-	@rm -f *~ *.so exactP.c *.pyc
+	@rm -f *~ *.so exactP.c *.pyc PISMNC.py
 	@rm -rf src/
 	@rm -rf build/
 
