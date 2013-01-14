@@ -51,3 +51,7 @@ echo "creating PISM-readable config override file $CONF.nc ..."
 rm -f $CONF.nc
 ncgen -o $CONF.nc $CONF.cdl
 
+INTOBED=fakesummerevent.nc
+echo "calling fake-inputtobed.py to create PISM-readable -input_to_bed file $INTOBED ..."
+./fake-inputtobed.py
+

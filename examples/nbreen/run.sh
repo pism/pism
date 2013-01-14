@@ -65,3 +65,9 @@ diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars $evarl
 mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
     $grid -max_dt $dtmax -y $YY $diagnostics -o $oname
 
+hydroinput="-input_to_bed_file fakesummerevent.nc"
+onameinput=nbreen_summerevent_${dx}m_$4.nc
+morediagnostics="-extra_file extras_$onameinput -extra_times 2012.0:daily:2013.0 -extra_vars $evarlist"
+
+mpiexec -n $NN $pismexec -i $oname $climate $physics $hydro $hydroinput \
+    -max_dt $dtmax -ys 2012.0 -ye 2013.0 $morediagnostics -o $onameinput
