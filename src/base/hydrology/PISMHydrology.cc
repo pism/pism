@@ -25,8 +25,8 @@
 PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   string itbfilename;  // itb = input_to_bed
-  bool itbfile_set, itbperiod_set;
-  PetscReal itbperiod_years = 0.0;
+  bool itbfile_set, itbperiod_set, itbreference_set;
+  PetscReal itbperiod_years = 0.0, itbreference_year = 0.0;
 
   ierr = verbPrintf(4, grid.com,
     "entering PISMHydrology::init() ...\n"); CHKERRQ(ierr);
@@ -35,14 +35,16 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
             "Options controlling the base class PISMHydrology", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsIsSet("-report_mass_accounting",
-                            "stdout report on mass accounting in hydrology models",
-                            report_mass_accounting); CHKERRQ(ierr);
+      "Report to stdout on mass accounting in hydrology models", report_mass_accounting); CHKERRQ(ierr);
     ierr = PISMOptionsString("-input_to_bed_file",
-                             "Specifies a time-dependent file with amount of water (depth per time) which should be put at the ice sheet bed at the given time",
-                             itbfilename, itbfile_set); CHKERRQ(ierr);
+      "A time- and space-dependent file with amount of water (depth per time) which should be put at the ice sheet bed at the given location at the given time",
+      itbfilename, itbfile_set); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-input_to_bed_period",
-                           "Specifies the period (i.e. duration before repeat), in years, of -input_to_bed_file data",
-                           itbperiod_years, itbperiod_set); CHKERRQ(ierr);
+      "The period (i.e. duration before repeat), in years, of -input_to_bed_file data",
+      itbperiod_years, itbperiod_set); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-input_to_bed_reference_year",
+      "The reference year for periodizing the -input_to_bed_file data",
+      itbreference_year, itbreference_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -70,8 +72,11 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 
   if (itbfile_set) {
     inputtobed_period = (itbperiod_set) ? grid.time->years_to_seconds(itbperiod_years) : 0.0;
+    inputtobed_reference_time = (itbreference_set) ? grid.time->years_to_seconds(itbreference_year) : 0.0;
+
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
                  n_records = 1;
+
     PIO nc(grid.com, grid.rank, "netcdf3");
     ierr = nc.open(itbfilename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_nrecords("inputtobed", "", n_records); CHKERRQ(ierr);
@@ -82,10 +87,11 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
                   itbfilename.c_str());
       PISMEnd();
     }
+
     ierr = verbPrintf(2,grid.com,
-      "    option -input_to_bed_file seen ...\n"
-      "    creating 'inputtobed' variable with space for n = %d records ...\n",
-      n_records); CHKERRQ(ierr);
+      "    option -input_to_bed_file seen ... creating 'inputtobed' variable ...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com,
+      "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records); CHKERRQ(ierr);
     inputtobed = new IceModelVec2T;
     inputtobed->set_n_records(n_records);
     ierr = inputtobed->create(grid, "inputtobed", false); CHKERRQ(ierr);
@@ -146,29 +152,22 @@ PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
 
 
 //! The only reason to restrict the time step taken by the calling model (i.e. IceModel) is if there is a time-dependent input file IceModelVec2T *inputtobed.
-PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt) {
   if (inputtobed == NULL) {
     my_dt = -1;
-    restrict = false;
-    return 0;
+    restrict_dt = false;
   } else {
-    PetscReal max_dt = -1;
-    //FIXME: should we "periodize" the forcing data this way?
-    //       is a reference time needed?  see PLapseRates::max_timestep()
-    my_t = grid.time->mod(my_t, inputtobed_period);
-    max_dt = inputtobed->max_timestep(my_t);
-    if (my_dt > 0) {
-      if (max_dt > 0)  my_dt = PetscMin(max_dt, my_dt);
-    } else
-      my_dt = max_dt;
+    // "periodize" the forcing data
+    my_t = grid.time->mod(my_t - inputtobed_reference_time, inputtobed_period);
+    my_dt = inputtobed->max_timestep(my_t);
     // if the user specifies periodized forcing, limit time-steps so that PISM
     // never tries to average data over an interval that begins in one period and
     // ends in the next one.
     if (inputtobed_period > 1e-6)
       my_dt = PetscMin(my_dt, inputtobed_period - my_t);
-    restrict = (my_dt > 0);
-    return 0;
+    restrict_dt = (my_dt > 0);
   }
+  return 0;
 }
 
 

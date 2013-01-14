@@ -71,7 +71,7 @@ public:
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
   virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt);
 
   // derived classes need to have a model state, which will be the variables in this set:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) = 0;
@@ -95,7 +95,7 @@ protected:
                 *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
   IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
-  PetscReal     inputtobed_period;
+  PetscReal     inputtobed_period, inputtobed_reference_time;
   PISMVars *variables;
   bool report_mass_accounting;
   virtual PetscErrorCode get_input_rate(IceModelVec2S &result);
