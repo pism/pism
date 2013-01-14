@@ -5,15 +5,17 @@
 
 Jakobshavn Isbrae is a fast-flowing outlet glacier in western Greenland that drains approximately 7\% of the area of the Greenland ice sheet.  It experienced a large acceleration following the loss of its floating tongue in the 1990s \cite{JoughinAbdalatiFahnestock}, an event which seems to have been driven by warmer ocean temperatures \cite{Hollandetal2008}.  Because it is thick, has a steep surface slope, has a deep trough in its bedrock topography (Figure \ref{fig:jako-basin-topg}), and has a thick layer of low-viscosity temperate ice at its base \cite{Luethietal2009}, this ice flow is different from the ice streams in West Antarctica or Northeast Greenland \cite{TrufferEchelmeyer}.
  
-This section describes how to build a PISM regional model of this outlet glacier using scripts from \texttt{examples/jako/} \cite{DellaGiustina2011}, but the same strategy will work for other outlet glaciers.  We also demonstrate the outlet-glacier-mode PISM executable \texttt{pismo}, and a Python drainage-basin-delineation tool \texttt{regional-tools}, also by the PISM authors.  Such regional models allow modest-size computers to run high resolution models\footnote{PISM can do 1\,km runs for the whole Greenland ice sheet; see this \href{http://www.pism-docs.org/wiki/doku.php?id=news:first1km}{news item}.  You need a supercomputer for that!} and large ensembles.  Model-based regional analysis is also justified if additional data is available for the region, of course.\index{PISM!pismo executable for outlet glaciers}\index{regional-tools}
+This section describes how to build a PISM regional model of this outlet glacier using scripts from \texttt{examples/jako/} \cite{DellaGiustina2011}.  The same strategy should work for other outlet glaciers.  We also demonstrate the PISM executable \texttt{pismo} (``outlet-glacier mode''), and a Python drainage-basin-delineation tool \texttt{regional-tools} which can be downloaded from the PISM source code website.  Such regional models allow modest-size computers to run high resolution models\footnote{PISM can do 1\,km runs for the whole Greenland ice sheet; see this \href{http://www.pism-docs.org/wiki/doku.php?id=news:first1km}{news item}.  You need a supercomputer for that!} and large ensembles.  Model-based regional analysis is also justified if additional data is available for the region, of course.\index{PISM!pismo executable for outlet glaciers}\index{regional-tools}
 
 \index{CReSIS bedrock topography for Jakobshavn}
-The geometric data used here is the SeaRISE  \cite{Bindshadler2012SeaRISE} 1\,km dataset for the whole Greenland ice sheet.  It contains bedrock topography from recent CReSIS radar in the Jakobshavn area.  We also use the SeaRISE 5\,km data set which has climatic mass balance from the Greenland-region climate model RACMO \cite{Ettemaetal2009}.  A regional ice flow model also generally needs boundary conditions.  For this we use a 5\,km whole ice sheet spun-up model state from PISM, described in Section \ref{sec:start} of this \emph{Manual}.  You can download the 1.3\,GB NetCDF result from the PISM website, or you can generate it by running the Section \ref{sec:start} script. 
+The geometric data used here is the SeaRISE  \cite{Bindshadler2012SeaRISE} 1\,km dataset for the whole Greenland ice sheet.  It contains bedrock topography from recent CReSIS radar in the Jakobshavn area.  We also use the SeaRISE 5\,km data set which has climatic mass balance from the Greenland-region climate model RACMO \cite{Ettemaetal2009}.
+
+A regional ice flow model generally needs ice flow and stress boundary conditions.  For this we use a 5\,km whole ice sheet spun-up model state from PISM, described in Section \ref{sec:start} of this \emph{Manual}.  You can download the 1.3\,GB NetCDF result from the PISM website, or you can generate it by running the Section \ref{sec:start} script. 
 
 \begin{figure}[ht]
   \centering
   \includegraphics[height=2.1in,keepaspectratio=true]{jako-ftt-mask} \, \includegraphics[height=2.1in,keepaspectratio=true]{jako-topg}
-  \caption{A \texttt{regional-tools} script computes a drainage basin mask from the surface DEM (left; Modis background) and a user-identified terminus rectangle (blue).  The regional model benefits from high-resolution bedrock elevations inland from Jakobshavn fjord (right; meters asl).}
+  \caption{A \texttt{regional-tools} script computes a drainage basin mask from the surface DEM (left; Modis background) and from a user-identified terminus rectangle (blue).  The regional model can exploit high-resolution bedrock elevations inland from Jakobshavn fjord (right; meters asl).}
   \label{fig:jako-basin-topg}
 \end{figure}
 
@@ -57,16 +59,20 @@ Note specifically that the boundary condition file \texttt{g5km_bc.nc} contains 
 
 None of the above actions is specific to Jakobshavn, though all are specific to Greenland.  If your goal is to build a regional model of another outlet glacier in Greenland, then you may be able to use \texttt{preprocess.sh} as is.  The SeaRISE 1\,km data set only has recent CReSIS bed topography data for the vicinity of the Jakobshavn outlet, however, and it is otherwise just BEDMAP.  Because outlet glacier flows are bed-topography-dominated, additional bed elevation data should be sought.
 
-\subsection*{Extract the region for modeling}
-We are going to extract a ``drainage basin mask'' from the surface elevation data (DEM) in \texttt{gr1km.nc}.  The goal is to determine the locations, outside of the flow into the outlet glacier we want to model, where boundary conditions taken from the precomputed whole ice sheet run can be applied.  Such locations are outside of the drainage basin.  The basin is determined by the gradient flow from the surface elevation, thus its generation uses a highly-simplified ice dynamics model (namely: ice flows down the surface gradient).  We will apply the full PISM model in the basin interior.  Outside the basin we will apply simplified models or use the whole ice sheet results as boundary conditions.  The script \texttt{pism_regional.py} computes the drainage basin based on a user choice of a ``terminus rectangle''; see Figure \ref{fig:jako-basin-topg}.  
+\subsection*{Identify the drainage basin for the modeled outlet glacier}
+Here we are going to extract a ``drainage basin mask'' from the surface elevation data (DEM) in \texttt{gr1km.nc}.  The goal is to determine, in part, the locations outside of the drainage basin where boundary conditions taken from the precomputed whole ice sheet run can be applied to modeling the outlet glacier flow itself.
+
+The basin mask is determined by the gradient flow of the surface elevation.  Thus generating the mask uses a highly-simplified ice dynamics model (namely: ice flows down the surface gradient).  Once we have the mask, we will apply the full PISM model in the basin interior marked by the mask.  Outside the basin mask we will apply simplified models or use the whole ice sheet results as boundary conditions.
+
+The script \texttt{pism_regional.py} computes the drainage basin mask based on a user choice of a ``terminus rectangle''; see Figure \ref{fig:jako-basin-topg}.  There are two ways to use this script:
 \begin{itemize}
-\item \textbf{To use the GUI.}  The script can be used in graphical user interface (GUI) mode:
+\item \textbf{To use the graphical user interface (GUI) mode.}  Run
 \begin{quote}\small
 \begin{verbatim}
 $ python pism_regional.py
 \end{verbatim}
 \normalsize\end{quote}
-Select \texttt{gr1km.nc} to open.  Once the topographic map appears in the Figure window, you may zoom enough to see the general outlet glacier area.  Then select the button ``Select terminus rectangle''.  Use the mouse to select a small rectangle around the Jakobshavn terminus (calving front), or around the terminus of another glacier if you want to model that.  Once you have a highlighted rectangle, select a ``border width'' of at least 50 cells.\footnote{This recommendation is somewhat Jakobshavn-specific. We want our model to have an ice-free down flow (western) boundary on the resulting computational domain for the modeled region.}  Then click ``Compute the drainage basin mask.''  Because this is a large data set there will be some delay. (But multi-core users will see that an automatic parallel computation is done.)  Finally click ``Save the drainage basin mask'' and save with your preferred name; we will assume it is ``jakomask.nc.''  Then quit.
+Select \texttt{gr1km.nc} to open.  Once the topographic map appears in the Figure window, you may zoom enough to see the general outlet glacier area.  Then select the button ``Select terminus rectangle''.  Use the mouse to select a small rectangle around the Jakobshavn terminus (calving front), or around the terminus of another glacier if you want to model that.  Once you have a highlighted rectangle, select a ``border width'' of at least 50 cells.\footnote{This recommendation is somewhat Jakobshavn-specific. We want our model to have an ice-free down flow (western) boundary on the resulting computational domain for the modeled region.}  Then click ``Compute the drainage basin mask.''  Because this is a large data set there will be some delay. (Multi-core users will see that an automatic parallel computation is done.)  Finally click ``Save the drainage basin mask'' and save with your preferred name; we will assume it is ``jakomask.nc.''  Then quit.
 \item \textbf{To use the command-line interface.}  There are reasons for using the command-line interface of the same script \texttt{pism_regional.py}, including to re-create the mask without changing the terminus rectangle choice, and because of the slowness of the GUI for large data sets.  In fact, for repeatability, we now assume you have used command-line options to calculate the drainage basin as follows:
 \begin{quote}\small
 \begin{verbatim}
@@ -136,7 +142,7 @@ It produces three files which can be viewed (e.g.~with \verb|ncview|): \verb|spu
 \item Generally the regridding techniques used at the start of this spin-up run are recommended for regional modeling.  Read the actual run command by
 \begin{quote}\small
 \begin{verbatim}
-$ PISM_DO=echo spinup.sh 4 125 86 | less
+$ PISM_DO=echo ./spinup.sh 4 125 86 | less
 \end{verbatim}
 \normalsize\end{quote}
 \item  We use \verb|-boot_file| on \verb|jako.nc|, so we get to choose our grid, and (as usual in PISM with \verb|-boot_file|) the fields are interpolated to our grid.

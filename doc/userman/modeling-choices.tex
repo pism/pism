@@ -163,7 +163,7 @@ Flow law parameters such as ice softness can be changed using configuration para
 \centering
 \index{rheology}\index{flow law}
 \small
-\begin{tabular}{p{0.15\linewidth}p{0.2\linewidth}p{0.6\linewidth}}\toprule
+\begin{tabular}{p{0.18\linewidth}p{0.2\linewidth}p{0.52\linewidth}}\toprule
 \textbf{Type} & C++ Class & \textbf{Comments and Reference} \\ \midrule
 \texttt{pb} &\texttt{ThermoGlenIce}  & Paterson-Budd law, the cold-mode default.  Fixed Glen exponent $n=3$.  There is a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
  \mbox{$A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* > 263$ K and where $T^*$ is the pressure-adjusted temperature \cite{PatersonBudd}. \\
@@ -184,11 +184,13 @@ Flow law parameters such as ice softness can be changed using configuration para
 
 The basic stress balance used for all grounded ice in PISM is the non-sliding, thermomechanically-coupled SIA \cite{BBL}.  For the vast majority of most ice sheets, as measured by area or volume, this is an appropriate model which is an $O(\eps^2)$ approximation to the Stokes model \cite{Fowler}.
 
-The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance is applied to floating ice.  It is also used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}.  Specifically for the SSA with ``plastic'' (Coulomb friction) basal resistance, the locations of ice streams are determined as part of a free boundary problem of Schoof \cite{SchoofStream}, a model for emergent ice streams within a ice sheet and ice shelf system which explains ice streams by a combination of plastic till failure and SSA stress balance.  Schoof's model is one way to understand how PISM uses the SSA.
+The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance applies to floating ice.  Option \texttt{-ssa_floating_only} turns on this stress balance but restricted only to floating ice.  See the Ross ice shelf example in section \ref{sec:ross} for an example in which the SSA is only applied to floating ice.
 
-This SSA description of ice streams is a preferred ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding laws}  It should be used instead of classical SIA sliding laws which make ice basal velocity a local function of the basal value of the driving stress, a quantity quite different from the basal shear stress at sliding locations.  This combination of SIA+SSA is a ``hybrid'' approximation of the Stokes model \cite{BBssasliding,Winkelmannetal2011}.
+The SSA is also used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}.  Specifically for the SSA with ``plastic'' (Coulomb friction) basal resistance, the locations of ice streams are determined as part of a free boundary problem of Schoof \cite{SchoofStream}, a model for emergent ice streams within a ice sheet and ice shelf system.  This model explains ice streams through a combination of plastic till failure and SSA stress balance.  As a combination of SIA and SSA it is a ``hybrid'' approximation of the Stokes model \cite{BBssasliding,Winkelmannetal2011}.  In other words, this SSA description of ice streams is the preferred ``sliding law'' for the SIA, and it should be used in preference to classical SIA sliding laws which make ice basal velocity a local function of the basal value of the driving stress \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding laws}
 
-Option \texttt{-ssa_sliding} turns on the use of the plastic till SSA as a sliding law.  At all grounded points a yield stress, or pseudo-yield-stress  in the case of power law sliding (subsection \ref{subsect:basestrength}), is computed from the amount of stored basal water and from a (generally) spatially-varying till strength.  The amount of stored basal water is thermodynamically determined (subsection \ref{subsect:basestrength}).  Table \ref{tab:stressbalchoice} describes the basic choice of stress balance, while Table \ref{tab:ssausage} describes additional controls on the manner of solution.
+Option \texttt{-ssa_sliding} turns on such use of the plastic till SSA as a sliding law; floating ice is also subject to the SSA with this option.  Of course the is more to the use of a stress balance than just turning it on.  At all grounded points a yield stress, or a pseudo-yield-stress in the case of power law sliding (subsection \ref{subsect:basestrength}), is computed from the amount of stored basal water and from a (generally) spatially-varying till strength.  The amount of stored basal water is modeled by the subglacial hydrology mode choice (subsection \ref{subsect:subhydro}) based on the basal melt rate which is, primarily, thermodynamically-determined (subsection \ref{subsect:basestrength}).
+
+Table \ref{tab:stressbalchoice} describes the basic choice of stress balance, while Table \ref{tab:ssausage} describes additional controls on the numerical solution of the stress balance equations.
 
 \begin{table}[ht]
 \centering
@@ -209,7 +211,7 @@ Option \texttt{-ssa_sliding} turns on the use of the plastic till SSA as a slidi
 
 \begin{table}
   \centering
-  \begin{tabular}{p{0.25\linewidth}p{0.75\linewidth}}
+  \begin{tabular}{p{0.22\linewidth}p{0.75\linewidth}}
      \toprule
      \textbf{Option} & \textbf{Description}\\\midrule
      \intextoption{ssa_method} [\texttt{fd}$\big|$\texttt{fem}] & Both finite difference (\texttt{fd}) and finite element (\texttt{fem}) versions of the SSA numerical solver are implemented in PISM.  They behave similarly for runs without PIK options (section \ref{sec:pism-pik}), but the \texttt{fd} solver is the only one which allows PIK options.  \texttt{fd} uses Picard iteration \cite{BBssasliding}, while \texttt{fem} uses a Newton method.  The \texttt{fem} solver has in-development surface velocity inversion capability \cite{Habermannetal2012}.  \\
@@ -300,7 +302,7 @@ When using option \texttt{-ssa_sliding}, the SIA+SSA hybrid model, a sub-model f
     \\\midrule
     \intextoption{hold_tauc} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.  Normally used in combination with \texttt{-tauc}. \\
     \intextoption{pseudo_plastic} & enables the pseudo-plastic till model \\
-    \txtopt{plastic_pwfrac}{\emph{pure number}} & Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
+    \txtopt{plastic_pwfrac}{\emph{pure number}} & [FIXME: rename to \texttt{hydrology_bwpfrac} and put in next subsection; issue \#127]  Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
     \intextoption{plastic_c0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
     \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}. The default is $0.01$.\\
     \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
@@ -314,30 +316,33 @@ When using option \texttt{-ssa_sliding}, the SIA+SSA hybrid model, a sub-model f
 \label{tab:basal-strength}
 \end{table}
 
-In PISM the strength value is always a till yield stress $\tau_c$, which necessarily represents the strength of the aggregate material at the base of an ice sheet, a poorly observed mixture of liquid water, ice, granular till, and bedrock bumps.  However, this yield stress concept is extended to the power law form, so all the standard sliding laws can be chosen (below).  One reason that the yield stress is so useful is that is can be compared, when looking at PISM output files, to the driving stress.  Specifically, where \verb|tauc| $<$ \verb|taud_mag| you are likely to see sliding if option \verb|ssa_sliding| is used.
+In PISM the strength value is always a basal yield stress $\tau_c$.  This parameter represents the strength of the aggregate material at the base of an ice sheet, a poorly observed mixture of liquid water, ice, granular till, and bedrock bumps.  The yield stress concept is also extended to the power law form, and thus most standard sliding laws can be chosen by user options (below).  One reason that the yield stress is a useful parameter is that it can be compared, when looking at PISM output files, to the driving stress.  Specifically, where \verb|tauc| $<$ \verb|taud_mag| you are likely to see sliding if option \verb|ssa_sliding| is used.
 
-The value of $\tau_c$ is determined in part by a basal water model, including the modeled basal water pressure $p_w$, and in part by a stored basal till material property $\phi=$\texttt{tillphi}, the till friction angle \cite{Paterson}.  These quantities are related by the Mohr-Coulomb criterion \cite[Chapter 8]{Paterson}, 
+The value of $\tau_c$ is determined in part by a subglacial hydrology model, including the modeled basal water pressure $p_w$ (subsection \ref{subsect:subhydro}), and in part by a stored basal material property $\phi=$\texttt{tillphi}, the ``till friction angle'' \cite{Paterson}.  These quantities combine in the Mohr-Coulomb criterion \cite[Chapter 8]{Paterson} to determine the basal yield stress:
+\begin{equation}
+   \tau_c = c_{0} + (\tan\phi)\,(\rho g H - p_w).  \label{eq:mohrcoulomb}
+\end{equation}
+Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, and $c_0$ is called the ``till cohesion''.  The product $\rho g H$ is the ice overburden pressure.  The difference $N=\rho g H - p_w$ is the modeled value of the ``effective pressure'' on the basal material.  Lower effective pressure means that more of the weight of the ice is carried by pressurized water and thus that the ice can slide more easily because the shear stress needed to slide is smaller.  The default value in PISM for the till cohesion value $c_0$ is zero \cite[formula (2.4)]{SchoofStream}.  In any case the meaning of the yield stress is that the (vector) basal shear stress is at most the yield stress, and only once the shear stress reaches the yield value can there be sliding:
 \begin{equation*}
-   \tau_c = c_{0} + (\tan\phi)\,(\rho g H - p_w).
+   |\tau_b| \le \tau_c \quad \text{and} \quad \tau_b = \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0.
 \end{equation*}
-Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, and $c_0$ is called the ``till cohesion''.  The produce $\rho g H$ is the overburden pressure.  The difference $(\rho g H - p_w)$ is the modeled value of the effective pressure on the material till.  Note Schoof \cite{SchoofStream} formula (2.4) uses a till cohesion value $c_0 = 0$ and that is the default value in PISM.
 
-The yield stress $\tau_c$ can also be part of a power law model, the optional user-configurable ``pseudo-plastic'' power law.  In this case stress is a power of basal sliding velocity $\mathbf{u}$:
+As noted, the yield stress $\tau_c$ can also be part of a power law model, a ``pseudo-plastic'' law.  Here stress is a power of basal sliding velocity $\mathbf{u}$, but in a form where the coefficient has units of stress:
 \begin{equation}
 \tau_b = \tau_c \frac{|\mathbf{u}|^{q-1}}{u_{\text{threshold}}^q}\, \mathbf{u}.
 \label{eq:pseudopower}
 \end{equation}
-Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM output files, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.
+The plastic law is the case $q=0$.  Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM output files, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.
 
 \begin{quote}
   \textbf{WARNING!} Options \texttt{-pseudo_plastic_q} and \texttt{-pseudo_plastic_uthreshold} have no effect if \texttt{-pseudo_plastic} is not set.
 \end{quote}
 
-The purely plastic case is $q=0$ \cite{SchoofStream}, and it is the default, so just use \verb|-ssa_sliding| to turn on this model.  Options \verb|-hold_tauc| and \verb|-tauc| can be used to fix the yield stress, but that would be an unusual usage case because normally variations in yield stress are part of the explanation of the locations of ice streams \cite{SchoofStream}.
+The purely plastic case is the default; just use \verb|-ssa_sliding| to turn it on.  Options \verb|-hold_tauc| and/or \verb|-tauc| can be used to fix the yield stress in time and possibly space.  On the other hand the normal modeling case is where variations in yield stress, both in time and space, are part of the explanation of the locations of ice streams \cite{SchoofStream}.
 
-Equation \eqref{eq:pseudopower} is a very flexible power law form.  The linear case is $q=1$, giving a law of the form
+Equation \eqref{eq:pseudopower} is a very flexible power law form.  For example, the linear case is $q=1$, in which case if $\beta=\tau_c/u_{\text{threshold}}$ then the law is of the form
     $$\tau_b = \beta \mathbf{u}$$
-if $\beta=\tau_c/u_{\text{threshold}}$; the coefficient is also called $\beta^2$ \cite{MacAyeal}.  If you want such a linear sliding law, and you have a value $\beta=$\verb|beta| in $\text{Pa}\,\text{s}\,\text{m}^{-1}$, then you should use this option combination:
+(The ``$\beta$'' coefficient is also called $\beta^2$ in some sources \cite[for example]{MacAyeal}.)  If you want such a linear sliding law, and you have a value $\beta=$\verb|beta| in $\text{Pa}\,\text{s}\,\text{m}^{-1}$, then you can use this option combination:
 \begin{verbatim}
 -pseudo_plastic -pseudo_plastic_q 1.0 -pseudo_plastic_uthreshold 3.1556926e7 \
   -hold_tauc -tauc beta
@@ -350,13 +355,11 @@ as, for example, in section \ref{subsect:MISMIP}.  In that case, use this option
   -hold_tauc -tauc C
 \end{verbatim}
 
-Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=\mathtt{bwat}$; see the next subsection.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
-
-We find that an effective, though heuristic, way to determine \texttt{tillphi} is to make it a function of bed elevation \cite{BKAJS}.  This heuristic is motivated by hypothesis that basal material with a marine history should be weak \cite{HuybrechtsdeWolde}.  Thus PISM has a mechanism setting $\phi$=\texttt{tillphi} to a \emph{piecewise-linear} function of bed elevation.  The option is
+Recall the Mohr-Coulomb equation \eqref{eq:mohrcoulomb} which determines the yield stress $\tau_c$ from the till friction angle $\phi=$\texttt{tillphi} among other factors.  We find that an effective, though heuristic, way to determine \texttt{tillphi} is to make it a function of bed elevation \cite{Winkelmannetal2011}.  This heuristic is motivated by hypothesis that basal material with a marine history should be weak \cite{HuybrechtsdeWolde}.  PISM has a mechanism setting $\phi$=\texttt{tillphi} to be a \emph{piecewise-linear} function of bed elevation.  The option is
 \begin{verbatim}
 -topg_to_phi phimin,phimax,bmin,bmax
 \end{verbatim}
-which supplies 4 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$.  Here $b$ stands for the bed elevation.  To explain these, we define the rate $M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}})$.  Then
+Thus the user supplies 4 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$.  Here $b$ stands for the bed elevation.  To explain these, we define the rate $M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}})$.  Then
 \begin{equation}
   \phi(x,y) = \begin{cases}
     \phi_{\text{min}}, & b(x,y) \le b_{\text{min}}, \\
@@ -365,15 +368,15 @@ which supplies 4 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\
     \phi_{\text{max}}, & b_{\text{max}} \le b(x,y). \end{cases}\label{eq:2}
 \end{equation}
 
-See the \emph{PISM Source Code browser}, source files in \texttt{src/base/basal_resistance}, and \cite{BBssasliding,BKAJS,Martinetal2011,Winkelmannetal2011} for more details on how basal resistance is computed, and how it affects ice dynamics.
+See the \emph{PISM Source Code browser}, source files in \texttt{src/base/basalstrength}, and \cite{BBssasliding,BKAJS,Martinetal2011,Winkelmannetal2011} for more details on how basal resistance is computed, and how it affects ice dynamics.
 
-The major example of \texttt{-ssa_sliding} usage is in the first section of this manual.  A made-up example, in which sliding happens in the ``trough'', is
+The major example of \texttt{-ssa_sliding} usage is in the first section of this manual.  A simpler artificial example, in which sliding happens in the ``trough'', is
 \begin{verbatim}
 pisms -eisII I -ssa_sliding -Mx 91 -My 91 -Mz 51 \
       -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
 \end{verbatim}
 
-A final note on basal sliding is in order.  Sliding in the SIA stress balance model has been proposed, where the velocity of sliding is a direct function of the driving stress.  Such a SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and other places.  This kind of sliding is \emph{not} recommended, as it does not make sense to regard the driving stress as the local generator of flow if the bed is not holding all of that stress.  Within PISM, for historical reasons, there is an implementation of SIA-based sliding for verification test E; see \texttt{SIA_Sliding.cc}.  PISM does \emph{not} support this sliding mode in other contexts.
+A final note on basal sliding is in order.  Sliding in the SIA stress balance model has been proposed, where the velocity of sliding is a local function of the driving stress at the base.  Such a SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and other places.  This kind of sliding is \emph{not} recommended, as it does not make sense to regard the driving stress as the local generator of flow if the bed is not holding all of that stress.  Within PISM, for historical reasons, there is an implementation of SIA-based sliding for verification test E; see \texttt{SIA_Sliding.cc}.  PISM does \emph{not} support this sliding mode in other contexts without modifications of the source code.
 
 
 \subsection{Subglacial hydrology}  \label{subsect:subhydro}
@@ -381,11 +384,32 @@ A final note on basal sliding is in order.  Sliding in the SIA stress balance mo
 
 FIXME:  this should be updated to document \intextoption{hydrology} with cases \texttt{tillcan,diffuseonly,lakes,distributed}
 
+\begin{table}
+  \centering
+ \begin{tabular}{lp{0.6\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{hydrology} & Choose one of \texttt{tillcan}, \texttt{diffuseonly}, \texttt{lakes}, \texttt{distributed} FIXME \\
+    \txtopt{hydrology_null_strip}{(km)} & FIXME only applies to \texttt{lakes} and \texttt{distributed} \\
+    \intextoption{report_mass_accounting} & FIXME \\
+    \intextoption{input_to_bed_file} & FIXME \\
+    \intextoption{input_to_bed_period} & FIXME \\
+    \intextoption{init_P_from_steady}  & FIXME only applies to \texttt{distributed} \\
+    \intextoption{hydrology_use_const_bmelt} & FIXME \\
+    \intextoption{hydrology_const_bmelt} & FIXME \\
+    \intextoption{hydrology_hydraulic_conductivity} & FIXME only applies to \texttt{lakes} and \texttt{distributed} \\
+    \bottomrule
+  \end{tabular}
+\caption{Subglacial hydrology command-line options}
+\label{tab:hydrology}
+\end{table}
+
+FIXME Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=\mathtt{bwat}$; see the next subsection.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
+
 Currently, only the most minimal possible hydrology model is implemented in PISM.  By default, the energy conservation calculation generates basal melt and that water is stored locally in the ``till'' under the ice sheet.  The output variable \texttt{bwat} is the effective thickness of this layer of liquid water.  This layer of water relates to the basal boundary condition of the conservation of energy scheme, and it is involved in computing basal water pressure and thus the till yield stress; see the previous subsection.
 
 The minimal model which is on by default is that water is added by basal melt rate, subtracted by refreeze onto the base of the ice, and it decays away in the absence of other inputs according to the configuration parameter \texttt{bwat_decay_rate}.  The amount is bounded above by the configuration constant \texttt{bwat_max}, an effective thickness.  Water above that level is lost in an unmodeled manner.
-
-There is also the option of horizontal diffusion of stored basal water in the field \texttt{bwat}.  This mechanism is normally off, but it is turned on by the option \intextoption{diffuse_bwat}.  The configuration parameters \texttt{bwat_diffusion_distance} and \texttt{bwat_diffusion_time} control the diffusivity.  See equation (11) in \cite{BBssasliding}.
 
 
 \subsection{Dealing with more difficult modeling choices}
