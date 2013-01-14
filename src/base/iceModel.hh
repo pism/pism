@@ -490,6 +490,14 @@ protected:
   PetscInt     id, jd;	     // sounding indices
   map<string,PetscViewer> viewers;
 
+  // time step decision helper; see step()
+  inline void revise_maxdt(PetscReal new_dt, PetscReal &my_maxdt) {
+    if (my_maxdt > 0)
+      my_maxdt = PetscMin(new_dt, my_maxdt);
+    else
+      my_maxdt = new_dt;
+  }
+
 private:
   PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
 

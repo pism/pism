@@ -591,41 +591,26 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   double apcc_dt;
   bool restrict_dt;
   ierr = surface->max_timestep(grid.time->current(), apcc_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt) {
-    if (maxdt_temporary > 0)
-      maxdt_temporary = PetscMin(apcc_dt, maxdt_temporary);
-    else
-      maxdt_temporary = apcc_dt;
-  }
+  if (restrict_dt) revise_maxdt(apcc_dt, maxdt_temporary);
 
   double opcc_dt;
   ierr = ocean->max_timestep(grid.time->current(), opcc_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt) {
-    if (maxdt_temporary > 0)
-      maxdt_temporary = PetscMin(opcc_dt, maxdt_temporary);
-    else
-      maxdt_temporary = opcc_dt;
-  }
+  if (restrict_dt) revise_maxdt(opcc_dt, maxdt_temporary);
 
+  double hydro_dt;
+  ierr = subglacial_hydrology->max_timestep(grid.time->current(), hydro_dt, restrict_dt); CHKERRQ(ierr);
+  if (restrict_dt) revise_maxdt(hydro_dt, maxdt_temporary);
+
+  //! \li apply the time-step restriction from the -ts_{times,file,vars} mechanism
   double ts_dt;
   ierr = ts_max_timestep(grid.time->current(), ts_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt) {
-    if (maxdt_temporary > 0)
-      maxdt_temporary = PetscMin(ts_dt, maxdt_temporary);
-    else
-      maxdt_temporary = ts_dt;
-  }
+  if (restrict_dt) revise_maxdt(ts_dt, maxdt_temporary);
 
   //! \li apply the time-step restriction from the -extra_{times,file,vars}
   //! mechanism
   double extras_dt;
   ierr = extras_max_timestep(grid.time->current(), extras_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt) {
-    if (maxdt_temporary > 0)
-      maxdt_temporary = PetscMin(extras_dt, maxdt_temporary);
-    else
-      maxdt_temporary = extras_dt;
-  }
+  if (restrict_dt) revise_maxdt(extras_dt, maxdt_temporary);
 
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
