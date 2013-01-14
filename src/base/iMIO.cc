@@ -346,7 +346,7 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
   */
 PetscErrorCode IceModel::initFromFile(string filename) {
   PetscErrorCode  ierr;
-  PIO nc(grid, "guess_format");
+  PIO nc(grid, "guess_mode");
 
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
                     filename.c_str()); CHKERRQ(ierr);

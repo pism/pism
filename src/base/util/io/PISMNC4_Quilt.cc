@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -129,11 +129,11 @@ int PISMNC4_Quilt::def_var(string name, PISM_IO_Type nctype, vector<string> dims
   stat = PISMNC4File::def_var(name, nctype, dims); check(stat);
 
   // Compress 2D and 3D variables
-  if (m_compress && dims.size() > 1) {
+  if (m_compression_level > 0 && dims.size() > 1) {
     int varid;
 
     stat = nc_inq_varid(ncid, name.c_str(), &varid); check(stat);
-    stat = nc_def_var_deflate(ncid, varid, 0, 1, 9); check(stat);
+    stat = nc_def_var_deflate(ncid, varid, 0, 1, m_compression_level); check(stat);
   }
 
   return global_stat(stat);

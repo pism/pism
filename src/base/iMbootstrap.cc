@@ -89,7 +89,7 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
 PetscErrorCode IceModel::bootstrap_2d(string filename) {
   PetscErrorCode ierr;
 
-  PIO nc(grid, "guess_format");
+  PIO nc(grid, "guess_mode");
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
