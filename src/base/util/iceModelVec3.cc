@@ -149,13 +149,20 @@ PetscErrorCode  IceModelVec3::setValColumnPL(PetscInt i, PetscInt j, PetscScalar
 
 //! Set all values of scalar quantity to given a single value in a particular column.
 PetscErrorCode IceModelVec3D::setColumn(PetscInt i, PetscInt j, PetscScalar c) {
+  PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
-  PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
+  ierr = checkHaveArray();  CHKERRQ(ierr);
   check_array_indices(i, j);
 #endif
+
   PetscScalar ***arr = (PetscScalar***) array;
-  for (PetscInt k=0; k < n_levels; k++) {
-    arr[i][j][k] = c;
+
+  if (c == 0.0) {
+    ierr = PetscMemzero(arr[i][j], n_levels * sizeof(PetscScalar)); CHKERRQ(ierr);
+  } else {
+    for (PetscInt k=0; k < n_levels; k++) {
+      arr[i][j][k] = c;
+    }
   }
   return 0;
 }

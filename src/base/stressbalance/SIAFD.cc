@@ -139,9 +139,9 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
   ierr = compute_diffusive_flux(h_x, h_y, diffusive_flux, fast); CHKERRQ(ierr);
 
   if (!fast) {
-    ierr = compute_volumetric_strain_heating(D2_input, h_x, h_y); CHKERRQ(ierr);
-
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
+
+    ierr = compute_volumetric_strain_heating(D2_input, h_x, h_y); CHKERRQ(ierr);
   }
 
   grid.profiler->end(event_sia);
@@ -829,6 +829,8 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
  *
  * \note This is one of the places where "hybridization" is done.
  *
+ * \note The result is stored in SIAFD::Sigma. Ghosts of Sigma are not used.
+ *
  * \param[in] D2_input the "SSA" contribution to the strain heating
  * \param[in] h_x the X-component of the surface gradient, on the staggered grid
  * \param[in] h_y the Y-component of the surface gradient, on the staggered grid
@@ -838,120 +840,125 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
                                                         IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
   PetscScalar *sigma_ij, *delta_ij, *E;
-
-  // aliases
   IceModelVec2S thk_smooth = work_2d[0];
-  IceModelVec3 sigma[2] = {work_3d[0], work_3d[1]};
+
+  PetscScalar *column = new PetscScalar[grid.Mz];
+
+  ierr = delta[0].begin_access(); CHKERRQ(ierr);
+  ierr = delta[1].begin_access(); CHKERRQ(ierr);
+  ierr = h_x.begin_access(); CHKERRQ(ierr);
+  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  PetscInt GHOSTS = 1;
+  for (PetscInt o = 0; o < 2; ++o) {
+    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+        ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
+        memcpy(column, delta_ij, grid.Mz*sizeof(PetscScalar));
+
+        PetscReal alpha_squared = PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o));
+
+        for (PetscInt k = 0; k < grid.Mz; ++k) {
+          delta_ij[k] = alpha_squared * column[k];
+        }
+      }
+    }
+  }
+  ierr = h_y.end_access(); CHKERRQ(ierr);
+  ierr = h_x.end_access(); CHKERRQ(ierr);
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
-  ierr = delta[0].begin_access(); CHKERRQ(ierr);
-  ierr = delta[1].begin_access(); CHKERRQ(ierr);
-  ierr = sigma[0].begin_access(); CHKERRQ(ierr);
-  ierr = sigma[1].begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = D2_input->begin_access(); CHKERRQ(ierr);
+  // Now transfer delta*alpha_squared from the staggered onto the regular grid.
+  // We use SIAFD::Sigma to store delta*alpha_squared.
+  PetscScalar *delta_reg, *delta_e, *delta_w, *delta_n, *delta_s;
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-
-  MaskQuery M(*mask);
-
-  double enhancement_factor = flow_law->enhancement_factor(),
-    n_glen  = flow_law->exponent(),
-    Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
-    e_to_a_power = pow(enhancement_factor,-1/n_glen);
-
-  for (PetscInt o = 0; o < 2; ++o) {
-    PetscInt GHOSTS = 1;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        const PetscInt oi = 1-o, oj=o;
-
-        ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
-        ierr = sigma[o].getInternalColumn(i,j,&sigma_ij); CHKERRQ(ierr);
-        ierr = enthalpy->getInternalColumn(i,j,&E); CHKERRQ(ierr);
-
-        const PetscScalar
-          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
-
-        const PetscInt ks = grid.kBelowHeight(thk);
-
-        // alpha_squared is the square of the magnitude of the surface gradient
-        const PetscScalar alpha_squared =
-          PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o));
-
-        // in the ice:
-        for (PetscInt k=0; k<=ks; ++k) {
-          PetscReal depth = thk - grid.zlevels[k];
-          PetscReal pressure = EC.getPressureFromDepth(depth);
-
-          PetscReal sigma_sia = delta_ij[k] * alpha_squared * pressure,
-            BofT = flow_law->hardness_parameter(E[k], pressure) * e_to_a_power,
-            D2_ssa = (*D2_input)(i,j);
-
-          if (M.grounded_ice(i, j)) {
-            // combine SIA and SSA contributions
-            PetscReal D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
-            sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, Sig_pow);
-          } else {
-            // must be floating or ice-free, use the SSA contribution only
-            sigma_ij[k] = 2.0 * BofT * pow(D2_ssa, Sig_pow);
-          }
-        }
-
-        // above the ice:
-        for (PetscInt k=ks+1; k<grid.Mz; ++k) {
-          sigma_ij[k] = 0.0;
-        }
-      } // j
-    }   // i
-  }     // o
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = D2_input->end_access(); CHKERRQ(ierr);
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
-
-  ierr = delta[1].end_access(); CHKERRQ(ierr);
-  ierr = delta[0].end_access(); CHKERRQ(ierr);
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-
-  // Now transfer Sigma from the staggered onto the regular grid.
-  PetscScalar *Sigmareg, *SigmaEAST, *SigmaWEST, *SigmaNORTH, *SigmaSOUTH;
   ierr = Sigma.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscReal thk = thk_smooth(i,j);
+      ierr = Sigma.getInternalColumn(i,j,&delta_reg); CHKERRQ(ierr);
+
+      // Zero out the whole column:
+      ierr = PetscMemzero(delta_reg, grid.Mz*sizeof(PetscScalar)); CHKERRQ(ierr);
+
+      // Average from the staggered within the ice:
       if (thk > 0.0) {
-        // horizontally average Sigma onto regular grid
+        // horizontally average delta*alpha_squared onto regular grid
         const PetscInt ks = grid.kBelowHeight(thk);
-        ierr = Sigma.getInternalColumn(i,j,&Sigmareg); CHKERRQ(ierr);
-        ierr = sigma[0].getInternalColumn(i,j,&SigmaEAST); CHKERRQ(ierr);
-        ierr = sigma[0].getInternalColumn(i-1,j,&SigmaWEST); CHKERRQ(ierr);
-        ierr = sigma[1].getInternalColumn(i,j,&SigmaNORTH); CHKERRQ(ierr);
-        ierr = sigma[1].getInternalColumn(i,j-1,&SigmaSOUTH); CHKERRQ(ierr);
+        ierr = delta[0].getInternalColumn(i,j,&delta_e); CHKERRQ(ierr);
+        ierr = delta[0].getInternalColumn(i-1,j,&delta_w); CHKERRQ(ierr);
+        ierr = delta[1].getInternalColumn(i,j,&delta_n); CHKERRQ(ierr);
+        ierr = delta[1].getInternalColumn(i,j-1,&delta_s); CHKERRQ(ierr);
         for (PetscInt k = 0; k <= ks; ++k) {
-          Sigmareg[k] = 0.25 * (SigmaEAST[k] + SigmaWEST[k] + SigmaNORTH[k] + SigmaSOUTH[k]);
+          delta_reg[k] = 0.25 * (delta_e[k] + delta_w[k] + delta_n[k] + delta_s[k]);
         }
-        for (PetscInt k = ks+1; k < grid.Mz; ++k) {
-          Sigmareg[k] = 0.0;
-        }
-      } else { // zero thickness case
-        ierr = Sigma.setColumn(i,j,0.0); CHKERRQ(ierr);
       }
     }
   }
+  ierr = delta[1].end_access(); CHKERRQ(ierr);
+  ierr = delta[0].end_access(); CHKERRQ(ierr);
+
+
+  // Now compute the volumetric strain heating itself.
+  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  ierr = D2_input->begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+
+  MaskQuery M(*mask);
+
+  PetscReal enhancement_factor = flow_law->enhancement_factor(),
+    n_glen  = flow_law->exponent(),
+    Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
+    e_to_a_power = pow(enhancement_factor,-1/n_glen);
+
+  PetscScalar *delta_alpha_squared = new PetscScalar[grid.Mz];
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+
+        ierr = Sigma.getInternalColumn(i, j, &sigma_ij); CHKERRQ(ierr);
+        ierr = enthalpy->getInternalColumn(i, j, &E); CHKERRQ(ierr);
+
+        const PetscReal thk = thk_smooth(i, j),
+            D2_ssa = (*D2_input)(i,j);
+        PetscReal D2_sia = 0.0;       // No SIA contribution in floating and ice-free areas
+
+        const PetscInt ks = grid.kBelowHeight(thk);
+        const bool grounded = M.grounded_ice(i, j);
+
+        memcpy(column, E, grid.Mz*sizeof(PetscScalar));
+        memcpy(delta_alpha_squared, sigma_ij, grid.Mz*sizeof(PetscScalar));
+
+        // Fill in values in the ice:
+        for (PetscInt k=0; k<=ks; ++k) {
+          const PetscReal depth = thk - grid.zlevels[k],
+            pressure = EC.getPressureFromDepth(depth),
+            BofT = flow_law->hardness_parameter(column[k], pressure) * e_to_a_power;
+
+          if (grounded) {
+            const PetscReal sigma_sia = delta_alpha_squared[k] * pressure;
+            // combine SIA and SSA contributions
+            D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
+          }
+          sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, Sig_pow);
+        }
+        // Values above the ice were set to zero by the memset() call above.
+
+      } // j
+    }   // i
+
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = D2_input->end_access(); CHKERRQ(ierr);
+  ierr = enthalpy->end_access(); CHKERRQ(ierr);
   ierr = Sigma.end_access(); CHKERRQ(ierr);
 
   ierr = thk_smooth.end_access(); CHKERRQ(ierr);
-  ierr = sigma[1].end_access(); CHKERRQ(ierr);
-  ierr = sigma[0].end_access(); CHKERRQ(ierr);
 
+  delete [] column;
+  delete [] delta_alpha_squared;
+  
   return 0;
 }
 
@@ -964,7 +971,7 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
  *
  * See compute_diffusive_flux() for the definition of \f$\delta\f$.
  *
- * The result is stored in work_3[0,1] and is used to compute the SIA component
+ * The result is stored in work_3d[0,1] and is used to compute the SIA component
  * of the 3D-distributed horizontal ice velocity.
  */
 PetscErrorCode SIAFD::compute_I() {
@@ -999,14 +1006,16 @@ PetscErrorCode SIAFD::compute_I() {
 
         // within the ice:
         I_ij[0] = 0.0;
+        PetscScalar I_current = 0.0;
         for (int k = 1; k <= ks; ++k) {
           const PetscReal dz = grid.zlevels[k] - grid.zlevels[k-1];
           // trapezoidal rule
-          I_ij[k] = I_ij[k-1] + 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
+          I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
+          I_ij[k] = I_current;
         }
         // above the ice:
         for (PetscInt k = ks + 1; k < grid.Mz; ++k) {
-          I_ij[k] = I_ij[ks];
+          I_ij[k] = I_current;
         }
       }
     }
