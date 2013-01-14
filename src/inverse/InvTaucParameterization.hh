@@ -59,7 +59,7 @@ public:
   \param derivative On output, the value \f$F'(p)\f$. */
   virtual PetscErrorCode toTauc( PetscReal p, PetscReal *value, PetscReal *derivative) = 0;
   
-  /*! Converts from \f$\tauc\f$ to a parameterization value \f$p\f$ such that
+  /*! Converts from \f$\tau_c\f$ to a parameterization value \f$p\f$ such that
    \f$\tau_c=F(p)\f$.  More than one such \f$p\f$ may exist; only one is returned. */
   virtual PetscErrorCode fromTauc( PetscReal tauc, PetscReal *OUTPUT) = 0;
 
