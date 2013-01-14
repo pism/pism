@@ -217,6 +217,13 @@ PetscErrorCode show_usage_check_req_opts(
 */
 
 //! PISM wrapper replacing PetscOptionsEList.
+/*
+  Ignores everything after the first colon, i.e. if "-foo bar" is allowed, then
+  "-foo bar:baz" is also allowed.
+
+  This is to make it possible to pass a parameter to a module selected using a
+  command-line option without adding one mode option.
+ */
 PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set<string> choices,
 			       string default_value, string &result, bool &flag) {
   PetscErrorCode ierr;
@@ -247,8 +254,14 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set
     return 0;
   }
 
+  string keyword = tmp;
+  // find ":" and discard everything that goes after
+  size_t n = keyword.find(":");
+  if (n != string::npos)
+    keyword.resize(n);
+
   // return the choice if it is valid and stop if it is not
-  if (choices.find(tmp) != choices.end()) {
+  if (choices.find(keyword) != choices.end()) {
     flag = true;
     result = tmp;
   } else {
@@ -716,7 +729,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                     "xyz,yxz,zyx"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("o_format", "output_format",
-                                    "netcdf3,quilt,quilt-with-compression,netcdf4_parallel,pnetcdf,hdf5"); CHKERRQ(ierr);
+                                    "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
                                    "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);

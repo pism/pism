@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -281,7 +281,7 @@ PetscErrorCode IceModel::grid_setup() {
 			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    PIO nc(grid, "guess_format");
+    PIO nc(grid, "guess_mode");
     string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output

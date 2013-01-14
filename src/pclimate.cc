@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@ static char help[] =
 static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
-  PIO nc(grid, "guess_format");
+  PIO nc(grid, "guess_mode");
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   // filename should point to a PISM output file, which is guaranteed to have
@@ -422,7 +422,7 @@ int main(int argc, char *argv[]) {
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
     // read data from a PISM input file (including the projection parameters)
-    PIO nc(grid, "guess_format");
+    PIO nc(grid, "guess_mode");
     unsigned int last_record;
     bool mapping_exists;
 

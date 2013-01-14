@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,8 +24,8 @@
 class PISMNC4_Quilt : public PISMNC4File
 {
 public:
-  PISMNC4_Quilt(MPI_Comm c, int r, bool compress)
-    : PISMNC4File(c, r), suffix("_patch"), m_compress(compress)
+  PISMNC4_Quilt(MPI_Comm c, int r, unsigned int compression_level)
+    : PISMNC4File(c, r), suffix("_patch"), m_compression_level(compression_level)
   {
   }
   virtual ~PISMNC4_Quilt() {}
@@ -63,7 +63,7 @@ private:
   int global_stat(int stat) const;
 
   const string suffix;
-  bool m_compress;
+  unsigned int m_compression_level;
 };
 
 #endif /* _PISMNC4FILE_1FPP_H_ */

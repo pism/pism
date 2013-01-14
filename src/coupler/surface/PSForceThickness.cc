@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -94,7 +94,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   // fttfile now contains name of -force_to_thk file; now check
   // it is really there; and regrid the target thickness
-  PIO nc(grid, "guess_format");
+  PIO nc(grid, "guess_mode");
   bool mask_exists = false;
   ierr = nc.open(fttfile, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var("ftt_mask", mask_exists); CHKERRQ(ierr);
