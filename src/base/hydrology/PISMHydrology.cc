@@ -22,6 +22,30 @@
 #include "Mask.hh"
 
 
+PISMHydrology::PISMHydrology(IceGrid &g, const NCConfigVariable &conf)
+  : PISMComponent_TS(g, conf)
+{
+  thk   = NULL;
+  bed   = NULL;
+  cellarea = NULL;
+  bmelt = NULL;
+  mask  = NULL;
+  inputtobed = NULL;
+  variables = NULL;
+
+  PetscErrorCode ierr1, ierr2;
+  ierr1 = total_input.create(grid, "total_input_hydro", false);
+  ierr2 = total_input.set_attrs("internal",
+                         "workspace for total input rate into subglacial water layer",
+                         "m s-1", "");
+  if ((ierr1 != 0) || (ierr2 != 0)) {
+      PetscPrintf(grid.com,
+        "PISM ERROR: memory allocation failed in PISMHydrology constructor.\n");
+      PISMEnd();
+  }
+}
+
+
 PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   string itbfilename;  // itb = input_to_bed
@@ -110,6 +134,7 @@ void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
+  dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
 }
 
 
@@ -171,17 +196,15 @@ PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, boo
 }
 
 
-//! Compute the water input rate into the basal hydrology layer in the ice-covered region.
+//! Compute the water input rate from the base of the ice into the basal hydrology layer in the ice-covered region.
 /*!
-This method crops the basal melt rate to the ice-covered region.  It also uses
-hydrology_const_bmelt if that is requested.
+This method crops the basal melt rate \c bmelt to the ice-covered region.  It
+also uses hydrology_const_bmelt if that is requested.
 
-In this version the input rate is assumed to be constant in time \e during the
-PISMHydrology::update() actions.  In fact only the energy-conservation-computed
-(and/or sub-shelf-melt-coupler-computed) rate is used.  Compare
-get_input_rate_time_varying().
+Only the energy-conservation-computed (and/or sub-shelf-melt-coupler-computed)
+rate is used in this method.  Compare get_input_rate().
  */
-PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
+PetscErrorCode PISMHydrology::get_bmelt_only(IceModelVec2S &result) {
   PetscErrorCode ierr;
   bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
   PetscReal const_bmelt = config.get("hydrology_const_bmelt");
@@ -205,31 +228,28 @@ PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
 }
 
 
-//! Compute the water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input during the update period.
+//! Compute the total water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input from a file.
 /*!
-This version is more expensive to call than get_input_rate().  It should only
-be called if (inputtobed != NULL).  This method allows the user to specify the
-total of en- and supra-glacial drainage contributions to subglacial hydrology
-in a time-dependent input file.
+The user can specify the total of en- and supra-glacial drainage contributions
+to subglacial hydrology in a time-dependent input file using option -input_to_bed.
+This method includes that possible input along with bmelt to get the total water
+input into the subglacial hydrology.
 
 Call this method using the current \e hydrology time step.  That is, this method
 will generally be called many times per IceModel time step.  See update() method
 in derived classes of PISMHydrology.
  */
-PetscErrorCode PISMHydrology::get_input_rate_time_varying(
+PetscErrorCode PISMHydrology::get_input_rate(
                   PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result) {
   PetscErrorCode ierr;
   bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
   PetscReal const_bmelt = config.get("hydrology_const_bmelt");
 
-  if (inputtobed == NULL)
-     SETERRQ(grid.com, 1,
-             "IceModelVec2T* inputtobed is NULL in get_input_rate_time_varying() ... stopping");
-
-  ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
-  ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
-
-  ierr = inputtobed->begin_access(); CHKERRQ(ierr);
+  if (inputtobed != NULL) {
+    ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
+    ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
+    ierr = inputtobed->begin_access(); CHKERRQ(ierr);
+  }
   ierr = bmelt->begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -237,16 +257,20 @@ PetscErrorCode PISMHydrology::get_input_rate_time_varying(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (m.icy(i, j)) {
-        const PetscReal mybmelt = (use_const) ? const_bmelt : (*bmelt)(i,j);
-        result(i,j) = mybmelt + (*inputtobed)(i,j);
+        result(i,j) = (use_const) ? const_bmelt : (*bmelt)(i,j);
+        if (inputtobed != NULL) {
+          result(i,j) += (*inputtobed)(i,j);
+        }
       } else
         result(i,j) = 0.0;
     }
   }
-  ierr = inputtobed->begin_access(); CHKERRQ(ierr);
   ierr = bmelt->end_access(); CHKERRQ(ierr);
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
+  if (inputtobed != NULL) {
+    ierr = inputtobed->end_access(); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -319,10 +343,6 @@ PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &c
 
 PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
   PetscErrorCode ierr;
-  ierr = total_input.create(grid, "total_input_hydro", false); CHKERRQ(ierr);
-  ierr = total_input.set_attrs("internal",
-                         "workspace for total input rate into subglacial water layer",
-                         "m s-1", ""); CHKERRQ(ierr);
   if (Whasghosts) {
     ierr = W.create(grid, "bwat", true, 1); CHKERRQ(ierr);
   } else {
@@ -489,12 +509,7 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
 
   PetscErrorCode ierr;
 
-  if (inputtobed == NULL) {
-    ierr = get_input_rate(total_input); CHKERRQ(ierr);
-  } else {
-    // in this model the hydrology time step *is* (icet,icet+icedt)
-    ierr = get_input_rate_time_varying(icet,icedt,total_input); CHKERRQ(ierr);
-  }
+  ierr = get_input_rate(icet,icedt,total_input); CHKERRQ(ierr);
 
   PetscReal bwat_max        = config.get("hydrology_bwat_max"),
             bwat_decay_rate = config.get("hydrology_bwat_decay_rate");
@@ -600,7 +615,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
   }
 
   if (inputtobed == NULL) {
-    ierr = get_input_rate(total_input); CHKERRQ(ierr);
+    ierr = get_bmelt_only(total_input); CHKERRQ(ierr);
   }
 
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0;
@@ -610,7 +625,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
              oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
   for (PetscInt n=0; n<NN; ++n) {
     if (inputtobed != NULL) {
-      ierr = get_input_rate_time_varying(icet + n * hdt, hdt, total_input); CHKERRQ(ierr);
+      ierr = get_input_rate(icet + n * hdt, hdt, total_input); CHKERRQ(ierr);
     }
 
     // time-splitting: first, Euler step on source terms
@@ -734,6 +749,27 @@ PetscErrorCode PISMHydrology_effbwp::compute(IceModelVec* &output) {
   ierr = model->overburden_pressure(*result); CHKERRQ(ierr);
   ierr = result->add(-1.0,*P); CHKERRQ(ierr);  // result <-- result + (-1.0) P = Po - P
 
+  output = result;
+  return 0;
+}
+
+
+PISMHydrology_hydroinput::PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
+    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+  vars[0].init_2d("hydroinput", grid);
+  set_attrs("total water input into subglacial hydrology layer",
+            "", "m s-1", "m a-1", 0);
+}
+
+
+PetscErrorCode PISMHydrology_hydroinput::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "hydroinput", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+  // the value reported diagnostically is merely the last value filled
+  ierr = (model->total_input).copy_to(*result); CHKERRQ(ierr);
   output = result;
   return 0;
 }

@@ -73,10 +73,6 @@ PetscErrorCode PISMLakesHydrology::allocate() {
                      "m s-1", ""); CHKERRQ(ierr);
 
   // temporaries during update; do not need ghosts
-  ierr = total_input.create(grid, "total_input_hydro", false); CHKERRQ(ierr);
-  ierr = total_input.set_attrs("internal",
-                         "workspace for total_input into subglacial water layer",
-                         "m s-1", ""); CHKERRQ(ierr);
   ierr = Wnew.create(grid, "Wnew_internal", false); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
                      "new thickness of subglacial water layer during update",
@@ -170,10 +166,8 @@ PetscErrorCode PISMLakesHydrology::write_variables(set<string> vars, const PIO &
 
 
 void PISMLakesHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  PISMHydrology::get_diagnostics(dict);
   dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
-  dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
-  dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
-  dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
 }
 
 
@@ -461,7 +455,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   dt = icedt;
 
   if (inputtobed == NULL) {
-    ierr = get_input_rate(total_input); CHKERRQ(ierr);
+    ierr = get_bmelt_only(total_input); CHKERRQ(ierr);
   }
 
   // make sure W has valid ghosts before starting hydrology steps
@@ -490,7 +484,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = adaptive_for_W_evolution(ht, t+dt, hdt); CHKERRQ(ierr);
 
     if (inputtobed != NULL) {
-      ierr = get_input_rate_time_varying(ht,hdt,total_input); CHKERRQ(ierr);
+      ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
 
     // update Wnew (the actual step) from W, Wstag, Qstag, total_input
@@ -692,6 +686,7 @@ void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dic
   dict["bwatvel"] = new PISMLakesHydrology_bwatvel(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
+  dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
 }
 
 
@@ -883,7 +878,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   dt = icedt;
 
   if (inputtobed == NULL) {
-    ierr = get_input_rate(total_input); CHKERRQ(ierr);
+    ierr = get_bmelt_only(total_input); CHKERRQ(ierr);
   }
 
   // make sure W,P have valid ghosts before starting hydrology steps
@@ -941,7 +936,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     cumratio += PtoCFLratio;
 
     if (inputtobed != NULL) {
-      ierr = get_input_rate_time_varying(ht,hdt,total_input); CHKERRQ(ierr);
+      ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
 
     // update Pnew from time step
