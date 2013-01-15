@@ -373,7 +373,7 @@ protected:
   PISMStressBalance* stressbalance;
 
   virtual PetscErrorCode allocate_nontrivial_pressure();
-  virtual PetscErrorCode check_bounds();
+  virtual PetscErrorCode check_P_bounds(bool enforce_upper);
   virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode update_cbase(IceModelVec2S &result);
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);

@@ -704,14 +704,15 @@ PetscErrorCode PISMDistributedHydrology::water_pressure(IceModelVec2S &result) {
 }
 
 
-//! Check bounds on W and P and fail with message if not satisfied.
+//! Check bounds on P and fail with message if not satisfied.  Optionally, enforces the upper bound instead of checking it.
 /*!
-Checks \f$0 \le W\f$ and \f$0 \le P \le P_o\f$.
+The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
  */
-PetscErrorCode PISMDistributedHydrology::check_bounds() {
+PetscErrorCode PISMDistributedHydrology::check_P_bounds(bool enforce_upper) {
   PetscErrorCode ierr;
-  ierr = check_Wpositive(); CHKERRQ(ierr);
+
   ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
+
   ierr = P.begin_access(); CHKERRQ(ierr);
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -723,7 +724,9 @@ PetscErrorCode PISMDistributedHydrology::check_bounds() {
            "ENDING ... \n\n", P(i,j),i,j);
         PISMEnd();
       }
-      if (P(i,j) > Pwork(i,j) + 0.001) {
+      if (enforce_upper) {
+        P(i,j) = PetscMin(P(i,j), Pwork(i,j));
+      } else if (P(i,j) > Pwork(i,j) + 0.001) {
         PetscPrintf(grid.com,
            "PISM ERROR: subglacial water pressure P = %.16f Pa exceeds\n"
            "    overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)\n"
@@ -907,13 +910,20 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
 
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
             delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
-  PetscInt hydrocount = 0; // count hydrology time steps
 
   PetscReal PtoCFLratio,  // for reporting ratio of dtCFL to dtDIFFP
             cumratio = 0.0;
+  PetscInt hydrocount = 0; // count hydrology time steps
+
   while (ht < t + dt) {
     hydrocount++;
-    ierr = check_bounds(); CHKERRQ(ierr);
+
+    ierr = check_Wpositive(); CHKERRQ(ierr);
+
+    // note that ice dynamics can change overburden pressure, so we can only check P
+    //   bounds if thk has not changed; if thk could have just changed, such as in the
+    //   first time through the current loop, we enforce them
+    ierr = check_P_bounds((hydrocount == 1)); CHKERRQ(ierr);
 
     ierr = hydraulic_potential(psi); CHKERRQ(ierr);
     ierr = psi.update_ghosts(); CHKERRQ(ierr);
