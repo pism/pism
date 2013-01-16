@@ -1,13 +1,17 @@
 #!/bin/bash
 
-# format:
-#   run.sh PROCS GRID DURATION TYPE
-# where GRID is in {500, 250, 125} and TYPE is in {dist, lakes}
-
 if [ $# -lt 4 ] ; then
-  echo "run.sh ERROR: needs four arguments"
-  echo "  example usage: 'run.sh 4 500 5 dist' for"
-  echo "  4 processors, 500 m grid, 5 model year run, and '-hydrology distributed'"
+  echo "run.sh ERROR: needs four arguments ... ending"
+  echo "  format:"
+  echo "    run.sh PROCS GRID DURATION TYPE"
+  echo "  where"
+  echo "    PROCS    =1,2,3,... is number of MPI processes"
+  echo "    GRID     is in {500, 250, 125}, the grid spacing in meters"
+  echo "    DURATION is run duration in years"
+  echo "    TYPE     is in {dist, event, lakes}"
+  echo "  example usage:"
+  echo "    run.sh 4 500 5 dist"
+  echo "  i.e. 4 processors, 500 m grid, 5 model year run, and '-hydrology distributed'"
   exit
 fi
 
@@ -36,15 +40,31 @@ fi
 YY="$3"
 
 if [ "$4" = "dist" ]; then
+
   # distributed run
-  oname=nbreen_y${YY}_${dx}m.nc
+  oname=nbreen_y${YY}_${dx}m_dist.nc
   hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc"
-  evarlist="cbase,bmelt,bwat,bwp,bwatvel,bwprel,effbwp"
+  evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp"
+  etimes="0:0.1:$YY"
+
+elif [ "$4" = "event" ]; then
+
+  # distributed run with summer event
+  oname=nbreen_y${YY}_${dx}m_event.nc
+  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc -input_to_bed_file fakesummerevent.nc -input_to_bed_period 1.0 -input_to_bed_reference_year 0.0"
+  evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp"
+  etimes="0.0:0.005:$YY"
+#FIXME: this produced a bug: it gave warning about more than 500 frames
+# etimes="0.0:daily:$YY"
+
 elif [ "$4" = "lakes" ]; then
+
   # lakes run: very fast
   oname=nbreen_y${YY}_${dx}m_lakes.nc
-  hydro="-hydrology lakes -hydrology_null_strip 1.0 -report_mass_accounting"
-  evarlist="bmelt,bwat,bwp,bwatvel"
+  hydro="-hydrology lakes -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3"
+  evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel"
+  etimes="0:0.1:$YY"
+
 else
   echo "invalid fourth argument; must be in {dist,lakes}"
   exit
@@ -60,20 +80,8 @@ climate="-surface given -surface_given_file $data"
 
 physics="-config_override nbreen_config.nc -no_mass -no_energy"
 
-diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars $evarlist"
+diagnostics="-extra_file extras_$oname -extra_times $etimes -extra_vars $evarlist"
 
 mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
     $grid -max_dt $dtmax -ys 0.0 -y $YY $diagnostics -o $oname
 
-#hydroinput="-input_to_bed_file fakesummerevent.nc -input_to_bed_period 1.0 -input_to_bed_reference_year 0.0"
-hydroinput="-input_to_bed_file fakesummerevent.nc"
-onameinput=nbreen_summerevent_${dx}m_$4.nc
-
-#FIXME: this next may produce bug: it gave warning about more than 500 frames
-#morediagnostics="-extra_file extras_$onameinput -extra_times 0.0:daily:1.0 -extra_vars $evarlist"
-
-morediagnostics="-extra_file extras_$onameinput -extra_times 0.0:0.005:1.0 -extra_vars $evarlist"
-
-cmd="mpiexec -n $NN $pismexec -i $oname $climate $physics $hydro $hydroinput \
--max_dt $dtmax -ys 0.0 -ye 1.0 $morediagnostics -o $onameinput"
-echo $cmd
