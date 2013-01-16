@@ -287,7 +287,7 @@ protected:
                    Wstag,// edge-centered (staggered) W values (averaged from regular)
                    Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S total_input, Wnew, Pwork;
+  IceModelVec2S Wnew, Pwork;
 
   PetscReal stripwidth; // width in m of strip around margin where V and W are set to zero;
                         // if negative then the strip mechanism is inactive inactive
