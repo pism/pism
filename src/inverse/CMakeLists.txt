@@ -7,6 +7,7 @@ set(PISM_INVERSE_SOURCES
 ./Functional.cc
 ./L2NormFunctional.cc
 ./H1NormFunctional.cc
+./TotalVariationFunctional.cc
 ./MeanSquareFunctional.cc
 ./TwoBlockVec.cc
 ./InvSSATikhonovGN.cc  
