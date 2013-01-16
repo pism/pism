@@ -2,7 +2,7 @@
 
 # format:
 #   run.sh PROCS GRID DURATION TYPE
-# here TYPE is in {dist, lakes}
+# where GRID is in {500, 250, 125} and TYPE is in {dist, lakes}
 
 if [ $# -lt 4 ] ; then
   echo "run.sh ERROR: needs four arguments"
@@ -63,11 +63,17 @@ physics="-config_override nbreen_config.nc -no_mass -no_energy"
 diagnostics="-extra_file extras_$oname -extra_times 0:0.1:$YY -extra_vars $evarlist"
 
 mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
-    $grid -max_dt $dtmax -y $YY $diagnostics -o $oname
+    $grid -max_dt $dtmax -ys 0.0 -y $YY $diagnostics -o $oname
 
+#hydroinput="-input_to_bed_file fakesummerevent.nc -input_to_bed_period 1.0 -input_to_bed_reference_year 0.0"
 hydroinput="-input_to_bed_file fakesummerevent.nc"
 onameinput=nbreen_summerevent_${dx}m_$4.nc
-morediagnostics="-extra_file extras_$onameinput -extra_times 2012.0:daily:2013.0 -extra_vars $evarlist"
 
-mpiexec -n $NN $pismexec -i $oname $climate $physics $hydro $hydroinput \
-    -max_dt $dtmax -ys 2012.0 -ye 2013.0 $morediagnostics -o $onameinput
+#FIXME: this next may produce bug: it gave warning about more than 500 frames
+#morediagnostics="-extra_file extras_$onameinput -extra_times 0.0:daily:1.0 -extra_vars $evarlist"
+
+morediagnostics="-extra_file extras_$onameinput -extra_times 0.0:0.005:1.0 -extra_vars $evarlist"
+
+cmd="mpiexec -n $NN $pismexec -i $oname $climate $physics $hydro $hydroinput \
+-max_dt $dtmax -ys 0.0 -ye 1.0 $morediagnostics -o $onameinput"
+echo $cmd

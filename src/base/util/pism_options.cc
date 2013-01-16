@@ -588,15 +588,31 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
   ierr = config.flag_from_option("energy", "do_energy"); CHKERRQ(ierr);
   ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);
+
+  // choose hydrology submodel (and options that apply to all objects)
   ierr = config.keyword_from_option("hydrology", "hydrology_model",
                                     "tillcan,diffuseonly,lakes,distributed"); CHKERRQ(ierr);
-
   ierr = config.flag_from_option("hydrology_use_const_bmelt",
                                  "hydrology_use_const_bmelt"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_const_bmelt",
                                    "hydrology_const_bmelt"); CHKERRQ(ierr);
+  // these only apply to PISMLakesHydrology and PISMDistributedHydrology:
   ierr = config.scalar_from_option("hydrology_hydraulic_conductivity",
                                    "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_hydraulic_conductivity_at_large_W",
+                                   "hydrology_hydraulic_conductivity_at_large_W"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_roughness_scale",
+                                   "hydrology_roughness_scale"); CHKERRQ(ierr);
+  //FIXME issue #127:  till_pw_fraction too, but renamed
+  // these only apply to PISMDistributedHydrology:
+  ierr = config.scalar_from_option("hydrology_cavitation_opening_coefficient",
+                                   "hydrology_cavitation_opening_coefficient"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_creep_closure_coefficient",
+                                   "hydrology_creep_closure_coefficient"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_lower_bound_creep_regularization",
+                                   "hydrology_lower_bound_creep_regularization"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_diffusive_closure_regularization",
+                                   "hydrology_diffusive_closure_regularization"); CHKERRQ(ierr);
 
   // Time-stepping
   ierr = config.keyword_from_option("calendar", "calendar",
@@ -677,6 +693,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   // till_pw_fraction is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
   // option a pure number (a fraction); no conversion
+  // FIXME: issue #127
   ierr = config.scalar_from_option("plastic_pwfrac", "till_pw_fraction"); CHKERRQ(ierr);
 
   // controls regularization of plastic basal sliding law

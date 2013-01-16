@@ -22,11 +22,35 @@
 #include "Mask.hh"
 
 
+PISMHydrology::PISMHydrology(IceGrid &g, const NCConfigVariable &conf)
+  : PISMComponent_TS(g, conf)
+{
+  thk   = NULL;
+  bed   = NULL;
+  cellarea = NULL;
+  bmelt = NULL;
+  mask  = NULL;
+  inputtobed = NULL;
+  variables = NULL;
+
+  PetscErrorCode ierr1, ierr2;
+  ierr1 = total_input.create(grid, "total_input_hydro", false);
+  ierr2 = total_input.set_attrs("internal",
+                         "workspace for total input rate into subglacial water layer",
+                         "m s-1", "");
+  if ((ierr1 != 0) || (ierr2 != 0)) {
+      PetscPrintf(grid.com,
+        "PISM ERROR: memory allocation failed in PISMHydrology constructor.\n");
+      PISMEnd();
+  }
+}
+
+
 PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   string itbfilename;  // itb = input_to_bed
-  bool itbfile_set, itbperiod_set;
-  PetscReal itbperiod_years = 0.0;
+  bool itbfile_set, itbperiod_set, itbreference_set;
+  PetscReal itbperiod_years = 0.0, itbreference_year = 0.0;
 
   ierr = verbPrintf(4, grid.com,
     "entering PISMHydrology::init() ...\n"); CHKERRQ(ierr);
@@ -35,14 +59,16 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
             "Options controlling the base class PISMHydrology", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsIsSet("-report_mass_accounting",
-                            "stdout report on mass accounting in hydrology models",
-                            report_mass_accounting); CHKERRQ(ierr);
+      "Report to stdout on mass accounting in hydrology models", report_mass_accounting); CHKERRQ(ierr);
     ierr = PISMOptionsString("-input_to_bed_file",
-                             "Specifies a time-dependent file with amount of water (depth per time) which should be put at the ice sheet bed at the given time",
-                             itbfilename, itbfile_set); CHKERRQ(ierr);
+      "A time- and space-dependent file with amount of water (depth per time) which should be put at the ice sheet bed at the given location at the given time",
+      itbfilename, itbfile_set); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-input_to_bed_period",
-                           "Specifies the period (i.e. duration before repeat), in years, of -input_to_bed_file data",
-                           itbperiod_years, itbperiod_set); CHKERRQ(ierr);
+      "The period (i.e. duration before repeat), in years, of -input_to_bed_file data",
+      itbperiod_years, itbperiod_set); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-input_to_bed_reference_year",
+      "The reference year for periodizing the -input_to_bed_file data",
+      itbreference_year, itbreference_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -70,8 +96,11 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 
   if (itbfile_set) {
     inputtobed_period = (itbperiod_set) ? grid.time->years_to_seconds(itbperiod_years) : 0.0;
+    inputtobed_reference_time = (itbreference_set) ? grid.time->years_to_seconds(itbreference_year) : 0.0;
+
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
                  n_records = 1;
+
     PIO nc(grid.com, grid.rank, "netcdf3");
     ierr = nc.open(itbfilename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_nrecords("inputtobed", "", n_records); CHKERRQ(ierr);
@@ -82,10 +111,11 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
                   itbfilename.c_str());
       PISMEnd();
     }
+
     ierr = verbPrintf(2,grid.com,
-      "    option -input_to_bed_file seen ...\n"
-      "    creating 'inputtobed' variable with space for n = %d records ...\n",
-      n_records); CHKERRQ(ierr);
+      "    option -input_to_bed_file seen ... creating 'inputtobed' variable ...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com,
+      "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records); CHKERRQ(ierr);
     inputtobed = new IceModelVec2T;
     inputtobed->set_n_records(n_records);
     ierr = inputtobed->create(grid, "inputtobed", false); CHKERRQ(ierr);
@@ -104,6 +134,7 @@ void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
+  dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
 }
 
 
@@ -146,43 +177,34 @@ PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
 
 
 //! The only reason to restrict the time step taken by the calling model (i.e. IceModel) is if there is a time-dependent input file IceModelVec2T *inputtobed.
-PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt) {
   if (inputtobed == NULL) {
     my_dt = -1;
-    restrict = false;
-    return 0;
+    restrict_dt = false;
   } else {
-    PetscReal max_dt = -1;
-    //FIXME: should we "periodize" the forcing data this way?
-    //       is a reference time needed?  see PLapseRates::max_timestep()
-    my_t = grid.time->mod(my_t, inputtobed_period);
-    max_dt = inputtobed->max_timestep(my_t);
-    if (my_dt > 0) {
-      if (max_dt > 0)  my_dt = PetscMin(max_dt, my_dt);
-    } else
-      my_dt = max_dt;
+    // "periodize" the forcing data
+    my_t = grid.time->mod(my_t - inputtobed_reference_time, inputtobed_period);
+    my_dt = inputtobed->max_timestep(my_t);
     // if the user specifies periodized forcing, limit time-steps so that PISM
     // never tries to average data over an interval that begins in one period and
     // ends in the next one.
     if (inputtobed_period > 1e-6)
       my_dt = PetscMin(my_dt, inputtobed_period - my_t);
-    restrict = (my_dt > 0);
-    return 0;
+    restrict_dt = (my_dt > 0);
   }
+  return 0;
 }
 
 
-//! Compute the water input rate into the basal hydrology layer in the ice-covered region.
+//! Compute the water input rate from the base of the ice into the basal hydrology layer in the ice-covered region.
 /*!
-This method crops the basal melt rate to the ice-covered region.  It also uses
-hydrology_const_bmelt if that is requested.
+This method crops the basal melt rate \c bmelt to the ice-covered region.  It
+also uses hydrology_const_bmelt if that is requested.
 
-In this version the input rate is assumed to be constant in time \e during the
-PISMHydrology::update() actions.  In fact only the energy-conservation-computed
-(and/or sub-shelf-melt-coupler-computed) rate is used.  Compare
-get_input_rate_time_varying().
+Only the energy-conservation-computed (and/or sub-shelf-melt-coupler-computed)
+rate is used in this method.  Compare get_input_rate().
  */
-PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
+PetscErrorCode PISMHydrology::get_bmelt_only(IceModelVec2S &result) {
   PetscErrorCode ierr;
   bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
   PetscReal const_bmelt = config.get("hydrology_const_bmelt");
@@ -206,31 +228,28 @@ PetscErrorCode PISMHydrology::get_input_rate(IceModelVec2S &result) {
 }
 
 
-//! Compute the water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input during the update period.
+//! Compute the total water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input from a file.
 /*!
-This version is more expensive to call than get_input_rate().  It should only
-be called if (inputtobed != NULL).  This method allows the user to specify the
-total of en- and supra-glacial drainage contributions to subglacial hydrology
-in a time-dependent input file.
+The user can specify the total of en- and supra-glacial drainage contributions
+to subglacial hydrology in a time-dependent input file using option -input_to_bed.
+This method includes that possible input along with bmelt to get the total water
+input into the subglacial hydrology.
 
 Call this method using the current \e hydrology time step.  That is, this method
 will generally be called many times per IceModel time step.  See update() method
 in derived classes of PISMHydrology.
  */
-PetscErrorCode PISMHydrology::get_input_rate_time_varying(
+PetscErrorCode PISMHydrology::get_input_rate(
                   PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result) {
   PetscErrorCode ierr;
   bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
   PetscReal const_bmelt = config.get("hydrology_const_bmelt");
 
-  if (inputtobed == NULL)
-     SETERRQ(grid.com, 1,
-             "IceModelVec2T* inputtobed is NULL in get_input_rate_time_varying() ... stopping");
-
-  ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
-  ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
-
-  ierr = inputtobed->begin_access(); CHKERRQ(ierr);
+  if (inputtobed != NULL) {
+    ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
+    ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
+    ierr = inputtobed->begin_access(); CHKERRQ(ierr);
+  }
   ierr = bmelt->begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -238,16 +257,20 @@ PetscErrorCode PISMHydrology::get_input_rate_time_varying(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (m.icy(i, j)) {
-        const PetscReal mybmelt = (use_const) ? const_bmelt : (*bmelt)(i,j);
-        result(i,j) = mybmelt + (*inputtobed)(i,j);
+        result(i,j) = (use_const) ? const_bmelt : (*bmelt)(i,j);
+        if (inputtobed != NULL) {
+          result(i,j) += (*inputtobed)(i,j);
+        }
       } else
         result(i,j) = 0.0;
     }
   }
-  ierr = inputtobed->begin_access(); CHKERRQ(ierr);
   ierr = bmelt->end_access(); CHKERRQ(ierr);
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
+  if (inputtobed != NULL) {
+    ierr = inputtobed->end_access(); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -320,10 +343,6 @@ PISMTillCanHydrology::PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &c
 
 PetscErrorCode PISMTillCanHydrology::allocate(bool Whasghosts) {
   PetscErrorCode ierr;
-  ierr = total_input.create(grid, "total_input_hydro", false); CHKERRQ(ierr);
-  ierr = total_input.set_attrs("internal",
-                         "workspace for total input rate into subglacial water layer",
-                         "m s-1", ""); CHKERRQ(ierr);
   if (Whasghosts) {
     ierr = W.create(grid, "bwat", true, 1); CHKERRQ(ierr);
   } else {
@@ -490,12 +509,7 @@ PetscErrorCode PISMTillCanHydrology::update(PetscReal icet, PetscReal icedt) {
 
   PetscErrorCode ierr;
 
-  if (inputtobed == NULL) {
-    ierr = get_input_rate(total_input); CHKERRQ(ierr);
-  } else {
-    // in this model the hydrology time step *is* (icet,icet+icedt)
-    ierr = get_input_rate_time_varying(icet,icedt,total_input); CHKERRQ(ierr);
-  }
+  ierr = get_input_rate(icet,icedt,total_input); CHKERRQ(ierr);
 
   PetscReal bwat_max        = config.get("hydrology_bwat_max"),
             bwat_decay_rate = config.get("hydrology_bwat_decay_rate");
@@ -601,7 +615,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
   }
 
   if (inputtobed == NULL) {
-    ierr = get_input_rate(total_input); CHKERRQ(ierr);
+    ierr = get_bmelt_only(total_input); CHKERRQ(ierr);
   }
 
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0;
@@ -611,7 +625,7 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
              oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
   for (PetscInt n=0; n<NN; ++n) {
     if (inputtobed != NULL) {
-      ierr = get_input_rate_time_varying(icet + n * hdt, hdt, total_input); CHKERRQ(ierr);
+      ierr = get_input_rate(icet + n * hdt, hdt, total_input); CHKERRQ(ierr);
     }
 
     // time-splitting: first, Euler step on source terms
@@ -735,6 +749,27 @@ PetscErrorCode PISMHydrology_effbwp::compute(IceModelVec* &output) {
   ierr = model->overburden_pressure(*result); CHKERRQ(ierr);
   ierr = result->add(-1.0,*P); CHKERRQ(ierr);  // result <-- result + (-1.0) P = Po - P
 
+  output = result;
+  return 0;
+}
+
+
+PISMHydrology_hydroinput::PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
+    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+  vars[0].init_2d("hydroinput", grid);
+  set_attrs("total water input into subglacial hydrology layer",
+            "", "m s-1", "m a-1", 0);
+}
+
+
+PetscErrorCode PISMHydrology_hydroinput::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "hydroinput", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+  // the value reported diagnostically is merely the last value filled
+  ierr = (model->total_input).copy_to(*result); CHKERRQ(ierr);
   output = result;
   return 0;
 }

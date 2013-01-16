@@ -54,24 +54,19 @@ one-way during the update() call.
  */
 class PISMHydrology : public PISMComponent_TS {
 public:
-  PISMHydrology(IceGrid &g, const NCConfigVariable &conf) : PISMComponent_TS(g, conf) {
-    thk   = NULL;
-    bed   = NULL;
-    cellarea = NULL;
-    bmelt = NULL;
-    mask  = NULL;
-    inputtobed = NULL;
-    variables = NULL;
-  }
+  PISMHydrology(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PISMHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode regrid(IceModelVec2S &myvar);
+
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  friend class PISMHydrology_hydroinput;
+
   virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt);
 
   // derived classes need to have a model state, which will be the variables in this set:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) = 0;
@@ -88,6 +83,8 @@ public:
   virtual PetscErrorCode water_pressure(IceModelVec2S &result) = 0;
 
 protected:
+  // this model's workspace
+  IceModelVec2S total_input;
   // pointers into IceModel; these describe the ice sheet and the source
   IceModelVec2S *thk,   // ice thickness
                 *bed,   // bed elevation (not all models need this)
@@ -95,12 +92,12 @@ protected:
                 *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
   IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
-  PetscReal     inputtobed_period;
+  PetscReal     inputtobed_period, inputtobed_reference_time;
   PISMVars *variables;
   bool report_mass_accounting;
-  virtual PetscErrorCode get_input_rate(IceModelVec2S &result);
-  virtual PetscErrorCode get_input_rate_time_varying(
-                  PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
+  virtual PetscErrorCode get_bmelt_only(IceModelVec2S &result);
+  virtual PetscErrorCode get_input_rate(
+                            PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
   virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
                             PetscReal &icefreelost, PetscReal &oceanlost, PetscReal &negativegain);
 };
@@ -133,6 +130,15 @@ class PISMHydrology_effbwp : public PISMDiag<PISMHydrology>
 {
 public:
   PISMHydrology_effbwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
+//! \brief Reports the total input rate of water into the subglacial layer.
+class PISMHydrology_hydroinput : public PISMDiag<PISMHydrology>
+{
+public:
+  PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
@@ -173,8 +179,6 @@ public:
 protected:
   // this model's state
   IceModelVec2S W;      // water layer thickness
-  // this model's workspace
-  IceModelVec2S total_input;
 
   virtual PetscErrorCode allocate(bool Whasghosts);
   virtual PetscErrorCode check_W_bounds();
@@ -373,7 +377,7 @@ protected:
   PISMStressBalance* stressbalance;
 
   virtual PetscErrorCode allocate_nontrivial_pressure();
-  virtual PetscErrorCode check_bounds();
+  virtual PetscErrorCode check_P_bounds(bool enforce_upper);
   virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode update_cbase(IceModelVec2S &result);
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
