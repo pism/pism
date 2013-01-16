@@ -454,10 +454,6 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   t = icet;
   dt = icedt;
 
-  if (inputtobed == NULL) {
-    ierr = get_bmelt_only(total_input); CHKERRQ(ierr);
-  }
-
   // make sure W has valid ghosts before starting hydrology steps
   ierr = W.update_ghosts(); CHKERRQ(ierr);
 
@@ -483,7 +479,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
 
     ierr = adaptive_for_W_evolution(ht, t+dt, hdt); CHKERRQ(ierr);
 
-    if (inputtobed != NULL) {
+    if ((inputtobed != NULL) || (hydrocount==1)) {
       ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
 
@@ -877,10 +873,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   t = icet;
   dt = icedt;
 
-  if (inputtobed == NULL) {
-    ierr = get_bmelt_only(total_input); CHKERRQ(ierr);
-  }
-
   // make sure W,P have valid ghosts before starting hydrology steps
   ierr = W.update_ghosts(); CHKERRQ(ierr);
   ierr = P.update_ghosts(); CHKERRQ(ierr);
@@ -935,7 +927,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = adaptive_for_WandP_evolution(ht, t+dt, hdt, PtoCFLratio); CHKERRQ(ierr);
     cumratio += PtoCFLratio;
 
-    if (inputtobed != NULL) {
+    if ((inputtobed != NULL) || (hydrocount==1)) {
       ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
 

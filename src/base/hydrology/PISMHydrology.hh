@@ -95,7 +95,6 @@ protected:
   PetscReal     inputtobed_period, inputtobed_reference_time;
   PISMVars *variables;
   bool report_mass_accounting;
-  virtual PetscErrorCode get_bmelt_only(IceModelVec2S &result);
   virtual PetscErrorCode get_input_rate(
                             PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
   virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,

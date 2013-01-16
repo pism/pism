@@ -196,47 +196,18 @@ PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, boo
 }
 
 
-//! Compute the water input rate from the base of the ice into the basal hydrology layer in the ice-covered region.
-/*!
-This method crops the basal melt rate \c bmelt to the ice-covered region.  It
-also uses hydrology_const_bmelt if that is requested.
-
-Only the energy-conservation-computed (and/or sub-shelf-melt-coupler-computed)
-rate is used in this method.  Compare get_input_rate().
- */
-PetscErrorCode PISMHydrology::get_bmelt_only(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
-  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
-
-  ierr = bmelt->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  MaskQuery m(*mask);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (m.icy(i, j))
-        result(i,j) = (use_const) ? const_bmelt : (*bmelt)(i,j);
-      else
-        result(i,j) = 0.0;
-    }
-  }
-  ierr = bmelt->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Compute the total water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input from a file.
 /*!
 The user can specify the total of en- and supra-glacial drainage contributions
 to subglacial hydrology in a time-dependent input file using option -input_to_bed.
-This method includes that possible input along with bmelt to get the total water
+This method includes that possible input along with \c bmelt to get the total water
 input into the subglacial hydrology.
 
-Call this method using the current \e hydrology time step.  That is, this method
-will generally be called many times per IceModel time step.  See update() method
+This method crops the input rate to the ice-covered region.  It
+also uses hydrology_const_bmelt if that is requested.
+
+Call this method using the current \e hydrology time step.  This method
+may be called many times per IceModel time step.  See update() method
 in derived classes of PISMHydrology.
  */
 PetscErrorCode PISMHydrology::get_input_rate(
@@ -614,17 +585,13 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
       "   ... NN = %d > 1 ... THIS IS BELIEVED TO BE RARE\n",NN);
   }
 
-  if (inputtobed == NULL) {
-    ierr = get_bmelt_only(total_input); CHKERRQ(ierr);
-  }
-
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0;
 
   PetscReal  Rx = K * hdt / (grid.dx * grid.dx),
              Ry = K * hdt / (grid.dy * grid.dy),
              oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
   for (PetscInt n=0; n<NN; ++n) {
-    if (inputtobed != NULL) {
+    if ((inputtobed != NULL) || (n==0)) {
       ierr = get_input_rate(icet + n * hdt, hdt, total_input); CHKERRQ(ierr);
     }
 
