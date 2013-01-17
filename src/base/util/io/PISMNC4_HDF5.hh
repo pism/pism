@@ -93,6 +93,7 @@ public:
 
   virtual int get_att_text(string variable_name, string att_name, string &result) const;
 
+  using PISMNCFile::put_att_double;
   virtual int put_att_double(string variable_name, string att_name, PISM_IO_Type xtype, vector<double> &data) const;
 
   virtual int put_att_text(string variable_name, string att_name, string value) const;
