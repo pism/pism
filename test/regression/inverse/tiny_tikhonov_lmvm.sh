@@ -7,14 +7,6 @@ PISM_BUILD_DIR=$1
 # make sure that Python imports the right modules
 export PYTHONPATH=$PISM_BUILD_DIR:$PYTHONPATH
 
-# check if TAO is installed
-$PYTHONEXEC -c 'import tao4py'
-if [ $? != 0 ];
-then
-    echo "Please make sure that TAO is installed!"
-    exit 1
-fi
-
 set -x
 set -e
 
@@ -34,4 +26,4 @@ $PYTHONEXEC vel2tauc.py \
               -inv_method tikhonov_lmvm -tikhonov_penalty 3e-2
 
 # Check if we succeeded
-$PYTHONEXEC verify_ssa_inv.py tiny_tikhonov_lmvm.nc -m 15 -e 1 -i 64
+$PYTHONEXEC verify_ssa_inv.py tiny_tikhonov_lmvm.nc -m 15 -e 3 -i 65
