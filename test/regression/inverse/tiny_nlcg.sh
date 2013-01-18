@@ -34,4 +34,4 @@ $PYTHONEXEC vel2tauc.py \
               -inv_method nlcg -rms_error 100
 
 # Check if we succeeded
-$PYTHONEXEC verify_ssa_inv.py -m 110 -e 2 -i 30
+$PYTHONEXEC verify_ssa_inv.py tiny_inv.nc -m 80 -e 5 -i 35

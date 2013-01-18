@@ -49,12 +49,13 @@ import argparse
 
 parser = argparse.ArgumentParser(description=help_description,
 epilog=help_epilog,formatter_class=argparse.RawDescriptionHelpFormatter)
+parser.add_argument('inv_filename',help='NC file with inversion results',type=str)
 parser.add_argument('-m','--desired_misfit', required=True,type=float,help='desired final misfit')
 parser.add_argument('-e','--desired_misfit_tolerance',required=True, type=float,help='acceptable margin of error for final misfit')
 parser.add_argument('-i','--iter_max', required=True, type=int,help='maximum number of iterations')
 args = parser.parse_args()
 
-inv_filename = 'tiny_inv.nc'
+inv_filename = args.inv_filename
 try:
   data = netCDF.Dataset(inv_filename)
 except:
