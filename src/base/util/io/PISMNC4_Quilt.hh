@@ -25,7 +25,7 @@ class PISMNC4_Quilt : public PISMNC4File
 {
 public:
   PISMNC4_Quilt(MPI_Comm c, int r, unsigned int compression_level)
-    : PISMNC4File(c, r), suffix("_patch"), m_compression_level(compression_level)
+    : PISMNC4File(c, r, compression_level), suffix("_patch")
   {
   }
   virtual ~PISMNC4_Quilt() {}
@@ -63,7 +63,6 @@ private:
   int global_stat(int stat) const;
 
   const string suffix;
-  unsigned int m_compression_level;
 };
 
 #endif /* _PISMNC4FILE_1FPP_H_ */

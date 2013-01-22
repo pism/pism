@@ -218,7 +218,12 @@ target_link_libraries (pismv pismverif pismbase)
 add_executable (pclimate pclimate.cc)
 target_link_libraries (pclimate pismboundary pismrevision)
 
-add_executable (pismmerge pismmerge.cc base/util/io/PISMNC4_Serial.cc)
+add_executable (pismmerge
+  pismmerge/pismmerge.cc
+  pismmerge/metadata.cc
+  pismmerge/variables.cc
+  pismmerge/util.cc
+  base/util/io/PISMNC4_Serial.cc)
 target_link_libraries (pismmerge pismutil pismrevision)
 
 find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
