@@ -164,6 +164,24 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
                       "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
     CHKERRQ(ierr);
 
+    if (i_set || bootstrap) {
+      ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+
+      PIO nc(grid.com, grid.rank, "guess_mode");
+      bool tillphi_present;
+
+      ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+      ierr = nc.inq_var(till_phi.string_attr("short_name"), tillphi_present); CHKERRQ(ierr);
+      ierr = nc.close(); CHKERRQ(ierr);
+
+      if (tillphi_present) {
+        ierr = verbPrintf(2, grid.com,
+                          "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
+                          "              present in the input file '%s'!\n",
+                          till_phi.string_attr("short_name").c_str(), filename.c_str()); CHKERRQ(ierr);
+      }
+    }
+
     // note option -topg_to_phi will be read again to get comma separated array of parameters
     ierr = topg_to_phi(); CHKERRQ(ierr);
 
