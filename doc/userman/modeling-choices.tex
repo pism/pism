@@ -359,7 +359,7 @@ Recall the Mohr-Coulomb equation \eqref{eq:mohrcoulomb} which determines the yie
 \begin{verbatim}
 -topg_to_phi phimin,phimax,bmin,bmax
 \end{verbatim}
-Thus the user supplies 4 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$.  Here $b$ stands for the bed elevation.  To explain these, we define the rate $M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}})$.  Then
+Thus the user supplies 4 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$, where $b$ stands for the bed elevation.  To explain these, we define the rate $M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}})$.  Then
 \begin{equation}
   \phi(x,y) = \begin{cases}
     \phi_{\text{min}}, & b(x,y) \le b_{\text{min}}, \\
@@ -369,6 +369,26 @@ Thus the user supplies 4 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}
 \end{equation}
 
 See the \emph{PISM Source Code browser}, source files in \texttt{src/base/basalstrength}, and \cite{BBssasliding,BKAJS,Martinetal2011,Winkelmannetal2011} for more details on how basal resistance is computed, and how it affects ice dynamics.
+
+\begin{quote}
+  It is worth noting that an earth deformation model (see section
+  \ref{subsect:beddef}) changes $b(x,y)$ used in (\ref{eq:2}), so a sequence of
+  runs such as
+\begin{verbatim}
+pismr -i foo.nc -bed_def lc -ssa_sliding -topg_to_phi 10,30,-50,0 ... -o bar.nc
+pismr -i bar.nc -bed_def lc -ssa_sliding -topg_to_phi 10,30,-50,0 ... -o baz.nc
+\end{verbatim}
+  will use \emph{different} \texttt{tillphi} fields in the first and second
+  runs. PISM will print a warning during initialization of the second run:
+\begin{verbatim}
+* Initializing the default basal yield stress model...
+  option -topg_to_phi seen; creating tillphi map from bed elev ...
+PISM WARNING: -topg_to_phi computation will override the 'tillphi' field
+              present in the input file 'bar.nc'!
+\end{verbatim}
+  Omitting the \texttt{-topg_to_phi} option will make PISM continue the first
+  run above with the same \texttt{tillphi} field.
+\end{quote}
 
 The major example of \texttt{-ssa_sliding} usage is in the first section of this manual.  A simpler artificial example, in which sliding happens in the ``trough'', is
 \begin{verbatim}
