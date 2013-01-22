@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -152,7 +152,9 @@ public:
     ice_factory.setFromOptions();
     ice_factory.create(&flow_law);
   }
-  virtual ~SSB_Trivial() {}
+  virtual ~SSB_Trivial() {
+    delete flow_law;
+  }
   virtual PetscErrorCode update(bool fast);
 
   virtual void add_vars_to_output(string /*keyword*/,
