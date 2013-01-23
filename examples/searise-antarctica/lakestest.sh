@@ -20,7 +20,7 @@ OPTIONS="-sia_e 5.6 -atmosphere given -atmosphere_given_file pism_Antarctica_5km
 
 HYDRO="-hydrology lakes -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -hydrology_hydraulic_conductivity 1.0e-3 -report_mass_accounting"
 
-DURATION=20000
+ENDTIME=20000
 
 dorun () {
   GRID=$1
@@ -30,8 +30,10 @@ dorun () {
   cmd="$PISMGO -skip -skip_max 10 -boot_file pism_Antarctica_5km.nc $GRID $VERTGRID $OPTIONS -y 100 -o pre${LABEL}.nc"
   $DOIT $cmd
 
-  #hydrology only for $DURATION years
-  cmd="$PISMGO -i pre${LABEL}.nc $OPTIONS $HYDRO -no_mass -no_energy -no_sia -max_dt 10.0 -y $DURATION -o lakes${LABEL}.nc"
+  EXTRA="-extra_file ex_lakes${LABEL}.nc -extra_times 200:100:$ENDTIME -extra_vars bwat,bwp,bwatvel,hydroinput"
+
+  #hydrology only run for $ENDTIME years
+  cmd="$PISMGO -i pre${LABEL}.nc $OPTIONS $HYDRO -no_mass -no_energy -no_sia -max_dt 10.0 -ys 0 -ye $ENDTIME $EXTRA -o lakes${LABEL}.nc"
   $DOIT $cmd
 }
 
@@ -42,7 +44,7 @@ FIFTEENKMGRID="-Mx 400 -My 400"
 TENKMGRID="-Mx 600 -My 600"
 FIVEKMGRID="-Mx 1200 -My 1200"
 
-# first three regenerate results from IGS talk:
+# these first three regenerate results from IGS talk:
 #dorun "$HUNDREDKMGRID" 100km
 #dorun "$FIFTYKMGRID" 50km
 dorun "$TWENTYFIVEKMGRID" 25km
