@@ -185,6 +185,7 @@ PetscErrorCode InvSSAForwardProblem_dep::set_zeta(IceModelVec2S &new_zeta )
       }
     }
   }
+  ierr = new_zeta.end_access(); CHKERRQ(ierr);
 
   m_tauc_param.convertToTauc(new_zeta,*tauc);
 
