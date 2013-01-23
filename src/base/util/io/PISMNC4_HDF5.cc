@@ -594,9 +594,9 @@ int PISMNC4_HDF5::inq_dimlen(string dimension_name, unsigned int &result) const 
 
   space_id = H5Dget_space(dim_id); check(space_id);
 
-  int rank = H5Sget_simple_extent_ndims(space_id); check(rank);
+  int variable_rank = H5Sget_simple_extent_ndims(space_id); check(variable_rank);
 
-  if (rank == 1) {
+  if (variable_rank == 1) {
     hsize_t dim;
     stat = H5Sget_simple_extent_dims(space_id, &dim, NULL); check(stat);
     result = dim;
@@ -695,8 +695,8 @@ int PISMNC4_HDF5::def_var(string name, PISM_IO_Type xtype, vector<string> dims) 
     hid_t dim_id = H5Dopen(file_id, j->c_str(), H5P_DEFAULT);
     hid_t ds_id = H5Dget_space(dim_id);
 
-    int rank = H5Sget_simple_extent_ndims(ds_id);
-    assert(rank == 1);
+    int variable_rank = H5Sget_simple_extent_ndims(ds_id);
+    assert(variable_rank == 1);
 
     hsize_t dim_extent, dim_maxextent;
     stat = H5Sget_simple_extent_dims(ds_id, &dim_extent, &dim_maxextent);
@@ -949,7 +949,7 @@ int PISMNC4_HDF5::inq_varname(unsigned int j, string &result) const {
   size_t len = H5Lget_name_by_idx(file_id, "/", H5_INDEX_NAME, H5_ITER_INC, j, NULL, 1, H5P_DEFAULT);
   result.resize(len + 2);
 
-  stat = H5Lget_name_by_idx(file_id, "/", H5_INDEX_NAME, H5_ITER_INC, j, &result[0], len+1, H5P_DEFAULT);
+  stat = H5Lget_name_by_idx(file_id, "/", H5_INDEX_NAME, H5_ITER_INC, j, &result[0], len+1, H5P_DEFAULT); check(stat);
 
   return 0;
 }

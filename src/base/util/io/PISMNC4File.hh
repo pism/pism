@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 class PISMNC4File : public PISMNCFile
 {
 public:
-  PISMNC4File(MPI_Comm com, int rank);
+  PISMNC4File(MPI_Comm com, int rank, unsigned int compression_level);
   virtual ~PISMNC4File();
 
   // open/create/close
@@ -109,6 +109,7 @@ protected:
                                  vector<unsigned int> imap, double *ip,
                                  bool get,
                                  bool mapped) const;
+  unsigned int m_compression_level;
 };
 
 #endif /* _PISMNC4FILE_H_ */

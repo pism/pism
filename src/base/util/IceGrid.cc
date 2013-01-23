@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -493,7 +493,7 @@ PetscErrorCode IceGrid::init_interpolation() {
   ice_fine2storage.resize(Mz);
   m = 0;
   for (PetscInt k = 0; k < Mz; k++) {
-    while (zlevels_fine[m + 1] < zlevels[k]) {
+    while (m < Mz_fine - 1 && zlevels_fine[m + 1] < zlevels[k]) {
       m++;
     }
 

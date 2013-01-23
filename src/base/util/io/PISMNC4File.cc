@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,8 +30,8 @@
 
 #include "pism_type_conversion.hh"
 
-PISMNC4File::PISMNC4File(MPI_Comm c, int r)
-  : PISMNCFile(c, r) {
+PISMNC4File::PISMNC4File(MPI_Comm c, int r, unsigned int compression_level)
+  : PISMNCFile(c, r), m_compression_level(compression_level) {
   // empty
 }
 
@@ -168,6 +168,12 @@ int PISMNC4File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
 
   stat = nc_def_var(ncid, name.c_str(), pism_type_to_nc_type(nctype),
                     static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
+
+  // Compress 2D and 3D variables
+  if (m_compression_level > 0 && dims.size() > 1) {
+    stat = nc_inq_varid(ncid, name.c_str(), &varid); check(stat);
+    stat = nc_def_var_deflate(ncid, varid, 0, 1, m_compression_level); check(stat);
+  }
 
 #if (PISM_DEBUG==1)
   if (stat != NC_NOERR) {
