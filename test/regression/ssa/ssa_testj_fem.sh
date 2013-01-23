@@ -11,7 +11,7 @@ if [ $# -ge 4 ] && [ "$4" == "-python" ]
 then
   PYTHONEXEC=$5
   MPIEXEC_COMMAND="$MPIEXEC_COMMAND $PYTHONEXEC"
-  PYTHONPATH=${PISM_PATH}
+  PYTHONPATH=${PISM_PATH}:${PYTHONPATH}
   PISM_PATH=${PISM_SOURCE_DIR}/examples/python/ssa_tests
   EXT=".py"
 fi
