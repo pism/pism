@@ -26,4 +26,4 @@ $PYTHONEXEC vel2tauc.py \
               -inv_method tikhonov_lmvm -tikhonov_penalty 3e-2
 
 # Check if we succeeded
-$PYTHONEXEC verify_ssa_inv.py tiny_tikhonov_lmvm.nc -m 15 -e 3 -i 65
+$PYTHONEXEC verify_ssa_inv.py tiny_tikhonov_lmvm.nc --desired_misfit 14.12 --misfit_tolerance .5 --iter_max 66
