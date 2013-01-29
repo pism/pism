@@ -54,6 +54,9 @@ TaoInitializer::~TaoInitializer() {
   }
 }
 
+// TAO failure codes are negative and success codes are positive.  We declare 
+// associated description strings as an array and then point to the middle 
+// of the array so that we can look up description strings via the error code.
 const char *TaoConvergedReasonsShifted[] = {
     " ", " ", 
     "TAO_DIVERGED_USER",
