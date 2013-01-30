@@ -599,8 +599,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   // these only apply to PISMLakesHydrology and PISMDistributedHydrology:
   ierr = config.scalar_from_option("hydrology_hydraulic_conductivity",
                                    "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_hydraulic_conductivity_at_large_W",
-                                   "hydrology_hydraulic_conductivity_at_large_W"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_thickness_power_in_flux",
+                                   "hydrology_thickness_power_in_flux"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_roughness_scale",
                                    "hydrology_roughness_scale"); CHKERRQ(ierr);
   //FIXME issue #127:  till_pw_fraction too, but renamed

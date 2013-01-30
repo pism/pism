@@ -29,10 +29,16 @@
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
-This is a virtual base class.  The PISM default model PISMTillCanHydrology is a
-derived class of this one.  The PISM mass-conserving models are also derived
-classes, namely PISMLakesHydrology and its derived class
-PISMDistributedHydrology.
+This is a virtual base class.
+
+The main purpose of this class and its derived classes is to provide
+\code
+  PetscErrorCode water_layer_thickness(IceModelVec2S &result)
+  PetscErrorCode water_pressure(IceModelVec2S &result)
+\endcode
+Thus the interface is specific to subglacial hydrology models which track a
+two-dimensional layer with a well-defined thickness and pressure at each
+map-plane location.
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
 short physical timescales associated to liquid water moving under a glacier,
@@ -148,8 +154,8 @@ The name "till-can" comes from the following mental image:  Each map-plane cell
 under the glacier or ice sheet does not communicate with the next cell; i.e.
 there are "can walls" separating the cells.  The cans are "open-topped" in the
 sense that they fill up to level bwat_max.  Any water exceeding bwat_max "spills
-over the sides" and disappears.  Thus this model is not mass conserving, but it
-is useful for computing a till yield stress based on a time-integrated basal
+over the sides" \e and \e disappears.  Thus this model is not mass conserving.
+It is useful for computing a till yield stress based on a time-integrated basal
 melt rate.
 
 See [\ref BBssasliding] and [\ref Tulaczyketal2000b].  See this URL for a talk
@@ -309,13 +315,6 @@ protected:
                            PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
 
   PetscErrorCode raw_update_W(PetscReal hdt);
-
-  inline PetscReal K_of_W(PetscReal K0, PetscReal K1, PetscReal Wr, PetscReal myW) {
-    if (myW <= Wr)
-      return K0;
-    else
-      return K1 + (K0 - K1) * exp(- (myW - Wr) / Wr);
-  }
 
   inline bool in_null_strip(PetscInt i, PetscInt j) {
     if (stripwidth < 0.0) return false;

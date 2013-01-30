@@ -274,7 +274,7 @@ then we have <code> result(i,j,0) = alpha(i+1/2,j) </code> and
 <code> result(i,j,1) = beta(i,j+1/2) </code>
 
 The advection velocity is given by the formula
-  \f[ \mathbf{V} = - \frac{K}{\rho_w g} \nabla P - K \nabla b \f]
+  \f[ \mathbf{V} = - k W^{\alpha-1} \nabla \left(\frac{P}{\rho_w g} + b\right) \f]
 where \f$\mathbf{V}\f$ is the lateral water velocity, \f$P\f$ is the water
 pressure, and \f$b\f$ is the bedrock elevation.
 
@@ -290,10 +290,9 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
   const PetscReal
     g    = config.get("standard_gravity"),
     rhow = config.get("fresh_water_density"),
-    K0   = config.get("hydrology_hydraulic_conductivity"),
-    K1   = config.get("hydrology_hydraulic_conductivity_at_large_W"),
-    Wr   = config.get("hydrology_roughness_scale");
-  PetscReal dbdx, dbdy, dPdx, dPdy, Ke, Kn;
+    k    = config.get("hydrology_hydraulic_conductivity"),
+    alpha = config.get("hydrology_thickness_power_in_flux");
+  PetscReal dbdx, dbdy, dPdx, dPdy;
 
   ierr = water_pressure(Pwork); CHKERRQ(ierr);  // yes, it updates ghosts
 
@@ -306,15 +305,15 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
       if (Wstag(i,j,0) > 0.0) {
         dPdx = (Pwork(i+1,j  ) - Pwork(i,j)) / grid.dx;
         dbdx = ((*bed)(i+1,j  ) - (*bed)(i,j)) / grid.dx;
-        Ke = K_of_W(K0,K1,Wr,Wstag(i,j,0));
-        result(i,j,0) = - Ke * (dPdx / (rhow * g) + dbdx);
+        const PetscReal We = Wstag(i,j,0);
+        result(i,j,0) = - k * pow(We,alpha-1) * (dPdx / (rhow * g) + dbdx);
       } else
         result(i,j,0) = 0.0;
       if (Wstag(i,j,1) > 0.0) {
         dPdy = (Pwork(i  ,j+1) - Pwork(i,j)) / grid.dy;
         dbdy = ((*bed)(i  ,j+1) - (*bed)(i,j)) / grid.dy;
-        Kn = K_of_W(K0,K1,Wr,Wstag(i,j,1));
-        result(i,j,1) = - Kn * (dPdy / (rhow * g) + dbdy);
+        const PetscReal Wn = Wstag(i,j,1);
+        result(i,j,1) = - k * pow(Wn,alpha-1) * (dPdy / (rhow * g) + dbdy);
       } else
         result(i,j,1) = 0.0;
       if (in_null_strip(i,j) || in_null_strip(i+1,j))
@@ -358,10 +357,10 @@ PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal &dt_result,
                   PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result) {
   PetscErrorCode ierr;
-  const PetscReal maxK = PetscMax(config.get("hydrology_hydraulic_conductivity"),
-                                  config.get("hydrology_hydraulic_conductivity_at_large_W"));
-  PetscReal dtmax, maxW;
-  PetscReal tmp[2];
+  const PetscReal k     = config.get("hydrology_hydraulic_conductivity"),
+                  alpha = config.get("hydrology_thickness_power_in_flux"),
+                  dtmax = config.get("hydrology_maximum_time_step_years") * secpera;
+  PetscReal maxW, tmp[2];
   // Matlab: dtCFL = 0.5 / (max(max(abs(alphV)))/dx + max(max(abs(betaV)))/dy);
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
@@ -370,10 +369,9 @@ PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
   // Matlab: maxW = max(max(max(Wea)),max(max(Wno))) + 0.001;
   ierr = Wstag.absmaxcomponents(tmp); CHKERRQ(ierr);
   maxW = PetscMax(tmp[0],tmp[1]) + 0.001;
-  // Matlab: dtDIFFW = 0.25 / (p.K * maxW * (1/dx^2 + 1/dy^2));
+  // Matlab: dtDIFFW = 0.25 / (k * maxW^alpha * (1/dx^2 + 1/dy^2));
   dtDIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
-  dtDIFFW_result = 0.25 / (maxK * maxW * dtDIFFW_result);
-  dtmax = config.get("hydrology_maximum_time_step_years") * secpera;
+  dtDIFFW_result = 0.25 / (k * pow(maxW,alpha) * dtDIFFW_result);
   // dt = min([te-t dtmax dtCFL dtDIFFW]);
   dt_result = PetscMin(t_end - t_current, dtmax);
   dt_result = PetscMin(dt_result, dtCFL_result);
@@ -399,12 +397,11 @@ PetscErrorCode PISMLakesHydrology::adaptive_for_W_evolution(
 PetscErrorCode PISMLakesHydrology::raw_update_W(PetscReal hdt) {
     PetscErrorCode ierr;
     const PetscReal
-      K0   = config.get("hydrology_hydraulic_conductivity"),
-      K1   = config.get("hydrology_hydraulic_conductivity_at_large_W"),
-      Wr   = config.get("hydrology_roughness_scale"),
+      k    = config.get("hydrology_hydraulic_conductivity"),
+      alpha = config.get("hydrology_thickness_power_in_flux"),
       wux  = 1.0 / (grid.dx * grid.dx),
       wuy  = 1.0 / (grid.dy * grid.dy);
-    PetscReal divadflux, diffW, Ke, Kw, Kn, Ks;
+    PetscReal divadflux, diffW;
 
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
@@ -415,14 +412,14 @@ PetscErrorCode PISMLakesHydrology::raw_update_W(PetscReal hdt) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
                     + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
-        Ke = K_of_W(K0,K1,Wr,Wstag(i,  j,0));
-        Kw = K_of_W(K0,K1,Wr,Wstag(i-1,j,0));
-        Kn = K_of_W(K0,K1,Wr,Wstag(i,j,  1));
-        Ks = K_of_W(K0,K1,Wr,Wstag(i,j-1,1));
-        diffW =   wux * (  Ke * Wstag(i,  j,0) * (W(i+1,j) - W(i,j))
-                         - Kw * Wstag(i-1,j,0) * (W(i,j) - W(i-1,j)) )
-                + wuy * (  Kn * Wstag(i,j,  1) * (W(i,j+1) - W(i,j))
-                         - Ks * Wstag(i,j-1,1) * (W(i,j) - W(i,j-1)) );
+        const PetscReal  We = Wstag(i,  j,0),
+                         Ww = Wstag(i-1,j,0),
+                         Wn = Wstag(i,j  ,1),
+                         Ws = Wstag(i,j-1,1);
+        diffW =   wux * (  k * pow(We,alpha) * (W(i+1,j) - W(i,j))
+                         - k * pow(Ww,alpha) * (W(i,j) - W(i-1,j)) )
+                + wuy * (  k * pow(Wn,alpha) * (W(i,j+1) - W(i,j))
+                         - k * pow(Ws,alpha) * (W(i,j) - W(i,j-1)) );
         Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + total_input(i,j));
       }
     }
@@ -881,8 +878,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
   const PetscReal
-            K0 = config.get("hydrology_hydraulic_conductivity"),
-            K1 = config.get("hydrology_hydraulic_conductivity_at_large_W"),
+            k    = config.get("hydrology_hydraulic_conductivity"),
+            alpha = config.get("hydrology_thickness_power_in_flux"),
             rhow = config.get("fresh_water_density"),
             g = config.get("standard_gravity"),
             nglen = config.get("Glen_exponent"),
@@ -935,8 +932,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     const PetscReal  pux = 1.0 / (rhow * g * grid.dx * grid.dx),
                      puy = 1.0 / (rhow * g * grid.dy * grid.dy);
     PetscReal  Open, Close, divflux,
-               dpsie, dpsiw, dpsin, dpsis,
-               Ke, Kw, Kn, Ks;
+               dpsie, dpsiw, dpsin, dpsis;
     ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
 
     MaskQuery M(*mask);
@@ -984,14 +980,14 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           }
           divflux = 0.0;
           if (!knowne && !knownw) {
-            Ke = K_of_W(K0,K1,Wr,Wstag(i,  j,0));
-            Kw = K_of_W(K0,K1,Wr,Wstag(i-1,j,0));
-            divflux += pux * ( Ke * Wstag(i,j,0) * dpsie - Kw * Wstag(i-1,j,0) * dpsiw );
+            const PetscReal We = Wstag(i,  j,0),
+                            Ww = Wstag(i-1,j,0);
+            divflux += pux * k * ( pow(We,alpha) * dpsie - pow(Ww,alpha) * dpsiw );
           }
           if (!knownn && !knowns) {
-            Kn = K_of_W(K0,K1,Wr,Wstag(i,j  ,1));
-            Ks = K_of_W(K0,K1,Wr,Wstag(i,j-1,1));
-            divflux += puy * ( Kn * Wstag(i,j,1) * dpsin - Ks * Wstag(i,j-1,1) * dpsis );
+            const PetscReal Wn = Wstag(i,j  ,1),
+                            Ws = Wstag(i,j-1,1);
+            divflux += puy * k * ( pow(Wn,alpha) * dpsin - pow(Ws,alpha) * dpsis );
           }
           // candidate for update
           Pnew(i,j) = P(i,j) + (hdt * Pwork(i,j) / E0) * ( divflux + Close - Open + total_input(i,j) );
