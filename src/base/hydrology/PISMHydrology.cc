@@ -176,6 +176,14 @@ PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
 }
 
 
+//! Set the englacial storage to zero.  (The most basic subglacial hydrologies have no englacial storage.)
+PetscErrorCode PISMHydrology::englacial_water_thickness(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  ierr = result.set(0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! The only reason to restrict the time step taken by the calling model (i.e. IceModel) is if there is a time-dependent input file IceModelVec2T *inputtobed.
 PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt) {
   if (inputtobed == NULL) {
@@ -396,7 +404,7 @@ PetscErrorCode PISMTillCanHydrology::write_variables(set<string> vars, const PIO
 }
 
 
-PetscErrorCode PISMTillCanHydrology::water_layer_thickness(IceModelVec2S &result) {
+PetscErrorCode PISMTillCanHydrology::subglacial_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = W.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
@@ -407,7 +415,7 @@ PetscErrorCode PISMTillCanHydrology::water_layer_thickness(IceModelVec2S &result
   \f[ P = \lambda P_o \max\{1,W / W_{crit}\} \f]
 where \f$\lambda\f$=till_pw_fraction, \f$P_o = \rho_i g H\f$, \f$W_{crit}\f$=hydrology_bwat_max.
  */
-PetscErrorCode PISMTillCanHydrology::water_pressure(IceModelVec2S &result) {
+PetscErrorCode PISMTillCanHydrology::subglacial_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
 #if (PISM_DEBUG==1)
@@ -649,7 +657,7 @@ PetscErrorCode PISMHydrology_bwp::compute(IceModelVec* &output) {
   ierr = result->create(grid, "bwp", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
   result->write_in_glaciological_units = true;
-  ierr = model->water_pressure(*result); CHKERRQ(ierr);
+  ierr = model->subglacial_water_pressure(*result); CHKERRQ(ierr);
   output = result;
   return 0;
 }
@@ -674,7 +682,7 @@ PetscErrorCode PISMHydrology_bwprel::compute(IceModelVec* &output) {
   ierr = Po->create(grid, "Po_temporary", false); CHKERRQ(ierr);
   ierr = Po->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
-  ierr = model->water_pressure(*result); CHKERRQ(ierr);
+  ierr = model->subglacial_water_pressure(*result); CHKERRQ(ierr);
   ierr = model->overburden_pressure(*Po); CHKERRQ(ierr);
 
   ierr = result->begin_access(); CHKERRQ(ierr);
@@ -712,7 +720,7 @@ PetscErrorCode PISMHydrology_effbwp::compute(IceModelVec* &output) {
   ierr = P->create(grid, "P_temporary", false); CHKERRQ(ierr);
   ierr = P->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
-  ierr = model->water_pressure(*P); CHKERRQ(ierr);
+  ierr = model->subglacial_water_pressure(*P); CHKERRQ(ierr);
   ierr = model->overburden_pressure(*result); CHKERRQ(ierr);
   ierr = result->add(-1.0,*P); CHKERRQ(ierr);  // result <-- result + (-1.0) P = Po - P
 

@@ -31,14 +31,21 @@
 /*!
 This is a virtual base class.
 
-The main purpose of this class and its derived classes is to provide
+The purpose of this class and its derived classes is to provide
 \code
-  PetscErrorCode water_layer_thickness(IceModelVec2S &result)
-  PetscErrorCode water_pressure(IceModelVec2S &result)
+  PetscErrorCode subglacial_water_thickness(IceModelVec2S &result)
+  PetscErrorCode subglacial_water_pressure(IceModelVec2S &result)
+  PetscErrorCode englacial_water_thickness(IceModelVec2S &result)
 \endcode
 Thus the interface is specific to subglacial hydrology models which track a
-two-dimensional layer with a well-defined thickness and pressure at each
-map-plane location.
+two-dimensional water layer with a well-defined thickness and pressure at each
+map-plane location, and which either track the englacial water in a manner
+which allows computation of an effective thickness, or which lack englacial
+storage.  In the latter case englacial_water_thickness() sets \c result to
+zero.
+
+Some references for such models are [\ref Bartholomausetal2011,
+\ref FlowersClarke2002_theory, \ref Schoofetal2012, \ref vanPeltBuelerDRAFT ].
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
 short physical timescales associated to liquid water moving under a glacier,
@@ -47,9 +54,10 @@ ice dynamics time steps.  Thus when an update() method in a PISMHydrology
 derived class is called it will advance its internal time to the new goal t+dt
 using its own internal time steps.
 
-Generally PISMHydrology and derived classes use the ice geometry, the basal
-energy field which is the basal melt rate, and the basal sliding velocity.
-These come from IceModel and PISMStressBalance.  Additionally, time-dependent
+Generally PISMHydrology and derived classes use the ice geometry, the basal melt
+rate, and the basal sliding velocity.  Note that the basal melt rate is an
+energy-conservation-derived field.  These fields generally
+come from IceModel and PISMStressBalance.  Additionally, time-dependent
 and spatially-variable water input to the basal layer, taken directly from a
 file, is possible too.  Potentially PISMSurfaceModel could supply such a
 quantity.
@@ -85,8 +93,10 @@ public:
 
   // regardless of the derived class model state variables, these methods
   // need to be implemented so that PISMHydrology is useful to the outside
-  virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode water_pressure(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
+  // this one exists in the base class and sets result = 0:
+  virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
 
 protected:
   // this model's workspace
@@ -178,8 +188,8 @@ public:
 
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
-  virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result);
-  virtual PetscErrorCode water_pressure(IceModelVec2S &result);
+  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
   // this model's state
@@ -277,8 +287,8 @@ public:
 
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
-  virtual PetscErrorCode water_layer_thickness(IceModelVec2S &result);
-  virtual PetscErrorCode water_pressure(IceModelVec2S &result);
+  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
 
@@ -361,7 +371,8 @@ public:
 
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
-  virtual PetscErrorCode water_pressure(IceModelVec2S &result);
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+  virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
 
 protected:
   // this model's state, in addition to what is in PISMLakesHydrology

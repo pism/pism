@@ -335,7 +335,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
     high_tauc = config.get("high_tauc");
 
   if (hydrology) {
-    ierr = hydrology->water_pressure(bwp); CHKERRQ(ierr);
+    ierr = hydrology->subglacial_water_pressure(bwp); CHKERRQ(ierr);
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 3,
@@ -497,7 +497,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   PetscErrorCode ierr;
 
   if (hydrology) {
-    ierr = hydrology->water_pressure(bwp); CHKERRQ(ierr);
+    ierr = hydrology->subglacial_water_pressure(bwp); CHKERRQ(ierr);
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 3,
