@@ -35,7 +35,7 @@ except:
 
 ## Set up the option parser
 parser = ArgumentParser()
-parser.description = '''Script makes netCDF file ready for Climate Data Operators (CDO). Either a global attribute "projection", a mapping variable, or a command-line proj4 must be given.'''
+parser.description = '''Script makes netCDF file ready for Climate Data Operators (CDO). Either a global attribute "projection", a mapping variable, or a command-line proj4 string or a EPSG code must be given.'''
 parser.add_argument("FILE", nargs=1)
 parser.add_argument("--srs",dest="srs",
                   help='''
@@ -142,7 +142,10 @@ if __name__ == "__main__":
 
     if srs:
         ## Use projection from command line
-        proj = Proj(srs)
+        try:
+            proj = Proj(init=srs)
+        except:
+            proj = Proj(srs)
     else:
         ## Get projection from file
         proj = get_projection_from_file(nc)
