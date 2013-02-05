@@ -172,14 +172,14 @@ void PISMLakesHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
 
 
 //! Check W >= 0 and fails with message if not satisfied.
-PetscErrorCode PISMLakesHydrology::check_Wpositive() {
+PetscErrorCode PISMLakesHydrology::check_W_nonnegative() {
   PetscErrorCode ierr;
   ierr = W.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (W(i,j) < 0.0) {
         PetscPrintf(grid.com,
-           "PISM ERROR: disallowed negative subglacial water layer thickness\n"
+           "PISM ERROR: disallowed negative subglacial water layer thickness (bwat)\n"
            "    W(i,j) = %.6f m at (i,j)=(%d,%d)\n"
            "ENDING ... \n\n", W(i,j),i,j);
         PISMEnd();
@@ -463,7 +463,7 @@ PetscErrorCode PISMLakesHydrology::update(PetscReal icet, PetscReal icedt) {
   while (ht < t + dt) {
     hydrocount++;
 
-    ierr = check_Wpositive(); CHKERRQ(ierr);
+    ierr = check_W_nonnegative(); CHKERRQ(ierr);
 
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
@@ -748,16 +748,16 @@ PetscErrorCode PISMDistributedHydrology::subglacial_water_pressure(IceModelVec2S
 
 
 //! Check Wen >= 0 and fails with message if not satisfied.
-PetscErrorCode PISMDistributedHydrology::check_Wen_positive() {
+PetscErrorCode PISMDistributedHydrology::check_Wen_nonnegative() {
   PetscErrorCode ierr;
   ierr = Wen.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (Wen(i,j) < 0.0) {
         PetscPrintf(grid.com,
-           "PISM ERROR: disallowed negative subglacial water layer thickness\n"
-           "    W(i,j) = %.6f m at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", W(i,j),i,j);
+           "PISM ERROR: disallowed negative englacial effective water layer thickness (enwat)\n"
+           "    Wen(i,j) = %.6f m at (i,j)=(%d,%d)\n"
+           "ENDING ... \n\n", Wen(i,j),i,j);
         PISMEnd();
       }
     }
@@ -977,8 +977,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   while (ht < t + dt) {
     hydrocount++;
 
-    ierr = check_Wpositive(); CHKERRQ(ierr);
-//FIXME: check_Wen_positive()
+    ierr = check_W_nonnegative(); CHKERRQ(ierr);
+    ierr = check_Wen_nonnegative(); CHKERRQ(ierr);
 
     // note that ice dynamics can change overburden pressure, so we can only check P
     //   bounds if thk has not changed; if thk could have just changed, such as in the

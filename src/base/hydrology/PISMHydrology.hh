@@ -323,7 +323,7 @@ protected:
              PetscReal &icefreelost, PetscReal &oceanlost,
              PetscReal &negativegain, PetscReal &nullstriplost);
 
-  virtual PetscErrorCode check_Wpositive();
+  virtual PetscErrorCode check_W_nonnegative();
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
@@ -398,7 +398,7 @@ protected:
   virtual PetscErrorCode allocate_englacial();
   virtual PetscErrorCode allocate_pressure();
 
-  virtual PetscErrorCode check_Wen_positive();
+  virtual PetscErrorCode check_Wen_nonnegative();
   virtual PetscErrorCode check_P_bounds(bool enforce_upper);
   virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode update_cbase(IceModelVec2S &result);
