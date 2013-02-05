@@ -385,7 +385,8 @@ public:
 
 protected:
   // this model's state, in addition to what is in PISMLakesHydrology
-  IceModelVec2S P;      // water pressure
+  IceModelVec2S Wen,    // englacial water thickness
+                P;      // water pressure
   // this model's auxiliary variables, in addition ...
   IceModelVec2S psi,    // hydraulic potential
                 cbase,  // sliding speed of overlying ice
@@ -394,7 +395,10 @@ protected:
   // need to get basal sliding velocity (thus speed):
   PISMStressBalance* stressbalance;
 
-  virtual PetscErrorCode allocate_nontrivial_pressure();
+  virtual PetscErrorCode allocate_englacial();
+  virtual PetscErrorCode allocate_pressure();
+
+  virtual PetscErrorCode check_Wen_positive();
   virtual PetscErrorCode check_P_bounds(bool enforce_upper);
   virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode update_cbase(IceModelVec2S &result);

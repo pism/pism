@@ -227,7 +227,7 @@ PetscErrorCode PISMLakesHydrology::boundary_mass_changes_with_null(
 
 
 //! Copies the W variable, the modeled water layer thickness.
-PetscErrorCode PISMLakesHydrology::water_layer_thickness(IceModelVec2S &result) {
+PetscErrorCode PISMLakesHydrology::subglacial_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = W.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
@@ -239,7 +239,7 @@ Here
   \f[ P = \lambda P_o = \lambda (\rho_i g H) \f]
 where \f$\lambda\f$=till_pw_fraction and \f$P_o\f$ is the overburden pressure.
  */
-PetscErrorCode PISMLakesHydrology::water_pressure(IceModelVec2S &result) {
+PetscErrorCode PISMLakesHydrology::subglacial_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
   // ierr = verbPrintf(1,grid.com,"in PISMLakesHydrology::water_pressure()\n"); CHKERRQ(ierr);
   ierr = overburden_pressure(result); CHKERRQ(ierr);
@@ -294,7 +294,7 @@ PetscErrorCode PISMLakesHydrology::velocity_staggered(IceModelVec2Stag &result) 
     alpha = config.get("hydrology_thickness_power_in_flux");
   PetscReal dbdx, dbdy, dPdx, dPdy;
 
-  ierr = water_pressure(Pwork); CHKERRQ(ierr);  // yes, it updates ghosts
+  ierr = subglacial_water_pressure(Pwork); CHKERRQ(ierr);  // yes, it updates ghosts
 
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
   ierr = Wstag.begin_access(); CHKERRQ(ierr);
@@ -550,15 +550,33 @@ PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVar
     : PISMLakesHydrology(g, conf)
 {
     stressbalance = sb;
-    if (allocate_nontrivial_pressure() != 0) {
+    if (allocate_englacial() != 0) {
       PetscPrintf(grid.com,
-        "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor.\n");
+        "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor (englacial).\n");
+      PISMEnd();
+    }
+    if (allocate_pressure() != 0) {
+      PetscPrintf(grid.com,
+        "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor (pressure).\n");
       PISMEnd();
     }
 }
 
 
-PetscErrorCode PISMDistributedHydrology::allocate_nontrivial_pressure() {
+PetscErrorCode PISMDistributedHydrology::allocate_englacial() {
+  PetscErrorCode ierr;
+
+  // additional conserved (mass) variable
+  ierr = Wen.create(grid, "enwat", false); CHKERRQ(ierr);
+  ierr = Wen.set_attrs("model_state",
+                       "effective thickness of englacial water",
+                       "m", ""); CHKERRQ(ierr);
+  ierr = Wen.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode PISMDistributedHydrology::allocate_pressure() {
   PetscErrorCode ierr;
 
   // additional variables beyond PISMLakesHydrology::allocate()
@@ -612,13 +630,36 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
 
   ierr = PISMLakesHydrology::init_actions(vars,i_set,bootstrap_set); CHKERRQ(ierr);
 
+  // prepare for -i or -bootstrap
+  string filename;
+  int start;
+  if (i_set || bootstrap_set) {
+    ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
+  }
+
+  // initialize Wen: present or -i file or -bootstrap file or set to constant;
+  //   then overwrite by regrid
+  IceModelVec2S *Wen_input = dynamic_cast<IceModelVec2S*>(vars.get("enwat"));
+  if (Wen_input != NULL) { // a variable called "enwat" is already in context
+    ierr = Wen.copy_from(*Wen_input); CHKERRQ(ierr);
+  } else if (i_set || bootstrap_set) {
+    if (i_set) {
+      ierr = Wen.read(filename, start); CHKERRQ(ierr);
+    } else {
+      ierr = Wen.regrid(filename,
+                        config.get("bootstrapping_enwat_value_no_var")); CHKERRQ(ierr);
+    }
+  } else {
+    ierr = Wen.set(config.get("bootstrapping_enwat_value_no_var")); CHKERRQ(ierr);
+  }
+  ierr = regrid(Wen); CHKERRQ(ierr); //  we could be asked to regrid from file
+
+  // initialize P: present or -i file or -bootstrap file or set to constant;
+  //   then overwrite by regrid; then overwrite by -init_P_from_steady
   IceModelVec2S *P_input = dynamic_cast<IceModelVec2S*>(vars.get("bwp"));
   if (P_input != NULL) { // a variable called "bwp" is already in context
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
   } else if (i_set || bootstrap_set) {
-    string filename;
-    int start;
-    ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
     if (i_set) {
       ierr = P.read(filename, start); CHKERRQ(ierr);
     } else {
@@ -628,15 +669,15 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   } else {
     ierr = P.set(config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);
   }
-
-  // whether or not we could initialize from file, we could be asked to regrid from file
-  ierr = regrid(P); CHKERRQ(ierr);
-
+  ierr = regrid(P); CHKERRQ(ierr); //  we could be asked to regrid from file
   if (init_P_from_steady) { // if so, overwrite all the other stuff
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
 
-  // add bwp to the variables in the context if it is not already there
+  // add variables to the context if not already there
+  if (vars.get("enwat") == NULL) {
+    ierr = vars.add(Wen); CHKERRQ(ierr);
+  }
   if (vars.get("bwp") == NULL) {
     ierr = vars.add(P); CHKERRQ(ierr);
   }
@@ -646,6 +687,7 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
 
 void PISMDistributedHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
   result["bwat"] = W.get_metadata();
+  result["enwat"] = Wen.get_metadata();
   result["bwp"]  = P.get_metadata();
 }
 
@@ -655,6 +697,9 @@ PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, cons
   PetscErrorCode ierr;
   if (set_contains(vars, "bwat")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
+  }
+  if (set_contains(vars, "enwat")) {
+    ierr = Wen.define(nc, nctype); CHKERRQ(ierr);
   }
   if (set_contains(vars, "bwp")) {
     ierr = P.define(nc, nctype); CHKERRQ(ierr);
@@ -667,6 +712,9 @@ PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const
   PetscErrorCode ierr;
   if (set_contains(vars, "bwat")) {
     ierr = W.write(nc); CHKERRQ(ierr);
+  }
+  if (set_contains(vars, "enwat")) {
+    ierr = Wen.write(nc); CHKERRQ(ierr);
   }
   if (set_contains(vars, "bwp")) {
     ierr = P.write(nc); CHKERRQ(ierr);
@@ -683,11 +731,38 @@ void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dic
 }
 
 
-//! Copies the P state variable which is the modeled water pressure.
-PetscErrorCode PISMDistributedHydrology::water_pressure(IceModelVec2S &result) {
+//! Copies the Wen state variable which is the modeled effective englacial water thickness.
+PetscErrorCode PISMDistributedHydrology::englacial_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  //ierr = verbPrintf(1,grid.com,"in PISMDistributedHydrology::water_pressure()\n"); CHKERRQ(ierr);
+  ierr = Wen.copy_to(result); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Copies the P state variable which is the modeled water pressure.
+PetscErrorCode PISMDistributedHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+  PetscErrorCode ierr;
   ierr = P.copy_to(result); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Check Wen >= 0 and fails with message if not satisfied.
+PetscErrorCode PISMDistributedHydrology::check_Wen_positive() {
+  PetscErrorCode ierr;
+  ierr = Wen.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (Wen(i,j) < 0.0) {
+        PetscPrintf(grid.com,
+           "PISM ERROR: disallowed negative subglacial water layer thickness\n"
+           "    W(i,j) = %.6f m at (i,j)=(%d,%d)\n"
+           "ENDING ... \n\n", W(i,j),i,j);
+        PISMEnd();
+      }
+    }
+  }
+  ierr = Wen.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -903,6 +978,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     hydrocount++;
 
     ierr = check_Wpositive(); CHKERRQ(ierr);
+//FIXME: check_Wen_positive()
 
     // note that ice dynamics can change overburden pressure, so we can only check P
     //   bounds if thk has not changed; if thk could have just changed, such as in the
@@ -990,6 +1066,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             divflux += puy * k * ( pow(Wn,alpha) * dpsin - pow(Ws,alpha) * dpsis );
           }
           // candidate for update
+//FIXME: replace E0
           Pnew(i,j) = P(i,j) + (hdt * Pwork(i,j) / E0) * ( divflux + Close - Open + total_input(i,j) );
           // projection to enforce  0 <= P <= P_o
           Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pwork(i,j));
@@ -1009,9 +1086,13 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     // transfer Pnew into P; note Wstag, Qstag unaffected in Wnew update below
     ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
 
+//FIXME: update Wen; it is proportional to Pen
+
     // update Wnew (the actual step) from W, Wstag, Qstag, total_input
     ierr = PISMLakesHydrology::raw_update_W(hdt); CHKERRQ(ierr);
+//FIXME: append a call which adds - dWen/dt term to W
 
+//FIXME: Wen?
     ierr = boundary_mass_changes_with_null(Wnew,delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
     icefreelost  += delta_icefree;
@@ -1026,6 +1107,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   } // end of hydrology model time-stepping loop
 
   if (report_mass_accounting) {
+//FIXME: Wen?
     ierr = verbPrintf(2, grid.com,
       " 'distributed' hydrology summary:\n"
       "     %d hydrology sub-steps with average dt = %.6f years\n"

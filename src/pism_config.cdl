@@ -135,6 +135,9 @@ netcdf pism_config {
     pism_config:bootstrapping_bwat_value_no_var = 0.0;
     pism_config:bootstrapping_bwat_value_no_var_doc = "m; basal water thickness value to use if variable bwat is absent in bootstrapping file";
 
+    pism_config:bootstrapping_enwat_value_no_var = 0.0;
+    pism_config:bootstrapping_enwat_value_no_var_doc = "m; effective englacial water thickness value to use if variable enwat is absent in bootstrapping file";
+
     pism_config:bootstrapping_bwp_value_no_var = 0.0;
     pism_config:bootstrapping_bwp_value_no_var_doc = "Pa; basal water pressure value to use if variable bwp is absent in bootstrapping file; most hydrology models do not use this value because bwp is diagnostic";
 
