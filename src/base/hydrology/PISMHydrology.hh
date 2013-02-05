@@ -400,6 +400,7 @@ protected:
 
   virtual PetscErrorCode check_Wen_nonnegative();
   virtual PetscErrorCode check_P_bounds(bool enforce_upper);
+
   virtual PetscErrorCode hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode update_cbase(IceModelVec2S &result);
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
@@ -407,6 +408,8 @@ protected:
   virtual PetscErrorCode adaptive_for_WandP_evolution(
                            PetscReal t_current, PetscReal t_end,
                            PetscReal &dt_result, PetscReal &PtoCFLratio);
+
+  virtual PetscErrorCode update_amounts_englacial_connection(IceModelVec2S &myPnew);
 };
 
 #endif /* _PISMHYDROLOGY_H_ */

@@ -900,16 +900,13 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
                   PetscReal t_current, PetscReal t_end,
                   PetscReal &dt_result, PetscReal &PtoCFLratio) {
   PetscErrorCode ierr;
-  PetscReal maxV, dtCFL, dtDIFFW, dtDIFFP, maxH,
-            E0 = config.get("hydrology_diffusive_closure_regularization");
+  PetscReal maxV, dtCFL, dtDIFFW, dtDIFFP;
 
   ierr = adaptive_for_W_evolution(t_current,t_end,
               dt_result,maxV,dtCFL,dtDIFFW); CHKERRQ(ierr);
 
-  // Matlab: dtDIFFP = (p.rhow * p.E0 / (p.rhoi * maxH)) * dtDIFFW;
-  ierr = thk->max(maxH); CHKERRQ(ierr);
-  maxH += 2.0 * E0; // regularized: forces dtDIFFP < dtDIFFW
-  dtDIFFP = (config.get("fresh_water_density") * E0 / (config.get("ice_density") * maxH)) * dtDIFFW;
+  dtDIFFP = (config.get("fresh_water_density") * config.get("hydrology_englacial_porosity")
+             / config.get("ice_density")) * dtDIFFW;
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
   dt_result = PetscMin(dt_result, dtDIFFP);
@@ -923,6 +920,32 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
             "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
             maxV*secpera, dtCFL/secpera, dtDIFFW/secpera, dtDIFFP/secpera,
             dt_result/secpera, t_current/secpera); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Update conserved model state variables W,Wen by computing the englacial-to-subglacial connection using the change in subglacial pressure.
+PetscErrorCode PISMDistributedHydrology::update_amounts_englacial_connection(IceModelVec2S &myPnew) {
+  PetscErrorCode ierr;
+  const PetscReal rhow = config.get("fresh_water_density"),
+                  g = config.get("standard_gravity"),
+                  porosity = config.get("hydrology_englacial_porosity"),
+                  CCpor = porosity / (rhow * g);
+  ierr = myPnew.begin_access(); CHKERRQ(ierr);
+  ierr = P.begin_access(); CHKERRQ(ierr);
+  ierr = Wen.begin_access(); CHKERRQ(ierr);
+  ierr = Wnew.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      Wen(i,j) = CCpor * Pnew(i,j); // Wen satisifies scaled version of bounds 0 <= P <= P_o
+      const PetscReal deltaWen = CCpor * (Pnew(i,j) - P(i,j)); // this much water moved into englacial
+      //FIXME: put this back in:    Wnew(i,j) -= deltaWen; // ... so it moved out of subglacial
+    }
+  }
+  ierr = myPnew.end_access(); CHKERRQ(ierr);
+  ierr = P.end_access(); CHKERRQ(ierr);
+  ierr = Wen.end_access(); CHKERRQ(ierr);
+  ierr = Wnew.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -963,7 +986,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             c2 = config.get("hydrology_creep_closure_coefficient"),
             Wr = config.get("hydrology_roughness_scale"),
             Y0 = config.get("hydrology_lower_bound_creep_regularization"),
-            E0 = config.get("hydrology_diffusive_closure_regularization");
+            porosity = config.get("hydrology_englacial_porosity");
 
   PetscReal ht = t, hdt; // hydrology model time and time step
 
@@ -1065,11 +1088,14 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
                             Ws = Wstag(i,j-1,1);
             divflux += puy * k * ( pow(Wn,alpha) * dpsin - pow(Ws,alpha) * dpsis );
           }
-          // candidate for update
-//FIXME: replace E0
-          Pnew(i,j) = P(i,j) + (hdt * Pwork(i,j) / E0) * ( divflux + Close - Open + total_input(i,j) );
+
+          // candidate for pressure update
+          Pnew(i,j) = P(i,j) + (hdt / porosity) * ( divflux + Close - Open + total_input(i,j) );
           // projection to enforce  0 <= P <= P_o
           Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pwork(i,j));
+
+          // note  Wen_new = CCpor * Pnew  and  Delta Wen = Wen_new - Wen;
+          //   see
         }
       }
     }
@@ -1083,14 +1109,14 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
-    // transfer Pnew into P; note Wstag, Qstag unaffected in Wnew update below
-    ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
-
-//FIXME: update Wen; it is proportional to Pen
-
     // update Wnew (the actual step) from W, Wstag, Qstag, total_input
     ierr = PISMLakesHydrology::raw_update_W(hdt); CHKERRQ(ierr);
-//FIXME: append a call which adds - dWen/dt term to W
+
+    // update Wnew and Wen from  Delta P = Pnew - P
+    ierr = update_amounts_englacial_connection(Pnew); CHKERRQ(ierr);
+
+    // transfer Pnew into P; note Wstag, Qstag unaffected in Wnew update below
+    ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
 
 //FIXME: Wen?
     ierr = boundary_mass_changes_with_null(Wnew,delta_icefree, delta_ocean,
