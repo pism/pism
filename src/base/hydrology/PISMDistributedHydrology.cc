@@ -986,7 +986,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             c2 = config.get("hydrology_creep_closure_coefficient"),
             Wr = config.get("hydrology_roughness_scale"),
             Y0 = config.get("hydrology_lower_bound_creep_regularization"),
-            porosity = config.get("hydrology_englacial_porosity");
+            porosity = config.get("hydrology_englacial_porosity"),
+            CCpor = porosity / (rhow * g);
 
   PetscReal ht = t, hdt; // hydrology model time and time step
 
@@ -1090,7 +1091,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           }
 
           // candidate for pressure update
-          Pnew(i,j) = P(i,j) + (hdt / porosity) * ( divflux + Close - Open + total_input(i,j) );
+          Pnew(i,j) = P(i,j) + (hdt / CCpor) * ( divflux + Close - Open + total_input(i,j) );
           // projection to enforce  0 <= P <= P_o
           Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pwork(i,j));
 
