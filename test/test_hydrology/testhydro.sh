@@ -19,7 +19,7 @@ $MPIDO ${PATHTO}pismr -boot_file start.nc -hydrology tillcan -Mx 181 -My 181 -Lz
 $MPIDO ${PATHTO}pismr -i start.nc -hydrology diffuseonly -report_mass_accounting -ys 0 -y 20 -o diffuse.nc
 
 #$MPIDO ${PATHTO}pismr -i start.nc -hydrology lakes       -ys 0 -y 20 -o lakes.nc
-$MPIDO ${PATHTO}pismr -i start.nc -hydrology lakes -report_mass_accounting -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -ys 0 -y 20 -extra_file extras_lakes.nc -extra_times 0:0.5:20 -extra_vars bwat,bwp,bwatvel,thk -o lakes.nc
+$MPIDO ${PATHTO}pismr -i start.nc -hydrology lakes -report_mass_accounting -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -ys 0 -y 20 -extra_file extras_lakes.nc -extra_times 0:0.5:20 -extra_vars bwat,bwp,bwatvel,thk,enwat -o lakes.nc
 
 #$MPIDO ${PATHTO}pismr -i start.nc -ssa_sliding -tauc 1.0e6 -hold_tauc -hydrology distributed -report_mass_accounting -init_P_from_steady -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -ys 0 -y 20 -o distributed_const.nc
 

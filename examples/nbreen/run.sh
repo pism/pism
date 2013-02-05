@@ -39,12 +39,14 @@ fi
 
 YY="$3"
 
+# these diagnostics apply to "dist" and "event":
+evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp,enwat"
+
 if [ "$4" = "dist" ]; then
 
   # distributed run
   oname=nbreen_y${YY}_${dx}m_dist.nc
   hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc"
-  evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp"
   etimes="0:0.1:$YY"
 
 elif [ "$4" = "event" ]; then
@@ -52,7 +54,6 @@ elif [ "$4" = "event" ]; then
   # distributed run with summer event
   oname=nbreen_y${YY}_${dx}m_event.nc
   hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc -input_to_bed_file fakesummerevent.nc -input_to_bed_period 1.0 -input_to_bed_reference_year 0.0"
-  evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp"
   etimes="0.0:0.005:$YY"
 #FIXME: this produced a bug: it gave warning about more than 500 frames
 # etimes="0.0:daily:$YY"
@@ -62,11 +63,11 @@ elif [ "$4" = "lakes" ]; then
   # lakes run: very fast
   oname=nbreen_y${YY}_${dx}m_lakes.nc
   hydro="-hydrology lakes -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3"
-  evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel"
+  evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel"  # revised
   etimes="0:0.1:$YY"
 
 else
-  echo "invalid fourth argument; must be in {dist,lakes}"
+  echo "invalid fourth argument; must be in {dist,event,lakes}"
   exit
 fi
 

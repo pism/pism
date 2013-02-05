@@ -118,6 +118,15 @@ protected:
 };
 
 
+//! \brief Reports the amount of englacial water as an effective thickness.
+class PISMHydrology_enwat : public PISMDiag<PISMHydrology>
+{
+public:
+  PISMHydrology_enwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
 //! \brief Reports the pressure of the water in the subglacial layer.
 /*!
 This is used by most derived classes of PISMHydrology but not by

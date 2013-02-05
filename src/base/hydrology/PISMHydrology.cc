@@ -131,6 +131,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 
 
 void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  dict["enwat"] = new PISMHydrology_enwat(this, grid, *variables);
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
@@ -640,6 +641,24 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
 
     ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
   }
+  return 0;
+}
+
+
+PISMHydrology_enwat::PISMHydrology_enwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
+    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+  vars[0].init_2d("enwat", grid);
+  set_attrs("effective thickness of englacial water", "", "m", "m", 0);
+}
+
+
+PetscErrorCode PISMHydrology_enwat::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "enwat", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = model->englacial_water_thickness(*result); CHKERRQ(ierr);
+  output = result;
   return 0;
 }
 
