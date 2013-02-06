@@ -905,8 +905,9 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
   ierr = adaptive_for_W_evolution(t_current,t_end,
               dt_result,maxV,dtCFL,dtDIFFW); CHKERRQ(ierr);
 
-  dtDIFFP = (config.get("fresh_water_density") * config.get("hydrology_englacial_porosity")
-             / config.get("ice_density")) * dtDIFFW;
+  const PetscReal rhoratio = config.get("fresh_water_density") / config.get("ice_density"),
+                  phisum   = config.get("hydrology_englacial_porosity") + config.get("hydrology_regularizing_porosity");
+  dtDIFFP = rhoratio * phisum * dtDIFFW;
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
   dt_result = PetscMin(dt_result, dtDIFFP);
@@ -929,7 +930,7 @@ PetscErrorCode PISMDistributedHydrology::update_amounts_englacial_connection(Ice
   PetscErrorCode ierr;
   const PetscReal rhow = config.get("fresh_water_density"),
                   g = config.get("standard_gravity"),
-                  porosity = config.get("hydrology_englacial_porosity"),
+                  porosity = config.get("hydrology_englacial_porosity"), // the true porosity
                   CCpor = porosity / (rhow * g);
   PetscReal Wen_new;
   ierr = myPnew.begin_access(); CHKERRQ(ierr);
@@ -938,12 +939,12 @@ PetscErrorCode PISMDistributedHydrology::update_amounts_englacial_connection(Ice
   ierr = Wnew.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // (i)  Wen satisfies scaled version of bounds 0 <= P <= P_o
-      // (ii) Wen comes from connection to water at base so Wen=0 if W=0
+      // in next line: (i)  Wen satisfies scaled version of bounds 0 <= P <= P_o
+      //               (ii) Wen comes from connection to water at base so Wen=0 if W=0
       Wen_new = (Wnew(i,j) > 0) ? CCpor * Pnew(i,j) : 0.0;
-      const PetscReal deltaWen = Wen_new - Wen(i,j); // this much water moved into/from englacial
+      const PetscReal deltaWen = Wen_new - Wen(i,j); // this much water moved into englacial
       Wen(i,j) = Wen_new;
-      //FIXME: put this in:    Wnew(i,j) -= deltaWen; // ... so it moved out of subglacial
+      Wnew(i,j) -= deltaWen; // so the same amount moved out of subglacial
     }
   }
   ierr = myPnew.end_access(); CHKERRQ(ierr);
@@ -990,8 +991,16 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             c2 = config.get("hydrology_creep_closure_coefficient"),
             Wr = config.get("hydrology_roughness_scale"),
             Y0 = config.get("hydrology_lower_bound_creep_regularization"),
-            porosity = config.get("hydrology_englacial_porosity"),
-            CCpor = porosity / (rhow * g);
+            phisum = config.get("hydrology_englacial_porosity") + config.get("hydrology_regularizing_porosity");
+
+  if (phisum <= 0.0) {
+    PetscPrintf(grid.com,
+        "PISM ERROR:  phisum = englacial_porosity + regularizing_porosity <= 0 ... ENDING\n");
+    PISMEnd();
+  }
+
+  const PetscReal  omegax = 1.0 / (rhow * g * grid.dx * grid.dx),
+                   omegay = 1.0 / (rhow * g * grid.dy * grid.dy);
 
   PetscReal ht = t, hdt; // hydrology model time and time step
 
@@ -1033,8 +1042,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     }
 
     // update Pnew from time step
-    const PetscReal  pux = 1.0 / (rhow * g * grid.dx * grid.dx),
-                     puy = 1.0 / (rhow * g * grid.dy * grid.dy);
+    const PetscReal  CC = (rhow * g * hdt) / phisum;
     PetscReal  Open, Close, divflux,
                dpsie, dpsiw, dpsin, dpsis;
     ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
@@ -1086,21 +1094,18 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           if (!knowne && !knownw) {
             const PetscReal We = Wstag(i,  j,0),
                             Ww = Wstag(i-1,j,0);
-            divflux += pux * k * ( pow(We,alpha) * dpsie - pow(Ww,alpha) * dpsiw );
+            divflux += omegax * k * ( pow(We,alpha) * dpsie - pow(Ww,alpha) * dpsiw );
           }
           if (!knownn && !knowns) {
             const PetscReal Wn = Wstag(i,j  ,1),
                             Ws = Wstag(i,j-1,1);
-            divflux += puy * k * ( pow(Wn,alpha) * dpsin - pow(Ws,alpha) * dpsis );
+            divflux += omegay * k * ( pow(Wn,alpha) * dpsin - pow(Ws,alpha) * dpsis );
           }
 
           // candidate for pressure update
-          Pnew(i,j) = P(i,j) + (hdt / CCpor) * ( divflux + Close - Open + total_input(i,j) );
+          Pnew(i,j) = P(i,j) + CC * ( divflux + Close - Open + total_input(i,j) );
           // projection to enforce  0 <= P <= P_o
           Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pwork(i,j));
-
-          // note  Wen_new = CCpor * Pnew  and  Delta Wen = Wen_new - Wen;
-          //   see
         }
       }
     }
