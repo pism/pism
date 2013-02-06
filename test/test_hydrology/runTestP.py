@@ -42,8 +42,11 @@ def generate_config():
   pism_overrides.hydrology_hydraulic_conductivity = 1.0e-2
   pism_overrides.hydrology_hydraulic_conductivity_doc = "m s-1; = K; NOT DEFAULT"
 
-  pism_overrides.hydrology_hydraulic_conductivity_at_large_W = 1.0e-2
-  pism_overrides.hydrology_hydraulic_conductivity_doc = "m s-1; = K"
+  pism_overrides.hydrology_englacial_porosity = 0.0;
+  pism_overrides.hydrology_englacial_porosity_doc = "[pure]; phi in notes; NOT DEFAULT";
+
+  pism_overrides.hydrology_regularizing_porosity = 0.01;
+  pism_overrides.hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes";
 
   nc.close()
 

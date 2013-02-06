@@ -31,6 +31,12 @@ def generate_config():
     pism_overrides.hydrology_hydraulic_conductivity = 1.0e-2
     pism_overrides.hydrology_hydraulic_conductivity_doc = "m s-1; = k;"
 
+    pism_overrides.hydrology_englacial_porosity = 0.0;
+    pism_overrides.hydrology_englacial_porosity_doc = "[pure]; phi in notes; NOT DEFAULT";
+
+    pism_overrides.hydrology_regularizing_porosity = 0.01;
+    pism_overrides.hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes";
+
     nc.close()
 
 def run_pism(opts):
@@ -55,6 +61,9 @@ def check_drift(file1, file2):
 
         drift["%s_max" % name] = np.max(diff)
         drift["%s_avg" % name] = np.average(diff)
+
+    print "drift = ", drift
+    print "stored_drift = ", stored_drift
 
     for name in drift.keys():
         rel_diff = np.abs(stored_drift[name] - drift[name]) / stored_drift[name]
