@@ -1,9 +1,14 @@
 #!/bin/bash
 
-# do a basic Jakoshavn model run, presumably on a fine grid; run as
-#   ./century NN Mx My >> out.century &
+# first run spinup.sh to produce a starting file (e.g. spunjako_0.nc)
+# here is a basic Jakoshavn model run:
+#   ./century NN Mx My spunjako_0.nc >> out.century &
 
-# if user says "century.sh 8 620 425" then NN=8, Mx=620, My=425
+# Mx=620, My=425 is 1 km grid
+# Mx=310, My=213 is (approx) 2 km grid
+# Mx=125, My=86 is (approx) 5 km grid
+
+# if user says "century.sh 8 620 425 foo.nc" then NN=8, Mx=620, My=425, PREFILE=foo.nc
 NN="$1"
 Mx="$2"
 My="$3"
@@ -55,7 +60,7 @@ BCFILE=g5km_bc.nc
 CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thk $BOOT"
 
 # assert: PHYS is same as in spinup.sh
-PHYS="-ocean_kill $BOOT -cfbc -kill_icebergs -diffuse_bwat -thk_eff -sia_e 1.0 -ssa_sliding -topg_to_phi 5.0,30.0,-300.0,700.0 -plastic_pwfrac 0.98 -pseudo_plastic -pseudo_plastic_q 0.25"
+PHYS="-ocean_kill $BOOT -cfbc -kill_icebergs -sia_e 1.0 -ssa_sliding -topg_to_phi 5.0,30.0,-300.0,700.0 -plastic_pwfrac 0.98 -pseudo_plastic -pseudo_plastic_q 0.25"
 
 SKIP=10
 
@@ -73,13 +78,32 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -boot_file $BOOT  \
   -no_model_strip 10 $PHYS \
   -ssa_dirichlet_bc -regrid_file $PREFILE -regrid_vars thk,Href,bmelt,bwat,enthalpy,litho_temp,vel_ssa_bc \
   $CLIMATE -y 0.01 -skip -skip_max $SKIP -o jakofine_short.nc"
+#$PISM_DO $cmd
+
+# insert a hydrology test case; this is hijacking the main purpose of century.sh ...
+
+HYDROLENGTH=0.002
+#HYDRO="-hydrology distributed -init_P_from_steady -hydrology_null_strip 10 -report_mass_accounting"
+HYDRO="-hydrology distributed -hydrology_null_strip 10 -report_mass_accounting"
+
+echo
+cmd="$PISM_MPIDO $NN $PISM_EXEC -i jakofine_short.nc \
+  -no_model_strip 10 $PHYS $HYDRO \
+  -extra_file ex_jakofine_hydro.nc -extra_times 0:0.0005:$HYDROLENGTH \
+  -extra_vars thk,cbase,bwat,bwatvel,bwp,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
+  -ts_file ts_jakofine_hydro.nc -ts_times 0:0.0005:$HYDROLENGTH \
+  -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars vel_ssa_bc \
+  $CLIMATE -ys 0 -ye $HYDROLENGTH -o jakofine_hydro.nc"
 $PISM_DO $cmd
+
+exit
+
 
 echo
 cmd="$PISM_MPIDO $NN $PISM_EXEC -i jakofine_short.nc \
   -no_model_strip 10 $PHYS \
   -extra_file ex_jakofine.nc -extra_times 0:yearly:$LENGTH \
-  -extra_vars thk,cbase,bwp,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
+  -extra_vars thk,cbase,bwat,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
   -ts_file ts_jakofine.nc -ts_times 0:monthly:$LENGTH \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars vel_ssa_bc \
   $CLIMATE -ys 0 -ye $LENGTH -skip -skip_max $SKIP -o jakofine.nc"
