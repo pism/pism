@@ -931,15 +931,19 @@ PetscErrorCode PISMDistributedHydrology::update_amounts_englacial_connection(Ice
                   g = config.get("standard_gravity"),
                   porosity = config.get("hydrology_englacial_porosity"),
                   CCpor = porosity / (rhow * g);
+  PetscReal Wen_new;
   ierr = myPnew.begin_access(); CHKERRQ(ierr);
   ierr = P.begin_access(); CHKERRQ(ierr);
   ierr = Wen.begin_access(); CHKERRQ(ierr);
   ierr = Wnew.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      Wen(i,j) = CCpor * Pnew(i,j); // Wen satisifies scaled version of bounds 0 <= P <= P_o
-      const PetscReal deltaWen = CCpor * (Pnew(i,j) - P(i,j)); // this much water moved into englacial
-      //FIXME: put this back in:    Wnew(i,j) -= deltaWen; // ... so it moved out of subglacial
+      // (i)  Wen satisfies scaled version of bounds 0 <= P <= P_o
+      // (ii) Wen comes from connection to water at base so Wen=0 if W=0
+      Wen_new = (Wnew(i,j) > 0) ? CCpor * Pnew(i,j) : 0.0;
+      const PetscReal deltaWen = Wen_new - Wen(i,j); // this much water moved into/from englacial
+      Wen(i,j) = Wen_new;
+      //FIXME: put this in:    Wnew(i,j) -= deltaWen; // ... so it moved out of subglacial
     }
   }
   ierr = myPnew.end_access(); CHKERRQ(ierr);
