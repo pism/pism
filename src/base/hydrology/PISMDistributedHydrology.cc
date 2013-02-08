@@ -925,7 +925,7 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
 }
 
 
-//! Update conserved model state variables W,Wen by computing the englacial-to-subglacial connection using the change in subglacial pressure.
+//! Update conserved model state variables W,Wen by computing the englacial-to-subglacial connection using the new subglacial pressure.
 PetscErrorCode PISMDistributedHydrology::update_amounts_englacial_connection(IceModelVec2S &myPnew) {
   PetscErrorCode ierr;
   const PetscReal rhow = config.get("fresh_water_density"),
@@ -934,21 +934,21 @@ PetscErrorCode PISMDistributedHydrology::update_amounts_englacial_connection(Ice
                   CCpor = porosity / (rhow * g);
   PetscReal Wen_new;
   ierr = myPnew.begin_access(); CHKERRQ(ierr);
-  ierr = P.begin_access(); CHKERRQ(ierr);
   ierr = Wen.begin_access(); CHKERRQ(ierr);
   ierr = Wnew.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // in next line: (i)  Wen satisfies scaled version of bounds 0 <= P <= P_o
-      //               (ii) Wen comes from connection to water at base so Wen=0 if W=0
-      Wen_new = (Wnew(i,j) > 0) ? CCpor * Pnew(i,j) : 0.0;
+      // in next line: (i)  Wen_new satisfies scaled version of bounds 0 <= P <= P_o
+      //               (ii) Wen_new comes from connection to water at base so Wen=0 if W=0
+      Wen_new = (Wnew(i,j) > 0) ? CCpor * myPnew(i,j) : 0.0;
       const PetscReal deltaWen = Wen_new - Wen(i,j); // this much water moved into englacial
       Wen(i,j) = Wen_new;
       Wnew(i,j) -= deltaWen; // so the same amount moved out of subglacial
+//      Wnew(i,j) = PetscMax(0.0, Wnew(i,j) - deltaWen); // so the same amount moved out of subglacial
+//      Wen(i,j) = (Wnew(i,j) > 0) ? Wen_new : 0.0;
     }
   }
   ierr = myPnew.end_access(); CHKERRQ(ierr);
-  ierr = P.end_access(); CHKERRQ(ierr);
   ierr = Wen.end_access(); CHKERRQ(ierr);
   ierr = Wnew.end_access(); CHKERRQ(ierr);
   return 0;
@@ -1125,10 +1125,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     // update Wnew and Wen from  Delta P = Pnew - P
     ierr = update_amounts_englacial_connection(Pnew); CHKERRQ(ierr);
 
-    // transfer Pnew into P; note Wstag, Qstag unaffected in Wnew update below
-    ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
-
-//FIXME: Wen?
     ierr = boundary_mass_changes_with_null(Wnew,delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
     icefreelost  += delta_icefree;
@@ -1136,14 +1132,13 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     negativegain += delta_neggain;
     nullstriplost+= delta_nullstrip;
 
-    // transfer Wnew into W
+    ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
     ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
 
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
   if (report_mass_accounting) {
-//FIXME: Wen?
     ierr = verbPrintf(2, grid.com,
       " 'distributed' hydrology summary:\n"
       "     %d hydrology sub-steps with average dt = %.6f years\n"
