@@ -1135,6 +1135,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     // and revert meaning: Wnew_tot --> Wnew
     ierr = update_amounts_englacial_connection(Pnew, Wnew); CHKERRQ(ierr);
 
+    ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
+
     ierr = boundary_mass_changes_with_null(Wnew,delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
     icefreelost  += delta_icefree;
@@ -1142,7 +1144,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     negativegain += delta_neggain;
     nullstriplost+= delta_nullstrip;
 
-    ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
     ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
 
     ht += hdt;
