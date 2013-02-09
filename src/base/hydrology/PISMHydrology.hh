@@ -409,7 +409,8 @@ protected:
                            PetscReal t_current, PetscReal t_end,
                            PetscReal &dt_result, PetscReal &PtoCFLratio);
 
-  virtual PetscErrorCode update_amounts_englacial_connection(IceModelVec2S &myPnew);
+  virtual PetscErrorCode update_amounts_englacial_connection(
+                               IceModelVec2S &myPnew, IceModelVec2S &Wnew_tot);
 };
 
 #endif /* _PISMHYDROLOGY_H_ */
