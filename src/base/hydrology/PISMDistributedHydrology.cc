@@ -906,7 +906,8 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
               dt_result,maxV,dtCFL,dtDIFFW); CHKERRQ(ierr);
 
   const PetscReal rhoratio = config.get("fresh_water_density") / config.get("ice_density"),
-                  phisum   = config.get("hydrology_englacial_porosity") + config.get("hydrology_regularizing_porosity");
+                  phisum   = config.get("hydrology_englacial_porosity")
+                               + config.get("hydrology_regularizing_porosity");
   dtDIFFP = rhoratio * phisum * dtDIFFW;
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
@@ -1137,15 +1138,17 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
 
     // update Wtotnew from W, Wstag, Qstag, total_input; the physics is
     // subglacial water movement:
-    //    Wnew = W + (subglacial fluxes) + dt * total_input
+    //    Wnew^{l+1} = W + (subglacial fluxes) + dt * total_input
     ierr = PISMLakesHydrology::raw_update_W(hdt); CHKERRQ(ierr);
+
     // now include Wen = englacial into total water supply at new state
-    //    Wnew_tot = Wnew + Wen
+    //    Wnew_tot = (Wnew + Wen)^{l+1}
     ierr = Wnew.add(1.0,Wen); CHKERRQ(ierr);
+
     // now update Wen from knowledge of Pnew and Wnew_tot:
     //    Wen = C Pnew    if there is sufficient water, less otherwise
     // and then Wnew_tot -= Wen
-    // and then revert meaning: Wnew_tot --> Wnew
+    // and then revert meaning: Wnew_tot --> Wnew^{l+1}
     ierr = update_englacial_storage(Pnew, Wnew); CHKERRQ(ierr);
 
     ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);

@@ -241,7 +241,7 @@ netcdf pism_config {
     pism_config:hydrology_englacial_porosity_doc = "[pure]; phi in notes; macroporosity of englacial system, following [\\ref Bartholomaus2011]";
 
     pism_config:hydrology_regularizing_porosity = 0.01;
-    pism_config:hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes; macroporosity of englacial system, following [\\ref Bartholomaus2011]";
+    pism_config:hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes; added to hydrology_englacial_porosity in pressure equation time derivative term";
 
     pism_config:hydrology_maximum_time_step_years = 1.0;
     pism_config:hydrology_maximum_time_step_years_doc = "years; maximum allowed time step length used by PISMLakesHydrology and PISMDistributedHydrology";
