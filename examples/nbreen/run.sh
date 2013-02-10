@@ -6,7 +6,7 @@ if [ $# -lt 4 ] ; then
   echo "    run.sh PROCS GRID DURATION TYPE"
   echo "  where"
   echo "    PROCS    =1,2,3,... is number of MPI processes"
-  echo "    GRID     is in {500, 250, 125}, the grid spacing in meters"
+  echo "    GRID     is in {500, 250, 125, 62}, the grid spacing in meters"
   echo "    DURATION is run duration in years"
   echo "    TYPE     is in {dist, event, lakes}"
   echo "  example usage:"
@@ -32,8 +32,16 @@ elif [ "$2" -eq "125" ]; then
   dtmax=0.01  # more frequent just because so many hydrology substeps occur
   myMx=264
   myMy=207
+elif [ "$2" -eq "62" ]; then
+  echo ""
+  echo "WARNING: 62 m run is computationally intensive; may exceed 100 proc.-hours"
+  echo ""
+  dx=62
+  dtmax=0.01  # more frequent just because so many hydrology substeps occur
+  myMx=528
+  myMy=414
 else
-  echo "invalid second argument: must be in {125,250,500}"
+  echo "invalid second argument: must be in {62,125,250,500}"
   exit
 fi
 
