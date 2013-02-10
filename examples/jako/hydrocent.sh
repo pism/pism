@@ -77,13 +77,32 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -boot_file $BOOT  \
   -no_model_strip 10 $PHYS \
   -ssa_dirichlet_bc -regrid_file $PREFILE -regrid_vars thk,Href,bmelt,bwat,enthalpy,litho_temp,vel_ssa_bc \
   $CLIMATE -y 0.01 -skip -skip_max $SKIP -o jakofine_short.nc"
+#$PISM_DO $cmd
+
+# insert a hydrology test case; this is hijacking the main purpose of century.sh ...
+
+HYDROLENGTH=0.002
+#HYDRO="-hydrology distributed -init_P_from_steady -hydrology_null_strip 10 -report_mass_accounting"
+HYDRO="-hydrology distributed -hydrology_null_strip 10 -report_mass_accounting"
+
+echo
+cmd="$PISM_MPIDO $NN $PISM_EXEC -i jakofine_short.nc \
+  -no_model_strip 10 $PHYS $HYDRO \
+  -extra_file ex_jakofine_hydro.nc -extra_times 0:0.0005:$HYDROLENGTH \
+  -extra_vars thk,cbase,bwat,bwatvel,bwp,effbwp,enwat,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
+  -ts_file ts_jakofine_hydro.nc -ts_times 0:0.0005:$HYDROLENGTH \
+  -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars vel_ssa_bc \
+  $CLIMATE -ys 0 -ye $HYDROLENGTH -o jakofine_hydro.nc"
 $PISM_DO $cmd
+
+exit
+
 
 echo
 cmd="$PISM_MPIDO $NN $PISM_EXEC -i jakofine_short.nc \
   -no_model_strip 10 $PHYS \
   -extra_file ex_jakofine.nc -extra_times 0:yearly:$LENGTH \
-  -extra_vars thk,cbase,bwat,bwp,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
+  -extra_vars thk,cbase,bwat,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
   -ts_file ts_jakofine.nc -ts_times 0:monthly:$LENGTH \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars vel_ssa_bc \
   $CLIMATE -ys 0 -ye $LENGTH -skip -skip_max $SKIP -o jakofine.nc"
