@@ -409,7 +409,7 @@ protected:
                            PetscReal t_current, PetscReal t_end,
                            PetscReal &dt_result, PetscReal &PtoCFLratio);
 
-  virtual PetscErrorCode update_amounts_englacial_connection(
+  virtual PetscErrorCode update_englacial_storage(
                                IceModelVec2S &myPnew, IceModelVec2S &Wnew_tot);
 };
 

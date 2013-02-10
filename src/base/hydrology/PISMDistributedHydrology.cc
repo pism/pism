@@ -925,26 +925,39 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
 }
 
 
-//! Update conserved model state variables W,Wen by computing the englacial-to-subglacial connection using the new subglacial pressure.
-PetscErrorCode PISMDistributedHydrology::update_amounts_englacial_connection(
+//! Update englacial amount Wen using the new subglacial pressure and the new total water amount Wnew_tot.  At exit, Wnew_tot is the subglacial water.
+/*!
+Given the pressure Pnew at a location, the key function here is of the form
+        \f[W_{en}^{l+1} = F((W+W_{en})^{l+1})\f]
+where Wnew_tot = \f$(W+W_{en})^{l+1}\f$ is the already-updated total water amount.
+In this implementation the function \f$F\f$ is piecewise linear,
+\f$F\le (\phi/(\rho_w g)) P_{new}\f$, and gives
+\f$W_{en}^{l+1} \le 0.5 (W+W_{en})^{l+1}\f$.  Once this function is computed,
+the new value \f$W^{l+1}\f$ is also established in a mass conserving manner.
+ */
+PetscErrorCode PISMDistributedHydrology::update_englacial_storage(
                                     IceModelVec2S &myPnew, IceModelVec2S &Wnew_tot) {
   PetscErrorCode ierr;
   const PetscReal rhow = config.get("fresh_water_density"),
                   g = config.get("standard_gravity"),
                   porosity = config.get("hydrology_englacial_porosity"), // the true porosity
                   CCpor = porosity / (rhow * g);
-  PetscReal Wen_new;
+  PetscReal Wen_max;
   ierr = myPnew.begin_access(); CHKERRQ(ierr);
   ierr = Wen.begin_access(); CHKERRQ(ierr);
   ierr = Wnew_tot.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // in next line: Wen_new satisfies scaled version of bounds 0 <= P <= P_o
-      Wen_new = CCpor * myPnew(i,j);
-      if (Wnew_tot(i,j) > Wen_new) {  // if there is enough water to charge englacial
+      Wen_max = CCpor * myPnew(i,j);
+      if (Wnew_tot(i,j) > Wen_max) {  // if there is enough water to charge englacial
                                       //   system and still have subglacial water present
-        Wen(i,j) = Wen_new;
-        Wnew_tot(i,j) -= Wen_new; // so the same amount moved out of subglacial
+        if (Wnew_tot(i,j) > 2.0 * Wen_max) {  // if there is plenty of water
+          Wen(i,j) = Wen_max;
+        } else {
+          Wen(i,j) = Wnew_tot(i,j) - Wen_max;
+        }
+        Wnew_tot(i,j) -= Wen(i,j); // so the same amount moved out of subglacial
       } else {
         Wen(i,j) = 0.0;
       }
@@ -1130,10 +1143,10 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     //    Wnew_tot = Wnew + Wen
     ierr = Wnew.add(1.0,Wen); CHKERRQ(ierr);
     // now update Wen from knowledge of Pnew and Wnew_tot:
-    //    either   Wen = C Pnew,  Wnew_tot -= C Pnew
-    //    or       Wen = 0.0,     Wnew_tot unchanged
-    // and revert meaning: Wnew_tot --> Wnew
-    ierr = update_amounts_englacial_connection(Pnew, Wnew); CHKERRQ(ierr);
+    //    Wen = C Pnew    if there is sufficient water, less otherwise
+    // and then Wnew_tot -= Wen
+    // and then revert meaning: Wnew_tot --> Wnew
+    ierr = update_englacial_storage(Pnew, Wnew); CHKERRQ(ierr);
 
     ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
 
