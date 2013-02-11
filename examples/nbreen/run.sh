@@ -8,7 +8,7 @@ if [ $# -lt 4 ] ; then
   echo "    PROCS    =1,2,3,... is number of MPI processes"
   echo "    GRID     is in {500, 250, 125, 62}, the grid spacing in meters"
   echo "    DURATION is run duration in years"
-  echo "    TYPE     is in {dist, event, lakes}"
+  echo "    TYPE     is in {dist, event, routing}"
   echo "  example usage:"
   echo "    run.sh 4 500 5 dist"
   echo "  i.e. 4 processors, 500 m grid, 5 model year run, and '-hydrology distributed'"
@@ -66,16 +66,16 @@ elif [ "$4" = "event" ]; then
 #FIXME: this produced a bug: it gave warning about more than 500 frames
 # etimes="0.0:daily:$YY"
 
-elif [ "$4" = "lakes" ]; then
+elif [ "$4" = "routing" ]; then
 
-  # lakes run: very fast
-  oname=nbreen_y${YY}_${dx}m_lakes.nc
-  hydro="-hydrology lakes -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3"
+  # routing run: very fast
+  oname=nbreen_y${YY}_${dx}m_routing.nc
+  hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3"
   evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel"  # revised
   etimes="0:0.1:$YY"
 
 else
-  echo "invalid fourth argument; must be in {dist,event,lakes}"
+  echo "invalid fourth argument; must be in {dist,event,routing}"
   exit
 fi
 

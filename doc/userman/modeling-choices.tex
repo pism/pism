@@ -402,7 +402,7 @@ A final note on basal sliding is in order.  Sliding in the SIA stress balance mo
 \subsection{Subglacial hydrology}  \label{subsect:subhydro}
 \optsection{Subglacial hydrology}
 
-FIXME:  this should be updated to document \intextoption{hydrology} with cases \texttt{tillcan,diffuseonly,lakes,distributed}
+FIXME
 
 \begin{table}
   \centering
@@ -410,15 +410,15 @@ FIXME:  this should be updated to document \intextoption{hydrology} with cases \
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \intextoption{hydrology} & Choose one of \texttt{tillcan}, \texttt{diffuseonly}, \texttt{lakes}, \texttt{distributed} FIXME \\
-    \txtopt{hydrology_null_strip}{(km)} & FIXME only applies to \texttt{lakes} and \texttt{distributed} \\
+    \intextoption{hydrology} & Choose one of \texttt{tillcan}, \texttt{diffuseonly}, \texttt{routing}, \texttt{distributed} FIXME \\
+    \txtopt{hydrology_null_strip}{(km)} & FIXME only applies to \texttt{routing} and \texttt{distributed} \\
     \intextoption{report_mass_accounting} & FIXME \\
     \intextoption{input_to_bed_file} & FIXME \\
     \intextoption{input_to_bed_period} & FIXME \\
     \intextoption{init_P_from_steady}  & FIXME only applies to \texttt{distributed} \\
     \intextoption{hydrology_use_const_bmelt} & FIXME \\
     \intextoption{hydrology_const_bmelt} & FIXME \\
-    \intextoption{hydrology_hydraulic_conductivity} & FIXME only applies to \texttt{lakes} and \texttt{distributed} \\
+    \intextoption{hydrology_hydraulic_conductivity} & FIXME only applies to \texttt{routing} and \texttt{distributed} \\
     \bottomrule
   \end{tabular}
 \caption{Subglacial hydrology command-line options}

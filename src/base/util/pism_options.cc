@@ -591,7 +591,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   // choose hydrology submodel (and options that apply to all objects)
   ierr = config.keyword_from_option("hydrology", "hydrology_model",
-                                    "tillcan,diffuseonly,lakes,distributed"); CHKERRQ(ierr);
+                                    "tillcan,diffuseonly,routing,distributed"); CHKERRQ(ierr);
   ierr = config.flag_from_option("hydrology_use_const_bmelt",
                                  "hydrology_use_const_bmelt"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_const_bmelt",

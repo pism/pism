@@ -728,11 +728,11 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
     subglacial_hydrology = new PISMTillCanHydrology(grid, config, false);
   else if (hydrology_model == "diffuseonly")
     subglacial_hydrology = new PISMDiffuseOnlyHydrology(grid, config);
-  else if (hydrology_model == "lakes")
-    subglacial_hydrology = new PISMLakesHydrology(grid, config);
+  else if (hydrology_model == "routing")
+    subglacial_hydrology = new PISMRoutingHydrology(grid, config);
   else if (hydrology_model == "distributed")
     subglacial_hydrology = new PISMDistributedHydrology(grid, config, stress_balance);
-  else { SETERRQ(grid.com,1,"unknown value for 'hydrology_model'"); }
+  else { SETERRQ(grid.com,1,"unknown value for configuration string 'hydrology_model'"); }
 
   return 0;
 }

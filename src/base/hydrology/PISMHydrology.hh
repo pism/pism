@@ -253,11 +253,15 @@ protected:
 };
 
 
-//! \brief A subglacial hydrology model which assumes water pressure is a fixed fraction of (or is equal to) overburden pressure.  Suitable for locations of subglacial lakes.
+//! \brief A subglacial hydrology model which assumes water pressure is a fixed fraction of (or is equal to) overburden pressure.
 /*!
 This model conserves water and transports it in the map-plane.  It was promised
 in Bueler's talk at IGS 2012 Fairbanks:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
+
+In this model the water velocity follows the steepest descent route for the
+hydraulic potential which is geometrical because the pressure is the overburden
+pressure.  Suitable for finding locations of subglacial lakes.
 
 Subglacial lakes will occur in this model at local minimum of the hydraulic
 potential (i.e. a linear combination of overburden pressure, the bed elevation,
@@ -281,10 +285,10 @@ Note there is an option \c -hydrology_null_strip \c X which produces a strip of
 velocity is set to zero.  The water amount is also reset to zero at the end
 of each time step in this strip in an accounted way.
  */
-class PISMLakesHydrology : public PISMHydrology {
+class PISMRoutingHydrology : public PISMHydrology {
 public:
-  PISMLakesHydrology(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PISMLakesHydrology() {}
+  PISMRoutingHydrology(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PISMRoutingHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -343,11 +347,12 @@ protected:
 };
 
 
-//! \brief For PISMLakesHydrology and its derived classes, diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
-class PISMLakesHydrology_bwatvel : public PISMDiag<PISMLakesHydrology>
+//! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
+/*! Only available for PISMRoutingHydrology and its derived classes. */
+class PISMRoutingHydrology_bwatvel : public PISMDiag<PISMRoutingHydrology>
 {
 public:
-  PISMLakesHydrology_bwatvel(PISMLakesHydrology *m, IceGrid &g, PISMVars &my_vars);
+  PISMRoutingHydrology_bwatvel(PISMRoutingHydrology *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
@@ -357,16 +362,16 @@ public:
 This implements the new van Pelt & Bueler model documented at the repo (currently
 private):
   https://github.com/bueler/hydrolakes
-Unlike PISMLakesHydrology, the water pressure P is a state variable, and there
+Unlike PISMRoutingHydrology, the water pressure P is a state variable, and there
 are modeled mechanisms for cavity geometry evolution, including creep closure
 and opening through sliding ("cavitation").  Because of cavitation, this model
 needs access to a PISMStressBalance object.
 
-In addition to the actions within the null strip taken by PISMLakesHydrology,
+In addition to the actions within the null strip taken by PISMRoutingHydrology,
 this model also sets the staggered grid values of the gradient of the hydraulic
 potential to zero if either regular grid neighbor is in the null strip.
  */
-class PISMDistributedHydrology : public PISMLakesHydrology {
+class PISMDistributedHydrology : public PISMRoutingHydrology {
 public:
   PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf, PISMStressBalance *sb);
   virtual ~PISMDistributedHydrology() {}
@@ -384,7 +389,7 @@ public:
   virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
 
 protected:
-  // this model's state, in addition to what is in PISMLakesHydrology
+  // this model's state, in addition to what is in PISMRoutingHydrology
   IceModelVec2S Wen,    // englacial water thickness
                 P;      // water pressure
   // this model's auxiliary variables, in addition ...
