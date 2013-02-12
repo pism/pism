@@ -243,7 +243,7 @@ PetscErrorCode PISMRoutingHydrology::subglacial_water_pressure(IceModelVec2S &re
   PetscErrorCode ierr;
   // ierr = verbPrintf(1,grid.com,"in PISMRoutingHydrology::water_pressure()\n"); CHKERRQ(ierr);
   ierr = overburden_pressure(result); CHKERRQ(ierr);
-  ierr = result.scale(config.get("till_pw_fraction")); CHKERRQ(ierr);
+  ierr = result.scale(config.get("till_pw_fraction")); CHKERRQ(ierr);  //FIXME issue #127
   return 0;
 }
 

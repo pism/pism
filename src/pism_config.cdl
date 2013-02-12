@@ -220,10 +220,10 @@ netcdf pism_config {
     pism_config:hydrology_bwat_diffusion_time_doc = "years; diffusion time for melt water thickness; only used by hydrology model 'diffuseonly'=PISMDiffuseOnlyHydrology";
 
     pism_config:hydrology_hydraulic_conductivity = 1.0e-2;
-    pism_config:hydrology_hydraulic_conductivity_doc = "m s-1; = k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; used by PISMLakesHydrology and PISMDistributedHydrology";
+    pism_config:hydrology_hydraulic_conductivity_doc = "m s-1; = k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
 
     pism_config:hydrology_thickness_power_in_flux = 1.0;
-    pism_config:hydrology_thickness_power_in_flux_doc = "; = alpha in notes; power alpha in Darcy's law q = - k W^alpha grad psi, for subglacial water layer; used by PISMLakesHydrology and PISMDistributedHydrology";
+    pism_config:hydrology_thickness_power_in_flux_doc = "; = alpha in notes; power alpha in Darcy's law q = - k W^alpha grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
 
     pism_config:hydrology_roughness_scale = 1.0;
     pism_config:hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale determining maximum amount of cavitation opening in PISMDistributedHydrology";
@@ -244,10 +244,10 @@ netcdf pism_config {
     pism_config:hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes; added to hydrology_englacial_porosity in pressure equation time derivative term";
 
     pism_config:hydrology_maximum_time_step_years = 1.0;
-    pism_config:hydrology_maximum_time_step_years_doc = "years; maximum allowed time step length used by PISMLakesHydrology and PISMDistributedHydrology";
+    pism_config:hydrology_maximum_time_step_years_doc = "years; maximum allowed time step length used by PISMRoutingHydrology and PISMDistributedHydrology";
 
     pism_config:hydrology_null_strip_width = -1.0;
-    pism_config:hydrology_null_strip_width_doc = "m; if negative then mechanism is inactive; width of strip around computational domain in which water velocity and water amount are set to zero; used by PISMLakesHydrology and PISMDistributedHydrology";
+    pism_config:hydrology_null_strip_width_doc = "m; if negative then mechanism is inactive; width of strip around computational domain in which water velocity and water amount are set to zero; used by PISMRoutingHydrology and PISMDistributedHydrology";
 
     pism_config:minimum_temperature_for_sliding = 273.0;
     pism_config:minimum_temperature_for_sliding_doc = "K; This is less than water_melting_point_temperature.  If ice base is above this value then decide to do SIA sliding, if that mechanism is active at all.";
