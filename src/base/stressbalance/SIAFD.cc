@@ -117,7 +117,7 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
 
 //! \brief Do the update; if fast == true, skip the update of 3D velocities and
 //! strain heating.
-PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
+PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *strain_heating_contribution_input,
                              bool fast) {
   PetscErrorCode ierr;
   IceModelVec2Stag h_x = work_2d_stag[0], h_y = work_2d_stag[1];
@@ -141,7 +141,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
   if (!fast) {
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
 
-    ierr = compute_volumetric_strain_heating(D2_input, h_x, h_y); CHKERRQ(ierr);
+    ierr = compute_volumetric_strain_heating(strain_heating_contribution_input, h_x, h_y); CHKERRQ(ierr);
   }
 
   grid.profiler->end(event_sia);
@@ -831,11 +831,11 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
  *
  * \note The result is stored in SIAFD::Sigma. Ghosts of Sigma are not used.
  *
- * \param[in] D2_input the "SSA" contribution to the strain heating
+ * \param[in] strain_heating_contribution_input the "SSA" contribution to the strain heating
  * \param[in] h_x the X-component of the surface gradient, on the staggered grid
  * \param[in] h_y the Y-component of the surface gradient, on the staggered grid
  */
-PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
+PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *strain_heating_contribution_input,
                                                         IceModelVec2Stag &h_x,
                                                         IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
@@ -903,7 +903,7 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
 
   // Now compute the volumetric strain heating itself.
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = D2_input->begin_access(); CHKERRQ(ierr);
+  ierr = strain_heating_contribution_input->begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
 
   MaskQuery M(*mask);
@@ -922,8 +922,8 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
         ierr = enthalpy->getInternalColumn(i, j, &E); CHKERRQ(ierr);
 
         const PetscReal thk = thk_smooth(i, j),
-            D2_ssa = (*D2_input)(i,j);
-        PetscReal D2_sia = 0.0;       // No SIA contribution in floating and ice-free areas
+            strain_heating_contribution_ssa = (*strain_heating_contribution_input)(i,j);
+        PetscReal strain_heating_contribution_sia = 0.0;       // No SIA contribution in floating and ice-free areas
 
         const PetscInt ks = grid.kBelowHeight(thk);
         const bool grounded = M.grounded_ice(i, j);
@@ -940,9 +940,9 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
           if (grounded) {
             const PetscReal sigma_sia = delta_alpha_squared[k] * pressure;
             // combine SIA and SSA contributions
-            D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
+            strain_heating_contribution_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
           }
-          sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, Sig_pow);
+          sigma_ij[k] = 2.0 * BofT * pow(strain_heating_contribution_sia + strain_heating_contribution_ssa, Sig_pow);
         }
         // Values above the ice were set to zero by the memset() call above.
 
@@ -950,7 +950,7 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
     }   // i
 
   ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = D2_input->end_access(); CHKERRQ(ierr);
+  ierr = strain_heating_contribution_input->end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
   ierr = Sigma.end_access(); CHKERRQ(ierr);
 

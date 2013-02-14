@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@ public:
 
   using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input,
-                                IceModelVec2S *D2_input,
+                                IceModelVec2S *strain_heating_contribution_input,
                                 bool fast) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
@@ -90,7 +90,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   using PISMComponent_Diag::update;
-  virtual PetscErrorCode update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
+  virtual PetscErrorCode update(IceModelVec2V *vel_input, IceModelVec2S *strain_heating_contribution_input,
                                 bool fast);
   virtual void add_vars_to_output(string /*keyword*/,
                                   map<string,NCSpatialVariable> &/*result*/)
@@ -108,7 +108,7 @@ public:
   { return 0; }
 
 protected:
-  PetscErrorCode compute_volumetric_strain_heating(IceModelVec2S *D2_input, IceModelVec3 &result);
+  PetscErrorCode compute_volumetric_strain_heating(IceModelVec2S *strain_heating_contribution_input, IceModelVec3 &result);
   IceModelVec3 *enthalpy;
   IceModelVec2S *thickness;
 };

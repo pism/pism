@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -87,7 +87,7 @@ PetscErrorCode PISMStressBalance::set_basal_melt_rate(IceModelVec2S *bmr_input) 
 PetscErrorCode PISMStressBalance::update(bool fast) {
   PetscErrorCode ierr;
   IceModelVec2V *velocity_2d;
-  IceModelVec2S *D2;
+  IceModelVec2S *strain_heating_contribution;
   IceModelVec3  *u, *v;
 
   // Tell the ShallowStressBalance object about the current sea level:
@@ -100,9 +100,9 @@ PetscErrorCode PISMStressBalance::update(bool fast) {
   ierr = stress_balance->update(fast); CHKERRQ(ierr);
 
   ierr = stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr); 
-  ierr = stress_balance->get_D2(D2); CHKERRQ(ierr);
+  ierr = stress_balance->get_strain_heating_contribution(strain_heating_contribution); CHKERRQ(ierr);
 
-  ierr = modifier->update(velocity_2d, D2, fast); CHKERRQ(ierr);
+  ierr = modifier->update(velocity_2d, strain_heating_contribution, fast); CHKERRQ(ierr);
 
   if (!fast) {
     ierr = modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);

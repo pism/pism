@@ -592,6 +592,7 @@ INPUT                  = pism_config.txt \
                          ${PROJECT_SOURCE_DIR}/src/base/energy/ \
                          ${PROJECT_SOURCE_DIR}/src/base/rheology/ \
                          ${PROJECT_SOURCE_DIR}/src/base/stressbalance/ \
+                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/blatter/ \
                          ${PROJECT_SOURCE_DIR}/src/base/basalstrength/ \
                          ${PROJECT_SOURCE_DIR}/src/base/hydrology/ \
                          ${PROJECT_SOURCE_DIR}/src/software_tests/ \

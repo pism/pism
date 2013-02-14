@@ -105,7 +105,7 @@ SSBM_Trivial::~SSBM_Trivial()
  * - strain heating (Sigma)
  */
 PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
-                                    IceModelVec2S *D2_input,
+                                    IceModelVec2S *strain_heating_contribution_input,
                                     bool fast) {
   PetscErrorCode ierr;
 
@@ -142,7 +142,7 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
   D_max = 0.0;
 
   // strain heating
-  ierr = compute_volumetric_strain_heating(D2_input, Sigma); CHKERRQ(ierr);
+  ierr = compute_volumetric_strain_heating(strain_heating_contribution_input, Sigma); CHKERRQ(ierr);
 
   return 0;
 }
@@ -156,7 +156,7 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
  * - surface gradient on the staggered grid
  * - ice thickness relative to the smoothed bed
  */
-PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *D2_input, IceModelVec3 &result) {
+PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *strain_heating_contribution_input, IceModelVec3 &result) {
   PetscErrorCode ierr;
   PetscScalar *E, *sigma;
   const PetscReal
@@ -169,7 +169,7 @@ PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *D2
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = D2_input->begin_access(); CHKERRQ(ierr);
+  ierr = strain_heating_contribution_input->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
@@ -186,7 +186,7 @@ PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *D2
             pressure = ice_rho * standard_gravity * depth, // FIXME issue #15
           // Account for the enhancement factor.
             BofT    = flow_law->hardness_parameter(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
-          sigma[k] = 2.0 * BofT * pow((*D2_input)(i,j), Sig_pow);
+          sigma[k] = 2.0 * BofT * pow((*strain_heating_contribution_input)(i,j), Sig_pow);
         }
 
         // above the ice:
@@ -196,7 +196,7 @@ PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *D2
     }
   }
 
-  ierr = D2_input->end_access(); CHKERRQ(ierr);
+  ierr = strain_heating_contribution_input->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);  
   ierr = enthalpy->end_access(); CHKERRQ(ierr);

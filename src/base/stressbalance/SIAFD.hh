@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@ public:
 
   using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input,
-                                IceModelVec2S *D2_input,
+                                IceModelVec2S *strain_heating_contribution_input,
                                 bool fast);
 
   //! \brief Extends the computational grid (vertically).
@@ -84,7 +84,7 @@ protected:
                                                         IceModelVec3 &u_out, IceModelVec3 &v_out);
 
   virtual PetscErrorCode compute_I();
-  virtual PetscErrorCode compute_volumetric_strain_heating(IceModelVec2S *D2_input, IceModelVec2Stag &h_x,
+  virtual PetscErrorCode compute_volumetric_strain_heating(IceModelVec2S *strain_heating_contribution_input, IceModelVec2Stag &h_x,
                                                            IceModelVec2Stag &h_y);
 
   virtual PetscScalar grainSizeVostok(PetscScalar age) const;

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -170,9 +170,7 @@ protected:
 
   virtual PetscErrorCode solve()  = 0;
 
-  virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2S &result);
-
-  virtual PetscErrorCode compute_D2(IceModelVec2S &result);
+  virtual PetscErrorCode compute_strain_heating_contribution(IceModelVec2S &result);
 
   virtual PetscErrorCode compute_maximum_velocity();
 

@@ -38,4 +38,4 @@ if (Pism_BUILD_EXTRA_EXECS)
 endif ()
 
 add_subdirectory (ssa_tests)
-
+add_subdirectory (blatter)

@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,9 +19,10 @@
 #ifndef _BLATTERSTRESSBALANCE_H_
 #define _BLATTERSTRESSBALANCE_H_
 
-#include "PISMStressBalance.hh"
-#include "THI.hh"
+#include "ShallowStressBalance.hh"
+#include "Blatter_implementation.h"
 #include "IceGrid.hh"
+#include "IceModelVec3Scaled.hh"
 
 //! Blatter-Pattyn stress balance based on Jed Brown's PETSc tutorial ex48.c (Brown et al. 2011).
 /*!
@@ -29,15 +30,7 @@ Toy hydrostatic ice flow with multigrid in 3D
 
 Solves the hydrostatic (aka Blatter/Pattyn/First Order) equations for ice sheet
 flow using multigrid.  The ice uses a power-law rheology with Glen exponent 3
-(corresponds to p=4/3 in a p-Laplacian).  The focus is on ISMIP-HOM experiments
-which assume periodic boundary conditions in the x- and y-directions.
-
-Equations are rescaled so that the domain size and solution are O(1), details of
-this scaling can be controlled by the options -units_meter, -units_second, and
--units_kilogram.
-
-A VTK StructuredGrid output file can be written using the option
-\c -ex48_o \c filename.vts
+(corresponds to p=4/3 in a p-Laplacian).
 
 The equations for horizontal velocity \f$(u,v)\f$ are
 \f{align*}
@@ -70,82 +63,77 @@ exotic coarse spaces require 2D DAs which are made to use compatible domain
 decomposition relative to the 3D DAs.
 
 See the source code $PETSC_DIR/src/snes/examples/tutorials/ex48.c for
-compile-time options.
+the original implementation.
  */
-class BlatterStressBalance : public PISMStressBalance
+class BlatterStressBalance : public ShallowStressBalance
 {
+  friend void viscosity(void *ctx, PetscReal hardness, PetscReal gamma,
+			PetscReal *eta, PetscReal *deta);
+  friend void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
+		   PetscReal *taud, PetscReal *dtaub);
 public:
-  BlatterStressBalance(IceGrid &g, PISMOceanModel *ocean_model, const NCConfigVariable &conf);
+  BlatterStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b,
+                       EnthalpyConverter &e, const NCConfigVariable &conf);
 
   virtual ~BlatterStressBalance();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &/*locations*/,
-                                                 IceModelVec2V &/*velocities*/)
-  { SETERRQ(grid.com, 1,"not clear yet how to do this"); return 0; }
-
-  virtual PetscErrorCode update(bool fast);
-
-  virtual PetscErrorCode get_advective_2d_velocity(IceModelVec2V* &result)
-  { result = &vertically_averaged_velocity; return 0; }
-
-  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result)
-  { PetscErrorCode ierr = result->set(0.0); CHKERRQ(ierr); return 0; }
-
-  virtual PetscErrorCode get_max_diffusivity(PetscReal &Dmax)
-  { Dmax = 0; return 0; }
-
-  virtual PetscErrorCode get_max_2d_velocity(PetscReal &maxu, PetscReal &maxv);
-
-  virtual PetscErrorCode get_3d_velocity(IceModelVec3* &u_out, IceModelVec3* &v_out,
-                                         IceModelVec3* &w_out);
-
-  virtual PetscErrorCode get_max_3d_velocity(PetscReal &maxu, PetscReal &maxv, PetscReal &maxw);
-
-  virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &/*result*/)
-  { SETERRQ(grid.com, 2,"not implemented; implement by doing it"); return 0; }
-
-  virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &/*result*/)
-  { SETERRQ(grid.com, 3,"not implemented; implement by getting max"); return 0; }
-
-  virtual PetscErrorCode get_principal_strain_rates(IceModelVec2S &/*result_e1*/,
-                                                    IceModelVec2S &/*result_e2*/)
-  { SETERRQ(grid.com, 4,"not implemented; implement by vertical average"); return 0; }
-
+  //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
+  //! \brief Produce a report string for the standard output.
   virtual PetscErrorCode stdout_report(string &/*result*/)
-  { return 0; }  // FIXME: implementation needed
+  { return 0; }
 
-  virtual void add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &/*result*/)
-  {  }  // FIXME: implementation needed
+  virtual PetscErrorCode update(bool fast); // almost done (compute vertically-averaged u,v and sigma)
+
+  virtual PetscErrorCode get_strain_heating_contribution(IceModelVec2S* &)
+  { SETERRQ(grid.com, 1, "BlatterStressBalance does not implement get_strain_heating_contribution()"); }
+
+  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
+  { u_result = &u; v_result = &v; return 0; }
+
+  virtual void add_vars_to_output(string /*keyword*/,
+                                  map<string,NCSpatialVariable> &/*result*/);
 
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/)
-  { return 0; }                 // FIXME: implementation needed
+                                          PISM_IO_Type /*nctype*/);
 
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
-  {  return 0; }  // FIXME: implementation needed
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/);
 
-protected:
-  IceModelVec3 u, v, Sigma;
-  IceModelVec2V vertically_averaged_velocity;
-  IceModelVec2S basal_frictional_heating;
-
-  IceModelVec2S *topg, *usurf, *tauc;
-
-  THI thi;
-  DMMG *dmmg;
-
+protected: 
   PetscErrorCode allocate_blatter();
   PetscErrorCode deallocate_blatter();
-  PetscErrorCode mesh_to_regular_grid();
+  PetscErrorCode transfer_velocity();
+  PetscErrorCode initialize_ice_hardness();
   PetscErrorCode setup();
 
-  PetscErrorCode compute_basal_frictional_heating();
   PetscErrorCode compute_volumetric_strain_heating();
+  PetscErrorCode save_velocity();
+
+  IceModelVec3 u, v, Sigma;
+
+  IceModelVec2S *bed_elevation, *ice_thickness, *tauc;
+  IceModelVec3 *enthalpy;
+  IceModelVec3Scaled u_sigma, v_sigma; // u and v components on the "sigma" vertical grid
+
+  BlatterQ1Ctx ctx;
+  SNES snes;
+
+  PetscReal min_thickness; 	// FIXME: this should be used to set boundary conditions at ice margins
+  string stdout_blatter;
+
+  // profiling
+  int event_blatter;
 };
 
+// Tell the linker that these are called from the C code:
+extern "C" {
+  void viscosity(void *ctx, PetscReal hardness, PetscReal gamma,
+		 PetscReal *eta, PetscReal *deta);
+  void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
+	    PetscReal *taud, PetscReal *dtaub);
+}
 #endif /* _BLATTERSTRESSBALANCE_H_ */
 

@@ -79,15 +79,20 @@ public:
   virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result)
   { result = &basal_frictional_heating; return 0; }
 
-  virtual PetscErrorCode get_D2(IceModelVec2S* &result)
-  { result = &D2; return 0; }
+  virtual PetscErrorCode get_strain_heating_contribution(IceModelVec2S* &result)
+  { result = &strain_heating_contribution; return 0; }
 
-  virtual PetscErrorCode compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
+  virtual PetscErrorCode compute_2D_principal_strain_rates(IceModelVec2V &velocity,
+							   IceModelVec2Int &mask,
                                                            IceModelVec2 &result);
 
   virtual PetscErrorCode compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                              IceModelVec2 &result);
 
+  virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2V &velocity,
+							  IceModelVec2S &tauc,
+							  IceModelVec2Int &mask,
+							  IceModelVec2S &result);
   // helpers:
 
   //! \brief Extends the computational grid (vertically).
@@ -110,7 +115,7 @@ protected:
 
   IceModelVec2V m_velocity, *m_vel_bc;
   IceModelVec2Int *bc_locations;
-  IceModelVec2S basal_frictional_heating, D2;
+  IceModelVec2S basal_frictional_heating, strain_heating_contribution;
   PetscReal max_u, max_v;
 };
 
@@ -166,8 +171,8 @@ public:
     dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
   }
 
-  //! Defines requested couplings fields to file and/or asks an attached
-  //! model to do so.
+  //! Defines requested couplings fields and/or asks an attached model
+  //! to do so.
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/)
   { return 0; }

@@ -153,16 +153,8 @@ PetscErrorCode SSA::allocate() {
   long_names.push_back("SSA model ice velocity in the Y direction");
   ierr = m_velocity.rename("_ssa",long_names,""); CHKERRQ(ierr);
 
-  // mimic IceGrid::allocate() with TRANSPOSE :
   PetscInt dof=2, stencil_width=1;
-  ierr = DMDACreate2d(grid.com,
-                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-                      DMDA_STENCIL_BOX,
-                      grid.My, grid.Mx,
-                      grid.Ny, grid.Nx,
-                      dof, stencil_width,
-                      &grid.procs_y[0], &grid.procs_x[0],
-                      &SSADA); CHKERRQ(ierr);
+  ierr = grid.get_dm(dof, stencil_width, SSADA); CHKERRQ(ierr);
 
   ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
 
@@ -187,10 +179,6 @@ PetscErrorCode SSA::deallocate() {
     ierr = VecDestroy(&SSAX); CHKERRQ(ierr);
   }
 
-  if (SSADA != PETSC_NULL) {
-    ierr = DMDestroy(&SSADA);CHKERRQ(ierr);
-  }
-
   if (flow_law != NULL) {
     delete flow_law;
     flow_law = NULL;
@@ -211,8 +199,10 @@ PetscErrorCode SSA::update(bool fast) {
 
   ierr = solve(); CHKERRQ(ierr); 
 
-  ierr = compute_basal_frictional_heating(basal_frictional_heating); CHKERRQ(ierr);
-  ierr = compute_D2(D2); CHKERRQ(ierr);
+  ierr = compute_basal_frictional_heating(m_velocity, *tauc, *mask,
+					  basal_frictional_heating); CHKERRQ(ierr);
+  
+  ierr = compute_strain_heating_contribution(strain_heating_contribution); CHKERRQ(ierr);
 
   ierr = compute_maximum_velocity(); CHKERRQ(ierr);
 
@@ -222,11 +212,14 @@ PetscErrorCode SSA::update(bool fast) {
 }
 
 
-//! \brief Compute the D2 term for the strain heating computation.
+//! \brief Compute the SSA contribution to the strain heating.
 /*!
-Documented in [\ref BBssasliding].
+ * Documented in [\ref BBssasliding].
+ *
+ * FIXME: this code isn't right at ice margins (it uses velocities
+ * from ice-free areas in finite differences below).
  */
-PetscErrorCode SSA::compute_D2(IceModelVec2S &result) {
+PetscErrorCode SSA::compute_strain_heating_contribution(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscReal dx = grid.dx, dy = grid.dy;
 
@@ -239,8 +232,8 @@ PetscErrorCode SSA::compute_D2(IceModelVec2S &result) {
           u_y   = (m_velocity(i,j+1).u - m_velocity(i,j-1).u)/(2*dy),
           v_x   = (m_velocity(i+1,j).v - m_velocity(i-1,j).v)/(2*dx),
           v_y   = (m_velocity(i,j+1).v - m_velocity(i,j-1).v)/(2*dy);
-      result(i,j) = PetscSqr(u_x) + PetscSqr(v_y) + u_x * v_y 
-                      + PetscSqr(0.5*(u_y + v_x));
+      result(i,j) = (PetscSqr(u_x) + PetscSqr(v_y) + u_x * v_y +
+		     PetscSqr(0.5*(u_y + v_x)));
     }
   }
   ierr = result.end_access(); CHKERRQ(ierr);
@@ -248,40 +241,6 @@ PetscErrorCode SSA::compute_D2(IceModelVec2S &result) {
   return 0;
 }
 
-//! \brief Compute the basal frictional heating.
-/*!
-  Ice shelves have zero basal friction heating.
- */
-PetscErrorCode SSA::compute_basal_frictional_heating(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  MaskQuery m(*mask);
-
-  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (m.ocean(i,j)) {
-        result(i,j) = 0.0;
-      } else {
-        const PetscScalar 
-          C = basal.drag((*tauc)(i,j), m_velocity(i,j).u, m_velocity(i,j).v),
-              basal_stress_x = - C * m_velocity(i,j).u,
-              basal_stress_y = - C * m_velocity(i,j).v;
-        result(i,j) = - basal_stress_x * m_velocity(i,j).u - basal_stress_y * m_velocity(i,j).v;
-      }
-    }
-  }
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = m_velocity.end_access(); CHKERRQ(ierr);
-  return 0;
-}
 
 //! \brief Compute the gravitational driving stress.
 /*!
