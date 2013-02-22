@@ -9,7 +9,7 @@ try:
 except:
     from netCDF3 import Dataset as NC
 
-nameroot = "lakes"
+nameroot = "routing"
 
 for dx in ("100","50","25", "15", "10", "5"):
   basename = nameroot + dx + "km"

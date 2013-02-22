@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#(lakestest.sh) test 'lakes' hydrology on Antarctic geometry and constant
+#(routingtest.sh) test 'routing' hydrology on Antarctic geometry and constant
 #  basal melt rate of 1 cm a-1; compare
 #  http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
 
@@ -18,7 +18,7 @@ VERTGRID="-Lz 5000 -Lbz 2000 -Mz 51 -Mbz 21 -z_spacing equal"
 
 OPTIONS="-sia_e 5.6 -atmosphere given -atmosphere_given_file pism_Antarctica_5km.nc -surface simple -ocean pik -meltfactor_pik 1.5e-2 -ocean_kill"
 
-HYDRO="-hydrology lakes -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -hydrology_hydraulic_conductivity 1.0e-3 -report_mass_accounting"
+HYDRO="-hydrology routing -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -hydrology_hydraulic_conductivity 1.0e-3 -report_mass_accounting"
 
 ENDTIME=20000
 
@@ -30,10 +30,10 @@ dorun () {
   cmd="$PISMGO -skip -skip_max 10 -boot_file pism_Antarctica_5km.nc $GRID $VERTGRID $OPTIONS -y 100 -o pre${LABEL}.nc"
   $DOIT $cmd
 
-  EXTRA="-extra_file ex_lakes${LABEL}.nc -extra_times 200:100:$ENDTIME -extra_vars bwat,bwp,bwatvel,hydroinput"
+  EXTRA="-extra_file ex_routing${LABEL}.nc -extra_times 200:100:$ENDTIME -extra_vars bwat,bwp,bwatvel,hydroinput"
 
   #hydrology only run for $ENDTIME years
-  cmd="$PISMGO -i pre${LABEL}.nc $OPTIONS $HYDRO -no_mass -no_energy -no_sia -max_dt 10.0 -ys 0 -ye $ENDTIME $EXTRA -o lakes${LABEL}.nc"
+  cmd="$PISMGO -i pre${LABEL}.nc $OPTIONS $HYDRO -no_mass -no_energy -no_sia -max_dt 10.0 -ys 0 -ye $ENDTIME $EXTRA -o routing${LABEL}.nc"
   $DOIT $cmd
 }
 
