@@ -24,6 +24,14 @@
 #include "IceGrid.hh"
 #include "IceModelVec3Scaled.hh"
 
+// Tell the linker that these are called from the C code:
+extern "C" {
+  void viscosity(void *ctx, PetscReal hardness, PetscReal gamma,
+		 PetscReal *eta, PetscReal *deta);
+  void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
+	    PetscReal *taud, PetscReal *dtaub);
+}
+
 //! Blatter-Pattyn stress balance based on Jed Brown's PETSc tutorial ex48.c (Brown et al. 2011).
 /*!
 Toy hydrostatic ice flow with multigrid in 3D
@@ -128,12 +136,5 @@ protected:
   int event_blatter;
 };
 
-// Tell the linker that these are called from the C code:
-extern "C" {
-  void viscosity(void *ctx, PetscReal hardness, PetscReal gamma,
-		 PetscReal *eta, PetscReal *deta);
-  void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
-	    PetscReal *taud, PetscReal *dtaub);
-}
 #endif /* _BLATTERSTRESSBALANCE_H_ */
 
