@@ -22,7 +22,7 @@
 #include "PISMVars.hh"
 #include "basal_resistance.hh"
 #include "FE3DTools.h"
-#include "EnthalpyConverter.hh"
+#include "enthalpyConverter.hh"
 
 /*!
  * FIXMEs:
