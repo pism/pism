@@ -89,7 +89,7 @@
   \param[in]  zn[] z-coordinates of the nodes of the current element
   \param[out] dz[] partial derivatives of z
  */
-void compute_z_gradient(const PetscReal dphi[][3], const PetscReal zn[], PetscReal dz[])
+void compute_z_gradient(PetscReal dphi[][3], const PetscReal zn[], PetscReal dz[])
 {
   PetscInt i;
   dz[0] = dz[1] = dz[2] = 0;

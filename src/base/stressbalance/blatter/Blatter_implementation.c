@@ -47,7 +47,7 @@ typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat,
 
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
 
-static void compute_surface_gradient(const PetscReal dchi[4][4][2], const PrmNode parameters[],
+static void compute_surface_gradient(PetscReal dchi[4][4][2], const PrmNode parameters[],
 				     PetscReal dx, PetscReal dy, PetscReal ds[4][2]);
 
 static void compute_nodal_z_coordinates(const PrmNode parameters[], PetscInt k, PetscInt zm, PetscReal zn[]);
@@ -228,10 +228,11 @@ static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
 					 const char vec_name[])
 {
   PetscErrorCode ierr;
-  PetscFunctionBegin;
   Vec X_fine, X_fine_global, X_coarse, X_coarse_global;
   DM da2_fine, da2_coarse;
   Mat mat;
+
+  PetscFunctionBegin;
 
   /* get the restriction matrix from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, mat_name,
@@ -493,7 +494,7 @@ static void compute_nonlinearity(BlatterQ1Ctx *ctx,
 				 PetscReal *deta)
 {
   PetscInt l, ll;
-  PetscScalar gamma;
+  PetscScalar second_invariant;
 
   du[0] = du[1] = du[2] = 0;
   dv[0] = dv[1] = dv[2] = 0;
@@ -507,12 +508,12 @@ static void compute_nonlinearity(BlatterQ1Ctx *ctx,
       dv[ll] += dphi[l][ll] * velocity[l].v;
     }
   }
-  gamma = Sqr(du[0]) + Sqr(dv[1]) + du[0]*dv[1] + 0.25*Sqr(du[1]+dv[0]) + 0.25*Sqr(du[2]) + 0.25*Sqr(dv[2]);
+  second_invariant = Sqr(du[0]) + Sqr(dv[1]) + du[0]*dv[1] + 0.25*Sqr(du[1]+dv[0]) + 0.25*Sqr(du[2]) + 0.25*Sqr(dv[2]);
   {				/* FIXME: this needs to be an argument */
     PetscReal softness = 4e-25,
       n = 3.0,
       hardness = pow(softness,-1.0/n);
-    ctx->nonlinear.viscosity(ctx, hardness, gamma, eta, deta);
+    ctx->nonlinear.viscosity(ctx, hardness, second_invariant, eta, deta);
   }
 }
 
@@ -994,7 +995,7 @@ PetscErrorCode BlatterQ1_setup(MPI_Comm com, DM pism_da,
   @param[in]  dy grid spacing in the \f$y\f$ direction
   @param[out] ds values of the surface gradient
 */
-static void compute_surface_gradient(const PetscReal dchi[4][4][2],
+static void compute_surface_gradient(PetscReal dchi[4][4][2],
 				     const PrmNode parameters[], PetscReal dx, PetscReal dy, PetscReal ds[4][2])
 {
   PetscInt i, q;
