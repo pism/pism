@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Ed Bueler
+// Copyright (C) 2009-2011, 2013 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -74,7 +74,7 @@ public:
                *u,
                *v,
                *w,
-               *Sigma;
+               *strain_heating;
   IceModelVec3 *T3;
 
 protected: // used internally

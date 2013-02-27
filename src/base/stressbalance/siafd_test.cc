@@ -37,15 +37,15 @@ static char help[] =
 #include "ShallowStressBalance.hh"
 #include "PISMVars.hh"
 
-PetscErrorCode computeSigmaErrors(const NCConfigVariable &config,
-                                  IceModelVec3 &Sigma,
+PetscErrorCode compute_strain_heating_errors(const NCConfigVariable &config,
+                                  IceModelVec3 &strain_heating,
                                   IceModelVec2S &thickness,
                                   IceGrid &grid,
-                                  PetscScalar &gmaxSigmaerr,
-                                  PetscScalar &gavSigmaerr) {
+                                  PetscScalar &gmax_strain_heating_err,
+                                  PetscScalar &gav_strain_heating_err) {
 
   PetscErrorCode ierr;
-  PetscScalar    maxSigerr = 0.0, avSigerr = 0.0, avcount = 0.0;
+  PetscScalar    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
   PetscScalar    **H;
   const PetscInt Mz = grid.Mz;
   
@@ -55,17 +55,17 @@ PetscErrorCode computeSigmaErrors(const NCConfigVariable &config,
     ice_rho   = config.get("ice_density"),
     ice_c     = config.get("ice_specific_heat_capacity");
 
-  PetscScalar   *dummy1, *dummy2, *dummy3, *dummy4, *Sigex;
+  PetscScalar   *dummy1, *dummy2, *dummy3, *dummy4, *strain_heating_exact;
   PetscScalar   junk0, junk1;
   
-  Sigex = new PetscScalar[Mz];
+  strain_heating_exact = new PetscScalar[Mz];
   dummy1 = new PetscScalar[Mz];  dummy2 = new PetscScalar[Mz];
   dummy3 = new PetscScalar[Mz];  dummy4 = new PetscScalar[Mz];
 
-  PetscScalar *Sig;
+  PetscScalar *strain_heating_ij;
 
   ierr = thickness.get_array(H); CHKERRQ(ierr);
-  ierr = Sigma.begin_access(); CHKERRQ(ierr);
+  ierr = strain_heating.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar xx = grid.x[i], yy = grid.y[j],
@@ -73,32 +73,32 @@ PetscErrorCode computeSigmaErrors(const NCConfigVariable &config,
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
-                  &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
+                  &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
 
         for (PetscInt k = 0; k < Mz; k++)
-          Sigex[k] = Sigex[k] * ice_rho * ice_c; // scale exact Sigma to J/(s m^3)
+          strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
-        ierr = Sigma.getInternalColumn(i,j,&Sig); CHKERRQ(ierr);
+        ierr = strain_heating.getInternalColumn(i,j,&strain_heating_ij); CHKERRQ(ierr);
         for (PetscInt k = 0; k < ks; k++) {  // only eval error if below num surface
-          const PetscScalar Sigerr = PetscAbs(Sig[k] - Sigex[k]);
-          maxSigerr = PetscMax(maxSigerr,Sigerr);
+          const PetscScalar _strain_heating_error = PetscAbs(strain_heating_ij[k] - strain_heating_exact[k]);
+          max_strain_heating_error = PetscMax(max_strain_heating_error,_strain_heating_error);
           avcount += 1.0;
-          avSigerr += Sigerr;
+          av_strain_heating_error += _strain_heating_error;
         }
       }
     }
   }
   ierr = thickness.end_access(); CHKERRQ(ierr);
-  ierr = Sigma.end_access(); CHKERRQ(ierr);
+  ierr = strain_heating.end_access(); CHKERRQ(ierr);
 
-  delete [] Sigex;
+  delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
   
-  ierr = PISMGlobalMax(&maxSigerr, &gmaxSigmaerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avSigerr, &gavSigmaerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&max_strain_heating_error, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&av_strain_heating_error, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
   PetscScalar  gavcount;
   ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
-  gavSigmaerr = gavSigmaerr/PetscMax(gavcount,1.0);  // avoid div by zero
+  gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
 }
 
@@ -268,20 +268,20 @@ PetscErrorCode reportErrors(const NCConfigVariable &config,
                             IceModelVec2S *thickness,
                             IceModelVec3 *u_sia, IceModelVec3 *v_sia,
                             IceModelVec3 *w_sia,
-                            IceModelVec3 *Sigma
+                            IceModelVec3 *strain_heating
                             ) {
   PetscErrorCode ierr;
 
-  // Sigma errors if appropriate; reported in 10^6 J/(s m^3)
-  PetscScalar maxSigerr, avSigerr;
-  ierr = computeSigmaErrors(config, *Sigma, *thickness,
+  // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
+  PetscScalar max_strain_heating_error, av_strain_heating_error;
+  ierr = compute_strain_heating_errors(config, *strain_heating, *thickness,
                             grid,
-                            maxSigerr, avSigerr); CHKERRQ(ierr);
+                            max_strain_heating_error, av_strain_heating_error); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com, 
                     "Sigma     :      maxSig       avSig\n"); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n", 
-                    maxSigerr*1.0e6, avSigerr*1.0e6); CHKERRQ(ierr);
+                    max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6); CHKERRQ(ierr);
 
   // surface velocity errors if exact values are available; reported in m/a
   PetscScalar maxUerr, avUerr, maxWerr, avWerr;

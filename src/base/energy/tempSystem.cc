@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@ tempSystemCtx::tempSystemCtx(PetscInt my_Mz, string my_prefix)
   u = NULL;
   v = NULL;
   w = NULL;
-  Sigma = NULL;
+  strain_heating = NULL;
   T3 = NULL;
 }
 
@@ -60,7 +60,7 @@ PetscErrorCode tempSystemCtx::initAllColumns() {
   if (u == NULL) { SETERRQ(PETSC_COMM_SELF, 15,"un-initialized pointer u in tempSystemCtx"); }
   if (v == NULL) { SETERRQ(PETSC_COMM_SELF, 16,"un-initialized pointer v in tempSystemCtx"); }
   if (w == NULL) { SETERRQ(PETSC_COMM_SELF, 17,"un-initialized pointer w in tempSystemCtx"); }
-  if (Sigma == NULL) { SETERRQ(PETSC_COMM_SELF, 18,"un-initialized pointer Sigma in tempSystemCtx"); }
+  if (strain_heating == NULL) { SETERRQ(PETSC_COMM_SELF, 18,"un-initialized pointer strain_heating in tempSystemCtx"); }
   if (T3 == NULL) { SETERRQ(PETSC_COMM_SELF, 19,"un-initialized pointer T3 in tempSystemCtx"); }
   // set derived constants
   nuEQ = dtTemp / dzEQ;
@@ -149,7 +149,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
       // there is *grounded* ice; from FV across interface
       rhs[0] = T[0] + dtTemp * (Rb / (rho_c_I * dzEQ));
       if (!isMarginal) {
-        rhs[0] += dtTemp * 0.5 * Sigma[0]/ rho_c_I;
+        rhs[0] += dtTemp * 0.5 * strain_heating[0]/ rho_c_I;
         planeStar<PetscScalar> ss;
         T3->getPlaneStar(i,j,0,&ss);
         const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
@@ -192,7 +192,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
     }
     rhs[k] = T[k];
     if (!isMarginal) {
-      rhs[k] += dtTemp * (Sigma[k] / rho_c_I - UpTu - UpTv);
+      rhs[k] += dtTemp * (strain_heating[k] / rho_c_I - UpTu - UpTv);
     }
   }
       

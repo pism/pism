@@ -16,7 +16,7 @@ subgraph cluster_out {
     }
     {rank=same
         vel_3d [label="3D horizontal\nvelocity" style=dashed];
-        Sigma [label="get_volumetric_strain_heating()"];
+        strain_heating [label="get_volumetric_strain_heating()"];
         sia_flux [label="get_diffusive_flux()"];
         D_max [label="get_max_diffusivity()"];
     }
@@ -27,7 +27,7 @@ subgraph cluster_out {
         max_uv [label="get_max_2d_velocity()"];
     }
     D2_ssa -> vel_2d [label="" style=solid weight=10];
-    D2_ssa -> Sigma [label="" style=solid weight=10];
+    D2_ssa -> strain_heating [label="" style=solid weight=10];
     vel_2d -> max_uv [label="" style=solid weight=10];
     vel_2d -> vel_3d [label="" style=solid weight=10];
     vel_3d -> vel_3d_full [label="" style=solid weight=10];
@@ -58,7 +58,7 @@ adapt_dt_energy -> energy [style=dotted];
 
 vel_2d -> mass [label="2D vertically-averaged\nhorizontal velocity" style=dashed];
 sia_flux -> mass [label="2D diffusive\n(SIA) flux" style=dashed weight=10];
-Sigma -> energy [label="3D dissipation\nheating rate" style=dashed];
+strain_heating -> energy [label="3D dissipation\nheating rate" style=dashed];
 frictional_heating -> energy [label="2D frictional\nheating rate" style=dashed];
 vel_3d_full -> energy [label="3D velocity" style=dashed];
 /*vel_3d_full -> age [label="3D velocity" style=dashed];*/

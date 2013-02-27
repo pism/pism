@@ -35,18 +35,18 @@ const PetscScalar IceCompModel::LforFG = 750000; // m
 const PetscScalar IceCompModel::ApforG = 200; // m
 
 
-/*! Re-implemented so that we can add compensatory Sigma in Tests F and G. */
+/*! Re-implemented so that we can add compensatory strain_heating in Tests F and G. */
 PetscErrorCode IceCompModel::temperatureStep(
        PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
   PetscErrorCode  ierr;
 
   if ((testname == 'F') || (testname == 'G')) {
-    IceModelVec3 *Sigma3;
-    ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr);
+    IceModelVec3 *strain_heating3;
+    ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
-    ierr = Sigma3->add(1.0, SigmaComp3); CHKERRQ(ierr);	// Sigma = Sigma + Sigma_c
+    ierr = strain_heating3->add(1.0, strain_heating3_comp); CHKERRQ(ierr);	// strain_heating = strain_heating + strain_heating_c
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount); CHKERRQ(ierr);
-    ierr = Sigma3->add(-1.0, SigmaComp3); CHKERRQ(ierr); // Sigma = Sigma - Sigma_c
+    ierr = strain_heating3->add(-1.0, strain_heating3_comp); CHKERRQ(ierr); // strain_heating = strain_heating - strain_heating_c
   } else {
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount); CHKERRQ(ierr);
   }
@@ -128,67 +128,67 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
   dummy1=new PetscScalar[Mz];  dummy2=new PetscScalar[Mz];
   dummy3=new PetscScalar[Mz];  dummy4=new PetscScalar[Mz];
 
-  PetscScalar *SigmaC;
-  SigmaC = new PetscScalar[Mz];
+  PetscScalar *strain_heating_C;
+  strain_heating_C = new PetscScalar[Mz];
 
   const PetscScalar
     ice_rho   = config.get("ice_density"),
     ice_c     = config.get("ice_specific_heat_capacity");
 
-  // before temperature and flow step, set Sigma_c and accumulation from exact values
+  // before temperature and flow step, set strain_heating_c and accumulation from exact values
   ierr = acab.get_array(accum); CHKERRQ(ierr);
-  ierr = SigmaComp3.begin_access(); CHKERRQ(ierr);
+  ierr = strain_heating3_comp.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r = grid.radius(i,j);
       if (r > LforFG - 1.0) {  // outside of sheet
         accum[i][j] = -ablationRateOutside/secpera;
-        ierr = SigmaComp3.setColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = strain_heating3_comp.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else {
         r = PetscMax(r,1.0); // avoid singularity at origin
         if (testname == 'F') {
           bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
-                    &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC);
+                    &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,strain_heating_C);
         } else {
           bothexact(grid.time->current(),r,&grid.zlevels[0],Mz,ApforG,
-                    &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC);
+                    &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,strain_heating_C);
         }
-        for (PetscInt k=0;  k<Mz;  k++) // scale Sigma to J/(s m^3)
-          SigmaC[k] = SigmaC[k] * ice_rho * ice_c;
-        ierr = SigmaComp3.setInternalColumn(i,j,SigmaC); CHKERRQ(ierr);
+        for (PetscInt k=0;  k<Mz;  k++) // scale strain_heating to J/(s m^3)
+          strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c;
+        ierr = strain_heating3_comp.setInternalColumn(i,j,strain_heating_C); CHKERRQ(ierr);
       }
     }
   }
   ierr = acab.end_access(); CHKERRQ(ierr);
-  ierr = SigmaComp3.end_access(); CHKERRQ(ierr);
+  ierr = strain_heating3_comp.end_access(); CHKERRQ(ierr);
 
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
-  delete [] SigmaC;
+  delete [] strain_heating_C;
 
   return 0;
 }
 
 
 PetscErrorCode IceCompModel::fillSolnTestFG() {
-  // fills Vecs vH, vh, vAccum, T3, u3, v3, w3, Sigma3, vSigmaComp
+  // fills Vecs vH, vh, vAccum, T3, u3, v3, w3, strain_heating3, v_strain_heating_Comp
   PetscErrorCode  ierr;
   PetscInt        Mz=grid.Mz;
   PetscScalar     **H, **accum;
   PetscScalar     Ts, *Uradial;
 
-  IceModelVec3 *u3, *v3, *w3, *Sigma3;
+  IceModelVec3 *u3, *v3, *w3, *strain_heating3;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
-  ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr);
+  ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
   Uradial = new PetscScalar[Mz];
 
-  PetscScalar *T, *u, *v, *w, *Sigma, *SigmaC;
+  PetscScalar *T, *u, *v, *w, *strain_heating, *strain_heating_C;
   T = new PetscScalar[grid.Mz];
   u = new PetscScalar[grid.Mz];
   v = new PetscScalar[grid.Mz];
   w = new PetscScalar[grid.Mz];
-  Sigma = new PetscScalar[grid.Mz];
-  SigmaC = new PetscScalar[grid.Mz];
+  strain_heating = new PetscScalar[grid.Mz];
+  strain_heating_C = new PetscScalar[grid.Mz];
 
   const PetscScalar
     ice_rho   = config.get("ice_density"),
@@ -202,8 +202,8 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
   ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = Sigma3->begin_access(); CHKERRQ(ierr);
-  ierr = SigmaComp3.begin_access(); CHKERRQ(ierr);
+  ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
+  ierr = strain_heating3_comp.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -216,29 +216,29 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
         ierr = u3->setColumn(i,j,0.0); CHKERRQ(ierr);
         ierr = v3->setColumn(i,j,0.0); CHKERRQ(ierr);
         ierr = w3->setColumn(i,j,0.0); CHKERRQ(ierr);
-        ierr = Sigma3->setColumn(i,j,0.0); CHKERRQ(ierr);
-        ierr = SigmaComp3.setColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = strain_heating3->setColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = strain_heating3_comp.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else {  // inside the sheet
         r = PetscMax(r,1.0); // avoid singularity at origin
         if (testname == 'F') {
           bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
-                    &H[i][j],&accum[i][j],T,Uradial,w, Sigma,SigmaC);
+                    &H[i][j],&accum[i][j],T,Uradial,w, strain_heating,strain_heating_C);
         } else {
           bothexact(grid.time->current(),r,&grid.zlevels[0],Mz,ApforG,
-                    &H[i][j],&accum[i][j],T,Uradial,w, Sigma,SigmaC);
+                    &H[i][j],&accum[i][j],T,Uradial,w, strain_heating,strain_heating_C);
         }
         for (PetscInt k = 0; k < Mz; k++) {
           u[k] = Uradial[k]*(xx/r);
           v[k] = Uradial[k]*(yy/r);
-          Sigma[k] = Sigma[k] * ice_rho * ice_c; // scale Sigma to J/(s m^3)
-          SigmaC[k] = SigmaC[k] * ice_rho * ice_c; // scale SigmaC to J/(s m^3)
+          strain_heating[k] = strain_heating[k] * ice_rho * ice_c; // scale strain_heating to J/(s m^3)
+          strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c; // scale strain_heating_C to J/(s m^3)
         }
         ierr = T3.setInternalColumn(i,j,T); CHKERRQ(ierr);
         ierr = u3->setInternalColumn(i,j,u); CHKERRQ(ierr);
         ierr = v3->setInternalColumn(i,j,v); CHKERRQ(ierr);
         ierr = w3->setInternalColumn(i,j,w); CHKERRQ(ierr);
-        ierr = Sigma3->setInternalColumn(i,j,Sigma); CHKERRQ(ierr);
-        ierr = SigmaComp3.setInternalColumn(i,j,SigmaC); CHKERRQ(ierr);
+        ierr = strain_heating3->setInternalColumn(i,j,strain_heating); CHKERRQ(ierr);
+        ierr = strain_heating3_comp.setInternalColumn(i,j,strain_heating_C); CHKERRQ(ierr);
       }      
     }
   }
@@ -247,8 +247,8 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   ierr = u3->end_access(); CHKERRQ(ierr);
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = Sigma3->end_access(); CHKERRQ(ierr);
-  ierr = SigmaComp3.end_access(); CHKERRQ(ierr);
+  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
+  ierr = strain_heating3_comp.end_access(); CHKERRQ(ierr);
   
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = acab.end_access(); CHKERRQ(ierr);
@@ -256,7 +256,7 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   delete [] Uradial;
 
   delete [] T;  delete [] u;  delete [] v;  delete [] w;
-  delete [] Sigma;  delete [] SigmaC;
+  delete [] strain_heating;  delete [] strain_heating_C;
 
   ierr = vH.update_ghosts(); CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
@@ -487,18 +487,18 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
 }
 
 
-PetscErrorCode IceCompModel::computeSigmaErrors(
-                      PetscScalar &gmaxSigmaerr, PetscScalar &gavSigmaerr) {
+PetscErrorCode IceCompModel::compute_strain_heating_errors(
+                      PetscScalar &gmax_strain_heating_err, PetscScalar &gav_strain_heating_err) {
 
   PetscErrorCode ierr;
-  PetscScalar    maxSigerr = 0.0, avSigerr = 0.0, avcount = 0.0;
+  PetscScalar    max_strain_heating_err = 0.0, av_strain_heating_err = 0.0, avcount = 0.0;
   PetscScalar    **H;
   const PetscInt Mz = grid.Mz;
   
-  PetscScalar   *dummy1, *dummy2, *dummy3, *dummy4, *Sigex;
+  PetscScalar   *dummy1, *dummy2, *dummy3, *dummy4, *strain_heating_exact;
   PetscScalar   junk0, junk1;
   
-  Sigex = new PetscScalar[Mz];
+  strain_heating_exact = new PetscScalar[Mz];
   dummy1 = new PetscScalar[Mz];  dummy2 = new PetscScalar[Mz];
   dummy3 = new PetscScalar[Mz];  dummy4 = new PetscScalar[Mz];
 
@@ -506,12 +506,12 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
     ice_rho   = config.get("ice_density"),
     ice_c     = config.get("ice_specific_heat_capacity");
 
-  PetscScalar *Sig;
-  IceModelVec3 *Sigma3;
-  ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr);
+  PetscScalar *strain_heating;
+  IceModelVec3 *strain_heating3;
+  ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = Sigma3->begin_access(); CHKERRQ(ierr);
+  ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar r = grid.radius(i,j);
@@ -520,39 +520,39 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
         switch (testname) {
           case 'F':
             bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
-                      &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
+                      &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
             break;
           case 'G':
             bothexact(grid.time->current(),r,&grid.zlevels[0],Mz,ApforG,
-                      &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
+                      &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
             break;
           default:
-            SETERRQ(grid.com, 1,"strain-heating (Sigma) errors only computable for tests F and G\n");
+            SETERRQ(grid.com, 1,"strain-heating (strain_heating) errors only computable for tests F and G\n");
         }
         for (PetscInt k = 0; k < Mz; k++)
-          Sigex[k] = Sigex[k] * ice_rho * ice_c; // scale exact Sigma to J/(s m^3)
+          strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
-        ierr = Sigma3->getInternalColumn(i,j,&Sig); CHKERRQ(ierr);
+        ierr = strain_heating3->getInternalColumn(i,j,&strain_heating); CHKERRQ(ierr);
         for (PetscInt k = 0; k < ks; k++) {  // only eval error if below num surface
-          const PetscScalar Sigerr = PetscAbs(Sig[k] - Sigex[k]);
-          maxSigerr = PetscMax(maxSigerr,Sigerr);
+          const PetscScalar strain_heating_err = PetscAbs(strain_heating[k] - strain_heating_exact[k]);
+          max_strain_heating_err = PetscMax(max_strain_heating_err,strain_heating_err);
           avcount += 1.0;
-          avSigerr += Sigerr;
+          av_strain_heating_err += strain_heating_err;
         }
       }
     }
   }
   ierr =     vH.end_access(); CHKERRQ(ierr);
-  ierr = Sigma3->end_access(); CHKERRQ(ierr);
+  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
 
-  delete [] Sigex;
+  delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
   
-  ierr = PISMGlobalMax(&maxSigerr, &gmaxSigmaerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avSigerr, &gavSigmaerr, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&max_strain_heating_err, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&av_strain_heating_err, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
   PetscScalar  gavcount;
   ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
-  gavSigmaerr = gavSigmaerr/PetscMax(gavcount,1.0);  // avoid div by zero
+  gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
 }
 
