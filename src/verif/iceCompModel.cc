@@ -68,8 +68,8 @@ PetscErrorCode IceCompModel::createVecs() {
 
   ierr = vHexactL.create(grid, "HexactL", true, 2); CHKERRQ(ierr);
 
-  ierr = SigmaComp3.create(grid,"SigmaComp", false); CHKERRQ(ierr);
-  ierr = SigmaComp3.set_attrs("internal","rate of compensatory strain heating in ice",
+  ierr = strain_heating3_comp.create(grid,"strain_heating_comp", false); CHKERRQ(ierr);
+  ierr = strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
 			      "W m-3", ""); CHKERRQ(ierr);
 
   // this ensures that these variables are saved to an output file and are read
@@ -334,7 +334,7 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   // -boot_file command-line option is not allowed here.
   ierr = stop_if_set(grid.com, "-boot_file"); CHKERRQ(ierr);
 
-  ierr = SigmaComp3.set(0.0); CHKERRQ(ierr);
+  ierr = strain_heating3_comp.set(0.0); CHKERRQ(ierr);
 
   ierr = verbPrintf(3,grid.com, "initializing Test %c from formulas ...\n",testname);  CHKERRQ(ierr);
 
@@ -1170,14 +1170,14 @@ PetscErrorCode IceCompModel::reportErrors() {
     }
   }
 
-  // Sigma errors if appropriate; reported in 10^6 J/(s m^3)
+  // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
   if ((testname == 'F') || (testname == 'G')) {
-    PetscScalar maxSigerr, avSigerr;
-    ierr = computeSigmaErrors(maxSigerr, avSigerr); CHKERRQ(ierr);
+    PetscScalar max_strain_heating_error, av_strain_heating_error;
+    ierr = compute_strain_heating_errors(max_strain_heating_error, av_strain_heating_error); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com,
        "Sigma     :      maxSig       avSig\n"); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n",
-                  maxSigerr*1.0e6, avSigerr*1.0e6); CHKERRQ(ierr);
+                  max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6); CHKERRQ(ierr);
 
     if (netcdf_report) {
       err.reset();
@@ -1185,11 +1185,11 @@ PetscErrorCode IceCompModel::reportErrors() {
       ierr = err.set_units("J s-1 m-3"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("1e6 J s-1 m-3"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum strain heating error");
-      ierr = err.write(nc, (size_t)start, maxSigerr); CHKERRQ(ierr);
+      ierr = err.write(nc, (size_t)start, max_strain_heating_error); CHKERRQ(ierr);
 
       err.short_name = "average_sigma";
       err.set_string("long_name", "average strain heating error");
-      ierr = err.write(nc, (size_t)start, avSigerr); CHKERRQ(ierr);
+      ierr = err.write(nc, (size_t)start, av_strain_heating_error); CHKERRQ(ierr);
     }
   }
 

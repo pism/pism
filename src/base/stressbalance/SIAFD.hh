@@ -101,8 +101,8 @@ protected:
   IceModelVec2S work_2d[2];         // for eta, theta and the smoothed thickness
   IceModelVec2Stag work_2d_stag[2]; // for the surface gradient
   IceModelVec3 delta[2];            // store delta on the staggered grid
-  IceModelVec3 work_3d[2];      // replaces old Sigmastag3 and Istag3; used to
-                                // store I and Sigma on the staggered grid
+  IceModelVec3 work_3d[2];      // used to store I and strain_heating
+                                // on the staggered grid
 
   PISMBedSmoother *bed_smoother;
   const PetscInt WIDE_STENCIL;

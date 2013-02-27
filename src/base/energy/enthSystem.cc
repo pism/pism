@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2012 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2013 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -48,7 +48,7 @@ enthSystemCtx::enthSystemCtx(const NCConfigVariable &config,
   u      = new PetscScalar[Mz];
   v      = new PetscScalar[Mz];
   w      = new PetscScalar[Mz];
-  Sigma  = new PetscScalar[Mz];
+  strain_heating  = new PetscScalar[Mz];
   Enth   = new PetscScalar[Mz];
   Enth_s = new PetscScalar[Mz];  // enthalpy of pressure-melting-point
   R.resize(Mz);
@@ -61,7 +61,7 @@ enthSystemCtx::~enthSystemCtx() {
   delete [] u;
   delete [] v;
   delete [] w;
-  delete [] Sigma;
+  delete [] strain_heating;
   delete [] Enth_s;
   delete [] Enth;
 }
@@ -248,7 +248,7 @@ PetscErrorCode enthSystemCtx::setBasalHeatFlux(PetscScalar hf) {
                                              u[0] * (ss.ij  - ss.w) / dx;
     const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
                                              v[0] * (ss.ij  - ss.s) / dy;
-    b += dtTemp * ((Sigma[0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
+    b += dtTemp * ((strain_heating[0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
   }
   return 0;
 }
@@ -324,7 +324,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
                                                u[k] * (ss.ij  - ss.w) / dx;
       const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
                                                v[k] * (ss.ij  - ss.s) / dy;
-      rhs[k] += dtTemp * ((Sigma[k] / ice_rho) - UpEnthu - UpEnthv);
+      rhs[k] += dtTemp * ((strain_heating[k] / ice_rho) - UpEnthu - UpEnthv);
     }
   }
 

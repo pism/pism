@@ -37,11 +37,11 @@ PetscErrorCode SSB_Modifier::allocate() {
   ierr =     v.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   v.write_in_glaciological_units = true;
 
-  ierr = Sigma.create(grid, "strainheat", false); CHKERRQ(ierr); // never diff'ed in hor dirs
-  ierr = Sigma.set_attrs("internal",
+  ierr = strain_heating.create(grid, "strainheat", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  ierr = strain_heating.set_attrs("internal",
                           "rate of strain heating in ice (dissipation heating)",
 	        	  "W m-3", ""); CHKERRQ(ierr);
-  ierr = Sigma.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
+  ierr = strain_heating.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
 
   ierr = diffusive_flux.create(grid, "diffusive_flux", true, 1); CHKERRQ(ierr);
   ierr = diffusive_flux.set_attrs("internal", 
@@ -56,7 +56,7 @@ PetscErrorCode SSB_Modifier::extend_the_grid(PetscInt old_Mz) {
 
   ierr =     u.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
   ierr =     v.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr = Sigma.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
+  ierr = strain_heating.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -102,7 +102,7 @@ SSBM_Trivial::~SSBM_Trivial()
  * - maximum horizontal velocity
  * - diffusive ice flux
  * - maximum diffusivity
- * - strain heating (Sigma)
+ * - strain heating (strain_heating)
  */
 PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
                                     IceModelVec2S *strain_heating_contribution_input,
@@ -142,7 +142,8 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
   D_max = 0.0;
 
   // strain heating
-  ierr = compute_volumetric_strain_heating(strain_heating_contribution_input, Sigma); CHKERRQ(ierr);
+  ierr = compute_volumetric_strain_heating(strain_heating_contribution_input,
+                                           strain_heating); CHKERRQ(ierr);
 
   return 0;
 }
@@ -161,7 +162,7 @@ PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *st
   PetscScalar *E, *sigma;
   const PetscReal
     n_glen  = flow_law->exponent(),
-    Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
+    exponent = (1.0 + n_glen) / (2.0 * n_glen),
     enhancement_factor = config.get("ssa_enhancement_factor"),
     standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
@@ -186,7 +187,7 @@ PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *st
             pressure = ice_rho * standard_gravity * depth, // FIXME issue #15
           // Account for the enhancement factor.
             BofT    = flow_law->hardness_parameter(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
-          sigma[k] = 2.0 * BofT * pow((*strain_heating_contribution_input)(i,j), Sig_pow);
+          sigma[k] = 2.0 * BofT * pow((*strain_heating_contribution_input)(i,j), exponent);
         }
 
         // above the ice:

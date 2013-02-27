@@ -57,7 +57,7 @@ public:
   { max_u = u_max; max_v = v_max; return 0; }
 
   virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result)
-  { result = &Sigma; return 0; }
+  { result = &strain_heating; return 0; }
 
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
@@ -74,7 +74,7 @@ protected:
   EnthalpyConverter &EC;
   PetscReal D_max, u_max, v_max;
   IceModelVec2Stag diffusive_flux;
-  IceModelVec3 u, v, Sigma;
+  IceModelVec3 u, v, strain_heating;
 
   PISMVars *variables;
 };
