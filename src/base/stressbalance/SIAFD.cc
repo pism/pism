@@ -940,9 +940,9 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *strain_he
           if (grounded) {
             const PetscReal sigma_sia = delta_alpha_squared[k] * pressure;
             // combine SIA and SSA contributions
-            strain_heating_contribution_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
+            strain_heating_contribution_sia = pow(sigma_sia / (2 * BofT), 1.0 / exponent);
           }
-          sigma_ij[k] = 2.0 * BofT * pow(strain_heating_contribution_sia + strain_heating_contribution_ssa, Sig_pow);
+          sigma_ij[k] = 2.0 * BofT * pow(strain_heating_contribution_sia + strain_heating_contribution_ssa, exponent);
         }
         // Values above the ice were set to zero by the memset() call above.
 
