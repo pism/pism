@@ -601,6 +601,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                    "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_thickness_power_in_flux",
                                    "hydrology_thickness_power_in_flux"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_potential_gradient_power_in_flux",
+                                   "hydrology_potential_gradient_power_in_flux"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_roughness_scale",
                                    "hydrology_roughness_scale"); CHKERRQ(ierr);
   //FIXME issue #127:  till_pw_fraction too, but renamed

@@ -65,13 +65,10 @@ PetscErrorCode PISMRoutingHydrology::allocate() {
   ierr = Qstag.set_attrs("internal",
                      "cell face-centered (staggered) components of advective subglacial water flux",
                      "m2 s-1", ""); CHKERRQ(ierr);
-
-FIXME: width=2 and call it R:
-  ierr = Pwork.create(grid, "water_pressure_workspace", true, 1); CHKERRQ(ierr);
-  ierr = Pwork.set_attrs("internal",
-                      "work space for modeled subglacial water pressure",
+  ierr = R.create(grid, "potential_workspace", true, 1); CHKERRQ(ierr); // box stencil used
+  ierr = R.set_attrs("internal",
+                      "work space for modeled subglacial water hydraulic potential",
                       "Pa", ""); CHKERRQ(ierr);
-  ierr = Pwork.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
   // auxiliary variables which do not need ghosts
   ierr = Pover.create(grid, "overburden_pressure_internal", false); CHKERRQ(ierr);
@@ -279,17 +276,64 @@ PetscErrorCode PISMRoutingHydrology::water_thickness_staggered(IceModelVec2Stag 
 
 //! Compute the nonlinear conductivity at the center of cell edges.
 /*!
-Compute
-    \f[ K = K(W,\nabla P, \nabla b) = k W^{\alpha-1} |\nabla(P+\rho_w g b)|^{\beta-2} \f].
+Computes
+    \f[ K = K(W,\nabla P, \nabla b) = k W^{\alpha-1} |\nabla(P+\rho_w g b)|^{\beta-2} \f]
+on the staggered grid.  We denote \f$R = P+\rho_w g b\f$ internally.  The quantity
+    \f[ \Pi = |\nabla(P+\rho_w g b)|^2 = |\nabla R|^2 \f]
+is computed on a staggered grid by a [\ref Mahaffy] -like scheme.  This requires
+\f$R\f$ to be defined on a box stencil of width 1.
  */
 PetscErrorCode PISMRoutingHydrology::conductivity_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
-
+  const PetscReal
     k     = config.get("hydrology_hydraulic_conductivity"),
-    alpha = config.get("hydrology_thickness_power_in_flux");
-    beta  = config.get("hydrology_potential_gradient_power_in_flux");
+    alpha = config.get("hydrology_thickness_power_in_flux"),
+    beta  = config.get("hydrology_potential_gradient_power_in_flux"),
+    rg    = config.get("standard_gravity") * config.get("fresh_water_density");
+  if (alpha < 1.0) {
+    PetscPrintf(grid.com,
+           "PISM ERROR: alpha = %f < 1 which is not allowed\n"
+           "ENDING ... \n\n", alpha);
+    PISMEnd();
+  }
 
-FIXME: separate routine computes  R = P + rhow g b  in width=2  R  and then computes K on staggered grid
+  ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // yes, it updates ghosts
+  ierr = R.add(rg, (*bed)); CHKERRQ(ierr); // R  <-- P + rhow g b
+  ierr = R.update_ghosts(); CHKERRQ(ierr);
+
+  PetscReal dRdx, dRdy;
+  ierr = R.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      dRdx = ( R(i+1,j) - R(i,j) ) / grid.dx;
+      dRdy = ( R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1) ) / (4.0 * grid.dy);
+      result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
+      dRdx = ( R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j) ) / (4.0 * grid.dx);
+      dRdy = ( R(i,j+1) - R(i,j) ) / grid.dy;
+      result(i,j,1) = dRdx * dRdx + dRdy * dRdy;
+    }
+  }
+  ierr = R.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  ierr = R.begin_access(); CHKERRQ(ierr);
+  ierr = Wstag.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      for (PetscInt o = 0; o < 2; ++o) {
+        if (result(i,j,o) <= 0.0) {
+          result(i,j,o) = 1000.0 * k;
+        } else {
+          result(i,j,o) = k * pow(Wstag(i,j,o),alpha-1.0) * pow(result(i,j,o),(beta-2.0)/2.0);
+        }
+      }
+    }
+  }
+  ierr = R.end_access(); CHKERRQ(ierr);
+  ierr = Wstag.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -310,21 +354,19 @@ pressure, and \f$b\f$ is the bedrock elevation.
 If the corresponding staggered grid value of the water thickness is zero then
 that component of V is set to zero.  This does not change the flux value (which
 would be zero anyway) but it does provide the correct max velocity in the
-CFL calculation.  We assume Wstag and Kstag are up-to-date.  We assume Kstag
-has valid ghosts.
+CFL calculation.  We assume Wstag and Kstag are up-to-date.  We assume P and b
+have valid ghosts.
 
 Calls subglacial_water_pressure() method to get water pressure.
  */
 PetscErrorCode PISMRoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
-  const PetscReal  g    = config.get("standard_gravity"),
-                   rhow = config.get("fresh_water_density");
+  const PetscReal  rg = config.get("standard_gravity") * config.get("fresh_water_density");
   PetscReal dbdx, dbdy, dPdx, dPdy;
 
-FIXME: here we use R to store P on regular grid
-  ierr = subglacial_water_pressure(Pwork); CHKERRQ(ierr);  // yes, it updates ghosts
+  ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // R=P; yes, it updates ghosts
 
-  ierr = Pwork.begin_access(); CHKERRQ(ierr);
+  ierr = R.begin_access(); CHKERRQ(ierr);
   ierr = Wstag.begin_access(); CHKERRQ(ierr);
   ierr = Kstag.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
@@ -332,15 +374,15 @@ FIXME: here we use R to store P on regular grid
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (Wstag(i,j,0) > 0.0) {
-        dPdx = (Pwork(i+1,j) - Pwork(i,j)) / grid.dx;
+        dPdx = (R(i+1,j) - R(i,j)) / grid.dx;
         dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
-        result(i,j,0) = - Kstag(i,j,0) * (dPdx / (rhow * g) + dbdx);
+        result(i,j,0) = - Kstag(i,j,0) * (dPdx / rg + dbdx);
       } else
         result(i,j,0) = 0.0;
       if (Wstag(i,j,1) > 0.0) {
-        dPdy = (Pwork(i,j+1) - Pwork(i,j)) / grid.dy;
+        dPdy = (R(i,j+1) - R(i,j)) / grid.dy;
         dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
-        result(i,j,1) = - Kstag(i,j,1) * (dPdy / (rhow * g) + dbdy);
+        result(i,j,1) = - Kstag(i,j,1) * (dPdy / rg + dbdy);
       } else
         result(i,j,1) = 0.0;
       if (in_null_strip(i,j) || in_null_strip(i+1,j))
@@ -349,7 +391,7 @@ FIXME: here we use R to store P on regular grid
         result(i,j,1) = 0.0;
     }
   }
-  ierr = Pwork.end_access(); CHKERRQ(ierr);
+  ierr = R.end_access(); CHKERRQ(ierr);
   ierr = Wstag.end_access(); CHKERRQ(ierr);
   ierr = Kstag.end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
@@ -389,7 +431,7 @@ PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
                   PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result) {
   PetscErrorCode ierr;
   const PetscReal dtmax = config.get("hydrology_maximum_time_step_years") * secpera;
-  PetscReal maxKW, tmpmaxK[2], tmpmaxW[2];
+  PetscReal maxKW, tmp[2], tmpmaxK[2], tmpmaxW[2];
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
   dtCFL_result = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy); // is regularization needed?
@@ -439,8 +481,8 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
         const PetscReal  We = Wstag(i,  j,0),
                          Ww = Wstag(i-1,j,0),
                          Wn = Wstag(i,j  ,1),
-                         Ws = Wstag(i,j-1,1);
-        const PetscReal  Ke = Kstag(i,  j,0),
+                         Ws = Wstag(i,j-1,1),
+                         Ke = Kstag(i,  j,0),
                          Kw = Kstag(i-1,j,0),
                          Kn = Kstag(i,j  ,1),
                          Ks = Kstag(i,j-1,1);
