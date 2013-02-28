@@ -255,21 +255,21 @@ protected:
 
 //! \brief A subglacial hydrology model which assumes water pressure is equal to overburden pressure.
 /*!
-This model conserves water and transports it in the map-plane.  It was promised
-in Bueler's talk at IGS 2012 Fairbanks:
+This model conserves water and transports it in the map-plane.  This model has
+been used for finding locations of subglacial lakes [\ref Siegertetal2009].
+It was promised as a PISM addition in in Bueler's talk at IGS 2012 Fairbanks:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
 
 In this model the water velocity follows the steepest descent route for the
-hydraulic potential which is geometrical because the pressure is the overburden
-pressure.  Suitable for finding locations of subglacial lakes.
+hydraulic potential.  This potential is essentially a function of ice sheet
+geometry, because the pressure is the overburden pressure, but the water layer
+thickness is also a part of the potential; the hydraulic potential
+is the potential of the top of the aquifer.
 
-Subglacial lakes will occur in this model at local minimum of the hydraulic
-potential (i.e. a linear combination of overburden pressure, the bed elevation,
-and the water layer thickness).  Note that in this model the hydraulic potential
-is the potential of the top of the aquifer.  Thus if water builds up
-significantly (e.g. 10s of meters or more) then the resulting lakes diffuse
-instead of becoming infinitely deep (i.e. we avoid delta functions at the minima
-of the hydraulic potential).
+Subglacial lakes will occur in this model at local minima of the hydraulic
+potential.  Thus if water builds up significantly (e.g. 10s of meters or more)
+then the resulting lakes diffuse instead of becoming infinitely deep.  Thus we
+avoid delta functions at the minima of the hydraulic potential.
 
 This model should generally be tested using static ice geometry first, i.e. using
 option -no_mass.  Use option \c -report_mass_accounting to see stdout reports
