@@ -56,10 +56,17 @@ PetscErrorCode PISMRoutingHydrology::allocate() {
                      "cell face-centered (staggered) values of water layer thickness",
                      "m", ""); CHKERRQ(ierr);
   ierr = Wstag.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = Kstag.create(grid, "K_staggered", true, 1); CHKERRQ(ierr);
+  ierr = Kstag.set_attrs("internal",
+                     "cell face-centered (staggered) values of nonlinear conductivity",
+                     "m", ""); CHKERRQ(ierr);
+  ierr = Kstag.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = Qstag.create(grid, "advection_flux", true, 1); CHKERRQ(ierr);
   ierr = Qstag.set_attrs("internal",
                      "cell face-centered (staggered) components of advective subglacial water flux",
                      "m2 s-1", ""); CHKERRQ(ierr);
+
+FIXME: width=2 and call it R:
   ierr = Pwork.create(grid, "water_pressure_workspace", true, 1); CHKERRQ(ierr);
   ierr = Pwork.set_attrs("internal",
                       "work space for modeled subglacial water pressure",
@@ -67,6 +74,11 @@ PetscErrorCode PISMRoutingHydrology::allocate() {
   ierr = Pwork.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
   // auxiliary variables which do not need ghosts
+  ierr = Pover.create(grid, "overburden_pressure_internal", false); CHKERRQ(ierr);
+  ierr = Pover.set_attrs("internal",
+                     "overburden pressure",
+                     "Pa", ""); CHKERRQ(ierr);
+  ierr = Pover.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = V.create(grid, "water_velocity", false); CHKERRQ(ierr);
   ierr = V.set_attrs("internal",
                      "cell face-centered (staggered) components of water velocity in subglacial water layer",
@@ -241,7 +253,6 @@ where \f$\lambda\f$=till_pw_fraction and \f$P_o\f$ is the overburden pressure.
  */
 PetscErrorCode PISMRoutingHydrology::subglacial_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  // ierr = verbPrintf(1,grid.com,"in PISMRoutingHydrology::water_pressure()\n"); CHKERRQ(ierr);
   ierr = overburden_pressure(result); CHKERRQ(ierr);
   ierr = result.scale(config.get("till_pw_fraction")); CHKERRQ(ierr);  //FIXME issue #127
   return 0;
@@ -266,54 +277,70 @@ PetscErrorCode PISMRoutingHydrology::water_thickness_staggered(IceModelVec2Stag 
 }
 
 
+//! Compute the nonlinear conductivity at the center of cell edges.
+/*!
+Compute
+    \f[ K = K(W,\nabla P, \nabla b) = k W^{\alpha-1} |\nabla(P+\rho_w g b)|^{\beta-2} \f].
+ */
+PetscErrorCode PISMRoutingHydrology::conductivity_staggered(IceModelVec2Stag &result) {
+  PetscErrorCode ierr;
+
+    k     = config.get("hydrology_hydraulic_conductivity"),
+    alpha = config.get("hydrology_thickness_power_in_flux");
+    beta  = config.get("hydrology_potential_gradient_power_in_flux");
+
+FIXME: separate routine computes  R = P + rhow g b  in width=2  R  and then computes K on staggered grid
+
+  return 0;
+}
+
+
 //! Get the advection velocity V at the center of cell edges.
 /*!
-Computes the advection velocity \f$\mathbf{V}=\mathbf{V}(\nabla P,\nabla b)\f$
-on the staggered (face-centered) grid.  If V = (alpha,beta) in components
-then we have <code> result(i,j,0) = alpha(i+1/2,j) </code> and
-<code> result(i,j,1) = beta(i,j+1/2) </code>
+Computes the advection velocity \f$\mathbf{V}\f$ on the staggered
+(edge-centered) grid.  If V = (u,v) in components then we have
+<code> result(i,j,0) = u(i+1/2,j) </code> and
+<code> result(i,j,1) = v(i,j+1/2) </code>
 
 The advection velocity is given by the formula
-  \f[ \mathbf{V} = - k W^{\alpha-1} \nabla \left(\frac{P}{\rho_w g} + b\right) \f]
-where \f$\mathbf{V}\f$ is the lateral water velocity, \f$P\f$ is the water
+  \f[ \mathbf{V} = - K \left(\frac{\nabla P}{\rho_w g} + \nabla b\right) \f]
+where \f$\mathbf{V}\f$ is the water velocity, \f$P\f$ is the water
 pressure, and \f$b\f$ is the bedrock elevation.
 
 If the corresponding staggered grid value of the water thickness is zero then
 that component of V is set to zero.  This does not change the flux value (which
 would be zero anyway) but it does provide the correct max velocity in the
-CFL calculation.  We assume Wstag is up-to-date with up-to-date ghosts.
+CFL calculation.  We assume Wstag and Kstag are up-to-date.  We assume Kstag
+has valid ghosts.
 
-Calls water_pressure() method to get water pressure.
+Calls subglacial_water_pressure() method to get water pressure.
  */
 PetscErrorCode PISMRoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
-  const PetscReal
-    g    = config.get("standard_gravity"),
-    rhow = config.get("fresh_water_density"),
-    k    = config.get("hydrology_hydraulic_conductivity"),
-    alpha = config.get("hydrology_thickness_power_in_flux");
+  const PetscReal  g    = config.get("standard_gravity"),
+                   rhow = config.get("fresh_water_density");
   PetscReal dbdx, dbdy, dPdx, dPdy;
 
+FIXME: here we use R to store P on regular grid
   ierr = subglacial_water_pressure(Pwork); CHKERRQ(ierr);  // yes, it updates ghosts
 
   ierr = Pwork.begin_access(); CHKERRQ(ierr);
   ierr = Wstag.begin_access(); CHKERRQ(ierr);
+  ierr = Kstag.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (Wstag(i,j,0) > 0.0) {
-        dPdx = (Pwork(i+1,j  ) - Pwork(i,j)) / grid.dx;
-        dbdx = ((*bed)(i+1,j  ) - (*bed)(i,j)) / grid.dx;
-        const PetscReal We = Wstag(i,j,0);
-        result(i,j,0) = - k * pow(We,alpha-1) * (dPdx / (rhow * g) + dbdx);
+        dPdx = (Pwork(i+1,j) - Pwork(i,j)) / grid.dx;
+        dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
+        result(i,j,0) = - Kstag(i,j,0) * (dPdx / (rhow * g) + dbdx);
       } else
         result(i,j,0) = 0.0;
       if (Wstag(i,j,1) > 0.0) {
-        dPdy = (Pwork(i  ,j+1) - Pwork(i,j)) / grid.dy;
-        dbdy = ((*bed)(i  ,j+1) - (*bed)(i,j)) / grid.dy;
-        const PetscReal Wn = Wstag(i,j,1);
-        result(i,j,1) = - k * pow(Wn,alpha-1) * (dPdy / (rhow * g) + dbdy);
+        dPdy = (Pwork(i,j+1) - Pwork(i,j)) / grid.dy;
+        dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
+        result(i,j,1) = - Kstag(i,j,1) * (dPdy / (rhow * g) + dbdy);
       } else
         result(i,j,1) = 0.0;
       if (in_null_strip(i,j) || in_null_strip(i+1,j))
@@ -324,6 +351,7 @@ PetscErrorCode PISMRoutingHydrology::velocity_staggered(IceModelVec2Stag &result
   }
   ierr = Pwork.end_access(); CHKERRQ(ierr);
   ierr = Wstag.end_access(); CHKERRQ(ierr);
+  ierr = Kstag.end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
@@ -333,6 +361,8 @@ PetscErrorCode PISMRoutingHydrology::velocity_staggered(IceModelVec2Stag &result
 //! Compute Q = V W at edge-centers (staggered grid) by first-order upwinding.
 /*!
 The field W must have valid ghost values, but V does not need them.
+
+FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
  */
 PetscErrorCode PISMRoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
@@ -353,26 +383,22 @@ PetscErrorCode PISMRoutingHydrology::advective_fluxes(IceModelVec2Stag &result) 
 
 
 //! Compute the adaptive time step for evolution of W.
+/*! Assumes Wstag and Kstag are valid. */
 PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal &dt_result,
                   PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result) {
   PetscErrorCode ierr;
-  const PetscReal k     = config.get("hydrology_hydraulic_conductivity"),
-                  alpha = config.get("hydrology_thickness_power_in_flux"),
-                  dtmax = config.get("hydrology_maximum_time_step_years") * secpera;
-  PetscReal maxW, tmp[2];
-  // Matlab: dtCFL = 0.5 / (max(max(abs(alphV)))/dx + max(max(abs(betaV)))/dy);
+  const PetscReal dtmax = config.get("hydrology_maximum_time_step_years") * secpera;
+  PetscReal maxKW, tmpmaxK[2], tmpmaxW[2];
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
-  // regularize with eps = (1 cm/a) / (100km) :
   dtCFL_result = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy); // is regularization needed?
-  // Matlab: maxW = max(max(max(Wea)),max(max(Wno))) + 0.001;
-  ierr = Wstag.absmaxcomponents(tmp); CHKERRQ(ierr);
-  maxW = PetscMax(tmp[0],tmp[1]) + 0.001;
-  // Matlab: dtDIFFW = 0.25 / (k * maxW^alpha * (1/dx^2 + 1/dy^2));
+  ierr = Wstag.absmaxcomponents(tmpmaxW); CHKERRQ(ierr);
+  ierr = Kstag.absmaxcomponents(tmpmaxK); CHKERRQ(ierr);
+  maxKW = PetscMax(tmpmaxK[0]*(tmpmaxW[0] + 0.001),tmpmaxK[1]*(tmpmaxW[1] + 0.001));
   dtDIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
-  dtDIFFW_result = 0.25 / (k * pow(maxW,alpha) * dtDIFFW_result);
-  // dt = min([te-t dtmax dtCFL dtDIFFW]);
+  dtDIFFW_result = 0.25 / (maxKW * dtDIFFW_result);
+  // dt = min { te-t, dtmax, dtCFL, dtDIFFW }
   dt_result = PetscMin(t_end - t_current, dtmax);
   dt_result = PetscMin(dt_result, dtCFL_result);
   dt_result = PetscMin(dt_result, dtDIFFW_result);
@@ -396,15 +422,13 @@ PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
 //! The computation of Wnew, called by update().
 PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
     PetscErrorCode ierr;
-    const PetscReal
-      k    = config.get("hydrology_hydraulic_conductivity"),
-      alpha = config.get("hydrology_thickness_power_in_flux"),
-      wux  = 1.0 / (grid.dx * grid.dx),
-      wuy  = 1.0 / (grid.dy * grid.dy);
+    const PetscReal  wux  = 1.0 / (grid.dx * grid.dx),
+                     wuy  = 1.0 / (grid.dy * grid.dy);
     PetscReal divadflux, diffW;
 
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
+    ierr = Kstag.begin_access(); CHKERRQ(ierr);
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
     ierr = total_input.begin_access(); CHKERRQ(ierr);
     ierr = Wnew.begin_access(); CHKERRQ(ierr);
@@ -416,15 +440,20 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
                          Ww = Wstag(i-1,j,0),
                          Wn = Wstag(i,j  ,1),
                          Ws = Wstag(i,j-1,1);
-        diffW =   wux * (  k * pow(We,alpha) * (W(i+1,j) - W(i,j))
-                         - k * pow(Ww,alpha) * (W(i,j) - W(i-1,j)) )
-                + wuy * (  k * pow(Wn,alpha) * (W(i,j+1) - W(i,j))
-                         - k * pow(Ws,alpha) * (W(i,j) - W(i,j-1)) );
+        const PetscReal  Ke = Kstag(i,  j,0),
+                         Kw = Kstag(i-1,j,0),
+                         Kn = Kstag(i,j  ,1),
+                         Ks = Kstag(i,j-1,1);
+        diffW =   wux * (  Ke * We * (W(i+1,j) - W(i,j))
+                         - Kw * Ww * (W(i,j) - W(i-1,j)) )
+                + wuy * (  Kn * Wn * (W(i,j+1) - W(i,j))
+                         - Ks * Ws * (W(i,j) - W(i,j-1)) );
         Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + total_input(i,j));
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
+    ierr = Kstag.end_access(); CHKERRQ(ierr);
     ierr = Qstag.end_access(); CHKERRQ(ierr);
     ierr = total_input.end_access(); CHKERRQ(ierr);
     ierr = Wnew.end_access(); CHKERRQ(ierr);
@@ -467,6 +496,9 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
 
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
+
+    ierr = conductivity_staggered(Kstag); CHKERRQ(ierr);
+    ierr = Kstag.update_ghosts(); CHKERRQ(ierr);
 
     ierr = velocity_staggered(V); CHKERRQ(ierr);
 
@@ -774,10 +806,10 @@ The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
 PetscErrorCode PISMDistributedHydrology::check_P_bounds(bool enforce_upper) {
   PetscErrorCode ierr;
 
-  ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
+  ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
   ierr = P.begin_access(); CHKERRQ(ierr);
-  ierr = Pwork.begin_access(); CHKERRQ(ierr);
+  ierr = Pover.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (P(i,j) < 0.0) {
@@ -788,18 +820,18 @@ PetscErrorCode PISMDistributedHydrology::check_P_bounds(bool enforce_upper) {
         PISMEnd();
       }
       if (enforce_upper) {
-        P(i,j) = PetscMin(P(i,j), Pwork(i,j));
-      } else if (P(i,j) > Pwork(i,j) + 0.001) {
+        P(i,j) = PetscMin(P(i,j), Pover(i,j));
+      } else if (P(i,j) > Pover(i,j) + 0.001) {
         PetscPrintf(grid.com,
            "PISM ERROR: subglacial water pressure P = %.16f Pa exceeds\n"
            "    overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", P(i,j),Pwork(i,j),i,j);
+           "ENDING ... \n\n", P(i,j),Pover(i,j),i,j);
         PISMEnd();
       }
     }
   }
   ierr = P.end_access(); CHKERRQ(ierr);
-  ierr = Pwork.end_access(); CHKERRQ(ierr);
+  ierr = Pover.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -815,24 +847,24 @@ PetscErrorCode PISMDistributedHydrology::hydraulic_potential(IceModelVec2S &resu
   PetscReal fresh_water_density = config.get("fresh_water_density"),
             standard_gravity    = config.get("standard_gravity");
   MaskQuery M(*mask);
-  ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
+  ierr = overburden_pressure(Pover); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = P.begin_access(); CHKERRQ(ierr);
-  ierr = Pwork.begin_access(); CHKERRQ(ierr);
+  ierr = Pover.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (M.ocean(i,j))
-        result(i,j) = Pwork(i,j);
+        result(i,j) = Pover(i,j);
       else
         result(i,j) = P(i,j) + fresh_water_density * standard_gravity * ((*bed)(i,j) + W(i,j));
     }
   }
   ierr = W.end_access(); CHKERRQ(ierr);
   ierr = P.end_access(); CHKERRQ(ierr);
-  ierr = Pwork.end_access(); CHKERRQ(ierr);
+  ierr = Pover.end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
@@ -857,9 +889,9 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
             Wr = config.get("hydrology_roughness_scale"),
             Y0 = config.get("hydrology_lower_bound_creep_regularization"),
             sb, Wratio;
-  ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
+  ierr = overburden_pressure(Pover); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = Pwork.begin_access(); CHKERRQ(ierr);
+  ierr = Pover.begin_access(); CHKERRQ(ierr);
   ierr = cbase.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -869,11 +901,11 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
       // in cases where steady state is actually possible this will
       //   come out positive, but otherwise we should get underpressure P=0,
       //   and that is what it yields
-      result(i,j) = PetscMax( 0.0,Pwork(i,j) - sb * pow(Wratio,powglen) );
+      result(i,j) = PetscMax( 0.0,Pover(i,j) - sb * pow(Wratio,powglen) );
     }
   }
   ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = Pwork.end_access(); CHKERRQ(ierr);
+  ierr = Pover.end_access(); CHKERRQ(ierr);
   ierr = cbase.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
@@ -998,8 +1030,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
   const PetscReal
-            k    = config.get("hydrology_hydraulic_conductivity"),
-            alpha = config.get("hydrology_thickness_power_in_flux"),
             rhow = config.get("fresh_water_density"),
             g = config.get("standard_gravity"),
             nglen = config.get("Glen_exponent"),
@@ -1045,6 +1075,9 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
 
+    ierr = conductivity_staggered(Kstag); CHKERRQ(ierr);
+    ierr = Kstag.update_ghosts(); CHKERRQ(ierr);
+
     ierr = velocity_staggered(V); CHKERRQ(ierr);
 
     // to get Qstag, W needs valid ghosts
@@ -1062,7 +1095,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     const PetscReal  CC = (rhow * g * hdt) / phisum;
     PetscReal  Open, Close, divflux,
                dpsie, dpsiw, dpsin, dpsis;
-    ierr = overburden_pressure(Pwork); CHKERRQ(ierr);
+    ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
     MaskQuery M(*mask);
 
@@ -1071,22 +1104,23 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = cbase.begin_access(); CHKERRQ(ierr);
     ierr = psi.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
+    ierr = Kstag.begin_access(); CHKERRQ(ierr);
     ierr = total_input.begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
-    ierr = Pwork.begin_access(); CHKERRQ(ierr);
+    ierr = Pover.begin_access(); CHKERRQ(ierr);
     ierr = Pnew.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (M.ice_free_land(i,j))
           Pnew(i,j) = 0.0;
         else if (M.ocean(i,j))
-          Pnew(i,j) = Pwork(i,j);
+          Pnew(i,j) = Pover(i,j);
         else if (W(i,j) <= 0.0)
-          Pnew(i,j) = Pwork(i,j);
+          Pnew(i,j) = Pover(i,j);
         else {
           // opening and closure terms in pressure equation
           Open = PetscMax(0.0,c1 * cbase(i,j) * (Wr - W(i,j)));
-          Close = c2 * Aglen * pow(Pwork(i,j) - P(i,j),nglen) * (W(i,j) + Y0);
+          Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * (W(i,j) + Y0);
           // divergence of flux
           const bool knowne = (M.ice_free_land(i+1,j) || M.ocean(i+1,j)),
                      knownw = (M.ice_free_land(i-1,j) || M.ocean(i-1,j)),
@@ -1110,19 +1144,23 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           divflux = 0.0;
           if (!knowne && !knownw) {
             const PetscReal We = Wstag(i,  j,0),
-                            Ww = Wstag(i-1,j,0);
-            divflux += omegax * k * ( pow(We,alpha) * dpsie - pow(Ww,alpha) * dpsiw );
+                            Ww = Wstag(i-1,j,0),
+                            Ke = Kstag(i,  j,0),
+                            Kw = Kstag(i-1,j,0);
+            divflux += omegax * ( Ke * We * dpsie - Kw * Ww * dpsiw );
           }
           if (!knownn && !knowns) {
             const PetscReal Wn = Wstag(i,j  ,1),
                             Ws = Wstag(i,j-1,1);
-            divflux += omegay * k * ( pow(Wn,alpha) * dpsin - pow(Ws,alpha) * dpsis );
+            const PetscReal Kn = Kstag(i,j  ,1),
+                            Ks = Kstag(i,j-1,1);
+            divflux += omegay * ( Kn * Wn * dpsin - Ks * Ws * dpsis );
           }
 
           // candidate for pressure update
           Pnew(i,j) = P(i,j) + CC * ( divflux + Close - Open + total_input(i,j) );
           // projection to enforce  0 <= P <= P_o
-          Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pwork(i,j));
+          Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pover(i,j));
         }
       }
     }
@@ -1130,10 +1168,11 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = W.end_access(); CHKERRQ(ierr);
     ierr = cbase.end_access(); CHKERRQ(ierr);
     ierr = Pnew.end_access(); CHKERRQ(ierr);
-    ierr = Pwork.end_access(); CHKERRQ(ierr);
+    ierr = Pover.end_access(); CHKERRQ(ierr);
     ierr = psi.end_access(); CHKERRQ(ierr);
     ierr = total_input.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
+    ierr = Kstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
     // update Wtotnew from W, Wstag, Qstag, total_input; the physics is

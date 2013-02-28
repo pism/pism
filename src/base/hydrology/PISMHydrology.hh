@@ -253,7 +253,7 @@ protected:
 };
 
 
-//! \brief A subglacial hydrology model which assumes water pressure is a fixed fraction of (or is equal to) overburden pressure.
+//! \brief A subglacial hydrology model which assumes water pressure is equal to overburden pressure.
 /*!
 This model conserves water and transports it in the map-plane.  It was promised
 in Bueler's talk at IGS 2012 Fairbanks:
@@ -313,9 +313,10 @@ protected:
                         //   V(i,j,0) = alpha(i,j) = east-edge centered  x-component of water velocity
                         //   V(i,j,1) = beta(i,j)  = north-edge centered y-component of water velocity
                    Wstag,// edge-centered (staggered) W values (averaged from regular)
+                   Kstag,// edge-centered (staggered) values of nonlinear conductivity
                    Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S Wnew, Pwork;
+  IceModelVec2S Wnew, Pover, R;
 
   PetscReal stripwidth; // width in m of strip around margin where V and W are set to zero;
                         // if negative then the strip mechanism is inactive inactive
@@ -329,6 +330,7 @@ protected:
 
   virtual PetscErrorCode check_W_nonnegative();
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(
