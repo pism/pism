@@ -90,7 +90,7 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
 
   ierr = BlatterQ1_setup(grid.com, da2, blatter_Mz, &this->ctx, &this->snes); CHKERRQ(ierr);
 
-  // now allocate u, v, and Sigma (strain heating)
+  // now allocate u, v, and strain_heating (strain heating)
   ierr =     u.create(grid, "uvel", true); CHKERRQ(ierr);
   ierr =     u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
 			  "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
@@ -103,12 +103,12 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
   ierr =     v.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   v.write_in_glaciological_units = true;
 
-  // Sigma
-  ierr = Sigma.create(grid, "strainheat", false); CHKERRQ(ierr); // never diff'ed in hor dirs
-  ierr = Sigma.set_attrs("internal",
+  // strain_heating
+  ierr = strain_heating.create(grid, "strainheat", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  ierr = strain_heating.set_attrs("internal",
                           "rate of strain heating in ice (dissipation heating)",
 	        	  "W m-3", ""); CHKERRQ(ierr);
-  ierr = Sigma.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
+  ierr = strain_heating.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
 
   // storage for u and v on the sigma vertical grid (for restarting)
   ierr =     u_sigma.create(grid, "uvel_sigma", false, blatter_Mz); CHKERRQ(ierr);
@@ -433,7 +433,7 @@ PetscErrorCode BlatterStressBalance::extend_the_grid(PetscInt old_Mz) {
   PetscErrorCode ierr;
   ierr = u.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
   ierr = v.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr = Sigma.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
+  ierr = strain_heating.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
   return 0;
 }
 
@@ -441,7 +441,7 @@ PetscErrorCode BlatterStressBalance::extend_the_grid(PetscInt old_Mz) {
 PetscErrorCode BlatterStressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
   // FIXME: implement this
-  ierr = Sigma.set(0.0); CHKERRQ(ierr);
+  ierr = strain_heating.set(0.0); CHKERRQ(ierr);
   
   return 0;
 }

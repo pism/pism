@@ -120,7 +120,7 @@ protected:
   PetscErrorCode compute_volumetric_strain_heating();
   PetscErrorCode save_velocity();
 
-  IceModelVec3 u, v, Sigma;
+  IceModelVec3 u, v, strain_heating;
 
   IceModelVec2S *bed_elevation, *ice_thickness, *tauc;
   IceModelVec3 *enthalpy;
