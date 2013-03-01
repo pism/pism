@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -76,6 +76,18 @@ PetscErrorCode PA_delta_P::init(PISMVars &vars) {
 PetscErrorCode PA_delta_P::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->mean_precipitation(result);
   ierr = offset_data(result); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode PA_delta_P::precip_time_series(int i, int j, int N,
+                                              PetscReal *ts, PetscReal *values) {
+  PetscErrorCode ierr = input_model->precip_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+  
+  if (offset) {
+    for (int k = 0; k < N; ++k)
+      values[k] += (*offset)(ts[k]);
+  }
+
   return 0;
 }
 

@@ -361,7 +361,10 @@ netcdf pism_config {
     pism_config:snow_temp_fausto_kappa_mj_doc = "Kelvin (degW)-1; longitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_july_day = 196;
-    pism_config:snow_temp_july_day_doc = "day; = day of year for July 15; used in corrected formula (4) in [\\ref Faustoetal2009] ";
+    pism_config:snow_temp_july_day_doc = "day; day of year for July 15; used in corrected formula (4) in [\\ref Faustoetal2009] ";
+
+    pism_config:pdd_balance_year_start_day = 274;
+    pism_config:pdd_balance_year_start_day_doc = "day; day of year for October 1st, beginning of the balance year in northern latitudes.";
 
     pism_config:air_temp_all_precip_as_snow = 272.15;
     pism_config:air_temp_all_precip_as_snow_doc = "Kelvin; threshold temperature below which all precipitation is snow";

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -74,12 +74,14 @@ PetscErrorCode PAConstantPIK::mean_annual_temp(IceModelVec2S &result) {
 
 PetscErrorCode PAConstantPIK::begin_pointwise_access() {
   PetscErrorCode ierr;
+  ierr = precipitation.begin_access(); CHKERRQ(ierr);
   ierr = air_temp.begin_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAConstantPIK::end_pointwise_access() {
   PetscErrorCode ierr;
+  ierr = precipitation.end_access(); CHKERRQ(ierr);
   ierr = air_temp.end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -88,6 +90,13 @@ PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, int N,
                                                PetscReal */*ts*/, PetscReal *values) {
   for (PetscInt k = 0; k < N; k++)
     values[k] = air_temp(i,j);
+  return 0;
+}
+
+PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, int N,
+						 PetscReal */*ts*/, PetscReal *values) {
+  for (PetscInt k = 0; k < N; k++)
+    values[k] = precipitation(i,j);
   return 0;
 }
 

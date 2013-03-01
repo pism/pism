@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -173,6 +173,13 @@ PetscErrorCode PAYearlyCycle::mean_precipitation(IceModelVec2S &result) {
 PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = air_temp_mean_annual.copy_to(result); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, int N,
+						 PetscReal */*ts*/, PetscReal *values) {
+  for (PetscInt k = 0; k < N; k++)
+    values[k] = precipitation(i,j);
   return 0;
 }
 

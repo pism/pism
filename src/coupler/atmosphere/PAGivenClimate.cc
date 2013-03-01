@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -111,16 +111,18 @@ PetscErrorCode PAGivenClimate::temp_snapshot(IceModelVec2S &result) {
 
 PetscErrorCode PAGivenClimate::begin_pointwise_access() {
   PetscErrorCode ierr = temp.begin_access(); CHKERRQ(ierr);
+  ierr = mass_flux.begin_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAGivenClimate::end_pointwise_access() {
   PetscErrorCode ierr = temp.end_access(); CHKERRQ(ierr);
+  ierr = mass_flux.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, int N,
-                                                 PetscReal *ts, PetscReal *values) {
+						PetscReal *ts, PetscReal *values) {
 
   PetscReal *ptr;
 
@@ -139,6 +141,30 @@ PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, int N,
   }
 
   PetscErrorCode ierr = temp.interp(i, j, N, ptr, values); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, int N,
+						  PetscReal *ts, PetscReal *values) {
+
+  PetscReal *ptr;
+
+  if (bc_period > 0.01) {
+    // Recall that this method is called for each map-plane point during a
+    // time-step. This if-condition is here to avoid calling
+    // grid.time->mod() if the user didn't ask for periodized climate.
+    ts_mod.reserve(N);
+
+    for (int k = 0; k < N; ++k)
+      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_time, bc_period);
+
+    ptr = &ts_mod[0];
+  } else {
+    ptr = ts;
+  }
+
+  PetscErrorCode ierr = mass_flux.interp(i, j, N, ptr, values); CHKERRQ(ierr);
 
   return 0;
 }

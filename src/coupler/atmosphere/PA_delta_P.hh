@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,6 +31,9 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
+
+  virtual PetscErrorCode precip_time_series(int i, int j, int N,
+					    PetscReal *ts, PetscReal *values);
 
   virtual void add_vars_to_output(string keyword,
                                   map<string,NCSpatialVariable> &result);

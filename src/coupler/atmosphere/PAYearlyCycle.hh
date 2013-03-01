@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -44,6 +44,8 @@ public:
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+  virtual PetscErrorCode precip_time_series(int i, int j, int N,
+					    PetscReal *ts, PetscReal *values);
 protected:
   PISMVars *variables;
   PetscScalar snow_temp_july_day;
