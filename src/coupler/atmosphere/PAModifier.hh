@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -65,6 +65,15 @@ public:
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+    }
+    return 0;
+  }
+
+  virtual PetscErrorCode precip_time_series(int i, int j, int N,
+					  PetscReal *ts, PetscReal *values)
+  {
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->precip_time_series(i, j, N, ts, values); CHKERRQ(ierr);
     }
     return 0;
   }

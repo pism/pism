@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -145,25 +145,31 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   ierr = runoff_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   runoff_rate.write_in_glaciological_units = true;
 
+  ierr = snow_depth.create(grid, "snow_depth", false); CHKERRQ(ierr);
+  ierr = snow_depth.set_attrs("diagnostic",
+			      "snow cover depth (set to zero once a year)",
+			      "m", ""); CHKERRQ(ierr);
+  ierr = snow_depth.set(0.0); CHKERRQ(ierr);
+
   if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
     lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
     if (!lat)
       SETERRQ(grid.com, 10, "ERROR: 'latitude' is not available or is wrong type in dictionary");
-  } else
+  } else {
     lat = NULL;
-
+  }
 
   if (fausto_params) {
     ierr = verbPrintf(2, grid.com,
        "  Setting PDD parameters from [Faustoetal2009] ...\n");
        CHKERRQ(ierr);
 
-    //FIXME: this seems not to work because config is "const"?:  config.set("pdd_std_dev",2.53);
     base_pddStdDev = 2.53;
 
     lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
     if (!lon)
       SETERRQ(grid.com, 11, "ERROR: 'longitude' is not available or is wrong type in dictionary");
+
     usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
     if (!usurf)
       SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
@@ -176,6 +182,19 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     usurf = NULL;
   }
 
+  string input_file;
+  bool regrid = false;
+  int start = -1;
+  
+  // find PISM input file to read data from:
+  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
+
+  // read snow precipitation rate from file
+  ierr = verbPrintf(2, grid.com,
+		    "    reading snow depth (ice equivalent meters) from %s ... \n",
+		    input_file.c_str()); CHKERRQ(ierr);
+  ierr = snow_depth.regrid(input_file.c_str(), 0.0); CHKERRQ(ierr);
+  
   // if -pdd_annualize is set, update mass balance immediately (at the
   // beginning of the run)
   next_pdd_update = grid.time->current();
@@ -192,14 +211,10 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
-  if (pdd_annualize) {
-    if (PetscAbs(my_t - next_pdd_update) < 1e-12)
-      my_dt = convert(1.0, "years", "seconds");
-    else
-      my_dt = next_pdd_update - my_t;
-  } else {
-    my_dt = -1;
-  }
+  if (PetscAbs(my_t - next_pdd_update) < 1e-12)
+    my_dt = convert(1.0, "years", "seconds");
+  else
+    my_dt = next_pdd_update - my_t;
 
   PetscReal dt_atmosphere;
   ierr = atmosphere->max_timestep(my_t, dt_atmosphere, restrict); CHKERRQ(ierr);
@@ -248,7 +263,11 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
                         "  Updating mass balance for one year starting at %s ...\n",
                         grid.time->date(my_t).c_str());
       ierr = update_internal(my_t, one_year); CHKERRQ(ierr);
-      next_pdd_update = my_t + one_year;
+      next_pdd_update = (grid.time->mod(my_t, 1.0) +
+			 convert(config.get("pdd_balance_year_start_day") - 1, "day", "seconds"));
+
+      if (next_pdd_update <= my_t + my_dt)
+	next_pdd_update += one_year;
     }
   } else {
     ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
@@ -260,12 +279,13 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
 PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
+  if (fabs(grid.time->year_fraction(my_t) - config.get("pdd_balance_year_start_day") / 365.0) < 0.5/365.0) {
+    ierr = verbPrintf(3, grid.com, "  PDD model: Re-setting snow depth to 0 meters.\n"); CHKERRQ(ierr);
+    ierr = snow_depth.set(0.0); CHKERRQ(ierr);
+  }
+
   // to ensure that temperature time series are correct:
   ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
-
-  // This is a point-wise (local) computation, so we can use "climatic_mass_balance" to store
-  // precipitation:
-  ierr = atmosphere->mean_precipitation(climatic_mass_balance); CHKERRQ(ierr);
 
   // set up air temperature time series
   PetscInt Nseries;
@@ -275,7 +295,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   const PetscScalar dtseries = my_dt / ((PetscScalar) (Nseries - 1));
 
   // times for the air temperature time-series, in years:
-  vector<PetscScalar> ts(Nseries), T(Nseries);
+  vector<PetscScalar> ts(Nseries), T(Nseries), P(Nseries);
   for (PetscInt k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
 
@@ -306,12 +326,16 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   ierr = accumulation_rate.begin_access(); CHKERRQ(ierr);
   ierr = melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = runoff_rate.begin_access(); CHKERRQ(ierr);
+  ierr = snow_depth.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // the temperature time series from the PISMAtmosphereModel and its modifiers
       ierr = atmosphere->temp_time_series(i, j, Nseries, &ts[0], &T[0]); CHKERRQ(ierr);
+
+      // the precipitation time series from PISMAtmosphereModel and its modifiers
+      ierr = atmosphere->precip_time_series(i, j, Nseries, &ts[0], &P[0]); CHKERRQ(ierr);
 
       if (faustogreve != NULL) {
 	// we have been asked to set mass balance parameters according to
@@ -333,13 +357,15 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
                                   my_t, dtseries, &T[0], Nseries);
 
       // use the temperature time series to remove the rainfall from the precipitation
-      PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
-                                  climatic_mass_balance(i,j), // precipitation rate (input)
+      PetscScalar snow_accumulation = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
+                                  &P[0], // precipitation rate (input)
                                   my_t, dtseries, &T[0], Nseries);
 
       // use degree-day factors, and number of PDDs, and the snow precipitation, to
       //   get surface mass balance (and diagnostics: accumulation, melt, runoff)
-      ierr = mbscheme->getMassFluxesFromPDDs(ddf, my_dt, pddsum, snow_amount,
+      ierr = mbscheme->getMassFluxesFromPDDs(ddf, my_dt, pddsum,
+					     snow_accumulation,
+					     snow_depth(i,j), // input-output
                                              accumulation_rate(i,j), // output
                                              melt_rate(i,j), // output
                                              runoff_rate(i,j), // output
@@ -351,6 +377,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   ierr = accumulation_rate.end_access(); CHKERRQ(ierr);
   ierr = melt_rate.end_access(); CHKERRQ(ierr);
   ierr = runoff_rate.end_access(); CHKERRQ(ierr);
+  ierr = snow_depth.end_access(); CHKERRQ(ierr);
 
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
@@ -378,7 +405,9 @@ PetscErrorCode PSTemperatureIndex::ice_surface_mass_flux(IceModelVec2S &result) 
 
 
 PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result) {
+
   PetscErrorCode ierr = atmosphere->mean_annual_temp(result); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -386,6 +415,8 @@ void PSTemperatureIndex::add_vars_to_output(string keyword, map<string,NCSpatial
 
   PISMSurfaceModel::add_vars_to_output(keyword, result);
 
+  result["snow_depth"] = snow_depth.get_metadata();
+  
   if (keyword == "medium" || keyword == "big") {
     result["climatic_mass_balance"] = climatic_mass_balance.get_metadata();
     result["ice_surface_temp"] = ice_surface_temp;
@@ -419,6 +450,10 @@ PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO 
 
   if (set_contains(vars, "srunoff")) {
     ierr = runoff_rate.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "snow_depth")) {
+    ierr = snow_depth.define(nc, nctype); CHKERRQ(ierr);
   }
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -459,6 +494,11 @@ PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, const PIO &
   if (set_contains(vars, "srunoff")) {
     ierr = runoff_rate.write(nc); CHKERRQ(ierr);
     vars.erase("srunoff");
+  }
+
+  if (set_contains(vars, "snow_depth")) {
+    ierr = snow_depth.write(nc); CHKERRQ(ierr);
+    vars.erase("snow_depth");
   }
 
   ierr = PISMSurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
