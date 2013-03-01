@@ -18,7 +18,8 @@ netcdf pism_overrides {
     pism_overrides:ice_softness_doc = "; = A";
 
 
-    // next four are k, alpha, beta, W_r (= h_r) just as in Hewitt et al (2012) Table 1
+    // next four are k, alpha, beta, W_r (= h_r) just as in *both*
+    //   Schoof et al (2012) Table 1  and  Hewitt et al (2012) Table 1
 
     pism_overrides:hydrology_hydraulic_conductivity = 0.01;
     pism_overrides:hydrology_hydraulic_conductivity_doc = "m^{7/4} kg^{-1/2}; = k";
@@ -30,7 +31,7 @@ netcdf pism_overrides {
     pism_overrides:hydrology_potential_gradient_power_in_flux_doc = "; = 3/2; = beta";
 
     pism_overrides:hydrology_roughness_scale = 0.1;
-    pism_overrides:hydrology_roughness_scale_doc = "m; = W_r";
+    pism_overrides:hydrology_roughness_scale_doc = "m; = W_r; = h_r in Schoof/Hewitt work";
 
     // end
 
