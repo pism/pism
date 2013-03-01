@@ -330,14 +330,16 @@ protected:
 
   virtual PetscErrorCode check_W_nonnegative();
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
-  virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, PetscReal &maxKW);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(
-                           PetscReal t_current, PetscReal t_end, PetscReal &dt_result,
-                           PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result);
+            PetscReal t_current, PetscReal t_end, PetscReal maxKW,
+            PetscReal &dt_result,
+            PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result);
   virtual PetscErrorCode adaptive_for_W_evolution(
-                           PetscReal t_current, PetscReal t_end, PetscReal &dt_result);
+            PetscReal t_current, PetscReal t_end, PetscReal maxKW,
+            PetscReal &dt_result);
 
   PetscErrorCode raw_update_W(PetscReal hdt);
 
@@ -413,7 +415,7 @@ protected:
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
 
   virtual PetscErrorCode adaptive_for_WandP_evolution(
-                           PetscReal t_current, PetscReal t_end,
+                           PetscReal t_current, PetscReal t_end, PetscReal maxKW,
                            PetscReal &dt_result, PetscReal &PtoCFLratio);
 
   virtual PetscErrorCode update_englacial_storage(
