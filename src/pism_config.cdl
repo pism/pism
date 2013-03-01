@@ -220,7 +220,7 @@ netcdf pism_config {
     pism_config:hydrology_bwat_diffusion_time_doc = "years; diffusion time for melt water thickness; only used by hydrology model 'diffuseonly'=PISMDiffuseOnlyHydrology";
 
     pism_config:hydrology_hydraulic_conductivity = 1.0e-2;
-    pism_config:hydrology_hydraulic_conductivity_doc = "m s-1; = k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
+    pism_config:hydrology_hydraulic_conductivity_doc = "m^{2 beta - alpha} s^{2 beta - 3} kg^{1-beta}; = k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; units depend on powers alpha = hydrology_thickness_power_in_flux and beta = hydrology_potential_gradient_power_in_flux; used by PISMRoutingHydrology and PISMDistributedHydrology";
 
     pism_config:hydrology_thickness_power_in_flux = 1.0;
     pism_config:hydrology_thickness_power_in_flux_doc = "; = alpha in notes; power alpha in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
