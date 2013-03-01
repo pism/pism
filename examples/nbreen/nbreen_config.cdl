@@ -17,14 +17,22 @@ netcdf pism_overrides {
     pism_overrides:ice_softness = 3.1689e-24;
     pism_overrides:ice_softness_doc = "; = A";
 
-    pism_overrides:hydrology_hydraulic_conductivity = 1.0e-3;
-    pism_overrides:hydrology_hydraulic_conductivity_doc = "m s-1; = K";
 
-    pism_overrides:hydrology_thickness_power_in_flux = 2.0;
-    pism_overrides:hydrology_thickness_power_in_flux_doc = "; = alpha";
+    // next four are k, alpha, beta, W_r (= h_r) just as in Hewitt et al (2012) Table 1
 
-    pism_overrides:hydrology_roughness_scale = 1.0;
+    pism_overrides:hydrology_hydraulic_conductivity = 0.01;
+    pism_overrides:hydrology_hydraulic_conductivity_doc = "m^{7/4} kg^{-1/2}; = k";
+
+    pism_overrides:hydrology_thickness_power_in_flux = 1.25;
+    pism_overrides:hydrology_thickness_power_in_flux_doc = "; = 5/4; = alpha";
+
+    pism_overrides:hydrology_potential_gradient_power_in_flux = 1.5;
+    pism_overrides:hydrology_potential_gradient_power_in_flux_doc = "; = 3/2; = beta";
+
+    pism_overrides:hydrology_roughness_scale = 0.1;
     pism_overrides:hydrology_roughness_scale_doc = "m; = W_r";
+
+    // end
 
     pism_overrides:hydrology_cavitation_opening_coefficient = 0.500;
     pism_overrides:hydrology_cavitation_opening_coefficient_doc = "m-1; = c_1";
