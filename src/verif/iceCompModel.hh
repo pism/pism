@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -95,13 +95,13 @@ protected:
                    PetscScalar &gmaxTerr, PetscScalar &gavTerr);
   PetscErrorCode computeBasalTemperatureErrors( // tests F and G
                    PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &centerTerr);
-  PetscErrorCode computeSigmaErrors(            // tests F and G
-                   PetscScalar &gmaxSigmaerr, PetscScalar &gavSigmaerr);
+  PetscErrorCode compute_strain_heating_errors(            // tests F and G
+                   PetscScalar &gmax_strain_heating_err, PetscScalar &gav_strain_heating_err);
   PetscErrorCode computeSurfaceVelocityErrors(  // tests F and G
                    PetscScalar &gmaxUerr, PetscScalar &gavUerr,  // 2D vector errors
                    PetscScalar &gmaxWerr, PetscScalar &gavWerr); // scalar errors
   
-  IceModelVec3   SigmaComp3;
+  IceModelVec3   strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc
   PetscErrorCode initTestsKO();

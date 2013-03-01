@@ -276,10 +276,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   DrainageCalculator dc(config);
   
   IceModelVec2S *Rb;
-  IceModelVec3 *u3, *v3, *w3, *Sigma3;
+  IceModelVec3 *u3, *v3, *w3, *strain_heating3;
   ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
-  ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr); 
+  ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr); 
 
   PetscScalar *Enthnew;
   Enthnew = new PetscScalar[fMz];  // new enthalpy in column
@@ -354,7 +354,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
   ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = Sigma3->begin_access(); CHKERRQ(ierr);
+  ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vWork3d.begin_access(); CHKERRQ(ierr);
 
@@ -462,7 +462,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
         ierr = u3->getValColumn(i,j,ks,esys->u); CHKERRQ(ierr);
         ierr = v3->getValColumn(i,j,ks,esys->v); CHKERRQ(ierr);
-        ierr = Sigma3->getValColumn(i,j,ks,esys->Sigma); CHKERRQ(ierr);
+        ierr = strain_heating3->getValColumn(i,j,ks,esys->strain_heating); CHKERRQ(ierr);
 
         ierr = esys->initThisColumn(isMarginal, lambda, vH(i, j)); CHKERRQ(ierr);
         ierr = esys->setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
@@ -569,7 +569,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = u3->end_access(); CHKERRQ(ierr);
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = Sigma3->end_access(); CHKERRQ(ierr);
+  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
 

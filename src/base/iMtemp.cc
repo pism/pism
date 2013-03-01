@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -171,7 +171,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     system.u     = new PetscScalar[fMz];
     system.v     = new PetscScalar[fMz];
     system.w     = new PetscScalar[fMz];
-    system.Sigma = new PetscScalar[fMz];
+    system.strain_heating = new PetscScalar[fMz];
     system.T     = new PetscScalar[fMz];
     Tnew         = new PetscScalar[fMz];
 
@@ -227,16 +227,16 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     IceModelVec2S *Rb;            // basal frictional heating
     ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
 
-    IceModelVec3 *u3, *v3, *w3, *Sigma3;
+    IceModelVec3 *u3, *v3, *w3, *strain_heating3;
     ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
-    ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr);
+    ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
     ierr = Rb->begin_access(); CHKERRQ(ierr);
 
     ierr = u3->begin_access(); CHKERRQ(ierr);
     ierr = v3->begin_access(); CHKERRQ(ierr);
     ierr = w3->begin_access(); CHKERRQ(ierr);
-    ierr = Sigma3->begin_access(); CHKERRQ(ierr);
+    ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
     ierr = T3.begin_access(); CHKERRQ(ierr);
     ierr = vWork3d.begin_access(); CHKERRQ(ierr);
 
@@ -259,7 +259,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           ierr = u3->getValColumn(i,j,ks,system.u); CHKERRQ(ierr);
           ierr = v3->getValColumn(i,j,ks,system.v); CHKERRQ(ierr);
           ierr = w3->getValColumn(i,j,ks,system.w); CHKERRQ(ierr);
-          ierr = Sigma3->getValColumn(i,j,ks,system.Sigma); CHKERRQ(ierr);
+          ierr = strain_heating3->getValColumn(i,j,ks,system.strain_heating); CHKERRQ(ierr);
           ierr = T3.getValColumn(i,j,ks,system.T); CHKERRQ(ierr);
 
           // go through column and find appropriate lambda for BOMBPROOF
@@ -411,12 +411,12 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
   ierr = u3->end_access(); CHKERRQ(ierr);
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = Sigma3->end_access(); CHKERRQ(ierr);
+  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
   ierr = T3.end_access(); CHKERRQ(ierr);
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
 
   delete [] x;
-  delete [] system.T;  delete [] system.Sigma;
+  delete [] system.T;  delete [] system.strain_heating;
   delete [] system.u;  delete [] system.v;  delete [] system.w;
   delete [] Tnew;
   return 0;

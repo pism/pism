@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -66,7 +66,7 @@ public:
                *u,
                *v,
                *w,
-               *Sigma;
+               *strain_heating;
 protected:
   PetscInt     Mz;
   PetscScalar  ice_rho, ice_c, ice_k, ice_K, ice_K0,

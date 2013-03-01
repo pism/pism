@@ -818,7 +818,7 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
 /*!
  * See section 2.8 of [\ref BBssasliding].
  *
- * Computes the volumetric strain heating Sigma by combining the contribution
+ * Computes the volumetric strain heating strain_heating by combining the contribution
  * from the underlying stress balance (usually the SSA) in the form of the
  * (partial) square of the Frobenius norm of \f$D_{ij}\f$, the combined strain
  * rates with the SIA contribution.
@@ -829,7 +829,7 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
  *
  * \note This is one of the places where "hybridization" is done.
  *
- * \note The result is stored in SIAFD::Sigma. Ghosts of Sigma are not used.
+ * \note The result is stored in SIAFD::strain_heating. Ghosts of strain_heating are not used.
  *
  * \param[in] D2_input the "SSA" contribution to the strain heating
  * \param[in] h_x the X-component of the surface gradient, on the staggered grid
@@ -871,14 +871,14 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
                                         &thk_smooth); CHKERRQ(ierr);
 
   // Now transfer delta*alpha_squared from the staggered onto the regular grid.
-  // We use SIAFD::Sigma to store delta*alpha_squared.
+  // We use SIAFD::strain_heating to store delta*alpha_squared.
   PetscScalar *delta_reg, *delta_e, *delta_w, *delta_n, *delta_s;
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
-  ierr = Sigma.begin_access(); CHKERRQ(ierr);
+  ierr = strain_heating.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscReal thk = thk_smooth(i,j);
-      ierr = Sigma.getInternalColumn(i,j,&delta_reg); CHKERRQ(ierr);
+      ierr = strain_heating.getInternalColumn(i,j,&delta_reg); CHKERRQ(ierr);
 
       // Zero out the whole column:
       ierr = PetscMemzero(delta_reg, grid.Mz*sizeof(PetscScalar)); CHKERRQ(ierr);
@@ -910,7 +910,7 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
 
   PetscReal enhancement_factor = flow_law->enhancement_factor(),
     n_glen  = flow_law->exponent(),
-    Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
+    exponent = (1.0 + n_glen) / (2.0 * n_glen),
     e_to_a_power = pow(enhancement_factor,-1/n_glen);
 
   PetscScalar *delta_alpha_squared = new PetscScalar[grid.Mz];
@@ -918,7 +918,7 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
 
-        ierr = Sigma.getInternalColumn(i, j, &sigma_ij); CHKERRQ(ierr);
+        ierr = strain_heating.getInternalColumn(i, j, &sigma_ij); CHKERRQ(ierr);
         ierr = enthalpy->getInternalColumn(i, j, &E); CHKERRQ(ierr);
 
         const PetscReal thk = thk_smooth(i, j),
@@ -940,9 +940,9 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
           if (grounded) {
             const PetscReal sigma_sia = delta_alpha_squared[k] * pressure;
             // combine SIA and SSA contributions
-            D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
+            D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / exponent);
           }
-          sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, Sig_pow);
+          sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, exponent);
         }
         // Values above the ice were set to zero by the memset() call above.
 
@@ -952,7 +952,7 @@ PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = D2_input->end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
-  ierr = Sigma.end_access(); CHKERRQ(ierr);
+  ierr = strain_heating.end_access(); CHKERRQ(ierr);
 
   ierr = thk_smooth.end_access(); CHKERRQ(ierr);
 
