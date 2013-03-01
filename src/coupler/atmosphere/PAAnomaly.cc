@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -97,12 +97,15 @@ PetscErrorCode PAAnomaly::temp_snapshot(IceModelVec2S &result) {
 
 PetscErrorCode PAAnomaly::begin_pointwise_access() {
   PetscErrorCode ierr = input_model->begin_pointwise_access(); CHKERRQ(ierr);
-  return temp.begin_access();
+  ierr = temp.begin_access(); CHKERRQ(ierr);
+  ierr = mass_flux.begin_access(); CHKERRQ(ierr);
+  return 0;
 }
 
 PetscErrorCode PAAnomaly::end_pointwise_access() {
   PetscErrorCode ierr = input_model->end_pointwise_access(); CHKERRQ(ierr);
-  return temp.end_access();
+  ierr = temp.end_access(); CHKERRQ(ierr);
+  return 0;
 }
 
 PetscErrorCode PAAnomaly::temp_time_series(int i, int j, int N,
@@ -130,6 +133,38 @@ PetscErrorCode PAAnomaly::temp_time_series(int i, int j, int N,
 
   ts_values.reserve(N);
   ierr = temp.interp(i, j, N, ptr, &ts_values[0]); CHKERRQ(ierr);
+
+  for (int k = 0; k < N; ++k)
+    values[k] += ts_values[k];
+
+  return 0;
+}
+
+PetscErrorCode PAAnomaly::precip_time_series(int i, int j, int N,
+					     PetscReal *ts, PetscReal *values) {
+  PetscErrorCode ierr;
+
+  // NB! the input_model uses un-periodized times.
+  ierr = input_model->precip_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+
+  PetscReal *ptr;
+
+  if (bc_period > 0.01) {
+    // Recall that this method is called for each map-plane point during a
+    // time-step. This if-condition is here to avoid calling
+    // grid.time->mod() if the user didn't ask for periodized climate.
+    ts_mod.reserve(N);
+
+    for (int k = 0; k < N; ++k)
+      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_time, bc_period);
+
+    ptr = &ts_mod[0];
+  } else {
+    ptr = ts;
+  }
+
+  ts_values.reserve(N);
+  ierr = mass_flux.interp(i, j, N, ptr, &ts_values[0]); CHKERRQ(ierr);
 
   for (int k = 0; k < N; ++k)
     values[k] += ts_values[k];

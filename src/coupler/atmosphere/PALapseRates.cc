@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -106,6 +106,22 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, int N,
 
   for (int m = 0; m < N; ++m) {
     values[m] -= temp_lapse_rate * ((*surface)(i, j) - usurf[m]);
+  }
+
+  return 0;
+}
+
+PetscErrorCode PALapseRates::precip_time_series(int i, int j, int N,
+						PetscReal *ts, PetscReal *values) {
+  PetscErrorCode ierr;
+  vector<PetscScalar> usurf(N);
+
+  ierr = input_model->precip_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+
+  ierr = reference_surface.interp(i, j, N, ts, &usurf[0]); CHKERRQ(ierr);
+
+  for (int m = 0; m < N; ++m) {
+    values[m] -= precip_lapse_rate * ((*surface)(i, j) - usurf[m]);
   }
 
   return 0;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -69,7 +69,8 @@ protected:
     accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)
     melt_rate,             //!< diagnostic output melt rate (rate at which snow
                            //!< and ice is melted, but some snow melt refreezes)
-    runoff_rate;           //!< diagnostic output meltwater runoff rate
+    runoff_rate,           //!< diagnostic output meltwater runoff rate
+    snow_depth;		   //!< snow depth (reset once a year)
 
   IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex must hold these
                                      //!pointers in order to use object which

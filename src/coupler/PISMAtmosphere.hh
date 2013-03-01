@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -40,6 +40,13 @@ public:
 
   virtual PetscErrorCode begin_pointwise_access() = 0;
   virtual PetscErrorCode end_pointwise_access() = 0;
+
+  //! \brief Sets a pre-allocated N-element array "values" to the time-series of
+  //! ice-equivalent precipitation (m/s) at the point i,j on the grid.
+  //!
+  //! See temp_time_series() for more.
+  virtual PetscErrorCode precip_time_series(int i, int j, int N,
+					    PetscReal *ts, PetscReal *values) = 0;
 
   //! \brief Sets a pre-allocated N-element array "values" to the time-series
   //! of near-surface air temperature (degrees Kelvin) at the point i,j on the
