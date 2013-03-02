@@ -310,8 +310,8 @@ protected:
   IceModelVec2S W;      // water layer thickness
   // this model's auxiliary variables
   IceModelVec2Stag V,   // components are
-                        //   V(i,j,0) = alpha(i,j) = east-edge centered  x-component of water velocity
-                        //   V(i,j,1) = beta(i,j)  = north-edge centered y-component of water velocity
+                        //   V(i,j,0) = u(i,j) = east-edge  centered x-component of water velocity
+                        //   V(i,j,1) = v(i,j) = north-edge centered y-component of water velocity
                    Wstag,// edge-centered (staggered) W values (averaged from regular)
                    Kstag,// edge-centered (staggered) values of nonlinear conductivity
                    Qstag;// edge-centered (staggered) advection fluxes
