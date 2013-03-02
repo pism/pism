@@ -1,17 +1,20 @@
 #!/bin/bash
 
 if [ $# -lt 4 ] ; then
-  echo "run.sh ERROR: needs four arguments ... ending"
+  echo "run.sh ERROR: needs five arguments ... ENDING NOW"
   echo "  format:"
-  echo "    run.sh PROCS GRID DURATION TYPE"
+  echo "    run.sh PROCS GRID DURATION TYPE REPORTING"
   echo "  where"
-  echo "    PROCS    =1,2,3,... is number of MPI processes"
-  echo "    GRID     is in {500, 250, 125, 62}, the grid spacing in meters"
-  echo "    DURATION is run duration in years"
-  echo "    TYPE     is in {dist, event, routing}"
+  echo "    PROCS     = 1,2,3,... is number of MPI processes"
+  echo "    GRID      is in {500, 250, 125, 62}, the grid spacing in meters"
+  echo "    DURATION  is run duration in years"
+  echo "    TYPE      is in {dist, event, routing}"
+  echo "    REPORTING is either a Delta t in years or in {daily, monthly, yearly}"
+  echo "                                                 [hourly would be nice]"
   echo "  example usage:"
-  echo "    run.sh 4 500 5 dist"
-  echo "  i.e. 4 processors, 500 m grid, 5 model year run, and '-hydrology distributed'"
+  echo "    run.sh 4 500 0.25 dist daily"
+  echo "  is a run with 4 processors, 500 m grid, 3 model month run,"
+  echo "  using '-hydrology distributed', and with daily reporting"
   exit
 fi
 
@@ -47,7 +50,11 @@ fi
 
 YY="$3"
 
-# these diagnostics apply to "dist" and "event":
+DT="$5"
+
+etimes="0:$DT:$YY"
+
+# these extra_ diagnostics apply to "dist" and "event":
 evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp,enwat"
 
 if [ "$4" = "dist" ]; then
@@ -55,16 +62,12 @@ if [ "$4" = "dist" ]; then
   # distributed run
   oname=nbreen_y${YY}_${dx}m_dist.nc
   hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc"
-  etimes="0:0.1:$YY"
 
 elif [ "$4" = "event" ]; then
 
   # distributed run with summer event
   oname=nbreen_y${YY}_${dx}m_event.nc
   hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc -input_to_bed_file fakesummerevent.nc -input_to_bed_period 1.0 -input_to_bed_reference_year 0.0"
-  etimes="0.0:0.005:$YY"
-#FIXME: this produced a bug: it gave warning about more than 500 frames
-# etimes="0.0:daily:$YY"
 
 elif [ "$4" = "routing" ]; then
 
@@ -72,7 +75,6 @@ elif [ "$4" = "routing" ]; then
   oname=nbreen_y${YY}_${dx}m_routing.nc
   hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3"
   evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel"  # revised
-  etimes="0:0.1:$YY"
 
 else
   echo "invalid fourth argument; must be in {dist,event,routing}"
