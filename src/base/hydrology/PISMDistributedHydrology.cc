@@ -59,7 +59,7 @@ PetscErrorCode PISMRoutingHydrology::allocate() {
   ierr = Kstag.create(grid, "K_staggered", true, 1); CHKERRQ(ierr);
   ierr = Kstag.set_attrs("internal",
                      "cell face-centered (staggered) values of nonlinear conductivity",
-                     "m", ""); CHKERRQ(ierr);
+                     "", ""); CHKERRQ(ierr);
   ierr = Kstag.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = Qstag.create(grid, "advection_flux", true, 1); CHKERRQ(ierr);
   ierr = Qstag.set_attrs("internal",
@@ -367,7 +367,7 @@ Computes the advection velocity \f$\mathbf{V}\f$ on the staggered
 <code> result(i,j,1) = v(i,j+1/2) </code>
 
 The advection velocity is given by the formula
-  \f[ \mathbf{V} = - K \left(\frac{\nabla P}{\rho_w g} + \nabla b\right) \f]
+  \f[ \mathbf{V} = - K \left(\nabla P + \rho_w g \nabla b\right) \f]
 where \f$\mathbf{V}\f$ is the water velocity, \f$P\f$ is the water
 pressure, and \f$b\f$ is the bedrock elevation.
 
@@ -396,13 +396,13 @@ PetscErrorCode PISMRoutingHydrology::velocity_staggered(IceModelVec2Stag &result
       if (Wstag(i,j,0) > 0.0) {
         dPdx = (R(i+1,j) - R(i,j)) / grid.dx;
         dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
-        result(i,j,0) = - Kstag(i,j,0) * (dPdx / rg + dbdx);
+        result(i,j,0) = - Kstag(i,j,0) * (dPdx + rg * dbdx);
       } else
         result(i,j,0) = 0.0;
       if (Wstag(i,j,1) > 0.0) {
         dPdy = (R(i,j+1) - R(i,j)) / grid.dy;
         dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
-        result(i,j,1) = - Kstag(i,j,1) * (dPdy / rg + dbdy);
+        result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
       } else
         result(i,j,1) = 0.0;
       if (in_null_strip(i,j) || in_null_strip(i+1,j))
@@ -450,13 +450,16 @@ PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
                   PetscReal &dt_result,
                   PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result) {
   PetscErrorCode ierr;
-  const PetscReal dtmax = config.get("hydrology_maximum_time_step_years") * secpera;
-  PetscReal tmp[2];
+  const PetscReal
+    dtmax = config.get("hydrology_maximum_time_step_years") * secpera,
+    rg    = config.get("standard_gravity") * config.get("fresh_water_density");
+  PetscReal maxD, tmp[2];
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
+  maxD = rg * maxKW;
   dtCFL_result = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy); // is regularization needed?
   dtDIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
-  dtDIFFW_result = 0.25 / (maxKW * dtDIFFW_result);
+  dtDIFFW_result = 0.25 / (maxD * dtDIFFW_result);
   // dt = min { te-t, dtmax, dtCFL, dtDIFFW }
   dt_result = PetscMin(t_end - t_current, dtmax);
   dt_result = PetscMin(dt_result, dtCFL_result);
@@ -482,8 +485,10 @@ PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
 //! The computation of Wnew, called by update().
 PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
     PetscErrorCode ierr;
-    const PetscReal  wux  = 1.0 / (grid.dx * grid.dx),
-                     wuy  = 1.0 / (grid.dy * grid.dy);
+    const PetscReal
+      wux  = 1.0 / (grid.dx * grid.dx),
+      wuy  = 1.0 / (grid.dy * grid.dy),
+      rg   = config.get("standard_gravity") * config.get("fresh_water_density");
     PetscReal divadflux, diffW;
 
     ierr = W.begin_access(); CHKERRQ(ierr);
@@ -496,18 +501,12 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
                     + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
-        const PetscReal  We = Wstag(i,  j,0),
-                         Ww = Wstag(i-1,j,0),
-                         Wn = Wstag(i,j  ,1),
-                         Ws = Wstag(i,j-1,1),
-                         Ke = Kstag(i,  j,0),
-                         Kw = Kstag(i-1,j,0),
-                         Kn = Kstag(i,j  ,1),
-                         Ks = Kstag(i,j-1,1);
-        diffW =   wux * (  Ke * We * (W(i+1,j) - W(i,j))
-                         - Kw * Ww * (W(i,j) - W(i-1,j)) )
-                + wuy * (  Kn * Wn * (W(i,j+1) - W(i,j))
-                         - Ks * Ws * (W(i,j) - W(i,j-1)) );
+        const PetscReal  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
+                         Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
+                         Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
+                         Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
+        diffW =   wux * (  De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)) )
+                + wuy * (  Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)) );
         Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + total_input(i,j));
       }
     }
@@ -905,8 +904,8 @@ Calls water_pressure() method to get water pressure.
  */
 PetscErrorCode PISMDistributedHydrology::hydraulic_potential(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PetscReal fresh_water_density = config.get("fresh_water_density"),
-            standard_gravity    = config.get("standard_gravity");
+  const PetscReal
+    rg = config.get("fresh_water_density") * config.get("standard_gravity");
   MaskQuery M(*mask);
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
@@ -920,7 +919,7 @@ PetscErrorCode PISMDistributedHydrology::hydraulic_potential(IceModelVec2S &resu
       if (M.ocean(i,j))
         result(i,j) = Pover(i,j);
       else
-        result(i,j) = P(i,j) + fresh_water_density * standard_gravity * ((*bed)(i,j) + W(i,j));
+        result(i,j) = P(i,j) + rg * ((*bed)(i,j) + W(i,j));
     }
   }
   ierr = W.end_access(); CHKERRQ(ierr);
@@ -1032,10 +1031,9 @@ the new value \f$W^{l+1}\f$ is also established in a mass conserving manner.
 PetscErrorCode PISMDistributedHydrology::update_englacial_storage(
                                     IceModelVec2S &myPnew, IceModelVec2S &Wnew_tot) {
   PetscErrorCode ierr;
-  const PetscReal rhow = config.get("fresh_water_density"),
-                  g = config.get("standard_gravity"),
+  const PetscReal rg = config.get("fresh_water_density") * config.get("standard_gravity"),
                   porosity = config.get("hydrology_englacial_porosity"), // the true porosity
-                  CCpor = porosity / (rhow * g);
+                  CCpor = porosity / rg;
   PetscReal Wen_max;
   ierr = myPnew.begin_access(); CHKERRQ(ierr);
   ierr = Wen.begin_access(); CHKERRQ(ierr);
@@ -1091,15 +1089,15 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
   const PetscReal
-            rhow = config.get("fresh_water_density"),
-            g = config.get("standard_gravity"),
+            rg = config.get("fresh_water_density") * config.get("standard_gravity"),
             nglen = config.get("Glen_exponent"),
             Aglen = config.get("ice_softness"),
             c1 = config.get("hydrology_cavitation_opening_coefficient"),
             c2 = config.get("hydrology_creep_closure_coefficient"),
             Wr = config.get("hydrology_roughness_scale"),
             Y0 = config.get("hydrology_lower_bound_creep_regularization"),
-            phisum = config.get("hydrology_englacial_porosity") + config.get("hydrology_regularizing_porosity");
+            phisum = config.get("hydrology_englacial_porosity")
+                       + config.get("hydrology_regularizing_porosity");
 
   if (phisum <= 0.0) {
     PetscPrintf(grid.com,
@@ -1107,8 +1105,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     PISMEnd();
   }
 
-  const PetscReal  omegax = 1.0 / (rhow * g * grid.dx * grid.dx),
-                   omegay = 1.0 / (rhow * g * grid.dy * grid.dy);
+  const PetscReal  omegax = 1.0 / (grid.dx * grid.dx),
+                   omegay = 1.0 / (grid.dy * grid.dy);
 
   PetscReal ht = t, hdt, // hydrology model time and time step
             maxKW;
@@ -1153,7 +1151,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     }
 
     // update Pnew from time step
-    const PetscReal  CC = (rhow * g * hdt) / phisum;
+    const PetscReal  CC = (rg * hdt) / phisum;
     PetscReal  Open, Close, divflux,
                dpsie, dpsiw, dpsin, dpsis;
     ierr = overburden_pressure(Pover); CHKERRQ(ierr);
