@@ -6,6 +6,9 @@ file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/
 # Copy nccmp.py into the build directory:
 configure_file (${PROJECT_SOURCE_DIR}/util/nccmp.py ${PROJECT_BINARY_DIR}/nccmp.py COPYONLY)
 
+# Copy pypdd.py into the build directory:
+configure_file (${PROJECT_SOURCE_DIR}/util/pypdd.py ${PROJECT_BINARY_DIR}/pypdd.py COPYONLY)
+
 # Set the location of PISM regression test scripts
 set(PISM_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -94,6 +97,8 @@ pism_test (runtime_viewers test_27.sh)
 pism_test (bootstrapping_incomplete_input test_28.sh)
 
 pism_test (distributed_hydrology_regression test_29.py)
+
+pism_test (pdd_model test_30.sh)
 
 
 if(Pism_BUILD_PYTHON_BINDINGS)
