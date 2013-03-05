@@ -41,10 +41,10 @@ netcdf pism_overrides {
     pism_overrides:hydrology_creep_closure_coefficient = 0.040;
     pism_overrides:hydrology_creep_closure_coefficient_doc = "; = c_2";
 
-    pism_overrides:hydrology_englacial_porosity = 0.005;
+    pism_overrides:hydrology_englacial_porosity = 0.001;
     pism_overrides:hydrology_englacial_porosity_doc = "[pure]; = phi";
 
-    pism_overrides:hydrology_regularizing_porosity = 0.01;
+    pism_overrides:hydrology_regularizing_porosity = 0.005;
     pism_overrides:hydrology_regularizing_porosity_doc = "[pure]; phi_0";
 
     pism_overrides:hydrology_lower_bound_creep_regularization = 0.001;
