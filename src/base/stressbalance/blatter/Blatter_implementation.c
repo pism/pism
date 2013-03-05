@@ -33,16 +33,53 @@
 #include "Blatter_implementation.h"
 
 static PetscScalar Sqr(PetscScalar a) {return a*a;}
-/*
-  There is one compile-time option:
 
-  NO_SSE2:
-  If the host supports SSE2, we use integration code that has been vectorized with SSE2
-  intrinsics, unless this macro is defined.  The intrinsics speed up integration by about
-  30% on my architecture (P8700, gcc-4.5 snapshot) (JB).
+/*! \file Blatter_implementation.c
 
+  This file contains the implementation of the \f$Q_1\f$ 3D FEM solver for
+  the Blatter-Pattyn stress balance system.
+
+  Define the Blatter effective strain rate tensor \f$M\f$ 
+  \f[
+  M =
+  \left(
+  \begin{array}{lll}
+  4 u_x + 2 v_y & u_y + v_x & u_z\\
+  u_y + v_x & 2 u_x + 4 v_y & v_z
+  \end{array}
+  \right).
+  \f]
+
+  Then the Blatter system of equations reads
+  \f[
+  \nabla\cdot (\eta M) + \rho g \nabla s = 0,
+  \f]
+  or
+  \f{align*}{
+  \left(\eta (4 u_x + 2 v_y)\right)_x + \left(\eta (u_y + v_x)\right)_y + \left(\eta u_z\right)_z + \rho g s_x &= 0,\\
+  \left(\eta (2 u_x + 4 v_y)\right)_y + \left(\eta (u_y + v_x)\right)_x + \left(\eta v_z\right)_z + \rho g s_y &= 0,
+  \f}
+  where \f$\eta\f$ is the effective viscosity
+  \f[
+  \eta = \frac B 2 \left(\gamma + \epsilon^2\right)^{\displaystyle\frac{1-n}{2n}}
+  \f]
+  and \f$B\f$ and \f$\epsilon\f$ are ice hardness and the regularizing parameter, respectively.
+
+  Also, \f$\gamma\f$ is the second invariant of the strain rate tensor, defined by
+  \f[
+  \gamma(u,v) = u_{x}^2 + v_{y}^2 + v_{y} \cdot u_{x} + \frac14{(u_{y}+v_{x})^2} + \frac14{u_{z}^2} + \frac14{v_{z}^2}
+  \f]
+  See compute_nonlinearity() for the computation of \f$\gamma\f$ and \f$\eta\f$.
 */
 
+/*!
+  There is one compile-time option:
+  `NO_SSE2`: If the host supports SSE2, we use integration code that
+  has been vectorized with SSE2 intrinsics, unless this macro is
+  defined. The intrinsics speed up integration by about 30% on my
+  architecture (P8700, gcc-4.5 snapshot) (JB).
+
+*/
 typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
 
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
@@ -59,8 +96,6 @@ static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
 
 /*! Set up the DM and allocate storage for model parameters on the current grid level.
  */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_DM_setup"
 static PetscErrorCode BlatterQ1_DM_setup(BlatterQ1Ctx *ctx, DM dm)
 {
   PetscErrorCode ierr;
@@ -142,8 +177,6 @@ static PetscErrorCode BlatterQ1_DM_setup(BlatterQ1Ctx *ctx, DM dm)
  *
  * The result of this call is attached to \c dm_fine under \c mat_name.
  */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_create_interpolation"
 static PetscErrorCode BlatterQ1_create_interpolation(DM dm_fine, DM dm_coarse,
 						     const char dm_name[],
 						     const char mat_name[]) {
@@ -185,8 +218,6 @@ static PetscErrorCode BlatterQ1_create_interpolation(DM dm_fine, DM dm_coarse,
  * \i Set up the interpolation matrix that will be used by the
  * restriction hook to set model parameters on the new coarse level.
  */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_coarsening_hook"
 static PetscErrorCode BlatterQ1_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx)
 {
   PetscErrorCode ierr;
@@ -220,8 +251,6 @@ static PetscErrorCode BlatterQ1_coarsening_hook(DM dm_fine, DM dm_coarse, void *
  *
  * This function uses the restriction matrix created by BlatterQ1_coarsening_hook().
  */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_restrict"
 static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
 					 const char dm_name[],
 					 const char mat_name[],
@@ -292,8 +321,6 @@ static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
 
   This is called once per SNESSolve.
 */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_restriction_hook"
 static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
 						 Mat mrestrict, Vec rscale, Mat inject,
 						 DM coarse, void *ctx)
@@ -325,8 +352,6 @@ static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
   \param[in] da the DM managed by the SNES object
   \param[out] prm pointer to the array
 */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_begin_parameter_access"
 PetscErrorCode BlatterQ1_begin_parameter_access(DM da, PrmNode ***prm)
 {
   PetscErrorCode ierr;
@@ -354,8 +379,6 @@ PetscErrorCode BlatterQ1_begin_parameter_access(DM da, PrmNode ***prm)
 
   See BlatterQ1_begin_parameter_access for details.
 */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_end_parameter_access"
 PetscErrorCode BlatterQ1_end_parameter_access(DM da, PrmNode ***prm)
 {
   PetscErrorCode ierr;
@@ -383,8 +406,6 @@ PetscErrorCode BlatterQ1_end_parameter_access(DM da, PrmNode ***prm)
  * This is similar to BlatterQ1_begin_parameter_access(), but for ice
  * hardness.
  */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_begin_hardness_access"
 PetscErrorCode BlatterQ1_begin_hardness_access(DM da, PetscScalar ****hardness)
 {
   PetscErrorCode ierr;
@@ -412,8 +433,6 @@ PetscErrorCode BlatterQ1_begin_hardness_access(DM da, PetscScalar ****hardness)
 
   See BlatterQ1_begin_hardness_access for details.
 */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_end_hardness_access"
 PetscErrorCode BlatterQ1_end_hardness_access(DM da, PetscScalar ****hardness)
 {
   PetscErrorCode ierr;
@@ -439,10 +458,8 @@ PetscErrorCode BlatterQ1_end_hardness_access(DM da, PetscScalar ****hardness)
 
 /*! Compute the initial guess. */
 /*!
- * FIXME: we need a callback similar to drag() and voscosity().
+ * FIXME: we need a callback similar to drag() and viscosity().
  */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_initial_guess"
 static PetscErrorCode BlatterQ1_initial_guess(DM da, Vec X)
 {
   PetscErrorCode ierr;
@@ -476,12 +493,10 @@ static PetscErrorCode BlatterQ1_initial_guess(DM da, Vec X)
  * \param[in]  n    nodal values of horizontal velocity
  * \param[in]  phi  values of global basis functions (at the current quadrature point).
  * \param[in]  dphi values of derivatives of global basis functions (with respect to x,y,z)
- * \param[out] u    u-component of the horizontal velocity (at the current quadrature point)
- * \param[out] v    v-component of the horizontal velocity (at the current quade rature point)
+ * \param[out] u,v  components of the horizontal velocity (at the current quadrature point)
  * \param[out] eta  effective viscosity (at the current quadrature point)
  * \param[out] deta derivative of eta with respect to gamma
  */
-#undef __FUNCT__
 static void compute_nonlinearity(BlatterQ1Ctx *ctx,
 				 const Node velocity[restrict],
 				 const PetscReal phi[restrict],
@@ -523,8 +538,6 @@ static void compute_nonlinearity(BlatterQ1Ctx *ctx,
  *
  * FIXME: I need to document this.
  */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_residual_local"
 static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velocity, Node ***residual,
 					       BlatterQ1Ctx *ctx)
 {
@@ -541,7 +554,6 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
   zm = info->xm;
   dx = ctx->Lx / info->mz;      /* grid spacing in the x direction */
   dy = ctx->Ly / info->my;      /* grid spacing in the y direction */
-
   ierr = BlatterQ1_begin_parameter_access(info->da, &prm); CHKERRQ(ierr);
 
   for (i = xs; i < xs + xm; i++) {
@@ -660,8 +672,6 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
  *
  * FIXME: I need to document this.
  */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_Jacobian_local"
 static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velocity, Mat A,
 					       Mat B, MatStructure *mstr, BlatterQ1Ctx *ctx)
 {
@@ -891,8 +901,6 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
   \param[in] thi the THI object
   \param[out] result SNES object that will be used with SNESSolve later
 */
-#undef __FUNCT__
-#define __FUNCT__ "BlatterQ1_setup"
 PetscErrorCode BlatterQ1_setup(MPI_Comm com, DM pism_da,
 			       PetscInt Mz,
 			       BlatterQ1Ctx *ctx, SNES *result) {
@@ -990,13 +998,13 @@ PetscErrorCode BlatterQ1_setup(MPI_Comm com, DM pism_da,
   that \f$s(x,y,z) = s(x,y)\f$ for all \f$z\f$ and using 3D \f$Q_1\f$ basis expansion
   in this computation.
 
-  @param[in]  parameters 2D parameters at element nodes
-  @param[in]  dx grid spacing in the \f$x\f$ direction
-  @param[in]  dy grid spacing in the \f$y\f$ direction
-  @param[out] ds values of the surface gradient
+  \param[in]  parameters 2D parameters at element nodes
+  \param[in]  dx,dy grid spacing in x and y directions
+  \param[out] ds values of the surface gradient
 */
 static void compute_surface_gradient(PetscReal dchi[4][4][2],
-				     const PrmNode parameters[], PetscReal dx, PetscReal dy, PetscReal ds[4][2])
+				     const PrmNode parameters[], PetscReal dx, PetscReal dy,
+				     PetscReal ds[4][2])
 {
   PetscInt i, q;
 
@@ -1019,10 +1027,10 @@ static void compute_surface_gradient(PetscReal dchi[4][4][2],
   The bottom (top) mesh surface follows the bottom (top) surface of the ice.
   Each "column" of nodes is equally-spaced, independently from others.
 
-  @param[in]  parameters 2D parameters at element nodes
-  @param[in]  k  index of the vertical level
-  @param[in]  zm total number of vertical levels
-  @param[out] zn z-coordinates of element nodes
+  \param[in]  parameters 2D parameters at element nodes
+  \param[in]  k  index of the vertical level
+  \param[in]  zm total number of vertical levels
+  \param[out] zn z-coordinates of element nodes
 */
 static void compute_nodal_z_coordinates(const PrmNode parameters[], PetscInt k, PetscInt zm, PetscReal zn[])
 {
