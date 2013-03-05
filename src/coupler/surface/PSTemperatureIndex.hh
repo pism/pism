@@ -76,8 +76,6 @@ protected:
                                      //!pointers in order to use object which
                                      //!needs 3D location to determine degree
                                      //!day factors.
-  bool pdd_annualize;
-  PetscReal next_pdd_update;
 
   NCSpatialVariable ice_surface_temp;
 };

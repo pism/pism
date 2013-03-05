@@ -247,7 +247,8 @@ PetscErrorCode PDDMassBalance::getMassFluxesFromPDDs(const DegreeDayFactors &ddf
     // all of the snow melted;
     snow_melted = current_snow_depth;
     current_snow_depth = 0.0;
-    // some of melt mass is kept as refrozen ice;
+    // some of melt mass is kept as refrozen ice; note that melted ice
+    // (below) does not refreeze
     ice_created_by_refreeze = snow_melted * ddf.refreezeFrac;  // units: m (ice-equivalent)
 
     // excess PDDs remove some of this ice and perhaps more of the
@@ -260,13 +261,16 @@ PetscErrorCode PDDMassBalance::getMassFluxesFromPDDs(const DegreeDayFactors &ddf
   }
 
   melt_rate = (snow_melted + ice_melted) / dt;
+
   // all of the snow which melted but which did not refreeze, plus all
   // of the ice which melted (ice includes refrozen snow!), combine to
   // give meltwater runoff rate
   runoff_rate = (snow_melted + ice_melted - ice_created_by_refreeze) / dt;
+
   accumulation_rate = snow_accumulation / dt;
 
   smb_rate = accumulation_rate - runoff_rate;
+
   snow_depth = current_snow_depth;
 
   return 0;
