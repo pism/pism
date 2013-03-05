@@ -28,8 +28,19 @@ def generate_config():
     pism_overrides.ice_softness = 3.1689e-24
     pism_overrides.ice_softness_doc = "Pa-3 s-1; ice softness;"
 
-    pism_overrides.hydrology_hydraulic_conductivity = 1.0e-2
-    pism_overrides.hydrology_hydraulic_conductivity_doc = "m s-1; = k;"
+    # next four are k, alpha, beta, W_r
+
+    pism_overrides:hydrology_hydraulic_conductivity = 0.01;
+    pism_overrides:hydrology_hydraulic_conductivity_doc = "m^{7/4} kg^{-1/2}; = k";
+
+    pism_overrides:hydrology_thickness_power_in_flux = 1.0;
+    pism_overrides:hydrology_thickness_power_in_flux_doc = ";; = alpha";
+
+    pism_overrides:hydrology_potential_gradient_power_in_flux = 2.0;
+    pism_overrides:hydrology_potential_gradient_power_in_flux_doc = "; = beta";
+
+    pism_overrides:hydrology_roughness_scale = 1.0;
+    pism_overrides:hydrology_roughness_scale_doc = "m; = W_r";
 
     pism_overrides.hydrology_englacial_porosity = 0.0;
     pism_overrides.hydrology_englacial_porosity_doc = "[pure]; phi in notes; NOT DEFAULT";

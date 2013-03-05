@@ -34,7 +34,7 @@
 
 /* major model parameters: */
 #define Aglen    3.1689e-24    /* Pa-3 s-1 */
-#define K        0.01          /* m s-1 */
+#define k        0.01          /* m s-1 */
 #define Wr       1.0           /* m */
 #define c1       0.500         /* m-1 */
 #define c2       0.040         /* [pure] */
