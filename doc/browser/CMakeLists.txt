@@ -77,5 +77,17 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   add_custom_target (browsers)
   add_dependencies (browsers browser_base browser_util)
 
+else ()
+  if (NOT LATEX_COMPILER)
+    message (STATUS "LaTeX was not found. Please install it if you want to re-build PISM documentation.")
+  endif()
+
+  if (NOT DOXYGEN_EXECUTABLE)
+    message (STATUS "Doxygen was not found. Please install it if you want to re-build source code browsers.")
+  endif()
+
+  if (NOT DOXYGEN_DOT_EXECUTABLE)
+    message (STATUS "'dot' was not found. Please install graphviz if you want to re-build source code browsers.")
+  endif()
 endif ()
 
