@@ -32,6 +32,7 @@
 
 #include "Blatter_implementation.h"
 
+/*! \brief Compute the square of a number */
 static PetscScalar Sqr(PetscScalar a) {return a*a;}
 
 /*! \file Blatter_implementation.c
@@ -94,9 +95,9 @@ static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
 						 DM coarse, void *ctx);
 
 
-/*! Set up the DM and allocate storage for model parameters on the current grid level.
+/*! \brief Set up the DM and allocate storage for model parameters on the current grid level.
  */
-static PetscErrorCode BlatterQ1_DM_setup(BlatterQ1Ctx *ctx, DM dm)
+static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
 {
   PetscErrorCode ierr;
   PetscInt refinelevel, coarsenlevel, level, Mx, My, Mz, mx, my, stencil_width;
@@ -173,11 +174,16 @@ static PetscErrorCode BlatterQ1_DM_setup(BlatterQ1Ctx *ctx, DM dm)
 }
 
 
-/*! Create the restriction matrix.
+/*! \brief Create the restriction matrix.
  *
- * The result of this call is attached to \c dm_fine under \c mat_name.
+ * The result of this call is attached to `dm_fine` under `mat_name`.
+ *
+ * \param[in] dm_fine DM corresponding to the fine grid
+ * \param[in] dm_coarse DM corresponding to the coarse grid
+ * \param[in] dm_name name of the DM ("DMDA_2D" or "DMDA_3D")
+ * \param[in] mat_name name to use when attaching the interpolation matrix to `dm_fine`
  */
-static PetscErrorCode BlatterQ1_create_interpolation(DM dm_fine, DM dm_coarse,
+static PetscErrorCode BlatterQ1_create_restriction(DM dm_fine, DM dm_coarse,
 						     const char dm_name[],
 						     const char mat_name[]) {
   PetscErrorCode ierr;
@@ -208,15 +214,18 @@ static PetscErrorCode BlatterQ1_create_interpolation(DM dm_fine, DM dm_coarse,
   return 0;
 }
 
-/*!
- *  Grid coarsening hook.
+/*! \brief Grid coarsening hook.
+ *  
+ * This hook is called *once* when SNES sets up the next coarse level.
  *
  * This hook does three things:
- * \i Set up the DM for the newly created coarse level.
- * \i Set up the matrix type on the coarsest level to allow using
- * direct solvers for the coarse problem.
- * \i Set up the interpolation matrix that will be used by the
- * restriction hook to set model parameters on the new coarse level.
+ * - Set up the DM for the newly created coarse level.
+ * - Set up the matrix type on the coarsest level to allow using
+ *   direct solvers for the coarse problem.
+ * - Set up the interpolation matrix that will be used by the
+ *   restriction hook to set model parameters on the new coarse level.
+ *
+ * See BlatterQ1_restriction_hook().
  */
 static PetscErrorCode BlatterQ1_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx)
 {
@@ -225,7 +234,7 @@ static PetscErrorCode BlatterQ1_coarsening_hook(DM dm_fine, DM dm_coarse, void *
   PetscInt rlevel, clevel;
 
   PetscFunctionBegin;
-  ierr = BlatterQ1_DM_setup(blatter_ctx, dm_coarse); CHKERRQ(ierr);
+  ierr = BlatterQ1_setup_level(blatter_ctx, dm_coarse); CHKERRQ(ierr);
 
   ierr = DMGetRefineLevel(dm_coarse, &rlevel); CHKERRQ(ierr);
   ierr = DMGetCoarsenLevel(dm_coarse, &clevel); CHKERRQ(ierr);
@@ -237,17 +246,17 @@ static PetscErrorCode BlatterQ1_coarsening_hook(DM dm_fine, DM dm_coarse, void *
 			  ctx); CHKERRQ(ierr);
 
   /* create 2D interpolation */
-  ierr = BlatterQ1_create_interpolation(dm_fine, dm_coarse,
-					"DMDA_2D", "DMDA_2D_Restriction"); CHKERRQ(ierr);
+  ierr = BlatterQ1_create_restriction(dm_fine, dm_coarse,
+				      "DMDA_2D", "DMDA_2D_Restriction"); CHKERRQ(ierr);
 
   /* create 3D interpolation */
-  ierr = BlatterQ1_create_interpolation(dm_fine, dm_coarse,
-					"DMDA_3D", "DMDA_3D_Restriction"); CHKERRQ(ierr);
+  ierr = BlatterQ1_create_restriction(dm_fine, dm_coarse,
+				      "DMDA_3D", "DMDA_3D_Restriction"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-/*! Restrict model parameters from the \c fine grid onto the \c coarse grid.
+/*! \brief Restrict model parameters from the `fine` grid onto the `coarse` grid.
  *
  * This function uses the restriction matrix created by BlatterQ1_coarsening_hook().
  */
@@ -311,16 +320,15 @@ static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
 }
 
 
-/*!
-  Restrict model parameters to the grid corresponding to the next coarse level.
+/*! \brief Restrict model parameters to the grid corresponding to the next coarse level.
 
-  This computes the product
+  This function computes the product
   \f[ X_{\text{coarse}} = R X_{\text{fine}}, \f]
 
   extracting necessary information from DM objects managing fine and coarse grids.
 
-  This is called once per SNESSolve.
-*/
+  This is called once per SNESSolve().
+ */
 static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
 						 Mat mrestrict, Vec rscale, Mat inject,
 						 DM coarse, void *ctx)
@@ -342,8 +350,7 @@ static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
   return 0;
 }
 
-/*!
-  Get the pointer to the 2D array storing models parameters.
+/*! \brief Get the pointer to the 2D array storing models parameters.
 
   The input argument da is the 3D DM for the current level, but we
   need the 2D DM managing 2D parameters, so we need to extract it
@@ -352,7 +359,7 @@ static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
   \param[in] da the DM managed by the SNES object
   \param[out] prm pointer to the array
 */
-PetscErrorCode BlatterQ1_begin_parameter_access(DM da, PrmNode ***prm)
+PetscErrorCode BlatterQ1_begin_2D_parameter_access(DM da, PrmNode ***prm)
 {
   PetscErrorCode ierr;
   DM             da2prm;
@@ -374,12 +381,11 @@ PetscErrorCode BlatterQ1_begin_parameter_access(DM da, PrmNode ***prm)
   PetscFunctionReturn(0);
 }
 
-/*!
-  Restore the 2D array of model parameters.
+/*! \brief Restore the 2D array of model parameters.
 
-  See BlatterQ1_begin_parameter_access for details.
+  See BlatterQ1_begin_2D_parameter_access() for details.
 */
-PetscErrorCode BlatterQ1_end_parameter_access(DM da, PrmNode ***prm)
+PetscErrorCode BlatterQ1_end_2D_parameter_access(DM da, PrmNode ***prm)
 {
   PetscErrorCode ierr;
   DM             da2prm;
@@ -401,9 +407,9 @@ PetscErrorCode BlatterQ1_end_parameter_access(DM da, PrmNode ***prm)
   PetscFunctionReturn(0);
 }
 
-/*! Get the 3D array of ice hardness.
+/*! \brief Get the 3D array of ice hardness.
  *
- * This is similar to BlatterQ1_begin_parameter_access(), but for ice
+ * This is similar to BlatterQ1_begin_2D_parameter_access(), but for ice
  * hardness.
  */
 PetscErrorCode BlatterQ1_begin_hardness_access(DM da, PetscScalar ****hardness)
@@ -428,10 +434,9 @@ PetscErrorCode BlatterQ1_begin_hardness_access(DM da, PetscScalar ****hardness)
   PetscFunctionReturn(0);
 }
 
-/*!
-  Restore the 3D array of ice hardnesss.
+/*! \brief Restore the 3D array of ice hardness.
 
-  See BlatterQ1_begin_hardness_access for details.
+  See BlatterQ1_begin_hardness_access() for details.
 */
 PetscErrorCode BlatterQ1_end_hardness_access(DM da, PetscScalar ****hardness)
 {
@@ -456,7 +461,7 @@ PetscErrorCode BlatterQ1_end_hardness_access(DM da, PetscScalar ****hardness)
 }
 
 
-/*! Compute the initial guess. */
+/*! \brief Set the initial guess. */
 /*!
  * FIXME: we need a callback similar to drag() and viscosity().
  */
@@ -474,10 +479,11 @@ static PetscErrorCode BlatterQ1_initial_guess(DM da, Vec X)
   PetscFunctionReturn(0);
 }
 
-/*! Compute the viscosity non-linearity.
+/*! \brief Compute the viscosity non-linearity and related quantities.
  *
- * This function is called once for each quadrature point. It uses nodal values
- * of u,v and the basis expansion of u and v to compute u,v at the quadrature point
+ * This function is called once for each quadrature point. It uses
+ * nodal values of \f$u\f$, \f$v\f$ and the basis expansion of \f$u\f$
+ * and \f$v\f$ to compute \f$u\f$, \f$v\f$ at the quadrature point
  *
  * \f[ u(q_j) = \sum_{i=1}^8\phi_i(q_j)\cdot u_j \f]
  *
@@ -490,12 +496,14 @@ static PetscErrorCode BlatterQ1_initial_guess(DM da, Vec X)
  *
  * \c gamma is the second invariant \f$ \gamma \f$.
  *
- * \param[in]  n    nodal values of horizontal velocity
- * \param[in]  phi  values of global basis functions (at the current quadrature point).
- * \param[in]  dphi values of derivatives of global basis functions (with respect to x,y,z)
+ * \param[in]  ctx Solver's "application context". Provides `ctx->nonlinear.viscosity()`.
+ * \param[in]  velocity nodal values of horizontal velocity
+ * \param[in]  phi  values of global basis functions \f$\phi\f$ (at the current quadrature point).
+ * \param[in]  dphi values of derivatives of global basis functions \f$\phi\f$ (with respect to \f$x,y,z\f$)
  * \param[out] u,v  components of the horizontal velocity (at the current quadrature point)
- * \param[out] eta  effective viscosity (at the current quadrature point)
- * \param[out] deta derivative of eta with respect to gamma
+ * \param[out] du,dv partial derivatives of `u` and `v`
+ * \param[out] eta  effective viscosity \f$\eta\f$ (at the current quadrature point)
+ * \param[out] deta derivative of eta with respect to gamma \f$\frac{\partial \eta}{\partial \gamma}\f$
  */
 static void compute_nonlinearity(BlatterQ1Ctx *ctx,
 				 const Node velocity[restrict],
@@ -533,7 +541,7 @@ static void compute_nonlinearity(BlatterQ1Ctx *ctx,
 }
 
 
-/*! Compute the residual.
+/*! \brief Evaluate the residual.
  *
  *
  * FIXME: I need to document this.
@@ -554,7 +562,7 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
   zm = info->xm;
   dx = ctx->Lx / info->mz;      /* grid spacing in the x direction */
   dy = ctx->Ly / info->my;      /* grid spacing in the y direction */
-  ierr = BlatterQ1_begin_parameter_access(info->da, &prm); CHKERRQ(ierr);
+  ierr = BlatterQ1_begin_2D_parameter_access(info->da, &prm); CHKERRQ(ierr);
 
   for (i = xs; i < xs + xm; i++) {
     for (j = ys; j < ys + ym; j++) {
@@ -663,12 +671,12 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
     } /* j-loop */
   } /* i-loop */
 
-  ierr = BlatterQ1_end_parameter_access(info->da, &prm); CHKERRQ(ierr);
+  ierr = BlatterQ1_end_2D_parameter_access(info->da, &prm); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
 
-/*! Compute the Jacobian.
+/*! \brief Evaluate the Jacobian.
  *
  * FIXME: I need to document this.
  */
@@ -693,7 +701,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
   ierr = MatZeroEntries(B); CHKERRQ(ierr);
 
-  ierr = BlatterQ1_begin_parameter_access(info->da, &prm); CHKERRQ(ierr);
+  ierr = BlatterQ1_begin_2D_parameter_access(info->da, &prm); CHKERRQ(ierr);
 
   for (i = xs; i < xs + xm; i++) {
     for (j = ys; j < ys + ym; j++) {
@@ -883,7 +891,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
       } /* k-loop */
     } /* j-loop */
   } /* i-loop */
-  ierr = BlatterQ1_end_parameter_access(info->da, &prm); CHKERRQ(ierr);
+  ierr = BlatterQ1_end_2D_parameter_access(info->da, &prm); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -893,17 +901,17 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
   PetscFunctionReturn(0);
 }
 
-/*! Allocate the fine grid 3D DMDA and set up the SNES object.
+/*! \brief Allocate the fine grid 3D DMDA and set up the SNES object.
 
   \param[in] com communicator
   \param[in] pism_da PISM-side 2D DMDA (used to get grid info)
   \param[in] Mz number of vertical levels
-  \param[in] thi the THI object
+  \param[in] ctx the application context
   \param[out] result SNES object that will be used with SNESSolve later
 */
-PetscErrorCode BlatterQ1_setup(MPI_Comm com, DM pism_da,
-			       PetscInt Mz,
-			       BlatterQ1Ctx *ctx, SNES *result) {
+PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
+				PetscInt Mz,
+				BlatterQ1Ctx *ctx, SNES *result) {
   PetscErrorCode ierr;
   PetscInt dim, Mx, My, Nx, Ny;
   DM da;
@@ -938,7 +946,7 @@ PetscErrorCode BlatterQ1_setup(MPI_Comm com, DM pism_da,
   ierr = DMDASetFieldName(da, 0, "x-velocity"); CHKERRQ(ierr);
   ierr = DMDASetFieldName(da, 1, "y-velocity"); CHKERRQ(ierr);
 
-  ierr = BlatterQ1_DM_setup(ctx, da); CHKERRQ(ierr);
+  ierr = BlatterQ1_setup_level(ctx, da); CHKERRQ(ierr);
 
   /* ADD_VALUES, because BlatterQ1_residual_local contributes to ghosted values. */
   ierr = DMDASNESSetFunctionLocal(da, ADD_VALUES,
@@ -964,7 +972,7 @@ PetscErrorCode BlatterQ1_setup(MPI_Comm com, DM pism_da,
   return 0;
 }
 
-/*! Compute the surface gradient at all 4 quadrature points (in the map plane).
+/*! \brief Compute the surface gradient at all 4 quadrature points (in the map plane).
 
   Note that there are 8 quadrature points in a 3D hexahedral element, but since
   surface elevation does not depend on \f$z\f$, values at the first 4 points (bottom
@@ -998,6 +1006,7 @@ PetscErrorCode BlatterQ1_setup(MPI_Comm com, DM pism_da,
   that \f$s(x,y,z) = s(x,y)\f$ for all \f$z\f$ and using 3D \f$Q_1\f$ basis expansion
   in this computation.
 
+  \param[in]  dchi values of derivatives of 2D element basis functions \f$\chi\f$ at quadrature points
   \param[in]  parameters 2D parameters at element nodes
   \param[in]  dx,dy grid spacing in x and y directions
   \param[out] ds values of the surface gradient
@@ -1022,7 +1031,7 @@ static void compute_surface_gradient(PetscReal dchi[4][4][2],
   }
 }
 
-/*! Compute z-coordinates of the nodes of a hexahedral element.
+/*! \brief Compute z-coordinates of the nodes of a hexahedral element.
 
   The bottom (top) mesh surface follows the bottom (top) surface of the ice.
   Each "column" of nodes is equally-spaced, independently from others.

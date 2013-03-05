@@ -86,7 +86,7 @@ PetscErrorCode IceFlowLaw::setFromOptions() {
  * \param[in] hardness ice hardness
  * \param[in] gamma the second invariant \f$ \gamma \f$
  * \param[out] nu effective viscosity
- * \param[out] derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
+ * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
  */
 void IceFlowLaw::effective_viscosity(PetscReal hardness, PetscReal gamma,
 				     PetscReal *nu, PetscReal *dnu) const {

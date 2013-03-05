@@ -108,14 +108,14 @@ typedef struct {
   void *extra;
 } BlatterQ1Ctx;
 
-PetscErrorCode BlatterQ1_begin_parameter_access(DM da, PrmNode ***prm);
-PetscErrorCode BlatterQ1_end_parameter_access(DM da, PrmNode ***prm);
+PetscErrorCode BlatterQ1_begin_2D_parameter_access(DM da, PrmNode ***prm);
+PetscErrorCode BlatterQ1_end_2D_parameter_access(DM da, PrmNode ***prm);
 
 PetscErrorCode BlatterQ1_begin_hardness_access(DM da, PetscScalar ****hardness);
 PetscErrorCode BlatterQ1_end_hardness_access(DM da, PetscScalar ****hardness);
 
-PetscErrorCode BlatterQ1_setup(MPI_Comm com, DM pism_da, PetscInt Mz,
-			       BlatterQ1Ctx *ctx, SNES *result);
+PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da, PetscInt Mz,
+				BlatterQ1Ctx *ctx, SNES *result);
 #ifdef __cplusplus
 }
 #endif

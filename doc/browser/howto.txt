@@ -298,15 +298,15 @@ to the definition of PA_foo if you need to access a private data member (see
 the definition of IceModel for one example).
 \li when working with atmosphere models and other classes derived from
 PISMComponent, you can access the config database as "model->config".
-\li the compute() method allocates memory and performs the computation.
+\li the PISMDiagnostic::compute() method allocates memory and performs the computation.
 \li to use a field managed by IceModel, use "variables":
 \code
   IceModelVec2S *surface;
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
 \endcode
-\li the \b caller of the compute() method has to de-allocate the field
-allocated by compute()
+\li the \b caller of the PISMDiagnostic::compute() method has to de-allocate the field
+allocated by PISMDiagnostic::compute()
 
 Note that in almost every (current) implementation of ...::compute() you see
 \code

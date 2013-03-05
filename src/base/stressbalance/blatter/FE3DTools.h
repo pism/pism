@@ -144,8 +144,8 @@ void compute_z_gradient(PetscReal dchi[][3], const PetscReal zn[], PetscReal dz[
 
 /*! Compute temporaries at a quadrature point. */
 /*! Compute the following:
-   - values of shape functions $\phi_i$ at a given quadrature point
-   - values of partial derivatives of shape functions $\frac{\partial \phi_i}{\partial x_j}$ 
+   - values of shape functions \f$\phi_i\f$ at a given quadrature point
+   - values of partial derivatives of shape functions \f$\frac{\partial \phi_i}{\partial x_j}\f$ 
      at a given quadrature point
    - \f$det(J)\cdot w\f$ factor (product of the determinant of the Jacobian of the map
      from the reference element and the quadrature weight), at a given quadrature point.

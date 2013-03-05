@@ -88,7 +88,7 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
   initialize_Q12D(ctx.Q12D.chi, ctx.Q12D.dchi);
   initialize_Q13D(ctx.Q13D.chi, ctx.Q13D.dchi);
 
-  ierr = BlatterQ1_setup(grid.com, da2, blatter_Mz, &this->ctx, &this->snes); CHKERRQ(ierr);
+  ierr = BlatterQ1_create(grid.com, da2, blatter_Mz, &this->ctx, &this->snes); CHKERRQ(ierr);
 
   // now allocate u, v, and strain_heating (strain heating)
   ierr =     u.create(grid, "uvel", true); CHKERRQ(ierr);
@@ -210,7 +210,7 @@ PetscErrorCode BlatterStressBalance::setup() {
 
   ierr = SNESGetDM(this->snes, &da); CHKERRQ(ierr);
 
-  ierr = BlatterQ1_begin_parameter_access(da, &parameters); CHKERRQ(ierr);
+  ierr = BlatterQ1_begin_2D_parameter_access(da, &parameters); CHKERRQ(ierr);
 
   ierr = bed_elevation->begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
@@ -243,7 +243,7 @@ PetscErrorCode BlatterStressBalance::setup() {
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = tauc->end_access(); CHKERRQ(ierr);
 
-  ierr = BlatterQ1_end_parameter_access(da, &parameters); CHKERRQ(ierr);
+  ierr = BlatterQ1_end_2D_parameter_access(da, &parameters); CHKERRQ(ierr);
 
   return 0;
 }

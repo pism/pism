@@ -72,7 +72,7 @@ PetscErrorCode SSB_Trivial::update(bool fast) {
   Ice shelves have zero basal friction heating.
 
   \param[in] velocity *basal* sliding velocity
-  \parem[in] tauc basal yield stress
+  \param[in] tauc basal yield stress
   \param[in] mask (used to determine if floating or grounded)
   \param[out] result
  */
