@@ -205,7 +205,7 @@ PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt
   // compute the time corresponding to the beginning of the next balance year
   PetscReal one_year = convert(1.0, "years", "seconds"),
     one_day = convert(1.0, "days", "seconds"),
-    year_start = grid.time->mod(my_t, one_year),
+    year_start = my_t - grid.time->mod(my_t, one_year),
     balance_year_start = year_start + (config.get("pdd_balance_year_start_day") - 1.0) * one_day,
     next_balance_year_start = balance_year_start > my_t ? balance_year_start : balance_year_start + one_year;
   
@@ -262,8 +262,10 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
 
 PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
+  PetscReal year_fraction = grid.time->year_fraction(my_t),
+    balance_year_start_year_fraction = config.get("pdd_balance_year_start_day") / 365.0;
 
-  if (fabs(grid.time->year_fraction(my_t) - config.get("pdd_balance_year_start_day") / 365.0) < 0.5/365.0) {
+  if (fabs(year_fraction - balance_year_start_year_fraction) < 0.01) { // about 4 days
     ierr = verbPrintf(3, grid.com, "  PDD model: Re-setting snow depth to 0 meters.\n"); CHKERRQ(ierr);
     ierr = snow_depth.set(0.0); CHKERRQ(ierr);
   }
@@ -276,10 +278,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   PetscInt Nseries;
   ierr = mbscheme->getNForTemperatureSeries(my_t, my_dt, Nseries); CHKERRQ(ierr);
 
-  // time since the beginning of the year, in seconds
   const PetscScalar dtseries = my_dt / ((PetscScalar) (Nseries - 1));
-
-  // times for the air temperature time-series, in years:
   vector<PetscScalar> ts(Nseries), T(Nseries), P(Nseries);
   for (PetscInt k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
