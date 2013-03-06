@@ -13,6 +13,9 @@ default_pdd_refreeze    = 0.6
 default_pdd_std_dev     = 5.
 default_temp_snow       = 0.
 default_temp_rain       = 2.
+default_integrate_rule  = 'rectangle'
+default_interpolate_rule= 'linear'
+default_interpolate_n   = 53
 
 # PDD model class
 # ---------------
@@ -26,7 +29,10 @@ class PDDModel():
     pdd_refreeze    = default_pdd_refreeze,
     pdd_std_dev     = default_pdd_std_dev,
     temp_snow       = default_temp_snow,
-    temp_rain       = default_temp_rain):
+    temp_rain       = default_temp_rain,
+    integrate_rule  = default_integrate_rule,
+    interpolate_rule= default_interpolate_rule,
+    interpolate_n   = default_interpolate_n):
     """Initiate a PDD model with given parameters"""
     
     # set pdd model parameters
@@ -36,6 +42,9 @@ class PDDModel():
     self.pdd_std_dev     = pdd_std_dev
     self.temp_snow       = temp_snow
     self.temp_rain       = temp_rain
+    self.integrate_rule  = integrate_rule
+    self.interpolate_rule= interpolate_rule
+    self.interpolate_n   = interpolate_n
 
   def __call__(self, temp, prec, big=False):
     """Run the PDD model"""
@@ -47,19 +56,69 @@ class PDDModel():
     else:
       return smb
 
+  def _integrate(self, a):
+    """Integrate an array over one year"""
+
+    rule = self.integrate_rule
+    dx = 1./(self.interpolate_n-1)
+
+    if rule == 'rectangle':
+      return np.sum(a[:-1], axis=0)*dx
+
+    if rule == 'trapeze':
+      from scipy.integrate import trapz
+      return trapz(a, axis=0, dx=dx)
+
+    if rule == 'simpson':
+      from scipy.integrate import simps
+      return simps(a, axis=0, dx=dx)
+
+  def _interpolate(self, a):
+    """Interpolate an array through one year"""
+
+    from scipy.interpolate import interp1d
+
+    x = np.linspace(0, 1, 13)
+    y = np.append(a, [a[0]], axis=0)
+    newx = np.linspace(0, 1, self.interpolate_n)
+
+    return interp1d(x, y, kind=self.interpolate_rule, axis=0)(newx)
+
   def pdd(self, temp):
     """Compute positive degree days from temperature time series"""
-    return np.sum(np.greater(temp,0)*temp, axis=0)*365.242198781/12
+
+    from math import exp, pi, sqrt
+    from scipy.special import erfc
+
+    # parse standard deviation of temperatures for readability
+    sigma = self.pdd_std_dev
+
+    # if sigma is not zero, use the Calov and Greve (2005) formula
+    if sigma != 0:
+      z = temp / (sqrt(2)*sigma)
+      teff = sigma / sqrt(2*pi) * np.exp(-z**2) + temp/2 * erfc(-z)
+
+    # else use positive part of temperatures
+    else:
+      teff = np.greater(temp,0)*temp
+
+    # interpolate and integrate
+    newteff = self._interpolate(teff)
+    return self._integrate(newteff)*365.242198781
 
   def snow(self, temp, prec):
     """Compute snow precipitation from temperature and precipitation"""
 
+    # interpolate temperature and precipitation
+    newtemp = self._interpolate(temp)
+    newprec = self._interpolate(prec)
+
     # compute snow fraction as a function of temperature
-    reduced_temp = (self.temp_rain-temp) / (self.temp_rain-self.temp_snow)
+    reduced_temp = (self.temp_rain-newtemp)/(self.temp_rain-self.temp_snow)
     snowfrac     = np.clip(reduced_temp, 0, 1)
 
     # return total snow precipitation
-    return np.sum(snowfrac*prec, axis=0)/12
+    return self._integrate(snowfrac*newprec)
 
   def smb(self, snow, pdd):
     """Compute surface mass balance from snow precipitation and pdd sum"""
@@ -165,8 +224,8 @@ def make_fake_climate(filename):
 
     # create dimensions
     tdim = nc.createDimension('time', 12)
-    xdim = nc.createDimension('x', 21)
-    ydim = nc.createDimension('y', 21)
+    xdim = nc.createDimension('x', 201)
+    ydim = nc.createDimension('y', 201)
     ndim = nc.createDimension('nv', 2)
 
     # create x coordinate variable
@@ -213,7 +272,7 @@ def make_fake_climate(filename):
     # assign temperature and precipitation values
     (xx, yy) = np.meshgrid(xvar[:], yvar[:])
     for i in range(len(tdim)):
-      temp[i] = -10 * (yy/ly + cos(i*2*pi/12))
+      temp[i] = -10 * yy/ly - 5 * cos(i*2*pi/12)
       prec[i] = xx/lx * (np.sign(xx) - cos(i*2*pi/12))
 
     # close netcdf file
@@ -221,33 +280,46 @@ def make_fake_climate(filename):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='A Python Positive Degree Day (PDD) model for glacier surface mass balance')
-    parser.add_argument('-i', '--input',
+    parser = argparse.ArgumentParser(
+      description='''A Python Positive Degree Day (PDD) model
+        for glacier surface mass balance''',
+      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-i', '--input', metavar='input.nc',
       help='input file')
-    parser.add_argument('-o', '--output',
+    parser.add_argument('-o', '--output', metavar='output.nc',
       help='output file',
       default='smb.nc')
-    parser.add_argument('-b', '--big',
-      help='produce big output (more variables)',
-      action='store_true')
-    parser.add_argument('--pdd-factor-snow', type=float,
+    parser.add_argument('-b', '--big', action='store_true',
+      help='produce big output (more variables)')
+    parser.add_argument('--pdd-factor-snow', metavar='F', type=float,
       help='PDD factor for snow',
       default=default_pdd_factor_snow)
-    parser.add_argument('--pdd-factor-ice', type=float,
+    parser.add_argument('--pdd-factor-ice', metavar='F', type=float,
       help='PDD factor for ice',
       default=default_pdd_factor_ice)
-    parser.add_argument('--pdd-refreeze', type=float,
-      help='PDD refreezing fraction',
+    parser.add_argument('--pdd-refreeze', metavar='R', type=float,
+      help='PDD model refreezing fraction',
       default=default_pdd_refreeze)
-    parser.add_argument('--pdd-std-dev', type=float,
-      help='Unimplemented yet',
+    parser.add_argument('--pdd-std-dev', metavar='S', type=float,
+      help='Standard deviation of temperature',
       default=default_pdd_std_dev)
-    parser.add_argument('--temp-snow', type=float,
+    parser.add_argument('--temp-snow', metavar='T', type=float,
       help='Temperature at which all precip is snow',
       default=default_temp_snow)
-    parser.add_argument('--temp-rain', type=float,
+    parser.add_argument('--temp-rain', metavar='T', type=float,
       help='Temperature at which all precip is rain',
       default=default_temp_rain)
+    parser.add_argument('--integrate-rule',
+      help='Rule for integrations',
+      default = default_integrate_rule,
+      choices = ('rectangle', 'trapeze', 'simpson'))
+    parser.add_argument('--interpolate-rule',
+      help='Rule for interpolations',
+      default = default_interpolate_rule,
+      choices = ('linear','nearest','zero','slinear','quadratic','cubic'))
+    parser.add_argument('--interpolate-n', metavar='N',
+      help='Number of points used in interpolations.',
+      default = default_interpolate_n)
     args = parser.parse_args()
 
     # if no input file was given, prepare a dummy one
