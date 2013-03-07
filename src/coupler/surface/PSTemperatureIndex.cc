@@ -35,8 +35,6 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)
   base_ddf.refreezeFrac = config.get("pdd_refreeze");
   base_pddStdDev = config.get("pdd_std_dev");
   base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
-
-  pdd_annualize = false;
 }
 
 PSTemperatureIndex::~PSTemperatureIndex() {
@@ -63,9 +61,6 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     ierr = PISMOptionsIsSet("-pdd_fausto",
                             "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
 			    fausto_params); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-pdd_annualize",
-                            "Compute annual mass balance, removing yearly variations",
-                            pdd_annualize); CHKERRQ(ierr);
 
     ierr = PISMOptionsReal("-pdd_factor_snow", "PDD snow factor",
                            base_ddf.snow, pSet); CHKERRQ(ierr);
@@ -195,10 +190,6 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 		    input_file.c_str()); CHKERRQ(ierr);
   ierr = snow_depth.regrid(input_file.c_str(), 0.0); CHKERRQ(ierr);
   
-  // if -pdd_annualize is set, update mass balance immediately (at the
-  // beginning of the run)
-  next_pdd_update = grid.time->current();
-
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
@@ -211,10 +202,17 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
-  if (PetscAbs(my_t - next_pdd_update) < 1e-12)
+  // compute the time corresponding to the beginning of the next balance year
+  PetscReal one_year = convert(1.0, "years", "seconds"),
+    one_day = convert(1.0, "days", "seconds"),
+    year_start = my_t - grid.time->mod(my_t, one_year),
+    balance_year_start = year_start + (config.get("pdd_balance_year_start_day") - 1.0) * one_day,
+    next_balance_year_start = balance_year_start > my_t ? balance_year_start : balance_year_start + one_year;
+  
+  if (PetscAbs(my_t - next_balance_year_start) < 1e-12)
     my_dt = convert(1.0, "years", "seconds");
   else
-    my_dt = next_pdd_update - my_t;
+    my_dt = next_balance_year_start - my_t;
 
   PetscReal dt_atmosphere;
   ierr = atmosphere->max_timestep(my_t, dt_atmosphere, restrict); CHKERRQ(ierr);
@@ -231,18 +229,17 @@ PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt
 
     // try to avoid very small time steps:
     // (Necessary when driving this PDD model with monthly data, for example.)
-    if (pdd_annualize && PetscAbs(my_t + my_dt - next_pdd_update) < 1)
-      my_dt = next_pdd_update - my_t;
-  } else
+    if (PetscAbs(my_t + my_dt - next_balance_year_start) < 1)
+      my_dt = next_balance_year_start - my_t;
+  } else {
     restrict = false;
+  }
 
   return 0;
 }
 
 PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
-
-  PetscReal one_year = convert(1.0, "years", "seconds");
 
   if ((fabs(my_t - t) < 1e-12) &&
       (fabs(my_dt - dt) < 1e-12))
@@ -254,47 +251,34 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
   // This flag is set in pclimate to allow testing the model. It does not
   // affect the normal operation of PISM.
   if (config.get_flag("pdd_limit_timestep")) {
+    PetscReal one_year = convert(1.0, "years", "seconds");
     my_dt = PetscMin(my_dt, one_year);
   }
 
-  if (pdd_annualize) {
-    if (my_t + my_dt > next_pdd_update) {
-      ierr = verbPrintf(3, grid.com,
-                        "  Updating mass balance for one year starting at %s ...\n",
-                        grid.time->date(my_t).c_str());
-      ierr = update_internal(my_t, one_year); CHKERRQ(ierr);
-      next_pdd_update = (grid.time->mod(my_t, 1.0) +
-			 convert(config.get("pdd_balance_year_start_day") - 1, "day", "seconds"));
-
-      if (next_pdd_update <= my_t + my_dt)
-	next_pdd_update += one_year;
-    }
-  } else {
-    ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
-  }
+  ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   return 0;
 }
 
 PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
+  PetscReal year_fraction = grid.time->year_fraction(my_t),
+    balance_year_start_year_fraction = config.get("pdd_balance_year_start_day") / 365.0;
 
-  if (fabs(grid.time->year_fraction(my_t) - config.get("pdd_balance_year_start_day") / 365.0) < 0.5/365.0) {
+  if (fabs(year_fraction - balance_year_start_year_fraction) < 0.01) { // about 4 days
     ierr = verbPrintf(3, grid.com, "  PDD model: Re-setting snow depth to 0 meters.\n"); CHKERRQ(ierr);
     ierr = snow_depth.set(0.0); CHKERRQ(ierr);
   }
 
-  // to ensure that temperature time series are correct:
+  // upate to ensure that temperature and precipitation time series
+  // are correct:
   ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
 
   // set up air temperature time series
   PetscInt Nseries;
   ierr = mbscheme->getNForTemperatureSeries(my_t, my_dt, Nseries); CHKERRQ(ierr);
 
-  // time since the beginning of the year, in seconds
   const PetscScalar dtseries = my_dt / ((PetscScalar) (Nseries - 1));
-
-  // times for the air temperature time-series, in years:
   vector<PetscScalar> ts(Nseries), T(Nseries), P(Nseries);
   for (PetscInt k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
