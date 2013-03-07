@@ -176,22 +176,30 @@ PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, int N,
-						 PetscReal */*ts*/, PetscReal *values) {
-  for (PetscInt k = 0; k < N; k++)
+PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, int N) {
+  m_ts_length = N;
+  m_ts_times.resize(m_ts_length);
+
+  for (unsigned int k = 0; k < m_ts_length; k++)
+    m_ts_times[k] = ts[k];
+
+  return 0;
+}
+
+PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, PetscReal *values) {
+  for (unsigned int k = 0; k < m_ts_length; k++)
     values[k] = precipitation(i,j);
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, int N,
-                                               PetscReal *ts, PetscReal *values) {
+PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, PetscReal *values) {
   // constants related to the standard yearly cycle
   const PetscReal
     sperd = 8.64e4, // exact number of seconds per day
     julyday_fraction = (sperd / secpera) * snow_temp_july_day;
 
-  for (PetscInt k = 0; k < N; ++k) {
-    double tk = grid.time->year_fraction(ts[k]) - julyday_fraction;
+  for (unsigned int k = 0; k < m_ts_length; ++k) {
+    double tk = grid.time->year_fraction(m_ts_times[k]) - julyday_fraction;
     values[k] = air_temp_mean_annual(i,j) +
       (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos(2.0 * pi * tk);
   }

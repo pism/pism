@@ -82,14 +82,12 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
 PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  // Annualized PDD may take steps spanning several time-intervals of forcing
-  // data, so we need to compute the average to avoid making mistakes such as
-  // applying January mass balance throughout the year.
-  ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
+  // compute mean precipitation
+  ierr = mass_flux.average(t, dt, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // Average so that the mean_annual_temp() may be reported correctly (at least
   // in the "-surface pdd" case).
-  ierr = temp.average(t, dt); CHKERRQ(ierr);
+  ierr = temp.average(t, dt, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   return 0;
 }
@@ -121,50 +119,31 @@ PetscErrorCode PAGivenClimate::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, int N,
-						PetscReal *ts, PetscReal *values) {
+PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, PetscReal *result) {
+  PetscErrorCode ierr;
 
-  PetscReal *ptr;
-
-  if (bc_period > 0.01) {
-    // Recall that this method is called for each map-plane point during a
-    // time-step. This if-condition is here to avoid calling
-    // grid.time->mod() if the user didn't ask for periodized climate.
-    ts_mod.reserve(N);
-
-    for (int k = 0; k < N; ++k)
-      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_time, bc_period);
-
-    ptr = &ts_mod[0];
-  } else {
-    ptr = ts;
-  }
-
-  PetscErrorCode ierr = temp.interp(i, j, N, ptr, values); CHKERRQ(ierr);
+  ierr = temp.interp(i, j, &result[0]); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, int N,
-						  PetscReal *ts, PetscReal *values) {
+PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, PetscReal *result) {
+  PetscErrorCode ierr;
 
-  PetscReal *ptr;
-
-  if (bc_period > 0.01) {
-    // Recall that this method is called for each map-plane point during a
-    // time-step. This if-condition is here to avoid calling
-    // grid.time->mod() if the user didn't ask for periodized climate.
-    ts_mod.reserve(N);
-
-    for (int k = 0; k < N; ++k)
-      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_time, bc_period);
-
-    ptr = &ts_mod[0];
-  } else {
-    ptr = ts;
-  }
-
-  PetscErrorCode ierr = mass_flux.interp(i, j, N, ptr, values); CHKERRQ(ierr);
+  ierr = mass_flux.interp(i, j, &result[0]); CHKERRQ(ierr);
 
   return 0;
 }
+
+PetscErrorCode PAGivenClimate::init_timeseries(PetscReal *ts, int N) {
+  PetscErrorCode ierr;
+
+  ierr = temp.init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
+
+  ierr = mass_flux.init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
+
+  m_ts_length = N;
+  
+  return 0;
+}
+

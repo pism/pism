@@ -92,8 +92,8 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
 PetscErrorCode PAAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-  ierr = temp.at_time(t); CHKERRQ(ierr);
+  ierr = mass_flux.at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = temp.at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   return 0;
 }
@@ -131,66 +131,43 @@ PetscErrorCode PAAnomaly::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAAnomaly::temp_time_series(int i, int j, int N,
-                                           PetscReal *ts, PetscReal *values) {
+PetscErrorCode PAAnomaly::init_timeseries(PetscReal *ts, int N) {
   PetscErrorCode ierr;
+  ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
 
-  // NB! the input_model uses un-periodized times.
-  ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+  ierr = temp.init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
 
-  PetscReal *ptr;
+  ierr = mass_flux.init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
 
-  if (bc_period > 0.01) {
-    // Recall that this method is called for each map-plane point during a
-    // time-step. This if-condition is here to avoid calling
-    // grid.time->mod() if the user didn't ask for periodized climate.
-    ts_mod.reserve(N);
+  m_ts_length = N;
+  
+  return 0;
+}
 
-    for (int k = 0; k < N; ++k)
-      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_time, bc_period);
+PetscErrorCode PAAnomaly::temp_time_series(int i, int j, PetscReal *result) {
+  PetscErrorCode ierr;
+  vector<double> temp_anomaly(m_ts_length);
+  ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
 
-    ptr = &ts_mod[0];
-  } else {
-    ptr = ts;
-  }
+  ierr = temp.interp(i, j, &temp_anomaly[0]); CHKERRQ(ierr);
 
-  ts_values.reserve(N);
-  ierr = temp.interp(i, j, N, ptr, &ts_values[0]); CHKERRQ(ierr);
-
-  for (int k = 0; k < N; ++k)
-    values[k] += ts_values[k];
+  for (unsigned int k = 0; k < m_ts_length; ++k)
+    result[k] += temp_anomaly[k];
 
   return 0;
 }
 
-PetscErrorCode PAAnomaly::precip_time_series(int i, int j, int N,
-					     PetscReal *ts, PetscReal *values) {
+PetscErrorCode PAAnomaly::precip_time_series(int i, int j, PetscReal *result) {
   PetscErrorCode ierr;
+  vector<double> mass_flux_anomaly(m_ts_length);
 
-  // NB! the input_model uses un-periodized times.
-  ierr = input_model->precip_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+  ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
-  PetscReal *ptr;
+  mass_flux_anomaly.reserve(m_ts_length);
+  ierr = mass_flux.interp(i, j, &mass_flux_anomaly[0]); CHKERRQ(ierr);
 
-  if (bc_period > 0.01) {
-    // Recall that this method is called for each map-plane point during a
-    // time-step. This if-condition is here to avoid calling
-    // grid.time->mod() if the user didn't ask for periodized climate.
-    ts_mod.reserve(N);
-
-    for (int k = 0; k < N; ++k)
-      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_time, bc_period);
-
-    ptr = &ts_mod[0];
-  } else {
-    ptr = ts;
-  }
-
-  ts_values.reserve(N);
-  ierr = mass_flux.interp(i, j, N, ptr, &ts_values[0]); CHKERRQ(ierr);
-
-  for (int k = 0; k < N; ++k)
-    values[k] += ts_values[k];
+  for (unsigned int k = 0; k < m_ts_length; ++k)
+    result[k] += mass_flux_anomaly[k];
 
   return 0;
 }

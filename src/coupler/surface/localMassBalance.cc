@@ -28,8 +28,8 @@
 
 PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBalance(myconfig) {
   precip_as_snow = config.get_flag("interpret_precip_as_snow");
-  Tmin = config.get("air_temp_all_precip_as_snow");
-  Tmax = config.get("air_temp_all_precip_as_rain");
+  Tmin		 = config.get("air_temp_all_precip_as_snow");
+  Tmax		 = config.get("air_temp_all_precip_as_rain");
 }
 
 
@@ -337,16 +337,16 @@ PetscScalar PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries(
 FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const NCConfigVariable &myconfig)
   : grid(g), config(myconfig) {
 
-  beta_ice_w = config.get("pdd_fausto_beta_ice_w");
+  beta_ice_w  = config.get("pdd_fausto_beta_ice_w");
   beta_snow_w = config.get("pdd_fausto_beta_snow_w");
 
-  T_c = config.get("pdd_fausto_T_c");
-  T_w = config.get("pdd_fausto_T_w");
-  beta_ice_c = config.get("pdd_fausto_beta_ice_c");
+  T_c	      = config.get("pdd_fausto_T_c");
+  T_w	      = config.get("pdd_fausto_T_w");
+  beta_ice_c  = config.get("pdd_fausto_beta_ice_c");
   beta_snow_c = config.get("pdd_fausto_beta_snow_c");
 
-  fresh_water_density = config.get("fresh_water_density");
-  ice_density = config.get("ice_density");
+  fresh_water_density	     = config.get("fresh_water_density");
+  ice_density		     = config.get("ice_density");
   pdd_fausto_latitude_beta_w = config.get("pdd_fausto_latitude_beta_w");
 
   temp_mj.create(grid, "temp_mj_faustogreve", false);

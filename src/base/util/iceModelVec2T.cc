@@ -40,23 +40,26 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
 IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2S(other) {
   shallow_copy = true;
 
-  array3 = other.array3;
-  da3 = other.da3;
-  filename = other.filename;
-  first = other.first;
-  N = other.N;
-  lic = other.lic;
-  localp = other.localp;
-  n_records = other.n_records;
-  time = other.time;
+  array3      = other.array3;
+  da3         = other.da3;
+  filename    = other.filename;
+  first       = other.first;
+  N           = other.N;
+  lic         = other.lic;
+  localp      = other.localp;
+  n_records   = other.n_records;
+  time        = other.time;
   time_bounds = other.time_bounds;
-  v3 = other.v3;
+  v3          = other.v3;
+
+  m_interp_indices = other.m_interp_indices;
+  m_interp_weights = other.m_interp_weights;
 }
 
 IceModelVec2T::~IceModelVec2T() {
   if (!shallow_copy) {
     delete lic;
-    // call destroy(), maybe???
+    destroy();
   }
 }
 
@@ -97,10 +100,6 @@ PetscErrorCode IceModelVec2T::destroy() {
   if (v3 != PETSC_NULL) {
     ierr = VecDestroy(&v3); CHKERRQ(ierr);
     v3 = PETSC_NULL;
-  }
-  if (da3 != PETSC_NULL) {
-    ierr = DMDestroy(&da3); CHKERRQ(ierr);
-    da3 = PETSC_NULL;
   }
 
   return 0;
@@ -436,13 +435,17 @@ double IceModelVec2T::max_timestep(double my_t) {
 }
 
 //! \brief Get the record that is just before my_t.
-PetscErrorCode IceModelVec2T::at_time(double my_t) {
+PetscErrorCode IceModelVec2T::at_time(double my_t, double period, double reference_time) {
   PetscErrorCode ierr;
 
   int     last = first + (N - 1);
   double *j,
-    *start = &time_bounds[first * 2],
-    *end = &time_bounds[last * 2 + 1];
+    *start = &time_bounds[2 * first],
+    *end   = &time_bounds[2 * last + 1];
+
+  // "Periodize" time if necessary.
+  if (period > 1)
+    my_t =  grid->time->mod(my_t - reference_time, period);
 
   j = lower_bound(start, end, my_t); // binary search
 
@@ -480,94 +483,187 @@ PetscErrorCode IceModelVec2T::at_time(double my_t) {
 }
 
 
-//! Extract data corresponding to my_t using linear interpolation.
-/*!
-  Note: this method does not check if an update() call is necessary!
+/*
+ * \brief Use linear interpolation to initialize IceModelVec2T with
+ * the value at time `my_t`, assuming that data is periodic with
+ * period `period` seconds.
+ *
+ * \note This method does not check if an update() call is necessary!
+ *
+ * @param[in] my_t requested time
+ * @param[in] period period, in seconds
+ * @param[in] reference_time reference time, in seconds
+ *
+ * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::interp(double my_t) {
+PetscErrorCode IceModelVec2T::interp(double my_t, double period, double reference_time) {
   PetscErrorCode ierr;
-  int     last = first + (N - 1);
-  double *p,
-    *start = &time_bounds[first * 2],
-    *end = &time_bounds[last * 2 + 1];
 
-  p = lower_bound(start, end, my_t); // binary search
-
-  if (p == end) {
-    ierr = get_record(N - 1); CHKERRQ(ierr);
-    return 0;
-  }
-
-  int k = (int)(p - start - 1);
-
-  if (k < 0) {
-    ierr = get_record(0); CHKERRQ(ierr);
-    return 0;
-  }
-
-  long int index = ((p - &time_bounds[0]) - 1) / 2;
-
-  ierr = verbPrintf(3, grid->com,
-		    "  IceModelVec2T::interp(%3.5f years): using %s:%s[%d,%d]"
-                    " (time bounds: [%3.5f years, %3.5f years]).\n",
-                    grid->time->seconds_to_years(my_t),
-                    filename.c_str(),
-                    vars[0].short_name.c_str(),
-                    index - 1, index,
-                    grid->time->seconds_to_years(*(p-1)),
-                    grid->time->seconds_to_years(*p)); CHKERRQ(ierr);
-
-  int m = first + k;
-  double lambda = (my_t - time[m]) / (time[m + 1] - time[m]);
+  ierr = init_interpolation(&my_t, 1, period, reference_time); CHKERRQ(ierr);
 
   PetscScalar **a2, ***a3;
 
   ierr = get_array(a2); CHKERRQ(ierr);
   ierr = get_array3(a3); CHKERRQ(ierr);
-  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
-    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
-      a2[i][j] = a3[i][j][k] * (1 - lambda) + a3[i][j][k + 1] * lambda;
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      PetscScalar left = a3[i][j][m_interp_indices[0]],
+	right = a3[i][j][m_interp_indices[1]];
+      a2[i][j] = left + m_interp_weights[0] * (right - left);
+    }
+  }
   ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
 }
 
-//! Gets an interpolated time-series out. Has to be surrounded with begin_access() and end_access().
-/*!
-  Note: this method does not check ownership and does not check if an update() call is necessary!
+
+/** 
+ * Compute the average value over the time interval `[my_t, my_t + my_dt]`.
+ *
+ * @param my_t  start of the time interval, in seconds
+ * @param my_dt length of the time interval, in seconds
+ *
+ * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::interp(int i, int j, int number,
-				    PetscScalar *ts, PetscScalar *values) {
+PetscErrorCode IceModelVec2T::average(double my_t, double my_dt,
+				      double period, double reference_time) {
+  PetscErrorCode ierr;
+  PetscScalar **a2;
+  PetscReal dt_years = grid->time->seconds_to_years(my_dt); // *not* time->year(my_dt)
+
+  // Determine the number of small time-steps to use for averaging:
+  int M = (int) ceil(52 * (dt_years) + 1); // (52 weeks in a year)
+  if (M < 2) M = 2;
+
+  vector<double> ts(M);
+  double dt = my_dt / (M - 1);
+  for (int k = 0; k < M; k++)
+    ts[k] = my_t + k * dt;
+
+  ierr = init_interpolation(&ts[0], M, period, reference_time); CHKERRQ(ierr);
+
+  ierr = get_array(a2);         // calls begin_access()
+  for (PetscInt   i = grid->xs; i < grid->xs+grid->xm; ++i) {
+    for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j) {
+      ierr = average(i, j, a2[i][j]); CHKERRQ(ierr);
+    }
+  }
+  ierr = end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+/** 
+ * \brief Compute weights for the piecewise-linear interpolation. This is used *both*
+ * for time-series and "snapshots".
+ *
+ * @param ts requested times, in seconds
+ * @param ts_length number of requested times (length of the `ts` array)
+ * @param period period, in seconds
+ * @param indices indices, array of `2*ts_length` integers
+ * @param weights interpolation weights, array of `ts_length` doubles
+ *
+ * @return 0 on success
+ */
+PetscErrorCode IceModelVec2T::init_interpolation(PetscScalar *ts, unsigned int ts_length,
+						 double period, double reference_time) {
   int mcurr = first;
-  PetscScalar ***a3 = (PetscScalar***) array3;
   int last = first + (N - 1);
 
-  for (int k = 0; k < number; ++k) {
+  m_interp_indices.resize(2*ts_length);
+  m_interp_weights.resize(ts_length);
 
-    if (k > 0 && ts[k] < ts[k-1])
-      mcurr = first; // reset the mcurr index: ts are not increasing!
+  // Compute "periodized" times if necessary.
+  vector<double> times_requested(ts_length);
+  if (period > 1) {
+    for (unsigned int k = 0; k < ts_length; ++k)
+      times_requested[k] = grid->time->mod(ts[k] - reference_time, period);
+  } else {
+    for (unsigned int k = 0; k < ts_length; ++k)
+      times_requested[k] = ts[k];
+  }
+  
+  for (unsigned int k = 0; k < ts_length; ++k) {
 
-    // extrapolate on the left:
-    if (ts[k] <= time[first]) {
-      values[k] = a3[i][j][0];
-      continue;
-    }
+    if (k > 0 && times_requested[k] < times_requested[k-1])
+      mcurr = first; // reset the mcurr index: times_requested are not increasing!
+
     // extrapolate on the right:
-    if (ts[k] >= time[last]) {
-      values[k] = a3[i][j][N-1];
+    if (times_requested[k] >= time[last]) {
+      m_interp_indices[2*k + 0] = N - 1;
+      m_interp_indices[2*k + 1] = N - 1;
+      m_interp_weights[k]       = 0;
       continue;
     }
 
-    while (time[mcurr+1] < ts[k]) {
-      mcurr++;
+    int left, right;		// indices of the left and right
+				// end-points of the current interval
+    PetscReal lambda = 0.0,
+      epsilon = 1.0;            // 1 second
+
+    // handle periodicity on the left (using the fact that 'time'
+    // contains right end-points of time bounds
+    if (times_requested[k] < time[first]) {
+      right  = first;
+      left   = first;
+      lambda = 0.0;
+
+      if (period > 1.0) {	// we do not support periods shorter than 1 second
+	while (left < last && time[left] < period - epsilon)
+	  left++;
+
+	// periodic data has to have time axis starting from 0
+	//
+	// Here we make errors in time of up to 1 second to protect from
+	// division by zero
+	if (time[right] > 1)	
+	  lambda = (times_requested[k] - 0) / (time[right] - 0);
+      }
+
+    } else {
+
+      while (time[mcurr+1] < times_requested[k]) {
+	mcurr++;
+      }
+
+      left   = mcurr;
+      right  = mcurr + 1;
+      lambda = (times_requested[k] - time[left]) / (time[right] - time[left]);
     }
 
-    const PetscScalar incr = (ts[k] - time[mcurr]) / (time[mcurr+1] - time[mcurr]);
-    const PetscScalar valm = a3[i][j][mcurr - first];
-    values[k] = valm + incr * (a3[i][j][mcurr - first + 1] - valm);
+    m_interp_indices[2*k + 0] = left;
+    m_interp_indices[2*k + 1] = right;
+    m_interp_weights[k]       = lambda;
   }
 
+  return 0;
+}
+
+/** 
+ * \brief Compute values of the time-series using precomputed indices
+ * and interpolation weights (linear interpolation).
+ *
+ * @param i,j map-plane grid point
+ * @param indices pre-computed indices
+ * @param weights pre-computed interpolation weights
+ * @param values pointer to an allocated array of `weights.size()` `PetscScalar`
+ *
+ * @return 0 on success
+ */
+PetscErrorCode IceModelVec2T::interp(int i, int j,
+				     PetscScalar *result) {
+  PetscScalar ***a3 = (PetscScalar***) array3;
+  unsigned int ts_length = m_interp_weights.size();
+
+  for (unsigned int k = 0; k < ts_length; ++k) {
+    PetscScalar left = a3[i][j][m_interp_indices[2*k + 0]],
+      right	     = a3[i][j][m_interp_indices[2*k + 1]];
+
+    result[k] = left + m_interp_weights[k] * (right - left);
+  }
+  
   return 0;
 }
 
@@ -576,45 +672,22 @@ PetscErrorCode IceModelVec2T::interp(int i, int j, int number,
 /*!
   Can (and should) be optimized. Later, though.
  */
-PetscErrorCode IceModelVec2T::average(int i, int j, double my_t, double my_dt,
+PetscErrorCode IceModelVec2T::average(int i, int j,
 				      double &result) {
   PetscErrorCode ierr;
+  unsigned int M = m_interp_weights.size();
+  vector<PetscScalar> values(M);
 
-  PetscReal dt_years = grid->time->seconds_to_years(my_dt); // *not* time->year(my_dt)
-
-  // Determine the number of small time-steps to use for averaging:
-  int M = (int) ceil(52 * (dt_years) + 1); // (52 weeks in a year)
-  if (M < 2) M = 2;
-
-  vector<double> ts(M), values(M);
-  double dt = my_dt / (M - 1);
-  for (int k = 0; k < M; k++)
-    ts[k] = my_t + k * dt;
-
-  ierr = interp(i, j, M, &ts[0], &values[0]); CHKERRQ(ierr);
+  ierr = interp(i, j, &values[0]); CHKERRQ(ierr);
 
   // trapezoidal rule; uses the fact that all 'small' time intervals used here
   // are the same:
   result = 0;
-  for (int k = 0; k < M - 1; ++k)
+  for (unsigned int k = 0; k < M - 1; ++k)
     result += values[k] + values[k + 1];
   result /= 2*(M - 1);
 
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
-  PetscErrorCode ierr;
-  PetscScalar **a2;
-
-  ierr = get_array(a2);         // calls begin_access()
-  for (PetscInt   i = grid->xs; i < grid->xs+grid->xm; ++i) {
-    for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j) {
-      ierr = average(i, j, my_t, my_dt, a2[i][j]); CHKERRQ(ierr);
-    }
-  }
-  ierr = end_access(); CHKERRQ(ierr);
-
-  return 0;
-}
 

@@ -36,12 +36,11 @@ public:
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode precip_time_series(int i, int j, int N,
-					    PetscReal *ts, PetscReal *values);
+  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
 
   virtual void add_vars_to_output(string keyword,
                                   map<string,NCSpatialVariable> &result);
