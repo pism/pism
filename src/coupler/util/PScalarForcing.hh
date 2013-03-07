@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,15 @@ public:
     Mod::dt = my_dt;
 
     PetscErrorCode ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N)
+  {
+    m_ts_times.resize(N);
+    for (int k = 0; k < N; k++)
+      m_ts_times[k] = ts[k];
+
     return 0;
   }
 
@@ -113,6 +122,7 @@ protected:
   PetscReal bc_period,          // in seconds
     bc_reference_time;          // in seconds
 
+  vector<double> m_ts_times;
 };
 
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Constantine Khroulev
+// Copyright (C) 2009--2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -110,16 +110,21 @@ public:
   virtual PetscErrorCode get_record(int n);
   virtual double         max_timestep(double my_t);
 
-  virtual PetscErrorCode at_time(double my_t);
+  virtual PetscErrorCode at_time(double my_t, double period,
+				 double reference_time);
 
-  virtual PetscErrorCode interp(double my_t);
-  virtual PetscErrorCode interp(int i, int j, int N,
-				PetscScalar *times, PetscScalar *results);
-  virtual PetscErrorCode average(double my_t, double my_dt);
-  virtual PetscErrorCode average(int i, int j, double my_t, double my_dt,
-				 double &result);
+  virtual PetscErrorCode interp(double my_t, double period, double reference_time);
+
+  virtual PetscErrorCode interp(int i, int j, PetscScalar *results);
+
+  virtual PetscErrorCode average(double my_t, double my_dt,
+				 double period, double reference_time);
+  virtual PetscErrorCode average(int i, int j, double &result);
+
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
+  virtual PetscErrorCode init_interpolation(PetscScalar *ts, unsigned int ts_length,
+					    double period, double reference_time);
 
 protected:
   vector<double> time,		//!< all the times available in filename
@@ -132,6 +137,9 @@ protected:
     first,			//!< in-file index of the first record stored in memory
     N;                   //!< number of records kept in memory
   LocalInterpCtx *lic;
+
+  vector<unsigned int> m_interp_indices;
+  vector<double> m_interp_weights;
 
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode get_array3(PetscScalar*** &a3);

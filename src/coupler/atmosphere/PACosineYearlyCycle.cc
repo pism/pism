@@ -159,19 +159,18 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PACosineYearlyCycle::temp_time_series(int i, int j, int N,
-                                                     PetscReal *ts, PetscReal *values) {
+PetscErrorCode PACosineYearlyCycle::temp_time_series(int i, int j, PetscReal *values) {
   // constants related to the standard yearly cycle
   const PetscReal
     sperd = 8.64e4, // exact number of seconds per day
     julyday_fraction = (sperd / secpera) * snow_temp_july_day;
 
-  for (PetscInt k = 0; k < N; ++k) {
-    double tk = grid.time->year_fraction(ts[k]) - julyday_fraction,
+  for (unsigned int k = 0; k < m_ts_length; ++k) {
+    double tk = grid.time->year_fraction(m_ts_times[k]) - julyday_fraction,
       scaling = 1;
 
     if (A != NULL) {
-      scaling = (*A)(ts[k]);
+      scaling = (*A)(m_ts_times[k]);
     }
 
     values[k] = air_temp_mean_annual(i,j) +

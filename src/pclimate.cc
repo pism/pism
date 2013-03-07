@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -258,39 +258,57 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   // write the states
   unsigned int record_index = 0;
 
+  // skip requested times before the start of the run
   while (record_index < times.size() && times[record_index] <= grid.time->current())
     record_index++;
+
+  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append=true
+  ierr = nc.def_time(grid.config.get_string("time_dimension_name"),
+                     grid.config.get_string("calendar"),
+                     grid.time->units()); CHKERRQ(ierr);
 
   while (record_index < times.size() && grid.time->current() < grid.time->end()) {
 
     double current_time = grid.time->current(),
       next_time = times[record_index],
-      dt = next_time - current_time;
-
-    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append=true
-    ierr = nc.def_time(grid.config.get_string("time_dimension_name"),
-                       grid.config.get_string("calendar"),
-                       grid.time->units()); CHKERRQ(ierr);
-    ierr = nc.append_time(grid.config.get_string("time_dimension_name"),
-                          current_time); CHKERRQ(ierr);
-
+      dt = next_time - current_time,
+      surface_max_dt, ocean_max_dt;
+    bool surface_restrict, ocean_restrict;
     char timestr[TEMPORARY_STRING_LENGTH];
-    snprintf(timestr, sizeof(timestr),
-             "  boundary models updated for [%s, %s] ...", 
-             grid.time->date().c_str(),
-             grid.time->date(next_time).c_str());
-    ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
-    ierr = verbPrintf(3,com,"\n%s writing result to %s ..",timestr,filename.c_str()); CHKERRQ(ierr);
-    strncat(timestr,"\n",1);
+
+    do {
+      ierr = surface->max_timestep(current_time, surface_max_dt, surface_restrict); CHKERRQ(ierr);
+      ierr = ocean->max_timestep(current_time, ocean_max_dt, ocean_restrict); CHKERRQ(ierr);
+
+      if (surface_restrict && dt > surface_max_dt)
+	dt = surface_max_dt;
+
+      if (ocean_restrict && dt > ocean_max_dt)
+	dt = ocean_max_dt;
+
+      if (grid.time->current() + dt >= next_time)
+	dt = next_time - grid.time->current();
+
+      ierr = surface->update(grid.time->current(), dt); CHKERRQ(ierr);
+      ierr = ocean->update(grid.time->current(), dt); CHKERRQ(ierr);
+
+      snprintf(timestr, sizeof(timestr),
+	       "  boundary models updated for [%s, %s] ...", 
+	       grid.time->date().c_str(),
+	       grid.time->date(next_time).c_str());
+      ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
+      ierr = verbPrintf(3,com,"\n%s writing result to %s ..",timestr,filename.c_str()); CHKERRQ(ierr);
+      strncat(timestr,"\n",1);
+      grid.time->step(dt);
+
+    } while (grid.time->current() < next_time);
+
+    ierr = nc.append_time(grid.config.get_string("time_dimension_name"),
+                          next_time); CHKERRQ(ierr);
 
     ierr = nc.append_history(timestr); CHKERRQ(ierr); // append the history
-    ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = usurf->write(filename, PISM_FLOAT); CHKERRQ(ierr);
-
-    // update surface and ocean models' outputs:
-    ierr = surface->update(current_time, dt); CHKERRQ(ierr);
-    ierr = ocean->update(current_time, dt); CHKERRQ(ierr);
 
     ierr = surface->ice_surface_mass_flux(*climatic_mass_balance); CHKERRQ(ierr);
     ierr = surface->ice_surface_temperature(*ice_surface_temp); CHKERRQ(ierr);
@@ -320,9 +338,10 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = shelfbasemassflux->write(filename, PISM_FLOAT); CHKERRQ(ierr);
 
     record_index++;
-    grid.time->step(dt);
   }
   ierr = verbPrintf(2,com,"\n"); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }

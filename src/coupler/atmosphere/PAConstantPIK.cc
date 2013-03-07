@@ -86,16 +86,14 @@ PetscErrorCode PAConstantPIK::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, int N,
-                                               PetscReal */*ts*/, PetscReal *values) {
-  for (PetscInt k = 0; k < N; k++)
+PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, PetscReal *values) {
+  for (unsigned int k = 0; k < m_ts_length; k++)
     values[k] = air_temp(i,j);
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, int N,
-						 PetscReal */*ts*/, PetscReal *values) {
-  for (PetscInt k = 0; k < N; k++)
+PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, PetscReal *values) {
+  for (unsigned int k = 0; k < m_ts_length; k++)
     values[k] = precipitation(i,j);
   return 0;
 }
@@ -215,6 +213,12 @@ PetscErrorCode PAConstantPIK::update(PetscReal, PetscReal) {
   ierr = lat->end_access(); CHKERRQ(ierr);
   ierr = air_temp.end_access();   CHKERRQ(ierr);
 
+  return 0;
+}
+
+PetscErrorCode PAConstantPIK::init_timeseries(PetscReal *ts, int N) {
+  (void)ts;
+  m_ts_length = N;
   return 0;
 }
 

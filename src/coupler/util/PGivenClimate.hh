@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -207,8 +207,13 @@ protected:
     ierr = nc.inq_nrecords(mass_flux_name,  mass_flux_std_name,  mass_flux_n_records);  CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-    temp_n_records = PetscMin(temp_n_records, buffer_size);
-    mass_flux_n_records  = PetscMin(mass_flux_n_records, buffer_size);
+    // If -..._period is not set, make ..._n_records the minimum of the
+    // buffer size and the number of available records. Otherwise try
+    // to keep all available records in memory.
+    if (bc_period == 0.0) {
+      temp_n_records = PetscMin(temp_n_records, buffer_size);
+      mass_flux_n_records  = PetscMin(mass_flux_n_records, buffer_size);
+    }
 
     if (temp_n_records < 1) {
       PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",

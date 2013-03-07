@@ -41,17 +41,18 @@ public:
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-  virtual PetscErrorCode precip_time_series(int i, int j, int N,
-					    PetscReal *ts, PetscReal *values);
+
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N);
+  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
 protected:
   PISMVars *variables;
   PetscScalar snow_temp_july_day;
   string reference, precip_filename;
   IceModelVec2S air_temp_mean_annual, air_temp_mean_july, precipitation;
   NCSpatialVariable air_temp_snapshot;
+  vector<double> m_ts_times;
 private:
   PetscErrorCode allocate_PAYearlyCycle();
 };
