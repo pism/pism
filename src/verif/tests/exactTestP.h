@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2012 Ed Bueler
+   Copyright (C) 2012-2013 Ed Bueler
 
    This file is part of PISM.
 
@@ -31,8 +31,8 @@ extern "C"
 ! exactTestP is a C implementation of a nearly-exact solution to the 'distributed'
 ! subglacial hydrology model described in the draft manuscript
 !
-!    Ward van Pelt & Ed Bueler (2012) "A diffusive-closure model of
-!    subglacial hydrology"
+!    Ed Bueler & Ward van Pelt (2013) "A distributed model of subglacial
+!    and englacial hydrology in tidewater glaciers and ice sheets"
 !
 ! This nearly-exact solution requires solving an ODE numerically.
 ! Only the steady water thickness solution W(r) is computed here.  The

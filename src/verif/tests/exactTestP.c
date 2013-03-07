@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2012 Ed Bueler
+   Copyright (C) 2012-2013 Ed Bueler
 
    This file is part of PISM.
 
@@ -34,19 +34,18 @@
 
 /* major model parameters: */
 #define Aglen    3.1689e-24    /* Pa-3 s-1 */
-#define k        0.01          /* m s-1 */
+#define k        (0.01/(rhow*g))   /* FIXME:  this is extremely low but it matches what we were using */
 #define Wr       1.0           /* m */
 #define c1       0.500         /* m-1 */
 #define c2       0.040         /* [pure] */
 
 /* model regularizations */
-#define E0       1.0           /* m */
 #define Y0       0.001         /* m */
 
 /* specific to exact solution */
-#define Phi0     (0.20 / SperA) /* m s-1 */
+#define m0       ((0.20/SperA)*rhow)  /* kg m-2 s-1; = 20 cm a-1 */
 #define h0       500.0         /* m */
-#define v0       (100.0 / SperA) /* m s-1 */
+#define v0       (100.0/SperA) /* m s-1 */
 #define R1       5000.0        /* m */
 
 
@@ -84,7 +83,7 @@ int funcP(double r, const double W[], double f[], void *params) {
   Compare doublediff.m.  Assumes Glen power n=3.
   */
 
-  double sb, dsb, dPo, tmp1, c0, vphi0, numer, denom;
+  double sb, dsb, dPo, tmp1, omega0, numer, denom;
 
   if (params == NULL) {} /* quash warning "unused parameters" */
 
@@ -96,12 +95,11 @@ int funcP(double r, const double W[], double f[], void *params) {
     return GSL_SUCCESS;
   } else {
     getsb(r,&sb,&dsb);
-    c0    = K / (rhow * g);
-    vphi0 = Phi0 / (2 * c0);
+    omega0 = m0 / (2.0 * rhow * k);
     dPo   = - (2.0 * rhoi * g * h0 / (TESTP_R0*TESTP_R0)) * r;
     tmp1  = pow(W[0] + Y0,4.0/3.0) * pow(Wr - W[0],2.0/3.0);
     numer = dsb * (W[0] + Y0) * (Wr - W[0]);
-    numer = numer - ( vphi0 * r / W[0] + dPo ) * tmp1;
+    numer = numer - ( omega0 * r / W[0] + dPo ) * tmp1;
     denom = (1.0/3.0) * (Wr + Y0) * sb + rhow * g * tmp1;
     f[0] = numer / denom;
     return GSL_SUCCESS;
