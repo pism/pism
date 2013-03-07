@@ -330,14 +330,16 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   ierr = runoff_rate.begin_access(); CHKERRQ(ierr);
   ierr = snow_depth.begin_access(); CHKERRQ(ierr);
 
+  ierr = atmosphere->init_timeseries(&ts[0], Nseries); CHKERRQ(ierr);
+
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // the temperature time series from the PISMAtmosphereModel and its modifiers
-      ierr = atmosphere->temp_time_series(i, j, Nseries, &ts[0], &T[0]); CHKERRQ(ierr);
+      ierr = atmosphere->temp_time_series(i, j, &T[0]); CHKERRQ(ierr);
 
       // the precipitation time series from PISMAtmosphereModel and its modifiers
-      ierr = atmosphere->precip_time_series(i, j, Nseries, &ts[0], &P[0]); CHKERRQ(ierr);
+      ierr = atmosphere->precip_time_series(i, j, &P[0]); CHKERRQ(ierr);
 
       if (faustogreve != NULL) {
 	// we have been asked to set mass balance parameters according to

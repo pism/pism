@@ -36,10 +36,10 @@ public:
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
 
-  virtual PetscErrorCode precip_time_series(int i, int j, int N,
-					    PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-                                          PetscReal *ts, PetscReal *values);
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N);
+  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *result);
+  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *result);
+
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
 

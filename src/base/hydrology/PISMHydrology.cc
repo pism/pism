@@ -105,7 +105,14 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
     ierr = nc.open(itbfilename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_nrecords("inputtobed", "", n_records); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
-    n_records = PetscMin(n_records, buffer_size);
+
+    // if -..._period is not set, make n_records the minimum of the
+    // buffer size and the number of available records. Otherwise try
+    // to keep all available records in memory.
+    if (itbperiod_set == false) {
+      n_records = PetscMin(n_records, buffer_size);
+    }
+
     if (n_records == 0) {
       PetscPrintf(grid.com, "PISM ERROR: can't find 'inputtobed' in -input_to_bed file with name '%s'.\n",
                   itbfilename.c_str());
@@ -227,7 +234,8 @@ PetscErrorCode PISMHydrology::get_input_rate(
 
   if (inputtobed != NULL) {
     ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
-    ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
+    ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0,
+			       inputtobed_period, inputtobed_reference_time); CHKERRQ(ierr);
     ierr = inputtobed->begin_access(); CHKERRQ(ierr);
   }
   ierr = bmelt->begin_access(); CHKERRQ(ierr);

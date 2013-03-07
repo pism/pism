@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -61,7 +61,7 @@ public:
 
     ierr = reference_surface.update(m_t, m_dt); CHKERRQ(ierr);
 
-    ierr = reference_surface.at_time(m_t); CHKERRQ(ierr);
+    ierr = reference_surface.at_time(m_t, bc_period, bc_reference_time); CHKERRQ(ierr);
 
     return 0;
   }
@@ -158,7 +158,12 @@ protected:
     ierr = nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ref_surface_n_records = PetscMin(ref_surface_n_records, buffer_size);
+    // if -..._period is not set, make n_records the minimum of the
+    // buffer size and the number of available records. Otherwise try
+    // to keep all available records in memory.
+    if (bc_period_set == false) {
+      ref_surface_n_records = PetscMin(ref_surface_n_records, buffer_size);
+    }
 
     if (ref_surface_n_records == 0) {
       PetscPrintf(g.com, "PISM ERROR: can't find reference surface elevation (usurf) in %s.\n",
