@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -129,7 +129,6 @@ public:
   ThermoGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
                 EnthalpyConverter *my_EC)
     : IceFlowLaw(c, pre, config, my_EC) {
-    n = 3;    // Paterson-Budd has the fixed Glen exponent, so it's hard-wired.
   }
   virtual ~ThermoGlenIce() {}
 
