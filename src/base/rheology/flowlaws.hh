@@ -125,7 +125,6 @@ public:
   ThermoGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
                 EnthalpyConverter *my_EC)
     : IceFlowLaw(c, pre, config, my_EC) {
-    n = 3;    // Paterson-Budd has the fixed Glen exponent, so it's hard-wired.
   }
   virtual ~ThermoGlenIce() {}
 
