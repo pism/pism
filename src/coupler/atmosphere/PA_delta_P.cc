@@ -34,7 +34,7 @@ PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
   option_prefix = "-atmosphere_delta_P";
   offset_name = "delta_P";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("m / year", "");
+  offset->set_units("m / second", "m / year");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "precipitation offsets");
 
@@ -140,7 +140,7 @@ PetscErrorCode PA_delta_P::write_variables(set<string> vars, string file) {
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
     ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 
