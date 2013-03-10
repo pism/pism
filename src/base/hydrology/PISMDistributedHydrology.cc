@@ -328,7 +328,7 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
     ierr = result.end_access(); CHKERRQ(ierr);
   }
 
-  PetscReal mymaxKW = 0.0;;
+  PetscReal mymaxKW = 0.0;
   ierr = R.begin_access(); CHKERRQ(ierr);
   ierr = Wstag.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -448,36 +448,23 @@ PetscErrorCode PISMRoutingHydrology::advective_fluxes(IceModelVec2Stag &result) 
 PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal maxKW,
                   PetscReal &dt_result,
-                  PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result) {
+                  PetscReal &maxV_result, PetscReal &maxD_result,
+                  PetscReal &dtCFL_result, PetscReal &dtDIFFW_result) {
   PetscErrorCode ierr;
   const PetscReal
     dtmax = config.get("hydrology_maximum_time_step_years") * secpera,
     rg    = config.get("standard_gravity") * config.get("fresh_water_density");
-  PetscReal maxD, tmp[2];
+  PetscReal tmp[2];
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
-  maxD = rg * maxKW;
+  maxD_result = rg * maxKW;
   dtCFL_result = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy); // is regularization needed?
   dtDIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
-  dtDIFFW_result = 0.25 / (maxD * dtDIFFW_result);
+  dtDIFFW_result = 0.25 / (maxD_result * dtDIFFW_result);
   // dt = min { te-t, dtmax, dtCFL, dtDIFFW }
   dt_result = PetscMin(t_end - t_current, dtmax);
   dt_result = PetscMin(dt_result, dtCFL_result);
   dt_result = PetscMin(dt_result, dtDIFFW_result);
-  return 0;
-}
-
-
-/*!
-Call this version if you don't need the dt associated to the diffusion term.
- */
-PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
-                  PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-                  PetscReal &dt_result) {
-  PetscReal discard1, discard2, discard3;
-  PetscErrorCode ierr = adaptive_for_W_evolution(
-                             t_current, t_end, maxKW, dt_result,
-                             discard1, discard2, discard3); CHKERRQ(ierr);
   return 0;
 }
 
@@ -544,7 +531,7 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
 
   MaskQuery M(*mask);
   PetscReal ht = t, hdt, // hydrology model time and time step
-            maxKW;
+            maxKW, maxV, maxD, dtCFL, dtDIFFW;
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
             delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
   PetscInt hydrocount = 0; // count hydrology time steps
@@ -566,7 +553,8 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
     ierr = Qstag.update_ghosts(); CHKERRQ(ierr);
 
-    ierr = adaptive_for_W_evolution(ht, t+dt, maxKW, hdt); CHKERRQ(ierr);
+    ierr = adaptive_for_W_evolution(ht, t+dt, maxKW,
+                                    hdt, maxV, maxD, dtCFL, dtDIFFW); CHKERRQ(ierr);
 
     if ((inputtobed != NULL) || (hydrocount==1)) {
       ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
@@ -592,9 +580,10 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = verbPrintf(2, grid.com,
       " 'routing' hydrology summary:\n"
       "     %d hydrology sub-steps with average dt = %.6f years\n"
+      "        (last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
       "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
       "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
-      hydrocount, (dt/hydrocount)/secpera,
+      hydrocount, (dt/hydrocount)/secpera, maxV, maxD,
       icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
   }
   return 0;
@@ -990,12 +979,14 @@ PetscErrorCode PISMDistributedHydrology::update_cbase(IceModelVec2S &result_cbas
 //! Computes the adaptive time step for this (W,P) state space model.
 PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-                  PetscReal &dt_result, PetscReal &PtoCFLratio) {
+                  PetscReal &dt_result,
+                  PetscReal &maxV_result, PetscReal &maxD_result,
+                  PetscReal &PtoCFLratio) {
   PetscErrorCode ierr;
-  PetscReal maxV, dtCFL, dtDIFFW, dtDIFFP;
+  PetscReal dtCFL, dtDIFFW, dtDIFFP;
 
   ierr = adaptive_for_W_evolution(t_current,t_end, maxKW,
-              dt_result,maxV,dtCFL,dtDIFFW); CHKERRQ(ierr);
+              dt_result,maxV_result,maxD_result,dtCFL,dtDIFFW); CHKERRQ(ierr);
 
   const PetscReal rhoratio = config.get("fresh_water_density") / config.get("ice_density"),
                   phisum   = config.get("hydrology_englacial_porosity")
@@ -1012,7 +1003,7 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
 
   ierr = verbPrintf(3,grid.com,
             "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
-            maxV*secpera, dtCFL/secpera, dtDIFFW/secpera, dtDIFFP/secpera,
+            maxV_result*secpera, dtCFL/secpera, dtDIFFW/secpera, dtDIFFP/secpera,
             dt_result/secpera, t_current/secpera); CHKERRQ(ierr);
   return 0;
 }
@@ -1109,7 +1100,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
                    omegay = 1.0 / (grid.dy * grid.dy);
 
   PetscReal ht = t, hdt, // hydrology model time and time step
-            maxKW;
+            maxKW, maxV, maxD;
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
             delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
 
@@ -1143,7 +1134,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
     ierr = Qstag.update_ghosts(); CHKERRQ(ierr);
 
-    ierr = adaptive_for_WandP_evolution(ht, t+dt, maxKW, hdt, PtoCFLratio); CHKERRQ(ierr);
+    ierr = adaptive_for_WandP_evolution(ht, t+dt, maxKW, hdt, maxV, maxD, PtoCFLratio); CHKERRQ(ierr);
     cumratio += PtoCFLratio;
 
     if ((inputtobed != NULL) || (hydrocount==1)) {
@@ -1268,10 +1259,11 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = verbPrintf(2, grid.com,
       " 'distributed' hydrology summary:\n"
       "     %d hydrology sub-steps with average dt = %.7f years = %.6f hours\n"
-      "        (with average of %.2f sub-steps per CFL-forced step)\n"
+      "        (average of %.2f steps per CFL time; last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
       "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
       "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
-      hydrocount, dtavyears, dtavyears * (24.0*365.242198781), cumratio/hydrocount,
+      hydrocount, dtavyears, dtavyears * (24.0*365.242198781),
+      cumratio/hydrocount, maxV, maxD,
       icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
   }
   return 0;
