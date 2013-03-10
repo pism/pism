@@ -336,10 +336,8 @@ protected:
   virtual PetscErrorCode adaptive_for_W_evolution(
             PetscReal t_current, PetscReal t_end, PetscReal maxKW,
             PetscReal &dt_result,
-            PetscReal &maxV_result, PetscReal &dtCFL_result, PetscReal &dtDIFFW_result);
-  virtual PetscErrorCode adaptive_for_W_evolution(
-            PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-            PetscReal &dt_result);
+            PetscReal &maxV_result, PetscReal &maxD_result,
+            PetscReal &dtCFL_result, PetscReal &dtDIFFW_result);
 
   PetscErrorCode raw_update_W(PetscReal hdt);
 
@@ -416,7 +414,9 @@ protected:
 
   virtual PetscErrorCode adaptive_for_WandP_evolution(
                            PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-                           PetscReal &dt_result, PetscReal &PtoCFLratio);
+                           PetscReal &dt_result,
+                           PetscReal &maxV_result, PetscReal &maxD_result,
+                           PetscReal &PtoCFLratio);
 
   virtual PetscErrorCode update_englacial_storage(
                                IceModelVec2S &myPnew, IceModelVec2S &Wnew_tot);
