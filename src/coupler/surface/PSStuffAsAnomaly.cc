@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,12 +20,20 @@
 #include "IceGrid.hh"
 #include "PISMTime.hh"
 
-PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
-  PetscErrorCode ierr;
+PSStuffAsAnomaly::PSStuffAsAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
+    : PSModifier(g, conf, input) {
+  PetscErrorCode ierr = allocate_PSStuffAsAnomaly(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
 
-  if (input_model != NULL) {
-    ierr = input_model->init(vars); CHKERRQ(ierr);
-  }
+}
+
+PSStuffAsAnomaly::~PSStuffAsAnomaly() {
+  // empty
+}
+
+PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
+  PetscErrorCode ierr;
 
   ierr = mass_flux.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_state",
@@ -55,9 +63,22 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   ierr = temp_input.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
   ierr = temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
                               "K", ""); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
+  PetscErrorCode ierr;
   string input_file;
   bool regrid = false;
   int start = 0;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  if (input_model != NULL) {
+    ierr = input_model->init(vars); CHKERRQ(ierr);
+  }
+
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,

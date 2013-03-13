@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 PISM Authors
+// Copyright (C) 2008-2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,12 +24,24 @@
 ///// Constant-in-time surface model for accumulation,
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
+
+PSConstantPIK::PSConstantPIK(IceGrid &g, const NCConfigVariable &conf)
+  : PISMSurfaceModel(g, conf)
+{
+  // empty
+}
+
+void PSConstantPIK::attach_atmosphere_model(PISMAtmosphereModel *input)
+{
+  delete input;
+}
+
 PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool regrid = false;
   int start = -1;
 
-  //variables = &vars;
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
      "* Initializing the constant-in-time surface processes model PSConstantPIK.\n"
@@ -82,6 +94,18 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,"    parameterizing the ice surface temperature 'ice_surface_temp' ... \n"); CHKERRQ(ierr);
 
   return 0;
+}
+
+PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
+{
+  t = my_t;
+  dt = my_dt;
+  return 0;
+}
+
+void PSConstantPIK::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/)
+{
+  // empty (does not have an atmosphere model)
 }
 
 PetscErrorCode PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {

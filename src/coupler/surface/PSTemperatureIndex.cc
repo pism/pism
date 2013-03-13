@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,15 +28,10 @@
 
 PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)
   : PISMSurfaceModel(g, conf) {
-  mbscheme = NULL;
-  faustogreve = NULL;
-  base_ddf.snow = config.get("pdd_factor_snow");
-  base_ddf.ice  = config.get("pdd_factor_ice");
-  base_ddf.refreezeFrac = config.get("pdd_refreeze");
-  base_pddStdDev = config.get("pdd_std_dev");
-  base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
+  PetscErrorCode ierr = allocate_PSTemperatureIndex(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
 
-  pdd_annualize = false;
 }
 
 PSTemperatureIndex::~PSTemperatureIndex() {
@@ -44,11 +39,17 @@ PSTemperatureIndex::~PSTemperatureIndex() {
   delete faustogreve;
 }
 
-PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
+PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   PetscErrorCode ierr;
-  bool           pdd_rand, pdd_rand_repeatable, fausto_params, pSet;
+  bool flag;
 
-  ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
+  mbscheme		= NULL;
+  faustogreve		= NULL;
+  base_ddf.snow		= config.get("pdd_factor_snow");
+  base_ddf.ice		= config.get("pdd_factor_ice");
+  base_ddf.refreezeFrac = config.get("pdd_refreeze");
+  base_pddStdDev	= config.get("pdd_std_dev");
+  base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
 
   ierr = PetscOptionsBegin(grid.com, "",
                            "Temperature-index (PDD) scheme for surface (snow) processes", "");
@@ -56,10 +57,10 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   {
     ierr = PISMOptionsIsSet("-pdd_rand",
                             "Use a PDD implementation based on simulating a random process",
-			    pdd_rand); CHKERRQ(ierr);
+			    randomized); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-pdd_rand_repeatable",
                             "Use a PDD implementation based on simulating a repeatable random process",
-			    pdd_rand_repeatable); CHKERRQ(ierr);
+			    randomized_repeatable); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-pdd_fausto",
                             "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
 			    fausto_params); CHKERRQ(ierr);
@@ -68,52 +69,38 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
                             pdd_annualize); CHKERRQ(ierr);
 
     ierr = PISMOptionsReal("-pdd_factor_snow", "PDD snow factor",
-                           base_ddf.snow, pSet); CHKERRQ(ierr);
+                           base_ddf.snow, flag); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-pdd_factor_ice", "PDD ice factor",
-                           base_ddf.ice, pSet); CHKERRQ(ierr);
+                           base_ddf.ice, flag); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-pdd_refreeze", "PDD refreeze fraction",
-                           base_ddf.refreezeFrac, pSet); CHKERRQ(ierr);
+                           base_ddf.refreezeFrac, flag); CHKERRQ(ierr);
 
     ierr = PISMOptionsReal("-pdd_std_dev", "PDD standard deviation",
-                           base_pddStdDev, pSet); CHKERRQ(ierr);
+                           base_pddStdDev, flag); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-pdd_positive_threshold_temp",
                            "PDD uses this temp in K to determine 'positive' temperatures",
-                           base_pddThresholdTemp, pSet); CHKERRQ(ierr);
+                           base_pddThresholdTemp, flag); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-
-  ierr = verbPrintf(2, grid.com,
-    "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
-    "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
-    "  Surface mass balance and ice upper surface temperature are outputs.\n"
-    "  See PISM User's Manual for control of degree-day factors.\n");
-    CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com,
-    "  Computing number of positive degree-days by: "); CHKERRQ(ierr);
-  if (pdd_rand_repeatable) {
-    ierr = verbPrintf(2, grid.com, "simulation of a random process.\n"); CHKERRQ(ierr);
+  if (randomized_repeatable) {
     mbscheme = new PDDrandMassBalance(config, true);
-  } else if (pdd_rand) {
-    ierr = verbPrintf(2, grid.com, "repeatable simulation of a random process.\n");
-      CHKERRQ(ierr);
+  } else if (randomized) {
     mbscheme = new PDDrandMassBalance(config, false);
   } else {
-    ierr = verbPrintf(2, grid.com, "an expectation integral.\n"); CHKERRQ(ierr);
     mbscheme = new PDDMassBalance(config);
   }
 
-  if (config.get_flag("pdd_limit_timestep")) {
-    ierr = verbPrintf(2, grid.com, "  NOTE: Limiting time-steps to 1 year.\n"); CHKERRQ(ierr);
+  if (fausto_params) {
+    faustogreve = new FaustoGrevePDDObject(grid, config);
   }
 
   ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("diagnostic",
-			"instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
-			"m s-1",  // m *ice-equivalent* per second
-			"land_ice_surface_specific_mass_balance");  // CF standard_name
-                        CHKERRQ(ierr);
+					 "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
+					 "m s-1",  // m *ice-equivalent* per second
+					 "land_ice_surface_specific_mass_balance");  // CF standard_name
+  CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
   ierr = climatic_mass_balance.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr);
@@ -145,6 +132,49 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   ierr = runoff_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   runoff_rate.write_in_glaciological_units = true;
 
+  ierr = snow_depth.create(grid, "snow_depth", false); CHKERRQ(ierr);
+  ierr = snow_depth.set_attrs("diagnostic",
+			      "snow cover depth (set to zero once a year)",
+			      "m", ""); CHKERRQ(ierr);
+  ierr = snow_depth.set(0.0); CHKERRQ(ierr);
+
+  ice_surface_temp.init_2d("ice_surface_temp", grid);
+  ice_surface_temp.set_string("pism_intent", "diagnostic");
+  ice_surface_temp.set_string("long_name",
+                  "ice temperature at the ice surface");
+  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+    "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
+    "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
+    "  Surface mass balance and ice upper surface temperature are outputs.\n"
+    "  See PISM User's Manual for control of degree-day factors.\n");
+    CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+    "  Computing number of positive degree-days by: "); CHKERRQ(ierr);
+  if (randomized_repeatable) {
+    ierr = verbPrintf(2, grid.com, "simulation of a random process.\n"); CHKERRQ(ierr);
+  } else if (randomized) {
+    ierr = verbPrintf(2, grid.com, "repeatable simulation of a random process.\n"); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, "an expectation integral.\n"); CHKERRQ(ierr);
+  }
+
+  if (config.get_flag("pdd_limit_timestep")) {
+    ierr = verbPrintf(2, grid.com, "  NOTE: Limiting time-steps to 1 year.\n"); CHKERRQ(ierr);
+  }
+
   if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
     lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
     if (!lat)
@@ -167,8 +197,6 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
     if (!usurf)
       SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
-
-    faustogreve = new FaustoGrevePDDObject(grid, config);
   } else {
     // generally, this is the case in which degree day factors do not depend
     //   on location; we use base_ddf
@@ -180,11 +208,11 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   // beginning of the run)
   next_pdd_update = grid.time->current();
 
-  ice_surface_temp.init_2d("ice_surface_temp", grid);
-  ice_surface_temp.set_string("pism_intent", "diagnostic");
-  ice_surface_temp.set_string("long_name",
-                  "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+  // read snow precipitation rate from file
+  ierr = verbPrintf(2, grid.com,
+		    "    reading snow depth (ice equivalent meters) from %s ... \n",
+		    input_file.c_str()); CHKERRQ(ierr);
+  ierr = snow_depth.regrid(input_file.c_str(), 0.0); CHKERRQ(ierr);
 
   return 0;
 }

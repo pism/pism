@@ -19,12 +19,25 @@
 #include "PAGivenClimate.hh"
 #include "IceGrid.hh"
 
-PetscErrorCode PAGivenClimate::init(PISMVars &) {
-  PetscErrorCode ierr;
+PAGivenClimate::PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
+  : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
+{
+  temp_name      = "air_temp";
+  mass_flux_name = "precipitation";
+  option_prefix  = "-atmosphere_given";
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the atmosphere model reading near-surface air temperature\n"
-                    "  and ice-equivalent precipitation from a file...\n"); CHKERRQ(ierr);
+  // Cannot call allocate_PAGivenClimate() here, because some surface
+  // models do not use atmosphere models *and* this is the default
+  // atmosphere model.
+
+}
+
+PAGivenClimate::~PAGivenClimate() {
+  // empty
+}
+
+PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
+  PetscErrorCode ierr;
 
   ierr = process_options(); CHKERRQ(ierr);
 
@@ -38,6 +51,22 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
   ierr = mass_flux.set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                        "m s-1", ""); CHKERRQ(ierr);
   ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PAGivenClimate::init(PISMVars &) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the atmosphere model reading near-surface air temperature\n"
+                    "  and ice-equivalent precipitation from a file...\n"); CHKERRQ(ierr);
+
+  if (temp.was_created() == false && mass_flux.was_created() == false) {
+    ierr = allocate_PAGivenClimate(); CHKERRQ(ierr);
+  }
 
   ierr = temp.init(filename); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);

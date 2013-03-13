@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@ class PS_delta_T : public PScalarForcing<PISMSurfaceModel,PSModifier>
 {
 public:
   PS_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
-  virtual ~PS_delta_T() {}
+  virtual ~PS_delta_T();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -38,6 +38,8 @@ public:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+private:
+  PetscErrorCode allocate_PS_delta_T();
 };
 
 #endif /* _PSDTFORCING_H_ */

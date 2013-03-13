@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -869,21 +869,18 @@ PetscErrorCode IceModel::init() {
   //! 4) Allocate PISM components modeling some physical processes.
   ierr = allocate_submodels(); CHKERRQ(ierr);
 
-  //! 5) Initialize atmosphere and ocean couplers:
-  ierr = init_couplers(); CHKERRQ(ierr);
-
-  //! 6) Allocate work vectors:
+  //! 5) Allocate work vectors:
   ierr = allocate_internal_objects(); CHKERRQ(ierr);
 
-  //! 7) Fill the model state variables (from a PISM output file, from a
-  //! bootstrapping file using some modeling choices or using formulas). Calls
-  //! IceModel::regrid()
+  //! 6) Initialize coupler models and fill the model state variables
+  //! (from a PISM output file, from a bootstrapping file using some
+  //! modeling choices or using formulas). Calls IceModel::regrid()
   ierr = model_state_setup(); CHKERRQ(ierr);
 
-  //! 8) Report grid parameters:
+  //! 7) Report grid parameters:
   ierr = grid.report_parameters(); CHKERRQ(ierr);
 
-  //! 9) Miscellaneous stuff: set up the bed deformation model, initialize the
+  //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the
   //! basal till model, initialize snapshots. This has to happen *after*
   //! regridding.
   ierr = misc_setup();

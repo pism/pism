@@ -26,16 +26,11 @@
 class PAAnomaly : public PGivenClimate<PAModifier,PISMAtmosphereModel>
 {
 public:
-  PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-    : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in)
-  {
-    temp_name = "air_temp_anomaly";
-    mass_flux_name  = "precipitation_anomaly";
-    option_prefix = "-atmosphere_anomaly";
-  }
-  virtual ~PAAnomaly() {}
-  PetscErrorCode init(PISMVars &vars);
-  PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  virtual ~PAAnomaly();
+
+  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
@@ -57,6 +52,8 @@ public:
 protected:
   vector<PetscReal> ts_mod, ts_values;
   NCSpatialVariable air_temp, precipitation;
+private:
+  PetscErrorCode allocate_PAAnomaly();
 };
 
 #endif /* _PAANOMALY_H_ */

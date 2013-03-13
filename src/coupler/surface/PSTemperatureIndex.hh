@@ -79,6 +79,10 @@ protected:
   PetscReal next_pdd_update;
 
   NCSpatialVariable ice_surface_temp;
+
+  bool randomized, randomized_repeatable, fausto_params;
+private:
+  PetscErrorCode allocate_PSTemperatureIndex();
 };
 
 #endif /* _PSTEMPERATUREINDEX_H_ */

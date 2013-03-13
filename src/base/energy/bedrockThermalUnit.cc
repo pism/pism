@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -100,24 +100,84 @@ PISMBedThermalUnit::PISMBedThermalUnit(IceGrid &g, const NCConfigVariable &conf)
   bedtoptemp = NULL;
   ghf        = NULL;
 
-  Mbz = 1;
-  Lbz = 0;
+  // build constant diffusivity for heat equation
+  bed_rho = config.get("bedrock_thermal_density");
+  bed_c   = config.get("bedrock_thermal_specific_heat_capacity");
+  bed_k   = config.get("bedrock_thermal_conductivity");
+  bed_D   = bed_k / (bed_rho * bed_c);
+
+  Mbz = (PetscInt)config.get("grid_Mbz");
+  Lbz = (PetscInt)config.get("grid_Lbz");
+  m_input_file.clear();
+
+  PetscErrorCode ierr = allocate(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
 }
 
 //! \brief Allocate storage for the temperature in the bedrock layer (if there
 //! is a bedrock layer).
-PetscErrorCode PISMBedThermalUnit::allocate(int my_Mbz, double my_Lbz) {
+PetscErrorCode PISMBedThermalUnit::allocate() {
   PetscErrorCode ierr;
+  bool i_set, Mbz_set, Lbz_set;
+  grid_info g;
 
-  // to allow multiple calls to init() during the initialization sequence
-  if (temp.was_created()) return 0;
+  ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-i", "PISM input file name",
+                             m_input_file, i_set); CHKERRQ(ierr);
 
-  Mbz = my_Mbz;
-  Lbz = my_Lbz;
+    ierr = PISMOptionsInt("-Mbz", "number of levels in bedrock thermal layer",
+                          Mbz, Mbz_set); CHKERRQ(ierr);
 
+    ierr = PISMOptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
+                           Lbz, Lbz_set); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+
+  if (i_set) {
+    ierr = ignore_option(grid.com, "-Mbz"); CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
+
+    // If we're initializing from a file we need to get the number of bedrock
+    // levels and the depth of the bed thermal layer from it:
+    PIO nc(grid.com, grid.rank, "netcdf3");
+
+    ierr = nc.open(m_input_file, PISM_NOWRITE); CHKERRQ(ierr);
+
+    bool exists;
+    ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
+
+    if (exists) {
+      ierr = nc.inq_grid_info("litho_temp", g); CHKERRQ(ierr);
+
+      Mbz = g.z_len;
+      Lbz = -g.z_min;
+    } else {
+      // override values we got using config.get() in the constructor
+      Mbz = 1;
+      Lbz = 0;
+    }
+
+    ierr = nc.close(); CHKERRQ(ierr);
+  } else {
+    // Bootstrapping
+
+    if (Mbz_set && Mbz == 1) {
+      ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
+      Lbz = 0;
+    } else if (Mbz_set ^ Lbz_set) {
+      PetscPrintf(grid.com, "PISMBedThermalUnit ERROR: please specify both -Mbz and -Lbz.\n");
+      PISMEnd();
+    }
+  }
+
+  // actual allocation:
   if ((Lbz <= 0.0) && (Mbz > 1)) {
-     SETERRQ(grid.com, 1,"PISMBedThermalUnit can not be created with negative or zero Lbz value\n"
-               " and more than one layers\n"); }
+    SETERRQ(grid.com, 1,"PISMBedThermalUnit can not be created with negative or zero Lbz value\n"
+	    " and more than one layers\n"); }
 
   if (Mbz > 1) {
     ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
@@ -134,14 +194,12 @@ PetscErrorCode PISMBedThermalUnit::allocate(int my_Mbz, double my_Lbz) {
 //! \brief Initialize the bedrock thermal unit.
 PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  bool i_set, Mbz_set, Lbz_set;
-  string input_file;
   grid_info g;
 
   t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2,grid.com,
-      "* Initializing the bedrock thermal unit ... setting constants ...\n"); CHKERRQ(ierr);
+      "* Initializing the bedrock thermal unit... setting constants...\n"); CHKERRQ(ierr);
 
   // Get pointers to fields owned by IceModel.
   bedtoptemp = dynamic_cast<IceModelVec2S*>(vars.get("bedtoptemp"));
@@ -150,75 +208,33 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   ghf = dynamic_cast<IceModelVec2S*>(vars.get("bheatflx"));
   if (ghf == NULL) SETERRQ(grid.com, 2, "bheatflx is not available");
 
-  Mbz = (PetscInt)config.get("grid_Mbz");
-  Lbz = (PetscInt)config.get("grid_Lbz");
-
-  // build constant diffusivity for heat equation
-  bed_rho = config.get("bedrock_thermal_density");
-  bed_c   = config.get("bedrock_thermal_specific_heat_capacity");
-  bed_k   = config.get("bedrock_thermal_conductivity");
-  bed_D   = bed_k / (bed_rho * bed_c);
-
-  ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit options", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-i", "PISM input file name",
-                             input_file, i_set); CHKERRQ(ierr);
-    ierr = PISMOptionsInt("-Mbz", "number of levels in bedrock thermal layer", Mbz, Mbz_set); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer", Lbz, Lbz_set); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (i_set) {
-    // If we're initializing from a file we need to get the number of bedrock
-    // levels and the depth of the bed thermal layer from it:
-    PIO nc(grid.com, grid.rank, "netcdf3");
-
-    ierr = nc.open(input_file, PISM_NOWRITE); CHKERRQ(ierr);
-    
-    bool exists;
-    ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
-
-    if (exists) {
-      ierr = nc.inq_grid_info("litho_temp", g); CHKERRQ(ierr);
-
-      Mbz = g.z_len;
-      Lbz = - g.z_min;
-
-      ierr = allocate(Mbz, Lbz); CHKERRQ(ierr);
-
-      int last_record = g.t_len - 1;
-      ierr = temp.read(input_file, last_record); CHKERRQ(ierr);
-    } else {
-      Mbz = 1;
-      Lbz = 0;
-    }
-
-    ierr = nc.close(); CHKERRQ(ierr);
-
-    ierr = ignore_option(grid.com, "-Mbz"); CHKERRQ(ierr);
-    ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
-  } else {
-    // Bootstrapping
-
-    if (Mbz_set && Mbz == 1) {
-      ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
-      Lbz = 0;
-    } else if (Mbz_set ^ Lbz_set) {
-      PetscPrintf(grid.com, "PISMBedThermalUnit ERROR: please specify both -Mbz and -Lbz.\n");
-      PISMEnd();
-    }
-
-    ierr = allocate(Mbz, Lbz); CHKERRQ(ierr);
-
-    ierr = bootstrap(); CHKERRQ(ierr);
-  }
-
   // If we're using a minimal model, then we're done:
   if (!temp.was_created()) {
     ierr = verbPrintf(2,grid.com,
       "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
       CHKERRQ(ierr);
       return 0;
+  }
+
+  if (m_input_file.empty() == false) {
+    PIO nc(grid, "guess_mode");
+    bool exists;
+    unsigned int n_records;
+
+    ierr = nc.open(m_input_file, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
+
+    if (exists) {
+      ierr = nc.inq_nrecords("litho_temp", "", n_records); CHKERRQ(ierr);
+
+      const unsigned int last_record = n_records - 1;
+      ierr = temp.read(m_input_file, last_record); CHKERRQ(ierr);
+    }
+
+    ierr = nc.close(); CHKERRQ(ierr);
+  } else {
+    // Bootstrapping
+    ierr = bootstrap(); CHKERRQ(ierr);
   }
 
   ierr = regrid(); CHKERRQ(ierr);

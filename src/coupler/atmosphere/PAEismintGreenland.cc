@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2007-2013 Ed Bueler and Nathan Shemonski and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,10 @@ PA_EISMINT_Greenland::PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &c
   : PAYearlyCycle(g, conf) {
   do_greenhouse_warming = false;
   greenhouse_warming_start_year = 0.0;
+}
+
+PA_EISMINT_Greenland::~PA_EISMINT_Greenland() {
+  // empty
 }
 
 PetscErrorCode PA_EISMINT_Greenland::update(PetscReal my_t, PetscReal my_dt) {
@@ -65,6 +69,8 @@ PetscErrorCode PA_EISMINT_Greenland::update(PetscReal my_t, PetscReal my_dt) {
 
 PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
   PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing Greenland atmosphere model based on the EISMINT Greenland (C. Ritz, 1997)\n"

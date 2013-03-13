@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,9 +18,47 @@
 
 #include "PALapseRates.hh"
 
+
+PALapseRates::PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+  : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
+{
+  precip_lapse_rate = 0;
+  option_prefix     = "-atmosphere_lapse_rate";
+
+  PetscErrorCode ierr = allocate_PALapseRates(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PALapseRates::~PALapseRates() {
+  // empty
+}
+
+PetscErrorCode PALapseRates::allocate_PALapseRates() {
+  PetscErrorCode ierr;
+
+  precipitation.init_2d("precipitation", grid);
+  precipitation.set_string("pism_intent", "diagnostic");
+  precipitation.set_string("long_name",
+                           "ice-equivalent precipitation rate with a lapse-rate correction");
+  ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  air_temp.init_2d("air_temp", grid);
+  air_temp.set_string("pism_intent", "diagnostic");
+  air_temp.set_string("long_name",
+                      "near-surface air temperature with a lapse-rate correction");
+  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+
+  return 0;
+}
+
 PetscErrorCode PALapseRates::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool precip_lapse_rate_set;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -45,19 +83,6 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
   temp_lapse_rate = convert(temp_lapse_rate, "K/km", "K/m");
 
   precip_lapse_rate = convert(precip_lapse_rate, "m/year / km", "m/s / m");
-
-  precipitation.init_2d("precipitation", grid);
-  precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name",
-                    "ice-equivalent precipitation rate with a lapse-rate correction");
-  ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-
-  air_temp.init_2d("air_temp", grid);
-  air_temp.set_string("pism_intent", "diagnostic");
-  air_temp.set_string("long_name",
-                      "near-surface air temperature with a lapse-rate correction");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }

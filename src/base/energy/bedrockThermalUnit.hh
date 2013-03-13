@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -117,7 +117,7 @@ public:
 
   virtual PetscErrorCode get_upward_geothermal_flux(IceModelVec2S &result);
 protected:
-  virtual PetscErrorCode allocate(int Mbz, double Lbz);
+  PetscErrorCode allocate();
 
   virtual PetscErrorCode bootstrap();
   virtual PetscErrorCode regrid();
@@ -131,6 +131,7 @@ protected:
   
   PetscInt Mbz;
   PetscReal Lbz;
+  string m_input_file;		//!< non-empty if "-i" was set
 
   IceModelVec2S *bedtoptemp, //!< upper boundary temp, owned by the model to which we are attached
                 *ghf; //!< lower boundary flux, owned by the model to which we are attached

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,10 +23,17 @@
 
 
 ///// Elevation-dependent temperature and surface mass balance.
+PSElevation::PSElevation(IceGrid &g, const NCConfigVariable &conf)
+  : PISMSurfaceModel(g, conf)
+{
+  // empty
+}
 
 PetscErrorCode PSElevation::init(PISMVars &vars) {
   PetscErrorCode ierr;
   PetscBool T_is_set, m_is_set, m_limits_set;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n"); CHKERRQ(ierr);
@@ -149,6 +156,23 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
 
   return 0;
 }
+
+void PSElevation::attach_atmosphere_model(PISMAtmosphereModel *input)
+{
+  delete input;
+}
+
+void PSElevation::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {
+  // empty
+}
+
+PetscErrorCode PSElevation::update(PetscReal my_t, PetscReal my_dt)
+{
+  t = my_t;
+  dt = my_dt;
+  return 0;
+}
+
 
 PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;

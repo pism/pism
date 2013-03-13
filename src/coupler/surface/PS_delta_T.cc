@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,9 +23,20 @@
 PS_delta_T::PS_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
   : PScalarForcing<PISMSurfaceModel,PSModifier>(g, conf, in)
 {
+  PetscErrorCode ierr = allocate_PS_delta_T(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PS_delta_T::~PS_delta_T() {
+  // empty
+}
+
+PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
   option_prefix = "-surface_delta_T";
-  offset_name = "delta_T";
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+  offset_name	= "delta_T";
+
   offset->set_units("Kelvin", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "ice-surface temperature offsets");
@@ -33,9 +44,9 @@ PS_delta_T::PS_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceMode
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
+				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
-                  "land_ice_surface_specific_mass_balance");
+				   "land_ice_surface_specific_mass_balance");
   climatic_mass_balance.set_units("m s-1");
   climatic_mass_balance.set_glaciological_units("m year-1");
 
@@ -45,10 +56,15 @@ PS_delta_T::PS_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceMode
                               "ice temperature at the ice surface");
   ice_surface_temp.set_units("K");
 
+  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+
+  return 0;
 }
 
 PetscErrorCode PS_delta_T::init(PISMVars &vars) {
   PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,15 +27,10 @@
 //! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
 public:
-  PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
-    : PSModifier(g, conf, input)
-  {
-    ice_thickness = NULL;
-    alpha = convert(config.get("force_to_thickness_alpha"),"yr-1","s-1");
-  }
+  PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input);
 
-  virtual ~PSForceThickness() {}
-  PetscErrorCode init(PISMVars &vars);
+  virtual ~PSForceThickness();
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
@@ -49,6 +44,8 @@ protected:
   IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
   IceModelVec2S target_thickness, ftt_mask;
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+private:
+  PetscErrorCode allocate_PSForceThickness();
 };
 
 #endif /* _PSFORCETHICKNESS_H_ */

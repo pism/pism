@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,14 +26,8 @@
 class PSAnomaly : public PGivenClimate<PSModifier,PISMSurfaceModel>
 {
 public:
-  PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-    : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, in)
-  {
-    temp_name = "ice_surface_temp_anomaly";
-    mass_flux_name  = "climatic_mass_balance_anomaly";
-    option_prefix = "-surface_anomaly";
-  }
-  virtual ~PSAnomaly() {}
+  PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
+  virtual ~PSAnomaly();
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
@@ -46,6 +40,8 @@ public:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+private:
+  PetscErrorCode allocate_PSAnomaly();
 };
 
 #endif /* _PSANOMALY_H_ */

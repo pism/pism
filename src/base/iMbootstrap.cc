@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2013 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -25,6 +25,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include <assert.h>
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
@@ -49,29 +50,36 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
 
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
-  if (surface != NULL) {
+  assert(surface != NULL);
+  {
     PetscReal max_dt = 0;
     bool restrict = false;
-    // FIXME: this will break if a surface model requires contiguous update intervals
     ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
-    if (restrict == false)
-      max_dt = convert(1, "year", "seconds");
+    if (restrict) {
+      max_dt = PetscMin(1.0, max_dt);
+    } else {
+      max_dt = 1.0;
+    }
+
 
     ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
-  } else SETERRQ(grid.com, 1, "surface == NULL");
+  }
 
-  if (ocean != NULL) {
+  assert(ocean != NULL);
+  {
     PetscReal max_dt = 0;
     bool restrict = false;
-    // FIXME: this will break if an ocean model requires contiguous update intervals
     ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
-    if (restrict == false)
-      max_dt = convert(1, "year", "seconds");
+    if (restrict) {
+      max_dt = PetscMin(1.0, max_dt);
+    } else {
+      max_dt = 1.0;
+    }
 
     ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
-  } else SETERRQ(grid.com, 1, "ocean == NULL");
+  }
 
   ierr = verbPrintf(2, grid.com,
 		    "bootstrapping 3D variables...\n"); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,6 +47,8 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
   bool meltrate_set;
   PetscReal mymeltrate;
+private:
+  PetscErrorCode allocate_POConstant();
 };
 
 #endif /* _POCONSTANT_H_ */

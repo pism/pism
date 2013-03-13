@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 //documentation comment in iceModel.cc for the order in which they are called.
 
 #include <petscdmda.h>
+#include <assert.h>
 
 #include "iceModel.hh"
 #include "PIO.hh"
@@ -30,6 +31,9 @@
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
 #include "PISMBedDef.hh"
+#include "PAFactory.hh"
+#include "POFactory.hh"
+#include "PSFactory.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "PISMMohrCoulombYieldStress.hh"
@@ -41,6 +45,7 @@
 #include "LocalInterpCtx.hh"
 #include "pism_options.hh"
 #include "PISMStressBalance.hh"
+#include <assert.h>
 
 //! Set default values of grid parameters.
 /*!
@@ -481,6 +486,9 @@ PetscErrorCode IceModel::model_state_setup() {
   bool i_set;
   string filename;
 
+  // Initialize (or re-initialize) boundary models.
+  ierr = init_couplers(); CHKERRQ(ierr);
+
   // Check if we are initializing from a PISM output file:
   ierr = PISMOptionsString("-i", "Specifies a PISM input file",
 			   filename, i_set); CHKERRQ(ierr);
@@ -496,7 +504,7 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   // Initialize a bed deformation model (if needed); this should go after
-  // the regrid() call.
+  // the regrid(0) call.
   if (beddef) {
     ierr = beddef->init(variables); CHKERRQ(ierr);
   }
@@ -504,19 +512,21 @@ PetscErrorCode IceModel::model_state_setup() {
   if (btu) {
     PetscReal max_dt = 0;
     bool restrict = false;
-    // FIXME: this will break if a surface or an ocean model requires
-    // contiguous update intervals
     ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
     if (restrict == false)
-      max_dt = convert(1, "year", "seconds");
+      max_dt = 1.0;
+    else
+      max_dt = PetscMin(1.0, max_dt);
 
     ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
 
     ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
     if (restrict == false)
-      max_dt = convert(1, "year", "seconds");
+      max_dt = 1.0;
+    else
+      max_dt = PetscMin(1.0, max_dt);
 
     ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
     ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
@@ -755,9 +765,29 @@ PetscErrorCode IceModel::allocate_submodels() {
 
   ierr = allocate_bed_deformation(); CHKERRQ(ierr);
 
+  ierr = allocate_couplers(); CHKERRQ(ierr);
+
   return 0;
 }
 
+PetscErrorCode IceModel::allocate_couplers() {
+  PetscErrorCode ierr;
+  // Initialize boundary models:
+  PAFactory pa(grid, config);
+  PSFactory ps(grid, config);
+  POFactory po(grid, config);
+  PISMAtmosphereModel *atmosphere;
+
+  ierr = PetscOptionsBegin(grid.com, "", "Options choosing PISM boundary models", ""); CHKERRQ(ierr);
+  pa.create(atmosphere);
+  ps.create(surface);
+  po.create(ocean);
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  surface->attach_atmosphere_model(atmosphere);
+
+  return 0;
+}
 
 //! Initializes atmosphere and ocean couplers.
 PetscErrorCode IceModel::init_couplers() {
@@ -766,13 +796,11 @@ PetscErrorCode IceModel::init_couplers() {
   ierr = verbPrintf(3, grid.com,
 		    "Initializing boundary models...\n"); CHKERRQ(ierr);
 
-  if (surface != PETSC_NULL) {
-    ierr = surface->init(variables); CHKERRQ(ierr);
-  } else {  SETERRQ(grid.com, 2,"PISM ERROR: surface == PETSC_NULL");  }
+  assert(surface != PETSC_NULL);
+  ierr = surface->init(variables); CHKERRQ(ierr);
 
-  if (ocean != PETSC_NULL) {
-    ierr = ocean->init(variables); CHKERRQ(ierr);
-  } else {  SETERRQ(grid.com, 2,"PISM ERROR: ocean == PETSC_NULL");  }
+  assert(ocean != PETSC_NULL);
+  ierr = ocean->init(variables); CHKERRQ(ierr);
 
   return 0;
 }

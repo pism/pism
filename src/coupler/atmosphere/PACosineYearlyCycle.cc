@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,6 +30,8 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool input_file_flag, scaling_flag;
   string input_file, scaling_file;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   variables = &vars;
   snow_temp_july_day = config.get("snow_temp_july_day");

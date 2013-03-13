@@ -25,14 +25,8 @@
 class PALapseRates : public PLapseRates<PISMAtmosphereModel,PAModifier>
 {
 public:
-  PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-    : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
-  {
-    precip_lapse_rate = 0;
-    option_prefix = "-atmosphere_lapse_rate";
-  }
-
-  virtual ~PALapseRates() {}
+  PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  virtual ~PALapseRates();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -53,6 +47,8 @@ public:
 protected:
   PetscReal precip_lapse_rate;
   NCSpatialVariable precipitation, air_temp;
+private:
+  PetscErrorCode allocate_PALapseRates();
 };
 
 #endif /* _PALAPSERATES_H_ */

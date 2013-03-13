@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,20 +32,14 @@
 
 class PSConstantPIK : public PISMSurfaceModel {
 public:
-  PSConstantPIK(IceGrid &g, const NCConfigVariable &conf)
-    : PISMSurfaceModel(g, conf)
-  {};
+  PSConstantPIK(IceGrid &g, const NCConfigVariable &conf);
 
   virtual PetscErrorCode init(PISMVars &vars);
-  //! This surface model does not use an atmosphere model.
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
-  { delete input; }
 
-  // Does not have an atmosphere model.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
+  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
-  { t = my_t; dt = my_dt; return 0; } // do nothing
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -29,17 +29,9 @@
 //! Adds the precipitation correction for spin-ups.
 class PA_SeaRISE_Greenland : public PAYearlyCycle {
 public:
-  PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
-    : PAYearlyCycle(g, conf)
-  {
-    paleo_precipitation_correction = false;
-    delta_T = NULL;
-  }
+  PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PA_SeaRISE_Greenland();
 
-  virtual ~PA_SeaRISE_Greenland()
-  {
-    delete delta_T;
-  }
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
@@ -47,6 +39,8 @@ protected:
   bool paleo_precipitation_correction;
   Timeseries *delta_T;
   IceModelVec2S *lat, *lon, *surfelev;
+private:
+  PetscErrorCode allocate_PA_SeaRISE_Greenland();
 };
 
 

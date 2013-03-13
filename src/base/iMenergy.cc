@@ -22,6 +22,7 @@
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
 #include "enthalpyConverter.hh"
+#include <assert.h>
 
 //! \file iMenergy.cc Methods of IceModel which address conservation of energy.
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
@@ -129,16 +130,11 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
                               config.get("standard_gravity")); // K m-1
 
   // will need coupler fields in ice-free land and 
-  if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 1,"PISM ERROR: surface == PETSC_NULL");
-  }
-  if (ocean != PETSC_NULL) {
-    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 5,"PISM ERROR: ocean == PETSC_NULL");
-  }
+  assert(surface != NULL);
+  ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
+
+  assert(ocean != NULL);
+  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
   ierr = Enth3.getHorSlice(result, 0.0); CHKERRQ(ierr);
