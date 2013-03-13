@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,15 +19,24 @@
 #include "PSAnomaly.hh"
 #include "IceGrid.hh"
 
-PetscErrorCode PSAnomaly::init(PISMVars &vars) {
+PSAnomaly::PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+  : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, in)
+{
+  PetscErrorCode ierr = allocate_PSAnomaly(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PSAnomaly::~PSAnomaly() {
+  // empty
+}
+
+PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
   PetscErrorCode ierr;
-
-  if (input_model != NULL) {
-    ierr = input_model->init(vars); CHKERRQ(ierr);
-  }
-
-  ierr = verbPrintf(2, grid.com,
-		    "* Initializing the '-surface ...,anomaly' modifier...\n"); CHKERRQ(ierr);
+  temp_name	 = "ice_surface_temp_anomaly";
+  mass_flux_name = "climatic_mass_balance_anomaly";
+  option_prefix	 = "-surface_anomaly";
 
   ierr = process_options(); CHKERRQ(ierr);
 
@@ -45,13 +54,6 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
   ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   mass_flux.write_in_glaciological_units = true;
 
-  ierr = verbPrintf(2, grid.com,
-                    "    reading anomalies from %s ...\n",
-                    filename.c_str()); CHKERRQ(ierr);
-
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
-
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
@@ -66,6 +68,27 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
   ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PSAnomaly::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  if (input_model != NULL) {
+    ierr = input_model->init(vars); CHKERRQ(ierr);
+  }
+
+  ierr = verbPrintf(2, grid.com,
+		    "* Initializing the '-surface ...,anomaly' modifier...\n"); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+                    "    reading anomalies from %s ...\n", filename.c_str()); CHKERRQ(ierr);
+
+  ierr = temp.init(filename); CHKERRQ(ierr);
+  ierr = mass_flux.init(filename); CHKERRQ(ierr);
 
   return 0;
 }

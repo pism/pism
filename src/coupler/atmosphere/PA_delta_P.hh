@@ -26,7 +26,7 @@ class PA_delta_P : public PScalarForcing<PISMAtmosphereModel,PAModifier>
 {
 public:
   PA_delta_P(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
-  virtual ~PA_delta_P() {}
+  virtual ~PA_delta_P();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -45,6 +45,8 @@ public:
 
 protected:
   NCSpatialVariable air_temp, precipitation;
+private:
+  PetscErrorCode allocate_PA_delta_P();
 };
 
 #endif /* _PADPFORCING_H_ */

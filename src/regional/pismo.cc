@@ -511,24 +511,6 @@ int main(int argc, char *argv[]) {
     IceRegionalModel m(g, config, overrides);
     ierr = m.setExecName("pismo"); CHKERRQ(ierr);
 
-    // initialize boundary models
-    // factories allow runtime choice
-    PAFactory pa(g, config);
-    PSFactory ps(g, config);
-    POFactory po(g, config);
-    // now read options and choose
-    PISMAtmosphereModel *atmosphere;
-    PISMSurfaceModel    *surface;
-    PISMOceanModel      *ocean;
-    ierr = PetscOptionsBegin(com, "", "Options choosing PISM boundary models", ""); CHKERRQ(ierr);
-    pa.create(atmosphere);
-    ps.create(surface);
-    po.create(ocean);
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-    surface->attach_atmosphere_model(atmosphere); // IceModel m does not see atmosphere
-    m.attach_ocean_model(ocean);
-    m.attach_surface_model(surface);
-
     ierr = m.init(); CHKERRQ(ierr);
 
     ierr = m.run(); CHKERRQ(ierr);

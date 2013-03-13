@@ -24,8 +24,7 @@
 
 class PAConstantPIK : public PISMAtmosphereModel {
 public:
-  PAConstantPIK(IceGrid &g, const NCConfigVariable &conf)
-    : PISMAtmosphereModel(g, conf) {};
+  PAConstantPIK(IceGrid &g, const NCConfigVariable &conf);
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
@@ -45,6 +44,8 @@ protected:
   string input_file;
   IceModelVec2S precipitation, air_temp;
   NCSpatialVariable air_temp_snapshot;
+private:
+  PetscErrorCode allocate_PAConstantPIK();
 };
 
 #endif /* _PACONSTANTPIK_H_ */

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -24,6 +24,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include <assert.h>
 
 ///// PISMSurfaceModel base class:
 
@@ -51,9 +52,9 @@ void PISMSurfaceModel::attach_atmosphere_model(PISMAtmosphereModel *input) {
 PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  if (atmosphere == NULL)
-    SETERRQ(grid.com, 1, "PISMSurfaceModel::init(PISMVars &vars): atmosphere == NULL");
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
+  assert(atmosphere != NULL);
   ierr = atmosphere->init(vars); CHKERRQ(ierr);
 
   return 0;

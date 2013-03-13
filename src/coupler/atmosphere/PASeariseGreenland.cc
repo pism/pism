@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -30,8 +30,43 @@
 
 ///// PA_SeaRISE_Greenland
 
+PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
+  : PAYearlyCycle(g, conf)
+{
+  paleo_precipitation_correction = false;
+  delta_T = NULL;
+
+  PetscErrorCode ierr = allocate_PA_SeaRISE_Greenland(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PA_SeaRISE_Greenland::~PA_SeaRISE_Greenland() {
+  delete delta_T;
+}
+
+PetscErrorCode PA_SeaRISE_Greenland::allocate_PA_SeaRISE_Greenland() {
+  PetscErrorCode ierr;
+
+  ierr = PISMOptionsIsSet("-paleo_precip", paleo_precipitation_correction); CHKERRQ(ierr);
+
+  if (paleo_precipitation_correction) {
+    delta_T = new Timeseries(grid.com, grid.rank, "delta_T",
+                             grid.config.get_string("time_dimension_name"));
+    ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
+    ierr = delta_T->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
+    ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
+    CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
@@ -67,13 +102,6 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     ierr = verbPrintf(2, grid.com, 
                       "  reading delta_T data from forcing file %s for -paleo_precip actions ...\n",
                       delta_T_file.c_str());  CHKERRQ(ierr);
-
-    delta_T = new Timeseries(grid.com, grid.rank, "delta_T",
-                             grid.config.get_string("time_dimension_name"));
-    ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
-    ierr = delta_T->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
-    ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
-    CHKERRQ(ierr);
 
     PIO nc(grid, "netcdf3");    // OK to use netcdf3
     ierr = nc.open(delta_T_file, PISM_NOWRITE); CHKERRQ(ierr);

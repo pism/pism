@@ -22,9 +22,54 @@
 #include "PIO.hh"
 
 ///// "Force-to-thickness" mechanism
+PSForceThickness::PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
+  : PSModifier(g, conf, input)
+{
+  PetscErrorCode ierr = allocate_PSForceThickness(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PSForceThickness::~PSForceThickness() {
+  // empty
+}
 
 void PSForceThickness::attach_atmosphere_model(PISMAtmosphereModel *input) {
   input_model->attach_atmosphere_model(input);
+}
+
+PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
+  PetscErrorCode ierr;
+  ice_thickness = NULL;
+  alpha = convert(config.get("force_to_thickness_alpha"),"yr-1","s-1");
+
+  ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr);
+  // will set attributes in init()
+
+  ierr = ftt_mask.create(grid, "ftt_mask", false); CHKERRQ(ierr);
+  ierr = ftt_mask.set_attrs("diagnostic",
+			    "mask specifying where to apply the force-to-thickness mechanism",
+			    "", ""); CHKERRQ(ierr); // no units and no standard name
+  ierr = ftt_mask.set(1.0); CHKERRQ(ierr); // default: applied in whole domain
+  ftt_mask.write_in_glaciological_units = true;
+
+  climatic_mass_balance.init_2d("climatic_mass_balance", grid);
+  climatic_mass_balance.set_string("pism_intent", "diagnostic");
+  climatic_mass_balance.set_string("long_name",
+				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
+  climatic_mass_balance.set_string("standard_name",
+				   "land_ice_surface_specific_mass_balance");
+  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  ice_surface_temp.init_2d("ice_surface_temp", grid);
+  ice_surface_temp.set_string("pism_intent", "diagnostic");
+  ice_surface_temp.set_string("long_name",
+                              "ice temperature at the ice surface");
+  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+
+  return 0;
 }
 
 PetscErrorCode PSForceThickness::init(PISMVars &vars) {
@@ -33,6 +78,8 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   PetscBool opt_set;
   PetscScalar fttalpha;
   PetscBool  fttalphaSet;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -45,13 +92,13 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   if (!opt_set) {
     ierr = PetscPrintf(grid.com,
-      "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
+		       "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
     PISMEnd();
   }
 
   ierr = PetscOptionsReal("-force_to_thk_alpha",
 			  "Specifies the force-to-thickness alpha value in per-year units",
-			  "", convert(alpha,"yr-1","s-1"),
+			  "", convert(alpha, "s-1", "yr-1"),
 			  &fttalpha, &fttalphaSet); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
@@ -59,22 +106,6 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) SETERRQ(grid.com, 1, "ERROR: land_ice_thickness is not available");
-
-  ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr); // name to read by
-  ierr = target_thickness.set_attrs( // set attributes for the read stage; see below for reset
-     "diagnostic",
-     "target thickness for force-to-thickness mechanism (hit this at end of run)",
-     "m",
-     "land_ice_thickness"); CHKERRQ(ierr); // standard_name *to read by*
-  target_thickness.write_in_glaciological_units = true;
-
-  ierr = ftt_mask.create(grid, "ftt_mask", false); CHKERRQ(ierr);
-  ierr = ftt_mask.set_attrs(
-     "diagnostic",
-     "mask specifying where to apply the force-to-thickness mechanism",
-     "", ""); CHKERRQ(ierr); // no units and no standard name
-  ierr = ftt_mask.set(1.0); CHKERRQ(ierr); // default: applied in whole domain
-  ftt_mask.write_in_glaciological_units = true;
 
   input_file = fttfile;
 
@@ -104,38 +135,32 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 		    "    reading target thickness 'thk' from %s ...\n"
 		    "    (this field will appear in output file as 'ftt_target_thk')\n",
 		    fttfile); CHKERRQ(ierr);
-  ierr = target_thickness.regrid(fttfile, true); CHKERRQ(ierr);
+  {
+    ierr = target_thickness.set_name("thk"); CHKERRQ(ierr); // name to read by
+    // set attributes for the read stage; see below for reset
+    ierr = target_thickness.set_attrs("diagnostic",
+				      "target thickness for force-to-thickness mechanism (hit this at end of run)",
+				      "m",
+				      "land_ice_thickness"); CHKERRQ(ierr); // standard_name *to read by*
+
+    ierr = target_thickness.regrid(fttfile, true); CHKERRQ(ierr);
+
+    // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
+    ierr = target_thickness.set_name("ftt_target_thk"); CHKERRQ(ierr);
+    ierr = target_thickness.set_attrs(
+				      "diagnostic",
+				      "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
+				      "m",
+				      ""); CHKERRQ(ierr);  // no CF standard_name, to put it mildly
+
+    target_thickness.write_in_glaciological_units = true;
+  }
 
   if (mask_exists) {
     ierr = verbPrintf(2, grid.com,
                       "    reading force-to-thickness mask 'ftt_mask' from %s ...\n", fttfile); CHKERRQ(ierr);
     ierr = ftt_mask.regrid(fttfile, true); CHKERRQ(ierr);
   }
-
-  // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
-  ierr = target_thickness.set_name("ftt_target_thk"); CHKERRQ(ierr);
-  ierr = target_thickness.set_attrs(
-    "diagnostic",
-    "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
-    "m",
-    "");  // no CF standard_name, to put it mildly
-    CHKERRQ(ierr);
-  target_thickness.write_in_glaciological_units = true;
-
-  climatic_mass_balance.init_2d("climatic_mass_balance", grid);
-  climatic_mass_balance.set_string("pism_intent", "diagnostic");
-  climatic_mass_balance.set_string("long_name",
-                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
-  climatic_mass_balance.set_string("standard_name",
-                  "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-
-  ice_surface_temp.init_2d("ice_surface_temp", grid);
-  ice_surface_temp.set_string("pism_intent", "diagnostic");
-  ice_surface_temp.set_string("long_name",
-                              "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }

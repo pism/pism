@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev
+// Copyright (C) 2011, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,27 +25,19 @@
 class POGiven : public PGivenClimate<POModifier,PISMOceanModel>
 {
 public:
-  POGiven(IceGrid &g, const NCConfigVariable &conf)
-    : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
-  {
-    temp_name       = "shelfbtemp";
-    mass_flux_name  = "shelfbmassflux";
-    option_prefix   = "-ocean_given";
-  }
-
-  virtual ~POGiven() {}
+  POGiven(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~POGiven();
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result) {
-    result = sea_level;
-    return 0;
-  }
+  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
 
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
-
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
+
+private:
+  PetscErrorCode allocate_POGiven();
 };
 
 

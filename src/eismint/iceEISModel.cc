@@ -23,6 +23,8 @@
 #include "SIA_Sliding.hh"
 #include "PISMStressBalance.hh"
 #include "pism_options.hh"
+#include "POConstant.hh"
+#include "PSDummy.hh"
 
 IceEISModel::IceEISModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : IceModel(g, conf, conf_overrides) {
@@ -217,6 +219,14 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
     }
   }
   
+  return 0;
+}
+
+PetscErrorCode IceEISModel::allocate_couplers() {
+  // Climate will always come from intercomparison formulas.
+  surface = new PSDummy(grid, config);
+  ocean   = new POConstant(grid, config);
+
   return 0;
 }
 

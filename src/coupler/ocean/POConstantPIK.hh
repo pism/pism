@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,10 +29,10 @@
 class POConstantPIK : public PISMOceanModel {
 public:
   POConstantPIK(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~POConstantPIK() {}
+  virtual ~POConstantPIK();
+
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
-  { t = my_t; dt = my_dt; return 0; } // do nothing
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode sea_level_elevation(PetscReal &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
@@ -44,6 +44,8 @@ public:
 protected:
   IceModelVec2S *ice_thickness;	// is not owned by this class
   NCSpatialVariable shelfbmassflux, shelfbtemp;
+private:
+  PetscErrorCode allocate_POConstantPIK();
 };
 
 #endif /* _POCONSTANTPIK_H_ */

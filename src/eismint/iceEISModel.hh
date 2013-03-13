@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,6 +38,7 @@ public:
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode allocate_flowlaw();
   virtual PetscErrorCode allocate_stressbalance();
+  virtual PetscErrorCode allocate_couplers();
   virtual PetscErrorCode init_couplers();
     
 protected:

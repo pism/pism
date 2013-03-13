@@ -24,15 +24,20 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 
-//! Allocates memory and reads in the precipitaion data.
-PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
+PAYearlyCycle::PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
+  : PISMAtmosphereModel(g, conf) {
+  PetscErrorCode ierr = allocate_PAYearlyCycle(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PAYearlyCycle::~PAYearlyCycle(){
+  // empty
+}
+
+PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
   PetscErrorCode ierr;
-  bool regrid = false;
-  int start = -1;
-
-  variables = &vars;
-
-  snow_temp_july_day = config.get("snow_temp_july_day");
 
   // Allocate internal IceModelVecs:
   ierr = air_temp_mean_annual.create(grid, "air_temp_mean_annual", false); CHKERRQ(ierr);
@@ -58,6 +63,27 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   precipitation.write_in_glaciological_units = true;
   precipitation.time_independent = true;
 
+  air_temp_snapshot.init_2d("air_temp_snapshot", grid);
+  air_temp_snapshot.set_string("pism_intent", "diagnostic");
+  air_temp_snapshot.set_string("long_name",
+                         "snapshot of the near-surface air temperature");
+  ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Allocates memory and reads in the precipitaion data.
+PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  bool regrid = false;
+  int start = -1;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  variables = &vars;
+
+  snow_temp_july_day = config.get("snow_temp_july_day");
+
   ierr = find_pism_input(precip_filename, regrid, start); CHKERRQ(ierr);
 
   // read precipitation rate from file
@@ -70,12 +96,6 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   } else {
     ierr = precipitation.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
-
-  air_temp_snapshot.init_2d("air_temp_snapshot", grid);
-  air_temp_snapshot.set_string("pism_intent", "diagnostic");
-  air_temp_snapshot.set_string("long_name",
-                         "snapshot of the near-surface air temperature");
-  ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }

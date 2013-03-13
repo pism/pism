@@ -47,6 +47,8 @@ public:
 
 protected:
   NCSpatialVariable air_temp, precipitation;
+private:
+  PetscErrorCode allocate_PA_delta_T();
 };
 
 

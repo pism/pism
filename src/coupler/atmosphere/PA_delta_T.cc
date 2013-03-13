@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,24 +23,23 @@
 PA_delta_T::PA_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
+  offset = NULL;
+  PetscErrorCode ierr = allocate_PA_delta_T(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PetscErrorCode PA_delta_T::allocate_PA_delta_T() {
+  PetscErrorCode ierr;
   option_prefix = "-atmosphere_delta_T";
-  offset_name = "delta_T";
+  offset_name	= "delta_T";
+
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("Kelvin", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "near-surface air temperature offsets");
-}
-
-PetscErrorCode PA_delta_T::init(PISMVars &vars) {
-  PetscErrorCode ierr;
-
-  ierr = input_model->init(vars); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing near-surface air temperature forcing using scalar offsets...\n"); CHKERRQ(ierr);
-
-  ierr = init_internal(); CHKERRQ(ierr);
-
+  
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
@@ -51,6 +50,21 @@ PetscErrorCode PA_delta_T::init(PISMVars &vars) {
   precipitation.set_string("long_name", "near-surface air temperature");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PA_delta_T::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  ierr = input_model->init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing near-surface air temperature forcing using scalar offsets...\n"); CHKERRQ(ierr);
+
+  ierr = init_internal(); CHKERRQ(ierr);
 
   return 0;
 }

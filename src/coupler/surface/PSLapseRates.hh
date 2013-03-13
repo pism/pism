@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,14 +26,8 @@
 class PSLapseRates : public PLapseRates<PISMSurfaceModel,PSModifier>
 {
 public:
-  PSLapseRates(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-    : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
-  {
-    smb_lapse_rate = 0;
-    option_prefix = "-surface_lapse_rate";
-  }
-
-  virtual ~PSLapseRates() {}
+  PSLapseRates(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
+  virtual ~PSLapseRates();
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
@@ -45,6 +39,8 @@ public:
 protected:
   PetscReal smb_lapse_rate;
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+private:
+  PetscErrorCode allocate_PSLapseRates();
 };
 
 #endif /* _PSLAPSERATES_H_ */
