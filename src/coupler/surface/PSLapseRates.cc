@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,9 +18,49 @@
 
 #include "PSLapseRates.hh"
 
+PSLapseRates::PSLapseRates(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+  : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
+{
+  smb_lapse_rate = 0;
+  option_prefix = "-surface_lapse_rate";
+
+  PetscErrorCode ierr = allocate_PSLapseRates(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PSLapseRates::~PSLapseRates() {
+  // empty
+}
+
+PetscErrorCode PSLapseRates::allocate_PSLapseRates() {
+  PetscErrorCode ierr;
+
+  climatic_mass_balance.init_2d("climatic_mass_balance", grid);
+  climatic_mass_balance.set_string("pism_intent", "diagnostic");
+  climatic_mass_balance.set_string("long_name",
+                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
+  climatic_mass_balance.set_string("standard_name",
+                  "land_ice_surface_specific_mass_balance");
+  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  ice_surface_temp.init_2d("ice_surface_temp", grid);
+  ice_surface_temp.set_string("pism_intent", "diagnostic");
+  ice_surface_temp.set_string("long_name",
+                              "ice temperature at the ice surface");
+  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 PetscErrorCode PSLapseRates::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool smb_lapse_rate_set;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -45,21 +85,6 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
   temp_lapse_rate = convert(temp_lapse_rate, "K/km", "K/m");
 
   smb_lapse_rate = convert(smb_lapse_rate, "m/year / km", "m/s / m");
-
-  climatic_mass_balance.init_2d("climatic_mass_balance", grid);
-  climatic_mass_balance.set_string("pism_intent", "diagnostic");
-  climatic_mass_balance.set_string("long_name",
-                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
-  climatic_mass_balance.set_string("standard_name",
-                  "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-
-  ice_surface_temp.init_2d("ice_surface_temp", grid);
-  ice_surface_temp.set_string("pism_intent", "diagnostic");
-  ice_surface_temp.set_string("long_name",
-                              "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }

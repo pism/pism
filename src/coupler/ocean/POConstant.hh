@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,7 @@ class POConstant : public PISMOceanModel {
 public:
   POConstant(IceGrid &g, const NCConfigVariable &conf);
   virtual ~POConstant() {}
+
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
@@ -47,6 +48,8 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
   bool meltrate_set;
   PetscReal mymeltrate;
+private:
+  PetscErrorCode allocate_POConstant();
 };
 
 #endif /* _POCONSTANT_H_ */

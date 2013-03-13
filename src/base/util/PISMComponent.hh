@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,12 +61,20 @@ class PISMVars;
   the (my_t, my_t + my_dt) interval) and may impose restrictions on a
   time-step that is possible at a given time during a run.
 
+  \subsection pismcomponent_allocation Allocation
+
+  PISMComponent::allocate() should contain the code allocating objects
+  used by the class. It should not be called from the constructor;
+  this makes it possible to separate the stage at which the choice of
+  a sub-model is made from initialization of this sub-model. (This way
+  we can avoid allocating a sub-model and then immediately discarding
+  it.)
+
   \subsection pismcomponent_init Initialization
 
-  PISMComponent::init() should contain all the initialization code, preferably
-  including memory-allocation. This makes it possible to separate the PISM
-  initialization stage at which the choice of a sub-model is made from its own
-  initialization, so we can avoid initializing a sub-model just to throw it away.
+  PISMComponent::init() should contain all the initialization
+  code, excluding memory-allocation. This is to be able to
+  re-initialize the a sub-model after the "preliminary" time step.
 
   Many PISM sub-models read data from the same file the rest of PISM reads
   from. PISMComponent::find_pism_input() checks -i and -boot_file command-line

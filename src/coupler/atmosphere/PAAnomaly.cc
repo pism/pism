@@ -18,18 +18,22 @@
 
 #include "PAAnomaly.hh"
 #include "IceGrid.hh"
+#include <assert.h>
 
-PetscErrorCode PAAnomaly::init(PISMVars &vars) {
+PAAnomaly::PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+  : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in) {
+  PetscErrorCode ierr = allocate_PAAnomaly(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
   PetscErrorCode ierr;
 
-  if (input_model != NULL) {
-    ierr = input_model->init(vars); CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 1, "input_model == NULL");
-  }
-
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the -atmosphere ...,anomaly code...\n"); CHKERRQ(ierr);
+  temp_name	 = "air_temp_anomaly";
+  mass_flux_name = "precipitation_anomaly";
+  option_prefix	 = "-atmosphere_anomaly";
 
   ierr = process_options(); CHKERRQ(ierr);
 
@@ -45,13 +49,6 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
   ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   mass_flux.write_in_glaciological_units = true;
 
-  ierr = verbPrintf(2, grid.com,
-                    "    reading anomalies from %s ...\n",
-                    filename.c_str()); CHKERRQ(ierr);
-
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
-
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
@@ -62,6 +59,32 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
   precipitation.set_string("long_name", "near-surface air temperature");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PAAnomaly::~PAAnomaly()
+{
+  // empty
+}
+
+PetscErrorCode PAAnomaly::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  assert(input_model != NULL);
+  ierr = input_model->init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the -atmosphere ...,anomaly code...\n"); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+                    "    reading anomalies from %s ...\n",
+                    filename.c_str()); CHKERRQ(ierr);
+
+  ierr = temp.init(filename); CHKERRQ(ierr);
+  ierr = mass_flux.init(filename); CHKERRQ(ierr);
 
   return 0;
 }

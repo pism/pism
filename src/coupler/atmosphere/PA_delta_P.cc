@@ -21,23 +21,22 @@
 PA_delta_P::PA_delta_P(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
+  offset = NULL;
+  PetscErrorCode ierr = allocate_PA_delta_P(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
+  PetscErrorCode ierr;
+
   option_prefix = "-atmosphere_delta_P";
   offset_name = "delta_P";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("m / year", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "precipitation offsets");
-}
-
-PetscErrorCode PA_delta_P::init(PISMVars &vars) {
-  PetscErrorCode ierr;
-
-  ierr = input_model->init(vars); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing precipitation forcing using scalar offsets...\n"); CHKERRQ(ierr);
-
-  ierr = init_internal(); CHKERRQ(ierr);
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
@@ -49,6 +48,26 @@ PetscErrorCode PA_delta_P::init(PISMVars &vars) {
   precipitation.set_string("long_name", "near-surface air temperature");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PA_delta_P::~PA_delta_P()
+{
+  // empty
+}
+
+PetscErrorCode PA_delta_P::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  ierr = input_model->init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing precipitation forcing using scalar offsets...\n"); CHKERRQ(ierr);
+
+  ierr = init_internal(); CHKERRQ(ierr);
 
   return 0;
 }

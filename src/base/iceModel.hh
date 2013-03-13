@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -145,6 +145,7 @@ public:
   virtual PetscErrorCode allocate_bedrock_thermal_unit();
   virtual PetscErrorCode allocate_subglacial_hydrology();
   virtual PetscErrorCode allocate_basal_yield_stress();
+  virtual PetscErrorCode allocate_couplers();
 
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_grid_from_options();
@@ -178,8 +179,6 @@ public:
   virtual string         get_output_size(string option);
 
   // see iMutil.cc
-  virtual void attach_surface_model(PISMSurfaceModel *surf);
-  virtual void attach_ocean_model(PISMOceanModel *ocean);
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
   virtual PetscErrorCode compute_cell_areas(); // is an initialization step; should go there

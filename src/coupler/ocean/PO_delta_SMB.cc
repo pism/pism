@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,29 +21,46 @@
 PO_delta_SMB::PO_delta_SMB(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
 {
+  PetscErrorCode ierr = allocate_PO_delta_SMB(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PO_delta_SMB::~PO_delta_SMB() {
+  // empty
+}
+
+PetscErrorCode PO_delta_SMB::allocate_PO_delta_SMB() {
   option_prefix = "-ocean_delta_mass_flux";
-  offset_name = "delta_mass_flux";
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+  offset_name	= "delta_mass_flux";
+
   offset->set_units("m s-1", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "ice-shelf-base mass flux offsets");
 
-  shelfbmassflux.init_2d("shelfbmassflux", g);
+  shelfbmassflux.init_2d("shelfbmassflux", grid);
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
   shelfbmassflux.set_units("m s-1");
   shelfbmassflux.set_glaciological_units("m year-1");
 
-  shelfbtemp.init_2d("shelfbtemp", g);
+  shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
+
+  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+
+  return 0;
 }
 
 PetscErrorCode PO_delta_SMB::init(PISMVars &vars) {
   PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 

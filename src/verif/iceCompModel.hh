@@ -50,6 +50,7 @@ public:
   virtual PetscErrorCode allocate_bedrock_thermal_unit();
   virtual PetscErrorCode allocate_bed_deformation();
   virtual PetscErrorCode allocate_enthalpy_converter();
+  virtual PetscErrorCode allocate_couplers();
   virtual PetscErrorCode set_vars_from_options(); // called by IceModel::model_state_setup()
 
   PetscErrorCode reportErrors();

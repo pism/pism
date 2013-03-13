@@ -52,9 +52,14 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
   if (surface != NULL) {
     PetscReal max_dt = 0;
     bool restrict = false;
-    // FIXME: this will break if a surface model requires contiguous update intervals
     ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
+    if (restrict) {
+      max_dt = PetscMin(1.0, max_dt);
+    } else {
+      max_dt = 1.0;
+    }
+    
     if (restrict == false)
       max_dt = convert(1, "year", "seconds");
 

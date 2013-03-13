@@ -28,8 +28,9 @@
 //! (constant in time) precipitation field.
 class PAYearlyCycle : public PISMAtmosphereModel {
 public:
-  PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
-    : PISMAtmosphereModel(g, conf) {}
+  PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PAYearlyCycle();
+
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
@@ -51,6 +52,8 @@ protected:
   string reference, precip_filename;
   IceModelVec2S air_temp_mean_annual, air_temp_mean_july, precipitation;
   NCSpatialVariable air_temp_snapshot;
+private:
+  PetscErrorCode allocate_PAYearlyCycle();
 };
 
 #endif /* _PAYEARLYCYCLE_H_ */
