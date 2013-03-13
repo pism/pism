@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -54,7 +54,7 @@ public:
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);  
-  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 protected:
   virtual PetscErrorCode update_internal(PetscReal my_t, PetscReal my_dt);
   LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
@@ -69,14 +69,13 @@ protected:
     accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)
     melt_rate,             //!< diagnostic output melt rate (rate at which snow
                            //!< and ice is melted, but some snow melt refreezes)
-    runoff_rate;           //!< diagnostic output meltwater runoff rate
+    runoff_rate,           //!< diagnostic output meltwater runoff rate
+    snow_depth;		   //!< snow depth (reset once a year)
 
   IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex must hold these
                                      //!pointers in order to use object which
                                      //!needs 3D location to determine degree
                                      //!day factors.
-  bool pdd_annualize;
-  PetscReal next_pdd_update;
 
   NCSpatialVariable ice_surface_temp;
 

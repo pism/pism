@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -84,19 +84,23 @@ public:
 
   /*! Remove rain from precipitation.  Returned value is amount of snow in ice-equivalent m. */
   /*! Inputs \c precip_rate is in ice-equivalent m s-1.  Note
-      <tt>dt = N * dt_series</tt> is the full time-step.  */
+      <tt>dt = N * dt_series</tt> is the full time-step.
+      Both precip_rate and T are time-series with N records.
+  */
   virtual PetscScalar getSnowFromPrecipAndTemperatureTimeSeries(
-                 PetscScalar precip_rate,
+                 PetscScalar *precip_rate,
                  PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) = 0;
 
   /*! Input \c dt is in seconds.  Input \c pddsum is in K day.  
       Input \c snow is in ice-equivalent m. 
       Returned mass fluxes, including \c accumulation_rate, \c melt_rate,
       \c runoff_rate, and \c smb (= surface mass balance), are in 
-      ice-equivalent thickness per time (m s-1).  */
+      ice-equivalent thickness per time (m s-1).
+  */
   virtual PetscErrorCode getMassFluxesFromPDDs(const DegreeDayFactors &ddf,
                                                PetscScalar dt, PetscScalar pddsum,
-                                               PetscScalar snow,
+                                               PetscScalar accumulation,
+					       PetscScalar &snow_depth,
                                                PetscScalar &accumulation_rate,
                                                PetscScalar &melt_rate,
                                                PetscScalar &runoff_rate,
@@ -127,12 +131,13 @@ public:
                  PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N);
 
   virtual PetscScalar getSnowFromPrecipAndTemperatureTimeSeries(
-                 PetscScalar precip_rate,
+                 PetscScalar *precip_rate,
                  PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N);
 
   virtual PetscErrorCode getMassFluxesFromPDDs(const DegreeDayFactors &ddf,
                                                PetscScalar dt, PetscScalar pddsum,
-                                               PetscScalar snow,
+                                               PetscScalar accumulation,
+					       PetscScalar &snow_depth,
                                                PetscScalar &accumulation_rate,
                                                PetscScalar &melt_rate,
                                                PetscScalar &runoff_rate,
@@ -156,7 +161,7 @@ The way the number of positive degree-days are used to produce a surface mass ba
 is identical to the base class PDDMassBalance.
 
 \note
-  \li A more realistic pattern for the variability of surface melting might have correlation 
+A more realistic pattern for the variability of surface melting might have correlation 
 with appropriate spatial and temporal ranges.
  */
 class PDDrandMassBalance : public PDDMassBalance {

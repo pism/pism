@@ -223,6 +223,7 @@ PetscErrorCode PAYearlyCycle::begin_pointwise_access() {
 
   ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_july.begin_access(); CHKERRQ(ierr);
+  ierr = precipitation.begin_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -232,6 +233,7 @@ PetscErrorCode PAYearlyCycle::end_pointwise_access() {
 
   ierr = air_temp_mean_annual.end_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_july.end_access(); CHKERRQ(ierr);
+  ierr = precipitation.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

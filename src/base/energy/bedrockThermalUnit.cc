@@ -217,7 +217,7 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   }
 
   if (m_input_file.empty() == false) {
-    PIO nc(grid, "guess_mode");
+    PIO nc(grid.com, grid.rank, "netcdf3");
     bool exists;
     unsigned int n_records;
 
