@@ -27,6 +27,7 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include "PISMTime.hh"
+#include <assert.h>
 
 ///// PA_SeaRISE_Greenland
 
@@ -58,6 +59,8 @@ PetscErrorCode PA_SeaRISE_Greenland::allocate_PA_SeaRISE_Greenland() {
     ierr = delta_T->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
     ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
     CHKERRQ(ierr);
+
+    m_precipexpfactor = config.get("precip_exponential_factor_for_temperature");
   }
 
   return 0;
@@ -119,10 +122,25 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precipitation(IceModelVec2S &result) {
 
   ierr = PAYearlyCycle::mean_precipitation(result); CHKERRQ(ierr);
 
-  if ((delta_T != NULL) && paleo_precipitation_correction) {
-    PetscReal precipexpfactor = config.get("precip_exponential_factor_for_temperature");
-    ierr = result.scale(exp( precipexpfactor * (*delta_T)(t + 0.5 * dt) )); CHKERRQ(ierr);
+  if (paleo_precipitation_correction) {
+    assert(delta_T != NULL);
+
+    ierr = result.scale(exp( m_precipexpfactor * (*delta_T)(t + 0.5 * dt) )); CHKERRQ(ierr);
   }
+
+  return 0;
+}
+
+PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, PetscReal *values) {
+  if (paleo_precipitation_correction) {
+    assert(delta_T != NULL);
+
+    for (unsigned int k = 0; k < m_ts_length; k++)
+      values[k] = precipitation(i,j) * exp( m_precipexpfactor * (*delta_T)(m_ts_times[k]) );
+  }
+
+  for (unsigned int k = 0; k < m_ts_length; k++)
+    values[k] = precipitation(i,j);
 
   return 0;
 }

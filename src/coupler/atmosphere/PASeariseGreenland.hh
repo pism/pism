@@ -35,8 +35,10 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
+  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
 protected:
   bool paleo_precipitation_correction;
+  double m_precipexpfactor;
   Timeseries *delta_T;
   IceModelVec2S *lat, *lon, *surfelev;
 private:
