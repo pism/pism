@@ -64,7 +64,7 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 
   lat      = new IceModelVec2S;
   lon      = new IceModelVec2S;
-  mask     = new IceModelVec2S;
+  mask     = new IceModelVec2Int;
   thk      = new IceModelVec2S;
   surfelev = new IceModelVec2S;
   topg     = new IceModelVec2S;
