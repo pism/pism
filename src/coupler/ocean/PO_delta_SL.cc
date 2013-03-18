@@ -37,6 +37,8 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
   option_prefix = "-ocean_delta_SL";
   offset_name	= "delta_SL";
 
+  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+
   offset->set_units("m", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "sea level elevation offsets");
@@ -54,7 +56,6 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
 
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   return 0;
 }
 
