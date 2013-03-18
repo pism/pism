@@ -62,7 +62,7 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 
   lat      = new IceModelVec2S;
   lon      = new IceModelVec2S;
-  mask     = new IceModelVec2S;
+  mask     = new IceModelVec2Int;
   thk      = new IceModelVec2S;
   surfelev = new IceModelVec2S;
   topg     = new IceModelVec2S;
@@ -222,6 +222,9 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
   // append == false, check_dims == true
+  ierr = nc.def_time(grid.config.get_string("time_dimension_name"),
+                     grid.config.get_string("calendar"),
+                     grid.time->units()); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = mapping.write(filename); CHKERRQ(ierr);
@@ -262,11 +265,6 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   while (record_index < times.size() && times[record_index] <= grid.time->current())
     record_index++;
 
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append=true
-  ierr = nc.def_time(grid.config.get_string("time_dimension_name"),
-                     grid.config.get_string("calendar"),
-                     grid.time->units()); CHKERRQ(ierr);
-
   while (record_index < times.size() && grid.time->current() < grid.time->end()) {
 
     double current_time = grid.time->current(),
@@ -297,16 +295,20 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 	       grid.time->date().c_str(),
 	       grid.time->date(next_time).c_str());
       ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
-      ierr = verbPrintf(3,com,"\n%s writing result to %s ..",timestr,filename.c_str()); CHKERRQ(ierr);
+;
       strncat(timestr,"\n",1);
       grid.time->step(dt);
 
     } while (grid.time->current() < next_time);
 
+    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append=true
     ierr = nc.append_time(grid.config.get_string("time_dimension_name"),
                           next_time); CHKERRQ(ierr);
-
     ierr = nc.append_history(timestr); CHKERRQ(ierr); // append the history
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    ierr = verbPrintf(3, com, "\n%s writing result to %s ..",
+                      timestr, filename.c_str()); CHKERRQ(ierr);
 
     ierr = usurf->write(filename, PISM_FLOAT); CHKERRQ(ierr);
 
@@ -340,8 +342,6 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     record_index++;
   }
   ierr = verbPrintf(2,com,"\n"); CHKERRQ(ierr);
-
-  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }

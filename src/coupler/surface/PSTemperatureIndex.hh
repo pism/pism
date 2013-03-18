@@ -72,10 +72,10 @@ protected:
     runoff_rate,           //!< diagnostic output meltwater runoff rate
     snow_depth;		   //!< snow depth (reset once a year)
 
-  IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex must hold these
-                                     //!pointers in order to use object which
-                                     //!needs 3D location to determine degree
-                                     //!day factors.
+  IceModelVec2S *lat, *lon, *usurf;
+  //!< PSTemperatureIndex must hold these pointers in order to use
+  //! object which needs 3D location to determine degree day factors.
+  IceModelVec2Int *mask;
 
   NCSpatialVariable ice_surface_temp;
 

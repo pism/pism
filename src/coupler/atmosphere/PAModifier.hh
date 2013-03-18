@@ -84,13 +84,22 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N) {
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N)
+  {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
     }
+
+    m_ts_times.resize(N);
+    for (int k = 0; k < N; k++)
+      m_ts_times[k] = ts[k];
     m_ts_length = N;
+    
     return 0;
   }
+
+protected:
+  vector<double> m_ts_times;
 
 };
 

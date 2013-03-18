@@ -23,6 +23,7 @@
 #include "PISMVars.hh"
 #include "PISMTime.hh"
 #include "PISMAtmosphere.hh"
+#include "Mask.hh"
 
 ///// PISM surface model implementing a PDD scheme.
 
@@ -172,6 +173,10 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     ierr = verbPrintf(2, grid.com, "  NOTE: Limiting time-steps to 1 year.\n"); CHKERRQ(ierr);
   }
 
+  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
+  if (!mask)
+    SETERRQ(grid.com, 10, "ERROR: 'mask' is not available or is wrong type in dictionary");
+  
   if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
     lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
     if (!lat)
@@ -301,6 +306,9 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   for (PetscInt k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
 
+  MaskQuery m(*mask);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+
   if (lat != NULL) {
     ierr = lat->begin_access(); CHKERRQ(ierr);
   }
@@ -374,7 +382,11 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
                                              melt_rate(i,j), // output
                                              runoff_rate(i,j), // output
                                              climatic_mass_balance(i,j)); // climatic_mass_balance = smb (output)
-                                             CHKERRQ(ierr);
+      CHKERRQ(ierr);
+
+      if (m.ocean(i,j)) {
+        snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
+      }
     }
   }
 
@@ -386,6 +398,8 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
 
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  
   if (lat != NULL) {
     ierr = lat->end_access(); CHKERRQ(ierr);
   }

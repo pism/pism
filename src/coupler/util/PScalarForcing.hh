@@ -46,15 +46,6 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N)
-  {
-    m_ts_times.resize(N);
-    for (int k = 0; k < N; k++)
-      m_ts_times[k] = ts[k];
-
-    return 0;
-  }
-
 protected:
   virtual PetscErrorCode init_internal()
   {
@@ -121,8 +112,6 @@ protected:
 
   PetscReal bc_period,          // in seconds
     bc_reference_time;          // in seconds
-
-  vector<double> m_ts_times;
 };
 
 
