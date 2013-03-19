@@ -13,13 +13,17 @@ except:
 
 
 parser = argparse.ArgumentParser( \
-    description='show quiver for the subglacial water velocity field (bwatvel) from a PISM file')
+    description='show quiver for the subglacial water velocity (or flux) field from a PISM file')
 parser.add_argument('filename',
-                    help='file from which to get bwatvel')
+                    help='file from which to get  V = bwatvel[2]  (and  W = bwat  for flux)')
+parser.add_argument('-c', type=float, default=-1.0,
+                    help='arrow crop size; -c 0.1 shortens arrows longer than 0.1 * speed.max()')
 parser.add_argument('-d', type=int, default=-1,
-                    help='index of frame (defaults to last frame D=-1)')
+                    help='index of frame (default: last frame which is D=-1)')
+parser.add_argument('-q', action='store_true',
+                    help='show advective flux  q = V W  instead of velocity')
 parser.add_argument('-s', action='store_true',
-                    help='show second figure with pcolor on components of velocity')
+                    help='show second figure with pcolor on components of velocity (or flux)')
 parser.add_argument('-t', action='store_true',
                     help='transpose the x,y axes')
 parser.add_argument('-x', action='store_true',
@@ -57,6 +61,13 @@ except:
     print "ERROR: variable 'bwatvel[1]' not found ..."
     sys.exit(3)
 
+if args.q:
+    try:
+        bwat = nc.variables["bwat"]
+    except:
+        print "ERROR: variable 'bwat' not found ..."
+        sys.exit(6)
+
 if args.d >= 0:
    if shape(velx)[0] <= args.d:
        print "ERROR: frame %d not available in variable velx" % args.d
@@ -64,15 +75,22 @@ if args.d >= 0:
    if shape(vely)[0] <= args.d:
        print "ERROR: frame %d not available in variable vely" % args.d
        sys.exit(4)
-   print "  reading frame %d from velocity with %d frames" % (args.d, shape(velx)[0])
+   print "  reading frame %d of %d frames" % (args.d, shape(velx)[0])
 else:
    args.d = -1
-   print "  reading last frame from velocity with %d frames" % (shape(velx)[0])
+   print "  reading last frame of %d frames" % (shape(velx)[0])
 
 units = "m hr-1"  #FIXME: make this merely the default scale?
 scale = 3.1556926e7 / 3600.0
 velx = asarray(squeeze(velx[args.d,:,:])).transpose() / scale
 vely = asarray(squeeze(vely[args.d,:,:])).transpose() / scale
+
+if args.q:
+    bwat = asarray(squeeze(bwat[args.d,:,:])).transpose()
+    velx = velx * bwat
+    vely = vely * bwat
+    units = "m2 hr-1"  #FIXME: adjust units?
+
 nc.close()
 
 if args.t:
@@ -88,7 +106,7 @@ if args.y:
 
 if args.s:
     figure(2)
-    print "  generating pcolor() image of velocity components in figure(2) ..."
+    print "  generating pcolor() image of velocity (or flux) components in figure(2) ..."
     for j in [1,2]:
         if j == 1:
             data = velx
@@ -106,16 +124,30 @@ if args.s:
         xlabel('x  (km)')
         ylabel('y  (km)')
 
-figure(1)
 speed = sqrt(velx*velx + vely*vely)
-print "  maximum water speed = %8.3f %s" % (speed.max(),units)
-quiver(x/1000.0,y/1000.0,velx,vely,speed)
+
+plotvelx = velx.copy()
+plotvely = vely.copy()
+if args.c > 0.0:
+    crop = (speed > args.c * speed.max())
+    plotvelx[crop] = args.c * speed.max() * velx[crop] / speed[crop]
+    plotvely[crop] = args.c * speed.max() * vely[crop] / speed[crop]
+
+figure(1)
+quiver(x/1000.0,y/1000.0,plotvelx,plotvely,speed)
 colorbar()
-title("water velocity in meters/hour")
 gca().set_aspect('equal')
 gca().autoscale(tight=True)
 xlabel('x  (km)')
 ylabel('y  (km)')
+
+if args.q:
+     print "  maximum water flux magnitude = %8.3f %s" % (speed.max(),units)
+     titlestr = "water flux in %s" % units
+else:
+     print "  maximum water speed = %8.3f %s" % (speed.max(),units)
+     titlestr = "water velocity in %s" % units
+title(titlestr)
 
 show()
 
