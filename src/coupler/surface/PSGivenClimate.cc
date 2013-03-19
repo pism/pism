@@ -22,8 +22,6 @@
 PSGivenClimate::PSGivenClimate(IceGrid &g, const NCConfigVariable &conf)
   : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, NULL)
 {
-  temp_name = "ice_surface_temp";
-  mass_flux_name = "climatic_mass_balance";
   option_prefix = "-surface_given";
 
   PetscErrorCode ierr = allocate_PSGivenClimate(); CHKERRCONTINUE(ierr);
@@ -39,21 +37,29 @@ PSGivenClimate::~PSGivenClimate() {
 PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
   PetscErrorCode ierr;
 
+  ice_surface_temp      = new IceModelVec2T;
+  climatic_mass_balance = new IceModelVec2T;
+
+  m_fields["ice_surface_temp"]      = ice_surface_temp;
+  m_fields["climatic_mass_balance"] = climatic_mass_balance;
+
   ierr = process_options(); CHKERRQ(ierr);
 
-  ierr = set_vec_parameters("", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+  map<string, string> standard_names;
+  standard_names["climatic_mass_balance"] = "land_ice_surface_specific_mass_balance";
+  ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
-  ierr = temp.create(grid, temp_name, false); CHKERRQ(ierr);
-  ierr = mass_flux.create(grid, mass_flux_name, false); CHKERRQ(ierr);
+  ierr = ice_surface_temp->create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
 
-  ierr = temp.set_attrs("climate_forcing",
-                        "temperature of the ice at the ice surface but below firn processes",
-                        "Kelvin", ""); CHKERRQ(ierr);
-  ierr = mass_flux.set_attrs("climate_forcing",
-			     "ice-equivalent surface mass balance (accumulation/ablation) rate",
-			     "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  mass_flux.write_in_glaciological_units = true;
+  ierr = ice_surface_temp->set_attrs("climate_forcing",
+                                     "temperature of the ice at the ice surface but below firn processes",
+                                     "Kelvin", ""); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->set_attrs("climate_forcing",
+                                          "ice-equivalent surface mass balance (accumulation/ablation) rate",
+                                          "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  climatic_mass_balance->write_in_glaciological_units = true;
 
   return 0;
 }
@@ -71,11 +77,11 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
                     "* Initializing the surface model reading temperature at the top of the ice\n"
                     "  and ice surface mass flux from a file...\n"); CHKERRQ(ierr);
 
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
+  ierr = ice_surface_temp->init(filename); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->init(filename); CHKERRQ(ierr);
 
   // read time-independent data right away:
-  if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
+  if (ice_surface_temp->get_n_records() == 1 && climatic_mass_balance->get_n_records() == 1) {
     ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
   }
 
@@ -85,18 +91,18 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
 PetscErrorCode PSGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = mass_flux.at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = temp.at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = ice_surface_temp->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   return 0;
 }
 
 PetscErrorCode PSGivenClimate::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = mass_flux.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = climatic_mass_balance->copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PSGivenClimate::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = temp.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = ice_surface_temp->copy_to(result); CHKERRQ(ierr);
   return 0;
 }

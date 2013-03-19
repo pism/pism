@@ -34,21 +34,27 @@ POGiven::~POGiven() {
 
 PetscErrorCode POGiven::allocate_POGiven() {
   PetscErrorCode ierr;
-  temp_name       = "shelfbtemp";
-  mass_flux_name  = "shelfbmassflux";
   option_prefix   = "-ocean_given";
+
+  // will be de-allocated by the parent's destructor
+  shelfbtemp     = new IceModelVec2T;
+  shelfbmassflux = new IceModelVec2T;
+
+  m_fields["shelfbtemp"]     = shelfbtemp;
+  m_fields["shelfbmassflux"] = shelfbmassflux;
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  ierr = set_vec_parameters("", ""); CHKERRQ(ierr);
+  map<string, string> standard_names;
+  ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
-  ierr = temp.create(grid, temp_name, false); CHKERRQ(ierr);
-  ierr = mass_flux.create(grid, mass_flux_name, false); CHKERRQ(ierr);
+  ierr = shelfbtemp->create(grid, "shelfbtemp", false); CHKERRQ(ierr);
+  ierr = shelfbmassflux->create(grid, "shelfbmassflux", false); CHKERRQ(ierr);
 
-  ierr = temp.set_attrs("climate_forcing",
+  ierr = shelfbtemp->set_attrs("climate_forcing",
                         "absolute temperature at ice shelf base",
                         "Kelvin", ""); CHKERRQ(ierr);
-  ierr = mass_flux.set_attrs("climate_forcing",
+  ierr = shelfbmassflux->set_attrs("climate_forcing",
 			     "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
 			     "m s-1", ""); CHKERRQ(ierr);
 
@@ -64,11 +70,11 @@ PetscErrorCode POGiven::init(PISMVars &) {
                     "* Initializing the ocean model reading base of the shelf temperature\n"
                     "  and sub-shelf mass flux from a file...\n"); CHKERRQ(ierr);
 
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
+  ierr = shelfbtemp->init(filename); CHKERRQ(ierr);
+  ierr = shelfbmassflux->init(filename); CHKERRQ(ierr);
 
   // read time-independent data right away:
-  if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
+  if (shelfbtemp->get_n_records() == 1 && shelfbmassflux->get_n_records() == 1) {
     ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
   }
 
@@ -78,8 +84,8 @@ PetscErrorCode POGiven::init(PISMVars &) {
 PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = mass_flux.at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = temp.at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = shelfbmassflux->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = shelfbtemp->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   return 0;
 }
@@ -90,13 +96,13 @@ PetscErrorCode POGiven::sea_level_elevation(PetscReal &result) {
 }
 
 PetscErrorCode POGiven::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = temp.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = shelfbtemp->copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
 
 PetscErrorCode POGiven::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = mass_flux.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = shelfbmassflux->copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 

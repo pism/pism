@@ -22,9 +22,9 @@
 PAGivenClimate::PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
   : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
 {
-  temp_name      = "air_temp";
-  mass_flux_name = "precipitation";
-  option_prefix  = "-atmosphere_given";
+  option_prefix = "-atmosphere_given";
+  air_temp      = NULL;
+  precipitation = NULL;
 
   // Cannot call allocate_PAGivenClimate() here, because some surface
   // models do not use atmosphere models *and* this is the default
@@ -39,18 +39,26 @@ PAGivenClimate::~PAGivenClimate() {
 PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
   PetscErrorCode ierr;
 
+  // will be de-allocated by the parent's destructor
+  precipitation = new IceModelVec2T;
+  air_temp      = new IceModelVec2T;
+
+  m_fields["precipitation"] = precipitation;
+  m_fields["air_temp"]      = air_temp;
+
   ierr = process_options(); CHKERRQ(ierr);
 
-  ierr = set_vec_parameters("", ""); CHKERRQ(ierr);
+  map<string, string> standard_names;
+  ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
-  ierr = temp.create(grid, temp_name, false); CHKERRQ(ierr);
-  ierr = mass_flux.create(grid, mass_flux_name, false); CHKERRQ(ierr);
+  ierr = air_temp->create(grid, "air_temp", false); CHKERRQ(ierr);
+  ierr = precipitation->create(grid, "precipitation", false); CHKERRQ(ierr);
 
-  ierr = temp.set_attrs("climate_forcing", "near-surface air temperature",
-                        "Kelvin", ""); CHKERRQ(ierr);
-  ierr = mass_flux.set_attrs("climate_forcing", "ice-equivalent precipitation rate",
-                       "m s-1", ""); CHKERRQ(ierr);
-  ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = air_temp->set_attrs("climate_forcing", "near-surface air temperature",
+                             "Kelvin", ""); CHKERRQ(ierr);
+  ierr = precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
+                                  "m s-1", ""); CHKERRQ(ierr);
+  ierr = precipitation->set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -64,15 +72,15 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
                     "* Initializing the atmosphere model reading near-surface air temperature\n"
                     "  and ice-equivalent precipitation from a file...\n"); CHKERRQ(ierr);
 
-  if (temp.was_created() == false && mass_flux.was_created() == false) {
+  if (air_temp == NULL || precipitation == NULL) {
     ierr = allocate_PAGivenClimate(); CHKERRQ(ierr);
   }
 
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
+  ierr = air_temp->init(filename); CHKERRQ(ierr);
+  ierr = precipitation->init(filename); CHKERRQ(ierr);
 
   // read time-independent data right away:
-  if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
+  if (air_temp->get_n_records() == 1 && precipitation->get_n_records() == 1) {
     ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
   }
 
@@ -83,46 +91,46 @@ PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   // compute mean precipitation
-  ierr = mass_flux.average(t, dt, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = precipitation->average(t, dt, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // Average so that the mean_annual_temp() may be reported correctly (at least
   // in the "-surface pdd" case).
-  ierr = temp.average(t, dt, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = air_temp->average(t, dt, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   return 0;
 }
 
 PetscErrorCode PAGivenClimate::mean_precipitation(IceModelVec2S &result) {
-  PetscErrorCode ierr = mass_flux.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = precipitation->copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAGivenClimate::mean_annual_temp(IceModelVec2S &result) {
-  PetscErrorCode ierr = temp.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = air_temp->copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAGivenClimate::temp_snapshot(IceModelVec2S &result) {
-  PetscErrorCode ierr = temp.copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = air_temp->copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAGivenClimate::begin_pointwise_access() {
-  PetscErrorCode ierr = temp.begin_access(); CHKERRQ(ierr);
-  ierr = mass_flux.begin_access(); CHKERRQ(ierr);
+  PetscErrorCode ierr = air_temp->begin_access(); CHKERRQ(ierr);
+  ierr = precipitation->begin_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAGivenClimate::end_pointwise_access() {
-  PetscErrorCode ierr = temp.end_access(); CHKERRQ(ierr);
-  ierr = mass_flux.end_access(); CHKERRQ(ierr);
+  PetscErrorCode ierr = air_temp->end_access(); CHKERRQ(ierr);
+  ierr = precipitation->end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, PetscReal *result) {
   PetscErrorCode ierr;
 
-  ierr = temp.interp(i, j, &result[0]); CHKERRQ(ierr);
+  ierr = air_temp->interp(i, j, &result[0]); CHKERRQ(ierr);
 
   return 0;
 }
@@ -130,7 +138,7 @@ PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, PetscReal *result)
 PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, PetscReal *result) {
   PetscErrorCode ierr;
 
-  ierr = mass_flux.interp(i, j, &result[0]); CHKERRQ(ierr);
+  ierr = precipitation->interp(i, j, &result[0]); CHKERRQ(ierr);
 
   return 0;
 }
@@ -138,9 +146,9 @@ PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, PetscReal *resul
 PetscErrorCode PAGivenClimate::init_timeseries(PetscReal *ts, int N) {
   PetscErrorCode ierr;
 
-  ierr = temp.init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = air_temp->init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
 
-  ierr = mass_flux.init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = precipitation->init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   m_ts_length = N;
   

@@ -53,6 +53,7 @@ public:
 protected:
   vector<PetscReal> ts_mod, ts_values;
   NCSpatialVariable air_temp, precipitation;
+  IceModelVec2T *air_temp_anomaly, *precipitation_anomaly;
 private:
   PetscErrorCode allocate_PAAnomaly();
 };

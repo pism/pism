@@ -34,25 +34,31 @@ PSAnomaly::~PSAnomaly() {
 
 PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
   PetscErrorCode ierr;
-  temp_name	 = "ice_surface_temp_anomaly";
-  mass_flux_name = "climatic_mass_balance_anomaly";
   option_prefix	 = "-surface_anomaly";
+
+  // will be de-allocated by the parent's destructor
+  climatic_mass_balance_anomaly = new IceModelVec2T;
+  ice_surface_temp_anomaly      = new IceModelVec2T;
+
+  m_fields["climatic_mass_balance_anomaly"] = climatic_mass_balance_anomaly;
+  m_fields["ice_surface_temp_anomaly"] = ice_surface_temp_anomaly;
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  ierr = set_vec_parameters("", ""); CHKERRQ(ierr);
+  map<string, string> standard_names;
+  ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
-  ierr = temp.create(grid, temp_name, false); CHKERRQ(ierr);
-  ierr = mass_flux.create(grid, mass_flux_name, false); CHKERRQ(ierr);
+  ierr = ice_surface_temp_anomaly->create(grid, "ice_surface_temp_anomaly", false); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_anomaly->create(grid, "climatic_mass_balance_anomaly", false); CHKERRQ(ierr);
 
-  ierr = temp.set_attrs("climate_forcing",
+  ierr = ice_surface_temp_anomaly->set_attrs("climate_forcing",
                         "anomaly of the temperature of the ice at the ice surface but below firn processes",
                         "Kelvin", ""); CHKERRQ(ierr);
-  ierr = mass_flux.set_attrs("climate_forcing",
+  ierr = climatic_mass_balance_anomaly->set_attrs("climate_forcing",
                              "anomaly of the ice-equivalent surface mass balance (accumulation/ablation) rate",
                              "m s-1", ""); CHKERRQ(ierr);
-  ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  mass_flux.write_in_glaciological_units = true;
+  ierr = climatic_mass_balance_anomaly->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  climatic_mass_balance_anomaly->write_in_glaciological_units = true;
 
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
@@ -87,8 +93,8 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "    reading anomalies from %s ...\n", filename.c_str()); CHKERRQ(ierr);
 
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
+  ierr = ice_surface_temp_anomaly->init(filename); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_anomaly->init(filename); CHKERRQ(ierr);
 
   return 0;
 }
@@ -96,8 +102,8 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
 PetscErrorCode PSAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = mass_flux.at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = temp.at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_anomaly->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = ice_surface_temp_anomaly->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   return 0;
 }
@@ -106,7 +112,7 @@ PetscErrorCode PSAnomaly::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = input_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
-  ierr = result.add(1.0, mass_flux); CHKERRQ(ierr);
+  ierr = result.add(1.0, *climatic_mass_balance_anomaly); CHKERRQ(ierr);
 
   return 0;
 }
@@ -115,7 +121,7 @@ PetscErrorCode PSAnomaly::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
-  ierr = result.add(1.0, temp); CHKERRQ(ierr);
+  ierr = result.add(1.0, *ice_surface_temp_anomaly); CHKERRQ(ierr);
 
   return 0;
 }
