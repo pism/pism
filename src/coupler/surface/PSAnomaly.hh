@@ -40,6 +40,7 @@ public:
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+  IceModelVec2T *climatic_mass_balance_anomaly, *ice_surface_temp_anomaly;
 private:
   PetscErrorCode allocate_PSAnomaly();
 };

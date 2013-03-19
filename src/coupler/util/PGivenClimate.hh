@@ -31,24 +31,33 @@ public:
   PGivenClimate(IceGrid &g, const NCConfigVariable &conf, Input *in)
     : Model(g, conf, in) {}
 
-  virtual ~PGivenClimate() {}
+  virtual ~PGivenClimate() {
+    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      delete k->second;
+      ++k;
+    }
+  }
 
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
   {
-    PetscReal mass_flux_max_dt = -1;
-
     // "Periodize" the climate:
     my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
 
-    my_dt = temp.max_timestep(my_t);
+    PetscReal tmp_dt = -1;
+    my_dt = -1.0;
+    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      tmp_dt = (k->second)->max_timestep(my_t);
 
-    mass_flux_max_dt = mass_flux.max_timestep(my_t);
+      if (my_dt > 0) {
+        if (tmp_dt > 0)
+          my_dt = PetscMin(tmp_dt, my_dt);
+      } else
+        my_dt = tmp_dt;
 
-    if (my_dt > 0) {
-      if (mass_flux_max_dt > 0)
-        my_dt = PetscMin(mass_flux_max_dt, my_dt);
+      ++k;
     }
-    else my_dt = mass_flux_max_dt;
 
     // If the user asked for periodized climate, limit time-steps so that PISM
     // never tries to average data over an interval that begins in one period and
@@ -86,26 +95,29 @@ public:
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
   {
+    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      result[k->first] = (k->second)->get_metadata();
+      ++k;
+    }
+
     if (Model::input_model != NULL) {
       Model::input_model->add_vars_to_output(keyword, result);
     }
 
-    result[temp_name] = temp.get_metadata();
-    result[mass_flux_name] = mass_flux.get_metadata();
   }
 
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype)
   {
     PetscErrorCode ierr;
 
-    if (set_contains(vars, temp_name)) {
-      ierr = temp.define(nc, nctype); CHKERRQ(ierr);
-      vars.erase(temp_name);
-    }
-
-    if (set_contains(vars, mass_flux_name)) {
-      ierr = mass_flux.define(nc, nctype); CHKERRQ(ierr);
-      vars.erase(mass_flux_name);
+    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      if (set_contains(vars, k->first)) {
+        ierr = (k->second)->define(nc, nctype);
+        vars.erase(k->first);
+      }
+      ++k;
     }
 
     if (Model::input_model != NULL) {
@@ -119,16 +131,16 @@ public:
   {
     PetscErrorCode ierr;
 
-    if (set_contains(vars, temp_name)) {
-      ierr = temp.write(nc); CHKERRQ(ierr);
-      vars.erase(temp_name);
-    }
+    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
 
-    if (set_contains(vars, mass_flux_name)) {
-      ierr = mass_flux.write(nc); CHKERRQ(ierr);
-      vars.erase(mass_flux_name);
+      if (set_contains(vars, k->first)) {
+        ierr = (k->second)->write(nc); CHKERRQ(ierr);
+      }
+      
+      ++k;
     }
-
+  
     if (Model::input_model != NULL) {
       ierr = Model::input_model->write_variables(vars, nc); CHKERRQ(ierr);
     }
@@ -137,8 +149,8 @@ public:
   }
 
 protected:
-  IceModelVec2T temp, mass_flux;
-  string filename, temp_name, mass_flux_name, option_prefix;
+  map<string, IceModelVec2T*> m_fields;
+  string filename, option_prefix;
 
   PetscReal bc_period,          // in seconds
     bc_reference_time;          // in seconds
@@ -195,42 +207,40 @@ protected:
     return 0;
   }
 
-  PetscErrorCode set_vec_parameters(string temp_std_name, string mass_flux_std_name)
+  PetscErrorCode set_vec_parameters(map<string, string> standard_names)
   {
     PetscErrorCode ierr;
-    unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size"),
-      temp_n_records = 1, mass_flux_n_records = 1;
+    unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size");
 
     PIO nc(Model::grid.com, Model::grid.rank, "netcdf3");
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-    ierr = nc.inq_nrecords(temp_name, temp_std_name, temp_n_records); CHKERRQ(ierr);
-    ierr = nc.inq_nrecords(mass_flux_name,  mass_flux_std_name,  mass_flux_n_records);  CHKERRQ(ierr);
+
+    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      unsigned int n_records = 0;
+      string short_name = k->first,
+        standard_name = standard_names[short_name];
+      
+      ierr = nc.inq_nrecords(short_name, standard_name, n_records); CHKERRQ(ierr);
+
+      // If -..._period is not set, make ..._n_records the minimum of the
+      // buffer size and the number of available records. Otherwise try
+      // to keep all available records in memory.
+      if (bc_period == 0.0)
+        n_records = PetscMin(n_records, buffer_size);
+
+      if (n_records < 1) {
+        PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",
+                    short_name.c_str(), standard_name.c_str(), filename.c_str());
+        PISMEnd();
+      }
+
+      (k->second)->set_n_records(n_records);
+
+      ++k;
+    }
+
     ierr = nc.close(); CHKERRQ(ierr);
-
-    // If -..._period is not set, make ..._n_records the minimum of the
-    // buffer size and the number of available records. Otherwise try
-    // to keep all available records in memory.
-    if (bc_period == 0.0) {
-      temp_n_records = PetscMin(temp_n_records, buffer_size);
-      mass_flux_n_records  = PetscMin(mass_flux_n_records, buffer_size);
-    }
-
-    if (temp_n_records < 1) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",
-                  temp_name.c_str(), temp_std_name.c_str(), filename.c_str());
-      PISMEnd();
-
-    }
-
-    if (mass_flux_n_records < 1) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",
-                  mass_flux_name.c_str(), mass_flux_std_name.c_str(), filename.c_str());
-      PISMEnd();
-
-    }
-
-    temp.set_n_records(temp_n_records);
-    mass_flux.set_n_records(mass_flux_n_records);
 
     return 0;
   }
@@ -249,11 +259,15 @@ protected:
     Model::t  = my_t;
     Model::dt = my_dt;
 
-    ierr = temp.update(Model::t, Model::dt); CHKERRQ(ierr);
-    ierr = mass_flux.update(Model::t, Model::dt); CHKERRQ(ierr);
-
     if (Model::input_model != NULL) {
       ierr = Model::input_model->update(Model::t, Model::dt); CHKERRQ(ierr);
+    }
+
+    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      ierr = (k->second)->update(Model::t, Model::dt); CHKERRQ(ierr);
+
+      ++k;
     }
 
     return 0;

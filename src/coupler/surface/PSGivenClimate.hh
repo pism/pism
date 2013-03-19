@@ -37,6 +37,8 @@ public:
 
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
+protected:
+  IceModelVec2T *climatic_mass_balance, *ice_surface_temp;
 private:
   virtual PetscErrorCode allocate_PSGivenClimate();
 };
