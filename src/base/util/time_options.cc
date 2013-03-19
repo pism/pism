@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -60,10 +60,13 @@ vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
                 &unit,
                 &b_offset);
 
-  if (keyword == "daily") {
+  if (keyword == "hourly" || keyword == "daily") {
 
-    double t = a_offset, delta = 60*60*24; // seconds per day
+    double t = a_offset, delta = 60*60; // seconds per hour
     int year;
+
+    if (keyword == "daily")
+      delta *= 24;              // seconds per day
 
     do {
       result.push_back(t);
@@ -162,7 +165,10 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
         result[j] = convert(a + delta*j, "years", "seconds");
     }
 
-  } else if (str == "daily" || str == "monthly" || str == "yearly") {
+  } else if (str == "hourly"  ||
+             str == "daily"   ||
+             str == "monthly" ||
+             str == "yearly") { // it is a keyword without the range
 
     utUnit unit;
     string unit_str = "seconds since " + config.get_string("reference_date");
@@ -252,7 +258,8 @@ PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, d
     char *endptr;
 
     // take care of daily, monthly and yearly keywords:
-    if (j == 1 && (numbers[j] == "daily" ||
+    if (j == 1 && (numbers[j] == "hourly"  ||
+                   numbers[j] == "daily"   ||
                    numbers[j] == "monthly" ||
                    numbers[j] == "yearly")) {
       keyword = numbers[j];
