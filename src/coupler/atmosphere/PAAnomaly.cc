@@ -128,6 +128,7 @@ PetscErrorCode PAAnomaly::begin_pointwise_access() {
 PetscErrorCode PAAnomaly::end_pointwise_access() {
   PetscErrorCode ierr = input_model->end_pointwise_access(); CHKERRQ(ierr);
   ierr = temp.end_access(); CHKERRQ(ierr);
+  ierr = mass_flux.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -221,7 +222,7 @@ PetscErrorCode PAAnomaly::write_variables(set<string> vars, string file) {
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
     ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 
