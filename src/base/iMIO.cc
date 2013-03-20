@@ -404,6 +404,10 @@ PetscErrorCode IceModel::initFromFile(string filename) {
     string intent = var->string_attr("pism_intent");
     if ((intent == "model_state") || (intent == "mapping") ||
         (intent == "climate_steady")) {
+
+      if (config.get_flag("do_age") && var->string_attr("short_name") == "age")
+        continue;
+
       ierr = var->read(filename, last_record); CHKERRQ(ierr);
     }
   }
