@@ -626,8 +626,8 @@ PetscErrorCode IceModelVec2T::init_interpolation(PetscScalar *ts, unsigned int t
       lambda = (times_requested[k] - time[left]) / (time[right] - time[left]);
     }
 
-    m_interp_indices[2*k + 0] = left;
-    m_interp_indices[2*k + 1] = right;
+    m_interp_indices[2*k + 0] = left - first;
+    m_interp_indices[2*k + 1] = right - first;
     m_interp_weights[k]       = lambda;
   }
 
