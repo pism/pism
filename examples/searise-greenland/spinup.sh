@@ -166,7 +166,7 @@ echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km), with -skip = $COAR
 echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km), with -skip = $FINESKIP)"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG -climatic_mass_balance_cumulative"
+PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -ocean_kill $INNAME"
