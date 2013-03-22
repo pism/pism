@@ -25,6 +25,8 @@
 #include "PISMAtmosphere.hh"
 #include "Mask.hh"
 
+#include <assert.h>
+
 ///// PISM surface model implementing a PDD scheme.
 
 PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)
@@ -149,6 +151,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_next_balance_year_start = GSL_NAN;
 
   ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
 
@@ -169,18 +172,12 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     ierr = verbPrintf(2, grid.com, "an expectation integral.\n"); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("pdd_limit_timestep")) {
-    ierr = verbPrintf(2, grid.com, "  NOTE: Limiting time-steps to 1 year.\n"); CHKERRQ(ierr);
-  }
-
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (!mask)
-    SETERRQ(grid.com, 10, "ERROR: 'mask' is not available or is wrong type in dictionary");
+  assert(mask != NULL);
 
   if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
     lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-    if (!lat)
-      SETERRQ(grid.com, 10, "ERROR: 'latitude' is not available or is wrong type in dictionary");
+    assert(lat != NULL);
   } else {
     lat = NULL;
   }
@@ -193,12 +190,10 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     base_pddStdDev = 2.53;
 
     lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-    if (!lon)
-      SETERRQ(grid.com, 11, "ERROR: 'longitude' is not available or is wrong type in dictionary");
+    assert(lon != NULL);
 
     usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
-    if (!usurf)
-      SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
+    assert(usurf != NULL);
   } else {
     // generally, this is the case in which degree day factors do not depend
     //   on location; we use base_ddf
@@ -225,17 +220,10 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
-  // compute the time corresponding to the beginning of the next balance year
-  PetscReal one_year = convert(1.0, "years", "seconds"),
-    one_day = convert(1.0, "days", "seconds"),
-    year_start = my_t - grid.time->mod(my_t, one_year),
-    balance_year_start = year_start + (config.get("pdd_balance_year_start_day") - 1.0) * one_day,
-    next_balance_year_start = balance_year_start > my_t ? balance_year_start : balance_year_start + one_year;
-  
-  if (PetscAbs(my_t - next_balance_year_start) < 1e-12)
+  if (PetscAbs(my_t - m_next_balance_year_start) < 1e-12)
     my_dt = convert(1.0, "years", "seconds");
   else
-    my_dt = next_balance_year_start - my_t;
+    my_dt = m_next_balance_year_start - my_t;
 
   PetscReal dt_atmosphere;
   ierr = atmosphere->max_timestep(my_t, dt_atmosphere, restrict); CHKERRQ(ierr);
@@ -252,8 +240,8 @@ PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt
 
     // try to avoid very small time steps:
     // (Necessary when driving this PDD model with monthly data, for example.)
-    if (PetscAbs(my_t + my_dt - next_balance_year_start) < 1)
-      my_dt = next_balance_year_start - my_t;
+    if (PetscAbs(my_t + my_dt - m_next_balance_year_start) < 1)
+      my_dt = m_next_balance_year_start - my_t;
   } else {
     restrict = false;
   }
@@ -271,25 +259,17 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
   t  = my_t;
   dt = my_dt;
 
-  // This flag is set in pclimate to allow testing the model. It does not
-  // affect the normal operation of PISM.
-  if (config.get_flag("pdd_limit_timestep")) {
-    PetscReal one_year = convert(1.0, "years", "seconds");
-    my_dt = PetscMin(my_dt, one_year);
-  }
+  if (t >= m_next_balance_year_start || gsl_isnan(m_next_balance_year_start)) {
+    // compute the time corresponding to the beginning of the next balance year
+    PetscReal one_year = convert(1.0, "years", "seconds"),
+      one_day = convert(1.0, "days", "seconds"),
+      year_start = my_t - grid.time->mod(my_t, one_year),
+      balance_year_start = year_start + (config.get("pdd_balance_year_start_day") - 1.0) * one_day;
 
-  ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
+    m_next_balance_year_start = balance_year_start > my_t ? balance_year_start : balance_year_start + one_year;
 
-  return 0;
-}
-
-PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_dt) {
-  PetscErrorCode ierr;
-  PetscReal year_fraction = grid.time->year_fraction(my_t),
-    balance_year_start_year_fraction = config.get("pdd_balance_year_start_day") / 365.0;
-
-  if (fabs(year_fraction - balance_year_start_year_fraction) < 0.01) { // about 4 days
-    ierr = verbPrintf(3, grid.com, "  PDD model: Re-setting snow depth to 0 meters.\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(3, grid.com,
+                      "  PDD model: Re-setting snow depth to 0 meters.\n"); CHKERRQ(ierr);
     ierr = snow_depth.set(0.0); CHKERRQ(ierr);
   }
 
@@ -297,12 +277,11 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   // are correct:
   ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
 
-  // set up air temperature time series
-  PetscInt Nseries;
-  ierr = mbscheme->getNForTemperatureSeries(my_t, my_dt, Nseries); CHKERRQ(ierr);
+  // set up air temperature and precipitation time series
+  PetscInt Nseries = mbscheme->get_timeseries_length(my_dt);
 
   const PetscScalar dtseries = my_dt / ((PetscScalar) (Nseries - 1));
-  vector<PetscScalar> ts(Nseries), T(Nseries), P(Nseries);
+  vector<double> ts(Nseries), T(Nseries), P(Nseries), PDDs(Nseries-1);
   for (PetscInt k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
 
@@ -314,18 +293,16 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
   }
 
   if (faustogreve != NULL) {
-    if (lat == NULL) { SETERRQ(grid.com, 1,"faustogreve object is allocated BUT lat==NULL"); }
-    if (lon == NULL) { SETERRQ(grid.com, 2,"faustogreve object is allocated BUT lon==NULL"); }
-    if (usurf == NULL) { SETERRQ(grid.com, 3,"faustogreve object is allocated BUT usurf==NULL"); }
+    assert(lat != NULL && lon != NULL && usurf != NULL);
     ierr = lon->begin_access(); CHKERRQ(ierr);
     ierr = usurf->begin_access(); CHKERRQ(ierr);
     ierr = faustogreve->update_temp_mj(usurf, lat, lon); CHKERRQ(ierr);
   }
 
   const PetscScalar sigmalapserate = config.get("pdd_std_dev_lapse_lat_rate"),
-                    sigmabaselat   = config.get("pdd_std_dev_lapse_lat_base");
+    sigmabaselat   = config.get("pdd_std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
-    if (lat == NULL) { SETERRQ(grid.com, 4,"pdd_std_dev_lapse_lat_rate is nonzero BUT lat==NULL"); }
+    assert(lat != NULL);
   }
 
   DegreeDayFactors  ddf = base_ddf;
@@ -364,25 +341,22 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal my_t, PetscReal my_
       if (sigmalapserate != 0.0) {
         sigma += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
       }
-      PetscScalar pddsum = mbscheme->getPDDSumFromTemperatureTimeSeries(
-                                  sigma, base_pddThresholdTemp,
-                                  my_t, dtseries, &T[0], Nseries);
+
+      mbscheme->get_PDDs(sigma, dtseries, &T[0], Nseries, &PDDs[0]);
 
       // use the temperature time series to remove the rainfall from the precipitation
-      PetscScalar snow_accumulation = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
-                                  &P[0], // precipitation rate (input)
-                                  my_t, dtseries, &T[0], Nseries);
+      mbscheme->get_snow_accumulation(&P[0], // precipitation rate (input-output)
+                                      &T[0], // air temperature (input)
+                                      Nseries);
 
       // use degree-day factors, and number of PDDs, and the snow precipitation, to
       //   get surface mass balance (and diagnostics: accumulation, melt, runoff)
-      ierr = mbscheme->getMassFluxesFromPDDs(ddf, my_dt, pddsum,
-					     snow_accumulation,
-					     snow_depth(i,j), // input-output
-                                             accumulation_rate(i,j), // output
-                                             melt_rate(i,j), // output
-                                             runoff_rate(i,j), // output
-                                             climatic_mass_balance(i,j)); // climatic_mass_balance = smb (output)
-      CHKERRQ(ierr);
+      mbscheme->step(ddf, dt, &PDDs[0], &P[0], Nseries,
+                     snow_depth(i,j), // input-output
+                     accumulation_rate(i,j), // output
+                     melt_rate(i,j), // output
+                     runoff_rate(i,j), // output
+                     climatic_mass_balance(i,j)); // climatic_mass_balance = smb (output)
 
       if (m.ocean(i,j)) {
         snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
