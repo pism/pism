@@ -56,14 +56,14 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);  
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 protected:
-  virtual PetscErrorCode update_internal(PetscReal my_t, PetscReal my_dt);
   LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
 
   FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
   DegreeDayFactors base_ddf;          //!< holds degree-day factors in location-independent case
   PetscScalar  base_pddStdDev,        //!< K; daily amount of randomness
-               base_pddThresholdTemp; //!< K; temps are positive above this
+    base_pddThresholdTemp, //!< K; temps are positive above this
+    m_next_balance_year_start;
   IceModelVec2S
     climatic_mass_balance, //!< cached surface mass balance rate
     accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)

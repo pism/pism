@@ -262,7 +262,7 @@ def make_fake_climate(filename):
     prec.units     = "m yr-1"
 
     # assign coordinate values
-    lx = ly = 1000
+    lx = ly = 750000
     xvar[:] = np.linspace(-lx, lx, len(xdim))
     yvar[:] = np.linspace(-ly, ly, len(ydim))
     tvar[:] = np.arange(len(tdim))
