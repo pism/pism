@@ -150,36 +150,38 @@ protected:
       bc_period = 0;
     }
 
-    unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
-      ref_surface_n_records = 1;
+    if (reference_surface.was_created() == false) {
+      unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
+        ref_surface_n_records = 1;
 
-    PIO nc(g.com, g.rank, "netcdf3");
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-    ierr = nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
+      PIO nc(g.com, g.rank, "netcdf3");
+      ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+      ierr = nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
+      ierr = nc.close(); CHKERRQ(ierr);
 
-    // if -..._period is not set, make n_records the minimum of the
-    // buffer size and the number of available records. Otherwise try
-    // to keep all available records in memory.
-    if (bc_period_set == false) {
-      ref_surface_n_records = PetscMin(ref_surface_n_records, buffer_size);
+      // if -..._period is not set, make n_records the minimum of the
+      // buffer size and the number of available records. Otherwise try
+      // to keep all available records in memory.
+      if (bc_period_set == false) {
+        ref_surface_n_records = PetscMin(ref_surface_n_records, buffer_size);
+      }
+
+      if (ref_surface_n_records == 0) {
+        PetscPrintf(g.com, "PISM ERROR: can't find reference surface elevation (usurf) in %s.\n",
+                    filename.c_str());
+        PISMEnd();
+      }
+
+      ierr = verbPrintf(2,g.com,
+                        "    reading reference surface elevation from %s ...\n",
+                        filename.c_str()); CHKERRQ(ierr);
+
+      reference_surface.set_n_records(ref_surface_n_records);
+      ierr = reference_surface.create(g, "usurf", false); CHKERRQ(ierr);
+      ierr = reference_surface.set_attrs("climate_forcing",
+                                         "reference surface for lapse rate corrections",
+                                         "m", "surface_altitude"); CHKERRQ(ierr);
     }
-
-    if (ref_surface_n_records == 0) {
-      PetscPrintf(g.com, "PISM ERROR: can't find reference surface elevation (usurf) in %s.\n",
-                  filename.c_str());
-      PISMEnd();
-    }
-
-    ierr = verbPrintf(2,g.com,
-                      "    reading reference surface elevation from %s ...\n",
-                      filename.c_str()); CHKERRQ(ierr);
-
-    reference_surface.set_n_records(ref_surface_n_records);
-    ierr = reference_surface.create(g, "usurf", false); CHKERRQ(ierr);
-    ierr = reference_surface.set_attrs("climate_forcing",
-                                       "reference surface for lapse rate corrections",
-                                       "m", "surface_altitude"); CHKERRQ(ierr);
     ierr = reference_surface.init(filename); CHKERRQ(ierr);
 
     surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
