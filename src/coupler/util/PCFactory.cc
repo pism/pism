@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Torsten Albrecht
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -35,6 +35,7 @@
 #include "PASeariseGreenland.hh"
 #include "PA_delta_T.hh"
 #include "PA_delta_P.hh"
+#include "PA_paleo_precip.hh"
 #include "PAConstantPIK.hh"
 #include "PAAnomaly.hh"
 #include "PACosineYearlyCycle.hh"
@@ -97,6 +98,11 @@ static void create_pa_delta_P(IceGrid& g, const NCConfigVariable& conf,
   result = new PA_delta_P(g, conf, input);
 }
 
+static void create_pa_paleo_precip(IceGrid& g, const NCConfigVariable& conf,
+                                   PISMAtmosphereModel *input, PAModifier* &result) {
+  result = new PA_paleo_precip(g, conf, input);
+}
+
 static void create_pa_anomaly(IceGrid& g, const NCConfigVariable& conf,
                               PISMAtmosphereModel *input, PAModifier* &result) {
   result = new PAAnomaly(g, conf, input);
@@ -110,10 +116,11 @@ void PAFactory::add_standard_types() {
   add_model("yearly_cycle",      &create_pa_yearly_cycle);
   set_default("given");
 
-  add_modifier("anomaly",    &create_pa_anomaly);
-  add_modifier("delta_T",    &create_pa_delta_T);
-  add_modifier("delta_P",    &create_pa_delta_P);
-  add_modifier("lapse_rate", &create_pa_lapse_rates);
+  add_modifier("anomaly",      &create_pa_anomaly);
+  add_modifier("delta_T",      &create_pa_delta_T);
+  add_modifier("delta_P",      &create_pa_delta_P);
+  add_modifier("paleo_precip", &create_pa_paleo_precip);
+  add_modifier("lapse_rate",   &create_pa_lapse_rates);
 }
 
 
