@@ -394,9 +394,6 @@ int main(int argc, char *argv[]) {
     bool override_used;
     ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
 
-    // set an un-documented (!) flag to limit time-steps to 1 year.
-    config.set_flag("pdd_limit_timestep", true);
-
     IceGrid grid(com, rank, size, config);
 
     bool flag, times_set;
