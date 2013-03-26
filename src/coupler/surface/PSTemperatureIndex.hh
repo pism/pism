@@ -80,6 +80,7 @@ protected:
   NCSpatialVariable ice_surface_temp;
 
   bool randomized, randomized_repeatable, fausto_params;
+  double compute_next_balance_year_start(double time);
 private:
   PetscErrorCode allocate_PSTemperatureIndex();
 };
