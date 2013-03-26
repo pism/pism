@@ -150,7 +150,7 @@ PetscErrorCode PAGivenClimate::init_timeseries(PetscReal *ts, int N) {
 
   ierr = precipitation->init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
 
-  m_ts_length = N;
+  m_ts_times.resize(N);
   
   return 0;
 }

@@ -69,10 +69,9 @@ protected:
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (file_set == false) {
-      ierr = verbPrintf(2, g.com, "  WARNING: %s_file is not set; forcing is inactive.\n",
-                        option_prefix.c_str()); CHKERRQ(ierr);
-      delete offset;
-      offset = NULL;
+      ierr = PetscPrintf(g.com, "PISM ERROR: %s_file is not set.\n",
+                         option_prefix.c_str()); CHKERRQ(ierr);
+      PISMEnd();
     }
 
     if (bc_period_set) {
@@ -87,26 +86,24 @@ protected:
       bc_reference_time = 0;
     }
 
-    if (offset) {
-      ierr = verbPrintf(2, g.com,
-                        "  reading %s data from forcing file %s...\n",
-                        offset->short_name.c_str(), filename.c_str());
-      CHKERRQ(ierr);
-      PIO nc(g.com, g.rank, "netcdf3");
-      ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-      {
-        ierr = offset->read(nc, g.time->use_reference_date()); CHKERRQ(ierr);
-      }
-      ierr = nc.close(); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2, g.com,
+                      "  reading %s data from forcing file %s...\n",
+                      offset->short_name.c_str(), filename.c_str());
+    CHKERRQ(ierr);
+    PIO nc(g.com, g.rank, "netcdf3");
+    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    {
+      ierr = offset->read(nc, g.time->use_reference_date()); CHKERRQ(ierr);
     }
+    ierr = nc.close(); CHKERRQ(ierr);
+
 
     return 0;
   }
 
   PetscErrorCode offset_data(IceModelVec2S &result) {
-    if (offset) {
-      PetscErrorCode ierr = result.shift((*offset)(Mod::t + 0.5*Mod::dt)); CHKERRQ(ierr);
-    }
+    PetscErrorCode ierr = result.shift((*offset)(Mod::t + 0.5*Mod::dt)); CHKERRQ(ierr);
     return 0;
   }
 
