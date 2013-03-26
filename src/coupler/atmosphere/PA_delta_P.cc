@@ -81,10 +81,9 @@ PetscErrorCode PA_delta_P::mean_precipitation(IceModelVec2S &result) {
 
 PetscErrorCode PA_delta_P::precip_time_series(int i, int j, PetscReal *result) {
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
-  unsigned int m_ts_length = m_ts_times.size();
   
   if (offset) {
-    for (unsigned int k = 0; k < m_ts_length; ++k)
+    for (unsigned int k = 0; k < m_ts_times.size(); ++k)
       result[k] += (*offset)(m_ts_times[k]);
   }
 

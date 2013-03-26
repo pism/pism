@@ -30,7 +30,7 @@ class IceModelVec2S;
 class PISMAtmosphereModel : public PISMComponent_TS {
 public:
   PISMAtmosphereModel(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), m_ts_length(0) {};
+    : PISMComponent_TS(g, conf) {};
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result) = 0;
@@ -57,7 +57,7 @@ public:
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result) = 0;
 protected:
 
-  unsigned int m_ts_length;
+  vector<double> m_ts_times;
 };
 
 #endif	// __PISMAtmosphere_hh

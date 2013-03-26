@@ -177,17 +177,16 @@ PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
 }
 
 PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, int N) {
-  m_ts_length = N;
-  m_ts_times.resize(m_ts_length);
+  m_ts_times.resize(N);
 
-  for (unsigned int k = 0; k < m_ts_length; k++)
+  for (unsigned int k = 0; k < m_ts_times.size(); k++)
     m_ts_times[k] = ts[k];
 
   return 0;
 }
 
 PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, PetscReal *values) {
-  for (unsigned int k = 0; k < m_ts_length; k++)
+  for (unsigned int k = 0; k < m_ts_times.size(); k++)
     values[k] = precipitation(i,j);
   return 0;
 }
@@ -198,7 +197,7 @@ PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, PetscReal *values) 
     sperd = 8.64e4, // exact number of seconds per day
     julyday_fraction = (sperd / secpera) * snow_temp_july_day;
 
-  for (unsigned int k = 0; k < m_ts_length; ++k) {
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     double tk = grid.time->year_fraction(m_ts_times[k]) - julyday_fraction;
     values[k] = air_temp_mean_annual(i,j) +
       (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos(2.0 * pi * tk);

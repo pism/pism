@@ -140,19 +140,21 @@ PetscErrorCode PAAnomaly::init_timeseries(PetscReal *ts, int N) {
 
   ierr = mass_flux.init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
 
-  m_ts_length = N;
+  m_ts_times.resize(N);
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+    m_ts_times[k] = ts[k];
   
   return 0;
 }
 
 PetscErrorCode PAAnomaly::temp_time_series(int i, int j, PetscReal *result) {
   PetscErrorCode ierr;
-  vector<double> temp_anomaly(m_ts_length);
+  vector<double> temp_anomaly(m_ts_times.size());
   ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
 
   ierr = temp.interp(i, j, &temp_anomaly[0]); CHKERRQ(ierr);
 
-  for (unsigned int k = 0; k < m_ts_length; ++k)
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
     result[k] += temp_anomaly[k];
 
   return 0;
@@ -160,15 +162,14 @@ PetscErrorCode PAAnomaly::temp_time_series(int i, int j, PetscReal *result) {
 
 PetscErrorCode PAAnomaly::precip_time_series(int i, int j, PetscReal *result) {
   PetscErrorCode ierr;
-  vector<double> mass_flux_anomaly(m_ts_length);
 
   ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
-  mass_flux_anomaly.reserve(m_ts_length);
-  ierr = mass_flux.interp(i, j, &mass_flux_anomaly[0]); CHKERRQ(ierr);
+  m_mass_flux_anomaly.reserve(m_ts_times.size());
+  ierr = mass_flux.interp(i, j, &m_mass_flux_anomaly[0]); CHKERRQ(ierr);
 
-  for (unsigned int k = 0; k < m_ts_length; ++k)
-    result[k] += mass_flux_anomaly[k];
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+    result[k] += m_mass_flux_anomaly[k];
 
   return 0;
 }

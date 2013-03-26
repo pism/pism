@@ -130,11 +130,11 @@ PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, PetscReal 
   if (paleo_precipitation_correction) {
     assert(delta_T != NULL);
 
-    for (unsigned int k = 0; k < m_ts_length; k++)
+    for (unsigned int k = 0; k < m_ts_times.size(); k++)
       values[k] = precipitation(i,j) * exp( m_precipexpfactor * (*delta_T)(m_ts_times[k]) );
   }
 
-  for (unsigned int k = 0; k < m_ts_length; k++)
+  for (unsigned int k = 0; k < m_ts_times.size(); k++)
     values[k] = precipitation(i,j);
 
   return 0;

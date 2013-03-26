@@ -165,7 +165,7 @@ PetscErrorCode PACosineYearlyCycle::temp_time_series(int i, int j, PetscReal *va
     sperd = 8.64e4, // exact number of seconds per day
     julyday_fraction = (sperd / secpera) * snow_temp_july_day;
 
-  for (unsigned int k = 0; k < m_ts_length; ++k) {
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     double tk = grid.time->year_fraction(m_ts_times[k]) - julyday_fraction,
       scaling = 1;
 

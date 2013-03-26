@@ -77,10 +77,9 @@ PetscErrorCode PA_delta_T::mean_annual_temp(IceModelVec2S &result) {
 
 PetscErrorCode PA_delta_T::temp_time_series(int i, int j, PetscReal *values) {
   PetscErrorCode ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
-  unsigned int m_ts_length = m_ts_times.size();
 
   if (offset) {
-    for (unsigned int k = 0; k < m_ts_length; ++k)
+    for (unsigned int k = 0; k < m_ts_times.size(); ++k)
       values[k] += (*offset)(m_ts_times[k]);
   }
 

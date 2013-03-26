@@ -123,7 +123,7 @@ PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, int N) {
   PetscErrorCode ierr;
   ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
 
-  m_ts_length = N;
+  m_ts_times.resize(N);
 
   // NB! no support for periodic reference surfaces!
   ierr = reference_surface.init_interpolation(ts, N, 0.0, 0.0); CHKERRQ(ierr);
@@ -133,13 +133,13 @@ PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, int N) {
 
 PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
   PetscErrorCode ierr;
-  vector<PetscScalar> usurf(m_ts_length);
+  vector<PetscScalar> usurf(m_ts_times.size());
 
   ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
 
   ierr = reference_surface.interp(i, j, &usurf[0]); CHKERRQ(ierr);
 
-  for (unsigned int m = 0; m < m_ts_length; ++m) {
+  for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
     values[m] -= temp_lapse_rate * ((*surface)(i, j) - usurf[m]);
   }
 
@@ -148,13 +148,13 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
 
 PetscErrorCode PALapseRates::precip_time_series(int i, int j, PetscReal *values) {
   PetscErrorCode ierr;
-  vector<PetscScalar> usurf(m_ts_length);
+  vector<PetscScalar> usurf(m_ts_times.size());
 
   ierr = input_model->precip_time_series(i, j, values); CHKERRQ(ierr);
 
   ierr = reference_surface.interp(i, j, &usurf[0]); CHKERRQ(ierr);
 
-  for (unsigned int m = 0; m < m_ts_length; ++m) {
+  for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
     values[m] -= precip_lapse_rate * ((*surface)(i, j) - usurf[m]);
   }
 
