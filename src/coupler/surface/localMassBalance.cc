@@ -28,10 +28,10 @@
 #include "IceGrid.hh"
 
 PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBalance(myconfig) {
-  precip_as_snow     = config.get_flag("interpret_precip_as_snow");
-  Tmin               = config.get("air_temp_all_precip_as_snow");
-  Tmax               = config.get("air_temp_all_precip_as_rain");
-  pdd_threshold_temp = config.get("pdd_positive_threshold_temp");
+  precip_as_snow             = config.get_flag("interpret_precip_as_snow");
+  Tmin                       = config.get("air_temp_all_precip_as_snow");
+  Tmax                       = config.get("air_temp_all_precip_as_rain");
+  pdd_threshold_temp         = config.get("pdd_positive_threshold_temp");
 }
 
 
@@ -134,119 +134,66 @@ void PDDMassBalance::get_snow_accumulation(double *P, double *T,
 //! \brief Compute the surface mass balance at a location from the number of positive
 //! degree days and the accumulation amount in a time interval.
 /*!
- *
- * Several mass fluxes, including the final surface mass balance, are
- * computed as ice-equivalent meters per second from the number of
- * positive degree days and an accumulation amount in the time
- * interval.
- *
  * This is a PDD scheme. The input parameter \c ddf.snow is a rate of
- * melting per positive degree day for snow. If the number of PDDs,
- * which describes an energy available for melt, exceeds those needed
- * to melt all of the accumulation (snow, using \c ddf.snow) then:
+ * melting per positive degree day for snow.
  *
- *  \li a fraction of the melted snow refreezes, conceptualized as
- *      superimposed ice, and this is controlled by parameter \c
- *      ddf.refreezeFrac, and
+ * - a fraction of the melted snow and ice refreezes, conceptualized
+ *   as superimposed ice, and this is controlled by parameter \c
+ *   ddf.refreezeFrac
  *
- * \li the excess number of PDDs is used to melt both the ice that
- *      came from refreeze and then any ice which is already present.
+ * - the excess number of PDDs is used to melt both the ice that came
+ *   from refreeze and then any ice which is already present.
  *
- * In either case, \e ice melts at a constant rate per positive degree
- * day, controlled by parameter \c ddf.ice.
+ * Ice melts at a constant rate per positive degree day, controlled by
+ * parameter \c ddf.ice.
  *
  * The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but
  * is influenced by R. Hock (personal communication).
- *
- * The input argument \c dt is in seconds. The input argument \c
- * pddsum is in K day. These strange units work because the degree day
- * factors in \c ddf have their usual glaciological units, namely m
- * K-1 day-1, and we only multiply degree day factors times \e amounts
- * of snow, not rates.
- *
- * Note "snow_accumulation" is the part of precipitation which is not rain,
- * so, if needed, the modeled rain rate is <tt>rain_rate = precip_rate
- * - accum_rate</tt>. Again, "runoff" is meltwater runoff and does not
- * include rain.
- *
- * Output quantities satisfy <tt>smb_rate = accumulation_rate -
- * runoff_rate</tt> in all cases.
- *
- * @param[in] ddf    degree day factors
- * @param[in] dt total time step length (seconds)
- * @param[in] PDDs PDDs for each sub-interval (N-1 values)
- * @param[in] snow_accumulation solid accumulation at sub-interval end-points
- * @param[in] N length of the snow_accumulation array (there are N-1 intervals)
- * @param[in,out] snow_depth snow cover depth (meters, ice-equivalent)
- * @param[out] accumulation_rate accumulation rate (meters/second ice-equivalent, diagnostic)
- * @param[out] melt_rate melt rate (meters/second ice-equivalent, diagnostic, includes runoff)
- * @param[out] runoff_rate (part of the melt meters/second ice-equivalent, diagnostic)
- * @param[out] smb_rate (meters/second ice-equivalent, main output)
  */
 void PDDMassBalance::step(const DegreeDayFactors &ddf,
-                          double dt,
-                          double *PDDs,
-                          double *snow_accumulation,
-                          unsigned int Nseries,
+                          double PDDs,
+                          double accumulation,
                           double &snow_depth,
-                          double &accumulation_rate,
-                          double &melt_rate,
-                          double &runoff_rate,
-                          double &smb_rate) {
-  assert(dt > 0);
-  assert(Nseries > 1);
+                          double &cumulative_melt,
+                          double &cumulative_runoff,
+                          double &cumulative_smb) {
 
-  double total_accumulation = 0.0,
-    total_melt              = 0.0,
-    total_runoff            = 0.0,
-    dtseries                = dt / (Nseries - 1);
-  
-  for (unsigned int k = 0; k < Nseries - 1; ++k) {
-    double
-      max_snow_melted = PDDs[k] * ddf.snow,
-      accumulation    = 0.5 * (snow_accumulation[k] +
-                               snow_accumulation[k+1]) * dtseries,
-      snow_melted, excess_pdds;
+  double
+    max_snow_melted = PDDs * ddf.snow,
+    snow_melted, excess_pdds;
+    
+  snow_depth += accumulation;
 
-    snow_depth += accumulation;
+  if (PDDs <= 0.0) {       // The "no melt" case.
+    snow_melted = 0.0;
+    excess_pdds = 0.0;
+  } else if (max_snow_melted <= snow_depth) {
+    // Some of the snow melted and some is left; in any case, all of
+    // the energy available for melt, namely all of the positive
+    // degree days (PDDs) were used up in melting snow.
 
-    if (PDDs[k] <= 0.0) {       // The "no melt" case.
-      snow_melted = 0.0;
-      excess_pdds = 0.0;
-    } else if (max_snow_melted <= snow_depth) {
-      // Some of the snow melted and some is left; in any case, all of
-      // the energy available for melt, namely all of the positive
-      // degree days (PDDs) were used up in melting snow.
-
-      snow_melted = max_snow_melted;
-      excess_pdds = 0.0;
-    } else {
-      // All (snow_depth meters) of snow melted. Excess_pddsum is the
-      // positive degree days available to melt ice.
-      snow_melted = snow_depth;
-      excess_pdds = PDDs[k] - (snow_melted / ddf.snow); // units: K day
-    }
-
-    snow_depth -= snow_melted;
-    if (snow_depth < 0.0)
-      snow_depth = 0.0;
-
-    // Only snow can refreeze (in other words, ice_melted cannot
-    // refreeze).
-    double ice_melted         = excess_pdds * ddf.ice,
-      ice_created_by_refreeze = snow_melted * ddf.refreezeFrac,
-      melt                    = snow_melted + ice_melted,
-      runoff                  = melt - ice_created_by_refreeze;
-
-    total_accumulation += accumulation;
-    total_melt         += melt;
-    total_runoff       += runoff;
+    snow_melted = max_snow_melted;
+    excess_pdds = 0.0;
+  } else {
+    // All (snow_depth meters) of snow melted. Excess_pddsum is the
+    // positive degree days available to melt ice.
+    snow_melted = snow_depth;
+    excess_pdds = PDDs - (snow_melted / ddf.snow); // units: K day
   }
 
-  accumulation_rate = total_accumulation / dt;
-  melt_rate         = total_melt / dt;
-  runoff_rate       = total_runoff / dt;
-  smb_rate          = accumulation_rate - runoff_rate;
+  double
+    ice_melted              = excess_pdds * ddf.ice,
+    melt                    = snow_melted + ice_melted,
+    ice_created_by_refreeze = melt * ddf.refreezeFrac,
+    runoff                  = melt - ice_created_by_refreeze;
+
+  snow_depth -= snow_melted;
+  if (snow_depth < 0.0)
+    snow_depth = 0.0;
+  
+  cumulative_melt         += melt;
+  cumulative_runoff       += runoff;
+  cumulative_smb          += accumulation - runoff;
 }
 
 

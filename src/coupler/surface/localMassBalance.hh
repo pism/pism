@@ -80,23 +80,25 @@ public:
   virtual void get_snow_accumulation(double *precip_rate, double *T,
                                      unsigned int N) = 0;
 
-
-  /*! Input \c dt is in seconds.  Input \c pddsum is in K day.  
-    Input \c snow is in ice-equivalent m. 
-    Returned mass fluxes, including \c accumulation_rate, \c melt_rate,
-    \c runoff_rate, and \c smb (= surface mass balance), are in 
-    ice-equivalent thickness per time (m s-1).
-  */
+  /** 
+   * Take a step of the PDD model.
+   *
+   * @param[in] ddf degree day factors
+   * @param[in] PDDs number of positive degree days during the time step [K day]
+   * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
+   * @param[in,out] snow_depth snow depth [ice equivalent meters]
+   * @param[in,out] cumulative_accumulation [ice equivalent meters]
+   * @param[in,out] cumulative_melt [ice equivalent meters]
+   * @param[in,out] cumulative_runoff [ice equivalent meters]
+   * @param[in,out] cumulative_smb [ice equivalent meters]
+   */
   virtual void step(const DegreeDayFactors &ddf,
-                    double dt,
-                    double *PDDs,
-                    double *snow_accumulation,
-                    unsigned int Nseries,
+                    double PDDs,
+                    double accumulation,
                     double &snow_depth,
-                    double &accumulation_rate,
-                    double &melt_rate,
-                    double &runoff_rate,
-                    double &smb_rate) = 0;
+                    double &cumulative_melt,
+                    double &cumulative_runoff,
+                    double &cumulative_smb) = 0;
 
 protected:
   const NCConfigVariable& config;
@@ -124,15 +126,12 @@ public:
                                      unsigned int N);
 
   virtual void step(const DegreeDayFactors &ddf,
-                    double dt,
-                    double *PDDs,
-                    double *snow_accumulation,
-                    unsigned int Nseries,
+                    double PDDs,
+                    double accumulation,
                     double &snow_depth,
-                    double &accumulation_rate,
-                    double &melt_rate,
-                    double &runoff_rate,
-                    double &smb_rate);
+                    double &cumulative_melt,
+                    double &cumulative_runoff,
+                    double &cumulative_smb);
 
 protected:
   double CalovGreveIntegrand(double sigma, double TacC);

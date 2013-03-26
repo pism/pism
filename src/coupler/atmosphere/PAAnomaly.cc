@@ -160,7 +160,7 @@ PetscErrorCode PAAnomaly::temp_time_series(int i, int j, PetscReal *result) {
 
   ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
 
-  m_temp_anomaly.reserve(m_ts_length);
+  m_temp_anomaly.reserve(m_ts_times.size());
   ierr = air_temp_anomaly->interp(i, j, &m_temp_anomaly[0]); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
@@ -174,7 +174,7 @@ PetscErrorCode PAAnomaly::precip_time_series(int i, int j, PetscReal *result) {
 
   ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
-  m_mass_flux_anomaly.reserve(m_ts_length);
+  m_mass_flux_anomaly.reserve(m_ts_times.size());
   ierr = precipitation_anomaly->interp(i, j, &m_mass_flux_anomaly[0]); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)

@@ -151,7 +151,6 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   t = dt = GSL_NAN;  // every re-init restarts the clock
-  m_next_balance_year_start = GSL_NAN;
 
   ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
 
@@ -213,41 +212,33 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 		    "    reading snow depth (ice equivalent meters) from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr);
   ierr = snow_depth.regrid(input_file.c_str(), 0.0); CHKERRQ(ierr);
-  
+
+  m_next_balance_year_start = compute_next_balance_year_start(grid.time->current());
+
   return 0;
 }
 
 PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
-  if (PetscAbs(my_t - m_next_balance_year_start) < 1e-12)
-    my_dt = convert(1.0, "years", "seconds");
-  else
-    my_dt = m_next_balance_year_start - my_t;
-
-  PetscReal dt_atmosphere;
-  ierr = atmosphere->max_timestep(my_t, dt_atmosphere, restrict); CHKERRQ(ierr);
-
-  if (restrict) {
-    if (my_dt > 0)
-      my_dt = PetscMin(my_dt, dt_atmosphere);
-    else
-      my_dt = dt_atmosphere;
-  }
-
-  if (my_dt > 0) {
-    restrict = true;
-
-    // try to avoid very small time steps:
-    // (Necessary when driving this PDD model with monthly data, for example.)
-    if (PetscAbs(my_t + my_dt - m_next_balance_year_start) < 1)
-      my_dt = m_next_balance_year_start - my_t;
-  } else {
-    restrict = false;
-  }
+  ierr = atmosphere->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
 
   return 0;
 }
+
+double PSTemperatureIndex::compute_next_balance_year_start(double time) {
+    // compute the time corresponding to the beginning of the next balance year
+    PetscReal one_year = convert(1.0, "years", "seconds"),
+      one_day = convert(1.0, "days", "seconds"),
+      year_start = time - grid.time->mod(time, one_year),
+      balance_year_start = year_start + (config.get("pdd_balance_year_start_day") - 1.0) * one_day;
+
+    if (balance_year_start > time) {
+      return balance_year_start;
+    }
+    return balance_year_start + one_year;
+}
+
 
 PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
@@ -258,20 +249,6 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
 
   t  = my_t;
   dt = my_dt;
-
-  if (t >= m_next_balance_year_start || gsl_isnan(m_next_balance_year_start)) {
-    // compute the time corresponding to the beginning of the next balance year
-    PetscReal one_year = convert(1.0, "years", "seconds"),
-      one_day = convert(1.0, "days", "seconds"),
-      year_start = my_t - grid.time->mod(my_t, one_year),
-      balance_year_start = year_start + (config.get("pdd_balance_year_start_day") - 1.0) * one_day;
-
-    m_next_balance_year_start = balance_year_start > my_t ? balance_year_start : balance_year_start + one_year;
-
-    ierr = verbPrintf(3, grid.com,
-                      "  PDD model: Re-setting snow depth to 0 meters.\n"); CHKERRQ(ierr);
-    ierr = snow_depth.set(0.0); CHKERRQ(ierr);
-  }
 
   // upate to ensure that temperature and precipitation time series
   // are correct:
@@ -334,35 +311,52 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
         CHKERRQ(ierr);
       }
 
-      // use the temperature time series, the "positive" threshhold, and the
-      //   standard deviation of the daily variability to get the number of
-      //   positive degree days (PDDs)
+      // Use temperature time series, the "positive" threshhold, and
+      // the standard deviation of the daily variability to get the
+      // number of positive degree days (PDDs)
       PetscScalar sigma = base_pddStdDev;
       if (sigmalapserate != 0.0) {
         sigma += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
       }
-
       mbscheme->get_PDDs(sigma, dtseries, &T[0], Nseries, &PDDs[0]);
 
-      // use the temperature time series to remove the rainfall from the precipitation
+      // Use temperature time series to remove rainfall from precipitation
       mbscheme->get_snow_accumulation(&P[0], // precipitation rate (input-output)
                                       &T[0], // air temperature (input)
                                       Nseries);
 
-      // use degree-day factors, and number of PDDs, and the snow precipitation, to
-      //   get surface mass balance (and diagnostics: accumulation, melt, runoff)
-      mbscheme->step(ddf, dt, &PDDs[0], &P[0], Nseries,
-                     snow_depth(i,j), // input-output
-                     accumulation_rate(i,j), // output
-                     melt_rate(i,j), // output
-                     runoff_rate(i,j), // output
-                     climatic_mass_balance(i,j)); // climatic_mass_balance = smb (output)
+      // Use degree-day factors, and number of PDDs, and the snow
+      // precipitation, to get surface mass balance (and diagnostics:
+      // accumulation, melt, runoff)
+      {
+        double next_snow_depth_reset = m_next_balance_year_start;
+        accumulation_rate(i,j)     = 0.0;
+        melt_rate(i,j)             = 0.0;
+        runoff_rate(i,j)           = 0.0;
+        climatic_mass_balance(i,j) = 0.0;
+        for (int k = 0; k < Nseries - 1; ++k) {
+          if (ts[k] >= next_snow_depth_reset) {
+            snow_depth(i,j)        = 0.0;
+            next_snow_depth_reset += secpera;
+          }
+
+          double accumulation     = 0.5 * (P[k] + P[k+1]) * dtseries;
+          accumulation_rate(i,j) += accumulation;
+
+          mbscheme->step(ddf, PDDs[k], accumulation,
+                         snow_depth(i,j), melt_rate(i,j), runoff_rate(i,j), climatic_mass_balance(i,j));
+        }
+        accumulation_rate(i,j)     /= dt;
+        melt_rate(i,j)             /= dt;
+        runoff_rate(i,j)           /= dt;
+        climatic_mass_balance(i,j) /= dt;
+      }
 
       if (m.ocean(i,j)) {
         snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
       }
-    }
-  }
+    } // j-loop
+  } // i-loop
 
   ierr = accumulation_rate.end_access(); CHKERRQ(ierr);
   ierr = melt_rate.end_access(); CHKERRQ(ierr);
@@ -383,6 +377,8 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
     ierr = usurf->end_access(); CHKERRQ(ierr);
   }
 
+  m_next_balance_year_start = compute_next_balance_year_start(grid.time->current());
+  
   return 0;
 }
 
