@@ -33,6 +33,8 @@ public:
   virtual ~PA_SeaRISE_Greenland();
 
   virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N);
+
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
@@ -40,6 +42,7 @@ protected:
   bool paleo_precipitation_correction;
   double m_precipexpfactor;
   Timeseries *delta_T;
+  vector<double> m_delta_T_values;
   IceModelVec2S *lat, *lon, *surfelev;
 private:
   PetscErrorCode allocate_PA_SeaRISE_Greenland();

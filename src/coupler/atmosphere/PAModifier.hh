@@ -91,16 +91,11 @@ public:
     }
 
     m_ts_times.resize(N);
-    for (int k = 0; k < N; k++)
+    for (int k = 0; k < N; ++k)
       m_ts_times[k] = ts[k];
-    m_ts_length = N;
 
     return 0;
   }
-
-protected:
-  vector<double> m_ts_times;
-
 };
 
 #endif /* _PAMODIFIER_H_ */
