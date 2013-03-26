@@ -1248,7 +1248,10 @@ change~\cite{Huybrechts02}.  See
 for details.  Turn on this mechanism by using the \fileopt{paleo_precip}
 option. The argument of this option is the name of a file containing
 scalar temperature offsets; usually the same file as used with
-\texttt{-atmosphere ...,delta_T}. See section \ref{sec:atmosphere-delta-temp}.
+\texttt{-atmosphere ...,delta_T}, see section \ref{sec:atmosphere-delta-temp}.
+
+See also the \texttt{-atmosphere ...,paleo_precip} modifier, section
+\ref{sec:atmosphere-paleo-precip}.
 
 \subsection{EISMINT-Greenland}
 \label{sec:atmosphere-eismint-greenland}
@@ -1343,6 +1346,39 @@ file PISM will read \variable{delta_P} from.
   forcing data (section~\ref{sec:periodic-forcing})
 \item \intextoption{atmosphere_delta_P_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
 \end{itemize}
+
+\subsection{Modifier: Paleo-precipitation correction using scalar temperature offsets}
+\label{sec:atmosphere-paleo-precip}
+\optsection{\atmospheremods!\texttt{paleo_precip}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~...,paleo_precip} \index[options]{\atmospheremods!\texttt{paleo_precip}} \\
+    NetCDF variables: & \variable{delta_T} \mbox{[degrees Kelvin]}\\
+    C++ class: & \class{PA_paleo_precip}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier implements the SeaRISE-Greenland formula for
+paleo-precipitation correction from present; a 7.3\% change of
+precipitation rate for every one degree Celsius of air temperature
+change~\cite{Huybrechts02}. See
+\url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland}
+for details. The input file should contain air temperature offsets in
+the format used by \texttt{-atmosphere ...,delta_T} modifier, see
+section \ref{sec:atmosphere-delta-temp}.
+
+It takes the following command-line options.
+\begin{itemize}
+\item \fileopt{atmosphere_paleo_precip_file} sets the name of the
+file PISM will read \variable{delta_T} from.
+\item \txtopt{atmosphere_paleo_precip_period}{\emph{years}} sets the period of the
+  forcing data (section~\ref{sec:periodic-forcing})
+\item \intextoption{atmosphere_paleo_precip_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
+\end{itemize}
+
 
 \subsection{Modifier: Lapse rate corrections}
 \label{sec:atmosphere-lapse-rates}
