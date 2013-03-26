@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2012 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -290,6 +290,7 @@ struct planeStar {
     case South:
       return s;
     case West:
+    default:                    // irrelevant, but gets rid of a compiler warning
       return w;
     }
   }
