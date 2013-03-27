@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2012 The PISM Authors
+# Copyright (C) 2009-2013 The PISM Authors
 
 # PISM SeaRISE Greenland spinup using modeled paleoclimate
 #
@@ -171,9 +171,9 @@ PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PISM_CONFIG"
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -ocean_kill $INNAME"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_FORCING="-atmosphere searise_greenland,delta_T -surface pdd -paleo_precip $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES -ocean_kill $INNAME"
+COUPLER_FORCING="-atmosphere searise_greenland,delta_T,paleo_precip -surface pdd -atmosphere_paleo_precip_file $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES -ocean_kill $INNAME"
 # coupler settings for spin-up (i.e. with forcing) and force-to-thickness
-COUPLER_FTT="-atmosphere searise_greenland,delta_T -surface pdd,forcing -paleo_precip $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES -ocean_kill $INNAME"
+COUPLER_FTT="-atmosphere searise_greenland,delta_T,paleo_precip -surface pdd,forcing -atmosphere_paleo_precip_file $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES -ocean_kill $INNAME"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
