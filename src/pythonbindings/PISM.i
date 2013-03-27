@@ -36,6 +36,7 @@
 #include "inverse/Functional.hh"
 #include "inverse/L2NormFunctional.hh"
 #include "inverse/H1NormFunctional.hh"
+#include "inverse/GroundedIceH1NormFunctional.hh"
 #include "inverse/TotalVariationFunctional.hh"
 #include "inverse/MeanSquareFunctional.hh"
 #include "inverse/InvSSATikhonovGN.hh"
@@ -575,6 +576,7 @@ namespace std {
 %template(IPFunctional2V) IPFunctional< IceModelVec2V >;
 %include "inverse/L2NormFunctional.hh"
 %include "inverse/H1NormFunctional.hh"
+%include "inverse/GroundedIceH1NormFunctional.hh"
 %include "inverse/TotalVariationFunctional.hh"
 %include "inverse/MeanSquareFunctional.hh"
 %include "inverse/InvTaucParameterization.hh"

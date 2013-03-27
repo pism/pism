@@ -290,7 +290,7 @@ if __name__ == "__main__":
   # Attach various iteration listeners to the solver as needed for:
   # progress reporting,
   if inv_method.startswith('tikhonov'):
-    solver.addIterationListener(PISM.invert_ssa.printTikhonovProgress)
+    solver.addIterationListener(PISM.invert_ssa.PrintTikhonovProgress)
   # adjoint monitoring,
   if monitor_adjoint:    
     solver.addIterationListener(PISM.invert_ssa.MonitorAdjoint())
