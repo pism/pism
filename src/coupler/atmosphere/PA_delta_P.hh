@@ -29,6 +29,7 @@ public:
   virtual ~PA_delta_P();
 
   virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
 
@@ -44,6 +45,7 @@ public:
 
 protected:
   NCSpatialVariable air_temp, precipitation;
+  vector<double> m_offset_values;
 private:
   PetscErrorCode allocate_PA_delta_P();
 };
