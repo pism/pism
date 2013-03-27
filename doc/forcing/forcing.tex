@@ -473,7 +473,6 @@ level offsets from SPECMAP~\cite{Imbrieetal1984}.
     \variable{delta_SL}, \variable{lat}, \variable{lon}\\
     Options: & \texttt{\mbox{-atmosphere searise_greenland,delta_T}
       \mbox{-atmosphere_delta_T_file delta_T.nc}
-      \mbox{-paleo_precip}
       \mbox{-surface pdd}
       \mbox{-ocean constant,delta_SL}
       \mbox{-ocean_delta_SL_file delta_SL.nc}
@@ -609,8 +608,9 @@ Assuming that \texttt{g20km_pre100.nc} was produced by the run described in sect
 \ref{userman-sec:start}), one can run the following to check if the PDD
 model in PISM (see section \ref{sec:surface-pdd}) is ``reasonable'':
 \begin{verbatim}
-$ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
-           -surface pdd -paleo_precip pism_dT.nc -times 0:0.05:3 \
+$ pclimate -i g20km_pre100.nc -atmosphere searise_greenland,paleo_precip \
+           -surface pdd -atmosphere_paleo_precip_file pism_dT.nc \
+           -times 0:0.05:3 \
            -o pddmovie.nc -o_order zyx -calendar gregorian
 \end{verbatim}%$
 This produces the file \texttt{pddmovie.nc} with several variables: \texttt{climatic_mass_balance}
@@ -1240,18 +1240,11 @@ This atmosphere model~component implements a longitude, latitude, and elevation 
 
 The air temperature parameterization is controlled by configuration parameters with the \texttt{snow_temp_fausto} prefix.
 
-In addition to the temperature parameterization, it allows using the
-SeaRISE-Greenland formula for paleo-precipitation correction from present; a
-7.3\% change of precipitation rate for every one degree Celsius of temperature
-change~\cite{Huybrechts02}.  See
-\url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland}
-for details.  Turn on this mechanism by using the \fileopt{paleo_precip}
-option. The argument of this option is the name of a file containing
-scalar temperature offsets; usually the same file as used with
-\texttt{-atmosphere ...,delta_T}, see section \ref{sec:atmosphere-delta-temp}.
-
 See also the \texttt{-atmosphere ...,paleo_precip} modifier, section
-\ref{sec:atmosphere-paleo-precip}.
+\ref{sec:atmosphere-paleo-precip}, for an implementation of the
+SeaRISE-Greenland formula for paleo-precipitation correction from
+present; a 7.3\% change of precipitation rate for every one degree
+Celsius of temperature change~\cite{Huybrechts02}.
 
 \subsection{EISMINT-Greenland}
 \label{sec:atmosphere-eismint-greenland}

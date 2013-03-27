@@ -34,36 +34,9 @@
 PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
   : PAYearlyCycle(g, conf)
 {
-  paleo_precipitation_correction = false;
-  delta_T = NULL;
-
-  PetscErrorCode ierr = allocate_PA_SeaRISE_Greenland(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
 }
 
 PA_SeaRISE_Greenland::~PA_SeaRISE_Greenland() {
-  delete delta_T;
-}
-
-PetscErrorCode PA_SeaRISE_Greenland::allocate_PA_SeaRISE_Greenland() {
-  PetscErrorCode ierr;
-
-  ierr = PISMOptionsIsSet("-paleo_precip", paleo_precipitation_correction); CHKERRQ(ierr);
-
-  if (paleo_precipitation_correction) {
-    delta_T = new Timeseries(grid.com, grid.rank, "delta_T",
-                             grid.config.get_string("time_dimension_name"));
-    ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
-    ierr = delta_T->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
-    ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
-    CHKERRQ(ierr);
-
-    m_precipexpfactor = config.get("precip_exponential_factor_for_temperature");
-  }
-
-  return 0;
 }
 
 PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
@@ -92,66 +65,10 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
   if (!lon) SETERRQ(grid.com, 1, "ERROR: longitude is not available");
 
-  ierr = PISMOptionsIsSet("-paleo_precip", paleo_precipitation_correction); CHKERRQ(ierr);
-
-  if (paleo_precipitation_correction) {
-    bool delta_T_set;
-    string delta_T_file;
-
-    ierr = PISMOptionsString("-paleo_precip",
-                             "Specifies the air temperature offsets file to use with -paleo_precip",
-                             delta_T_file, delta_T_set); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2, grid.com, 
-                      "  reading delta_T data from forcing file %s for -paleo_precip actions ...\n",
-                      delta_T_file.c_str());  CHKERRQ(ierr);
-
-    PIO nc(grid, "netcdf3");    // OK to use netcdf3
-    ierr = nc.open(delta_T_file, PISM_NOWRITE); CHKERRQ(ierr);
-    {
-      ierr = delta_T->read(nc, grid.time->use_reference_date()); CHKERRQ(ierr);
-    }
-    ierr = nc.close(); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
-PetscErrorCode PA_SeaRISE_Greenland::init_timeseries(PetscReal *ts, int N) {
-  PetscErrorCode ierr;
-
-  ierr = PAYearlyCycle::init_timeseries(ts, N);
-
-  if (paleo_precipitation_correction) {
-    m_delta_T_values.resize(m_ts_times.size());
-    for (unsigned int k = 0; k < m_ts_times.size(); ++k)
-      m_delta_T_values[k] = (*delta_T)(m_ts_times[k]);
-  }
-
-  return 0;
-}
-
-PetscErrorCode PA_SeaRISE_Greenland::mean_precipitation(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = PAYearlyCycle::mean_precipitation(result); CHKERRQ(ierr);
-
-  if (paleo_precipitation_correction) {
-    assert(delta_T != NULL);
-
-    ierr = result.scale(exp( m_precipexpfactor * (*delta_T)(t + 0.5 * dt) )); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
 PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, PetscReal *values) {
-  if (paleo_precipitation_correction) {
-    assert(delta_T != NULL);
-
-    for (unsigned int k = 0; k < m_ts_times.size(); k++)
-      values[k] = precipitation(i,j) * exp( m_precipexpfactor * m_delta_T_values[k] );
-  }
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
     values[k] = precipitation(i,j);
