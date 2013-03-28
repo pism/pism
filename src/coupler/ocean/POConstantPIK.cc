@@ -57,7 +57,7 @@ PetscErrorCode POConstantPIK::init(PISMVars &vars) {
   t = dt = GSL_NAN;  // every re-init restarts the clock
 
   if (!config.get_flag("is_dry_simulation")) {
-    ierr = verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "* Initializing the constant (PIK) ocean model...\n"); CHKERRQ(ierr);
   }
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));

@@ -37,6 +37,8 @@ PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
   option_prefix = "-surface_delta_T";
   offset_name	= "delta_T";
 
+  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+
   offset->set_units("Kelvin", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "ice-surface temperature offsets");
@@ -55,8 +57,6 @@ PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
   ice_surface_temp.set_units("K");
-
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
   return 0;
 }

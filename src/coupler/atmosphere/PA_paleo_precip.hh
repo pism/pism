@@ -46,7 +46,7 @@ public:
 protected:
   NCSpatialVariable air_temp, precipitation;
   double m_precipexpfactor;
-  vector<double> m_ts_values;
+  vector<double> m_scaling_values;
 private:
   PetscErrorCode allocate_PA_paleo_precip();
 };
