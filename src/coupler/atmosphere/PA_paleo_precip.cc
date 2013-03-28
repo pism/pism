@@ -79,9 +79,9 @@ PetscErrorCode PA_paleo_precip::init_timeseries(PetscReal *ts, int N) {
 
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
 
-  m_ts_values.resize(N);
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
-    m_ts_values[k] = (*offset)(m_ts_times[k]);
+  m_scaling_values.resize(N);
+  for (unsigned int k = 0; k < N; ++k)
+    m_scaling_values[k] = exp( m_precipexpfactor * (*offset)(m_ts_times[k]));
 
   return 0;
 }
@@ -96,7 +96,7 @@ PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, PetscReal *resu
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
-    result[k] *= exp( m_precipexpfactor * m_ts_values[k] );
+    result[k] *= m_scaling_values[k];
 
   return 0;
 }
