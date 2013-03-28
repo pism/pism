@@ -21,6 +21,11 @@
 #include "PISMTime.hh"
 #include "pism_options.hh"
 
+
+PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
+  : PAYearlyCycle(g, conf), A(NULL) {
+}
+
 PACosineYearlyCycle::~PACosineYearlyCycle() {
   if (A != NULL)
     delete A;
@@ -34,38 +39,10 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   t = dt = GSL_NAN;  // every re-init restarts the clock
 
   variables = &vars;
-  snow_temp_july_day = config.get("snow_temp_july_day");
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
   CHKERRQ(ierr);
-
-  {
-    // Allocate storage:
-    ierr = air_temp_mean_annual.create(grid, "air_temp_mean_annual", false); CHKERRQ(ierr);
-    ierr = air_temp_mean_annual.set_attrs("climate_state",
-                                          "mean annual near-surface air temperature",
-                                          "Kelvin",
-                                          ""); CHKERRQ(ierr);
-    air_temp_mean_annual.time_independent = true;
-
-    ierr = air_temp_mean_july.create(grid, "air_temp_mean_july", false); CHKERRQ(ierr);
-    ierr = air_temp_mean_july.set_attrs("climate_state",
-                                        "mean July near-surface air temperature",
-                                        "Kelvin",
-                                        ""); CHKERRQ(ierr);
-    air_temp_mean_july.time_independent = true;
-
-    ierr = precipitation.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = precipitation.set_attrs("climate_state",
-                                   "mean annual ice-equivalent precipitation rate",
-                                   "m s-1",
-                                   ""); CHKERRQ(ierr);
-    ierr = precipitation.set_glaciological_units("m year-1");
-    precipitation.write_in_glaciological_units = true;
-    precipitation.time_independent = true;
-
-  }
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling '-atmosphere yearly_cycle'",
                            ""); CHKERRQ(ierr);
@@ -94,22 +71,19 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   ierr = air_temp_mean_july.regrid(input_file, true); CHKERRQ(ierr);
   ierr = precipitation.regrid(input_file, true); CHKERRQ(ierr);
 
-  air_temp_snapshot.init_2d("air_temp_snapshot", grid);
-  air_temp_snapshot.set_string("pism_intent", "diagnostic");
-  air_temp_snapshot.set_string("long_name",
-                               "snapshot of the near-surface air temperature");
-  ierr = air_temp_snapshot.set_units("Kelvin"); CHKERRQ(ierr);
-
   if (scaling_flag) {
+
+    if (A == NULL) {
+      A = new Timeseries(&grid, "amplitude_scaling",
+                         config.get_string("time_dimension_name"));
+      A->set_units("1", "1");
+      A->set_dimension_units(grid.time->units(), "");
+      A->set_attr("long_name", "cosine yearly cycle amplitude scaling");
+    }
+
     ierr = verbPrintf(2, grid.com,
                       "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
                       scaling_file.c_str()); CHKERRQ(ierr);
-
-    A = new Timeseries(&grid, "amplitude_scaling",
-                       config.get_string("time_dimension_name"));
-    A->set_units("1", "1");
-    A->set_dimension_units(grid.time->units(), "");
-    A->set_attr("long_name", "cosine yearly cycle amplitude scaling");
 
     PIO nc(grid, "netcdf3");    // OK to use netcdf3
     ierr = nc.open(scaling_file, PISM_NOWRITE); CHKERRQ(ierr);
@@ -136,13 +110,14 @@ PetscErrorCode PACosineYearlyCycle::update(PetscReal my_t, PetscReal my_dt) {
 
 PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
+
   const PetscReal
-    sperd = 8.64e4, // exact number of seconds per day
-    julyday_fraction = (sperd / secpera) * snow_temp_july_day;
+    sperd            = 8.64e4,  // exact number of seconds per day
+    julyday_fraction = (sperd / secpera) * snow_temp_july_day,
+    T                = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
+    cos_T            = cos(2.0 * pi * T);
 
-  double T = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
-    scaling = 1;
-
+  double scaling = 1.0;
   if (A != NULL) {
     scaling = (*A)(t + 0.5 * dt);
   }
@@ -153,8 +128,7 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j) = air_temp_mean_annual(i,j) +
-        scaling * (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos(2.0 * pi * T);
+      result(i,j) = air_temp_mean_annual(i,j) + (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * scaling * cos_T;
     }
   }
 
@@ -165,22 +139,14 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PACosineYearlyCycle::temp_time_series(int i, int j, PetscReal *values) {
-  // constants related to the standard yearly cycle
-  const PetscReal
-    sperd = 8.64e4, // exact number of seconds per day
-    julyday_fraction = (sperd / secpera) * snow_temp_july_day;
+PetscErrorCode PACosineYearlyCycle::init_timeseries(PetscReal *ts, int N) {
+  PetscErrorCode ierr;
 
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    double tk = grid.time->year_fraction(m_ts_times[k]) - julyday_fraction,
-      scaling = 1;
+  ierr = PAYearlyCycle::init_timeseries(ts, N); CHKERRQ(ierr);
 
-    if (A != NULL) {
-      scaling = (*A)(m_ts_times[k]);
-    }
-
-    values[k] = air_temp_mean_annual(i,j) +
-      scaling * (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos(2.0 * pi * tk);
+  if (A != NULL) {
+    for (int k = 0; k < N; ++k)
+      m_cosine_cycle[k] *= (*A)(ts[k]);
   }
 
   return 0;

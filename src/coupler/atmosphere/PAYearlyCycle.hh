@@ -52,7 +52,7 @@ protected:
   string reference, precip_filename;
   IceModelVec2S air_temp_mean_annual, air_temp_mean_july, precipitation;
   NCSpatialVariable air_temp_snapshot;
-  vector<double> m_ts_times;
+  vector<double> m_ts_times, m_cosine_cycle;
 private:
   PetscErrorCode allocate_PAYearlyCycle();
 };
