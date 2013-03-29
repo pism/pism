@@ -20,7 +20,7 @@
 #include <ctime>  // for time(), used to initialize random number gen
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include <gsl/gsl_sf.h>       // for erfc() in CalovGreveIntegrand()
+#include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <assert.h>
 #include "pism_const.hh"
 #include "NCVariable.hh"
@@ -67,7 +67,7 @@ user selects a random PDD implementation with <tt>-pdd_rand</tt> or
 double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 
   const double Z = TacC / (sqrt(2.0) * sigma);
-  return (sigma / sqrt(2.0 * pi)) * exp(-Z*Z) + (TacC / 2.0) * gsl_sf_erfc(-Z);
+  return (sigma / sqrt(2.0 * pi)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
 }
 
 
