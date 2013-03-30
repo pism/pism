@@ -256,6 +256,39 @@ PetscErrorCode PISMRoutingHydrology::subglacial_water_pressure(IceModelVec2S &re
 }
 
 
+//! Get the hydraulic potential from bedrock topography and current state variables.
+/*!
+Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
+Calls subglacial_water_pressure() method to get water pressure.
+ */
+PetscErrorCode PISMRoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  const PetscReal
+    rg = config.get("fresh_water_density") * config.get("standard_gravity");
+  ierr = subglacial_water_pressure(result); CHKERRQ(ierr);
+  ierr = result.add(rg, (*bed)); CHKERRQ(ierr); // result  <-- P + rhow g b
+  ierr = result.add(rg, W); CHKERRQ(ierr);      // result  <-- result + rhow g (b + W)
+
+  // now mask: psi = P_o if ocean
+  MaskQuery M(*mask);
+  ierr = overburden_pressure(Pover); CHKERRQ(ierr);
+  ierr = Pover.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (M.ocean(i,j))
+        result(i,j) = Pover(i,j);
+    }
+  }
+  ierr = Pover.end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Average the regular grid water thickness to values at the center of cell edges.
 PetscErrorCode PISMRoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
@@ -885,42 +918,6 @@ PetscErrorCode PISMDistributedHydrology::check_P_bounds(bool enforce_upper) {
 }
 
 
-//! Get the hydraulic potential from bedrock topography and current state variables.
-/*!
-Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
-
-Calls water_pressure() method to get water pressure.
- */
-PetscErrorCode PISMDistributedHydrology::hydraulic_potential(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  const PetscReal
-    rg = config.get("fresh_water_density") * config.get("standard_gravity");
-  MaskQuery M(*mask);
-  ierr = overburden_pressure(Pover); CHKERRQ(ierr);
-  ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = P.begin_access(); CHKERRQ(ierr);
-  ierr = Pover.begin_access(); CHKERRQ(ierr);
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ocean(i,j))
-        result(i,j) = Pover(i,j);
-      else
-        result(i,j) = P(i,j) + rg * ((*bed)(i,j) + W(i,j));
-    }
-  }
-  ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = P.end_access(); CHKERRQ(ierr);
-  ierr = Pover.end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Compute functional relationship P(W) which applies only in steady state.
 /*!
 In steady state in this model, water pressure is determined by a balance of
@@ -1118,7 +1115,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     //   first time through the current loop, we enforce them
     ierr = check_P_bounds((hydrocount == 1)); CHKERRQ(ierr);
 
-    ierr = hydraulic_potential(psi); CHKERRQ(ierr);
+    ierr = subglacial_hydraulic_potential(psi); CHKERRQ(ierr);
     ierr = psi.update_ghosts(); CHKERRQ(ierr);
 
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
