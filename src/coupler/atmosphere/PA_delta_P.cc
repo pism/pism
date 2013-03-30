@@ -75,7 +75,7 @@ PetscErrorCode PA_delta_P::init(PISMVars &vars) {
 PetscErrorCode PA_delta_P::init_timeseries(PetscReal *ts, int N) {
   PetscErrorCode ierr;
 
-  ierr = PAModifier::init_timeseries(ts, N);
+  ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
 
   m_offset_values.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
