@@ -477,6 +477,19 @@ PetscErrorCode PISMRoutingHydrology::advective_fluxes(IceModelVec2Stag &result) 
 }
 
 
+//! FIXME
+PetscErrorCode PISMRoutingHydrology::get_input_rate(
+                  PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  ierr = PISMHydrology::get_input_rate(hydro_t, hydro_dt, result); CHKERRQ(ierr);
+
+FIXME: add wall melt wall melt calculation, which is non-default and subject to config flag
+
+  return 0;
+}
+
+
 //! Compute the adaptive time step for evolution of W.
 PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
                   PetscReal t_current, PetscReal t_end, PetscReal maxKW,
