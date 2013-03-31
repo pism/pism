@@ -352,6 +352,7 @@ protected:
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
 
   virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, PetscReal &maxKW);
+  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
   using PISMHydrology::get_input_rate;

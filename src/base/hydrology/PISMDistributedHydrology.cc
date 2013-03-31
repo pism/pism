@@ -392,6 +392,83 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
 }
 
 
+
+//! Compute the wall melt input term to the water input term.
+/*!
+If flag \c hydrology_add_wall_melt is true then this same code fills
+\c result with
+    \f[ \frac{m_{wall}}{\rho_w} = - \frac{1}{L \rho_w} \mathbf{q} \cdot \nabla \psi = \left(\frac{k}{L \rho_w} W^\alpha |\nabla R|^\beta \f]
+where \f$R = P+\rho_w g b\f$.
+
+Note that conductivity_staggered() computes the related quantity
+\f$K = k W^{\alpha-1} |\nabla R|^{\beta-2}\f$ on the staggered grid, but
+contriving to reuse that code would be inefficient because of the
+staggered-versus-regular change.
+ */
+PetscErrorCode PISMRoutingHydrology::wall_melt(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  if (!config.get_flag("hydrology_add_wall_melt")) {
+    ierr = result.set(0.0); CHKERRQ(ierr);
+    return 0;
+  }
+
+  const PetscReal
+    k     = config.get("hydrology_hydraulic_conductivity"),
+    L     = config.get("water_latent_heat_fusion"),
+    alpha = config.get("hydrology_thickness_power_in_flux"),
+    beta  = config.get("hydrology_potential_gradient_power_in_flux"),
+    rhow  = config.get("standard_gravity"),
+    g     = config.get("fresh_water_density"),
+    rg    = rhow * g,
+    CC    = k / (L * rhow);
+
+  // FIXME:  could be scaled with overall factor hydrology_coefficient_wall_melt ?
+  if (alpha < 1.0) {
+    PetscPrintf(grid.com,
+           "PISM ERROR: alpha = %f < 1 which is not allowed\n"
+           "ENDING ... \n\n", alpha);
+    PISMEnd();
+  }
+
+  ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // yes, it updates ghosts
+  ierr = R.add(rg, (*bed)); CHKERRQ(ierr); // R  <-- P + rhow g b
+  ierr = R.update_ghosts(); CHKERRQ(ierr);
+
+  PetscReal dRdx, dRdy;
+  ierr = R.begin_access(); CHKERRQ(ierr);
+  ierr = W.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (W(i,j) > 0.0) {
+        dRdx = 0.0;
+        if (W(i+1,j) > 0.0) {
+          dRdx =  ( R(i+1,j) - R(i,j) ) / (2.0 * grid.dx);
+        }
+        if (W(i-1,j) > 0.0) {
+          dRdx += ( R(i,j) - R(i-1,j) ) / (2.0 * grid.dx);
+        }
+        dRdy = 0.0;
+        if (W(i,j+1) > 0.0) {
+          dRdy =  ( R(i,j+1) - R(i,j) ) / (2.0 * grid.dy);
+        }
+        if (W(i,j-1) > 0.0) {
+          dRdy += ( R(i,j) - R(i,j-1) ) / (2.0 * grid.dy);
+        }
+        result(i,j) = CC * pow(W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
+      } else
+        result(i,j) = 0.0;
+    }
+  }
+  ierr = R.end_access(); CHKERRQ(ierr);
+  ierr = W.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 //! Get the advection velocity V at the center of cell edges.
 /*!
 Computes the advection velocity \f$\mathbf{V}\f$ on the staggered
@@ -477,15 +554,15 @@ PetscErrorCode PISMRoutingHydrology::advective_fluxes(IceModelVec2Stag &result) 
 }
 
 
-//! FIXME
+//! Compute the total input rate using all the terms for PISMHydrology plus the wall melt term.
 PetscErrorCode PISMRoutingHydrology::get_input_rate(
                   PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result) {
   PetscErrorCode ierr;
-
   ierr = PISMHydrology::get_input_rate(hydro_t, hydro_dt, result); CHKERRQ(ierr);
-
-FIXME: add wall melt wall melt calculation, which is non-default and subject to config flag
-
+  // use Pover for temporary storage
+  IceModelVec2S mwall = Pover;
+  ierr = wall_melt(mwall); CHKERRQ(ierr);
+  ierr = result.add(1.0,mwall); CHKERRQ(ierr);
   return 0;
 }
 
