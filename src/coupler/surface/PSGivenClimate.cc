@@ -91,8 +91,8 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
 PetscErrorCode PSGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = climatic_mass_balance->at_time(t); CHKERRQ(ierr);
-  ierr = ice_surface_temp->at_time(t); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->average(t, dt); CHKERRQ(ierr);
+  ierr = ice_surface_temp->average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }

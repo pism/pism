@@ -84,8 +84,8 @@ PetscErrorCode POGiven::init(PISMVars &) {
 PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = shelfbmassflux->at_time(t); CHKERRQ(ierr);
-  ierr = shelfbtemp->at_time(t); CHKERRQ(ierr);
+  ierr = shelfbmassflux->average(t, dt); CHKERRQ(ierr);
+  ierr = shelfbtemp->average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }
