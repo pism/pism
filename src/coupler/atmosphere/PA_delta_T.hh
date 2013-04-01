@@ -29,7 +29,7 @@ public:
   virtual ~PA_delta_T() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N);
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
 
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
 

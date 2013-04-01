@@ -74,13 +74,13 @@ PetscErrorCode PA_paleo_precip::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_paleo_precip::init_timeseries(PetscReal *ts, int N) {
+PetscErrorCode PA_paleo_precip::init_timeseries(PetscReal *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
 
   m_scaling_values.resize(N);
-  for (unsigned int k = 0; k < N; ++k)  // FIXME @Constantine:  my compiler says "warning: comparison between signed and unsigned integer expressions" on k<N; not sure if you want to cast or make deeper change
+  for (unsigned int k = 0; k < N; ++k)
     m_scaling_values[k] = exp( m_precipexpfactor * (*offset)(m_ts_times[k]));
 
   return 0;

@@ -119,14 +119,14 @@ PetscErrorCode PALapseRates::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, int N) {
+PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, unsigned int N) {
   PetscErrorCode ierr;
   ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
 
   m_ts_times.resize(N);
 
   // NB! no support for periodic reference surfaces!
-  ierr = reference_surface.init_interpolation(ts, N, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = reference_surface.init_interpolation(ts, N); CHKERRQ(ierr);
 
   return 0;
 }

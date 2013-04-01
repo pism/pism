@@ -61,7 +61,7 @@ public:
 
     ierr = reference_surface.update(m_t, m_dt); CHKERRQ(ierr);
 
-    ierr = reference_surface.at_time(m_t, bc_period, bc_reference_time); CHKERRQ(ierr);
+    ierr = reference_surface.at_time(m_t); CHKERRQ(ierr);
 
     return 0;
   }
@@ -182,7 +182,7 @@ protected:
                                          "reference surface for lapse rate corrections",
                                          "m", "surface_altitude"); CHKERRQ(ierr);
     }
-    ierr = reference_surface.init(filename); CHKERRQ(ierr);
+    ierr = reference_surface.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
     surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
     if (!surface) SETERRQ(g.com, 1, "ERROR: 'usurf' is not available or is wrong type in dictionary");

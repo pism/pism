@@ -68,8 +68,8 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
     ierr = allocate_PAGivenClimate(); CHKERRQ(ierr);
   }
 
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
+  ierr = temp.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = mass_flux.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // read time-independent data right away:
   if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
@@ -82,12 +82,8 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
 PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  // compute mean precipitation
-  ierr = mass_flux.average(t, dt, bc_period, bc_reference_time); CHKERRQ(ierr);
-
-  // Average so that the mean_annual_temp() may be reported correctly (at least
-  // in the "-surface pdd" case).
-  ierr = temp.average(t, dt, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
+  ierr = temp.average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }
@@ -135,12 +131,11 @@ PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, PetscReal *resul
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::init_timeseries(PetscReal *ts, int N) {
+PetscErrorCode PAGivenClimate::init_timeseries(PetscReal *ts, unsigned int N) {
   PetscErrorCode ierr;
 
-  ierr = temp.init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
-
-  ierr = mass_flux.init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = temp.init_interpolation(ts, N); CHKERRQ(ierr);
+  ierr = mass_flux.init_interpolation(ts, N); CHKERRQ(ierr);
 
   m_ts_times.resize(N);
   

@@ -50,11 +50,9 @@ public:
     }
     else my_dt = mass_flux_max_dt;
 
-    // If the user asked for periodized climate, limit time-steps so that PISM
-    // never tries to average data over an interval that begins in one period and
-    // ends in the next one.
+    // Do not restrict time steps if the user asked for periodized climate.
     if (bc_period > 0.01)
-      my_dt = PetscMin(my_dt, bc_period - my_t);
+      my_dt = -1.0;
 
     // my_dt is fully determined (in the case input_model == NULL). Now get
     // max_dt from an input model:
