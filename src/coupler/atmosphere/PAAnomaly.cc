@@ -100,8 +100,8 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
 PetscErrorCode PAAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = precipitation_anomaly->at_time(t); CHKERRQ(ierr);
-  ierr = air_temp_anomaly->at_time(t); CHKERRQ(ierr);
+  ierr = precipitation_anomaly->average(t, dt); CHKERRQ(ierr);
+  ierr = air_temp_anomaly->average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }
