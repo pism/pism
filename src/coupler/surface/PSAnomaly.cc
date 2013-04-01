@@ -93,8 +93,8 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "    reading anomalies from %s ...\n", filename.c_str()); CHKERRQ(ierr);
 
-  ierr = ice_surface_temp_anomaly->init(filename); CHKERRQ(ierr);
-  ierr = climatic_mass_balance_anomaly->init(filename); CHKERRQ(ierr);
+  ierr = ice_surface_temp_anomaly->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_anomaly->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   return 0;
 }
@@ -102,8 +102,8 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
 PetscErrorCode PSAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = climatic_mass_balance_anomaly->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = ice_surface_temp_anomaly->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_anomaly->at_time(t); CHKERRQ(ierr);
+  ierr = ice_surface_temp_anomaly->at_time(t); CHKERRQ(ierr);
 
   return 0;
 }

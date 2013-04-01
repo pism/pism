@@ -29,7 +29,7 @@ public:
   virtual ~PACosineYearlyCycle();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N);
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:

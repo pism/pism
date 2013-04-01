@@ -69,7 +69,7 @@ PetscErrorCode PA_delta_T::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_delta_T::init_timeseries(PetscReal *ts, int N) {
+PetscErrorCode PA_delta_T::init_timeseries(PetscReal *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
