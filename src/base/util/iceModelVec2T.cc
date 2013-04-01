@@ -242,7 +242,7 @@ PetscErrorCode IceModelVec2T::init(string fname, double period, double reference
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
 
   if (m_period > 1.0 && (size_t)n_records < time.size()) {
-    SETERRQ(1, grid->com, "buffer has to be big enough to hold all records of periodic data");
+    SETERRQ(grid->com, 1, "buffer has to be big enough to hold all records of periodic data");
   }
 
   return 0;
