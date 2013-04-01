@@ -176,7 +176,7 @@ PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, int N) {
+PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
   // constants related to the standard yearly cycle
   const double
     sperd = 8.64e4, // exact number of seconds per day

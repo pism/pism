@@ -216,7 +216,7 @@ PetscErrorCode PAConstantPIK::update(PetscReal, PetscReal) {
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::init_timeseries(PetscReal *ts, int N) {
+PetscErrorCode PAConstantPIK::init_timeseries(PetscReal *ts, unsigned int N) {
   (void)ts;
   m_ts_times.resize(N);
   return 0;

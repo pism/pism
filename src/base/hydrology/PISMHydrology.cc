@@ -131,7 +131,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
                                  "m s-1", ""); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
       "    reading 'inputtobed' variable from file '%s' ...\n",itbfilename.c_str()); CHKERRQ(ierr);
-    ierr = inputtobed->init(itbfilename); CHKERRQ(ierr);
+    ierr = inputtobed->init(itbfilename, inputtobed_period, inputtobed_reference_time); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -234,8 +234,7 @@ PetscErrorCode PISMHydrology::get_input_rate(
 
   if (inputtobed != NULL) {
     ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
-    ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0,
-			       inputtobed_period, inputtobed_reference_time); CHKERRQ(ierr);
+    ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
     ierr = inputtobed->begin_access(); CHKERRQ(ierr);
   }
   ierr = bmelt->begin_access(); CHKERRQ(ierr);

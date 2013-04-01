@@ -37,7 +37,7 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N);
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
 protected:
   IceModelVec2S *usurf, *lat;
   string input_file;

@@ -43,7 +43,7 @@ public:
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N);
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
   virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
   virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
 protected:
