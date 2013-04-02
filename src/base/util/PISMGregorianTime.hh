@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -48,6 +48,10 @@ public:
 
   virtual bool use_reference_date()
   { return true; }
+
+  virtual double calendar_year_start(double T);
+
+  virtual double increment_date(double T, int years, int months, int days);
 
 protected:
   utUnit ut_units;

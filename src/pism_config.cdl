@@ -388,10 +388,13 @@ netcdf pism_config {
     pism_config:pdd_balance_year_start_day = 274;
     pism_config:pdd_balance_year_start_day_doc = "day; day of year for October 1st, beginning of the balance year in northern latitudes.";
 
-    pism_config:air_temp_all_precip_as_snow = 272.15;
+    pism_config:pdd_refreeze_ice_melt = "yes";
+    pism_config:pdd_refreeze_ice_melt_doc = "If set to 'yes', refreeze pdd_refreeze fraction of melted ice, otherwise all of the melted ice runs off.";
+
+    pism_config:air_temp_all_precip_as_snow = 273.15;
     pism_config:air_temp_all_precip_as_snow_doc = "Kelvin; threshold temperature below which all precipitation is snow";
 
-    pism_config:air_temp_all_precip_as_rain = 274.15;
+    pism_config:air_temp_all_precip_as_rain = 275.15;
     pism_config:air_temp_all_precip_as_rain_doc = "Kelvin; threshold temperature above which all precipitation is rain; must exceed air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";
 
     pism_config:precip_exponential_factor_for_temperature = 0.07041666667;
@@ -603,6 +606,9 @@ netcdf pism_config {
 
     pism_config:climate_forcing_buffer_size = 60;
     pism_config:climate_forcing_buffer_size_doc = "; number of 2D climate forcing records to keep in memory; = 5 years of monthly records";
+
+    pism_config:climate_forcing_evaluations_per_year = 53;
+    pism_config:climate_forcing_evaluations_per_year_doc = "; length of the time-series used to compute temporal averages of forcing data (such as mean annual temperature)";
 
     pism_config:timeseries_buffer_size = 10000;
     pism_config:timeseries_buffer_size_doc = "; Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";

@@ -28,10 +28,11 @@
 #include "IceGrid.hh"
 
 PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBalance(myconfig) {
-  precip_as_snow             = config.get_flag("interpret_precip_as_snow");
-  Tmin                       = config.get("air_temp_all_precip_as_snow");
-  Tmax                       = config.get("air_temp_all_precip_as_rain");
-  pdd_threshold_temp         = config.get("pdd_positive_threshold_temp");
+  precip_as_snow     = config.get_flag("interpret_precip_as_snow");
+  Tmin               = config.get("air_temp_all_precip_as_snow");
+  Tmax               = config.get("air_temp_all_precip_as_rain");
+  pdd_threshold_temp = config.get("pdd_positive_threshold_temp");
+  refreeze_ice_melt  = config.get_flag("pdd_refreeze_ice_melt");
 }
 
 
@@ -85,9 +86,8 @@ void PDDMassBalance::get_PDDs(double pddStdDev, double dt_series,
                               double *T, unsigned int N, double *PDDs) {
   const double h_days = dt_series / seconds_per_day;
 
-  for (unsigned int k = 0; k < N - 1; ++k) {
-    PDDs[k] = h_days * CalovGreveIntegrand(pddStdDev,
-                                           0.5 * (T[k] + T[k+1]) - pdd_threshold_temp);
+  for (unsigned int k = 0; k < N; ++k) {
+    PDDs[k] = h_days * CalovGreveIntegrand(pddStdDev, T[k] - pdd_threshold_temp);
   }
 }
 
@@ -161,7 +161,7 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
   double
     max_snow_melted = PDDs * ddf.snow,
     snow_melted, excess_pdds;
-    
+
   snow_depth += accumulation;
 
   if (PDDs <= 0.0) {       // The "no melt" case.
@@ -184,16 +184,22 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
   double
     ice_melted              = excess_pdds * ddf.ice,
     melt                    = snow_melted + ice_melted,
-    ice_created_by_refreeze = snow_melted * ddf.refreezeFrac,
-    runoff                  = melt - ice_created_by_refreeze;
+    ice_created_by_refreeze, runoff;
+
+  if (refreeze_ice_melt)
+    ice_created_by_refreeze = melt * ddf.refreezeFrac;
+  else
+    ice_created_by_refreeze = snow_melted * ddf.refreezeFrac;
+
+  runoff = melt - ice_created_by_refreeze;
 
   snow_depth -= snow_melted;
   if (snow_depth < 0.0)
     snow_depth = 0.0;
-  
-  cumulative_melt         += melt;
-  cumulative_runoff       += runoff;
-  cumulative_smb          += accumulation - runoff;
+
+  cumulative_melt   += melt;
+  cumulative_runoff += runoff;
+  cumulative_smb    += accumulation - runoff;
 }
 
 
@@ -227,8 +233,6 @@ PDDrandMassBalance::~PDDrandMassBalance() {
 
   Implementation of get_PDDs() requires returned N >= 2, so we
   guarantee that.
-
-  
  */
 int PDDrandMassBalance::get_timeseries_length(double dt) {
   return PetscMax(static_cast<int>(ceil(dt / seconds_per_day)), 2);
@@ -243,18 +247,17 @@ int PDDrandMassBalance::get_timeseries_length(double dt) {
  * @param pddStdDev \f$\sigma\f$ (standard deviation for daily temperature excursions)
  * @param dt_series time-series step, in seconds
  * @param T air temperature
- * @param N number if *end-points* in the temperature time-series
- * @param PDDs pointer to a pre-allocated array of length (N-1)
+ * @param N number of points in the temperature time-series, each corresponds to a sub-interval
+ * @param PDDs pointer to a pre-allocated array of length N
  */
 void PDDrandMassBalance::get_PDDs(double pddStdDev, double dt_series,
                                   double *T, unsigned int N, double *PDDs) {
   const double h_days = dt_series / seconds_per_day;
 
-  for (unsigned int k = 0; k < N - 1; ++k) {
+  for (unsigned int k = 0; k < N; ++k) {
     // average temperature in k-th interval
-    double T_k = 0.5*(T[k] + T[k + 1]);
+    double T_k = T[k] + gsl_ran_gaussian(pddRandGen, pddStdDev); // add random: N(0,sigma)
 
-    T_k += gsl_ran_gaussian(pddRandGen, pddStdDev); // add random: N(0,sigma)
     if (T_k > pdd_threshold_temp)
       PDDs[k] = h_days * (T_k - pdd_threshold_temp);
   }

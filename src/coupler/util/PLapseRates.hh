@@ -25,6 +25,7 @@
 #include "PIO.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
+#include <assert.h>
 
 template <class Model, class Mod>
 class PLapseRates : public Mod
@@ -61,7 +62,7 @@ public:
 
     ierr = reference_surface.update(m_t, m_dt); CHKERRQ(ierr);
 
-    ierr = reference_surface.at_time(m_t); CHKERRQ(ierr);
+    ierr = reference_surface.interp(m_t + 0.5*m_dt); CHKERRQ(ierr);
 
     return 0;
   }
@@ -172,23 +173,25 @@ protected:
         PISMEnd();
       }
 
-      ierr = verbPrintf(2,g.com,
-                        "    reading reference surface elevation from %s ...\n",
-                        filename.c_str()); CHKERRQ(ierr);
-
       reference_surface.set_n_records(ref_surface_n_records);
       ierr = reference_surface.create(g, "usurf", false); CHKERRQ(ierr);
       ierr = reference_surface.set_attrs("climate_forcing",
                                          "reference surface for lapse rate corrections",
                                          "m", "surface_altitude"); CHKERRQ(ierr);
+      reference_surface.set_n_evaluations_per_year(Mod::config.get("climate_forcing_evaluations_per_year"));
     }
+
+    ierr = verbPrintf(2, g.com,
+                      "    reading reference surface elevation from %s ...\n",
+                      filename.c_str()); CHKERRQ(ierr);
+
     ierr = reference_surface.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
     surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-    if (!surface) SETERRQ(g.com, 1, "ERROR: 'usurf' is not available or is wrong type in dictionary");
+    assert(surface != NULL);
 
     thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-    if (!thk) SETERRQ(g.com, 1, "ERROR: 'ice thickness' is not available or is wrong type in dictionary");
+    assert(thk != NULL);
 
     return 0;
   }
