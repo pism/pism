@@ -59,6 +59,7 @@ PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
   ierr = precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                                   "m s-1", ""); CHKERRQ(ierr);
   ierr = precipitation->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  precipitation->write_in_glaciological_units = true;
 
   return 0;
 }

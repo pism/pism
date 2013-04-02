@@ -234,7 +234,7 @@ PetscErrorCode PISMHydrology::get_input_rate(
 
   if (inputtobed != NULL) {
     ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
-    ierr = inputtobed->at_time(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
+    ierr = inputtobed->interp(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
     ierr = inputtobed->begin_access(); CHKERRQ(ierr);
   }
   ierr = bmelt->begin_access(); CHKERRQ(ierr);

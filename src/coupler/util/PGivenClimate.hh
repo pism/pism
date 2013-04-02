@@ -39,58 +39,6 @@ public:
     }
   }
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
-  {
-    // "Periodize" the climate:
-    my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
-
-    PetscReal tmp_dt = -1;
-    my_dt = -1.0;
-    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
-    while(k != m_fields.end()) {
-      tmp_dt = (k->second)->max_timestep(my_t);
-
-      if (my_dt > 0) {
-        if (tmp_dt > 0)
-          my_dt = PetscMin(tmp_dt, my_dt);
-      } else
-        my_dt = tmp_dt;
-
-      ++k;
-    }
-
-    // Do not restrict time steps if the user asked for periodized climate.
-    if (bc_period > 0.01)
-      my_dt = -1.0;
-
-    // my_dt is fully determined (in the case input_model == NULL). Now get
-    // max_dt from an input model:
-
-    if (Model::input_model != NULL) {
-      PetscReal input_dt;
-      bool input_restrict;
-
-      // Note: we use "periodized" t here:
-      PetscErrorCode ierr = Model::input_model->max_timestep(my_t, input_dt, input_restrict); CHKERRQ(ierr);
-
-      if (input_restrict) {
-        if (my_dt > 0)
-          my_dt = PetscMin(input_dt, my_dt);
-        else
-          my_dt = input_dt;
-      }
-      // else my_dt is not changed
-
-    }
-
-    if (my_dt > 0)
-      restrict = true;
-    else
-      restrict = false;
-
-    return 0;
-  }
-
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
   {
     map<string, IceModelVec2T*>::iterator k = m_fields.begin();
@@ -135,10 +83,10 @@ public:
       if (set_contains(vars, k->first)) {
         ierr = (k->second)->write(nc); CHKERRQ(ierr);
       }
-      
+
       ++k;
     }
-  
+
     if (Model::input_model != NULL) {
       ierr = Model::input_model->write_variables(vars, nc); CHKERRQ(ierr);
     }
@@ -218,7 +166,7 @@ protected:
       unsigned int n_records = 0;
       string short_name = k->first,
         standard_name = standard_names[short_name];
-      
+
       ierr = nc.inq_nrecords(short_name, standard_name, n_records); CHKERRQ(ierr);
 
       // If -..._period is not set, make ..._n_records the minimum of the
@@ -234,6 +182,8 @@ protected:
       }
 
       (k->second)->set_n_records(n_records);
+
+      (k->second)->set_n_evaluations_per_year(Model::config.get("climate_forcing_evaluations_per_year"));
 
       ++k;
     }

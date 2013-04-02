@@ -136,7 +136,8 @@ public:
 protected:
   double CalovGreveIntegrand(double sigma, double TacC);
 
-  bool precip_as_snow;          //!< interpret all the precipitation as snow (no rain)
+  bool precip_as_snow,          //!< interpret all the precipitation as snow (no rain)
+    refreeze_ice_melt;          //!< refreeze melted ice
   double Tmin,             //!< the temperature below which all precipitation is snow
     Tmax;             //!< the temperature above which all precipitation is rain
   double pdd_threshold_temp; //!< threshold temperature for the PDD computation
