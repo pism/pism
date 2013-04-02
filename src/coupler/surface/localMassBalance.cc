@@ -184,7 +184,7 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
   double
     ice_melted              = excess_pdds * ddf.ice,
     melt                    = snow_melted + ice_melted,
-    ice_created_by_refreeze = melt * ddf.refreezeFrac,
+    ice_created_by_refreeze = snow_melted * ddf.refreezeFrac,
     runoff                  = melt - ice_created_by_refreeze;
 
   snow_depth -= snow_melted;
