@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -120,6 +120,14 @@ public:
   //! \brief Returns the fraction of a year passed since the last beginning of
   //! a year. Only useful in codes with a "yearly cycle" (such as the PDD model).
   virtual double year_fraction(double T);
+
+  //! \brief Returns the model time in seconds corresponding to the
+  //! beginning of the year `T` falls into.
+  virtual double calendar_year_start(double T);
+
+  //! Increment time `T` by a given amount and return resulting model
+  //! time in seconds.
+  virtual double increment_date(double T, int years, int months, int days);
 
   //! \brief Returns the date corresponding to time T.
   virtual string date(double T);

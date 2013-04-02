@@ -228,15 +228,16 @@ PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt
 
 double PSTemperatureIndex::compute_next_balance_year_start(double time) {
     // compute the time corresponding to the beginning of the next balance year
-    PetscReal one_year = convert(1.0, "years", "seconds"),
-      one_day = convert(1.0, "days", "seconds"),
-      year_start = time - grid.time->mod(time, one_year),
-      balance_year_start = year_start + (config.get("pdd_balance_year_start_day") - 1.0) * one_day;
+    PetscReal
+      balance_year_start_day = config.get("pdd_balance_year_start_day"),
+      one_day                = convert(1.0, "days", "seconds"),
+      year_start             = grid.time->calendar_year_start(time),
+      balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
 
     if (balance_year_start > time) {
       return balance_year_start;
     }
-    return balance_year_start + one_year;
+    return grid.time->increment_date(balance_year_start, 1, 0, 0);
 }
 
 
@@ -257,9 +258,9 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
   // set up air temperature and precipitation time series
   PetscInt Nseries = mbscheme->get_timeseries_length(my_dt);
 
-  const PetscScalar dtseries = my_dt / ((PetscScalar) (Nseries - 1));
-  vector<double> ts(Nseries), T(Nseries), P(Nseries), PDDs(Nseries-1);
-  for (PetscInt k = 0; k < Nseries; ++k)
+  const double dtseries = my_dt / Nseries;
+  vector<double> ts(Nseries), T(Nseries), P(Nseries), PDDs(Nseries);
+  for (int k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
 
   MaskQuery m(*mask);
@@ -334,13 +335,13 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
         melt_rate(i,j)             = 0.0;
         runoff_rate(i,j)           = 0.0;
         climatic_mass_balance(i,j) = 0.0;
-        for (int k = 0; k < Nseries - 1; ++k) {
+        for (int k = 0; k < Nseries; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
-            snow_depth(i,j)        = 0.0;
-            next_snow_depth_reset += secpera;
+            snow_depth(i,j)       = 0.0;
+            next_snow_depth_reset = grid.time->increment_date(next_snow_depth_reset, 1, 0, 0);
           }
 
-          double accumulation     = 0.5 * (P[k] + P[k+1]) * dtseries;
+          double accumulation     = P[k] * dtseries;
           accumulation_rate(i,j) += accumulation;
 
           mbscheme->step(ddf, PDDs[k], accumulation,

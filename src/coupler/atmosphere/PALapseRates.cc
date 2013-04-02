@@ -125,7 +125,6 @@ PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, unsigned int N) {
 
   m_ts_times.resize(N);
 
-  // NB! no support for periodic reference surfaces!
   ierr = reference_surface.init_interpolation(ts, N); CHKERRQ(ierr);
 
   return 0;

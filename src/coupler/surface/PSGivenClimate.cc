@@ -86,8 +86,8 @@ PetscErrorCode PSGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
-    ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-    ierr = temp.at_time(t); CHKERRQ(ierr);
+    ierr = mass_flux.interp(t); CHKERRQ(ierr);
+    ierr = temp.interp(t); CHKERRQ(ierr);
   } else {
     ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
     ierr = temp.average(t, dt); CHKERRQ(ierr);

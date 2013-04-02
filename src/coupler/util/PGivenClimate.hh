@@ -33,55 +33,6 @@ public:
 
   virtual ~PGivenClimate() {}
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
-  {
-    PetscReal mass_flux_max_dt = -1;
-
-    // "Periodize" the climate:
-    my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
-
-    my_dt = temp.max_timestep(my_t);
-
-    mass_flux_max_dt = mass_flux.max_timestep(my_t);
-
-    if (my_dt > 0) {
-      if (mass_flux_max_dt > 0)
-        my_dt = PetscMin(mass_flux_max_dt, my_dt);
-    }
-    else my_dt = mass_flux_max_dt;
-
-    // Do not restrict time steps if the user asked for periodized climate.
-    if (bc_period > 0.01)
-      my_dt = -1.0;
-
-    // my_dt is fully determined (in the case input_model == NULL). Now get
-    // max_dt from an input model:
-
-    if (Model::input_model != NULL) {
-      PetscReal input_dt;
-      bool input_restrict;
-
-      // Note: we use "periodized" t here:
-      PetscErrorCode ierr = Model::input_model->max_timestep(my_t, input_dt, input_restrict); CHKERRQ(ierr);
-
-      if (input_restrict) {
-        if (my_dt > 0)
-          my_dt = PetscMin(input_dt, my_dt);
-        else
-          my_dt = input_dt;
-      }
-      // else my_dt is not changed
-
-    }
-
-    if (my_dt > 0)
-      restrict = true;
-    else
-      restrict = false;
-
-    return 0;
-  }
-
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
   {
     if (Model::input_model != NULL) {
