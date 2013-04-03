@@ -87,7 +87,6 @@ public:
    * @param[in] PDDs number of positive degree days during the time step [K day]
    * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
    * @param[in,out] snow_depth snow depth [ice equivalent meters]
-   * @param[in,out] cumulative_accumulation [ice equivalent meters]
    * @param[in,out] cumulative_melt [ice equivalent meters]
    * @param[in,out] cumulative_runoff [ice equivalent meters]
    * @param[in,out] cumulative_smb [ice equivalent meters]

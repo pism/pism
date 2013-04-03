@@ -50,7 +50,7 @@ netcdf pism_config {
     pism_config:verbose_pik_messages_doc = "Display verbose PIK messages e.g. about iceberg removal.";
 
     pism_config:calving_front_stress_boundary_condition = "no";
-    pism_config:calving_front_stress_boundary_condition_doc = "Apply CFBC condition as in [\\ref Albrechtetal2011, \\ref Winkelmannetal2010TCD].  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in [\\ref BBssasliding].";
+    pism_config:calving_front_stress_boundary_condition_doc = "Apply CFBC condition as in [\\ref Albrechtetal2011, \\ref Winkelmannetal2011].  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in [\\ref BBssasliding].";
 
     pism_config:part_grid = "no";
     pism_config:part_grid_doc = "apply partially filled grid cell scheme";
@@ -241,7 +241,7 @@ netcdf pism_config {
     pism_config:hydrology_lower_bound_creep_regularization_doc = "m; Y_0 in notes; creep closure term in evolution of layer thickness remains positive (active) even at zero water if this is positive; in PISMDistributedHydrology";
 
     pism_config:hydrology_englacial_porosity = 0.001;
-    pism_config:hydrology_englacial_porosity_doc = "[pure]; phi in notes; macroporosity of englacial system, following [\\ref Bartholomaus2011]";
+    pism_config:hydrology_englacial_porosity_doc = "[pure]; phi in notes; macroporosity of englacial system, following [\\ref Bartholomausetal2011]";
 
     pism_config:hydrology_regularizing_porosity = 0.01;
     pism_config:hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes; added to hydrology_englacial_porosity in pressure equation time derivative term";

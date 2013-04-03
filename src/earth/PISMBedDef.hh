@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 
 //! PISM bed deformation model (base class).
 /*! Unlike other PISMComponent_TS derived classes, the update() method of
-  PISMBedDef has side-effects (modifies IceModel data memebers).
+  PISMBedDef has side-effects (modifies IceModel data members).
  */
 class PISMBedDef : public PISMComponent_TS {
 public:
@@ -59,35 +59,5 @@ protected:
   PetscErrorCode allocate();
   IceModelVec2S thk_last;	//!< last ice thickness
 };
-
-#if (PISM_USE_FFTW==1)
-#include <fftw3.h>
-#include "deformation.hh"
-
-//! A wrapper class around BedDeformLC.
-class PBLingleClark : public PISMBedDef {
-public:
-  PBLingleClark(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PBLingleClark();
-
-  PetscErrorCode init(PISMVars &vars);
-  PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-protected:
-  PetscErrorCode correct_topg();
-  PetscErrorCode allocate();
-  PetscErrorCode deallocate();
-  PetscErrorCode transfer_to_proc0(IceModelVec2S *source, Vec result);
-  PetscErrorCode transfer_from_proc0(Vec source, IceModelVec2S *result);
-  Vec g2, g2natural;  //!< global Vecs used to transfer data to/from processor 0.
-  VecScatter scatter; //!< VecScatter used to transfer data to/from processor 0.
-  // Vecs on processor 0:
-  Vec Hp0,			//!< ice thickness
-    bedp0,			//!< bed elevation
-    Hstartp0,			//!< initial (start-of-the-run) thickness
-    bedstartp0,			//!< initial bed elevation
-    upliftp0;			//!< bed uplift
-  BedDeformLC bdLC;
-};
-#endif	// PISM_USE_FFTW
 
 #endif	// __PISMBedDef_hh

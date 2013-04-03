@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012  David Maxwell
+// Copyright (C) 2011, 2012, 2013  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ disadvantage that it is a 2-1 parameterization.  A potentially
 more satisfactory choice is \f$F(p)=e^p\f$, which ensures
 positivitiy, is 1-1, and respects the wide scale variations of \f$\tau_c\f$.
 
-An \class InvTaucParameterization encapsulates a parameterization, and
+An InvTaucParameterization encapsulates a parameterization, and
 is intended to be used in conjuction with an \class InvSSAForwardProblem 
 to indicate the choice of parameterization.
 

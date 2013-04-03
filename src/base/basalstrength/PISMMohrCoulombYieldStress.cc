@@ -22,8 +22,8 @@
 #include "pism_options.hh"
 #include "Mask.hh"
 
-//! \file PISMYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
-/*! \file PISMYieldStress.cc
+//! \file PISMMohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
+/*! \file PISMMohrCoulombYieldStress.cc
 The output variable of this submodel is \c tauc, the pseudo-plastic yield stress
 field that is used in the ShallowStressBalance objects.
 

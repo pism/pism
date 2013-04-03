@@ -572,9 +572,7 @@ PetscErrorCode IceModelVec2T::init_interpolation(const PetscScalar *ts, unsigned
  * and interpolation weights (linear interpolation).
  *
  * @param i,j map-plane grid point
- * @param indices pre-computed indices
- * @param weights pre-computed interpolation weights
- * @param values pointer to an allocated array of `weights.size()` `PetscScalar`
+ * @param result pointer to an allocated array of `weights.size()` `PetscScalar`
  *
  * @return 0 on success
  */
