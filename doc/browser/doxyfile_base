@@ -685,7 +685,8 @@ RECURSIVE              = NO
 EXCLUDE                = ${PROJECT_SOURCE_DIR}/src/earth/cubature.h \
                          ${PROJECT_SOURCE_DIR}/src/earth/cubature.c \
                          ${PROJECT_SOURCE_DIR}/src/verif/tests/exactM.py \
-                         ${PROJECT_SOURCE_DIR}/src/pythonbindings/PISMPYTHON_wrap.cxx
+                         ${PROJECT_SOURCE_DIR}/src/pythonbindings/PISMPYTHON_wrap.cxx \
+                         ${PROJECT_SOURCE_DIR}/src/pism_config.cdl
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or
 # directories that are symbolic links (a Unix filesystem feature) are excluded
@@ -1348,7 +1349,7 @@ INCLUDE_FILE_PATTERNS  =
 # undefined via #undef or recursively expanded use the := operator
 # instead of the = operator.
 
-PREDEFINED             = PISM_HAVE_FFTW,PISM_DEBUG,PISM_HAVE_PROJ4,PISM_PARALLEL_NETCDF4,PISM_PNETCDF
+PREDEFINED             = PISM_USE_FFTW,PISM_DEBUG,PISM_USE_PROJ4,PISM_USE_PARALLEL_NETCDF4,PISM_USE_PNETCDF,USE_SSE2_KERNELS=0
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.

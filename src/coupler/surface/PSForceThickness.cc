@@ -277,10 +277,10 @@ As shown below, the time series for \c ivol and \c maximum_diffusivity in the
 above time series files show that the force-to-thickness mechanism is forcing
 a system with negative feedback.
 
-\image html ivol_force_to_thk.png "\b Volume results from the -force_to_thk mechanism."
+image html ivol_force_to_thk.png "\b Volume results from the -force_to_thk mechanism."
 \anchor ivol_force_to_thk
 
-\image html diffusivity_force_to_thk.png "\b Maximum diffusivity results from the -force_to_thk mechanism."
+image html diffusivity_force_to_thk.png "\b Maximum diffusivity results from the -force_to_thk mechanism."
 \anchor diffusivity_force_to_thk
 
  */

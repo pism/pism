@@ -32,6 +32,9 @@
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
 #include "PISMBedDef.hh"
+#if (PISM_USE_FFTW==1)
+#include "PBLingleClark.hh"
+#endif
 #include "PAFactory.hh"
 #include "POFactory.hh"
 #include "PSFactory.hh"
