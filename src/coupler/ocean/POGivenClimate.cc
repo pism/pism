@@ -70,8 +70,8 @@ PetscErrorCode POGiven::init(PISMVars &) {
                     "* Initializing the ocean model reading base of the shelf temperature\n"
                     "  and sub-shelf mass flux from a file...\n"); CHKERRQ(ierr);
 
-  ierr = shelfbtemp->init(filename); CHKERRQ(ierr);
-  ierr = shelfbmassflux->init(filename); CHKERRQ(ierr);
+  ierr = shelfbtemp->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = shelfbmassflux->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // read time-independent data right away:
   if (shelfbtemp->get_n_records() == 1 && shelfbmassflux->get_n_records() == 1) {
@@ -84,8 +84,8 @@ PetscErrorCode POGiven::init(PISMVars &) {
 PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = shelfbmassflux->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = shelfbtemp->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = shelfbmassflux->average(t, dt); CHKERRQ(ierr);
+  ierr = shelfbtemp->average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }

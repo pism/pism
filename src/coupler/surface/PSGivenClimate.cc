@@ -77,8 +77,8 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
                     "* Initializing the surface model reading temperature at the top of the ice\n"
                     "  and ice surface mass flux from a file...\n"); CHKERRQ(ierr);
 
-  ierr = ice_surface_temp->init(filename); CHKERRQ(ierr);
-  ierr = climatic_mass_balance->init(filename); CHKERRQ(ierr);
+  ierr = ice_surface_temp->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // read time-independent data right away:
   if (ice_surface_temp->get_n_records() == 1 && climatic_mass_balance->get_n_records() == 1) {
@@ -91,8 +91,8 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
 PetscErrorCode PSGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = climatic_mass_balance->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = ice_surface_temp->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->average(t, dt); CHKERRQ(ierr);
+  ierr = ice_surface_temp->average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }

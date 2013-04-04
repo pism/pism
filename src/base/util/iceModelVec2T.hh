@@ -100,31 +100,27 @@ public:
   virtual ~IceModelVec2T();
 
   virtual void set_n_records(unsigned int N);
+  virtual void set_n_evaluations_per_year(unsigned int N);
   virtual unsigned int get_n_records();
   using IceModelVec2S::create;
   virtual PetscErrorCode create(IceGrid &mygrid, string my_short_name,
                                 bool local, int width = 1);
-  virtual PetscErrorCode init(string filename);
+  virtual PetscErrorCode init(string filename, double period, double reference_time);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);
   virtual double         max_timestep(double my_t);
 
-  virtual PetscErrorCode at_time(double my_t, double period,
-				 double reference_time);
-
-  virtual PetscErrorCode interp(double my_t, double period, double reference_time);
+  virtual PetscErrorCode interp(double my_t);
 
   virtual PetscErrorCode interp(int i, int j, PetscScalar *results);
 
-  virtual PetscErrorCode average(double my_t, double my_dt,
-				 double period, double reference_time);
+  virtual PetscErrorCode average(double my_t, double my_dt);
   virtual PetscErrorCode average(int i, int j, double &result);
 
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
-  virtual PetscErrorCode init_interpolation(PetscScalar *ts, unsigned int ts_length,
-					    double period, double reference_time);
+  virtual PetscErrorCode init_interpolation(const PetscScalar *ts, unsigned int ts_length);
 
 protected:
   vector<double> time,		//!< all the times available in filename
@@ -133,17 +129,21 @@ protected:
   DM da3;
   Vec v3;			//!< a 3D Vec used to store records
   void ***array3;
-  int n_records,		//!< maximum number of records to store in memory
-    first,			//!< in-file index of the first record stored in memory
-    N;                   //!< number of records kept in memory
+  unsigned int n_records, //!< maximum number of records to store in memory
+    N,                    //!< number of records kept in memory
+    n_evaluations_per_year;     //!< number of evaluations per year
+                                //!< used to compute temporal averages
+  int first; //!< in-file index of the first record stored in memory
+             //!< ("int" to allow first==-1 as an "invalid" first value)
+
   LocalInterpCtx *lic;
 
   vector<unsigned int> m_interp_indices;
-  vector<double> m_interp_weights;
+  double m_period, m_reference_time;
 
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode get_array3(PetscScalar*** &a3);
-  virtual PetscErrorCode update(int start);
+  virtual PetscErrorCode update(unsigned int start);
   virtual PetscErrorCode discard(int N);
 };
 

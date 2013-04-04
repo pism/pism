@@ -351,19 +351,19 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
  * Mahaffy's prescription for computing the y-component on the i-offset can be
  * interpreted as:
  *
- * \i compute the y-component at four surrounding j-offset staggered grid locations,
- * \i compute the average of these four.
+ * - compute the y-component at four surrounding j-offset staggered grid locations,
+ * - compute the average of these four.
  *
  * The code below does just that.
  *
- * \i The first double for-loop computes x-components at i-offset locations and
- * y-components at j-offset locations. Each computed number is assigned a
- * weight (w_i and w_j) that is used below
+ * - The first double for-loop computes x-components at i-offset
+ *   locations and y-components at j-offset locations. Each computed
+ *   number is assigned a weight (w_i and w_j) that is used below
  *
- * \i The second double for-loop computes x-components at j-offset locations
- * and y-components at i-offset locations as averages of quantities computed
- * earlier. The weight are used to keep track of the number of values used in
- * the averaging process.
+ * - The second double for-loop computes x-components at j-offset
+ *   locations and y-components at i-offset locations as averages of
+ *   quantities computed earlier. The weight are used to keep track of
+ *   the number of values used in the averaging process.
  *
  * This method communicates ghost values of h_x and h_y. They cannot be
  * computed locally because the first loop uses width=2 stencil of surface,

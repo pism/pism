@@ -91,8 +91,8 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
                     "    reading anomalies from %s ...\n",
                     filename.c_str()); CHKERRQ(ierr);
 
-  ierr = air_temp_anomaly->init(filename); CHKERRQ(ierr);
-  ierr = precipitation_anomaly->init(filename); CHKERRQ(ierr);
+  ierr = air_temp_anomaly->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = precipitation_anomaly->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   return 0;
 }
@@ -100,8 +100,8 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
 PetscErrorCode PAAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = precipitation_anomaly->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = air_temp_anomaly->at_time(t, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = precipitation_anomaly->average(t, dt); CHKERRQ(ierr);
+  ierr = air_temp_anomaly->average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }
@@ -140,13 +140,13 @@ PetscErrorCode PAAnomaly::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAAnomaly::init_timeseries(PetscReal *ts, int N) {
+PetscErrorCode PAAnomaly::init_timeseries(PetscReal *ts, unsigned int N) {
   PetscErrorCode ierr;
   ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
 
-  ierr = air_temp_anomaly->init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = air_temp_anomaly->init_interpolation(ts, N); CHKERRQ(ierr);
 
-  ierr = precipitation_anomaly->init_interpolation(ts, N, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = precipitation_anomaly->init_interpolation(ts, N); CHKERRQ(ierr);
 
   m_ts_times.resize(N);
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)

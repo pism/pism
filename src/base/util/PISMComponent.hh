@@ -52,23 +52,14 @@ class PISMVars;
 
   There are two kinds of PISM's components:
 
-  \li diagnostic components (PISMComponent_Diag) and
-  \li time-stepping components (PISMComponent_TS).
+  - diagnostic components (PISMComponent_Diag) and
+  - time-stepping components (PISMComponent_TS).
 
   The main difference is that diagnostic components do not need to know the
   model time to perform an update, while time-stepping ones need to know the
   time-step to update for (usually given as the my_t, my_dt pair defining
   the (my_t, my_t + my_dt) interval) and may impose restrictions on a
   time-step that is possible at a given time during a run.
-
-  \subsection pismcomponent_allocation Allocation
-
-  PISMComponent::allocate() should contain the code allocating objects
-  used by the class. It should not be called from the constructor;
-  this makes it possible to separate the stage at which the choice of
-  a sub-model is made from initialization of this sub-model. (This way
-  we can avoid allocating a sub-model and then immediately discarding
-  it.)
 
   \subsection pismcomponent_init Initialization
 
@@ -84,10 +75,10 @@ class PISMVars;
 
   A PISM component needs to implement the following I/O methods:
 
-  \li add_vars_to_output(), which adds variable names to the list of fields that need
-  to be written.
-  \li define_variables(), which defines variables to be written and writes variable metadata.
-  \li write_variables(), which writes data itself.
+  - add_vars_to_output(), which adds variable names to the list of fields that need
+    to be written.
+  - define_variables(), which defines variables to be written and writes variable metadata.
+  - write_variables(), which writes data itself.
   
   Why are all these methods needed? In PISM we separate defining and writing
   NetCDF variables because defining all the NetCDF variables before writing
@@ -99,12 +90,12 @@ class PISMVars;
   Within IceModel the following steps are done to write 2D and 3D fields to an
   output file:
 
-  \li Assemble the list of variables to be written (see
+  - Assemble the list of variables to be written (see
   IceModel::set_output_size()); calls add_vars_to_output()
-  \li Create a NetCDF file
-  \li Define all the variables in the file (see IceModel::write_variables());
-  calls define_variables()
-  \li Write all the variables to the file (same method); calls write_variables().
+  - Create a NetCDF file
+  - Define all the variables in the file (see IceModel::write_variables());
+    calls define_variables()
+  - Write all the variables to the file (same method); calls write_variables().
 
   \subsection pismcomponent_timestep Restricting time-steps
 

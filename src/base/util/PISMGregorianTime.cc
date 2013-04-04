@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -187,4 +187,39 @@ string PISMGregorianTime::start_date() {
 string PISMGregorianTime::end_date() {
   return this->date(run_end);
 }
+
+double PISMGregorianTime::calendar_year_start(double T) {
+  int year, month, day, hour, minute;
+  float second;
+  double result;
+
+  // Get the date corresponding ti time T:
+  utCalendar(T, &ut_units,
+             &year, &month, &day, &hour, &minute, &second);
+  // Get the time in seconds corresponding to the beginning of the
+  // year.
+  utInvCalendar(year,
+                1, 1, 0, 0, 0.0, // month, day, hour, minute, second
+                &ut_units, &result);
+
+  return result;
+}
+
+double PISMGregorianTime::increment_date(double T, int years, int months, int days) {
+  int year, month, day, hour, minute;
+  float second;
+  double result;
+
+  // Get the date corresponding ti time T:
+  utCalendar(T, &ut_units,
+             &year, &month, &day, &hour, &minute, &second);
+  // Get the time in seconds corresponding to the beginning of the
+  // year.
+  utInvCalendar(year + years, month + months, day + days,
+                hour, minute, second, &ut_units, &result);
+
+  return result;
+}
+
+
 

@@ -40,7 +40,7 @@ public:
 
   virtual PetscErrorCode begin_pointwise_access() = 0;
   virtual PetscErrorCode end_pointwise_access() = 0;
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, int N) = 0;
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N) = 0;
   //! \brief Sets a pre-allocated N-element array "values" to the time-series of
   //! ice-equivalent precipitation (m/s) at the point i,j on the grid.
   //!
