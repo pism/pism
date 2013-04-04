@@ -780,6 +780,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
     config.set_flag_from_option("kill_icebergs", true);
   }
 
+  if (config.get_flag("do_eigen_calving")) {
+    config.set_flag_from_option("part_grid", true);
+  }
+
   // kill_icebergs requires part_grid
   if (config.get_flag("kill_icebergs")) {
     config.set_flag_from_option("part_grid", true);
