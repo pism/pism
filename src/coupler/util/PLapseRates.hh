@@ -78,17 +78,11 @@ public:
 
     max_dt = reference_surface.max_timestep(my_t);
 
-    if (my_dt > 0) {
+    if (restrict == true) {
       if (max_dt > 0)
         my_dt = PetscMin(max_dt, my_dt);
     }
     else my_dt = max_dt;
-
-    // If the user asked for periodized climate, limit time-steps so that PISM
-    // never tries to average data over an interval that begins in one period and
-    // ends in the next one.
-    if (bc_period > 1e-6)
-      my_dt = PetscMin(my_dt, bc_period - my_t);
 
     if (my_dt > 0)
       restrict = true;
