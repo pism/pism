@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,25 +26,21 @@
 class PAAnomaly : public PGivenClimate<PAModifier,PISMAtmosphereModel>
 {
 public:
-  PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-    : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in)
-  {
-    temp_name = "air_temp_anomaly";
-    mass_flux_name  = "precipitation_anomaly";
-    option_prefix = "-atmosphere_anomaly";
-  }
-  virtual ~PAAnomaly() {}
-  PetscErrorCode init(PISMVars &vars);
-  PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  virtual ~PAAnomaly();
+
+  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values);
+  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
 
   virtual void add_vars_to_output(string keyword,
                                   map<string,NCSpatialVariable> &result);
@@ -57,6 +53,9 @@ public:
 protected:
   vector<PetscReal> ts_mod, ts_values;
   NCSpatialVariable air_temp, precipitation;
+  vector<double> m_mass_flux_anomaly;
+private:
+  PetscErrorCode allocate_PAAnomaly();
 };
 
 #endif /* _PAANOMALY_H_ */

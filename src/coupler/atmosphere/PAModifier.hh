@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -60,11 +60,18 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values)
+  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *result)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+      PetscErrorCode ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
+    }
+    return 0;
+  }
+
+  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *result)
+  {
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
     }
     return 0;
   }
@@ -74,6 +81,19 @@ public:
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
     }
+    return 0;
+  }
+
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N)
+  {
+    if (input_model != NULL) {
+      PetscErrorCode ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
+    }
+
+    m_ts_times.resize(N);
+    for (unsigned int k = 0; k < N; ++k)
+      m_ts_times[k] = ts[k];
+    
     return 0;
   }
 };

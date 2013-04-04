@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,15 +25,8 @@
 class PAGivenClimate : public PGivenClimate<PAModifier,PISMAtmosphereModel>
 {
 public:
-  PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
-    : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
-  {
-    temp_name = "air_temp";
-    mass_flux_name  = "precipitation";
-    option_prefix = "-atmosphere_given";
-  }
-
-  virtual ~PAGivenClimate() {}
+  PAGivenClimate(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PAGivenClimate();
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
@@ -44,10 +37,12 @@ public:
 
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values);
-protected:
-  vector<PetscReal> ts_mod;
+
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
+  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
+private:
+  virtual PetscErrorCode allocate_PAGivenClimate();
 };
 
 #endif /* _PAGIVEN_H_ */

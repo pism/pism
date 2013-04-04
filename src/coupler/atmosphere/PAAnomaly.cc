@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,18 +18,22 @@
 
 #include "PAAnomaly.hh"
 #include "IceGrid.hh"
+#include <assert.h>
 
-PetscErrorCode PAAnomaly::init(PISMVars &vars) {
+PAAnomaly::PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+  : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in) {
+  PetscErrorCode ierr = allocate_PAAnomaly(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
   PetscErrorCode ierr;
 
-  if (input_model != NULL) {
-    ierr = input_model->init(vars); CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 1, "input_model == NULL");
-  }
-
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the -atmosphere ...,anomaly code...\n"); CHKERRQ(ierr);
+  temp_name      = "air_temp_anomaly";
+  mass_flux_name = "precipitation_anomaly";
+  option_prefix  = "-atmosphere_anomaly";
 
   ierr = process_options(); CHKERRQ(ierr);
 
@@ -45,13 +49,6 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
   ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   mass_flux.write_in_glaciological_units = true;
 
-  ierr = verbPrintf(2, grid.com,
-                    "    reading anomalies from %s ...\n",
-                    filename.c_str()); CHKERRQ(ierr);
-
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
-
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
@@ -66,11 +63,37 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
   return 0;
 }
 
+PAAnomaly::~PAAnomaly()
+{
+  // empty
+}
+
+PetscErrorCode PAAnomaly::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  assert(input_model != NULL);
+  ierr = input_model->init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the -atmosphere ...,anomaly code...\n"); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+                    "    reading anomalies from %s ...\n",
+                    filename.c_str()); CHKERRQ(ierr);
+
+  ierr = temp.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = mass_flux.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+
+  return 0;
+}
+
 PetscErrorCode PAAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-  ierr = temp.at_time(t); CHKERRQ(ierr);
+  ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
+  ierr = temp.average(t, dt); CHKERRQ(ierr);
 
   return 0;
 }
@@ -97,42 +120,56 @@ PetscErrorCode PAAnomaly::temp_snapshot(IceModelVec2S &result) {
 
 PetscErrorCode PAAnomaly::begin_pointwise_access() {
   PetscErrorCode ierr = input_model->begin_pointwise_access(); CHKERRQ(ierr);
-  return temp.begin_access();
+  ierr = temp.begin_access(); CHKERRQ(ierr);
+  ierr = mass_flux.begin_access(); CHKERRQ(ierr);
+  return 0;
 }
 
 PetscErrorCode PAAnomaly::end_pointwise_access() {
   PetscErrorCode ierr = input_model->end_pointwise_access(); CHKERRQ(ierr);
-  return temp.end_access();
+  ierr = temp.end_access(); CHKERRQ(ierr);
+  ierr = mass_flux.end_access(); CHKERRQ(ierr);
+  return 0;
 }
 
-PetscErrorCode PAAnomaly::temp_time_series(int i, int j, int N,
-                                           PetscReal *ts, PetscReal *values) {
+PetscErrorCode PAAnomaly::init_timeseries(PetscReal *ts, unsigned int N) {
+  PetscErrorCode ierr;
+  ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
+
+  ierr = temp.init_interpolation(ts, N); CHKERRQ(ierr);
+
+  ierr = mass_flux.init_interpolation(ts, N); CHKERRQ(ierr);
+
+  m_ts_times.resize(N);
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+    m_ts_times[k] = ts[k];
+  
+  return 0;
+}
+
+PetscErrorCode PAAnomaly::temp_time_series(int i, int j, PetscReal *result) {
+  PetscErrorCode ierr;
+  vector<double> temp_anomaly(m_ts_times.size());
+  ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
+
+  ierr = temp.interp(i, j, &temp_anomaly[0]); CHKERRQ(ierr);
+
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+    result[k] += temp_anomaly[k];
+
+  return 0;
+}
+
+PetscErrorCode PAAnomaly::precip_time_series(int i, int j, PetscReal *result) {
   PetscErrorCode ierr;
 
-  // NB! the input_model uses un-periodized times.
-  ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+  ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
-  PetscReal *ptr;
+  m_mass_flux_anomaly.reserve(m_ts_times.size());
+  ierr = mass_flux.interp(i, j, &m_mass_flux_anomaly[0]); CHKERRQ(ierr);
 
-  if (bc_period > 0.01) {
-    // Recall that this method is called for each map-plane point during a
-    // time-step. This if-condition is here to avoid calling
-    // grid.time->mod() if the user didn't ask for periodized climate.
-    ts_mod.reserve(N);
-
-    for (int k = 0; k < N; ++k)
-      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_time, bc_period);
-
-    ptr = &ts_mod[0];
-  } else {
-    ptr = ts;
-  }
-
-  ts_values.reserve(N);
-  ierr = temp.interp(i, j, N, ptr, &ts_values[0]); CHKERRQ(ierr);
-
-  for (int k = 0; k < N; ++k)
-    values[k] += ts_values[k];
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+    result[k] += m_mass_flux_anomaly[k];
 
   return 0;
 }
@@ -186,7 +223,7 @@ PetscErrorCode PAAnomaly::write_variables(set<string> vars, string file) {
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
     ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 

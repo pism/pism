@@ -16,27 +16,27 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PA_delta_P.hh"
+#include "PA_paleo_precip.hh"
 
-PA_delta_P::PA_delta_P(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+PA_paleo_precip::PA_paleo_precip(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
   offset = NULL;
-  PetscErrorCode ierr = allocate_PA_delta_P(); CHKERRCONTINUE(ierr);
+  PetscErrorCode ierr = allocate_PA_paleo_precip(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
 
 }
 
-PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
+PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {
   PetscErrorCode ierr;
 
-  option_prefix = "-atmosphere_delta_P";
-  offset_name = "delta_P";
+  option_prefix = "-atmosphere_paleo_precip";
+  offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("m / second", "m / year");
+  offset->set_units("Kelvin", "Kelvin");
   offset->set_dimension_units(grid.time->units(), "");
-  offset->set_attr("long_name", "precipitation offsets");
+  offset->set_attr("long_name", "air temperature offsets");
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
@@ -49,15 +49,17 @@ PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
 
+  m_precipexpfactor = config.get("precip_exponential_factor_for_temperature");
+
   return 0;
 }
 
-PA_delta_P::~PA_delta_P()
+PA_paleo_precip::~PA_paleo_precip()
 {
   // empty
 }
 
-PetscErrorCode PA_delta_P::init(PISMVars &vars) {
+PetscErrorCode PA_paleo_precip::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   t = dt = GSL_NAN;  // every re-init restarts the clock
@@ -65,54 +67,52 @@ PetscErrorCode PA_delta_P::init(PISMVars &vars) {
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-                    "* Initializing precipitation forcing using scalar offsets...\n"); CHKERRQ(ierr);
+                    "* Initializing paleo-precipitation correction using temperature offsets...\n"); CHKERRQ(ierr);
 
   ierr = init_internal(); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PA_delta_P::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PA_paleo_precip::init_timeseries(PetscReal *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
 
-  m_offset_values.resize(m_ts_times.size());
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
-    m_offset_values[k] = (*offset)(m_ts_times[k]);
+  m_scaling_values.resize(N);
+  for (unsigned int k = 0; k < N; ++k)
+    m_scaling_values[k] = exp( m_precipexpfactor * (*offset)(m_ts_times[k]));
 
   return 0;
 }
 
-
-
-PetscErrorCode PA_delta_P::mean_precipitation(IceModelVec2S &result) {
+PetscErrorCode PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->mean_precipitation(result);
-  ierr = offset_data(result); CHKERRQ(ierr);
+  ierr = result.scale(exp( m_precipexpfactor * (*offset)(t + 0.5 * dt) )); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PA_delta_P::precip_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, PetscReal *result) {
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
-  
+
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
-    result[k] += m_offset_values[k];
+    result[k] *= m_scaling_values[k];
 
   return 0;
 }
 
-void PA_delta_P::add_vars_to_output(string keyword,
+void PA_paleo_precip::add_vars_to_output(string keyword,
                                     map<string,NCSpatialVariable> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
-    result["air_temp"] = air_temp;
+    result["air_temp"]      = air_temp;
     result["precipitation"] = precipitation;
   }
 }
 
 
-PetscErrorCode PA_delta_P::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PA_paleo_precip::define_variables(set<string> vars, const PIO &nc,
                                             PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -132,7 +132,7 @@ PetscErrorCode PA_delta_P::define_variables(set<string> vars, const PIO &nc,
 }
 
 
-PetscErrorCode PA_delta_P::write_variables(set<string> vars, string file) {
+PetscErrorCode PA_paleo_precip::write_variables(set<string> vars, string file) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

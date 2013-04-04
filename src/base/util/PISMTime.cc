@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -123,3 +123,12 @@ double PISMTime::mod(double time, double period) {
 double PISMTime::year_fraction(double T) {
   return seconds_to_years(T) - floor(seconds_to_years(T));
 }
+
+double PISMTime::calendar_year_start(double T) {
+  return T - this->mod(T, secpera);
+}
+
+double PISMTime::increment_date(double T, int years, int months, int days) {
+  return T + secpera * (years + 1.0/12.0 * months) + 86400 * days;
+}
+

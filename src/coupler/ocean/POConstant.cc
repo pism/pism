@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,26 +23,36 @@
 
 POConstant::POConstant(IceGrid &g, const NCConfigVariable &conf)
   : PISMOceanModel(g, conf) {
+  PetscErrorCode ierr = allocate_POConstant(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
 
-  shelfbmassflux.init_2d("shelfbmassflux", g);
+}
+
+PetscErrorCode POConstant::allocate_POConstant() {
+  mymeltrate = 0.0;
+  meltrate_set = false;
+
+  shelfbmassflux.init_2d("shelfbmassflux", grid);
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
   shelfbmassflux.set_units("m s-1");
   shelfbmassflux.set_glaciological_units("m year-1");
 
-  shelfbtemp.init_2d("shelfbtemp", g);
+  shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
 
-  mymeltrate = 0.0;
-  meltrate_set = false;
+  return 0;
 }
 
 PetscErrorCode POConstant::init(PISMVars &vars) {
   PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   if (!config.get_flag("is_dry_simulation")) {
     ierr = verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n"); CHKERRQ(ierr);

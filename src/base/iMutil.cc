@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -296,12 +296,3 @@ PetscErrorCode IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
 bool IceModel::issounding(const PetscInt i, const PetscInt j){ 
   return ((i == id) && (j == jd));
 }
-
-void IceModel::attach_surface_model(PISMSurfaceModel *my_surface) {
-  surface = my_surface;
-}
-
-void IceModel::attach_ocean_model(PISMOceanModel *my_ocean) {
-  ocean = my_ocean;
-}
-

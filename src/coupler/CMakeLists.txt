@@ -11,6 +11,7 @@ add_library (pismboundary
   ./atmosphere/PALapseRates.cc
   ./atmosphere/PA_delta_T.cc
   ./atmosphere/PA_delta_P.cc
+  ./atmosphere/PA_paleo_precip.cc
   ./atmosphere/PAAnomaly.cc
   ./ocean/POConstantPIK.cc
   ./ocean/POConstant.cc

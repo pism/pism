@@ -36,6 +36,8 @@
 #include "enthalpyConverter.hh"
 #include "PIO.hh"
 #include "pism_options.hh"
+#include "POConstant.hh"
+#include "PSDummy.hh"
 
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
@@ -327,6 +329,14 @@ PetscErrorCode IceCompModel::allocate_bed_deformation() {
                       "IceCompModel WARNING: Test H should be run with option\n"
                       "  '-bed_def iso'  for the reported errors to be correct.\n"); CHKERRQ(ierr);
   }
+
+  return 0;
+}
+
+PetscErrorCode IceCompModel::allocate_couplers() {
+  // Climate will always come from intercomparison formulas.
+  surface = new PSDummy(grid, config);
+  ocean   = new POConstant(grid, config);
 
   return 0;
 }

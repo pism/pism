@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,23 +23,22 @@
 PA_delta_T::PA_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
 {
+  offset = NULL;
+  PetscErrorCode ierr = allocate_PA_delta_T(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PetscErrorCode PA_delta_T::allocate_PA_delta_T() {
+  PetscErrorCode ierr;
   option_prefix = "-atmosphere_delta_T";
-  offset_name = "delta_T";
+  offset_name	= "delta_T";
+
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("Kelvin", "");
   offset->set_dimension_units(grid.time->units(), "");
   offset->set_attr("long_name", "near-surface air temperature offsets");
-}
-
-PetscErrorCode PA_delta_T::init(PISMVars &vars) {
-  PetscErrorCode ierr;
-
-  ierr = input_model->init(vars); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing near-surface air temperature forcing using scalar offsets...\n"); CHKERRQ(ierr);
-
-  ierr = init_internal(); CHKERRQ(ierr);
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
@@ -55,20 +54,44 @@ PetscErrorCode PA_delta_T::init(PISMVars &vars) {
   return 0;
 }
 
+PetscErrorCode PA_delta_T::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  ierr = input_model->init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing near-surface air temperature forcing using scalar offsets...\n"); CHKERRQ(ierr);
+
+  ierr = init_internal(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PA_delta_T::init_timeseries(PetscReal *ts, unsigned int N) {
+  PetscErrorCode ierr;
+
+  ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
+
+  m_offset_values.resize(m_ts_times.size());
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+    m_offset_values[k] = (*offset)(m_ts_times[k]);
+
+  return 0;
+}
+
 PetscErrorCode PA_delta_T::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->mean_annual_temp(result); CHKERRQ(ierr);
   ierr = offset_data(result); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PA_delta_T::temp_time_series(int i, int j, int N,
-                                             PetscReal *ts, PetscReal *values) {
-  PetscErrorCode ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
-  
-  if (offset) {
-    for (int k = 0; k < N; ++k)
-      values[k] += (*offset)(ts[k]);
-  }
+PetscErrorCode PA_delta_T::temp_time_series(int i, int j, PetscReal *values) {
+  PetscErrorCode ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
+
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+    values[k] += m_offset_values[k];
 
   return 0;
 }

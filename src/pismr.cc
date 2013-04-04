@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -78,26 +78,6 @@ int main(int argc, char *argv[]) {
     IceGrid g(com, rank, size, config);
     IceModel m(g, config, overrides);
 
-    // Initialize boundary models:
-    PAFactory pa(g, config);
-    PISMAtmosphereModel *atmosphere;
-
-    PSFactory ps(g, config);
-    PISMSurfaceModel *surface;
-
-    POFactory po(g, config);
-    PISMOceanModel *ocean;
-
-    ierr = PetscOptionsBegin(com, "", "Options choosing PISM boundary models", ""); CHKERRQ(ierr);
-    pa.create(atmosphere);
-    ps.create(surface);
-    po.create(ocean);
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-    surface->attach_atmosphere_model(atmosphere);
-
-    m.attach_ocean_model(ocean);
-    m.attach_surface_model(surface);
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);
 
     ierr = m.init(); CHKERRQ(ierr);

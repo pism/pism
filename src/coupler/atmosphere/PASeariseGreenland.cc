@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -27,11 +27,49 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include "PISMTime.hh"
+#include <assert.h>
 
 ///// PA_SeaRISE_Greenland
 
+PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
+  : PAYearlyCycle(g, conf)
+{
+  paleo_precipitation_correction = false;
+  delta_T = NULL;
+
+  PetscErrorCode ierr = allocate_PA_SeaRISE_Greenland(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PA_SeaRISE_Greenland::~PA_SeaRISE_Greenland() {
+  delete delta_T;
+}
+
+PetscErrorCode PA_SeaRISE_Greenland::allocate_PA_SeaRISE_Greenland() {
+  PetscErrorCode ierr;
+
+  ierr = PISMOptionsIsSet("-paleo_precip", paleo_precipitation_correction); CHKERRQ(ierr);
+
+  if (paleo_precipitation_correction) {
+    delta_T = new Timeseries(grid.com, grid.rank, "delta_T",
+                             grid.config.get_string("time_dimension_name"));
+    ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
+    ierr = delta_T->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
+    ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
+    CHKERRQ(ierr);
+
+    m_precipexpfactor = config.get("precip_exponential_factor_for_temperature");
+  }
+
+  return 0;
+}
+
 PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
@@ -68,13 +106,21 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
                       "  reading delta_T data from forcing file %s for -paleo_precip actions ...\n",
                       delta_T_file.c_str());  CHKERRQ(ierr);
 
-    delta_T = new Timeseries(grid.com, grid.rank, "delta_T",
-                             grid.config.get_string("time_dimension_name"));
-    ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
-    ierr = delta_T->set_dimension_units(grid.time->units(), ""); CHKERRQ(ierr);
-    ierr = delta_T->set_attr("long_name", "near-surface air temperature offsets");
-    CHKERRQ(ierr);
     ierr = delta_T->read(delta_T_file, grid.time->use_reference_date()); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode PA_SeaRISE_Greenland::init_timeseries(PetscReal *ts, unsigned int N) {
+  PetscErrorCode ierr;
+
+  ierr = PAYearlyCycle::init_timeseries(ts, N);
+
+  if (paleo_precipitation_correction) {
+    m_delta_T_values.resize(m_ts_times.size());
+    for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+      m_delta_T_values[k] = (*delta_T)(m_ts_times[k]);
   }
 
   return 0;
@@ -85,10 +131,25 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precipitation(IceModelVec2S &result) {
 
   ierr = PAYearlyCycle::mean_precipitation(result); CHKERRQ(ierr);
 
-  if ((delta_T != NULL) && paleo_precipitation_correction) {
-    PetscReal precipexpfactor = config.get("precip_exponential_factor_for_temperature");
-    ierr = result.scale(exp( precipexpfactor * (*delta_T)(t + 0.5 * dt) )); CHKERRQ(ierr);
+  if (paleo_precipitation_correction) {
+    assert(delta_T != NULL);
+
+    ierr = result.scale(exp( m_precipexpfactor * (*delta_T)(t + 0.5 * dt) )); CHKERRQ(ierr);
   }
+
+  return 0;
+}
+
+PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, PetscReal *values) {
+  if (paleo_precipitation_correction) {
+    assert(delta_T != NULL);
+
+    for (unsigned int k = 0; k < m_ts_times.size(); k++)
+      values[k] = precipitation(i,j) * exp( m_precipexpfactor * m_delta_T_values[k] );
+  }
+
+  for (unsigned int k = 0; k < m_ts_times.size(); k++)
+    values[k] = precipitation(i,j);
 
   return 0;
 }

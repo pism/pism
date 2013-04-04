@@ -1178,10 +1178,10 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
 //! Update the nuH viewer, which shows log10(nu H).
 PetscErrorCode SSAFD::update_nuH_viewers() {
   PetscErrorCode ierr;
-  IceModelVec2S tmp;
 
   if (!view_nuh) return 0;
 
+  IceModelVec2S tmp;
   ierr = tmp.create(grid, "nuH", false); CHKERRQ(ierr);
   ierr = tmp.set_attrs("temporary",
                        "log10 of (viscosity * thickness)",

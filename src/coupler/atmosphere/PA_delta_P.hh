@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,11 +26,14 @@ class PA_delta_P : public PScalarForcing<PISMAtmosphereModel,PAModifier>
 {
 public:
   PA_delta_P(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
-  virtual ~PA_delta_P() {}
+  virtual ~PA_delta_P();
 
   virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
+
+  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
 
   virtual void add_vars_to_output(string keyword,
                                   map<string,NCSpatialVariable> &result);
@@ -42,6 +45,9 @@ public:
 
 protected:
   NCSpatialVariable air_temp, precipitation;
+  vector<double> m_offset_values;
+private:
+  PetscErrorCode allocate_PA_delta_P();
 };
 
 #endif /* _PADPFORCING_H_ */

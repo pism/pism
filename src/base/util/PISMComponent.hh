@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,8 +52,8 @@ class PISMVars;
 
   There are two kinds of PISM's components:
 
-  \li diagnostic components (PISMComponent_Diag) and
-  \li time-stepping components (PISMComponent_TS).
+  - diagnostic components (PISMComponent_Diag) and
+  - time-stepping components (PISMComponent_TS).
 
   The main difference is that diagnostic components do not need to know the
   model time to perform an update, while time-stepping ones need to know the
@@ -63,10 +63,9 @@ class PISMVars;
 
   \subsection pismcomponent_init Initialization
 
-  PISMComponent::init() should contain all the initialization code, preferably
-  including memory-allocation. This makes it possible to separate the PISM
-  initialization stage at which the choice of a sub-model is made from its own
-  initialization, so we can avoid initializing a sub-model just to throw it away.
+  PISMComponent::init() should contain all the initialization
+  code, excluding memory-allocation. This is to be able to
+  re-initialize the a sub-model after the "preliminary" time step.
 
   Many PISM sub-models read data from the same file the rest of PISM reads
   from. PISMComponent::find_pism_input() checks -i and -boot_file command-line
@@ -76,10 +75,10 @@ class PISMVars;
 
   A PISM component needs to implement the following I/O methods:
 
-  \li add_vars_to_output(), which adds variable names to the list of fields that need
-  to be written.
-  \li define_variables(), which defines variables to be written and writes variable metadata.
-  \li write_variables(), which writes data itself.
+  - add_vars_to_output(), which adds variable names to the list of fields that need
+    to be written.
+  - define_variables(), which defines variables to be written and writes variable metadata.
+  - write_variables(), which writes data itself.
   
   Why are all these methods needed? In PISM we separate defining and writing
   NetCDF variables because defining all the NetCDF variables before writing
@@ -91,12 +90,12 @@ class PISMVars;
   Within IceModel the following steps are done to write 2D and 3D fields to an
   output file:
 
-  \li Assemble the list of variables to be written (see
+  - Assemble the list of variables to be written (see
   IceModel::set_output_size()); calls add_vars_to_output()
-  \li Create a NetCDF file
-  \li Define all the variables in the file (see IceModel::write_variables());
-  calls define_variables()
-  \li Write all the variables to the file (same method); calls write_variables().
+  - Create a NetCDF file
+  - Define all the variables in the file (see IceModel::write_variables());
+    calls define_variables()
+  - Write all the variables to the file (same method); calls write_variables().
 
   \subsection pismcomponent_timestep Restricting time-steps
 
@@ -235,6 +234,9 @@ public:
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+    } else {
+      my_dt    = -1;
+      restrict = false;
     }
     return 0;
   }

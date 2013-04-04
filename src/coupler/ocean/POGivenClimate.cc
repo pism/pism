@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,24 @@
 #include "POGivenClimate.hh"
 #include "IceGrid.hh"
 
-PetscErrorCode POGiven::init(PISMVars &) {
-  PetscErrorCode ierr;
+POGiven::POGiven(IceGrid &g, const NCConfigVariable &conf)
+  : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
+{
+  PetscErrorCode ierr = allocate_POGiven(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the ocean model reading base of the shelf temperature\n"
-                    "  and sub-shelf mass flux from a file...\n"); CHKERRQ(ierr);
+}
+
+POGiven::~POGiven() {
+  // empty
+}
+
+PetscErrorCode POGiven::allocate_POGiven() {
+  PetscErrorCode ierr;
+  temp_name       = "shelfbtemp";
+  mass_flux_name  = "shelfbmassflux";
+  option_prefix   = "-ocean_given";
 
   ierr = process_options(); CHKERRQ(ierr);
 
@@ -37,11 +49,23 @@ PetscErrorCode POGiven::init(PISMVars &) {
                         "absolute temperature at ice shelf base",
                         "Kelvin", ""); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing",
-                       "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                       "m s-1", ""); CHKERRQ(ierr);
+			     "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+			     "m s-1", ""); CHKERRQ(ierr);
 
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode POGiven::init(PISMVars &) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the ocean model reading base of the shelf temperature\n"
+                    "  and sub-shelf mass flux from a file...\n"); CHKERRQ(ierr);
+
+  ierr = temp.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = mass_flux.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // read time-independent data right away:
   if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
@@ -54,9 +78,14 @@ PetscErrorCode POGiven::init(PISMVars &) {
 PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-  ierr = temp.at_time(t); CHKERRQ(ierr);
+  ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
+  ierr = temp.average(t, dt); CHKERRQ(ierr);
 
+  return 0;
+}
+
+PetscErrorCode POGiven::sea_level_elevation(PetscReal &result) {
+  result = sea_level;
   return 0;
 }
 

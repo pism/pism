@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,14 +25,8 @@
 class PALapseRates : public PLapseRates<PISMAtmosphereModel,PAModifier>
 {
 public:
-  PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-    : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
-  {
-    precip_lapse_rate = 0;
-    option_prefix = "-atmosphere_lapse_rate";
-  }
-
-  virtual ~PALapseRates() {}
+  PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  virtual ~PALapseRates();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -42,8 +36,10 @@ public:
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
 
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-                                          PetscReal *ts, PetscReal *values);
+  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
+  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *result);
+  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *result);
+
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
 
@@ -53,6 +49,8 @@ public:
 protected:
   PetscReal precip_lapse_rate;
   NCSpatialVariable precipitation, air_temp;
+private:
+  PetscErrorCode allocate_PALapseRates();
 };
 
 #endif /* _PALAPSERATES_H_ */

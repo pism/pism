@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -56,29 +56,33 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);  
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
-  virtual PetscErrorCode update_internal(PetscReal my_t, PetscReal my_dt);
   LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
 
   FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
   DegreeDayFactors base_ddf;          //!< holds degree-day factors in location-independent case
   PetscScalar  base_pddStdDev,        //!< K; daily amount of randomness
-               base_pddThresholdTemp; //!< K; temps are positive above this
+    base_pddThresholdTemp, //!< K; temps are positive above this
+    m_next_balance_year_start;
   IceModelVec2S
     climatic_mass_balance, //!< cached surface mass balance rate
     accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)
     melt_rate,             //!< diagnostic output melt rate (rate at which snow
                            //!< and ice is melted, but some snow melt refreezes)
-    runoff_rate;           //!< diagnostic output meltwater runoff rate
+    runoff_rate,           //!< diagnostic output meltwater runoff rate
+    snow_depth;		   //!< snow depth (reset once a year)
 
-  IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex must hold these
-                                     //!pointers in order to use object which
-                                     //!needs 3D location to determine degree
-                                     //!day factors.
-  bool pdd_annualize;
-  PetscReal next_pdd_update;
+  IceModelVec2S *lat, *lon, *usurf;
+  //!< PSTemperatureIndex must hold these pointers in order to use
+  //! object which needs 3D location to determine degree day factors.
+  IceModelVec2Int *mask;
 
   NCSpatialVariable ice_surface_temp;
+
+  bool randomized, randomized_repeatable, fausto_params;
+  double compute_next_balance_year_start(double time);
+private:
+  PetscErrorCode allocate_PSTemperatureIndex();
 };
 
 #endif /* _PSTEMPERATUREINDEX_H_ */

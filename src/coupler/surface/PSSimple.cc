@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,30 +20,26 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "iceModelVec.hh"
+#include <assert.h>
 
 ///// Simple PISM surface model.
+PSSimple::PSSimple(IceGrid &g, const NCConfigVariable &conf)
+    : PISMSurfaceModel(g, conf) {
+  PetscErrorCode ierr = allocate_PSSimple(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
 
-PetscErrorCode PSSimple::init(PISMVars &vars) {
+}
+
+PetscErrorCode PSSimple::allocate_PSSimple() {
   PetscErrorCode ierr;
-
-  if (atmosphere == NULL)
-    SETERRQ(grid.com, 1, "PISMSurfaceModel::init(PISMVars &vars): atmosphere == NULL");
-
-  ierr = atmosphere->init(vars); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com,
-     "* Initializing the simplest PISM surface (snow) processes model PSSimple.\n"
-     "  It passes atmospheric state directly to upper ice fluid surface:\n"
-     "    surface mass balance          := precipitation,\n"
-     "    ice upper surface temperature := 2m air temperature.\n");
-     CHKERRQ(ierr);
 
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
+				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
-                  "land_ice_surface_specific_mass_balance");
+				   "land_ice_surface_specific_mass_balance");
   ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
@@ -55,6 +51,36 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
 
   return 0;
 }
+
+
+PetscErrorCode PSSimple::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  assert(atmosphere != NULL);
+  ierr = atmosphere->init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+     "* Initializing the simplest PISM surface (snow) processes model PSSimple.\n"
+     "  It passes atmospheric state directly to upper ice fluid surface:\n"
+     "    surface mass balance          := precipitation,\n"
+     "    ice upper surface temperature := 2m air temperature.\n");
+     CHKERRQ(ierr);
+ 
+  return 0;
+}
+
+PetscErrorCode PSSimple::update(PetscReal my_t, PetscReal my_dt)
+{
+  t = my_t;
+  dt = my_dt;
+  if (atmosphere) {
+    PetscErrorCode ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
 
 PetscErrorCode PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr = atmosphere->mean_precipitation(result); CHKERRQ(ierr);

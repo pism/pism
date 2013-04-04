@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -280,7 +280,7 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
     }
 
     vector<string> input_dims;
-    int ndims = 0;                 // number of spatial dimensions (input file)
+    int input_ndims = 0;                 // number of spatial dimensions (input file)
     size_t matching_dim_count = 0; // number of matching dimensions
 
     ierr = nc.inq_vardims(name_found, input_dims);
@@ -290,7 +290,7 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
       ierr = nc.inq_dimtype(*j, tmp); CHKERRQ(ierr);
 
       if (tmp != T_AXIS)
-        ++ndims;
+        ++input_ndims;
 
       if (axes.find(tmp) != axes.end())
         ++matching_dim_count;
@@ -311,7 +311,7 @@ PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v
       PetscPrintf(com,
                   "PISM ERROR: found the %dD variable %s(%s) in '%s' while trying to read\n"
                   "            '%s' ('%s'), which is %d-dimensional.\n",
-                  ndims, name_found.c_str(), tmp.c_str(), filename.c_str(),
+                  input_ndims, name_found.c_str(), tmp.c_str(), filename.c_str(),
                   short_name.c_str(), strings["long_name"].c_str(),
                   static_cast<int>(axes.size()));
       PISMEnd();

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -24,32 +24,50 @@
 
 POConstantPIK::POConstantPIK(IceGrid &g, const NCConfigVariable &conf)
   : PISMOceanModel(g, conf) {
+  PetscErrorCode ierr = allocate_POConstantPIK(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
 
-  shelfbmassflux.init_2d("shelfbmassflux", g);
+}
+
+POConstantPIK::~POConstantPIK() {
+  // empty
+}
+
+PetscErrorCode POConstantPIK::allocate_POConstantPIK() {
+  shelfbmassflux.init_2d("shelfbmassflux", grid);
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
   shelfbmassflux.set_units("m s-1");
   shelfbmassflux.set_glaciological_units("m year-1");
 
-  shelfbtemp.init_2d("shelfbtemp", g);
+  shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
+
+  return 0;
 }
 
 PetscErrorCode POConstantPIK::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
   if (!config.get_flag("is_dry_simulation")) {
-    ierr = verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "* Initializing the constant (PIK) ocean model...\n"); CHKERRQ(ierr);
   }
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) { SETERRQ(grid.com, 1, "ERROR: ice thickness is not available"); }
 
   return 0;
+}
+
+PetscErrorCode POConstantPIK::update(PetscReal my_t, PetscReal my_dt) {
+  t = my_t; dt = my_dt; return 0;
 }
 
 PetscErrorCode POConstantPIK::sea_level_elevation(PetscReal &result) {

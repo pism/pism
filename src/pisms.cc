@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -83,12 +83,6 @@ int main(int argc, char *argv[]) {
 
     // actually construct the IceModel
     IceGrid g(com, rank, size, config);
-
-    // Initialize boundary models (climate will always come from
-    // intercomparison formulas):
-    PISMSurfaceModel *surface = new PSDummy(g, config);
-    PISMOceanModel *ocean = new POConstant(g, config);
-
     IceModel *m;
     if (PSTexchosen == PETSC_TRUE) {
       m = new IcePSTexModel(g, config, overrides);
@@ -96,8 +90,6 @@ int main(int argc, char *argv[]) {
       m = new IceEISModel(g, config, overrides);
     }
 
-    m->attach_surface_model(surface);
-    m->attach_ocean_model(ocean);
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
 
     ierr = m->init(); CHKERRQ(ierr);

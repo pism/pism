@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 PISM Authors
+// Copyright (C) 2008-2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,12 +24,46 @@
 ///// Constant-in-time surface model for accumulation,
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
+
+PSConstantPIK::PSConstantPIK(IceGrid &g, const NCConfigVariable &conf)
+  : PISMSurfaceModel(g, conf)
+{
+  PetscErrorCode ierr = allocate_PSConstantPIK(); CHKERRCONTINUE(ierr);
+  if (ierr != 0) {
+    PISMEnd();
+  }
+}
+
+void PSConstantPIK::attach_atmosphere_model(PISMAtmosphereModel *input)
+{
+  delete input;
+}
+
+PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
+  PetscErrorCode ierr;
+
+  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_attrs("climate_state",
+                                         "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
+                                         "m s-1",
+                                         "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.write_in_glaciological_units = true;
+
+  ierr = ice_surface_temp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_attrs("climate_state",
+                                    "constant-in-time ice temperature at the ice surface",
+                                    "K", ""); CHKERRQ(ierr);
+  return 0;
+}
+
+
 PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool regrid = false;
   int start = -1;
 
-  //variables = &vars;
+  t = dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
      "* Initializing the constant-in-time surface processes model PSConstantPIK.\n"
@@ -37,32 +71,11 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
      "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
      "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n"); CHKERRQ(ierr);
 
-
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
    if (!usurf) SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 
   lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
   if (!lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
-
-
-
-  // allocate IceModelVecs for storing temperature and surface mass balance fields
-
-  // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
-  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_attrs("climate_state",
-			"constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
-			"m s-1",
-			"land_ice_surface_specific_mass_balance"); // CF standard_name
-			CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  climatic_mass_balance.write_in_glaciological_units = true;
-
-  ierr = ice_surface_temp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-  ierr = ice_surface_temp.set_attrs("climate_state",
-			"constant-in-time ice temperature at the ice surface",
-			"K",
-			""); CHKERRQ(ierr);
 
   // find PISM input file to read data from:
   ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
@@ -77,11 +90,42 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
     ierr = climatic_mass_balance.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
 
-
   // parameterizing the ice surface temperature 'ice_surface_temp'
-  ierr = verbPrintf(2, grid.com,"    parameterizing the ice surface temperature 'ice_surface_temp' ... \n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n"); CHKERRQ(ierr);
 
   return 0;
+}
+
+PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
+{
+  PetscErrorCode ierr;
+
+  if ((fabs(my_t - t) < 1e-12) &&
+      (fabs(my_dt - dt) < 1e-12))
+    return 0;
+
+  t  = my_t;
+  dt = my_dt;
+
+  ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
+  ierr = usurf->begin_access();   CHKERRQ(ierr);
+  ierr = lat->begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
+    }
+  }
+  ierr = usurf->end_access();   CHKERRQ(ierr);
+  ierr = lat->end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access();   CHKERRQ(ierr);
+
+  return 0;
+}
+
+void PSConstantPIK::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/)
+{
+  // empty (does not have an atmosphere model)
 }
 
 PetscErrorCode PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {
@@ -95,22 +139,7 @@ PetscErrorCode PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {
 PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = result.begin_access();   CHKERRQ(ierr);
-  ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
-  ierr = usurf->begin_access();   CHKERRQ(ierr);
-  ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-
-      result(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
-      ice_surface_temp(i,j)=result(i,j);
-
-    }
-  }
-  ierr = usurf->end_access();   CHKERRQ(ierr);
-  ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access();   CHKERRQ(ierr);
-  ierr = ice_surface_temp.end_access();   CHKERRQ(ierr);
+  ierr = ice_surface_temp.copy_to(result); CHKERRQ(ierr);
 
   return 0;
 }

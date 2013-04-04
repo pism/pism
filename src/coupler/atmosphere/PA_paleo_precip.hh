@@ -1,5 +1,4 @@
-// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
-// Gudfinna Adalgeirsdottir and Andy Aschwanden
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,36 +16,39 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PASeariseGreenland_hh
-#define __PASeariseGreenland_hh
+#ifndef _PA_PALEO_PRECIP_H_
+#define _PA_PALEO_PRECIP_H_
 
-#include "PAYearlyCycle.hh"
-#include "Timeseries.hh"
+#include "PScalarForcing.hh"
+#include "PAModifier.hh"
 
-//! \brief A modification of PAYearlyCycle tailored for the
-//! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
-//! present-day temperature parameterization and stored precipitation data.
-//! Adds the precipitation correction for spin-ups.
-class PA_SeaRISE_Greenland : public PAYearlyCycle {
+class PA_paleo_precip : public PScalarForcing<PISMAtmosphereModel,PAModifier>
+{
 public:
-  PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PA_SeaRISE_Greenland();
+  PA_paleo_precip(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  virtual ~PA_paleo_precip();
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
+
   virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
+
+  virtual void add_vars_to_output(string keyword,
+                                  map<string,NCSpatialVariable> &result);
+
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
+
+  virtual PetscErrorCode write_variables(set<string> vars, string file);
+
 protected:
-  bool paleo_precipitation_correction;
+  NCSpatialVariable air_temp, precipitation;
   double m_precipexpfactor;
-  Timeseries *delta_T;
-  vector<double> m_delta_T_values;
-  IceModelVec2S *lat, *lon, *surfelev;
+  vector<double> m_scaling_values;
 private:
-  PetscErrorCode allocate_PA_SeaRISE_Greenland();
+  PetscErrorCode allocate_PA_paleo_precip();
 };
 
-
-#endif	// __PASeariseGreenland_hh
+#endif /* _PA_PALEO_PRECIP_H_ */

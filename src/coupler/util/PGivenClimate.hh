@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,57 +32,6 @@ public:
     : Model(g, conf, in) {}
 
   virtual ~PGivenClimate() {}
-
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
-  {
-    PetscReal mass_flux_max_dt = -1;
-
-    // "Periodize" the climate:
-    my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
-
-    my_dt = temp.max_timestep(my_t);
-
-    mass_flux_max_dt = mass_flux.max_timestep(my_t);
-
-    if (my_dt > 0) {
-      if (mass_flux_max_dt > 0)
-        my_dt = PetscMin(mass_flux_max_dt, my_dt);
-    }
-    else my_dt = mass_flux_max_dt;
-
-    // If the user asked for periodized climate, limit time-steps so that PISM
-    // never tries to average data over an interval that begins in one period and
-    // ends in the next one.
-    if (bc_period > 0.01)
-      my_dt = PetscMin(my_dt, bc_period - my_t);
-
-    // my_dt is fully determined (in the case input_model == NULL). Now get
-    // max_dt from an input model:
-
-    if (Model::input_model != NULL) {
-      PetscReal input_dt;
-      bool input_restrict;
-
-      // Note: we use "periodized" t here:
-      PetscErrorCode ierr = Model::input_model->max_timestep(my_t, input_dt, input_restrict); CHKERRQ(ierr);
-
-      if (input_restrict) {
-        if (my_dt > 0)
-          my_dt = PetscMin(input_dt, my_dt);
-        else
-          my_dt = input_dt;
-      }
-      // else my_dt is not changed
-
-    }
-
-    if (my_dt > 0)
-      restrict = true;
-    else
-      restrict = false;
-
-    return 0;
-  }
 
   virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
   {
@@ -207,8 +156,13 @@ protected:
     ierr = nc.inq_nrecords(mass_flux_name,  mass_flux_std_name,  mass_flux_n_records);  CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-    temp_n_records = PetscMin(temp_n_records, buffer_size);
-    mass_flux_n_records  = PetscMin(mass_flux_n_records, buffer_size);
+    // If -..._period is not set, make ..._n_records the minimum of the
+    // buffer size and the number of available records. Otherwise try
+    // to keep all available records in memory.
+    if (bc_period == 0.0) {
+      temp_n_records = PetscMin(temp_n_records, buffer_size);
+      mass_flux_n_records  = PetscMin(mass_flux_n_records, buffer_size);
+    }
 
     if (temp_n_records < 1) {
       PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",

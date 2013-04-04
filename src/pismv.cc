@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -76,10 +76,6 @@ int main(int argc, char *argv[]) {
 
     IceGrid      g(com, rank, size, config);
 
-    // Initialize boundary models:
-    PISMSurfaceModel *surface = new PSDummy(g, config);
-    PISMOceanModel     *ocean = new POConstant(g, config);
-
     // determine test (and whether to report error)
     string testname = "A";
     bool   test_chosen;
@@ -98,8 +94,6 @@ int main(int argc, char *argv[]) {
     // (i.e. compensatory accumulation or compensatory heating)
     IceCompModel mComp(g, config, overrides, testname[0]);
     ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
-    mComp.attach_surface_model(surface);
-    mComp.attach_ocean_model(ocean);
 
     ierr = mComp.init(); CHKERRQ(ierr);
 

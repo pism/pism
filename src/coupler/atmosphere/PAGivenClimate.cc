@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,25 @@
 #include "PAGivenClimate.hh"
 #include "IceGrid.hh"
 
-PetscErrorCode PAGivenClimate::init(PISMVars &) {
-  PetscErrorCode ierr;
+PAGivenClimate::PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
+  : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
+{
+  temp_name      = "air_temp";
+  mass_flux_name = "precipitation";
+  option_prefix  = "-atmosphere_given";
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the atmosphere model reading near-surface air temperature\n"
-                    "  and ice-equivalent precipitation from a file...\n"); CHKERRQ(ierr);
+  // Cannot call allocate_PAGivenClimate() here, because some surface
+  // models do not use atmosphere models *and* this is the default
+  // atmosphere model.
+
+}
+
+PAGivenClimate::~PAGivenClimate() {
+  // empty
+}
+
+PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
+  PetscErrorCode ierr;
 
   ierr = process_options(); CHKERRQ(ierr);
 
@@ -39,8 +52,24 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
                        "m s-1", ""); CHKERRQ(ierr);
   ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode PAGivenClimate::init(PISMVars &) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the atmosphere model reading near-surface air temperature\n"
+                    "  and ice-equivalent precipitation from a file...\n"); CHKERRQ(ierr);
+
+  if (temp.was_created() == false && mass_flux.was_created() == false) {
+    ierr = allocate_PAGivenClimate(); CHKERRQ(ierr);
+  }
+
+  ierr = temp.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = mass_flux.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // read time-independent data right away:
   if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
@@ -53,13 +82,7 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
 PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  // Annualized PDD may take steps spanning several time-intervals of forcing
-  // data, so we need to compute the average to avoid making mistakes such as
-  // applying January mass balance throughout the year.
   ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
-
-  // Average so that the mean_annual_temp() may be reported correctly (at least
-  // in the "-surface pdd" case).
   ierr = temp.average(t, dt); CHKERRQ(ierr);
 
   return 0;
@@ -82,34 +105,40 @@ PetscErrorCode PAGivenClimate::temp_snapshot(IceModelVec2S &result) {
 
 PetscErrorCode PAGivenClimate::begin_pointwise_access() {
   PetscErrorCode ierr = temp.begin_access(); CHKERRQ(ierr);
+  ierr = mass_flux.begin_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PAGivenClimate::end_pointwise_access() {
   PetscErrorCode ierr = temp.end_access(); CHKERRQ(ierr);
+  ierr = mass_flux.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, int N,
-                                                 PetscReal *ts, PetscReal *values) {
+PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, PetscReal *result) {
+  PetscErrorCode ierr;
 
-  PetscReal *ptr;
-
-  if (bc_period > 0.01) {
-    // Recall that this method is called for each map-plane point during a
-    // time-step. This if-condition is here to avoid calling
-    // grid.time->mod() if the user didn't ask for periodized climate.
-    ts_mod.reserve(N);
-
-    for (int k = 0; k < N; ++k)
-      ts_mod[k] = grid.time->mod(ts[k] - bc_reference_time, bc_period);
-
-    ptr = &ts_mod[0];
-  } else {
-    ptr = ts;
-  }
-
-  PetscErrorCode ierr = temp.interp(i, j, N, ptr, values); CHKERRQ(ierr);
+  ierr = temp.interp(i, j, &result[0]); CHKERRQ(ierr);
 
   return 0;
 }
+
+PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, PetscReal *result) {
+  PetscErrorCode ierr;
+
+  ierr = mass_flux.interp(i, j, &result[0]); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PAGivenClimate::init_timeseries(PetscReal *ts, unsigned int N) {
+  PetscErrorCode ierr;
+
+  ierr = temp.init_interpolation(ts, N); CHKERRQ(ierr);
+  ierr = mass_flux.init_interpolation(ts, N); CHKERRQ(ierr);
+
+  m_ts_times.resize(N);
+  
+  return 0;
+}
+

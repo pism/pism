@@ -5,6 +5,9 @@
 
 \input{pism-macros.tex}
 
+\usepackage{tikz}
+\usetikzlibrary{chains,arrows,shapes}
+
 \addtolength\textheight{0.75in}
 \addtolength{\oddsidemargin}{-.4in}
 \addtolength{\evensidemargin}{-.4in}
@@ -70,10 +73,10 @@ urlcolor=blue     % only if colorlinks=true
 
 \vspace{0.3in}
 \begin{quote}
-  \textsl{Copyright (C) 2004--2012 The PISM Authors}
+  \textsl{Copyright (C) 2004--2013 The PISM Authors}
   \medskip
 
-  \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+  \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
 \end{quote}
 \normalsize
 
@@ -851,23 +854,85 @@ Note: this surface model \emph{ignores} the atmosphere model selection made usin
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-surface~pdd} \index[options]{SA@\surface!\texttt{pdd}} \\
-    NetCDF variables: & none \\
+    NetCDF variables: & \variable{snow_depth} \\
     C++ class: & \class{PSTemperatureIndex}\\
     \bottomrule
   \end{tabular}
 \end{center}
 
-The default PDD model used by PISM, turned on by option \texttt{-surface pdd}, is based on~\cite{CalovGreve05} and EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+\newcommand{\PDD}{\ensuremath{\text{PDD}}}
+\newcommand{\Hs}{\ensuremath{H_{\text{snow}}}}
+\newcommand{\Ms}{\ensuremath{\text{Melt}_{\text{snow}}}}
+\newcommand{\Mi}{\ensuremath{\text{Melt}_{\text{ice}}}}
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[ auto, thick, font=\small, node distance=3mm,
+    block/.style={rectangle, rounded corners, draw, fill=gray!5, text width=2in, text centered,
+      minimum width=2in, minimum height=1cm},
+    big block/.style={block, text width=3in},
+    decision/.style={diamond, draw, fill=gray!5},
+    line/.style={draw, -latex'},
+    start chain=1 going below, every node/.style={on chain},
+    every join/.style={-latex'},
+    ]
 
-By default, PISM computes the number of PDD, accumulation and ablation at each time-step. To do this calculation on an annual basis instead, option \texttt{-pdd_annualize} should be used. This becomes particularly important when using annually-variable climate inputs and sub-annual time-steps.
+    \node [big block] {Compute snow accumulation \mbox{``Accumulation''}, discarding rain};
+    \node [big block, join] {Compute the number of \mbox{positive} degree days (\PDD) };
+    \node [big block, join] {Update snow depth \mbox{$\Hs \gets \Hs + \text{Accumulation}$}};
+    \node [big block, join] {Compute maximum possible snow melt \mbox{$\Ms^{\text{max}} := \PDD\times F_{s}$}};
+    \node (melt all snow) [decision, join] {$\Ms^{\text{max}} > \Hs?$};
 
-Our PDD implementation is meant to be used with an atmosphere model
-implementing a cosine yearly cycle such as \texttt{searise_greenland} (section
-\ref{sec:atmosphere-searise-greenland}) and \texttt{eismint_greenland} (section
-\ref{sec:atmosphere-eismint-greenland}), but it is not restricted to
-parameterizations like these.
+    \begin{scope}[start branch=yes, node distance=4em]
+      \node (ice melt case) [block, on chain=going right] {\mbox{Melt all available snow:} $\Ms := \Hs$};
+    \end{scope}
+    \begin{scope}[start branch=no, node distance=4em]
+      \node (no ice melt case) [block, on chain=going left] {Melt some of the snow: \mbox{$\Ms := \Ms^{\text{max}}$}};
+    \end{scope}
 
-A PDD generally adds ``white noise'' to the seasonal cycle to simulate
+    \node (excess pdds) [big block] {$\PDD_{\text{excess}} := \PDD - \Ms / F_{s}$};
+    \node [big block, join] {Melt some ice: \mbox{$\Mi := \PDD_{\text{excess}} \times F_{i}$}};
+    \node (refreeze ice) [decision, join] {Refreeze melted ice?};
+
+    \begin{scope}[start branch=yes, node distance=4em]
+      \node (refreeze both) [block, on chain=going right] {Refreeze is \mbox{$(\Ms + \Mi) \times \theta_{\text{refreeze}}$}};
+    \end{scope}
+
+    \begin{scope}[start branch=no, node distance=4em]
+      \node (refreeze snow) [block, on chain=going left] {Refreeze is $\Ms \times \theta_{\text{refreeze}}$};
+    \end{scope}
+
+    \node (runoff) [big block] {$\text{Runoff} := \Ms + \Mi - \text{Refreeze}$};
+    \node [big block, join] {Compute surface mass balance: $\text{SMB} := \text{Accumulation} - \text{Runoff}$};
+    \node [big block, join] {Update snow depth: $\Hs \gets \Hs - \Ms$};
+    % special edges:
+    \path[line] (melt all snow) -- node {Yes} (ice melt case);
+    \path[line] (melt all snow) -- node {No}  (no ice melt case);
+    \path[line] (ice melt case) |- (excess pdds);
+    \path[line] (no ice melt case) |- (excess pdds);
+    \path[line] (refreeze ice) -- node {Yes} (refreeze both);
+    \path[line] (refreeze ice) -- node {No}  (refreeze snow);
+    \path[line] (refreeze both) |- (runoff);
+    \path[line] (refreeze snow) |- (runoff);
+  \end{tikzpicture}
+  \caption{PISM's positive degree day model. $F_s$ and $F_i$ are PDD
+    factors for snow and ice, respectively; $\theta_{\text{refreeze}}$
+    is the refreeze fraction.}
+  \label{fig:pdd-model}
+\end{figure}
+
+The default PDD model used by PISM, turned on by option
+\texttt{-surface pdd}, is based on~\cite{CalovGreve05} and
+EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+
+Our model computes the solid (snow) precipitation rate using the air
+temperature threshold with a linear transition. All precipitation
+during periods with air temperatures above
+\config{air_temp_all_precip_as_rain} (default of $2^\circ C$) is
+interpreted as rain; all precipitation during periods with air
+temperatures below \config{air_temp_all_precip_as_snow} (default of
+$0^\circ C$) is interpreted as snow.
+
+A PDD model generally adds ``white noise'' to the seasonal cycle to simulate
 additional daily variability associated to the vagaries of weather. This
 additional random variation is quite significant, as the seasonal cycle may
 never reach the melting point but that point may be reached with some
@@ -876,7 +941,7 @@ Concretely, a normally-distributed, mean zero random temperature increment is
 added to the seasonal cycle. There is no assumed spatial correlation of daily
 variability. The standard deviation of the daily variability is controlled by
 the \intextoption{pdd_std_dev} option, and the corresponding configuration
-parameter has the same name. The default value is 5.0 degrees
+parameter has the same name. The default value is $5.0$ degrees
 \cite{RitzEISMINT}.
 
 The number of positive degree days is computed as the magnitude of the
@@ -886,23 +951,39 @@ duration (in days) when it is above zero.
 In PISM there are two methods for computing the number of positive degree days.
 The first computes only the expected value, by the method described in
 \cite{CalovGreve05}. This is the default when a PDD is chosen (i.e.~option
-\texttt{-surface~pdd}). The second is a monte carlo simulation of the white
-noise itself, chosen by adding the option \intextoption{pdd_rand}. This monte
-carlo simulation adds the same daily variation at every point, though the
+\texttt{-surface~pdd}). The second is a Monte Carlo simulation of the white
+noise itself, chosen by adding the option \intextoption{pdd_rand}. This Monte
+Carlo simulation adds the same daily variation at every point, though the
 seasonal cycle is (generally) location dependent. If repeatable randomness is
 desired use \intextoption{pdd_rand_repeatable} instead of \texttt{-pdd_rand}.
 
-The number of positive degree days is multiplied by a coefficient (config
-parameter \config{pdd_factor_snow}) to compute the amount of snow melted. Of
-the melted snow, a fraction (\config{pdd_refreeze}) is kept as ice. This ice,
-plus all unmelted snow (already measured as ice-equivalent) is added to the
-mass balance, unless the number of positive degree days exceeds that required
-to melt all of the snow. In this latter case, in which there are excess
-positive degree days available for melting, the excess is multiplied by a
-coefficient (\config{pdd_factor_ice}) to compute how much ice is melted. In
-this case actual ablation occurs at that location.
+By default, the computation summarized in Figure \ref{fig:pdd-model}
+is performed every week. (This frequency is controlled by the
+\config{pdd_max_evals_per_year} parameter.) To compute mass balance
+during each week-long time-step, PISM keeps track of the current snow
+depth (units of ice-equivalent thickness). This is necessary to
+determine if melt should be computed using the degree day factor for
+snow (\config{pdd_factor_snow}) or the corresponding factor for ice
+(\config{pdd_factor_ice}).
 
-It also implements latitude- and mean July temperature dependent ice and snow
+A fraction of the melt controlled by the configuration parameter
+\config{pdd_refreeze} ($\theta_{\text{refreeze}}$ in Figure
+\ref{fig:pdd-model}, default: $0.6$) refreezes. The user can select
+whether melted ice should be allowed to refreeze using the
+\config{pdd_refreeze_ice_melt} configuration flag.
+
+Since PISM does not have a principled firn model, the snow depth is
+set to zero at the beginning of the balance year. See
+\config{pdd_balance_year_start_day}. Default is $274$, corresponding
+to October 1$^{\text{st}}$.
+
+Our PDD implementation is meant to be used with an atmosphere model
+implementing a cosine yearly cycle such as \texttt{searise_greenland} (section
+\ref{sec:atmosphere-searise-greenland}) and \texttt{eismint_greenland} (section
+\ref{sec:atmosphere-eismint-greenland}), but it is not restricted to
+parameterizations like these.
+
+This code also implements latitude- and mean July temperature dependent ice and snow
 factors using formulas (6) and (7) in~\cite{Faustoetal2009}; set
 \intextoption{pdd_fausto} to enable. The default standard deviation of the
 daily variability (\intextoption{pdd_std_dev} option) is 2.53 degrees under the
@@ -1186,7 +1267,10 @@ change~\cite{Huybrechts02}.  See
 for details.  Turn on this mechanism by using the \fileopt{paleo_precip}
 option. The argument of this option is the name of a file containing
 scalar temperature offsets; usually the same file as used with
-\texttt{-atmosphere ...,delta_T}. See section \ref{sec:atmosphere-delta-temp}.
+\texttt{-atmosphere ...,delta_T}, see section \ref{sec:atmosphere-delta-temp}.
+
+See also the \texttt{-atmosphere ...,paleo_precip} modifier, section
+\ref{sec:atmosphere-paleo-precip}.
 
 \subsection{EISMINT-Greenland}
 \label{sec:atmosphere-eismint-greenland}
@@ -1281,6 +1365,39 @@ file PISM will read \variable{delta_P} from.
   forcing data (section~\ref{sec:periodic-forcing})
 \item \intextoption{atmosphere_delta_P_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
 \end{itemize}
+
+\subsection{Modifier: Paleo-precipitation correction using scalar temperature offsets}
+\label{sec:atmosphere-paleo-precip}
+\optsection{\atmospheremods!\texttt{paleo_precip}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~...,paleo_precip} \index[options]{\atmospheremods!\texttt{paleo_precip}} \\
+    NetCDF variables: & \variable{delta_T} \mbox{[degrees Kelvin]}\\
+    C++ class: & \class{PA_paleo_precip}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier implements the SeaRISE-Greenland formula for
+paleo-precipitation correction from present; a 7.3\% change of
+precipitation rate for every one degree Celsius of air temperature
+change~\cite{Huybrechts02}. See
+\url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland}
+for details. The input file should contain air temperature offsets in
+the format used by \texttt{-atmosphere ...,delta_T} modifier, see
+section \ref{sec:atmosphere-delta-temp}.
+
+It takes the following command-line options.
+\begin{itemize}
+\item \fileopt{atmosphere_paleo_precip_file} sets the name of the
+file PISM will read \variable{delta_T} from.
+\item \txtopt{atmosphere_paleo_precip_period}{\emph{years}} sets the period of the
+  forcing data (section~\ref{sec:periodic-forcing})
+\item \intextoption{atmosphere_paleo_precip_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
+\end{itemize}
+
 
 \subsection{Modifier: Lapse rate corrections}
 \label{sec:atmosphere-lapse-rates}

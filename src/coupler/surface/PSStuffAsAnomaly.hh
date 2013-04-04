@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,9 +27,8 @@
 class PSStuffAsAnomaly : public PSModifier
 {
 public:
-  PSStuffAsAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
-    : PSModifier(g, conf, input) {}
-  virtual ~PSStuffAsAnomaly() {}
+  PSStuffAsAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input);
+  virtual ~PSStuffAsAnomaly();
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
@@ -43,6 +42,8 @@ public:
 protected:
   IceModelVec2S mass_flux, mass_flux_0, mass_flux_input,
     temp, temp_0, temp_input;
+private:
+  PetscErrorCode allocate_PSStuffAsAnomaly();
 };
 
 #endif /* _PSSTUFFASANOMALY_H_ */

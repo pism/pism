@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,23 +24,16 @@
 #include "PISMAtmosphere.hh"
 
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
-
 class PSElevation : public PISMSurfaceModel {
 public:
-  PSElevation(IceGrid &g, const NCConfigVariable &conf)
-    : PISMSurfaceModel(g, conf)
-  {};
+  PSElevation(IceGrid &g, const NCConfigVariable &conf);
 
   virtual PetscErrorCode init(PISMVars &vars);
-  //! This surface model does not use an atmosphere model.
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
-  { delete input; }
+  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
 
-  // Does not have an atmosphere model.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
-  { t = my_t; dt = my_dt; return 0; } // do nothing
+  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);

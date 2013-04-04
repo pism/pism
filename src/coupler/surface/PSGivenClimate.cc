@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,25 @@
 #include "PSGivenClimate.hh"
 #include "IceGrid.hh"
 
-PetscErrorCode PSGivenClimate::init(PISMVars &) {
-  PetscErrorCode ierr;
+PSGivenClimate::PSGivenClimate(IceGrid &g, const NCConfigVariable &conf)
+  : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, NULL)
+{
+  temp_name = "ice_surface_temp";
+  mass_flux_name = "climatic_mass_balance";
+  option_prefix = "-surface_given";
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the surface model reading temperature at the top of the ice\n"
-                    "  and ice surface mass flux from a file...\n"); CHKERRQ(ierr);
+  PetscErrorCode ierr = allocate_PSGivenClimate(); CHKERRCONTINUE(ierr);
+  if (ierr != 0)
+    PISMEnd();
+
+}
+
+PSGivenClimate::~PSGivenClimate() {
+  // empty
+}
+
+PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
+  PetscErrorCode ierr;
 
   ierr = process_options(); CHKERRQ(ierr);
 
@@ -37,13 +50,29 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
                         "temperature of the ice at the ice surface but below firn processes",
                         "Kelvin", ""); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing",
-                       "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                       "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+			     "ice-equivalent surface mass balance (accumulation/ablation) rate",
+			     "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
   ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   mass_flux.write_in_glaciological_units = true;
 
-  ierr = temp.init(filename); CHKERRQ(ierr);
-  ierr = mass_flux.init(filename); CHKERRQ(ierr);
+  return 0;
+}
+
+void PSGivenClimate::attach_atmosphere_model(PISMAtmosphereModel *input) {
+  delete input;
+}
+
+PetscErrorCode PSGivenClimate::init(PISMVars &) {
+  PetscErrorCode ierr;
+
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the surface model reading temperature at the top of the ice\n"
+                    "  and ice surface mass flux from a file...\n"); CHKERRQ(ierr);
+
+  ierr = temp.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = mass_flux.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // read time-independent data right away:
   if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
@@ -56,8 +85,13 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
 PetscErrorCode PSGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = mass_flux.at_time(t); CHKERRQ(ierr);
-  ierr = temp.at_time(t); CHKERRQ(ierr);
+  if (temp.get_n_records() == 1 && mass_flux.get_n_records() == 1) {
+    ierr = mass_flux.interp(t); CHKERRQ(ierr);
+    ierr = temp.interp(t); CHKERRQ(ierr);
+  } else {
+    ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
+    ierr = temp.average(t, dt); CHKERRQ(ierr);
+  }
 
   return 0;
 }
