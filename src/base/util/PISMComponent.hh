@@ -234,6 +234,9 @@ public:
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+    } else {
+      my_dt    = -1;
+      restrict = false;
     }
     return 0;
   }
