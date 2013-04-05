@@ -107,7 +107,7 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, V
   return 0;
 }
 
-//! Sets an IceModelVec2 to the magnitude of a 2D vector field with components \c v_x and \c v_y.
+//! Sets an IceModelVec2 to the magnitude of a 2D vector field with components `v_x` and `v_y`.
 /*! Computes the magnitude \b pointwise, so any of v_x, v_y and the IceModelVec
   this is called on can be the same.
 
@@ -131,7 +131,7 @@ PetscErrorCode IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S
   return 0;
 }
 
-//! Masks out all the areas where \f$ M \le 0 \f$ by setting them to \c fill. 
+//! Masks out all the areas where \f$ M \le 0 \f$ by setting them to `fill`. 
 PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, PetscScalar fill) {
   PetscErrorCode ierr;
   PetscScalar **a = NULL;
@@ -580,7 +580,7 @@ PetscErrorCode IceModelVec2S::min(PetscScalar &result) {
 
 /*!
  * This could be implemented using VecStrideGather, but our code is more
- * flexible: \c source and the current IceModelVec2 need not be both local or
+ * flexible: `source` and the current IceModelVec2 need not be both local or
  * global.
  */
 
@@ -612,7 +612,7 @@ PetscErrorCode IceModelVec2::get_component(int N, Vec result) {
 
 /*!
  * This could be implemented using VecStrideScatter, but our code is more
- * flexible: \c source and the current IceModelVec2 need not be both local or
+ * flexible: `source` and the current IceModelVec2 need not be both local or
  * global.
  */
 PetscErrorCode IceModelVec2::set_component(int N, Vec source) {

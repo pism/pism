@@ -75,7 +75,7 @@ PetscErrorCode ignore_option(MPI_Comm com, const char name[]) {
   return 0;
 }
 
-//! Stop if an option \c old_name is set, printing a message that \c new_name should be used instead.
+//! Stop if an option `old_name` is set, printing a message that `new_name` should be used instead.
 PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
@@ -92,7 +92,7 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], co
   return 0;
 }
 
-//!Stop if an option \c name is set.
+//!Stop if an option `name` is set.
 PetscErrorCode stop_if_set(MPI_Comm com, const char name[]) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
@@ -486,11 +486,11 @@ PetscErrorCode PISMOptionsIntArray(string option, string text,
 /*!
 
   This is (essentially) a reimplementation of PetscOptionsHasName, except that
-  this *always* sets \c flag to PETSC_TRUE if an option is present.
+  this *always* sets `flag` to PETSC_TRUE if an option is present.
 
-  PetscOptionsHasName, on the other hand, sets \c flag to PETSC_FALSE if an
+  PetscOptionsHasName, on the other hand, sets `flag` to PETSC_FALSE if an
   option was set as "-foo FALSE", "-foo NO" or "-foo 0". Note that if one uses
-  "-foo 0.0", PetscOptionsHasName will set \c flag to PETSC_TRUE.
+  "-foo 0.0", PetscOptionsHasName will set `flag` to PETSC_TRUE.
 
   This unpredictability is bad. We want a function that does not depend on the
   argument given with an option.

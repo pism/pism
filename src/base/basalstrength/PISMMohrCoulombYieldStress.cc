@@ -24,20 +24,20 @@
 
 //! \file PISMMohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
 /*! \file PISMMohrCoulombYieldStress.cc
-The output variable of this submodel is \c tauc, the pseudo-plastic yield stress
+The output variable of this submodel is `tauc`, the pseudo-plastic yield stress
 field that is used in the ShallowStressBalance objects.
 
 In the default implementation PISMMohrCoulombYieldStress [\ref BBssasliding], the
 "dry" strength of the (notional) till is a state variable, but private to the
-submodel, namely \c tillphi.
+submodel, namely `tillphi`.
 
-Its initialization is nontrivial: either \c -topg_to_phi  heuristic or inverse
-modeling so that \c tillphi can be read-in at the beginning of the run. Currently
-\c tillphi does not evolve during the run.
+Its initialization is nontrivial: either `-topg_to_phi`  heuristic or inverse
+modeling so that `tillphi` can be read-in at the beginning of the run. Currently
+`tillphi` does not evolve during the run.
 
 This submodel uses a pointer to a PISMHydrology instance to get the basal water
 pressure.  Then the effective pressure is combined with tillphi
-to compute an updated \c tauc by the Mohr-Coulomb criterion.
+to compute an updated `tauc` by the Mohr-Coulomb criterion.
 
 This submodel is inactive in floating areas.
 */
@@ -99,9 +99,9 @@ till material.  Thus it is assumed to change more slowly than the basal water
 pressure, and it follows that it changes more slowly than the yield stress and
 the basal shear stress.
 
-Option \c -topg_to_phi causes call to topg_to_phi() at the beginning of the run.
+Option `-topg_to_phi` causes call to topg_to_phi() at the beginning of the run.
 This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
-the current method leaves \c tillphi unchanged, and thus either in its
+the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
 PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
@@ -316,7 +316,7 @@ We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
 and by expressing the coefficient as the tangent of a till friction angle
 \f$\varphi\f$:
     \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
-Option  \c -plastic_c0 controls it \f$c_0\f$; see [\ref Paterson] table 8.1
+Option  `-plastic_c0` controls it \f$c_0\f$; see [\ref Paterson] table 8.1
 regarding values.
  */
 PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_dt) {
@@ -390,7 +390,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::basal_material_yield_stress(IceModelV
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
 /*!
 Computes the till friction angle \f$\phi(x,y)\f$ at a location, namely
-\c IceModel::vtillphi, as the following increasing, piecewise-linear function of
+`IceModel::vtillphi`, as the following increasing, piecewise-linear function of
 the bed elevation \f$b(x,y)\f$.  Let
 	\f[ M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}}) \f]
 be the slope of the nontrivial part.  Then
@@ -400,16 +400,16 @@ be the slope of the nontrivial part.  Then
 	                          &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
 	        \phi_{\text{max}}, & b_{\text{max}} \le b(x,y), \end{cases} \f]
 The exception is if the point is marked as floating, in which case the till friction angle
-is set to the value \c phi_ocean.
+is set to the value `phi_ocean`.
 
 The default values are vaguely suitable for Antarctica, perhaps:
-- \c phi_min = 5.0 degrees,
-- \c phi_max = 15.0 degrees,
-- \c topg_min = -1000.0 m,
-- \c topg_max = 1000.0 m,
-- \c phi_ocean = 10.0 degrees.
+- `phi_min` = 5.0 degrees,
+- `phi_max` = 15.0 degrees,
+- `topg_min` = -1000.0 m,
+- `topg_max` = 1000.0 m,
+- `phi_ocean` = 10.0 degrees.
 
-If the user gives option <code>-topg_to_phi A,B,C,D</code> then \c phi_ocean
+If the user gives option <code>-topg_to_phi A,B,C,D</code> then `phi_ocean`
 is not used. Instead, the same rule as above for grounded ice is used.
  */
 PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {

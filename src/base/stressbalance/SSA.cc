@@ -288,7 +288,7 @@ PetscErrorCode SSA::compute_basal_frictional_heating(IceModelVec2S &result) {
 Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
 
-If configuration parameter \c surface_gradient_method = \c eta then the surface
+If configuration parameter `surface_gradient_method` = `eta` then the surface
 gradient \f$\nabla h\f$ is computed by the gradient of the transformed variable
 \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$). The idea is that
 this quantity is more regular at ice sheet margins, and so we get a better

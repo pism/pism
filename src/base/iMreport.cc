@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -224,14 +224,14 @@ the beginning of the run, while an 'S' line appears at every time step.
 This base class version gives a report based on the information included in the
 EISMINT II intercomparison of ice sheet models[\ref EISMINT00].
 
-Note that the inputs \c volume and \c area to this method are in m^3 and m^2,
-respectively.  Thus all inputs to this method are in MKS except for \c year.
+Note that the inputs `volume` and `area` to this method are in m^3 and m^2,
+respectively.  Thus all inputs to this method are in MKS except for `year`.
 
 The resulting numbers on an 'S' line have the following meaning in this base
 class version:
-  - \c ivol is the total ice sheet volume
-  - \c iarea is the total area occupied by positive thickness ice
-  - \c max_diff is the maximum diffusivity
+  - `ivol` is the total ice sheet volume
+  - `iarea` is the total area occupied by positive thickness ice
+  - `max_diff` is the maximum diffusivity
 thick0 and temp0 can be interpreted as "sanity checks", because they give
 information about a location which may or may not be "typical".
 

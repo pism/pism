@@ -269,13 +269,13 @@ void IceModel::adjust_flow(planeStar<int> mask,
  * from regular grid neighbors, making sure that velocities from ice-free areas
  * are not used.
  *
- * Note that the input parameter \c input_velocity contains both components of
- * the velocity field in the neighborhood of i,j, while \c output_velocity
+ * Note that the input parameter `input_velocity` contains both components of
+ * the velocity field in the neighborhood of i,j, while `output_velocity`
  * contains \b scalars: projections of velocity vectors onto normals to
  * corresponding cell interfaces.
  *
- * The SIA flux \c input_flux is computed on the staggered grid by SIAFD, so
- * the loop below just copies it to \c output_flux.
+ * The SIA flux `input_flux` is computed on the staggered grid by SIAFD, so
+ * the loop below just copies it to `output_flux`.
  *
  * 2) Adjust the flow using the mask by calling adjust_flow().
  *
@@ -428,13 +428,13 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
   IceModelVec2V *vel_advective;
   stress_balance->get_advective_2d_velocity(vel_advective);
   \endcode
-  The diffusive flux \f$-D\nabla h\f$ is thus stored in \c IceModelVec2Stag
-  \c *Qdiff while the less-diffusive velocity \f$\mathbf{U}_b\f$ is stored in
-  \c IceModelVec2V \c *vel_advective.
+  The diffusive flux \f$-D\nabla h\f$ is thus stored in `IceModelVec2Stag`
+  `*Qdiff` while the less-diffusive velocity \f$\mathbf{U}_b\f$ is stored in
+  `IceModelVec2V` `*vel_advective`.
 
   The methods used here are first-order and explicit in time.  The derivatives in
   \f$\nabla \cdot (D \nabla h)\f$ are computed by centered finite difference
-  methods.  The diffusive flux \c Qdiff is already stored on the staggered grid
+  methods.  The diffusive flux `Qdiff` is already stored on the staggered grid
   and it is differenced in a centered way here.  The time-stepping for this part
   of the explicit scheme is controlled by equation (25) in [\ref BBL], so that
   \f$\Delta t \sim \Delta x^2 / \max D\f$; see also [\ref MortonMayers].
@@ -449,8 +449,8 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
   (21) and (22) in \ref BBL is no longer used.
 
   Checks are made which can generate zero thickness according to minimal calving
-  relations, specifically the mechanisms turned-on by options \c -ocean_kill and
-  \c -float_kill.
+  relations, specifically the mechanisms turned-on by options `-ocean_kill` and
+  `-float_kill`.
 
 We also compute total ice fluxes in kg s-1 at 3 interfaces:
 
@@ -464,8 +464,8 @@ A unit-conversion occurs for all three quantities, from ice-equivalent m s-1
 to kg s-1.  The sign convention about these fluxes is that positve flux means
 ice is being \e added to the ice fluid volume at that interface.
 
-These quantities should be understood as <i>instantaneous at the beginning of
-the time-step.</i>  Multiplying by dt will \b not necessarily give the
+These quantities should be understood as *instantaneous at the beginning of
+the time-step.*  Multiplying by dt will \b not necessarily give the
 corresponding change from the beginning to the end of the time-step.
 
 FIXME:  The calving rate can be computed by post-processing:

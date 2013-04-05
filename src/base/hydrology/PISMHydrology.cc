@@ -216,7 +216,7 @@ PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, boo
 /*!
 The user can specify the total of en- and supra-glacial drainage contributions
 to subglacial hydrology in a time-dependent input file using option -input_to_bed.
-This method includes that possible input along with \c bmelt to get the total water
+This method includes that possible input along with `bmelt` to get the total water
 input into the subglacial hydrology.
 
 This method crops the input rate to the ice-covered region.  It
@@ -563,7 +563,7 @@ This model adds a contrived lateral diffusion to the PISMTillCanHydrology
 model.  See equation (11) in \ref BBssasliding , namely
   \f[W_t = K \nabla^2 W.\f]
 The diffusion constant \f$K\f$ is chosen so that the fundamental solution (Green's
-function) of this equation has standard deviation \f$\sigma=L\f$ at time t=\c diffusion_time.
+function) of this equation has standard deviation \f$\sigma=L\f$ at time t=`diffusion_time`.
 Note that \f$2 \sigma^2 = 4 K t\f$.
 
 The time step restriction for the explicit method for this equation is believed

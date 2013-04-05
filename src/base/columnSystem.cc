@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 
 //! Allocate a tridiagonal system of maximum size my_nmax.
 /*!
-Let N = \c nmax.  Then allocated locations are like this:
+Let N = `nmax`.  Then allocated locations are like this:
 \verbatim
 D[0]   U[0]    0      0      0    ...
 L[1]   D[1]   U[1]    0      0    ...
@@ -105,7 +105,7 @@ PetscScalar columnSystemCtx::norm1(const PetscInt n) const {
 //! Compute diagonal-dominance ratio.  If this is less than one then the matrix is strictly diagonally-dominant.
 /*!
 Let \f$A = (a_{ij})\f$ be the tridiagonal matrix
-described by L,D,U for row indices 0 through \c n.  The computed ratio is 
+described by L,D,U for row indices 0 through `n`.  The computed ratio is 
   \f[ \max_{j=1,\dots,n} \frac{|a_{j,j-1}|+|a_{j,j+1}|}{|a_{jj}|}, \f]
 where \f$a_{1,0}\f$ and \f$a_{n,n+1}\f$ are interpreted as zero.
 
@@ -157,7 +157,7 @@ PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(
 /*!
 Give first argument NULL to get standard out.  No binary viewer.
 
-Give description string as \c info argument.
+Give description string as `info` argument.
 
 Result should be executable as part of a Matlab/Octave script.
  */
@@ -203,7 +203,7 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
 /*! 
 Give first argument NULL to get standard out.  No binary viewer.
 
-Give description string as \c info argument.
+Give description string as `info` argument.
  */
 PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info) const {
   PetscErrorCode ierr;
@@ -345,7 +345,7 @@ PetscErrorCode columnSystemCtx::reportColumnZeroPivotErrorMFile(const PetscError
 An example of the use of this procedure is from <c>examples/searise-greenland/</c>
 running the enthalpy formulation.  First run spinup.sh in that directory  (FIXME:
 which was modified to have equal spacing in z, when I did this example) to
-generate \c g20km_steady.nc.  Then:
+generate `g20km_steady.nc`.  Then:
 
 \code
   $ pismr -ocean_kill -e 3 -atmosphere searise_greenland -surface pdd -config_override  config_269.0_0.001_0.80_-0.500_9.7440.nc \
@@ -366,7 +366,7 @@ generate \c g20km_steady.nc.  Then:
   ans =  2.6190
 \endcode
 
-Of course we can also do \c spy(A), \c eig(A), and look at individual entries,
+Of course we can also do `spy(A)`, `eig(A)`, and look at individual entries,
 and row and column sums, and so on.
  */
 PetscErrorCode columnSystemCtx::viewColumnInfoMFile(PetscScalar *x, PetscInt n) {

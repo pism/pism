@@ -53,7 +53,7 @@ int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, string dim_n
 /*!
  * Also defines all the dimensions that this variable requires.
  *
- * The \c extra_vars output argument will contain names of coordinate variables
+ * The `extra_vars` output argument will contain names of coordinate variables
  * corresponding to dimensions used by this variable.
  */
 int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, string variable_name) {

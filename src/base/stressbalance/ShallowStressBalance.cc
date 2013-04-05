@@ -69,14 +69,14 @@ PetscErrorCode SSB_Trivial::update(bool fast) {
 /*!
 Calculates all components \f$D_{xx}, D_{yy}, D_{xy}=D_{yx}\f$ of the
 vertically-averaged strain rate tensor \f$D\f$ [\ref SchoofStream].  Then computes
-the eigenvalues \c result(i,j,0) = (maximum eigenvalue), \c result(i,j,1) = (minimum
+the eigenvalues `result(i,j,0)` = (maximum eigenvalue), `result(i,j,1)` = (minimum
 eigenvalue).  Uses the provided thickness to make decisions (PIK) about computing
 strain rates near calving front.
 
 Though there are two eigenvalues, such do not form a vector, so the output is not
 an IceModelVec2V, though it could be a std::vector<IceModelVec2S> or such.
 
-Note that \c result(i,j,0) >= \c result(i,j,1), but there is no necessary relation between 
+Note that `result(i,j,0)` >= `result(i,j,1)`, but there is no necessary relation between 
 the magnitudes, and either principal strain rate could be negative or positive.
 
 Result can be used in a calving law, for example in eigencalving (PIK).

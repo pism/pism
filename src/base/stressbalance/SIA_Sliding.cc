@@ -187,7 +187,7 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   pressure-melting-temperature-activated linear sliding.  See Appendix B of
   [\ref BBssasliding] for the dangers in this mechanism.
 
-  Parameter \f$\mu\f$ can be set by option \c -mu_sliding.
+  Parameter \f$\mu\f$ can be set by option `-mu_sliding`.
 
   The returned coefficient is used in update() (above).
 */

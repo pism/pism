@@ -28,7 +28,7 @@
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
-This procedure is called by the base class when option <tt>-boot_file</tt> is used.
+This procedure is called by the base class when option `-boot_file` is used.
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
@@ -239,10 +239,10 @@ bedrock if surface temperature and geothermal flux maps are given. This rule is
 heuristic but seems to work well anyway. Full bootstrapping will start from the
 temperature computed by this procedure and then run for a long time (e.g.
 \f$10^5\f$ years), with fixed geometry, to get closer to thermomechanically
-coupled equilibrium. See the part of the <i>User's Manual</i> on
+coupled equilibrium. See the part of the *User's Manual* on
 EISMINT-Greenland.
 
-Consider a horizontal grid point <tt>i,j</tt>. Suppose the surface temperature
+Consider a horizontal grid point `i,j`. Suppose the surface temperature
 \f$T_s\f$ and the geothermal flux \f$g\f$ are given at that grid point. Within
 the corresponding column, denote the temperature by \f$T(z)\f$ for some
 elevation \f$z\f$ above the base of the ice. (Note ice corresponds to \f$z>0\f$

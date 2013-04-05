@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -99,8 +99,8 @@ PetscErrorCode NCVariable::read_attributes(const PIO &nc) {
 
 
 //! Set the internal units.
-/*! Units should not be set by accessing the \c strings member directly. This
-  method also checks if \c new_units are valid and initializes the \c units structure.
+/*! Units should not be set by accessing the `strings` member directly. This
+  method also checks if `new_units` are valid and initializes the `units` structure.
  */
 PetscErrorCode NCVariable::set_units(string new_units) {
   strings["units"] = new_units;
@@ -121,8 +121,8 @@ PetscErrorCode NCVariable::set_units(string new_units) {
 /*! These units are used for output (if write_in_glaciological_units is set)
   and for standard out reports.
 
-  \c glaciological_units should not be set by accessing the \c strings member
-  directly. This method also checks if \c new_units are valid and compatible
+  `glaciological_units` should not be set by accessing the `strings` member
+  directly. This method also checks if `new_units` are valid and compatible
   with the internal units.
  */
 PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
@@ -330,7 +330,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   return 0;
 }
 
-//! \brief Write a \b global Vec \c v to a variable.
+//! \brief Write a \b global Vec `v` to a variable.
 /*!
   Defines a variable and converts the units if needed.
  */
@@ -363,10 +363,10 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, PISM_IO_Type nctype,
   return 0;
 }
 
-//! \brief Regrid from a NetCDF file into a \b global Vec \c v.
+//! \brief Regrid from a NetCDF file into a \b global Vec `v`.
 /*!
   \li stops if critical == true and the variable was not found
-  \li sets \c v to \c default_value if \c set_default_value == true and the variable was not found
+  \li sets `v` to `default_value` if `set_default_value` == true and the variable was not found
  */
 PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
                                          bool critical, bool set_default_value,
@@ -460,8 +460,8 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
 
 
 //! Read the valid range information from a file.
-/*! Reads \c valid_min, \c valid_max and \c valid_range attributes; if \c
-    valid_range is found, sets the pair \c valid_min and \c valid_max instead.
+/*! Reads `valid_min`, `valid_max` and `valid_range` attributes; if \c
+    valid_range is found, sets the pair `valid_min` and `valid_max` instead.
  */
 PetscErrorCode NCVariable::read_valid_range(const PIO &nc, string name) {
   string input_units_string;
@@ -511,12 +511,12 @@ PetscErrorCode NCVariable::read_valid_range(const PIO &nc, string name) {
   return 0;
 }
 
-//! Converts \c v from internal to glaciological units.
+//! Converts `v` from internal to glaciological units.
 PetscErrorCode NCSpatialVariable::to_glaciological_units(Vec v) {
   return change_units(v, &units, &glaciological_units);
 }
 
-//! Converts \c v from the units corresponding to \c from to the ones corresponding to \c to.
+//! Converts `v` from the units corresponding to `from` to the ones corresponding to `to`.
 /*!
   Does nothing if this transformation is trivial.
  */
@@ -655,7 +655,7 @@ PetscErrorCode NCVariable::write_attributes(const PIO &nc, PISM_IO_Type nctype,
 }
 
 
-//! Report the range of a \b global Vec \c v.
+//! Report the range of a \b global Vec `v`.
 PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_name) {
   double slope, intercept;
   PetscErrorCode ierr;
@@ -704,7 +704,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   return 0;
 }
 
-//! Check if the range of a \b global Vec \c v is in the range specified by valid_min and valid_max attributes.
+//! Check if the range of a \b global Vec `v` is in the range specified by valid_min and valid_max attributes.
 PetscErrorCode NCSpatialVariable::check_range(string filename, Vec v) {
   PetscScalar min, max;
   PetscErrorCode ierr;
@@ -926,8 +926,8 @@ string NCVariable::get_string(string name) const {
     return string();
 }
 
-//! \brief Check if a value \c a is in the valid range defined by \c valid_min
-//! and \c valid_max attributes.
+//! \brief Check if a value `a` is in the valid range defined by `valid_min`
+//! and `valid_max` attributes.
 bool NCVariable::is_valid(PetscScalar a) const {
 
   if (has("valid_min") && has("valid_max"))
@@ -1084,7 +1084,7 @@ bool NCConfigVariable::get_flag_quiet(string name) const {
 }
 
 
-//! Returns a \c double parameter. Stops if it was not found.
+//! Returns a `double` parameter. Stops if it was not found.
 double NCConfigVariable::get(string name) const {
   if (options_left_set)
     parameters_used.insert(name);
@@ -1521,7 +1521,7 @@ PetscErrorCode NCTimeseries::get_bounds_name(const PIO &nc, string &result) {
 }
 
 
-//! \brief Report the range of a time-series stored in \c data.
+//! \brief Report the range of a time-series stored in `data`.
 PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
   double slope, intercept;
   PetscErrorCode ierr;
@@ -1578,7 +1578,7 @@ PetscErrorCode NCTimeseries::define(const PIO &nc, PISM_IO_Type nctype, bool) {
   return 0;
 }
 
-//! \brief Write a time-series \c data to a file.
+//! \brief Write a time-series `data` to a file.
 PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
 				   vector<double> &data, PISM_IO_Type nctype) {
 
@@ -1614,7 +1614,7 @@ PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
   return 0;
 }
 
-//! Convert \c data.
+//! Convert `data`.
 PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, utUnit *to) {
   PetscErrorCode ierr;
   double slope, intercept;
@@ -1744,7 +1744,7 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const PIO &nc, PISM_IO_Type,
   return 0;
 }
 
-//! Prepends \c message to the history string.
+//! Prepends `message` to the history string.
 void NCGlobalAttributes::prepend_history(string message) {
   strings["history"] = message + strings["history"];
 }

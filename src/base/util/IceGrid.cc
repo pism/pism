@@ -104,23 +104,23 @@ IceGrid::~IceGrid() {
 //! \brief Set the vertical levels in the ice according to values in Mz, Lz,
 //! and the ice_vertical_spacing data member.
 /*!
-Sets \c dzMIN and \c dzMAX.  Sets and re-allocates \c zlevels[].
+Sets `dzMIN` and `dzMAX`.  Sets and re-allocates `zlevels[]`.
 
-Uses \c Mz, \c Lz, and \c ice_vertical_spacing.  (Note that \c ice_vertical_spacing
+Uses `Mz`, `Lz`, and `ice_vertical_spacing`.  (Note that `ice_vertical_spacing`
 cannot be UNKNOWN.)
 
 This procedure is only called when a grid is determined from scratch, %e.g. 
 by a derived class or when bootstrapping from 2D data only, but not when 
 reading a model state input file (which will have its own grid,
 which may not even be a grid created by this routine).
-  - When \c vertical_spacing == EQUAL, the vertical grid in the ice is equally spaced:
-    <tt>zlevels[k] = k dzMIN</tt> where <tt>dzMIN = Lz / (Mz - 1)</tt>.  
-    In this case <tt>dzMIN = dzMAX</tt>.
-  - When \c vertical_spacing == QUADRATIC, the spacing is a quadratic function.  The intent 
+  - When `vertical_spacing` == EQUAL, the vertical grid in the ice is equally spaced:
+    `zlevels[k] = k dzMIN` where `dzMIN = Lz / (Mz - 1)`.  
+    In this case `dzMIN = dzMAX`.
+  - When `vertical_spacing` == QUADRATIC, the spacing is a quadratic function.  The intent 
     is that the spacing is smaller near the base than near the top.  In particular, if 
-    \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then <tt>zlevels[k] = Lz * 
+    \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz * 
     ( (\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0) 
-    * \f$\zeta_k\f$) )</tt> where \f$\lambda\f$ = 4.  The value \f$\lambda\f$ 
+    * \f$\zeta_k\f$) )` where \f$\lambda\f$ = 4.  The value \f$\lambda\f$ 
     indicates the slope of the quadratic function as it leaves the base.  
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer 
     at the base than equal spacing would be.
@@ -194,7 +194,7 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
 }
 
 
-//! Print the vertical levels in \c zlevels[] to stdout.
+//! Print the vertical levels in `zlevels[]` to stdout.
 PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
   PetscErrorCode ierr;
   ierr = verbPrintf(verbosity,com,
@@ -207,7 +207,7 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
 }
 
 
-//! Return the index \c k into \c zlevels[] so that <tt>zlevels[k] <= height < zlevels[k+1]</tt> and <tt>k < Mz</tt>.
+//! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
 PetscInt IceGrid::kBelowHeight(PetscScalar height) {
   if (height < 0.0 - 1.0e-6) {
     PetscPrintf(com, 
@@ -229,10 +229,10 @@ PetscInt IceGrid::kBelowHeight(PetscScalar height) {
   return mcurr;
 }
 
-//! \brief From given vertical grid zlevels[], determine \c dzMIN, \c dzMAX, and
+//! \brief From given vertical grid zlevels[], determine `dzMIN`, `dzMAX`, and
 //! determine whether ice vertical spacings are equal.
 /*! The standard for equal vertical spacing in the ice is \f$10^{-8}\f$ m max
-  difference between \c dzMIN and \c dzMAX.
+  difference between `dzMIN` and `dzMAX`.
  */
 PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
 
@@ -312,7 +312,7 @@ void IceGrid::compute_ownership_ranges() {
   This procedure should only be called after the parameters describing the
   horizontal computational box (Lx,Ly) and the parameters for the horizontal
   grid (Mx,My) are already determined. In particular, the input file (either \c
-  -i or \c -boot_file) and user options (like \c -Mx) must have already been
+  -i or `-boot_file`) and user options (like `-Mx`) must have already been
   read to determine the parameters, and any conflicts must have been resolved.
 
   This method contains the "fundamental" transpose: "My,Mx" instead of "Mx,My"
@@ -395,20 +395,20 @@ PetscErrorCode IceGrid::set_vertical_levels(vector<double> new_zlevels) {
 }
 
 
-//! Compute horizontal spacing parameters \c dx and \c dy using \c Mx, \c My, \c Lx, \c Ly and periodicity.
+//! Compute horizontal spacing parameters `dx` and `dy` using `Mx`, `My`, `Lx`, `Ly` and periodicity.
 /*! 
 The grid used in PISM, in particular the PETSc DAs used here, are periodic in x and y.
-This means that the ghosted values <tt> foo[i+1][j], foo[i-1][j], foo[i][j+1], foo[i][j-1]</tt>
+This means that the ghosted values ` foo[i+1][j], foo[i-1][j], foo[i][j+1], foo[i][j-1]`
 for all 2D Vecs, and similarly in the x and y directions for 3D Vecs, are always available.
 That is, they are available even if i,j is a point at the edge of the grid.  On the other
-hand, by default, \c dx  is the full width  <tt>2 * Lx</tt>  divided by  <tt>Mx - 1</tt>.
-This means that we conceive of the computational domain as starting at the <tt>i = 0</tt>
-grid location and ending at the  <tt>i = Mx - 1</tt>  grid location, in particular.  
+hand, by default, `dx`  is the full width  `2 * Lx`  divided by  `Mx - 1`.
+This means that we conceive of the computational domain as starting at the `i = 0`
+grid location and ending at the  `i = Mx - 1`  grid location, in particular.  
 This idea is not quite compatible with the periodic nature of the grid.
 
 The upshot is that if one computes in a truly periodic way then the gap between the  
-<tt>i = 0</tt>  and  <tt>i = Mx - 1</tt>  grid points should \em also have width  \c dx.  
-Thus we compute  <tt>dx = 2 * Lx / Mx</tt>.
+`i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.  
+Thus we compute  `dx = 2 * Lx / Mx`.
  */
 PetscErrorCode IceGrid::compute_horizontal_spacing() {
 

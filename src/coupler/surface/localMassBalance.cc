@@ -55,15 +55,15 @@ The integral is
                + \frac{T_{ac}(t)}{2}\,\mathrm{erfc}
                \left(-\frac{T_{ac}(t)}{\sqrt{2}\,\sigma}\right)\bigg] \f]
 This procedure computes the quantity in square brackets.  The value \f$T_{ac}(t)\f$
-in the above integral is in degrees C.  Here we think of the argument \c TacC
+in the above integral is in degrees C.  Here we think of the argument `TacC`
 as temperature in Celsius, but really it is the temperature above a threshold
 at which it is "positive".
 
 This integral is used for the expected number of positive degree days, unless the
-user selects a random PDD implementation with <tt>-pdd_rand</tt> or
-<tt>-pdd_rand_repeatable</tt>.  The user can choose \f$\sigma\f$ by option
-<tt>-pdd_std_dev</tt>.  Note that the integral is over a time interval of length
-\c dt instead of a whole year as stated in \ref CalovGreve05 .
+user selects a random PDD implementation with `-pdd_rand` or
+`-pdd_rand_repeatable`.  The user can choose \f$\sigma\f$ by option
+`-pdd_std_dev`.  Note that the integral is over a time interval of length
+`dt` instead of a whole year as stated in \ref CalovGreve05 .
  */
 double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 
@@ -134,7 +134,7 @@ void PDDMassBalance::get_snow_accumulation(double *P, double *T,
 //! \brief Compute the surface mass balance at a location from the number of positive
 //! degree days and the accumulation amount in a time interval.
 /*!
- * This is a PDD scheme. The input parameter \c ddf.snow is a rate of
+ * This is a PDD scheme. The input parameter `ddf.snow` is a rate of
  * melting per positive degree day for snow.
  *
  * - a fraction of the melted snow and ice refreezes, conceptualized
@@ -145,7 +145,7 @@ void PDDMassBalance::get_snow_accumulation(double *P, double *T,
  *   from refreeze and then any ice which is already present.
  *
  * Ice melts at a constant rate per positive degree day, controlled by
- * parameter \c ddf.ice.
+ * parameter `ddf.ice`.
  *
  * The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but
  * is influenced by R. Hock (personal communication).
@@ -224,11 +224,11 @@ PDDrandMassBalance::~PDDrandMassBalance() {
 
 
 /*! We need to compute simulated random temperature each actual \e
-  day, or at least as close as we can reasonably get. Output \c N is
+  day, or at least as close as we can reasonably get. Output `N` is
   number of days or number of days plus one.
 
   Thus this method ignores
-  <tt>config.get("pdd_max_evals_per_year")</tt>, which is
+  `config.get("pdd_max_evals_per_year")`, which is
   used in the base class PDDMassBalance.
 
   Implementation of get_PDDs() requires returned N >= 2, so we

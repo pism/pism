@@ -50,8 +50,8 @@ struct DegreeDayFactors {
   times in the time interval
   - a scalar precipation rate which is taken to apply in the time interval.
 
-  This model also uses degree day factors passed-in in DegreeDayFactors \c ddf,
-  and the standard deviation \c pddStdDev.  The latter is the standard deviation of the
+  This model also uses degree day factors passed-in in DegreeDayFactors `ddf`,
+  and the standard deviation `pddStdDev`.  The latter is the standard deviation of the
   modeled temperature away from the input temperature time series which contains
   the part of location-dependent temperature cycle on the time interval.
 
@@ -72,7 +72,7 @@ public:
 
   //! Count positive degree days (PDDs).  Returned value in units of K day.
   /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt_series, ..., t+(N-1)dt_series.
-    Inputs \c t, \c dt_series are in seconds.  */
+    Inputs `t`, `dt_series` are in seconds.  */
   virtual void get_PDDs(double pddStdDev, double dt_series,
                         double *T, unsigned int N, double *PDDs) = 0;
 

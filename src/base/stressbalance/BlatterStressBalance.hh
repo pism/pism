@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,7 +37,7 @@ this scaling can be controlled by the options -units_meter, -units_second, and
 -units_kilogram.
 
 A VTK StructuredGrid output file can be written using the option
-\c -ex48_o \c filename.vts
+`-ex48_o` `filename.vts`
 
 The equations for horizontal velocity \f$(u,v)\f$ are
 \f{align*}

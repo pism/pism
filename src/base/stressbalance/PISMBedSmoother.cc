@@ -318,14 +318,14 @@ PetscErrorCode PISMBedSmoother::compute_coefficients_on_proc0(PetscReal n) {
 
 //! Computes a smoothed thickness map.
 /*!
-The result \c thksmooth is the difference between the given upper surface
-elevation (\c usurf) and the stored smoothed bed topography (\c topgsmooth),
-except where the given original thickness (\c thk) is zero.  In places where
-the original thickness is zero, the result \c thksmooth is also set to zero.
+The result `thksmooth` is the difference between the given upper surface
+elevation (`usurf`) and the stored smoothed bed topography (`topgsmooth`),
+except where the given original thickness (`thk`) is zero.  In places where
+the original thickness is zero, the result `thksmooth` is also set to zero.
 
 Ghosted values are updated directly and no communication occurs.  In fact,
-we \e assume \c usurf, \c thk, and \c thksmooth all have stencil width at least
-equal to GHOSTS.  We \e check whether \c topgsmooth, which has stencil width 
+we \e assume `usurf`, `thk`, and `thksmooth` all have stencil width at least
+equal to GHOSTS.  We \e check whether `topgsmooth`, which has stencil width 
 maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
@@ -400,11 +400,11 @@ of a rational function of surface elevation, approximated here by a Taylor polyn
              \approx 1 + C_2 H^{-2} + C_3 H^{-3} + C_4 H^{-4} \f]
 where \f$h =\f$ usurf, \f$H = h -\f$ topgsmooth and \f$\tilde b\f$ is the local
 bed topography, a function with mean zero.  The coefficients \f$C_2,C_3,C_4\f$,
-which depend on \f$x,y\f$, are precomputed by \c preprocess_bed().
+which depend on \f$x,y\f$, are precomputed by `preprocess_bed()`.
 
 Ghosted values are updated directly and no communication occurs.  In fact,
-we \e assume \c usurf and \c theta have stencil width at least
-equal to GHOSTS.  We \e check whether \c topgsmooth, which has stencil width 
+we \e assume `usurf` and `theta` have stencil width at least
+equal to GHOSTS.  We \e check whether `topgsmooth`, which has stencil width 
 maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.

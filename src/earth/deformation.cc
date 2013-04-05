@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011 Ed Bueler
+// Copyright (C) 2004-2009, 2011, 2013 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -378,7 +378,7 @@ void BedDeformLC::clear_fftw_input() {
   }
 }
 
-//! \brief Copy fftw_output to \c output.
+//! \brief Copy fftw_output to `output`.
 void BedDeformLC::copy_fftw_output(fftw_complex *output) {
   VecAccessor2D<fftw_complex> fftw_out(fftw_output, Nx, Ny), out(output, Nx, Ny);
   for (int i = 0; i < Nx; ++i) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,13 +26,13 @@
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!
 Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.
-Then sets \c CFLmaxdt, the maximum time step allowed under the
+Then sets `CFLmaxdt`, the maximum time step allowed under the
 Courant-Friedrichs-Lewy (CFL) condition on the
 horizontal advection scheme for age and for temperature.
 
 Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect
-\c CFLmaxdt.
+`CFLmaxdt`.
  */
 PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscErrorCode ierr;
