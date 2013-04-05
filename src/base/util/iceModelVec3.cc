@@ -119,10 +119,10 @@ PetscErrorCode  IceModelVec3D::isLegalLevel(PetscScalar z) {
 }
 
 
-//! Set values of an ice scalar quantity in a column by linear <i>interpolation</i>.
+//! Set values of an ice scalar quantity in a column by linear *interpolation*.
 /*!
-  Input array \c source and \c must contain \c grid.Mz_fine scalars
-  (\c PetscScalar).  Upon completion, internal storage will hold values derived from 
+  Input array `source` and `must` contain `grid.Mz_fine` scalars
+  (`PetscScalar`).  Upon completion, internal storage will hold values derived from 
   linearly interpolating the input values.
  */
 PetscErrorCode  IceModelVec3::setValColumnPL(PetscInt i, PetscInt j, PetscScalar *source) {
@@ -297,17 +297,17 @@ PetscErrorCode IceModelVec3::getPlaneStar_fine(PetscInt i, PetscInt j, PetscInt 
 
 //! Return values of ice scalar quantity at given levels (m) above base of ice, using piecewise linear interpolation.
 /*!
-Input array \c levelsIN must be an allocated array of \c nlevels scalars 
-(\c PetscScalar).
+Input array `levelsIN` must be an allocated array of `nlevels` scalars 
+(`PetscScalar`).
 
-\c levelsIN must be strictly increasing and positive. Exceeding Lz is allowed,
+`levelsIN` must be strictly increasing and positive. Exceeding Lz is allowed,
 extrapolation (by the value at the top-most level) is performed in this case.
 
-Return array \c valsOUT must be an allocated array of \c nlevels scalars 
-(\c PetscScalar).
+Return array `valsOUT` must be an allocated array of `nlevels` scalars 
+(`PetscScalar`).
 
-Upon return, \c valsOUT will be filled with values of scalar quantity at 
-the \f$z\f$ values in \c levelsIN.
+Upon return, `valsOUT` will be filled with values of scalar quantity at 
+the \f$z\f$ values in `levelsIN`.
  */
 PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
 					    PetscScalar *result) {
@@ -344,8 +344,8 @@ PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
 //! Return values of ice scalar quantity on the fine computational grid, using local quadratic interpolation.
 /*!
 
-Return array \c valsOUT must be an allocated array of \c grid.Mz_fine scalars 
-(\c PetscScalar).
+Return array `valsOUT` must be an allocated array of `grid.Mz_fine` scalars 
+(`PetscScalar`).
  */
 PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt ks,
 					       PetscScalar *result) {
@@ -536,7 +536,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, string my_name, bool loca
   return 0;
 }
 
-//! Extends an IceModelVec3 and fills all the new grid points with \c fill_value.
+//! Extends an IceModelVec3 and fills all the new grid points with `fill_value`.
 PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_value) {
   PetscErrorCode ierr;
 
@@ -564,7 +564,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_valu
 }
 
 
-//! Extends an IceModelVec3 and fills the new grid points with corresponding \c fill_values values.
+//! Extends an IceModelVec3 and fills the new grid points with corresponding `fill_values` values.
 PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_values) {
   PetscErrorCode ierr;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,9 +44,9 @@ called by an IceModel-derived class after the it has set its own defaults.
 In fact this procedure only reads the majority of the options.  Some are read in 
 initFromOptions(), writeFiles(), and setStartRunEndYearsFromOptions(), among other places.
 
-There are no options to directly set \c dx, \c dy, \c dz, \c Lbz, and \c year as the user 
+There are no options to directly set `dx`, `dy`, `dz`, `Lbz`, and `year` as the user 
 should not directly set these grid parameters.  There are, however, options for directly 
-setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
+setting `Mx`, `My`, `Mz`, `Mbz` and also `Lx`, `Ly`, `Lz`.
 
 Note that additional options are read by PISM{Atmosphere|Surface|Ocean}Model
 instances, including -pdd... others.

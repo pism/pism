@@ -153,16 +153,16 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *strain_hea
 //! \brief Compute the ice surface gradient for the SIA.
 /*!
   There are three methods for computing the surface gradient. Which method is
-  controlled by configuration parameter \c surface_gradient_method which can
-  have values \c haseloff, \c mahaffy, or \c eta.
+  controlled by configuration parameter `surface_gradient_method` which can
+  have values `haseloff`, `mahaffy`, or `eta`.
 
   The most traditional method is to directly differentiate the surface
-  elevation \f$h\f$ by the Mahaffy method [\ref Mahaffy]. The \c haseloff method,
+  elevation \f$h\f$ by the Mahaffy method [\ref Mahaffy]. The `haseloff` method,
   suggested by Marianne Haseloff, modifies the Mahaffy method only where
   ice-free adjacent bedrock points are above the ice surface, and in those
   cases the returned gradient component is zero.
 
-  The alternative method, when \c surface_gradient_method = \c eta, transforms
+  The alternative method, when `surface_gradient_method` = `eta`, transforms
   the thickness to something more regular and differentiates that. We get back
   to the gradient of the surface by applying the chain rule. In particular, as
   shown in [\ref CDDSV] for the flat bed and \f$n=3\f$ case, if we define
@@ -180,7 +180,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *strain_hea
   In all cases we are computing the gradient by finite differences onto a
   staggered grid. In the method with \f$\eta\f$ we apply centered differences
   using (roughly) the same method for \f$\eta\f$ and \f$b\f$ that applies
-  directly to the surface elevation \f$h\f$ in the \c mahaffy and \c haseloff
+  directly to the surface elevation \f$h\f$ in the `mahaffy` and `haseloff`
   methods.
 
   \param[out] h_x the X-component of the surface gradient, on the staggered grid

@@ -506,7 +506,9 @@ PetscErrorCode IceModel::createVecs() {
       ex_vars.insert(var_name);
 
     if (set_contains(ex_vars, "climatic_mass_balance_cumulative")) {
-      ierr = climatic_mass_balance_cumulative.create(grid, "climatic_mass_balance_cumulative", false); CHKERRQ(ierr);
+      ierr = climatic_mass_balance_cumulative.create(grid,
+                                                     "climatic_mass_balance_cumulative",
+                                                     false); CHKERRQ(ierr);
       ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
                                                         "cumulative ice-equivalent surface mass balance",
                                                         "m", ""); CHKERRQ(ierr);

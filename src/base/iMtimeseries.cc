@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2012 Constantine Khroulev
+// Copyright (C) 2009-2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -108,6 +108,11 @@ PetscErrorCode IceModel::init_timeseries() {
   ierr = nc.open(ts_filename, PISM_WRITE, append); CHKERRQ(ierr);
 
   ierr = write_metadata(nc, false); CHKERRQ(ierr);
+
+  if (append == true) {
+    // read the last record of the time variable and skip requested
+    // times before this time
+  }
 
   ierr = nc.close(); CHKERRQ(ierr);
 

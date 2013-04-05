@@ -27,7 +27,7 @@
 extern const char *const* TaoConvergedReasons;
 
 //! Class to initialize the TAO library using the Resource Allocation Is Initialization (RAII) paradigm.
-/*! Declare a TaoInitializer on the stack to initialize the library in, e.g. \c main. When its destructor is called,
+/*! Declare a TaoInitializer on the stack to initialize the library in, e.g. `main`. When its destructor is called,
     the TAO library will be finalized.
 */
 class TaoInitializer {
@@ -49,18 +49,18 @@ public:
 //! \brief An interface for solving an optimization problem with TAO where the
 //! problem itself is defined by a separate Problem class.
 /*!  The primary interface to a TAO optimization problem is mediated by a PETSc-style
-\c TaoSolver object. The PISM TaoBasicSolver C++ class wraps a \c TaoSolver and some of 
+`TaoSolver` object. The PISM TaoBasicSolver C++ class wraps a `TaoSolver` and some of 
 its initialization boilierplate, and allows a separate class to define the function to be minimized.
 
-To use a TaoBasicSolver you create a \c Problem class that defines the objective function and initial
+To use a TaoBasicSolver you create a `Problem` class that defines the objective function and initial
 guess, as well any auxilliary callbacks desired.  The Problem class must define a
 
 \code
 PetscErrorCode Problem::connect(TaoSolver solver);
 \endcode
 
-method which gives the \c Problem an opportunity to register its methods as callbacks to the solver, 
-perhaps taking advantage of the various \c TaoFooCallback classes provided in TaoUtil.hh to facilitate this.
+method which gives the `Problem` an opportunity to register its methods as callbacks to the solver, 
+perhaps taking advantage of the various `TaoFooCallback` classes provided in TaoUtil.hh to facilitate this.
 For example, a problem class MyProblem that did nothing more than register a combined objective/gradient
 callback could define
 
@@ -73,14 +73,14 @@ PetscErrorCode MyProblem::connect(TaoSolver tao) {
 }
 \endcode
 
-In addition to the \c connect method, a \c Problem must define 
+In addition to the `connect` method, a `Problem` must define 
 \code
 PetscErrorCode MyProblem::formInitialGuess(Vec *v, TerminationReason::Ptr &reason)
 \endcode
 which allows the problem to set the initial guess for optimization. If the minimization
 is successful, the solution will be found in the same vector that was returned by this method.
 
-Assuming a \c MyProblem called \c problem has been constructed, solution
+Assuming a `MyProblem` called `problem` has been constructed, solution
 of the minimization is done using, for example, the TAO algorithm
 tao_cg:
 
@@ -101,7 +101,7 @@ template<class Problem>
 class TaoBasicSolver {
 public:
     
-  //! Construct a solver to solve \c prob using TAO algorithm \c tao_type.
+  //! Construct a solver to solve `prob` using TAO algorithm `tao_type`.
   TaoBasicSolver(MPI_Comm comm, const char* tao_type, Problem &prob):
   m_comm(comm), m_problem(prob)
    {
@@ -186,14 +186,14 @@ with a C++ object method. To assign
 PetscErrorCode MyObject::evaluateObjective(TaoSolver tao,Vec x, PetscReal *value);
 \endcode
 
-as the objective function to a \c TaoSolver \c tao, 
+as the objective function to a `TaoSolver` `tao`, 
 
 \code
 MyObject obj;
 TaoObjectiveCallback<MyObject>::connect(tao,obj);
 \endcode
 
-The method name \c evaluateObjective for the callback is hard-coded.
+The method name `evaluateObjective` for the callback is hard-coded.
 See TaoObjGradCallback for a technique to allow 
 the method name to be specified (at the expense of a little more cumbersome code).
 */
@@ -229,14 +229,14 @@ with a C++ object method. To assign
 PetscErrorCode MyObject::monitorTao(TaoSolver tao)
 \endcode
 
-as the objective function to a \c TaoSolver \c tao, 
+as the objective function to a `TaoSolver` `tao`, 
 
 \code
 MyObject obj;
 TaoMonitorCallback<MyObject>::connect(tao,obj);
 \endcode
 
-The method name \c monitorTao for the callback is hard-coded.
+The method name `monitorTao` for the callback is hard-coded.
 See TaoObjGradCallback for a technique to allow 
 the method name to be specified (at the expense of a little more cumbersome code).
 */
@@ -270,14 +270,14 @@ with a C++ object method. To assign
 PetscErrorCode MyObject::getVariableBounds(TaoSolver tao,Vec lo, Vec hi);
 \endcode
 
-as the objective function to a \c TaoSolver \c tao, 
+as the objective function to a `TaoSolver` `tao`, 
 
 \code
 MyObject obj;
 TaoGetVariableBoundsCallback<MyObject>::connect(tao,obj);
 \endcode
 
-The method name \c getVariableBounds for the callback is hard-coded.
+The method name `getVariableBounds` for the callback is hard-coded.
 See TaoObjGradCallback for a technique to allow 
 the method name to be specified (at the expense of a little more cumbersome code).
 */
@@ -311,14 +311,14 @@ with a C++ object method. To assign
 PetscErrorCode MyObject::evaluateGradient(TaoSolver tao,Vec x, Vec gradient);
 \endcode
 
-as the objective function to a \c TaoSolver \c tao, 
+as the objective function to a `TaoSolver` `tao`, 
 
 \code
 MyObject obj;
 TaoGradientCallback<MyObject>::connect(tao,obj);
 \endcode
 
-The method name \c evaluateGradient for the callback is hard-coded.
+The method name `evaluateGradient` for the callback is hard-coded.
 See TaoObjGradCallback for a technique to allow 
 the method name to be specified (at the expense of a little more cumbersome code).
 */
@@ -353,14 +353,14 @@ with a C++ object method. To assign
 PetscErrorCode MyObject::convergenceTest(TaoSolver tao);
 \endcode
 
-as the convergence test function to a \c TaoSolver \c tao, 
+as the convergence test function to a `TaoSolver` `tao`, 
 
 \code
 MyObject obj;
 TaoConvergenceCallback<MyObject>::connect(tao,obj);
 \endcode
 
-The method name \c convergenceTest for the callback is hard-coded.
+The method name `convergenceTest` for the callback is hard-coded.
 See TaoObjGradCallback for a technique to allow 
 the method name to be specified (at the expense of a little more cumbersome code).
 */
@@ -395,7 +395,7 @@ callback with a C++ object method. To assign
 PetscErrorCode MyObject::someObjectiveFunction(TaoSolver tao,Vec x, PetscReal *value, Vec gradient);
 \endcode
 
-as the convergence test function to a \c TaoSolver \c tao, 
+as the convergence test function to a `TaoSolver` `tao`, 
 
 \code
 MyObject obj;
@@ -437,14 +437,14 @@ PetscErrorCode MyObject::evaluateConstraints(TaoSolver tao,Vec x,Vec c);
 PetscErrorCode MyObject::evaluateConstraintsJacobianState(TaoSolver tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure);
 PetscErrorCode MyObject::evaluateConstraintsJacobianDesign(TaoSolver tao, Vec x, Mat *J);
 \endcode
-as the LCL callbacks to a \c TaoSolver \c tao, 
+as the LCL callbacks to a `TaoSolver` `tao`, 
 
 \code
 MyObject obj;
 TaoLCLCallback<MyObject>::connect(tao,obj);
 \endcode
 
-The method names for the callback (\c evaluateConstraints, etc.) are hard-coded.
+The method names for the callback (`evaluateConstraints`, etc.) are hard-coded.
 */
 template<class Problem>
 class TaoLCLCallbacks {

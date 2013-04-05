@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -148,7 +148,7 @@ void endPrintRank() {
 }
 
 
-//! Returns true if \c str ends with \c suffix and false otherwise.
+//! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(string str, string suffix) {
   if (str.rfind(suffix) + suffix.size() == str.size())
     return true;

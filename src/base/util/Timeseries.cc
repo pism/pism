@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Constantine Khroulev
+// Copyright (C) 2009--2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,7 @@ void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r, string name, str
 }
 
 
-//! Read timeseries data from a NetCDF file \c filename.
+//! Read timeseries data from a NetCDF file `filename`.
 PetscErrorCode Timeseries::read(const PIO &nc, bool use_reference_date) {
   PetscErrorCode ierr;
 
@@ -128,7 +128,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, bool use_reference_date) {
   return 0;
 }
 
-//! Write timeseries data to a NetCDF file \c filename.
+//! Write timeseries data to a NetCDF file `filename`.
 PetscErrorCode Timeseries::write(const PIO &nc) {
   PetscErrorCode ierr;
 
@@ -143,7 +143,7 @@ PetscErrorCode Timeseries::write(const PIO &nc) {
   return 0;
 }
 
-//! Get a value of timeseries at time \c t.
+//! Get a value of timeseries at time `t`.
 /*! Returns the first value or the last value if t is out of range on the left
   and right, respectively.
 
@@ -329,7 +329,7 @@ PetscErrorCode DiagnosticTimeseries::append(double V, double /*a*/, double b) {
 }
 
 //! \brief Use linear interpolation to find the value of a scalar diagnostic
-//! quantity at time \c T and store the obtained pair (T, value).
+//! quantity at time `T` and store the obtained pair (T, value).
 PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
   PetscErrorCode ierr;
 
@@ -401,6 +401,9 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_dimlen(dimension.short_name, len); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
+    if (len > 0) {
+      // read the last value and initialize v_previous and v[0]
+    }
   }
 
   output_filename = filename;

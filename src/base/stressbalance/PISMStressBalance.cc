@@ -192,8 +192,8 @@ PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
 
 //! Compute vertical velocity using incompressibility of the ice.
 /*!
-The vertical velocity \f$w(x,y,z,t)\f$ is the velocity <i>relative to the
-location of the base of the ice column</i>.  That is, the vertical velocity
+The vertical velocity \f$w(x,y,z,t)\f$ is the velocity *relative to the
+location of the base of the ice column*.  That is, the vertical velocity
 computed here is identified as \f$\tilde w(x,y,s,t)\f$ in the page
 \ref vertchange.
 
@@ -216,7 +216,7 @@ This is immediately equivalent to the integral
    \f[ w(x,y,z,t) = - \int_{b(x,y,t)}^{z} \nabla\cdot\mathbf{U}\,d\zeta
                            + w_b(x,y,t). \f]
 Here the value \f$w_b(x,y,t)\f$ is either zero or the negative of the basal melt rate
-according to the value of the flag \c include_bmr_in_continuity.
+according to the value of the flag `include_bmr_in_continuity`.
 
 The vertical integral is computed by the trapezoid rule.
  */

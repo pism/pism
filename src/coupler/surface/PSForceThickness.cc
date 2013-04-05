@@ -166,13 +166,13 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 }
 
 /*!
-If \c -force_to_thk \c foo.nc is in use then vthktarget will have a target ice thickness
+If `-force_to_thk` `foo.nc` is in use then vthktarget will have a target ice thickness
 map.  Let \f$H_{\text{tar}}\f$ be this target thickness,
 and let \f$H\f$ be the current model thickness.  Recall that the mass continuity
 equation solved by IceModel::massContExplicitStep() is
   \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
 and that this procedure is supposed to produce \f$M\f$.
-In this context, the semantics of \c -force_to_thk are that \f$M\f$ is modified
+In this context, the semantics of `-force_to_thk` are that \f$M\f$ is modified
 by a multiple of the difference between the target thickness and the current thickness.
 In particular, the \f$\Delta M\f$ that is produced here is
   \f[\Delta M = \alpha (H_{\text{tar}} - H)\f]
@@ -189,17 +189,17 @@ Let's assume \f$H(t_s)=H_0\f$.  This initial value problem has solution
 and so
   \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
 
-The constant \f$\alpha\f$ has a default value \c pism_config:force_to_thickness_alpha.
+The constant \f$\alpha\f$ has a default value `pism_config:force_to_thickness_alpha`.
 
 The next example uses files generated from the EISMINT-Greenland experiment;
 see the corresponding chapter of the User's Manual.
 
 Suppose we regard the SSL2 run as a spin-up to reach a better temperature field.
 It is a spinup in which the surface was allowed to evolve.  Assume the
-early file \c green20km_y1.nc has the target thickness, because it essentially
+early file `green20km_y1.nc` has the target thickness, because it essentially
 has the input thickness.  This script adds a 500 a run, to finalize the spinup,
 in which the ice sheet geometry goes from the the thickness values in
-\c green_ssl2_110ka.nc to values very close to those in \c green20km_y1.nc:
+`green_ssl2_110ka.nc` to values very close to those in `green20km_y1.nc`:
 \code
 #!/bin/bash
 
@@ -273,7 +273,7 @@ $PISM_DO $cmd
 The script also has a run with no forcing, one with forcing at a lower alpha value,
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
 
-As shown below, the time series for \c ivol and \c maximum_diffusivity in the
+As shown below, the time series for `ivol` and `maximum_diffusivity` in the
 above time series files show that the force-to-thickness mechanism is forcing
 a system with negative feedback.
 

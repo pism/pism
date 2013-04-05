@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,18 +29,18 @@
   in arrays.
 
   The essential quantities to compute are where each processor should start within the NetCDF file grid
-  (<tt>start[]</tt>) and how many grid points, from the starting place, the processor has.  The resulting
-  portion of the grid is stored in array \c a (a field of the \c LocalInterCtx).
+  (`start[]`) and how many grid points, from the starting place, the processor has.  The resulting
+  portion of the grid is stored in array `a` (a field of the `LocalInterCtx`).
 
-  We make conservative choices about \c start[] and \c count[].  In particular, the portions owned by
+  We make conservative choices about `start[]` and `count[]`.  In particular, the portions owned by
   processors \e must overlap at one point in the NetCDF file grid, but they \e may overlap more than that
   (as computed here).
 
   Note this constructor doesn't extract new information from the NetCDF file or
   do communication. The information from the NetCDF file must already be
-  extracted, validly stored in a grid_info structure \c input.
+  extracted, validly stored in a grid_info structure `input`.
 
-  The \c IceGrid is used to determine what ranges of the target arrays (i.e. \c
+  The `IceGrid` is used to determine what ranges of the target arrays (i.e. \c
   Vecs into which NetCDF information will be interpolated) are owned by each
   processor.
 */
@@ -203,7 +203,7 @@ LocalInterpCtx::~LocalInterpCtx() {
 
 //! Print out the actual array information stored in the local interpolation context.
 /*!
-Every processor in the communicator \c com must call this for it to work, I think.
+Every processor in the communicator `com` must call this for it to work, I think.
  */
 PetscErrorCode LocalInterpCtx::printArray() {
   PetscErrorCode ierr;

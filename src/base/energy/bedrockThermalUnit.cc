@@ -408,9 +408,9 @@ Uses the second-order finite difference expression
   \f[\frac{\partial T_b}{\partial z}\big|_{z=0} \approx \frac{3 T_b(0) - 4 T_b(-\Delta z) + T_b(-2\Delta z)}{2 \Delta z}\f]
 where \f$\Delta z\f$ is the equal spacing in the bedrock.
 
-The above expression only makes sense when \c Mbz = \c temp.n_levels >= 3.
-When \c Mbz = 2 we use first-order differencing.  When temp was not created,
-the \c Mbz <= 1 cases, we return the stored geothermal flux.
+The above expression only makes sense when `Mbz` = `temp.n_levels` >= 3.
+When `Mbz` = 2 we use first-order differencing.  When temp was not created,
+the `Mbz` <= 1 cases, we return the stored geothermal flux.
  */
 PetscErrorCode PISMBedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;

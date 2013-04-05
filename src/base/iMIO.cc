@@ -477,16 +477,16 @@ PetscErrorCode IceModel::initFromFile(string filename) {
 
   //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
   /*!
-    For each variable selected by option <tt>-regrid_vars</tt>, we regrid it onto the current grid from
-    the NetCDF file specified by <tt>-regrid_file</tt>.
+    For each variable selected by option `-regrid_vars`, we regrid it onto the current grid from
+    the NetCDF file specified by `-regrid_file`.
 
-    The default, if <tt>-regrid_vars</tt> is not given, is to regrid the 3
-    dimensional quantities \c tau3, \c Tb3 and either \c T3 or \c Enth3. This is
+    The default, if `-regrid_vars` is not given, is to regrid the 3
+    dimensional quantities `tau3`, `Tb3` and either `T3` or `Enth3`. This is
     consistent with one standard purpose of regridding, which is to stick with
     current geometry through the downscaling procedure. Most of the time the user
     should carefully specify which variables to regrid.
 
-    This \c dimensions argument can be 2 (regrid 2D variables only), 3 (3D
+    This `dimensions` argument can be 2 (regrid 2D variables only), 3 (3D
     only) and 0 (everything).
   */
   PetscErrorCode IceModel::regrid(int dimensions) {

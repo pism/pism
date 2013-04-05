@@ -72,8 +72,8 @@ Let \f$T_b(t,x,y,z)\f$ be the temperature of the bedrock layer, for elevations
 bedrock, the ice/bedrock interface.  (Note \f$z=0\f$ is the base of the ice in
 IceModel, and thus a different location if ice is floating.)
 Let \f$G\f$ be the lithosphere geothermal flux rate, namely the PISM input
-variable \c bheatflx; see Related Page \ref std_names .  Let \f$k_b\f$
-(= \c bedrock_thermal_conductivity in pism_config.cdl) be the constant thermal
+variable `bheatflx`; see Related Page \ref std_names .  Let \f$k_b\f$
+(= `bedrock_thermal_conductivity` in pism_config.cdl) be the constant thermal
 conductivity of the upper lithosphere.  In these terms the actual
 upward heat flux into the ice/bedrock interface is the quantity,
   \f[G_0 = -k_b \frac{\partial T_b}{\partial z}.\f]
@@ -82,19 +82,19 @@ This is the \e output of the method get_upward_geothermal_flux() in this class.
 The evolution equation solved in this class, for which a timestep is done by the
 update() method, is the standard 1D heat equation
     \f[\rho_b c_b \frac{\partial T_b}{\partial t} = k_b \frac{\partial^2 T_b}{\partial z^2}\f]
-where \f$\rho_b\f$ = \c bedrock_thermal_density and \f$c_b\f$ =
-\c bedrock_thermal_specific_heat_capacity in pism_config.cdl.
+where \f$\rho_b\f$ = `bedrock_thermal_density` and \f$c_b\f$ =
+`bedrock_thermal_specific_heat_capacity` in pism_config.cdl.
 
-If \c n_levels>=3 then everything is the general case.  The lithospheric temperature
-in \c temp is saved in files as \c litho_temp.  The get_upward_geothermal_flux()
+If `n_levels` >= 3 then everything is the general case.  The lithospheric temperature
+in `temp` is saved in files as `litho_temp`.  The get_upward_geothermal_flux()
 method uses second-order differencing to compute the values of \f$G_0\f$.
 
-If \c n_levels<=1 then this object becomes very simplified: there is no internal
+If `n_levels` <= 1 then this object becomes very simplified: there is no internal
 state in IceModelVec3BTU temp.  The update() and allocate() methods are null,
 and the get_upward_geothermal_flux() method does nothing other than to copy the
-field \f$G\f$ = \c bheatflx into \c result.
+field \f$G\f$ = `bheatflx` into `result`.
 
-If \c n_levels==2 then everything is the general case except that 
+If `n_levels` == 2 then everything is the general case except that 
 get_upward_geothermal_flux() method uses first-order differencing to compute the
 values of \f$G_0\f$.
  */

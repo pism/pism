@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2011 Ed Bueler
+   Copyright (C) 2011, 2013 Ed Bueler
   
    This file is part of PISM.
   
@@ -39,20 +39,20 @@
 /*! \brief Implements an exact solution for basal melt rate.  Utterly straightforward arithmetic. */
 /*!
 Assumes a steady-state temperature profile in ice and bedrock.  This steady
-profile is driven by geothermal flux \c G from the crust below the bedrock
+profile is driven by geothermal flux `G` from the crust below the bedrock
 thermal layer.  The heat flux is everywhere upward in the bedrock thermal layer,
-and it is equal by construction to \c G.  The heat flux upward in the ice is
-also a constant everywhere in the ice, but its value is smaller than \c G.  This
-imbalance is balanced by the basal melt rate \c bmelt.
+and it is equal by construction to `G`.  The heat flux upward in the ice is
+also a constant everywhere in the ice, but its value is smaller than `G`.  This
+imbalance is balanced by the basal melt rate `bmelt`.
 
 Geometry and dynamics context:  The top of the ice is flat so the ice
-does not flow; the ice thickness has constant value \c H0.  The ice surface has
-temperature \c Ts which is below the melting point.  The basal melt rate
-\c bmelt does not contribute to the vertical velocity in the ice.  The ice
+does not flow; the ice thickness has constant value `H0`.  The ice surface has
+temperature `Ts` which is below the melting point.  The basal melt rate
+`bmelt` does not contribute to the vertical velocity in the ice.  The ice
 pressure is hydrostatic: \f$p = \rho_i g (h-z)\f$.
 
 The basic equation relates the fluxes in the basal ice, and in the top of the
-bedrock layer, with the basal melt rate \c bmelt \f$= - M_b / \rho_i \f$.  The
+bedrock layer, with the basal melt rate `bmelt` \f$= - M_b / \rho_i \f$.  The
 eqution is from [\ref AschwandenBuelerKhroulevBlatter],
   \f[ M_b H + (\mathbf{q} - \mathbf{q_{lith}}) \cdot \mathbf{n} = F_b + Q_b. \f]
 Here \f$-M_b\f$ is the basal melt rate in units of mass per area per time.
@@ -84,7 +84,7 @@ and in the bedrock (\f$z \le 0\f$) is also linear,
 This method implements these formulas.  It should be called both when setting-up
 a verification test by setting temperature at different elevations within
 the ice and bedrock, and when doing the verification itself by checking against
-the exact \c bmelt value.
+the exact `bmelt` value.
  */
 int exactO(const double z, double *TT, double *Tm, double *qice, double *qbed, double *bmelt) {
 

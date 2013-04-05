@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include "PISMVars.hh"
 
-//! \brief Add an IceModelVec v using the name \c name.
+//! \brief Add an IceModelVec v using the name `name`.
 PetscErrorCode PISMVars::add(IceModelVec &v, string name) {
 
   variables[name] = &v;
@@ -56,7 +56,7 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
   return 0;
 }
 
-//! Removes a variable with the key \c name from the dictionary.
+//! Removes a variable with the key `name` from the dictionary.
 void PISMVars::remove(string name) {
   IceModelVec *v = variables[name];
 
@@ -80,7 +80,7 @@ void PISMVars::remove(string name) {
 
 }
 
-//! \brief Returns a pointer to an IceModelVec containing variable \c name or
+//! \brief Returns a pointer to an IceModelVec containing variable `name` or
 //! NULL if that variable was not found.
 /*!
  * Checks standard_name first, then short name

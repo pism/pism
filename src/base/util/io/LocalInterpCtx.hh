@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -52,7 +52,7 @@ onto these points, we need the indices \f$\{I_m, \dots, I_{m'}\}\f$ of the netCD
 
   \f[  [x(i_m), x(i_{m'})] \quad \text{is a subset of} \quad  [x(I_m), x(I_{m'})]  \f]
 
-The arrays \c start and \c count have 4 integer entries, corresponding to the dimensions
+The arrays `start` and `count` have 4 integer entries, corresponding to the dimensions
 \f$t, x, y, z(zb)\f$.
  */
 class LocalInterpCtx {

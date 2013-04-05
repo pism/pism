@@ -582,7 +582,7 @@ public:
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
 //! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
-//! components are not called \c u and \c v (to avoid confusion).
+//! components are not called `u` and `v` (to avoid confusion).
 class IceModelVec2Stag : public IceModelVec2 {
 public:
   IceModelVec2Stag() : IceModelVec2() {

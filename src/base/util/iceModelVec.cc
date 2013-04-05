@@ -53,7 +53,7 @@ IceModelVec::IceModelVec() {
   zlevels[0] = 0.0;
 }
 
-//! Creates a shallow copy of an \c IceModelVec.
+//! Creates a shallow copy of an `IceModelVec`.
 /*!
   No data is copied to the new IceModelVec.
 
@@ -315,7 +315,7 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x) {
 }
 
 //! Copies v to a global vector 'destination'. Ghost points are discarded.
-/*! This is potentially dangerous: make sure that \c destination has the same
+/*! This is potentially dangerous: make sure that `destination` has the same
     dimensions as the current IceModelVec.
  */
 PetscErrorCode  IceModelVec::copy_to(Vec destination) {
@@ -331,7 +331,7 @@ PetscErrorCode  IceModelVec::copy_to(Vec destination) {
   return 0;
 }
 
-//! \brief Copies data from a Vec \c source to this IceModelVec. Updates ghost
+//! \brief Copies data from a Vec `source` to this IceModelVec. Updates ghost
 //! points if necessary.
 PetscErrorCode IceModelVec::copy_from(Vec source) {
   PetscErrorCode ierr;
@@ -372,7 +372,7 @@ Vec IceModelVec::get_vec() {
   return v;
 }
 
-//! Sets the variable name to \c name and resets metadata.
+//! Sets the variable name to `name` and resets metadata.
 PetscErrorCode  IceModelVec::set_name(string new_name, int N) {
   reset_attrs(N);
 
@@ -505,8 +505,8 @@ PetscErrorCode IceModelVec::get_interp_context(const PIO &nc, LocalInterpCtx* &l
 }
 
 
-//! Gets an IceModelVec from a file \c nc, interpolating onto the current grid.
-/*! Stops if the variable was not found and \c critical == true.
+//! Gets an IceModelVec from a file `nc`, interpolating onto the current grid.
+/*! Stops if the variable was not found and `critical` == true.
  */
 PetscErrorCode IceModelVec::regrid(const PIO &nc, bool critical, int start) {
   PetscErrorCode ierr;
@@ -545,8 +545,8 @@ PetscErrorCode IceModelVec::regrid(const PIO &nc, bool critical, int start) {
   return 0;
 }
 
-//! Gets an IceModelVec from a file \c nc, interpolating onto the current grid.
-/*! Sets all the values to \c default_value if the variable was not found.
+//! Gets an IceModelVec from a file `nc`, interpolating onto the current grid.
+/*! Sets all the values to `default_value` if the variable was not found.
  */
 PetscErrorCode IceModelVec::regrid(const PIO &nc, PetscScalar default_value) {
   PetscErrorCode ierr;
@@ -612,7 +612,7 @@ PetscErrorCode IceModelVec::read(const PIO &nc, const unsigned int time) {
   return 0;
 }
 
-//! \brief Define variables corresponding to an IceModelVec in a file opened using \c nc.
+//! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
 PetscErrorCode IceModelVec::define(const PIO &nc, PISM_IO_Type output_datatype) {
   PetscErrorCode ierr;
 
@@ -624,7 +624,7 @@ PetscErrorCode IceModelVec::define(const PIO &nc, PISM_IO_Type output_datatype) 
   return 0;
 }
 
-//! \brief Read attributes from the corresponding variable in \c nc.
+//! \brief Read attributes from the corresponding variable in `nc`.
 /*! Note that unline read() and regrid(), this method does not use the standard
   name to find the variable to read attributes from.
  */
@@ -881,7 +881,7 @@ PetscErrorCode  IceModelVec::set(const PetscScalar c) {
   return 0;
 }
 
-//! Checks if a value \c a in in the range of valid values of an IceModelVec.
+//! Checks if a value `a` in in the range of valid values of an IceModelVec.
 /*!
   uses valid_min and valid_max attributes, which can be set using the set_attr() method.
  */
