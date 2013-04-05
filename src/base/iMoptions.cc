@@ -65,10 +65,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PISMOptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
   ierr = PISMOptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
 
-  bool initfromT, initfromTandOm;
-  ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
-
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // Set global attributes using the config database:
