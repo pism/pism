@@ -59,7 +59,7 @@
 
   In the Galerkin formulation, test functions \f$\psi\f$ are the same as
   trial functions \f$\phi_i\f$, but it is still helpful to use different
-  letters for test and trial functions (this makes notation simpler).
+o  letters for test and trial functions (this makes notation simpler).
  */
 
 
@@ -68,7 +68,7 @@
 
    Use this to *get* values of a field in a FEM assembly loop.
 */
-#define get_nodal_values_3d(x,i,j,k,n) do {              \
+#define get_nodal_values_3d(x,i,j,k,n) do {     \
     (n)[0] = (x)[i][j][k];                      \
     (n)[1] = (x)[i+1][j][k];                    \
     (n)[2] = (x)[i+1][j+1][k];                  \
@@ -86,7 +86,7 @@
 
    This is used in the resudual evaluation code.
 */
-#define get_pointers_to_nodal_values_3d(x,i,j,k,n) do {           \
+#define get_pointers_to_nodal_values_3d(x,i,j,k,n) do { \
     (n)[0] = &(x)[i][j][k];                     \
     (n)[1] = &(x)[i+1][j][k];                   \
     (n)[2] = &(x)[i+1][j+1][k];                 \
@@ -104,7 +104,7 @@
 
    This is used in the code computing boundary integrals.
 */
-#define get_nodal_values_2d(x,i,j,n) do {               \
+#define get_nodal_values_2d(x,i,j,n) do {       \
     (n)[0] = (x)[i][j];                         \
     (n)[1] = (x)[i+1][j];                       \
     (n)[2] = (x)[i+1][j+1];                     \
@@ -119,6 +119,10 @@
   \f[
   z (\xi, \eta, \zeta)  =  \sum_{j = 1}^8 z_j \cdot \chi_j (\xi,\eta,\zeta) .
   \f]
+
+  Here \f$\xi\f$, \f$\eta\f$ and \f$\zeta\f$ are range from \f$-1\f$
+  to \f$1\f$, so that the triple \f$(\xi,\eta,\zeta)\f$ describes an
+  arbitrary point in the reference element.
 
   These derivatives are used to compute the Jacobian of this map (they
   appear in the third column).
@@ -162,10 +166,10 @@ void compute_z_gradient(PetscReal dchi[][3], const PetscReal zn[], PetscReal dz[
    partial derivatives of reference element basis functions \f$\chi_i\f$ (with
    respect to \f$\xi\f$,\f$\eta\f$,\f$\zeta\f$).
 
-   We have \f$\nabla \phi = J^{-1} (\nabla \chi)\f$.
+   In particular, \f$\nabla \phi = J^{-1} (\nabla \chi)\f$.
 
-   Note: both the Jacobian and its inverse are stored *transposed* here. (For
-   no apparent reason.)
+   **Note:** both the Jacobian and its inverse are stored *transposed*
+   here. (For no apparent reason.)
 
    \todo Quadrature weights are hard-wired!
 
@@ -204,7 +208,7 @@ void compute_element_info(PetscReal chi[8][8],PetscReal dchi[8][8][3],
 
 /*! Compute values of shape functions and their derivatives at quadrature points.
  *
- * Given coordinated of the nodes of the 2D \f$Q_1\f$ reference elelent
+ * Given coordinated of the nodes of the 2D \f$Q_1\f$ reference element
  * \f{align*}{
  * \xi  &= (-1, 1, 1, -1)\\
  * \eta &= (-1, -1, 1, 1)
@@ -255,7 +259,7 @@ void initialize_Q12D(PetscReal chi[4][4], PetscReal dchi[4][4][2])
 
 /*! Compute values of shape functions and their derivatives at quadrature points.
  *
- * Given coordinated of the nodes of the 2D \f$Q_1\f$ reference elelent
+ * Given coordinated of the nodes of the 3D \f$Q_1\f$ reference element
  * \f{align*}{
  * \xi   &= (-1,  1,  1, -1, -1,  1, 1, -1)\\
  * \eta  &= (-1, -1,  1,  1, -1, -1, 1,  1)\\
