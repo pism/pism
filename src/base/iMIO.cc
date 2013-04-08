@@ -422,9 +422,9 @@ PetscErrorCode IceModel::initFromFile(string filename) {
   // and assuming that the ice is cold.
   {
     bool enthalpy_exists, liqfrac_exists, temperature_exists;
-    ierr = nc.inq_var("enthalpy",    enthalpy_exists);    CHKERRQ(ierr);
-    ierr = nc.inq_var("liqfrac",     liqfrac_exists);     CHKERRQ(ierr);
-    ierr = nc.inq_var("temperature", temperature_exists); CHKERRQ(ierr);
+    ierr = nc.inq_var("enthalpy", enthalpy_exists);    CHKERRQ(ierr);
+    ierr = nc.inq_var("liqfrac",  liqfrac_exists);     CHKERRQ(ierr);
+    ierr = nc.inq_var("temp",     temperature_exists); CHKERRQ(ierr);
 
     if (enthalpy_exists) {
       ierr = Enth3.read(filename, last_record); CHKERRQ(ierr);
@@ -441,8 +441,8 @@ PetscErrorCode IceModel::initFromFile(string filename) {
 
       if (liqfrac_exists) {
         ierr = verbPrintf(2, grid.com,
-                          "* Computing enthalpy from ice temperature,"
-                          " liquid water fraction and thickness ...\n"); CHKERRQ(ierr);
+                          "* Computing enthalpy using ice temperature,"
+                          " liquid water fraction and thickness...\n"); CHKERRQ(ierr);
 
         // use vWork3d as already-allocated space
         ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);
@@ -453,7 +453,7 @@ PetscErrorCode IceModel::initFromFile(string filename) {
         ierr = compute_enthalpy(temperature, vWork3d, Enth3); CHKERRQ(ierr);
       } else {
         ierr = verbPrintf(2, grid.com,
-                          "* Computing enthalpy from ice temperature and thickness...\n");
+                          "* Computing enthalpy using ice temperature and thickness...\n");
         CHKERRQ(ierr);
 
         ierr = compute_enthalpy_cold(temperature, Enth3); CHKERRQ(ierr);
