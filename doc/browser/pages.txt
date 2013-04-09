@@ -19,7 +19,7 @@ The [Related Pages tab](pages.html) links to some
 overview pages for PISM usage and design.  You will find a
 \ref std_names "table of standard names used by PISM", a
 \ref config "table of configuration parameters for PISM", a
-\ref howto "how do I" page for developers, a
+\ref howto "'how do I?' page for developers", a
 \ref references "list of References", and other helpful material.
 
 This doxygen source *Browser* can be regenerated in any source code release.
@@ -31,8 +31,9 @@ Just do `"make browser_base"` in the build directory and look in
 - The website [www.pism-docs.org](http://www.pism-docs.org/) is the \e
   root for all PISM information.
 
-- The "PISM Utility classes" source code browser found online.
-  [http://www.pism-docs.org/doxy-trunk/util/html/index.html](http://www.pism-docs.org/doxy-trunk/util/html/index.html)
+- The "PISM Utility classes" source code browser can also be generated from
+  source; do `"make browser_util"` in the build directory and look in
+  `doc/browser/util/html/`
 
 - You can *get help,* send comments, or ask for new features by email to
   help@pism-docs.org.
@@ -50,11 +51,6 @@ Just do `"make browser_base"` in the build directory and look in
   Manual](http://www.pism-docs.org/). The *User's Manual* should
   suffice for understanding PISM unless one wants to modify it or
   couple another model to it.
-
-- [*source code repository browsing
-  tool*](https://github.com/pism/pism) at the [PISM download
-  site](https://github.com/pism/pism). It shows changes between source
-  code revisions.
 
 Copyright (C) 2008-2013 the PISM authors.  
 
