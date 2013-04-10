@@ -32,7 +32,8 @@ extern "C" {
 	    PetscReal *taud, PetscReal *dtaub);
 }
 
-//! Blatter-Pattyn stress balance based on Jed Brown's PETSc tutorial ex48.c (Brown et al. 2011).
+//! \brief Blatter-Pattyn stress balance based on Jed Brown's PETSc
+//! tutorial ex48.c (Brown et al. 2011).
 /*!
 Toy hydrostatic ice flow with multigrid in 3D
 
@@ -49,16 +50,18 @@ where
   \f[\eta = B/2 (\epsilon + \gamma)^{(p-2)/2}.\f]
 is the nonlinear effective viscosity with regularization epsilon and hardness
 parameter B, written in terms of the second invariant
-  \f[\gamma = u_x^2 + v_y^2 + u_x v_y + (1/4) (u_y + v_x)^2 + (1/4) u_z^2 + (1/4) v_z^2.\f]
 
-The surface boundary conditions are the natural conditions.  The basal boundary
-conditions are either no-slip, or Navier (linear) slip with spatially variant
-friction coefficient \f$\beta^2\f$.
+\f[\gamma = u_x^2 + v_y^2 + u_x v_y + (1/4) (u_y + v_x)^2 + (1/4) u_z^2 + (1/4) v_z^2.\f]
+
+The surface boundary conditions are the natural conditions,
+corresponding to the "zero stress" condition (see [\ref RappazReist05]). The
+basal boundary conditions are either no-slip, or a pseudo-plastic
+sliding law (see IceBasalResistancePlasticLaw).
 
 In the code, the equations for \f$(u,v)\f$ are multiplied through by \f$1/(\rho g)\f$
 so that residuals are O(1).
 
-The discretization is Q1 finite elements, managed by a DA.  The grid is never
+The discretization is \f$Q_1\f$ finite elements, managed by a DA.  The grid is never
 distorted in the map \f$(x,y)\f$ plane, but the bed and surface may be bumpy.
 This is handled as usual in FEM, through the Jacobian of the coordinate
 transformation from a reference element to the physical element.
@@ -69,6 +72,18 @@ contiguous in memory.  This amounts to reversing the meaning of X,Y,Z compared
 to the DA's internal interpretation, and then indexing as vec[i][j][k].  The
 exotic coarse spaces require 2D DAs which are made to use compatible domain
 decomposition relative to the 3D DAs.
+
+Note that this implementation introduces two extra simplifications
+compatible with the small bed slope assumption:
+
+- the code evaluating the integral corresponding to the basal boundary
+  condition assumes that the Jacobian of the map from the 2D reference
+  element is \f$J = \frac 1 4 \Delta x \times \Delta y\f$, which is
+  correct only if the bed is a horizontal plane.
+
+- it assumes that the horizontal ice velocity at the base approximates
+  the tangential basal ice velocity, which is also correct if the base
+  of the ice is horizontal.
 
 See the source code $PETSC_DIR/src/snes/examples/tutorials/ex48.c for
 the original implementation.

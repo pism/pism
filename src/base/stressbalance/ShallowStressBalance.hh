@@ -104,6 +104,9 @@ public:
 
   IceFlowLaw* get_flow_law()
   { return flow_law; }
+
+  EnthalpyConverter& get_enthalpy_converter()
+  { return EC; }
 protected:
   virtual PetscErrorCode allocate();
 

@@ -59,7 +59,7 @@
 
   In the Galerkin formulation, test functions \f$\psi\f$ are the same as
   trial functions \f$\phi_i\f$, but it is still helpful to use different
-o  letters for test and trial functions (this makes notation simpler).
+  letters for test and trial functions (this makes notation simpler).
  */
 
 

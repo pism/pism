@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -130,10 +130,11 @@ protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                                    IceModelVec2S *bmr, IceModelVec3 &result);
+  virtual PetscErrorCode compute_volumetric_strain_heating();
 
   PISMVars *variables;
-
-  IceModelVec3 w;
+  
+  IceModelVec3 w, strain_heating;
   PetscReal w_max;
   IceModelVec2S *basal_melt_rate;
 

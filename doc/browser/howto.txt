@@ -1,41 +1,37 @@
+/* -*- mode: markdown -*- */
 /*! \page howto How do I...?
 
-\li \ref adding_parameters "Create and use configuration flags and parameters"
-\li \ref adding_variables "Create and use (read, write...) additional variables"
-\li \ref reading_scalar_forcing "Read scalar forcing data"
-\li \ref reading_2d_forcing "Read 2D forcing fields"
-\li \ref get_variables "Use fields managed by IceModel in a surface (atmosphere, ocean) model to implement a parameterization."
-\li \ref component_output "Write to an output file from a PISMComponent derived class (such as a surface model)"
-\li \ref diag "Add a new diagnostic quantity"
+- \ref adding_parameters "Create and use configuration flags and parameters"
+- \ref adding_variables "Create and use (read, write...) additional variables"
+- \ref reading_scalar_forcing "Read scalar forcing data"
+- \ref reading_2d_forcing "Read 2D forcing fields"
+- \ref get_variables "Use fields managed by IceModel in a surface (atmosphere, ocean) model to implement a parameterization."
+- \ref component_output "Write to an output file from a PISMComponent derived class (such as a surface model)"
+- \ref diag "Add a new diagnostic quantity"
 
 \section adding_parameters Creating and using configuration flags and parameters
 
-\li Edit 'src/pism_config.cdl'. Each flag or parameter is stored as a NetCDF attribute and should have a corresponding "_doc" attribute describing its meaning.
+- Edit 'src/pism_config.cdl'. Each flag or parameter is stored as a NetCDF attribute and should have a corresponding "_doc" attribute describing its meaning.
 
-\verbatim
     pism_config:standard_gravity = 9.81;
     pism_config:standard_gravity_doc = "m s-2; acceleration due to gravity on Earth geoid";
-\endverbatim
 
-\li One can access these parameters using the NCConfigVariable class. IceModel
+- One can access these parameters using the NCConfigVariable class. IceModel
 has an instance of this class as a data member 'config', so no additional code is
 necessary to initialize the configuration database.
 
 To use a parameter, do
-\code
-double g = config.get("standard_gravity");
-\endcode
+
+    double g = config.get("standard_gravity");
 
 To use a flag, do
-\code
-bool compute_age = config.get_flag("do_age");
-\endcode
 
+    bool compute_age = config.get_flag("do_age");
 
 \note
-\li It is a good idea to avoid calling config.get() and config.get_flag()
+- It is a good idea to avoid calling config.get() and config.get_flag()
 from within loops: looking up a parameter by its name is slow.
-\li Please see \ref config "this page" for a list of flags and parameters
+- Please see \ref config "this page" for a list of flags and parameters
 currently used in PISM.
 
 \section adding_variables Creating and using additional variables.
@@ -45,12 +41,12 @@ currently used in PISM.
 PISM uses the following classes to manage 2D and 3D fields, their I/O and
 metadata:
 
-\li IceModelVec2S -- scalar 2D fields
-\li IceModelVec2V -- vector 2D fields (such as horizontal velocities;
+- IceModelVec2S -- scalar 2D fields
+- IceModelVec2V -- vector 2D fields (such as horizontal velocities;
 corresponds to 2 NetCDF variables)
-\li IceModelVec2Int -- 2D masks, such as the grounded/floating mask
-\li IceModelVec2T -- 2D time-dependent fields (used to read and store forcing data)
-\li IceModelVec3 -- scalar 3D fields (within the ice)
+- IceModelVec2Int -- 2D masks, such as the grounded/floating mask
+- IceModelVec2T -- 2D time-dependent fields (used to read and store forcing data)
+- IceModelVec3 -- scalar 3D fields (within the ice)
 
 Please see the documentation of these classes for more info.  The base class
 IceModelVec is a virtual class, so code should use the above derived classes.
@@ -59,13 +55,11 @@ Only the derived classes have create() methods, in particular.
 To create a scalar field, for example, one needs to create an instance of one
 of the classes listed above and then call "create" to allocate it.
 
-\code
-  // land ice thickness
-  ierr = vH.create(grid, "thk", true, 2); CHKERRQ(ierr);
-  ierr = vH.set_attrs("model_state", "land ice thickness",
-		      "m", "land_ice_thickness"); CHKERRQ(ierr);
-  ierr = vH.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-\endcode
+    // land ice thickness
+    ierr = vH.create(grid, "thk", true, 2); CHKERRQ(ierr);
+    ierr = vH.set_attrs("model_state", "land ice thickness",
+                        "m", "land_ice_thickness"); CHKERRQ(ierr);
+    ierr = vH.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
 Here \c grid is an IceGrid instance, "thk" is the name of the NetCDF variable,
 "true" corresponds to "has ghosts" and "2" is the number of ghosts (in other
@@ -77,11 +71,11 @@ unless you dynamically created the IceModelVec (or derived) instance using the
 C++ "new" operator.  (In which case "delete" should be used.)
 
 The set_attrs() call sets variable metadata you will see in an output file
-\li \b pism_intent  -- the only important case is "model_state", see below
-\li \b long_name -- the (descriptive) long name used for plotting, etc
-\li \b units -- units used \e in \e the \e code. Does not have to match units
+- \b pism_intent  -- the only important case is "model_state", see below
+- \b long_name -- the (descriptive) long name used for plotting, etc
+- \b units -- units used \e in \e the \e code. Does not have to match units
 in a file
-\li \b standard_name -- CF standard name.
+- \b standard_name -- CF standard name.
 
 The third call above using set_attr() allows any named attribute to be added to
 the variable.  The CF convention covers some attribute semantics, including
@@ -90,9 +84,7 @@ the variable.  The CF convention covers some attribute semantics, including
 If you want PISM to automatically convert data from the units used in an input
 file to the units used internally, you need to add
 
-\code
-  ierr = vH.set_glaciological_units("km"); CHKERRQ(ierr);
-\endcode
+    ierr = vH.set_glaciological_units("km"); CHKERRQ(ierr);
 
 If, in addition to this, you want PISM to \e write data using "glaciological"
 units, add
@@ -103,54 +95,51 @@ vH.write_in_glaciological_units = true;
 \subsubsection reading_more Reading data from a file.
 
 There are at least three cases of "reading data from a file":
-\li reading a field stored in an input file on a grid matching the one used by the current run
+- reading a field stored in an input file on a grid matching the one used by the current run
 (restarting a run) and
-\li reading a field stored in an input file on a different grid, interpolating onto the current
+- reading a field stored in an input file on a different grid, interpolating onto the current
 grid (bootstrapping).
-\li reading a field stored in a file \b other than the input file using
+- reading a field stored in a file \b other than the input file using
 interpolation (assuming that grids are compatible but not identical)
 
 This snippet from PAYearlyCycle::init() covers the first two cases (at least for
 surface, atmosphere and ocean models; %i.e. for all the classes derived from PISMComponent)
-\code
-  ierr = find_pism_input(precip_filename, regrid, start); CHKERRQ(ierr);
 
-  // read precipitation rate from file
-  ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent precipitation rate 'precip'\n"
-		    "      from %s ... \n",
-		    precip_filename.c_str()); CHKERRQ(ierr); 
-  if (regrid) {
-    ierr = precip.regrid(precip_filename.c_str(), true); CHKERRQ(ierr); // fails if not found!
-  } else {
-    ierr = precip.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
-  }
-  string precip_history = "read from " + precip_filename + "\n";
+    ierr = find_pism_input(precip_filename, regrid, start); CHKERRQ(ierr);
 
-  ierr = precip.set_attr("history", precip_history); CHKERRQ(ierr);
+    // read precipitation rate from file
+    ierr = verbPrintf(2, grid.com, 
+                      "    reading mean annual ice-equivalent precipitation rate 'precip'\n"
+                      "      from %s ... \n",
+                      precip_filename.c_str()); CHKERRQ(ierr); 
+    if (regrid) {
+      ierr = precip.regrid(precip_filename.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    } else {
+      ierr = precip.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    }
+    string precip_history = "read from " + precip_filename + "\n";
 
-  delete lic;
-\endcode
+    ierr = precip.set_attr("history", precip_history); CHKERRQ(ierr);
+
+    delete lic;
 
 Here
-\li "start" is an index of a record \e within \e a \e file that we need to
-read. PISM almost always reads the last record.
+- "start" is an index of a record \e within \e a \e file that we need to
+  read. PISM almost always reads the last record.
 
 Please see PISMComponent::find_pism_input() to see how to compute the "start"
 index "by hand".
 
 The snippet below is an example of case 3 (for 2D fields, reading the last record).
-\code
- ierr = variable.regrid(filename, true); CHKERRQ(ierr); // fails if not found!
-\endcode
+
+    ierr = variable.regrid(filename, true); CHKERRQ(ierr); // fails if not found!
+
 
 \subsubsection writing_more Writing data to a file.
 
 To write a field stored in an IceModelVec to an already "prepared" file, just call
 
-\code 
     ierr = precip.write(filename); CHKERRQ(ierr);
-\endcode
 
 The file referred to by "filename" here has to have "t", "x", "y", "z", "zb"
 dimensions created, that is, it must be prepared.  No action is needed to be
@@ -158,18 +147,17 @@ able to write to an output ("-o") file, a snapshot file or the like; IceModel
 has already prepared it.
 
 If you do need to "prepare" a file, do:
-\code
-  PISMIO nc(&grid);
 
-  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
-\endcode
+    PISMIO nc(&grid);
+
+    ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+    ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
 
 Regarding the second and third arguments to nc.open_for_writing():
-\li append == false means that if a file exists already, it will be moved
+- append == false means that if a file exists already, it will be moved
 aside
-\li check_dims == true means tells PISM to create dimensions. 
+- check_dims == true means tells PISM to create dimensions. 
 
 A newly-created file is "empty" and contains no records. The nc.append_time()
 call creates a record corresponding to a particular model year.
@@ -183,9 +171,7 @@ If "pism_intent" is set to "model_state" and a variable is added to the
 variable from a file it is re-starting from and will always write it to an
 output, snapshot and backup files.
 
-\code
-  ierr = variables.add(vH); CHKERRQ(ierr);
-\endcode
+    ierr = variables.add(vH); CHKERRQ(ierr);
 
 \section reading_scalar_forcing Reading scalar forcing data
 
@@ -195,7 +181,6 @@ see PAForcing or PA_SeaRISE_Greenland for an example.
 The following snippet from PAForcing::init() illustrates creating a Timeseries
 object and reading data from a file.
 
-\code
     delta_T = new Timeseries(grid.com, grid.rank, "delta_T", "t");
     ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
     ierr = delta_T->set_dimension_units("years", ""); CHKERRQ(ierr);
@@ -207,12 +192,11 @@ object and reading data from a file.
 		      CHKERRQ(ierr);
 	 
     ierr = delta_T->read(dT_file); CHKERRQ(ierr);
-\endcode
 
 Call
-\code
-double offset = (*delta_T)(time);
-\endcode
+
+    double offset = (*delta_T)(time);
+
 to get the value corresponding to the time "time", in this case in years. The
 value returned will be computed using linear interpolation.
 
@@ -225,14 +209,14 @@ adding_variables if you need to read and store \b one record of a 2D field.
 The following snippet from PSDirectForcing::init() illustrates creating an
 IceModelVec2T object and reading data from a file.
 
-\code
-  temperature.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
-  ierr = temperature.create(grid, "artm", false); CHKERRQ(ierr);
-  ierr = temperature.set_attrs("climate_forcing",
-                               "temperature of the ice at the ice surface but below firn processes",
-                               "Kelvin", ""); CHKERRQ(ierr);
-  ierr = temperature.init(filename); CHKERRQ(ierr);
-\endcode
+
+    temperature.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
+    ierr = temperature.create(grid, "artm", false); CHKERRQ(ierr);
+    ierr = temperature.set_attrs("climate_forcing",
+                                 "temperature of the ice at the ice surface but below firn processes",
+                                 "Kelvin", ""); CHKERRQ(ierr);
+    ierr = temperature.init(filename); CHKERRQ(ierr);
+
 
 \section get_variables Using fields managed by IceModel in a surface model to implement a parameterization.
 
@@ -242,12 +226,12 @@ Please see PA_EISMINT_Greenland::init() and PA_EISMINT_Greenland::update() for a
 
 A PISM component needs to implement the following I/O methods:
 
-\li init(). It is not an I/O method per se, but most PISM components read their
+- init(). It is not an I/O method per se, but most PISM components read their
 input fields there; see PA_EISMINT_Greenland::init().
-\li add_vars_to_output(), which adds variable names to the list of fields that need
+- add_vars_to_output(), which adds variable names to the list of fields that need
 to be written. See PSTemperatureIndex::add_vars_to_output() for an example.
-\li define_variables(), which defines variables. (See PSTemperatureIndex::define_variables().)
-\li write_variables(), which writes data; see PSTemperatureIndex::write_variables().
+- define_variables(), which defines variables. (See PSTemperatureIndex::define_variables().)
+- write_variables(), which writes data; see PSTemperatureIndex::write_variables().
 
 Why are all these methods needed? In PISM we separate defining and writing NetCDF variables because defining all
 the NetCDF variables before writing data is a lot faster than defining a
@@ -258,12 +242,12 @@ NetCDF Users' Guide</a> for a technical explanation.)
 Within IceModel the following steps are done to write 2D and 3D fields to an
 output file:
 
-\li Assemble the list of variables to be written (see
+- Assemble the list of variables to be written (see
 IceModel::set_output_size()); calls add_vars_to_output()
-\li Create a NetCDF file
-\li Define all the variables in the file (see IceModel::write_variables());
+- Create a NetCDF file
+- Define all the variables in the file (see IceModel::write_variables());
 calls define_variables()
-\li Write all the variables to the file (same method); calls write_variables().
+- Write all the variables to the file (same method); calls write_variables().
 
 \section diag Adding a new "diagnostic" quantity to an atmosphere model.
 
@@ -276,58 +260,57 @@ on demand), do the following.
 Assuming that PA_foo is the atmosphere model we're working with and "bar" is
 the name of the new quantity, we need to add this code
 
-\code
-class PA_foo_bar : public PISMDiag<PA_foo>
-{
-public:
-  PA_foo_bar(PA_foo *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-\endcode
+    class PA_foo_bar : public PISMDiag<PA_foo>
+    {
+    public:
+      PA_foo_bar(PA_foo *m, IceGrid &g, PISMVars &my_vars);
+      virtual PetscErrorCode compute(IceModelVec* &result);
+    };
+
 to a header (.hh) file and implement it in a .cc file.
 
 See IceModel_diagnostics.cc for examples. Generally speaking, in every class
 implementing a "diagnostic" quantity
-\li the constructor sets metadata
-\li you have access to a data member "var" of an atmosphere model as
+- the constructor sets metadata
+- you have access to a data member "var" of an atmosphere model as
 "model->var"; you might need to add
-\code
-friend class PA_foo_bar;
-\endcode
+
+    friend class PA_foo_bar;
+
 to the definition of PA_foo if you need to access a private data member (see
 the definition of IceModel for one example).
-\li when working with atmosphere models and other classes derived from
+- when working with atmosphere models and other classes derived from
 PISMComponent, you can access the config database as "model->config".
-\li the PISMDiagnostic::compute() method allocates memory and performs the computation.
-\li to use a field managed by IceModel, use "variables":
-\code
-  IceModelVec2S *surface;
-  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
-\endcode
-\li the \b caller of the PISMDiagnostic::compute() method has to de-allocate the field
+- the PISMDiagnostic::compute() method allocates memory and performs the computation.
+- to use a field managed by IceModel, use "variables":
+
+    IceModelVec2S *surface;
+    surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
+    if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+
+- the \b caller of the PISMDiagnostic::compute() method has to de-allocate the field
 allocated by PISMDiagnostic::compute()
 
-Note that in almost every (current) implementation of ...::compute() you see
-\code
-PetscErrorCode ...::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  const PetscScalar fillval = -0.01;
+Note that in almost every (current) implementation of PISMDiagnostic::compute() you see
 
-  <...>
+    PetscErrorCode ...::compute(IceModelVec* &output) {
+      PetscErrorCode ierr;
+      const PetscScalar fillval = -0.01;
 
-  // 1
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "hardav", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+      <...>
 
-  <...>
+      // 1
+      IceModelVec2S *result = new IceModelVec2S;
+      ierr = result->create(grid, "hardav", false); CHKERRQ(ierr);
+      ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
-  // 2
-  output = result;
-  return 0;
-}
-\endcode
+      <...>
+
+      // 2
+      output = result;
+      return 0;
+    }
+
 
 The block marked "1" allocates a 2D field and copies metadata stored in
 vars[0], while the block marked "2" casts a pointer to a 2D field to a pointer
@@ -340,17 +323,14 @@ This allows us to have the same interface for both 2D and 3D diagnostics.
 To make the new diagnostic field available (i.e. to be able to use the new
 PA_foo_bar class), implement PA_foo::get_diagnostics().
 
-\code
-void PA_foo::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  dict["bar"] = new PA_foo_bar(this, grid, *variables);
-}
-\endcode
+    void PA_foo::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+      dict["bar"] = new PA_foo_bar(this, grid, *variables);
+    }
 
 Note that if you are implementing this method in a "modifier" of a surface
 model, you need to remember to call
-\code
-  input_model->get_diagnostics(dict);
-\endcode
+
+    input_model->get_diagnostics(dict);
 
 \note PISM's handling of scalar diagnostic quantities is different and should
 be improved.
