@@ -187,6 +187,7 @@ PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
   PetscErrorCode ierr;
 
   ierr = w.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
+  ierr = strain_heating.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
 
   ierr = stress_balance->extend_the_grid(old_Mz); CHKERRQ(ierr);
 
