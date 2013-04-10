@@ -111,9 +111,6 @@ public:
 
   virtual PetscErrorCode update(bool fast); // almost done (compute vertically-averaged u,v and sigma)
 
-  virtual PetscErrorCode get_strain_heating_contribution(IceModelVec2S* &)
-  { SETERRQ(grid.com, 1, "BlatterStressBalance does not implement get_strain_heating_contribution()"); }
-
   virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
   { u_result = &u; v_result = &v; return 0; }
 

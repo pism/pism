@@ -30,35 +30,35 @@ PISMStressBalance::PISMStressBalance(IceGrid &g,
                                      SSB_Modifier *ssb_mod,
                                      PISMOceanModel *ocean_model,
                                      const NCConfigVariable &conf)
-  : PISMComponent_Diag(g, conf), stress_balance(sb), modifier(ssb_mod), ocean(ocean_model) {
+  : PISMComponent_Diag(g, conf), m_stress_balance(sb), m_modifier(ssb_mod), m_ocean(ocean_model) {
 
-  basal_melt_rate = NULL;
-  variables = NULL;
+  m_basal_melt_rate = NULL;
+  m_variables = NULL;
 
   allocate();
 }
 
 PISMStressBalance::~PISMStressBalance() {
-  delete stress_balance;
-  delete modifier;
+  delete m_stress_balance;
+  delete m_modifier;
 }
 
 PetscErrorCode PISMStressBalance::allocate() {
   PetscErrorCode ierr;
 
   // allocate the vertical velocity field:
-  ierr = w.create(grid, "wvel_rel", false); CHKERRQ(ierr);
-  ierr = w.set_attrs("diagnostic",
-                     "vertical velocity of ice, relative to base of ice directly below",
-                     "m s-1", ""); CHKERRQ(ierr);
-  w.time_independent = false;
-  ierr = w.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  w.write_in_glaciological_units = true;
+  ierr = m_w.create(grid, "wvel_rel", false); CHKERRQ(ierr);
+  ierr = m_w.set_attrs("diagnostic",
+                       "vertical velocity of ice, relative to base of ice directly below",
+                       "m s-1", ""); CHKERRQ(ierr);
+  m_w.time_independent = false;
+  ierr = m_w.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  m_w.write_in_glaciological_units = true;
 
-  ierr = strain_heating.create(grid, "strain_heating", false); CHKERRQ(ierr);
-  ierr = strain_heating.set_attrs("internal",
-                                  "rate of strain heating in ice (dissipation heating)",
-                                  "", ""); CHKERRQ(ierr);
+  ierr = m_strain_heating.create(grid, "strain_heating", false); CHKERRQ(ierr);
+  ierr = m_strain_heating.set_attrs("internal",
+                                    "rate of strain heating in ice (dissipation heating)",
+                                    "", ""); CHKERRQ(ierr);
   return 0;
 }
 
@@ -66,10 +66,10 @@ PetscErrorCode PISMStressBalance::allocate() {
 PetscErrorCode PISMStressBalance::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  variables = &vars;
+  m_variables = &vars;
 
-  ierr = stress_balance->init(vars); CHKERRQ(ierr);
-  ierr = modifier->init(vars); CHKERRQ(ierr);
+  ierr = m_stress_balance->init(vars); CHKERRQ(ierr);
+  ierr = m_modifier->init(vars); CHKERRQ(ierr);
 
   return 0;
 }
@@ -77,14 +77,14 @@ PetscErrorCode PISMStressBalance::init(PISMVars &vars) {
 PetscErrorCode PISMStressBalance::set_boundary_conditions(IceModelVec2Int &locations,
                                                           IceModelVec2V &velocities) {
   PetscErrorCode ierr;
-  ierr = stress_balance->set_boundary_conditions(locations, velocities); CHKERRQ(ierr);
+  ierr = m_stress_balance->set_boundary_conditions(locations, velocities); CHKERRQ(ierr);
   return 0;
 }
 
 //! \brief Set the basal melt rate. (If not NULL, it will be included in the
 //! computation of the vertical valocity).
 PetscErrorCode PISMStressBalance::set_basal_melt_rate(IceModelVec2S *bmr_input) {
-  basal_melt_rate = bmr_input;
+  m_basal_melt_rate = bmr_input;
   return 0;
 }
 
@@ -92,28 +92,27 @@ PetscErrorCode PISMStressBalance::set_basal_melt_rate(IceModelVec2S *bmr_input) 
 PetscErrorCode PISMStressBalance::update(bool fast) {
   PetscErrorCode ierr;
   IceModelVec2V *velocity_2d;
-  IceModelVec2S *strain_heating_contribution;
   IceModelVec3  *u, *v;
 
   // Tell the ShallowStressBalance object about the current sea level:
-  if (ocean) {
+  if (m_ocean) {
     PetscReal sea_level;
-    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-    stress_balance->set_sea_level_elevation(sea_level);
+    ierr = m_ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+    m_stress_balance->set_sea_level_elevation(sea_level);
   }
 
-  ierr = stress_balance->update(fast); CHKERRQ(ierr);
+  ierr = m_stress_balance->update(fast); CHKERRQ(ierr);
 
-  ierr = stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr);
-  ierr = stress_balance->get_strain_heating_contribution(strain_heating_contribution); CHKERRQ(ierr);
-  ierr = modifier->update(velocity_2d, strain_heating_contribution, fast); CHKERRQ(ierr);
+  ierr = m_stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr);
+
+  ierr = m_modifier->update(velocity_2d, fast); CHKERRQ(ierr);
 
   if (!fast) {
-    ierr = modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
+    ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
 
     ierr = this->compute_volumetric_strain_heating(); CHKERRQ(ierr);
 
-    ierr = compute_vertical_velocity(u, v, basal_melt_rate, w); CHKERRQ(ierr);
+    ierr = this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w); CHKERRQ(ierr);
   }
 
   return 0;
@@ -121,64 +120,64 @@ PetscErrorCode PISMStressBalance::update(bool fast) {
 
 PetscErrorCode PISMStressBalance::get_2D_advective_velocity(IceModelVec2V* &result) {
   PetscErrorCode ierr;
-  ierr = stress_balance->get_2D_advective_velocity(result); CHKERRQ(ierr);
+  ierr = m_stress_balance->get_2D_advective_velocity(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PISMStressBalance::get_diffusive_flux(IceModelVec2Stag* &result) {
   PetscErrorCode ierr;
-  ierr = modifier->get_diffusive_flux(result); CHKERRQ(ierr);
+  ierr = m_modifier->get_diffusive_flux(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PISMStressBalance::get_max_diffusivity(PetscReal &D) {
   PetscErrorCode ierr;
-  ierr = modifier->get_max_diffusivity(D); CHKERRQ(ierr);
+  ierr = m_modifier->get_max_diffusivity(D); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PISMStressBalance::get_max_2d_velocity(PetscReal &u_max, PetscReal &v_max) {
   PetscErrorCode ierr;
-  ierr = stress_balance->get_max_2d_velocity(u_max, v_max); CHKERRQ(ierr);
+  ierr = m_stress_balance->get_max_2d_velocity(u_max, v_max); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PISMStressBalance::get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v, IceModelVec3* &w_out) {
   PetscErrorCode ierr;
-  ierr = modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
-  w_out = &w;
+  ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
+  w_out = &m_w;
   return 0;
 }
 
 PetscErrorCode PISMStressBalance::get_max_3d_velocity(PetscReal &u, PetscReal &v, PetscReal &w_out) {
   PetscErrorCode ierr;
-  ierr = modifier->get_max_horizontal_velocity(u, v); CHKERRQ(ierr);
-  w_out = w_max;
+  ierr = m_modifier->get_max_horizontal_velocity(u, v); CHKERRQ(ierr);
+  w_out = m_w_max;
   return 0;
 }
 
 PetscErrorCode PISMStressBalance::get_basal_frictional_heating(IceModelVec2S* &result) {
   PetscErrorCode ierr;
-  ierr = stress_balance->get_basal_frictional_heating(result); CHKERRQ(ierr); 
+  ierr = m_stress_balance->get_basal_frictional_heating(result); CHKERRQ(ierr); 
   return 0;
 }
 
 PetscErrorCode PISMStressBalance::get_volumetric_strain_heating(IceModelVec3* &result) {
-  result = &this->strain_heating;
+  result = &m_strain_heating;
   return 0;
 }
 
 PetscErrorCode PISMStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                                     IceModelVec2 &result) {
   PetscErrorCode ierr;
-  ierr = stress_balance->compute_2D_principal_strain_rates(velocity, mask, result); CHKERRQ(ierr);
+  ierr = m_stress_balance->compute_2D_principal_strain_rates(velocity, mask, result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PISMStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                       IceModelVec2 &result) {
   PetscErrorCode ierr;
-  ierr = stress_balance->compute_2D_stresses(velocity, mask, result); CHKERRQ(ierr);
+  ierr = m_stress_balance->compute_2D_stresses(velocity, mask, result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -186,12 +185,12 @@ PetscErrorCode PISMStressBalance::compute_2D_stresses(IceModelVec2V &velocity, I
 PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
   PetscErrorCode ierr;
 
-  ierr = w.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr = strain_heating.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
+  ierr = m_w.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
+  ierr = m_strain_heating.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
 
-  ierr = stress_balance->extend_the_grid(old_Mz); CHKERRQ(ierr);
+  ierr = m_stress_balance->extend_the_grid(old_Mz); CHKERRQ(ierr);
 
-  ierr = modifier->extend_the_grid(old_Mz); CHKERRQ(ierr);
+  ierr = m_modifier->extend_the_grid(old_Mz); CHKERRQ(ierr);
 
   return 0;
 }
@@ -232,7 +231,7 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
   PetscErrorCode ierr;
   IceModelVec2Int *mask;
 
-  mask = dynamic_cast<IceModelVec2Int*>(variables->get("mask"));
+  mask = dynamic_cast<IceModelVec2Int*>(m_variables->get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery m(*mask);
@@ -334,7 +333,7 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
   ierr = v->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMax(&my_w_max, &w_max, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMax(&my_w_max, &m_w_max, grid.com); CHKERRQ(ierr);
 
   return 0;
 }
@@ -343,8 +342,14 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
  * This function computes \f$D^2\f$ defined by
  *
  * \f[ 2D^2 = D_{ij} D_{ij}\f]
+ * or
+ * \f[
+ * D^2 = \frac{1}{2}\,\left(\frac{1}{2}\,(v_{z})^2 + (v_{y} + u_{x})^2 +
+ *       (v_{y})^2 + \frac{1}{2}\,(v_{x} + u_{y})^2 + \frac{1}{2}\,(u_{z})^2 +
+ *       (u_{x})^2\right)
+ * \f]
  *
- * (note the use of the summation convention). Here \f$D_ij\f$ is the
+ * (note the use of the summation convention). Here \f$D_{ij}\f$ is the
  * strain rate tensor. See
  * PISMStressBalance::compute_volumetric_strain_heating() for details.
  *
@@ -404,15 +409,15 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
   IceModelVec3 *u, *v, *enthalpy;
   IceModelVec2S *thickness;
-  IceFlowLaw *flow_law = stress_balance->get_flow_law();
-  EnthalpyConverter &EC = stress_balance->get_enthalpy_converter();
+  IceFlowLaw *flow_law = m_stress_balance->get_flow_law();
+  EnthalpyConverter &EC = m_stress_balance->get_enthalpy_converter();
 
-  ierr = modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
+  ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables->get("land_ice_thickness"));
+  thickness = dynamic_cast<IceModelVec2S*>(m_variables->get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
-  enthalpy = dynamic_cast<IceModelVec3*>(variables->get("enthalpy"));
+  enthalpy = dynamic_cast<IceModelVec3*>(m_variables->get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   double dx = grid.dx, dy = grid.dy,
@@ -421,30 +426,9 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
     exponent = 0.5 * (1.0 / n + 1.0),
     e_to_a_power = pow(enhancement_factor,-1.0/n);
 
-  ierr = strain_heating.begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
- 
-  // use strain_heating to store ice hardness (temporarily)
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      PetscScalar H  = (*thickness)(i,j), *E_ij, *tmp;
-      int         ks = grid.kBelowHeight(H);
-
-      ierr =      enthalpy->getInternalColumn(i, j, &E_ij); CHKERRQ(ierr); 
-      ierr = strain_heating.getInternalColumn(i, j, &tmp);  CHKERRQ(ierr); 
-
-      // Zero out the whole column:
-      ierr = PetscMemzero(tmp, grid.Mz*sizeof(PetscScalar)); CHKERRQ(ierr);
-
-      for (int k = 0; k <= ks; ++k) {
-        double pressure = EC.getPressureFromDepth(H - grid.zlevels[k]);
-        tmp[k] = flow_law->hardness_parameter(E_ij[k], pressure) * e_to_a_power;
-      }
-    }
-  }
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-
+  ierr = m_strain_heating.begin_access(); CHKERRQ(ierr);
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = u->begin_access(); CHKERRQ(ierr);
   ierr = v->begin_access(); CHKERRQ(ierr);
 
@@ -452,10 +436,11 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       PetscScalar H  = (*thickness)(i,j);
       int         ks = grid.kBelowHeight(H);
-      PetscScalar *u_ij, *u_w, *u_n, *u_e, *u_s;
-      PetscScalar *v_ij, *v_w, *v_n, *v_e, *v_s;
+      PetscScalar
+        *u_ij, *u_w, *u_n, *u_e, *u_s,
+        *v_ij, *v_w, *v_n, *v_e, *v_s;
       PetscScalar u_x, u_y, u_z, v_x, v_y, v_z;
-      PetscScalar *Sigma;
+      PetscScalar *Sigma, *E_ij;
 
       ierr = u->getInternalColumn(i,     j,     &u_ij); CHKERRQ(ierr);
       ierr = u->getInternalColumn(i - 1, j,     &u_w);  CHKERRQ(ierr);
@@ -469,19 +454,24 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
       ierr = v->getInternalColumn(i,     j - 1, &v_s);  CHKERRQ(ierr);
       ierr = v->getInternalColumn(i,     j + 1, &v_n);  CHKERRQ(ierr);
 
-      ierr = strain_heating.getInternalColumn(i, j, &Sigma);  CHKERRQ(ierr); 
+      ierr =        enthalpy->getInternalColumn(i, j, &E_ij);  CHKERRQ(ierr); 
+      ierr = m_strain_heating.getInternalColumn(i, j, &Sigma); CHKERRQ(ierr); 
 
-      // bottom level (use one-sided differences for u_z and v_z)
       double dz = grid.zlevels[1] - grid.zlevels[0];
       u_x = (u_e[0] - u_w[0]) / (2.0 * dx);
       u_y = (u_n[0] - u_s[0]) / (2.0 * dy);
       v_x = (v_e[0] - v_w[0]) / (2.0 * dx);
       v_y = (v_n[0] - v_s[0]) / (2.0 * dy);
 
+      // use one-sided differences for u_z and v_z on the bottom level
       u_z = (u_ij[1] - u_ij[0]) / dz;
       v_z = (v_ij[1] - v_ij[0]) / dz;
 
-      Sigma[0] *= 2.0 * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
+      double
+        pressure = EC.getPressureFromDepth(H),
+        B        = flow_law->hardness_parameter(E_ij[0], pressure);
+
+      Sigma[0] = (2.0 * B * e_to_a_power * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent));
       
       for (int k = 1; k <= ks; ++k) {
         dz = grid.zlevels[k+1] - grid.zlevels[k-1];
@@ -493,15 +483,19 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
         u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
         v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
 
-        Sigma[k] *= 2.0 * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
+        pressure = EC.getPressureFromDepth(H - grid.zlevels[k]);
+        B        = flow_law->hardness_parameter(E_ij[0], pressure);
+
+        Sigma[k] = 2.0 * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
       }
     }
   }
 
-  ierr = v->end_access(); CHKERRQ(ierr);
-  ierr = u->end_access(); CHKERRQ(ierr);
-  ierr = strain_heating.end_access(); CHKERRQ(ierr);
+  ierr = enthalpy->end_access(); CHKERRQ(ierr);
+  ierr = m_strain_heating.end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr = u->end_access(); CHKERRQ(ierr);
+  ierr = v->end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -510,9 +504,9 @@ PetscErrorCode PISMStressBalance::stdout_report(string &result) {
   PetscErrorCode ierr;
   string tmp1, tmp2;
 
-  ierr = stress_balance->stdout_report(tmp1); CHKERRQ(ierr);
+  ierr = m_stress_balance->stdout_report(tmp1); CHKERRQ(ierr);
 
-  ierr = modifier->stdout_report(tmp2); CHKERRQ(ierr);
+  ierr = m_modifier->stdout_report(tmp2); CHKERRQ(ierr);
 
   result = tmp1 + tmp2;
 
@@ -523,8 +517,8 @@ PetscErrorCode PISMStressBalance::define_variables(set<string> vars, const PIO &
                                                    PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  ierr = stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-  ierr = modifier->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = m_stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = m_modifier->define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   return 0;
 }
@@ -533,15 +527,15 @@ PetscErrorCode PISMStressBalance::define_variables(set<string> vars, const PIO &
 PetscErrorCode PISMStressBalance::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
-  ierr = stress_balance->write_variables(vars, nc); CHKERRQ(ierr);
-  ierr = modifier->write_variables(vars, nc); CHKERRQ(ierr);
+  ierr = m_stress_balance->write_variables(vars, nc); CHKERRQ(ierr);
+  ierr = m_modifier->write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }
 
 void PISMStressBalance::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
 
-  stress_balance->add_vars_to_output(keyword, result);
-  modifier->add_vars_to_output(keyword, result);
+  m_stress_balance->add_vars_to_output(keyword, result);
+  m_modifier->add_vars_to_output(keyword, result);
 
 }

@@ -121,26 +121,26 @@ public:
 
   //! \brief Returns a pointer to a stress balance solver implementation.
   virtual ShallowStressBalance* get_stressbalance()
-  { return stress_balance; }
+  { return m_stress_balance; }
 
   //! \brief Returns a pointer to a stress balance modifier implementation.
   virtual SSB_Modifier* get_ssb_modifier()
-  { return modifier; }
+  { return m_modifier; }
 protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                                    IceModelVec2S *bmr, IceModelVec3 &result);
   virtual PetscErrorCode compute_volumetric_strain_heating();
 
-  PISMVars *variables;
+  PISMVars *m_variables;
   
-  IceModelVec3 w, strain_heating;
-  PetscReal w_max;
-  IceModelVec2S *basal_melt_rate;
+  IceModelVec3 m_w, m_strain_heating;
+  PetscReal m_w_max;
+  IceModelVec2S *m_basal_melt_rate;
 
-  ShallowStressBalance *stress_balance;
-  SSB_Modifier *modifier;
-  PISMOceanModel *ocean;
+  ShallowStressBalance *m_stress_balance;
+  SSB_Modifier *m_modifier;
+  PISMOceanModel *m_ocean;
 };
 
 #endif /* _PISMSTRESSBALANCE_H_ */

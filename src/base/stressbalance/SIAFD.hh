@@ -42,9 +42,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   using PISMComponent_Diag::update;
-  virtual PetscErrorCode update(IceModelVec2V *vel_input,
-                                IceModelVec2S *strain_heating_contribution_input,
-                                bool fast);
+  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
 
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
@@ -84,8 +82,6 @@ protected:
                                                         IceModelVec3 &u_out, IceModelVec3 &v_out);
 
   virtual PetscErrorCode compute_I();
-  virtual PetscErrorCode compute_volumetric_strain_heating(IceModelVec2S *strain_heating_contribution_input, IceModelVec2Stag &h_x,
-                                                           IceModelVec2Stag &h_y);
 
   virtual PetscScalar grainSizeVostok(PetscScalar age) const;
 

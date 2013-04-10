@@ -43,11 +43,6 @@ PetscErrorCode ShallowStressBalance::allocate() {
   ierr = basal_frictional_heating.set_glaciological_units("mW m-2"); CHKERRQ(ierr);
   basal_frictional_heating.write_in_glaciological_units = true;
 
-  ierr = strain_heating_contribution.create(grid, "strain_heating_contribution", true); CHKERRQ(ierr);
-  ierr = strain_heating_contribution.set_attrs("internal",
-                      "(partial) square of the Frobenius norm of D_{ij}, the combined strain rates",
-                      "", ""); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -62,8 +57,6 @@ PetscErrorCode SSB_Trivial::update(bool fast) {
 
   ierr = basal_frictional_heating.set(0.0); CHKERRQ(ierr);
 
-  ierr = strain_heating_contribution.set(0.0); CHKERRQ(ierr);
-  
   return 0;
 }
 

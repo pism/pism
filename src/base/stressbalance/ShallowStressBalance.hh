@@ -79,9 +79,6 @@ public:
   virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result)
   { result = &basal_frictional_heating; return 0; }
 
-  virtual PetscErrorCode get_strain_heating_contribution(IceModelVec2S* &result)
-  { result = &strain_heating_contribution; return 0; }
-
   virtual PetscErrorCode compute_2D_principal_strain_rates(IceModelVec2V &velocity,
 							   IceModelVec2Int &mask,
                                                            IceModelVec2 &result);
@@ -118,7 +115,7 @@ protected:
 
   IceModelVec2V m_velocity, *m_vel_bc;
   IceModelVec2Int *bc_locations;
-  IceModelVec2S basal_frictional_heating, strain_heating_contribution;
+  IceModelVec2S basal_frictional_heating;
   PetscReal max_u, max_v;
 };
 

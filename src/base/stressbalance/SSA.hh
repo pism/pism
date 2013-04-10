@@ -170,8 +170,6 @@ protected:
 
   virtual PetscErrorCode solve()  = 0;
 
-  virtual PetscErrorCode compute_strain_heating_contribution(IceModelVec2S &result);
-
   virtual PetscErrorCode compute_maximum_velocity();
 
   IceModelVec2Int *mask;

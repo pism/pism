@@ -202,45 +202,12 @@ PetscErrorCode SSA::update(bool fast) {
   ierr = compute_basal_frictional_heating(m_velocity, *tauc, *mask,
 					  basal_frictional_heating); CHKERRQ(ierr);
   
-  ierr = compute_strain_heating_contribution(strain_heating_contribution); CHKERRQ(ierr);
-
   ierr = compute_maximum_velocity(); CHKERRQ(ierr);
 
   grid.profiler->end(event_ssa);
 
   return 0;
 }
-
-
-//! \brief Compute the SSA contribution to the strain heating.
-/*!
- * Documented in [\ref BBssasliding].
- *
- * FIXME: this code isn't right at ice margins (it uses velocities
- * from ice-free areas in finite differences below).
- */
-PetscErrorCode SSA::compute_strain_heating_contribution(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  PetscReal dx = grid.dx, dy = grid.dy;
-
-  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      const PetscScalar 
-          u_x   = (m_velocity(i+1,j).u - m_velocity(i-1,j).u)/(2*dx),
-          u_y   = (m_velocity(i,j+1).u - m_velocity(i,j-1).u)/(2*dy),
-          v_x   = (m_velocity(i+1,j).v - m_velocity(i-1,j).v)/(2*dx),
-          v_y   = (m_velocity(i,j+1).v - m_velocity(i,j-1).v)/(2*dy);
-      result(i,j) = (PetscSqr(u_x) + PetscSqr(v_y) + u_x * v_y +
-		     PetscSqr(0.5*(u_y + v_x)));
-    }
-  }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = m_velocity.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
 
 //! \brief Compute the gravitational driving stress.
 /*!

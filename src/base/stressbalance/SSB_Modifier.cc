@@ -66,12 +66,6 @@ PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
 
   ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
 
-  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
-
-  thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
   return 0;
 }
 
@@ -104,9 +98,7 @@ SSBM_Trivial::~SSBM_Trivial()
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
-                                    IceModelVec2S *strain_heating_contribution_input,
-                                    bool fast) {
+PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input, bool fast) {
   PetscErrorCode ierr;
 
   if (fast)
@@ -140,67 +132,6 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
   // diffusive flux and maximum diffusivity
   ierr = diffusive_flux.set(0.0); CHKERRQ(ierr);
   D_max = 0.0;
-
-  // strain heating
-  ierr = compute_volumetric_strain_heating(strain_heating_contribution_input,
-                                           strain_heating); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-//! \brief Compute the volumetric strain heating.
-/*!
- * Uses:
- * - delta on the staggered grid, which should be initialized by the update(true) call.
- * - enthalpy
- * - surface gradient on the staggered grid
- * - ice thickness relative to the smoothed bed
- */
-PetscErrorCode SSBM_Trivial::compute_volumetric_strain_heating(IceModelVec2S *strain_heating_contribution_input, IceModelVec3 &result) {
-  PetscErrorCode ierr;
-  PetscScalar *E, *sigma;
-  const PetscReal
-    n_glen  = flow_law->exponent(),
-    exponent = (1.0 + n_glen) / (2.0 * n_glen),
-    enhancement_factor = config.get("ssa_enhancement_factor"),
-    standard_gravity = config.get("standard_gravity"),
-    ice_rho = config.get("ice_density");
-
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating_contribution_input->begin_access(); CHKERRQ(ierr);
-
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      ierr = enthalpy->getInternalColumn(i,j,&E); CHKERRQ(ierr);
-      ierr = result.getInternalColumn(i,j,&sigma); CHKERRQ(ierr);
-
-      PetscReal thk = (*thickness)(i,j);
-      // in the ice:
-      PetscInt ks = grid.kBelowHeight(thk);
-        for (PetscInt k=0; k<ks; ++k) {
-          // Use hydrostatic pressure; presumably this is not quite right in context
-          //   of shelves and streams; here we hard-wire the Glen law
-          PetscReal depth = thk - grid.zlevels[k],
-            pressure = ice_rho * standard_gravity * depth, // FIXME issue #15
-          // Account for the enhancement factor.
-            BofT    = flow_law->hardness_parameter(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
-          sigma[k] = 2.0 * BofT * pow((*strain_heating_contribution_input)(i,j), exponent);
-        }
-
-        // above the ice:
-        for (PetscInt k=ks+1; k<grid.Mz; ++k) {
-          sigma[k] = 0.0;
-        }
-    }
-  }
-
-  ierr = strain_heating_contribution_input->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);  
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
   return 0;
 }

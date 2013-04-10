@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,31 +24,31 @@
 
 void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
 
-  dict["bfrict"]   = new PSB_bfrict(this, grid, *variables);
+  dict["bfrict"]   = new PSB_bfrict(this, grid, *m_variables);
 
-  dict["cbar"]     = new PSB_cbar(this,     grid, *variables);
-  dict["cflx"]     = new PSB_cflx(this,     grid, *variables);
-  dict["cbase"]    = new PSB_cbase(this,    grid, *variables);
-  dict["csurf"]    = new PSB_csurf(this,    grid, *variables);
+  dict["cbar"]     = new PSB_cbar(this,     grid, *m_variables);
+  dict["cflx"]     = new PSB_cflx(this,     grid, *m_variables);
+  dict["cbase"]    = new PSB_cbase(this,    grid, *m_variables);
+  dict["csurf"]    = new PSB_csurf(this,    grid, *m_variables);
 
-  dict["uvel"]     = new PSB_uvel(this, grid, *variables);
-  dict["vvel"]     = new PSB_vvel(this, grid, *variables);
+  dict["uvel"]     = new PSB_uvel(this, grid, *m_variables);
+  dict["vvel"]     = new PSB_vvel(this, grid, *m_variables);
 
-  dict["strainheat"] = new PSB_strainheat(this, grid, *variables);
+  dict["strainheat"] = new PSB_strainheat(this, grid, *m_variables);
 
-  dict["velbar"]   = new PSB_velbar(this,   grid, *variables);
-  dict["velbase"]  = new PSB_velbase(this,  grid, *variables);
-  dict["velsurf"]  = new PSB_velsurf(this,  grid, *variables);
+  dict["velbar"]   = new PSB_velbar(this,   grid, *m_variables);
+  dict["velbase"]  = new PSB_velbase(this,  grid, *m_variables);
+  dict["velsurf"]  = new PSB_velsurf(this,  grid, *m_variables);
 
-  dict["wvel"]     = new PSB_wvel(this,     grid, *variables);
-  dict["wvelbase"] = new PSB_wvelbase(this, grid, *variables);
-  dict["wvelsurf"] = new PSB_wvelsurf(this, grid, *variables);
-  dict["wvel_rel"] = new PSB_wvel_rel(this, grid, *variables);
-  dict["strain_rates"] = new PSB_strain_rates(this, grid, *variables);
-  dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, grid, *variables);
+  dict["wvel"]     = new PSB_wvel(this,     grid, *m_variables);
+  dict["wvelbase"] = new PSB_wvelbase(this, grid, *m_variables);
+  dict["wvelsurf"] = new PSB_wvelsurf(this, grid, *m_variables);
+  dict["wvel_rel"] = new PSB_wvel_rel(this, grid, *m_variables);
+  dict["strain_rates"] = new PSB_strain_rates(this, grid, *m_variables);
+  dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, grid, *m_variables);
 
-  stress_balance->get_diagnostics(dict);
-  modifier->get_diagnostics(dict);
+  m_stress_balance->get_diagnostics(dict);
+  m_modifier->get_diagnostics(dict);
 }
 
 PSB_velbar::PSB_velbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)

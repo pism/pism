@@ -38,9 +38,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars) { variables = &vars; return 0; }
 
   using PISMComponent_Diag::update;
-  virtual PetscErrorCode update(IceModelVec2V *vel_input,
-                                IceModelVec2S *strain_heating_contribution_input,
-                                bool fast) = 0;
+  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
   virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result)
@@ -90,8 +88,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   using PISMComponent_Diag::update;
-  virtual PetscErrorCode update(IceModelVec2V *vel_input, IceModelVec2S *strain_heating_contribution_input,
-                                bool fast);
+  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
   virtual void add_vars_to_output(string /*keyword*/,
                                   map<string,NCSpatialVariable> &/*result*/)
   { }
@@ -106,10 +103,5 @@ public:
   //! model to do so.
   virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
-
-protected:
-  PetscErrorCode compute_volumetric_strain_heating(IceModelVec2S *strain_heating_contribution_input, IceModelVec3 &result);
-  IceModelVec3 *enthalpy;
-  IceModelVec2S *thickness;
 };
 #endif /* _SSB_MODIFIER_H_ */
