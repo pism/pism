@@ -459,7 +459,7 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
 
       ierr = PetscMemzero(Sigma, grid.Mz*sizeof(PetscScalar)); CHKERRQ(ierr);
       
-      for (int k = 1; k <= ks; ++k) {
+      for (int k = 0; k <= ks; ++k) {
         double dz,
           pressure = EC.getPressureFromDepth(H - grid.zlevels[k]),
           B        = flow_law->hardness_parameter(E_ij[k], pressure);
@@ -481,9 +481,9 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
         }
 
         Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
-      }
-    }
-  }
+      } // k-loop
+    }   // j-loop
+  }     // i-loop
 
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
   ierr = m_strain_heating.end_access(); CHKERRQ(ierr);
