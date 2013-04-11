@@ -457,36 +457,30 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
       ierr =        enthalpy->getInternalColumn(i, j, &E_ij);  CHKERRQ(ierr); 
       ierr = m_strain_heating.getInternalColumn(i, j, &Sigma); CHKERRQ(ierr); 
 
-      double dz = grid.zlevels[1] - grid.zlevels[0];
-      u_x = (u_e[0] - u_w[0]) / (2.0 * dx);
-      u_y = (u_n[0] - u_s[0]) / (2.0 * dy);
-      v_x = (v_e[0] - v_w[0]) / (2.0 * dx);
-      v_y = (v_n[0] - v_s[0]) / (2.0 * dy);
-
-      // use one-sided differences for u_z and v_z on the bottom level
-      u_z = (u_ij[1] - u_ij[0]) / dz;
-      v_z = (v_ij[1] - v_ij[0]) / dz;
-
-      double
-        pressure = EC.getPressureFromDepth(H),
-        B        = flow_law->hardness_parameter(E_ij[0], pressure);
-
-      Sigma[0] = (2.0 * B * e_to_a_power * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent));
+      ierr = PetscMemzero(Sigma, grid.Mz*sizeof(PetscScalar)); CHKERRQ(ierr);
       
       for (int k = 1; k <= ks; ++k) {
-        dz = grid.zlevels[k+1] - grid.zlevels[k-1];
+        double dz,
+          pressure = EC.getPressureFromDepth(H - grid.zlevels[k]),
+          B        = flow_law->hardness_parameter(E_ij[k], pressure);
+
         u_x = (u_e[k] - u_w[k]) / (2.0 * dx);
         u_y = (u_n[k] - u_s[k]) / (2.0 * dy);
         v_x = (v_e[k] - v_w[k]) / (2.0 * dx);
         v_y = (v_n[k] - v_s[k]) / (2.0 * dy);
 
-        u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
-        v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
+        if (k > 0) {
+          dz = grid.zlevels[k+1] - grid.zlevels[k-1];
+          u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
+          v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
+        } else {
+          // use one-sided differences for u_z and v_z on the bottom level
+          dz = grid.zlevels[1] - grid.zlevels[0];
+          u_z = (u_ij[1] - u_ij[0]) / dz;
+          v_z = (v_ij[1] - v_ij[0]) / dz;
+        }
 
-        pressure = EC.getPressureFromDepth(H - grid.zlevels[k]);
-        B        = flow_law->hardness_parameter(E_ij[0], pressure);
-
-        Sigma[k] = 2.0 * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
+        Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
       }
     }
   }
