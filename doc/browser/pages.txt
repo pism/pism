@@ -1,4 +1,4 @@
-// -*- mode: c++ -*-
+// -*- mode: markdown -*-
 
 // adds commentary and GPL to first page of doxygen-erated HTML browser
 
@@ -84,8 +84,8 @@ of all other membrane-including stress balances (Blatter, Stokes).
 \section intro Introduction
 
 The PETSc library [\ref petsc-user-ref] provides essential support for distributed 
-arrays and linear solvers in a parallel computing environment.  ``PETSc" stands for 
-``Portable, Extensible Toolkit for Scientific Computation."  It is a suite of data structures 
+arrays and linear solvers in a parallel computing environment.  "PETSc" stands for 
+"Portable, Extensible Toolkit for Scientific Computation."  It is a suite of data structures 
 and routines in C for the scalable parallel solution of partial differential equations and their 
 scientific applications.  Large parts of PETSc relate especially to finite-difference-type regular, 
 rectangular grids but PETSc has been used for unstructured grids as well.
@@ -176,15 +176,13 @@ chunk is stored on the local processor.  *No message passing occurs here.*  Inst
 idea is that the `DM` knows what are the valid index ranges for each processor.  That's why 
 essentially all loops over two dimensional arrays in PISM look like this:
 
-\code
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-    ... vH(i,j) ...
+      for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+        for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+        ... vH(i,j) ...
+        }
+      }
 
-    }
-  }
-\endcode
 
 The integers `grid.xs`, `grid.xm`, `grid.ys`, `grid.ym`, are just the numbers that come
 from a call to `DMDAGetLocalInfo()`, just after the `DM` is created, but normally
@@ -205,35 +203,35 @@ treat these ghost values as "read-only", because of what happens at the communic
 *Example.*  We create a local `Vec` `v` which we want to have `STAR` type stencil.  Assuming 
 `da` is `DM` created with `DMDA_STENCIL_STAR` then we do this to create `v` and get an array 
 pointer `arr` into the local portion of it:
-\code
-   DMDACreateLocalVector(da, &v);
-   DMDAVecGetArray(da, v, &arr);
-\endcode
+
+    DMDACreateLocalVector(da, &v);
+    DMDAVecGetArray(da, v, &arr);
+
 Now the processor can access `arr[i][j]` for every 
-\code 
-   grid.xs <= i <= grid.xs + grid.xm - 1
-\endcode
+
+    grid.xs <= i <= grid.xs + grid.xm - 1
+
 and
-\code 
-   grid.ys <= j <= grid.ys + grid.ym - 1
-\endcode
+
+    grid.ys <= j <= grid.ys + grid.ym - 1
+
 But this is just the regular (owned by the processor) portion.  In addition, all of these 
 are valid for every `i` and `j` in the above ranges:
-\code
-   arr[i+1][j],   arr[i-1][j],   arr[i][j+1],   arr[i][j-1].
-\endcode
+
+    arr[i+1][j],   arr[i-1][j],   arr[i][j+1],   arr[i][j-1].
+
 (*If* the `da` were of type `DMDA_STENCIL_BOX` then, in addition 
-\code
-   arr[i+1][j+1],   arr[i-1][j+1],   arr[i+1][j-1],   arr[i-1][j-1].
-\endcode
+
+    arr[i+1][j+1],   arr[i-1][j+1],   arr[i+1][j-1],   arr[i-1][j-1].
+
 would all be valid.)  Once the processor is done with modifying its portion of `v` (i.e. not including 
 the ghosts, although it may read them) then we would want to update the ghost values so that
 all processors agree on the values at those grid points:
-\code
-   DMDAVecRestoreArray(da, v, &arr);
-   DMDALocalToLocalBegin(da, v, INSERT_VALUES, v);
-   DMDALocalToLocalEnd(da, v, INSERT_VALUES, v);
-\endcode
+
+    DMDAVecRestoreArray(da, v, &arr);
+    DMDALocalToLocalBegin(da, v, INSERT_VALUES, v);
+    DMDALocalToLocalEnd(da, v, INSERT_VALUES, v);
+
 (Note we release the array pointer before the communication stage, although that may not be
 essential.)
 
@@ -306,13 +304,13 @@ The `PetscViewer` interface allows PETSc objects to be displayed.  One can "view
 a `Vec` to a graphical (X) window, but the "view" can be saving the `Vec` to a binary
 file on disk, in plain text to the terminal (standard out), or even by sending to a running
 instance of *Matlab.*  In PISM the X views are available under options -view_map,
--view_slice, and -view_sounding.  See the User's Manual.
+-view_slice, and -view_sounding.  See the "User's Manual".
 When viewing `Vec` s graphically in multiprocessor jobs, the display may have to be 
 set on the command line, for instance as `-display :0` or similar; this must be given 
 as the final option.  For example,
-\code
-   mpiexec -n 2 pisms -view_map thk -display :0
-\endcode
+
+    mpiexec -n 2 pisms -view_map thk -display :0
+
 allows a two processor run to view the ice thickness.
 
 */

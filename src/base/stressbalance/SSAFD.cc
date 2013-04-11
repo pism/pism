@@ -20,7 +20,7 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "pism_options.hh"
-#include "flowlaw_factory.hh"
+#include "flowlaws.hh"
 
 #include "pism_petsc32_compat.hh"
 
@@ -1145,7 +1145,11 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
           v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
         }
 
-        result(i,j,o) = H * flow_law->effective_viscosity(hardness(i,j,o), u_x, u_y, v_x, v_y);
+	PetscReal nu;
+	flow_law->effective_viscosity(hardness(i,j,o),
+				      secondInvariant_2D(u_x, u_y, v_x, v_y),
+				      &nu, NULL);
+        result(i,j,o) = nu * H;
 
         if (! finite(result(i,j,o)) || false) {
           ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,7 @@ public:
   }
 
   void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
-               IceModelVec2Int &out_mask, IceModelVec2S &out_bed);
+               IceModelVec2Int &out_mask, IceModelVec2S &out_surface);
 
   inline void compute(PetscReal bed, PetscReal thickness,
                       int *out_mask, PetscReal *out_surface) {

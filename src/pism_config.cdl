@@ -544,6 +544,12 @@ netcdf pism_config {
     pism_config:ssa_flow_law = "gpbld";
     pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
+    pism_config:blatter_flow_law = "gpbld";
+    pism_config:blatter_flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+
+    pism_config:blatter_enhancement_factor = 1.0;
+    pism_config:blatter_enhancement_factor_doc = "; Flow enhancement factor for the Blatter stress balance flow law";
+
     pism_config:enthalpy_cold_bulge_max = 60270.0;
     pism_config:enthalpy_cold_bulge_max_doc = "J kg-1; = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
 
@@ -647,6 +653,9 @@ netcdf pism_config {
 
    pism_config:grid_Mz = 31;
    pism_config:grid_Mz_doc = "; Number of vertical grid levels in the ice.";
+
+   pism_config:blatter_Mz = 5;
+   pism_config:blatter_Mz_doc = "; Number of vertical grid levels in the ice (in the Blatter solver).";
 
    pism_config:grid_Mbz = 1;
    pism_config:grid_Mbz_doc = "; Number of thermal bedrock layers; 1 level corresponds to no bedrock.";

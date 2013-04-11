@@ -117,8 +117,7 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
 
 //! \brief Do the update; if fast == true, skip the update of 3D velocities and
 //! strain heating.
-PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
-                             bool fast) {
+PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   PetscErrorCode ierr;
   IceModelVec2Stag h_x = work_2d_stag[0], h_y = work_2d_stag[1];
 
@@ -140,8 +139,6 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
 
   if (!fast) {
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
-
-    ierr = compute_volumetric_strain_heating(D2_input, h_x, h_y); CHKERRQ(ierr);
   }
 
   grid.profiler->end(event_sia);
@@ -529,10 +526,9 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
  *
  * \f[D = \int_b^h\delta(z)(h-z)dz. \f]
  *
- * The advantage is that it is then possible to avoid re-evaluating \f$F(z)\f$
- * (which is computationally expensive) in strain heating (see compute_volumetric_strain_heating())
- * and horizontal ice velocity (see compute_3d_horizontal_velocity())
- * computations.
+ * The advantage is that it is then possible to avoid re-evaluating
+ * \f$F(z)\f$ (which is computationally expensive) in the horizontal ice
+ * velocity (see compute_3d_horizontal_velocity()) computation.
  *
  * This method computes \f$Q\f$ and stores \f$\delta\f$ in delta[0,1] is fast == false.
  *
@@ -603,7 +599,6 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
     ierr = delta[1].begin_access(); CHKERRQ(ierr);
   }
 
-  // some flow laws use enthalpy while some ("cold ice methods") use temperature
   PetscScalar *E_ij, *E_offset;
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
 
@@ -811,154 +806,6 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
   ierr = work_3d[0].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
   ierr = work_3d[1].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
 
-  return 0;
-}
-
-//! \brief Compute the volumetric strain heating.
-/*!
- * See section 2.8 of [\ref BBssasliding].
- *
- * Computes the volumetric strain heating strain_heating by combining the contribution
- * from the underlying stress balance (usually the SSA) in the form of the
- * (partial) square of the Frobenius norm of \f$D_{ij}\f$, the combined strain
- * rates with the SIA contribution.
- *
- * Uses the fact that in the combined strain rate tensor SIA and SSA have
- * disjoint sets of non-zero elements, making it possible to \e literally add
- * SSA and SIA contributions when computing \f$D^2\f$.
- *
- * \note This is one of the places where "hybridization" is done.
- *
- * \note The result is stored in SIAFD::strain_heating. Ghosts of strain_heating are not used.
- *
- * \param[in] D2_input the "SSA" contribution to the strain heating
- * \param[in] h_x the X-component of the surface gradient, on the staggered grid
- * \param[in] h_y the Y-component of the surface gradient, on the staggered grid
- */
-PetscErrorCode SIAFD::compute_volumetric_strain_heating(IceModelVec2S *D2_input,
-                                                        IceModelVec2Stag &h_x,
-                                                        IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
-  PetscScalar *sigma_ij, *delta_ij, *E;
-  IceModelVec2S thk_smooth = work_2d[0];
-
-  PetscScalar *column = new PetscScalar[grid.Mz];
-
-  ierr = delta[0].begin_access(); CHKERRQ(ierr);
-  ierr = delta[1].begin_access(); CHKERRQ(ierr);
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
-  PetscInt GHOSTS = 1;
-  for (PetscInt o = 0; o < 2; ++o) {
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
-        memcpy(column, delta_ij, grid.Mz*sizeof(PetscScalar));
-
-        PetscReal alpha_squared = PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o));
-
-        for (PetscInt k = 0; k < grid.Mz; ++k) {
-          delta_ij[k] = alpha_squared * column[k];
-        }
-      }
-    }
-  }
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
-
-  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
-                                        WIDE_STENCIL,
-                                        &thk_smooth); CHKERRQ(ierr);
-
-  // Now transfer delta*alpha_squared from the staggered onto the regular grid.
-  // We use SIAFD::strain_heating to store delta*alpha_squared.
-  PetscScalar *delta_reg, *delta_e, *delta_w, *delta_n, *delta_s;
-  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscReal thk = thk_smooth(i,j);
-      ierr = strain_heating.getInternalColumn(i,j,&delta_reg); CHKERRQ(ierr);
-
-      // Zero out the whole column:
-      ierr = PetscMemzero(delta_reg, grid.Mz*sizeof(PetscScalar)); CHKERRQ(ierr);
-
-      // Average from the staggered within the ice:
-      if (thk > 0.0) {
-        // horizontally average delta*alpha_squared onto regular grid
-        const PetscInt ks = grid.kBelowHeight(thk);
-        ierr = delta[0].getInternalColumn(i,j,&delta_e); CHKERRQ(ierr);
-        ierr = delta[0].getInternalColumn(i-1,j,&delta_w); CHKERRQ(ierr);
-        ierr = delta[1].getInternalColumn(i,j,&delta_n); CHKERRQ(ierr);
-        ierr = delta[1].getInternalColumn(i,j-1,&delta_s); CHKERRQ(ierr);
-        for (PetscInt k = 0; k <= ks; ++k) {
-          delta_reg[k] = 0.25 * (delta_e[k] + delta_w[k] + delta_n[k] + delta_s[k]);
-        }
-      }
-    }
-  }
-  ierr = delta[1].end_access(); CHKERRQ(ierr);
-  ierr = delta[0].end_access(); CHKERRQ(ierr);
-
-
-  // Now compute the volumetric strain heating itself.
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = D2_input->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-
-  MaskQuery M(*mask);
-
-  PetscReal enhancement_factor = flow_law->enhancement_factor(),
-    n_glen  = flow_law->exponent(),
-    exponent = (1.0 + n_glen) / (2.0 * n_glen),
-    e_to_a_power = pow(enhancement_factor,-1/n_glen);
-
-  PetscScalar *delta_alpha_squared = new PetscScalar[grid.Mz];
-
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-
-        ierr = strain_heating.getInternalColumn(i, j, &sigma_ij); CHKERRQ(ierr);
-        ierr = enthalpy->getInternalColumn(i, j, &E); CHKERRQ(ierr);
-
-        const PetscReal thk = thk_smooth(i, j),
-            D2_ssa = (*D2_input)(i,j);
-        PetscReal D2_sia = 0.0;       // No SIA contribution in floating and ice-free areas
-
-        const PetscInt ks = grid.kBelowHeight(thk);
-        const bool grounded = M.grounded_ice(i, j);
-
-        memcpy(column, E, grid.Mz*sizeof(PetscScalar));
-        memcpy(delta_alpha_squared, sigma_ij, grid.Mz*sizeof(PetscScalar));
-
-        // Fill in values in the ice:
-        for (PetscInt k=0; k<=ks; ++k) {
-          const PetscReal depth = thk - grid.zlevels[k],
-            pressure = EC.getPressureFromDepth(depth),
-            BofT = flow_law->hardness_parameter(column[k], pressure) * e_to_a_power;
-
-          if (grounded) {
-            const PetscReal sigma_sia = delta_alpha_squared[k] * pressure;
-            // combine SIA and SSA contributions
-            D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / exponent);
-          }
-          sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, exponent);
-        }
-        // Values above the ice were set to zero by the memset() call above.
-
-      } // j
-    }   // i
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = D2_input->end_access(); CHKERRQ(ierr);
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-  ierr = strain_heating.end_access(); CHKERRQ(ierr);
-
-  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
-
-  delete [] column;
-  delete [] delta_alpha_squared;
-  
   return 0;
 }
 

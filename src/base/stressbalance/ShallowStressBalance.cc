@@ -19,6 +19,8 @@
 #include "ShallowStressBalance.hh"
 #include "Mask.hh"
 #include "PISMVars.hh"
+#include "flowlaws.hh"
+#include "basal_resistance.hh"
 
 //! \brief Allocate a shallow stress balance object.
 PetscErrorCode ShallowStressBalance::allocate() {
@@ -41,11 +43,6 @@ PetscErrorCode ShallowStressBalance::allocate() {
   ierr = basal_frictional_heating.set_glaciological_units("mW m-2"); CHKERRQ(ierr);
   basal_frictional_heating.write_in_glaciological_units = true;
 
-  ierr = D2.create(grid, "D2", true); CHKERRQ(ierr);
-  ierr = D2.set_attrs("internal",
-                      "(partial) square of the Frobenius norm of D_{ij}, the combined strain rates",
-                      "", ""); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -60,10 +57,54 @@ PetscErrorCode SSB_Trivial::update(bool fast) {
 
   ierr = basal_frictional_heating.set(0.0); CHKERRQ(ierr);
 
-  ierr = D2.set(0.0); CHKERRQ(ierr);
-  
   return 0;
 }
+
+//! \brief Compute the basal frictional heating.
+/*!
+  Ice shelves have zero basal friction heating.
+
+  \param[in] velocity *basal* sliding velocity
+  \param[in] tauc basal yield stress
+  \param[in] mask (used to determine if floating or grounded)
+  \param[out] result
+ */
+PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVec2V &velocity,
+								      IceModelVec2S &tauc,
+								      IceModelVec2Int &mask,
+								      IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  MaskQuery m(mask);
+
+  ierr = velocity.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = tauc.begin_access(); CHKERRQ(ierr);
+  ierr = mask.begin_access(); CHKERRQ(ierr);
+  
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (m.ocean(i,j)) {
+        result(i,j) = 0.0;
+      } else {
+        const PetscScalar
+          C = basal.drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v),
+              basal_stress_x = - C * velocity(i,j).u,
+              basal_stress_y = - C * velocity(i,j).v;
+        result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
+      }
+    }
+  }
+
+  ierr = mask.end_access(); CHKERRQ(ierr);
+  ierr = tauc.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = velocity.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 
 //! \brief Compute eigenvalues of the horizontal, vertically-integrated strain rate tensor.
 /*!
@@ -240,7 +281,10 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
         v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
       }
 
-      double nu = flow_law->effective_viscosity(hardness, u_x, u_y, v_x, v_y);
+      double nu;
+      flow_law->effective_viscosity(hardness,
+				    secondInvariant_2D(u_x, u_y, v_x, v_y),
+				    &nu, NULL);
 
       //get deviatoric stresses
       result(i,j,0) = nu*u_x;
