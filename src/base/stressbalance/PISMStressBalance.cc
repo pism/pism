@@ -58,7 +58,7 @@ PetscErrorCode PISMStressBalance::allocate() {
   ierr = m_strain_heating.create(grid, "strain_heating", false); CHKERRQ(ierr);
   ierr = m_strain_heating.set_attrs("internal",
                                     "rate of strain heating in ice (dissipation heating)",
-                                    "", ""); CHKERRQ(ierr);
+                                    "W m-3", ""); CHKERRQ(ierr);
   return 0;
 }
 
