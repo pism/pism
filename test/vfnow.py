@@ -5,7 +5,7 @@
 ## \brief A script for verification of numerical schemes in PISM.
 ## \details It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
 ## pismv accordingly.
-## Copyright (C) 2007--2012 Ed Bueler and Constantine Khroulev
+## Copyright (C) 2007--2013 Ed Bueler and Constantine Khroulev
 ##
 ## Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in the user manual.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 ##
@@ -17,8 +17,8 @@
 ## For a list of options do \verbatim test/vfnow.py --help \endverbatim.
 ## Timing information is given in the \c vfnow.py output so performance, including parallel performance, can be assessed along with accuracy.
 
-import sys, getopt, time, commands
-from numpy import array, double, int
+import sys, time, commands
+from numpy import array
 
 ## A class describing a refinement path and command-line options
 ## for a particular PISM verification test.
@@ -61,7 +61,7 @@ def run_test(executable, name, level, extra_options = "", debug = False):
         return
 
     if level == 1:
-        print " ++++  TEST %s:  verifying with %s exact solution  ++++\n %s" % (
+        print "# ++++  TEST %s:  verifying with %s exact solution  ++++\n# %s" % (
             test.name, test.test, test.path)
     else:
         extra_options += " -append"
@@ -69,7 +69,7 @@ def run_test(executable, name, level, extra_options = "", debug = False):
     command = test.build_command(executable, level) + " " + extra_options
 
     if debug:
-        print ' L%d: would try "%s"' % (level, command)
+        print '# L%d\n%s' % (level, command)
         return
     else:
         print ' L%d: trying "%s"' % (level, command)
@@ -160,7 +160,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     F = PISMVerificationTest()
     F.name = "F"
     F.test = "steady thermomechanically-coupled SIA"
-    F.path = "(refine dx=30,20,15,10,7.5,km, dx=dy, dz=66.67,44.44,33.33,22.22,16.67 m\n  and Mx=My=Mz=61,91,121,181,241)"
+    F.path = "(refine dx=30,20,15,10,7.5,km, dx=dy, dz=66.67,44.44,33.33,22.22,16.67 m and Mx=My=Mz=61,91,121,181,241)"
     F.Mx   = [61, 91, 121, 181, 241]
     F.My   = F.Mx
     F.Mz   = F.Mx
@@ -170,7 +170,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     G = PISMVerificationTest()
     G.name = "G"
     G.test = "time-dependent thermomechanically-coupled SIA"
-    G.path = "(refine dx=30,20,15,10,7.5,km, dx=dy, dz=66.67,44.44,33.33,22.22,16.67 m\n  and Mx=My=Mz=61,91,121,181,241)"
+    G.path = "(refine dx=30,20,15,10,7.5,km, dx=dy, dz=66.67,44.44,33.33,22.22,16.67 m and Mx=My=Mz=61,91,121,181,241)"
     G.Mx   = [61, 91, 121, 181, 241]
     G.My   = G.Mx
     G.Mz   = G.Mx
@@ -298,87 +298,70 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
 
     return tests
 
-#####
-## get options; see --help msg for meaning
-## default settings
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.description = """PISM verification script"""
+parser.add_argument("--eta",dest="eta", action="store_true",
+                    help="to add '-eta' option to pismv call")
+parser.add_argument("-l", dest="levels", type=int, default=2,
+                    help="number of levels of verification; '-l 1' fast, '-l 5' slowest")
+parser.add_argument("--mpido", dest="mpido", default="mpiexec - np",
+                    help="specify MPI executable (e.g. 'mpirun -np' or 'aprun -n')")
+parser.add_argument("-n", dest="n", type=int, default=2,
+                    help="number of processors to use")
+parser.add_argument("--prefix", dest="prefix", default="",
+                    help="path prefix to pismv executable")
+parser.add_argument("-r", dest="report_file", default="",
+                    help="name of the NetCDF error report file")
+parser.add_argument("-t", dest="tests", nargs="+",
+                    help="verification tests to use (A,B,C,D,E,F,G,H,I,J,K,L,M,O); specify a space-separated list", default=['C', 'G', 'I', 'J'])
+parser.add_argument("-u", dest="unequal", action="store_true",
+                    help="use quadratic vertical grid spacing")
+parser.add_argument("--debug", dest="debug", action="store_true",
+                    help="just print commands in sequence (do not run pismv)")
+parser.add_argument("--userman", dest="userman", action="store_true",
+                    help="run tests necessary to produce figures in the User's Manual")
+parser.add_argument("--save_figures", dest="save_figures", action="store_true",
+                    help="save fugires to .png files")
+
+options = parser.parse_args()
+extra_options = ""
+
+if options.eta:
+    extra_options += " -eta"
+
+if options.unequal:
+    extra_options += " -z_spacing quadratic"
+
+if options.report_file:
+    extra_options += " -report_file %s" % options.report_file
+    
+predo = ""
+if options.n > 1:
+  predo = "%s %d " % (options.mpido, options.n)
+
+exec_prefix = predo + options.prefix
+
 KSPRTOL = 1e-12 # for tests I, J, M
 SSARTOL = 5e-7  # ditto
-nproc   = 2  ## default; will not use 'mpiexec' if equal to one
-levels  = 2
-mpi     = "mpiexec -np"
-prefix  = ""
-test_names    = "CGIJ"
-userman_tests = ["B_userman", "G_userman", "K_userman", "I_userman"]
-extra_options = "-verbose 1"
-do_userman = False
-debug      = False
-try:
-  opts, args = getopt.getopt(sys.argv[1:], "ep:n:l:t:ur:",
-     ["eta","prefix=","nproc=","levels=","tests=","userman", "debug",
-      "uneq","mpido=","report_file=","help","usage"])
-  for opt, arg in opts:
-    if opt in ("-p", "--prefix"):
-        prefix = arg
-    elif opt == "--userman":
-        do_userman = True
-    elif opt == "--debug":
-        debug = True
-    elif opt in ("-m", "--mpido"):
-        mpi = arg
-    elif opt in ("-n", "--nproc"):
-        nproc = int(arg)
-    elif opt in ("-l", "--levels"):
-        levels = int(arg)
-    elif opt in ("-t", "--tests"):
-        test_names = arg.split(',')
-    elif opt in ("-u", "--uneq"):
-        extra_options += " -z_spacing quadratic"
-    elif opt in ("-e", "--eta"):
-        extra_options += " -eta"
-    elif opt in ("-r", "--report_file"):
-        extra_options += " -report_file %s" % arg
-    elif opt in ("--help", "--usage"):
-        print """PISM verification script; usage:
-  -e,--eta=     to add '-eta' option to pismv call
-  -l,--levels=  number of levels of verification; '-l 1' fast, '-l 5' slowest
-  --mpido=      specify MPI executable
-                  (e.g. 'mpirun -np' or 'aprun -n' instead of default 'mpiexec -np')
-  -n,--nproc=   specify number of processors to MPI
-  -p,--prefix=  path prefix to pismv executable
-  -r,--report_file=  name of the NetCDF error report file
-  -t,--tests=   verification tests to use: A,B,C,D,E,F,G,H,I,J,K,L,M,O
-                specify a comma-separated list
-  -u            use unequal spaced (quadratic) vertical spacing
-  --userman     run tests necessary to produce figures in the User's Manual
-  --debug       do not run PISM, just print commands
-  --help        prints this message
-  --usage       ditto"""
-        sys.exit(0)
-except getopt.GetoptError:
-    print 'Incorrect command line arguments'
-    sys.exit(2)
-# should do range checking on option arguments here
-
-if nproc > 1:
-  predo = "%s %d " % (mpi, nproc)
-else:
-  predo = ""
-exec_prefix = predo + prefix
-
 tests = define_refinement_paths(KSPRTOL, SSARTOL)
 
-if do_userman:
-    print " VFNOW.PY: test(s) %s, using '%s...'\n" % (userman_tests, exec_prefix) + \
-          "           and ignoring options -t and -l"
+userman_tests = ["B_userman", "G_userman", "K_userman", "I_userman"]
+if options.userman:
+    print "# VFNOW.PY: test(s) %s, using '%s...'\n" % (userman_tests, exec_prefix) + \
+          "#           and ignoring options -t and -l"
     for test in userman_tests:
         N = len(tests[test].Mx)
         for j in range(1, N + 1):
-            run_test(exec_prefix, test, j, extra_options, debug)
+            run_test(exec_prefix, test, j, extra_options,
+                     options.debug)
 else:
-    print " VFNOW.PY: test(s) %s, %d refinement level(s), using '%s...'" % (
-        test_names, levels, exec_prefix)
+    print "# VFNOW.PY: test(s) %s, %d refinement level(s), using '%s...'" % (
+        options.tests, options.levels, exec_prefix)
 
-    for test in test_names:
-        for j in range(1, levels + 1):
-            run_test(exec_prefix, test, j, extra_options, debug)
+    for test in options.tests:
+        for j in range(1, options.levels + 1):
+            run_test(exec_prefix, test, j, extra_options,
+                     options.debug)
 
