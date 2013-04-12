@@ -29,7 +29,7 @@ IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const NCConfigVariabl
 PetscErrorCode IceBasalResistancePlasticLaw::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
   ierr = verbPrintf(verbthresh, com, 
-                    "Using purely plastic till with eps = %10.5e m/a.\n",
+                    "Using purely plastic till with eps = %10.5e m/year.\n",
                     convert(plastic_regularize, "m/s", "m/year")); CHKERRQ(ierr);
 
   return 0;
@@ -71,12 +71,12 @@ PetscErrorCode IceBasalResistancePseudoPlasticLaw::printInfo(int verbthresh, MPI
 
   if (pseudo_q == 1.0) {
     ierr = verbPrintf(verbthresh, com, 
-                      "Using linearly viscous till with u_threshold = %.2f m/a.\n", 
+                      "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
                       convert(pseudo_u_threshold, "m/s", "m/year")); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(verbthresh, com, 
-                      "Using pseudo-plastic till with eps = %10.5e m/a, q = %.4f,"
-                      " and u_threshold = %.2f m/a.\n", 
+                      "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
+                      " and u_threshold = %.2f m/year.\n", 
                       convert(plastic_regularize, "m/s", "m/year"),
                       pseudo_q,
                       convert(pseudo_u_threshold, "m/s", "m/year")); 
@@ -96,7 +96,7 @@ basal shear stress as
 where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$, \f$U=(u,v)\f$,
 \f$q=\f$ `pseudo_q`, and \f$U_{\mathtt{th}}=\f$ `pseudo_u_threshold`.
 Typical values for the constants are \f$q=0.25\f$ and \f$U_{\mathtt{th}} = 100\f$
-m/a.
+m/year.
 
 The linearly-viscous till case pseudo_q = 1.0 is allowed, in which case 
 \f$\beta = \tau_c/U_{\mathtt{th}}\f$.  The purely-plastic till case pseudo_q = 0.0

@@ -153,7 +153,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
 			 myMmax, paramSet); CHKERRQ(ierr);
   if (paramSet)     M_max = myMmax / secpera;
 
-  ierr = PISMOptionsReal("-Sb", "radial gradient of accumulation rate, (m/a)/km",
+  ierr = PISMOptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
 			 mySb, paramSet); CHKERRQ(ierr);
   if (paramSet)     S_b = mySb * 1e-3 / secpera;
 

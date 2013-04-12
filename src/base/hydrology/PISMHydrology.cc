@@ -758,7 +758,7 @@ PISMHydrology_hydroinput::PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g,
     : PISMDiag<PISMHydrology>(m, g, my_vars) {
   vars[0].init_2d("hydroinput", grid);
   set_attrs("total water input into subglacial hydrology layer",
-            "", "m s-1", "m a-1", 0);
+            "", "m s-1", "m/year", 0);
 }
 
 

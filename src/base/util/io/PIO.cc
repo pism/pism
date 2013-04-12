@@ -608,6 +608,10 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units,
     PISMEnd();
   }
 
+  // strip trailing spaces
+  while (ends_with(units_string, " "))
+    units_string.resize(units_string.size() - 1);
+  
   ierr = utScan(units_string.c_str(), &units);
   if (ierr != 0) {
     ierr = PetscPrintf(com, "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",

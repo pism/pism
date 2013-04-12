@@ -315,7 +315,7 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
     PISMEnd();
   }
 
-  PetscScalar dt_from_eigencalving_min = 0.001; //about 9 hours which corresponds to 10000 km/a on a 10 km grid
+  PetscScalar dt_from_eigencalving_min = 0.001; //about 9 hours which corresponds to 10000 km/year on a 10 km grid
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   PetscInt offset = 2;
@@ -408,7 +408,7 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
   dt_from_eigencalving = 1.0/denom;
 
   ierr = verbPrintf(2, grid.com,
-                    "!!!!! c_rate = %.0f m/a ( dt=%.5f a ) at point %d, %d with mean_c=%.0f m/a over %.0f cells \n",
+                    "!!!!! c_rate = %.0f m/year ( dt=%.5f a ) at point %d, %d with mean_c=%.0f m/year over %.0f cells \n",
                     maxCalvingRate*secpera,
                     dt_from_eigencalving/secpera,
                     i0, j0, meancalvrate*secpera, calving_rate_counter); CHKERRQ(ierr);

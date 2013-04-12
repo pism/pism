@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #(routingtest.sh) test 'routing' hydrology on Antarctic geometry and constant
-#  basal melt rate of 1 cm a-1; compare
+#  basal melt rate of 1 cm/year; compare
 #  http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
 
 # run preprocess.sh before this script

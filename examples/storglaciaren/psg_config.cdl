@@ -24,7 +24,7 @@ netcdf pism_overrides {
     pism_overrides:till_pw_fraction_doc = "pure number; pore water pressure is this fraction of overburden";
 
     pism_overrides:pseudo_plastic_uthreshold = 10.0;
-    pism_overrides:pseudo_plastic_uthreshold_doc = "m a-1; ";
+    pism_overrides:pseudo_plastic_uthreshold_doc = "m/year; ";
 
     pism_overrides:default_till_phi = 40.0;
     pism_overrides:default_till_phi_doc = "degrees; fill value for till friction angle";

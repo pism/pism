@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012 David Maxwell
+# Copyright (C) 2011, 2012, 2013 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -471,7 +471,7 @@ if __name__ == "__main__":
             "m s-1", "inv_ssa_residual", 0);
   r_mag.set_attr("_FillValue", PISM.convert(-0.01,'m/year','m/s'));
   r_mag.set_attr("valid_min", 0.0);
-  r_mag.set_glaciological_units("m a-1")
+  r_mag.set_glaciological_units("m year-1")
   r_mag.write_in_glaciological_units = True
 
   residual.magnitude(r_mag)

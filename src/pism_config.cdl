@@ -181,13 +181,13 @@ netcdf pism_config {
     pism_config:maximum_time_step_years_doc = "years; Maximum allowed time step length";
 
     pism_config:epsilon_ssa = 1.0e13;
-    pism_config:epsilon_ssa_doc = "Pa s m;  Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [\\ref MacAyealetal] and a typical strain rate of 0.001 a-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa yr, the value in [\\ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
+    pism_config:epsilon_ssa_doc = "Pa s m;  Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [\\ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa yr, the value in [\\ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
 
     pism_config:min_thickness_strength_extension_ssa = 50.0;
     pism_config:min_thickness_strength_extension_ssa_doc = "m; The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  At ice thicknesses below this value the product nu*H switches from the normal vertical integral to a constant value.  The geometry itself is not affected by this value.";
 
     pism_config:constant_nu_strength_extension_ssa = 9.48680701906572e+14;
-    pism_config:constant_nu_strength_extension_ssa_doc = "Pa s; The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [\\ref MacAyealetal] and a typical strain rate of 0.001 a-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa yr in [\\ref Ritzetal2001].";
+    pism_config:constant_nu_strength_extension_ssa_doc = "Pa s; The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [\\ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa yr in [\\ref Ritzetal2001].";
 
     pism_config:default_tauc = 2e5;
     pism_config:default_tauc_doc = "Pa; fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default";
@@ -199,7 +199,7 @@ netcdf pism_config {
     pism_config:sliding_scale_factor_reduces_tauc_doc = "; divides pseudo-plastic tauc (yield stress) by given factor; this would increase sliding by given factor in absence of membrane stresses; not used if negative or zero; not used by default";
 
     pism_config:beta_ice_free_bedrock = 1.8e9;
-    pism_config:beta_ice_free_bedrock_doc = "Pa s m-1; value is for ice stream E from [\\ref HulbeMacAyeal]; thus sliding velocity, but we hope it doesn't matter much; at 100 m a-1 the linear sliding law gives 57040 Pa basal shear stress";
+    pism_config:beta_ice_free_bedrock_doc = "Pa s m-1; value is for ice stream E from [\\ref HulbeMacAyeal]; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
 
     pism_config:hydrology_use_const_bmelt = "no";
     pism_config:hydrology_use_const_bmelt_doc = "if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology_const_bmelt";
@@ -308,7 +308,7 @@ netcdf pism_config {
     pism_config:pseudo_plastic_q_doc = "; The exponent of the pseudo-plastic basal resistance model";
 
     pism_config:pseudo_plastic_uthreshold = 100.0;
-    pism_config:pseudo_plastic_uthreshold_doc = "m a-1; ";
+    pism_config:pseudo_plastic_uthreshold_doc = "m/year; ";
 
     pism_config:ssafd_relative_convergence = 1.0e-4;
     pism_config:ssafd_relative_convergence_doc = "Relative change tolerance for the effective viscosity in the SSAFD object";
@@ -433,7 +433,7 @@ netcdf pism_config {
     pism_config:inv_ssa_tv_exponent_doc = "Lebesgue exponent for pseudo-TV norm";
 
     pism_config:inv_ssa_velocity_scale = 100;
-    pism_config:inv_ssa_velocity_scale_doc = "m/a; typical size of ice velocities expected during inversion";
+    pism_config:inv_ssa_velocity_scale_doc = "m/year; typical size of ice velocities expected during inversion";
 
     pism_config:inv_ssa_length_scale = 50e3;
     pism_config:inv_ssa_length_scale_doc = "m; typical length scale for rescaling derivative norms";
@@ -445,10 +445,10 @@ netcdf pism_config {
     pism_config:inv_ssa_tauc_max_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
     
     pism_config:inv_ssa_target_rms_misfit = 100;
-    pism_config:inv_ssa_target_rms_misfit_doc = "m/a; desired RMS misfit for SSA inversions";
+    pism_config:inv_ssa_target_rms_misfit_doc = "m/year; desired RMS misfit for SSA inversions";
     
     pism_config:tikhonov_atol  = 1e-10;
-    pism_config:tikhonov_atol_doc = "m/a; absolute threshold for Tikhonov stopping criterion";
+    pism_config:tikhonov_atol_doc = "m/year; absolute threshold for Tikhonov stopping criterion";
     
     pism_config:tikhonov_rtol  = 5e-2;
     pism_config:tikhonov_rtol_doc = "relative threshold for Tikhonov stopping criterion";
@@ -569,7 +569,7 @@ netcdf pism_config {
     pism_config:drainage_target_water_frac_doc = "; liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [\\ref AschwandenBuelerKhroulevBlatter]";
 
     pism_config:drainage_max_rate = 1.58443823077064e-09;
-    pism_config:drainage_max_rate_doc = "s-1; = 0.05 a-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see [\\ref AschwandenBuelerKhroulevBlatter]";
+    pism_config:drainage_max_rate_doc = "s-1; = 0.05 year-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see [\\ref AschwandenBuelerKhroulevBlatter]";
 
     pism_config:fresh_water_density = 1000.0;
     pism_config:fresh_water_density_doc = "kg m-3;";

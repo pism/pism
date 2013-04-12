@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2012 Ed Bueler and Andy Aschwanden
+# Copyright (C) 2009-2013 Ed Bueler and Andy Aschwanden
 
 # PISM SeaRISE Greenland
 #
@@ -33,7 +33,7 @@ ncks -O $DATANAME $PISMVERSION  # just copies over, but preserves history and gl
 # adjust metadata; uses NCO (http://nco.sourceforge.net/)
 # convert from water equiv to ice thickness change rate; assumes ice density 910.0 kg m-3
 ncap -O -s "precipitation=presprcp*(1000.0/910.0)" $PISMVERSION $PISMVERSION
-ncatted -O -a units,precipitation,a,c,"m a-1" $PISMVERSION
+ncatted -O -a units,precipitation,a,c,"m/year" $PISMVERSION
 ncatted -O -a long_name,precipitation,a,c,"ice-equivalent mean annual precipitation rate" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION

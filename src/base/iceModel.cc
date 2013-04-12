@@ -475,7 +475,7 @@ PetscErrorCode IceModel::createVecs() {
                                   "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                                   "m s-1", ""); CHKERRQ(ierr); 
   // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
-  // rescales from m/s to m/a when writing to NetCDF and std out:
+  // rescales from m/s to m/year when writing to NetCDF and std out:
   shelfbmassflux.write_in_glaciological_units = true;
   ierr = shelfbmassflux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   // do not add; boundary models are in charge here

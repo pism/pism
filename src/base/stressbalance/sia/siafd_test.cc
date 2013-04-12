@@ -283,7 +283,7 @@ PetscErrorCode reportErrors(const NCConfigVariable &config,
   ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n", 
                     max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6); CHKERRQ(ierr);
 
-  // surface velocity errors if exact values are available; reported in m/a
+  // surface velocity errors if exact values are available; reported in m/year
   PetscScalar maxUerr, avUerr, maxWerr, avWerr;
   ierr = computeSurfaceVelocityErrors(grid, *thickness,
                                       *u_sia,

@@ -325,7 +325,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           if (Tnew[k] < globalMinAllowedTemp) {
             ierr = PetscPrintf(PETSC_COMM_SELF,
                                "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
-                               " proc %d; mask=%d; w=%f m/a]]\n",
+                               " proc %d; mask=%d; w=%f m/year]]\n",
                                Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),
                                convert(system.w[k], "m/s", "m/year")); CHKERRQ(ierr);
             myLowTempCount++;

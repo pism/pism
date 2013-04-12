@@ -81,7 +81,7 @@ Used in PISM but no proposed standard name for now.  This is an incomplete list.
 \section finaltech Final technical notes
 
 \li PISM also uses attributes "grid_mapping = "mapping" ;" and "coordinates = "lat lon" ;" on output variables that depend on y,x.
-\li Because PISM uses UDUNITS, it will write some variables in "glaciological units" instead of the SI units listed above, for instance velocities in m a-1 instead of m s-1.  This is allowed under CF.  When PISM reads such a field from a NetCDF file, the conversion is handled automatically by UDUNITS.
+\li Because PISM uses UDUNITS, it will write some variables in "glaciological units" instead of the SI units listed above, for instance velocities in m year-1 instead of m s-1.  This is allowed under CF.  When PISM reads such a field from a NetCDF file, the conversion is handled automatically by UDUNITS.
 \li It is possible for PISM to write a NetCDF variable for diagnostic purposes without having a dedicated internal IceModelVec.  In that case the last column of the corresponding table may be empty for that standard_name.
 
 */

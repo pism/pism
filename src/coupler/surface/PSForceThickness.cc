@@ -118,7 +118,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "    alpha = %.6f a-1 for -force_to_thk mechanism\n",
+		    "    alpha = %.6f year-1 for -force_to_thk mechanism\n",
 		    convert(alpha,"s-1","yr-1")); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);

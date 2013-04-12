@@ -195,49 +195,49 @@ PetscErrorCode IcePSTexModel::prepare_series() {
   iarea->set_attr("long_name", "PST result: total ice area");
   
   maxcbar = new DiagnosticTimeseries(&grid, "maxcbar", time_dimension_name);
-  maxcbar->set_units("m s-1", "m a-1");
+  maxcbar->set_units("m s-1", "m/year");
   maxcbar->set_dimension_units("years", "");
   maxcbar->output_filename = seriesname;
   maxcbar->set_attr("long_name", 
     "PST result: maximum vertically-averaged ice speed anywhere on ice sheet");
   
   avup0 = new DiagnosticTimeseries(&grid, "avup0", time_dimension_name);
-  avup0->set_units("m s-1", "m a-1");
+  avup0->set_units("m s-1", "m/year");
   avup0->set_dimension_units("years", "");
   avup0->output_filename = seriesname;
   avup0->set_attr("long_name",
     "PST result: average speed in upper part of stream 0");
   
   avup1 = new DiagnosticTimeseries(&grid, "avup1", time_dimension_name);
-  avup1->set_units("m s-1", "m a-1");
+  avup1->set_units("m s-1", "m/year");
   avup1->set_dimension_units("years", "");
   avup1->output_filename = seriesname;
   avup1->set_attr("long_name",
     "PST result: average speed in upper part of stream 1");
   
   avup2 = new DiagnosticTimeseries(&grid, "avup2", time_dimension_name);
-  avup2->set_units("m s-1", "m a-1");
+  avup2->set_units("m s-1", "m/year");
   avup2->set_dimension_units("years", "");
   avup2->output_filename = seriesname;
   avup2->set_attr("long_name",
     "PST result: average speed in upper part of stream 2");
   
   avdwn0 = new DiagnosticTimeseries(&grid, "avdwn0", time_dimension_name);
-  avdwn0->set_units("m s-1", "m a-1");
+  avdwn0->set_units("m s-1", "m/year");
   avdwn0->set_dimension_units("years", "");
   avdwn0->output_filename = seriesname;
   avdwn0->set_attr("long_name",
     "PST result: average speed in downstream part of stream 0");
   
   avdwn1 = new DiagnosticTimeseries(&grid, "avdwn1", time_dimension_name);
-  avdwn1->set_units("m s-1", "m a-1");
+  avdwn1->set_units("m s-1", "m/year");
   avdwn1->set_dimension_units("years", "");
   avdwn1->output_filename = seriesname;
   avdwn1->set_attr("long_name",
     "PST result: average speed in downstream part of stream 1");
   
   avdwn2 = new DiagnosticTimeseries(&grid, "avdwn2", time_dimension_name);
-  avdwn2->set_units("m s-1", "m a-1");
+  avdwn2->set_units("m s-1", "m/year");
   avdwn2->set_dimension_units("years", "");
   avdwn2->output_filename = seriesname;
   avdwn2->set_attr("long_name",
@@ -245,14 +245,14 @@ PetscErrorCode IcePSTexModel::prepare_series() {
 
   if (exper_chosen != 3) {
     avup3 = new DiagnosticTimeseries(&grid, "avup3", time_dimension_name);
-    avup3->set_units("m s-1", "m a-1");
+    avup3->set_units("m s-1", "m/year");
     avup3->set_dimension_units("years", "");
     avup3->output_filename = seriesname;
     avup3->set_attr("long_name",
       "PST result: average speed in upper part of stream 3");
 
     avdwn3 = new DiagnosticTimeseries(&grid, "avdwn3", time_dimension_name);
-    avdwn3->set_units("m s-1", "m a-1");
+    avdwn3->set_units("m s-1", "m/year");
     avdwn3->set_dimension_units("years", "");
     avdwn3->output_filename = seriesname;
     avdwn3->set_attr("long_name",

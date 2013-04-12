@@ -39,7 +39,7 @@
 #include "POConstant.hh"
 #include "PSDummy.hh"
 
-const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
+const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/year
 
 IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides, int mytest)
   : IceModel(g, conf, conf_overrides) {
@@ -1203,7 +1203,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     }
   }
 
-  // surface velocity errors if exact values are available; reported in m/a
+  // surface velocity errors if exact values are available; reported in m/year
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxUerr, avUerr, maxWerr, avWerr;
     ierr = computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr); CHKERRQ(ierr);
@@ -1234,7 +1234,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     }
   }
 
-  // basal velocity errors if appropriate; reported in m/a except prcntavvec
+  // basal velocity errors if appropriate; reported in m/year except prcntavvec
   if (testname == 'E') {
     PetscScalar exactmaxspeed, maxvecerr, avvecerr, maxuberr, maxvberr;
     ierr = computeBasalVelocityErrors(exactmaxspeed,
@@ -1268,7 +1268,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     }
   }
 
-  // basal melt rate errors if appropriate; reported in m/a
+  // basal melt rate errors if appropriate; reported in m/year
   if (testname == 'O') {
     PetscScalar maxbmelterr, minbmelterr;
     ierr = computeBasalMeltRateErrors(maxbmelterr, minbmelterr); CHKERRQ(ierr);

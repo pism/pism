@@ -87,10 +87,10 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   ierr = verbPrintf(3, grid.com,
                     "     temperature at %.0f m a.s.l. = %.2f deg C\n"
                     "     temperature at %.0f m a.s.l. = %.2f deg C\n"
-                    "     mass balance below %.0f m a.s.l. = %.2f m/a\n"
-                    "     mass balance at  %.0f m a.s.l. = %.2f m/a\n"
-                    "     mass balance at  %.0f m a.s.l. = %.2f m/a\n"
-                    "     mass balance above %.0f m a.s.l. = %.2f m/a\n"
+                    "     mass balance below %.0f m a.s.l. = %.2f m/year\n"
+                    "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
+                    "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
+                    "     mass balance above %.0f m a.s.l. = %.2f m/year\n"
                     "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
                     z_T_min, T_min, z_T_max, T_max, z_m_min,
                     convert(m_limit_min, "m s-1", "m year-1"),
@@ -144,10 +144,10 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
                     "        of surface altitue (usurf):\n"
-                    "                  /  %5.2f m/a                       for          usurf < %3.f m\n"
+                    "                  /  %5.2f m/year                       for          usurf < %3.f m\n"
                     "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
                     "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
-                    "                   \\ %5.2f m/a                       for %3.f m < usurf\n",
+                    "                   \\ %5.2f m/year                       for %3.f m < usurf\n",
                     convert(m_limit_min, "m s-1", "m year-1"), z_m_min,
                     convert(-m_min, "m s-1", "m year-1")/(z_ELA - z_m_min), z_ELA, z_m_min, z_ELA,
                     convert(m_max, "m s-1", "m year-1")/(z_m_max - z_ELA), z_ELA, z_ELA, z_m_max,

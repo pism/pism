@@ -33,7 +33,7 @@ ncap -O -s "air_temp=temp+273.15" $PISMVERSION $PISMVERSION
 ncatted -O -a units,air_temp,a,c,"K" $PISMVERSION
 # choose Van de Berg et al version of accumulation; will treat as ice-equivalent snow rate
 ncrename -O -v accr,precipitation $PISMVERSION
-ncatted -O -a units,precipitation,m,c,"m a-1" $PISMVERSION
+ncatted -O -a units,precipitation,m,c,"m/year" $PISMVERSION
 # use bheatflx_shapiro as the default bheatflx data and 
 ncrename -O -v bheatflx_shapiro,bheatflx $PISMVERSION
 ncatted -O -a units,bheatflx,m,c,"W m-2" $PISMVERSION
