@@ -3,7 +3,7 @@
 
 * Things I need to do
 1. [X] Split allocation and setup from re-setting input fields.
-2. [ ] Add a 3D DMDA (with dof==1) and the associated Vec to store ice hardness.
+2. [X] Add a 3D DMDA (with dof==1) and the associated Vec to store ice hardness.
 3. [X] Write the restriction hook.
 4. [X] Write the interpolation code (to and from the PISM grid).
 5. [X] Replace "bed" with "ice lower surface elevation"
@@ -21,7 +21,7 @@
 17. [ ] Write the code checking if grid dimensions are compatible with
     the chosen number of coarsenings. (This is to avoid ugly PETSC
     ERROR tracebacks.)
-18. [ ] Consider switching element types at the margin. Yes, there are lots of cases.
+18. [X] Consider switching element types at the margin. Yes, there are lots of cases.
 19. [X] Switch to using PISM's basal drag computation.
 20. [X] Switch to computing the effective viscosity using =IceFlowLaw=.
 21. [X] Make =BlatterStressBalance= a derived class of
@@ -40,8 +40,6 @@
 
 * Outputs
 - $u$ and $v$ components of the horizontal velocity on the `PISM` grid
-- basal frictional heating
-- volumetric strain heating
-- vertically averaged horizontal velocuty (for mass continuity time-stepping)
 - $u$ and $v$ on the sigma grid for restarting
+- vertically averaged horizontal velocity (for mass continuity time-stepping)
 
