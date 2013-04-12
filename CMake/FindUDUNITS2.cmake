@@ -10,12 +10,9 @@ if (UDUNITS2_INCLUDES)
   set (UDUNITS2_FIND_QUIETLY TRUE)
 endif (UDUNITS2_INCLUDES)
 
-find_path (UDUNITS2_INCLUDES udunits2.h)
-
-if (NOT ${UDUNITS2_INCLUDES})
-  find_path(UDUNITS2_INCLUDES udunits2/udunits2.h)
-  set (UDUNITS2_INCLUDES "${UDUNITS2_INCLUDES}/udunits2" CACHE STRING "Path to udunits2.h" FORCE)
-endif()
+find_path (UDUNITS2_INCLUDES udunits2.h
+  PATH_SUFFIXES "udunits2"
+  DOC "Path to udunits2.h")
 
 find_library (UDUNITS2_LIBRARY NAMES udunits2)
 

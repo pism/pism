@@ -287,6 +287,7 @@ if (Pism_BUILD_EXTRA_EXECS)
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
 endif (Pism_BUILD_EXTRA_EXECS)
 
+add_subdirectory (calcalcs)
 add_subdirectory (inverse)
 add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
