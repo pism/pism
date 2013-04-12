@@ -16,7 +16,6 @@ include_directories (
   coupler/surface
   coupler/ocean
   coupler/util
-  udunits
   )
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
@@ -87,7 +86,7 @@ set_source_files_properties (base/util/io/PIO.cc
   PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
 
 add_library (pismutil ${PISMUTIL_SRC})
-target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
+target_link_libraries (pismutil ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)
 
 add_custom_target (touch_pism_revision
@@ -106,7 +105,7 @@ add_library (pismflowlaws
   base/rheology/flowlaw_factory.cc
   base/rheology/flowlaws.cc
 )
-target_link_libraries (pismflowlaws pismutil pismudunits ${Pism_EXTERNAL_LIBS})
+target_link_libraries (pismflowlaws pismutil ${Pism_EXTERNAL_LIBS})
 
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
@@ -170,9 +169,6 @@ set_source_files_properties (earth/cubature.c
 
 set_source_files_properties (base/util/pism_default_config.cc
   PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
-set_source_files_properties (udunits/utlib.c
-  PROPERTIES COMPILE_FLAGS
-  "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
 
 # Verification tests.
 add_library (pismverif
@@ -187,18 +183,6 @@ add_library (pismverif
   verif/tests/exactTestsIJ.c
 )
 target_link_libraries (pismverif pismbase pismstressbalance)
-
-# A custom version of UDUNITS (version 1).
-add_library (pismudunits
-  udunits/udalloc.c
-  udunits/utlib.c
-  udunits/utparse.c
-  udunits/utscan.c
-)
-
-# Disable compiler warnings for UDUNITS (sources are not by PISM authors)
-set_target_properties(pismudunits
-  PROPERTIES COMPILE_FLAGS "-w")
 
 # Main executables:
 add_executable (pismr pismr.cc)
@@ -241,7 +225,7 @@ add_custom_target (pism_config DEPENDS pism_config.nc)
 # Install libraries only if BUILD_SHARED_LIBS is ON.
 if (${BUILD_SHARED_LIBS})
   install (TARGETS
-    pismutil pismverif pismbase pismflowlaws pismearth pismudunits # libraries
+    pismutil pismverif pismbase pismflowlaws pismearth # libraries
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
 endif ()
@@ -252,7 +236,6 @@ install (TARGETS
   RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 install (FILES
-  "udunits/pismudunits.dat"
   "${PROJECT_BINARY_DIR}/pism_config.nc"
   DESTINATION ${Pism_LIB_DIR})
 

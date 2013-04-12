@@ -160,6 +160,7 @@ macro(pism_find_prerequisites)
   endif()
 
   # Other required libraries
+  find_package (UDUNITS2 REQUIRED)
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
 
@@ -236,9 +237,9 @@ macro(pism_find_prerequisites)
   endif()
 
   # Set include and library directories for *required* libraries.
-  include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
+  include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${UDUNITS2_INCLUDES} ${NETCDF_INCLUDES} ${MPI_C_INCLUDE_PATH})
   list (APPEND Pism_EXTERNAL_LIBS
-    ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
+    ${PETSC_LIBRARIES} ${UDUNITS2_LIBRARY} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARY} ${MPI_C_LIBRARIES})
 
   # Hide distracting CMake variables
   mark_as_advanced(file_cmd MPI_LIBRARY MPI_EXTRA_LIBRARY

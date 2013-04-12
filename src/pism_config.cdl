@@ -599,7 +599,7 @@ netcdf pism_config {
     pism_config:mantle_viscosity_doc = "Pa s; half-space (mantle) viscosity used by the bed deformation model. See [\\ref LingleClark, \\ref BLKfastearth]";
 
     pism_config:seconds_per_year = 3.15569259747e7;
-    pism_config:seconds_per_year_doc = "; should match the one used by UDUNITS (see src/udunits/pismudunits.dat).";
+    pism_config:seconds_per_year_doc = "; should match the one used by UDUNITS-2";
 
     pism_config:standard_gravity = 9.81;
     pism_config:standard_gravity_doc = "m s-2; acceleration due to gravity on Earth geoid";

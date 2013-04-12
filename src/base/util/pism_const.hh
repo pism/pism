@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,8 +35,7 @@ using namespace std;
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 
-const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS
-						// (src/udunits/pismudunits.dat)
+const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS-2
 const PetscScalar pi         = M_PI;		// defined in gsl/gsl_math.h
 
 enum PismMask {

@@ -445,8 +445,8 @@ If \texttt{-Lx} and \texttt{-Ly} specify horizontal grid dimensions smaller than
 Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
 \item NetCDF variables should have the \texttt{units} containing a
-  UDUNITS-compatible string. If this attribute is missing, PISM will assume
-  that a field uses MKS units.\footnote{PISM uses a library called UDUNITS\index{PISM!uses UDUNITS when reading NetCDF files}\index{UDUNITS} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.}
+  UDUNITS-2-compatible string. If this attribute is missing, PISM will assume
+  that a field uses MKS units.\footnote{PISM uses a library called UDUNITS-2\index{PISM!uses UDUNITS when reading NetCDF files}\index{UDUNITS-2} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.}
 \item NetCDF coordinate variables should have \texttt{standard_name} or
   \texttt{axis} attributes. These are used to
   determine which \emph{spatial} dimension a NetCDF dimension corresponds to;
