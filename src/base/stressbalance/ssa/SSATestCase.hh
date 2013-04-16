@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2013 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@ the input to an SSA for a test case:
 
 The SSA itself is constructed between steps 2) and 3).
 
-Additionally, a subclass can implement \c report to handle
+Additionally, a subclass can implement `report` to handle
 printing statistics after a run.  The default report method relies
 on subclasses implementing the exactSolution method for comparision.
 

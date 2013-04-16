@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,26 +77,26 @@ PetscErrorCode IceFlowLaw::setFromOptions() {
   return 0;
 }
 
-//! Returns viscosity and \b not the nu * H product.
-PetscReal IceFlowLaw::effective_viscosity(PetscReal hardness,
-                                         PetscReal u_x, PetscReal u_y,
-                                         PetscReal v_x, PetscReal v_y) const {
-  const PetscReal alpha = secondInvariant(u_x, u_y, v_x, v_y);
-  return 0.5 * hardness * pow(schoofReg + alpha, (1-n)/(2*n));
-}
-
 //! \brief Computes effective viscosity and its derivative with respect to the
-//! second invariant.
-void IceFlowLaw::effective_viscosity_with_derivative(PetscReal hardness, const PetscReal Du[],
-                                                    PetscReal *nu, PetscReal *dnu) const {
+//! second invariant \f$ \gamma \f$.
+/*!
+ *
+ * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
+ *
+ * \param[in] hardness ice hardness
+ * \param[in] gamma the second invariant \f$ \gamma \f$
+ * \param[out] nu effective viscosity
+ * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
+ */
+void IceFlowLaw::effective_viscosity(PetscReal hardness, PetscReal gamma,
+				     PetscReal *nu, PetscReal *dnu) const {
 
-  const PetscReal alpha = secondInvariantDu(Du),
+  const PetscReal
     power = (1-n)/(2*n),
-    my_nu = 0.5 * hardness * pow(schoofReg + alpha, power),
-    my_dnu = power * my_nu / (schoofReg + alpha);
+    my_nu = 0.5 * hardness * pow(schoofReg + gamma, power);
 
   if (nu)   *nu = my_nu;
-  if (dnu) *dnu = my_dnu;
+  if (dnu) *dnu = power * my_nu / (schoofReg + gamma);
 }
 
 //! Return the softness parameter A(T) for a given temperature T.
@@ -339,17 +339,10 @@ PetscReal GoldsbyKohlstedtIce::flow(PetscReal stress, PetscReal E,
   return flow_from_temp(stress, temp, pressure, grainsize);
 }
 
-PetscReal GoldsbyKohlstedtIce::effective_viscosity(PetscReal,
-                                                   PetscReal , PetscReal ,
-                                                   PetscReal , PetscReal ) const {
-  PetscPrintf(com, "ERROR: GoldsbyKohlstedtIce::effective_viscosity is not implemented\n");
-  PISMEnd();
-  return 0;
-}
-
-void GoldsbyKohlstedtIce::effective_viscosity_with_derivative(PetscReal, const PetscReal [],
-                                                              PetscReal *, PetscReal *) const {
-  PetscPrintf(com, "ERROR: GoldsbyKohlstedtIce::effective_viscosity_with_derivative is not implemented\n");
+void GoldsbyKohlstedtIce::effective_viscosity(PetscReal, PetscReal,
+					      PetscReal *, PetscReal *) const {
+  PetscPrintf(com,
+	      "ERROR: GoldsbyKohlstedtIce::effective_viscosity is not implemented\n");
   PISMEnd();
 }
 

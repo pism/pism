@@ -271,7 +271,7 @@ netcdf pism_config {
     pism_config:till_c_0_doc = "kPa; cohesion of till; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
 
     pism_config:mu_sliding = 0.0;
-    pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. <i>This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.</i>  See Appendix B of [\\ref BBssasliding] for the dangers in this mechanism.";
+    pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. *This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.*  See Appendix B of [\\ref BBssasliding] for the dangers in this mechanism.";
 
     pism_config:bed_def_interval_years = 10.0;
     pism_config:bed_def_interval_years_doc = "years; Interval between bed deformation updates";
@@ -547,6 +547,12 @@ netcdf pism_config {
     pism_config:ssa_flow_law = "gpbld";
     pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
+    pism_config:blatter_flow_law = "gpbld";
+    pism_config:blatter_flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+
+    pism_config:blatter_enhancement_factor = 1.0;
+    pism_config:blatter_enhancement_factor_doc = "; Flow enhancement factor for the Blatter stress balance flow law";
+
     pism_config:enthalpy_cold_bulge_max = 60270.0;
     pism_config:enthalpy_cold_bulge_max_doc = "J kg-1; = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
 
@@ -650,6 +656,9 @@ netcdf pism_config {
 
    pism_config:grid_Mz = 31;
    pism_config:grid_Mz_doc = "; Number of vertical grid levels in the ice.";
+
+   pism_config:blatter_Mz = 5;
+   pism_config:blatter_Mz_doc = "; Number of vertical grid levels in the ice (in the Blatter solver).";
 
    pism_config:grid_Mbz = 1;
    pism_config:grid_Mbz_doc = "; Number of thermal bedrock layers; 1 level corresponds to no bedrock.";

@@ -75,7 +75,7 @@ PetscErrorCode ignore_option(MPI_Comm com, const char name[]) {
   return 0;
 }
 
-//! Stop if an option \c old_name is set, printing a message that \c new_name should be used instead.
+//! Stop if an option `old_name` is set, printing a message that `new_name` should be used instead.
 PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
@@ -92,7 +92,7 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], co
   return 0;
 }
 
-//!Stop if an option \c name is set.
+//!Stop if an option `name` is set.
 PetscErrorCode stop_if_set(MPI_Comm com, const char name[]) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
@@ -486,11 +486,11 @@ PetscErrorCode PISMOptionsIntArray(string option, string text,
 /*!
 
   This is (essentially) a reimplementation of PetscOptionsHasName, except that
-  this *always* sets \c flag to PETSC_TRUE if an option is present.
+  this *always* sets `flag` to PETSC_TRUE if an option is present.
 
-  PetscOptionsHasName, on the other hand, sets \c flag to PETSC_FALSE if an
+  PetscOptionsHasName, on the other hand, sets `flag` to PETSC_FALSE if an
   option was set as "-foo FALSE", "-foo NO" or "-foo 0". Note that if one uses
-  "-foo 0.0", PetscOptionsHasName will set \c flag to PETSC_TRUE.
+  "-foo 0.0", PetscOptionsHasName will set `flag` to PETSC_TRUE.
 
   This unpredictability is bad. We want a function that does not depend on the
   argument given with an option.
@@ -782,6 +782,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
     config.set_flag_from_option("kill_icebergs", true);
   }
 
+  if (config.get_flag("do_eigen_calving")) {
+    config.set_flag_from_option("part_grid", true);
+  }
+
   // kill_icebergs requires part_grid
   if (config.get_flag("kill_icebergs")) {
     config.set_flag_from_option("part_grid", true);
@@ -804,6 +808,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
     config.set_flag_from_option("use_ssa_velocity", true);
     config.set_flag_from_option("use_ssa_when_grounded", true);
   }
+
+  ierr = config.scalar_from_option("blatter_Mz", "blatter_Mz"); CHKERRQ(ierr);
 
   return 0;
 }

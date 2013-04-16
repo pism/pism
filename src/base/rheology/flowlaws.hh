@@ -26,12 +26,12 @@ class NCConfigVariable;
 
 // This uses the definition of second invariant from Hutter and several others, namely
 // \f$ \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
-static inline PetscReal secondInvariant(PetscReal u_x, PetscReal u_y,
-                                        PetscReal v_x, PetscReal v_y)
+static inline PetscReal secondInvariant_2D(PetscReal u_x, PetscReal u_y,
+					   PetscReal v_x, PetscReal v_y)
 { return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y) + 0.5*PetscSqr(u_y + v_x)); }
 
 // The second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
-static inline PetscReal secondInvariantDu(const PetscReal Du[])
+static inline PetscReal secondInvariantDu_2D(const PetscReal Du[])
 { return 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2])); }
 
 
@@ -61,12 +61,8 @@ public:
  virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
 
-  virtual PetscReal effective_viscosity(PetscReal hardness,
-                                        PetscReal u_x, PetscReal u_y,
-                                        PetscReal v_x, PetscReal v_y) const;
-
-  virtual void effective_viscosity_with_derivative(PetscReal hardness, const PetscReal Du[],
-                                                   PetscReal *nu, PetscReal *dnu) const;
+  virtual void effective_viscosity(PetscReal hardness, PetscReal gamma,
+				   PetscReal *nu, PetscReal *dnu) const;
 
   virtual PetscReal averaged_hardness(PetscReal thickness,
                                       PetscInt kbelowH,
@@ -256,12 +252,8 @@ public:
   virtual PetscReal flow(PetscReal stress, PetscReal E,
                          PetscReal pressure, PetscReal grainsize) const;
 
-  virtual PetscReal effective_viscosity(PetscReal hardness,
-                                        PetscReal u_x, PetscReal u_y,
-                                        PetscReal v_x, PetscReal v_y) const;
-
-  virtual void effective_viscosity_with_derivative(PetscReal hardness, const PetscReal Du[],
-                                                   PetscReal *nu, PetscReal *dnu) const;
+  virtual void effective_viscosity(PetscReal hardness, PetscReal gamma,
+				   PetscReal *nu, PetscReal *dnu) const;
 
   virtual PetscReal averaged_hardness(PetscReal thickness,
                                       PetscInt kbelowH,

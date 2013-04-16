@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,8 +43,8 @@ typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERI
   contains the dimensions of the PISM (4-dimensional, x*y*z*time) computational
   box. The vertical spacing can be quite arbitrary.
 
-  It creates and destroys a two dimensional \c PETSc \c DA (distributed array).
-  The creation of this \c DA is the point at which PISM gets distributed across
+  It creates and destroys a two dimensional `PETSc` `DA` (distributed array).
+  The creation of this `DA` is the point at which PISM gets distributed across
   multiple processors.
 
   It computes grid parameters for the fine and equally-spaced vertical grid

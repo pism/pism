@@ -1,22 +1,7 @@
 #!/usr/bin/env python
 
-## @package vnreport
-## Plots error graphs using \c pismv of \c vfnow.py report files.
-## 
-## Has two command-line options: -i specifies a \c pismv report file to use, \c
-## -t selects tests to plot. Use "-t all" to plot error graphs using all the
-## error reports saved in a file given with -i.
-## 
-## For example:
-## \verbatim
-## vnreport.py -i r1084.nc -t G,B
-## \endverbatim
-## will use \c r1084.nc and plot tests "G" and "B".
-
 from pylab import close, figure, clf, hold, plot, xlabel, ylabel, xticks, yticks, axis, legend, title, grid, show, savefig
 from numpy import array, polyfit, polyval, log10, floor, ceil, unique
-#from matplotlib.font_manager import FontProperties
-import getopt
 import sys
 
 try:
@@ -24,7 +9,7 @@ try:
 except:
     from netCDF3 import Dataset as NC
 
-def plot_errors(nc, x, vars, testname, plot_title, filename = None):
+def plot_errors(save_figures, nc, x, vars, testname, plot_title):
     # This mask lets us choose data corresponding to a particular test:
     test = array(map(chr, nc.variables['test'][:]))
     mask = (test == testname)
@@ -104,119 +89,108 @@ def plot_errors(nc, x, vars, testname, plot_title, filename = None):
     grid(True)
     title("Test %s %s (%s)" % (testname, plot_title, nc.source))
 
-    if (filename):
+    if (save_figures):
+        filename = "%s_%s_%s" % (nc.source.replace(" ", "_"),
+                                 testname.replace(" ", "_"),
+                                 plot_title.replace(" ", "_"))
         savefig(filename)
 
-def plot_tests(nc, list_of_tests):
+def plot_tests(nc, list_of_tests, save_figures=False):
     for test_name in list_of_tests:
         # thickness, volume and eta errors:
         if test_name in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'L']:
-            plot_errors(nc, 'dx', ["maximum_thickness", "average_thickness"], test_name, "ice thickness errors")
-            plot_errors(nc, 'dx', ["relative_volume"], test_name, "relative ice volume errors")
-            plot_errors(nc, 'dx', ["relative_max_eta"], test_name, r"relative max $\eta$ errors")
+            plot_errors(save_figures, nc, 'dx', ["maximum_thickness", "average_thickness"], test_name, "ice thickness errors")
+            plot_errors(save_figures, nc, 'dx', ["relative_volume"], test_name, "relative ice volume errors")
+            plot_errors(save_figures, nc, 'dx', ["relative_max_eta"], test_name, r"relative max eta errors")
 
         # errors that are reported for test E only:
         if (test_name == 'E'):
-            plot_errors(nc, 'dx', ["maximum_basal_velocity", "average_basal_velocity"], 'E' , r"basal velocity errors")
-            plot_errors(nc, 'dx', ["maximum_basal_u", "maximum_basal_v"], 'E' , "basal velocity (ub and vb) errors")
-            plot_errors(nc, 'dx', ["relative_basal_velocity"], 'E', "relative basal velocity errors")
+            plot_errors(save_figures, nc, 'dx', ["maximum_basal_velocity", "average_basal_velocity"], 'E' , r"basal velocity errors")
+            plot_errors(save_figures, nc, 'dx', ["maximum_basal_u", "maximum_basal_v"], 'E' , "basal velocity (ub and vb) errors")
+            plot_errors(save_figures, nc, 'dx', ["relative_basal_velocity"], 'E', "relative basal velocity errors")
 
         # F and G temperature, sigma and velocity errors:
         if test_name in ['F', 'G']:
-            plot_errors(nc, 'dx', ["maximum_sigma", "average_sigma"],
+            plot_errors(save_figures, nc, 'dx', ["maximum_sigma", "average_sigma"],
                         test_name, "strain heating errors")
-            plot_errors(nc, 'dx', ["maximum_temperature", "average_temperature",
-                                   "maximum_basal_temperature", "average_basal_temperature"],
+            plot_errors(save_figures, nc, 'dx', ["maximum_temperature", "average_temperature",
+                                                 "maximum_basal_temperature", "average_basal_temperature"],
                         test_name, "ice temperature errors")
 
-            plot_errors(nc, 'dx', ["maximum_surface_velocity", "maximum_surface_w"],
+            plot_errors(save_figures, nc, 'dx', ["maximum_surface_velocity", "maximum_surface_w"],
                         test_name, "maximum ice surface velocity errors")
-            plot_errors(nc, 'dx', ["average_surface_velocity", "average_surface_w"],
+            plot_errors(save_figures, nc, 'dx', ["average_surface_velocity", "average_surface_w"],
                         test_name, "average ice surface velocity errors")
 
 
         # test I: plot only the u component
         if test_name == 'I':
-            plot_errors(nc, 'dy', ["relative_velocity"],
+            plot_errors(save_figures, nc, 'dy', ["relative_velocity"],
                         test_name, "relative velocity errors")
-            plot_errors(nc, 'dy', ["maximum_u", "average_u"],
+            plot_errors(save_figures, nc, 'dy', ["maximum_u", "average_u"],
                         test_name, "velocity errors")
             
         # tests J and M:
         if test_name in ['J', 'M']:
-            plot_errors(nc, 'dx', ["relative_velocity"],
+            plot_errors(save_figures, nc, 'dx', ["relative_velocity"],
                         test_name, "relative velocity errors")
-            plot_errors(nc, 'dx', ["maximum_velocity", "maximum_u", "average_u", "maximum_v", "average_v"],
+            plot_errors(save_figures, nc, 'dx', ["maximum_velocity", "maximum_u", "average_u", "maximum_v", "average_v"],
                         test_name, "velocity errors")
 
         # test K temperature errors:
         if (test_name == 'K'):
-            plot_errors(nc, 'dz', ["maximum_temperature", "average_temperature",
-                                   "maximum_bedrock_temperature", "average_bedrock_temperature"],
+            plot_errors(save_figures, nc, 'dz', ["maximum_temperature", "average_temperature",
+                                                 "maximum_bedrock_temperature", "average_bedrock_temperature"],
                         'K', "temperature errors")
 
         # test O temperature and basal melt rate errors:
         if (test_name == 'O'):
-            plot_errors(nc, 'dz', ["maximum_temperature", "average_temperature",
-                                   "maximum_bedrock_temperature", "average_bedrock_temperature"],
+            plot_errors(save_figures, nc, 'dz', ["maximum_temperature", "average_temperature",
+                                                 "maximum_bedrock_temperature", "average_bedrock_temperature"],
                         'K', "temperature errors")
-            plot_errors(nc, 'dz', ["maximum_basal_melt_rate"],
+            plot_errors(save_figures, nc, 'dz', ["maximum_basal_melt_rate"],
                         'O', "basal melt rate errors")
 
         # test V: plot only the u component
         if test_name == 'V':
-            plot_errors(nc, 'dx', ["relative_velocity"],
+            plot_errors(save_figures, nc, 'dx', ["relative_velocity"],
                         test_name, "relative velocity errors")
-            plot_errors(nc, 'dx', ["maximum_u", "average_u"],
+            plot_errors(save_figures, nc, 'dx', ["maximum_u", "average_u"],
                         test_name, "velocity errors")
-def print_help():
-    print """Usage:
--i            specifies an input file, a result of running pismv (or vfnow.py)
-                with the -report_file option
--t,--tests=   specifies a comma-separated list of tests. Use '-t all'
-                to plot all the tests available in the -i file.
---help        prints this message
-"""
 
-tests_to_plot = None
-input = None
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "i:t:", ["tests=", "help"])
-    for opt, arg in opts:
-        if opt in ["-t", "--tests"]:
-            tests_to_plot = arg.split(',')
-        if opt == "-i":
-            input = arg
-        if opt == "--help":
-            print_help()
-            sys.exit(0)
-    if input:
-        nc = NC(input, 'r')
-        available_tests = unique(array(map(chr, nc.variables['test'][:])))
+from argparse import ArgumentParser
+parser = ArgumentParser()
+parser.description = """Plot script for PISM verification results."""
 
-        if len(available_tests) == 1:
-            if tests_to_plot == None:
-                tests_to_plot = available_tests
-        else:
-            if (tests_to_plot == None):
-                print """Please choose tests to plot using the -t option.
+parser.add_argument("filename",
+                    help="The NetCDF error report file name, usually produces by running vfnow.py")
+parser.add_argument("-t", nargs="+", dest="tests_to_plot", default=None,
+                    help="Test results to plot (space-delimited list)")
+parser.add_argument("--save_figures", dest="save_figures", action="store_true",
+                    help="Save figures to .png files")
+
+options = parser.parse_args()
+
+nc = NC(options.filename, 'r')
+available_tests = unique(array(map(chr, nc.variables['test'][:])))
+tests_to_plot = options.tests_to_plot
+
+if len(available_tests) == 1:
+    if tests_to_plot == None:
+        tests_to_plot = available_tests
+else:
+    if (tests_to_plot == None):
+        print """Please choose tests to plot using the -t option.
 (Input file %s has reports for tests %s available.)""" % (input, str(available_tests))
-                sys.exit(0)
+        sys.exit(0)
 
-        if (tests_to_plot[0] == "all"):
-            tests_to_plot = available_tests
+if (tests_to_plot[0] == "all"):
+    tests_to_plot = available_tests
 
-        close('all')
-        plot_tests(nc, tests_to_plot)
-        try:
-            # show() will break if we didn't plot anything
-            show()
-        except:
-            pass
-    else:
-        print_help()
-except getopt.GetoptError:
-    print "Processing command-line options failed."
-    print_help()
-    sys.exit(1)
-
+close('all')
+plot_tests(nc, tests_to_plot, options.save_figures)
+try:
+    # show() will break if we didn't plot anything
+    show()
+except:
+    pass

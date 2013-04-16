@@ -97,8 +97,6 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
 
   ierr = compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
 
-  ierr = D2.set(0.0); CHKERRQ(ierr);
-
   double mu_sliding = config.get("mu_sliding"),
     minimum_temperature_for_sliding = config.get("minimum_temperature_for_sliding"),
     ice_rho = config.get("ice_density");
@@ -187,7 +185,7 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   pressure-melting-temperature-activated linear sliding.  See Appendix B of
   [\ref BBssasliding] for the dangers in this mechanism.
 
-  Parameter \f$\mu\f$ can be set by option \c -mu_sliding.
+  Parameter \f$\mu\f$ can be set by option `-mu_sliding`.
 
   The returned coefficient is used in update() (above).
 */

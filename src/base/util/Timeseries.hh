@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -107,7 +107,7 @@ protected:
 };
 
 //! A class for storing and writing diagnostic time-series.
-/*! This version of Timeseries only holds \c buffer_size entries in memory and
+/*! This version of Timeseries only holds `buffer_size` entries in memory and
   writes to a file every time this limit is exceeded.
 
   Here is a usage example:
@@ -144,7 +144,7 @@ protected:
   \endcode
 
   to the code. The first call will store the (my_t, TsOffset). The second
-  call will use linear interpolation to find the value at \c time years.  Note
+  call will use linear interpolation to find the value at `time` years.  Note
   that the first call adds to a buffer but does not yield any output without 
   the second call.  Therefore, even if interpolation is not really needed
   because time==my_t, the call to interp() should still occur.
@@ -156,7 +156,7 @@ protected:
   delete offsets;
   \endcode
 
-  Note that every time you exceed the \c buffer_size limit, all the entries are
+  Note that every time you exceed the `buffer_size` limit, all the entries are
   written to a file by flush() <b> and removed from memory</b>.  One may also
   explicitly call flush().
  */

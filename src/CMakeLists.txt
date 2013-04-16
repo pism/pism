@@ -1,6 +1,9 @@
 include_directories (
   base
   base/stressbalance
+  base/stressbalance/sia
+  base/stressbalance/ssa
+  base/stressbalance/blatter
   base/util
   base/util/io
   base/energy
@@ -261,7 +264,7 @@ install (TARGETS flowlaw_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 add_executable (bedrough_test
   software_tests/bedrough_test.cc
-  base/stressbalance/PISMBedSmoother.cc)
+  base/stressbalance/sia/PISMBedSmoother.cc)
 target_link_libraries (bedrough_test pismutil)
 install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 

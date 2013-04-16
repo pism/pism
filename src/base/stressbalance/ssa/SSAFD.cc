@@ -20,7 +20,7 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "pism_options.hh"
-#include "flowlaw_factory.hh"
+#include "flowlaws.hh"
 
 #include "pism_petsc32_compat.hh"
 
@@ -344,8 +344,8 @@ and reference [\ref BKAJS].  The pseudo-plastic till model includes all power la
 sliding relations and the linearly-viscous model for sliding,
 \f$\tau_{(b)i} = - \beta u_i\f$ where \f$\beta\f$ is the basal drag
 (friction) parameter [\ref MacAyeal].  In any case, PISM assumes that the basal shear
-stress can be factored this way, <i>even if the coefficient depends on the
-velocity</i>, \f$\beta(u,v)\f$.  Such factoring is possible even in the case of
+stress can be factored this way, *even if the coefficient depends on the
+velocity*, \f$\beta(u,v)\f$.  Such factoring is possible even in the case of
 (regularized) plastic till.  This scalar coefficient \f$\beta\f$ is what is
 returned by IceBasalResistancePlasticLaw::drag().
 
@@ -671,15 +671,15 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 This is the main procedure in the SSAFD.  It manages the nonlinear solve process
 and the Picard iteration.
 
-The outer loop (over index \c k) is the nonlinear iteration.  In this loop the effective
+The outer loop (over index `k`) is the nonlinear iteration.  In this loop the effective
 viscosity is computed by compute_nuH_staggered() and then the linear system is
 set up and solved.
 
 Specifically, we call the PETSc procedure KSPSolve() to solve the linear system.
 Solving the linear system is also a loop, an iteration, but it occurs
 inside KSPSolve().  The user has full control of the KSP solve through the PETSc
-interface.  The default choicess for KSP type <tt>-ksp_type</tt> and preconditioner type
-<tt>-pc_type</tt> are GMRES(30) for the former and block Jacobi with ILU on the
+interface.  The default choicess for KSP type `-ksp_type` and preconditioner type
+`-pc_type` are GMRES(30) for the former and block Jacobi with ILU on the
 blocks for the latter.  The defaults usually work.  These choices are important
 but poorly understood.  The eigenvalues of the linearized
 SSA vary with ice sheet geometry and temperature in ways that are not well-studied.
@@ -689,34 +689,34 @@ in the right place so that the KSP can converge quickly.
 
 The preconditioner will behave differently on different numbers of
 processors.  If the user wants the results of SSA calculations to be
-independent of the number of processors, then <tt>-pc_type none</tt> could
+independent of the number of processors, then `-pc_type none` could
 be used, but performance will be poor.
 
 If you want to test different KSP methods, it may be helpful to see how many
-iterations were necessary.  Use <tt>-ksp_monitor</tt>.
+iterations were necessary.  Use `-ksp_monitor`.
 Initial testing implies that CGS takes roughly half the iterations of
 GMRES(30), but is not significantly faster because the iterations are each
-roughly twice as slow.  The outputs of PETSc options <tt>-ksp_monitor_singular_value</tt>,
-<tt>-ksp_compute_eigenvalues</tt> and <tt>-ksp_plot_eigenvalues -draw_pause N</tt>
+roughly twice as slow.  The outputs of PETSc options `-ksp_monitor_singular_value`,
+`-ksp_compute_eigenvalues` and `-ksp_plot_eigenvalues -draw_pause N`
 (the last holds plots for N seconds) may be useful to diagnose.
 
 The outer loop terminates when the effective viscosity times thickness is no longer changing
-much, according to the tolerance set by the option <tt>-ssa_rtol</tt>.  The
+much, according to the tolerance set by the option `-ssa_rtol`.  The
 outer loop also terminates when a maximum number of iterations is exceeded.
 We save the velocity from the last time step in order to have a better estimate
 of the effective viscosity than the u=v=0 result.
 
-In truth there is an "outer outer" loop (over index \c l).  This attempts to
+In truth there is an "outer outer" loop (over index `l`).  This attempts to
 over-regularize the effective viscosity if the nonlinear iteration (the "outer"
-loop over \c k) is not converging with the default regularization.  The same
+loop over `k`) is not converging with the default regularization.  The same
 over-regularization is attempted if the KSP object reports that it has not
 converged.
 
 (An alternative for recovery in the KSP diverged case, suggested by Jed, is to
 revert to a direct linear solve, either for the whole domain (not scalable) or
 on the subdomains.  This recovery alternative requires a more nontrivial choice
-but it may be worthwhile.  Note the user can already do <tt>-pc_type asm
--sub_pc_type lu</tt> at the command line, forcing subdomain direct solves.)
+but it may be worthwhile.  Note the user can already do `-pc_type asm
+-sub_pc_type lu` at the command line, forcing subdomain direct solves.)
  */
 PetscErrorCode SSAFD::solve() {
   PetscErrorCode ierr;
@@ -1145,7 +1145,11 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
           v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
         }
 
-        result(i,j,o) = H * flow_law->effective_viscosity(hardness(i,j,o), u_x, u_y, v_x, v_y);
+	PetscReal nu;
+	flow_law->effective_viscosity(hardness(i,j,o),
+				      secondInvariant_2D(u_x, u_y, v_x, v_y),
+				      &nu, NULL);
+        result(i,j,o) = nu * H;
 
         if (! finite(result(i,j,o)) || false) {
           ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));

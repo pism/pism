@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2013  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -56,7 +56,7 @@ public:
   \f[
   \nabla J_i = \frac{\partial}{\partial x_i} J(x).
   \f]
-  This vector is returned as \c gradient.
+  This vector is returned as `gradient`.
   */
   virtual PetscErrorCode gradientAt(IMVecType &x, IMVecType &gradient) = 0;
 

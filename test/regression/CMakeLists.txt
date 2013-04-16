@@ -95,6 +95,8 @@ pism_test (bootstrapping_incomplete_input test_28.sh)
 
 pism_test (distributed_hydrology_regression test_29.py)
 
+pism_test (initialization_without_enthalpy test_31.sh)
+
 
 if(Pism_BUILD_PYTHON_BINDINGS)
 

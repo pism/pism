@@ -351,43 +351,7 @@ PetscErrorCode IceModel::initFromFile(string filename) {
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
                     filename.c_str()); CHKERRQ(ierr);
 
-  // options for initializing enthalpy
-  bool initfromT, initfromTandOm;
-  string enthalpy_pism_intent;
-  ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
-  if (initfromT && initfromTandOm) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: both options -init_from_temp and -init_from_temp_and_liqfrac seen; must choose one or none");
-    PISMEnd();
-  }
-
-  // if initializing enthalpy from temperature or temperature and liquid water
-  // fraction, temporarily set pism_intent of Enth3 to "diagnostic" so that
-  // PISM does not even try to read the "enthalpy" variable
-  if (initfromT || initfromTandOm) {
-    enthalpy_pism_intent = Enth3.string_attr("pism_intent");
-    ierr = Enth3.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr);
-  }
-
-
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-
-  // check if the input file has Href; set its pism_intent to "diagnostic" and
-  // set the field itself to 0 if it is not present
-  if (config.get_flag("part_grid")) {
-    bool exists;
-    ierr = nc.inq_var("Href", exists); CHKERRQ(ierr);
-
-    if (!exists) {
-      ierr = verbPrintf(2, grid.com,
-        "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
-                        filename.c_str()); CHKERRQ(ierr);
-
-      ierr = vHref.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr);
-      ierr = vHref.set(0.0); CHKERRQ(ierr);
-    }
-  }
 
   // Find the index of the last record in the file:
   unsigned int last_record;
@@ -405,7 +369,10 @@ PetscErrorCode IceModel::initFromFile(string filename) {
     if ((intent == "model_state") || (intent == "mapping") ||
         (intent == "climate_steady")) {
 
-      if (config.get_flag("do_age") && var->string_attr("short_name") == "age")
+      // skip "age" and "enthalpy" for now: we'll take care of them a
+      // little later
+      if (var->string_attr("short_name") == "enthalpy" ||
+          var->string_attr("short_name") == "age")
         continue;
 
       ierr = var->read(filename, last_record); CHKERRQ(ierr);
@@ -418,6 +385,22 @@ PetscErrorCode IceModel::initFromFile(string filename) {
     ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
   }
 
+  // check if the input file has Href; set to 0 if it is not present
+  if (config.get_flag("part_grid")) {
+    bool href_exists;
+    ierr = nc.inq_var("Href", href_exists); CHKERRQ(ierr);
+
+    if (href_exists == true) {
+      ierr = vHref.read(filename, last_record); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2, grid.com,
+        "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
+                        filename.c_str()); CHKERRQ(ierr);
+      ierr = vHref.set(0.0); CHKERRQ(ierr);
+    }
+  }
+
+  // read the age field if present, otherwise set to zero
   if (config.get_flag("do_age")) {
     bool age_exists;
     ierr = nc.inq_var("age", age_exists); CHKERRQ(ierr);
@@ -433,48 +416,55 @@ PetscErrorCode IceModel::initFromFile(string filename) {
     }
   }
 
-  if (initfromT || initfromTandOm) {
-    IceModelVec3 temperature;
 
-    ierr = temperature.create(grid, "temp", false); CHKERRQ(ierr);
-    ierr = temperature.set_attrs("internal", "ice temperature; temporary storage during initialization",
-                                 "K", "land_ice_temperature"); CHKERRQ(ierr);
-    ierr = temperature.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  // Initialize the enthalpy field by reading from a file or by using
+  // temperature and liquid water fraction, or by using temperature
+  // and assuming that the ice is cold.
+  {
+    bool enthalpy_exists, liqfrac_exists, temperature_exists;
+    ierr = nc.inq_var("enthalpy", enthalpy_exists);    CHKERRQ(ierr);
+    ierr = nc.inq_var("liqfrac",  liqfrac_exists);     CHKERRQ(ierr);
+    ierr = nc.inq_var("temp",     temperature_exists); CHKERRQ(ierr);
 
-    ierr = temperature.read(filename, last_record); CHKERRQ(ierr);
+    if (enthalpy_exists) {
+      ierr = Enth3.read(filename, last_record); CHKERRQ(ierr);
+    } else if (temperature_exists) {
+      IceModelVec3 temperature;
 
-    if (initfromT) {
-      ierr = verbPrintf(2, grid.com,
-                        "  option -init_from_temp seen;"
-                        " computing enthalpy from ice temperature and thickness ...\n");
-      CHKERRQ(ierr);
+      ierr = temperature.create(grid, "temp", false); CHKERRQ(ierr);
+      ierr = temperature.set_attrs("internal",
+                                   "ice temperature; temporary storage during initialization",
+                                   "K", "land_ice_temperature"); CHKERRQ(ierr);
+      ierr = temperature.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
-      ierr = compute_enthalpy_cold(temperature, Enth3); CHKERRQ(ierr);
+      ierr = temperature.read(filename, last_record); CHKERRQ(ierr);
 
+      if (liqfrac_exists) {
+        ierr = verbPrintf(2, grid.com,
+                          "* Computing enthalpy using ice temperature,"
+                          " liquid water fraction and thickness...\n"); CHKERRQ(ierr);
+
+        // use vWork3d as already-allocated space
+        ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);
+        ierr = vWork3d.set_attrs("internal", "liqfrac; temporary use during initialization",
+                                 "", ""); CHKERRQ(ierr);
+        ierr = vWork3d.read(filename, last_record); CHKERRQ(ierr);
+
+        ierr = compute_enthalpy(temperature, vWork3d, Enth3); CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(2, grid.com,
+                          "* Computing enthalpy using ice temperature and thickness...\n");
+        CHKERRQ(ierr);
+
+        ierr = compute_enthalpy_cold(temperature, Enth3); CHKERRQ(ierr);
+      }
     } else {
-      ierr = verbPrintf(2, grid.com,
-                        "  option -init_from_temp_and_liqfrac seen; computing enthalpy from ice temperature,"
-                        " liquid water fraction and thickness ...\n"); CHKERRQ(ierr);
-
-      // use vWork3d as already-allocated space
-      ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);
-      ierr = vWork3d.set_attrs("internal", "liqfrac; temporary use during initialization",
-                               "", ""); CHKERRQ(ierr);
-      ierr = vWork3d.read(filename, last_record); CHKERRQ(ierr);
-
-      ierr = compute_enthalpy(temperature, vWork3d, Enth3); CHKERRQ(ierr);
+      PetscPrintf(grid.com, "PISM ERROR: neither %s nor %s was found in the input file %s.\n",
+                  "enthalpy", "temperature", filename.c_str());
+      PISMEnd();
     }
-
-    // restore the original value of pism_intent (currently: either
-    // "model_state" or "diagnostic" depending on the "do_cold_ice_methods"
-    // config parameter).
-    ierr = Enth3.set_attr("pism_intent", enthalpy_pism_intent); CHKERRQ(ierr);
-  }
-
-  // re-set Href's pism_intent attribute
-  if (config.get_flag("part_grid")) {
-    ierr = vHref.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
-  }
+      
+  } // end of enthalpy initialization
 
   string history;
   ierr = nc.get_att_text("PISM_GLOBAL", "history", history); CHKERRQ(ierr);
@@ -487,16 +477,16 @@ PetscErrorCode IceModel::initFromFile(string filename) {
 
   //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
   /*!
-    For each variable selected by option <tt>-regrid_vars</tt>, we regrid it onto the current grid from
-    the NetCDF file specified by <tt>-regrid_file</tt>.
+    For each variable selected by option `-regrid_vars`, we regrid it onto the current grid from
+    the NetCDF file specified by `-regrid_file`.
 
-    The default, if <tt>-regrid_vars</tt> is not given, is to regrid the 3
-    dimensional quantities \c tau3, \c Tb3 and either \c T3 or \c Enth3. This is
+    The default, if `-regrid_vars` is not given, is to regrid the 3
+    dimensional quantities `tau3`, `Tb3` and either `T3` or `Enth3`. This is
     consistent with one standard purpose of regridding, which is to stick with
     current geometry through the downscaling procedure. Most of the time the user
     should carefully specify which variables to regrid.
 
-    This \c dimensions argument can be 2 (regrid 2D variables only), 3 (3D
+    This `dimensions` argument can be 2 (regrid 2D variables only), 3 (3D
     only) and 0 (everything).
   */
   PetscErrorCode IceModel::regrid(int dimensions) {

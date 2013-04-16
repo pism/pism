@@ -43,14 +43,14 @@ ocean.  Or at least PISM assumes that the edge of the computational domain is in
 a region with strong ablation that the ice will not cross.
 
 Here, by contrast, we add a strip around the edge of the computational domain
-(variable \c no_model_mask and option \c -no_model_strip).  Various
+(variable `no_model_mask` and option `-no_model_strip`).  Various
 simplifications and boundary conditions are enforced in this script:
 * the surface gradient computation is made trivial,
 * the driving stress does not change during the run but instead comes from
 the gradient of a saved surface elevation, and
 * the base is made strong so that no sliding occurs.
 
-Also options \c -force_to_thk and variable \c ftt_mask play a role in isolating
+Also options `-force_to_thk` and variable `ftt_mask` play a role in isolating
 the modeled outlet glacier.  But there is no code here for that purpose. 
 Instead see the PSForceThickness surface model modifier class.
  */

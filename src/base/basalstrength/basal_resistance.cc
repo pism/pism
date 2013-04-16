@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2012 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2013 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -94,7 +94,7 @@ is minus the return value here times (vx,vy).  Thus this method computes the
 basal shear stress as
     \f[ \tau_b = - \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U} \f]
 where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$, \f$U=(u,v)\f$,
-\f$q=\f$ <tt>pseudo_q</tt>, and \f$U_{\mathtt{th}}=\f$ <tt>pseudo_u_threshold</tt>.
+\f$q=\f$ `pseudo_q`, and \f$U_{\mathtt{th}}=\f$ `pseudo_u_threshold`.
 Typical values for the constants are \f$q=0.25\f$ and \f$U_{\mathtt{th}} = 100\f$
 m/a.
 
@@ -108,15 +108,15 @@ plastic_regularize.
 A scale factor of \f$A\f$ is intended to increase basal sliding rate by
 \f$A\f$.  It would have exactly this effect \e if the driving stress were
 \e hypothetically completely held by the basal resistance.  Thus this scale factor
-is used to reduce (if \c -sliding_scale \f$A\f$ with \f$A > 1\f$) or increase
-(if \f$A < 1\f$) the value of the (pseudo-) yield stress \c tauc.  The concept
+is used to reduce (if `-sliding_scale` \f$A\f$ with \f$A > 1\f$) or increase
+(if \f$A < 1\f$) the value of the (pseudo-) yield stress `tauc`.  The concept
 behind this is described at
 http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
 
 Specifically, the concept behind this mechanism is to suppose equality of driving
 and basal shear stresses,
     \f[ \rho g H \nabla h = \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}. \f]
-(<i>For emphasis:</i> The membrane stress held by the ice itself is missing from
+(*For emphasis:* The membrane stress held by the ice itself is missing from
 this incomplete stress balance.)  Thus the pseudo yield stress
 \f$\tau_c\f$ would be related to the sliding speed \f$|\mathbf{U}|\f$ by
   \f[ |\mathbf{U}| = \frac{C}{\tau_c^{1/q}} \f]

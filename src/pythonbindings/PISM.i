@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 David Maxwell
+// Copyright (C) 2011, 2012, 2013 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@
 #include "Timeseries.hh"
 #include "TerminationReason.hh"
 #include "exactTestsIJ.h"
-#include "stressbalance/SSAFEM.hh"
+#include "stressbalance/ssa/SSAFEM.hh"
 #include "inverse/InvSSAForwardProblem.hh"
 #include "inverse/InvSSAForwardProblem_dep.hh"
 #include "inverse/InvTaucParameterization.hh"
@@ -45,7 +45,7 @@
 #include "inverse/InvSSATikhonov.hh"
 #include "inverse/InvSSATikhonovLCL.hh"
 #endif
-#include "stressbalance/SSAFD.hh"
+#include "stressbalance/ssa/SSAFD.hh"
 #include "pism_python.hh"
 #include "iceModel.hh"
 #include "SNESProblem.hh"
@@ -507,7 +507,7 @@ namespace std {
 }
 
 
-%include "stressbalance/SNESProblem.hh"
+%include "stressbalance/ssa/SNESProblem.hh"
 %template(SNESScalarProblem) SNESProblem<1,PetscScalar>;
 %template(SNESVectorProblem) SNESProblem<2,PISMVector2>;
 
@@ -543,7 +543,7 @@ namespace std {
 # implementation of update comes from a class that is itself abstract?
 # Regardless, we assure SWIG that the class is concrete.
 %feature("notabstract") SIAFD;
-%include "SIAFD.hh"
+%include "stressbalance/sia/SIAFD.hh"
 
 %include "iceModel.hh"
 
@@ -555,10 +555,10 @@ namespace std {
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
 %template(PISMDiag_SSA) PISMDiag<SSA>;
-%include "stressbalance/SSA.hh"
-%include "stressbalance/SSAFEM.hh"
+%include "stressbalance/ssa/SSA.hh"
+%include "stressbalance/ssa/SSAFEM.hh"
 %template(PISMDiag_SSAFD) PISMDiag<SSAFD>;
-%include "stressbalance/SSAFD.hh"
+%include "stressbalance/ssa/SSAFD.hh"
 %include "Mask.hh"
 %include "pism_python.hh"
 %template(PISMDiag_PISMMohrCoulombYieldStress) PISMDiag<PISMMohrCoulombYieldStress>;
@@ -567,7 +567,7 @@ namespace std {
 %include "PISMTime.hh"
 %feature("notabstract") SIAFD_Regional;
 %include "regional/regional.hh"
-%include "FEEvaluator.hh"
+%include "stressbalance/ssa/FEEvaluator.hh"
 
 %include "inverse/Functional.hh"
 %template(Functional2S) Functional< IceModelVec2S >;

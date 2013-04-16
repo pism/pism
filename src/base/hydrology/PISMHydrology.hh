@@ -41,7 +41,7 @@ Thus the interface is specific to subglacial hydrology models which track a
 two-dimensional water layer with a well-defined thickness and pressure at each
 map-plane location, and which either track the englacial water in a manner
 which allows computation of an effective thickness, or which lack englacial
-storage.  In the latter case englacial_water_thickness() sets \c result to
+storage.  In the latter case englacial_water_thickness() sets `result` to
 zero.
 
 Some references for such models are [\ref Bartholomausetal2011,
@@ -276,7 +276,7 @@ hydraulic potential.  This specific model is a well-posed PDE which finds
 subglacial lakes.
 
 This model should generally be tested using static ice geometry first, i.e. using
-option -no_mass.  Use option \c -report_mass_accounting to see stdout reports
+option -no_mass.  Use option `-report_mass_accounting` to see stdout reports
 which balance the books on this model.
 
 As with PISMTillCanHydrology and PISMDiffuseOnlyHydrology, the state space
@@ -284,8 +284,8 @@ includes only the water layer thickness W.  For more complete modeling where the
 water pressure is determined by a physical model for the opening and closing of
 cavities, and where the state space is both W and P, use PISMDistributedHydrology.
 
-Note there is an option \c -hydrology_null_strip \c X which produces a strip of
-\c X km around the edge of the computational domain in which the water flow
+Note there is an option `-hydrology_null_strip` `X` which produces a strip of
+`X` km around the edge of the computational domain in which the water flow
 velocity is set to zero.  The water amount is also reset to zero at the end
 of each time step in this strip in an accounted way.
 

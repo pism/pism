@@ -29,30 +29,30 @@
 #include "IceGrid.hh"
 
 
-//! Virtual.  Does nothing in \c IceModel.  Derived classes can do more computation in each time step.
+//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
 PetscErrorCode IceModel::additionalAtStartTimestep() {
   return 0;
 }
 
 
-//! Virtual.  Does nothing in \c IceModel.  Derived classes can do more computation in each time step.
+//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
 PetscErrorCode IceModel::additionalAtEndTimestep() {
   return 0;
 }
 
 //! Catch signals -USR1, -USR2 and -TERM.
 /*!
-Signal \c SIGTERM makes PISM end, saving state under original \c -o name 
+Signal `SIGTERM` makes PISM end, saving state under original `-o` name 
 (or default name).  We also add an indication to the history attribute 
 of the output NetCDF file.
 
-Signal \c SIGUSR1 makes PISM save state under a filename based on the
-the name of the executable (e.g. \c pismr or \c pismv) and the current 
-model year.  In addition the time series (\c -ts_file, etc.) is flushed out
-There is no indication of these actions in the history attribute of the output (\c -o)
-NetCDF file because there is no effect on it, but there is an indication at \c stdout.
+Signal `SIGUSR1` makes PISM save state under a filename based on the
+the name of the executable (e.g. `pismr` or `pismv`) and the current 
+model year.  In addition the time series (`-ts_file`, etc.) is flushed out
+There is no indication of these actions in the history attribute of the output (`-o`)
+NetCDF file because there is no effect on it, but there is an indication at `stdout`.
 
-Signal \c SIGUSR2 makes PISM flush time-series, without saving model state.
+Signal `SIGUSR2` makes PISM flush time-series, without saving model state.
  */
 int IceModel::endOfTimeStepHook() {
   PetscErrorCode ierr;

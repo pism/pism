@@ -20,6 +20,7 @@
 #include "FETools.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
+#include "flowlaws.hh"
 
 #include "pism_petsc32_compat.hh"
 
@@ -401,7 +402,8 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
     *nuH = strength_extension->get_notional_strength();
     if (dNuH) *dNuH = 0;
   } else {
-    flow_law->effective_viscosity_with_derivative(feS->B, Du, nuH, dNuH);
+    flow_law->effective_viscosity(feS->B, secondInvariantDu_2D(Du),
+				  nuH, dNuH);
     *nuH  *= feS->H;
     *nuH  += m_epsilon_ssa;
     if (dNuH) *dNuH *= feS->H;
