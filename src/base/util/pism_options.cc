@@ -598,6 +598,9 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                  "hydrology_add_wall_melt"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_const_bmelt",
                                    "hydrology_const_bmelt"); CHKERRQ(ierr);
+  // these only apply to PISMTillCanHydrology and derived:
+  ierr = config.scalar_from_option("hydrology_pressure_fraction",
+                                   "hydrology_pressure_fraction"); CHKERRQ(ierr);
   // these only apply to PISMLakesHydrology and PISMDistributedHydrology:
   ierr = config.scalar_from_option("hydrology_hydraulic_conductivity",
                                    "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
@@ -607,8 +610,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                    "hydrology_potential_gradient_power_in_flux"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_roughness_scale",
                                    "hydrology_roughness_scale"); CHKERRQ(ierr);
-  //FIXME issue #127:  till_pw_fraction too, but renamed
-  // these only apply to PISMDistributedHydrology:
   ierr = config.scalar_from_option("hydrology_cavitation_opening_coefficient",
                                    "hydrology_cavitation_opening_coefficient"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_creep_closure_coefficient",
@@ -695,12 +696,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
   // Note: option is given in kPa.
   ierr = config.scalar_from_option("plastic_c0", "till_c_0");      CHKERRQ(ierr);
-
-  // till_pw_fraction is a parameter in the computation of the till yield stress tau_c
-  // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
-  // option a pure number (a fraction); no conversion
-  // FIXME: issue #127
-  ierr = config.scalar_from_option("plastic_pwfrac", "till_pw_fraction"); CHKERRQ(ierr);
 
   // controls regularization of plastic basal sliding law
   ierr = config.scalar_from_option("plastic_reg", "plastic_regularization"); CHKERRQ(ierr);

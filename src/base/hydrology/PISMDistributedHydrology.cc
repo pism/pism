@@ -246,12 +246,12 @@ PetscErrorCode PISMRoutingHydrology::subglacial_water_thickness(IceModelVec2S &r
 /*!
 Here
   \f[ P = \lambda P_o = \lambda (\rho_i g H) \f]
-where \f$\lambda\f$=till_pw_fraction and \f$P_o\f$ is the overburden pressure.
+where \f$\lambda\f$=hydrology_pressure_fraction and \f$P_o\f$ is the overburden pressure.
  */
 PetscErrorCode PISMRoutingHydrology::subglacial_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = overburden_pressure(result); CHKERRQ(ierr);
-  ierr = result.scale(config.get("till_pw_fraction")); CHKERRQ(ierr);  //FIXME issue #127
+  ierr = result.scale(config.get("hydrology_pressure_fraction")); CHKERRQ(ierr);
   return 0;
 }
 
