@@ -209,10 +209,10 @@ $PISM_DO $cmd
 PRE1NAME=g${CS}km_steady.nc
 EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:500:${NOMASSSIARUNLENGTH}
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwat,bwp,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
-cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
+cmd="$PISM_MPIDO $NN $PISM -i $PRE0NAME $COUPLER_SIMPLE \
   -no_mass -ys 0 -y ${NOMASSSIARUNLENGTH} \
   -extra_file $EX1NAME -extra_vars $EXVARS -extra_times $EXTIMES -o $PRE1NAME"
 $PISM_DO $cmd
@@ -234,7 +234,7 @@ TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
 EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,climatic_mass_balance_cumulative"
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwat,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,climatic_mass_balance_cumulative"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
