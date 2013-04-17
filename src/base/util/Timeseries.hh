@@ -77,7 +77,8 @@ using namespace std;
 class Timeseries {
 public:
   Timeseries(IceGrid * g, string name, string dimension_name);
-  Timeseries(MPI_Comm com, PetscMPIInt rank, string name, string dimension_name);
+  Timeseries(MPI_Comm com, PetscMPIInt rank, PISMUnitSystem units_system,
+             string name, string dimension_name);
   
   PetscErrorCode read(const PIO &nc, bool use_reference_date);
   PetscErrorCode write(const PIO &nc);
@@ -99,11 +100,14 @@ protected:
   NCTimeseries dimension, var;
   NCTimeBounds bounds;
   bool use_bounds;
+  PISMUnitSystem m_unit_system;
 
   vector<double> time;
   vector<double> values;
   vector<double> time_bounds;
-  void private_constructor(MPI_Comm com, PetscMPIInt rank, string name, string dimension_name);
+  void private_constructor(MPI_Comm com, PetscMPIInt rank,
+                           PISMUnitSystem unit_system,
+                           string name, string dimension_name);
 };
 
 //! A class for storing and writing diagnostic time-series.

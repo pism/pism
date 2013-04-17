@@ -24,6 +24,7 @@
 //! \brief Contains parameters of an input file grid.
 class grid_info {
 public:
+  grid_info(PISMUnitSystem unit_system);
   // dimension lengths
   unsigned int t_len, x_len, y_len, z_len;
   double time,			//!< current time (seconds)
@@ -34,8 +35,9 @@ public:
     z_min,			//!< minimal value of the z dimension
     z_max;			//!< maximal value of the z dimension
   vector<double> x, y, z;       //!< coordinates
-  grid_info();
   PetscErrorCode print(MPI_Comm com, int threshold = 3);
+private:
+  PISMUnitSystem m_unit_system;
 };
 
 //! The "local interpolation context" describes the processor's part of the source NetCDF file (for regridding).

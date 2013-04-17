@@ -327,7 +327,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
                                "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
                                " proc %d; mask=%d; w=%f m/year]]\n",
                                Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),
-                               convert(system.w[k], "m/s", "m/year")); CHKERRQ(ierr);
+                               grid.conv(system.w[k],
+                                       "m/s", "m/year")); CHKERRQ(ierr);
             myLowTempCount++;
           }
           if (Tnew[k] < artm(i,j) - bulgeMax) {
@@ -358,7 +359,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
                                "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                                " proc %d; mask=%d; w=%f]]\n",
                                Tnew[0],i,j,grid.rank,vMask.as_int(i,j),
-                               convert(system.w[0], "m/s", "m/year")); CHKERRQ(ierr);
+                               grid.conv(system.w[0], "m/s", "m/year")); CHKERRQ(ierr);
             myLowTempCount++;
           }
           if (Tnew[0] < artm(i,j) - bulgeMax) {

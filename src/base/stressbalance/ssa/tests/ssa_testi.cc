@@ -76,7 +76,7 @@ PetscErrorCode SSATestCaseI::initializeGrid(PetscInt Mx,PetscInt My)
 
 PetscErrorCode SSATestCaseI::initializeSSAModel()
 {
-  basal = new IceBasalResistancePlasticLaw(config);
+  basal = new IceBasalResistancePlasticLaw(config, grid.get_unit_system());
 
   enthalpyconverter = new EnthalpyConverter(config);
 

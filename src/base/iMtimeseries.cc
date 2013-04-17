@@ -66,7 +66,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
   save_ts = true;
 
-  ierr = parse_times(grid.com, config, times,
+  ierr = parse_times(grid.com, config, grid.get_unit_system(), times,
                      grid.time->start(),
                      grid.time->end(),
                      ts_times);
@@ -224,7 +224,7 @@ PetscErrorCode IceModel::init_extras() {
     return 0;
   }
 
-  ierr = parse_times(grid.com, config, times,
+  ierr = parse_times(grid.com, config, grid.get_unit_system(), times,
                      grid.time->start(),
                      grid.time->end(),
                      extra_times);
@@ -315,7 +315,7 @@ PetscErrorCode IceModel::init_extras() {
 
   timestamp.init("timestamp", config.get_string("time_dimension_name"),
                  grid.com, grid.rank);
-  timestamp.set_units("hours");
+  timestamp.set_units(grid.get_unit_system(), "hours");
   timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
 
   return 0;

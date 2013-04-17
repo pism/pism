@@ -32,7 +32,7 @@ class Vel2Tauc(PISM.invert_ssa.InvSSAFromInputFile):
       grid = self.grid
       vecs = self.modeldata.vecs
 
-      pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+      pio = PISM.PIO(grid.com,grid.rank,"netcdf3", grid.get_unit_system())
       pio.open(filename,PISM.NC_WRITE,True) #append mode!
 
       self.modeldata.vecs.write(filename)
@@ -386,7 +386,7 @@ if __name__ == "__main__":
   
   # Prep the output file from the grid so that we can save zeta to it during the runs.
   if not append_mode:
-    pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+    pio = PISM.PIO(grid.com,grid.rank,"netcdf3", grid.get_unit_system())
     pio.open(output_filename,PISM.NC_WRITE,False)
     pio.def_time(grid.config.get_string("time_dimension_name"),
                  grid.config.get_string("calendar"), grid.time.units())
@@ -469,7 +469,7 @@ if __name__ == "__main__":
   
   r_mag.set_attrs("diagnostic","magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
             "m s-1", "inv_ssa_residual", 0);
-  r_mag.set_attr("_FillValue", PISM.convert(-0.01,'m/year','m/s'));
+  r_mag.set_attr("_FillValue", grid.conv(-0.01,'m/year','m/s'));
   r_mag.set_attr("valid_min", 0.0);
   r_mag.set_glaciological_units("m year-1")
   r_mag.write_in_glaciological_units = True

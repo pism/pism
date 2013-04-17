@@ -38,8 +38,8 @@
 class PISMTime
 {
 public:
-  PISMTime(MPI_Comm c, const NCConfigVariable &conf);
-  virtual ~PISMTime() {}
+  PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem units_system);
+  virtual ~PISMTime();
 
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time)
@@ -146,6 +146,7 @@ public:
 protected:
   MPI_Comm com;
   const NCConfigVariable &config;
+  PISMUnitSystem m_unit_system;
   double secpera;      //!< number of seconds in a year, for unit conversion
   double time_in_seconds, //!< current time, in seconds since the reference time
     run_start,                  //!< run start time, in seconds since the reference time

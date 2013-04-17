@@ -23,6 +23,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "PISMUnits.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -128,6 +129,8 @@ public:
   PetscErrorCode create_viewer(int viewer_size, string title, PetscViewer &viewer);
   PetscReal      radius(int i, int j);
   PetscErrorCode get_dm(PetscInt dm_dof, PetscInt stencil_width, DM &result);
+  double conv(double, const char*, const char*) const;
+  PISMUnitSystem get_unit_system() const;
 
   const NCConfigVariable &config;
   MPI_Comm    com;
@@ -190,6 +193,8 @@ public:
 protected:
   map<int,DM> dms;
   PetscScalar lambda;	 //!< quadratic vertical spacing parameter
+  PISMUnitSystem m_unit_system;
+
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
   PetscErrorCode compute_horizontal_coordinates();
   PetscErrorCode compute_fine_vertical_grid();

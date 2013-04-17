@@ -20,12 +20,14 @@
 #define _PISMGREGORIANTIME_H_
 
 #include "PISMTime.hh"
+#include "PISMUnits.hh"
 
 class PISMGregorianTime : public PISMTime
 {
 public:
-  PISMGregorianTime(MPI_Comm c, const NCConfigVariable &conf);
-  virtual ~PISMGregorianTime() {}
+  PISMGregorianTime(MPI_Comm c, const NCConfigVariable &conf,
+                    PISMUnitSystem units_system);
+  virtual ~PISMGregorianTime();
 
   virtual PetscErrorCode init();
 
@@ -54,7 +56,11 @@ public:
   virtual double increment_date(double T, int years, int months, int days);
 
 protected:
-  utUnit ut_units;
+  PISMUnit m_time_units;
+private:
+  // Hide copy constructor / assignment operator.
+  PISMGregorianTime(PISMGregorianTime const &);
+  PISMGregorianTime & operator=(PISMGregorianTime const &);
 };
 
 

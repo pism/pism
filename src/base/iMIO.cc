@@ -74,7 +74,7 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
 
   // save the config file
   if (dump_config) {
-    ierr = config.write(config_out); CHKERRQ(ierr);
+    ierr = config.write(config_out, grid.get_unit_system()); CHKERRQ(ierr);
   }
 
 #ifdef PISM_PROFILE
@@ -447,7 +447,7 @@ PetscErrorCode IceModel::initFromFile(string filename) {
         // use vWork3d as already-allocated space
         ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);
         ierr = vWork3d.set_attrs("internal", "liqfrac; temporary use during initialization",
-                                 "", ""); CHKERRQ(ierr);
+                                 "1", ""); CHKERRQ(ierr);
         ierr = vWork3d.read(filename, last_record); CHKERRQ(ierr);
 
         ierr = compute_enthalpy(temperature, vWork3d, Enth3); CHKERRQ(ierr);
@@ -604,7 +604,7 @@ PetscErrorCode IceModel::init_snapshots() {
     return 0;
   }
 
-  ierr = parse_times(grid.com, config, tmp,
+  ierr = parse_times(grid.com, config, grid.get_unit_system(), tmp,
                      grid.time->start(),
                      grid.time->end(), snapshot_times);
   if (ierr != 0) {

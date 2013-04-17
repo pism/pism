@@ -40,13 +40,6 @@
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : grid(g), config(conf), overrides(conf_overrides) {
 
-  if (utIsInit() == 0) {
-    if (utInit(NULL) != 0) {
-      PetscPrintf(grid.com, "PISM ERROR: UDUNITS initialization failed.\n");
-      PISMEnd();
-    }
-  }
-
   mapping.init("mapping", grid.com, grid.rank);
   global_attributes.init("global_attributes", grid.com, grid.rank);
 
@@ -158,8 +151,6 @@ IceModel::~IceModel() {
   delete basal;
   delete EC;
   delete btu;
-
-  utTerm(); // Clean up after UDUNITS
 }
 
 
@@ -417,9 +408,9 @@ PetscErrorCode IceModel::createVecs() {
                             "m s-1", "", 1); CHKERRQ(ierr);
     ierr = vBCvel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
     for (int j = 0; j < 2; ++j) {
-      ierr = vBCvel.set_attr("valid_min",  convert(-1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
-      ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
-      ierr = vBCvel.set_attr("_FillValue", convert(config.get("fill_value"), "m/year", "m/s"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("valid_min",  grid.conv(-1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("valid_max",  grid.conv(1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("_FillValue", grid.conv(config.get("fill_value"), "m/year", "m/s"), j); CHKERRQ(ierr);
     }
     //just for diagnostics...
     ierr = variables.add(vBCvel); CHKERRQ(ierr);

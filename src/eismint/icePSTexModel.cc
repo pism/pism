@@ -513,7 +513,7 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
     }
   }
 
-  double dt_years = convert(dt, "seconds", "years"),
+  double dt_years = grid.conv(dt, "seconds", "years"),
     a = grid.time->seconds_to_years(grid.time->current() - dt),
     b = grid.time->seconds_to_years(grid.time->current());
 

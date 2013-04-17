@@ -20,6 +20,7 @@
 #define __flowlaws_hh
 
 #include <petscsys.h>
+#include "PISMUnits.hh"
 
 class EnthalpyConverter;
 class NCConfigVariable;
@@ -56,7 +57,8 @@ static inline PetscReal secondInvariantDu_2D(const PetscReal Du[])
  */
 class IceFlowLaw {
 public:
-  IceFlowLaw(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+  IceFlowLaw(MPI_Comm c, const char pre[], PISMUnitSystem unit_system,
+             const NCConfigVariable &config,
              EnthalpyConverter *EC);
  virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
@@ -98,7 +100,8 @@ protected:
 };
 
 // Helper functions:
-PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const NCConfigVariable &, EnthalpyConverter*);
+PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const NCConfigVariable &,
+                                       PISMUnitSystem unit_system, EnthalpyConverter*);
 PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *);
 
 //! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
@@ -108,7 +111,8 @@ PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *);
  */
 class GPBLDIce : public IceFlowLaw {
 public:
-  GPBLDIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+  GPBLDIce(MPI_Comm c, const char pre[], PISMUnitSystem s,
+           const NCConfigVariable &config,
            EnthalpyConverter *EC);
   virtual ~GPBLDIce() {}
 
@@ -122,9 +126,10 @@ protected:
 //! Derived class of IceFlowLaw for Paterson-Budd (1982)-Glen ice.
 class ThermoGlenIce : public IceFlowLaw {
 public:
-  ThermoGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+  ThermoGlenIce(MPI_Comm c, const char pre[], PISMUnitSystem s,
+                const NCConfigVariable &config,
                 EnthalpyConverter *my_EC)
-    : IceFlowLaw(c, pre, config, my_EC) {
+    : IceFlowLaw(c, pre, s, config, my_EC) {
   }
   virtual ~ThermoGlenIce() {}
 
@@ -149,7 +154,8 @@ protected:
 //! Isothermal Glen ice allowing extra customization.
 class IsothermalGlenIce : public ThermoGlenIce {
 public:
-  IsothermalGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+  IsothermalGlenIce(MPI_Comm c, const char pre[], PISMUnitSystem s,
+                    const NCConfigVariable &config,
                     EnthalpyConverter *my_EC);
   virtual ~IsothermalGlenIce() {}
 
@@ -179,7 +185,8 @@ protected:
 //! The Hooke flow law.
 class HookeIce : public ThermoGlenIce {
 public:
-  HookeIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+  HookeIce(MPI_Comm c, const char pre[], PISMUnitSystem s,
+           const NCConfigVariable &config,
            EnthalpyConverter *EC);
   virtual ~HookeIce() {}
 protected:
@@ -192,9 +199,10 @@ protected:
 //! Cold case of Paterson-Budd
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
-  ThermoGlenArrIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+  ThermoGlenArrIce(MPI_Comm c, const char pre[], PISMUnitSystem s,
+                   const NCConfigVariable &config,
                    EnthalpyConverter *my_EC)
-    : ThermoGlenIce(c, pre, config, my_EC) {}
+    : ThermoGlenIce(c, pre, s, config, my_EC) {}
   virtual ~ThermoGlenArrIce() {}
 
   //! Return the temperature T corresponding to a given value A=A(T).
@@ -219,9 +227,9 @@ protected:
 //! Warm case of Paterson-Budd
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
-  ThermoGlenArrIceWarm(MPI_Comm c, const char pre[],
+  ThermoGlenArrIceWarm(MPI_Comm c, const char pre[], PISMUnitSystem s,
                        const NCConfigVariable &config, EnthalpyConverter *my_EC)
-    : ThermoGlenArrIce(c, pre, config, my_EC) {}
+    : ThermoGlenArrIce(c, pre, s, config, my_EC) {}
   virtual ~ThermoGlenArrIceWarm() {}
 
 protected:
@@ -246,7 +254,8 @@ derived class.
  */
 class GoldsbyKohlstedtIce : public IceFlowLaw {
 public:
-  GoldsbyKohlstedtIce(MPI_Comm c, const char pre[], const NCConfigVariable &config,
+  GoldsbyKohlstedtIce(MPI_Comm c, const char pre[], PISMUnitSystem s,
+                      const NCConfigVariable &config,
                       EnthalpyConverter *my_EC);
 
   virtual PetscReal flow(PetscReal stress, PetscReal E,
@@ -288,7 +297,7 @@ protected:
  */
 class GoldsbyKohlstedtIceStripped : public GoldsbyKohlstedtIce {
 public:
-  GoldsbyKohlstedtIceStripped(MPI_Comm c, const char pre[],
+  GoldsbyKohlstedtIceStripped(MPI_Comm c, const char pre[], PISMUnitSystem s,
                               const NCConfigVariable &config, EnthalpyConverter *my_EC);
 protected:
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,

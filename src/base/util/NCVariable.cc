@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <sstream>
 #include <set>
+#include <assert.h>
 
 #include "NCVariable.hh"
 #include "NCSpatialVariable.hh"
@@ -28,15 +29,28 @@
 #include "LocalInterpCtx.hh"
 
 NCVariable::NCVariable() {
-  // Initialize UDUNITS if needed
-  if (utIsInit() == 0) {
-    if (utInit(NULL) != 0) {
-      PetscPrintf(com, "PISM ERROR: UDUNITS initialization failed.\n");
-      PISMEnd();
-    }
-  }
-
   reset();
+}
+
+//! Reset all the attributes.
+PetscErrorCode NCVariable::reset() {
+
+  m_units.reset();
+  m_glaciological_units.reset();
+
+  strings.clear();
+  short_name = "unnamed_variable";
+  // long_name is unset
+  // standard_name is unset
+  // pism_intent is unset
+  // coordinates is unset
+
+  doubles.clear();
+  // valid_min and valid_max are unset
+
+  ndims = 0;
+
+  return 0;
 }
 
 //! Initialize a NCVariable instance.
@@ -102,17 +116,17 @@ PetscErrorCode NCVariable::read_attributes(const PIO &nc) {
 /*! Units should not be set by accessing the `strings` member directly. This
   method also checks if `new_units` are valid and initializes the `units` structure.
  */
-PetscErrorCode NCVariable::set_units(string new_units) {
+PetscErrorCode NCVariable::set_units(PISMUnitSystem unit_system, string new_units) {
   strings["units"] = new_units;
   strings["glaciological_units"] = new_units;
 
-  if (utScan(new_units.c_str(), &units) != 0) {
+  if (m_units.parse(unit_system, new_units) != 0) {
     SETERRQ2(com, 1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());
   }
 
   // Set the glaciological units too:
-  utCopy(&units, &glaciological_units);
+  m_glaciological_units = m_units;
 
   return 0;
 }
@@ -126,8 +140,9 @@ PetscErrorCode NCVariable::set_units(string new_units) {
   with the internal units.
  */
 PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
-  double a, b;			// dummy variables
   string &units_string = strings["units"];
+
+  PISMUnitSystem unit_system = m_units.get_system();
 
   // Save the human-friendly version of the string; this is to avoid getting
   // things like '3.16887646408185e-08 meter second-1' instead of 'm year-1'
@@ -144,12 +159,12 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
   if (n != -1)
     new_units.resize(n);
 
-  if (utScan(new_units.c_str(), &glaciological_units) != 0) {
+  if (m_glaciological_units.parse(unit_system, new_units) != 0) {
     SETERRQ2(com, 1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());
   }
 
-  if (utConvert(&units, &glaciological_units, &a, &b) == UT_ECONVERT) {
+  if (ut_are_convertible(m_units.get(), m_glaciological_units.get()) == 0) {
     SETERRQ3(com, 1, "PISM ERROR: NCVariable '%s': attempted to set glaciological units to '%s', which is not compatible with '%s'.\n",
 	     short_name.c_str(), new_units.c_str(), units_string.c_str());
   }
@@ -173,7 +188,8 @@ PetscErrorCode NCSpatialVariable::reset() {
   return 0;
 }
 
-NCSpatialVariable::NCSpatialVariable() {
+NCSpatialVariable::NCSpatialVariable()
+  : NCVariable() {
   grid = NULL;
   dimensions.clear();
   dimensions["x"] = "x";
@@ -197,6 +213,23 @@ NCSpatialVariable::NCSpatialVariable() {
   z_attrs["positive"]      = "up";
 
   reset();
+}
+
+NCSpatialVariable::NCSpatialVariable(const NCSpatialVariable &other)
+  : NCVariable(other) {
+  dimensions       = other.dimensions;
+  x_attrs          = other.x_attrs;
+  y_attrs          = other.y_attrs;
+  z_attrs          = other.z_attrs;
+  time_independent = other.time_independent;
+  variable_order   = other.variable_order;
+  nlevels          = other.nlevels;
+  zlevels          = other.zlevels;
+  grid             = other.grid;
+}
+
+NCSpatialVariable::~NCSpatialVariable() {
+  // empty
 }
 
 void NCSpatialVariable::init_2d(string name, IceGrid &g) {
@@ -308,7 +341,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   ierr = nc.get_vec(grid, name_found, nlevels, time, v); CHKERRQ(ierr);
 
   bool input_has_units;
-  utUnit input_units;
+  PISMUnit input_units;
 
   // We ignore the reference date in units of spatial fields.
   ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
@@ -321,11 +354,11 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
 		      "              Assuming that it is in '%s'.\n",
 		      short_name.c_str(), long_name.c_str(),
 		      units_string.c_str()); CHKERRQ(ierr);
-    utCopy(&units, &input_units);
+    input_units = m_units;
   }
 
   // Convert data:
-  ierr = change_units(v, &input_units, &units); CHKERRQ(ierr);
+  ierr = change_units(v, input_units, m_units); CHKERRQ(ierr);
 
   return 0;
 }
@@ -350,14 +383,14 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, PISM_IO_Type nctype,
   }
 
   if (write_in_glaciological_units) {
-    ierr = change_units(v, &units, &glaciological_units); CHKERRQ(ierr);
+    ierr = change_units(v, m_units, m_glaciological_units); CHKERRQ(ierr);
   }
 
   // Actually write data:
   ierr = nc.put_vec(grid, name_found, nlevels, v); CHKERRQ(ierr);
 
   if (write_in_glaciological_units) {
-    ierr = change_units(v, &glaciological_units, &units); CHKERRQ(ierr); // restore the units
+    ierr = change_units(v, m_glaciological_units, m_units); CHKERRQ(ierr); // restore the units
   }
 
   return 0;
@@ -373,8 +406,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
                                          PetscScalar default_value, Vec v) {
   PetscErrorCode ierr;
 
-  if (grid == NULL)
-    SETERRQ(com, 1, "NCVariable::regrid: grid is NULL.");
+  assert(grid != NULL);
 
   // Find the variable
   bool exists, found_by_standard_name;
@@ -394,9 +426,15 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
     string spacer(short_name.size(), ' ');
 
     if (set_default_value) {	// if it's not and we have a default value, set it
-      double slope, intercept, tmp;
-      utConvert(&units, &glaciological_units, &slope, &intercept);
-      tmp = intercept + slope*default_value;
+      double tmp;
+
+      ierr = check_units(m_units);               CHKERRQ(ierr);
+      ierr = check_units(m_glaciological_units); CHKERRQ(ierr);
+
+      cv_converter *c = ut_get_converter(m_units.get(), m_glaciological_units.get());
+      assert(c != NULL);
+      tmp = cv_convert_double(c, default_value);
+      cv_free(c);
 
       ierr = verbPrintf(2, com,
 			"  absent %s / %-10s\n"
@@ -423,26 +461,28 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
     // units.
 
     bool input_has_units;
-    utUnit input_units;
+    PISMUnit input_units;
 
     // We ignore the reference date in units of spatial fields.
     ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
-    if ( has("units") && (!input_has_units) ) {
-      ierr = verbPrintf(2, com,
-			"PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-			"              Assuming that it is in '%s'.\n",
-			short_name.c_str(),
-			strings["long_name"].c_str(),
-			strings["units"].c_str()); CHKERRQ(ierr);
-      utCopy(&units, &input_units);
+    if (input_has_units == false) {
+      input_units = m_units;
+      if (get_string("units") != "") {
+        ierr = verbPrintf(2, com,
+                          "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                          "              Assuming that it is in '%s'.\n",
+                          short_name.c_str(),
+                          strings["long_name"].c_str(),
+                          strings["units"].c_str()); CHKERRQ(ierr);
+      }
     }
 
     // Convert data:
-    ierr = change_units(v, &input_units, &units); CHKERRQ(ierr);
+    ierr = change_units(v, input_units, m_units); CHKERRQ(ierr);
 
     // Read the valid range info:
-    ierr = read_valid_range(nc, name_found); CHKERRQ(ierr);
+    ierr = read_valid_range(nc, grid->get_unit_system(), name_found); CHKERRQ(ierr);
 
     // Check the range and warn the user if needed:
     ierr = check_range(nc.inq_filename(), v); CHKERRQ(ierr);
@@ -463,102 +503,94 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
 /*! Reads `valid_min`, `valid_max` and `valid_range` attributes; if \c
     valid_range is found, sets the pair `valid_min` and `valid_max` instead.
  */
-PetscErrorCode NCVariable::read_valid_range(const PIO &nc, string name) {
+PetscErrorCode NCVariable::read_valid_range(const PIO &nc, PISMUnitSystem unit_system, string name) {
   string input_units_string;
-  utUnit input_units;
+  PISMUnit input_units;
   vector<double> bounds;
-  double slope, intercept;
   int ierr;
 
   // Never reset valid_min/max if any of them was set internally.
   if (has("valid_min") || has("valid_max"))
     return 0;
 
-  // Clear the input units.
-  utClear(&input_units);
-
   // Read the units: The following code ignores the units in the input file if
   // a) they are absent :-) b) they are invalid c) they are not compatible with
   // internal units.
   ierr = nc.get_att_text(name, "units", input_units_string); CHKERRQ(ierr);
-  if (input_units_string.empty() == false) {
-    ierr = utScan(input_units_string.c_str(), &input_units);
-    if (ierr != 0)
-      utCopy(&units, &input_units);
-  }
 
-  if (utConvert(&input_units, &units, &slope, &intercept) != 0) {
-    slope = 1;
-    intercept = 0;
+  if (input_units.parse(unit_system, input_units_string) != 0)
+    input_units = m_units;
+
+  ierr = check_units(m_units);     CHKERRQ(ierr); 
+  ierr = check_units(input_units); CHKERRQ(ierr); 
+
+  cv_converter *c = ut_get_converter(input_units.get(), m_units.get());
+  if (c == NULL) {
+    c = cv_get_trivial();
   }
 
   ierr = nc.get_att_double(name, "valid_range", bounds); CHKERRQ(ierr);
   if (bounds.size() == 2) {		// valid_range is present
-    set("valid_min", intercept + slope*bounds[0]);
-    set("valid_max", intercept + slope*bounds[1]);
+    this->set("valid_min", cv_convert_double(c, bounds[0]));
+    this->set("valid_max", cv_convert_double(c, bounds[1]));
   } else {			// valid_range has the wrong length or is missing
     ierr = nc.get_att_double(name, "valid_min", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {		// valid_min is present
-      set("valid_min", intercept + slope*bounds[0]);
+      this->set("valid_min", cv_convert_double(c, bounds[0]));
     }
 
     ierr = nc.get_att_double(name, "valid_max", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {		// valid_max is present
-      set("valid_max", intercept + slope*bounds[0]);
+      this->set("valid_max", cv_convert_double(c, bounds[0]));
     }
   }
+
+  cv_free(c);
 
   return 0;
 }
 
 //! Converts `v` from internal to glaciological units.
 PetscErrorCode NCSpatialVariable::to_glaciological_units(Vec v) {
-  return change_units(v, &units, &glaciological_units);
+  return change_units(v, m_units, m_glaciological_units);
 }
 
 //! Converts `v` from the units corresponding to `from` to the ones corresponding to `to`.
 /*!
   Does nothing if this transformation is trivial.
  */
-PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) {
+PetscErrorCode NCSpatialVariable::change_units(Vec v, PISMUnit &from, PISMUnit &to) {
   PetscErrorCode ierr;
-  double slope, intercept;
   string from_name, to_name;
-  char *tmp;
-  bool use_slope, use_intercept;
 
-  // Get string representations of units:
-  utPrint(from, &tmp);
-  from_name = tmp;
-  utPrint(to, &tmp);
-  to_name = tmp;
+  ierr = check_units(from); CHKERRQ(ierr); 
+  ierr = check_units(to);   CHKERRQ(ierr); 
+  
+  from_name = from.format();
+  to_name   = to.format();
 
-  // Get the slope and the intercept of the linear transformation.
-  ierr = utConvert(from, to, &slope, &intercept);
-
-  if (ierr != 0) { 		// can't convert
-    if (ierr == UT_ECONVERT) {	// because units are incompatible
+  // Get the converter:
+  cv_converter *c = ut_get_converter(from.get(), to.get());
+  if (c == NULL) {              // can't convert
+    if (ut_get_status() == UT_MEANINGLESS) {	// because units are incompatible
       ierr = PetscPrintf(com,
-			 "PISM ERROR: IceModelVec '%s': attempted to convert data from '%s' to '%s'.\n",
+			 "PISM ERROR: NCSpatialVariable '%s': attempted to convert data from '%s' to '%s'.\n",
 			 short_name.c_str(), from_name.c_str(), to_name.c_str());
       PISMEnd();
     } else {			// some other error
-      return 2;
+      SETERRQ(com, 1, "Failed to create a unit converter");
     }
   }
 
-  use_slope     = PetscAbsReal(slope - 1.0) > 1e-16;
-  use_intercept = PetscAbsReal(intercept)   > 1e-16;
+  PetscInt data_size;
+  PetscScalar *data;
+  ierr = VecGetLocalSize(v, &data_size); CHKERRQ(ierr);
 
-  if (use_slope && use_intercept) {
-    ierr = VecScale(v, slope); CHKERRQ(ierr);
-    ierr = VecShift(v, intercept); CHKERRQ(ierr);
-  } else if (use_slope && !use_intercept) {
-    ierr = VecScale(v, slope); CHKERRQ(ierr);
-  } else if (!use_slope && use_intercept) {
-    ierr = VecShift(v, intercept); CHKERRQ(ierr);
-  }
+  ierr = VecGetArray(v, &data); CHKERRQ(ierr);
+  cv_convert_doubles(c, data, data_size, data);
+  ierr = VecRestoreArray(v, &data); CHKERRQ(ierr);
 
+  cv_free(c);
   return 0;
 }
 
@@ -598,13 +630,18 @@ PetscErrorCode NCVariable::write_attributes(const PIO &nc, PISM_IO_Type nctype,
   // We need to save valid_min, valid_max and valid_range in the units
   // matching the ones in the output.
   if (write_in_glaciological_units) {
-    double slope, intercept;
 
-    ierr = utConvert(&units, &glaciological_units, &slope, &intercept); CHKERRQ(ierr);
+    ierr = check_units(m_units);               CHKERRQ(ierr);
+    ierr = check_units(m_glaciological_units); CHKERRQ(ierr);
 
-    bounds[0]  = intercept + slope*get("valid_min");
-    bounds[1]  = intercept + slope*get("valid_max");
-    fill_value = intercept + slope*fill_value;
+    cv_converter *c = ut_get_converter(m_units.get(), m_glaciological_units.get());
+    assert(c != NULL);
+
+    bounds[0]  = cv_convert_double(c, get("valid_min"));
+    bounds[1]  = cv_convert_double(c, get("valid_max"));
+    fill_value = cv_convert_double(c, fill_value);
+
+    cv_free(c);
   } else {
     bounds[0] = get("valid_min");
     bounds[1] = get("valid_max");
@@ -657,19 +694,20 @@ PetscErrorCode NCVariable::write_attributes(const PIO &nc, PISM_IO_Type nctype,
 
 //! Report the range of a \b global Vec `v`.
 PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_name) {
-  double slope, intercept;
   PetscErrorCode ierr;
   PetscReal min, max;
-
-  // Get the conversion coefficients:
-  utConvert(&units, &glaciological_units, &slope, &intercept);
 
   ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
 
-  // Note that in some cases the following conversion does nothing
-  min = min * slope + intercept;
-  max = max * slope + intercept;
+  ierr = check_units(m_units);               CHKERRQ(ierr);
+  ierr = check_units(m_glaciological_units); CHKERRQ(ierr);
+
+  cv_converter *c = ut_get_converter(m_units.get(), m_glaciological_units.get());
+  assert(c != NULL);
+  min = cv_convert_double(c, min);
+  max = cv_convert_double(c, max);
+  cv_free(c);
 
   string spacer(short_name.size(), ' ');
 
@@ -850,33 +888,13 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, PISM_IO_Type nctype,
   return 0;
 }
 
-//! Reset all the attributes.
-PetscErrorCode NCVariable::reset() {
-
-  strings.clear();
-  short_name = "unnamed_variable";
-  // long_name is unset
-  // standard_name is unset
-  // pism_intent is unset
-  // coordinates is unset
-
-  doubles.clear();
-  // valid_min and valid_max are unset
-
-  utClear(&units);
-  utClear(&glaciological_units);
-
-  ndims = 0;
-
-  return 0;
-}
-
-//! Checks if an attribute is present. Ignores empty strings.
+//! Checks if an attribute is present. Ignores empty strings, except
+//! for the "units" attribute.
 bool NCVariable::has(string name) const {
 
   map<string,string>::const_iterator j = strings.find(name);
   if (j != strings.end()) {
-    if ((j->second).empty())
+    if (name != "units" && (j->second).empty())
       return false;
 
     return true;
@@ -942,7 +960,8 @@ bool NCVariable::is_valid(PetscScalar a) const {
   return true;
 }
 
-NCConfigVariable::NCConfigVariable() {
+NCConfigVariable::NCConfigVariable()
+  : NCVariable() {
   options_left_set = false;
   PISMOptionsIsSet("-options_left", options_left_set);
 }
@@ -952,9 +971,9 @@ NCConfigVariable::~NCConfigVariable() {
 }
 
 
-PetscErrorCode NCConfigVariable::read(string filename) {
+PetscErrorCode NCConfigVariable::read(string filename, PISMUnitSystem unit_system) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
+  PIO nc(com, rank, "netcdf3", unit_system); // OK to use netcdf3
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -965,9 +984,9 @@ PetscErrorCode NCConfigVariable::read(string filename) {
   return 0;
 }
 
-PetscErrorCode NCConfigVariable::write(string filename) {
+PetscErrorCode NCConfigVariable::write(string filename, PISMUnitSystem unit_system) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
+  PIO nc(com, rank, "netcdf3", unit_system); // OK to use netcdf3
 
   ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
 
@@ -1092,9 +1111,9 @@ double NCConfigVariable::get(string name) const {
   return this->get_quiet(name);
 }
 
-double NCConfigVariable::get(string name, string u1, string u2) const {
+double NCConfigVariable::get(string name, PISMUnitSystem unit_system, string u1, string u2) const {
   // always use get() (*not* _quiet) here
-  return convert(this->get(name), u1.c_str(), u2.c_str());
+  return convert(this->get(name), unit_system, u1.c_str(), u2.c_str());
 }
 
 
@@ -1423,7 +1442,6 @@ PetscErrorCode NCConfigVariable::warn_about_unused_parameters() const {
   return 0;
 }
 
-
 //! \brief Initialize the time-series object.
 void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(n, c, r);
@@ -1483,7 +1501,7 @@ PetscErrorCode NCTimeseries::read(const PIO &nc, bool use_reference_date,
   ierr = nc.get_1d_var(name_found, 0, length, data); CHKERRQ(ierr);
 
   bool input_has_units;
-  utUnit input_units;
+  PISMUnit input_units;
 
   ierr = nc.inq_units(name_found, input_has_units, input_units,
                       use_reference_date); CHKERRQ(ierr);
@@ -1496,10 +1514,10 @@ PetscErrorCode NCTimeseries::read(const PIO &nc, bool use_reference_date,
 		      "              Assuming that it is in '%s'.\n",
 		      short_name.c_str(), long_name.c_str(),
 		      units_string.c_str()); CHKERRQ(ierr);
-    utCopy(&units, &input_units);
+    input_units = m_units;
   }
 
-  ierr = change_units(data, &input_units, &units); CHKERRQ(ierr);
+  ierr = change_units(data, input_units, m_units); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1523,18 +1541,20 @@ PetscErrorCode NCTimeseries::get_bounds_name(const PIO &nc, string &result) {
 
 //! \brief Report the range of a time-series stored in `data`.
 PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
-  double slope, intercept;
   PetscErrorCode ierr;
   PetscReal min, max;
-
-  // Get the conversion coefficients:
-  utConvert(&units, &glaciological_units, &slope, &intercept);
 
   min = *min_element(data.begin(), data.end());
   max = *max_element(data.begin(), data.end());
 
-  min = min * slope + intercept;
-  max = max * slope + intercept;
+  ierr = check_units(m_units);               CHKERRQ(ierr);
+  ierr = check_units(m_glaciological_units); CHKERRQ(ierr);
+
+  cv_converter *c = ut_get_converter(m_units.get(), m_glaciological_units.get());
+  assert(c != NULL);
+  min = cv_convert_double(c, min);
+  max = cv_convert_double(c, max);
+  cv_free(c);
 
   string spacer(short_name.size(), ' ');
 
@@ -1593,14 +1613,14 @@ PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
   ierr = nc.enddef(); CHKERRQ(ierr);
 
   // convert to glaciological units:
-  ierr = change_units(data, &units, &glaciological_units); CHKERRQ(ierr);
+  ierr = change_units(data, m_units, m_glaciological_units); CHKERRQ(ierr);
 
   ierr = nc.put_1d_var(short_name,
 		       static_cast<unsigned int>(start),
 		       static_cast<unsigned int>(data.size()), data); CHKERRQ(ierr);
 
   // restore internal units:
-  ierr = change_units(data, &glaciological_units, &units); CHKERRQ(ierr);
+  ierr = change_units(data, m_glaciological_units, m_units); CHKERRQ(ierr);
   return 0;
 }
 
@@ -1615,45 +1635,32 @@ PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
 }
 
 //! Convert `data`.
-PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, utUnit *to) {
+PetscErrorCode NCTimeseries::change_units(vector<double> &data, PISMUnit &from, PISMUnit &to) {
   PetscErrorCode ierr;
-  double slope, intercept;
   string from_name, to_name;
-  char *tmp;
-  bool use_slope, use_intercept;
+
+  ierr = check_units(from); CHKERRQ(ierr);
+  ierr = check_units(to);   CHKERRQ(ierr);
 
   // Get string representations of units:
-  utPrint(from, &tmp);
-  from_name = tmp;
-  utPrint(to, &tmp);
-  to_name = tmp;
+  from_name = from.format();
+  to_name   = to.format();
 
-  // Get the slope and the intercept of the linear transformation.
-  ierr = utConvert(from, to, &slope, &intercept);
-
-  if (ierr != 0) { 		// can't convert
-    if (ierr == UT_ECONVERT) {	// because units are incompatible
+  // Get the converter:
+  cv_converter *c = ut_get_converter(from.get(), to.get());
+  if (c == NULL) {              // can't convert
+    if (ut_get_status() == UT_MEANINGLESS) {	// because units are incompatible
       ierr = PetscPrintf(com,
-			 "PISM ERROR: variable '%s': attempted to convert data from '%s' to '%s'.\n",
+			 "PISM ERROR: NCTimeseries '%s': attempted to convert data from '%s' to '%s'.\n",
 			 short_name.c_str(), from_name.c_str(), to_name.c_str());
       PISMEnd();
     } else {			// some other error
-      return 2;
+      SETERRQ(com, 1, "Failed to create a unit converter");
     }
   }
 
-  use_slope     = PetscAbsReal(slope - 1.0) > 1e-16;
-  use_intercept = PetscAbsReal(intercept)   > 1e-16;
-
-  vector<double>::iterator j;
-  if (use_slope) {
-    for (j = data.begin(); j < data.end(); ++j)
-      *j *= slope;
-  }
-
-  if (use_intercept)
-    for (j = data.begin(); j < data.end(); ++j)
-      *j += intercept;
+  cv_convert_doubles(c, &data[0], data.size(), &data[0]);
+  cv_free(c);
 
   return 0;
 }
@@ -1751,12 +1758,11 @@ void NCGlobalAttributes::prepend_history(string message) {
 
 
 /// NCTimeBounds
-
 void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(var_name, c, r);
   dimension_name = dim_name;
-  bounds_name = "nv";           // number of vertices
-  ndims = 2;
+  bounds_name    = "nv";        // number of vertices
+  ndims          = 2;
 }
 
 PetscErrorCode NCTimeBounds::read(const PIO &nc, bool use_reference_date,
@@ -1829,10 +1835,10 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, bool use_reference_date,
   // variable, because according to CF-1.5 section 7.1 a "boundary variable"
   // may not have metadata set.)
   bool input_has_units;
-  utUnit input_units;
+  PISMUnit input_units;
   ierr = nc.inq_var(dimension_name, variable_exists); CHKERRQ(ierr);
 
-  if (! variable_exists) {
+  if (variable_exists == false) {
     PetscPrintf(com, "PISM ERROR: Can't find '%s' in %s.\n",
                 dimension_name.c_str(), nc.inq_filename().c_str());
     PISMEnd();
@@ -1848,10 +1854,10 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, bool use_reference_date,
 		      "              Assuming that it is in '%s'.\n",
 		      dimension_name.c_str(),
 		      units_string.c_str()); CHKERRQ(ierr);
-    utCopy(&units, &input_units);
+    input_units = m_units;
   }
 
-  ierr = change_units(data, &input_units, &units); CHKERRQ(ierr);
+  ierr = change_units(data, input_units, m_units); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1866,7 +1872,7 @@ PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t s, vector<double> &data
   }
 
   // convert to glaciological units:
-  ierr = change_units(data, &units, &glaciological_units); CHKERRQ(ierr);
+  ierr = change_units(data, m_units, m_glaciological_units); CHKERRQ(ierr);
 
   ierr = nc.enddef(); CHKERRQ(ierr);
 
@@ -1879,7 +1885,7 @@ PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t s, vector<double> &data
   ierr = nc.put_vara_double(short_name, start, count, &data[0]); CHKERRQ(ierr);
 
   // restore internal units:
-  ierr = change_units(data, &glaciological_units, &units); CHKERRQ(ierr);
+  ierr = change_units(data, m_glaciological_units, m_units); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1893,45 +1899,31 @@ PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t start, double a, double
   return 0;
 }
 
-PetscErrorCode NCTimeBounds::change_units(vector<double> &data, utUnit *from, utUnit *to) {
+PetscErrorCode NCTimeBounds::change_units(vector<double> &data, PISMUnit &from, PISMUnit &to) {
   PetscErrorCode ierr;
-  double slope, intercept;
   string from_name, to_name;
-  char *tmp;
-  bool use_slope, use_intercept;
 
-  // Get string representations of units:
-  utPrint(from, &tmp);
-  from_name = tmp;
-  utPrint(to, &tmp);
-  to_name = tmp;
+  ierr = check_units(from); CHKERRQ(ierr);
+  ierr = check_units(to);   CHKERRQ(ierr);
 
-  // Get the slope and the intercept of the linear transformation.
-  ierr = utConvert(from, to, &slope, &intercept);
+  from_name = from.format();
+  to_name   = to.format();
 
-  if (ierr != 0) { 		// can't convert
-    if (ierr == UT_ECONVERT) {	// because units are incompatible
+  // Get the converter:
+  cv_converter *c = ut_get_converter(from.get(), to.get());
+  if (c == NULL) {              // can't convert
+    if (ut_get_status() == UT_MEANINGLESS) {	// because units are incompatible
       ierr = PetscPrintf(com,
-			 "PISM ERROR: variable '%s': attempted to convert data from '%s' to '%s'.\n",
+			 "PISM ERROR: NCTimeBounds '%s': attempted to convert data from '%s' to '%s'.\n",
 			 short_name.c_str(), from_name.c_str(), to_name.c_str());
       PISMEnd();
     } else {			// some other error
-      return 2;
+      SETERRQ(com, 1, "Failed to create a unit converter");
     }
   }
 
-  use_slope     = PetscAbsReal(slope - 1.0) > 1e-16;
-  use_intercept = PetscAbsReal(intercept)   > 1e-16;
-
-  vector<double>::iterator j;
-  if (use_slope) {
-    for (j = data.begin(); j < data.end(); ++j)
-      *j *= slope;
-  }
-
-  if (use_intercept)
-    for (j = data.begin(); j < data.end(); ++j)
-      *j += intercept;
+  cv_convert_doubles(c, &data[0], data.size(), &data[0]);
+  cv_free(c);
 
   return 0;
 }
@@ -1972,3 +1964,10 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, PISM_IO_Type nctype, bool) {
   return 0;
 }
 
+PetscErrorCode NCVariable::check_units(PISMUnit units) const {
+  if (units.is_valid() == false) {
+    SETERRQ1(com, 1, "variable %s: uninitialized units",
+             short_name.c_str());
+  }
+  return 0;
+}

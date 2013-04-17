@@ -217,7 +217,9 @@ PetscErrorCode LocalInterpCtx::printArray() {
   return 0;
 }
 
-grid_info::grid_info() {
+grid_info::grid_info(PISMUnitSystem unit_system) {
+  m_unit_system = unit_system;
+
   t_len = 0;
   time  = 0;
 
@@ -249,6 +251,6 @@ PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
   ierr = verbPrintf(threshold, com, "  z:  %5d points, [%10.3f, %10.3f] m\n",
 		    z_len, zero, z_max); CHKERRQ(ierr);
   ierr = verbPrintf(threshold, com, "  t:  %5d points, last time = %.3f years\n\n",
-		    t_len, convert(time, "seconds", "years")); CHKERRQ(ierr);
+		    t_len, convert(time, m_unit_system, "seconds", "years")); CHKERRQ(ierr);
   return 0;
 }

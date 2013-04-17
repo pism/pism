@@ -20,21 +20,24 @@
 #include "NCVariable.hh"
 #include <algorithm>
 #include <sstream>
+#include "PISMUnits.hh"
+#include "utCalendar2_cal.h"
 
 //! \brief Compute
 /*!
  * Here a and b are integer years.
  */
 vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
+                             PISMUnitSystem unit_system,
                              int a, int b, string keyword) {
-  utUnit unit;
-  string unit_str = "seconds since " + config.get_string("reference_date");
+  PISMUnit time_units;
+  string unit_str = "seconds since " + config.get_string("reference_date"),
+    calendar = config.get_string("calendar");
   vector<double> result;
   double a_offset, b_offset;
 
   // scan the units:
-  int err = utScan(unit_str.c_str(), &unit);
-  if (err != 0) {
+  if (time_units.parse(unit_system, unit_str) != 0) {
     PetscPrintf(com, "PISM ERROR: invalid units specification: %s\n",
                 unit_str.c_str());
     PISMEnd();
@@ -42,23 +45,26 @@ vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
 
   // get the 'year' out of the reference date:
   int reference_year, tmp1;
-  float tmp2;
-  utCalendar(0, &unit, &reference_year,
-             &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+  double tmp2;
+  utCalendar2_cal(0, time_units.get(), &reference_year,
+                  &tmp1, &tmp1, &tmp1, &tmp1, &tmp2,
+                  calendar.c_str());
 
   // compute the number of seconds-since-the-reference date 'a' corresponds to:
-  utInvCalendar(reference_year + a, // year
-                1, 1,               // month, day
-                0, 0, 0,            // hour, minute, second
-                &unit,
-                &a_offset);
+  utInvCalendar2_cal(reference_year + a, // year
+                     1, 1,               // month, day
+                     0, 0, 0,            // hour, minute, second
+                     time_units.get(),
+                     &a_offset,
+                     calendar.c_str());
 
   // compute the number of seconds-since-the-reference date 'b' corresponds to:
-  utInvCalendar(reference_year + b, // year
-                1, 1,               // month, day
-                0, 0, 0,            // hour, minute, second
-                &unit,
-                &b_offset);
+  utInvCalendar2_cal(reference_year + b, // year
+                     1, 1,               // month, day
+                     0, 0, 0,            // hour, minute, second
+                     time_units.get(),
+                     &b_offset,
+                     calendar.c_str());
 
   if (keyword == "hourly" || keyword == "daily") {
 
@@ -71,7 +77,8 @@ vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
     do {
       result.push_back(t);
       t += delta;
-      utCalendar(t, &unit, &year, &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+      utCalendar2_cal(t, time_units.get(), &year, &tmp1, &tmp1, &tmp1, &tmp1, &tmp2,
+                      calendar.c_str());
     } while (year <= reference_year + b);
 
     // add the last record:
@@ -83,32 +90,35 @@ vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
     int y, m;
     for (y = a; y <= b; y++) {
       for (m = 1; m <= 12; m++) {
-        utInvCalendar(reference_year + y,   // year
-                      m, 1,                 // month, day
-                      0, 0, 0,              // hour, minute, second
-                      &unit,
-                      &t);
+        utInvCalendar2_cal(reference_year + y,   // year
+                           m, 1,                 // month, day
+                           0, 0, 0,              // hour, minute, second
+                           time_units.get(),
+                           &t,
+                           calendar.c_str());
         result.push_back(t);
       }
     }
 
     // add the last record:
-    utInvCalendar(reference_year + b + 1,   // year
-                  1, 1,                     // month, day
-                  0, 0, 0,                  // hour, minute, second
-                  &unit,
-                  &t);
+    utInvCalendar2_cal(reference_year + b + 1,   // year
+                       1, 1,                     // month, day
+                       0, 0, 0,                  // hour, minute, second
+                       time_units.get(),
+                       &t,
+                       calendar.c_str());
     result.push_back(t);
 
   } else if (keyword == "yearly") {
 
     double t;
     for (int y = a; y <= b+1; y++) {    // note the "b + 1"
-      utInvCalendar(reference_year + y,   // year
-                    1, 1,                 // month, day
-                    0, 0, 0,              // hour, minute, second
-                    &unit,
-                    &t);
+      utInvCalendar2_cal(reference_year + y,   // year
+                         1, 1,                 // month, day
+                         0, 0, 0,              // hour, minute, second
+                         time_units.get(),
+                         &t,
+                         calendar.c_str());
       result.push_back(t);
     }
 
@@ -129,10 +139,12 @@ vector<double> compute_times(MPI_Comm com, const NCConfigVariable &config,
 
   If it is a comma-separated list, converts to double (with error-checking).
  */
-PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string str,
+PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config,
+                           PISMUnitSystem unit_system, string str,
                            double run_start, double run_end, vector<double> &result) {
   PetscErrorCode ierr;
   int N;
+  string calendar = config.get_string("calendar");
 
   if (str.find(':') != string::npos) { // it's a range specification
 
@@ -149,7 +161,8 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
 
     if (keyword != "simple") {
 
-      result = compute_times(com, config, (int)a, (int)b, keyword);
+      result = compute_times(com, config, unit_system,
+                             (int)a, (int)b, keyword);
 
     } else {
       if (delta <= 0) {
@@ -162,7 +175,7 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
       result.resize(N);
 
       for (int j = 0; j < N; ++j)
-        result[j] = convert(a + delta*j, "years", "seconds");
+        result[j] = convert(a + delta*j, unit_system, "years", "seconds");
     }
 
   } else if (str == "hourly"  ||
@@ -170,12 +183,11 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
              str == "monthly" ||
              str == "yearly") { // it is a keyword without the range
 
-    utUnit unit;
+    PISMUnit time_units;
     string unit_str = "seconds since " + config.get_string("reference_date");
 
     // scan the units:
-    int err = utScan(unit_str.c_str(), &unit);
-    if (err != 0) {
+    if (time_units.parse(unit_system, unit_str) != 0) {
       PetscPrintf(com, "PISM ERROR: invalid units specification: %s\n",
                   unit_str.c_str());
       PISMEnd();
@@ -183,19 +195,22 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
 
     // get the 'year' out of the reference date:
     int reference_year, start_year, end_year, tmp1;
-    float tmp2;
-    utCalendar(0, &unit, &reference_year,
-               &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+    double tmp2;
+    utCalendar2_cal(0, time_units.get(), &reference_year,
+                    &tmp1, &tmp1, &tmp1, &tmp1, &tmp2,
+                    calendar.c_str());
 
     // get the year at the start of the run
-    utCalendar(run_start, &unit, &start_year,
-               &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+    utCalendar2_cal(run_start, time_units.get(), &start_year,
+                    &tmp1, &tmp1, &tmp1, &tmp1, &tmp2,
+                    calendar.c_str());
 
     // get the year at the end of the run
-    utCalendar(run_end, &unit, &end_year,
-               &tmp1, &tmp1, &tmp1, &tmp1, &tmp2);
+    utCalendar2_cal(run_end, time_units.get(), &end_year,
+                    &tmp1, &tmp1, &tmp1, &tmp1, &tmp2,
+                    calendar.c_str());
 
-    result = compute_times(com, config,
+    result = compute_times(com, config, unit_system,
                            start_year - reference_year,
                            end_year - reference_year,
                            str);
@@ -218,7 +233,7 @@ PetscErrorCode parse_times(MPI_Comm com, const NCConfigVariable &config, string 
 	return 1;
       }
       else
-	result.push_back(convert(d, "years", "seconds"));
+	result.push_back(convert(d, unit_system, "years", "seconds"));
     }
     sort(result.begin(), result.end());
   } else {
@@ -288,42 +303,43 @@ PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, d
  * Converts time interval specifications like "10days", "5hours", "day",
  * "month" to seconds.
  */
-PetscErrorCode interval_to_seconds(MPI_Comm com, string interval, double &result) {
-  utUnit interval_units, seconds;
-  double slope, intercept;
-  int errcode;
+PetscErrorCode interval_to_seconds(MPI_Comm com,
+                                   PISMUnitSystem unit_system,
+                                   string interval, double &result) {
+  PISMUnit interval_units, seconds;
+  cv_converter *c;
 
-  errcode = utScan("seconds", &seconds);
-  if (errcode != 0)
-    SETERRQ(PETSC_COMM_SELF, 1, "utScan(\"seconds\", ...) failed");
+  if (seconds.parse(unit_system, "seconds") != 0)
+    SETERRQ(PETSC_COMM_SELF, 1, "parsing 'seconds' failed");
 
-  errcode = utScan(interval.c_str(), &interval_units);
-  if (errcode != 0) {
+  if (interval_units.parse(unit_system, interval)) {
     PetscPrintf(com, "PISM ERROR: can't parse '%s'\n", interval.c_str());
     PISMEnd();
   }
 
-  if (utIsTime(&interval_units) == 1) {
-    errcode = utConvert(&interval_units, &seconds, &slope, &intercept);
-    if (errcode != 0) {
+  if (ut_are_convertible(interval_units.get(), seconds.get()) != 0) {
+    c = ut_get_converter(interval_units.get(), seconds.get());
+    if (c == NULL) {
       PetscPrintf(com, "PISM ERROR: can't convert '%s' to seconds\n", interval.c_str());
       PISMEnd();
     }
 
-    result = slope;
+    result = cv_convert_double(c, 1.0);
+    cv_free(c);
   } else {
-    errcode = utScan("1", &seconds);
-    if(errcode != 0)
-      SETERRQ(PETSC_COMM_SELF, 1, "utScan(\"1\", ...) failed");
+    PISMUnit one;
+    if (one.parse(unit_system, "1") != 0)
+      SETERRQ(PETSC_COMM_SELF, 1, "ut_parse(..., \"1\", ...) failed");
 
-    errcode = utConvert(&interval_units, &seconds, &slope, &intercept);
-    if (errcode != 0) {
+    c = ut_get_converter(interval_units.get(), one.get());
+    if (c == NULL) {
       PetscPrintf(com, "PISM ERROR: can't parse '%s'\n", interval.c_str());
       PISMEnd();
     }
 
-    result = slope;
+    result = cv_convert_double(c, 1.0);
   }
-
+  cv_free(c);
+  
   return 0;
 }

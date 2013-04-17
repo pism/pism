@@ -126,7 +126,9 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
   v_sigma.write_in_glaciological_units = false;
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "blatter_", config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "blatter_",
+                                  grid.get_unit_system(),
+                                  config, &EC);
     ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
 
     ierr = ice_factory.setType(config.get_string("blatter_flow_law")); CHKERRQ(ierr);

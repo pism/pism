@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -38,7 +38,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     config = self.config
     
     # Configuration flags and parameters used by this call are irrelevant because tauc == 0.
-    basal = PISM.IceBasalResistancePlasticLaw(config)
+    basal = PISM.IceBasalResistancePlasticLaw(config, self.grid.get_unit_system())
 
     #// Enthalpy converter is irrelevant for this test.
     enthalpyconverter = PISM.EnthalpyConverter(config);

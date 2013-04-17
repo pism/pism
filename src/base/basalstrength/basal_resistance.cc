@@ -22,15 +22,19 @@
 
 /* Purely plastic */
 
-IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const NCConfigVariable &config) {
-  plastic_regularize = config.get("plastic_regularization", "m/year", "m/second");
+IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const NCConfigVariable &config,
+                                                           PISMUnitSystem unit_system) {
+  plastic_regularize = config.get("plastic_regularization",
+                                  unit_system, "m/year", "m/second");
+  m_unit_system = unit_system;
 }
 
 PetscErrorCode IceBasalResistancePlasticLaw::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
   ierr = verbPrintf(verbthresh, com, 
                     "Using purely plastic till with eps = %10.5e m/year.\n",
-                    convert(plastic_regularize, "m/s", "m/year")); CHKERRQ(ierr);
+                    convert(plastic_regularize,
+                            m_unit_system, "m/s", "m/year")); CHKERRQ(ierr);
 
   return 0;
 }
@@ -59,10 +63,11 @@ void IceBasalResistancePlasticLaw::dragWithDerivative(PetscReal tauc, PetscScala
 
 /* Pseudo-plastic */
 
-IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const NCConfigVariable &config)
-  : IceBasalResistancePlasticLaw(config) {
+IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const NCConfigVariable &config, PISMUnitSystem s)
+  : IceBasalResistancePlasticLaw(config, s) {
   pseudo_q = config.get("pseudo_plastic_q");
-  pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
+  pseudo_u_threshold = config.get("pseudo_plastic_uthreshold",
+                                  m_unit_system, "m/year", "m/second");
   sliding_scale = config.get("sliding_scale_factor_reduces_tauc");
 }
 
@@ -72,14 +77,14 @@ PetscErrorCode IceBasalResistancePseudoPlasticLaw::printInfo(int verbthresh, MPI
   if (pseudo_q == 1.0) {
     ierr = verbPrintf(verbthresh, com, 
                       "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
-                      convert(pseudo_u_threshold, "m/s", "m/year")); CHKERRQ(ierr);
+                      convert(pseudo_u_threshold, m_unit_system, "m/s", "m/year")); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(verbthresh, com, 
                       "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
                       " and u_threshold = %.2f m/year.\n", 
-                      convert(plastic_regularize, "m/s", "m/year"),
+                      convert(plastic_regularize, m_unit_system, "m/s", "m/year"),
                       pseudo_q,
-                      convert(pseudo_u_threshold, "m/s", "m/year")); 
+                      convert(pseudo_u_threshold, m_unit_system, "m/s", "m/year"));
     CHKERRQ(ierr);
   }
 

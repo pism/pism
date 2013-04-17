@@ -57,6 +57,7 @@ def generate_config():
 def run_pism(opts):
     cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP_regression.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, 21, 21)
 
+    print cmd
     subprocess.call(shlex.split(cmd))
 
 def check_drift(file1, file2):

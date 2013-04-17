@@ -24,10 +24,6 @@ PetscErrorCode IceModelVec3Scaled::create(IceGrid &mygrid, const char my_short_n
   PetscErrorCode ierr;
   grid = &mygrid;
 
-  if (!utIsInit()) {
-    SETERRQ(grid->com, 1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
-
   if (v != PETSC_NULL) {
     SETERRQ1(grid->com, 2,"IceModelVec3Scaled with name='%s' already allocated\n",name.c_str());
   }

@@ -208,7 +208,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
     ierr = verbPrintf(2, grid.com,
                       "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
                       stripkm); CHKERRQ(ierr);
-    ierr = set_no_model_strip(convert(stripkm, "km", "m")); CHKERRQ(ierr);
+    ierr = set_no_model_strip(grid.conv(stripkm, "km", "m")); CHKERRQ(ierr);
   }
 
   return 0;

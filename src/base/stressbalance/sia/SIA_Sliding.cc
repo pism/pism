@@ -38,7 +38,9 @@ PetscErrorCode SIA_Sliding::allocate() {
   ierr = work_2d.create(grid, "work_vector_2d", true, WIDE_STENCIL); CHKERRQ(ierr);
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "sia_",
+                                  grid.get_unit_system(),
+                                  config, &EC);
 
     ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
 

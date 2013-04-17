@@ -31,9 +31,6 @@
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
 PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, string my_name, bool local, int width) {
-  if (!utIsInit()) {
-    SETERRQ(grid->com, 1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
 
   if (v != PETSC_NULL) {
     SETERRQ1(grid->com, 2,"IceModelVec2S with name='%s' already allocated\n", my_name.c_str());
@@ -661,9 +658,6 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, string my_name, bool loca
                                      int stencil_width, int my_dof) {
   PetscErrorCode ierr;
 
-  if (!utIsInit()) {
-    SETERRQ(grid->com, 1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
   if (v != PETSC_NULL) {
     SETERRQ1(grid->com, 2,"IceModelVec2 with name='%s' already allocated\n", my_name.c_str());
   }

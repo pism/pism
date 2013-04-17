@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -205,7 +205,9 @@ int main(int argc, char *argv[]) {
 
     ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
-    PetscReal dt_seconds = convert(dt_years, "years", "seconds");
+    PetscReal dt_seconds = convert(dt_years,
+                                   grid.get_unit_system(),
+                                   "years", "seconds");
 
     // worry about time step
     int  N = (int)ceil((grid.time->end() - grid.time->start()) / dt_seconds);
@@ -213,13 +215,16 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com,
                       "  user set timestep of %.4f years ...\n"
                       "  reset to %.4f years to get integer number of steps ... \n",
-                      dt_years, convert(dt_seconds, "seconds", "years")); CHKERRQ(ierr);
+                      dt_years, convert(dt_seconds,
+                                        grid.get_unit_system(),
+                                        "seconds", "years")); CHKERRQ(ierr);
     PetscReal max_dt;
     bool restrict_dt;
     ierr = btu.max_timestep(0.0, max_dt, restrict_dt); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
         "  PISMBedThermalUnit reports max timestep of %.4f years ...\n",
-                      convert(max_dt, "seconds", "years")); CHKERRQ(ierr);
+                      convert(max_dt,
+                              grid.get_unit_system(), "seconds", "years")); CHKERRQ(ierr);
 
 
     // actually do the time-stepping

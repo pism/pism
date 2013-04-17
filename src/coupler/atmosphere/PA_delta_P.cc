@@ -41,12 +41,12 @@ PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+  ierr = air_temp.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
 
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "near-surface air temperature");
-  ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
+  ierr = precipitation.set_units(grid.get_unit_system(),"m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
 
   return 0;

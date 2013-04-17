@@ -159,7 +159,9 @@ PetscErrorCode SSA::allocate() {
   ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "ssa_",
+                                  grid.get_unit_system(),
+                                  config, &EC);
     ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
 
     ierr = ice_factory.setType(config.get_string("ssa_flow_law")); CHKERRQ(ierr);

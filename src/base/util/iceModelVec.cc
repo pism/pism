@@ -456,21 +456,14 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 				      string my_standard_name,
 				      int N) {
 
-  if (!my_long_name.empty()) {
-    vars[N].set_string("long_name", my_long_name);
-  }
+  vars[N].set_string("long_name", my_long_name);
 
-  if (!my_units.empty()) {
-    PetscErrorCode ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
-  }
+  PetscErrorCode ierr = vars[N].set_units(grid->get_unit_system(),
+                                          my_units); CHKERRQ(ierr);
 
-  if (!my_pism_intent.empty()) {
-    vars[N].set_string("pism_intent", my_pism_intent);
-  }
+  vars[N].set_string("pism_intent", my_pism_intent);
 
-  if (!my_standard_name.empty()) {
-    vars[N].set_string("standard_name", my_standard_name);
-  }
+  vars[N].set_string("standard_name", my_standard_name);
 
   return 0;
 }
@@ -490,7 +483,7 @@ PetscErrorCode IceModelVec::get_interp_context(const PIO &nc, LocalInterpCtx* &l
   if (exists == false) {
     lic = NULL;
   } else {
-    grid_info gi;
+    grid_info gi(grid->get_unit_system());
 
     ierr = nc.inq_grid_info(name_found, gi); CHKERRQ(ierr);
 
@@ -896,7 +889,8 @@ PetscErrorCode IceModelVec::set_attr(string attr, string value, int N) {
   PetscErrorCode ierr;
 
   if (attr == "units") {
-    ierr = vars[N].set_units(value); CHKERRQ(ierr);
+    ierr = vars[N].set_units(grid->get_unit_system(),
+                             value); CHKERRQ(ierr);
     return 0;
   }
 

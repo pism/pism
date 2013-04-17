@@ -302,7 +302,9 @@ PetscErrorCode IceCompModel::allocate_stressbalance() {
 
     IceFlowLaw *ice = stress_balance->get_ssb_modifier()->get_flow_law();
 
-    if (IceFlowLawIsPatersonBuddCold(ice, config, EC) == PETSC_FALSE) {
+    if (IceFlowLawIsPatersonBuddCold(ice, config,
+                                     grid.get_unit_system(), 
+                                     EC) == PETSC_FALSE) {
       ierr = verbPrintf(1, grid.com,
                         "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
       CHKERRQ(ierr);
@@ -391,7 +393,9 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   PetscErrorCode  ierr;
   PetscScalar     A0, T0, **H, **accum, dummy1, dummy2, dummy3;
 
-  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
+  ThermoGlenArrIce tgaIce(grid.com, "sia_",
+                          grid.get_unit_system(), 
+                          config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -471,7 +475,9 @@ PetscErrorCode IceCompModel::initTestL() {
 
   if (testname != 'L')  { SETERRQ(grid.com, 1,"test must be 'L'"); }
 
-  ThermoGlenArrIce tgaIce(grid.com, "sia_", config, EC);
+  ThermoGlenArrIce tgaIce(grid.com, "sia_",
+                          grid.get_unit_system(), 
+                          config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -721,7 +727,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
     Glen_n = config.get("Glen_exponent"),
     // enthalpy and pressure do not matter here
     B0, C,
-    H0 = 600.0, v0 = convert(300.0, "m/year", "m/second"),
+    H0 = 600.0, v0 = grid.conv(300.0, "m/year", "m/second"),
     Q0 = H0 * v0;
 
   if (testname == 'V') {
@@ -900,7 +906,9 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
                     testname); CHKERRQ(ierr);
 
   if (exactOnly == PETSC_TRUE && testname != 'K')
-    dt_force = config.get("maximum_time_step_years", "years", "seconds");
+    dt_force = config.get("maximum_time_step_years",
+                          grid.get_unit_system(), 
+                          "years", "seconds");
 
   // these have no changing boundary conditions or comp sources:
   if (strchr("AEBKLOV",testname) != NULL)
@@ -1029,7 +1037,8 @@ PetscErrorCode IceCompModel::reportErrors() {
     return 0;
 
   IceFlowLaw* flow_law = stress_balance->get_ssb_modifier()->get_flow_law();
-  if (testname != 'V' && !IceFlowLawIsPatersonBuddCold(flow_law, config, EC) &&
+  if (testname != 'V' &&
+      IceFlowLawIsPatersonBuddCold(flow_law, config, grid.get_unit_system(), EC) == false &&
       ((testname == 'F') || (testname == 'G'))) {
     ierr = verbPrintf(1, grid.com,
                       "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
@@ -1045,7 +1054,7 @@ PetscErrorCode IceCompModel::reportErrors() {
   string filename;
   bool netcdf_report, append;
   NCTimeseries err;
-  PIO nc(grid.com, grid.rank, "netcdf3"); // OK to use netcdf3
+  PIO nc(grid.com, grid.rank, "netcdf3", grid.get_unit_system()); // OK to use netcdf3
 
   ierr = PISMOptionsString("-report_file", "NetCDF error report file",
                            filename, netcdf_report); CHKERRQ(ierr);
@@ -1067,7 +1076,7 @@ PetscErrorCode IceCompModel::reportErrors() {
 
     // Always write grid parameters:
     err.short_name = "dx";
-    ierr = err.set_units("meters"); CHKERRQ(ierr);
+    ierr = err.set_units(grid.get_unit_system(), "meters"); CHKERRQ(ierr);
     ierr = err.write(nc, (size_t)start, grid.dx); CHKERRQ(ierr);
     err.short_name = "dy";
     ierr = err.write(nc, (size_t)start, grid.dy); CHKERRQ(ierr);
@@ -1098,22 +1107,22 @@ PetscErrorCode IceCompModel::reportErrors() {
     if (netcdf_report) {
       err.reset();
       err.short_name = "relative_volume";
-      ierr = err.set_units("percent"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "percent"); CHKERRQ(ierr);
       err.set_string("long_name", "relative ice volume error");
       ierr = err.write(nc, (size_t)start, 100*volerr/volexact); CHKERRQ(ierr);
 
       err.short_name = "relative_max_eta";
-      ierr = err.set_units("1"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "1"); CHKERRQ(ierr);
       err.set_string("long_name", "relative $\\eta$ error");
       ierr = err.write(nc, (size_t)start, maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
 
       err.short_name = "maximum_thickness";
-      ierr = err.set_units("meters"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "meters"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice thickness error");
       ierr = err.write(nc, (size_t)start, maxHerr); CHKERRQ(ierr);
 
       err.short_name = "average_thickness";
-      ierr = err.set_units("meters"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "meters"); CHKERRQ(ierr);
       err.set_string("long_name", "average ice thickness error");
       ierr = err.write(nc, (size_t)start, avHerr); CHKERRQ(ierr);
     }
@@ -1134,7 +1143,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     if (netcdf_report) {
       err.reset();
       err.short_name = "maximum_temperature";
-      ierr = err.set_units("Kelvin"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "Kelvin"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice temperature error");
       ierr = err.write(nc, (size_t)start, maxTerr); CHKERRQ(ierr);
 
@@ -1162,7 +1171,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     if (netcdf_report) {
       err.reset();
       err.short_name = "maximum_temperature";
-      ierr = err.set_units("Kelvin"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "Kelvin"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice temperature error");
       ierr = err.write(nc, (size_t)start, maxTerr); CHKERRQ(ierr);
 
@@ -1192,7 +1201,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     if (netcdf_report) {
       err.reset();
       err.short_name = "maximum_sigma";
-      ierr = err.set_units("J s-1 m-3"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "J s-1 m-3"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("1e6 J s-1 m-3"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum strain heating error");
       ierr = err.write(nc, (size_t)start, max_strain_heating_error); CHKERRQ(ierr);
@@ -1216,7 +1225,7 @@ PetscErrorCode IceCompModel::reportErrors() {
       err.reset();
       err.short_name = "maximum_surface_velocity";
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
-      ierr = err.set_units("m/s"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
       ierr = err.write(nc, (size_t)start, maxUerr); CHKERRQ(ierr);
 
@@ -1250,7 +1259,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     if (netcdf_report) {
       err.reset();
       err.short_name = "maximum_basal_velocity";
-      ierr = err.set_units("m/s"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
       ierr = err.write(nc, (size_t)start, maxvecerr); CHKERRQ(ierr);
 
@@ -1263,7 +1272,7 @@ PetscErrorCode IceCompModel::reportErrors() {
 
       err.reset();
       err.short_name = "relative_basal_velocity";
-      ierr = err.set_units("percent"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "percent"); CHKERRQ(ierr);
       ierr = err.write(nc, (size_t)start, (avvecerr/exactmaxspeed)*100); CHKERRQ(ierr);
     }
   }
@@ -1285,7 +1294,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     if (netcdf_report) {
       err.reset();
       err.short_name = "maximum_basal_melt_rate";
-      ierr = err.set_units("m/s"); CHKERRQ(ierr);
+      ierr = err.set_units(grid.get_unit_system(), "m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
       ierr = err.write(nc, (size_t)start, maxbmelterr); CHKERRQ(ierr);
     }
@@ -1340,7 +1349,7 @@ PetscErrorCode IceCompModel::test_V_init() {
   ierr = vbed.set(-1000); CHKERRQ(ierr);
 
   // set SSA boundary conditions:
-  PetscReal upstream_velocity = convert(300.0, "m/year", "m/second"),
+  PetscReal upstream_velocity = grid.conv(300.0, "m/year", "m/second"),
     upstream_thk = 600.0;
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);

@@ -295,10 +295,10 @@ PetscErrorCode reportErrors(const NCConfigVariable &config,
   ierr = verbPrintf(1,grid.com, 
                     "surf vels :     maxUvec      avUvec        maxW         avW\n"); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
-                    convert(maxUerr, "m/s", "m/year"),
-                    convert(avUerr, "m/s", "m/year"),
-                    convert(maxWerr, "m/s", "m/year"),
-                    convert(avWerr, "m/s", "m/year")); CHKERRQ(ierr);
+                    grid.conv(maxUerr, "m/s", "m/year"),
+                    grid.conv(avUerr, "m/s", "m/year"),
+                    grid.conv(maxWerr, "m/s", "m/year"),
+                    grid.conv(avWerr, "m/s", "m/year")); CHKERRQ(ierr);
 
   return 0;
 }
@@ -367,7 +367,8 @@ int main(int argc, char *argv[]) {
     //ierr = grid.printVertLevels(1); CHKERRQ(ierr); 
 
     ICMEnthalpyConverter EC(config);
-    ThermoGlenArrIce ice(grid.com, "", config, &EC);
+    ThermoGlenArrIce ice(grid.com, "", grid.get_unit_system(),
+                         config, &EC);
 
     IceModelVec2S vh, vH, vbed;
     IceModelVec2Int vMask;
@@ -428,7 +429,7 @@ int main(int argc, char *argv[]) {
 
     // This is never used (but it is a required argument of the
     // PISMStressBalance constructor).
-    IceBasalResistancePlasticLaw basal(config);
+    IceBasalResistancePlasticLaw basal(config, grid.get_unit_system());
 
     // Create the SIA solver object:
 

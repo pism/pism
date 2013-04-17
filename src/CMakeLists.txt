@@ -16,6 +16,7 @@ include_directories (
   coupler/surface
   coupler/ocean
   coupler/util
+  calcalcs
   )
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
@@ -52,6 +53,7 @@ set(PISMUTIL_SRC
   base/util/pism_options.cc
   base/util/TerminationReason.cc
   base/util/time_options.cc
+  base/util/PISMUnits.cc
   base/varcEnthalpyConverter.cc
   )
 
@@ -86,7 +88,7 @@ set_source_files_properties (base/util/io/PIO.cc
   PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
 
 add_library (pismutil ${PISMUTIL_SRC})
-target_link_libraries (pismutil ${Pism_EXTERNAL_LIBS})
+target_link_libraries (pismutil pismcalcalcs ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)
 
 add_custom_target (touch_pism_revision

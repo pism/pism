@@ -52,9 +52,6 @@ IceModelVec3D::IceModelVec3D(const IceModelVec3D &other)
 PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, string my_name,
                                         bool local, vector<double> levels, int stencil_width) {
   PetscErrorCode ierr;
-  if (!utIsInit()) {
-    SETERRQ(grid->com, 1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
 
   if (v != PETSC_NULL) {
     SETERRQ1(grid->com, 1,"IceModelVec3 with name='%s' already allocated\n",name.c_str());

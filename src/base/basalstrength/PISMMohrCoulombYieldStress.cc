@@ -167,7 +167,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
     if (i_set || bootstrap) {
       ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
 
-      PIO nc(grid.com, grid.rank, "guess_mode");
+      PIO nc(grid.com, grid.rank, "guess_mode", grid.get_unit_system());
       bool tillphi_present;
 
       ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);

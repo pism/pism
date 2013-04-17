@@ -530,6 +530,7 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
 			   NCConfigVariable &config, NCConfigVariable &overrides,
                            bool process_options) {
   PetscErrorCode ierr;
+  PISMUnitSystem system(NULL);
 
   config.init("pism_config", com, rank);
   overrides.init("pism_overrides", com, rank);
@@ -547,10 +548,10 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  ierr = config.read(alt_config.c_str()); CHKERRQ(ierr);
+  ierr = config.read(alt_config.c_str(), system); CHKERRQ(ierr);
 
   if (use_override_config) {
-    ierr = overrides.read(override_config.c_str()); CHKERRQ(ierr);
+    ierr = overrides.read(override_config.c_str(), system); CHKERRQ(ierr);
     config.import_from(overrides);
     ierr = verbPrintf(2, com, "CONFIG OVERRIDES read from file '%s'.\n",
 		      override_config.c_str()); CHKERRQ(ierr);

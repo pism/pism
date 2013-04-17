@@ -61,7 +61,8 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
     }
     
     if (restrict == false)
-      max_dt = convert(1, "year", "seconds");
+      max_dt = convert(1, grid.get_unit_system(),
+                       "year", "seconds");
 
     ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
   } else SETERRQ(grid.com, 1, "surface == NULL");
@@ -73,7 +74,7 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
     ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
     if (restrict == false)
-      max_dt = convert(1, "year", "seconds");
+      max_dt = convert(1, grid.get_unit_system(), "year", "seconds");
 
     ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
   } else SETERRQ(grid.com, 1, "ocean == NULL");
@@ -215,7 +216,9 @@ PetscErrorCode IceModel::bootstrap_3d() {
     ierr = verbPrintf(2, grid.com, 
       "  setting initial age to %.4f years\n", config.get("initial_age_of_ice_years"));
       CHKERRQ(ierr);
-      tau3.set(config.get("initial_age_of_ice_years", "years", "seconds"));
+      tau3.set(config.get("initial_age_of_ice_years",
+                          grid.get_unit_system(),
+                          "years", "seconds"));
   }
   
   ierr = verbPrintf(2, grid.com, 

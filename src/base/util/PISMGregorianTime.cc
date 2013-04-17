@@ -19,11 +19,27 @@
 #include "PISMGregorianTime.hh"
 #include "pism_options.hh"
 #include "PIO.hh"
+#include "utCalendar2_cal.h"
 
-PISMGregorianTime::PISMGregorianTime(MPI_Comm c, const NCConfigVariable &conf)
-  : PISMTime(c, conf) {
+PISMGregorianTime::PISMGregorianTime(MPI_Comm c, const NCConfigVariable &conf,
+                                     PISMUnitSystem units_system)
+  : PISMTime(c, conf, units_system) {
 
-  calendar_string = "gregorian";  // only "gregorian" is supported by this class
+  calendar_string = config.get_string("calendar");
+
+  if ((calendar_string == "standard" ||
+       calendar_string == "proleptic_Julian" ||
+       calendar_string == "proleptic_Gregorian" ||
+       calendar_string == "noleap" ||
+       calendar_string == "365_day" ||
+       calendar_string == "no_leap" ||
+       calendar_string == "360_day") == false) {
+    PetscPrintf(com, "ERROR: invalid calendar name: %s\n", calendar_string.c_str());
+    PISMEnd();
+  }
+}
+
+PISMGregorianTime::~PISMGregorianTime() {
 }
 
 PetscErrorCode PISMGregorianTime::init() {
@@ -51,7 +67,10 @@ PetscErrorCode PISMGregorianTime::init() {
   }
 
   // initialize the units object:
-  ierr = utScan(this->units().c_str(), &ut_units); CHKERRQ(ierr);
+  if (m_time_units.parse(m_unit_system, this->units()) != 0) {
+    PetscPrintf(com, "ERROR: parsing units string \"%s\" failed", this->units().c_str());
+    PISMEnd();
+  }
 
   return 0;
 }
@@ -71,7 +90,7 @@ PetscErrorCode PISMGregorianTime::init_from_file(string filename) {
   bool exists;
 
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
+  PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var(time_name, exists); CHKERRQ(ierr);
@@ -113,14 +132,14 @@ PetscErrorCode PISMGregorianTime::init_from_file(string filename) {
   if (time_bounds_name.empty() == false) {
     // use the time bounds
     bounds.init(time_bounds_name, time_name, com, rank);
-    bounds.set_units("seconds");
+    bounds.set_units(m_unit_system, "seconds");
 
     // do *not* use the reference date
     ierr = bounds.read(nc, false, time); CHKERRQ(ierr);
   } else {
     // use the time axis
     time_axis.init(time_name, time_name, com, rank);
-    time_axis.set_units("seconds");
+    time_axis.set_units(m_unit_system, "seconds");
 
     // do *not* use the reference date
     ierr = time_axis.read(nc, false, time); CHKERRQ(ierr);
@@ -142,23 +161,25 @@ double PISMGregorianTime::mod(double time, double) {
 
 double PISMGregorianTime::year_fraction(double T) {
   int year, month, day, hour, minute;
-  float second;
-  double year_start, next_year_start;
+  double second, year_start, next_year_start;
 
-  utCalendar(T, &ut_units,
-             &year, &month, &day, &hour, &minute, &second);
+  utCalendar2_cal(T, m_time_units.get(),
+                  &year, &month, &day, &hour, &minute, &second,
+                  calendar_string.c_str());
 
-  utInvCalendar(year,
-                1, 1,            // month, day
-                0, 0, 0,         // hour, minute, second
-                &ut_units,
-                &year_start);
+  utInvCalendar2_cal(year,
+                     1, 1,            // month, day
+                     0, 0, 0,         // hour, minute, second
+                     m_time_units.get(),
+                     &year_start,
+                     calendar_string.c_str());
 
-  utInvCalendar(year + 1,
-                1, 1,           // month, day
-                0, 0, 0,        // hour, minute, second
-                &ut_units,
-                &next_year_start);
+  utInvCalendar2_cal(year + 1,
+                     1, 1,           // month, day
+                     0, 0, 0,        // hour, minute, second
+                     m_time_units.get(),
+                     &next_year_start,
+                     calendar_string.c_str());
 
   return (T - year_start) / (next_year_start - year_start);
 }
@@ -166,10 +187,11 @@ double PISMGregorianTime::year_fraction(double T) {
 string PISMGregorianTime::date(double T) {
   char tmp[256];
   int year, month, day, hour, minute;
-  float second;
+  double second;
 
-  utCalendar(T, &ut_units,
-             &year, &month, &day, &hour, &minute, &second);
+  utCalendar2_cal(T, m_time_units.get(),
+                  &year, &month, &day, &hour, &minute, &second,
+                  calendar_string.c_str());
 
   snprintf(tmp, 256, "%04d-%02d-%02d", year, month, day);
 
@@ -190,33 +212,37 @@ string PISMGregorianTime::end_date() {
 
 double PISMGregorianTime::calendar_year_start(double T) {
   int year, month, day, hour, minute;
-  float second;
-  double result;
+  double second, result;
 
-  // Get the date corresponding ti time T:
-  utCalendar(T, &ut_units,
-             &year, &month, &day, &hour, &minute, &second);
+  // Get the date corresponding to time T:
+  utCalendar2_cal(T, m_time_units.get(),
+                  &year, &month, &day, &hour, &minute, &second,
+                  calendar_string.c_str());
+
   // Get the time in seconds corresponding to the beginning of the
   // year.
-  utInvCalendar(year,
-                1, 1, 0, 0, 0.0, // month, day, hour, minute, second
-                &ut_units, &result);
+  utInvCalendar2_cal(year,
+                     1, 1, 0, 0, 0.0, // month, day, hour, minute, second
+                     m_time_units.get(), &result,
+                     calendar_string.c_str());
 
   return result;
 }
 
 double PISMGregorianTime::increment_date(double T, int years, int months, int days) {
   int year, month, day, hour, minute;
-  float second;
-  double result;
+  double second, result;
 
   // Get the date corresponding ti time T:
-  utCalendar(T, &ut_units,
-             &year, &month, &day, &hour, &minute, &second);
+  utCalendar2_cal(T, m_time_units.get(),
+                  &year, &month, &day, &hour, &minute, &second,
+                  calendar_string.c_str());
+
   // Get the time in seconds corresponding to the beginning of the
   // year.
-  utInvCalendar(year + years, month + months, day + days,
-                hour, minute, second, &ut_units, &result);
+  utInvCalendar2_cal(year + years, month + months, day + days,
+                     hour, minute, second, m_time_units.get(), &result,
+                     calendar_string.c_str());
 
   return result;
 }

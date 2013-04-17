@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     // This is never used (but it is a required argument of the
     // PISMStressBalance constructor).
     // It will be used eventually, though.
-    IceBasalResistancePlasticLaw basal(config);
+    IceBasalResistancePlasticLaw basal(config, grid.get_unit_system());
 
     POConstant ocean(grid, config);
 

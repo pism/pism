@@ -26,6 +26,7 @@
 // of PISM headers being wrapped.
 
 #include "PIO.hh"
+#include "PISMUnits.hh"
 #include "Timeseries.hh"
 #include "TerminationReason.hh"
 #include "exactTestsIJ.h"
@@ -526,6 +527,7 @@ namespace std {
 %include "iceModelVec.hh"
 %include "PISMVars.hh"
 %include "PIO.hh"
+%include "PISMUnits.hh"
 %include "PISMNCFile.hh"
 %include "PISMDiagnostic.hh"
 %include "PISMComponent.hh"

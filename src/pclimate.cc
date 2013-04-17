@@ -411,7 +411,8 @@ int main(int argc, char *argv[]) {
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-    ierr = parse_times(grid.com, config, tmp,
+    ierr = parse_times(grid.com, config,
+                       grid.get_unit_system(), tmp,
                        grid.time->start(),
                        grid.time->end(),
                        times);
@@ -446,7 +447,7 @@ int main(int argc, char *argv[]) {
     ierr = nc.close(); CHKERRQ(ierr);
 
     if (mapping_exists) {
-      ierr = mapping.read(inname); CHKERRQ(ierr);
+      ierr = mapping.read(inname, grid.get_unit_system()); CHKERRQ(ierr);
       ierr = mapping.print(); CHKERRQ(ierr);
     }
     last_record -= 1;
@@ -492,7 +493,7 @@ int main(int argc, char *argv[]) {
         "  recording config overrides in NetCDF file '%s' ...\n",
 	outname.c_str()); CHKERRQ(ierr);
       overrides.update_from(config);
-      ierr = overrides.write(outname.c_str()); CHKERRQ(ierr);
+      ierr = overrides.write(outname, grid.get_unit_system()); CHKERRQ(ierr);
     }
 
     delete surface;
