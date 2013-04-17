@@ -32,7 +32,7 @@ class BasalTillStrength:
 
     config        = PISM.global_config()
     
-    self.till_pw_fraction = config.get("till_pw_fraction")
+    self.hydrology_pressure_fraction = config.get("hydrology_pressure_fraction")
     self.till_c_0 = config.get("till_c_0") * 1e3 # convert from kPa to Pa
     self.bwat_max = config.get("bwat_max");
 
@@ -52,10 +52,10 @@ class BasalTillStrength:
       # // Note: option is given in kPa.
       config.scalar_from_option("plastic_c0", "till_c_0");
 
-      # // till_pw_fraction is a parameter in the computation of the till yield stress tau_c
+      # // hydrology_pressure_fraction is a parameter in the computation of the till yield stress tau_c
       # // from the thickness of the basal melt water bwat
       # // option a pure number (a fraction); no conversion
-      config.scalar_from_option("plastic_pwfrac", "till_pw_fraction")
+      config.scalar_from_option("hydrology_pressure_fraction", "hydrology_pressure_fraction")
 
 
       config.flag_from_option("thk_eff", "thk_eff_basal_water_pressure")
@@ -67,7 +67,7 @@ class BasalTillStrength:
 
   def updateYieldStress(self,mask,thickness,bwat,bmr,tillphi,tauc):
     config = PISM.global_config()
-    till_pw_fraction = self.till_pw_fraction#config.get("till_pw_fraction")
+    hydrology_pressure_fraction = self.hydrology_pressure_fraction#config.get("hydrology_pressure_fraction")
     till_c_0 = self.till_c_0#config.get("till_c_0") * 1e3 # convert from kPa to Pa
     bwat_max = self.bwat_max#config.get("bwat_max");
 
@@ -88,7 +88,7 @@ class BasalTillStrength:
         else: # grounded and there is some ice
           p_over = rho_g * H_ij
           p_w    = self.getBasalWaterPressure( H_ij,
-                                         bwat[i,j],bmr[i,j],till_pw_fraction, 
+                                         bwat[i,j],bmr[i,j],hydrology_pressure_fraction, 
                                          bwat_max)
           N = p_over - p_w #  effective pressure on till
           if N<Nmin:
@@ -97,7 +97,7 @@ class BasalTillStrength:
 
   def updateTillPhi_algebraic(self,mask,thickness,bwat,bmr,tauc,tillphi,tillphi_prev=None):
     config = PISM.global_config()
-    till_pw_fraction = self.till_pw_fraction#config.get("till_pw_fraction")
+    hydrology_pressure_fraction = self.hydrology_pressure_fraction#config.get("hydrology_pressure_fraction")
     till_c_0 = self.till_c_0#config.get("till_c_0") * 1e3 # convert from kPa to Pa
     bwat_max = self.bwat_max#config.get("bwat_max");
 
@@ -124,7 +124,7 @@ class BasalTillStrength:
         else: # grounded and there is some ice
           p_over = rho_g * H_ij
           p_w    = self.getBasalWaterPressure( H_ij,
-                                         bwat[i,j],bmr[i,j],till_pw_fraction, 
+                                         bwat[i,j],bmr[i,j],hydrology_pressure_fraction, 
                                          bwat_max)
           N = p_over - p_w #  effective pressure on till
           if abs(N) < Nmin:

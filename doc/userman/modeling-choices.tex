@@ -302,7 +302,6 @@ When using option \texttt{-ssa_sliding}, the SIA+SSA hybrid model, a sub-model f
     \\\midrule
     \intextoption{hold_tauc} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.  Normally used in combination with \texttt{-tauc}. \\
     \intextoption{pseudo_plastic} & enables the pseudo-plastic till model \\
-    \txtopt{plastic_pwfrac}{\emph{pure number}} & [FIXME: rename to \texttt{hydrology_bwpfrac} and put in next subsection; issue \#127]  Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
     \intextoption{plastic_c0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
     \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}. The default is $0.01$.\\
     \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
@@ -322,7 +321,11 @@ The value of $\tau_c$ is determined in part by a subglacial hydrology model, inc
 \begin{equation}
    \tau_c = c_{0} + (\tan\phi)\,(\rho g H - p_w).  \label{eq:mohrcoulomb}
 \end{equation}
-Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, and $c_0$ is called the ``till cohesion''.  The product $\rho g H$ is the ice overburden pressure.  The difference $N=\rho g H - p_w$ is the modeled value of the ``effective pressure'' on the basal material.  Lower effective pressure means that more of the weight of the ice is carried by pressurized water and thus that the ice can slide more easily because the shear stress needed to slide is smaller.  The default value in PISM for the till cohesion value $c_0$ is zero \cite[formula (2.4)]{SchoofStream}.  In any case the meaning of the yield stress is that the (vector) basal shear stress is at most the yield stress, and only once the shear stress reaches the yield value can there be sliding:
+Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, and $c_0$ is called the ``till cohesion''.  The default value in PISM for the till cohesion value $c_0$ is zero \cite[formula (2.4)]{SchoofStream}.
+
+The product $\rho g H$ is the ice overburden pressure.  The difference $N=\rho g H - p_w$ is the modelled value of the ``effective pressure'' on the basal material.  Lower effective pressure means that more of the weight of the ice is carried by pressurized water and thus that the ice can slide more easily because the shear stress needed to slide is smaller.  See section \ref{subsect:subhydro} on models for the subglacial water pressure.  Note that the hydrology model \verb|-hydrology tillcan| has been extensively used in modelling ice streaming \cite{BBssasliding,BKAJS,Winkelmannetal2011} but that most of the many other possible combinations of basal strength models and hydrology models have not been tested.  For model \verb|-hydrology tillcan|, note that parameter option \verb|-hydrology_pressure_fraction| is  a critical parameter value in practice.
+
+In any case the meaning of the yield stress is that the (vector) basal shear stress is at most the yield stress, and only once the shear stress reaches the yield value can there be sliding:
 \begin{equation*}
    |\tau_b| \le \tau_c \quad \text{and} \quad \tau_b = \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0.
 \end{equation*}
@@ -418,6 +421,7 @@ FIXME
     \intextoption{init_P_from_steady}  & FIXME only applies to \texttt{distributed} \\
     \intextoption{hydrology_use_const_bmelt} & FIXME \\
     \intextoption{hydrology_const_bmelt} & FIXME \\
+    \intextoption{hydrology_pressure_fraction} & FIXME.  Sets what fraction of overburden pressure is assumed as the till pore water pressure in \texttt{tillcan}; scales overburden pressure in \texttt{routing}.  Only relevant at basal points where there is a positive amount of basal water.\\
     \intextoption{hydrology_hydraulic_conductivity} & FIXME only applies to \texttt{routing} and \texttt{distributed} \\
     \bottomrule
   \end{tabular}
@@ -425,11 +429,11 @@ FIXME
 \label{tab:hydrology}
 \end{table}
 
-FIXME Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=\mathtt{bwat}$; see the next subsection.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
+In models \verb|tillcan|, option \texttt{-hydrology_pressure_fraciton} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=\mathtt{bwat}$; see the next subsection.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
 
-Currently, only the most minimal possible hydrology model is implemented in PISM.  By default, the energy conservation calculation generates basal melt and that water is stored locally in the ``till'' under the ice sheet.  The output variable \texttt{bwat} is the effective thickness of this layer of liquid water.  This layer of water relates to the basal boundary condition of the conservation of energy scheme, and it is involved in computing basal water pressure and thus the till yield stress; see the previous subsection.
+Currently, only fairly-simple hydrology models are implemented in PISM.  By default, the energy conservation calculation generates basal melt and that water is stored locally in the ``till'' under the ice sheet.  The output variable \texttt{bwat} is the effective thickness of this layer of liquid water.  This layer of water relates to the basal boundary condition of the conservation of energy scheme, and it is involved in computing basal water pressure and thus the till yield stress; see the previous subsection.
 
-The minimal model which is on by default is that water is added by basal melt rate, subtracted by refreeze onto the base of the ice, and it decays away in the absence of other inputs according to the configuration parameter \texttt{bwat_decay_rate}.  The amount is bounded above by the configuration constant \texttt{bwat_max}, an effective thickness.  Water above that level is lost in an unmodeled manner.
+The minimal model \verb|tillcan| which is on by default is that water is added by basal melt rate, subtracted by refreeze onto the base of the ice, and it decays away in the absence of other inputs according to the configuration parameter \texttt{bwat_decay_rate}.  The amount is bounded above by the configuration constant \texttt{bwat_max}, an effective thickness.  Water above that level is lost in an unmodeled manner.
 
 
 \subsection{Dealing with more difficult modeling choices}
