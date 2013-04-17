@@ -8,6 +8,8 @@ set(PISM_INVERSE_SOURCES
 ./L2NormFunctional.cc
 ./H1NormFunctional.cc
 ./GroundedIceH1NormFunctional.cc
+./LogRatioFunctional.cc
+./LogRelativeFunctional.cc
 ./TotalVariationFunctional.cc
 ./MeanSquareFunctional.cc
 ./TwoBlockVec.cc

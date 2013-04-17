@@ -39,6 +39,8 @@
 #include "inverse/GroundedIceH1NormFunctional.hh"
 #include "inverse/TotalVariationFunctional.hh"
 #include "inverse/MeanSquareFunctional.hh"
+#include "inverse/LogRelativeFunctional.hh"
+#include "inverse/LogRatioFunctional.hh"
 #include "inverse/InvSSATikhonovGN.hh"
 #if (PISM_USE_TAO==1)
 #include "inverse/TaoUtil.hh"
@@ -579,6 +581,8 @@ namespace std {
 %include "inverse/GroundedIceH1NormFunctional.hh"
 %include "inverse/TotalVariationFunctional.hh"
 %include "inverse/MeanSquareFunctional.hh"
+%include "inverse/LogRatioFunctional.hh"
+%include "inverse/LogRelativeFunctional.hh"
 %include "inverse/InvTaucParameterization.hh"
 %include "inverse/InvSSAForwardProblem.hh"
 %include "inverse/InvSSAForwardProblem_dep.hh"
