@@ -250,7 +250,7 @@ macro(pism_set_dependencies)
 
   list (APPEND Pism_EXTERNAL_LIBS
     ${PETSC_LIBRARIES}
-    ${UDUNITS2_LIBRARY}
+    ${UDUNITS2_LIBRARIES}
     ${GSL_LIBRARIES}
     ${NETCDF_LIBRARIES}
     ${MPI_LIBRARY}
