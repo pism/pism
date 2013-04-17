@@ -184,7 +184,7 @@ protected:
 
       (k->second)->set_n_records(n_records);
 
-      (k->second)->set_n_evaluations_per_year(Model::config.get("climate_forcing_evaluations_per_year"));
+      (k->second)->set_n_evaluations_per_year((unsigned int)Model::config.get("climate_forcing_evaluations_per_year"));
 
       ++k;
     }

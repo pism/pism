@@ -16,6 +16,39 @@ find_path (UDUNITS2_INCLUDES udunits2.h
 
 find_library (UDUNITS2_LIBRARY NAMES udunits2)
 
+set(UDUNITS2_TEST_SRC "
+#include <udunits2.h>
+
+int main(int argc, char **argv) {
+  ut_system *s = ut_read_xml(NULL);
+  ut_free_system(s);
+  return 0;
+}
+")
+
+include (CheckCSourceRuns)
+
+set(CMAKE_REQUIRED_INCLUDES ${UDUNITS2_INCLUDES})
+set(CMAKE_REQUIRED_LIBRARIES ${UDUNITS2_LIBRARY})
+check_c_source_runs("${UDUNITS2_TEST_SRC}" UDUNITS2_WORKS_WITHOUT_EXPAT)
+
+if(${UDUNITS2_WORKS_WITHOUT_EXPAT})
+  message(STATUS "UDUNITS-2 does not require expat")
+else()
+  find_package(EXPAT REQUIRED)
+
+  set(CMAKE_REQUIRED_INCLUDES ${UDUNITS2_INCLUDES} ${EXPAT_INCLUDE_DIRS})
+  set(CMAKE_REQUIRED_LIBRARIES ${UDUNITS2_LIBRARY} ${EXPAT_LIBRARIES})
+  check_c_source_runs("${UDUNITS2_TEST_SRC}" UDUNITS2_WORKS_WITH_EXPAT)
+
+  if(NOT ${UDUNITS2_WORKS_WITH_EXPAT})
+    message(FATAL_ERROR "Failed to find UDUNITS-2")
+  endif()
+
+  message(STATUS "UDUNITS-2 requires EXPAT")
+  set (UDUNITS2_LIBRARY "${UDUNITS2_LIBRARY};${EXPAT_LIBRARIES}" CACHE STRING "" FORCE)
+endif()
+
 # handle the QUIETLY and REQUIRED arguments and set UDUNITS2_FOUND to TRUE if
 # all listed variables are TRUE
 include (FindPackageHandleStandardArgs)

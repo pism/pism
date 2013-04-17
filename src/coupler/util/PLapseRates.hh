@@ -172,7 +172,7 @@ protected:
       ierr = reference_surface.set_attrs("climate_forcing",
                                          "reference surface for lapse rate corrections",
                                          "m", "surface_altitude"); CHKERRQ(ierr);
-      reference_surface.set_n_evaluations_per_year(Mod::config.get("climate_forcing_evaluations_per_year"));
+      reference_surface.set_n_evaluations_per_year((unsigned int)Mod::config.get("climate_forcing_evaluations_per_year"));
     }
 
     ierr = verbPrintf(2, g.com,
