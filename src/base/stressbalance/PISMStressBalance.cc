@@ -389,19 +389,33 @@ static inline double D2(double u_x, double u_y, double u_z, double v_x, double v
 
   \f[ \Sigma = \sum_{i,j=1}^{3}D_{ij}\tau_{ij} = 2 B(T) D^{(1/n) + 1}. \f]
 
-  We use an *approximation* of \f$D_ij\f$ common in shallow ice models:
+  We use an *approximation* of \f$D_{ij}\f$ common in shallow ice models:
 
   - we assume that horizontal derivatives of the vertical velocity are
     much smaller than \f$z\f$ derivatives horizontal velocity
     components \f$u\f$ and \f$v\f$. (We drop \f$w_x\f$ and \f$w_y\f$
-    terms in \f$D_ij\f$.)
+    terms in \f$D_{ij}\f$.)
 
   - we use the incompressibility of ice to approximate \f$w_z\f$:
 
   \f[ w_z = - (u_x + v_y). \f]
 
-  Requires ghosts of `u` and `v` velocity components. Resulting field
-  does not have ghosts.
+  Requires ghosts of `u` and `v` velocity components and uses the fact
+  that `u` and `v` above the ice are filled using constant
+  extrapolation.
+
+  Resulting field does not have ghosts.
+
+  Below is the *Maxima* code that produces the expression evaluated by D2().
+
+       derivabbrev : true;
+       U : [u, v, w]; X : [x, y, z]; depends(U, X);
+       gradef(w, x, 0); gradef(w, y, 0);
+       gradef(w, z, -(diff(u, x) + diff(v, y)));
+       d[i,j] := 1/2 * (diff(U[i], X[j]) + diff(U[j], X[i]));
+       D : genmatrix(d, 3, 3), ratsimp, factor;
+       tex('D = D);
+       tex('D^2 = 1/2 * mat_trace(D . D));
 
   @return 0 on success
  */

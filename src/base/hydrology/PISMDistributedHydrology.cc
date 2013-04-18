@@ -397,7 +397,7 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
 /*!
 If flag \c hydrology_add_wall_melt is true then this same code fills
 \c result with
-    \f[ \frac{m_{wall}}{\rho_w} = - \frac{1}{L \rho_w} \mathbf{q} \cdot \nabla \psi = \left(\frac{k}{L \rho_w} W^\alpha |\nabla R|^\beta \f]
+    \f[ \frac{m_{wall}}{\rho_w} = - \frac{1}{L \rho_w} \mathbf{q} \cdot \nabla \psi = \left(\frac{k}{L \rho_w}\right) W^\alpha |\nabla R|^\beta \f]
 where \f$R = P+\rho_w g b\f$.
 
 Note that conductivity_staggered() computes the related quantity
