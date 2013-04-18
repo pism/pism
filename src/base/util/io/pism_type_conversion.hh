@@ -39,7 +39,7 @@ static nc_type pism_type_to_nc_type(PISM_IO_Type input) {
   }
 }
 
-static PISM_IO_Type nc_type_to_pism_type(nc_type input) {
+static PISM_IO_Type nc_type_to_pism_type(int input) {
   switch (input) {
   case NC_BYTE:
     return PISM_BYTE;
