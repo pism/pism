@@ -150,6 +150,11 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 
   ierr = stampHistory(str); CHKERRQ(ierr);
 
+  global_attributes.set("wall_clock_hours", wall_clock_hours);
+  global_attributes.set("processor_hours", proc_hours);
+  global_attributes.set("model_years_per_processor_hour", mypph);
+  global_attributes.set("PETSc_MFlops", flops * 1.0e-6);
+
   return 0;
 }
 
