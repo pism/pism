@@ -36,7 +36,7 @@ PetscErrorCode PO_delta_SMB::allocate_PO_delta_SMB() {
   offset_name	= "delta_mass_flux";
 
   offset->set_units("m s-1", "");
-  offset->set_dimension_units(grid.time->units(), "");
+  offset->set_dimension_units(grid.time->units_string(), "");
   offset->set_attr("long_name", "ice-shelf-base mass flux offsets");
 
   shelfbmassflux.init_2d("shelfbmassflux", grid);

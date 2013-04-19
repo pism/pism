@@ -389,7 +389,7 @@ if __name__ == "__main__":
     pio = PISM.PIO(grid.com,grid.rank,"netcdf3", grid.get_unit_system())
     pio.open(output_filename,PISM.NC_WRITE,False)
     pio.def_time(grid.config.get_string("time_dimension_name"),
-                 grid.config.get_string("calendar"), grid.time.units())
+                 grid.config.get_string("calendar"), grid.time.units_string())
     pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
     pio.close()
   zeta.write(output_filename)

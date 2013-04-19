@@ -34,7 +34,7 @@ set(PISMUTIL_SRC
   base/util/PISMComponent.cc
   base/util/PISMProf.cc
   base/util/PISMTime.cc
-  base/util/PISMGregorianTime.cc
+  base/util/PISMTime_Calendar.cc
   base/util/PISMVars.cc
   base/util/Timeseries.cc
   base/util/iceModelVec.cc
@@ -52,7 +52,6 @@ set(PISMUTIL_SRC
   base/util/pism_default_config.cc
   base/util/pism_options.cc
   base/util/TerminationReason.cc
-  base/util/time_options.cc
   base/util/PISMUnits.cc
   base/varcEnthalpyConverter.cc
   )

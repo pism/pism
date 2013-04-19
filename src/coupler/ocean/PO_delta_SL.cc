@@ -40,7 +40,7 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
   offset->set_units("m", "");
-  offset->set_dimension_units(grid.time->units(), "");
+  offset->set_dimension_units(grid.time->units_string(), "");
   offset->set_attr("long_name", "sea level elevation offsets");
 
   shelfbmassflux.init_2d("shelfbmassflux", grid);

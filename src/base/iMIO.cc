@@ -123,7 +123,8 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
   // Prepare the file
   string time_name = config.get_string("time_dimension_name");
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
-  ierr = nc.def_time(time_name, config.get_string("calendar"), grid.time->CF_units()); CHKERRQ(ierr);
+  ierr = nc.def_time(time_name, config.get_string("calendar"),
+                     grid.time->CF_units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
 
   // Write metadata *before* variables:
@@ -604,9 +605,7 @@ PetscErrorCode IceModel::init_snapshots() {
     return 0;
   }
 
-  ierr = parse_times(grid.com, config, grid.get_unit_system(), tmp,
-                     grid.time->start(),
-                     grid.time->end(), snapshot_times);
+  ierr = grid.time->parse_times(tmp, snapshot_times);
   if (ierr != 0) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_times argument failed.\n"); CHKERRQ(ierr);
     PISMEnd();
@@ -702,7 +701,7 @@ PetscErrorCode IceModel::write_snapshot() {
     ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        config.get_string("calendar"),
-                       grid.time->CF_units()); CHKERRQ(ierr);
+                       grid.time->CF_units_string()); CHKERRQ(ierr);
 
     ierr = write_metadata(nc); CHKERRQ(ierr);
 
@@ -789,7 +788,7 @@ PetscErrorCode IceModel::write_backup() {
   ierr = nc.open(backup_filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
                      config.get_string("calendar"),
-                     grid.time->CF_units()); CHKERRQ(ierr);
+                     grid.time->CF_units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
 
   // Write metadata *before* variables:

@@ -188,7 +188,7 @@ class PISMTSDiag : public PISMTSDiagnostic
 public:
   PISMTSDiag(Model *m, IceGrid &g, PISMVars &my_vars)
     : PISMTSDiagnostic(g, my_vars), model(m) {
-    time_units = grid.time->CF_units();
+    time_units = grid.time->CF_units_string();
     time_dimension_name = grid.config.get_string("time_dimension_name");
   }
 protected:

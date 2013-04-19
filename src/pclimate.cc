@@ -243,7 +243,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   DiagnosticTimeseries sea_level(&grid, "sea_level", grid.config.get_string("time_dimension_name"));
   sea_level.set_units("m", "m");
-  sea_level.set_dimension_units(grid.time->units(), "");
+  sea_level.set_dimension_units(grid.time->units_string(), "");
   sea_level.output_filename = filename;
   sea_level.set_attr("long_name", "sea level elevation");
 
@@ -268,7 +268,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append=true
   ierr = nc.def_time(grid.config.get_string("time_dimension_name"),
                      grid.config.get_string("calendar"),
-                     grid.time->units()); CHKERRQ(ierr);
+                     grid.time->units_string()); CHKERRQ(ierr);
 
   while (record_index < times.size() && grid.time->current() < grid.time->end()) {
 
@@ -411,11 +411,7 @@ int main(int argc, char *argv[]) {
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-    ierr = parse_times(grid.com, config,
-                       grid.get_unit_system(), tmp,
-                       grid.time->start(),
-                       grid.time->end(),
-                       times);
+    ierr = grid.time->parse_times(tmp, times);
     if (ierr != 0) {
       PetscPrintf(grid.com, "PISM ERROR: parsing the -times argument failed.\n");
       PISMEnd();

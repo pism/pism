@@ -66,10 +66,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
   save_ts = true;
 
-  ierr = parse_times(grid.com, config, grid.get_unit_system(), times,
-                     grid.time->start(),
-                     grid.time->end(),
-                     ts_times);
+  ierr = grid.time->parse_times(times, ts_times);
   if (ierr != 0) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -ts_times argument failed.\n"); CHKERRQ(ierr);
     PISMEnd();
@@ -224,10 +221,7 @@ PetscErrorCode IceModel::init_extras() {
     return 0;
   }
 
-  ierr = parse_times(grid.com, config, grid.get_unit_system(), times,
-                     grid.time->start(),
-                     grid.time->end(),
-                     extra_times);
+  ierr = grid.time->parse_times(times, extra_times);
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: parsing the -extra_times argument failed.\n");
     PISMEnd();
@@ -312,6 +306,7 @@ PetscErrorCode IceModel::init_extras() {
 
   extra_bounds.init("time_bounds", config.get_string("time_dimension_name"),
                     grid.com, grid.rank);
+  extra_bounds.set_units(grid.get_unit_system(), grid.time->units_string());
 
   timestamp.init("timestamp", config.get_string("time_dimension_name"),
                  grid.com, grid.rank);
@@ -424,7 +419,7 @@ PetscErrorCode IceModel::write_extras() {
     ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        config.get_string("calendar"),
-                       grid.time->CF_units()); CHKERRQ(ierr);
+                       grid.time->CF_units_string()); CHKERRQ(ierr);
     ierr = nc.put_att_text(config.get_string("time_dimension_name"),
                            "bounds", "time_bounds"); CHKERRQ(ierr);
 

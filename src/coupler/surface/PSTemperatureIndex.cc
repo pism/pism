@@ -237,7 +237,7 @@ double PSTemperatureIndex::compute_next_balance_year_start(double time) {
     if (balance_year_start > time) {
       return balance_year_start;
     }
-    return grid.time->increment_date(balance_year_start, 1, 0, 0);
+    return grid.time->increment_date(balance_year_start, 1);
 }
 
 
@@ -338,7 +338,7 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
         for (int k = 0; k < Nseries; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
             snow_depth(i,j)       = 0.0;
-            next_snow_depth_reset = grid.time->increment_date(next_snow_depth_reset, 1, 0, 0);
+            next_snow_depth_reset = grid.time->increment_date(next_snow_depth_reset, 1);
           }
 
           double accumulation     = P[k] * dtseries;

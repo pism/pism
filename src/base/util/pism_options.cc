@@ -624,7 +624,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   // Time-stepping
   ierr = config.keyword_from_option("calendar", "calendar",
-                                    "365_day,gregorian"); CHKERRQ(ierr);
+                                    "standard,proleptic_Julian,proleptic_Gregorian,noleap,365_day,no_leap,360_day,none"); CHKERRQ(ierr);
 
   ierr = config.string_from_option("reference_date", "reference_date"); CHKERRQ(ierr);
 

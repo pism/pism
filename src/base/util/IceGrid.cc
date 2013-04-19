@@ -20,7 +20,7 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "PISMTime.hh"
-#include "PISMGregorianTime.hh"
+#include "PISMTime_Calendar.hh"
 #include "PISMProf.hh"
 #include "NCVariable.hh"
 
@@ -84,10 +84,10 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   profiler = new PISMProf(com, rank, size);
 
-  if (config.get_string("calendar") == "gregorian") {
-    time = new PISMGregorianTime(com, config, m_unit_system);
-  } else {
+  if (config.get_string("calendar") == "none") {
     time = new PISMTime(com, config, m_unit_system);
+  } else {
+    time = new PISMTime_Calendar(com, config, m_unit_system);
   }
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).

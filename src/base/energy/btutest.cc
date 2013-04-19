@@ -299,7 +299,7 @@ int main(int argc, char *argv[]) {
     string time_name = config.get_string("time_dimension_name");
     ierr = pio.open(outname, PISM_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(time_name, config.get_string("calendar"),
-                        grid.time->CF_units()); CHKERRQ(ierr);
+                        grid.time->CF_units_string()); CHKERRQ(ierr);
     ierr = pio.append_time(time_name, grid.time->end()); CHKERRQ(ierr);
 
     ierr = btu.define_variables(vars, pio, PISM_DOUBLE); CHKERRQ(ierr);

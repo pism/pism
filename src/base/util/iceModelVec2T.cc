@@ -192,7 +192,7 @@ PetscErrorCode IceModelVec2T::init(string fname, double period, double reference
     time_dimension.init(dimname, dimname, grid->com, grid->rank);
 
     ierr = time_dimension.set_units(grid->get_unit_system(),
-                                    grid->time->units()); CHKERRQ(ierr);
+                                    grid->time->units_string()); CHKERRQ(ierr);
     ierr = time_dimension.read(nc, grid->time->use_reference_date(), time); CHKERRQ(ierr);
 
     string bounds_name;

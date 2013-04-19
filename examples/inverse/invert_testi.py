@@ -277,7 +277,7 @@ if __name__ == "__main__":
   pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
   pio.open(output_file,PISM.NC_WRITE,False)
   pio.def_time(grid.config.get_string("time_dimension_name"),
-               grid.config.get_string("calendar"), grid.time.units())
+               grid.config.get_string("calendar"), grid.time.units_string())
   pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
   pio.close()
   zeta0.write(output_file)

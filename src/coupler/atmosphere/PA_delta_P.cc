@@ -35,7 +35,7 @@ PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
   offset_name = "delta_P";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("m / second", "m / year");
-  offset->set_dimension_units(grid.time->units(), "");
+  offset->set_dimension_units(grid.time->units_string(), "");
   offset->set_attr("long_name", "precipitation offsets");
 
   air_temp.init_2d("air_temp", grid);
