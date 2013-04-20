@@ -97,10 +97,9 @@ PetscErrorCode LogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &g
       PetscReal modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v+v_eps*v_eps);
       PetscReal v = log( modelMagSq/obsMagSq);
       PetscReal dJdu =  2*v/modelMagSq;
-      // PetscReal dJdu =  1./( obsMagSq + x_ij.u*x_ij.u + x_ij.v*x_ij.v);
 
-      gradient_a[i][j].u = dJdu*2*x_a[i][j].u/m_normalization;
-      gradient_a[i][j].v = dJdu*2*x_a[i][j].v/m_normalization;
+      gradient_a[i][j].u = dJdu*2*u_model_ij.u/m_normalization;
+      gradient_a[i][j].v = dJdu*2*u_model_ij.v/m_normalization;
     }
   }
   ierr = m_u_observed.end_access(); CHKERRQ(ierr);
