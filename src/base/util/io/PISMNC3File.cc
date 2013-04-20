@@ -4,7 +4,7 @@
 //
 // PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
-// Foundation; either version 2 of the License, or (at your option) any later
+// Foundation; either version 3 of the License, or (at your option) any later
 // version.
 //
 // PISM is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -930,7 +930,7 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, PISM_IO_Type
   MPI_Barrier(com);
   MPI_Bcast(&tmp, 1, MPI_INT, 0, com);
 
-  result = nc_type_to_pism_type(static_cast<nc_type>(tmp));
+  result = nc_type_to_pism_type(tmp);
 
   return 0;
 }

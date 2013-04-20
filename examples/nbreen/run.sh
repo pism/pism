@@ -1,14 +1,17 @@
 #!/bin/bash
 
+GRIDLIST="{500, 250, 125, 62}"
+TYPELIST="{dist, event, routing, routingwall}"
+
 if [ $# -lt 4 ] ; then
   echo "run.sh ERROR: needs five arguments ... ENDING NOW"
   echo "  format:"
   echo "    run.sh PROCS GRID DURATION TYPE REPORTING"
   echo "  where"
   echo "    PROCS     = 1,2,3,... is number of MPI processes"
-  echo "    GRID      is in {500, 250, 125, 62}, the grid spacing in meters"
+  echo "    GRID      is in $GRIDLIST, the grid spacing in meters"
   echo "    DURATION  is run duration in years"
-  echo "    TYPE      is in {dist, event, routing}"
+  echo "    TYPE      is in $TYPELIST"
   echo "    REPORTING is either a Delta t in years or in {hourly, daily, monthly, yearly}"
   echo "  example usage:"
   echo "    run.sh 4 500 0.25 dist daily"
@@ -43,7 +46,7 @@ elif [ "$2" -eq "62" ]; then
   myMx=528
   myMy=414
 else
-  echo "invalid second argument: must be in {62,125,250,500}"
+  echo "invalid second argument: must be in $GRIDLIST"
   exit
 fi
 
@@ -75,8 +78,15 @@ elif [ "$4" = "routing" ]; then
   hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3"
   evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel"  # revised
 
+elif [ "$4" = "routingwall" ]; then
+
+  # routing run but with wall melt
+  oname=nbreen_y${YY}_${dx}m_routingwall.nc
+  hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3 -hydrology_add_wall_melt"
+  evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel"  # revised
+
 else
-  echo "invalid fourth argument; must be in {dist,event,routing}"
+  echo "invalid fourth argument; must be in $TYPELIST"
   exit
 fi
 

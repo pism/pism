@@ -16,8 +16,11 @@ parser = argparse.ArgumentParser( \
     description='show quiver for the subglacial water velocity (or flux) field from a PISM file')
 parser.add_argument('filename',
                     help='file from which to get  V = bwatvel[2]  (and  W = bwat  for flux)')
+parser.add_argument('-b', type=float, default=-1.0,
+                    help='upper bound on speed; -b 100 shows all speeds above 100 as 100')
 parser.add_argument('-c', type=float, default=-1.0,
                     help='arrow crop size; -c 0.1 shortens arrows longer than 0.1 * speed.max()')
+# e.g. ./showhydrovel.py -c 0.001 -q extras_nbreen_y0.25_250m_routing.nc -b 20
 parser.add_argument('-d', type=int, default=-1,
                     help='index of frame (default: last frame which is D=-1)')
 parser.add_argument('-q', action='store_true',
@@ -133,6 +136,9 @@ if args.c > 0.0:
     plotvelx[crop] = args.c * speed.max() * velx[crop] / speed[crop]
     plotvely[crop] = args.c * speed.max() * vely[crop] / speed[crop]
 
+if args.b > 0.0:
+    speed[speed > args.b] = args.b
+
 figure(1)
 quiver(x/1000.0,y/1000.0,plotvelx,plotvely,speed)
 colorbar()
@@ -145,7 +151,8 @@ if args.q:
      print "  maximum water flux magnitude = %8.3f %s" % (speed.max(),units)
      titlestr = "water flux in %s" % units
 else:
-     print "  maximum water speed = %8.3f %s" % (speed.max(),units)
+     print "  maximum water speed = %8.3f %s = %6.3f %s" % \
+        (speed.max(),units,speed.max()/3600.0,'m s-1')  # assumes units is m hr-1
      titlestr = "water velocity in %s" % units
 title(titlestr)
 

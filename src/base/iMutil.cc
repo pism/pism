@@ -4,7 +4,7 @@
 //
 // PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
-// Foundation; either version 2 of the License, or (at your option) any later
+// Foundation; either version 3 of the License, or (at your option) any later
 // version.
 //
 // PISM is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -149,6 +149,11 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
     wall_clock_hours, proc_hours, mypph, flops * 1.0e-6);
 
   ierr = stampHistory(str); CHKERRQ(ierr);
+
+  global_attributes.set("wall_clock_hours", wall_clock_hours);
+  global_attributes.set("processor_hours", proc_hours);
+  global_attributes.set("model_years_per_processor_hour", mypph);
+  global_attributes.set("PETSc_MFlops", flops * 1.0e-6);
 
   return 0;
 }

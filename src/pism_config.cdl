@@ -204,8 +204,14 @@ netcdf pism_config {
     pism_config:hydrology_use_const_bmelt = "no";
     pism_config:hydrology_use_const_bmelt_doc = "if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology_const_bmelt";
 
+    pism_config:hydrology_add_wall_melt = "no";
+    pism_config:hydrology_add_wall_melt_doc = "if 'yes', add the melt rate computed by immediately dissipating the flow energy in the moving subglacial water as wall melt";
+
     pism_config:hydrology_const_bmelt = 3.168876461e-10;
     pism_config:hydrology_const_bmelt_doc = "m s-1; = 1 cm per year of melt; only used if hydrology_use_const_bmelt = 'yes'";
+
+    pism_config:hydrology_pressure_fraction = 0.95;
+    pism_config:hydrology_pressure_fraction_doc = "pure number; water pressure is this fraction of overburden in PISMTillCanHydrology and derived models; water pressure is scaled by this fraction in PISMRoutingHydrology";
 
     pism_config:hydrology_bwat_max = 2.0;
     pism_config:hydrology_bwat_max_doc = "m; maximum thickness of the basal melt water layer; used by PISMTillCanHydrology and derived models; not used by some hydrology models";
@@ -260,9 +266,6 @@ netcdf pism_config {
 
     pism_config:default_till_phi = 30.0;
     pism_config:default_till_phi_doc = "degrees; fill value for till friction angle";
-
-    pism_config:till_pw_fraction = 0.95;
-    pism_config:till_pw_fraction_doc = "pure number; pore water pressure is this fraction of overburden";
 
     pism_config:till_c_0 = 0.0;
     pism_config:till_c_0_doc = "kPa; cohesion of till; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";

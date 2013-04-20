@@ -4,7 +4,7 @@
 //
 // PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
-// Foundation; either version 2 of the License, or (at your option) any later
+// Foundation; either version 3 of the License, or (at your option) any later
 // version.
 //
 // PISM is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -39,7 +39,7 @@ static nc_type pism_type_to_nc_type(PISM_IO_Type input) {
   }
 }
 
-static PISM_IO_Type nc_type_to_pism_type(nc_type input) {
+static PISM_IO_Type nc_type_to_pism_type(int input) {
   switch (input) {
   case NC_BYTE:
     return PISM_BYTE;

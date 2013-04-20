@@ -4,7 +4,7 @@
 //
 // PISM is free software; you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
-// Foundation; either version 2 of the License, or (at your option) any later
+// Foundation; either version 3 of the License, or (at your option) any later
 // version.
 //
 // PISM is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -421,7 +421,7 @@ PetscErrorCode PISMTillCanHydrology::subglacial_water_thickness(IceModelVec2S &r
 //! Computes pressure diagnostically.
 /*!
   \f[ P = \lambda P_o \max\{1,W / W_{crit}\} \f]
-where \f$\lambda\f$=till_pw_fraction, \f$P_o = \rho_i g H\f$, \f$W_{crit}\f$=hydrology_bwat_max.
+where \f$\lambda\f$=hydrology_pressure_fraction, \f$P_o = \rho_i g H\f$, \f$W_{crit}\f$=hydrology_bwat_max.
  */
 PetscErrorCode PISMTillCanHydrology::subglacial_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
@@ -433,14 +433,13 @@ PetscErrorCode PISMTillCanHydrology::subglacial_water_pressure(IceModelVec2S &re
   ierr = overburden_pressure(result); CHKERRQ(ierr);
 
   double bwat_max = config.get("hydrology_bwat_max"),
-    till_pw_fraction = config.get("till_pw_fraction");
+         lam = config.get("hydrology_pressure_fraction");
 
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      // P = lambda (W/W_0) P_o
-      result(i,j) = till_pw_fraction * (W(i,j) / bwat_max) * result(i,j);
+      result(i,j) = lam * (W(i,j) / bwat_max) * result(i,j);
     }
   }
   ierr = result.end_access(); CHKERRQ(ierr);
