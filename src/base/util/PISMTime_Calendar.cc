@@ -29,7 +29,7 @@
 static inline string string_strip(string input) {
   if (input.empty() == true)
     return input;
-  
+
   // strip leading spaces
   input.erase(0, input.find_first_not_of(" \t"));
 
@@ -53,7 +53,7 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
     PetscPrintf(m_com, "PISM ERROR: invalid calendar name: %s\n", m_calendar_string.c_str());
     PISMEnd();
   }
-  
+
   string ref_date = m_config.get_string("reference_date");
 
   int errcode = parse_date(ref_date, NULL);
@@ -76,73 +76,63 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
 PISMTime_Calendar::~PISMTime_Calendar() {
 }
 
+PetscErrorCode PISMTime_Calendar::process_ys(double &result, bool &flag) {
+  PetscErrorCode ierr;
+  string tmp;
+  result = m_config.get("start_year", m_unit_system, "years", "seconds");
+
+  ierr = PISMOptionsString("-ys", "Start date", tmp, flag); CHKERRQ(ierr);
+
+  if (flag) {
+    ierr = parse_date(tmp, &result);
+    if (ierr != 0) {
+      PetscPrintf(m_com, "PISM ERROR: processing -ys option failed.\n");
+      PISMEnd();
+    }
+  }
+
+  return 0;
+}
+
+PetscErrorCode PISMTime_Calendar::process_y(double &result, bool &flag) {
+  PetscErrorCode ierr;
+  int tmp;
+  result = m_config.get("run_length_years", m_unit_system, "years", "seconds");
+
+  ierr = PISMOptionsInt("-y", "Run length, in years (integer)", tmp, flag); CHKERRQ(ierr);
+
+  if (flag) {
+    result = convert(tmp, m_unit_system, "years", "seconds");
+  }
+
+  return 0;
+}
+
+PetscErrorCode PISMTime_Calendar::process_ye(double &result, bool &flag) {
+  PetscErrorCode ierr;
+  string tmp;
+  result = (m_config.get("start_year", m_unit_system, "years", "seconds") +
+            m_config.get("run_length_years", m_unit_system, "years", "seconds"));
+
+  ierr = PISMOptionsString("-ye", "Start date", tmp, flag); CHKERRQ(ierr);
+
+  if (flag) {
+    ierr = parse_date(tmp, &result);
+    if (ierr != 0) {
+      PetscPrintf(m_com, "PISM ERROR: processing -ye option failed.\n");
+      PISMEnd();
+    }
+  }
+
+  return 0;
+}
+
+
 PetscErrorCode PISMTime_Calendar::init() {
   PetscErrorCode ierr;
   string time_file;
-  bool flag, ys_set, ye_set, y_set;
+  bool flag;
 
-  string T_start, T_end;
-  int y_length;
-
-  ierr = PetscOptionsBegin(m_com, "", "PISM model time options (calendar-based)", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-ys", "Start date", T_start, ys_set); CHKERRQ(ierr); 
-    ierr = PISMOptionsString("-ye", "End date",   T_end,   ye_set); CHKERRQ(ierr); 
-    ierr = PISMOptionsInt("-y",     "Run length, in years (integer)", y_length, y_set); CHKERRQ(ierr); 
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  double Ts, Te;
-
-  if (ys_set) {
-    ierr = parse_date(T_start, &Ts);
-    if (ierr != 0) {
-      PetscPrintf(m_com, "PISM ERROR: -ys %s is invalid.\n", T_start.c_str());
-      PISMEnd();
-    }
-  }
-
-  if (ye_set) {
-    ierr = parse_date(T_end, &Te);
-    if (ierr != 0) {
-      PetscPrintf(m_com, "PISM ERROR: -ye %s is invalid.\n", T_end.c_str());
-      PISMEnd();
-    }
-  }
-
-  if (ys_set && ye_set && y_set) {
-    ierr = PetscPrintf(m_com, "PISM ERROR: all of -y, -ys, -ye are set. Exiting...\n");
-    CHKERRQ(ierr);
-    PISMEnd();
-  }
-
-  if (y_set && ye_set) {
-    ierr = PetscPrintf(m_com, "PISM ERROR: using -y and -ye together is not allowed. Exiting...\n"); CHKERRQ(ierr);
-    PISMEnd();
-  }
-
-  // Set the start year if -ys is set, use the default otherwise.
-  if (ys_set == true) {
-    m_run_start = Ts;
-  }
-
-  m_time_in_seconds = m_run_start;
-
-  if (ye_set == true) {
-    if (Te < m_time_in_seconds) {
-      ierr = PetscPrintf(m_com,
-                         "PISM ERROR: -ye (%s) is before -ys (%s) (or input file time, or default).\n"
-                         "PISM cannot run backward in time.\n",
-			 T_end.c_str(), date(m_run_start).c_str()); CHKERRQ(ierr);
-      PISMEnd();
-    }
-    m_run_end = Te;
-  } else if (y_set == true) {
-    m_run_end = increment_date(m_run_start, y_length);
-  } else {
-    m_run_end = increment_date(m_run_start, m_config.get("run_length_years"));
-  }
-  
   ierr = PISMOptionsString("-time_file", "Reads time information from a file",
                            time_file, flag); CHKERRQ(ierr);
 
@@ -154,7 +144,6 @@ PetscErrorCode PISMTime_Calendar::init() {
     ierr = ignore_option(m_com, "-y"); CHKERRQ(ierr);
     ierr = ignore_option(m_com, "-ys"); CHKERRQ(ierr);
     ierr = ignore_option(m_com, "-ye"); CHKERRQ(ierr);
-    ierr = ignore_option(m_com, "-reference_date"); CHKERRQ(ierr);
 
     ierr = init_from_file(time_file); CHKERRQ(ierr);
   }
@@ -211,8 +200,13 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
                   time_units.c_str());
       PISMEnd();
     }
+  }
 
-    m_reference_date = time_units.substr(position + 6); // 6 is the length of "since "
+  ierr = m_time_units.parse(m_unit_system, time_units);
+  if (ierr != 0) {
+    PetscPrintf(m_com, "PISM ERROR: time units '%s' are invalid.\n",
+                time_units.c_str());
+    PISMEnd();
   }
 
   // set the time
@@ -343,7 +337,7 @@ double PISMTime_Calendar::increment_date(double T, int years) {
                 year + years, month, day);
     day -= 1;
   }
-  
+
   // Get the time in seconds corresponding to the new date.
   utInvCalendar2_cal(year + years, month, day,
                      hour, minute, second, m_time_units.get(), &result,
@@ -465,7 +459,7 @@ PetscErrorCode PISMTime_Calendar::compute_times_monthly(vector<double> &result) 
 
     if (time > m_run_end)
       break;
-    
+
     if (time >= m_run_start && time <= m_run_end)
       result.push_back(time);
 
@@ -475,7 +469,7 @@ PetscErrorCode PISMTime_Calendar::compute_times_monthly(vector<double> &result) 
     } else {
       month += 1;
     }
-    
+
   }
 
   return 0;
@@ -506,7 +500,7 @@ PetscErrorCode PISMTime_Calendar::compute_times_yearly(vector<double> &result) {
 
     if (time > m_run_end)
       break;
-    
+
     if (time >= m_run_start && time <= m_run_end)
       result.push_back(time);
 
@@ -537,4 +531,3 @@ PetscErrorCode PISMTime_Calendar::compute_times(double time_start, double delta,
 
   return 1;
 }
-

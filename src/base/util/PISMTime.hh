@@ -48,9 +48,6 @@ public:
 
   void set_end(double new_end);
 
-  //! \brief Sets the reference date string.
-  void set_reference_date(string str);
-
   //! \brief Advance by delta_t seconds.
   void step(double delta_t);
 
@@ -114,16 +111,18 @@ public:
   //! \brief Returns current time, in years. Only for reporting.
   virtual string date();
 
-  //! \brief All times are interpreted as "time since the reference time", even
-  //! if this implementation does not take advantage of that.
+  //! Date corresponding to the beginning of the run.
   virtual string start_date();
 
-  //! \brief All times are interpreted as "time since the reference time", even
-  //! if this implementation does not take advantage of that.
+  //! Date corresponding to the end of the run.
   virtual string end_date();
 
 protected:
   PetscErrorCode parse_list(string spec, vector<double> &result);
+
+  virtual PetscErrorCode process_ys(double &result, bool &flag);
+  virtual PetscErrorCode process_y(double &result, bool &flag);
+  virtual PetscErrorCode process_ye(double &result, bool &flag);
 
   virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
                                        string keyword,
@@ -146,8 +145,7 @@ protected:
   double m_time_in_seconds, //!< current time, in seconds since the reference time
     m_run_start,                  //!< run start time, in seconds since the reference time
     m_run_end;                    //!< run end tim, in seconds since the reference time
-  string m_reference_date,     //!< CF reference date; used in the units string
-    m_calendar_string;         //!< CF calendard string
+  string m_calendar_string;       //!< CF calendar string
 };
 
 #endif /* _PISMTIME_H_ */

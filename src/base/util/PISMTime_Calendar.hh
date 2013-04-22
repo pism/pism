@@ -60,6 +60,10 @@ protected:
                                        string keyword,
                                        vector<double> &result);
 
+  virtual PetscErrorCode process_ys(double &result, bool &flag);
+  virtual PetscErrorCode process_y(double &result, bool &flag);
+  virtual PetscErrorCode process_ye(double &result, bool &flag);
+
   virtual PetscErrorCode parse_date(string spec, double *result);
 
   PetscErrorCode compute_times_monthly(vector<double> &result);

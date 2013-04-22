@@ -26,7 +26,6 @@ PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem unit
 
   m_secpera = convert(1.0, m_unit_system, "year", "seconds");
 
-  m_reference_date = m_config.get_string("reference_date");
   m_calendar_string = "none";  // No calendar
 
   m_run_start = m_config.get("start_year", m_unit_system, "years", "seconds");
@@ -73,17 +72,12 @@ double PISMTime::years_to_seconds(double T) {
 }
 
 string PISMTime::CF_units_string() {
-  return string("seconds since ") + m_reference_date;
+  return string("seconds since ") + m_config.get_string("reference_date");
 }
 
 //! \brief Returns the calendar string.
 string PISMTime::calendar() {
   return m_calendar_string;
-}
-
-//! \brief Sets the reference date string.
-void PISMTime::set_reference_date(string str) {
-  m_reference_date = str;
 }
 
 void PISMTime::step(double delta_t) {
@@ -100,23 +94,60 @@ string PISMTime::units_string() {
   return "seconds";
 }
 
+/**
+ * Returns `true` if PISM should use the reference date in units
+ * strings of time variables read from input files.
+ *
+ * Using the reference date only makes sense if PISM's time management
+ * uses a reference date, i.e. in runs using a calendar.
+ */
 bool PISMTime::use_reference_date() {
   return false;
 }
 
+PetscErrorCode PISMTime::process_ys(double &result, bool &flag) {
+  PetscErrorCode ierr;
+  result = m_config.get("start_year");
+
+  ierr = PISMOptionsReal("-ys", "Start year", result, flag); CHKERRQ(ierr);
+
+  result = convert(result, m_unit_system, "years", "seconds");
+
+  return 0;
+}
+
+PetscErrorCode PISMTime::process_y(double &result, bool &flag) {
+  PetscErrorCode ierr;
+  result = m_config.get("run_length_years");
+
+  ierr = PISMOptionsReal("-y", "Run length, in years", result, flag); CHKERRQ(ierr);
+
+  result = convert(result, m_unit_system, "years", "seconds");
+
+  return 0;
+}
+
+PetscErrorCode PISMTime::process_ye(double &result, bool &flag) {
+  PetscErrorCode ierr;
+  result = m_config.get("start_year") + m_config.get("run_length_years");
+
+  ierr = PISMOptionsReal("-ye", "End year", result, flag); CHKERRQ(ierr);
+
+  result = convert(result, m_unit_system, "years", "seconds");
+
+  return 0;
+}
 
 PetscErrorCode PISMTime::init() {
   PetscErrorCode ierr;
   bool y_set, ys_set, ye_set;
-  PetscReal y = m_config.get("run_length_years"),
-    ys = m_config.get("start_year"),
-    ye = ys + y;
+  PetscReal y_seconds, ys_seconds, ye_seconds;
 
   ierr = PetscOptionsBegin(m_com, "", "PISM model time options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsReal("-ys", "Start year", ys, ys_set); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-ye", "End year", ye, ye_set); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-y", "Run length, in years", y, y_set); CHKERRQ(ierr);
+    ierr = process_y(y_seconds, y_set); CHKERRQ(ierr);
+    ierr = process_ys(ys_seconds, ys_set); CHKERRQ(ierr);
+    ierr = process_ye(ye_seconds, ye_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -133,22 +164,23 @@ PetscErrorCode PISMTime::init() {
 
   // Set the start year if -ys is set, use the default otherwise.
   if (ys_set == true) {
-    m_run_start = ys * secpera;
+    m_run_start = ys_seconds;
   }
 
   m_time_in_seconds = m_run_start;
 
   if (ye_set == true) {
-    if (ye < seconds_to_years(m_time_in_seconds)) {
+    if (ye_seconds < m_time_in_seconds) {
       ierr = PetscPrintf(m_com,
-			"PISM ERROR: -ye (%3.3f) is less than -ys (%3.3f) (or input file year or default).\n"
-			"PISM cannot run backward in time.\n",
-			 ye, seconds_to_years(m_run_start)); CHKERRQ(ierr);
+                        "PISM ERROR: -ye (%s) is less than -ys (%s) (or input file year or default).\n"
+                        "PISM cannot run backward in time.\n",
+                         date(ye_seconds).c_str(),
+                         date(m_run_start).c_str()); CHKERRQ(ierr);
       PISMEnd();
     }
-    m_run_end = ye * secpera;
+    m_run_end = ye_seconds;
   } else if (y_set == true) {
-    m_run_end = m_run_start + y * secpera;
+    m_run_end = m_run_start + y_seconds;
   } else {
     m_run_end = m_run_start + m_config.get("run_length_years", m_unit_system, "years", "seconds");
   }
@@ -206,7 +238,7 @@ double PISMTime::increment_date(double T, int years) {
 
 PetscErrorCode PISMTime::parse_times(string spec,
                                      vector<double> &result) {
-  
+
   if (spec.find(',') != string::npos) {
     // a list will always contain a comma because at least two numbers are
     // needed to specify reporting intervals
@@ -312,11 +344,12 @@ int PISMTime::parse_interval_length(string spec, string &keyword, double *result
     cv_converter *c = ut_get_converter(tmp.get(), one.get());
     assert(c != NULL);
 
-    if (result)
+    if (result) {
       *result = cv_convert_double(c, 1.0);
+      *result = convert(*result, m_unit_system, "years", "seconds");
+    }
 
     cv_free(c);
-
   } else {
     PetscPrintf(m_com, "PISM ERROR: invalid interval length: '%s'\n",
                 spec.c_str());
@@ -368,7 +401,7 @@ PetscErrorCode PISMTime::parse_range(string spec, vector<double> &result) {
     errcode = parse_date(parts[2], &time_end);
     if (errcode != 0)
       return 1;
-    
+
   }
 
   return compute_times(time_start, delta, time_end, keyword, result);
@@ -395,13 +428,13 @@ PetscErrorCode PISMTime::parse_date(string spec, double *result) {
   }
 
   if (result)
-    *result = d;
+    *result = convert(d, m_unit_system, "years", "seconds");
 
   return 0;
 }
 
 
-/** 
+/**
  * Compute times corresponding to a "simple" time range.
  *
  * This is a time range with a fixed step ("hourly" is an example).
