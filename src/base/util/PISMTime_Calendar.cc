@@ -133,6 +133,8 @@ PetscErrorCode PISMTime_Calendar::init() {
   string time_file;
   bool flag;
 
+  ierr = PISMTime::init(); CHKERRQ(ierr);
+
   ierr = PISMOptionsString("-time_file", "Reads time information from a file",
                            time_file, flag); CHKERRQ(ierr);
 
