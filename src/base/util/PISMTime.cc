@@ -309,13 +309,6 @@ int PISMTime::parse_interval_length(string spec, string &keyword, double *result
     return 0;
   }
 
-  // do not allow intervals specified in terms of "fuzzy" units
-  if (spec.find("year") != string::npos || spec.find("month") != string::npos) {
-    PetscPrintf(m_com, "PISM ERROR: invalid interval length: '%s'\n",
-                spec.c_str());
-    return 1;
-  }
-
   PISMUnit tmp, seconds, one;
   assert(seconds.parse(m_unit_system, "seconds") == 0);
   assert(one.parse(m_unit_system, "1") == 0);
@@ -383,25 +376,30 @@ PetscErrorCode PISMTime::parse_range(string spec, vector<double> &result) {
     while(getline(arg, tmp, ':'))
       parts.push_back(tmp);
 
-    if (parts.size() != 3) {
+    if (parts.size() == 1) {
+      errcode = parse_interval_length(parts[0], keyword, &delta);
+      if (errcode != 0)
+        return 1;
+
+    } else if (parts.size() == 3) {
+      errcode = parse_date(parts[0], &time_start);
+      if (errcode != 0)
+        return 1;
+
+      errcode = parse_interval_length(parts[1], keyword, &delta);
+      if (errcode != 0)
+        return 1;
+
+      errcode = parse_date(parts[2], &time_end);
+      if (errcode != 0)
+        return 1;
+
+    } else {
       PetscPrintf(m_com,
                   "PISM ERROR: A time range must consist of exactly 3 parts, separated by colons. (Got '%s'.)\n",
                   spec.c_str());
       return 1;
     }
-
-    errcode = parse_date(parts[0], &time_start);
-    if (errcode != 0)
-      return 1;
-
-    errcode = parse_interval_length(parts[1], keyword, &delta);
-    if (errcode != 0)
-      return 1;
-
-    errcode = parse_date(parts[2], &time_end);
-    if (errcode != 0)
-      return 1;
-
   }
 
   return compute_times(time_start, delta, time_end, keyword, result);

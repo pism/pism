@@ -237,25 +237,31 @@ for all the options corresponding to this feature;
 tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3}
 list all the variable choices.
 
-The list of available diagnostic quantities depends on the model setup. For
-example, a run with only one vertical grid level in the bedrock thermal layer
-will not be able to save \texttt{litho_temp}, an SIA-only run does not use a
-basal yield stress model and so will not provide \texttt{tauc}, etc. To see
-which quantities are available in a particular setup, use the
-\intextoption{list_diagnostics} option, which prints the list of diagnostics
-and stops.
+Note that options \intextoption{extra_times},
+\intextoption{save_times}, \intextoption{ts_times} take \emph{dates}
+if a non-trivial calendar is selected. For example,
+\begin{verbatim}
+pismr ... -extra_times 10       # every 10 years
+pismr ... -extra_times 2days    # every 2 days
+pismr ... -calendar gregorian -extra_times 1-1-1:daily:11-1-1 # daily for 10 years
+pismr ... -calendar gregorian -extra_times daily -ys 1-1-1 -ye 11-1-1
+pismr ... -calendar gregorian -extra_times 2hours -ys 1-1-1 -ye 1-2-1
+\end{verbatim}
 
-In addition to specifying a constant step in \texttt{-extra_times a:step:b} one can save every day, month, or every year by using \texttt{daily}, \texttt{monthly} or \texttt{yearly} instead of a number; for example
+The step in the range specification can have the form \texttt{Nunit},
+for example \texttt{5days}. Units based on ``months'' and ``years''
+are not supported if a non-trivial calendar is selected.
+
+In addition to specifying a constant step in \texttt{-extra_times a:step:b} one can save every hour, day, month, or every year by using \texttt{hourly}, \texttt{daily}, \texttt{monthly} or \texttt{yearly} instead of a number; for example
 \begin{verbatim}
 $ pismr -i foo.nc -y 100 -o output.nc -extra_file extras.nc \
         -extra_times 0:monthly:100 -extra_vars dHdt
 \end{verbatim} %$
-will save the rate of change of the ice thickness every month for 100 years.
-PISM uses the Gregorian calendar to compute lengths of months and years. In
-this case the \emph{reference date} mentioned in section \ref{sec:i-format}
-\textbf{is} used. Use the \intextoption{reference_date} option or the
-configuration parameter with the same name to set it. (And see \emph{PISM's
-  climate forcing components} for more details.)
+will save the rate of change of the ice thickness every month for 100
+years. With \texttt{-calendar none} (the default), ``monthly'' means
+``every $\frac 1 {12}$ of the year'', and ``yearly'' is ``every
+$3.14\dots\times10^7$ seconds, otherwise PISM uses month lengths
+computed using the selected calendar.
 
 It is frequently desirable to save diagnostic quantities at regular intervals for the whole duration of the run; options \intextoption{extra_times}, \intextoption{ts_times}, and \intextoption{save_times} provide a shortcut. For example, use \texttt{-extra_times yearly} to save at the end of every year.
 
@@ -270,6 +276,14 @@ will save ice thickness at the end of every month while running PISM for the dur
 Times given using \texttt{-extra_times} are interpreted as endpoints of reporting intervals. This implies that \texttt{0:1:10} will produce 10 records and \emph{not} 11.
 
 If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc\~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-extra_append}.
+
+The list of available diagnostic quantities depends on the model setup. For
+example, a run with only one vertical grid level in the bedrock thermal layer
+will not be able to save \texttt{litho_temp}, an SIA-only run does not use a
+basal yield stress model and so will not provide \texttt{tauc}, etc. To see
+which quantities are available in a particular setup, use the
+\intextoption{list_diagnostics} option, which prints the list of diagnostics
+and stops.
 
 Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
 \emph{exactly} at the times requested (instead of using linear interpolation).

@@ -88,7 +88,110 @@ The following command-line options control PISM time:
 \\[2em]
 \noindent The default value for the end year is the start year (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.
 
-Most of PISM (and its ice dynamics core in particular) only needs to know the length of the current time-step. This explains the unsophisticated interface described here. Careful application of climate data and model validation requires well-organized management of model time, though. Please see the \emph{PISM's climate forcing components} manual for an alternative, calendar-aware, time-management interface.
+Most of PISM (and its ice dynamics core in particular) only needs to know the length of the current time-step. One can select a calandar for a more precise control of the model time, though; see below.
+
+\subsubsection{Calendars}
+\label{sec:calendars}
+\index{Time!calendars}
+
+Internally PISM stores time in ``seconds since a specified moment'' and
+generally does not use or need a calendar; seconds are part of SI units.
+We refer to PISM internal time as \emph{model time}.
+
+However, runs for specific temporal periods (e.g.~``the 18th-century'' or
+``1989--2010'') generally requires specific knowledge of lengths of months
+and years, both to use climate data properly and to facilitate model validation.
+This specific knowledge is recording in a ``calendar'', a concept that
+is part of the \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html}{CF Metadata Conventions}.
+You can choose a calendar by setting the \config{calendar} configuration
+parameter or the command-line options described below.
+
+PISM uses
+\href{http://meteora.ucsd.edu/~pierce/calcalcs/index.html}{CalCalcs}
+by David~W.~Pierce to perform calendric computations. This lets us
+support all the calendars
+\href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#calendar}{defined}
+by the CF Metadata Conventions document except for the
+\texttt{366_day} (\texttt{all_leap}) calendar.
+
+\begin{table}
+  \centering
+  \begin{tabular}{lp{0.7\linewidth}}
+    \texttt{gregorian} or \texttt{standard} & Mixed Gregorian/Julian calendar used today.\\
+    \texttt{proleptic_gregorian} & Gregorian calendar extended to dates before 1582-10-15.\\
+    \texttt{noleap} or \texttt{365_day} & Calendar with fixed-length 365-day years\\
+    \texttt{360_day} & Calendar with fixed-length 360-day years divided into 30-day months\\
+    \texttt{julian} & Julian calendar \\
+    \texttt{none} & no calendar\\
+  \end{tabular}
+  \caption{Calendars supported by PISM. Please see \href{http://meteora.ucsd.edu/~pierce/calcalcs/calendars.html}{CalCalcs documentation} for details.}
+  \label{tab:calendars}
+\end{table}
+
+By default PISM does not use a calendar. This is appropriate for runs that do not require precise application of forcing data or reporting on particular dates (paleo-climate runs, for example).
+
+In this mode PISM ignores the reference date in time unit specifications
+(such as ``\texttt{days since 1969-7-20}''), though the value set using
+\config{reference_date} configuration parameter is saved in
+output files.  Time units in PISM's output files always contain a reference date
+because it is required by the CF metadata conventions.
+
+Selecting a calendar using the \config{calendar} configuration
+parameter or the \intextoption{-calendar} command-line option enables calendar-based time management.
+
+The implications are:
+\begin{itemize}
+\item PISM uses the \texttt{units} attribute of coordinate variables
+  \emph{literally} (including the reference date) in unit conversions. Please
+  make sure that the \variable{time} variable in all forcing files has the
+  units attribute such as ``\texttt{days since 2012-1-1}''. PISM will stop with
+  an error message if a time variable does not have a reference date in its
+  unit specification.
+\item It is important to use units that are a fixed multiple of ``seconds'',
+  such as ``\texttt{minutes since 1989-1-1}'' or ``\texttt{days since
+    1999-12-31}'' and avoid ``months'' and ``years''. (PISM uses UDUNITS-2 to
+  convert units, and in UDUNITS one month is always interpreted as
+  $\frac{1}{12}\cdot 365.242198781$ days.) Please see the 
+  \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#time-coordinate}{CF
+    Conventions} document for details.
+\item PISM uses dates in standard output:
+\begin{verbatim}
+...
+   time interval (length)   [2012-01-01, 2021-12-31]  (10.000 years)
+...
+S 2012-05-26:  0.00011    0.6306   0.00000000           0.00000
+$v$Eh m (dt=0.10000)
+S 2012-07-01:  0.00014    0.6306   0.00000000           0.00000
+\end{verbatim}
+\end{itemize}
+
+Just like in the no-calendar mode, run length, run start and run end
+times are specified using \intextoption{y}, \intextoption{ys} and
+\intextoption{ye} command-line options, respectively. Arguments of
+these options are interpreted in a slightly different manner, though:
+\begin{itemize}
+\item the run length option \texttt{-y} takes an \emph{integer}
+  argument, interpreted as the number of \emph{calendar} years
+\item options \texttt{-ys} and \texttt{-ye} take \emph{dates} as arguments.
+\end{itemize}
+
+For example, either of the following commands sets up a run covering the 21$^{st}$ century:
+\begin{verbatim}
+$ pismr -calendar gregorian -ys 2001-1-1 -y 100 ...
+$ pismr -calendar standard -ys 2001-1-1 -ye 2101-1-1 ...
+\end{verbatim}
+(These option combinations are equivalent.)
+
+It is also possible to run PISM for the duration of the available forcing data using the \fileopt{time_file} option.
+This command
+\begin{verbatim}
+$ pismr -calendar gregorian -time_file forcing.nc
+\end{verbatim} %$
+will extract the reference date and run length from \texttt{forcing.nc}, respecting time bounds.
+
+It is also possible to save spatial and/or scalar time-series daily, monthly or
+yearly (using the calendric computations). See sections~\ref{sec:saving-time-series}
+and~\ref{sec:saving-spat-vari}.
 
 \subsection{Diagnostic computations}
 \label{sec:diagnostic-computations}

@@ -135,7 +135,7 @@ protected:
 
   virtual PetscErrorCode parse_date(string spec, double *result);
 
-  PetscErrorCode parse_interval_length(string spec, string &keyword, double *result);
+  virtual PetscErrorCode parse_interval_length(string spec, string &keyword, double *result);
 
   MPI_Comm m_com;
   const NCConfigVariable &m_config;

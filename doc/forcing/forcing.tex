@@ -166,100 +166,13 @@ to use a modifier. Model~components and modifiers are chained as in Figure
 \optsection{Managing model time}
 \index{Time}
 
-Most of PISM only needs to know  how long the current time step is. The climate
-forcing  code,  on  the other  hand,  uses  time in a precise manner
-to provide the correct values at the right time.  For example of the issues related to time
-and calendars, this section describes how to control model time to ensure
-that the February mass balance is used for 28 days and not $365/12 = 30.4167$ days.
+Most of PISM only needs to know how long the current time step is. The
+climate forcing (reporting) code, on the other hand, uses time in a
+precise manner to provide (and report) the correct values at the right
+time. For example: the February mass balance should be used for 28
+days (except during leap years) and not $365/12 = 30.4167$ days.
 
 
-\subsection{Calendars}
-\label{sec:calendars}
-\index{Time!calendars}
-
-Internally PISM stores time in ``seconds since a specified moment'' and
-generally does not use or need a calendar; seconds are part of SI units.
-We refer to PISM internal time as \emph{model time}.
-
-However, runs for specific temporal periods (e.g.~``the 18th-century'' or
-``1989--2010'') generally requires specific knowledge of lengths of months
-and years, both to use climate data properly and to facilitate model validation.
-This specific knowledge is recording in a ``calendar'', a concept that
-is part of the \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html}{CF Metadata Conventions}.
-You can choose a calendar by setting the \config{calendar} configuration
-parameter or the command-line options described below.
-
-\subsubsection{\texttt{365_day} calendar}
-\label{sec:365-day}
-\index{Time!calendars!365-day}
-
-The default ``calendar'' (corresponding to the \txtopt{calendar}{\texttt{365_day}} option) is used in all PISM runs that do not require precise application of forcing data or reporting on particular dates (paleo-climate runs, for example).
-
-In this mode PISM ignores the reference date in time unit specifications
-(such as ``\texttt{days since 1969-7-20}''), though the value set using
-\config{reference_date} configuration parameter (or the associated option) is saved in
-output files.  Time units in PISM's output files always contain a reference date
-because it is required by the CF metadata conventions.
-
-\subsubsection{\texttt{gregorian} calendar}
-\label{sec:gregorian}
-\index{Time!calendars!Gregorian}
-
-The command-line option \txtopt{calendar}{\texttt{gregorian}} enables the Gregorian
-calendar mode.  The implications are:
-\begin{itemize}
-\item PISM uses the \texttt{units} attribute of coordinate variables
-  \emph{literally} (including the reference date) in unit conversions. Please
-  make sure that the \variable{time} variable in all forcing files has the
-  units attribute such as ``\texttt{days since 2012-1-1}''. PISM will stop with
-  an error message if a time variable does not have a reference date in its
-  unit specification.
-\item It is important to use units that are a fixed multiple of ``seconds'',
-  such as ``\texttt{minutes since 1989-1-1}'' or ``\texttt{days since
-    1999-12-31}'' and avoid ``months'' and ``years''. (PISM uses UDUNITS-2 to
-  convert units, and in UDUNITS one month is always interpreted as
-  $\frac{1}{12}\cdot 365.242198781$ days.) Please see the 
-  \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#time-coordinate}{CF
-    Conventions} document for details.
-\item PISM uses dates in standard output:
-\begin{verbatim}
-...
-   time interval (length)   [2012-01-01, 2021-12-31]  (10.000 years)
-...
-S 2012-05-26:  0.00011    0.6306   0.00000000           0.00000
-$v$Eh m (dt=0.10000)
-S 2012-07-01:  0.00014    0.6306   0.00000000           0.00000
-\end{verbatim}
-\end{itemize}
-
-Just like in the \texttt{365_day} mode, run length, run start and run end times
-are specified using \intextoption{y}, \intextoption{ys} and \intextoption{ye}
-command-line options, respectively. Arguments of these options use ``model
-time'' and \textbf{not} calendar years.
-
-Here \texttt{-y 1} has the meaning of $3.14...\cdot 10^{7}$ seconds (one
-``tropical year''). Similarly, \texttt{-ye 2001} means ``stop after reaching
-model year $2001$'', not ``stop at the end of the XX century''.
-
-Use the \mbox{\intextoption{reference_date} \texttt{YYYY-MM-DD}} command-line option
-or the \config{reference_date} configuration parameter to set the reference
-date, i.e. the date corresponding to model time $0$. For example, to run for
-$20$ years starting on January 1, $1989$, and override time read from an input
-file, do
-\begin{verbatim}
-$ pismr -calendar gregorian -reference_date 1989-1-1 -ys 0 -ye 20
-\end{verbatim} %$
-
-It is also possible to run PISM for the duration of the available forcing data using the \fileopt{time_file} option.
-This command
-\begin{verbatim}
-$ pismr -calendar gregorian -time_file forcing.nc
-\end{verbatim} %$
-will extract the reference date and run length from \texttt{forcing.nc}, respecting time bounds.
-
-It is also possible to save spatial and/or scalar time-series daily, monthly or
-yearly (using the Gregorian calendar). See sections~\ref*{userman-sec:saving-time-series}
-and~\ref*{userman-sec:saving-spat-vari} of the User's Manual.
 
 
 \subsection{Periodic climate data}
@@ -291,15 +204,7 @@ at the beginning of the model year 10, do
 \end{verbatim}
 
 Note that the reference year is given in \emph{model years}, not calendar
-years. We find that it is usually possible to avoid confusion by starting runs
-corresponding to specific historical periods at model year zero and using the
-\intextoption{reference_date} option to tie the run to a particular date. For instance,
-\begin{verbatim}
--surface given -surface_given_period 20 -surface_given_file forcing.nc \
--ys 0 -reference_date 1989-1-1
-\end{verbatim}
-will use climate data as periodic with the period of 20 years starting on
-January 1, 1989. Please see section~\ref{sec:calendars} for more details.
+years.
 
 The \variable{time} variable  in a forcing file that is to  be used as periodic
 should start at $0$. (In other words, time in a file with periodic forcing data

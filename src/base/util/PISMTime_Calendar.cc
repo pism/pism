@@ -39,18 +39,27 @@ static inline string string_strip(string input) {
   return input;
 }
 
+/*!
+
+  See http://meteora.ucsd.edu/~pierce/calcalcs/index.html and
+  http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#calendar
+
+  for more details about supported calendars.
+ */
 PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
                                      PISMUnitSystem units_system)
   : PISMTime(c, conf, units_system) {
   m_calendar_string = m_config.get_string("calendar");
+  // Calendar names from the CF Conventions document (except the
+  // 366_day (all_leap)):
   if ((m_calendar_string == "standard"            ||
-       m_calendar_string == "proleptic_Julian"    ||
-       m_calendar_string == "proleptic_Gregorian" ||
+       m_calendar_string == "gregorian"           ||
+       m_calendar_string == "proleptic_gregorian" ||
        m_calendar_string == "noleap"              ||
        m_calendar_string == "365_day"             ||
-       m_calendar_string == "no_leap"             ||
+       m_calendar_string == "julian"              ||
        m_calendar_string == "360_day") == false) {
-    PetscPrintf(m_com, "PISM ERROR: invalid calendar name: %s\n", m_calendar_string.c_str());
+    PetscPrintf(m_com, "PISM ERROR: unsupported calendar: %s\n", m_calendar_string.c_str());
     PISMEnd();
   }
 
@@ -179,7 +188,7 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
                 time_name.c_str(), filename.c_str());
     PISMEnd();
   }
-  ierr = nc.get_att_text(time_name, "units", time_units); CHKERRQ(ierr);
+  ierr = nc.get_att_text(time_name, "units",  time_units);       CHKERRQ(ierr);
   ierr = nc.get_att_text(time_name, "bounds", time_bounds_name); CHKERRQ(ierr);
 
   if (time_bounds_name.empty() == false) {
@@ -188,13 +197,13 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
     if (exists == false) {
       ierr = nc.close(); CHKERRQ(ierr);
 
-      PetscPrintf(m_com, "PISM ERROR: '%s' variable is not present in '%s'.\n",
+      PetscPrintf(m_com, "PISM ERROR: variable '%s' is not present in '%s'.\n",
                   time_bounds_name.c_str(), filename.c_str());
       PISMEnd();
     }
   }
 
-  // set the reference date:
+  // Check if the time_file has a reference date set:
   {
     size_t position = time_units.find("since");
     if (position == string::npos) {
@@ -204,28 +213,19 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
     }
   }
 
-  ierr = m_time_units.parse(m_unit_system, time_units);
-  if (ierr != 0) {
-    PetscPrintf(m_com, "PISM ERROR: time units '%s' are invalid.\n",
-                time_units.c_str());
-    PISMEnd();
-  }
-
   // set the time
   if (time_bounds_name.empty() == false) {
     // use the time bounds
     bounds.init(time_bounds_name, time_name, m_com, rank);
-    bounds.set_units(m_unit_system, "seconds");
+    bounds.set_units(m_unit_system, m_time_units.format());
 
-    // do *not* use the reference date
-    ierr = bounds.read(nc, false, time); CHKERRQ(ierr);
+    ierr = bounds.read(nc, true, time); CHKERRQ(ierr);
   } else {
     // use the time axis
     time_axis.init(time_name, time_name, m_com, rank);
-    time_axis.set_units(m_unit_system, "seconds");
+    time_axis.set_units(m_unit_system, m_time_units.format());
 
-    // do *not* use the reference date
-    ierr = time_axis.read(nc, false, time); CHKERRQ(ierr);
+    ierr = time_axis.read(nc, true, time); CHKERRQ(ierr);
   }
 
   m_run_start = time.front();
@@ -435,6 +435,25 @@ PetscErrorCode PISMTime_Calendar::parse_date(string spec, double *result) {
 
   return 1;
 }
+
+int PISMTime_Calendar::parse_interval_length(string spec, string &keyword, double *result) {
+
+  int ierr;
+
+  ierr = PISMTime::parse_interval_length(spec, keyword, result);
+  if (ierr != 0)
+    return 1;
+
+  // do not allow intervals specified in terms of "fuzzy" units
+  if (spec.find("year") != string::npos || spec.find("month") != string::npos) {
+    PetscPrintf(m_com, "PISM ERROR: interval length '%s' with the calendar '%s' is not supported.\n",
+                spec.c_str(), m_calendar_string.c_str());
+    return 1;
+  }
+
+  return 0;
+}
+
 
 PetscErrorCode PISMTime_Calendar::compute_times_monthly(vector<double> &result) {
   int errcode;

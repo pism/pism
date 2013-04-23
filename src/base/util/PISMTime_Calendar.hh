@@ -66,6 +66,8 @@ protected:
 
   virtual PetscErrorCode parse_date(string spec, double *result);
 
+  virtual PetscErrorCode parse_interval_length(string spec, string &keyword, double *result);
+
   PetscErrorCode compute_times_monthly(vector<double> &result);
 
   PetscErrorCode compute_times_yearly(vector<double> &result);
