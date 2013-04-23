@@ -31,6 +31,8 @@ PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem unit
   m_run_start = m_config.get("start_year", m_unit_system, "years", "seconds");
   m_run_end   = m_run_start + m_config.get("run_length_years", m_unit_system, "years", "seconds");
 
+  m_time_units.parse(m_unit_system, "seconds");
+
   m_time_in_seconds = m_run_start;
 }
 
@@ -72,7 +74,7 @@ double PISMTime::years_to_seconds(double T) {
 }
 
 string PISMTime::CF_units_string() {
-  return string("seconds since ") + m_config.get_string("reference_date");
+  return m_time_units.format();
 }
 
 //! \brief Returns the calendar string.
@@ -263,12 +265,12 @@ PetscErrorCode PISMTime::parse_list(string spec, vector<double> &result) {
 
   result.clear();
   for (unsigned int k = 0; k < parts.size(); ++k) {
-    double date;
-    int errcode = parse_date(parts[k], &date);
+    double d;
+    int errcode = parse_date(parts[k], &d);
     if (errcode != 0)
       return 1;
 
-    result.push_back(date);
+    result.push_back(d);
   }
 
   return 0;
@@ -310,8 +312,11 @@ int PISMTime::parse_interval_length(string spec, string &keyword, double *result
   }
 
   PISMUnit tmp, seconds, one;
-  assert(seconds.parse(m_unit_system, "seconds") == 0);
-  assert(one.parse(m_unit_system, "1") == 0);
+  int errcode;
+  errcode = seconds.parse(m_unit_system, "seconds");
+  assert(errcode == 0);
+  errcode = one.parse(m_unit_system, "1");
+  assert(errcode == 0);
 
   // check if the interval spec is a valid unit spec:
   if (tmp.parse(m_unit_system, spec) != 0) {
@@ -472,9 +477,8 @@ PetscErrorCode PISMTime::compute_times_simple(double time_start, double delta, d
 PetscErrorCode PISMTime::compute_times(double time_start, double delta, double time_end,
                                        string keyword,
                                        vector<double> &result) {
-  PetscErrorCode ierr;
   if (keyword != "simple") {
-    ierr = PetscPrintf(m_com, "PISM ERROR: only simple time ranges are supported.\n");
+    PetscPrintf(m_com, "PISM ERROR: only simple time ranges are supported.\n");
     return 1;
   }
 

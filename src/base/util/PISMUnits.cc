@@ -61,6 +61,9 @@ PISMUnit::PISMUnit(const PISMUnit &other) {
     m_unit = NULL;
   else
     m_unit = ut_clone(other.m_unit);
+
+  m_system      = other.m_system;
+  m_unit_string = other.m_unit_string;
 }
 
 PISMUnit& PISMUnit::operator=(const PISMUnit& other) {
@@ -69,7 +72,8 @@ PISMUnit& PISMUnit::operator=(const PISMUnit& other) {
 
   reset();
 
-  m_system = other.m_system;
+  m_system      = other.m_system;
+  m_unit_string = other.m_unit_string;
 
   if (other.m_unit == NULL)
     m_unit = NULL;
@@ -87,6 +91,7 @@ int PISMUnit::parse(PISMUnitSystem system, std::string spec) {
   reset();
   m_system = system;
   m_unit = ut_parse(system.get().get(), spec.c_str(), UT_ASCII);
+  m_unit_string = spec;
   if (m_unit == NULL)
     return 1;
   else
@@ -94,16 +99,7 @@ int PISMUnit::parse(PISMUnitSystem system, std::string spec) {
 }
 
 std::string PISMUnit::format() const {
-  char buffer[1024];
-  int errcode;
-
-  // Get a string representation of units:
-  errcode = ut_format(m_unit, buffer, 1024, UT_ASCII);
-  if (errcode == -1) {
-    return "";
-  }
-
-  return buffer;
+  return m_unit_string;
 }
 
 void PISMUnit::reset() {

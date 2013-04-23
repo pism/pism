@@ -712,7 +712,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
   // append = false, check_dimensions = true
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(grid->config.get_string("time_dimension_name"),
-                     grid->config.get_string("calendar"),
+                     grid->time->calendar(),
                      grid->time->units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(grid->config.get_string("time_dimension_name"),
                         grid->time->current()); CHKERRQ(ierr);

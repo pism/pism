@@ -26,6 +26,10 @@ int main(int argc, char **argv) {
 }
 ")
 
+if ((NOT UDUNITS2_LIBRARIES) OR (NOT UDUNITS2_INCLUDES))
+  message(FATAL_ERROR "Failed to find UDUNITS-2")
+endif()
+
 include (CheckCSourceRuns)
 
 set(CMAKE_REQUIRED_INCLUDES ${UDUNITS2_INCLUDES})

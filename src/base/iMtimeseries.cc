@@ -418,7 +418,7 @@ PetscErrorCode IceModel::write_extras() {
     // Prepare the file:
     ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
-                       config.get_string("calendar"),
+                       grid.time->calendar(),
                        grid.time->CF_units_string()); CHKERRQ(ierr);
     ierr = nc.put_att_text(config.get_string("time_dimension_name"),
                            "bounds", "time_bounds"); CHKERRQ(ierr);

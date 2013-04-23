@@ -123,7 +123,7 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
   // Prepare the file
   string time_name = config.get_string("time_dimension_name");
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
-  ierr = nc.def_time(time_name, config.get_string("calendar"),
+  ierr = nc.def_time(time_name, grid.time->calendar(),
                      grid.time->CF_units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
 
@@ -700,7 +700,7 @@ PetscErrorCode IceModel::write_snapshot() {
     // Prepare the snapshots file:
     ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
-                       config.get_string("calendar"),
+                       grid.time->calendar(),
                        grid.time->CF_units_string()); CHKERRQ(ierr);
 
     ierr = write_metadata(nc); CHKERRQ(ierr);
@@ -787,7 +787,7 @@ PetscErrorCode IceModel::write_backup() {
   // write metadata:
   ierr = nc.open(backup_filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
-                     config.get_string("calendar"),
+                     grid.time->calendar(),
                      grid.time->CF_units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
 

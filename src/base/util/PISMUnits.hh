@@ -34,6 +34,11 @@
  *
  * One thing is worth mentioning, though: in UDUNITS-2, every ut_unit
  * object contains a pointer to the unit system that was used to create it.
+ *
+ * We use C++ (TR1) shared pointers to make sure that the system a
+ * PISMUnit instance needs is allocated during the whole life span of
+ * this instance. (De-allocating the unit system too early results in
+ * having a pointer to freed memory.)
  */
 
 class PISMUnitSystem {
@@ -67,6 +72,7 @@ public:
 private:
   ut_unit *m_unit;
   PISMUnitSystem m_system;
+  std::string m_unit_string;
 };
 
 #endif /* _PISMUNIT_H_ */

@@ -267,7 +267,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append=true
   ierr = nc.def_time(grid.config.get_string("time_dimension_name"),
-                     grid.config.get_string("calendar"),
+                     grid.time->calendar(),
                      grid.time->units_string()); CHKERRQ(ierr);
 
   while (record_index < times.size() && grid.time->current() < grid.time->end()) {

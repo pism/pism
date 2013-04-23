@@ -39,6 +39,25 @@ static inline string string_strip(string input) {
   return input;
 }
 
+/**
+ * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
+ */
+static inline int validate_calendar_name(string name) {
+  // Calendar names from the CF Conventions document (except the
+  // 366_day (all_leap)):
+  if (name == "standard"            ||
+      name == "gregorian"           ||
+      name == "proleptic_gregorian" ||
+      name == "noleap"              ||
+      name == "365_day"             ||
+      name == "julian"              ||
+      name == "360_day") {
+    return 0;
+  }
+
+  return 1;
+}
+
 /*!
 
   See http://meteora.ucsd.edu/~pierce/calcalcs/index.html and
@@ -49,16 +68,9 @@ static inline string string_strip(string input) {
 PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
                                      PISMUnitSystem units_system)
   : PISMTime(c, conf, units_system) {
+
   m_calendar_string = m_config.get_string("calendar");
-  // Calendar names from the CF Conventions document (except the
-  // 366_day (all_leap)):
-  if ((m_calendar_string == "standard"            ||
-       m_calendar_string == "gregorian"           ||
-       m_calendar_string == "proleptic_gregorian" ||
-       m_calendar_string == "noleap"              ||
-       m_calendar_string == "365_day"             ||
-       m_calendar_string == "julian"              ||
-       m_calendar_string == "360_day") == false) {
+  if (validate_calendar_name(m_calendar_string) == 1) {
     PetscPrintf(m_com, "PISM ERROR: unsupported calendar: %s\n", m_calendar_string.c_str());
     PISMEnd();
   }
@@ -72,11 +84,11 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
     PISMEnd();
   }
 
-  string units_string = "seconds since " + ref_date;
-  errcode = m_time_units.parse(m_unit_system, units_string);
+  string tmp = "seconds since " + ref_date;
+  errcode = m_time_units.parse(m_unit_system, tmp);
   if (errcode != 0) {
     PetscPrintf(m_com, "PISM ERROR: time units '%s' are invalid.\n",
-                units_string.c_str());
+                tmp.c_str());
     PISMEnd();
   }
 
@@ -172,7 +184,7 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
   NCTimeBounds bounds;
   PetscMPIInt rank;
   vector<double> time, time_bounds;
-  string time_units, time_bounds_name,
+  string time_units, time_bounds_name, new_calendar,
     time_name = m_config.get_string("time_dimension_name");
   bool exists;
 
@@ -191,6 +203,17 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
   ierr = nc.get_att_text(time_name, "units",  time_units);       CHKERRQ(ierr);
   ierr = nc.get_att_text(time_name, "bounds", time_bounds_name); CHKERRQ(ierr);
 
+  ierr = nc.get_att_text(time_name, "calendar", new_calendar); CHKERRQ(ierr);
+  if (new_calendar.empty() == false) {
+    if (validate_calendar_name(new_calendar) == 1) {
+      PetscPrintf(m_com,
+                  "PISM ERROR: unsupported calendar name '%s' found in a -time_file '%s'.\n",
+                  new_calendar.c_str(), filename.c_str());
+      PISMEnd();
+    }
+    m_calendar_string = new_calendar;
+  }
+
   if (time_bounds_name.empty() == false) {
     ierr = nc.inq_var(time_bounds_name, exists); CHKERRQ(ierr);
 
@@ -203,13 +226,23 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
     }
   }
 
-  // Check if the time_file has a reference date set:
   {
+    // Check if the time_file has a reference date set:
     size_t position = time_units.find("since");
     if (position == string::npos) {
       PetscPrintf(m_com, "PISM ERROR: time units string '%s' does not contain a reference date.\n",
                   time_units.c_str());
       PISMEnd();
+    }
+
+    string tmp = "seconds " + time_units.substr(position);
+    ierr = m_time_units.parse(m_unit_system, tmp);
+    if (ierr != 0) {
+      PetscPrintf(m_com,
+                  "PISM ERROR: units specification '%s' is invalid (processing -time_file).\n",
+                  tmp.c_str());
+      PISMEnd();
+
     }
   }
 

@@ -21,6 +21,7 @@
 #include "pism_const.hh"
 #include "IceGrid.hh"
 #include "PIO.hh"
+#include "PISMTime.hh"
 
 Timeseries::Timeseries(IceGrid *g, string name, string dimension_name)
 {
@@ -302,7 +303,7 @@ DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, string name, string dimen
   buffer_size = (size_t)g->config.get("timeseries_buffer_size");
   start = 0;
   rate_of_change = false;
-  dimension.set_string("calendar", g->config.get_string("calendar"));
+  dimension.set_string("calendar", g->time->calendar());
   dimension.set_string("long_name", "time");
   dimension.set_string("axis", "T");
 }
