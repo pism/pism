@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,11 +19,13 @@
 #include "flowlaw_factory.hh"
 #include "pism_const.hh"
 #include "pism_options.hh"
+#include "PISMUnits.hh"
 
 IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
-                                     const char pre[], const NCConfigVariable &conf,
+                                     const char pre[], PISMUnitSystem unit_system,
+                                     const NCConfigVariable &conf,
                                      EnthalpyConverter *my_EC)
-  : com(c), config(conf), EC(my_EC) {
+  : com(c), config(conf), EC(my_EC), m_unit_system(unit_system) {
   prefix[0] = 0;
   if (pre) {
     PetscStrncpy(prefix, pre, sizeof(prefix));
@@ -56,39 +58,39 @@ PetscErrorCode IceFlowLawFactory::removeType(string name) {
 }
 
 
-static PetscErrorCode create_isothermal_glen(MPI_Comm com,const char pre[],
+static PetscErrorCode create_isothermal_glen(MPI_Comm com,const char pre[], PISMUnitSystem s,
                                              const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (IsothermalGlenIce)(com, pre, config, EC);  return 0;
+  *i = new (IsothermalGlenIce)(com, pre, s, config, EC);  return 0;
 }
 
-static PetscErrorCode create_pb(MPI_Comm com,const char pre[],
+static PetscErrorCode create_pb(MPI_Comm com,const char pre[], PISMUnitSystem s,
                                 const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenIce)(com, pre, config, EC);  return 0;
+  *i = new (ThermoGlenIce)(com, pre, s, config, EC);  return 0;
 }
 
-static PetscErrorCode create_gpbld(MPI_Comm com,const char pre[],
+static PetscErrorCode create_gpbld(MPI_Comm com,const char pre[], PISMUnitSystem s,
                                    const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (GPBLDIce)(com, pre, config, EC);  return 0;
+  *i = new (GPBLDIce)(com, pre, s, config, EC);  return 0;
 }
 
-static PetscErrorCode create_hooke(MPI_Comm com,const char pre[],
+static PetscErrorCode create_hooke(MPI_Comm com,const char pre[], PISMUnitSystem s,
                                    const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (HookeIce)(com, pre, config, EC);  return 0;
+  *i = new (HookeIce)(com, pre, s, config, EC);  return 0;
 }
 
-static PetscErrorCode create_arr(MPI_Comm com,const char pre[],
+static PetscErrorCode create_arr(MPI_Comm com,const char pre[], PISMUnitSystem s,
                                  const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIce)(com, pre, config, EC);  return 0;
+  *i = new (ThermoGlenArrIce)(com, pre, s, config, EC);  return 0;
 }
 
-static PetscErrorCode create_arrwarm(MPI_Comm com,const char pre[],
+static PetscErrorCode create_arrwarm(MPI_Comm com,const char pre[], PISMUnitSystem s,
                                      const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIceWarm)(com, pre, config, EC);  return 0;
+  *i = new (ThermoGlenArrIceWarm)(com, pre, s, config, EC);  return 0;
 }
 
-static PetscErrorCode create_goldsby_kohlstedt(MPI_Comm com,const char pre[],
+static PetscErrorCode create_goldsby_kohlstedt(MPI_Comm com,const char pre[], PISMUnitSystem s,
                                                const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (GoldsbyKohlstedtIce)(com, pre, config, EC);  return 0;
+  *i = new (GoldsbyKohlstedtIce)(com, pre, s, config, EC);  return 0;
 }
 
 PetscErrorCode IceFlowLawFactory::registerAll()
@@ -173,7 +175,7 @@ PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
   }
 
   // create an IceFlowLaw instance:
-  ierr = (*r)(com, prefix, config, EC, &ice);CHKERRQ(ierr);
+  ierr = (*r)(com, prefix, m_unit_system, config, EC, &ice);CHKERRQ(ierr);
   *inice = ice;
 
   PetscFunctionReturn(0);

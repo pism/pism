@@ -42,7 +42,7 @@ void PSForceThickness::attach_atmosphere_model(PISMAtmosphereModel *input) {
 PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   PetscErrorCode ierr;
   ice_thickness = NULL;
-  alpha = convert(config.get("force_to_thickness_alpha"),"yr-1","s-1");
+  alpha = grid.conv(config.get("force_to_thickness_alpha"),"yr-1","s-1");
 
   ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr);
   // will set attributes in init()
@@ -60,14 +60,14 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
 				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
 				   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units(grid.get_unit_system(), "m s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -98,7 +98,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   ierr = PetscOptionsReal("-force_to_thk_alpha",
 			  "Specifies the force-to-thickness alpha value in per-year units",
-			  "", convert(alpha, "s-1", "yr-1"),
+			  "", grid.conv(alpha, "s-1", "yr-1"),
 			  &fttalpha, &fttalphaSet); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
@@ -114,12 +114,12 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   if (fttalphaSet == PETSC_TRUE) {
     ierr = verbPrintf(3, grid.com, "    option -force_to_thk_alpha seen\n");
        CHKERRQ(ierr);
-    alpha = convert(fttalpha,"yr-1","s-1");
+    alpha = grid.conv(fttalpha,"yr-1","s-1");
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "    alpha = %.6f a-1 for -force_to_thk mechanism\n",
-		    convert(alpha,"s-1","yr-1")); CHKERRQ(ierr);
+		    "    alpha = %.6f year-1 for -force_to_thk mechanism\n",
+		    grid.conv(alpha,"s-1","yr-1")); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 

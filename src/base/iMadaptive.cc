@@ -37,7 +37,9 @@ The maximum vertical velocity is computed but it does not affect
 PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscErrorCode ierr;
   PetscScalar *u, *v, *w;
-  PetscScalar locCFLmaxdt = config.get("maximum_time_step_years", "years", "seconds");
+  PetscScalar locCFLmaxdt = config.get("maximum_time_step_years",
+                                       grid.get_unit_system(),
+                                       "years", "seconds");
 
   IceModelVec3 *u3, *v3, *w3;
 
@@ -102,6 +104,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
   PISMVector2 **vel;
   PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years",
+                                         grid.get_unit_system(),
                                          "years", "seconds");
 
   MaskQuery mask(vMask);
@@ -188,7 +191,9 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       adaptReasonFlag = 'e';
     }
   } else {
-    dt = config.get("maximum_time_step_years", "years", "seconds");
+    dt = config.get("maximum_time_step_years",
+                    grid.get_unit_system(),
+                    "years", "seconds");
     bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
     adaptReasonFlag = 'm';

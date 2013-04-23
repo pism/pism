@@ -21,19 +21,24 @@
 #include "pism_const.hh"
 #include "IceGrid.hh"
 #include "PIO.hh"
+#include "PISMTime.hh"
 
 Timeseries::Timeseries(IceGrid *g, string name, string dimension_name)
 {
-  private_constructor(g->com, g->rank, name, dimension_name);
+  private_constructor(g->com, g->rank, g->get_unit_system(), name, dimension_name);
 }
 
-Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name) {
-  private_constructor(c, r, name, dimension_name);
+Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, PISMUnitSystem units_system,
+                       string name, string dimension_name) {
+  private_constructor(c, r, units_system, name, dimension_name);
 }
 
-void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r, string name, string dimension_name) {
+void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r,
+                                     PISMUnitSystem unit_system,
+                                     string name, string dimension_name) {
   com = c;
   rank = r;
+  m_unit_system = unit_system;
   dimension.init(dimension_name, dimension_name, com, rank);
   var.init(name, dimension_name, com, rank);
   bounds.init(dimension_name + "_bounds", dimension_name, com, rank);
@@ -103,7 +108,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, bool use_reference_date) {
     use_bounds = true;
 
     bounds.init(time_bounds_name, time_name, com, rank);
-    ierr = bounds.set_units(dimension.get_string("units")); CHKERRQ(ierr);
+    ierr = bounds.set_units(m_unit_system, dimension.get_string("units")); CHKERRQ(ierr);
 
     ierr = bounds.read(nc, use_reference_date, time_bounds); CHKERRQ(ierr);
   } else {
@@ -245,7 +250,7 @@ PetscErrorCode Timeseries::append(double v, double a, double b) {
 //! Set the internal units for the values of a time-series.
 PetscErrorCode Timeseries::set_units(string units, string glaciological_units) {
   if (!units.empty())
-    var.set_units(units);
+    var.set_units(m_unit_system, units);
   if (!glaciological_units.empty())
     var.set_glaciological_units(glaciological_units);
   return 0;
@@ -253,10 +258,14 @@ PetscErrorCode Timeseries::set_units(string units, string glaciological_units) {
 
 //! Set the internal units for the dimension variable of a time-series.
 PetscErrorCode Timeseries::set_dimension_units(string units, string glaciological_units) {
-  if (!units.empty())
-    dimension.set_units(units);
-  if (!glaciological_units.empty())
+  if (!units.empty()) {
+    dimension.set_units(m_unit_system, units);
+    bounds.set_units(m_unit_system, units);
+  }
+  if (!glaciological_units.empty()) {
     dimension.set_glaciological_units(glaciological_units);
+    bounds.set_glaciological_units(glaciological_units);
+  }
   return 0;
 }
 
@@ -294,7 +303,7 @@ DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, string name, string dimen
   buffer_size = (size_t)g->config.get("timeseries_buffer_size");
   start = 0;
   rate_of_change = false;
-  dimension.set_string("calendar", g->config.get_string("calendar"));
+  dimension.set_string("calendar", g->time->calendar());
   dimension.set_string("long_name", "time");
   dimension.set_string("axis", "T");
 }
@@ -381,7 +390,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
 }
 PetscErrorCode DiagnosticTimeseries::init(string filename) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
+  PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
@@ -416,7 +425,7 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
   //! Writes data to a file.
 PetscErrorCode DiagnosticTimeseries::flush() {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3"); // OK to use netcdf3
+  PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
   // return cleanly if this DiagnosticTimeseries object was created but never

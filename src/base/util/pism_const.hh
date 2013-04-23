@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 #include <vector>
 #include <set>
 
-#include "udunits.h"
+#include "PISMUnits.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -35,8 +35,7 @@ using namespace std;
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 
-const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS
-						// (src/udunits/pismudunits.dat)
+const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS-2
 const PetscScalar pi         = M_PI;		// defined in gsl/gsl_math.h
 
 enum PismMask {
@@ -87,39 +86,41 @@ inline bool set_contains(set<string> S, string name) {
  *
  * Please avoid using in computationally-intensive code.
  */
-inline double convert(double value, const char spec1[], const char spec2[]) {
-  utUnit unit1, unit2;
-  double slope, intercept;
-  int errcode;
+inline double convert(double value,
+                      PISMUnitSystem units_system,
+                      const char spec1[], const char spec2[]) {
+  PISMUnit unit1, unit2;
 
-  errcode = utScan(spec1, &unit1);
-  if (errcode != 0) {
+  if (unit1.parse(units_system, spec1) != 0) {
 #if (PISM_DEBUG==1)
-    PetscPrintf(MPI_COMM_SELF, "utScan failed trying to parse %s\n", spec1);
+    PetscPrintf(MPI_COMM_SELF, "ut_parse failed trying to parse %s\n", spec1);
     PISMEnd();
 #endif
     return GSL_NAN;
   }
 
-  errcode = utScan(spec2, &unit2);
-  if (errcode != 0) {
+  if (unit2.parse(units_system, spec2) != 0) {
 #if (PISM_DEBUG==1)
-    PetscPrintf(MPI_COMM_SELF, "utScan failed trying to parse %s\n", spec2);
+    PetscPrintf(MPI_COMM_SELF, "ut_parse failed trying to parse %s\n", spec2);
     PISMEnd();
 #endif
     return GSL_NAN;
   }
 
-  errcode = utConvert(&unit1, &unit2, &slope, &intercept);
-  if (errcode != 0) {
+  cv_converter *c = ut_get_converter(unit1.get(), unit2.get());
+  if (c == NULL) {
 #if (PISM_DEBUG==1)
-    PetscPrintf(MPI_COMM_SELF, "utConvert failed trying to convert %s to %s\n", spec1, spec2);
+    PetscPrintf(MPI_COMM_SELF, "ut_get_converter failed trying to convert %s to %s\n",
+                spec1, spec2);
     PISMEnd();
 #endif
     return GSL_NAN;
   }
 
-  return value * slope + intercept;
+  double result = cv_convert_double(c, value);
+  cv_free(c);
+
+  return result;
 }
 
 inline PetscErrorCode PISMGlobalMin(PetscReal *local, PetscReal *result, MPI_Comm comm)

@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,6 +61,7 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
 
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
@@ -155,13 +156,14 @@ int main(int argc, char *argv[]) {
       ierr = VecSet(Hstart, 0.0); CHKERRQ(ierr);    // load was zero up till t=0
       ierr = VecSet(bedstart, 0.0); CHKERRQ(ierr);       // initially flat bed
       
+      const PetscScalar peak_up = convert(10, unit_system,
+                                          "mm/year", "m/s");  // 10 mm/year
       // initialize uplift
       if (do_uplift == PETSC_TRUE) {
         PetscScalar **upl;
         ierr = VecGetArray2d(uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
         for (PetscInt i=0; i<Mx; i++) {
           for (PetscInt j=0; j<My; j++) {
-            const PetscScalar peak_up = convert(10, "mm/year", "m/s");  // 10 mm/a
             const PetscScalar r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
             if (r < 1.5 * R0) {
               upl[i][j] = peak_up * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0; 
@@ -203,7 +205,7 @@ int main(int argc, char *argv[]) {
         const PetscScalar dbdt0 = (b0new - b0old) / (dtyears);
 
         ierr = PetscPrintf(PETSC_COMM_SELF,
-                  "   t=%8.0f (a)   b(0,0)=%11.5f (m)  dbdt(0,0)=%11.7f (m/a)\n",
+                  "   t=%8.0f (a)   b(0,0)=%11.5f (m)  dbdt(0,0)=%11.7f (m/year)\n",
                   tyears, b0new, dbdt0); CHKERRQ(ierr);
 
         char title[100];

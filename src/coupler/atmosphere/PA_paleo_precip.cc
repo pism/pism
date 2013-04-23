@@ -35,18 +35,18 @@ PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("Kelvin", "Kelvin");
-  offset->set_dimension_units(grid.time->units(), "");
+  offset->set_dimension_units(grid.time->units_string(), "");
   offset->set_attr("long_name", "air temperature offsets");
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+  ierr = air_temp.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
 
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "near-surface air temperature");
-  ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
+  ierr = precipitation.set_units(grid.get_unit_system(), "m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
 
   m_precipexpfactor = config.get("precip_exponential_factor_for_temperature");

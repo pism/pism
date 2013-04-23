@@ -43,7 +43,7 @@
 #define Y0       0.001         /* m */
 
 /* specific to exact solution */
-#define m0       ((0.20/SperA)*rhow)  /* kg m-2 s-1; = 20 cm a-1 */
+#define m0       ((0.20/SperA)*rhow)  /* kg m-2 s-1; = 20 cm/year */
 #define h0       500.0         /* m */
 #define v0       (100.0/SperA) /* m s-1 */
 #define R1       5000.0        /* m */

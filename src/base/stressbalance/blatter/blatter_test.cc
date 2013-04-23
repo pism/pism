@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     // This is never used (but it is a required argument of the
     // PISMStressBalance constructor).
     // It will be used eventually, though.
-    IceBasalResistancePlasticLaw basal(config);
+    IceBasalResistancePlasticLaw basal(config, grid.get_unit_system());
 
     POConstant ocean(grid, config);
 
@@ -245,8 +245,8 @@ int main(int argc, char *argv[]) {
 
     ierr = pio.open(output_file, PISM_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(config.get_string("time_dimension_name"),
-                        config.get_string("calendar"),
-                        grid.time->CF_units()); CHKERRQ(ierr);
+                        grid.time->calendar(),
+                        grid.time->CF_units_string()); CHKERRQ(ierr);
     ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0);
 
     set<string> blatter_vars;

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -106,15 +106,12 @@ public:
     if (N >= dof) SETERRQ(grid.com, 1, "invalid N (>= dof)");
 
     vars[N].set_string("pism_intent", "diagnostic");
-    if (my_long_name != "")
-      vars[N].set_string("long_name", my_long_name);
 
-    if (my_standard_name != "")
-      vars[N].set_string("standard_name", my_standard_name);
+    vars[N].set_string("long_name", my_long_name);
 
-    if (my_units != "") {
-      ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
-    }
+    vars[N].set_string("standard_name", my_standard_name);
+
+    ierr = vars[N].set_units(grid.get_unit_system(), my_units); CHKERRQ(ierr);
 
     if (my_glaciological_units != "") {
       ierr = vars[N].set_glaciological_units(my_glaciological_units); CHKERRQ(ierr);
@@ -191,7 +188,7 @@ class PISMTSDiag : public PISMTSDiagnostic
 public:
   PISMTSDiag(Model *m, IceGrid &g, PISMVars &my_vars)
     : PISMTSDiagnostic(g, my_vars), model(m) {
-    time_units = grid.time->CF_units();
+    time_units = grid.time->CF_units_string();
     time_dimension_name = grid.config.get_string("time_dimension_name");
   }
 protected:

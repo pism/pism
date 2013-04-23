@@ -1,0 +1,42 @@
+These are the Calender Calculation (CalCalcs routines), version 1.0,
+released Jan 7, 2010.
+
+The CalCalcs routines are written in C and provide:
+
+1. A replacement for the udunits library "utCalendar" and "utInvCalendar"
+routines, which are extended to include various calendars, and work
+for version 2 of the udunits library.  These routines allow 
+converting an arbitrary time span in arbitrary temporal units into a date.
+For example, they can be used to compute the date that is "1800 seconds 
+since 1901-01-01 12:00", or "-366 days since 1750-09-27 00:00", or
+"14876.259 hours since 2200-12-31", etc.  Gregorian, Julian, our Standard 
+civil, noleap, and 360_day calendars are supported.
+
+2. A set of routines that implement calendar calculations for supported
+calendars.  For example, computing the day-of-year, Julian Day number,
+date, date-since, etc.
+
+For details on how to use the library, see its homepage at:
+
+http://meteora.ucsd.edu/~pierce/calcalcs
+
+The routines are intended to be incorporated into programs that
+need calendar-calculation functionality.  As such, there are only two 
+short stand-alone example programs provided.
+
+
+The CalCalcs routines are Copyright (C) 2010 by David W. Pierce.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+

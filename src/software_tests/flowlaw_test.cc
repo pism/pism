@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -51,8 +51,10 @@ int main(int argc, char *argv[]) {
 
     EnthalpyConverter EC(config);
 
+    PISMUnitSystem unit_system(NULL);
+
     IceFlowLaw *flow_law = NULL;
-    IceFlowLawFactory ice_factory(com, NULL, config, &EC);
+    IceFlowLawFactory ice_factory(com, NULL, unit_system, config, &EC);
 
     string flow_law_name = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type

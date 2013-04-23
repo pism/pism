@@ -142,7 +142,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                   "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -230,14 +230,14 @@ double PSTemperatureIndex::compute_next_balance_year_start(double time) {
     // compute the time corresponding to the beginning of the next balance year
     PetscReal
       balance_year_start_day = config.get("pdd_balance_year_start_day"),
-      one_day                = convert(1.0, "days", "seconds"),
+      one_day                = grid.conv(1.0, "days", "seconds"),
       year_start             = grid.time->calendar_year_start(time),
       balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
 
     if (balance_year_start > time) {
       return balance_year_start;
     }
-    return grid.time->increment_date(balance_year_start, 1, 0, 0);
+    return grid.time->increment_date(balance_year_start, 1);
 }
 
 
@@ -338,7 +338,7 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
         for (int k = 0; k < Nseries; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
             snow_depth(i,j)       = 0.0;
-            next_snow_depth_reset = grid.time->increment_date(next_snow_depth_reset, 1, 0, 0);
+            next_snow_depth_reset = grid.time->increment_date(next_snow_depth_reset, 1);
           }
 
           double accumulation     = P[k] * dtseries;

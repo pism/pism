@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,12 +36,13 @@ using namespace std;
 #define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
-typedef PetscErrorCode(*IceFlowLawCreator)(MPI_Comm, const char[],
+typedef PetscErrorCode(*IceFlowLawCreator)(MPI_Comm, const char[], PISMUnitSystem,
                                            const NCConfigVariable &, EnthalpyConverter*, IceFlowLaw **);
 
 class IceFlowLawFactory {
 public:
-  IceFlowLawFactory(MPI_Comm, const char prefix[], const NCConfigVariable &conf,
+  IceFlowLawFactory(MPI_Comm, const char prefix[], PISMUnitSystem unit_system,
+                    const NCConfigVariable &conf,
                     EnthalpyConverter *my_EC);
   ~IceFlowLawFactory();
   PetscErrorCode setType(string name);
@@ -58,6 +59,7 @@ private:
   map<string, IceFlowLawCreator> flow_laws;
   const NCConfigVariable &config;
   EnthalpyConverter *EC;
+  PISMUnitSystem m_unit_system;
 };
 
 

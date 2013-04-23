@@ -90,9 +90,9 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
   config.set_string("output_variable_order", "zyx");
 
   if (config.get_flag("do_pseudo_plastic_till") == true)
-      basal = new IceBasalResistancePseudoPlasticLaw(config);
+    basal = new IceBasalResistancePseudoPlasticLaw(config, grid.get_unit_system());
   else
-      basal = new IceBasalResistancePlasticLaw(config);
+    basal = new IceBasalResistancePlasticLaw(config, grid.get_unit_system());
 
   enthalpyconverter = new EnthalpyConverter(config);
 

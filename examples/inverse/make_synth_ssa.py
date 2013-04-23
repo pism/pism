@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -155,10 +155,10 @@ if __name__ == '__main__':
     u_noise = PISM.sipletools.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
     final_velocity.add(1./PISM.secpera,u_noise)
 
-  pio = PISM.PIO(grid.com, grid.rank, "netcdf3")
+  pio = PISM.PIO(grid.com, grid.rank, "netcdf3", grid.get_unit_system())
   pio.open(output_file_name, PISM.NC_WRITE)
   pio.def_time(grid.config.get_string("time_dimension_name"),
-               grid.config.get_string("calendar"), grid.time.units())
+               grid.config.get_string("calendar"), grid.time.units_string())
   pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
   pio.close()
 

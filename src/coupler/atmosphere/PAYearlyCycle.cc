@@ -69,7 +69,7 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
   air_temp_snapshot.set_string("pism_intent", "diagnostic");
   air_temp_snapshot.set_string("long_name",
                          "snapshot of the near-surface air temperature");
-  ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
+  ierr = air_temp_snapshot.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
 
   return 0;
 }

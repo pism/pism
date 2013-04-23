@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,9 @@ public:
 
     ice_density = config.get("ice_density");
     standard_gravity = config.get("standard_gravity");
-    till_c_0 = config.get("till_c_0", "kPa", "Pa");
+    till_c_0 = config.get("till_c_0",
+                          grid.get_unit_system(),
+                          "kPa", "Pa");
   }
 
   virtual ~PISMMohrCoulombYieldStress() {}

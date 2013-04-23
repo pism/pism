@@ -43,7 +43,7 @@ int PDDMassBalance::get_timeseries_length(double dt) {
   const int    NperYear = static_cast<int>(config.get("pdd_max_evals_per_year"));
   const double dt_years = dt / secpera;
 
-  return PetscMax(ceil((NperYear - 1) * (dt_years) + 1), 2);
+  return (int)PetscMax(ceil((NperYear - 1) * (dt_years) + 1), 2);
 }
 
 

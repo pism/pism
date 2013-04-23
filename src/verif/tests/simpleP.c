@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2012 Ed Bueler
+   Copyright (C) 2012, 2013 Ed Bueler
 
    This file is part of PISM.
 
@@ -23,7 +23,7 @@
 $ ./simpleP
 Enter  r  (in km; 0 <= r <= TESTP_L = 22.5):   20.0
 Results from Test P:
-    h = 180.0000 (m)  Po = 16.0687800 (bar)  |vb| = 46.26644 (m a-1)
+    h = 180.0000 (m)  Po = 16.0687800 (bar)  |vb| = 46.26644 (m/year)
     W_c = 0.58184968 (m)  W = 0.67507258 (m)  P = 2.0086731 (bar)
 
 */
@@ -55,7 +55,7 @@ int main() {
   }
 
   printf("Results from Test P:\n");
-  printf("    h = %.4f (m)  Po = %.7f (bar)  |vb| = %.5f (m a-1)\n"
+  printf("    h = %.4f (m)  Po = %.7f (bar)  |vb| = %.5f (m/year)\n"
          "    W_c = %.8f (m)  W = %.8f (m)  P = %.7f (bar)\n",
          h,910.0*9.81*h/1.0e5,magvb*secpera,Wcrit,W,P/1.0e5);
 

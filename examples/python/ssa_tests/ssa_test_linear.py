@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -35,7 +35,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     config = self.config
     config.set_flag("do_pseudo_plastic_till", True)
     config.set("pseudo_plastic_q", 1.0)
-    basal = PISM.IceBasalResistancePseudoPlasticLaw(config)
+    basal = PISM.IceBasalResistancePseudoPlasticLaw(config, self.grid.get_unit_system())
 
     enthalpyconverter = PISM.EnthalpyConverter(config)
 

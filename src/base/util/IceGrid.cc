@@ -20,14 +20,14 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "PISMTime.hh"
-#include "PISMGregorianTime.hh"
+#include "PISMTime_Calendar.hh"
 #include "PISMProf.hh"
 #include "NCVariable.hh"
 
 
 IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
-		 const NCConfigVariable &conf)
-  : config(conf), com(c), rank(r), size(s){ 
+                 const NCConfigVariable &conf)
+  : config(conf), com(c), rank(r), size(s), m_unit_system(NULL) {
 
   // The grid in symmetric with respect to zero by default.
   x0 = 0.0;
@@ -43,9 +43,9 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
   else if (word == "xy")
     periodicity = XY_PERIODIC;
   else {
-    PetscPrintf(com, 
-		"ERROR: grid periodicity type '%s' is invalid.\n",
-		word.c_str());
+    PetscPrintf(com,
+                "ERROR: grid periodicity type '%s' is invalid.\n",
+                word.c_str());
     PISMEnd();
   }
 
@@ -55,9 +55,9 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
   else if (word == "equal")
     ice_vertical_spacing = EQUAL;
   else {
-    PetscPrintf(com, 
-		"ERROR: ice vertical spacing type '%s' is invalid.\n",
-		word.c_str());
+    PetscPrintf(com,
+                "ERROR: ice vertical spacing type '%s' is invalid.\n",
+                word.c_str());
     PISMEnd();
   }
 
@@ -73,7 +73,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   Nx = Ny = 0;			// will be set to a correct value in allocate()
   initial_Mz = 0;		// will be set to a correct value in
-				// IceModel::check_maximum_thickness()
+                                // IceModel::check_maximum_thickness()
 
   max_stencil_width = 2;
 
@@ -84,10 +84,10 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   profiler = new PISMProf(com, rank, size);
 
-  if (config.get_string("calendar") == "gregorian") {
-    time = new PISMGregorianTime(com, config);
+  if (config.get_string("calendar") == "none") {
+    time = new PISMTime(com, config, m_unit_system);
   } else {
-    time = new PISMTime(com, config);
+    time = new PISMTime_Calendar(com, config, m_unit_system);
   }
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
@@ -109,24 +109,24 @@ Sets `dzMIN` and `dzMAX`.  Sets and re-allocates `zlevels[]`.
 Uses `Mz`, `Lz`, and `ice_vertical_spacing`.  (Note that `ice_vertical_spacing`
 cannot be UNKNOWN.)
 
-This procedure is only called when a grid is determined from scratch, %e.g. 
-by a derived class or when bootstrapping from 2D data only, but not when 
+This procedure is only called when a grid is determined from scratch, %e.g.
+by a derived class or when bootstrapping from 2D data only, but not when
 reading a model state input file (which will have its own grid,
 which may not even be a grid created by this routine).
   - When `vertical_spacing` == EQUAL, the vertical grid in the ice is equally spaced:
-    `zlevels[k] = k dzMIN` where `dzMIN = Lz / (Mz - 1)`.  
+    `zlevels[k] = k dzMIN` where `dzMIN = Lz / (Mz - 1)`.
     In this case `dzMIN = dzMAX`.
-  - When `vertical_spacing` == QUADRATIC, the spacing is a quadratic function.  The intent 
-    is that the spacing is smaller near the base than near the top.  In particular, if 
-    \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz * 
-    ( (\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0) 
-    * \f$\zeta_k\f$) )` where \f$\lambda\f$ = 4.  The value \f$\lambda\f$ 
-    indicates the slope of the quadratic function as it leaves the base.  
-    Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer 
+  - When `vertical_spacing` == QUADRATIC, the spacing is a quadratic function.  The intent
+    is that the spacing is smaller near the base than near the top.  In particular, if
+    \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz *
+    ( (\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0)
+    * \f$\zeta_k\f$) )` where \f$\lambda\f$ = 4.  The value \f$\lambda\f$
+    indicates the slope of the quadratic function as it leaves the base.
+    Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
 PetscErrorCode  IceGrid::compute_vertical_levels() {
-  
+
   if (Mz < 2) {
     SETERRQ(com, 2,"IceGrid::compute_ice_vertical_levels(): Mz must be at least 2.");
   }
@@ -142,7 +142,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
   case EQUAL: {
     dzMIN = Lz / ((PetscScalar) Mz - 1);
     dzMAX = dzMIN;
-    
+
     // Equal spacing
     for (PetscInt k=0; k < Mz - 1; k++) {
       zlevels[k] = dzMIN * ((PetscScalar) k);
@@ -180,7 +180,7 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
          Lx/1000.0,Ly/1000.0,Lz); CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,com,
          "            x0 = %6.2f km, y0 = %6.2f km,   (coordinates of center)\n",
-		    x0/1000.0, y0/1000.0); CHKERRQ(ierr);
+                    x0/1000.0, y0/1000.0); CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,com,
          "            Mx = %d, My = %d, Mz = %d,\n",
          Mx,My,Mz); CHKERRQ(ierr);
@@ -210,13 +210,13 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
 PetscInt IceGrid::kBelowHeight(PetscScalar height) {
   if (height < 0.0 - 1.0e-6) {
-    PetscPrintf(com, 
+    PetscPrintf(com,
        "IceGrid kBelowHeight(): height = %5.4f is below base of ice (height must be non-negative)\n",
        height);
     PISMEnd();
   }
   if (height > Lz + 1.0e-6) {
-    PetscPrintf(com, 
+    PetscPrintf(com,
        "IceGrid kBelowHeight(): height = %5.4f is above top of computational grid Lz = %5.4f\n",
        height,Lz);
     PISMEnd();
@@ -237,7 +237,7 @@ PetscInt IceGrid::kBelowHeight(PetscScalar height) {
 PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
 
   // ice:
-  dzMIN = Lz; 
+  dzMIN = Lz;
   dzMAX = 0.0;
   for (PetscInt k = 0; k < Mz - 1; k++) {
     const PetscScalar mydz = zlevels[k+1] - zlevels[k];
@@ -275,13 +275,13 @@ void IceGrid::compute_nprocs() {
 
   if ((Mx / Nx) < 2) {		// note: integer division
     PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
-		Mx, My, size);
+                Mx, My, size);
     PISMEnd();
   }
 
   if ((My / Ny) < 2) {		// note: integer division
     PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
-		Mx, My, size);
+                Mx, My, size);
     PISMEnd();
   }
 
@@ -296,7 +296,7 @@ void IceGrid::compute_ownership_ranges() {
 
   procs_x.resize(Nx);
   procs_y.resize(Ny);
-  
+
   for (PetscInt i=0; i < Nx; i++) {
     procs_x[i] = Mx/Nx + ((Mx % Nx) > i);
   }
@@ -396,18 +396,18 @@ PetscErrorCode IceGrid::set_vertical_levels(vector<double> new_zlevels) {
 
 
 //! Compute horizontal spacing parameters `dx` and `dy` using `Mx`, `My`, `Lx`, `Ly` and periodicity.
-/*! 
+/*!
 The grid used in PISM, in particular the PETSc DAs used here, are periodic in x and y.
 This means that the ghosted values ` foo[i+1][j], foo[i-1][j], foo[i][j+1], foo[i][j-1]`
 for all 2D Vecs, and similarly in the x and y directions for 3D Vecs, are always available.
 That is, they are available even if i,j is a point at the edge of the grid.  On the other
 hand, by default, `dx`  is the full width  `2 * Lx`  divided by  `Mx - 1`.
 This means that we conceive of the computational domain as starting at the `i = 0`
-grid location and ending at the  `i = Mx - 1`  grid location, in particular.  
+grid location and ending at the  `i = Mx - 1`  grid location, in particular.
 This idea is not quite compatible with the periodic nature of the grid.
 
-The upshot is that if one computes in a truly periodic way then the gap between the  
-`i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.  
+The upshot is that if one computes in a truly periodic way then the gap between the
+`i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.
 Thus we compute  `dx = 2 * Lx / Mx`.
  */
 PetscErrorCode IceGrid::compute_horizontal_spacing() {
@@ -469,7 +469,7 @@ PetscErrorCode IceGrid::compute_fine_vertical_grid() {
 }
 
 //! Fills arrays ice_storage2fine, ice_fine2storage, bed_storage2fine,
-//! bed_fine2storage with indices of levels that are just below 
+//! bed_fine2storage with indices of levels that are just below
 PetscErrorCode IceGrid::init_interpolation() {
   PetscInt m;
 
@@ -488,7 +488,7 @@ PetscErrorCode IceGrid::init_interpolation() {
 
     ice_storage2fine[k] = m;
   }
-  
+
   // ice: fine -> storage
   ice_fine2storage.resize(Mz);
   m = 0;
@@ -546,28 +546,28 @@ PetscErrorCode IceGrid::report_parameters() {
   ierr = verbPrintf(2,com, "computational domain and grid:\n"); CHKERRQ(ierr);
 
   // report on grid
-  ierr = verbPrintf(2,com, 
+  ierr = verbPrintf(2,com,
            "                grid size   %d x %d x %d\n",
            Mx,My,Mz); CHKERRQ(ierr);
   // report on computational box
-  ierr = verbPrintf(2,com, 
+  ierr = verbPrintf(2,com,
            "           spatial domain   %.2f km x %.2f km x %.2f m\n",
            2*Lx/1000.0,2*Ly/1000.0,Lz); CHKERRQ(ierr);
-  
+
   // report on grid cell dims
-  ierr = verbPrintf(2,com, 
+  ierr = verbPrintf(2,com,
            "     horizontal grid cell   %.2f km x %.2f km\n",
                     dx/1000.0,dy/1000.0); CHKERRQ(ierr);
   if (ice_vertical_spacing == EQUAL) {
-    ierr = verbPrintf(2,com, 
+    ierr = verbPrintf(2,com,
            "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
                     dzMIN); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2,com, 
+    ierr = verbPrintf(2,com,
            "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
-		    Mz, dzMIN, dzMAX); CHKERRQ(ierr);
+                    Mz, dzMIN, dzMAX); CHKERRQ(ierr);
   }
-  ierr = verbPrintf(3,com, 
+  ierr = verbPrintf(3,com,
                     "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m\n",
                     Mz_fine, dz_fine); CHKERRQ(ierr);
   if (Mz_fine > 1000) {
@@ -579,7 +579,7 @@ PetscErrorCode IceGrid::report_parameters() {
   // report on time axis
   ierr = verbPrintf(2, com,
            "   time interval (length)   [%s, %s]  (%s years)\n",
-		    time->start_date().c_str(),
+                    time->start_date().c_str(),
                     time->end_date().c_str(),
                     time->run_length().c_str()); CHKERRQ(ierr);
 
@@ -589,7 +589,7 @@ PetscErrorCode IceGrid::report_parameters() {
   ierr = verbPrintf(5,com,
        "  REALLY verbose output on IceGrid:\n"); CHKERRQ(ierr);
   ierr = printVertLevels(5); CHKERRQ(ierr);
-  
+
   return 0;
 }
 
@@ -599,13 +599,13 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
   // aim for smaller dimension equal to target, larger dimension larger by Ly/Lx or Lx/Ly proportion
   const double  yTOx = Ly / Lx;
   if (Ly > Lx) {
-    X = target_size; 
-    Y = (PetscInt) ((double)target_size * yTOx); 
+    X = target_size;
+    Y = (PetscInt) ((double)target_size * yTOx);
   } else {
-    Y = target_size; 
+    Y = target_size;
     X = (PetscInt) ((double)target_size / yTOx);
   }
-  
+
   // if either dimension is larger than twice the target, shrink appropriately
   if (X > 2 * target_size) {
     Y = (PetscInt) ( (double)(Y) * (2.0 * (double)target_size / (double)(X)) );
@@ -614,7 +614,7 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
     X = (PetscInt) ( (double)(X) * (2.0 * (double)target_size / (double)(Y)) );
     Y = 2 * target_size;
   }
-  
+
   // make sure minimum dimension is sufficient to see
   if (X < 20)   X = 20;
   if (Y < 20)   Y = 20;
@@ -630,7 +630,7 @@ PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, string title, PetscV
 
   // note we reverse x <-> y; see IceGrid::allocate() for original reversal
   ierr = PetscViewerDrawOpen(com, PETSC_NULL, title.c_str(),
-			     PETSC_DECIDE, PETSC_DECIDE, Y, X, &viewer);  CHKERRQ(ierr);
+                             PETSC_DECIDE, PETSC_DECIDE, Y, X, &viewer);  CHKERRQ(ierr);
 
   // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
   // there is a no titles bug
@@ -763,6 +763,14 @@ PetscErrorCode IceGrid::get_dm(PetscInt da_dof, PetscInt stencil_width, DM &resu
   return 0;
 }
 
+PISMUnitSystem IceGrid::get_unit_system() const {
+  return m_unit_system;
+}
+
+double IceGrid::conv(double value, const char *unit1, const char *unit2) const {
+  return convert(value, m_unit_system, unit1, unit2);
+}
+
 void IceGrid::destroy_dms() {
 
   map<int, DM>::iterator j = dms.begin();
@@ -778,7 +786,7 @@ PetscErrorCode IceGrid::create_dm(PetscInt da_dof, PetscInt stencil_width, DM &r
   PetscErrorCode ierr;
 
   ierr = verbPrintf(3, com,
-		    "* Creating a DM with dof=%d and stencil_width=%d...\n",
+                    "* Creating a DM with dof=%d and stencil_width=%d...\n",
                     da_dof, stencil_width); CHKERRQ(ierr);
 
   ierr = DMDACreate2d(com,

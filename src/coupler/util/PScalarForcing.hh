@@ -91,7 +91,7 @@ protected:
                       "  reading %s data from forcing file %s...\n",
                       offset->short_name.c_str(), filename.c_str());
     CHKERRQ(ierr);
-    PIO nc(g.com, g.rank, "netcdf3");
+    PIO nc(g.com, g.rank, "netcdf3", g.get_unit_system());
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     {
       ierr = offset->read(nc, g.time->use_reference_date()); CHKERRQ(ierr);

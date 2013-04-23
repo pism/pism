@@ -158,7 +158,8 @@ protected:
     PetscErrorCode ierr;
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size");
 
-    PIO nc(Model::grid.com, Model::grid.rank, "netcdf3");
+    PIO nc(Model::grid.com, Model::grid.rank, "netcdf3",
+           Model::grid.get_unit_system());
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
     map<string, IceModelVec2T*>::iterator k = m_fields.begin();
@@ -183,7 +184,7 @@ protected:
 
       (k->second)->set_n_records(n_records);
 
-      (k->second)->set_n_evaluations_per_year(Model::config.get("climate_forcing_evaluations_per_year"));
+      (k->second)->set_n_evaluations_per_year((unsigned int)Model::config.get("climate_forcing_evaluations_per_year"));
 
       ++k;
     }

@@ -84,7 +84,8 @@ PetscErrorCode SSATestCaseExp::initializeSSAModel()
   // Use a pseudo-plastic law with linear till
   config.set_flag("do_pseudo_plastic_till", true);
   config.set("pseudo_plastic_q", 1.0);
-  basal = new IceBasalResistancePseudoPlasticLaw(config);
+  basal = new IceBasalResistancePseudoPlasticLaw(config,
+                                                 grid.get_unit_system());
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);
@@ -150,7 +151,9 @@ PetscErrorCode SSATestCaseExp::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
                                              PetscReal x, PetscReal /*y*/,
                                              PetscReal *u, PetscReal *v)
 {
-  PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
+  PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
+                                                   grid.get_unit_system(),
+                                                   "m/year", "m/second");
   PetscScalar v0 = 100./secpera ; // 100 m/s.
   // PetscScalar alpha=log(2.)/(2*L);
   PetscScalar alpha = sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );

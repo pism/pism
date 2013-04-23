@@ -86,6 +86,9 @@ if (Pism_LOOK_FOR_LIBRARIES)
   pism_find_prerequisites()
 endif()
 
+# Set Pism_EXTERNAL_LIBS and include directories.
+pism_set_dependencies()
+
 if (Pism_BUILD_PYTHON_BINDINGS)
   find_package(Python REQUIRED)
   find_package(PETSc4Py REQUIRED)

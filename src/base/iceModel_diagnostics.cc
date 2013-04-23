@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -350,7 +350,7 @@ IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   vars[0].init_2d("rank", grid);
 
-  set_attrs("processor rank", "", "", "", 0);
+  set_attrs("processor rank", "", "count", "", 0);
   vars[0].time_independent = true;
 }
 
@@ -1803,9 +1803,9 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
             "m s-1", "m year-1", 0);
 
-  vars[0].set("valid_min",  convert(-1e6, "m/year", "m/s"));
-  vars[0].set("valid_max",  convert( 1e6, "m/year", "m/s"));
-  vars[0].set("_FillValue", convert( grid.config.get("fill_value"), "m/year", "m/s"));
+  vars[0].set("valid_min",  grid.conv(-1e6, "m/year", "m/s"));
+  vars[0].set("valid_max",  grid.conv( 1e6, "m/year", "m/s"));
+  vars[0].set("_FillValue", grid.conv( grid.config.get("fill_value"), "m/year", "m/s"));
   vars[0].set_string("cell_methods", "time: mean");
 
   last_ice_thickness.create(grid, "last_ice_thickness", false);
@@ -1825,7 +1825,7 @@ PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
   result->write_in_glaciological_units = true;
 
   if (gsl_isnan(last_report_time)) {
-    ierr = result->set(convert(2e6, "m/year", "m/s")); CHKERRQ(ierr);
+    ierr = result->set(grid.conv(2e6, "m/year", "m/s")); CHKERRQ(ierr);
   } else {
 
     ierr = result->begin_access(); CHKERRQ(ierr);

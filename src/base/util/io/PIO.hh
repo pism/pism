@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _PIO_H_
 #define _PIO_H_
 
-#include "udunits.h"
+#include "PISMUnits.hh"
 
 #include <petscvec.h>
 #include <map>
@@ -46,7 +46,7 @@ class LocalInterpCtx;
 class PIO
 {
 public:
-  PIO(MPI_Comm com, int rank, string mode);
+  PIO(MPI_Comm com, int rank, string mode, PISMUnitSystem units_system);
   PIO(IceGrid &g, string mode);
   PIO(const PIO &other);
   virtual ~PIO();
@@ -82,7 +82,7 @@ public:
 
   virtual PetscErrorCode inq_grid(string var_name, IceGrid *grid, Periodicity periodicity) const;
 
-  virtual PetscErrorCode inq_units(string name, bool &has_units, utUnit &units,
+  virtual PetscErrorCode inq_units(string name, bool &has_units, PISMUnit &units,
                                    bool use_reference_date = false) const;
 
   virtual PetscErrorCode inq_grid_info(string name, grid_info &g) const;
@@ -162,6 +162,7 @@ protected:
   bool shallow_copy;
   PISMNCFile *nc;
   int m_xs, m_xm, m_ys, m_ym;
+  PISMUnitSystem m_unit_system;
 
   PetscErrorCode compute_start_and_count(string name, int t_start,
                                          int x_start, int x_count,
@@ -177,7 +178,7 @@ protected:
 
   PetscErrorCode detect_mode(string filename);
 private:
-  void constructor(MPI_Comm com, int rank, string mode);
+  void constructor(MPI_Comm com, int rank, string mode, PISMUnitSystem unit_system);
 };
 
 #endif /* _PIO_H_ */

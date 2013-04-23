@@ -81,19 +81,12 @@ static PISMNCFile* create_backend(MPI_Comm com, int rank, string mode) {
 }
 
 //! \brief The code shared by different PIO constructors.
-void PIO::constructor(MPI_Comm c, int r, string mode) {
+void PIO::constructor(MPI_Comm c, int r, string mode, PISMUnitSystem unit_system) {
   com = c;
   rank = r;
   shallow_copy = false;
   m_mode = mode;
-
-  // Initialize UDUNITS if needed
-  if (utIsInit() == 0) {
-    if (utInit(NULL) != 0) {
-      PetscPrintf(com, "PISM ERROR: UDUNITS initialization failed.\n");
-      PISMEnd();
-    }
-  }
+  m_unit_system = unit_system;
 
   nc = create_backend(com, rank, mode);
 
@@ -106,12 +99,12 @@ void PIO::constructor(MPI_Comm c, int r, string mode) {
   }
 }
 
-PIO::PIO(MPI_Comm c, int r, string mode) {
-  constructor(c, r, mode);
+PIO::PIO(MPI_Comm c, int r, string mode, PISMUnitSystem units_system) {
+  constructor(c, r, mode, units_system);
 }
 
 PIO::PIO(IceGrid &grid, string mode) {
-  constructor(grid.com, grid.rank, mode);
+  constructor(grid.com, grid.rank, mode, grid.get_unit_system());
   if (nc != NULL)
     set_local_extent(grid.xs, grid.xm, grid.ys, grid.ym);
 }
@@ -121,6 +114,7 @@ PIO::PIO(const PIO &other) {
   rank = other.rank;
   nc = other.nc;
   m_mode = other.m_mode;
+  m_unit_system = other.m_unit_system;
 
   shallow_copy = true;
 }
@@ -415,7 +409,7 @@ PetscErrorCode PIO::inq_dimlen(string name, unsigned int &result) const {
 PetscErrorCode PIO::inq_dimtype(string name, AxisType &result) const {
   PetscErrorCode ierr;
   string axis, standard_name, units;
-  utUnit ut_units;
+  PISMUnit tmp_units;
   bool exists;
 
   ierr = nc->inq_varid(name, exists); CHKERRQ(ierr);
@@ -430,14 +424,17 @@ PetscErrorCode PIO::inq_dimtype(string name, AxisType &result) const {
   ierr = nc->get_att_text(name, "units", units); CHKERRQ(ierr);
 
   // check if it has units compatible with "seconds":
-  ierr = utScan(units.c_str(), &ut_units);
-  if (ierr != 0) {
+
+  if (tmp_units.parse(m_unit_system, units) != 0) {
     ierr = PetscPrintf(com, "ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
 		       units.c_str(), name.c_str());
     PISMEnd();
   }
 
-  if (utIsTime(&ut_units) == 1) {
+  PISMUnit seconds;
+  int errcode = seconds.parse(m_unit_system, "seconds");
+  assert(errcode == 0);
+  if (ut_are_convertible(tmp_units.get(), seconds.get())) {
     result = T_AXIS;
     return 0;
   }
@@ -523,7 +520,7 @@ PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid, Periodicity periodi
   if (grid == NULL)
     SETERRQ(com, 1, "grid == NULL");
 
-  grid_info input;
+  grid_info input(m_unit_system);
 
   // The following call may fail because var_name does not exist. (And this is fatal!)
   ierr = this->inq_grid_info(var_name, input); CHKERRQ(ierr);
@@ -578,7 +575,7 @@ PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid, Periodicity periodi
 }
 
 
-PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units,
+PetscErrorCode PIO::inq_units(string name, bool &has_units, PISMUnit &units,
                               bool use_reference_date) const {
   PetscErrorCode ierr;
   string units_string;
@@ -589,7 +586,7 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units,
   // If a variables does not have the units attribute, set the flag and return:
   if (units_string.empty()) {
     has_units = false;
-    utClear(&units);
+    units.reset();
     return 0;
   }
 
@@ -603,13 +600,17 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, utUnit &units,
     */
     if (n != -1) units_string.resize(n);
   } else if (n == -1) {
-    ierr = PetscPrintf(com, "PISM ERROR: units specification '%s' does not contain a reference date (processing variable '%s').\n",
+    ierr = PetscPrintf(com,
+                       "PISM ERROR: units specification '%s' does not contain a reference date (processing variable '%s').\n",
                        units_string.c_str(), name.c_str());
     PISMEnd();
   }
 
-  ierr = utScan(units_string.c_str(), &units);
-  if (ierr != 0) {
+  // strip trailing spaces
+  while (ends_with(units_string, " "))
+    units_string.resize(units_string.size() - 1);
+  
+  if (units.parse(m_unit_system, units_string) != 0) {
     ierr = PetscPrintf(com, "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
 		       units_string.c_str(), name.c_str());
     PISMEnd();

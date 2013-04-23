@@ -260,7 +260,9 @@ PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
 
   // Check if it's time to update:
   PetscReal dt_beddef = t_final - t_beddef_last; // in seconds
-  if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
+  if ((dt_beddef < config.get("bed_def_interval_years",
+                              grid.get_unit_system(),
+                              "years", "seconds") &&
        t_final < grid.time->end()) ||
       dt_beddef < 1e-12)
     return 0;

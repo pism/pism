@@ -90,7 +90,7 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
   config.set("pseudo_plastic_q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
-  basal = new IceBasalResistancePseudoPlasticLaw(config);
+  basal = new IceBasalResistancePseudoPlasticLaw(config, grid.get_unit_system());
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);
@@ -156,7 +156,9 @@ PetscErrorCode SSATestCaseConst::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
  PetscReal /*x*/, PetscReal /*y*/, PetscReal *u, PetscReal *v)
 {
   PetscScalar earth_grav = config.get("standard_gravity"),
-    tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second"),
+    tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
+                                         grid.get_unit_system(),
+                                         "m/year", "m/second"),
     ice_rho = config.get("ice_density");
   
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;

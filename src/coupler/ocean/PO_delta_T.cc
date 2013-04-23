@@ -38,21 +38,21 @@ PetscErrorCode PO_delta_T::allocate_PO_delta_T() {
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
   offset->set_units("Kelvin", "");
-  offset->set_dimension_units(grid.time->units(), "");
+  offset->set_dimension_units(grid.time->units_string(), "");
   offset->set_attr("long_name", "ice-shelf-base temperature offsets");
 
   shelfbmassflux.init_2d("shelfbmassflux", grid);
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("m s-1");
+  shelfbmassflux.set_units(grid.get_unit_system(), "m s-1");
   shelfbmassflux.set_glaciological_units("m year-1");
 
   shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_units("Kelvin");
+  shelfbtemp.set_units(grid.get_unit_system(), "Kelvin");
 
   return 0;
 }

@@ -17,7 +17,7 @@ barB = 3.7e8    # strength of shelf; Pa s^(1/3); as in Schoof 2006; compare 1.9e
 Rc   = 600.0e3  # calving front at 600 km
 Rg   = 300.0e3  # grounding line at 300 km
 H0   = 500.0    # uniform 500 m thickness
-ug   = 100.0 / SperA  # velocity across grounding line is 100 m/a
+ug   = 100.0 / SperA  # velocity across grounding line is 100 m/year
 
 # compute physical constant in ODE
 Q = (1.0-rho/rhow) * rho*g * Rc * H0 / (2.0*barB)
@@ -45,7 +45,7 @@ r  = linspace(Rg,Rc,((Rc-Rg)/dr)+1);
 print 'solving with odeint from scipy.integrate; it reports: ',
 alpha = odeint(GG, [ug], r, printmessg=1,
                rtol=0.0,            # ask for no change in digits
-               atol=0.00001/SperA)  # ask for abs tol of 0.01 mm/a
+               atol=0.00001/SperA)  # ask for abs tol of 0.01 mm/year
 
 # info to evaluate solution
 qual = array(qual)
@@ -55,7 +55,7 @@ guesserr   = qual[:,3]
 print 'maximum relative error in initial guess for fsolve() is %f' \
    % max(guesserr)
 
-print "at calving front:  alpha(Rc) = %f  (m/a)" \
+print "at calving front:  alpha(Rc) = %f  (m/year)" \
    % (alpha[-1] * SperA)
 #print "   (last r used = %f km; strain rate at last r = %f  (1/a))" \
 #   % (rused[-1] / 1000.0, strainrate[-1] * SperA)
@@ -64,7 +64,7 @@ print "at calving front:  alpha(Rc) = %f  (m/a)" \
 figure(1)
 subplot(211)
 plot(r / 1000.0, alpha * SperA,'k',linewidth=3)
-ylabel(r'velocity (m/a)',size=14)
+ylabel(r'velocity (m/year)',size=14)
 subplot(212)
 plot(rused / 1000.0, strainrate * SperA,'ko-')
 axis([Rg/1000.0,Rc/1000.0,0,1.1*max(strainrate * SperA)])

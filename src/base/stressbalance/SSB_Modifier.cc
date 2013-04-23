@@ -72,7 +72,9 @@ PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
 SSBM_Trivial::SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
   : SSB_Modifier(g, e, c)
 {
-  IceFlowLawFactory ice_factory(grid.com, "", config, &EC);
+  IceFlowLawFactory ice_factory(grid.com, "",
+                                grid.get_unit_system(),
+                                config, &EC);
 
   ice_factory.setType(config.get_string("sia_flow_law").c_str());
 

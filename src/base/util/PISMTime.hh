@@ -38,81 +38,57 @@
 class PISMTime
 {
 public:
-  PISMTime(MPI_Comm c, const NCConfigVariable &conf);
-  virtual ~PISMTime() {}
+  PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem units_system);
+  virtual ~PISMTime();
 
   //! \brief Sets the current time (in seconds since the reference time).
-  void set(double new_time)
-  { time_in_seconds = new_time; }
+  void set(double new_time);
 
-  void set_start(double new_start)
-  { run_start = new_start; }
+  void set_start(double new_start);
 
-  void set_end(double new_end)
-  { run_end = new_end; }
-
-  //! \brief Sets the reference date string.
-  void set_reference_date(string str)
-  { reference_date = str; }
+  void set_end(double new_end);
 
   //! \brief Advance by delta_t seconds.
-  void step(double delta_t)
-  {
-    time_in_seconds += delta_t;
-
-    // If we are less than 0.001 second from the end of the run, reset
-    // time_in_seconds to avoid taking a very small (and useless) time step.
-    if (run_end > time_in_seconds &&
-        run_end - time_in_seconds < 1e-3)
-      time_in_seconds = run_end;
-  }
+  void step(double delta_t);
 
   //! \brief Current time, in seconds.
-  double current()
-  { return time_in_seconds; }
+  double current();
 
-  double start()
-  { return run_start; }
+  double start();
 
-  double end()
-  { return run_end; }
+  double end();
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
   /*!
    * This units string is saved in the output file. Always contains a reference
    * date, even if it is not used by PISM.
    */
-  string CF_units()
-  { return string("seconds since ") + reference_date; }
+  string CF_units_string();
 
   //! \brief Returns the calendar string.
-  string calendar()
-  { return calendar_string; }
+  string calendar();
 
   //! \brief Returns the length of the current run, in years.
   string run_length();
 
-  double seconds_to_years(double T)
-  { return T / secpera; }
-
-  double years_to_seconds(double T)
-  { return T * secpera; }
+  double seconds_to_years(double T);
+  double years_to_seconds(double T);
 
   // Virtual methods:
 
   //! \brief Intialize using command-line options.
   virtual PetscErrorCode init();
 
+  PetscErrorCode parse_times(string spec, vector<double> &result);
+
   //! \brief Internal time units.
   /*!
    * May or may not contain a reference date. (The base class PISMTime does not
-   * use the reference date, while PISMGregorianTime does.)
+   * use the reference date, while PISMTime_Calendar does.)
    */
-  virtual string units()
-  { return "seconds"; }
+  virtual string units_string();
 
-  virtual bool use_reference_date()
-  { return false; }
+  virtual bool use_reference_date();
 
   //! \brief Returns time since the origin modulo period.
   virtual double mod(double time, double period);
@@ -127,7 +103,7 @@ public:
 
   //! Increment time `T` by a given amount and return resulting model
   //! time in seconds.
-  virtual double increment_date(double T, int years, int months, int days);
+  virtual double increment_date(double T, int years);
 
   //! \brief Returns the date corresponding to time T.
   virtual string date(double T);
@@ -135,23 +111,41 @@ public:
   //! \brief Returns current time, in years. Only for reporting.
   virtual string date();
 
-  //! \brief All times are interpreted as "time since the reference time", even
-  //! if this implementation does not take advantage of that.
+  //! Date corresponding to the beginning of the run.
   virtual string start_date();
 
-  //! \brief All times are interpreted as "time since the reference time", even
-  //! if this implementation does not take advantage of that.
+  //! Date corresponding to the end of the run.
   virtual string end_date();
 
 protected:
-  MPI_Comm com;
-  const NCConfigVariable &config;
-  double secpera;      //!< number of seconds in a year, for unit conversion
-  double time_in_seconds, //!< current time, in seconds since the reference time
-    run_start,                  //!< run start time, in seconds since the reference time
-    run_end;                    //!< run end tim, in seconds since the reference time
-  string reference_date,     //!< CF reference date; used in the units string
-    calendar_string;         //!< CF calendard string
+  PetscErrorCode parse_list(string spec, vector<double> &result);
+
+  virtual PetscErrorCode process_ys(double &result, bool &flag);
+  virtual PetscErrorCode process_y(double &result, bool &flag);
+  virtual PetscErrorCode process_ye(double &result, bool &flag);
+
+  virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
+                                       string keyword,
+                                       vector<double> &result);
+
+  PetscErrorCode compute_times_simple(double time_start, double delta, double time_end,
+                                      vector<double> &result);
+
+  virtual PetscErrorCode parse_range(string spec, vector<double> &result);
+
+  virtual PetscErrorCode parse_date(string spec, double *result);
+
+  virtual PetscErrorCode parse_interval_length(string spec, string &keyword, double *result);
+
+  MPI_Comm m_com;
+  const NCConfigVariable &m_config;
+  PISMUnitSystem m_unit_system;
+  PISMUnit m_time_units;
+  double m_secpera;      //!< number of seconds in a year, for unit conversion
+  double m_time_in_seconds, //!< current time, in seconds since the reference time
+    m_run_start,                  //!< run start time, in seconds since the reference time
+    m_run_end;                    //!< run end tim, in seconds since the reference time
+  string m_calendar_string;       //!< CF calendar string
 };
 
 #endif /* _PISMTIME_H_ */

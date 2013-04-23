@@ -191,7 +191,8 @@ PetscErrorCode IceModelVec2T::init(string fname, double period, double reference
     NCTimeseries time_dimension;
     time_dimension.init(dimname, dimname, grid->com, grid->rank);
 
-    ierr = time_dimension.set_units(grid->time->units()); CHKERRQ(ierr);
+    ierr = time_dimension.set_units(grid->get_unit_system(),
+                                    grid->time->units_string()); CHKERRQ(ierr);
     ierr = time_dimension.read(nc, grid->time->use_reference_date(), time); CHKERRQ(ierr);
 
     string bounds_name;
@@ -202,7 +203,8 @@ PetscErrorCode IceModelVec2T::init(string fname, double period, double reference
         // read time bounds data from a file
         NCTimeBounds tb;
         tb.init(bounds_name, dimname, grid->com, grid->rank);
-        ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
+        ierr = tb.set_units(grid->get_unit_system(),
+                            time_dimension.get_string("units")); CHKERRQ(ierr);
 
         ierr = tb.read(nc, grid->time->use_reference_date(), time_bounds); CHKERRQ(ierr);
 

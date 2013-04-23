@@ -33,10 +33,6 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
   PetscErrorCode ierr;
   grid = &mygrid;
 
-  if (!utIsInit()) {
-    SETERRQ(grid->com, 1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
-
   if (v != PETSC_NULL) {
     SETERRQ1(grid->com, 2,"IceModelVec3BTU with name='%s' already allocated\n",name.c_str());
   }
@@ -121,7 +117,7 @@ PISMBedThermalUnit::PISMBedThermalUnit(IceGrid &g, const NCConfigVariable &conf)
 PetscErrorCode PISMBedThermalUnit::allocate() {
   PetscErrorCode ierr;
   bool i_set, Mbz_set, Lbz_set;
-  grid_info g;
+  grid_info g(grid.get_unit_system());
 
   ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit options", ""); CHKERRQ(ierr);
   {
@@ -194,7 +190,7 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
 //! \brief Initialize the bedrock thermal unit.
 PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  grid_info g;
+  grid_info g(grid.get_unit_system());
 
   t = dt = GSL_NAN;  // every re-init restarts the clock
 

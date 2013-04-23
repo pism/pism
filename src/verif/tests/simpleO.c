@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2011 Ed Bueler
+   Copyright (C) 2011, 2013 Ed Bueler
   
    This file is part of PISM.
   
@@ -27,8 +27,8 @@ Results from Test O:
    T_m   = 271.034 (K)          [pressure-melting (abs.) temperature at base]
    q_i   = 0.033519 (W m-2)     [upward heat flux in ice]
    q_bed = 0.042000 (W m-2)     [        "        in bedrock]
-   bmelt = 8.80550e-04 (m a-1)
-         = 0.88055 (mm a-1)     [ice-equivalent basal melt rate]
+   bmelt = 8.80550e-04 (m/year)
+         = 0.88055 (mm/year)    [ice-equivalent basal melt rate]
 
 */
 
@@ -57,8 +57,8 @@ int main() {
   printf("   T_m   = %.3f (K)          [pressure-melting (abs.) temperature at base]\n",Tm);
   printf("   q_i   = %f (W m-2)     [upward heat flux in ice]\n",qice);
   printf("   q_bed = %f (W m-2)     [        \"        in bedrock]\n",qbed);
-  printf("   bmelt = %.5e (m a-1)\n"
-         "         = %.5f (mm a-1)     [ice-equivalent basal melt rate]\n",
+  printf("   bmelt = %.5e (m/year)\n"
+         "         = %.5f (mm/year)    [ice-equivalent basal melt rate]\n",
          bmelt*secpera,1000.0*bmelt*secpera);
 
   return 0;

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ public:
     OM1 = config.get("drainage_target_water_frac"); // 0.01
     OM2 = 2.0 * OM1;
     OM3 = 3.0 * OM1;
-    DR3 = config.get("drainage_max_rate"); // 0.05 a-1 
+    DR3 = config.get("drainage_max_rate"); // 0.05 year-1 
     DR2 = 0.1 * DR3;
   }
   virtual ~DrainageCalculator() {}

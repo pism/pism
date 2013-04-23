@@ -101,7 +101,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
                  n_records = 1;
 
-    PIO nc(grid.com, grid.rank, "netcdf3");
+    PIO nc(grid.com, grid.rank, "netcdf3", grid.get_unit_system());
     ierr = nc.open(itbfilename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_nrecords("inputtobed", "", n_records); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
@@ -583,7 +583,9 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
   }
 
   const PetscReal
-    diffusion_time  = config.get("hydrology_bwat_diffusion_time", "years", "seconds"), // convert to seconds
+    diffusion_time  = config.get("hydrology_bwat_diffusion_time",
+                                 grid.get_unit_system(),
+                                 "years", "seconds"), // convert to seconds
     bwat_max        = config.get("hydrology_bwat_max"),
     bwat_decay_rate = config.get("hydrology_bwat_decay_rate"),
     K               = L * L / (2.0 * diffusion_time);
@@ -758,7 +760,7 @@ PISMHydrology_hydroinput::PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g,
     : PISMDiag<PISMHydrology>(m, g, my_vars) {
   vars[0].init_2d("hydroinput", grid);
   set_attrs("total water input into subglacial hydrology layer",
-            "", "m s-1", "m a-1", 0);
+            "", "m s-1", "m/year", 0);
 }
 
 

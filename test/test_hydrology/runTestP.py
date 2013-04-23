@@ -169,7 +169,7 @@ def generate_pism_input(x, y, xx, yy):
                      attrs = {"long_name"   : "y-component of prescribed sliding velocity",
                               "units"       : "m s-1"})
 
-  Phi0 = 0.20                           # 20 cm a-1 basal melt rate
+  Phi0 = 0.20                           # 20 cm/year basal melt rate
   T_surface = 260                       # ice surface temperature, K
 
   variables = {"topg" : np.zeros_like(xx),

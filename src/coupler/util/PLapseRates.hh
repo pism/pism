@@ -149,7 +149,7 @@ protected:
       unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
-      PIO nc(g.com, g.rank, "netcdf3");
+      PIO nc(g.com, g.rank, "netcdf3", g.get_unit_system());
       ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
       ierr = nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
@@ -172,7 +172,7 @@ protected:
       ierr = reference_surface.set_attrs("climate_forcing",
                                          "reference surface for lapse rate corrections",
                                          "m", "surface_altitude"); CHKERRQ(ierr);
-      reference_surface.set_n_evaluations_per_year(Mod::config.get("climate_forcing_evaluations_per_year"));
+      reference_surface.set_n_evaluations_per_year((unsigned int)Mod::config.get("climate_forcing_evaluations_per_year"));
     }
 
     ierr = verbPrintf(2, g.com,

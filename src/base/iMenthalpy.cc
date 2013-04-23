@@ -125,7 +125,7 @@ PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
   ierr = result.set_attrs(
      "diagnostic",
      "liquid water fraction in ice (between 0 and 1)",
-     "", ""); CHKERRQ(ierr);
+     "1", ""); CHKERRQ(ierr);
 
   PetscScalar *omegaij, *Enthij; // columns of these values
   ierr = result.begin_access(); CHKERRQ(ierr);

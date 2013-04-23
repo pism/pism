@@ -42,14 +42,14 @@ PetscErrorCode PALapseRates::allocate_PALapseRates() {
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name",
 			   "ice-equivalent precipitation rate with a lapse-rate correction");
-  ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = precipitation.set_units(grid.get_unit_system(),"m s-1"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name",
                       "near-surface air temperature with a lapse-rate correction");
-  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
+  ierr = air_temp.set_units(grid.get_unit_system(),"K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -80,9 +80,9 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
                     "   precipitation lapse rate:   %3.3f m/year per km\n",
                     temp_lapse_rate, precip_lapse_rate); CHKERRQ(ierr);
 
-  temp_lapse_rate = convert(temp_lapse_rate, "K/km", "K/m");
+  temp_lapse_rate = grid.conv(temp_lapse_rate, "K/km", "K/m");
 
-  precip_lapse_rate = convert(precip_lapse_rate, "m/year / km", "m/s / m");
+  precip_lapse_rate = grid.conv(precip_lapse_rate, "m/year / km", "m/s / m");
 
   return 0;
 }

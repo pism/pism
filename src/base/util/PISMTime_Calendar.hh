@@ -20,12 +20,14 @@
 #define _PISMGREGORIANTIME_H_
 
 #include "PISMTime.hh"
+#include "PISMUnits.hh"
 
-class PISMGregorianTime : public PISMTime
+class PISMTime_Calendar : public PISMTime
 {
 public:
-  PISMGregorianTime(MPI_Comm c, const NCConfigVariable &conf);
-  virtual ~PISMGregorianTime() {}
+  PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
+                    PISMUnitSystem units_system);
+  virtual ~PISMTime_Calendar();
 
   virtual PetscErrorCode init();
 
@@ -43,18 +45,36 @@ public:
 
   virtual string end_date();
 
-  virtual string units()
-  { return CF_units(); }
+  virtual string units_string()
+  { return CF_units_string(); }
 
   virtual bool use_reference_date()
   { return true; }
 
   virtual double calendar_year_start(double T);
 
-  virtual double increment_date(double T, int years, int months, int days);
+  virtual double increment_date(double T, int years);
 
 protected:
-  utUnit ut_units;
+  virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
+                                       string keyword,
+                                       vector<double> &result);
+
+  virtual PetscErrorCode process_ys(double &result, bool &flag);
+  virtual PetscErrorCode process_y(double &result, bool &flag);
+  virtual PetscErrorCode process_ye(double &result, bool &flag);
+
+  virtual PetscErrorCode parse_date(string spec, double *result);
+
+  virtual PetscErrorCode parse_interval_length(string spec, string &keyword, double *result);
+
+  PetscErrorCode compute_times_monthly(vector<double> &result);
+
+  PetscErrorCode compute_times_yearly(vector<double> &result);
+private:
+  // Hide copy constructor / assignment operator.
+  PISMTime_Calendar(PISMTime_Calendar const &);
+  PISMTime_Calendar & operator=(PISMTime_Calendar const &);
 };
 
 

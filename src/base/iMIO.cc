@@ -74,7 +74,7 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
 
   // save the config file
   if (dump_config) {
-    ierr = config.write(config_out); CHKERRQ(ierr);
+    ierr = config.write(config_out, grid.get_unit_system()); CHKERRQ(ierr);
   }
 
 #ifdef PISM_PROFILE
@@ -123,7 +123,8 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
   // Prepare the file
   string time_name = config.get_string("time_dimension_name");
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
-  ierr = nc.def_time(time_name, config.get_string("calendar"), grid.time->CF_units()); CHKERRQ(ierr);
+  ierr = nc.def_time(time_name, grid.time->calendar(),
+                     grid.time->CF_units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
 
   // Write metadata *before* variables:
@@ -447,7 +448,7 @@ PetscErrorCode IceModel::initFromFile(string filename) {
         // use vWork3d as already-allocated space
         ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);
         ierr = vWork3d.set_attrs("internal", "liqfrac; temporary use during initialization",
-                                 "", ""); CHKERRQ(ierr);
+                                 "1", ""); CHKERRQ(ierr);
         ierr = vWork3d.read(filename, last_record); CHKERRQ(ierr);
 
         ierr = compute_enthalpy(temperature, vWork3d, Enth3); CHKERRQ(ierr);
@@ -604,9 +605,7 @@ PetscErrorCode IceModel::init_snapshots() {
     return 0;
   }
 
-  ierr = parse_times(grid.com, config, tmp,
-                     grid.time->start(),
-                     grid.time->end(), snapshot_times);
+  ierr = grid.time->parse_times(tmp, snapshot_times);
   if (ierr != 0) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_times argument failed.\n"); CHKERRQ(ierr);
     PISMEnd();
@@ -701,8 +700,8 @@ PetscErrorCode IceModel::write_snapshot() {
     // Prepare the snapshots file:
     ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
-                       config.get_string("calendar"),
-                       grid.time->CF_units()); CHKERRQ(ierr);
+                       grid.time->calendar(),
+                       grid.time->CF_units_string()); CHKERRQ(ierr);
 
     ierr = write_metadata(nc); CHKERRQ(ierr);
 
@@ -788,8 +787,8 @@ PetscErrorCode IceModel::write_backup() {
   // write metadata:
   ierr = nc.open(backup_filename, PISM_WRITE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
-                     config.get_string("calendar"),
-                     grid.time->CF_units()); CHKERRQ(ierr);
+                     grid.time->calendar(),
+                     grid.time->CF_units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
 
   // Write metadata *before* variables:

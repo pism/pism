@@ -37,14 +37,14 @@ PetscErrorCode POConstant::allocate_POConstant() {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("m s-1");
+  shelfbmassflux.set_units(grid.get_unit_system(), "m s-1");
   shelfbmassflux.set_glaciological_units("m year-1");
 
   shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_units("Kelvin");
+  shelfbtemp.set_units(grid.get_unit_system(), "Kelvin");
 
   return 0;
 }
@@ -117,7 +117,7 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
 
   if (meltrate_set) {
 
-    meltrate = convert(mymeltrate,"m year-1","m s-1");
+    meltrate = grid.conv(mymeltrate,"m year-1","m s-1");
 
   } else {
 

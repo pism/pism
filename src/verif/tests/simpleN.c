@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2010 Ed Bueler
+   Copyright (C) 2010, 2013 Ed Bueler
   
    This file is part of PISM.
   
@@ -25,8 +25,8 @@ Enter  x  (in km; 0.0 <= x <= 500.0):   300.0
 Results from Test N:
      H    = ice thickness        =   1920.00000 (m)
      h_x  = surface slope        = -7.20000e-03
-     u    = ice velocity         =    300.00000 (m a-1)
-     M    = surface mass balance =    -24.00000 (cm a-1)
+     u    = ice velocity         =    300.00000 (m/year)
+     M    = surface mass balance =    -24.00000 (cm/year)
      B    = ice hardness         =  1.36989e+08 (Pa s^(1/3))
      beta = ice hardness         =  1.29813e+10 (Pa s m-1)
 */
@@ -69,8 +69,8 @@ int main() {
   printf(
     "     H    = ice thickness        = %12.5f (m)\n"
     "     h_x  = surface slope        = %12.5e\n"
-    "     u    = ice velocity         = %12.5f (m a-1)\n"
-    "     M    = surface mass balance = %12.5f (cm a-1)\n"
+    "     u    = ice velocity         = %12.5f (m/year)\n"
+    "     M    = surface mass balance = %12.5f (cm/year)\n"
     "     B    = ice hardness         = %12.5e (Pa s^(1/3))\n"
     "     beta = ice hardness         = %12.5e (Pa s m-1)\n",
     H, hx, u * secpera, M * secpera * 100.0, B, beta);

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Constantine Khroulev
+// Copyright (C) 2009--2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,6 +28,8 @@ class IceGrid;
 class NCSpatialVariable : public NCVariable {
 public:
   NCSpatialVariable();
+  NCSpatialVariable(const NCSpatialVariable &other);
+  virtual ~NCSpatialVariable();
   virtual void init_2d(string name, IceGrid &g);
   virtual void init_3d(string name, IceGrid &g, vector<double> &zlevels);
   virtual void set_levels(const vector<double> &levels);
@@ -53,7 +55,7 @@ protected:
   vector<double> zlevels;
   IceGrid *grid;
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
-  PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
+  PetscErrorCode change_units(Vec v, PISMUnit &from, PISMUnit &to);
   PetscErrorCode check_range(string filename, Vec v);
   PetscErrorCode define_dimensions(const PIO &nc);
 };

@@ -77,7 +77,7 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
       A = new Timeseries(&grid, "amplitude_scaling",
                          config.get_string("time_dimension_name"));
       A->set_units("1", "1");
-      A->set_dimension_units(grid.time->units(), "");
+      A->set_dimension_units(grid.time->units_string(), "");
       A->set_attr("long_name", "cosine yearly cycle amplitude scaling");
     }
 
