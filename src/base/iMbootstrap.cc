@@ -235,40 +235,34 @@ PetscErrorCode IceModel::bootstrap_3d() {
 //! Create a temperature field within ice and bedrock from given surface temperature and geothermal flux maps.
 /*!
 In bootstrapping we need to guess about the temperature within the ice and
-bedrock if surface temperature and geothermal flux maps are given. This rule is
-heuristic but seems to work well anyway. Full bootstrapping will start from the
-temperature computed by this procedure and then run for a long time (e.g.
-\f$10^5\f$ years), with fixed geometry, to get closer to thermomechanically
-coupled equilibrium. See the part of the *User's Manual* on
-EISMINT-Greenland.
+bedrock if surface temperature and geothermal flux maps are given.  The rule for
+the ice here is heuristic but seems to work well anyway.  The result is not
+the temperature field at steady state, and it may be significantly different,
+so spinup is most-definitely needed in many applications.  Such spinup usually
+starts from the temperature field computed by this procedure and then runs for
+a long time (e.g. \f$10^5\f$ years), with fixed geometry, to get closer to
+thermomechanically coupled equilibrium.
 
 Consider a horizontal grid point `i,j`. Suppose the surface temperature
 \f$T_s\f$ and the geothermal flux \f$g\f$ are given at that grid point. Within
-the corresponding column, denote the temperature by \f$T(z)\f$ for some
-elevation \f$z\f$ above the base of the ice. (Note ice corresponds to \f$z>0\f$
-while bedrock has \f$z<0\f$.) Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is
-above the top of the ice (at \f$z=H\f$).
-
+the column, denote the temperature by \f$T(z)\f$ at height \f$z\f$ above the
+base of the ice.  Set \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice.
 Within the ice, set
 \f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
 where \f$\alpha,\beta\f$ are chosen so that
 \f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
 and 
 \f[\frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
-
-The point of the second condition is our observation that, in observed ice, the
-rate of decrease in ice temperature with elevation is significantly decreased
-at only one quarter of the ice thickness above the base.
+The purpose of the second condition is that when ice is advecting downward then
+the temperature gradient is much larger in roughly the bottom quarter of the
+ice column.
 
 The temperature within the ice is not allowed to exceed the pressure-melting
 temperature.
 
-Note that the above heuristic rule for ice determines \f$T(0)\f$. Within the
-bedrock our rule is that the rate of change with depth is exactly the
-geothermal flux:
-\f[T(z) = T(0) - \frac{g}{k_r} z.\f]
-Note that \f$z\f$ here is negative, so the temperature increases as one goes
-down into the bed.
+This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
+temperature is used by PISMBedThermalUnit::bootstrap() to determine a
+bootstrap temperature profile in the bedrock.
 
 FIXME issue #15
 */
@@ -295,10 +289,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   ierr = artm.begin_access(); CHKERRQ(ierr);
   ierr =   vH.begin_access();   CHKERRQ(ierr);
-  ierr = vbed.begin_access();   CHKERRQ(ierr);
   ierr = vGhf.begin_access(); CHKERRQ(ierr);
-
   ierr = result->begin_access(); CHKERRQ(ierr);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar HH = vH(i,j);
@@ -333,8 +326,8 @@ PetscErrorCode IceModel::putTempAtDepth() {
       
     }
   }
+
   ierr =     vH.end_access(); CHKERRQ(ierr);
-  ierr =   vbed.end_access(); CHKERRQ(ierr);
   ierr =   vGhf.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
   ierr =   artm.end_access(); CHKERRQ(ierr);
