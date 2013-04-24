@@ -638,6 +638,11 @@ PetscErrorCode IceModel::init_snapshots() {
 
   ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp.c_str()); CHKERRQ(ierr);
 
+  timestamp.init("timestamp", config.get_string("time_dimension_name"),
+                 grid.com, grid.rank);
+  timestamp.set_units(grid.get_unit_system(), "hours");
+  timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
+
   return 0;
 }
 
@@ -687,15 +692,6 @@ PetscErrorCode IceModel::write_snapshot() {
                     grid.time->date(saving_after).c_str());
   CHKERRQ(ierr);
 
-  // create line for history in .nc file, including time of write
-
-  string date_str = pism_timestamp();
-  char tmp[TEMPORARY_STRING_LENGTH];
-  snprintf(tmp, TEMPORARY_STRING_LENGTH,
-           "%s: %s snapshot at %s, for time-step goal %s\n",
-           date_str.c_str(), executable_short_name.c_str(), grid.time->date().c_str(),
-           grid.time->date(saving_after).c_str());
-
   if (!snapshots_file_is_ready) {
     // Prepare the snapshots file:
     ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
@@ -710,10 +706,27 @@ PetscErrorCode IceModel::write_snapshot() {
     ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append==true
   }
 
+  unsigned int time_length = 0;
+
   ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
-  ierr = nc.append_history(tmp); CHKERRQ(ierr); // append the history
+  ierr = nc.inq_dimlen(config.get_string("time_dimension_name"), time_length); CHKERRQ(ierr);
 
   ierr = write_variables(nc, snapshot_vars, PISM_DOUBLE);
+
+  {
+    // find out how much time passed since the beginning of the run
+    double wall_clock_hours;
+    if (grid.rank == 0) {
+      PetscLogDouble current_time;
+      ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+      wall_clock_hours = (current_time - start_time) / 3600.0;
+    }
+
+    MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
+
+    ierr = timestamp.write(nc, static_cast<size_t>(time_length - 1),
+                           wall_clock_hours); CHKERRQ(ierr);
+  }
 
   ierr = nc.close(); CHKERRQ(ierr);
 
