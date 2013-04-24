@@ -128,13 +128,16 @@ by the CF Metadata Conventions document except for the
   \label{tab:calendars}
 \end{table}
 
-By default PISM does not use a calendar. This is appropriate for runs that do not require precise application of forcing data or reporting on particular dates (paleo-climate runs, for example).
+Time units in PISM's output files always contain a reference date
+because it is required by the CF metadata conventions.
 
+By default PISM does not use a calendar. This is appropriate for runs that
+do not require precise application of forcing data or reporting on
+particular dates (paleo-climate runs, for example).
 In this mode PISM ignores the reference date in time unit specifications
 (such as ``\texttt{days since 1969-7-20}''), though the value set using
 \config{reference_date} configuration parameter is saved in
-output files.  Time units in PISM's output files always contain a reference date
-because it is required by the CF metadata conventions.
+output files.
 
 Selecting a calendar using the \config{calendar} configuration
 parameter or the \intextoption{-calendar} command-line option enables calendar-based time management.
