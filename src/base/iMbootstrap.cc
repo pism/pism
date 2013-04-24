@@ -235,7 +235,53 @@ PetscErrorCode IceModel::bootstrap_3d() {
   return 0;
 }
 
-//! Create a temperature field within ice and bedrock from given surface temperature and geothermal flux maps.
+
+//NEW VERSION:
+//! Create a temperature field within ice from provided surface temperature, surface mass balance, and geothermal flux.
+/*!
+In bootstrapping we need to set some initial values for the temperature within
+the ice (and bedrock).  There is various data available at bootstrapping,
+but there is not enough to determine initial value for temperature.  Here 
+we take a "guess" based on an assumption of steady state, and an estimate of
+the vertical velocity in the column.  The data which are needed are the surface
+temperature, surface mass balance, geothermal flux, and the ice thickness.  The
+rule is heuristic but seems to work well anyway.
+
+The result is *not* the temperature field which is in steady state with the ice
+dynamics.  Spinup is most-definitely needed in many applications.  Such spinup
+usually starts from the temperature field computed by this procedure and then
+runs for a long time (e.g. \f$10^5\f$ years), with fixed geometry, to get closer
+to thermomechanically-coupled equilibrium.
+
+Consider a horizontal grid point `i,j`. Suppose the surface temperature
+\f$T_s\f$, surface mass balance \$m\$, and geothermal flux \f$g\f$ are given at
+the grid point.  Within the column, denote the temperature by \f$T(z)\f$ at
+height \f$z\f$ above the base of the ice.  We set the ice temperature to the
+solution of the steady problem [\ref Paterson]
+  \f[\rho_i c w \frac{\partial T}{\partial z} = k_i \frac{\partial^2 T}{\partial z^2}\f]
+with boundary conditions \f$T(H) = T_s\f$ where \f$H\f$ is the ice thickness,
+and \f$\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f$, where the
+vertical velocity is linear between the surface value and zero at the base:
+  \f[w(z) = - m z / H.\f]
+
+The solution is 
+
+FIXME
+
+The temperature within the ice is not allowed to exceed the pressure-melting
+temperature.
+
+This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
+temperature is used by PISMBedThermalUnit::bootstrap() to determine a
+bootstrap temperature profile in the bedrock.
+
+FIXME issue #15
+*/
+// PetscErrorCode IceModel::putTempAtDepth() {
+// }
+
+
+//! Create a temperature field within ice from provided surface temperature and geothermal flux maps.
 /*!
 In bootstrapping we need to guess about the temperature within the ice and
 bedrock if surface temperature and geothermal flux maps are given.  The rule for
