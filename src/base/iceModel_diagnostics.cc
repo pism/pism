@@ -363,7 +363,7 @@ IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   vars[0].init_2d("rank", grid);
 
-  set_attrs("processor rank", "", "count", "", 0);
+  set_attrs("processor rank", "", "1", "", 0);
   vars[0].time_independent = true;
 }
 

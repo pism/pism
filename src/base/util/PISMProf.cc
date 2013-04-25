@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@ PISMProf::PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s) {
   tmp.name = "processor_rank";
   tmp.description = "processor rank";
   tmp.total_time = r;
-  tmp.units = "count";
+  tmp.units = "1";
   events.push_back(tmp);
 }
 
@@ -53,7 +53,7 @@ void PISMProf::set_grid_size(int n) {
   tmp.name = "processor_grid_size";
   tmp.description = "number of map-plane grid points in a processor's subdomain";
   tmp.total_time = n;
-  tmp.units = "count";
+  tmp.units = "1";
   events.push_back(tmp);
 }
 
