@@ -1219,15 +1219,12 @@ PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
       count[j] = y_count;
       imap[j]  = z_count;
       break;
+    default:
     case Z_AXIS:
       start[j] = z_start;
       count[j] = z_count;
       imap[j]  = 1;
       break;
-    default:
-      {
-        SETERRQ(com, 1, "dimtype is not one of T_AXIS, X_AXIS, Y_AXIS, Z_AXIS");
-      }
     }
 
 // #if (PISM_DEBUG==1)

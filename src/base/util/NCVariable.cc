@@ -208,7 +208,6 @@ NCSpatialVariable::NCSpatialVariable()
 
   z_attrs["axis"]          = "Z";
   z_attrs["long_name"]     = "Z-coordinate in Cartesian system";
-  // PROPOSED: z_attrs["standard_name"] = "projection_z_coordinate";
   z_attrs["units"]         = "m";
   z_attrs["positive"]      = "up";
 
@@ -844,6 +843,12 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, PISM_IO_Type nctype,
     return 0;
 
   ierr = define_dimensions(nc); CHKERRQ(ierr);
+
+  // "..._bounds" should be stored with grid corners (corresponding to
+  // the "z" dimension here) last, so we override the variable storage
+  // order here
+  if (ends_with(short_name, "_bounds") && variable_order == "zyx")
+    variable_order = "yxz";
 
   string x = dimensions["x"],
     y = dimensions["y"],

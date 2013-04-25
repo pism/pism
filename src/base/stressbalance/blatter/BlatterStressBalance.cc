@@ -110,15 +110,27 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
 	        	  "W m-3", ""); CHKERRQ(ierr);
   ierr = strain_heating.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
 
+  vector<double> sigma(blatter_Mz);
+  double dz = 1.0 / (blatter_Mz - 1);
+  for (int i = 0; i < blatter_Mz; ++i)
+    sigma[i] = i * dz;
+  sigma.back() = 1.0;
+
+  map<string,string> z_attrs;
+  z_attrs["axis"]          = "Z";
+  z_attrs["long_name"]     = "scaled Z-coordinate in the ice (z_base=0, z_surface=1)";
+  z_attrs["units"]         = "1";
+  z_attrs["positive"]      = "up";
+
   // storage for u and v on the sigma vertical grid (for restarting)
-  ierr =     u_sigma.create(grid, "uvel_sigma", false, blatter_Mz); CHKERRQ(ierr);
+  ierr =     u_sigma.create(grid, "uvel_sigma", "z_sigma", sigma, z_attrs); CHKERRQ(ierr);
   ierr =     u_sigma.set_attrs("diagnostic",
 			       "horizontal velocity of ice in the X direction on the sigma vertical grid",
 			       "m s-1", ""); CHKERRQ(ierr);
   ierr =     u_sigma.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   u_sigma.write_in_glaciological_units = false;
 
-  ierr =     v_sigma.create(grid, "vvel_sigma", false, blatter_Mz); CHKERRQ(ierr);
+  ierr =     v_sigma.create(grid, "vvel_sigma", "z_sigma", sigma, z_attrs); CHKERRQ(ierr);
   ierr =     v_sigma.set_attrs("diagnostic",
 			       "horizontal velocity of ice in the Y direction on the sigma vertical grid",
 			       "m s-1", ""); CHKERRQ(ierr);

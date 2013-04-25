@@ -22,7 +22,7 @@
 #include "ShallowStressBalance.hh"
 #include "Blatter_implementation.h"
 #include "IceGrid.hh"
-#include "IceModelVec3Scaled.hh"
+#include "IceModelVec3Custom.hh"
 
 // Tell the linker that these are called from the C code:
 extern "C" {
@@ -136,7 +136,7 @@ protected:
 
   IceModelVec2S *bed_elevation, *ice_thickness, *tauc;
   IceModelVec3 *enthalpy;
-  IceModelVec3Scaled u_sigma, v_sigma; // u and v components on the "sigma" vertical grid
+  IceModelVec3Custom u_sigma, v_sigma; // u and v components on the "sigma" vertical grid
 
   BlatterQ1Ctx ctx;
   SNES snes;

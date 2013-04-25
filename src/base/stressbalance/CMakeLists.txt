@@ -42,8 +42,7 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable(blatter_test
     blatter/Blatter_implementation.c
     blatter/BlatterStressBalance.cc
-    blatter/blatter_test.cc
-    blatter/IceModelVec3Scaled.cc)
+    blatter/blatter_test.cc)
   target_link_libraries (blatter_test pismutil pismbase pismstressbalance)
 endif()
 
