@@ -265,6 +265,8 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
   if (flag == false)
     return 0;
 
+  err.set_units(grid.get_unit_system(), "1");
+
   ierr = verbPrintf(2, grid.com, "Also writing errors to '%s'...\n", filename.c_str());
   CHKERRQ(ierr);
 
@@ -293,41 +295,41 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
   ierr = err.write(nc, (size_t)start, grid.dy); CHKERRQ(ierr);
 
   // Always write the test name:
-  err.reset();
+  err.reset(); err.set_units(grid.get_unit_system(), "1");
   err.short_name = "test";
   ierr = err.write(nc, (size_t)start, testname[0], PISM_BYTE); CHKERRQ(ierr);
 
-  err.reset();
+  err.reset(); err.set_units(grid.get_unit_system(), "1");
   err.short_name = "max_velocity";
   ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum ice velocity magnitude error");
   ierr = err.write(nc, (size_t)start, max_vector); CHKERRQ(ierr);
 
-  err.reset();
+  err.reset(); err.set_units(grid.get_unit_system(), "1");
   err.short_name = "relative_velocity";
   ierr = err.set_units(grid.get_unit_system(), "percent"); CHKERRQ(ierr);
   err.set_string("long_name", "relative ice velocity magnitude error");
   ierr = err.write(nc, (size_t)start, rel_vector); CHKERRQ(ierr);
 
-  err.reset();
+  err.reset(); err.set_units(grid.get_unit_system(), "1");
   err.short_name = "maximum_u";
   ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
   ierr = err.write(nc, (size_t)start, max_u); CHKERRQ(ierr);
 
-  err.reset();
+  err.reset(); err.set_units(grid.get_unit_system(), "1");
   err.short_name = "maximum_v";
   ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
   ierr = err.write(nc, (size_t)start, max_v); CHKERRQ(ierr);
 
-  err.reset();
+  err.reset(); err.set_units(grid.get_unit_system(), "1");
   err.short_name = "average_u";
   ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the X-component of the ice velocity");
   ierr = err.write(nc, (size_t)start, avg_u); CHKERRQ(ierr);
 
-  err.reset();
+  err.reset(); err.set_units(grid.get_unit_system(), "1");
   err.short_name = "average_v";
   ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the Y-component of the ice velocity");

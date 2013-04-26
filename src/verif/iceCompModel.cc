@@ -1054,6 +1054,9 @@ PetscErrorCode IceCompModel::reportErrors() {
   string filename;
   bool netcdf_report, append;
   NCTimeseries err;
+
+  err.set_units(grid.get_unit_system(), "1");
+
   PIO nc(grid.com, grid.rank, "netcdf3", grid.get_unit_system()); // OK to use netcdf3
 
   ierr = PISMOptionsString("-report_file", "NetCDF error report file",
@@ -1084,7 +1087,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = err.write(nc, (size_t)start, grid.dzMAX); CHKERRQ(ierr);
 
     // Always write the test name:
-    err.reset();
+    err.reset(); err.set_units(grid.get_unit_system(), "1");
     err.short_name = "test";
     ierr = err.write(nc, (size_t)start, (double)testname, PISM_BYTE); CHKERRQ(ierr);
   }
@@ -1105,7 +1108,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                       maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset();
+      err.reset(); err.set_units(grid.get_unit_system(), "1");
       err.short_name = "relative_volume";
       ierr = err.set_units(grid.get_unit_system(), "percent"); CHKERRQ(ierr);
       err.set_string("long_name", "relative ice volume error");
@@ -1141,7 +1144,7 @@ PetscErrorCode IceCompModel::reportErrors() {
        maxTerr, avTerr, basemaxTerr, baseavTerr); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset();
+      err.reset(); err.set_units(grid.get_unit_system(), "1");
       err.short_name = "maximum_temperature";
       ierr = err.set_units(grid.get_unit_system(), "Kelvin"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice temperature error");
@@ -1169,7 +1172,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset();
+      err.reset(); err.set_units(grid.get_unit_system(), "1");
       err.short_name = "maximum_temperature";
       ierr = err.set_units(grid.get_unit_system(), "Kelvin"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice temperature error");
@@ -1199,7 +1202,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                   max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset();
+      err.reset(); err.set_units(grid.get_unit_system(), "1");
       err.short_name = "maximum_sigma";
       ierr = err.set_units(grid.get_unit_system(), "J s-1 m-3"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("1e6 J s-1 m-3"); CHKERRQ(ierr);
@@ -1222,7 +1225,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxUerr*secpera, avUerr*secpera, maxWerr*secpera, avWerr*secpera); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset();
+      err.reset(); err.set_units(grid.get_unit_system(), "1");
       err.short_name = "maximum_surface_velocity";
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
       ierr = err.set_units(grid.get_unit_system(), "m/s"); CHKERRQ(ierr);
@@ -1257,7 +1260,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset();
+      err.reset(); err.set_units(grid.get_unit_system(), "1");
       err.short_name = "maximum_basal_velocity";
       ierr = err.set_units(grid.get_unit_system(), "m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
@@ -1270,7 +1273,7 @@ PetscErrorCode IceCompModel::reportErrors() {
       err.short_name = "maximum_basal_v";
       ierr = err.write(nc, (size_t)start, maxvberr); CHKERRQ(ierr);
 
-      err.reset();
+      err.reset(); err.set_units(grid.get_unit_system(), "1");
       err.short_name = "relative_basal_velocity";
       ierr = err.set_units(grid.get_unit_system(), "percent"); CHKERRQ(ierr);
       ierr = err.write(nc, (size_t)start, (avvecerr/exactmaxspeed)*100); CHKERRQ(ierr);
@@ -1292,7 +1295,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = verbPrintf(1,grid.com, "           %11.5f\n", maxbmelterr*secpera); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset();
+      err.reset(); err.set_units(grid.get_unit_system(), "1");
       err.short_name = "maximum_basal_melt_rate";
       ierr = err.set_units(grid.get_unit_system(), "m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
