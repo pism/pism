@@ -51,6 +51,8 @@ public:
   PIO(const PIO &other);
   virtual ~PIO();
 
+  virtual PetscErrorCode check_if_exists(string filename, bool &result);
+
   virtual PetscErrorCode open(string filename, int mode, bool append = false);
 
   virtual PetscErrorCode close();

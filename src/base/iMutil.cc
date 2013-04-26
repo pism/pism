@@ -113,12 +113,8 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   return 0;
 }
 
-
-//! Build the particular history string associated to the end of a PISM run,
-//! including a minimal performance assessment.
-PetscErrorCode  IceModel::stampHistoryEnd() {
+PetscErrorCode IceModel::update_run_stats() {
   PetscErrorCode ierr;
-
   // timing stats
   PetscLogDouble current_time;
   PetscReal wall_clock_hours, proc_hours, mypph;
@@ -141,19 +137,44 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
   MPI_Allreduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, grid.com);
 
+  run_stats.set("wall_clock_hours", wall_clock_hours);
+  run_stats.set("processor_hours", proc_hours);
+  run_stats.set("model_years_per_processor_hour", mypph);
+  run_stats.set("PETSc_MFlops", flops * 1.0e-6);
+
+  run_stats.set("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);
+  run_stats.set("float_kill_flux_cumulative", float_kill_flux_cumulative);
+  run_stats.set("discharge_flux_cumulative", discharge_flux_cumulative);
+  run_stats.set("nonneg_rule_flux_cumulative", nonneg_rule_flux_cumulative);
+  run_stats.set("ocean_kill_flux_cumulative", ocean_kill_flux_cumulative);
+  run_stats.set("sub_shelf_ice_flux_cumulative", sub_shelf_ice_flux_cumulative);
+  run_stats.set("surface_ice_flux_cumulative", surface_ice_flux_cumulative);
+  run_stats.set("sum_divQ_SIA_cumulative", sum_divQ_SIA_cumulative);
+  run_stats.set("sum_divQ_SSA_cumulative", sum_divQ_SSA_cumulative);
+  run_stats.set("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
+  run_stats.set("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
+
+  return 0;
+}
+
+//! Build the particular history string associated to the end of a PISM run,
+//! including a minimal performance assessment.
+PetscErrorCode  IceModel::stampHistoryEnd() {
+  PetscErrorCode ierr;
+
+  ierr = update_run_stats(); CHKERRQ(ierr);
+
   // build and put string into global attribute "history"
   char str[TEMPORARY_STRING_LENGTH];
 
   snprintf(str, TEMPORARY_STRING_LENGTH,
     "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour, PETSc MFlops = %.2f.",
-    wall_clock_hours, proc_hours, mypph, flops * 1.0e-6);
+           run_stats.get("wall_clock_hours"),
+           run_stats.get("processor_hours"),
+           run_stats.get("model_years_per_processor_hour"),
+           run_stats.get("PETSc_MFlops"));
 
   ierr = stampHistory(str); CHKERRQ(ierr);
-
-  global_attributes.set("wall_clock_hours", wall_clock_hours);
-  global_attributes.set("processor_hours", proc_hours);
-  global_attributes.set("model_years_per_processor_hour", mypph);
-  global_attributes.set("PETSc_MFlops", flops * 1.0e-6);
 
   return 0;
 }

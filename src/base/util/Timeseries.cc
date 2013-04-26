@@ -394,25 +394,26 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
-  int file_exists = 0;
-  if (rank == 0) {
-    // Check if the file exists:
-    if (FILE *f = fopen(filename.c_str(), "r")) {
-      file_exists = 1;
-      fclose(f);
-    } else {
-      file_exists = 0;
-    }
-  }
-  ierr = MPI_Bcast(&file_exists, 1, MPI_INT, 0, com); CHKERRQ(ierr);
+  bool file_exists = false;
+  ierr = nc.check_if_exists(filename, file_exists); CHKERRQ(ierr);
 
-  if (file_exists == 1) {
+  if (file_exists == true) {
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_dimlen(dimension.short_name, len); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
     if (len > 0) {
       // read the last value and initialize v_previous and v[0]
+      vector<double> tmp;
+      bool var_exists;
+
+      ierr = nc.inq_var(short_name, var_exists); CHKERRQ(ierr);
+      if (var_exists) {
+        ierr = nc.get_1d_var(short_name, len - 1, 1, tmp); CHKERRQ(ierr);
+        // NOTE: this is WRONG if rate_of_change == true!
+        v.push_back(tmp[0]);
+        v_previous = tmp[0];
+      }
     }
+    ierr = nc.close(); CHKERRQ(ierr);
   }
 
   output_filename = filename;

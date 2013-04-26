@@ -155,6 +155,23 @@ PetscErrorCode IceModel::set_output_size(string option,
     i++;
   }
 
+  // add cumulative quantities to ensure continuity after restarting
+  if (climatic_mass_balance_cumulative.was_created()) {
+    result.insert("climatic_mass_balance_cumulative");
+  }
+  if (ocean_kill_flux_2D_cumulative.was_created()) {
+    result.insert("ocean_kill_flux_2D_cumulative");
+  }
+  if (grounded_basal_flux_2D_cumulative.was_created()) {
+    result.insert("grounded_basal_flux_2D_cumulative");
+  }
+  if (floating_basal_flux_2D_cumulative.was_created()) {
+    result.insert("floating_basal_flux_2D_cumulative");
+  }
+  if (nonneg_flux_2D_cumulative.was_created()) {
+    result.insert("nonneg_flux_2D_cumulative");
+  }
+
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):
     string tmp = config.get_string("output_medium");

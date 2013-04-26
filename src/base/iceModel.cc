@@ -41,6 +41,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   : grid(g), config(conf), overrides(conf_overrides) {
 
   mapping.init("mapping", grid.com, grid.rank);
+  run_stats.init("run_stats", grid.com, grid.rank);
   global_attributes.init("global_attributes", grid.com, grid.rank);
 
   pism_signal = 0;
@@ -832,7 +833,6 @@ PetscErrorCode IceModel::run() {
   stdout_flags.erase(); // clear it out
   ierr = summaryPrintLine(PETSC_TRUE, do_energy, "", 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
-  reset_counters();
   ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
 
   // main loop for time evolution

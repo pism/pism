@@ -196,7 +196,9 @@ protected:
 
   NCConfigVariable      mapping, //!< grid projection (mapping) parameters
     &config,			 //!< configuration flags and parameters
-    &overrides;			 //!< flags and parameters overriding config, see -config_override
+    &overrides,			 //!< flags and parameters overriding config, see -config_override
+    run_stats;                   //!< run statistics
+
   NCGlobalAttributes    global_attributes;
 
   PISMHydrology   *subglacial_hydrology;
@@ -420,6 +422,7 @@ protected:
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
   virtual PetscErrorCode stampHistory(string);
+  virtual PetscErrorCode update_run_stats();
   virtual PetscErrorCode check_maximum_thickness();
   virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
   virtual bool           issounding(const PetscInt i, const PetscInt j);

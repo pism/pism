@@ -175,6 +175,30 @@ PetscErrorCode PIO::detect_mode(string filename) {
   return 0;
 }
 
+PetscErrorCode PIO::check_if_exists(string filename, bool &result) {
+  PetscErrorCode ierr;
+
+  int file_exists = 0;
+  if (rank == 0) {
+    // Check if the file exists:
+    if (FILE *f = fopen(filename.c_str(), "r")) {
+      file_exists = 1;
+      fclose(f);
+    } else {
+      file_exists = 0;
+    }
+  }
+  ierr = MPI_Bcast(&file_exists, 1, MPI_INT, 0, com); CHKERRQ(ierr);
+
+  if (file_exists == 1)
+    result = true;
+  else
+    result = false;
+
+  return 0;
+}
+
+
 PetscErrorCode PIO::open(string filename, int mode, bool append) {
   PetscErrorCode stat;
 
