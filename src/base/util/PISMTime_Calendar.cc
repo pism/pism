@@ -361,6 +361,7 @@ double PISMTime_Calendar::increment_date(double T, int years) {
   cal = ccs_init_calendar(m_calendar_string.c_str());
   assert(cal != NULL);
   errcode = ccs_isleap(cal, year + years, &leap);
+  assert(errcode == 0);
   ccs_free_calendar(cal);
 
   if (leap == 0 && month == 2 && day == 29) {

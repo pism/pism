@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -486,6 +486,28 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+#if (PISM_USE_PROJ4==1)
+
+#include <proj_api.h>
+
+//! \brief Computes latitude and longitude bounds.
+class IceModel_lat_lon_bounds : public PISMDiag<IceModel>
+{
+public:
+  IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVars &my_vars,
+                          string var_name,
+                          string proj_string);
+  ~IceModel_lat_lon_bounds();
+  virtual PetscErrorCode compute(IceModelVec* &result);
+protected:
+  string m_var_name;
+  projPJ pism, lonlat;
+};
+#elif (PISM_USE_PROJ4==0)
+// do nothing
+#else  // PISM_USE_PROJ4 is not set
+#error "PISM build system error: PISM_USE_PROJ4 is not set."
+#endif
 
 #endif  /* _ICEMODEL_DIAGNOSTICS_H_ */
 

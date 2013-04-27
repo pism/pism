@@ -32,9 +32,9 @@ ncks -O $DATANAME $PISMVERSION  # just copies over, but preserves history and gl
 
 # adjust metadata; uses NCO (http://nco.sourceforge.net/)
 # convert from water equiv to ice thickness change rate; assumes ice density 910.0 kg m-3
-ncap -O -s "precipitation=presprcp*(1000.0/910.0)" $PISMVERSION $PISMVERSION
-ncatted -O -a units,precipitation,a,c,"m/year" $PISMVERSION
-ncatted -O -a long_name,precipitation,a,c,"ice-equivalent mean annual precipitation rate" $PISMVERSION
+ncap2 -O -s "precipitation=presprcp*(1000.0/910.0)" $PISMVERSION $PISMVERSION
+ncatted -O -a units,precipitation,c,c,"m/year" $PISMVERSION
+ncatted -O -a long_name,precipitation,c,c,"ice-equivalent mean annual precipitation rate" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION
 ncks -O -v lat,lon,bheatflx,topg,thk,precipitation,mapping \
@@ -50,7 +50,7 @@ echo -n "creating paleo-temperature file $TEMPSERIES from $DATANAME for option -
 ncks -O -v oisotopestimes,temp_time_series $DATANAME $TEMPSERIES
 ncrename -O -d oisotopestimes,time -v oisotopestimes,time -v temp_time_series,delta_T $TEMPSERIES
 ncpdq -O --rdr=-time $TEMPSERIES $TEMPSERIES  # reverse time dimension
-ncap -O -s "time=-time" $TEMPSERIES $TEMPSERIES  # make times follow same convention as PISM
+ncap2 -O -s "time=-time" $TEMPSERIES $TEMPSERIES  # make times follow same convention as PISM
 ncatted -O -a units,time,a,c,"years since 1-1-1" $TEMPSERIES
 ncatted -O -a units,delta_T,m,c,"Kelvin" $TEMPSERIES
 echo "done."
@@ -59,7 +59,7 @@ echo -n "creating paleo-sea-level file $SLSERIES from $DATANAME for option -ocea
 ncks -O -v sealeveltimes,sealevel_time_series $DATANAME $SLSERIES
 ncrename -O -d sealeveltimes,time -v sealeveltimes,time -v sealevel_time_series,delta_SL $SLSERIES
 ncpdq -O --rdr=-time $SLSERIES $SLSERIES  # reverse time dimension
-ncap -O -s "time=-time" $SLSERIES $SLSERIES  # make times follow same convention as PISM
+ncap2 -O -s "time=-time" $SLSERIES $SLSERIES  # make times follow same convention as PISM
 ncatted -O -a units,time,a,c,"years since 1-1-1" $SLSERIES
 echo "done."
 echo

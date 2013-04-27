@@ -64,11 +64,11 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // Get the bootstrapping file name:
 
   ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
-			   filename, boot_file_set); CHKERRQ(ierr);
+                           filename, boot_file_set); CHKERRQ(ierr);
 
   if (!boot_file_set) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: Please specify an input file using -i or -boot_file.\n");
+                       "PISM ERROR: Please specify an input file using -i or -boot_file.\n");
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -137,7 +137,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
     if (t_exists) {
       grid.time->set_start(input.time);
       ierr = verbPrintf(2, grid.com,
-  		      "  time t = %s found; setting current time\n",
+                      "  time t = %s found; setting current time\n",
                         grid.time->date().c_str()); CHKERRQ(ierr);
     }
   }
@@ -152,7 +152,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
   if ( !(Mx_set && My_set && Mz_set && Lz_set) ) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.\n");
+                       "PISM ERROR: All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.\n");
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -176,20 +176,20 @@ PetscErrorCode IceModel::set_grid_from_options() {
 
   // Read -Lx and -Ly.
   ierr = PISMOptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
-			 y_scale,  Ly_set); CHKERRQ(ierr);
+                         y_scale,  Ly_set); CHKERRQ(ierr);
   ierr = PISMOptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
-			 x_scale,  Lx_set); CHKERRQ(ierr);
+                         x_scale,  Lx_set); CHKERRQ(ierr);
   // Vertical extent (in the ice):
   ierr = PISMOptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
-			 z_scale,  Lz_set); CHKERRQ(ierr);
+                         z_scale,  Lz_set); CHKERRQ(ierr);
 
   // Read -Mx, -My, -Mz and -Mbz.
   ierr = PISMOptionsInt("-My", "Number of grid points in the X direction",
-			grid.My, My_set); CHKERRQ(ierr);
+                        grid.My, My_set); CHKERRQ(ierr);
   ierr = PISMOptionsInt("-Mx", "Number of grid points in the Y direction",
-			grid.Mx, Mx_set); CHKERRQ(ierr);
+                        grid.Mx, Mx_set); CHKERRQ(ierr);
   ierr = PISMOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
-			grid.Mz, Mz_set); CHKERRQ(ierr);
+                        grid.Mz, Mz_set); CHKERRQ(ierr);
 
   vector<double> x_range, y_range;
   bool x_range_set, y_range_set;
@@ -204,7 +204,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   z_spacing_choices.insert("equal");
   // Determine the vertical grid spacing in the ice:
   ierr = PISMOptionsList(grid.com, "-z_spacing", "Vertical spacing in the ice.",
-			 z_spacing_choices, "quadratic", keyword, z_spacing_set); CHKERRQ(ierr);
+                         z_spacing_choices, "quadratic", keyword, z_spacing_set); CHKERRQ(ierr);
 
   if (keyword == "quadratic") {
     grid.ice_vertical_spacing = QUADRATIC;
@@ -219,7 +219,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   periodicity_choices.insert("y");
   periodicity_choices.insert("xy");
   ierr = PISMOptionsList(grid.com, "-periodicity", "Horizontal grid periodicity.",
-			 periodicity_choices, "none", keyword, periodicity_set); CHKERRQ(ierr);
+                         periodicity_choices, "none", keyword, periodicity_set); CHKERRQ(ierr);
   if (periodicity_set) {
     if (keyword == "none")
       grid.periodicity = NONE;
@@ -234,7 +234,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   // Use the information obtained above:
   if (Lx_set)    grid.Lx  = x_scale * 1000.0; // convert to meters
   if (Ly_set)    grid.Ly  = y_scale * 1000.0; // convert to meters
-  if (Lz_set)    grid.Lz  = z_scale;	      // in meters already
+  if (Lz_set)    grid.Lz  = z_scale;          // in meters already
 
   if (x_range_set && y_range_set) {
     if (x_range.size() != 2 || y_range.size() != 2) {
@@ -281,11 +281,11 @@ PetscErrorCode IceModel::grid_setup() {
                            ""); CHKERRQ(ierr);
 
   ierr = verbPrintf(3, grid.com,
-		    "Setting up the computational grid...\n"); CHKERRQ(ierr);
+                    "Setting up the computational grid...\n"); CHKERRQ(ierr);
 
   // Check if we are initializing from a PISM output file:
   ierr = PISMOptionsString("-i", "Specifies a PISM input file",
-			   filename, i_set); CHKERRQ(ierr);
+                           filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
     PIO nc(grid, "guess_mode");
@@ -308,17 +308,17 @@ PetscErrorCode IceModel::grid_setup() {
     // If it's missing, print a warning
     if (source.empty()) {
       ierr = verbPrintf(1, grid.com,
-			"PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
-			"     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
-			"     ncatted -a source,global,c,c,PISM %s\n",
-			filename.c_str(), filename.c_str(), filename.c_str()); CHKERRQ(ierr);
+                        "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
+                        "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
+                        "     ncatted -a source,global,c,c,PISM %s\n",
+                        filename.c_str(), filename.c_str(), filename.c_str()); CHKERRQ(ierr);
     } else if (source.find("PISM") == string::npos) {
       // If the 'source' attribute does not contain the string "PISM", then print
       // a message and stop:
       ierr = verbPrintf(1, grid.com,
-			"PISM WARNING: '%s' does not seem to be a PISM output file.\n"
-			"     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
-			filename.c_str()); CHKERRQ(ierr);
+                        "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
+                        "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
+                        filename.c_str()); CHKERRQ(ierr);
     }
 
     vector<string> names;
@@ -366,13 +366,13 @@ PetscErrorCode IceModel::grid_setup() {
 
   bool Nx_set, Ny_set;
   ierr = PISMOptionsInt("-Nx", "Number of processors in the x direction",
-			grid.Nx, Nx_set); CHKERRQ(ierr);
+                        grid.Nx, Nx_set); CHKERRQ(ierr);
   ierr = PISMOptionsInt("-Ny", "Number of processors in the y direction",
-			grid.Ny, Ny_set); CHKERRQ(ierr);
+                        grid.Ny, Ny_set); CHKERRQ(ierr);
 
   if (Nx_set ^ Ny_set) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: Please set both -Nx and -Ny.\n");
+                       "PISM ERROR: Please set both -Nx and -Ny.\n");
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -384,24 +384,24 @@ PetscErrorCode IceModel::grid_setup() {
 
     if ((grid.Mx / grid.Nx) < 2) {
       ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: Can't split %d grid points between %d processors.\n",
-			 grid.Mx, grid.Nx);
+                         "PISM ERROR: Can't split %d grid points between %d processors.\n",
+                         grid.Mx, grid.Nx);
       CHKERRQ(ierr);
       PISMEnd();
     }
 
     if ((grid.My / grid.Ny) < 2) {
       ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: Can't split %d grid points between %d processors.\n",
-			 grid.My, grid.Ny);
+                         "PISM ERROR: Can't split %d grid points between %d processors.\n",
+                         grid.My, grid.Ny);
       CHKERRQ(ierr);
       PISMEnd();
     }
 
     if (grid.Nx * grid.Ny != grid.size) {
       ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: Nx * Ny has to be equal to %d.\n",
-			 grid.size);
+                         "PISM ERROR: Nx * Ny has to be equal to %d.\n",
+                         grid.size);
       CHKERRQ(ierr);
       PISMEnd();
     }
@@ -409,40 +409,40 @@ PetscErrorCode IceModel::grid_setup() {
     bool procs_x_set, procs_y_set;
     vector<PetscInt> tmp_x, tmp_y;
     ierr = PISMOptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
-			       tmp_x, procs_x_set); CHKERRQ(ierr);
+                               tmp_x, procs_x_set); CHKERRQ(ierr);
     ierr = PISMOptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
-			       tmp_y, procs_y_set); CHKERRQ(ierr);
+                               tmp_y, procs_y_set); CHKERRQ(ierr);
 
     if (procs_x_set ^ procs_y_set) {
       ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: Please set both -procs_x and -procs_y.\n");
+                         "PISM ERROR: Please set both -procs_x and -procs_y.\n");
       CHKERRQ(ierr);
       PISMEnd();
     }
 
     if (procs_x_set && procs_y_set) {
       if (tmp_x.size() != (unsigned int)grid.Nx) {
-	ierr = PetscPrintf(grid.com,
-			   "PISM ERROR: -Nx has to be equal to the -procs_x size.\n");
-	CHKERRQ(ierr);
-	PISMEnd();
+        ierr = PetscPrintf(grid.com,
+                           "PISM ERROR: -Nx has to be equal to the -procs_x size.\n");
+        CHKERRQ(ierr);
+        PISMEnd();
       }
 
       if (tmp_y.size() != (unsigned int)grid.Ny) {
-	ierr = PetscPrintf(grid.com,
-			   "PISM ERROR: -Ny has to be equal to the -procs_y size.\n");
-	CHKERRQ(ierr);
-	PISMEnd();
+        ierr = PetscPrintf(grid.com,
+                           "PISM ERROR: -Ny has to be equal to the -procs_y size.\n");
+        CHKERRQ(ierr);
+        PISMEnd();
       }
 
       grid.procs_x.resize(grid.Nx);
       grid.procs_y.resize(grid.Ny);
 
       for (PetscInt j=0; j < grid.Nx; j++)
-	grid.procs_x[j] = tmp_x[j];
+        grid.procs_x[j] = tmp_x[j];
 
       for (PetscInt j=0; j < grid.Ny; j++)
-	grid.procs_y[j] = tmp_y[j];
+        grid.procs_y[j] = tmp_y[j];
     } else {
       grid.compute_ownership_ranges();
     }
@@ -483,12 +483,14 @@ PetscErrorCode IceModel::model_state_setup() {
   bool i_set;
   string filename;
 
+  reset_counters();
+
   // Initialize (or re-initialize) boundary models.
   ierr = init_couplers(); CHKERRQ(ierr);
-  
+
   // Check if we are initializing from a PISM output file:
   ierr = PISMOptionsString("-i", "Specifies the PISM input file",
-			   filename, i_set); CHKERRQ(ierr);
+                           filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
     ierr = initFromFile(filename.c_str()); CHKERRQ(ierr);
@@ -559,6 +561,84 @@ PetscErrorCode IceModel::model_state_setup() {
     } else {
       ierr = ocean_kill_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
     }
+  }
+
+  if (grounded_basal_flux_2D_cumulative.was_created()) {
+    if (i_set) {
+      ierr = verbPrintf(2, grid.com,
+                        "* Trying to read cumulative grounded basal flux from '%s'...\n",
+                        filename.c_str()); CHKERRQ(ierr);
+      ierr = grounded_basal_flux_2D_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+    } else {
+      ierr = grounded_basal_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
+    }
+  }
+
+  if (floating_basal_flux_2D_cumulative.was_created()) {
+    if (i_set) {
+      ierr = verbPrintf(2, grid.com,
+                        "* Trying to read cumulative floating basal flux from '%s'...\n",
+                        filename.c_str()); CHKERRQ(ierr);
+      ierr = floating_basal_flux_2D_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+    } else {
+      ierr = floating_basal_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
+    }
+  }
+
+  if (nonneg_flux_2D_cumulative.was_created()) {
+    if (i_set) {
+      ierr = verbPrintf(2, grid.com,
+                        "* Trying to read cumulative nonneg flux from '%s'...\n",
+                        filename.c_str()); CHKERRQ(ierr);
+      ierr = nonneg_flux_2D_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+    } else {
+      ierr = nonneg_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
+    }
+  }
+
+  if (i_set) {
+    PIO nc(grid.com, grid.rank, "netcdf3", grid.get_unit_system());
+    bool run_stats_exists;
+
+    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_var("run_stats", run_stats_exists); CHKERRQ(ierr);
+    if (run_stats_exists) {
+      ierr = run_stats.read(nc); CHKERRQ(ierr);
+    }
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    if (run_stats.has("grounded_basal_ice_flux_cumulative"))
+      grounded_basal_ice_flux_cumulative = run_stats.get("grounded_basal_ice_flux_cumulative");
+
+    if (run_stats.has("float_kill_flux_cumulative"))
+      float_kill_flux_cumulative = run_stats.get("float_kill_flux_cumulative");
+
+    if (run_stats.has("discharge_flux_cumulative"))
+      discharge_flux_cumulative = run_stats.get("discharge_flux_cumulative");
+
+    if (run_stats.has("nonneg_rule_flux_cumulative"))
+      nonneg_rule_flux_cumulative = run_stats.get("nonneg_rule_flux_cumulative");
+
+    if (run_stats.has("ocean_kill_flux_cumulative"))
+      ocean_kill_flux_cumulative = run_stats.get("ocean_kill_flux_cumulative");
+
+    if (run_stats.has("sub_shelf_ice_flux_cumulative"))
+      sub_shelf_ice_flux_cumulative = run_stats.get("sub_shelf_ice_flux_cumulative");
+
+    if (run_stats.has("surface_ice_flux_cumulative"))
+      surface_ice_flux_cumulative = run_stats.get("surface_ice_flux_cumulative");
+
+    if (run_stats.has("sum_divQ_SIA_cumulative"))
+      sum_divQ_SIA_cumulative = run_stats.get("sum_divQ_SIA_cumulative");
+
+    if (run_stats.has("sum_divQ_SSA_cumulative"))
+      sum_divQ_SSA_cumulative = run_stats.get("sum_divQ_SSA_cumulative");
+
+    if (run_stats.has("Href_to_H_flux_cumulative"))
+      Href_to_H_flux_cumulative = run_stats.get("Href_to_H_flux_cumulative");
+
+    if (run_stats.has("H_to_Href_flux_cumulative"))
+      H_to_Href_flux_cumulative = run_stats.get("H_to_Href_flux_cumulative");
   }
 
   ierr = compute_cell_areas(); CHKERRQ(ierr);

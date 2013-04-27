@@ -103,6 +103,9 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping) {
     ierr = mapping.write(nc); CHKERRQ(ierr);
   }
 
+  ierr = update_run_stats(); CHKERRQ(ierr);
+  ierr = run_stats.write(nc); CHKERRQ(ierr);
+
   ierr = global_attributes.write(nc); CHKERRQ(ierr);
 
   bool override_used;
@@ -323,7 +326,7 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
     }
   }
 
-  // if user wants it, give it to them (ignor -o_size, except "none")
+  // if user wants it, give it to them (ignore -o_size, except "none")
   bool userWantsCTS;
   ierr = PISMOptionsIsSet("-cts", userWantsCTS); CHKERRQ(ierr);
   if (userWantsCTS) {
@@ -331,6 +334,20 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
                       "  writing CTS (= E/Es) scalar field 'cts' ...\n"); CHKERRQ(ierr);
     output_vars.insert("cts");
   }
+
+#if (PISM_USE_PROJ4==1)
+
+  if (mapping.has("proj4")) {
+    output_vars.insert("lon_bounds");
+    output_vars.insert("lat_bounds");
+    vLatitude.set_attr("bounds", "lat_bound");
+    vLongitude.set_attr("bounds", "lon_bound");
+  }
+#elif (PISM_USE_PROJ4==0)
+  // do nothing
+#else  // PISM_USE_PROJ4 is not set
+#error "PISM build system error: PISM_USE_PROJ4 is not set."
+#endif
 
   ierr = write_variables(nc, output_vars, PISM_DOUBLE); CHKERRQ(ierr);
 
@@ -735,33 +752,33 @@ PetscErrorCode IceModel::write_snapshot() {
   return 0;
 }
 
-  //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
-  PetscErrorCode IceModel::init_backups() {
-    PetscErrorCode ierr;
-    bool o_set;
+//! Initialize the backup (snapshot-on-wallclock-time) mechanism.
+PetscErrorCode IceModel::init_backups() {
+  PetscErrorCode ierr;
+  bool o_set;
 
-    backup_interval = config.get("backup_interval");
+  backup_interval = config.get("backup_interval");
 
-    ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
-    {
-      ierr = PISMOptionsString("-o", "Output file name", backup_filename, o_set); CHKERRQ(ierr);
-      if (!o_set)
-        backup_filename = executable_short_name + "_backup.nc";
-      else
-        backup_filename = pism_filename_add_suffix(backup_filename, "_backup", "");
+  ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-o", "Output file name", backup_filename, o_set); CHKERRQ(ierr);
+    if (!o_set)
+      backup_filename = executable_short_name + "_backup.nc";
+    else
+      backup_filename = pism_filename_add_suffix(backup_filename, "_backup", "");
 
-      ierr = PISMOptionsReal("-backup_interval", "Automatic backup interval, hours",
-                             backup_interval, o_set); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-backup_interval", "Automatic backup interval, hours",
+                           backup_interval, o_set); CHKERRQ(ierr);
 
-      ierr = set_output_size("-backup_size", "Sets the 'size' of a backup file.",
-                             "small", backup_vars); CHKERRQ(ierr);
-    }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-    last_backup_time = 0.0;
-
-    return 0;
+    ierr = set_output_size("-backup_size", "Sets the 'size' of a backup file.",
+                           "small", backup_vars); CHKERRQ(ierr);
   }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  last_backup_time = 0.0;
+
+  return 0;
+}
 
   //! Write a backup (i.e. an intermediate result of a run).
 PetscErrorCode IceModel::write_backup() {

@@ -306,7 +306,7 @@ parser.add_argument("--eta",dest="eta", action="store_true",
                     help="to add '-eta' option to pismv call")
 parser.add_argument("-l", dest="levels", type=int, default=2,
                     help="number of levels of verification; '-l 1' fast, '-l 5' slowest")
-parser.add_argument("--mpido", dest="mpido", default="mpiexec - np",
+parser.add_argument("--mpido", dest="mpido", default="mpiexec -np",
                     help="specify MPI executable (e.g. 'mpirun -np' or 'aprun -n')")
 parser.add_argument("-n", dest="n", type=int, default=2,
                     help="number of processors to use")
@@ -322,8 +322,6 @@ parser.add_argument("--debug", dest="debug", action="store_true",
                     help="just print commands in sequence (do not run pismv)")
 parser.add_argument("--userman", dest="userman", action="store_true",
                     help="run tests necessary to produce figures in the User's Manual")
-parser.add_argument("--save_figures", dest="save_figures", action="store_true",
-                    help="save fugires to .png files")
 
 options = parser.parse_args()
 extra_options = ""

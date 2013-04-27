@@ -31,6 +31,7 @@
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
 #include "bedrockThermalUnit.hh"
+#include "IceModelVec3Custom.hh"
 
 PetscErrorCode IceModel::init_diagnostics() {
   bool print_list_and_stop = false;
@@ -81,6 +82,18 @@ PetscErrorCode IceModel::init_diagnostics() {
       print_list_and_stop) {
     diagnostics["floating_basal_flux_cumulative"] = new IceModel_floating_basal_flux_2D_cumulative(this, grid, variables);
   }
+
+#if (PISM_USE_PROJ4==1)
+  if (mapping.has("proj4")) {
+    string proj4 = mapping.get_string("proj4");
+    diagnostics["lat_bounds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lat", proj4);
+    diagnostics["lon_bounds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lon", proj4);
+  }
+#elif (PISM_USE_PROJ4==0)
+  // do nothing
+#else  // PISM_USE_PROJ4 is not set
+#error "PISM build system error: PISM_USE_PROJ4 is not set."
+#endif
 
   ts_diagnostics["ivol"]          = new IceModel_ivol(this, grid, variables);
   ts_diagnostics["slvol"]         = new IceModel_slvol(this, grid, variables);
@@ -350,7 +363,7 @@ IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   vars[0].init_2d("rank", grid);
 
-  set_attrs("processor rank", "", "count", "", 0);
+  set_attrs("processor rank", "", "1", "", 0);
   vars[0].time_independent = true;
 }
 
@@ -2114,3 +2127,107 @@ PetscErrorCode IceModel_floating_basal_flux_2D_cumulative::compute(IceModelVec* 
   return 0;
 }
 
+
+#if (PISM_USE_PROJ4==1)
+IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVars &my_vars,
+                                                 string var_name, string proj_string)
+  :PISMDiag<IceModel>(m, g, my_vars) {
+  assert(var_name == "lat" || var_name == "lon");
+  m_var_name = var_name;
+
+  // set metadata:
+  vector<double> levels(4);
+  for (int k = 0; k < 4; ++k)
+    levels[k] = k;
+
+  vars[0].init_3d(m_var_name + "_bounds", grid, levels);
+  vars[0].dimensions["z"] = "grid_corners";
+  vars[0].z_attrs.clear();
+  vars[0].time_independent = true;
+
+  if (m_var_name == "lon") {
+    set_attrs("longitude bounds", "", "degree_east", "degree_east", 0);
+    vars[0].set("valid_min", -180);
+    vars[0].set("valid_max", 180);
+  } else {
+    set_attrs("latitude bounds", "", "degree_north", "degree_north", 0);
+    vars[0].set("valid_min", -90);
+    vars[0].set("valid_max", 90);
+  }
+
+  lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
+  if (lonlat == NULL) {
+    PetscPrintf(grid.com, "PISM ERROR: projection initialization failed "
+                "('+proj=latlong +datum=WGS84 +ellps=WGS84').\n");
+    PISMEnd();
+  }
+
+  pism = pj_init_plus(proj_string.c_str());
+  if (pism == NULL) {
+    PetscPrintf(grid.com, "PISM ERROR: proj.4 string '%s' is invalid. Exiting...\n",
+                proj_string.c_str());
+    PISMEnd();
+  }
+
+}
+
+IceModel_lat_lon_bounds::~IceModel_lat_lon_bounds() {
+  pj_free(pism);
+  pj_free(lonlat);
+}
+
+PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec3Custom *result = new IceModelVec3Custom;
+  map<string,string> attrs;
+  vector<double> indices(4);
+
+  ierr = result->create(grid, m_var_name + "_bounds", "grid_corners",
+                        indices, attrs); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+
+  double dx2 = 0.5 * grid.dx, dy2 = 0.5 * grid.dy;
+  double x_offsets[] = {-dx2, dx2, dx2, -dx2};
+  double y_offsets[] = {-dy2, -dy2, dy2, dy2};
+
+  bool latitude = true;
+  if (m_var_name == "lon")
+    latitude = false;
+
+  ierr =  result->begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double x0 = grid.x[i], y0 = grid.y[j];
+      PetscScalar *values;
+
+      ierr = result->getInternalColumn(i,j,&values); CHKERRQ(ierr);
+
+      for (int k = 0; k < 4; ++k) {
+        double
+          x = x0 + x_offsets[k],
+          y = y0 + y_offsets[k];
+
+        // compute lon,lat coordinates:
+        pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
+
+        // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
+
+        if (latitude)
+          values[k] = y * RAD_TO_DEG;
+        else
+          values[k] = x * RAD_TO_DEG;
+      }
+    }
+  }
+  ierr =  result->end_access(); CHKERRQ(ierr);
+
+  output = result;
+
+  return 0;
+}
+#elif (PISM_USE_PROJ4==0)
+  // do nothing
+#else  // PISM_USE_PROJ4 is not set
+#error "PISM build system error: PISM_USE_PROJ4 is not set."
+#endif

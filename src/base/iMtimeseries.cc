@@ -104,12 +104,27 @@ PetscErrorCode IceModel::init_timeseries() {
   PIO nc(grid, "netcdf3");      // Use NetCDF-3 to write time-series.
   ierr = nc.open(ts_filename, PISM_WRITE, append); CHKERRQ(ierr);
 
-  ierr = write_metadata(nc, false); CHKERRQ(ierr);
-
   if (append == true) {
-    // read the last record of the time variable and skip requested
-    // times before this time
+    double time_max;
+    string time_name = config.get_string("time_dimension_name");
+    bool time_exists = false;
+
+    ierr = nc.inq_var(time_name, time_exists); CHKERRQ(ierr);
+    if (time_exists == true) {
+      ierr = nc.inq_dim_limits(time_name, NULL, &time_max); CHKERRQ(ierr);
+
+      while (current_ts < ts_times.size() && ts_times[current_ts] < time_max)
+        current_ts++;
+
+      if (current_ts > 0) {
+        ierr = verbPrintf(2, grid.com,
+                          "skipping times before the last record in %s (at %s)\n",
+                          ts_filename.c_str(), grid.time->date(time_max).c_str()); CHKERRQ(ierr);
+      }
+    }
   }
+
+  ierr = write_metadata(nc, false); CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -130,6 +145,7 @@ PetscErrorCode IceModel::init_timeseries() {
     return 0;
   }
 
+  // discard requested times before the beginning of the run
   vector<double> tmp(ts_times.size() - current_ts);
   for (unsigned int k = 0; k < tmp.size(); ++k)
     tmp[k] = ts_times[current_ts + k];
@@ -229,6 +245,46 @@ PetscErrorCode IceModel::init_extras() {
   if (extra_times.size() == 0) {
     PetscPrintf(grid.com, "PISM ERROR: no argument for -extra_times option.\n");
     PISMEnd();
+  }
+
+  bool append;
+  ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
+
+  if (append == true && split == true) {
+    PetscPrintf(grid.com, "PISM ERROR: both -extra_split and -extra_append are set.\n");
+    PISMEnd();
+  }
+
+  if (append) {
+    PIO nc(grid, grid.config.get_string("output_format"));
+    string time_name = config.get_string("time_dimension_name");
+    bool time_exists;
+
+    ierr = nc.open(extra_filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_var(time_name, time_exists); CHKERRQ(ierr);
+
+    if (time_exists == true) {
+      double time_max;
+      ierr = nc.inq_dim_limits(time_name, NULL, &time_max); CHKERRQ(ierr);
+
+      while (next_extra + 1 < extra_times.size() && extra_times[next_extra + 1] < time_max)
+        next_extra++;
+
+      if (next_extra > 0) {
+        ierr = verbPrintf(2, grid.com,
+                          "skipping times before the last record in %s (at %s)\n",
+                          extra_filename.c_str(), grid.time->date(time_max).c_str()); CHKERRQ(ierr);
+      }
+
+      // discard requested times before the beginning of the run
+      vector<double> tmp(extra_times.size() - next_extra);
+      for (unsigned int k = 0; k < tmp.size(); ++k)
+        tmp[k] = extra_times[next_extra + k];
+
+      extra_times = tmp;
+      next_extra = 0;
+    }
+    ierr = nc.close(); CHKERRQ(ierr);
   }
 
   save_extra = true;
