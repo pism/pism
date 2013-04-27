@@ -580,6 +580,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   //   ice is cold
   ierr = config.flag_from_option("cold", "do_cold_ice_methods"); CHKERRQ(ierr);
 
+  // at bootstrapping, choose whether the method uses smb as upper boundary for
+  // vertical velocity
+  ierr = config.flag_from_option("boot_no_smb_in_temp", "bootstrapping_no_smb_in_initial_temp"); CHKERRQ(ierr);
+
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
 

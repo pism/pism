@@ -147,8 +147,8 @@ netcdf pism_config {
     pism_config:bootstrapping_tillphi_value_no_var = 15.0;
     pism_config:bootstrapping_tillphi_value_no_var_doc = "degrees; till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip";
 
-    pism_config:bootstrapping_use_surface_mass_balance_for_initial_temp = "yes";  // FIXME
-    pism_config:bootstrapping_use_surface_mass_balance_for_initial_temp_doc = "if 'yes' then use the method in IceModel::putTempAtDepth() which includes the surface mass balance";
+    pism_config:bootstrapping_no_smb_in_initial_temp = "no";
+    pism_config:bootstrapping_no_smb_in_initial_temp_doc = "if 'no' then use the method in IceModel::putTempAtDepth() which includes the surface mass balance; if 'yes' use the old PISM method which does not use smb";
 
     pism_config:sia_enhancement_factor = 1.0;
     pism_config:sia_enhancement_factor_doc = "; Flow enhancement factor for SIA";

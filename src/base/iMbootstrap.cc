@@ -222,8 +222,9 @@ PetscErrorCode IceModel::bootstrap_3d() {
                           "years", "seconds"));
   }
   
-  ierr = verbPrintf(2, grid.com, 
-     "  filling in ice and bedrock temperatures using surface temps and quartic guess\n");
+  ierr = verbPrintf(2, grid.com, "  filling ice temperatures using surface temps (and %s)\n",
+     (config.get_flag("bootstrapping_no_smb_in_initial_temp")
+        ? "quartic guess sans smb" : "mass balance for velocity estimate") );
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
@@ -260,13 +261,11 @@ the base of the ice.  Suppose the column of ice has height \f$H\f$, the ice
 thickness.
 
 There are two alternative bootstrap methods determined by configuration flag
-`usesmb` = bootstrapping_use_surface_mass_balance_for_initial_temp.
+`dontusesmb` = bootstrapping_no_smb_in_initial_temp.
 
-1. If `usesmb` is true then the method sets the ice temperature to the solution
-of the steady problem [\ref Paterson]
-  \f[\rho_i c w \frac{\partial T}{\partial z} = k_i \frac{\partial^2 T}{\partial z^2}\f]
-with boundary conditions
-  \f[ T(H) = T_s \quad \text{and} \quad \frac{\partial T}{\partial z}(0) = - \frac{g}{k_i}, \f]
+1. If `dontusesmb` is false, which is the default, then the method sets the ice
+temperature to the solution of the steady problem [\ref Paterson]
+  \f[\rho_i c w \frac{\partial T}{\partial z} = k_i \frac{\partial^2 T}{\partial z^2} \qquad \text{with boundary conditions} \qquad T(H) = T_s \quad \text{and} \quad \frac{\partial T}{\partial z}(0) = - \frac{g}{k_i}, \f]
 where the vertical velocity is linear between the surface value \f$w=-m\f$ and
 a velocity of zero at the base:
   \f[w(z) = - m z / H.\f]
@@ -279,17 +278,16 @@ Let
 [\ref Paterson]; compare [\ref vanderWeletal2013].)  The solution to the
 two-point boundary value problem is
   \f[T(z) = T_s + C_0 \left(\operatorname{erf}(\gamma_0) - \operatorname{erf}\left(\gamma_0 \frac{z}{H}\right)\right).\f]
-
-2. If `usesmb` is false then the formula which was in older versions of PISM is
+2. If `dontusesmb` is true then the formula which was in older versions of PISM is
 used.  Namely, within the ice we set
 \f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
 where \f$\alpha,\beta\f$ are chosen so that
-\f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
-and 
-\f[\frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
+\f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i} \qquad \text{and} \qquad \frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
 The purpose of the second condition is that when ice is advecting downward then
 the temperature gradient is much larger in roughly the bottom quarter of the
-ice column.
+ice column.  However, without the surface mass balance, much less the solution
+of the stress balance equations, we cannot estimate the vertical velocity
+without such a rough guess.
 
 In either case the temperature within the ice is not allowed to exceed the
 pressure-melting temperature.
@@ -299,15 +297,13 @@ We set \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice.
 This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
 temperature is used by PISMBedThermalUnit::bootstrap() to determine a
 bootstrap temperature profile in the bedrock.
-
-FIXME issue #15
 */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
 
   PetscScalar *T = new PetscScalar[grid.Mz];
   const bool do_cold = config.get_flag("do_cold_ice_methods"),
-             usesmb = config.get_flag("bootstrapping_use_surface_mass_balance_for_initial_temp");
+             dontusesmb = config.get_flag("bootstrapping_no_smb_in_initial_temp");
   const PetscScalar
     ice_k = config.get("ice_thermal_conductivity"),
     melting_point_temp = config.get("water_melting_point_temperature"),
@@ -316,7 +312,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   if (surface != NULL) {
     ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
-    ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);  // FIXME: make depend on method
+    if (!dontusesmb) {
+      ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
+    }
   } else {
     SETERRQ(grid.com, 1, "PISM ERROR: surface == NULL");
   }
@@ -336,15 +334,15 @@ PetscErrorCode IceModel::putTempAtDepth() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar HH = vH(i,j),
-                        mm = acab(i,j),
                         Ts = artm(i,j),
                         gg = vGhf(i,j);
       const PetscInt    ks = grid.kBelowHeight(HH);
       
       // within ice
-      if (usesmb) {
-        // method 1
-        const PetscScalar C0 = (gg * sqrt(pi * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
+      if (!dontusesmb) {
+        // method 1:  includes surface mass balance in estimate
+        const PetscScalar mm = acab(i,j),
+                          C0 = (gg * sqrt(pi * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
                           gamma0 = sqrt(mm * HH / (2.0 * KK));
         for (PetscInt k = 0; k < ks; k++) {
           const PetscScalar z = grid.zlevels[k],
@@ -353,7 +351,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
           T[k] = PetscMin(Tpmp,T[k]);
         }
       } else {
-        // method 2
+        // method 2:  does not use smb
         const PetscScalar beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
                           alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
         for (PetscInt k = 0; k < ks; k++) {
