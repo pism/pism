@@ -427,17 +427,19 @@ The need for an identified stage like ``bootstrapping'' comes from the fact that
 Instead, evolutionary ice sheet modeling necessarily does something like this
 to get ``reasonable'' initial fields within the ice:
 \begin{enumerate}
-\item start only with observable quantities like surface elevation, ice thickness, and ice surface temperature,
-\item ``bootstrap'' as defined here, using heuristics to fill in temperatures at depth and to give a preliminary estimate of the basal sliding condition, and thus of the three-dimensional velocity field, and
-\item \emph{either} do a long run holding the current geometry and surface temperature steady,  to evolve toward a ``more physical'' steady state which will have compatible temperature field, velocities, and age field,
-\item \emph{or} do a long run using an additional spatially-imprecise historical record from an ice core or a sea bed core (or both), to apply forcing to the surface temperature or sea level (for instance), but with the same functional result of filling in a temperature, velocity, and age.
+\item start only with (potentially) observable quantities like surface elevation, ice thickness, ice surface temperature, surface mass balance, and geothermal flux,
+\item ``bootstrap'' as defined here, using heuristics to fill in temperatures at depth and to give a preliminary estimate of the basal sliding condition and the three-dimensional velocity field, and
+\item \begin{enumerate}
+      \item \emph{either} do a long run holding the current geometry and surface conditions steady, to evolve toward a steady state which has compatible temperature, stress, and velocity fields,
+      \item \emph{or} do a long run using an additional (typically spatially-imprecise) historical record from an ice core or a sea bed core (or both), to apply forcing to the surface temperature or sea level (for instance), but with the same functional result of filling in temperature, stress, and velocity fields.
+      \end{enumerate}
 \end{enumerate}
 
-The heuristics used by PISM are, for now, only documented in the source code file \texttt{src/base/iMbootstrap.cc}.
+When using \fileopt{boot_file} you will need to specify both grid dimensions (using \texttt{-Mx}, \texttt{-My} and \texttt{-Mz}) and the height of the computational box for the ice with \texttt{-Lz}.  The data read from the file can determine the horizontal extent of the model, if options \texttt{-Lx}, \texttt{-Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because typical data used in ``bootstrapping'' are two-dimensional.  Using \texttt{-boot_file} without specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} is an error.
 
-When using \fileopt{boot_file} you will need to specify both grid dimensions (using \texttt{-Mx}, \texttt{-My} and \texttt{-Mz}) and the height of the computational box for the ice with \texttt{-Lz}.  The data read from the file can determine the horizontal extent of the model, if options \texttt{-Lx}, \texttt{-Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} \emph{when bootstrapping with} \texttt{-boot_file} is an error.
+If \texttt{-Lx} and \texttt{-Ly} specify horizontal grid dimensions smaller than in the bootstrapping file, PISM will cut out the center portion of the domain.  Alternatively, options \intextoption{x_range} and \intextoption{y_range} each take a list of two numbers, a list of minimum and maximum $x$ and $y$ coordinates, respectively (in meters), which makes it possible to select a subset that is not in the center of the bootstrapping file's grid.
 
-If \texttt{-Lx} and \texttt{-Ly} specify horizontal grid dimensions smaller than in the bootstrapping file, PISM will cut out the \emph{center} portion of the domain. Options \intextoption{x_range} and \intextoption{y_range} each take a list of two numbers, a list of minimum and maximum $x$ and $y$ coordinates, respectively (in meters). This makes it possible to select a subset that is not in the center of a bootstrapping file grid.
+For the key issue of what heuristic is used to determine the temperatures at depth, there are two methods.  The default method uses ice thickness, surface temperature, surface mass balance, and geothermal flux.  The temperature is set to the solution of a steady one-dimensional differential equation in which conduction and vertical advection balance, and the vertical velocity linearly interpolates between the surface mass balance rate at the top and zero at the bottom.  The non-default method, set with option \intextoption{boot_no_smb_in_temp}, was the default in older PISM versions (\texttt{stable0.5} and earlier); it does not use the surface mass balance and instead makes an even more heuristic estimate of the vertical profile which connects the surface temperature and basal (geothermal) flux boundary conditions.
 
 \subsubsection*{\texttt{-boot_file} file format}
 \label{sec:bootstrapping-format}
@@ -463,11 +465,12 @@ Allowed formats for a bootstrapping file are relatively simple to describe.
   be missing. For those missing variables some heuristic will be applied. See
   table \ref{tab:modelhierarchy} for a sketch of the data necessary for
   bootstrapping, and \texttt{src/base/iMbootstrap.cc} for all further details.
+\item The bed elevation (topography) is read by \texttt{standard_name} =
+  \texttt{bedrock_altitude} and the ice thickness by \texttt{standard_name} =
+  \texttt{land_ice_thickness}.
 \item Surface elevation is ignored if present. Users with surface elevation and
-  bed elevation data should produce an ice thickness variable, with
-  \texttt{standard_name} = \texttt{land_ice_thickness} for bootstrapping. The
-  bed elevation (topography) is read by \texttt{standard_name} =
-  \texttt{bedrock_altitude}.
+  bed elevation data should compute the ice thickness variable, put it in the
+  bootstrapping file, and set its \texttt{standard_name} to \texttt{land_ice_thickness}.
 \end{enumerate}
 
 
