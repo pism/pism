@@ -25,6 +25,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include <cmath>                // for erf() in method 1 in putTempAtDepth()
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
@@ -237,15 +238,14 @@ PetscErrorCode IceModel::bootstrap_3d() {
 
 
 //NEW VERSION:
-//! Create a temperature field within ice from provided surface temperature, surface mass balance, and geothermal flux.
+//! Create a temperature field within the ice from provided ice thickness, surface temperature, surface mass balance, and geothermal flux.
 /*!
-In bootstrapping we need to set some initial values for the temperature within
-the ice (and bedrock).  There is various data available at bootstrapping,
-but there is not enough to determine initial value for temperature.  Here 
-we take a "guess" based on an assumption of steady state, and an estimate of
-the vertical velocity in the column.  The data which are needed are the surface
-temperature, surface mass balance, geothermal flux, and the ice thickness.  The
-rule is heuristic but seems to work well anyway.
+In bootstrapping we need to determine initial values for the temperature within
+the ice (and the bedrock).  There is various data available at bootstrapping,
+but there is not enough to determine initial values for the temperature.  Here 
+we take a "guess" based on an assumption of steady state and a simple model of
+the vertical velocity in the column.  The rule is certainly heuristic but it
+seems to work well anyway.
 
 The result is *not* the temperature field which is in steady state with the ice
 dynamics.  Spinup is most-definitely needed in many applications.  Such spinup
@@ -253,50 +253,35 @@ usually starts from the temperature field computed by this procedure and then
 runs for a long time (e.g. \f$10^5\f$ years), with fixed geometry, to get closer
 to thermomechanically-coupled equilibrium.
 
-Consider a horizontal grid point `i,j`. Suppose the surface temperature
-\f$T_s\f$, surface mass balance \$m\$, and geothermal flux \f$g\f$ are given at
-the grid point.  Within the column, denote the temperature by \f$T(z)\f$ at
-height \f$z\f$ above the base of the ice.  We set the ice temperature to the
-solution of the steady problem [\ref Paterson]
+Consider some horizontal grid point.  Suppose the surface temperature
+\f$T_s\f$, surface mass balance \f$m\f$, and geothermal flux \f$g\f$ are given.
+Within the column denote the temperature by \f$T(z)\f$ at height \f$z\f$ above
+the base of the ice.  Suppose the column of ice has height \f$H\f$, the ice
+thickness.
+
+There are two alternative bootstrap methods determined by configuration flag
+`usesmb` = bootstrapping_use_surface_mass_balance_for_initial_temp.
+
+1. If `usesmb` is true then the method sets the ice temperature to the solution
+of the steady problem [\ref Paterson]
   \f[\rho_i c w \frac{\partial T}{\partial z} = k_i \frac{\partial^2 T}{\partial z^2}\f]
-with boundary conditions \f$T(H) = T_s\f$ where \f$H\f$ is the ice thickness,
-and \f$\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f$, where the
-vertical velocity is linear between the surface value and zero at the base:
+with boundary conditions
+  \f[ T(H) = T_s \quad \text{and} \quad \frac{\partial T}{\partial z}(0) = - \frac{g}{k_i}, \f]
+where the vertical velocity is linear between the surface value \f$w=-m\f$ and
+a velocity of zero at the base:
   \f[w(z) = - m z / H.\f]
+This is a two-point boundary value problem for a linear ODE.  In fact, if
+\f$K = k_i / (\rho_i c)\f$ then we can write the ODE as
+  \f[K T'' + \frac{m z}{H} T' = 0.\f]
+Let
+  \f[C_0 = \frac{g \sqrt{\pi H K}}{k_i \sqrt{2 m}}, \qquad \gamma_0 = \sqrt{\frac{mH}{2K}}.\f]
+(Note \f$\gamma_0\f$ is, up to a constant, the square root of the Peclet number
+[\ref Paterson]; compare [\ref vanderWeletal2013].)  The solution to the
+two-point boundary value problem is
+  \f[T(z) = T_s + C_0 \left(\operatorname{erf}(\gamma_0) - \operatorname{erf}\left(\gamma_0 \frac{z}{H}\right)\right).\f]
 
-The solution is 
-
-FIXME
-
-The temperature within the ice is not allowed to exceed the pressure-melting
-temperature.
-
-This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
-temperature is used by PISMBedThermalUnit::bootstrap() to determine a
-bootstrap temperature profile in the bedrock.
-
-FIXME issue #15
-*/
-// PetscErrorCode IceModel::putTempAtDepth() {
-// }
-
-
-//! Create a temperature field within ice from provided surface temperature and geothermal flux maps.
-/*!
-In bootstrapping we need to guess about the temperature within the ice and
-bedrock if surface temperature and geothermal flux maps are given.  The rule for
-the ice here is heuristic but seems to work well anyway.  The result is not
-the temperature field at steady state, and it may be significantly different,
-so spinup is most-definitely needed in many applications.  Such spinup usually
-starts from the temperature field computed by this procedure and then runs for
-a long time (e.g. \f$10^5\f$ years), with fixed geometry, to get closer to
-thermomechanically coupled equilibrium.
-
-Consider a horizontal grid point `i,j`. Suppose the surface temperature
-\f$T_s\f$ and the geothermal flux \f$g\f$ are given at that grid point. Within
-the column, denote the temperature by \f$T(z)\f$ at height \f$z\f$ above the
-base of the ice.  Set \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice.
-Within the ice, set
+2. If `usesmb` is false then the formula which was in older versions of PISM is
+used.  Namely, within the ice we set
 \f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
 where \f$\alpha,\beta\f$ are chosen so that
 \f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i}\f]
@@ -306,8 +291,10 @@ The purpose of the second condition is that when ice is advecting downward then
 the temperature gradient is much larger in roughly the bottom quarter of the
 ice column.
 
-The temperature within the ice is not allowed to exceed the pressure-melting
-temperature.
+In either case the temperature within the ice is not allowed to exceed the
+pressure-melting temperature.
+
+We set \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice.
 
 This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
 temperature is used by PISMBedThermalUnit::bootstrap() to determine a
@@ -319,13 +306,17 @@ PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
 
   PetscScalar *T = new PetscScalar[grid.Mz];
-  const bool do_cold = config.get_flag("do_cold_ice_methods");
-  const PetscScalar ice_k = config.get("ice_thermal_conductivity"),
+  const bool do_cold = config.get_flag("do_cold_ice_methods"),
+             usesmb = config.get_flag("bootstrapping_use_surface_mass_balance_for_initial_temp");
+  const PetscScalar
+    ice_k = config.get("ice_thermal_conductivity"),
     melting_point_temp = config.get("water_melting_point_temperature"),
-    beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity");
+    beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity"),
+    KK = ice_k / (config.get("ice_density") * config.get("ice_specific_heat_capacity"));
 
   if (surface != NULL) {
     ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);  // FIXME: make depend on method
   } else {
     SETERRQ(grid.com, 1, "PISM ERROR: surface == NULL");
   }
@@ -337,38 +328,54 @@ PetscErrorCode IceModel::putTempAtDepth() {
     result = &Enth3;
 
   ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr =   vH.begin_access();   CHKERRQ(ierr);
   ierr = vGhf.begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar HH = vH(i,j);
+      const PetscScalar HH = vH(i,j),
+                        mm = acab(i,j),
+                        Ts = artm(i,j),
+                        gg = vGhf(i,j);
       const PetscInt    ks = grid.kBelowHeight(HH);
       
       // within ice
-      const PetscScalar g = vGhf(i,j);
-      const PetscScalar beta = (4.0/21.0) * (g / (2.0 * ice_k * HH * HH * HH));
-      const PetscScalar alpha = (g / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
-      for (PetscInt k = 0; k < ks; k++) {
-        const PetscScalar depth = HH - grid.zlevels[k];
-        const PetscScalar Tpmp = melting_point_temp - beta_CC_grad * depth;
-        const PetscScalar d2 = depth * depth;
-
-        T[k] = PetscMin(Tpmp,artm(i,j) + alpha * d2 + beta * d2 * d2);
-
+      if (usesmb) {
+        // method 1
+        const PetscScalar C0 = (gg * sqrt(pi * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
+                          gamma0 = sqrt(mm * HH / (2.0 * KK));
+        for (PetscInt k = 0; k < ks; k++) {
+          const PetscScalar z = grid.zlevels[k],
+                            Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
+          T[k] = Ts + C0 * ( erf(gamma0) - erf(gamma0 * z / HH) );
+          T[k] = PetscMin(Tpmp,T[k]);
+        }
+      } else {
+        // method 2
+        const PetscScalar beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
+                          alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
+        for (PetscInt k = 0; k < ks; k++) {
+          const PetscScalar depth = HH - grid.zlevels[k],
+                            Tpmp = melting_point_temp - beta_CC_grad * depth,
+                            d2 = depth * depth;
+          T[k] = PetscMin(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
+        }
       }
-      for (PetscInt k = ks; k < grid.Mz; k++) // above ice
+
+      // above ice
+      for (PetscInt k = ks; k < grid.Mz; k++)
         T[k] = artm(i,j);
       
+      // convert to enthalpy if that's what we are calculuting
       if (!do_cold) {
-	for (PetscInt k = 0; k < grid.Mz; ++k) {
-	  const PetscScalar depth = HH - grid.zlevels[k];
-	  const PetscScalar pressure = 
-	    EC->getPressureFromDepth(depth);
-	  // reuse T to store enthalpy; assume that the ice is cold
-	  ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
-	}
+        for (PetscInt k = 0; k < grid.Mz; ++k) {
+          const PetscScalar depth = HH - grid.zlevels[k];
+          const PetscScalar pressure = EC->getPressureFromDepth(depth);
+          // reuse T to store enthalpy; assume that the ice is cold
+          ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
+        }
       }
 
       ierr = result->setInternalColumn(i,j,T); CHKERRQ(ierr);
@@ -380,6 +387,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr =   vGhf.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
   ierr =   artm.end_access(); CHKERRQ(ierr);
+  ierr =   acab.end_access(); CHKERRQ(ierr);
 
   delete [] T;
 
