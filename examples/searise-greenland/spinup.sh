@@ -207,6 +207,8 @@ $PISM_DO $cmd
 
 # run with -no_mass (no surface change) for 50ka
 PRE1NAME=g${CS}km_steady.nc
+TS1NAME=ts_${PRE1NAME}
+TS1TIMES=0:100:${NOMASSSIARUNLENGTH}
 EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:500:${NOMASSSIARUNLENGTH}
 EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwat,bwp,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
@@ -214,7 +216,8 @@ echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM -i $PRE0NAME $COUPLER_SIMPLE \
   -no_mass -ys 0 -y ${NOMASSSIARUNLENGTH} \
-  -extra_file $EX1NAME -extra_vars $EXVARS -extra_times $EXTIMES -o $PRE1NAME"
+  -extra_file $EX1NAME -extra_vars $EXVARS -extra_times $EXTIMES \
+  -ts_file $TS1NAME -ts_times $TS1TIMES -o $PRE1NAME"
 $PISM_DO $cmd
 
 
@@ -222,7 +225,7 @@ $PISM_DO $cmd
 
 EXSTEP=500
 EXFSTEP=10
-TSSTEP=yearly
+TSSTEP=1
 
 STARTTIME=$PALEOSTARTYEAR
 
