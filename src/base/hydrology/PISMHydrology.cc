@@ -143,6 +143,7 @@ void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
+  dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
 }
 
 
@@ -186,8 +187,14 @@ PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
 
 //! Set the englacial storage to zero.  (The most basic subglacial hydrologies have no englacial storage.)
 PetscErrorCode PISMHydrology::englacial_water_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = result.set(0.0); CHKERRQ(ierr);
+  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Set the wall melt rate to zero.  (The most basic subglacial hydrologies have no lateral flux or potential gradient.)
+PetscErrorCode PISMHydrology::wall_melt(IceModelVec2S &result) {
+  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
   return 0;
 }
 
@@ -772,6 +779,26 @@ PetscErrorCode PISMHydrology_hydroinput::compute(IceModelVec* &output) {
   result->write_in_glaciological_units = true;
   // the value reported diagnostically is merely the last value filled
   ierr = (model->total_input).copy_to(*result); CHKERRQ(ierr);
+  output = result;
+  return 0;
+}
+
+
+PISMHydrology_wallmelt::PISMHydrology_wallmelt(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
+    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+  vars[0].init_2d("wallmelt", grid);
+  set_attrs("wall melt into subglacial hydrology layer from (turbulent) dissipation",
+            "", "m s-1", "m/year", 0);
+}
+
+
+PetscErrorCode PISMHydrology_wallmelt::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "wallmelt", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+  ierr = model->wall_melt(*result); CHKERRQ(ierr);
   output = result;
   return 0;
 }

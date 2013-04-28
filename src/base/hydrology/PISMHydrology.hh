@@ -95,8 +95,9 @@ public:
   // need to be implemented so that PISMHydrology is useful to the outside
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
-  // this one exists in the base class and sets result = 0:
+  // these two exist in the base class and set result = 0:
   virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
+  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
 protected:
   // this model's workspace
@@ -163,6 +164,15 @@ class PISMHydrology_hydroinput : public PISMDiag<PISMHydrology>
 {
 public:
   PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
+//! \brief Report the wall melt rate from dissipation of the potential energy of the water.
+class PISMHydrology_wallmelt : public PISMDiag<PISMHydrology>
+{
+public:
+  PISMHydrology_wallmelt(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
@@ -322,6 +332,7 @@ public:
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
   virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
+  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
 
@@ -352,12 +363,7 @@ protected:
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
 
   virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, PetscReal &maxKW);
-  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
-
-  using PISMHydrology::get_input_rate;
-  virtual PetscErrorCode get_input_rate(
-                            PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(
             PetscReal t_current, PetscReal t_end, PetscReal maxKW,

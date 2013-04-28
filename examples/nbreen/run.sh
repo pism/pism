@@ -1,7 +1,7 @@
 #!/bin/bash
 
 GRIDLIST="{500, 250, 125, 62}"
-TYPELIST="{dist, event, routing, routingwall}"
+TYPELIST="{dist, event, routing}"
 
 if [ $# -lt 4 ] ; then
   echo "run.sh ERROR: needs five arguments ... ENDING NOW"
@@ -57,7 +57,7 @@ DT="$5"
 etimes="0:$DT:$YY"
 
 # these extra_ diagnostics apply to "dist" and "event":
-evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp,enwat"
+evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp,enwat,wallmelt"
 
 if [ "$4" = "dist" ]; then
 
@@ -76,14 +76,7 @@ elif [ "$4" = "routing" ]; then
   # routing run: very fast
   oname=nbreen_y${YY}_${dx}m_routing.nc
   hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3"
-  evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel"  # revised
-
-elif [ "$4" = "routingwall" ]; then
-
-  # routing run but with wall melt
-  oname=nbreen_y${YY}_${dx}m_routingwall.nc
-  hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3 -hydrology_add_wall_melt"
-  evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel"  # revised
+  evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt"  # revised
 
 else
   echo "invalid fourth argument; must be in $TYPELIST"

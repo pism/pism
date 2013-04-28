@@ -392,11 +392,9 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
 }
 
 
-
-//! Compute the wall melt input term to the water input term.
+//! Compute the wall melt rate which comes from (turbulent) dissipation of flow energy.
 /*!
-If flag \c hydrology_add_wall_melt is true then this same code fills
-\c result with
+This code fills `result` with
     \f[ \frac{m_{wall}}{\rho_w} = - \frac{1}{L \rho_w} \mathbf{q} \cdot \nabla \psi = \left(\frac{k}{L \rho_w}\right) W^\alpha |\nabla R|^\beta \f]
 where \f$R = P+\rho_w g b\f$.
 
@@ -404,14 +402,11 @@ Note that conductivity_staggered() computes the related quantity
 \f$K = k W^{\alpha-1} |\nabla R|^{\beta-2}\f$ on the staggered grid, but
 contriving to reuse that code would be inefficient because of the
 staggered-versus-regular change.
+
+At the current state of the code, this is a diagnostic calculation only.
  */
 PetscErrorCode PISMRoutingHydrology::wall_melt(IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  if (!config.get_flag("hydrology_add_wall_melt")) {
-    ierr = result.set(0.0); CHKERRQ(ierr);
-    return 0;
-  }
 
   const PetscReal
     k     = config.get("hydrology_hydraulic_conductivity"),
@@ -550,19 +545,6 @@ PetscErrorCode PISMRoutingHydrology::advective_fluxes(IceModelVec2Stag &result) 
   ierr = W.end_access(); CHKERRQ(ierr);
   ierr = V.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Compute the total input rate using all the terms for PISMHydrology plus the wall melt term.
-PetscErrorCode PISMRoutingHydrology::get_input_rate(
-                  PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = PISMHydrology::get_input_rate(hydro_t, hydro_dt, result); CHKERRQ(ierr);
-  // use Pover for temporary storage
-  IceModelVec2S mwall = Pover;
-  ierr = wall_melt(mwall); CHKERRQ(ierr);
-  ierr = result.add(1.0,mwall); CHKERRQ(ierr);
   return 0;
 }
 

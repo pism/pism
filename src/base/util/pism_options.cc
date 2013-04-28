@@ -599,8 +599,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                     "tillcan,diffuseonly,routing,distributed"); CHKERRQ(ierr);
   ierr = config.flag_from_option("hydrology_use_const_bmelt",
                                  "hydrology_use_const_bmelt"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("hydrology_add_wall_melt",
-                                 "hydrology_add_wall_melt"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_const_bmelt",
                                    "hydrology_const_bmelt"); CHKERRQ(ierr);
   // these only apply to PISMTillCanHydrology and derived:

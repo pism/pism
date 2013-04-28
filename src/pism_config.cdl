@@ -207,9 +207,6 @@ netcdf pism_config {
     pism_config:hydrology_use_const_bmelt = "no";
     pism_config:hydrology_use_const_bmelt_doc = "if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology_const_bmelt";
 
-    pism_config:hydrology_add_wall_melt = "no";
-    pism_config:hydrology_add_wall_melt_doc = "if 'yes', add the melt rate computed by immediately dissipating the flow energy in the moving subglacial water as wall melt";
-
     pism_config:hydrology_const_bmelt = 3.168876461e-10;
     pism_config:hydrology_const_bmelt_doc = "m s-1; = 1 cm per year of melt; only used if hydrology_use_const_bmelt = 'yes'";
 
