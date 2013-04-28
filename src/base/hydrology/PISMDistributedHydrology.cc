@@ -914,6 +914,7 @@ void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dic
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
+  dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
 }
 
 
