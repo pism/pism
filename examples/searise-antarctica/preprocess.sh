@@ -4,7 +4,7 @@
 # dataset NetCDF file, adjusts metadata, breaks up, saves under new names,
 # ready for PISM
 
-# depends on wget and NCO (ncrename, ncap, ncatted, ncpdq, ncks)
+# depends on wget and NCO (ncrename, ncap2, ncatted, ncpdq, ncks)
 
 set -e  # exit on error
 
@@ -29,8 +29,8 @@ ncatted -O -a standard_parallel,mapping,m,d,-71.0 $PISMVERSION
 # rename usurf for convenience
 ncrename -O -v usrf,usurf $PISMVERSION
 # fix surface temperature name and make K
-ncap -O -s "air_temp=temp+273.15" $PISMVERSION $PISMVERSION
-ncatted -O -a units,air_temp,a,c,"K" $PISMVERSION
+ncap2 -O -s "air_temp=temp+273.15" $PISMVERSION $PISMVERSION
+ncatted -O -a units,air_temp,m,c,"K" $PISMVERSION
 # choose Van de Berg et al version of accumulation; will treat as ice-equivalent snow rate
 ncrename -O -v accr,precipitation $PISMVERSION
 ncatted -O -a units,precipitation,m,c,"m/year" $PISMVERSION
@@ -51,15 +51,15 @@ SLSERIES=pism_dSL.nc
 ncks -O -v temptimes,temp_time_series $DATANAME $TEMPSERIES
 ncrename -O -d temptimes,t -v temptimes,t -v temp_time_series,delta_T $TEMPSERIES
 ncpdq -O --rdr=-t $TEMPSERIES $TEMPSERIES  # reverse time dimension so that
-ncap -O -s "t=-t" $TEMPSERIES $TEMPSERIES  #   times follow same convention as PISM
-ncatted -O -a units,t,a,c,"years since 1-1-1" $TEMPSERIES
+ncap2 -O -s "t=-t" $TEMPSERIES $TEMPSERIES  #   times follow same convention as PISM
+ncatted -O -a units,t,m,c,"years since 1-1-1" $TEMPSERIES
 echo "  PISM-readable paleo-temperature file $TEMPSERIES; for option -atmosphere ...,delta_T"
 
 ncks -O -v sealeveltimes,sealevel_time_series $DATANAME $SLSERIES
 ncrename -O -d sealeveltimes,t -v sealeveltimes,t -v sealevel_time_series,delta_SL $SLSERIES
 ncpdq -O --rdr=-t $SLSERIES $SLSERIES  # reverse time dimension so that
-ncap -O -s "t=-t" $SLSERIES $SLSERIES  #   times follow same convention as PISM
-ncatted -O -a units,t,a,c,"years since 1-1-1" $SLSERIES
+ncap2 -O -s "t=-t" $SLSERIES $SLSERIES  #   times follow same convention as PISM
+ncatted -O -a units,t,m,c,"years since 1-1-1" $SLSERIES
 echo "  PISM-readable paleo-sea-level file $SLSERIES; for option -ocean ...,delta_SL"
 echo
 
@@ -76,7 +76,7 @@ echo "creating unscaled precip anomaly file ... "
 ncks -O -v preciptation ANT_climate_forcing_2004_2098_v3.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
 # change name and convert to ice-equivalent units;
 # email 13 July 2011 from Bindshadler says Charles Jackson confirms density 1000.0 is correct
-ncap2 -O -s 'precip=float(preciptation*(1000.0/910.0))' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
+ncap22 -O -s 'precip=float(preciptation*(1000.0/910.0))' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
 # remove the unneeded 'preciptation' var
 ncks -O -v preciptation -x ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
 # remove now incorrect lwe_... standard name
