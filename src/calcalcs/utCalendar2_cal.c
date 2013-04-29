@@ -357,7 +357,7 @@ static cv_converter *get_day_to_user_converter( ut_unit *uu, int y0, int mon0, i
 		exit(-1);
 		}
 
-	free( udu_days );
+	ut_free( udu_days );
 	return( conv_days_to_user_units );
 }
 
