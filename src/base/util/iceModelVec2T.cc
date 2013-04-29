@@ -63,7 +63,7 @@ IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2S(other) 
 }
 
 IceModelVec2T::~IceModelVec2T() {
-  if (!shallow_copy) {
+  if (shallow_copy == false) {
     delete lic;
     destroy();
   }
@@ -245,6 +245,8 @@ PetscErrorCode IceModelVec2T::init(string fname, double period, double reference
     PISMEnd();
   }
 
+  if (lic != NULL)
+    delete lic;
   ierr = get_interp_context(nc, lic); CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -368,8 +370,10 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
 
     ierr = vars[0].regrid(nc, lic, true, false, 0.0, v); CHKERRQ(ierr);
 
-    ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %f...\n",
-		      name.c_str(), start + j, time[start + j]);
+    ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
+		      name.c_str(),
+                      start + j,
+                      grid->time->date(time[start + j]).c_str());
     ierr = set_record(kept + j); CHKERRQ(ierr);
   }
 
