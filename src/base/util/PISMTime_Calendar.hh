@@ -45,8 +45,13 @@ public:
 
   virtual string end_date();
 
-  virtual string units_string()
-  { return CF_units_string(); }
+  virtual string units_string() {
+    return CF_units_string();
+  }
+
+  virtual string CF_units_string() {
+    return m_time_units.format();
+  }
 
   virtual bool use_reference_date()
   { return true; }

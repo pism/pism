@@ -8,7 +8,7 @@ The example in this section is a hands-on first look at PISM.  It is not an in-d
 Some of the PISM output figures in this section were produced using a supercomputer.  But the basic run here can be done on a typical workstation or capable laptop.  That is why a rather coarse $20\,\textrm{km}$ grid is used in the main example in this section.  Of course PISM makes much higher spatial resolution possible by exploiting large-scale parallel processing.
 
 To install PISM, see the Installation Manual at \href{http://www.pism-docs.org}{\texttt{www.pism-docs.org}}.
-Once installed, executables \texttt{pismr} and \texttt{pclimate} should be available (i.e.~on your system's ``path''; confirm with ``\texttt{which pismr}'').  The instructions below also assume you are using a \texttt{bash} shell or one that accepts \texttt{bash} syntax.
+Once installed, the executable \texttt{pismr} should be available (i.e.~on your system's ``path''; confirm with ``\texttt{which pismr}'').  The instructions below also assume you are using a \texttt{bash} shell or one that accepts \texttt{bash} syntax.
 
 
 \subsection{SeaRISE input data for the Greenland ice sheet}
@@ -72,7 +72,7 @@ $ ./spinup.sh 8 >> out.spin20km &
 \end{verbatim}
 \noindent Because we have re-directed the text output, PISM will show what it is doing in the text file \texttt{out.spin20km} as it runs in the background.  Using \texttt{less} is a good way to watch such a growing text file.  Quickly the run will produce an early flow result in \texttt{g20km_pre100.nc}.
 
-Soon after that some climatic boundary conditions sample results will appear in \texttt{g20km_climate-500a.nc}.  Such output from executable \texttt{pclimate} is effectively a movie of the stored and modeled climatic inputs provided to our ice dynamics model, including the results from surface models like the above-mentioned PDD model for surface mass balance.  This is a convenient way to, early in the modeling process, look at the critical surface mass balance and surface temperature inputs to the ice dynamics.
+Soon after that some climatic boundary conditions sample results will appear in \texttt{g20km_climate-500a.nc}.  Such output is effectively a movie of the stored and modeled climatic inputs provided to our ice dynamics model, including the results from surface models like the above-mentioned PDD model for surface mass balance.  This is a convenient way to, early in the modeling process, look at the critical surface mass balance and surface temperature inputs to the ice dynamics.
 
 
 \subsection{Watching the spin-up}  \label{subsect:spinupsketch}  The next paragraphs describe what happens and what files are produced by the run which is underway.  We believe that the modeling choices represented here are reasonable, but they are not the only way to do it.  The user is encouraged to experiment; that is the point of a model!

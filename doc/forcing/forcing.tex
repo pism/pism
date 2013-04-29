@@ -420,57 +420,36 @@ computation.
 
 It is very important to ensure that selected forcing options produce the result you expect: we find that the ice sheet response is very sensitive to provided climate forcing, especially in short-scale simulations.
 
-This section describes \texttt{pclimate}, a PISM tool created to inspect climate forcing, and suggests an alternative way of diagnosing climate forcing issues using PISM's reporting features.
+This section describes how to use PISM to inspect climate forcing.
 
 \subsection{Visualizing climate inputs, without ice dynamics}
-\label{sec:pclimate}
+\label{sec:visualize-climate}
 \index{Visualizing climate inputs!without ice dynamics}
-\index{Visualizing climate inputs!\texttt{pclimate}}
-\index{pclimate@\texttt{pclimate}}
+\optsection{Tesing climate models}
 
-\optsection{pclimate@\texttt{pclimate} options}
+Recall that internally in PISM there is a separation of climate inputs from ice dynamics (see User's Manual, section~\ref*{userman-sec:climate-inputs}). This makes it possible to turn ``off'' the ice dynamics code to visualize the climate mass balance and temperature boundary conditions produced using a combination of options and input files. This is helpful during the process of creating PISM-readable data files, and modeling with such.
 
-Recall that internally in PISM there is a separation of climate inputs from ice dynamics (see User's Manual, section~\ref*{userman-sec:climate-inputs}). Executable \texttt{pclimate} allows one to visualize climate inputs without invoking the ice dynamics core of PISM.
+To do this, use the option \intextoption{test_climate_models}, which is equivalent to \intextoption{no_sia}, and \intextoption{no_energy} together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
 
-This is helpful during the process of creating PISM-readable data files, and modeling with such.
-
-\texttt{pclimate} shares the code implementing climate model~components with
-other PISM executables, so everything said elsewhere in this document applies
-here. In addition to \texttt{-atmosphere}, \texttt{-surface}, \texttt{-ocean}
-and others, \texttt{pclimate} takes options listed in table~\ref{tab:pclimate}.
-
-\begin{table}[ht]
-  \centering
-  \caption{\texttt{pclimate} command-line options}
-  \begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}
-    \toprule
-    \textbf{Option} & \textbf{Description}\\
-    \midrule
-    \fileopt{i} & specifies an input file, which has been produced by PISM;\\
-    \fileopt{o} & sets the output file name;\\
-    \txtopt{times}{\emph{list or range}} & sets times at which to save climate data,
-    in model years. \texttt{pclimate} does not save at the first time, which is
-    interpreted as the beginning of the first time-stepping interval.\\
-   \bottomrule
- \end{tabular}
- \label{tab:pclimate}
-\end{table}
+Turning ``off'' ice dynamics saves computational time while allowing one to use the same options as in an actual modeling run. Note that \intextoption{test_climate_models} does \emph{not} disable geometry updates, so one can check if surface evelation feedbacks modeled using lapse rates (and similar) work correctly. Please use the \intextoption{no_mass} command-line option to fix ice geometry. (This may be necessary if the mass balance rate data would result in extreme ice sheet growth that is not balanced by ice flow in this setup.
 
 \bigskip
-As an example, set up an ice sheet state file and run \texttt{pclimate} on it:
+As an example, set up an ice sheet state file and check if climate data is read in correctly:
 \begin{verbatim}
 $ mpiexec -n 2 pisms -eisII A -y 1000 -o state.nc
-$ pclimate -i state.nc -surface given -times 0.0:0.1:2.5 -o movie.nc
+$ pismr -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
+          -extra_file movie.nc -extra_vars climatic_mass_balance,ice_surface_temp \
+          -ys 0 -ye 2.5
 \end{verbatim}
 Using \texttt{pisms} merely generates demonstration climate data, using
-EISMINT II choices~\cite{EISMINT00}.  \texttt{pclimate} extracts the 
-surface mass balance \variable{climatic_mass_balance} and surface temperature \variable{air_temp} from \texttt{state.nc}.
+EISMINT II choices~\cite{EISMINT00}.  The next run extracts the 
+surface mass balance \variable{climatic_mass_balance} and surface temperature \variable{ice_surface_temp} from \texttt{state.nc}.
 It then does nothing interesting, exactly because a constant climate
 is used.  Viewing \texttt{movie.nc} we see these same values as from \texttt{state.nc},
-in variables \variable{climatic_mass_balance}, \variable{air_temp}, reported back to us as the time- and space-dependent
+in variables \variable{climatic_mass_balance}, \variable{ice_surface_temp}, reported back to us as the time- and space-dependent
 climate at times \texttt{ys:dt:ye}.  It is a boring ``movie.''
 
-The excuse for the executable \texttt{pclimate} becomes clearer if we use a
+A more interesting example uses a
 positive degree-day scheme (section~\ref{sec:surface-pdd}). The positive
 degree-day scheme uses a variable called \variable{precipitation}, and a
 calculation of melting, to get the surface mass balance
@@ -478,19 +457,20 @@ calculation of melting, to get the surface mass balance
 
 Assuming that \texttt{g20km_pre100.nc} was created as described in the User's Manual, section~\ref*{userman-sec:start}, running
 \begin{verbatim}
-$ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
-           -surface pdd -times 0:0.1:2.5 -o foo.nc
+$ pismr -test_climate_models -no_mass -i g20km_pre100.nc \
+        -atmosphere searise_greenland -surface pdd \
+        -ys 0 -ye 1 -extra_times 0:1week:1 \
+        -extra_file foo.nc \
+        -extra_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot,precipitation
 \end{verbatim}%$
-produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle in the variable \variable{air_temp} and a noticeable decrease in the surface mass balance during summer months (see variable \variable{climatic_mass_balance}). Note that \variable{air_temp} is constant in time: this is the temperature \emph{at the ice surface but below firn} and it does not include seasonal variations~\cite{Hock05}.
+produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle in the variable \variable{air_temp} and a noticeable decrease in the surface mass balance during summer months (see variable \variable{climatic_mass_balance}). Note that \variable{ice_surface_temp} is constant in time: this is the temperature \emph{at the ice surface but below firn} and it does not include seasonal variations~\cite{Hock05}.
 
 
 \subsection{Low-resolution test runs}
 \label{sec:low-resolution-test-runs}
 \index{Visualizing climate inputs!using a low-resolution run}
 
-One weakness of the \texttt{pclimate} is a direct consequence of one its strengths: avoiding ice dynamics computations makes \texttt{pclimate} runs computationally cheap, but its output does not include ice geometry/climate feedbacks.
-
-In this case one can use a low-resolution \texttt{pismr} run instead.
+Sometimes a run like the one above is still too costly. In this case it might be helpful to replace it with a similar run on a coarser grid, with or without the \intextoption{test_climate_models} option. (Testing climate inputs usually means checking if the timing of modeled events is right, and high spatial resolution is not essential.)
 
 The command
 \begin{verbatim}
@@ -498,36 +478,34 @@ $ pismr -boot_file g20km_pre100.nc -Mx 51 -My 101 -Mz 11 \
         -atmosphere searise_greenland \
         -surface pdd -ys 0 -ye 2.5 \
         -extra_file foo.nc -extra_times 0:0.1:2.5 \
-        -extra_vars climatic_mass_balance,air_temp,smelt,srunoff,saccum
+        -extra_vars climatic_mass_balance,air_temp_snapshot,smelt,srunoff,saccum
         -ts_file ts.nc -ts_times 0:0.1:2.5 \
         -o bar.nc
 \end{verbatim}%$
-will produce \texttt{foo.nc} containing a ``movie'' very similar to the one created using \texttt{pclimate} above, but including the influence of ice dynamics.
+will produce \texttt{foo.nc} containing a ``movie'' very similar to the one created by the previous run, but including the full influence of ice dynamics.
 
 In addition to \texttt{foo.nc}, the latter command will produce \texttt{ts.nc} containing scalar time-series. The variable \texttt{surface_ice_flux} (the \emph{total over the ice-covered area} of the surface mass flux) can be used to detect if climate forcing is applied at the right time.
 
 \subsubsection{Visualizing the climate inputs in the Greenland case}
-\label{sec:pdd-series-with-pclimate}
+\label{sec:pdd-series}
 
 Assuming that \texttt{g20km_pre100.nc} was produced by the run described in section
 \ref{userman-sec:start}), one can run the following to check if the PDD
 model in PISM (see section \ref{sec:surface-pdd}) is ``reasonable'':
 \begin{verbatim}
-$ pclimate -i g20km_pre100.nc -atmosphere searise_greenland,paleo_precip \
-           -surface pdd -atmosphere_paleo_precip_file pism_dT.nc \
-           -times 0:0.05:3 \
-           -o pddmovie.nc -o_order zyx -calendar gregorian
+$ pismr -i g20km_pre100.nc -atmosphere searise_greenland,paleo_precip \
+          -surface pdd -atmosphere_paleo_precip_file pism_dT.nc \
+          -extra_times 0:1week:3 -ys 0 -ye 3 \
+          -extra_file pddmovie.nc -o_order zyx \
+          -extra_vars climatic_mass_balance,air_temp_snapshot
 \end{verbatim}%$
 This produces the file \texttt{pddmovie.nc} with several variables: \texttt{climatic_mass_balance}
-(instantaneous net ice equivalent accumulation (ablation) rate), \texttt{ice_surface_temp}
-(mean annual temperature at ice surface but below firn), \texttt{air_temperature}
+(instantaneous net ice equivalent accumulation (ablation) rate), \texttt{air_temp_snapshot}
 (instantaneous near-surface air temperature), \texttt{precipitation} (mean annual
 ice-equivalent precipitation rate) and some others.
 
-Variables \texttt{climatic_mass_balance} and \texttt{precipitation} do not evolve over time because the 
-former is generated from ice sheet geometry and latitude by the
-SeaRISE-Greenland formulas (section \ref{sec:atmosphere-searise-greenland}),
-while the latter is part of the SeaRISE-Greenland data itself.
+The variable \texttt{precipitation} does not evolve over time because
+it is part of the SeaRISE-Greenland data and is read in from the input file.
 
 The other two variables were used to create figure \ref{fig:pddseries}, which
 shows the time-series of the accumulation rate (top graph) and the air
@@ -543,7 +521,7 @@ Here are two things to notice:
 \item Lows of the surface mass balance rate \texttt{climatic_mass_balance} correspond to
   positive degree-days in the given period, because of highs of the air
   temperature.  Recall the air temperature graph does
-  not show random daily variations.  Even though it has the maximum of about $270$
+  not show random daily variations.  Even though it has the maximum of about $266$
   Kelvin, the parameterized instantaneous air temperature can be above freezing.
   A positive value for positive degree-days is expected \cite{CalovGreve05}.
 \end{enumerate}
@@ -558,10 +536,13 @@ Here are two things to notice:
 \bigskip
 We can also test the surface temperature forcing code with the following command.
 \begin{verbatim}
-$ pclimate -i g20km_pre100.nc -o dT_movie.nc -surface simple \
-           -atmosphere searise_greenland,delta_T \
-           -atmosphere_delta_T_file pism_dT.nc \
-           -times -125e3:1e3:0 -o_order zyx
+$ pismr -i g20km_pre100.nc -surface simple \
+          -atmosphere searise_greenland,delta_T \
+          -atmosphere_delta_T_file pism_dT.nc \
+          -extra_times 100 -ys -125e3 -ye 0 \
+          -extra_vars ice_surface_temp \
+          -extra_file dT_movie.nc -o_order zyx \
+          -test_climate_models -no_mass
 \end{verbatim}%$
 The output \texttt{dT_movie.nc} and \texttt{pism_dT.nc} were used to create figure \ref{fig:artm-timeseries}.
 
@@ -1541,4 +1522,3 @@ It takes the following command-line options:
 
 \end{document}
 
-% LocalWords: pclimate

@@ -805,6 +805,15 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
     config.set_flag_from_option("use_ssa_when_grounded", true);
   }
 
+  bool test_climate_models = false;
+  ierr = PISMOptionsIsSet("-test_climate_models", "Disable ice dynamics to test climate models",
+                          test_climate_models); CHKERRQ(ierr);
+  if (test_climate_models) {
+    config.set_flag_from_option("do_sia",           false);
+    config.set_flag_from_option("use_ssa_velocity", false);
+    config.set_flag_from_option("do_energy",        false);
+  }
+
   ierr = config.scalar_from_option("blatter_Mz", "blatter_Mz"); CHKERRQ(ierr);
 
   return 0;

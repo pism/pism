@@ -203,10 +203,6 @@ endforeach (EXEC)
 add_executable (pismv pismv.cc)
 target_link_libraries (pismv pismverif pismbase)
 
-# Testing boundary models without ice dynamics.
-add_executable (pclimate pclimate.cc)
-target_link_libraries (pclimate pismboundary pismrevision)
-
 add_executable (pismmerge
   pismmerge/pismmerge.cc
   pismmerge/metadata.cc
@@ -234,7 +230,7 @@ endif ()
 
 # Always install executables.
 install (TARGETS
-  pismr pisms pismv pclimate pismmerge ## executables
+  pismr pisms pismv pismmerge ## executables
   RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 install (FILES

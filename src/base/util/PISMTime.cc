@@ -74,7 +74,7 @@ double PISMTime::years_to_seconds(double T) {
 }
 
 string PISMTime::CF_units_string() {
-  return m_time_units.format();
+  return "seconds since " + m_config.get_string("reference_date");
 }
 
 //! \brief Returns the calendar string.
@@ -477,8 +477,13 @@ PetscErrorCode PISMTime::compute_times_simple(double time_start, double delta, d
 PetscErrorCode PISMTime::compute_times(double time_start, double delta, double time_end,
                                        string keyword,
                                        vector<double> &result) {
-  if (keyword != "simple") {
-    PetscPrintf(m_com, "PISM ERROR: only simple time ranges are supported.\n");
+  if (keyword == "yearly") {
+    delta = secpera;
+  } else if (keyword == "monthly") {
+    delta = secpera / 12.0;
+  } else if (keyword != "simple") {
+    PetscPrintf(m_com, "PISM ERROR: Unknown time range keyword: %s.\n",
+                keyword.c_str());
     return 1;
   }
 

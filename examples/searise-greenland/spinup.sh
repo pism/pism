@@ -198,10 +198,10 @@ $PISM_DO $cmd
 # quick look at climate in 500 a recent period; see also delta_T in pism_dT.nc
 CLIMSTARTTIME=-500
 PRE0CLIMATE=g${CS}km_climate${CLIMSTARTTIME}a.nc
-PCLIM="${PISM_PREFIX}pclimate"
+PCLIM="${PISM} -test_climate_models -no_mass"
 echo
-echo "$SCRIPTNAME  running pclimate to show climate in modern period [${CLIMSTARTTIME} a,0 a], using current geometry and 10 year subintervals"
-cmd="$PISM_MPIDO $NN $PCLIM -i $PRE0NAME $COUPLER_FORCING -times $CLIMSTARTTIME:10:0 -o $PRE0CLIMATE"
+echo "$SCRIPTNAME  running PISM with ice dynamics 'off' to show climate in modern period [${CLIMSTARTTIME} a,0 a], using current geometry and 10 year subintervals"
+cmd="$PISM_MPIDO $NN $PCLIM -i $PRE0NAME $COUPLER_FORCING -ys $CLIMSTARTTIME -ye 0 -extra_times $CLIMSTARTTIME:10:0 -extra_file $PRE0CLIMATE -extra_vars lat,lon,climatic_mass_balance,ice_surface_temp,usurf"
 $PISM_DO $cmd
 
 

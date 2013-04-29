@@ -52,6 +52,7 @@ ncrename -O -d oisotopestimes,time -v oisotopestimes,time -v temp_time_series,de
 ncpdq -O --rdr=-time $TEMPSERIES $TEMPSERIES  # reverse time dimension
 ncap2 -O -s "time=-time" $TEMPSERIES $TEMPSERIES  # make times follow same convention as PISM
 ncatted -O -a units,time,m,c,"years since 1-1-1" $TEMPSERIES
+ncatted -O -a calendar,time,c,c,"365_day" $TEMPSERIES
 ncatted -O -a units,delta_T,m,c,"Kelvin" $TEMPSERIES
 echo "done."
 echo
@@ -61,6 +62,7 @@ ncrename -O -d sealeveltimes,time -v sealeveltimes,time -v sealevel_time_series,
 ncpdq -O --rdr=-time $SLSERIES $SLSERIES  # reverse time dimension
 ncap2 -O -s "time=-time" $SLSERIES $SLSERIES  # make times follow same convention as PISM
 ncatted -O -a units,time,m,c,"years since 1-1-1" $SLSERIES
+ncatted -O -a calendar,time,c,c,"365_day" $SLSERIES
 echo "done."
 echo
 
