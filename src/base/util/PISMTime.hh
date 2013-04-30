@@ -58,13 +58,6 @@ public:
 
   double end();
 
-  //! \brief Returns the CF- (and UDUNITS) compliant units string.
-  /*!
-   * This units string is saved in the output file. Always contains a reference
-   * date, even if it is not used by PISM.
-   */
-  string CF_units_string();
-
   //! \brief Returns the calendar string.
   string calendar();
 
@@ -80,6 +73,14 @@ public:
   virtual PetscErrorCode init();
 
   PetscErrorCode parse_times(string spec, vector<double> &result);
+
+
+  //! \brief Returns the CF- (and UDUNITS) compliant units string.
+  /*!
+   * This units string is saved in the output file. Always contains a reference
+   * date, even if it is not used by PISM.
+   */
+  virtual string CF_units_string();
 
   //! \brief Internal time units.
   /*!
