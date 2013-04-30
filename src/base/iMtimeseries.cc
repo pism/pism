@@ -124,7 +124,7 @@ PetscErrorCode IceModel::init_timeseries() {
     }
   }
 
-  ierr = write_metadata(nc, false); CHKERRQ(ierr);
+  ierr = write_metadata(nc, false, false); CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -479,7 +479,7 @@ PetscErrorCode IceModel::write_extras() {
     ierr = nc.put_att_text(config.get_string("time_dimension_name"),
                            "bounds", "time_bounds"); CHKERRQ(ierr);
 
-    ierr = write_metadata(nc); CHKERRQ(ierr); 
+    ierr = write_metadata(nc, true, false); CHKERRQ(ierr);
 
     extra_file_is_ready = true;
   } else {

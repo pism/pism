@@ -96,15 +96,18 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
 }
 
 //! \brief Write metadata (global attributes, overrides and mapping parameters) to a file.
-PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping) {
+PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
+                                        bool write_run_stats) {
   PetscErrorCode ierr;
 
   if (write_mapping) {
     ierr = mapping.write(nc); CHKERRQ(ierr);
   }
 
-  ierr = update_run_stats(); CHKERRQ(ierr);
-  ierr = run_stats.write(nc); CHKERRQ(ierr);
+  if (write_run_stats) {
+    ierr = update_run_stats(); CHKERRQ(ierr);
+    ierr = run_stats.write(nc); CHKERRQ(ierr);
+  }
 
   ierr = global_attributes.write(nc); CHKERRQ(ierr);
 
@@ -131,7 +134,7 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
 
   // Write metadata *before* variables:
-  ierr = write_metadata(nc); CHKERRQ(ierr);
+  ierr = write_metadata(nc, true, true); CHKERRQ(ierr);
 
   ierr = write_model_state(nc);  CHKERRQ(ierr);
 
@@ -716,7 +719,7 @@ PetscErrorCode IceModel::write_snapshot() {
                        grid.time->calendar(),
                        grid.time->CF_units_string()); CHKERRQ(ierr);
 
-    ierr = write_metadata(nc); CHKERRQ(ierr);
+    ierr = write_metadata(nc, true, true); CHKERRQ(ierr);
 
     snapshots_file_is_ready = true;
   } else {
@@ -822,7 +825,7 @@ PetscErrorCode IceModel::write_backup() {
   ierr = nc.append_time(config.get_string("time_dimension_name"), grid.time->current()); CHKERRQ(ierr);
 
   // Write metadata *before* variables:
-  ierr = write_metadata(nc); CHKERRQ(ierr);
+  ierr = write_metadata(nc, true, true); CHKERRQ(ierr);
 
   ierr = write_variables(nc, backup_vars, PISM_DOUBLE); CHKERRQ(ierr);
 
