@@ -33,19 +33,42 @@ This is a virtual base class.
 
 The purpose of this class and its derived classes is to provide
 \code
-  PetscErrorCode subglacial_water_thickness(IceModelVec2S &result)
-  PetscErrorCode subglacial_water_pressure(IceModelVec2S &result)
-  PetscErrorCode englacial_water_thickness(IceModelVec2S &result)
+  subglacial_water_thickness(IceModelVec2S &result)
+  subglacial_water_pressure(IceModelVec2S &result)
+  englacial_water_thickness(IceModelVec2S &result)
+  till_water_thickness(IceModelVec2S &result)
+  till_water_pressure(IceModelVec2S &result)
 \endcode
-Thus the interface is specific to subglacial hydrology models which track a
-two-dimensional water layer with a well-defined thickness and pressure at each
-map-plane location, and which either track the englacial water in a manner
-which allows computation of an effective thickness, or which lack englacial
-storage.  In the latter case englacial_water_thickness() sets `result` to
-zero.
 
-Some references for such models are [\ref Bartholomausetal2011,
-\ref FlowersClarke2002_theory, \ref Schoofetal2012, \ref vanPeltBuelerDRAFT ].
+Additional modeled fields, for diagnostic purposes, are
+\code
+  overburden_pressure(IceModelVec2S &result)
+  wall_melt(IceModelVec2S &result)
+\endcode
+
+This interface is specific to subglacial hydrology models which track a
+two-dimensional water layer with a well-defined thickness and pressure at each
+map-plane location.  The methods subglacial_water_thickness() and
+subglacial_water_pressure() return amount and pressure.  This subglacial water
+is *transportable*, that is, it moves along a modeled hydraulic head gradient.
+For more information see [\ref vanPeltBuelerDRAFT].  Background references for
+such models include [\ref FlowersClarke2002_theory, \ref Hewittetal2012,
+\ref Schoofetal2012].
+
+These models also either track a separate, but coupled, amount of water which
+is held in local till storage, or they lack that mechanism.  If they lack the
+mechanism then till_water_thickness() returns zero while till_water_pressure()
+returns subglacial_water_pressure().  If they have the mechanism then
+generally the subglacial and till pressures are different.  The till pressure
+is used by the Mohr-Coulomb criterion to provide a yield stress.  References
+for such models with till storage include [\ref BBssasliding,  
+\ref SchoofTill, \ref TrufferEchelmeyerHarrison, \ref Tulaczyketal2000b].
+
+These models also either track the amount of englacial water, in a manner
+which allows computation of an effective thickness and which is returned by
+englacial_water_thickness(), or they lack the mechanism and
+englacial_water_thickness() returns zero.  A reference for such a model with
+englacial storage is [\ref Bartholomausetal2011].
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
 short physical timescales associated to liquid water moving under a glacier,
@@ -78,8 +101,6 @@ public:
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
   friend class PISMHydrology_hydroinput;
 
-  virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
-
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt);
 
   // derived classes need to have a model state, which will be the variables in this set:
@@ -95,8 +116,18 @@ public:
   // need to be implemented so that PISMHydrology is useful to the outside
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
+
   // these two exist in the base class and set result = 0:
   virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
+  virtual PetscErrorCode till_water_thickness(IceModelVec2S &result);
+
+  // this method needs to be implemented by the derived class
+  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result) = 0;
+
+  // this diagnostic method returns the standard shallow approximation
+  virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
+
+  // this diagnostic method returns zero in the base class
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
 protected:
@@ -119,16 +150,7 @@ protected:
 };
 
 
-//! \brief Reports the amount of englacial water as an effective thickness.
-class PISMHydrology_enwat : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_enwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Reports the pressure of the water in the subglacial layer.
+//! \brief Reports the pressure of the transportable water in the subglacial layer.
 /*!
 This is used by most derived classes of PISMHydrology but not by
 PISMDistributedHydrology, in which the modeled pressure is a state variable.
@@ -141,7 +163,7 @@ public:
 };
 
 
-//! \brief Reports the pressure of the water in the subglacial layer as a fraction of the overburden pressure.
+//! \brief Reports the pressure of the transportable water in the subglacial layer as a fraction of the overburden pressure.
 class PISMHydrology_bwprel : public PISMDiag<PISMHydrology>
 {
 public:
@@ -150,7 +172,7 @@ public:
 };
 
 
-//! \brief Reports the effective pressure of the water in the subglacial layer, that is, the overburden pressure minus the pressure.
+//! \brief Reports the effective pressure of the transportable water in the subglacial layer, that is, the overburden pressure minus the pressure.
 class PISMHydrology_effbwp : public PISMDiag<PISMHydrology>
 {
 public:
@@ -168,13 +190,23 @@ public:
 };
 
 
-//! \brief Report the wall melt rate from dissipation of the potential energy of the water.
+//! \brief Report the wall melt rate from dissipation of the potential energy of the transportable water.
 class PISMHydrology_wallmelt : public PISMDiag<PISMHydrology>
 {
 public:
   PISMHydrology_wallmelt(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
+
+
+//! \brief Reports the amount of englacial water as an effective thickness.
+class PISMHydrology_enwat : public PISMDiag<PISMHydrology>
+{
+public:
+  PISMHydrology_enwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 
 
 //! \brief The subglacial hydrology model from Bueler & Brown (2009) WITHOUT contrived water diffusion.

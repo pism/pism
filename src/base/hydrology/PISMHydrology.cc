@@ -185,8 +185,15 @@ PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
 }
 
 
-//! Set the englacial storage to zero.  (The most basic subglacial hydrologies have no englacial storage.)
+//! Set the englacial storage to zero.  (By default, basic subglacial hydrologies have no englacial storage.)
 PetscErrorCode PISMHydrology::englacial_water_thickness(IceModelVec2S &result) {
+  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Set the till storage to zero.  (By default, basic subglacial hydrologies have no local till storage.)
+PetscErrorCode PISMHydrology::till_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
   return 0;
 }
