@@ -125,7 +125,6 @@ PetscErrorCode IceModel::set_output_size(string option,
   set<string> choices;
   string keyword;
   bool flag;
-  map<string, NCSpatialVariable> list;
 
   result.clear();
 
@@ -204,33 +203,27 @@ PetscErrorCode IceModel::set_output_size(string option,
     result.insert("ocean_kill_mask");
 
   if (beddef != NULL)
-    beddef->add_vars_to_output(keyword, list);
+    beddef->add_vars_to_output(keyword, result);
 
   if (btu != NULL)
-    btu->add_vars_to_output(keyword, list);
+    btu->add_vars_to_output(keyword, result);
 
   if (basal_yield_stress != NULL)
-    basal_yield_stress->add_vars_to_output(keyword, list);
+    basal_yield_stress->add_vars_to_output(keyword, result);
 
   // Ask the stress balance module to add more variables:
   if (stress_balance != NULL)
-    stress_balance->add_vars_to_output(keyword, list);
+    stress_balance->add_vars_to_output(keyword, result);
 
   if (subglacial_hydrology != NULL)
-    subglacial_hydrology->add_vars_to_output(keyword, list);
+    subglacial_hydrology->add_vars_to_output(keyword, result);
 
   // Ask ocean and surface models to add more variables to the list:
   if (ocean != NULL)
-    ocean->add_vars_to_output(keyword, list);
+    ocean->add_vars_to_output(keyword, result);
 
   if (surface != NULL)
-    surface->add_vars_to_output(keyword, list);
-
-  map<string,NCSpatialVariable>::iterator j = list.begin();
-  while(j != list.end()) {
-    result.insert(j->first);
-    ++j;
-  }
+    surface->add_vars_to_output(keyword, result);
 
   return 0;
 }

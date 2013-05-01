@@ -22,6 +22,25 @@
 #include "pism_const.hh"
 #include "NCVariable.hh"
 
+/**
+ * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
+ */
+inline int pism_validate_calendar_name(string name) {
+  // Calendar names from the CF Conventions document (except the
+  // 366_day (all_leap)):
+  if (name == "standard"            ||
+      name == "gregorian"           ||
+      name == "proleptic_gregorian" ||
+      name == "noleap"              ||
+      name == "365_day"             ||
+      name == "julian"              ||
+      name == "360_day") {
+    return 0;
+  }
+
+  return 1;
+}
+
 //! \brief Time management class.
 /*!
  * This is to make it possible to switch between different implementations.
@@ -74,7 +93,6 @@ public:
 
   PetscErrorCode parse_times(string spec, vector<double> &result);
 
-
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
   /*!
    * This units string is saved in the output file. Always contains a reference
@@ -98,6 +116,9 @@ public:
   //! a year. Only useful in codes with a "yearly cycle" (such as the PDD model).
   virtual double year_fraction(double T);
 
+  //! \brief Convert the day number to the year fraction.
+  virtual double day_of_the_year_to_day_fraction(unsigned int day);
+  
   //! \brief Returns the model time in seconds corresponding to the
   //! beginning of the year `T` falls into.
   virtual double calendar_year_start(double T);

@@ -81,12 +81,11 @@ static PISMNCFile* create_backend(MPI_Comm com, int rank, string mode) {
 }
 
 //! \brief The code shared by different PIO constructors.
-void PIO::constructor(MPI_Comm c, int r, string mode, PISMUnitSystem unit_system) {
+void PIO::constructor(MPI_Comm c, int r, string mode) {
   com = c;
   rank = r;
   shallow_copy = false;
   m_mode = mode;
-  m_unit_system = unit_system;
 
   nc = create_backend(com, rank, mode);
 
@@ -99,22 +98,24 @@ void PIO::constructor(MPI_Comm c, int r, string mode, PISMUnitSystem unit_system
   }
 }
 
-PIO::PIO(MPI_Comm c, int r, string mode, PISMUnitSystem units_system) {
-  constructor(c, r, mode, units_system);
+PIO::PIO(MPI_Comm c, int r, string mode, PISMUnitSystem units_system)
+  : m_unit_system(units_system) {
+  constructor(c, r, mode);
 }
 
-PIO::PIO(IceGrid &grid, string mode) {
-  constructor(grid.com, grid.rank, mode, grid.get_unit_system());
+PIO::PIO(IceGrid &grid, string mode)
+  : m_unit_system(grid.get_unit_system()) {
+  constructor(grid.com, grid.rank, mode);
   if (nc != NULL)
     set_local_extent(grid.xs, grid.xm, grid.ys, grid.ym);
 }
 
-PIO::PIO(const PIO &other) {
+PIO::PIO(const PIO &other)
+  : m_unit_system(other.m_unit_system) {
   com = other.com;
   rank = other.rank;
   nc = other.nc;
   m_mode = other.m_mode;
-  m_unit_system = other.m_unit_system;
 
   shallow_copy = true;
 }
@@ -433,7 +434,7 @@ PetscErrorCode PIO::inq_dimlen(string name, unsigned int &result) const {
 PetscErrorCode PIO::inq_dimtype(string name, AxisType &result) const {
   PetscErrorCode ierr;
   string axis, standard_name, units;
-  PISMUnit tmp_units;
+  PISMUnit tmp_units(m_unit_system);
   bool exists;
 
   ierr = nc->inq_varid(name, exists); CHKERRQ(ierr);
@@ -449,14 +450,14 @@ PetscErrorCode PIO::inq_dimtype(string name, AxisType &result) const {
 
   // check if it has units compatible with "seconds":
 
-  if (tmp_units.parse(m_unit_system, units) != 0) {
+  if (tmp_units.parse(units) != 0) {
     ierr = PetscPrintf(com, "ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
 		       units.c_str(), name.c_str());
     PISMEnd();
   }
 
-  PISMUnit seconds;
-  int errcode = seconds.parse(m_unit_system, "seconds");
+  PISMUnit seconds(m_unit_system);
+  int errcode = seconds.parse("seconds");
   assert(errcode == 0);
   if (ut_are_convertible(tmp_units.get(), seconds.get())) {
     result = T_AXIS;
@@ -634,7 +635,7 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, PISMUnit &units,
   while (ends_with(units_string, " "))
     units_string.resize(units_string.size() - 1);
   
-  if (units.parse(m_unit_system, units_string) != 0) {
+  if (units.parse(units_string) != 0) {
     ierr = PetscPrintf(com, "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
 		       units_string.c_str(), name.c_str());
     PISMEnd();

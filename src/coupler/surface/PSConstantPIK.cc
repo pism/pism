@@ -144,9 +144,9 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSConstantPIK::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["climatic_mass_balance"] = climatic_mass_balance.get_metadata();
-  result["ice_surface_temp"] = ice_surface_temp.get_metadata();
+void PSConstantPIK::add_vars_to_output(string /*keyword*/, set<string> &result) {
+  result.insert("climatic_mass_balance");
+  result.insert("ice_surface_temp");
   // does not call atmosphere->add_vars_to_output().
 }
 

@@ -61,7 +61,7 @@ public:
                PetscMPIInt size, NCConfigVariable &c ): 
                   config(c), grid(com,rank,size,config), 
                   basal(0), enthalpyconverter(0), ssa(0),
-                  report_velocity_scale(secpera)
+                  report_velocity_scale(PISMVerification::secpera)
   {  };
 
   virtual ~SSATestCase()

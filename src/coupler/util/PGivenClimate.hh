@@ -39,11 +39,11 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
+  virtual void add_vars_to_output(string keyword, set<string> &result)
   {
     map<string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
-      result[k->first] = (k->second)->get_metadata();
+      result.insert(k->first);
       ++k;
     }
 

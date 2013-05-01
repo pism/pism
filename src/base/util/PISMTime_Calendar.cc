@@ -39,25 +39,6 @@ static inline string string_strip(string input) {
   return input;
 }
 
-/**
- * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
- */
-static inline int validate_calendar_name(string name) {
-  // Calendar names from the CF Conventions document (except the
-  // 366_day (all_leap)):
-  if (name == "standard"            ||
-      name == "gregorian"           ||
-      name == "proleptic_gregorian" ||
-      name == "noleap"              ||
-      name == "365_day"             ||
-      name == "julian"              ||
-      name == "360_day") {
-    return 0;
-  }
-
-  return 1;
-}
-
 /*!
 
   See http://meteora.ucsd.edu/~pierce/calcalcs/index.html and
@@ -70,7 +51,7 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
   : PISMTime(c, conf, units_system) {
 
   m_calendar_string = m_config.get_string("calendar");
-  if (validate_calendar_name(m_calendar_string) == 1) {
+  if (pism_validate_calendar_name(m_calendar_string) == 1) {
     PetscPrintf(m_com, "PISM ERROR: unsupported calendar: %s\n", m_calendar_string.c_str());
     PISMEnd();
   }
@@ -85,7 +66,7 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
   }
 
   string tmp = "seconds since " + ref_date;
-  errcode = m_time_units.parse(m_unit_system, tmp);
+  errcode = m_time_units.parse(tmp);
   if (errcode != 0) {
     PetscPrintf(m_com, "PISM ERROR: time units '%s' are invalid.\n",
                 tmp.c_str());
@@ -100,7 +81,7 @@ PISMTime_Calendar::~PISMTime_Calendar() {
 PetscErrorCode PISMTime_Calendar::process_ys(double &result, bool &flag) {
   PetscErrorCode ierr;
   string tmp;
-  result = m_config.get("start_year", m_unit_system, "years", "seconds");
+  result = m_config.get("start_year", "years", "seconds");
 
   ierr = PISMOptionsString("-ys", "Start date", tmp, flag); CHKERRQ(ierr);
 
@@ -118,12 +99,12 @@ PetscErrorCode PISMTime_Calendar::process_ys(double &result, bool &flag) {
 PetscErrorCode PISMTime_Calendar::process_y(double &result, bool &flag) {
   PetscErrorCode ierr;
   int tmp;
-  result = m_config.get("run_length_years", m_unit_system, "years", "seconds");
+  result = m_config.get("run_length_years", "years", "seconds");
 
   ierr = PISMOptionsInt("-y", "Run length, in years (integer)", tmp, flag); CHKERRQ(ierr);
 
   if (flag) {
-    result = convert(tmp, m_unit_system, "years", "seconds");
+    result = m_unit_system.convert(tmp, "years", "seconds");
   }
 
   return 0;
@@ -132,8 +113,8 @@ PetscErrorCode PISMTime_Calendar::process_y(double &result, bool &flag) {
 PetscErrorCode PISMTime_Calendar::process_ye(double &result, bool &flag) {
   PetscErrorCode ierr;
   string tmp;
-  result = (m_config.get("start_year", m_unit_system, "years", "seconds") +
-            m_config.get("run_length_years", m_unit_system, "years", "seconds"));
+  result = (m_config.get("start_year", "years", "seconds") +
+            m_config.get("run_length_years", "years", "seconds"));
 
   ierr = PISMOptionsString("-ye", "Start date", tmp, flag); CHKERRQ(ierr);
 
@@ -180,8 +161,9 @@ PetscErrorCode PISMTime_Calendar::init() {
  */
 PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
   PetscErrorCode ierr;
-  NCTimeseries time_axis;
-  NCTimeBounds bounds;
+  PISMUnitSystem system = m_time_units.get_system();
+  NCTimeseries time_axis(system);
+  NCTimeBounds bounds(system);
   PetscMPIInt rank;
   vector<double> time, time_bounds;
   string time_units, time_bounds_name, new_calendar,
@@ -205,7 +187,7 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
 
   ierr = nc.get_att_text(time_name, "calendar", new_calendar); CHKERRQ(ierr);
   if (new_calendar.empty() == false) {
-    if (validate_calendar_name(new_calendar) == 1) {
+    if (pism_validate_calendar_name(new_calendar) == 1) {
       PetscPrintf(m_com,
                   "PISM ERROR: unsupported calendar name '%s' found in a -time_file '%s'.\n",
                   new_calendar.c_str(), filename.c_str());
@@ -236,7 +218,7 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
     }
 
     string tmp = "seconds " + time_units.substr(position);
-    ierr = m_time_units.parse(m_unit_system, tmp);
+    ierr = m_time_units.parse(tmp);
     if (ierr != 0) {
       PetscPrintf(m_com,
                   "PISM ERROR: units specification '%s' is invalid (processing -time_file).\n",
@@ -250,13 +232,13 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
   if (time_bounds_name.empty() == false) {
     // use the time bounds
     bounds.init(time_bounds_name, time_name, m_com, rank);
-    bounds.set_units(m_unit_system, m_time_units.format());
+    bounds.set_units(m_time_units.format());
 
     ierr = bounds.read(nc, true, time); CHKERRQ(ierr);
   } else {
     // use the time axis
     time_axis.init(time_name, time_name, m_com, rank);
-    time_axis.set_units(m_unit_system, m_time_units.format());
+    time_axis.set_units(m_time_units.format());
 
     ierr = time_axis.read(nc, true, time); CHKERRQ(ierr);
   }

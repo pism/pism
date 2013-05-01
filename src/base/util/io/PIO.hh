@@ -180,7 +180,7 @@ protected:
 
   PetscErrorCode detect_mode(string filename);
 private:
-  void constructor(MPI_Comm com, int rank, string mode, PISMUnitSystem unit_system);
+  void constructor(MPI_Comm com, int rank, string mode);
 };
 
 #endif /* _PIO_H_ */

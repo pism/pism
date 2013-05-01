@@ -21,7 +21,7 @@
 #include "IceGrid.hh"
 
 PAConstantPIK::PAConstantPIK(IceGrid &g, const NCConfigVariable &conf)
-  : PISMAtmosphereModel(g, conf) {
+  : PISMAtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAConstantPIK(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
@@ -55,7 +55,7 @@ PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
   air_temp_snapshot.set_string("pism_intent", "diagnostic");
   air_temp_snapshot.set_string("long_name",
 			       "snapshot of the near-surface air temperature");
-  ierr = air_temp_snapshot.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
+  ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -106,12 +106,12 @@ PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-void PAConstantPIK::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
-  result["precipitation"] = precipitation.get_metadata();
-  result["air_temp"] = air_temp.get_metadata();
+void PAConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
+  result.insert("precipitation");
+  result.insert("air_temp");
 
   if (keyword == "big") {
-    result["air_temp_snapshot"] = air_temp_snapshot;
+    result.insert("air_temp_snapshot");
   }
 }
 

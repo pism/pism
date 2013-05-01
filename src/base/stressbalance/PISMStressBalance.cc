@@ -541,7 +541,7 @@ PetscErrorCode PISMStressBalance::write_variables(set<string> vars, const PIO &n
   return 0;
 }
 
-void PISMStressBalance::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+void PISMStressBalance::add_vars_to_output(string keyword, set<string> &result) {
 
   m_stress_balance->add_vars_to_output(keyword, result);
   m_modifier->add_vars_to_output(keyword, result);

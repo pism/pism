@@ -112,8 +112,7 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   const PetscReal
-    sperd            = 8.64e4,  // exact number of seconds per day
-    julyday_fraction = (sperd / secpera) * snow_temp_july_day,
+    julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day),
     T                = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
     cos_T            = cos(2.0 * pi * T);
 

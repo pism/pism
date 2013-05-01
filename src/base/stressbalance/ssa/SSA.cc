@@ -159,9 +159,7 @@ PetscErrorCode SSA::allocate() {
   ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "ssa_",
-                                  grid.get_unit_system(),
-                                  config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
     ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
 
     ierr = ice_factory.setType(config.get_string("ssa_flow_law")); CHKERRQ(ierr);
@@ -409,8 +407,8 @@ PetscErrorCode SSA::set_initial_guess(IceModelVec2V &guess) {
 }
 
 
-void SSA::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["vel_ssa"] = m_velocity.get_metadata();
+void SSA::add_vars_to_output(string /*keyword*/, set<string> &result) {
+  result.insert("vel_ssa");
 }
 
 
@@ -444,7 +442,7 @@ SSA_taud::SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SSA>(m, g, my_vars) {
 
   dof = 2;
-  vars.resize(dof);
+  vars.resize(dof,  NCSpatialVariable(g.get_unit_system()));
   // set metadata:
   vars[0].init_2d("taud_x", grid);
   vars[1].init_2d("taud_y", grid);

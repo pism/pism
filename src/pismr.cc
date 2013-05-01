@@ -72,7 +72,8 @@ int main(int argc, char *argv[]) {
       ierr = show_usage_check_req_opts(com, "pismr", required, usage.c_str()); CHKERRQ(ierr);
     }
 
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     IceGrid g(com, rank, size, config);

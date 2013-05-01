@@ -56,7 +56,7 @@ public:
     : variables(my_vars), grid(g) {
     output_datatype = PISM_FLOAT;
     dof = 1;
-    vars.resize(dof);
+    vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   }
   virtual ~PISMDiagnostic() {}
 
@@ -78,7 +78,7 @@ public:
   //! Get a pointer to a metadata object corresponding to variable number N.
   virtual NCSpatialVariable get_metadata(int N = 0)
   {
-    if (N >= dof) return NCSpatialVariable();
+    if (N >= dof) return NCSpatialVariable(grid.get_unit_system());
 
     return vars[N];
   }
@@ -111,7 +111,7 @@ public:
 
     vars[N].set_string("standard_name", my_standard_name);
 
-    ierr = vars[N].set_units(grid.get_unit_system(), my_units); CHKERRQ(ierr);
+    ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
 
     if (my_glaciological_units != "") {
       ierr = vars[N].set_glaciological_units(my_glaciological_units); CHKERRQ(ierr);

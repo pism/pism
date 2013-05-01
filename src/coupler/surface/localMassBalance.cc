@@ -27,7 +27,8 @@
 #include "localMassBalance.hh"
 #include "IceGrid.hh"
 
-PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBalance(myconfig) {
+PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig)
+  : LocalMassBalance(myconfig) {
   precip_as_snow     = config.get_flag("interpret_precip_as_snow");
   Tmin               = config.get("air_temp_all_precip_as_snow");
   Tmax               = config.get("air_temp_all_precip_as_rain");
@@ -41,7 +42,7 @@ PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBala
  */
 int PDDMassBalance::get_timeseries_length(double dt) {
   const int    NperYear = static_cast<int>(config.get("pdd_max_evals_per_year"));
-  const double dt_years = dt / secpera;
+  const double dt_years = m_unit_system.convert(dt, "seconds", "years");
 
   return (int)PetscMax(ceil((NperYear - 1) * (dt_years) + 1), 2);
 }
@@ -208,8 +209,9 @@ Initializes the random number generator (RNG).  The RNG is GSL's recommended def
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
-PDDrandMassBalance::PDDrandMassBalance(const NCConfigVariable& myconfig, bool repeatable)
-    : PDDMassBalance(myconfig) {
+PDDrandMassBalance::PDDrandMassBalance(const NCConfigVariable& myconfig,
+                                       bool repeatable)
+  : PDDMassBalance(myconfig) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
   gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));
 }

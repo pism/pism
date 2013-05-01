@@ -150,8 +150,8 @@ PetscErrorCode PISMRoutingHydrology::init_actions(PISMVars &vars, bool i_set, bo
 }
 
 
-void PISMRoutingHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["bwat"] = W.get_metadata();
+void PISMRoutingHydrology::add_vars_to_output(string /*keyword*/, set<string> &result) {
+  result.insert("bwat");
 }
 
 
@@ -557,7 +557,8 @@ PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
                   PetscReal &dtCFL_result, PetscReal &dtDIFFW_result) {
   PetscErrorCode ierr;
   const PetscReal
-    dtmax = config.get("hydrology_maximum_time_step_years") * secpera,
+    dtmax = config.get("hydrology_maximum_time_step_years",
+                       "years", "seconds"),
     rg    = config.get("standard_gravity") * config.get("fresh_water_density");
   PetscReal tmp[2];
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
@@ -683,13 +684,15 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
 
   if (report_mass_accounting) {
     ierr = verbPrintf(2, grid.com,
-      " 'routing' hydrology summary:\n"
-      "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
-      "        (last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
-      "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
-      "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
-      hydrocount, (dt/hydrocount)/secpera, dt/hydrocount, maxV, maxD,
-      icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
+                      " 'routing' hydrology summary:\n"
+                      "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
+                      "        (last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
+                      "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
+                      "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
+                      hydrocount,
+                      grid.convert(dt/hydrocount, "seconds", "years"),
+                      dt/hydrocount, maxV, maxD,
+                      icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -700,7 +703,7 @@ PISMRoutingHydrology_bwatvel::PISMRoutingHydrology_bwatvel(PISMRoutingHydrology 
 
   // set metadata:
   dof = 2;
-  vars.resize(2);
+  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   vars[0].init_2d("bwatvel[0]", grid);
   vars[1].init_2d("bwatvel[1]", grid);
 
@@ -871,10 +874,10 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
 }
 
 
-void PISMDistributedHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["bwat"] = W.get_metadata();
-  result["enwat"] = Wen.get_metadata();
-  result["bwp"]  = P.get_metadata();
+void PISMDistributedHydrology::add_vars_to_output(string /*keyword*/, set<string> &result) {
+  result.insert("bwat");
+  result.insert("enwat");
+  result.insert("bwp");
 }
 
 
@@ -1071,9 +1074,13 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
     PtoCFLratio = 1.0;
 
   ierr = verbPrintf(3,grid.com,
-            "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
-            maxV_result*secpera, dtCFL/secpera, dtDIFFW/secpera, dtDIFFP/secpera,
-            dt_result/secpera, t_current/secpera); CHKERRQ(ierr);
+                    "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
+                    grid.convert(maxV_result, "m/second", "m/year"),
+                    grid.convert(dtCFL,       "seconds",  "years"),
+                    grid.convert(dtDIFFW,     "seconds",  "years"),
+                    grid.convert(dtDIFFP,     "seconds",  "years"),
+                    grid.convert(dt_result,   "seconds",  "years"),
+                    grid.convert(t_current,   "seconds",  "years")); CHKERRQ(ierr);
   return 0;
 }
 
@@ -1324,16 +1331,17 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   } // end of hydrology model time-stepping loop
 
   if (report_mass_accounting) {
-    const PetscReal dtavyears = (dt/hydrocount)/secpera;
+    const PetscReal dtavyears = grid.convert(dt/hydrocount, "seconds", "years");
     ierr = verbPrintf(2, grid.com,
-      " 'distributed' hydrology summary:\n"
-      "     %d hydrology sub-steps with average dt = %.7f years = %.2f s\n"
-      "        (average of %.2f steps per CFL time; last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
-      "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
-      "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
-      hydrocount, dtavyears, dtavyears * secpera,
-      cumratio/hydrocount, maxV, maxD,
-      icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
+                      " 'distributed' hydrology summary:\n"
+                      "     %d hydrology sub-steps with average dt = %.7f years = %.2f s\n"
+                      "        (average of %.2f steps per CFL time; last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
+                      "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
+                      "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
+                      hydrocount, dtavyears,
+                      grid.convert(dtavyears, "seconds", "years"),
+                      cumratio/hydrocount, maxV, maxD,
+                      icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
   }
   return 0;
 }

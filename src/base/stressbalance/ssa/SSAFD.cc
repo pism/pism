@@ -1280,7 +1280,7 @@ SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g, PISMVars &my_vars)
 
   // set metadata:
   dof = 2;
-  vars.resize(2);
+  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   vars[0].init_2d("nuH[0]", grid);
   vars[1].init_2d("nuH[1]", grid);
 

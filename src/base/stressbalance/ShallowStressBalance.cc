@@ -305,7 +305,7 @@ SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
 
   dof = 2;
-  vars.resize(dof);
+  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   // set metadata:
   vars[0].init_2d("taud_x", grid);
   vars[1].init_2d("taud_y", grid);

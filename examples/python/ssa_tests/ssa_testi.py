@@ -41,7 +41,7 @@ class testi(PISM.ssa.SSAExactTestCase):
   def _initPhysics(self):
     config = self.config
     config.set_flag("do_pseudo_plastic_till", False)
-    basal = PISM.IceBasalResistancePlasticLaw(config, self.grid.get_unit_system())
+    basal = PISM.IceBasalResistancePlasticLaw(config)
 
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);

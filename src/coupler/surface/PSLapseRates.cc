@@ -19,7 +19,9 @@
 #include "PSLapseRates.hh"
 
 PSLapseRates::PSLapseRates(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-  : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
+  : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in),
+    climatic_mass_balance(g.get_unit_system()),
+    ice_surface_temp(g.get_unit_system())
 {
   smb_lapse_rate = 0;
   option_prefix = "-surface_lapse_rate";
@@ -43,14 +45,14 @@ PetscErrorCode PSLapseRates::allocate_PSLapseRates() {
                   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units(grid.get_unit_system(), "m s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -82,9 +84,9 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
                     "   ice-equivalent surface mass balance lapse rate: %3.3f m/year per km\n",
                     temp_lapse_rate, smb_lapse_rate); CHKERRQ(ierr);
 
-  temp_lapse_rate = grid.conv(temp_lapse_rate, "K/km", "K/m");
+  temp_lapse_rate = grid.convert(temp_lapse_rate, "K/km", "K/m");
 
-  smb_lapse_rate = grid.conv(smb_lapse_rate, "m/year / km", "m/s / m");
+  smb_lapse_rate = grid.convert(smb_lapse_rate, "m/year / km", "m/s / m");
 
   return 0;
 }
@@ -103,10 +105,10 @@ PetscErrorCode PSLapseRates::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSLapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+void PSLapseRates::add_vars_to_output(string keyword, set<string> &result) {
   if (keyword == "medium" || keyword == "big") {
-    result["ice_surface_temp"] = ice_surface_temp;
-    result["climatic_mass_balance"] = climatic_mass_balance;
+    result.insert("ice_surface_temp");
+    result.insert("climatic_mass_balance");
   }
 
   input_model->add_vars_to_output(keyword, result);

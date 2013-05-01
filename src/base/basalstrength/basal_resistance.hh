@@ -29,7 +29,7 @@ viscous till to purely plastic till.
  */
 class IceBasalResistancePlasticLaw {
 public:
-  IceBasalResistancePlasticLaw(const NCConfigVariable &config, PISMUnitSystem unit_system);
+  IceBasalResistancePlasticLaw(const NCConfigVariable &config);
   virtual ~IceBasalResistancePlasticLaw() {}
   virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar tauc,
@@ -44,7 +44,7 @@ protected:
 
 class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
-  IceBasalResistancePseudoPlasticLaw(const NCConfigVariable &config, PISMUnitSystem unit_system);
+  IceBasalResistancePseudoPlasticLaw(const NCConfigVariable &config);
   virtual ~IceBasalResistancePseudoPlasticLaw() {}
   virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar tauc,

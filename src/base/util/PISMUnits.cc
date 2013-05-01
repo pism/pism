@@ -20,6 +20,7 @@
 #include "PISMUnits.hh"
 #include <gsl/gsl_math.h>       // GSL_NAN
 #include <petscsys.h>
+#include <cstdio>
 
 class ut_system_deleter {
 public:
@@ -27,10 +28,6 @@ public:
     ut_free_system(p);
   }
 };
-
-PISMUnitSystem::PISMUnitSystem() {
-  m_system.reset();
-}
 
 /** Initialize the unit system by reading from an XML unit
  * definition file.
@@ -52,11 +49,51 @@ PISMUnitSystem::Ptr PISMUnitSystem::get() const {
   return m_system;
 }
 
-PISMUnit::PISMUnit() {
-  m_unit = NULL;
+//! \brief Convert a quantity from unit1 to unit2.
+/*!
+ * Example: convert(1, "m/year", "m/s").
+ *
+ * Please avoid using in computationally-intensive code.
+ */
+double PISMUnitSystem::convert(double input, std::string spec1, std::string spec2) const {
+  PISMUnit unit1(*this), unit2(*this);
+
+  if (unit1.parse(spec1) != 0) {
+#if (PISM_DEBUG==1)
+    fprintf(stderr, "PISMUnitSystem::convert() failed trying to parse %s\n", spec1.c_str());
+#endif
+    return GSL_NAN;
+  }
+
+  if (unit2.parse(spec2) != 0) {
+#if (PISM_DEBUG==1)
+    fprintf(stderr, "PISMUnitSystem::convert() failed trying to parse %s\n", spec2.c_str());
+#endif
+    return GSL_NAN;
+  }
+
+  cv_converter *c = unit2.get_converter_from(unit1);
+  if (c == NULL) {
+#if (PISM_DEBUG==1)
+    fprintf(stderr, "PISMUnitSystem::convert() failed trying to convert %s to %s\n",
+            spec1.c_str(), spec2.c_str());
+#endif
+    return GSL_NAN;
+  }
+
+  double result = cv_convert_double(c, input);
+  cv_free(c);
+
+  return result;
 }
 
-PISMUnit::PISMUnit(const PISMUnit &other) {
+PISMUnit::PISMUnit(PISMUnitSystem system)
+  : m_unit(NULL), m_system(system) {
+  this->parse("1");
+}
+
+PISMUnit::PISMUnit(const PISMUnit &other)
+  : m_system(other.m_system) {
   if (other.m_unit == NULL)
     m_unit = NULL;
   else
@@ -87,16 +124,20 @@ PISMUnit::~PISMUnit() {
   reset();
 }
 
-int PISMUnit::parse(PISMUnitSystem system, std::string spec) {
+int PISMUnit::parse(std::string spec) {
   reset();
-  m_system = system;
-  m_unit = ut_parse(system.get().get(), spec.c_str(), UT_ASCII);
+  m_unit = ut_parse(m_system.get().get(), spec.c_str(), UT_ASCII);
   m_unit_string = spec;
   if (m_unit == NULL)
     return 1;
   else
     return 0;
 }
+
+cv_converter* PISMUnit::get_converter_from(PISMUnit from) const {
+  return ut_get_converter(from.get(), this->get());
+}
+
 
 std::string PISMUnit::format() const {
   return m_unit_string;

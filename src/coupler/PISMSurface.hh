@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -47,7 +47,7 @@ public:
   // provide default re-implementations of these parent's methods:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);

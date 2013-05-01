@@ -37,7 +37,7 @@ public:
 
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
   IceModelVec2T *climatic_mass_balance_anomaly, *ice_surface_temp_anomaly;

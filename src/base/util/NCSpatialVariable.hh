@@ -27,7 +27,7 @@ class IceGrid;
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class NCSpatialVariable : public NCVariable {
 public:
-  NCSpatialVariable();
+  NCSpatialVariable(PISMUnitSystem system);
   NCSpatialVariable(const NCSpatialVariable &other);
   virtual ~NCSpatialVariable();
   virtual void init_2d(string name, IceGrid &g);

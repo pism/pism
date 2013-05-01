@@ -29,7 +29,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 
   def _initPhysics(self):
     config = self.modeldata.config
-    basal = PISM.IceBasalResistancePlasticLaw(config, self.grid.get_unit_system())
+    basal = PISM.IceBasalResistancePlasticLaw(config)
 
     enthalpyconverter = PISM.EnthalpyConverter(config)
 

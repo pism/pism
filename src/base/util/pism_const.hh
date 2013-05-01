@@ -35,7 +35,10 @@ using namespace std;
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 
-const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS-2
+namespace PISMVerification {
+  const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS-2
+}
+
 const PetscScalar pi         = M_PI;		// defined in gsl/gsl_math.h
 
 enum PismMask {
@@ -78,49 +81,6 @@ bool ends_with(string str, string suffix);
 
 inline bool set_contains(set<string> S, string name) {
   return (S.find(name) != S.end());
-}
-
-//! \brief Convert a quantity from unit1 to unit2.
-/*!
- * Example: convert(1, "m/year", "m/s").
- *
- * Please avoid using in computationally-intensive code.
- */
-inline double convert(double value,
-                      PISMUnitSystem units_system,
-                      const char spec1[], const char spec2[]) {
-  PISMUnit unit1, unit2;
-
-  if (unit1.parse(units_system, spec1) != 0) {
-#if (PISM_DEBUG==1)
-    PetscPrintf(MPI_COMM_SELF, "ut_parse failed trying to parse %s\n", spec1);
-    PISMEnd();
-#endif
-    return GSL_NAN;
-  }
-
-  if (unit2.parse(units_system, spec2) != 0) {
-#if (PISM_DEBUG==1)
-    PetscPrintf(MPI_COMM_SELF, "ut_parse failed trying to parse %s\n", spec2);
-    PISMEnd();
-#endif
-    return GSL_NAN;
-  }
-
-  cv_converter *c = ut_get_converter(unit1.get(), unit2.get());
-  if (c == NULL) {
-#if (PISM_DEBUG==1)
-    PetscPrintf(MPI_COMM_SELF, "ut_get_converter failed trying to convert %s to %s\n",
-                spec1, spec2);
-    PISMEnd();
-#endif
-    return GSL_NAN;
-  }
-
-  double result = cv_convert_double(c, value);
-  cv_free(c);
-
-  return result;
 }
 
 inline PetscErrorCode PISMGlobalMin(PetscReal *local, PetscReal *result, MPI_Comm comm)

@@ -469,7 +469,7 @@ if __name__ == "__main__":
   
   r_mag.set_attrs("diagnostic","magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
             "m s-1", "inv_ssa_residual", 0);
-  r_mag.set_attr("_FillValue", grid.conv(-0.01,'m/year','m/s'));
+  r_mag.set_attr("_FillValue", grid.convert(-0.01,'m/year','m/s'));
   r_mag.set_attr("valid_min", 0.0);
   r_mag.set_glaciological_units("m year-1")
   r_mag.write_in_glaciological_units = True

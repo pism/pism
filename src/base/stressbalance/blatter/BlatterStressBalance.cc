@@ -139,7 +139,6 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
 
   {
     IceFlowLawFactory ice_factory(grid.com, "blatter_",
-                                  grid.get_unit_system(),
                                   config, &EC);
     ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
 
@@ -460,10 +459,9 @@ PetscErrorCode BlatterStressBalance::compute_volumetric_strain_heating() {
   return 0;
 }
 
-void BlatterStressBalance::add_vars_to_output(string /*keyword*/,
-					      map<string,NCSpatialVariable> &result) {
-  result["u_sigma"] = u_sigma.get_metadata();
-  result["v_sigma"] = v_sigma.get_metadata();
+void BlatterStressBalance::add_vars_to_output(string /*keyword*/, set<string> &result) {
+  result.insert("u_sigma");
+  result.insert("v_sigma");
 }
 
 //! Defines requested couplings fields.

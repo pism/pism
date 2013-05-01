@@ -38,7 +38,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     config = self.config
     
     # Configuration flags and parameters used by this call are irrelevant because tauc == 0.
-    basal = PISM.IceBasalResistancePlasticLaw(config, self.grid.get_unit_system())
+    basal = PISM.IceBasalResistancePlasticLaw(config)
 
     #// Enthalpy converter is irrelevant for this test.
     enthalpyconverter = PISM.EnthalpyConverter(config);

@@ -38,9 +38,7 @@ PetscErrorCode SIA_Sliding::allocate() {
   ierr = work_2d.create(grid, "work_vector_2d", true, WIDE_STENCIL); CHKERRQ(ierr);
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "sia_",
-                                  grid.get_unit_system(),
-                                  config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
     ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
 
@@ -196,7 +194,8 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
                                           PetscScalar /*alpha*/, PetscScalar mu,
                                           PetscScalar min_T) const {
   PetscReal ice_rho = config.get("ice_density"),
-    beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity");
+    beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity"),
+    secpera = grid.convert(1.0, "year", "seconds");
 
   if (verification_mode) {
     // test 'E' mode

@@ -67,7 +67,7 @@ protected:
 const PetscScalar L=50.e3; // 50km half-width
 const PetscScalar H0=500; // m
 const PetscScalar dhdx = 0.005; // pure number, slope of surface & bed
-const PetscScalar nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
+const PetscScalar nu0 = 30.0 * 1.0e6 * PISMVerification::secpera; /* = 9.45e14 Pa s */
 const PetscScalar tauc0 = 1.e4; // 1kPa
 
 
@@ -84,8 +84,7 @@ PetscErrorCode SSATestCaseExp::initializeSSAModel()
   // Use a pseudo-plastic law with linear till
   config.set_flag("do_pseudo_plastic_till", true);
   config.set("pseudo_plastic_q", 1.0);
-  basal = new IceBasalResistancePseudoPlasticLaw(config,
-                                                 grid.get_unit_system());
+  basal = new IceBasalResistancePseudoPlasticLaw(config);
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);
@@ -152,9 +151,8 @@ PetscErrorCode SSATestCaseExp::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
                                              PetscReal *u, PetscReal *v)
 {
   PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
-                                                   grid.get_unit_system(),
                                                    "m/year", "m/second");
-  PetscScalar v0 = 100./secpera ; // 100 m/s.
+  PetscScalar v0 = 100./PISMVerification::secpera ; // 100 m/s.
   // PetscScalar alpha=log(2.)/(2*L);
   PetscScalar alpha = sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );
   *u = v0*exp( -alpha*(x-L));
@@ -177,7 +175,8 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);

@@ -57,6 +57,7 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
     ierr = DMCreateGlobalVector(da, &v); CHKERRQ(ierr);
   }
 
+  vars.resize(dof, NCSpatialVariable(grid->get_unit_system()));
   vars[0].init_3d(name, mygrid, zlevels);
   vars[0].dimensions["z"] = "zb";
 
@@ -239,9 +240,9 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
 }
 
 
-void PISMBedThermalUnit::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
+void PISMBedThermalUnit::add_vars_to_output(string /*keyword*/, set<string> &result) {
   if (temp.was_created()) {
-    result[temp.string_attr("short_name")] = temp.get_metadata();
+    result.insert(temp.string_attr("short_name"));
   }
 }
 

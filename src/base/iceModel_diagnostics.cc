@@ -169,15 +169,7 @@ PetscErrorCode IceModel::list_diagnostics() {
 
   // quantities with dedicated storage
   {
-    map<string, NCSpatialVariable> list;
-    set<string> vars = variables.keys();
-
-    set<string>::iterator i = vars.begin();
-    while (i != vars.end()) {
-      list[*i] = variables.get(*i)->get_metadata();
-      ++i;
-    }
-
+    set<string> list = variables.keys();
 
     if (beddef != NULL)
       beddef->add_vars_to_output("big", list);
@@ -206,16 +198,18 @@ PetscErrorCode IceModel::list_diagnostics() {
                   "======== Available %dD quantities with dedicated storage ========\n",
                   d);
 
-      map<string,NCSpatialVariable>::iterator j = list.begin();
+      set<string>::iterator j = list.begin();
       while(j != list.end()) {
+        IceModelVec *v = variables.get(*j);
+        
+        if (v != NULL && v->get_ndims() == d) {
+          NCSpatialVariable var = v->get_metadata();
 
-        if ((j->second).get_ndims() == d) {
-          NCSpatialVariable var = j->second;
-
-          string name = j->first,
-            units = var.get_string("units"),
+          string
+            name                = var.short_name,
+            units               = var.get_string("units"),
             glaciological_units = var.get_string("glaciological_units"),
-            long_name = var.get_string("long_name");
+            long_name           = var.get_string("long_name");
 
           if (glaciological_units.empty() == false)
             units = glaciological_units;
@@ -229,7 +223,7 @@ PetscErrorCode IceModel::list_diagnostics() {
       }
     }
 
-  }
+  } // done with quantities with dedicated storage
 
   // 2D and 3D diagnostics
   for (int d = 3; d > 1; --d) {
@@ -242,8 +236,8 @@ PetscErrorCode IceModel::list_diagnostics() {
     while (j != diagnostics.end()) {
       PISMDiagnostic *diag = j->second;
 
-      string name = j->first,
-        units = diag->get_metadata().get_string("units"),
+      string name           = j->first,
+        units               = diag->get_metadata().get_string("units"),
         glaciological_units = diag->get_metadata().get_string("glaciological_units");
 
       if (glaciological_units.empty() == false)
@@ -294,7 +288,6 @@ PetscErrorCode IceModel::list_diagnostics() {
 
   return 0;
 }
-
 
 
 IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
@@ -1816,9 +1809,9 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
             "m s-1", "m year-1", 0);
 
-  vars[0].set("valid_min",  grid.conv(-1e6, "m/year", "m/s"));
-  vars[0].set("valid_max",  grid.conv( 1e6, "m/year", "m/s"));
-  vars[0].set("_FillValue", grid.conv( grid.config.get("fill_value"), "m/year", "m/s"));
+  vars[0].set("valid_min",  grid.convert(-1e6, "m/year", "m/s"));
+  vars[0].set("valid_max",  grid.convert( 1e6, "m/year", "m/s"));
+  vars[0].set("_FillValue", grid.config.get("fill_value", "m/year", "m/s"));
   vars[0].set_string("cell_methods", "time: mean");
 
   last_ice_thickness.create(grid, "last_ice_thickness", false);
@@ -1838,7 +1831,7 @@ PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
   result->write_in_glaciological_units = true;
 
   if (gsl_isnan(last_report_time)) {
-    ierr = result->set(grid.conv(2e6, "m/year", "m/s")); CHKERRQ(ierr);
+    ierr = result->set(grid.convert(2e6, "m/year", "m/s")); CHKERRQ(ierr);
   } else {
 
     ierr = result->begin_access(); CHKERRQ(ierr);

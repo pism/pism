@@ -20,7 +20,9 @@
 
 
 PALapseRates::PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-  : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
+  : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in),
+    precipitation(g.get_unit_system()),
+    air_temp(g.get_unit_system())
 {
   precip_lapse_rate = 0;
   option_prefix	    = "-atmosphere_lapse_rate";
@@ -42,14 +44,14 @@ PetscErrorCode PALapseRates::allocate_PALapseRates() {
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name",
 			   "ice-equivalent precipitation rate with a lapse-rate correction");
-  ierr = precipitation.set_units(grid.get_unit_system(),"m s-1"); CHKERRQ(ierr);
+  ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name",
                       "near-surface air temperature with a lapse-rate correction");
-  ierr = air_temp.set_units(grid.get_unit_system(),"K"); CHKERRQ(ierr);
+  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -80,9 +82,9 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
                     "   precipitation lapse rate:   %3.3f m/year per km\n",
                     temp_lapse_rate, precip_lapse_rate); CHKERRQ(ierr);
 
-  temp_lapse_rate = grid.conv(temp_lapse_rate, "K/km", "K/m");
+  temp_lapse_rate = grid.convert(temp_lapse_rate, "K/km", "K/m");
 
-  precip_lapse_rate = grid.conv(precip_lapse_rate, "m/year / km", "m/s / m");
+  precip_lapse_rate = grid.convert(precip_lapse_rate, "m/year / km", "m/s / m");
 
   return 0;
 }
@@ -215,11 +217,11 @@ PetscErrorCode PALapseRates::write_variables(set<string> vars, const PIO &nc) {
   return 0;
 }
 
-void PALapseRates::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+void PALapseRates::add_vars_to_output(string keyword, set<string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
-    result["air_temp"] = air_temp;
-    result["precipitation"]   = precipitation;
+    result.insert("air_temp");
+    result.insert("precipitation");
   }
 }

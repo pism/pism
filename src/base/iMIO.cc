@@ -74,7 +74,7 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
 
   // save the config file
   if (dump_config) {
-    ierr = config.write(config_out, grid.get_unit_system()); CHKERRQ(ierr);
+    ierr = config.write(config_out); CHKERRQ(ierr);
   }
 
 #ifdef PISM_PROFILE
@@ -660,7 +660,7 @@ PetscErrorCode IceModel::init_snapshots() {
 
   timestamp.init("timestamp", config.get_string("time_dimension_name"),
                  grid.com, grid.rank);
-  timestamp.set_units(grid.get_unit_system(), "hours");
+  timestamp.set_units("hours");
   timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
 
   return 0;

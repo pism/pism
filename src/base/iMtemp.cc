@@ -245,6 +245,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     PetscInt maxLowTempCount = static_cast<PetscInt>(config.get("max_low_temp_count"));
     PetscReal globalMinAllowedTemp = config.get("global_min_allowed_temp");
 
+    const double epsilon = grid.convert(1e-6, "m/year", "m/second");
+
     MaskQuery mask(vMask);
 
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -265,7 +267,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           // go through column and find appropriate lambda for BOMBPROOF
           PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
           for (PetscInt k = 1; k < ks; k++) {
-            const PetscScalar denom = (PetscAbs(system.w[k]) + 0.000001/secpera)
+            const PetscScalar denom = (PetscAbs(system.w[k]) + epsilon)
               * ice_rho * ice_c * fdz;
             lambda = PetscMin(lambda, 2.0 * ice_k / denom);
           }
@@ -327,7 +329,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
                                "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
                                " proc %d; mask=%d; w=%f m/year]]\n",
                                Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),
-                               grid.conv(system.w[k],
+                               grid.convert(system.w[k],
                                        "m/s", "m/year")); CHKERRQ(ierr);
             myLowTempCount++;
           }
@@ -359,7 +361,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
                                "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                                " proc %d; mask=%d; w=%f]]\n",
                                Tnew[0],i,j,grid.rank,vMask.as_int(i,j),
-                               grid.conv(system.w[0], "m/s", "m/year")); CHKERRQ(ierr);
+                               grid.convert(system.w[0], "m/s", "m/year")); CHKERRQ(ierr);
             myLowTempCount++;
           }
           if (Tnew[0] < artm(i,j) - bulgeMax) {

@@ -50,8 +50,7 @@ public:
   //! Add pointers to diagnostic quantities to a dictionary.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 
-  virtual void add_vars_to_output(string /*keyword*/,
-                                  map<string,NCSpatialVariable> &/*result*/)
+  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
   { }
 
   //! Defines requested couplings fields to file and/or asks an attached

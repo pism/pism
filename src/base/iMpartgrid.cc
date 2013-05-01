@@ -34,6 +34,10 @@
 
   FIXME: does not account for grounded tributaries: thin ice shelves may
   evolve from grounded tongue
+
+  FIXME: as far as I (CK) know, there is no evidence that the
+  extension mechanism reducing frontal ice thickness using magic
+  numbers (below) is any better.
 */
 PetscReal IceModel::get_average_thickness(bool do_redist, planeStar<int> M, planeStar<PetscScalar> H) {
 
@@ -55,9 +59,13 @@ PetscReal IceModel::get_average_thickness(bool do_redist, planeStar<int> M, plan
 
   // reduces the guess at the front
   if (do_redist) {
-    const PetscReal  mslope = 2.4511e-18*grid.dx / (300*600 / secpera);
+    // FIXME: Magic numbers without references to the literature are bad.
     // for declining front C / Q0 according to analytical flowline profile in
     //   vandeveen with v0 = 300m / yr and H0 = 600m
+    const PetscReal
+      H0 = 600.0,                   // 600 m
+      V0 = 300.0 / 3.15569259747e7, // 300 m/year (hard-wired for efficiency)
+      mslope = 2.4511e-18 * grid.dx / (H0 * V0);
     H_average -= 0.8*mslope*pow(H_average, 5);
   }
 

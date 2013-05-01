@@ -338,7 +338,7 @@ PetscErrorCode IcePSTexModel::allocate_stressbalance() {
   ierr = IceModel::allocate_stressbalance(); CHKERRQ(ierr);
 
   // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-  const PetscScalar TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);
+  const PetscScalar TYPICAL_STRAIN_RATE = grid.convert(100.0, "(m/year)/(100km)", "(m/s)/m");
   const PetscScalar H_SSA_EXTENSION = 50.0; // m; thickness of ice shelf extension
   const PetscScalar constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
   const PetscScalar PSTconstantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
@@ -513,7 +513,7 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
     }
   }
 
-  double dt_years = grid.conv(dt, "seconds", "years"),
+  double dt_years = grid.convert(dt, "seconds", "years"),
     a = grid.time->seconds_to_years(grid.time->current() - dt),
     b = grid.time->seconds_to_years(grid.time->current());
 

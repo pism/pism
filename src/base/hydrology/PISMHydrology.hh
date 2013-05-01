@@ -83,7 +83,7 @@ public:
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt);
 
   // derived classes need to have a model state, which will be the variables in this set:
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) = 0;
+  virtual void add_vars_to_output(string keyword, set<string> &result) = 0;
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype) = 0;
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc) = 0;
 
@@ -201,7 +201,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
@@ -321,7 +321,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
@@ -412,7 +412,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);

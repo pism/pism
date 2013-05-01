@@ -114,8 +114,7 @@ public:
   virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
   { u_result = &u; v_result = &v; return 0; }
 
-  virtual void add_vars_to_output(string /*keyword*/,
-                                  map<string,NCSpatialVariable> &/*result*/);
+  virtual void add_vars_to_output(string /*keyword*/, set<string> &result);
 
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/);

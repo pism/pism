@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -44,10 +44,11 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {  
-    NCConfigVariable config, overrides;
+  {
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     IceGrid grid(com, rank, size, config);

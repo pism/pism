@@ -72,7 +72,7 @@ protected:
 const PetscScalar L=50.e3; // 50km half-width
 const PetscScalar H0=500; // m
 const PetscScalar dhdx = 0.005; // pure number, slope of surface & bed
-const PetscScalar nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
+const PetscScalar nu0 = 30.0 * 1.0e6 * PISMVerification::secpera; /* = 9.45e14 Pa s */
 const PetscScalar tauc0 = 1.e4; // Pa
 
 
@@ -90,7 +90,7 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
   config.set("pseudo_plastic_q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
-  basal = new IceBasalResistancePseudoPlasticLaw(config, grid.get_unit_system());
+  basal = new IceBasalResistancePseudoPlasticLaw(config);
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);
@@ -157,7 +157,6 @@ PetscErrorCode SSATestCaseConst::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
 {
   PetscScalar earth_grav = config.get("standard_gravity"),
     tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
-                                         grid.get_unit_system(),
                                          "m/year", "m/second"),
     ice_rho = config.get("ice_density");
   
@@ -181,7 +180,8 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);

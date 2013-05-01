@@ -520,6 +520,8 @@ namespace std {
 // we want to wrap, including base classes if we want access to base class
 // methods
 %include "IceGrid.hh"
+%feature("valuewrapper") NCVariable;
+%feature("valuewrapper") NCSpatialVariable;
 %include "NCVariable.hh"
 %include "pism_const.hh"
 %include "pism_options.hh"

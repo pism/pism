@@ -63,7 +63,8 @@ int main(int argc, char *argv[]) {
       "  -pdd        not allowed (because PISMConstAtmosCoupler is always used)\n"
       ); CHKERRQ(ierr);
 
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     bool EISIIchosen, PSTexchosen;

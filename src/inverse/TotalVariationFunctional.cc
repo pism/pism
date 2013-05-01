@@ -21,10 +21,8 @@
 TotalVariationFunctional2S::TotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal exponent, IceModelVec2Int *dirichletLocations)
 : Functional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations), m_c(c), m_lebesgue_exp(exponent) {
   PetscReal schoofLen = grid.config.get("Schoof_regularizing_length",
-                                        grid.get_unit_system(),
                                         "km", "m"); // convert to meters
   PetscReal schoofVel = grid.config.get("Schoof_regularizing_velocity",
-                                        grid.get_unit_system(),
                                         "m/year", "m/s"); // convert to m/s
   m_schoofReg = PetscSqr(schoofVel/schoofLen);
 }

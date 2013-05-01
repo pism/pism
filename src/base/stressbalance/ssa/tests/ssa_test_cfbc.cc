@@ -34,7 +34,7 @@ static char help[] =
 #include "pism_options.hh"
 
 const double H0 = 600;          // grounding line thickness (meters)
-const double V0 = 300/secpera;  // grounding line vertically-averaged velocity (300 meters/year)
+const double V0 = 300/PISMVerification::secpera;  // grounding line vertically-averaged velocity (300 meters/year)
 const double C  = 2.45e-18;     // "typical constant ice parameter"
 
 // thickness profile in the van der Veen solution
@@ -90,9 +90,9 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
   config.set_string("output_variable_order", "zyx");
 
   if (config.get_flag("do_pseudo_plastic_till") == true)
-    basal = new IceBasalResistancePseudoPlasticLaw(config, grid.get_unit_system());
+    basal = new IceBasalResistancePseudoPlasticLaw(config);
   else
-    basal = new IceBasalResistancePlasticLaw(config, grid.get_unit_system());
+    basal = new IceBasalResistancePlasticLaw(config);
 
   enthalpyconverter = new EnthalpyConverter(config);
 
@@ -194,7 +194,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);

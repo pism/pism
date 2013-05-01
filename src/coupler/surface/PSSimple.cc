@@ -24,7 +24,10 @@
 
 ///// Simple PISM surface model.
 PSSimple::PSSimple(IceGrid &g, const NCConfigVariable &conf)
-    : PISMSurfaceModel(g, conf) {
+  : PISMSurfaceModel(g, conf),
+    climatic_mass_balance(g.get_unit_system()),
+    ice_surface_temp(g.get_unit_system())
+{
   PetscErrorCode ierr = allocate_PSSimple(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
@@ -40,14 +43,14 @@ PetscErrorCode PSSimple::allocate_PSSimple() {
 				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
 				   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units(grid.get_unit_system(), "m s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -92,12 +95,12 @@ PetscErrorCode PSSimple::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSSimple::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+void PSSimple::add_vars_to_output(string keyword, set<string> &result) {
   PISMSurfaceModel::add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
-    result["ice_surface_temp"] = ice_surface_temp;
-    result["climatic_mass_balance"] = climatic_mass_balance;
+    result.insert("ice_surface_temp");
+    result.insert("climatic_mass_balance");
   }
 }
 

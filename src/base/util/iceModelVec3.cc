@@ -74,6 +74,7 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, string my_name,
   localp = local;
   name = my_name;
 
+  vars.resize(dof,  NCSpatialVariable(grid->get_unit_system()));
   vars[0].init_3d(my_name, my_grid, zlevels);
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);

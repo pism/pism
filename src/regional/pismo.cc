@@ -208,7 +208,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
     ierr = verbPrintf(2, grid.com,
                       "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
                       stripkm); CHKERRQ(ierr);
-    ierr = set_no_model_strip(grid.conv(stripkm, "km", "m")); CHKERRQ(ierr);
+    ierr = set_no_model_strip(grid.convert(stripkm, "km", "m")); CHKERRQ(ierr);
   }
 
   return 0;
@@ -503,7 +503,8 @@ int main(int argc, char *argv[]) {
       ierr = show_usage_check_req_opts(com, "pismo", required, usage.c_str()); CHKERRQ(ierr);
     }
 
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     // initialize the ice dynamics model

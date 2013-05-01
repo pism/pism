@@ -44,29 +44,31 @@
 class PISMUnitSystem {
   friend class PISMUnit;
 public:
-  PISMUnitSystem();
   PISMUnitSystem(const char *path);
   typedef std::tr1::shared_ptr<ut_system> Ptr;
 
   PISMUnitSystem::Ptr get() const;
+
+  double convert(double input, std::string spec1, std::string spec2) const;
 private:
   PISMUnitSystem::Ptr m_system;
 };
 
 class PISMUnit {
 public:
-  PISMUnit();
+  PISMUnit(PISMUnitSystem system);
   PISMUnit(const PISMUnit &other);
   ~PISMUnit();
 
   void reset();
 
   PISMUnit& operator=(const PISMUnit& other);
-  int parse(PISMUnitSystem system, std::string spec);
+  int parse(std::string spec);
   std::string format() const;
 
   ut_unit* get() const;
   PISMUnitSystem get_system() const;
+  cv_converter* get_converter_from(PISMUnit from) const;
 
   bool is_valid() const;
 private:

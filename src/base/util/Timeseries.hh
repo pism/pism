@@ -106,7 +106,6 @@ protected:
   vector<double> values;
   vector<double> time_bounds;
   void private_constructor(MPI_Comm com, PetscMPIInt rank,
-                           PISMUnitSystem unit_system,
                            string name, string dimension_name);
 };
 

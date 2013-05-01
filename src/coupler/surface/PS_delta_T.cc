@@ -21,7 +21,9 @@
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
 PS_delta_T::PS_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-  : PScalarForcing<PISMSurfaceModel,PSModifier>(g, conf, in)
+  : PScalarForcing<PISMSurfaceModel,PSModifier>(g, conf, in),
+    climatic_mass_balance(g.get_unit_system()),
+    ice_surface_temp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PS_delta_T(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
@@ -49,14 +51,14 @@ PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
 				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
 				   "land_ice_surface_specific_mass_balance");
-  climatic_mass_balance.set_units(grid.get_unit_system(), "m s-1");
+  climatic_mass_balance.set_units("m s-1");
   climatic_mass_balance.set_glaciological_units("m year-1");
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ice_surface_temp.set_units(grid.get_unit_system(), "K");
+  ice_surface_temp.set_units("K");
 
   return 0;
 }
@@ -82,12 +84,12 @@ PetscErrorCode PS_delta_T::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PS_delta_T::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+void PS_delta_T::add_vars_to_output(string keyword, set<string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
-    result["ice_surface_temp"] = ice_surface_temp;
-    result["climatic_mass_balance"] = climatic_mass_balance;
+    result.insert("ice_surface_temp");
+    result.insert("climatic_mass_balance");
   }
 }
 

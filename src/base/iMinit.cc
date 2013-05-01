@@ -118,7 +118,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   bool mapping_exists;
   ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
   if (mapping_exists) {
-    ierr = mapping.read(filename, grid.get_unit_system()); CHKERRQ(ierr);
+    ierr = mapping.read(filename); CHKERRQ(ierr);
     ierr = mapping.print(); CHKERRQ(ierr);
   }
 
@@ -299,7 +299,7 @@ PetscErrorCode IceModel::grid_setup() {
     bool mapping_exists;
     ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
     if (mapping_exists) {
-      ierr = mapping.read(filename, grid.get_unit_system()); CHKERRQ(ierr);
+      ierr = mapping.read(filename); CHKERRQ(ierr);
       ierr = mapping.print(); CHKERRQ(ierr);
     }
 
@@ -860,9 +860,9 @@ PetscErrorCode IceModel::allocate_basal_resistance_law() {
     return 0;
 
   if (config.get_flag("do_pseudo_plastic_till") == true)
-    basal = new IceBasalResistancePseudoPlasticLaw(config, grid.get_unit_system());
+    basal = new IceBasalResistancePseudoPlasticLaw(config);
   else
-    basal = new IceBasalResistancePlasticLaw(config, grid.get_unit_system());
+    basal = new IceBasalResistancePlasticLaw(config);
 
   return 0;
 }

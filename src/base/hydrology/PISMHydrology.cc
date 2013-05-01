@@ -395,8 +395,8 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
 }
 
 
-void PISMTillCanHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["bwat"] = W.get_metadata();
+void PISMTillCanHydrology::add_vars_to_output(string /*keyword*/, set<string> &result) {
+  result.insert("bwat");
 }
 
 
@@ -591,7 +591,6 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
 
   const PetscReal
     diffusion_time  = config.get("hydrology_bwat_diffusion_time",
-                                 grid.get_unit_system(),
                                  "years", "seconds"), // convert to seconds
     bwat_max        = config.get("hydrology_bwat_max"),
     bwat_decay_rate = config.get("hydrology_bwat_decay_rate"),
