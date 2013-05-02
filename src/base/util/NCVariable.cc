@@ -562,14 +562,10 @@ PetscErrorCode NCSpatialVariable::change_units(Vec v, PISMUnit &from, PISMUnit &
   // Get the converter:
   cv_converter *c = to.get_converter_from(from);
   if (c == NULL) {              // can't convert
-    if (ut_get_status() == UT_MEANINGLESS) {	// because units are incompatible
-      ierr = PetscPrintf(com,
-			 "PISM ERROR: NCSpatialVariable '%s': attempted to convert data from '%s' to '%s'.\n",
-			 short_name.c_str(), from_name.c_str(), to_name.c_str());
-      PISMEnd();
-    } else {			// some other error
-      SETERRQ(com, 1, "Failed to create a unit converter");
-    }
+    ierr = PetscPrintf(com,
+                       "PISM ERROR: NCSpatialVariable '%s': attempted to convert data from '%s' to '%s'.\n",
+                       short_name.c_str(), from_name.c_str(), to_name.c_str());
+    PISMEnd();
   }
 
   PetscInt data_size;
@@ -1657,14 +1653,10 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, PISMUnit &from, 
   // Get the converter:
   cv_converter *c = to.get_converter_from(from);
   if (c == NULL) {              // can't convert
-    if (ut_get_status() == UT_MEANINGLESS) {	// because units are incompatible
-      ierr = PetscPrintf(com,
-			 "PISM ERROR: NCTimeseries '%s': attempted to convert data from '%s' to '%s'.\n",
-			 short_name.c_str(), from_name.c_str(), to_name.c_str());
-      PISMEnd();
-    } else {			// some other error
-      SETERRQ(com, 1, "Failed to create a unit converter");
-    }
+    ierr = PetscPrintf(com,
+                       "PISM ERROR: NCTimeseries '%s': attempted to convert data from '%s' to '%s'.\n",
+                       short_name.c_str(), from_name.c_str(), to_name.c_str());
+    PISMEnd();
   }
 
   cv_convert_doubles(c, &data[0], data.size(), &data[0]);
@@ -1944,14 +1936,10 @@ PetscErrorCode NCTimeBounds::change_units(vector<double> &data, PISMUnit &from, 
   // Get the converter:
   cv_converter *c = to.get_converter_from(from);
   if (c == NULL) {              // can't convert
-    if (ut_get_status() == UT_MEANINGLESS) {	// because units are incompatible
-      ierr = PetscPrintf(com,
-			 "PISM ERROR: NCTimeBounds '%s': attempted to convert data from '%s' to '%s'.\n",
-			 short_name.c_str(), from_name.c_str(), to_name.c_str());
-      PISMEnd();
-    } else {			// some other error
-      SETERRQ(com, 1, "Failed to create a unit converter");
-    }
+    ierr = PetscPrintf(com,
+                       "PISM ERROR: NCTimeBounds '%s': attempted to convert data from '%s' to '%s'.\n",
+                       short_name.c_str(), from_name.c_str(), to_name.c_str());
+    PISMEnd();
   }
 
   cv_convert_doubles(c, &data[0], data.size(), &data[0]);
