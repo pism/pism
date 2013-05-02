@@ -143,6 +143,7 @@ add_library (pismbase
   base/basalstrength/basal_resistance.cc
   base/hydrology/PISMHydrology.cc
   base/hydrology/PISMDistributedHydrology.cc
+  base/hydrology/hydrology_diagnostics.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 

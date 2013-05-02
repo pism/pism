@@ -25,7 +25,7 @@
 #include "iceModelVec2T.hh"
 #include "PISMComponent.hh"
 #include "PISMStressBalance.hh"
-#include "PISMDiagnostic.hh"
+
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
@@ -148,65 +148,6 @@ protected:
   virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
                             PetscReal &icefreelost, PetscReal &oceanlost, PetscReal &negativegain);
 };
-
-
-//! \brief Reports the pressure of the transportable water in the subglacial layer.
-/*!
-This is used by most derived classes of PISMHydrology but not by
-PISMDistributedHydrology, in which the modeled pressure is a state variable.
- */
-class PISMHydrology_bwp : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Reports the pressure of the transportable water in the subglacial layer as a fraction of the overburden pressure.
-class PISMHydrology_bwprel : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Reports the effective pressure of the transportable water in the subglacial layer, that is, the overburden pressure minus the pressure.
-class PISMHydrology_effbwp : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_effbwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Reports the total input rate of water into the subglacial layer.
-class PISMHydrology_hydroinput : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Report the wall melt rate from dissipation of the potential energy of the transportable water.
-class PISMHydrology_wallmelt : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_wallmelt(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Reports the amount of englacial water as an effective thickness.
-class PISMHydrology_enwat : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_enwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
 
 
 //! \brief The subglacial hydrology model from Bueler & Brown (2009) WITHOUT contrived water diffusion.
@@ -410,16 +351,6 @@ protected:
     return ((grid.x[i] <= grid.x[0] + stripwidth) || (grid.x[i] >= grid.x[grid.Mx-1] - stripwidth)
             || (grid.y[j] <= grid.y[0] + stripwidth) || (grid.y[j] >= grid.y[grid.My-1] - stripwidth));
   }
-};
-
-
-//! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
-/*! Only available for PISMRoutingHydrology and its derived classes. */
-class PISMRoutingHydrology_bwatvel : public PISMDiag<PISMRoutingHydrology>
-{
-public:
-  PISMRoutingHydrology_bwatvel(PISMRoutingHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 
