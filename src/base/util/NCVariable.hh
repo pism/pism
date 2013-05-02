@@ -32,6 +32,7 @@
 using namespace std;
 /// @endcond
 
+class PISMTime;
 
 //! \brief A class for handling variable metadata, reading, writing and converting
 //! from input units and to output units.
@@ -57,10 +58,10 @@ using namespace std;
  */
 class NCVariable {
 public:
-  NCVariable();
+  NCVariable(PISMUnitSystem system);
   virtual ~NCVariable() {}
   void init(string name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode set_units(PISMUnitSystem, string);
+  virtual PetscErrorCode set_units(string);
   virtual PetscErrorCode set_glaciological_units(string);
   virtual PetscErrorCode reset();
   virtual void set(string, double);
@@ -90,8 +91,7 @@ public:
 protected:
   virtual PetscErrorCode write_attributes(const PIO &nc, PISM_IO_Type nctype,
 					  bool write_in_glaciological_units) const;
-  virtual PetscErrorCode read_valid_range(const PIO &nc, PISMUnitSystem unit_system, string name);
-  PetscErrorCode check_units(PISMUnit units) const;
+  virtual PetscErrorCode read_valid_range(const PIO &nc, string name);
   MPI_Comm com;
   PetscMPIInt rank;
   map<string, string> strings;  //!< string and boolean attributes
@@ -104,19 +104,20 @@ protected:
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
 class NCConfigVariable : public NCVariable {
 public:
-  NCConfigVariable();
+  NCConfigVariable(PISMUnitSystem system);
   ~NCConfigVariable();
   virtual PetscErrorCode print(PetscInt verbosity_threshhold = 4) const;
   virtual PetscErrorCode warn_about_unused_parameters() const;
   virtual PetscErrorCode read(const PIO &nc);
   virtual PetscErrorCode write(const PIO &nc);
 
-  virtual PetscErrorCode read(string filename, PISMUnitSystem unit_system);
-  virtual PetscErrorCode write(string filename, PISMUnitSystem unit_system);
+  virtual PetscErrorCode read(string filename);
+  virtual PetscErrorCode write(string filename);
 
   virtual string get_config_filename() const;
+  virtual PISMUnitSystem get_unit_system() const;
   virtual double get(string) const;
-  virtual double get(string name, PISMUnitSystem unit_system, string u1, string u2) const;
+  virtual double get(string name, string u1, string u2) const;
   virtual bool   get_flag(string) const;
   virtual string get_string(string name) const;
   // Set a flag (overriding the default in pism_config.cdl). Should not be used
@@ -151,6 +152,7 @@ protected:
   std::set<string> parameters_set;
   mutable std::set<string> parameters_used;
   bool options_left_set;
+  PISMUnitSystem m_unit_system;
 };
 
 //! \brief A class for reading and writing NetCDF global attributes.
@@ -159,6 +161,7 @@ protected:
 */
 class NCGlobalAttributes : public NCConfigVariable {
 public:
+  NCGlobalAttributes(PISMUnitSystem system);
   using NCConfigVariable::read;
   using NCConfigVariable::write;
   virtual PetscErrorCode read(const PIO &nc);
@@ -173,10 +176,11 @@ protected:
 //! An internal class for reading, writing and converting time-series.
 class NCTimeseries : public NCVariable {
 public:
+  NCTimeseries(PISMUnitSystem system);
   string dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
   void    init(string name, string dim_name, MPI_Comm c, PetscMPIInt r);
 
-  virtual PetscErrorCode read(const PIO &nc, bool use_reference_date, vector<double> &data);
+  virtual PetscErrorCode read(const PIO &nc, PISMTime *time, vector<double> &data);
   virtual PetscErrorCode write(const PIO &nc, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
   virtual PetscErrorCode write(const PIO &nc, size_t start, double data, PISM_IO_Type nctype = PISM_DOUBLE);
 
@@ -190,8 +194,9 @@ public:
 class NCTimeBounds : public NCVariable
 {
 public:
+  NCTimeBounds(PISMUnitSystem system);
   void init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode read(const PIO &nc, bool use_reference_date, vector<double> &data);
+  virtual PetscErrorCode read(const PIO &nc, PISMTime *time, vector<double> &data);
   virtual PetscErrorCode write(const PIO &nc, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
   virtual PetscErrorCode write(const PIO &nc, size_t start, double a, double b, PISM_IO_Type nctype = PISM_DOUBLE);
 

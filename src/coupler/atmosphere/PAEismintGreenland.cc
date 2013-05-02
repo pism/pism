@@ -107,7 +107,7 @@ PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
 
 PetscReal PA_EISMINT_Greenland::greenhouse_shift(PetscReal my_t, PetscReal my_dt) {
   // compute age back to start of GWL3; use midpoint of interval as the time
-  PetscScalar age_years = grid.time->seconds_to_years(my_t + 0.5 * my_dt) - greenhouse_warming_start_year;
+  PetscScalar age_years = grid.convert(my_t + 0.5 * my_dt, "seconds", "years") - greenhouse_warming_start_year;
 
   if (age_years <= 0.0) {
     return 0.0; // before time 0.0, no warming

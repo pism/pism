@@ -19,7 +19,9 @@
 #include "PA_paleo_precip.hh"
 
 PA_paleo_precip::PA_paleo_precip(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-  : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in)
+  : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
+    air_temp(g.get_unit_system()),
+    precipitation(g.get_unit_system())
 {
   offset = NULL;
   PetscErrorCode ierr = allocate_PA_paleo_precip(); CHKERRCONTINUE(ierr);
@@ -41,12 +43,12 @@ PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
-  ierr = air_temp.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
+  ierr = air_temp.set_units("K"); CHKERRQ(ierr);
 
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "near-surface air temperature");
-  ierr = precipitation.set_units(grid.get_unit_system(), "m / s"); CHKERRQ(ierr);
+  ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
 
   m_precipexpfactor = config.get("precip_exponential_factor_for_temperature");
@@ -101,13 +103,12 @@ PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, PetscReal *resu
   return 0;
 }
 
-void PA_paleo_precip::add_vars_to_output(string keyword,
-                                    map<string,NCSpatialVariable> &result) {
+void PA_paleo_precip::add_vars_to_output(string keyword, set<string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
-    result["air_temp"]      = air_temp;
-    result["precipitation"] = precipitation;
+    result.insert("air_temp");
+    result.insert("precipitation");
   }
 }
 

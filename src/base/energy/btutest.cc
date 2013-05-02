@@ -113,7 +113,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "BTUTEST %s (test program for PISMBedThermalUnit)\n",
@@ -205,9 +206,7 @@ int main(int argc, char *argv[]) {
 
     ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
-    PetscReal dt_seconds = convert(dt_years,
-                                   grid.get_unit_system(),
-                                   "years", "seconds");
+    PetscReal dt_seconds = unit_system.convert(dt_years, "years", "seconds");
 
     // worry about time step
     int  N = (int)ceil((grid.time->end() - grid.time->start()) / dt_seconds);
@@ -215,16 +214,13 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com,
                       "  user set timestep of %.4f years ...\n"
                       "  reset to %.4f years to get integer number of steps ... \n",
-                      dt_years, convert(dt_seconds,
-                                        grid.get_unit_system(),
-                                        "seconds", "years")); CHKERRQ(ierr);
+                      dt_years, unit_system.convert(dt_seconds, "seconds", "years")); CHKERRQ(ierr);
     PetscReal max_dt;
     bool restrict_dt;
     ierr = btu.max_timestep(0.0, max_dt, restrict_dt); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
         "  PISMBedThermalUnit reports max timestep of %.4f years ...\n",
-                      convert(max_dt,
-                              grid.get_unit_system(), "seconds", "years")); CHKERRQ(ierr);
+                      unit_system.convert(max_dt, "seconds", "years")); CHKERRQ(ierr);
 
 
     // actually do the time-stepping
@@ -284,15 +280,8 @@ int main(int argc, char *argv[]) {
                       maxghferr,100.0*maxghferr/FF,avghferr); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
 
-    map<string, NCSpatialVariable> list;
     set<string> vars;
-    btu.add_vars_to_output("big", list); // "write everything you can"
-
-    map<string, NCSpatialVariable>::iterator j = list.begin();
-    while (j != list.end()) {
-      vars.insert(j->first);
-      ++j;
-    }
+    btu.add_vars_to_output("big", vars); // "write everything you can"
 
     PIO pio(grid, grid.config.get_string("output_format"));
 

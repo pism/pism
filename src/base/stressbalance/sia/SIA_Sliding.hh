@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -51,8 +51,7 @@ public:
 
   virtual PetscErrorCode update(bool fast);
 
-  virtual void add_vars_to_output(string /*keyword*/,
-                                  map<string,NCSpatialVariable> &/*result*/)
+  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
   { }
 
   //! Defines requested couplings fields to file and/or asks an attached

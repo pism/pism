@@ -24,21 +24,23 @@
 #include "PISMTime.hh"
 
 Timeseries::Timeseries(IceGrid *g, string name, string dimension_name)
-{
-  private_constructor(g->com, g->rank, g->get_unit_system(), name, dimension_name);
+  : dimension(g->get_unit_system()), var(g->get_unit_system()),
+    bounds(g->get_unit_system()),
+    m_unit_system(g->get_unit_system()) {
+  private_constructor(g->com, g->rank, name, dimension_name);
 }
 
 Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, PISMUnitSystem units_system,
-                       string name, string dimension_name) {
-  private_constructor(c, r, units_system, name, dimension_name);
+                       string name, string dimension_name)
+  : dimension(units_system), var(units_system), bounds(units_system),
+    m_unit_system(units_system) {
+  private_constructor(c, r, name, dimension_name);
 }
 
 void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r,
-                                     PISMUnitSystem unit_system,
                                      string name, string dimension_name) {
   com = c;
   rank = r;
-  m_unit_system = unit_system;
   dimension.init(dimension_name, dimension_name, com, rank);
   var.init(name, dimension_name, com, rank);
   bounds.init(dimension_name + "_bounds", dimension_name, com, rank);
@@ -50,7 +52,7 @@ void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r,
 
 
 //! Read timeseries data from a NetCDF file `filename`.
-PetscErrorCode Timeseries::read(const PIO &nc, bool use_reference_date) {
+PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
   PetscErrorCode ierr;
 
   bool exists, found_by_standard_name;
@@ -87,7 +89,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, bool use_reference_date) {
 
   dimension.init(time_name, time_name, com, rank);
 
-  ierr = dimension.read(nc, use_reference_date, time); CHKERRQ(ierr);
+  ierr = dimension.read(nc, time_manager, time); CHKERRQ(ierr);
   bool is_increasing = true;
   for (unsigned int j = 1; j < time.size(); ++j) {
     if (time[j] - time[j-1] < 1e-16) {
@@ -108,17 +110,14 @@ PetscErrorCode Timeseries::read(const PIO &nc, bool use_reference_date) {
     use_bounds = true;
 
     bounds.init(time_bounds_name, time_name, com, rank);
-    ierr = bounds.set_units(m_unit_system, dimension.get_string("units")); CHKERRQ(ierr);
+    ierr = bounds.set_units(dimension.get_string("units")); CHKERRQ(ierr);
 
-    ierr = bounds.read(nc, use_reference_date, time_bounds); CHKERRQ(ierr);
+    ierr = bounds.read(nc, time_manager, time_bounds); CHKERRQ(ierr);
   } else {
     use_bounds = false;
   }
 
-  // Do not use the reference date. This may be a problem if someone needs to
-  // read a time-series with the meaning of "time depending on time", but this is
-  // not likely.
-  ierr = var.read(nc, false, values); CHKERRQ(ierr);
+  ierr = var.read(nc, time_manager, values); CHKERRQ(ierr);
 
   if (time.size() != values.size()) {
     ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",
@@ -250,7 +249,7 @@ PetscErrorCode Timeseries::append(double v, double a, double b) {
 //! Set the internal units for the values of a time-series.
 PetscErrorCode Timeseries::set_units(string units, string glaciological_units) {
   if (!units.empty())
-    var.set_units(m_unit_system, units);
+    var.set_units(units);
   if (!glaciological_units.empty())
     var.set_glaciological_units(glaciological_units);
   return 0;
@@ -259,8 +258,8 @@ PetscErrorCode Timeseries::set_units(string units, string glaciological_units) {
 //! Set the internal units for the dimension variable of a time-series.
 PetscErrorCode Timeseries::set_dimension_units(string units, string glaciological_units) {
   if (!units.empty()) {
-    dimension.set_units(m_unit_system, units);
-    bounds.set_units(m_unit_system, units);
+    dimension.set_units(units);
+    bounds.set_units(units);
   }
   if (!glaciological_units.empty()) {
     dimension.set_glaciological_units(glaciological_units);

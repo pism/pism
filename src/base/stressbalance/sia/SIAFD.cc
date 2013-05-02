@@ -62,12 +62,10 @@ PetscErrorCode SIAFD::allocate() {
   // bed smoother
   bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
 
-  second_to_kiloyear = grid.conv(1, "second", "1000 years");
+  second_to_kiloyear = grid.convert(1, "second", "1000 years");
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "sia_",
-                                  grid.get_unit_system(),
-                                  config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
     ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
 

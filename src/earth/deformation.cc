@@ -141,16 +141,16 @@ PetscErrorCode BedDeformLC::alloc() {
   cy = new PetscScalar[Ny];
 
   for (PetscInt i = 0; i <= Nx / 2; i++)
-    cx[i] = (pi / Lx_fat) * i;
+    cx[i] = (M_PI / Lx_fat) * i;
 
   for (PetscInt i = Nx / 2 + 1; i < Nx; i++)
-    cx[i] = (pi / Lx_fat) * (Nx - i);
+    cx[i] = (M_PI / Lx_fat) * (Nx - i);
 
   for (PetscInt j = 0; j <= Ny / 2; j++)
-    cy[j] = (pi / Ly_fat) * j;
+    cy[j] = (M_PI / Ly_fat) * j;
 
   for (PetscInt j = Ny / 2 + 1; j < Ny; j++)
-    cy[j] = (pi / Ly_fat) * (Ny - j);
+    cy[j] = (M_PI / Ly_fat) * (Ny - j);
 
   // compare geforconv.m
   if (include_elastic == PETSC_TRUE) {
@@ -358,7 +358,7 @@ void BedDeformLC::tweak(PetscReal seconds_from_start) {
   PetscScalar delvolume;
   VecSum(Hdiff, &delvolume);
   delvolume = delvolume * dx * dy;  // make into a volume
-  const PetscScalar Hequiv = delvolume / (pi * Requiv * Requiv);
+  const PetscScalar Hequiv = delvolume / (M_PI * Requiv * Requiv);
 
   const PetscScalar discshift = viscDisc(seconds_from_start,
                                          Hequiv, Requiv, Lav, rho, standard_gravity, D, eta) - av;

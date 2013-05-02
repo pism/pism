@@ -25,7 +25,7 @@
 #include "IceGrid.hh"
 
 PAYearlyCycle::PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
-  : PISMAtmosphereModel(g, conf) {
+  : PISMAtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAYearlyCycle(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
@@ -69,7 +69,7 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
   air_temp_snapshot.set_string("pism_intent", "diagnostic");
   air_temp_snapshot.set_string("long_name",
                          "snapshot of the near-surface air temperature");
-  ierr = air_temp_snapshot.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
+  ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -100,13 +100,13 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   return 0;
 }
 
-void PAYearlyCycle::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
-  result["precipitation"] = precipitation.get_metadata();
+void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
+  result.insert("precipitation");
 
   if (keyword == "big") {
-    result["air_temp_mean_annual"] = air_temp_mean_annual.get_metadata();
-    result["air_temp_mean_july"]   = air_temp_mean_july.get_metadata();
-    result["air_temp_snapshot"]    = air_temp_snapshot;
+    result.insert("air_temp_mean_annual");
+    result.insert("air_temp_mean_july");
+    result.insert("air_temp_snapshot");
   }
 }
 
@@ -179,8 +179,7 @@ PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
 PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
   // constants related to the standard yearly cycle
   const double
-    sperd = 8.64e4, // exact number of seconds per day
-    julyday_fraction = (sperd / secpera) * snow_temp_july_day;
+    julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day);
 
   m_ts_times.resize(N);
   m_cosine_cycle.resize(N);
@@ -188,7 +187,7 @@ PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
     double tk = grid.time->year_fraction(ts[k]) - julyday_fraction;
 
     m_ts_times[k] = ts[k];
-    m_cosine_cycle[k] = cos(2.0 * pi * tk);
+    m_cosine_cycle[k] = cos(2.0 * M_PI * tk);
   }
 
   return 0;
@@ -213,10 +212,9 @@ PetscErrorCode PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   const double
-    sperd            = 8.64e4,  // exact number of seconds per day
-    julyday_fraction = (sperd / secpera) * snow_temp_july_day,
+    julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day),
     T                = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
-    cos_T            = cos(2.0 * pi * T);
+    cos_T            = cos(2.0 * M_PI * T);
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);

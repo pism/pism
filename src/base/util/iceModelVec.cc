@@ -41,7 +41,9 @@ IceModelVec::IceModelVec() {
   n_levels = 1;
   name = "unintialized variable";
 
-  vars.resize(dof);
+  // would resize "vars", but "grid" is not initialized, and so we
+  // cannot get the unit system:
+  // vars.resize(dof);
   reset_attrs(0);
 
   shallow_copy = false;
@@ -429,14 +431,15 @@ PetscErrorCode  IceModelVec::set_glaciological_units(string my_units) {
 }
 
 //! Resets most IceModelVec attributes.
-PetscErrorCode IceModelVec::reset_attrs(int N) {
+PetscErrorCode IceModelVec::reset_attrs(unsigned int N) {
 
   time_independent = false;
   write_in_glaciological_units = false;
   report_range = true;
   output_data_type = PISM_DOUBLE;
 
-  vars[N].reset();
+  if (N > 0 && N < vars.size())
+    vars[N].reset();
 
   return 0;
 }
@@ -458,8 +461,7 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 
   vars[N].set_string("long_name", my_long_name);
 
-  PetscErrorCode ierr = vars[N].set_units(grid->get_unit_system(),
-                                          my_units); CHKERRQ(ierr);
+  PetscErrorCode ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
 
   vars[N].set_string("pism_intent", my_pism_intent);
 
@@ -648,7 +650,7 @@ PetscErrorCode IceModelVec::read_attributes(string filename, int N) {
 //! the compoment N.
 NCSpatialVariable IceModelVec::get_metadata(int N) {
   if (N < 0 || N >= dof)
-    return NCSpatialVariable();
+    return NCSpatialVariable(grid->get_unit_system());
 
   return vars[N];
 }
@@ -889,8 +891,7 @@ PetscErrorCode IceModelVec::set_attr(string attr, string value, int N) {
   PetscErrorCode ierr;
 
   if (attr == "units") {
-    ierr = vars[N].set_units(grid->get_unit_system(),
-                             value); CHKERRQ(ierr);
+    ierr = vars[N].set_units(value); CHKERRQ(ierr);
     return 0;
   }
 

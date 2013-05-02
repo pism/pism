@@ -21,10 +21,13 @@
 
 import PISM, math
 
-L=50.e3; #// 50km half-width
-H0=500; #// m
-dhdx = 0.005; #// pure number, slope of surface & bed
-nu0 = 30.0 * 1.0e6 * PISM.secpera; #/* = 9.45e14 Pa s */
+context = PISM.Context()
+unit_system = context.config.get_unit_system()
+
+L     = 50.e3; #// 50km half-width
+H0    = 500; #// m
+dhdx  = 0.005; #// pure number, slope of surface & bed
+nu0   = unit_system.convert(30.0, "MPa year", "Pa s")
 tauc0 = 1.e4; #// 1kPa
 
 class test_linear(PISM.ssa.SSAExactTestCase):
@@ -35,7 +38,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     config = self.config
     config.set_flag("do_pseudo_plastic_till", True)
     config.set("pseudo_plastic_q", 1.0)
-    basal = PISM.IceBasalResistancePseudoPlasticLaw(config, self.grid.get_unit_system())
+    basal = PISM.IceBasalResistancePseudoPlasticLaw(config)
 
     enthalpyconverter = PISM.EnthalpyConverter(config)
 
@@ -81,8 +84,9 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
 
   def exactSolution(self, i, j, x, y ):
-    tauc_threshold_velocity = self.config.get("pseudo_plastic_uthreshold") / PISM.secpera;
-    v0 = 100./PISM.secpera ; #// 100 m/s.
+    tauc_threshold_velocity = self.config.get("pseudo_plastic_uthreshold",
+                                              "m/year", "m/second")
+    v0 = self.grid.convert(100, "m/year", "m/second")
     alpha = math.sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );
     return [v0*math.exp( -alpha*(x-L)), 0]
 

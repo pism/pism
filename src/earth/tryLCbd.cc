@@ -60,8 +60,8 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    NCConfigVariable config, overrides;
     PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
 
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
@@ -156,8 +156,7 @@ int main(int argc, char *argv[]) {
       ierr = VecSet(Hstart, 0.0); CHKERRQ(ierr);    // load was zero up till t=0
       ierr = VecSet(bedstart, 0.0); CHKERRQ(ierr);       // initially flat bed
       
-      const PetscScalar peak_up = convert(10, unit_system,
-                                          "mm/year", "m/s");  // 10 mm/year
+      const PetscScalar peak_up = unit_system.convert(10, "mm/year", "m/s");  // 10 mm/year
       // initialize uplift
       if (do_uplift == PETSC_TRUE) {
         PetscScalar **upl;
@@ -166,7 +165,7 @@ int main(int argc, char *argv[]) {
           for (PetscInt j=0; j<My; j++) {
             const PetscScalar r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
             if (r < 1.5 * R0) {
-              upl[i][j] = peak_up * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0; 
+              upl[i][j] = peak_up * (cos(M_PI * (r / (1.5 * R0))) + 1.0) / 2.0; 
             } else {
               upl[i][j] = 0.0;
             }

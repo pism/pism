@@ -27,8 +27,10 @@
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
+#include "PISMTime.hh"
 
-NCVariable::NCVariable() {
+NCVariable::NCVariable(PISMUnitSystem system)
+  : m_units(system), m_glaciological_units(system) {
   reset();
 }
 
@@ -116,11 +118,11 @@ PetscErrorCode NCVariable::read_attributes(const PIO &nc) {
 /*! Units should not be set by accessing the `strings` member directly. This
   method also checks if `new_units` are valid and initializes the `units` structure.
  */
-PetscErrorCode NCVariable::set_units(PISMUnitSystem unit_system, string new_units) {
+PetscErrorCode NCVariable::set_units(string new_units) {
   strings["units"] = new_units;
   strings["glaciological_units"] = new_units;
 
-  if (m_units.parse(unit_system, new_units) != 0) {
+  if (m_units.parse(new_units) != 0) {
     SETERRQ2(com, 1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());
   }
@@ -159,7 +161,7 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
   if (n != -1)
     new_units.resize(n);
 
-  if (m_glaciological_units.parse(unit_system, new_units) != 0) {
+  if (m_glaciological_units.parse(new_units) != 0) {
     SETERRQ2(com, 1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());
   }
@@ -188,8 +190,8 @@ PetscErrorCode NCSpatialVariable::reset() {
   return 0;
 }
 
-NCSpatialVariable::NCSpatialVariable()
-  : NCVariable() {
+NCSpatialVariable::NCSpatialVariable(PISMUnitSystem system)
+  : NCVariable(system) {
   grid = NULL;
   dimensions.clear();
   dimensions["x"] = "x";
@@ -340,9 +342,8 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   ierr = nc.get_vec(grid, name_found, nlevels, time, v); CHKERRQ(ierr);
 
   bool input_has_units;
-  PISMUnit input_units;
+  PISMUnit input_units(m_units.get_system());
 
-  // We ignore the reference date in units of spatial fields.
   ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
   if ( has("units") && (!input_has_units) ) {
@@ -427,10 +428,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
     if (set_default_value) {	// if it's not and we have a default value, set it
       double tmp;
 
-      ierr = check_units(m_units);               CHKERRQ(ierr);
-      ierr = check_units(m_glaciological_units); CHKERRQ(ierr);
-
-      cv_converter *c = ut_get_converter(m_units.get(), m_glaciological_units.get());
+      cv_converter *c = m_glaciological_units.get_converter_from(m_units);
       assert(c != NULL);
       tmp = cv_convert_double(c, default_value);
       cv_free(c);
@@ -460,9 +458,8 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
     // units.
 
     bool input_has_units;
-    PISMUnit input_units;
+    PISMUnit input_units(m_units.get_system());
 
-    // We ignore the reference date in units of spatial fields.
     ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
     if (input_has_units == false) {
@@ -481,7 +478,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
     ierr = change_units(v, input_units, m_units); CHKERRQ(ierr);
 
     // Read the valid range info:
-    ierr = read_valid_range(nc, grid->get_unit_system(), name_found); CHKERRQ(ierr);
+    ierr = read_valid_range(nc, name_found); CHKERRQ(ierr);
 
     // Check the range and warn the user if needed:
     ierr = check_range(nc.inq_filename(), v); CHKERRQ(ierr);
@@ -502,9 +499,9 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
 /*! Reads `valid_min`, `valid_max` and `valid_range` attributes; if \c
     valid_range is found, sets the pair `valid_min` and `valid_max` instead.
  */
-PetscErrorCode NCVariable::read_valid_range(const PIO &nc, PISMUnitSystem unit_system, string name) {
+PetscErrorCode NCVariable::read_valid_range(const PIO &nc, string name) {
   string input_units_string;
-  PISMUnit input_units;
+  PISMUnit input_units(m_units.get_system());
   vector<double> bounds;
   int ierr;
 
@@ -517,13 +514,10 @@ PetscErrorCode NCVariable::read_valid_range(const PIO &nc, PISMUnitSystem unit_s
   // internal units.
   ierr = nc.get_att_text(name, "units", input_units_string); CHKERRQ(ierr);
 
-  if (input_units.parse(unit_system, input_units_string) != 0)
+  if (input_units.parse(input_units_string) != 0)
     input_units = m_units;
 
-  ierr = check_units(m_units);     CHKERRQ(ierr); 
-  ierr = check_units(input_units); CHKERRQ(ierr); 
-
-  cv_converter *c = ut_get_converter(input_units.get(), m_units.get());
+  cv_converter *c = m_units.get_converter_from(input_units);
   if (c == NULL) {
     c = cv_get_trivial();
   }
@@ -562,23 +556,16 @@ PetscErrorCode NCSpatialVariable::change_units(Vec v, PISMUnit &from, PISMUnit &
   PetscErrorCode ierr;
   string from_name, to_name;
 
-  ierr = check_units(from); CHKERRQ(ierr); 
-  ierr = check_units(to);   CHKERRQ(ierr); 
-  
   from_name = from.format();
   to_name   = to.format();
 
   // Get the converter:
-  cv_converter *c = ut_get_converter(from.get(), to.get());
+  cv_converter *c = to.get_converter_from(from);
   if (c == NULL) {              // can't convert
-    if (ut_get_status() == UT_MEANINGLESS) {	// because units are incompatible
-      ierr = PetscPrintf(com,
-			 "PISM ERROR: NCSpatialVariable '%s': attempted to convert data from '%s' to '%s'.\n",
-			 short_name.c_str(), from_name.c_str(), to_name.c_str());
-      PISMEnd();
-    } else {			// some other error
-      SETERRQ(com, 1, "Failed to create a unit converter");
-    }
+    ierr = PetscPrintf(com,
+                       "PISM ERROR: NCSpatialVariable '%s': attempted to convert data from '%s' to '%s'.\n",
+                       short_name.c_str(), from_name.c_str(), to_name.c_str());
+    PISMEnd();
   }
 
   PetscInt data_size;
@@ -630,10 +617,7 @@ PetscErrorCode NCVariable::write_attributes(const PIO &nc, PISM_IO_Type nctype,
   // matching the ones in the output.
   if (write_in_glaciological_units) {
 
-    ierr = check_units(m_units);               CHKERRQ(ierr);
-    ierr = check_units(m_glaciological_units); CHKERRQ(ierr);
-
-    cv_converter *c = ut_get_converter(m_units.get(), m_glaciological_units.get());
+    cv_converter *c = m_glaciological_units.get_converter_from(m_units);
     assert(c != NULL);
 
     bounds[0]  = cv_convert_double(c, get("valid_min"));
@@ -699,10 +683,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
 
-  ierr = check_units(m_units);               CHKERRQ(ierr);
-  ierr = check_units(m_glaciological_units); CHKERRQ(ierr);
-
-  cv_converter *c = ut_get_converter(m_units.get(), m_glaciological_units.get());
+  cv_converter *c = m_glaciological_units.get_converter_from(m_units);
   assert(c != NULL);
   min = cv_convert_double(c, min);
   max = cv_convert_double(c, max);
@@ -965,10 +946,11 @@ bool NCVariable::is_valid(PetscScalar a) const {
   return true;
 }
 
-NCConfigVariable::NCConfigVariable()
-  : NCVariable() {
+NCConfigVariable::NCConfigVariable(PISMUnitSystem unit_system)
+  : NCVariable(unit_system), m_unit_system(unit_system) {
   options_left_set = false;
   PISMOptionsIsSet("-options_left", options_left_set);
+  m_unit_system = unit_system;
 }
 
 NCConfigVariable::~NCConfigVariable() {
@@ -976,9 +958,9 @@ NCConfigVariable::~NCConfigVariable() {
 }
 
 
-PetscErrorCode NCConfigVariable::read(string filename, PISMUnitSystem unit_system) {
+PetscErrorCode NCConfigVariable::read(string filename) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3", unit_system); // OK to use netcdf3
+  PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
@@ -989,9 +971,9 @@ PetscErrorCode NCConfigVariable::read(string filename, PISMUnitSystem unit_syste
   return 0;
 }
 
-PetscErrorCode NCConfigVariable::write(string filename, PISMUnitSystem unit_system) {
+PetscErrorCode NCConfigVariable::write(string filename) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3", unit_system); // OK to use netcdf3
+  PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
 
   ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
 
@@ -1116,9 +1098,9 @@ double NCConfigVariable::get(string name) const {
   return this->get_quiet(name);
 }
 
-double NCConfigVariable::get(string name, PISMUnitSystem unit_system, string u1, string u2) const {
+double NCConfigVariable::get(string name, string u1, string u2) const {
   // always use get() (*not* _quiet) here
-  return convert(this->get(name), unit_system, u1.c_str(), u2.c_str());
+  return m_unit_system.convert(this->get(name),  u1.c_str(),  u2.c_str());
 }
 
 
@@ -1388,6 +1370,10 @@ string NCConfigVariable::get_config_filename() const {
   return config_filename;
 }
 
+PISMUnitSystem NCConfigVariable::get_unit_system() const {
+  return m_unit_system;
+}
+
 //! Imports values from the other config variable, silently overwriting present values.
 void NCConfigVariable::import_from(const NCConfigVariable &other) {
   map<string, vector<double> >::const_iterator j;
@@ -1447,6 +1433,12 @@ PetscErrorCode NCConfigVariable::warn_about_unused_parameters() const {
   return 0;
 }
 
+NCTimeseries::NCTimeseries(PISMUnitSystem system)
+  : NCVariable(system) {
+  // empty
+}
+
+
 //! \brief Initialize the time-series object.
 void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(n, c, r);
@@ -1455,7 +1447,7 @@ void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-PetscErrorCode NCTimeseries::read(const PIO &nc, bool use_reference_date,
+PetscErrorCode NCTimeseries::read(const PIO &nc, PISMTime *time,
                                   vector<double> &data) {
 
   PetscErrorCode ierr;
@@ -1469,7 +1461,7 @@ PetscErrorCode NCTimeseries::read(const PIO &nc, bool use_reference_date,
 
   if (!variable_exists) {
     ierr = PetscPrintf(com,
-		      "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
+                       "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
 		       short_name.c_str(),
 		       strings["standard_name"].c_str(), nc.inq_filename().c_str());
     CHKERRQ(ierr);
@@ -1506,12 +1498,25 @@ PetscErrorCode NCTimeseries::read(const PIO &nc, bool use_reference_date,
   ierr = nc.get_1d_var(name_found, 0, length, data); CHKERRQ(ierr);
 
   bool input_has_units;
-  PISMUnit input_units;
+  string input_units_string;
+  PISMUnit input_units(m_units.get_system());
 
-  ierr = nc.inq_units(name_found, input_has_units, input_units,
-                      use_reference_date); CHKERRQ(ierr);
+  ierr = nc.get_att_text(name_found, "units", input_units_string); CHKERRQ(ierr);
+  input_units_string = time->CF_units_to_PISM_units(input_units_string);
 
-  if ( has("units") && (!input_has_units) ) {
+  if (input_units_string.empty() == true) {
+    input_has_units = false;
+  } else {
+    if (input_units.parse(input_units_string) != 0) {
+      ierr = PetscPrintf(com,
+                         "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
+                         input_units_string.c_str(), short_name.c_str());
+      PISMEnd();
+    }
+    input_has_units = true;
+  }
+  
+  if (has("units") == true && input_has_units == false) {
     string &units_string = strings["units"],
       &long_name = strings["long_name"];
     ierr = verbPrintf(2, com,
@@ -1552,10 +1557,7 @@ PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
   min = *min_element(data.begin(), data.end());
   max = *max_element(data.begin(), data.end());
 
-  ierr = check_units(m_units);               CHKERRQ(ierr);
-  ierr = check_units(m_glaciological_units); CHKERRQ(ierr);
-
-  cv_converter *c = ut_get_converter(m_units.get(), m_glaciological_units.get());
+  cv_converter *c = m_glaciological_units.get_converter_from(m_units);
   assert(c != NULL);
   min = cv_convert_double(c, min);
   max = cv_convert_double(c, max);
@@ -1644,24 +1646,17 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, PISMUnit &from, 
   PetscErrorCode ierr;
   string from_name, to_name;
 
-  ierr = check_units(from); CHKERRQ(ierr);
-  ierr = check_units(to);   CHKERRQ(ierr);
-
   // Get string representations of units:
   from_name = from.format();
   to_name   = to.format();
 
   // Get the converter:
-  cv_converter *c = ut_get_converter(from.get(), to.get());
+  cv_converter *c = to.get_converter_from(from);
   if (c == NULL) {              // can't convert
-    if (ut_get_status() == UT_MEANINGLESS) {	// because units are incompatible
-      ierr = PetscPrintf(com,
-			 "PISM ERROR: NCTimeseries '%s': attempted to convert data from '%s' to '%s'.\n",
-			 short_name.c_str(), from_name.c_str(), to_name.c_str());
-      PISMEnd();
-    } else {			// some other error
-      SETERRQ(com, 1, "Failed to create a unit converter");
-    }
+    ierr = PetscPrintf(com,
+                       "PISM ERROR: NCTimeseries '%s': attempted to convert data from '%s' to '%s'.\n",
+                       short_name.c_str(), from_name.c_str(), to_name.c_str());
+    PISMEnd();
   }
 
   cv_convert_doubles(c, &data[0], data.size(), &data[0]);
@@ -1669,6 +1664,12 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, PISMUnit &from, 
 
   return 0;
 }
+
+NCGlobalAttributes::NCGlobalAttributes(PISMUnitSystem system)
+  : NCConfigVariable(system) {
+  // empty
+}
+
 
 //! \brief Read global attributes from a file.
 PetscErrorCode NCGlobalAttributes::read(const PIO &nc) {
@@ -1763,6 +1764,13 @@ void NCGlobalAttributes::prepend_history(string message) {
 
 
 /// NCTimeBounds
+
+
+NCTimeBounds::NCTimeBounds(PISMUnitSystem system)
+  : NCVariable(system) {
+  // empty
+}
+
 void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(var_name, c, r);
   dimension_name = dim_name;
@@ -1770,7 +1778,7 @@ void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIIn
   ndims          = 2;
 }
 
-PetscErrorCode NCTimeBounds::read(const PIO &nc, bool use_reference_date,
+PetscErrorCode NCTimeBounds::read(const PIO &nc, PISMTime *time,
                                   vector<double> &data) {
   PetscErrorCode ierr;
   bool variable_exists;
@@ -1839,8 +1847,6 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, bool use_reference_date,
   // Find the corresponding 'time' variable. (We get units from the 'time'
   // variable, because according to CF-1.5 section 7.1 a "boundary variable"
   // may not have metadata set.)
-  bool input_has_units;
-  PISMUnit input_units;
   ierr = nc.inq_var(dimension_name, variable_exists); CHKERRQ(ierr);
 
   if (variable_exists == false) {
@@ -1849,10 +1855,26 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, bool use_reference_date,
     PISMEnd();
   }
 
-  ierr = nc.inq_units(dimension_name, input_has_units, input_units,
-                      use_reference_date); CHKERRQ(ierr);
+  bool input_has_units;
+  string input_units_string;
+  PISMUnit input_units(m_units.get_system());
 
-  if ( has("units") && (!input_has_units) ) {
+  ierr = nc.get_att_text(dimension_name, "units", input_units_string); CHKERRQ(ierr);
+  input_units_string = time->CF_units_to_PISM_units(input_units_string);
+
+  if (input_units_string.empty() == true) {
+    input_has_units = false;
+  } else {
+    if (input_units.parse(input_units_string) != 0) {
+      ierr = PetscPrintf(com,
+                         "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
+                         input_units_string.c_str(), short_name.c_str());
+      PISMEnd();
+    }
+    input_has_units = true;
+  }
+
+  if ( has("units") && input_has_units == false ) {
     string &units_string = strings["units"];
     ierr = verbPrintf(2, com,
 		      "PISM WARNING: Variable '%s' does not have the units attribute.\n"
@@ -1908,23 +1930,16 @@ PetscErrorCode NCTimeBounds::change_units(vector<double> &data, PISMUnit &from, 
   PetscErrorCode ierr;
   string from_name, to_name;
 
-  ierr = check_units(from); CHKERRQ(ierr);
-  ierr = check_units(to);   CHKERRQ(ierr);
-
   from_name = from.format();
   to_name   = to.format();
 
   // Get the converter:
-  cv_converter *c = ut_get_converter(from.get(), to.get());
+  cv_converter *c = to.get_converter_from(from);
   if (c == NULL) {              // can't convert
-    if (ut_get_status() == UT_MEANINGLESS) {	// because units are incompatible
-      ierr = PetscPrintf(com,
-			 "PISM ERROR: NCTimeBounds '%s': attempted to convert data from '%s' to '%s'.\n",
-			 short_name.c_str(), from_name.c_str(), to_name.c_str());
-      PISMEnd();
-    } else {			// some other error
-      SETERRQ(com, 1, "Failed to create a unit converter");
-    }
+    ierr = PetscPrintf(com,
+                       "PISM ERROR: NCTimeBounds '%s': attempted to convert data from '%s' to '%s'.\n",
+                       short_name.c_str(), from_name.c_str(), to_name.c_str());
+    PISMEnd();
   }
 
   cv_convert_doubles(c, &data[0], data.size(), &data[0]);
@@ -1966,13 +1981,5 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, PISM_IO_Type nctype, bool) {
 
   ierr = write_attributes(nc, nctype, true);
 
-  return 0;
-}
-
-PetscErrorCode NCVariable::check_units(PISMUnit units) const {
-  if (units.is_valid() == false) {
-    SETERRQ1(com, 1, "variable %s: uninitialized units",
-             short_name.c_str());
-  }
   return 0;
 }

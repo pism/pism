@@ -30,7 +30,9 @@
 ///// PISM surface model implementing a PDD scheme.
 
 PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)
-  : PISMSurfaceModel(g, conf) {
+  : PISMSurfaceModel(g, conf),
+    ice_surface_temp(g.get_unit_system())
+{
   PetscErrorCode ierr = allocate_PSTemperatureIndex(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
@@ -142,7 +144,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                   "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units(grid.get_unit_system(), "K"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -230,7 +232,7 @@ double PSTemperatureIndex::compute_next_balance_year_start(double time) {
     // compute the time corresponding to the beginning of the next balance year
     PetscReal
       balance_year_start_day = config.get("pdd_balance_year_start_day"),
-      one_day                = grid.conv(1.0, "days", "seconds"),
+      one_day                = grid.convert(1.0, "days", "seconds"),
       year_start             = grid.time->calendar_year_start(time),
       balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
 
@@ -400,21 +402,21 @@ PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result
   return 0;
 }
 
-void PSTemperatureIndex::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+void PSTemperatureIndex::add_vars_to_output(string keyword, set<string> &result) {
 
   PISMSurfaceModel::add_vars_to_output(keyword, result);
 
-  result["snow_depth"] = snow_depth.get_metadata();
+  result.insert("snow_depth");
   
   if (keyword == "medium" || keyword == "big") {
-    result["climatic_mass_balance"] = climatic_mass_balance.get_metadata();
-    result["ice_surface_temp"] = ice_surface_temp;
+    result.insert("climatic_mass_balance");
+    result.insert("ice_surface_temp");
   }
 
   if (keyword == "big") {
-    result["saccum"]  = accumulation_rate.get_metadata();
-    result["smelt"]   = melt_rate.get_metadata();
-    result["srunoff"] = runoff_rate.get_metadata();
+    result.insert("saccum");
+    result.insert("smelt");
+    result.insert("srunoff");
   }
 }
 

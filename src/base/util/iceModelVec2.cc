@@ -683,7 +683,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, string my_name, bool loca
   localp = local;
   name = my_name;
 
-  vars.resize(dof);
+  vars.resize(dof, NCSpatialVariable(grid->get_unit_system()));
 
   if (dof == 1) {
     vars[0].init_2d(my_name, my_grid);

@@ -65,7 +65,10 @@ struct DegreeDayFactors {
 class LocalMassBalance {
 public:
   LocalMassBalance(const NCConfigVariable &myconfig)
-    : config(myconfig), seconds_per_day(86400) {}
+    : config(myconfig), m_unit_system(config.get_unit_system()),
+      seconds_per_day(86400) {
+    // empty
+  }
   virtual ~LocalMassBalance() {}
 
   virtual int get_timeseries_length(double dt) = 0;
@@ -101,6 +104,7 @@ public:
 
 protected:
   const NCConfigVariable& config;
+  PISMUnitSystem m_unit_system;
   const double seconds_per_day;
 };
 
@@ -158,7 +162,8 @@ protected:
 class PDDrandMassBalance : public PDDMassBalance {
 
 public:
-  PDDrandMassBalance(const NCConfigVariable& myconfig, bool repeatable); //! repeatable==true to seed with zero every time.
+  PDDrandMassBalance(const NCConfigVariable& myconfig,
+                     bool repeatable); //! repeatable==true to seed with zero every time.
   virtual ~PDDrandMassBalance();
 
   virtual int get_timeseries_length(double dt);

@@ -66,7 +66,7 @@ PetscErrorCode SSATestCaseJ::initializeGrid(PetscInt Mx,PetscInt My)
 
 PetscErrorCode SSATestCaseJ::initializeSSAModel()
 {
-  basal = new IceBasalResistancePlasticLaw(config, grid.get_unit_system());
+  basal = new IceBasalResistancePlasticLaw(config);
 
   enthalpyconverter = new EnthalpyConverter(config);
   config.set_string("ssa_flow_law", "isothermal_glen");
@@ -86,8 +86,8 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
-  const PetscScalar nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
-  const PetscScalar H0 = 500.0;       /* 500 m typical thickness */
+  const PetscScalar nu0 = grid.convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
+  const PetscScalar H0 = 500.;       /* 500 m typical thickness */
 
   // Test J has a viscosity that is independent of velocity.  So we force a
   // constant viscosity by settting the strength_extension
@@ -161,7 +161,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);

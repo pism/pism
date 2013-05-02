@@ -118,6 +118,8 @@ protected:
   // using Van der Veen's exact solution to test CFBC and the part-grid code
   PetscErrorCode test_V_init();
 
+  static const double secpera;
+
 private:
   PetscScalar        f;       // ratio of ice density to bedrock density
   PetscBool         bedrock_is_ice_forK;

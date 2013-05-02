@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -152,7 +152,7 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, P
 
   // set metadata:
   dof = 2;
-  vars.resize(dof);
+  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   vars[0].init_2d("diffusivity_i", grid);
   vars[1].init_2d("diffusivity_j", grid);
 
@@ -183,7 +183,7 @@ SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, PISMVars &my_vars)
 
   // set metadata:
   dof = 2;
-  vars.resize(dof);
+  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   vars[0].init_2d("h_x_i", grid);
   vars[1].init_2d("h_x_j", grid);
 
@@ -216,7 +216,7 @@ SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, PISMVars &my_vars)
 
   // set metadata:
   dof = 2;
-  vars.resize(dof);
+  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   vars[0].init_2d("h_y_i", grid);
   vars[1].init_2d("h_y_j", grid);
 

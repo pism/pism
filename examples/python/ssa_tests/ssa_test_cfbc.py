@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -36,14 +36,18 @@ usage of SSA_TEST_CFBC:
   run ssa_test_cfbc -Mx <number> -My <number>
 """
 
+context = PISM.Context()
+unit_system = context.config.get_unit_system()
+
 H0 = 600.;          # meters
-V0 = 300./PISM.secpera;  # 300 meters/year
+V0 = unit_system.convert(300, "m/year", "m/second")
 C  = 2.45e-18;     # "typical constant ice parameter"
 T  = 400;          # time used to compute the calving front location
 
-Q0 = V0*H0;
+Q0  = V0*H0;
 Hc1 = 4.*C/Q0
 Hc2 = 1./(H0**4)
+
 def H_exact(x):
   return (Hc1*x+Hc2)**(-1/4.)
   
@@ -70,7 +74,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     config.set_string("ssa_flow_law", "isothermal_glen")
     config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")))
     
-    self.modeldata.setPhysics(ice,basal,enthalpyconverter)
+    self.modeldata.setPhysics(basal,enthalpyconverter)
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
@@ -81,15 +85,15 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     vecs.bed.set(-1000.0); # assures shelf is floating
     vecs.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
-    grid = self.grid
-    thickness=vecs.thickness;
-    surface = vecs.surface
-    bc_mask = vecs.bc_mask
-    vel_bc = vecs.vel_bc
-    ice_mask = vecs.ice_mask
+    grid      = self.grid
+    thickness = vecs.thickness;
+    surface   = vecs.surface
+    bc_mask   = vecs.bc_mask
+    vel_bc    = vecs.vel_bc
+    ice_mask  = vecs.ice_mask
 
     ocean_rho = self.config.get("sea_water_density");
-    ice_rho   = self.modeldata.ice.rho
+    ice_rho   = self.config.get("ice_density")
     
     with PISM.util.Access(comm=[thickness,surface,bc_mask,vel_bc,ice_mask]):
       for (i,j) in grid.points():
@@ -112,7 +116,6 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
           vel_bc[i,j].u = 0.
           vel_bc[i,j].v = 0.
 
-
   def exactSolution(self,i,j,x,y):
     if x<= 0:
       u = u_exact(x+self.grid.Lx)
@@ -121,8 +124,6 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     return [u,0]
 
 if __name__ == '__main__':
-  context = PISM.Context()
-
   # if PISM.optionsSet('-usage') or PISM.optionsSet('-help'):
   #   PISM.verbPrintf(1,context.com,help)
   #   PISM.verbPrintf(1,context.com,usage)

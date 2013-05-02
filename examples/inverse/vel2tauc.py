@@ -63,6 +63,8 @@ class Vel2TaucPlotListener(PISM.invert_ssa.PlotListener):
     if data.has_key('d'): d = self.toproczero(data.d)
     zeta = self.toproczero(data.zeta)      
 
+    secpera = grid.convert(1.0, "year", "second")
+    
     if self.grid.rank == 0:
       import matplotlib.pyplot as pp
     
@@ -75,7 +77,7 @@ class Vel2TaucPlotListener(PISM.invert_ssa.PlotListener):
       V = self.Vmax
 
       pp.subplot(2,3,1)
-      rx = l2_weight*r[0,:,:]*PISM.secpera
+      rx = l2_weight*r[0,:,:]*secpera
       rx = np.maximum(rx,-V)
       rx = np.minimum(rx,V)
       pp.imshow(rx,origin='lower',interpolation='nearest')
@@ -84,7 +86,7 @@ class Vel2TaucPlotListener(PISM.invert_ssa.PlotListener):
       pp.jet()
 
       pp.subplot(2,3,4)
-      ry = l2_weight*r[1,:,:]*PISM.secpera
+      ry = l2_weight*r[1,:,:]*secpera
       ry = np.maximum(ry,-V)
       ry = np.minimum(ry,V)
       pp.imshow(ry,origin='lower',interpolation='nearest')
@@ -95,14 +97,14 @@ class Vel2TaucPlotListener(PISM.invert_ssa.PlotListener):
     
       if method == 'ign':
         pp.subplot(2,3,2)
-        Tdx = Td[0,:,:]*PISM.secpera
+        Tdx = Td[0,:,:]*secpera
         pp.imshow(Tdx,origin='lower',interpolation='nearest')
         pp.colorbar()
         pp.title('Td_x')
         pp.jet()
 
         pp.subplot(2,3,5)
-        Tdy = Td[1,:,:]*PISM.secpera
+        Tdy = Td[1,:,:]*secpera
         pp.imshow(Tdy,origin='lower',interpolation='nearest')
         pp.colorbar()
         pp.title('Td_y')
@@ -348,7 +350,7 @@ if __name__ == "__main__":
           for (i,j) in grid.points():
             if zeta_fixed_mask[i,j] != 0:
               d[i,j] = 0;
-      r = PISM.util.randVectorV(grid,1./PISM.secpera,PISM.util.WIDE_STENCIL)
+      r = PISM.util.randVectorV(grid,1./secpera,PISM.util.WIDE_STENCIL)
       from PISM.sipletools import PISMLocalVector as PLV
       forward_problem = solver.forward_problem
       (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),PLV(r),3)
@@ -469,7 +471,7 @@ if __name__ == "__main__":
   
   r_mag.set_attrs("diagnostic","magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
             "m s-1", "inv_ssa_residual", 0);
-  r_mag.set_attr("_FillValue", grid.conv(-0.01,'m/year','m/s'));
+  r_mag.set_attr("_FillValue", grid.convert(-0.01,'m/year','m/s'));
   r_mag.set_attr("valid_min", 0.0);
   r_mag.set_glaciological_units("m year-1")
   r_mag.write_in_glaciological_units = True

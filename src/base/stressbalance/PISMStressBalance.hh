@@ -53,7 +53,7 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
 
   //! Defines requested fields to file and/or asks an attached
   //! model to do so.

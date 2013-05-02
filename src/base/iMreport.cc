@@ -130,6 +130,8 @@ PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = tau3.begin_access(); CHKERRQ(ierr);
 
+  const double one_year = grid.convert(1.0, "year", "seconds");
+  
   // compute local original volume
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -139,7 +141,7 @@ PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
         const PetscInt  ks = grid.kBelowHeight(vH(i,j));
         for (PetscInt k=1; k<=ks; k++) {
           // ice in segment is original if it is as old as one year less than current time
-          if (0.5*(tau[k-1]+tau[k]) > currtime - secpera)
+          if (0.5*(tau[k-1]+tau[k]) > currtime - one_year)
             origvol += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
         }
       }
@@ -279,7 +281,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
 
   if ((tempAndAge == PETSC_TRUE) || (!do_energy) || (getVerbosityLevel() > 2)) {
     char tempstr[90] = "";
-    const PetscScalar major_dt_years = grid.conv(mass_cont_sub_dtsum,
+    const PetscScalar major_dt_years = grid.convert(mass_cont_sub_dtsum,
                                                  "seconds", "years");
 
     if (mass_cont_sub_counter == 1) {
@@ -302,8 +304,8 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
     ierr = verbPrintf(2,grid.com,
                       "S %s: %8.5f %9.5f %12.5f %14.5f\n",
                       date.c_str(), volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity,
-                      grid.conv(gmaxu > gmaxv ? gmaxu : gmaxv,
-                                "m/s", "m/year")); CHKERRQ(ierr);
+                      grid.convert(gmaxu > gmaxv ? gmaxu : gmaxv,
+                                   "m/s", "m/year")); CHKERRQ(ierr);
 
     mass_cont_sub_counter = 0;
     mass_cont_sub_dtsum = 0.0;

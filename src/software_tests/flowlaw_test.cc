@@ -46,15 +46,14 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     EnthalpyConverter EC(config);
 
-    PISMUnitSystem unit_system(NULL);
-
     IceFlowLaw *flow_law = NULL;
-    IceFlowLawFactory ice_factory(com, NULL, unit_system, config, &EC);
+    IceFlowLawFactory ice_factory(com, NULL, config, &EC);
 
     string flow_law_name = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type

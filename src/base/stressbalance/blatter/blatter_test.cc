@@ -160,7 +160,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
     ierr = set_config_from_options(com, config); CHKERRQ(ierr);
     ierr = setVerbosityLevel(2);
@@ -221,7 +222,7 @@ int main(int argc, char *argv[]) {
     // This is never used (but it is a required argument of the
     // PISMStressBalance constructor).
     // It will be used eventually, though.
-    IceBasalResistancePlasticLaw basal(config, grid.get_unit_system());
+    IceBasalResistancePlasticLaw basal(config);
 
     POConstant ocean(grid, config);
 

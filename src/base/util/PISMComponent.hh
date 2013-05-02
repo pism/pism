@@ -114,8 +114,7 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(string /*keyword*/,
-                                  map<string,NCSpatialVariable> &/*result*/) = 0;
+  virtual void add_vars_to_output(string /*keyword*/, set<string> &result) = 0;
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
@@ -199,7 +198,7 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
+  virtual void add_vars_to_output(string keyword, set<string> &result)
   {
     if (input_model != NULL) {
       input_model->add_vars_to_output(keyword, result);

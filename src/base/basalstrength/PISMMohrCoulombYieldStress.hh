@@ -44,16 +44,14 @@ public:
 
     ice_density = config.get("ice_density");
     standard_gravity = config.get("standard_gravity");
-    till_c_0 = config.get("till_c_0",
-                          grid.get_unit_system(),
-                          "kPa", "Pa");
+    till_c_0 = config.get("till_c_0", "kPa", "Pa");
   }
 
   virtual ~PISMMohrCoulombYieldStress() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
 
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);

@@ -38,7 +38,14 @@
 #include "PISMDiagnostic.hh"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
-  : grid(g), config(conf), overrides(conf_overrides) {
+  : grid(g), 
+    mapping(g.get_unit_system()),
+    config(conf),
+    overrides(conf_overrides),
+    run_stats(g.get_unit_system()),
+    global_attributes(g.get_unit_system()),
+    extra_bounds(g.get_unit_system()),
+    timestamp(g.get_unit_system()) {
 
   mapping.init("mapping", grid.com, grid.rank);
   run_stats.init("run_stats", grid.com, grid.rank);
@@ -409,9 +416,9 @@ PetscErrorCode IceModel::createVecs() {
                             "m s-1", "", 1); CHKERRQ(ierr);
     ierr = vBCvel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
     for (int j = 0; j < 2; ++j) {
-      ierr = vBCvel.set_attr("valid_min",  grid.conv(-1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
-      ierr = vBCvel.set_attr("valid_max",  grid.conv(1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
-      ierr = vBCvel.set_attr("_FillValue", grid.conv(config.get("fill_value"), "m/year", "m/s"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("valid_min",  grid.convert(-1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("valid_max",  grid.convert(1e6, "m/year", "m/second"), j); CHKERRQ(ierr);
+      ierr = vBCvel.set_attr("_FillValue", config.get("fill_value", "m/year", "m/s"), j); CHKERRQ(ierr);
     }
     //just for diagnostics...
     ierr = variables.add(vBCvel); CHKERRQ(ierr);
@@ -878,7 +885,8 @@ PetscErrorCode IceModel::run() {
     ierr = verbPrintf(1,grid.com,
                       "count_time_steps:  run() took %d steps\n"
                       "average dt = %.6f years\n",
-                      stepcount, grid.time->seconds_to_years(grid.time->end() - grid.time->start())/(double)stepcount); CHKERRQ(ierr);
+                      stepcount,
+                      grid.convert(grid.time->end() - grid.time->start(), "seconds", "years")/(double)stepcount); CHKERRQ(ierr);
   }
 
   return 0;

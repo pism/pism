@@ -217,14 +217,14 @@ PetscErrorCode IceModel::getlambdaColumn(PetscInt ks,
 					 const PetscScalar *Enth_s,
 					 const PetscScalar *w,
 					 PetscScalar *lambda) {
-
+  const double epsilon = 1e-6 / 3.15569259747e7;
   *lambda = 1.0;  // start with centered implicit for more accuracy
   for (PetscInt k = 0; k <= ks; k++) {
     if (Enth[k] > Enth_s[k]) { // lambda = 0 if temperate ice present in column
       *lambda = 0.0;
     } else {
       const PetscScalar 
-          denom = (PetscAbs(w[k]) + 0.000001/secpera) * ice_rho_c * grid.dz_fine;
+          denom = (PetscAbs(w[k]) + epsilon) * ice_rho_c * grid.dz_fine;
       *lambda = PetscMin(*lambda, 2.0 * ice_k / denom);
     }
   }

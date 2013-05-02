@@ -74,14 +74,14 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
             "Y-component of the SSA velocity boundary conditions", 
             "m s-1", "", 1); CHKERRQ(ierr);
   ierr = vel_bc.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("valid_min", grid.conv(-1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("valid_max", grid.conv( 1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("valid_min", grid.conv(-1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("valid_max", grid.conv( 1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("_FillValue",grid.conv(config.get("fill_value"), "m/year", "m/s"), 0); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("_FillValue",grid.conv(config.get("fill_value"), "m/year", "m/s"), 1); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("valid_min", grid.convert(-1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("valid_max", grid.convert( 1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("valid_min", grid.convert(-1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("valid_max", grid.convert( 1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("_FillValue", config.get("fill_value", "m/year", "m/s"), 0); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("_FillValue", config.get("fill_value", "m/year", "m/s"), 1); CHKERRQ(ierr);
   vel_bc.write_in_glaciological_units = true;
-  ierr = vel_bc.set(grid.conv(config.get("fill_value"), "m/year", "m/s")); CHKERRQ(ierr);
+  ierr = vel_bc.set(config.get("fill_value", "m/year", "m/s")); CHKERRQ(ierr);
   
   // grounded_dragging_floating integer mask
   ierr = ice_mask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -228,19 +228,22 @@ PetscErrorCode SSATestCase::report(string testname) {
   CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, 
                     "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
-                    gmaxvecerr*report_velocity_scale, (gavvecerr/gexactvelmax)*100.0,
-                    gmaxuerr*report_velocity_scale, gmaxverr*report_velocity_scale, gavuerr*report_velocity_scale, 
-                    gavverr*report_velocity_scale); CHKERRQ(ierr);
+                    grid.convert(gmaxvecerr, "m/second", "m/year"),
+                    (gavvecerr/gexactvelmax)*100.0,
+                    grid.convert(gmaxuerr, "m/second", "m/year"),
+                    grid.convert(gmaxverr, "m/second", "m/year"),
+                    grid.convert(gavuerr, "m/second", "m/year"),
+                    grid.convert(gavverr, "m/second", "m/year")); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
 
   ierr = report_netcdf(testname,
-                       gmaxvecerr*report_velocity_scale,
+                       grid.convert(gmaxvecerr, "m/second", "m/year"),
                        (gavvecerr/gexactvelmax)*100.0,
-                       gmaxuerr*report_velocity_scale,
-                       gmaxverr*report_velocity_scale,
-                       gavuerr*report_velocity_scale,
-                       gavverr*report_velocity_scale); CHKERRQ(ierr);
+                       grid.convert(gmaxuerr, "m/second", "m/year"),
+                       grid.convert(gmaxverr, "m/second", "m/year"),
+                       grid.convert(gavuerr, "m/second", "m/year"),
+                       grid.convert(gavverr, "m/second", "m/year")); CHKERRQ(ierr);
 
   return 0;
 }
@@ -253,11 +256,11 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
                                           double avg_u,
                                           double avg_v) {
   PetscErrorCode ierr;
-  NCTimeseries err;
+  NCTimeseries err(grid.get_unit_system());
   unsigned int start;
   string filename;
   bool flag, append;
-  NCGlobalAttributes global_attributes;
+  NCGlobalAttributes global_attributes(grid.get_unit_system());
 
   ierr = PISMOptionsString("-report_file", "NetCDF error report file",
                            filename, flag); CHKERRQ(ierr);
@@ -265,7 +268,7 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
   if (flag == false)
     return 0;
 
-  err.set_units(grid.get_unit_system(), "1");
+  err.set_units("1");
 
   ierr = verbPrintf(2, grid.com, "Also writing errors to '%s'...\n", filename.c_str());
   CHKERRQ(ierr);
@@ -289,49 +292,49 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
 
   // Always write grid parameters:
   err.short_name = "dx";
-  ierr = err.set_units(grid.get_unit_system(), "meters"); CHKERRQ(ierr);
+  ierr = err.set_units("meters"); CHKERRQ(ierr);
   ierr = err.write(nc, (size_t)start, grid.dx); CHKERRQ(ierr);
   err.short_name = "dy";
   ierr = err.write(nc, (size_t)start, grid.dy); CHKERRQ(ierr);
 
   // Always write the test name:
-  err.reset(); err.set_units(grid.get_unit_system(), "1");
+  err.reset(); err.set_units("1");
   err.short_name = "test";
   ierr = err.write(nc, (size_t)start, testname[0], PISM_BYTE); CHKERRQ(ierr);
 
-  err.reset(); err.set_units(grid.get_unit_system(), "1");
+  err.reset(); err.set_units("1");
   err.short_name = "max_velocity";
-  ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
+  ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum ice velocity magnitude error");
   ierr = err.write(nc, (size_t)start, max_vector); CHKERRQ(ierr);
 
-  err.reset(); err.set_units(grid.get_unit_system(), "1");
+  err.reset(); err.set_units("1");
   err.short_name = "relative_velocity";
-  ierr = err.set_units(grid.get_unit_system(), "percent"); CHKERRQ(ierr);
+  ierr = err.set_units("percent"); CHKERRQ(ierr);
   err.set_string("long_name", "relative ice velocity magnitude error");
   ierr = err.write(nc, (size_t)start, rel_vector); CHKERRQ(ierr);
 
-  err.reset(); err.set_units(grid.get_unit_system(), "1");
+  err.reset(); err.set_units("1");
   err.short_name = "maximum_u";
-  ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
+  ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
   ierr = err.write(nc, (size_t)start, max_u); CHKERRQ(ierr);
 
-  err.reset(); err.set_units(grid.get_unit_system(), "1");
+  err.reset(); err.set_units("1");
   err.short_name = "maximum_v";
-  ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
+  ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
   ierr = err.write(nc, (size_t)start, max_v); CHKERRQ(ierr);
 
-  err.reset(); err.set_units(grid.get_unit_system(), "1");
+  err.reset(); err.set_units("1");
   err.short_name = "average_u";
-  ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
+  ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the X-component of the ice velocity");
   ierr = err.write(nc, (size_t)start, avg_u); CHKERRQ(ierr);
 
-  err.reset(); err.set_units(grid.get_unit_system(), "1");
+  err.reset(); err.set_units("1");
   err.short_name = "average_v";
-  ierr = err.set_units(grid.get_unit_system(), "m/year"); CHKERRQ(ierr);
+  ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
   ierr = err.write(nc, (size_t)start, avg_v); CHKERRQ(ierr);
 

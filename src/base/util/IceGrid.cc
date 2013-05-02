@@ -27,7 +27,7 @@
 
 IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
                  const NCConfigVariable &conf)
-  : config(conf), com(c), rank(r), size(s), m_unit_system(NULL) {
+  : config(conf), com(c), rank(r), size(s), m_unit_system(config.get_unit_system()) {
 
   // The grid in symmetric with respect to zero by default.
   x0 = 0.0;
@@ -767,8 +767,8 @@ PISMUnitSystem IceGrid::get_unit_system() const {
   return m_unit_system;
 }
 
-double IceGrid::conv(double value, const char *unit1, const char *unit2) const {
-  return convert(value, m_unit_system, unit1, unit2);
+double IceGrid::convert(double value, const char *unit1, const char *unit2) const {
+  return m_unit_system.convert(value, unit1, unit2);
 }
 
 void IceGrid::destroy_dms() {

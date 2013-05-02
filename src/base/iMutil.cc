@@ -125,7 +125,7 @@ PetscErrorCode IceModel::update_run_stats() {
   proc_hours = grid.size * wall_clock_hours;
 
   // MYPPH stands for "model years per processor hour"
-  mypph = grid.time->seconds_to_years(grid.time->current() - grid.time->start()) / proc_hours;
+  mypph = grid.convert(grid.time->current() - grid.time->start(), "seconds", "years") / proc_hours;
 
   MPI_Bcast(&mypph, 1, MPI_DOUBLE, 0, grid.com);
 

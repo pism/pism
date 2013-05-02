@@ -88,7 +88,7 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
     PIO nc(grid, "netcdf3");    // OK to use netcdf3
     ierr = nc.open(scaling_file, PISM_NOWRITE); CHKERRQ(ierr);
     {
-      ierr = A->read(nc, grid.time->use_reference_date()); CHKERRQ(ierr);
+      ierr = A->read(nc, grid.time); CHKERRQ(ierr);
     }
     ierr = nc.close(); CHKERRQ(ierr);
 
@@ -112,10 +112,9 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   const PetscReal
-    sperd            = 8.64e4,  // exact number of seconds per day
-    julyday_fraction = (sperd / secpera) * snow_temp_july_day,
+    julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day),
     T                = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
-    cos_T            = cos(2.0 * pi * T);
+    cos_T            = cos(2.0 * M_PI * T);
 
   double scaling = 1.0;
   if (A != NULL) {

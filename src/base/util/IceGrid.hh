@@ -105,7 +105,8 @@ typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERI
  */
 class IceGrid {
 public:
-  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s, const NCConfigVariable &config);
+  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
+          const NCConfigVariable &config);
   ~IceGrid();
 
   PetscErrorCode report_parameters();
@@ -129,7 +130,7 @@ public:
   PetscErrorCode create_viewer(int viewer_size, string title, PetscViewer &viewer);
   PetscReal      radius(int i, int j);
   PetscErrorCode get_dm(PetscInt dm_dof, PetscInt stencil_width, DM &result);
-  double conv(double, const char*, const char*) const;
+  double convert(double, const char*, const char*) const;
   PISMUnitSystem get_unit_system() const;
 
   const NCConfigVariable &config;
@@ -208,7 +209,6 @@ private:
   // Hide copy constructor / assignment operator.
   IceGrid(IceGrid const &);
   IceGrid & operator=(IceGrid const &);
-
 };
 
 #endif	/* __grid_hh */

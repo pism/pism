@@ -96,8 +96,8 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   // the following inputtobed is not related to IceModel; we must read it ourselves
 
   if (itbfile_set) {
-    inputtobed_period = (itbperiod_set) ? grid.time->years_to_seconds(itbperiod_years) : 0.0;
-    inputtobed_reference_time = (itbreference_set) ? grid.time->years_to_seconds(itbreference_year) : 0.0;
+    inputtobed_period = (itbperiod_set) ? grid.convert(itbperiod_years, "years", "seconds") : 0.0;
+    inputtobed_reference_time = (itbreference_set) ? grid.convert(itbreference_year, "years", "seconds") : 0.0;
 
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
                  n_records = 1;
@@ -407,8 +407,8 @@ PetscErrorCode PISMTillCanHydrology::init(PISMVars &vars) {
 }
 
 
-void PISMTillCanHydrology::add_vars_to_output(string /*keyword*/, map<string,NCSpatialVariable> &result) {
-  result["bwat"] = W.get_metadata();
+void PISMTillCanHydrology::add_vars_to_output(string /*keyword*/, set<string> &result) {
+  result.insert("bwat");
 }
 
 
@@ -603,7 +603,6 @@ PetscErrorCode PISMDiffuseOnlyHydrology::update(PetscReal icet, PetscReal icedt)
 
   const PetscReal
     diffusion_time  = config.get("hydrology_bwat_diffusion_time",
-                                 grid.get_unit_system(),
                                  "years", "seconds"), // convert to seconds
     bwat_max        = config.get("hydrology_bwat_max"),
     bwat_decay_rate = config.get("hydrology_bwat_decay_rate"),

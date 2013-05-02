@@ -282,7 +282,7 @@ protected:
   //! \brief Check the array indices and warn if they are out of range.
   void check_array_indices(int i, int j);
   void check_array_indices(int i, int j, int k);
-  virtual PetscErrorCode reset_attrs(int N);
+  virtual PetscErrorCode reset_attrs(unsigned int N);
   virtual PetscErrorCode get_interp_context(const PIO &nc, LocalInterpCtx* &lic);
 };
 
@@ -587,7 +587,6 @@ class IceModelVec2Stag : public IceModelVec2 {
 public:
   IceModelVec2Stag() : IceModelVec2() {
     dof = 2;
-    vars.resize(dof);
     begin_end_access_use_dof = true;
   }
   IceModelVec2Stag(const IceModelVec2Stag &other) : IceModelVec2(other) {}

@@ -188,12 +188,11 @@ PetscErrorCode IceModelVec2T::init(string fname, double period, double reference
 
   if (time_found) {
     // we're found the time dimension
-    NCTimeseries time_dimension;
+    NCTimeseries time_dimension(grid->get_unit_system());
     time_dimension.init(dimname, dimname, grid->com, grid->rank);
 
-    ierr = time_dimension.set_units(grid->get_unit_system(),
-                                    grid->time->units_string()); CHKERRQ(ierr);
-    ierr = time_dimension.read(nc, grid->time->use_reference_date(), time); CHKERRQ(ierr);
+    ierr = time_dimension.set_units(grid->time->units_string()); CHKERRQ(ierr);
+    ierr = time_dimension.read(nc, grid->time, time); CHKERRQ(ierr);
 
     string bounds_name;
     ierr = time_dimension.get_bounds_name(nc, bounds_name);
@@ -201,12 +200,11 @@ PetscErrorCode IceModelVec2T::init(string fname, double period, double reference
     if (time.size() > 1) {
       if (!bounds_name.empty()) {
         // read time bounds data from a file
-        NCTimeBounds tb;
+        NCTimeBounds tb(grid->get_unit_system());
         tb.init(bounds_name, dimname, grid->com, grid->rank);
-        ierr = tb.set_units(grid->get_unit_system(),
-                            time_dimension.get_string("units")); CHKERRQ(ierr);
+        ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
 
-        ierr = tb.read(nc, grid->time->use_reference_date(), time_bounds); CHKERRQ(ierr);
+        ierr = tb.read(nc, grid->time, time_bounds); CHKERRQ(ierr);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval
@@ -492,7 +490,7 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
 PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   PetscErrorCode ierr;
   PetscScalar **a2;
-  PetscReal dt_years = grid->time->seconds_to_years(my_dt); // *not* time->year(my_dt)
+  PetscReal dt_years = grid->convert(my_dt, "seconds", "years"); // *not* time->year(my_dt)
 
   // Determine the number of small time-steps to use for averaging:
   int M = (int) ceil(n_evaluations_per_year * (dt_years));

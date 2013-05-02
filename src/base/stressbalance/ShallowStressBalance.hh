@@ -151,9 +151,7 @@ public:
     : ShallowStressBalance(g, b, e, conf) {
 
     // Use the SIA flow law.
-    IceFlowLawFactory ice_factory(grid.com, "sia_",
-                                  grid.get_unit_system(),
-                                  config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
     ice_factory.setType(config.get_string("sia_flow_law"));
 
     ice_factory.setFromOptions();
@@ -164,8 +162,7 @@ public:
   }
   virtual PetscErrorCode update(bool fast);
 
-  virtual void add_vars_to_output(string /*keyword*/,
-                                  map<string,NCSpatialVariable> &/*result*/)
+  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
   { }
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict) {

@@ -84,8 +84,7 @@ public:
 
   virtual PetscErrorCode inq_grid(string var_name, IceGrid *grid, Periodicity periodicity) const;
 
-  virtual PetscErrorCode inq_units(string name, bool &has_units, PISMUnit &units,
-                                   bool use_reference_date = false) const;
+  virtual PetscErrorCode inq_units(string name, bool &has_units, PISMUnit &units) const;
 
   virtual PetscErrorCode inq_grid_info(string name, grid_info &g) const;
 
@@ -180,7 +179,7 @@ protected:
 
   PetscErrorCode detect_mode(string filename);
 private:
-  void constructor(MPI_Comm com, int rank, string mode, PISMUnitSystem unit_system);
+  void constructor(MPI_Comm com, int rank, string mode);
 };
 
 #endif /* _PIO_H_ */

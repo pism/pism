@@ -21,7 +21,9 @@
 /// -ocean_delta_SL_file, ...
 
 PO_delta_SL::PO_delta_SL(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
-  : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in)
+  : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in),
+    shelfbmassflux(g.get_unit_system()),
+    shelfbtemp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PO_delta_SL(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
@@ -47,14 +49,14 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units(grid.get_unit_system(), "m s-1");
+  shelfbmassflux.set_units("m s-1");
   shelfbmassflux.set_glaciological_units("m year-1");
 
   shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_units(grid.get_unit_system(), "Kelvin");
+  shelfbtemp.set_units("Kelvin");
 
   return 0;
 }
@@ -83,11 +85,11 @@ PetscErrorCode PO_delta_SL::sea_level_elevation(PetscReal &result) {
   return 0;
 }
 
-void PO_delta_SL::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+void PO_delta_SL::add_vars_to_output(string keyword, set<string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
-  result["shelfbtemp"] = shelfbtemp;
-  result["shelfbmassflux"] = shelfbmassflux;
+  result.insert("shelfbtemp");
+  result.insert("shelfbmassflux");
 }
 
 PetscErrorCode PO_delta_SL::define_variables(set<string> vars, const PIO &nc,

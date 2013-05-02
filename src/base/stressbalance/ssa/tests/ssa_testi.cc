@@ -76,7 +76,7 @@ PetscErrorCode SSATestCaseI::initializeGrid(PetscInt Mx,PetscInt My)
 
 PetscErrorCode SSATestCaseI::initializeSSAModel()
 {
-  basal = new IceBasalResistancePlasticLaw(config, grid.get_unit_system());
+  basal = new IceBasalResistancePlasticLaw(config);
 
   enthalpyconverter = new EnthalpyConverter(config);
 
@@ -185,7 +185,8 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);

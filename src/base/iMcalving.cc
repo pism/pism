@@ -404,14 +404,17 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
   ierr = PISMGlobalMax(&my_maxCalvingRate, &maxCalvingRate, grid.com); CHKERRQ(ierr);
 
   PetscScalar denom = maxCalvingRate/dx;
-  denom += (0.01/secpera)/(dx + dy);  // make sure it's positive
-  dt_from_eigencalving = 1.0/denom;
+  const double denom_regularization = grid.convert(0.001 / (grid.dx + grid.dy), "years", "seconds");
+
+  dt_from_eigencalving = 1.0/(denom + denom_regularization);
 
   ierr = verbPrintf(2, grid.com,
                     "!!!!! c_rate = %.0f m/year ( dt=%.5f a ) at point %d, %d with mean_c=%.0f m/year over %.0f cells \n",
-                    maxCalvingRate*secpera,
-                    dt_from_eigencalving/secpera,
-                    i0, j0, meancalvrate*secpera, calving_rate_counter); CHKERRQ(ierr);
+                    grid.convert(maxCalvingRate, "m/s", "m/year"),
+                    grid.convert(dt_from_eigencalving, "seconds", "years"),
+                    i0, j0,
+                    grid.convert(meancalvrate, "m/s", "m/year"),
+                    calving_rate_counter); CHKERRQ(ierr);
 
   dt_from_eigencalving = PetscMax(dt_from_eigencalving, dt_from_eigencalving_min);
 

@@ -39,11 +39,11 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result)
+  virtual void add_vars_to_output(string keyword, set<string> &result)
   {
     map<string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
-      result[k->first] = (k->second)->get_metadata();
+      result.insert(k->first);
       ++k;
     }
 
@@ -143,11 +143,11 @@ protected:
     }
 
     if (bc_ref_year_set) {
-      bc_reference_time = Model::grid.time->years_to_seconds(bc_reference_year);
+      bc_reference_time = Model::grid.convert(bc_reference_year, "years", "seconds");
     }
 
     if (bc_period_set) {
-      bc_period = Model::grid.time->years_to_seconds(bc_period_years);
+      bc_period = Model::grid.convert(bc_period_years, "years", "seconds");
     }
 
     return 0;

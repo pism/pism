@@ -89,8 +89,7 @@ public:
 
   using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
-  virtual void add_vars_to_output(string /*keyword*/,
-                                  map<string,NCSpatialVariable> &/*result*/)
+  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
   { }
 
   //! Defines requested couplings fields to file and/or asks an attached

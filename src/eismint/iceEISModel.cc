@@ -115,10 +115,10 @@ PetscErrorCode IceEISModel::setFromOptions() {
     "setting parameters for surface mass balance and temperature in EISMINT II experiment %c ... \n", 
     expername); CHKERRQ(ierr);
   // EISMINT II specified values for parameters
-  S_b = grid.conv(1.0e-2 * 1e-3, "1/year", "1/s");    // Grad of accum rate change
+  S_b = grid.convert(1.0e-2 * 1e-3, "1/year", "1/s");    // Grad of accum rate change
   S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
   // these are for A,E,G,H,I,K:
-  M_max = grid.conv(0.5, "m/year", "m/s");  // Max accumulation
+  M_max = grid.convert(0.5, "m/year", "m/s");  // Max accumulation
   R_el = 450.0e3;           // Distance to equil line (accum=0)
   T_min = 238.15;
   switch (expername) {
@@ -129,7 +129,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
     case 'J':
     case 'L':  // supposed to start from end of experiment A (for C;
                //   resp I and K for J and L) and:
-      M_max = grid.conv(0.25, "m/year", "m/s");
+      M_max = grid.convert(0.25, "m/year", "m/s");
       R_el = 425.0e3;
       break;
     case 'D':  // supposed to start from end of experiment A and:
@@ -145,25 +145,31 @@ PetscErrorCode IceEISModel::setFromOptions() {
   ierr = PISMOptionsReal("-Tmin", "T min, Kelvin",
 			 T_min, paramSet); CHKERRQ(ierr);
 
-  PetscReal myMmax = grid.conv(M_max, "m/s", "m/year"),
-    mySb = S_b * secpera / 1e3,
-    myST = S_T / 1e3,
-    myRel = R_el / 1e3;
+  PetscReal
+    myMmax = grid.convert(M_max, "m/s",        "m/year"),
+    mySb   = grid.convert(S_b,   "m/second/m", "m/year/km"),
+    myST   = grid.convert(S_T,   "K/m",        "K/km"),
+    myRel  = grid.convert(R_el,  "m",          "km");
+
   ierr = PISMOptionsReal("-Mmax", "Maximum accumulation, m/year",
 			 myMmax, paramSet); CHKERRQ(ierr);
-  if (paramSet)     M_max = myMmax / secpera;
+  if (paramSet)
+    M_max = grid.convert(myMmax, "m/year", "m/second");
 
   ierr = PISMOptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
 			 mySb, paramSet); CHKERRQ(ierr);
-  if (paramSet)     S_b = mySb * 1e-3 / secpera;
+  if (paramSet)
+    S_b = grid.convert(mySb, "m/year/km", "m/second/m");
 
   ierr = PISMOptionsReal("-ST", "radial gradient of surface temperature, K/km",
 			 myST, paramSet); CHKERRQ(ierr);
-  if (paramSet)     S_T = myST * 1e-3;
+  if (paramSet)
+    S_T = grid.convert(myST, "K/km", "K/m");
 
   ierr = PISMOptionsReal("-Rel", "radial distance to equilibrium line, km",
 			 myRel, paramSet); CHKERRQ(ierr);
-  if (paramSet)     R_el = myRel * 1e3;
+  if (paramSet)
+    R_el = grid.convert(myRel, "km", "m");
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -279,7 +285,7 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
       const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
       if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
            && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
-        vbed(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(pi * (nsd - L) / w));
+        vbed(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
       } else {
         vbed(i,j) = 1000.0;
       }
@@ -305,7 +311,7 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
-      vbed(i,j) = PetscAbs(slope * sin(pi * ewd / w) + slope * cos(pi * nsd / w));
+      vbed(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
     }
   }
   ierr = vbed.end_access(); CHKERRQ(ierr);

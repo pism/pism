@@ -133,7 +133,7 @@ PetscErrorCode PISMSurfaceModel::max_timestep(PetscReal my_t, PetscReal &my_dt, 
   return 0;
 }
 
-void PISMSurfaceModel::add_vars_to_output(string keyword, map<string,NCSpatialVariable> &result) {
+void PISMSurfaceModel::add_vars_to_output(string keyword, set<string> &result) {
   if (atmosphere != NULL) {
     atmosphere->add_vars_to_output(keyword, result);
   }

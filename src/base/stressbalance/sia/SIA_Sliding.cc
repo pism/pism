@@ -38,9 +38,7 @@ PetscErrorCode SIA_Sliding::allocate() {
   ierr = work_2d.create(grid, "work_vector_2d", true, WIDE_STENCIL); CHKERRQ(ierr);
 
   {
-    IceFlowLawFactory ice_factory(grid.com, "sia_",
-                                  grid.get_unit_system(),
-                                  config, &EC);
+    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
     ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
 
@@ -196,17 +194,18 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
                                           PetscScalar /*alpha*/, PetscScalar mu,
                                           PetscScalar min_T) const {
   PetscReal ice_rho = config.get("ice_density"),
-    beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity");
+    beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity"),
+    secpera = grid.convert(1.0, "year", "seconds");
 
   if (verification_mode) {
     // test 'E' mode
     const PetscScalar r1 = 200e3, r2 = 700e3,   /* define region of sliding */
-      theta1 = 10 * (pi/180), theta2 = 40 * (pi/180);
+      theta1 = 10 * (M_PI/180), theta2 = 40 * (M_PI/180);
     const PetscScalar x = fabs(xIN), y = fabs(yIN);
     const PetscScalar r = sqrt(x * x + y * y);
     PetscScalar       theta;
     if (x < 1.0)
-      theta = pi / 2.0;
+      theta = M_PI / 2.0;
     else
       theta = atan(y / x);
 

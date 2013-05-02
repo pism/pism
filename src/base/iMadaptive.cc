@@ -37,9 +37,7 @@ The maximum vertical velocity is computed but it does not affect
 PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscErrorCode ierr;
   PetscScalar *u, *v, *w;
-  PetscScalar locCFLmaxdt = config.get("maximum_time_step_years",
-                                       grid.get_unit_system(),
-                                       "years", "seconds");
+  PetscScalar locCFLmaxdt = config.get("maximum_time_step_years", "years", "seconds");
 
   IceModelVec3 *u3, *v3, *w3;
 
@@ -52,6 +50,8 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = v3->begin_access(); CHKERRQ(ierr);
   ierr = w3->begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
+
+  const double epsilon = grid.convert(0.001 / (grid.dx + grid.dy), "seconds", "years");
 
   // update global max of abs of velocities for CFL; only velocities under surface
   PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
@@ -68,7 +68,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
           maxu = PetscMax(maxu, absu);
           maxv = PetscMax(maxv, absv);
           // make sure the denominator below is positive:
-          PetscScalar tempdenom = (0.001 / secpera) / (grid.dx + grid.dy);
+          PetscScalar tempdenom = epsilon;
           tempdenom += PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
           locCFLmaxdt = PetscMin(locCFLmaxdt, 1.0 / tempdenom);
           maxw = PetscMax(maxw, PetscAbs(w[k]));
@@ -103,14 +103,14 @@ sliding case we have a CFL condition.
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
   PISMVector2 **vel;
-  PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years",
-                                         grid.get_unit_system(),
-                                         "years", "seconds");
+  PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years", "years", "seconds");
 
   MaskQuery mask(vMask);
 
   IceModelVec2V *vel_advective;
   ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
+
+  const double epsilon = grid.convert(0.01 / (grid.dx + grid.dy), "seconds", "years");
 
   ierr = vel_advective->get_array(vel); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -118,7 +118,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (mask.icy(i, j)) {
         PetscScalar denom = PetscAbs(vel[i][j].u)/grid.dx + PetscAbs(vel[i][j].v)/grid.dy;
-        denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.
+        denom += epsilon;
         locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
       }
     }
@@ -191,9 +191,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       adaptReasonFlag = 'e';
     }
   } else {
-    dt = config.get("maximum_time_step_years",
-                    grid.get_unit_system(),
-                    "years", "seconds");
+    dt = config.get("maximum_time_step_years", "years", "seconds");
     bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
     adaptReasonFlag = 'm';

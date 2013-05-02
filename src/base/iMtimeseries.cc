@@ -343,17 +343,11 @@ PetscErrorCode IceModel::init_extras() {
       i++;
     }
 
-    map<string,NCSpatialVariable> list;
+    set<string> list;
     if (stress_balance)
-      stress_balance->add_vars_to_output("small", list);
+      stress_balance->add_vars_to_output("small", extra_vars);
 
-    map<string,NCSpatialVariable>::iterator j = list.begin();
-    while(j != list.end()) {
-      extra_vars.insert(j->first);
-      ++j;
-    }
-
-  }
+  } // end of the else clause after "if (extra_vars_set)"
 
   if (extra_vars.size() == 0) {
     ierr = verbPrintf(2, grid.com, 
@@ -362,11 +356,11 @@ PetscErrorCode IceModel::init_extras() {
 
   extra_bounds.init("time_bounds", config.get_string("time_dimension_name"),
                     grid.com, grid.rank);
-  extra_bounds.set_units(grid.get_unit_system(), grid.time->units_string());
+  extra_bounds.set_units(grid.time->units_string());
 
   timestamp.init("timestamp", config.get_string("time_dimension_name"),
                  grid.com, grid.rank);
-  timestamp.set_units(grid.get_unit_system(), "hours");
+  timestamp.set_units("hours");
   timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
 
   return 0;

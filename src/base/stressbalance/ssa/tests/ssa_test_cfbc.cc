@@ -33,31 +33,32 @@ static char help[] =
 #include "SSATestCase.hh"
 #include "pism_options.hh"
 
-const double H0 = 600;          // grounding line thickness (meters)
-const double V0 = 300/secpera;  // grounding line vertically-averaged velocity (300 meters/year)
-const double C  = 2.45e-18;     // "typical constant ice parameter"
-
 // thickness profile in the van der Veen solution
-static double H_exact(double x)
+static double H_exact(double V0, double H0, double C, double x)
 {
   const double Q0 = V0*H0;
   return pow(4 * C / Q0 * x + 1/pow(H0, 4), -0.25);
 }
 
 // velocity profile; corresponds to constant flux
-static double u_exact(double x)
+static double u_exact(double V0, double H0, double C, double x)
 {
   const double Q0 = V0*H0;
-  return Q0 / H_exact(x);
+  return Q0 / H_exact(V0, H0, C, x);
 }
 
 class SSATestCaseCFBC: public SSATestCase
 {
 public:
   SSATestCaseCFBC( MPI_Comm com, PetscMPIInt rank,
-                 PetscMPIInt size, NCConfigVariable &c ):
-                 SSATestCase(com, rank, size, c)
-  { };
+                 PetscMPIInt size, NCConfigVariable &c )
+    : SSATestCase(com, rank, size, c)
+  {
+    PISMUnitSystem s = c.get_unit_system();
+    V0 = s.convert(300.0, "m/year", "m/second");
+    H0 = 600.0;                 // meters
+    C  = 2.45e-18;
+  };
 
 protected:
   virtual PetscErrorCode initializeGrid(PetscInt Mx, PetscInt My);
@@ -69,6 +70,9 @@ protected:
   virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
     PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
 
+  double V0, //!< grounding line vertically-averaged velocity
+    H0,      //!< grounding line thickness (meters)
+    C;       //!< "typical constant ice parameter"
 };
 
 PetscErrorCode SSATestCaseCFBC::initializeGrid(PetscInt Mx, PetscInt My)
@@ -90,9 +94,9 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
   config.set_string("output_variable_order", "zyx");
 
   if (config.get_flag("do_pseudo_plastic_till") == true)
-    basal = new IceBasalResistancePseudoPlasticLaw(config, grid.get_unit_system());
+    basal = new IceBasalResistancePseudoPlasticLaw(config);
   else
-    basal = new IceBasalResistancePlasticLaw(config, grid.get_unit_system());
+    basal = new IceBasalResistancePlasticLaw(config);
 
   enthalpyconverter = new EnthalpyConverter(config);
 
@@ -122,7 +126,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
       const PetscScalar x = grid.x[i];
 
       if (i != grid.Mx - 1) {
-        thickness(i, j) = H_exact(x + grid.Lx);
+        thickness(i, j) = H_exact(V0, H0, C, x + grid.Lx);
         ice_mask(i, j)  = MASK_FLOATING;
       } else {
         thickness(i, j) = 0;
@@ -170,7 +174,7 @@ PetscErrorCode SSATestCaseCFBC::exactSolution(PetscInt i, PetscInt /*j*/,
                                               PetscReal *u, PetscReal *v)
 {
   if (i != grid.Mx - 1) {
-    *u = u_exact(x + grid.Lx);
+    *u = u_exact(V0, H0, C, x + grid.Lx);
   } else {
     *u = 0;
   }
@@ -194,7 +198,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);

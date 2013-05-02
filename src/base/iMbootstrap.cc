@@ -62,8 +62,7 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
     }
     
     if (restrict == false)
-      max_dt = convert(1, grid.get_unit_system(),
-                       "year", "seconds");
+      max_dt = grid.convert(1.0, "year", "seconds");
 
     ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
   } else SETERRQ(grid.com, 1, "surface == NULL");
@@ -75,7 +74,7 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
     ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
     if (restrict == false)
-      max_dt = convert(1, grid.get_unit_system(), "year", "seconds");
+      max_dt = grid.convert(1, "year", "seconds");
 
     ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
   } else SETERRQ(grid.com, 1, "ocean == NULL");
@@ -217,9 +216,7 @@ PetscErrorCode IceModel::bootstrap_3d() {
     ierr = verbPrintf(2, grid.com, 
       "  setting initial age to %.4f years\n", config.get("initial_age_of_ice_years"));
       CHKERRQ(ierr);
-      tau3.set(config.get("initial_age_of_ice_years",
-                          grid.get_unit_system(),
-                          "years", "seconds"));
+      tau3.set(config.get("initial_age_of_ice_years", "years", "seconds"));
   }
   
   ierr = verbPrintf(2, grid.com, "  filling ice temperatures using surface temps (and %s)\n",
@@ -342,7 +339,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       if (!dontusesmb) {
         // method 1:  includes surface mass balance in estimate
         const PetscScalar mm = acab(i,j),
-                          C0 = (gg * sqrt(pi * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
+                          C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
                           gamma0 = sqrt(mm * HH / (2.0 * KK));
         for (PetscInt k = 0; k < ks; k++) {
           const PetscScalar z = grid.zlevels[k],

@@ -60,8 +60,7 @@ public:
   SSATestCase( MPI_Comm com, PetscMPIInt rank, 
                PetscMPIInt size, NCConfigVariable &c ): 
                   config(c), grid(com,rank,size,config), 
-                  basal(0), enthalpyconverter(0), ssa(0),
-                  report_velocity_scale(secpera)
+                  basal(0), enthalpyconverter(0), ssa(0)
   {  };
 
   virtual ~SSATestCase()
@@ -120,10 +119,6 @@ protected:
   IceModelVec2Int ice_mask, bc_mask;
 
   SSA *ssa;
-
-  // Scale for converting velocities from their units during computation to human friendly units.
-  PetscScalar report_velocity_scale;
-
 };
 
 #endif /* _SSATESTCASE_H_ */

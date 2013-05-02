@@ -69,7 +69,8 @@ int main(int argc, char *argv[]) {
         "(see User's Manual for tests I and J).\n"
         ); CHKERRQ(ierr);
 
-    NCConfigVariable config, overrides;
+    PISMUnitSystem unit_system(NULL);
+    NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     config.set_flag("use_eta_transformation", false);

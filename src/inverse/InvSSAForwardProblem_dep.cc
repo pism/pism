@@ -799,6 +799,7 @@ PetscErrorCode InvSSAForwardProblem_dep::rangeIP_core(PISMVector2 **A, PISMVecto
     misfit_weight = 1;
   }
 
+  const double secpera = grid.convert(1.0, "year", "seconds");
   PetscReal units_factor = secpera*secpera;
 
   for (i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -990,6 +991,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_TStarA_rhs( PISMVector2 **R, P
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
   }
 
+  const double secpera = grid.convert(1.0, "year", "seconds");
   PetscReal units_factor = secpera*secpera;
 
   PetscReal **W;

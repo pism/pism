@@ -22,7 +22,10 @@
 #include "pism_options.hh"
 
 POConstant::POConstant(IceGrid &g, const NCConfigVariable &conf)
-  : PISMOceanModel(g, conf) {
+  : PISMOceanModel(g, conf),
+    shelfbmassflux(g.get_unit_system()),
+    shelfbtemp(g.get_unit_system())
+{
   PetscErrorCode ierr = allocate_POConstant(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
@@ -37,14 +40,14 @@ PetscErrorCode POConstant::allocate_POConstant() {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units(grid.get_unit_system(), "m s-1");
+  shelfbmassflux.set_units("m s-1");
   shelfbmassflux.set_glaciological_units("m year-1");
 
   shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_units(grid.get_unit_system(), "Kelvin");
+  shelfbtemp.set_units("Kelvin");
 
   return 0;
 }
@@ -117,7 +120,7 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
 
   if (meltrate_set) {
 
-    meltrate = grid.conv(mymeltrate,"m year-1","m s-1");
+    meltrate = grid.convert(mymeltrate, "m year-1", "m s-1");
 
   } else {
 
@@ -131,9 +134,9 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-void POConstant::add_vars_to_output(string, map<string,NCSpatialVariable> &result) {
-  result["shelfbtemp"] = shelfbtemp;
-  result["shelfbmassflux"] = shelfbmassflux;
+void POConstant::add_vars_to_output(string, set<string> &result) {
+  result.insert("shelfbtemp");
+  result.insert("shelfbmassflux");
 }
 
 PetscErrorCode POConstant::define_variables(set<string> vars, const PIO &nc,

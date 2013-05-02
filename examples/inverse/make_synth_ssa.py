@@ -140,9 +140,11 @@ if __name__ == '__main__':
     vecs.markForWriting(vel_surface_observed)
     final_velocity = vel_surface_observed
 
+  secpera = grid.convert(1.0, "year", "seconds")
+    
   # Add the misfit weight.
   if misfit_weight_type == "fast":
-    misfit_weight = fastIceMisfitWeight(modeldata,fast_ice_speed / PISM.secpera)
+    misfit_weight = fastIceMisfitWeight(modeldata,fast_ice_speed / secpera)
   else:
     misfit_weight = groundedIceMisfitWeight(modeldata)
   modeldata.vecs.add(misfit_weight,writing=True)    
@@ -153,7 +155,7 @@ if __name__ == '__main__':
 
   if not noise is None:
     u_noise = PISM.sipletools.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
-    final_velocity.add(1./PISM.secpera,u_noise)
+    final_velocity.add(1./secpera,u_noise)
 
   pio = PISM.PIO(grid.com, grid.rank, "netcdf3", grid.get_unit_system())
   pio.open(output_file_name, PISM.NC_WRITE)

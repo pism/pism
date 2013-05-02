@@ -17,7 +17,6 @@ from PISM.sipletools import PISMLocalVector as PLV
 p_schoof = 4.0/3.0   # = 1 + 1/n
 
 rms_error = 2.754712829589844 #m/a # invParams.pointwise_error_size from conv_rate.py run when relative_noise_level is set to 1%
-#rms_error /= PISM.secpera # m/s
 
 ssa_l2_coeff = 1.
 ssa_h1_coeff = 0.
@@ -31,19 +30,19 @@ Ly = 80.e3 # meters
 Mx = 61
 My = 121  #int(Mx/Lx * Ly)
 
-B = 7. * (PISM.secpera)**(1./3) * 1.e5 # units have to be kg, m, sec in PISM
 
 def testi_tauc(grid,ice,tauc):
   xzero = -20.e3
   yzero = 30.e3
   xsig = 1.e8 # = 2*\sigma^2 where \sigma is the std
   ysig = xsig
+  secpera = grid.convert(1.0, "year", "seconds")
   with PISM.util.Access(comm=tauc):
     for (i,j) in grid.points():
       x=grid.x[i]
       y=grid.y[j]
       tauc[i,j] = 5.e-4 + 5.e-3*np.exp(-(x-xzero)**2/xsig - (y-yzero)**2/ysig)
-      tauc[i,j] = tauc[i,j] * PISM.secpera * 1.e5
+      tauc[i,j] = tauc[i,j] * secpera * 1.e5
 
 class testi_run(InvSSARun):
   def __init__(self,Mx,My):
@@ -56,10 +55,11 @@ class testi_run(InvSSARun):
     PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NONE); # NONE makes a non-periodic grid
 
   def _initPhysics(self):
+    secpera = grid.convert(1.0, "year", "seconds")
     config = self.config
     config.set_flag("do_pseudo_plastic_till", True)
     config.set("pseudo_plastic_q", 1.0);
-    config.set("pseudo_plastic_uthreshold", 1.0/PISM.secpera) # so that tau_b = tauc * u
+    config.set("pseudo_plastic_uthreshold", 1.0/secpera) # so that tau_b = tauc * u
 
     basal = PISM.IceBasalResistancePseudoPlasticLaw(config)
 
@@ -67,6 +67,8 @@ class testi_run(InvSSARun):
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
     ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
+
+    B = 7. * (secpera)**(1./3) * 1.e5 # units have to be kg, m, sec in PISM
     ice.setHardness(B)
 
     self.modeldata.setPhysics(ice,basal,enthalpyconverter)
@@ -200,8 +202,9 @@ else:
       zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
 
 if test_adjoint:
+  secpera = grid.convert(1.0, "year", "seconds")
   d = PLV(pismssaforward.randVectorS(grid,1e5))
-  r = PLV(pismssaforward.randVectorV(grid,1./PISM.secpera))
+  r = PLV(pismssaforward.randVectorV(grid,1./secpera))
   (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
   siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
   exit(0)
@@ -232,7 +235,8 @@ if do_plotting:
 if do_pause:
   solver.addIterationListener(pauseListener)
 
-rms_error /= PISM.secpera # m/s
+secpera = grid.convert(1.0, "year", "seconds")
+rms_error /= secpera # m/s
 (zeta,u) = solver.solve(zeta,u_true,rms_error)
 
 # Convert back from zeta to tauc
