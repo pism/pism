@@ -69,7 +69,7 @@ user selects a random PDD implementation with `-pdd_rand` or
 double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 
   const double Z = TacC / (sqrt(2.0) * sigma);
-  return (sigma / sqrt(2.0 * pi)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
+  return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
 }
 
 

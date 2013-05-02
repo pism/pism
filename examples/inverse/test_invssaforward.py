@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012 David Maxwell
+# Copyright (C) 2012, 2013 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -105,8 +105,9 @@ if __name__ == "__main__":
       for (i,j) in grid.points():
         if zeta_fixed_mask[i,j] != 0:
           d_proj[i,j] = 0;
-  
-  r = PISM.util.randVectorV(grid,1./PISM.secpera)
+
+  secpera = grid.convert(1.0, "year", "secpera")
+  r = PISM.util.randVectorV(grid,1./secpera)
 
   u1 = PISM.IceModelVec2V();
   u1.create(grid,"",PISM.kHasGhosts,PISM.util.WIDE_STENCIL)

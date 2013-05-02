@@ -8,7 +8,6 @@ from matplotlib import pyplot as pp
 from matplotlib import colors as mc
 from optparse import OptionParser
 from siple.reporting import endpause
-import PISM
 import numpy as np
 
 usage =  """Usage: %prog [options]
@@ -34,6 +33,7 @@ except:
     parser.print_help()
     exit(0)
 
+secpera = 3.15569259747e7    
 tauc = ds.variables['tauc'][...].squeeze()
 tauc_true = ds.variables['tauc_true'][...].squeeze()
 
@@ -45,8 +45,8 @@ tauc_true[not_ice] = 0
 tauc_diff[not_ice] = 0.
 
 
-u_computed = ds.variables['u_computed'][...].squeeze()*PISM.secpera
-v_computed = ds.variables['v_computed'][...].squeeze()*PISM.secpera
+u_computed = ds.variables['u_computed'][...].squeeze()*secpera
+v_computed = ds.variables['v_computed'][...].squeeze()*secpera
 cbase_computed = np.sqrt(u_computed * u_computed + v_computed * v_computed)
 
 not_sliding = np.logical_and( (abs(u_computed) < 10.) , (abs(v_computed) < 10.) )

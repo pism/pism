@@ -20,8 +20,8 @@
 
 PA_delta_P::PA_delta_P(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
-    precipitation(g.get_unit_system()),
-    air_temp(g.get_unit_system())
+    air_temp(g.get_unit_system()),
+    precipitation(g.get_unit_system())
 {
   offset = NULL;
   PetscErrorCode ierr = allocate_PA_delta_P(); CHKERRCONTINUE(ierr);

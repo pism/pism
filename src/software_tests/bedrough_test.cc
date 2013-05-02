@@ -87,8 +87,8 @@ int main(int argc, char *argv[]) {
     ierr = topg.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        topg(i,j) = 400.0 * sin(2.0 * pi * grid.x[i] / 600.0e3) +
-                    100.0 * sin(2.0 * pi * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
+        topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x[i] / 600.0e3) +
+                    100.0 * sin(2.0 * M_PI * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
       }
     }
     ierr = topg.end_access(); CHKERRQ(ierr);

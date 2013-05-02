@@ -75,7 +75,7 @@ class testj(PISM.ssa.SSAExactTestCase):
     # constant viscosity by settting the strength_extension
     # thickness larger than the given ice thickness. (max = 770m).
 
-    nu0 = 30.0 * 1.0e6 * PISM.secpera; # 9.45e14 Pa s 
+    nu0 = self.grid.convert(30.0, "MPa year", "Pa s")
     H0 = 500.0;                        # 500 m typical thickness
 
     ssa = self.ssa

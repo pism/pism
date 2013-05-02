@@ -268,7 +268,9 @@ if __name__ == "__main__":
     stencil_width=1
     forward_problem = solver.forward_problem
     d = PLV(PISM.sipletools.randVectorS(grid,1e5,stencil_width))
-    r = PLV(PISM.sipletools.randVectorV(grid,1./PISM.secpera,stencil_width))
+    r = PLV(PISM.sipletools.randVectorV(grid,
+                                        grid.convert(1.0, "m/year", "m/second"),
+                                        stencil_width))
     (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta0),d,r,3)
     siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
     exit(0)
@@ -334,6 +336,8 @@ if __name__ == "__main__":
   u_i_a = tz2.communicate(u_i)
   u_obs_a = tz2.communicate(u_obs)
 
+  secpera = grid.convert(1.0, "year", "seconds")
+  
   if do_final_plot and (not tauc_a is None):
     from matplotlib import pyplot
     pyplot.clf()
@@ -342,8 +346,8 @@ if __name__ == "__main__":
     pyplot.plot(grid.y,tauc_true[:,Mx/2])
 
     pyplot.subplot(1,2,2)
-    pyplot.plot(grid.y,u_i_a[0,:,Mx/2]*PISM.secpera)
-    pyplot.plot(grid.y,u_obs_a[0,:,Mx/2]*PISM.secpera)
+    pyplot.plot(grid.y,u_i_a[0,:,Mx/2]*secpera)
+    pyplot.plot(grid.y,u_obs_a[0,:,Mx/2]*secpera)
 
     pyplot.ion()
     pyplot.show()

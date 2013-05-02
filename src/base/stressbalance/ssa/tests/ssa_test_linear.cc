@@ -47,10 +47,18 @@ static char help[] =
 class SSATestCaseExp: public SSATestCase
 {
 public:
-  SSATestCaseExp( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &c): 
-                 SSATestCase(com,rank,size,c)
-  { };
+  SSATestCaseExp(MPI_Comm com, PetscMPIInt rank, 
+                 PetscMPIInt size, NCConfigVariable &c)
+    : SSATestCase(com,rank,size,c)
+  {
+    PISMUnitSystem s = c.get_unit_system();
+
+    L     = s.convert(50, "km", "m"); // 50km half-width
+    H0    = 500;                      // meters
+    dhdx  = 0.005;                    // pure number
+    nu0   = s.convert(30.0, "MPa year", "Pa s");
+    tauc0 = 1.e4;               // 1kPa
+  }
   
 protected:
   virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
@@ -62,13 +70,8 @@ protected:
   virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
     PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
 
+  PetscScalar L, H0, dhdx, nu0, tauc0;
 };
-
-const PetscScalar L=50.e3; // 50km half-width
-const PetscScalar H0=500; // m
-const PetscScalar dhdx = 0.005; // pure number, slope of surface & bed
-const PetscScalar nu0 = 30.0 * 1.0e6 * PISMVerification::secpera; /* = 9.45e14 Pa s */
-const PetscScalar tauc0 = 1.e4; // 1kPa
 
 
 PetscErrorCode SSATestCaseExp::initializeGrid(PetscInt Mx,PetscInt My)
@@ -152,7 +155,7 @@ PetscErrorCode SSATestCaseExp::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
 {
   PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
                                                    "m/year", "m/second");
-  PetscScalar v0 = 100./PISMVerification::secpera ; // 100 m/s.
+  PetscScalar v0 = grid.convert(100.0, "m/year", "m/second");
   // PetscScalar alpha=log(2.)/(2*L);
   PetscScalar alpha = sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );
   *u = v0*exp( -alpha*(x-L));

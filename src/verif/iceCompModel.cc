@@ -885,8 +885,8 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   ierr = PISMGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
-  const PetscScalar xpeak = 450e3 * cos(25.0*(pi/180.0)),
-                    ypeak = 450e3 * sin(25.0*(pi/180.0));
+  const PetscScalar xpeak = 450e3 * cos(25.0*(M_PI/180.0)),
+                    ypeak = 450e3 * sin(25.0*(M_PI/180.0));
   exactE(xpeak,ypeak,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
   exactmaxspeed = sqrt(ubexact*ubexact + vbexact*vbexact);
   return 0;
@@ -1215,7 +1215,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = verbPrintf(1,grid.com,
        "surf vels :     maxUvec      avUvec        maxW         avW\n"); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
-                  maxUerr*secpera, avUerr*secpera, maxWerr*secpera, avWerr*secpera); CHKERRQ(ierr);
+                  grid.convert(maxUerr, "m/second", "m/year"), grid.convert(avUerr, "m/second", "m/year"), grid.convert(maxWerr, "m/second", "m/year"), grid.convert(avWerr, "m/second", "m/year")); CHKERRQ(ierr);
 
     if (netcdf_report) {
       err.reset(); err.set_units("1");
@@ -1248,9 +1248,9 @@ PetscErrorCode IceCompModel::reportErrors() {
        "base vels :  maxvector   avvector  prcntavvec     maxub     maxvb\n");
        CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %11.4f%11.5f%12.5f%10.4f%10.4f\n",
-                  maxvecerr*secpera, avvecerr*secpera,
+                  grid.convert(maxvecerr, "m/second", "m/year"), grid.convert(avvecerr, "m/second", "m/year"),
                   (avvecerr/exactmaxspeed)*100.0,
-                  maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
+                  grid.convert(maxuberr, "m/second", "m/year"), grid.convert(maxvberr, "m/second", "m/year")); CHKERRQ(ierr);
 
     if (netcdf_report) {
       err.reset(); err.set_units("1");
@@ -1279,13 +1279,15 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = computeBasalMeltRateErrors(maxbmelterr, minbmelterr); CHKERRQ(ierr);
     if (maxbmelterr != minbmelterr) {
        ierr = verbPrintf(1,grid.com,
-          "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
-          "  are different: maxbmelterr = %f, minbmelterr = %f\n",
-          maxbmelterr * secpera, minbmelterr * secpera); CHKERRQ(ierr);
+                         "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
+                         "  are different: maxbmelterr = %f, minbmelterr = %f\n",
+                         grid.convert(maxbmelterr, "m/second", "m/year"),
+                         grid.convert(minbmelterr, "m/second", "m/year")); CHKERRQ(ierr);
     }
     ierr = verbPrintf(1,grid.com,
        "basal melt:  max\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(1,grid.com, "           %11.5f\n", maxbmelterr*secpera); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, "           %11.5f\n",
+                      grid.convert(maxbmelterr, "m/second", "m/year")); CHKERRQ(ierr);
 
     if (netcdf_report) {
       err.reset(); err.set_units("1");

@@ -339,7 +339,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       if (!dontusesmb) {
         // method 1:  includes surface mass balance in estimate
         const PetscScalar mm = acab(i,j),
-                          C0 = (gg * sqrt(pi * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
+                          C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
                           gamma0 = sqrt(mm * HH / (2.0 * KK));
         for (PetscInt k = 0; k < ks; k++) {
           const PetscScalar z = grid.zlevels[k],

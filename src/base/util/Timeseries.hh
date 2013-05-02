@@ -80,7 +80,7 @@ public:
   Timeseries(MPI_Comm com, PetscMPIInt rank, PISMUnitSystem units_system,
              string name, string dimension_name);
   
-  PetscErrorCode read(const PIO &nc, bool use_reference_date);
+  PetscErrorCode read(const PIO &nc, PISMTime *time);
   PetscErrorCode write(const PIO &nc);
   double operator()(double time);
   double operator[](unsigned int j) const;

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PISMUNIT_H_
-#define _PISMUNIT_H_
+#ifndef _PISMUNITS_H_
+#define _PISMUNITS_H_
 
 #include <udunits2.h>
 #include <string>
@@ -38,7 +38,7 @@
  * We use C++ (TR1) shared pointers to make sure that the system a
  * PISMUnit instance needs is allocated during the whole life span of
  * this instance. (De-allocating the unit system too early results in
- * having a pointer to freed memory.)
+ * having a "dangling" pointer.)
  */
 
 class PISMUnitSystem {
@@ -77,4 +77,4 @@ private:
   std::string m_unit_string;
 };
 
-#endif /* _PISMUNIT_H_ */
+#endif /* _PISMUNITS_H_ */

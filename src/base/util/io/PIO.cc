@@ -599,9 +599,11 @@ PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid, Periodicity periodi
   return 0;
 }
 
-
-PetscErrorCode PIO::inq_units(string name, bool &has_units, PISMUnit &units,
-                              bool use_reference_date) const {
+/*! Do not use this method to get units of time and time_bounds
+  variables: in these two cases we need to handle the reference date
+  correctly.
+ */
+PetscErrorCode PIO::inq_units(string name, bool &has_units, PISMUnit &units) const {
   PetscErrorCode ierr;
   string units_string;
 
@@ -613,22 +615,6 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, PISMUnit &units,
     has_units = false;
     units.reset();
     return 0;
-  }
-
-  int n = (int)units_string.find("since");
-  if (use_reference_date == false) {
-    /*!
-      \note This code finds the string "since" in the units_string and
-      terminates it on the first 's' of "since", if this sub-string was found.
-      This is done to ignore the reference date in the time units string (the
-      reference date specification always starts with this word).
-    */
-    if (n != -1) units_string.resize(n);
-  } else if (n == -1) {
-    ierr = PetscPrintf(com,
-                       "PISM ERROR: units specification '%s' does not contain a reference date (processing variable '%s').\n",
-                       units_string.c_str(), name.c_str());
-    PISMEnd();
   }
 
   // strip trailing spaces

@@ -228,19 +228,22 @@ PetscErrorCode SSATestCase::report(string testname) {
   CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, 
                     "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
-                    gmaxvecerr*report_velocity_scale, (gavvecerr/gexactvelmax)*100.0,
-                    gmaxuerr*report_velocity_scale, gmaxverr*report_velocity_scale, gavuerr*report_velocity_scale, 
-                    gavverr*report_velocity_scale); CHKERRQ(ierr);
+                    grid.convert(gmaxvecerr, "m/second", "m/year"),
+                    (gavvecerr/gexactvelmax)*100.0,
+                    grid.convert(gmaxuerr, "m/second", "m/year"),
+                    grid.convert(gmaxverr, "m/second", "m/year"),
+                    grid.convert(gavuerr, "m/second", "m/year"),
+                    grid.convert(gavverr, "m/second", "m/year")); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
 
   ierr = report_netcdf(testname,
-                       gmaxvecerr*report_velocity_scale,
+                       grid.convert(gmaxvecerr, "m/second", "m/year"),
                        (gavvecerr/gexactvelmax)*100.0,
-                       gmaxuerr*report_velocity_scale,
-                       gmaxverr*report_velocity_scale,
-                       gavuerr*report_velocity_scale,
-                       gavverr*report_velocity_scale); CHKERRQ(ierr);
+                       grid.convert(gmaxuerr, "m/second", "m/year"),
+                       grid.convert(gmaxverr, "m/second", "m/year"),
+                       grid.convert(gavuerr, "m/second", "m/year"),
+                       grid.convert(gavverr, "m/second", "m/year")); CHKERRQ(ierr);
 
   return 0;
 }

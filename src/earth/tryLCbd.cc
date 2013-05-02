@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
           for (PetscInt j=0; j<My; j++) {
             const PetscScalar r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
             if (r < 1.5 * R0) {
-              upl[i][j] = peak_up * (cos(pi * (r / (1.5 * R0))) + 1.0) / 2.0; 
+              upl[i][j] = peak_up * (cos(M_PI * (r / (1.5 * R0))) + 1.0) / 2.0; 
             } else {
               upl[i][j] = 0.0;
             }

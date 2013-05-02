@@ -408,8 +408,8 @@ PetscErrorCode IcePSTexModel::setBedElev() {
       for (PetscInt m=0; m<4; m++) {
         PetscScalar drop = e[exper_chosen].bed_end_depth[m],
                     slope = drop / stream_length;
-        if (inStream((pi/2.0)*m,width,x,y,x_loc,y_loc))
-          vbed(i,j) = plateau - slope * x_loc * cos(pi * y_loc / width);
+        if (inStream((M_PI/2.0)*m,width,x,y,x_loc,y_loc))
+          vbed(i,j) = plateau - slope * x_loc * cos(M_PI * y_loc / width);
       }
     }
   }
@@ -462,7 +462,7 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
         if (exper_chosen == 3) { // exper P2
           const PetscScalar width = e[exper_chosen].stream_width[0] * 1000.0;
           for (int m=0; m<3; m++) {
-            if (inStream((pi/180.0) * stream_angle_P2[m],width,x,y,x_loc,y_loc)) {
+            if (inStream((M_PI/180.0) * stream_angle_P2[m],width,x,y,x_loc,y_loc)) {
               if (r > stream_change) {
                 areadown[m] += darea;
                 avcdown[m] += cbar * darea;
@@ -475,7 +475,7 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
         } else {
           for (int m=0; m<4; m++) {
             const PetscScalar width = e[exper_chosen].stream_width[m] * 1000.0;
-            if (inStream((pi/2.0)*m,width,x,y,x_loc,y_loc)) {
+            if (inStream((M_PI/2.0)*m,width,x,y,x_loc,y_loc)) {
               if (x_loc > stream_change - 1.0) {
                 areadown[m] += darea;
                 avcdown[m] += cbar * darea;
@@ -514,8 +514,8 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   }
 
   double dt_years = grid.convert(dt, "seconds", "years"),
-    a = grid.time->seconds_to_years(grid.time->current() - dt),
-    b = grid.time->seconds_to_years(grid.time->current());
+    a = grid.convert(grid.time->current() - dt, "seconds", "years"),
+    b = grid.convert(grid.time->current(), "seconds", "years");
 
   dt_ser->append(dt_years, a, b);
   dt_ser->interp(a, b);
@@ -584,7 +584,7 @@ PetscErrorCode PSTYieldStress::init_till_phi() {
       if (experiment == 3) { // experiment P2
         const PetscScalar width = e[experiment].stream_width[0] * 1000.0;
         for (PetscInt m = 0; m < 3; m++) {
-          if (inStreamNbhd(false, (pi / 180.0) * stream_angle_P2[m], width, x, y, x_loc, y_loc))
+          if (inStreamNbhd(false, (M_PI / 180.0) * stream_angle_P2[m], width, x, y, x_loc, y_loc))
             till_phi(i, j) = phiLocal(width, x_loc, y_loc, DEFAULT_PHI_STRONG,
                                      e[experiment].upstream_phi[m],
                                      e[experiment].downstream_phi[m]);
@@ -592,7 +592,7 @@ PetscErrorCode PSTYieldStress::init_till_phi() {
       } else {
         for (PetscInt m = 0; m < 4; m++) { // go through four sectors
           const PetscScalar width = e[experiment].stream_width[m] * 1000.0;
-          if (inStreamNbhd(false, (pi / 2.0)*m, width, x, y, x_loc, y_loc)) {
+          if (inStreamNbhd(false, (M_PI / 2.0)*m, width, x, y, x_loc, y_loc)) {
             till_phi(i, j) = phiLocal(width, x_loc, y_loc, DEFAULT_PHI_STRONG,
                                      e[experiment].upstream_phi[m],
                                      e[experiment].downstream_phi[m]);
@@ -640,7 +640,7 @@ PetscScalar PSTYieldStress::phiLocal(const PetscScalar width,
   if (PetscAbs(eta) <= 1.0 - eta_slop)
     lambda = 1.0;
   else if (PetscAbs(eta) < 1.0 + eta_slop)
-    lambda = 0.5 - 0.5 * sin((pi/2.0) * (PetscAbs(eta) - 1.0) / eta_slop);
+    lambda = 0.5 - 0.5 * sin((M_PI/2.0) * (PetscAbs(eta) - 1.0) / eta_slop);
 
   if (x > stream_change)
     return DOWN * lambda + STRONG * (1.0 - lambda); // downstream value
@@ -650,7 +650,7 @@ PetscScalar PSTYieldStress::phiLocal(const PetscScalar width,
       f = UP;
     else if (xi > - xi_slop) {
       const PetscScalar fav = 0.5 * (STRONG + UP);
-      f = fav - 0.5 * (STRONG - UP) * sin((pi/2.0) * (xi / xi_slop));
+      f = fav - 0.5 * (STRONG - UP) * sin((M_PI/2.0) * (xi / xi_slop));
     }
     return f * lambda + STRONG * (1.0 - lambda); // upstream value
   }

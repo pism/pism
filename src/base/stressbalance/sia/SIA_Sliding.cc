@@ -200,12 +200,12 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
   if (verification_mode) {
     // test 'E' mode
     const PetscScalar r1 = 200e3, r2 = 700e3,   /* define region of sliding */
-      theta1 = 10 * (pi/180), theta2 = 40 * (pi/180);
+      theta1 = 10 * (M_PI/180), theta2 = 40 * (M_PI/180);
     const PetscScalar x = fabs(xIN), y = fabs(yIN);
     const PetscScalar r = sqrt(x * x + y * y);
     PetscScalar       theta;
     if (x < 1.0)
-      theta = pi / 2.0;
+      theta = M_PI / 2.0;
     else
       theta = atan(y / x);
 

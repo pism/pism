@@ -32,6 +32,7 @@
 using namespace std;
 /// @endcond
 
+class PISMTime;
 
 //! \brief A class for handling variable metadata, reading, writing and converting
 //! from input units and to output units.
@@ -91,7 +92,6 @@ protected:
   virtual PetscErrorCode write_attributes(const PIO &nc, PISM_IO_Type nctype,
 					  bool write_in_glaciological_units) const;
   virtual PetscErrorCode read_valid_range(const PIO &nc, string name);
-  PetscErrorCode check_units(PISMUnit units) const;
   MPI_Comm com;
   PetscMPIInt rank;
   map<string, string> strings;  //!< string and boolean attributes
@@ -180,7 +180,7 @@ public:
   string dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
   void    init(string name, string dim_name, MPI_Comm c, PetscMPIInt r);
 
-  virtual PetscErrorCode read(const PIO &nc, bool use_reference_date, vector<double> &data);
+  virtual PetscErrorCode read(const PIO &nc, PISMTime *time, vector<double> &data);
   virtual PetscErrorCode write(const PIO &nc, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
   virtual PetscErrorCode write(const PIO &nc, size_t start, double data, PISM_IO_Type nctype = PISM_DOUBLE);
 
@@ -196,7 +196,7 @@ class NCTimeBounds : public NCVariable
 public:
   NCTimeBounds(PISMUnitSystem system);
   void init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode read(const PIO &nc, bool use_reference_date, vector<double> &data);
+  virtual PetscErrorCode read(const PIO &nc, PISMTime *time, vector<double> &data);
   virtual PetscErrorCode write(const PIO &nc, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
   virtual PetscErrorCode write(const PIO &nc, size_t start, double a, double b, PISM_IO_Type nctype = PISM_DOUBLE);
 

@@ -368,7 +368,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
         tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
         const PetscScalar N = Po(i,j) - bwp(i,j);
-        tauc(i, j) = till_c_0 + N * tan((pi/180.0) * till_phi(i, j));
+        tauc(i, j) = till_c_0 + N * tan((M_PI/180.0) * till_phi(i, j));
       }
     }
   }
@@ -522,7 +522,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
         // no change
       } else { // grounded and there is some ice
         const PetscScalar N = Po(i,j) - bwp(i,j);
-        till_phi(i, j) = 180.0/pi * atan((tauc(i, j) - till_c_0) / N);
+        till_phi(i, j) = 180.0/M_PI * atan((tauc(i, j) - till_c_0) / N);
       }
     }
   }

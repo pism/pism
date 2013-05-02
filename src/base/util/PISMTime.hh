@@ -48,7 +48,7 @@ inline int pism_validate_calendar_name(string name) {
  * For example: 365-day no-leap calendar for spinups
  * Gregorian calendar for XX-century forcing runs
  *
- * This base class implements the 365.24-day no-leap version.
+ * This base class implements the 365-day no-leap version.
  *
  * We want to be able to count time since a particular date, so it is helpful
  * to keep in mind that the year "1986" in this context is not the year of the
@@ -83,9 +83,6 @@ public:
   //! \brief Returns the length of the current run, in years.
   string run_length();
 
-  double seconds_to_years(double T);
-  double years_to_seconds(double T);
-
   // Virtual methods:
 
   //! \brief Intialize using command-line options.
@@ -107,7 +104,7 @@ public:
    */
   virtual string units_string();
 
-  virtual bool use_reference_date();
+  virtual string CF_units_to_PISM_units(string input);
 
   //! \brief Returns time since the origin modulo period.
   virtual double mod(double time, double period);

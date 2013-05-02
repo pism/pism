@@ -75,13 +75,13 @@ protected:
     }
 
     if (bc_period_set) {
-      bc_period = g.time->years_to_seconds(bc_period_years);
+      bc_period = g.convert(bc_period_years, "years", "seconds");
     } else {
       bc_period = 0;
     }
 
     if (bc_ref_year_set) {
-      bc_reference_time = g.time->years_to_seconds(bc_reference_year);
+      bc_reference_time = g.convert(bc_reference_year, "years", "seconds");
     } else {
       bc_reference_time = 0;
     }
@@ -94,7 +94,7 @@ protected:
     PIO nc(g.com, g.rank, "netcdf3", g.get_unit_system());
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     {
-      ierr = offset->read(nc, g.time->use_reference_date()); CHKERRQ(ierr);
+      ierr = offset->read(nc, g.time); CHKERRQ(ierr);
     }
     ierr = nc.close(); CHKERRQ(ierr);
 

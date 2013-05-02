@@ -234,13 +234,13 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
     bounds.init(time_bounds_name, time_name, m_com, rank);
     bounds.set_units(m_time_units.format());
 
-    ierr = bounds.read(nc, true, time); CHKERRQ(ierr);
+    ierr = bounds.read(nc, this, time); CHKERRQ(ierr);
   } else {
     // use the time axis
     time_axis.init(time_name, time_name, m_com, rank);
     time_axis.set_units(m_time_units.format());
 
-    ierr = time_axis.read(nc, true, time); CHKERRQ(ierr);
+    ierr = time_axis.read(nc, this, time); CHKERRQ(ierr);
   }
 
   m_run_start = time.front();

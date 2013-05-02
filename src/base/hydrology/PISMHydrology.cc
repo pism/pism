@@ -95,8 +95,8 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   // the following inputtobed is not related to IceModel; we must read it ourselves
 
   if (itbfile_set) {
-    inputtobed_period = (itbperiod_set) ? grid.time->years_to_seconds(itbperiod_years) : 0.0;
-    inputtobed_reference_time = (itbreference_set) ? grid.time->years_to_seconds(itbreference_year) : 0.0;
+    inputtobed_period = (itbperiod_set) ? grid.convert(itbperiod_years, "years", "seconds") : 0.0;
+    inputtobed_reference_time = (itbreference_set) ? grid.convert(itbreference_year, "years", "seconds") : 0.0;
 
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
                  n_records = 1;

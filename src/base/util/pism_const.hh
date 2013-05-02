@@ -35,12 +35,6 @@ using namespace std;
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 
-namespace PISMVerification {
-  const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS-2
-}
-
-const PetscScalar pi         = M_PI;		// defined in gsl/gsl_math.h
-
 enum PismMask {
   MASK_UNKNOWN          = -1,
   MASK_ICE_FREE_BEDROCK = 0,
@@ -67,10 +61,11 @@ PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],..
 
 void endPrintRank();
 
-//void PISMEnd()  __attribute__((noreturn));
-//void PISMEndQuiet()  __attribute__((noreturn));
-void PISMEnd();
-void PISMEndQuiet();
+#ifndef __GNUC__
+#  define  __attribute__(x)  /* nothing */
+#endif
+void PISMEnd()  __attribute__((noreturn));
+void PISMEndQuiet()  __attribute__((noreturn));
 
 string pism_timestamp();
 string pism_username_prefix(MPI_Comm com);

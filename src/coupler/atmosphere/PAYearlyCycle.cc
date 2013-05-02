@@ -187,7 +187,7 @@ PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
     double tk = grid.time->year_fraction(ts[k]) - julyday_fraction;
 
     m_ts_times[k] = ts[k];
-    m_cosine_cycle[k] = cos(2.0 * pi * tk);
+    m_cosine_cycle[k] = cos(2.0 * M_PI * tk);
   }
 
   return 0;
@@ -214,7 +214,7 @@ PetscErrorCode PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day),
     T                = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
-    cos_T            = cos(2.0 * pi * T);
+    cos_T            = cos(2.0 * M_PI * T);
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);

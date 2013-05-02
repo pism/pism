@@ -52,7 +52,7 @@ void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r,
 
 
 //! Read timeseries data from a NetCDF file `filename`.
-PetscErrorCode Timeseries::read(const PIO &nc, bool use_reference_date) {
+PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
   PetscErrorCode ierr;
 
   bool exists, found_by_standard_name;
@@ -89,7 +89,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, bool use_reference_date) {
 
   dimension.init(time_name, time_name, com, rank);
 
-  ierr = dimension.read(nc, use_reference_date, time); CHKERRQ(ierr);
+  ierr = dimension.read(nc, time_manager, time); CHKERRQ(ierr);
   bool is_increasing = true;
   for (unsigned int j = 1; j < time.size(); ++j) {
     if (time[j] - time[j-1] < 1e-16) {
@@ -112,15 +112,12 @@ PetscErrorCode Timeseries::read(const PIO &nc, bool use_reference_date) {
     bounds.init(time_bounds_name, time_name, com, rank);
     ierr = bounds.set_units(dimension.get_string("units")); CHKERRQ(ierr);
 
-    ierr = bounds.read(nc, use_reference_date, time_bounds); CHKERRQ(ierr);
+    ierr = bounds.read(nc, time_manager, time_bounds); CHKERRQ(ierr);
   } else {
     use_bounds = false;
   }
 
-  // Do not use the reference date. This may be a problem if someone needs to
-  // read a time-series with the meaning of "time depending on time", but this is
-  // not likely.
-  ierr = var.read(nc, false, values); CHKERRQ(ierr);
+  ierr = var.read(nc, time_manager, values); CHKERRQ(ierr);
 
   if (time.size() != values.size()) {
     ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",

@@ -285,7 +285,7 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
       const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
       if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
            && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
-        vbed(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(pi * (nsd - L) / w));
+        vbed(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
       } else {
         vbed(i,j) = 1000.0;
       }
@@ -311,7 +311,7 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
-      vbed(i,j) = PetscAbs(slope * sin(pi * ewd / w) + slope * cos(pi * nsd / w));
+      vbed(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
     }
   }
   ierr = vbed.end_access(); CHKERRQ(ierr);

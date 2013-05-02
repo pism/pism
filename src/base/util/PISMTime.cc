@@ -66,14 +66,6 @@ double PISMTime::end() {
   return m_run_end;
 }
 
-double PISMTime::seconds_to_years(double T) {
-  return T / m_secpera;
-}
-
-double PISMTime::years_to_seconds(double T) {
-  return T * m_secpera;
-}
-
 string PISMTime::CF_units_string() {
   return "seconds since " + m_config.get_string("reference_date");
 }
@@ -97,15 +89,24 @@ string PISMTime::units_string() {
   return "seconds";
 }
 
-/**
- * Returns `true` if PISM should use the reference date in units
- * strings of time variables read from input files.
- *
- * Using the reference date only makes sense if PISM's time management
- * uses a reference date, i.e. in runs using a calendar.
- */
-bool PISMTime::use_reference_date() {
-  return false;
+
+string PISMTime::CF_units_to_PISM_units(string input) {
+  size_t n = input.find("since");
+  
+  /*!
+    \note This code finds the string "since" in the units_string and
+    terminates it on the first 's' of "since", if this sub-string was found.
+    This is done to ignore the reference date in the time units string (the
+    reference date specification always starts with this word).
+  */
+  if (n != string::npos)
+    input.resize(n);
+
+  // strip trailing spaces
+  while (ends_with(input, " "))
+    input.resize(input.size() - 1);
+
+  return input;
 }
 
 PetscErrorCode PISMTime::process_ys(double &result, bool &flag) {
@@ -193,7 +194,7 @@ PetscErrorCode PISMTime::init() {
 
 string PISMTime::date(double T) {
   char tmp[256];
-  snprintf(tmp, 256, "%3.3f", seconds_to_years(T));
+  snprintf(tmp, 256, "%3.3f", m_unit_system.convert(T, "seconds", "years"));
   return string(tmp);
 }
 
@@ -211,7 +212,8 @@ string PISMTime::end_date() {
 
 string PISMTime::run_length() {
   char tmp[256];
-  snprintf(tmp, 256, "%3.3f", seconds_to_years(m_run_end - m_run_start));
+  snprintf(tmp, 256, "%3.3f",
+           m_unit_system.convert(m_run_end - m_run_start, "seconds", "years"));
   return string(tmp);
 }
 
@@ -228,7 +230,8 @@ double PISMTime::mod(double time, double period) {
 }
 
 double PISMTime::year_fraction(double T) {
-  return seconds_to_years(T) - floor(seconds_to_years(T));
+  double Y = m_unit_system.convert(T, "seconds", "years");
+  return Y - floor(Y);
 }
 
 double PISMTime::day_of_the_year_to_day_fraction(unsigned int day) {
@@ -236,14 +239,12 @@ double PISMTime::day_of_the_year_to_day_fraction(unsigned int day) {
   return (sperd / m_secpera) * (double) day;
 }
 
-
-
 double PISMTime::calendar_year_start(double T) {
   return T - this->mod(T, m_secpera);
 }
 
 double PISMTime::increment_date(double T, int years) {
-  return T + m_secpera * years;
+  return T + m_unit_system.convert(years, "years", "seconds");
 }
 
 PetscErrorCode PISMTime::parse_times(string spec,
@@ -489,9 +490,9 @@ PetscErrorCode PISMTime::compute_times(double time_start, double delta, double t
                                        string keyword,
                                        vector<double> &result) {
   if (keyword == "yearly") {
-    delta = m_secpera;
+    delta = m_unit_system.convert(1.0, "year", "seconds");
   } else if (keyword == "monthly") {
-    delta = m_secpera / 12.0;
+    delta = m_unit_system.convert(1.0, "month", "seconds");
   } else if (keyword != "simple") {
     PetscPrintf(m_com, "PISM ERROR: Unknown time range keyword: %s.\n",
                 keyword.c_str());
