@@ -76,7 +76,7 @@ echo "creating unscaled precip anomaly file ... "
 ncks -O -v preciptation ANT_climate_forcing_2004_2098_v3.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
 # change name and convert to ice-equivalent units;
 # email 13 July 2011 from Bindshadler says Charles Jackson confirms density 1000.0 is correct
-ncap22 -O -s 'precip=float(preciptation*(1000.0/910.0))' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
+ncap2 -O -s 'precip=float(preciptation*(1000.0/910.0))' ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
 # remove the unneeded 'preciptation' var
 ncks -O -v preciptation -x ar4_ant_precip_anomaly_scalefactor_1.0.nc ar4_ant_precip_anomaly_scalefactor_1.0.nc
 # remove now incorrect lwe_... standard name
