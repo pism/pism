@@ -1655,7 +1655,7 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, PISMUnit &from, 
   if (c == NULL) {              // can't convert
     ierr = PetscPrintf(com,
                        "PISM ERROR: NCTimeseries '%s': attempted to convert data from '%s' to '%s'.\n",
-                       short_name.c_str(), from_name.c_str(), to_name.c_str());
+                       short_name.c_str(), from_name.c_str(), to_name.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -1938,7 +1938,7 @@ PetscErrorCode NCTimeBounds::change_units(vector<double> &data, PISMUnit &from, 
   if (c == NULL) {              // can't convert
     ierr = PetscPrintf(com,
                        "PISM ERROR: NCTimeBounds '%s': attempted to convert data from '%s' to '%s'.\n",
-                       short_name.c_str(), from_name.c_str(), to_name.c_str());
+                       short_name.c_str(), from_name.c_str(), to_name.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
