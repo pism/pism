@@ -45,7 +45,7 @@ PetscErrorCode InvSSATikhonovLCL::construct() {
   PetscReal stressScale = grid.config.get("tauc_param_tauc_scale");
   m_constraintsScale = grid.Lx*grid.Ly*4*stressScale;
 
-  m_velocityScale = grid.config.get("inv_ssa_velocity_scale")/secpera;
+  m_velocityScale = grid.config.get("inv_ssa_velocity_scale", "m/year", "m/second");
 
 
   PetscInt design_stencil_width = m_d0.get_stencil_width();
