@@ -201,7 +201,7 @@ PetscErrorCode IceModel::list_diagnostics() {
       set<string>::iterator j = list.begin();
       while(j != list.end()) {
         IceModelVec *v = variables.get(*j);
-        
+
         if (v != NULL && v->get_ndims() == d) {
           NCSpatialVariable var = v->get_metadata();
 

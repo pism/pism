@@ -38,7 +38,7 @@
 #include "PISMDiagnostic.hh"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
-  : grid(g), 
+  : grid(g),
     mapping(g.get_unit_system()),
     config(conf),
     overrides(conf_overrides),

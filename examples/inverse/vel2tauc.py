@@ -64,7 +64,7 @@ class Vel2TaucPlotListener(PISM.invert_ssa.PlotListener):
     zeta = self.toproczero(data.zeta)      
 
     secpera = grid.convert(1.0, "year", "second")
-    
+
     if self.grid.rank == 0:
       import matplotlib.pyplot as pp
     

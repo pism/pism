@@ -47,7 +47,7 @@ static char help[] =
 class SSATestCaseExp: public SSATestCase
 {
 public:
-  SSATestCaseExp(MPI_Comm com, PetscMPIInt rank, 
+  SSATestCaseExp(MPI_Comm com, PetscMPIInt rank,
                  PetscMPIInt size, NCConfigVariable &c)
     : SSATestCase(com,rank,size,c)
   {
