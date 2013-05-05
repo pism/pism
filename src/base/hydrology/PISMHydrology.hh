@@ -55,14 +55,18 @@ For more information see [\ref vanPeltBuelerDRAFT].  Background references for
 such models include [\ref FlowersClarke2002_theory, \ref Hewittetal2012,
 \ref Schoofetal2012].
 
-These models also either track a separate, but coupled, amount of water which
-is held in local till storage, or they lack that mechanism.  If they lack the
-mechanism then till_water_thickness() returns zero while till_water_pressure()
-returns subglacial_water_pressure().  If they have the mechanism then
-generally the subglacial and till pressures are different.  The till pressure
-is used by the Mohr-Coulomb criterion to provide a yield stress.  References
-for such models with till storage include [\ref BBssasliding,  
+These models alway have a separate, but potentially coupled, amount of water
+which is held in local till storage.  Generally the transportable water (bwat)
+and till water (tillwat) thicknesses are different.  Also, generally the
+tranportable water (bwp) till water (tillwp) pressures are different.
+References for models with till storage include [\ref BBssasliding,
 \ref SchoofTill, \ref TrufferEchelmeyerHarrison, \ref Tulaczyketal2000b].
+
+The till water pressure, not the tranportable water pressure, is used by the
+Mohr-Coulomb criterion to provide a yield stress.
+
+The base class does not implement the evolution of the till water thickness.
+It does not report a till water pressure.
 
 These models also either track the amount of englacial water, in a manner
 which allows computation of an effective thickness and which is returned by
@@ -103,26 +107,16 @@ public:
 
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt);
 
-  // derived classes need to have a model state, which will be the variables in this set:
-  virtual void add_vars_to_output(string keyword, set<string> &result) = 0;
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype) = 0;
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc) = 0;
+  // in the base class these only add/define/write tillwat
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
-  // derived classes need to be able to update their internal state
-  using PISMComponent_TS::update;
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
-
-  // regardless of the derived class model state variables, these methods
-  // need to be implemented so that PISMHydrology is useful to the outside
-  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
-
-  // these two exist in the base class and set result = 0:
-  virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
+  // all PISMHydrology models have a Wtil state variable, which this returns
   virtual PetscErrorCode till_water_thickness(IceModelVec2S &result);
 
-  // this method needs to be implemented by the derived class
-  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result) = 0;
+  // this exists in the base class and sets result = 0:
+  virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
 
   // this diagnostic method returns the standard shallow approximation
   virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
@@ -130,109 +124,69 @@ public:
   // this diagnostic method returns zero in the base class
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
+  // these methods MUST be implemented in the derived class
+  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result) = 0;
+  using PISMComponent_TS::update;
+  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
+
 protected:
+  // this model's state
+  IceModelVec2S Wtil;      // effective thickness of till
   // this model's workspace
   IceModelVec2S total_input;
+
   // pointers into IceModel; these describe the ice sheet and the source
   IceModelVec2S *thk,   // ice thickness
                 *bed,   // bed elevation (not all models need this)
                 *cellarea, // projection-dependent area of each cell, used in mass reporting
                 *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
-  IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
-  PetscReal     inputtobed_period, inputtobed_reference_time;
   PISMVars *variables;
-  bool report_mass_accounting;
+
+  // for time dependent input of water to bed (in addition to bmelt)
+  IceModelVec2T *inputtobed;
+  PetscReal     inputtobed_period, inputtobed_reference_time;
   virtual PetscErrorCode get_input_rate(
                             PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
-  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
-                            PetscReal &icefreelost, PetscReal &oceanlost, PetscReal &negativegain);
+
+  virtual PetscErrorCode check_Wtil_bounds();
 };
 
 
-//! \brief The subglacial hydrology model from Bueler & Brown (2009) WITHOUT contrived water diffusion.
+//! The PISM minimal model has till in a "can".  Water that overflows the can is not conserved.  Thus there is no true hydrology, i.e. no model for transport.
 /*!
-The name "till-can" comes from the following mental image:  Each map-plane cell
-under the glacier or ice sheet does not communicate with the next cell; i.e.
-there are "can walls" separating the cells.  The cans are "open-topped" in the
-sense that they fill up to level bwat_max.  Any water exceeding bwat_max "spills
-over the sides" \e and \e disappears.  Thus this model is not mass conserving.
-It is useful for computing a till yield stress based on a time-integrated basal
-melt rate.
+This is the minimum functional derived class.  It updates till water thickness.
+It returns a simple model for the pressure of the water stored in till.
 
-See [\ref BBssasliding] and [\ref Tulaczyketal2000b].  See this URL for a talk
-where the "till-can" metaphor is illustrated:
+It has no tranportable water so subglacial_water_thickness() returns zero.
+
+The method subglacial_water_pressure() is trivialized: it returns overburden
+pressure.
+
+This model can give no meaningful report on conservation errors.
+
+Here is a talk which illustrates the "till-can" metaphor:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
-
-The paper [\ref BBssasliding] used this model but with contrived diffusion of
-the water.  It is implemented in the derived class PISMDiffuseOnlyHydrology.
  */
-class PISMTillCanHydrology : public PISMHydrology {
+class PISMNullTransportHydrology : public PISMHydrology {
 public:
-  PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf, bool Whasghosts);
-  virtual ~PISMTillCanHydrology() {}
+  PISMNullTransportHydrology(IceGrid &g, const NCConfigVariable &conf)
+    : PISMHydrology(g, conf) {}
+  virtual ~PISMNullTransportHydrology() {}
 
-  virtual PetscErrorCode init(PISMVars &vars);
-
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
-
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
-
+  // sets result = 0
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+
+  // sets result = overburden pressure
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
-protected:
-  // this model's state
-  IceModelVec2S W;      // water layer thickness
+  // sets result = Bueler&Brown version of pressure of till water
+  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result);
 
-  virtual PetscErrorCode allocate(bool Whasghosts);
-  virtual PetscErrorCode check_W_bounds();
-
-  //! \brief Updates the basal water layer thickness (in meters) at a grid cell.
-  /*!
-   * @param[in] my_W water layer thickness before the update
-   * @param[in] dWinput change in water amount due do melt/refreeze (can be of either sign)
-   * @param[in] dWdecay change in water amount due to the "decay" mechanism (non-negative)
-   * @param[in] Wmax maximum allowed water layer thickness
-   *
-   * @returns The new basal water thickness, W.  Note that W
-   * computed here may be negative due to refreeze, but not due to the gradual decay.
-   */
-  inline PetscReal pointwise_update(PetscReal my_W, PetscReal dWinput, PetscReal dWdecay, PetscReal Wmax) {
-    assert(dWdecay >= 0);
-
-    my_W += dWinput;       // if this makes my_W negative then we leave it for reporting
-
-    // avoids having the decay rate contribution reported as an icefree or floating mass loss:
-    if (dWdecay < my_W)    // case where my_W is largish and decay rate reduces it
-      my_W -= dWdecay;
-    else if (my_W >= 0.0)  // case where decay rate would go past zero ... don't allow that
-      my_W = 0.0;
-
-    return PetscMin(Wmax, my_W);  // overflows top of "can" and we lose it
-  }
-};
-
-
-//! \brief The subglacial hydrology model from Bueler & Brown (2009) WITH contrived water diffusion.
-/*!
-Implements the full model in [\ref BBssasliding], including the diffusion in
-equation (11).
- */
-class PISMDiffuseOnlyHydrology : public PISMTillCanHydrology {
-public:
-  PISMDiffuseOnlyHydrology(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PISMDiffuseOnlyHydrology() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-
+  // solves an implicit step of a highly-simplified ODE
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
-
-protected:
-  IceModelVec2S Wnew;  // new value at update
-  virtual PetscErrorCode allocateWnew();
 };
 
 
@@ -328,7 +282,10 @@ protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode init_actions(PISMVars &vars, bool i_set, bool bootstrap_set);
 
-  virtual PetscErrorCode boundary_mass_changes_with_null(IceModelVec2S &Wnew,
+  // when we update the transportable water, careful mass accounting at the
+  // boundary is needed; we update Wnew and so model state (Wtil or W) is not touched
+  bool report_mass_accounting;
+  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
              PetscReal &icefreelost, PetscReal &oceanlost,
              PetscReal &negativegain, PetscReal &nullstriplost);
 

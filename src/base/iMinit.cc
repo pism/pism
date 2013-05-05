@@ -816,10 +816,8 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
 
   if (subglacial_hydrology != NULL) // indicates it has already been allocated
     return 0;
-  if      (hydrology_model == "tillcan")
-    subglacial_hydrology = new PISMTillCanHydrology(grid, config, false);
-  else if (hydrology_model == "diffuseonly")
-    subglacial_hydrology = new PISMDiffuseOnlyHydrology(grid, config);
+  if      (hydrology_model == "null")
+    subglacial_hydrology = new PISMNullTransportHydrology(grid, config);
   else if (hydrology_model == "routing")
     subglacial_hydrology = new PISMRoutingHydrology(grid, config);
   else if (hydrology_model == "distributed")

@@ -102,8 +102,8 @@ netcdf pism_config {
     pism_config:ssa_dirichlet_bc = "no";
     pism_config:ssa_dirichlet_bc_doc = "apply SSA velocity Dirichlet boundary condition";
 
-    pism_config:hydrology_model = "tillcan";
-    pism_config:hydrology_model_doc = "Choose the hydrology sub-model from 'tillcan', 'diffuseonly', 'routing', 'distributed'.  These models determine the evolution of the subglacial water layer thickness (bwat) and pressure (bwp).  Normally bwat affects the basal values of the internal energy (enthalpy or temperature) field, and bwat, bwp determine the strength of the subglacial layer (the basal shearstress).  The 'tillcan' model (default) does not move water laterally; roughly it is the undrained plastic till model of [\\ref Tulaczyketal2000b].  The 'diffuseonly' model is documented in [\\ref BBssasliding]; see equation (11).  Neither 'tillcan' nor 'diffuseonly' are mass-conserving.  The 'routing' model is a mass-conserving, minimal distributed subglacial hydrology model that directs water along the steepest descent route of the hydraulic potential, and where the pressure is a fixed fraction of overburden; this model is suitable for identifying locations of subglacial lakes.  The 'distributed' model is a mass-conserving, distributed subglacial hydrology model that models the physical opening and closing of linked cavities on an area averaged basis; pressure evolves nontrivially.  The 'routing' and 'distributed' models may make PISM run pretty slowly because of the fast time-scale for liquid water movement.";
+    pism_config:hydrology_model = "null";
+    pism_config:hydrology_model_doc = "Choose the hydrology sub-model from 'null', 'routing', 'distributed'.";
 
     pism_config:use_linear_in_temperature_heat_capacity = "no";
     pism_config:use_linear_in_temperature_heat_capacity_doc = "If yes, use varcEnthalpyConverter class to convert (internally) temperature to/from enthalpy.  It is based on equation (4.39) in [\\ref GreveBlatter2009].  Otherwise use default class EnthalpyConverter which has temperature-independent (i.e. constant) specific heat capacity, set by constant ice_specific_heat_capacity.";
@@ -132,8 +132,8 @@ netcdf pism_config {
     pism_config:bootstrapping_uplift_value_no_var = 0.0;
     pism_config:bootstrapping_uplift_value_no_var_doc = "m s-1; uplift value to use if dbdt variable is absent in bootstrapping file";
 
-    pism_config:bootstrapping_bwat_value_no_var = 0.0;
-    pism_config:bootstrapping_bwat_value_no_var_doc = "m; basal water thickness value to use if variable bwat is absent in bootstrapping file";
+    pism_config:bootstrapping_tillwat_value_no_var = 0.0;
+    pism_config:bootstrapping_tillwat_value_no_var_doc = "m; till water thickness value to use if variable tillwat is absent in bootstrapping file";
 
     pism_config:bootstrapping_enwat_value_no_var = 0.0;
     pism_config:bootstrapping_enwat_value_no_var_doc = "m; effective englacial water thickness value to use if variable enwat is absent in bootstrapping file";
@@ -213,17 +213,11 @@ netcdf pism_config {
     pism_config:hydrology_pressure_fraction = 0.95;
     pism_config:hydrology_pressure_fraction_doc = "pure number; water pressure is this fraction of overburden in PISMTillCanHydrology and derived models; water pressure is scaled by this fraction in PISMRoutingHydrology";
 
-    pism_config:hydrology_bwat_max = 2.0;
-    pism_config:hydrology_bwat_max_doc = "m; maximum thickness of the basal melt water layer; used by PISMTillCanHydrology and derived models; not used by some hydrology models";
+    pism_config:hydrology_tillwat_max = 2.0;
+    pism_config:hydrology_tillwat_max_doc = "m; maximum effective thickness of the water stored in till";
 
-    pism_config:hydrology_bwat_decay_rate = 3.16887646154128e-11;
-    pism_config:hydrology_bwat_decay_rate_doc = "m s-1; = 1 m per 1000 years; rate at which bwat is reduced to zero, in absence of other effects like basal melt rate and/or diffusion; used by PISMTillCanHydrology and derived models; not used by some hydrology models";
-
-    pism_config:hydrology_bwat_diffusion_distance = 2e4;
-    pism_config:hydrology_bwat_diffusion_distance_doc = "m; diffusion distance for melt water thickness; only used by hydrology model 'diffuseonly'=PISMDiffuseOnlyHydrology";
-
-    pism_config:hydrology_bwat_diffusion_time = 1000.0;
-    pism_config:hydrology_bwat_diffusion_time_doc = "years; diffusion time for melt water thickness; only used by hydrology model 'diffuseonly'=PISMDiffuseOnlyHydrology";
+    pism_config:hydrology_tillwat_decay_rate_null = 3.16887646154128e-11;
+    pism_config:hydrology_tillwat_decay_rate_null_doc = "m s-1; = 1 m per 1000 years; rate at which tillwat is reduced to zero, in absence of other effects like input; only used by -hydrology null model";
 
     pism_config:hydrology_hydraulic_conductivity = 1.0e-2;
     pism_config:hydrology_hydraulic_conductivity_doc = "m^{2 beta - alpha} s^{2 beta - 3} kg^{1-beta}; = k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; units depend on powers alpha = hydrology_thickness_power_in_flux and beta = hydrology_potential_gradient_power_in_flux; used by PISMRoutingHydrology and PISMDistributedHydrology";

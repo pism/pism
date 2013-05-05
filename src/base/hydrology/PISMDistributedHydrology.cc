@@ -105,6 +105,8 @@ PetscErrorCode PISMRoutingHydrology::init(PISMVars &vars) {
     ierr = PISMOptionsIsSet("-i", "PISM input file", i); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-report_mass_accounting",
+      "Report to stdout on mass accounting in hydrology models", report_mass_accounting); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-hydrology_null_strip",
                            "set the width, in km, of the strip around the edge of the computational domain in which hydrology is inactivated",
                            stripwidth,stripset); CHKERRQ(ierr);
@@ -200,15 +202,63 @@ PetscErrorCode PISMRoutingHydrology::check_W_nonnegative() {
 }
 
 
-PetscErrorCode PISMRoutingHydrology::boundary_mass_changes_with_null(
+
+
+//! Correct the new water thickness based on boundary requirements.  Do mass accounting.
+/*!
+At ice free locations and ocean locations we require that the water thickness
+is zero at the end of each time step.  Also we require that any negative water
+thicknesses be set to zero (i.e. projection to enforce \f$W\ge 0\f$).
+
+This method takes care of these requirements by altering Wnew appropriately.
+
+We account for these mass changes.
+ */
+PetscErrorCode PISMRoutingHydrology::boundary_mass_changes(
             IceModelVec2S &myWnew,
             PetscReal &icefreelost, PetscReal &oceanlost,
             PetscReal &negativegain, PetscReal &nullstriplost) {
-
   PetscErrorCode ierr;
+  PetscReal fresh_water_density = config.get("fresh_water_density");
+  PetscReal my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
+  MaskQuery M(*mask);
+  ierr = Wnew.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = cellarea->begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscReal dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+      if (Wnew(i,j) < 0.0) {
+        my_negativegain += -Wnew(i,j) * dmassdz;
+        Wnew(i,j) = 0.0;
+      }
+      if (M.ice_free_land(i,j) && (Wnew(i,j) > 0.0)) {
+        my_icefreelost += Wnew(i,j) * dmassdz;
+        Wnew(i,j) = 0.0;
+      }
+      if (M.ocean(i,j) && (Wnew(i,j) > 0.0)) {
+        my_oceanlost += Wnew(i,j) * dmassdz;
+        Wnew(i,j) = 0.0;
+      }
+    }
+  }
+  ierr = Wnew.end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = cellarea->end_access(); CHKERRQ(ierr);
 
-  ierr = PISMHydrology::boundary_mass_changes(myWnew,
-            icefreelost,oceanlost,negativegain); CHKERRQ(ierr);
+  // make global over all proc domains (i.e. whole glacier/ice sheet)
+  ierr = PISMGlobalSum(&my_icefreelost, &icefreelost, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&my_oceanlost, &oceanlost, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalSum(&my_negativegain, &negativegain, grid.com); CHKERRQ(ierr);
+
+  // this reporting is redundant for the simpler models but shows short time step
+  // reporting for nontrivially-distributed (possibly adaptive) hydrology models
+  ierr = verbPrintf(4, grid.com,
+    "  mass losses in hydrology time step:\n"
+    "     land margin loss = %.3e kg, ocean margin loss = %.3e kg, (W<0) gain = %.3e kg\n",
+    icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
+  return 0;
+
   if (stripwidth <= 0.0)  return 0;
 
   PetscReal fresh_water_density = config.get("fresh_water_density");

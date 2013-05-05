@@ -100,15 +100,6 @@ public:
 };
 
 
-//! \brief Reports the amount of water stored in subglacial till as an effective thickness.
-class PISMHydrology_tillwat : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_tillwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
 //! \brief Reports the modeled pressure of the water stored in subglacial till.
 class PISMHydrology_tillwp : public PISMDiag<PISMHydrology>
 {

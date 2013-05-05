@@ -164,24 +164,6 @@ PetscErrorCode PISMHydrology_enwat::compute(IceModelVec* &output) {
 }
 
 
-PISMHydrology_tillwat::PISMHydrology_tillwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiag<PISMHydrology>(m, g, my_vars) {
-  vars[0].init_2d("tillwat", grid);
-  set_attrs("effective thickness of water stored in subglacial till", "", "m", "m", 0);
-}
-
-
-PetscErrorCode PISMHydrology_tillwat::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "tillwat", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = model->till_water_thickness(*result); CHKERRQ(ierr);
-  output = result;
-  return 0;
-}
-
-
 PISMHydrology_tillwp::PISMHydrology_tillwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
     : PISMDiag<PISMHydrology>(m, g, my_vars) {
   vars[0].init_2d("tillwp", grid);
