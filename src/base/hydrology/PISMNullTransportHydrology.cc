@@ -19,6 +19,12 @@
 #include "PISMHydrology.hh"
 
 
+void PISMNullTransportHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  PISMHydrology::get_diagnostics(dict);
+  dict["bwat"] = new PISMHydrology_bwat(this, grid, *variables);
+}
+
+
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
 PetscErrorCode PISMNullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);

@@ -20,6 +20,24 @@
 #include "hydrology_diagnostics.hh"
 
 
+PISMHydrology_bwat::PISMHydrology_bwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
+    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+  vars[0].init_2d("bwat", grid);
+  set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
+}
+
+
+PetscErrorCode PISMHydrology_bwat::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "bwat", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+  ierr = model->subglacial_water_thickness(*result); CHKERRQ(ierr);
+  output = result;
+  return 0;
+}
+
 PISMHydrology_bwp::PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
     : PISMDiag<PISMHydrology>(m, g, my_vars) {
   vars[0].init_2d("bwp", grid);

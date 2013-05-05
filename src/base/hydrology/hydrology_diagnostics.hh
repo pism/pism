@@ -28,13 +28,13 @@
 Interfaces for the following diagnostics which are handled by PISMHydrology
 instances; some of these may be replaced by state variables; listed by short
 name:
-  * bwp
+  * bwat [replace by state var in PISMRoutingHydrology and PISMDistributedHydrology]
+  * bwp [replace by state var in PISMDistributedHydrology]
   * bwprel
   * effbwp
   * hydroinput
   * wallmelt
-  * enwat
-  * tillwat
+  * enwat [replace by state var in PISMDistributedHydrology]
   * tillwp
 Interfaces for the following diagnostics which are handled by
 PISMRoutingHydrology instances:
@@ -42,11 +42,16 @@ PISMRoutingHydrology instances:
 */
 
 
+//! \brief Reports the thickness of the transportable water in the subglacial layer.
+class PISMHydrology_bwat : public PISMDiag<PISMHydrology>
+{
+public:
+  PISMHydrology_bwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
 //! \brief Reports the pressure of the transportable water in the subglacial layer.
-/*!
-This is used by most derived classes of PISMHydrology but not by
-PISMDistributedHydrology, in which the modeled pressure is a state variable.
- */
 class PISMHydrology_bwp : public PISMDiag<PISMHydrology>
 {
 public:
