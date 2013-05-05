@@ -106,7 +106,9 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  ierr = PISMRoutingHydrology::init_actions(vars,i_set,bootstrap_set); CHKERRQ(ierr);
+  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
+
+  ierr = PISMRoutingHydrology::init_bwat(vars,i_set,bootstrap_set); CHKERRQ(ierr);
 
   // prepare for -i or -bootstrap
   string filename;
@@ -202,11 +204,12 @@ PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const
 
 
 void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
+  dict["tillwp"] = new PISMHydrology_tillwp(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
+  dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
 }
 
 

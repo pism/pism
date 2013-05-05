@@ -106,16 +106,16 @@ PetscErrorCode PISMRoutingHydrology::init(PISMVars &vars) {
     if (stripset) stripwidth *= 1.0e3;
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-  // does not produce confusing messages in derived classes:
-  ierr = init_actions(vars,i,bootstrap); CHKERRQ(ierr);
+
+  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
+
+  ierr = init_bwat(vars,i,bootstrap); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode PISMRoutingHydrology::init_actions(PISMVars &vars, bool i_set, bool bootstrap_set) {
+PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars, bool i_set, bool bootstrap_set) {
   PetscErrorCode ierr;
-
-  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
 
   IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
   if (W_input != NULL) { // a variable called "bwat" is already in context
@@ -183,7 +183,7 @@ PetscErrorCode PISMRoutingHydrology::check_W_nonnegative() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (W(i,j) < 0.0) {
         PetscPrintf(grid.com,
-           "PISM ERROR: disallowed negative subglacial water layer thickness (bwat)\n"
+           "PISMRoutingHydrology ERROR: disallowed negative subglacial water layer thickness (bwat)\n"
            "    W(i,j) = %.6f m at (i,j)=(%d,%d)\n"
            "ENDING ... \n\n", W(i,j),i,j);
         PISMEnd();
@@ -193,8 +193,6 @@ PetscErrorCode PISMRoutingHydrology::check_W_nonnegative() {
   ierr = W.end_access(); CHKERRQ(ierr);
   return 0;
 }
-
-
 
 
 //! Correct the new water thickness based on boundary requirements.  Do mass accounting.
@@ -309,6 +307,7 @@ PetscErrorCode PISMRoutingHydrology::subglacial_hydraulic_potential(IceModelVec2
 
   const PetscReal
     rg = config.get("fresh_water_density") * config.get("standard_gravity");
+
   ierr = subglacial_water_pressure(result); CHKERRQ(ierr);
   ierr = result.add(rg, (*bed)); CHKERRQ(ierr); // result  <-- P + rhow g b
   ierr = result.add(rg, W); CHKERRQ(ierr);      // result  <-- result + rhow g (b + W)
@@ -657,7 +656,7 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
 }
 
 
-//! Update the model state variable W by running the subglacial hydrology model.
+//! Update the model state variables W and Wtil by applying the subglacial hydrology model equations.
 /*!
 Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
 is generally on the order of months to years.  This hydrology model will take its
@@ -684,6 +683,8 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
             delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
   PetscInt hydrocount = 0; // count hydrology time steps
+
+FIXME:  Wtil
 
   while (ht < t + dt) {
     hydrocount++;
