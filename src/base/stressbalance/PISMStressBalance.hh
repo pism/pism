@@ -19,7 +19,7 @@
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
 
-#include "PISMComponent.hh"     // derives from PISMComponent_Diag
+#include "PISMComponent.hh"     // derives from PISMComponent
 #include "iceModelVec.hh"
 
 class ShallowStressBalance;
@@ -38,11 +38,11 @@ does not show the call graph, as would doxygen.)
 
 this command fails: \dotfile stressbalance-out.dot
  */
-class PISMStressBalance : public PISMComponent_Diag
+class PISMStressBalance : public PISMComponent
 {
 public:
   PISMStressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
-                    PISMOceanModel *ocean, const NCConfigVariable &config);
+                    const NCConfigVariable &config);
   virtual ~PISMStressBalance();
 
   //! \brief Initialize the PISMStressBalance object.
@@ -74,7 +74,7 @@ public:
 
   //! \brief Update all the fields if fast == false, only update diffusive flux
   //! and max. diffusivity otherwise.
-  virtual PetscErrorCode update(bool fast);
+  virtual PetscErrorCode update(bool fast, double sea_level);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   virtual PetscErrorCode get_2D_advective_velocity(IceModelVec2V* &result);
@@ -140,7 +140,6 @@ protected:
 
   ShallowStressBalance *m_stress_balance;
   SSB_Modifier *m_modifier;
-  PISMOceanModel *m_ocean;
 };
 
 #endif /* _PISMSTRESSBALANCE_H_ */

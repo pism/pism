@@ -441,7 +441,6 @@ int main(int argc, char *argv[]) {
 
     PISMStressBalance stress_balance(grid,
                                      trivial_stress_balance, sia,
-                                     NULL, // no ocean model
                                      config);
 
     // fill the fields:
@@ -454,7 +453,7 @@ int main(int argc, char *argv[]) {
 
     // Solve (fast==true means "no 3D update and no strain heating computation"):
     bool fast = false;
-    ierr = stress_balance.update(fast); CHKERRQ(ierr);
+    ierr = stress_balance.update(fast, 0.0); CHKERRQ(ierr);
 
     // Report errors relative to the exact solution:
     IceModelVec3 *u_sia, *v_sia, *w_sia, *sigma;

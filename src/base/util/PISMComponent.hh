@@ -50,17 +50,6 @@ class PISMVars;
   for PISM sub-models, such as surface, atmosphere, ocean and bed deformation
   models.
 
-  There are two kinds of PISM's components:
-
-  - diagnostic components (PISMComponent_Diag) and
-  - time-stepping components (PISMComponent_TS).
-
-  The main difference is that diagnostic components do not need to know the
-  model time to perform an update, while time-stepping ones need to know the
-  time-step to update for (usually given as the my_t, my_dt pair defining
-  the (my_t, my_t + my_dt) interval) and may impose restrictions on a
-  time-step that is possible at a given time during a run.
-
   \subsection pismcomponent_init Initialization
 
   PISMComponent::init() should contain all the initialization
@@ -134,23 +123,6 @@ protected:
   virtual PetscErrorCode find_pism_input(string &filename, bool &regrid, int &start);
   IceGrid &grid;
   const NCConfigVariable &config;
-};
-
-//! \brief An abstract class for "diagnostic" components (such as stress
-//! balance modules).
-/*!
- * Here "diagnostic" means "one that performs a computation which does not
- * involve time-stepping".
- */
-class PISMComponent_Diag : public PISMComponent
-{
-public:
-  PISMComponent_Diag(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent(g, conf) {}
-  virtual ~PISMComponent_Diag() {}
-
-  virtual PetscErrorCode update(bool /*fast*/)
-  { return 0; }
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to

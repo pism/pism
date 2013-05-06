@@ -290,7 +290,7 @@ PetscErrorCode IceCompModel::allocate_stressbalance() {
     ShallowStressBalance *ssb = new SIA_Sliding(grid, *basal, *EC, config);
     SIAFD *sia = new SIAFD(grid, *EC, config);
 
-    stress_balance = new PISMStressBalance(grid, ssb, sia, NULL, config);
+    stress_balance = new PISMStressBalance(grid, ssb, sia, config);
     ierr = stress_balance->init(variables); CHKERRQ(ierr);
   } else {
     ierr = IceModel::allocate_stressbalance(); CHKERRQ(ierr);

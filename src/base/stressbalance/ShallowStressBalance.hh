@@ -32,12 +32,12 @@ class EnthalpyConverter;
 class IceBasalResistancePlasticLaw;
 
 //! Shallow stress balance (such as the SSA).
-class ShallowStressBalance : public PISMComponent_Diag
+class ShallowStressBalance : public PISMComponent
 {
 public:
   ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b,
                        EnthalpyConverter &e, const NCConfigVariable &conf)
-    : PISMComponent_Diag(g, conf), basal(b), flow_law(NULL), EC(e)
+    : PISMComponent(g, conf), basal(b), flow_law(NULL), EC(e)
   {
     m_vel_bc = NULL; bc_locations = NULL; variables = NULL;
     max_u = max_v = 0.0;
@@ -65,6 +65,8 @@ public:
   void set_sea_level_elevation(PetscReal new_sea_level)
   { sea_level = new_sea_level; }
 
+  virtual PetscErrorCode update(bool fast) = 0;
+
   // interface to the data provided by the stress balance object:
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
@@ -80,16 +82,16 @@ public:
   { result = &basal_frictional_heating; return 0; }
 
   virtual PetscErrorCode compute_2D_principal_strain_rates(IceModelVec2V &velocity,
-							   IceModelVec2Int &mask,
+                                                           IceModelVec2Int &mask,
                                                            IceModelVec2 &result);
 
   virtual PetscErrorCode compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                              IceModelVec2 &result);
 
   virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2V &velocity,
-							  IceModelVec2S &tauc,
-							  IceModelVec2Int &mask,
-							  IceModelVec2S &result);
+                                                          IceModelVec2S &tauc,
+                                                          IceModelVec2Int &mask,
+                                                          IceModelVec2S &result);
   // helpers:
 
   //! \brief Extends the computational grid (vertically).
@@ -183,4 +185,3 @@ public:
 };
 
 #endif /* _SHALLOWSTRESSBALANCE_H_ */
-

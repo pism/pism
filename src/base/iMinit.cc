@@ -782,7 +782,7 @@ PetscErrorCode IceModel::allocate_stressbalance() {
       }
       // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
       stress_balance = new PISMStressBalance(grid, my_stress_balance,
-                                             my_modifier, ocean, config);
+                                             my_modifier, config);
     }
 
     // PISM stress balance computations are diagnostic, i.e. do not

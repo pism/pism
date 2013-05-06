@@ -41,7 +41,6 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
 
   //! \brief Extends the computational grid (vertically).
