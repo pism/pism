@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMHydrology.hh"
+#include "hydrology_diagnostics.hh"
 
 
 void PISMNullTransportHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
@@ -73,7 +74,7 @@ PetscErrorCode PISMNullTransportHydrology::till_water_pressure(IceModelVec2S &re
 //! Update both the till water thickness (by a step of a simplified ODE) and the tranportable water thickness (set to zero in non-conserving way).
 /*!
 Does an implicit (backward Euler) step of the integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(W_{til}^{max} - W_{til}\right) + (m/\rho_w) - C.\f]
+  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(W_{til}^{max} - W_{til}\right) + (m/\rho_w) - C\f]
 where \f$\mu=\f$`hydrology_tillwat_rate`, \f$C=\f$`hydrology_tillwat_decay_rate_null`,
 and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is
 `total_input`.
@@ -92,10 +93,9 @@ PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal iced
 
   ierr = get_input_rate(icet,icedt,total_input); CHKERRQ(ierr);
 
-  PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-            mu       = config.get("hydrology_tillwat_rate"),
-            C        = config.get("hydrology_tillwat_decay_rate_null");
-
+  const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
+                  mu       = config.get("hydrology_tillwat_rate"),
+                  C        = config.get("hydrology_tillwat_decay_rate_null");
   if ((Wtilmax < 0.0) || (mu < 0.0) || (C < 0.0)) {
     PetscPrintf(grid.com,
        "PISMNullTransportHydrology ERROR: one of scalar config parameters is negative\n"

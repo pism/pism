@@ -822,7 +822,10 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
     subglacial_hydrology = new PISMRoutingHydrology(grid, config);
   else if (hydrology_model == "distributed")
     subglacial_hydrology = new PISMDistributedHydrology(grid, config, stress_balance);
-  else { SETERRQ(grid.com,1,"unknown value for configuration string 'hydrology_model'"); }
+  else {
+    SETERRQ1(grid.com,1,"unknown value for configuration string 'hydrology_model':\n"
+             "  has value '%s'\n", hydrology_model.c_str());
+  }
 
   return 0;
 }

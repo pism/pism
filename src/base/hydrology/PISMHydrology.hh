@@ -176,6 +176,8 @@ public:
     : PISMHydrology(g, conf) {}
   virtual ~PISMNullTransportHydrology() {}
 
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+
   // sets result = 0
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
 
@@ -265,6 +267,8 @@ public:
 
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result);
+
   virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
@@ -347,6 +351,7 @@ public:
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result);
   virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
 
 protected:
