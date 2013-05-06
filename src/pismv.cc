@@ -74,8 +74,9 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
     config.set_flag("use_eta_transformation", false);
+    config.set_string("calendar", "none");
 
-    IceGrid      g(com, rank, size, config);
+    IceGrid g(com, rank, size, config);
 
     // determine test (and whether to report error)
     string testname = "A";

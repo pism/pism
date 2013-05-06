@@ -95,7 +95,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   // the following inputtobed is not related to IceModel; we must read it ourselves
 
   if (itbfile_set) {
-    inputtobed_period = (itbperiod_set) ? grid.convert(itbperiod_years, "years", "seconds") : 0.0;
+    inputtobed_period = (itbperiod_set) ? itbperiod_years : 0.0;
     inputtobed_reference_time = (itbreference_set) ? grid.convert(itbreference_year, "years", "seconds") : 0.0;
 
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
@@ -211,7 +211,7 @@ PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, boo
     // if the user specifies periodized forcing, limit time-steps so that PISM
     // never tries to average data over an interval that begins in one period and
     // ends in the next one.
-    if (inputtobed_period > 1e-6)
+    if (inputtobed_period != 0)
       my_dt = PetscMin(my_dt, inputtobed_period - my_t);
     restrict_dt = (my_dt > 0);
   }

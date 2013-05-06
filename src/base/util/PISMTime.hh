@@ -25,7 +25,7 @@
 /**
  * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
  */
-inline int pism_validate_calendar_name(string name) {
+inline bool pism_is_valid_calendar_name(string name) {
   // Calendar names from the CF Conventions document (except the
   // 366_day (all_leap)):
   if (name == "standard"            ||
@@ -34,11 +34,12 @@ inline int pism_validate_calendar_name(string name) {
       name == "noleap"              ||
       name == "365_day"             ||
       name == "julian"              ||
-      name == "360_day") {
-    return 0;
+      name == "360_day"             ||
+      name == "none") {
+    return true;
   }
 
-  return 1;
+  return false;
 }
 
 //! \brief Time management class.
@@ -107,7 +108,7 @@ public:
   virtual string CF_units_to_PISM_units(string input);
 
   //! \brief Returns time since the origin modulo period.
-  virtual double mod(double time, double period);
+  virtual double mod(double time, unsigned int period_years);
 
   //! \brief Returns the fraction of a year passed since the last beginning of
   //! a year. Only useful in codes with a "yearly cycle" (such as the PDD model).
@@ -156,11 +157,16 @@ protected:
 
   virtual PetscErrorCode parse_interval_length(string spec, string &keyword, double *result);
 
+private:
+  double years_to_seconds(double input);
+  double seconds_to_years(double input);
+
+protected:
   MPI_Comm m_com;
   const NCConfigVariable &m_config;
   PISMUnitSystem m_unit_system;
   PISMUnit m_time_units;
-  double m_secpera;      //!< number of seconds in a year, for unit conversion
+  double m_year_length;      //!< number of seconds in a year, "mod" and "year fraction"
   double m_time_in_seconds, //!< current time, in seconds since the reference time
     m_run_start,                  //!< run start time, in seconds since the reference time
     m_run_end;                    //!< run end tim, in seconds since the reference time

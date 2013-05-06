@@ -627,8 +627,8 @@ netcdf pism_config {
    pism_config:time_dimension_name = "time";
    pism_config:time_dimension_name_doc = "The name of the time dimension in PISM output files.";
 
-   pism_config:calendar = "none";
-   pism_config:calendar_doc = "The calendar to use. Choose from standard,proleptic_Julian,proleptic_Gregorian,noleap,365_day,no_leap,360_day,none.";
+   pism_config:calendar = "365_day";
+   pism_config:calendar_doc = "The calendar to use. Choose from standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian.";
 
    pism_config:run_title = "";
    pism_config:run_title_doc = "Free-form string containing a concise description of the current run. This string is written to output files as the 'title' global attribute.";

@@ -95,8 +95,8 @@ public:
 protected:
   IceModelVec2T reference_surface;
   IceModelVec2S *surface, *thk;
-  PetscReal bc_period,          // in seconds
-    bc_reference_time,          // in seconds
+  unsigned int bc_period;
+  PetscReal bc_reference_time,          // in seconds
     temp_lapse_rate;
   string option_prefix;
 
@@ -140,7 +140,7 @@ protected:
     }
 
     if (bc_period_set) {
-      bc_period = Model::grid.convert(bc_period_years, "years", "seconds");
+      bc_period = bc_period_years;
     } else {
       bc_period = 0;
     }

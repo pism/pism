@@ -21,16 +21,41 @@
 #include <sstream>
 #include <assert.h>
 
+//! Convert model years into seconds using the year length
+//! corresponding to the current calendar.
+/*! Do not use this to convert quantities other than time intervals!
+ */
+double PISMTime::years_to_seconds(double input) {
+  return input * m_year_length;
+}
+
+//! Convert seconds into model years using the year length
+//! corresponding to the current calendar.
+/*! Do not use this to convert quantities other than time intervals!
+ */
+double PISMTime::seconds_to_years(double input) {
+  return input / m_year_length;
+}
+
+
 PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem unit_system)
   : m_com(c), m_config(conf), m_unit_system(unit_system),
     m_time_units(m_unit_system) {
 
-  m_secpera = m_unit_system.convert(1.0,  "year",  "seconds");
+  m_calendar_string = m_config.get_string("calendar");
 
-  m_calendar_string = "none";  // No calendar
+  double seconds_per_day = m_unit_system.convert(1.0, "day", "seconds");
+  if (calendar() == "360_day") {
+    m_year_length = 360 * seconds_per_day;
+  } else if (calendar() == "365_day" || calendar() == "noleap") {
+    m_year_length = 365 * seconds_per_day;
+  } else {
+    // use the ~365.2524-day year
+    m_year_length = m_unit_system.convert(1.0, "year", "seconds");
+  }
 
-  m_run_start = m_config.get("start_year", "years", "seconds");
-  m_run_end   = m_run_start + m_config.get("run_length_years", "years", "seconds");
+  m_run_start = years_to_seconds(m_config.get("start_year"));
+  m_run_end   = increment_date(m_run_start, m_config.get("run_length_years"));
 
   m_time_units.parse("seconds");
 
@@ -115,7 +140,7 @@ PetscErrorCode PISMTime::process_ys(double &result, bool &flag) {
 
   ierr = PISMOptionsReal("-ys", "Start year", result, flag); CHKERRQ(ierr);
 
-  result =  m_unit_system.convert(result,  "years",  "seconds");
+  result = years_to_seconds(result);
 
   return 0;
 }
@@ -126,7 +151,7 @@ PetscErrorCode PISMTime::process_y(double &result, bool &flag) {
 
   ierr = PISMOptionsReal("-y", "Run length, in years", result, flag); CHKERRQ(ierr);
 
-  result =  m_unit_system.convert(result,  "years",  "seconds");
+  result = years_to_seconds(result);
 
   return 0;
 }
@@ -137,7 +162,7 @@ PetscErrorCode PISMTime::process_ye(double &result, bool &flag) {
 
   ierr = PISMOptionsReal("-ye", "End year", result, flag); CHKERRQ(ierr);
 
-  result = m_unit_system.convert(result, "years", "seconds");
+  result = years_to_seconds(result);
 
   return 0;
 }
@@ -186,7 +211,7 @@ PetscErrorCode PISMTime::init() {
   } else if (y_set == true) {
     m_run_end = m_run_start + y_seconds;
   } else {
-    m_run_end = m_run_start + m_config.get("run_length_years", "years", "seconds");
+    m_run_end = increment_date(m_run_start, m_config.get("run_length_years"));
   }
 
   return 0;
@@ -194,7 +219,7 @@ PetscErrorCode PISMTime::init() {
 
 string PISMTime::date(double T) {
   char tmp[256];
-  snprintf(tmp, 256, "%3.3f", m_unit_system.convert(T, "seconds", "years"));
+  snprintf(tmp, 256, "%3.3f", seconds_to_years(T));
   return string(tmp);
 }
 
@@ -212,39 +237,40 @@ string PISMTime::end_date() {
 
 string PISMTime::run_length() {
   char tmp[256];
-  snprintf(tmp, 256, "%3.3f",
-           m_unit_system.convert(m_run_end - m_run_start, "seconds", "years"));
+  snprintf(tmp, 256, "%3.3f", seconds_to_years(m_run_end - m_run_start));
   return string(tmp);
 }
 
-double PISMTime::mod(double time, double period) {
-  if (period <= 0)
+double PISMTime::mod(double time, unsigned int period_years) {
+  if (period_years == 0)
     return time;
 
-  double tmp = time - floor(time / period) * period;
+  double period_seconds = years_to_seconds(period_years);
 
-  if (fabs(tmp - period) < 1)
+  double tmp = time - floor(time / period_seconds) * period_seconds;
+
+  if (fabs(tmp - period_seconds) < 1)
     tmp = 0;
 
   return tmp;
 }
 
 double PISMTime::year_fraction(double T) {
-  double Y = m_unit_system.convert(T, "seconds", "years");
+  double Y = seconds_to_years(T);
   return Y - floor(Y);
 }
 
 double PISMTime::day_of_the_year_to_day_fraction(unsigned int day) {
   const double sperd = 86400.0;
-  return (sperd / m_secpera) * (double) day;
+  return (sperd / m_year_length) * (double) day;
 }
 
 double PISMTime::calendar_year_start(double T) {
-  return T - this->mod(T, m_secpera);
+  return T - this->mod(T, 1);
 }
 
 double PISMTime::increment_date(double T, int years) {
-  return T + m_unit_system.convert(years, "years", "seconds");
+  return T + years_to_seconds(years);
 }
 
 PetscErrorCode PISMTime::parse_times(string spec,
@@ -355,8 +381,12 @@ int PISMTime::parse_interval_length(string spec, string &keyword, double *result
     assert(c != NULL);
 
     if (result) {
+      // this is a rather convoluted way of turning a string into a
+      // floating point number:
       *result = cv_convert_double(c, 1.0);
-      *result =  m_unit_system.convert(*result,  "years",  "seconds");
+      // convert from years to seconds without using UDUNITS-2 (this
+      // way we handle 360-day and 365-day years correctly)
+      *result = years_to_seconds(*result);
     }
 
     cv_free(c);
@@ -443,7 +473,7 @@ PetscErrorCode PISMTime::parse_date(string spec, double *result) {
   }
 
   if (result)
-    *result = m_unit_system.convert(d,  "years",  "seconds");
+    *result = years_to_seconds(d);
 
   return 0;
 }
@@ -490,9 +520,9 @@ PetscErrorCode PISMTime::compute_times(double time_start, double delta, double t
                                        string keyword,
                                        vector<double> &result) {
   if (keyword == "yearly") {
-    delta = m_unit_system.convert(1.0, "year", "seconds");
+    delta = years_to_seconds(1.0);
   } else if (keyword == "monthly") {
-    delta = m_unit_system.convert(1.0, "month", "seconds");
+    delta = years_to_seconds(1.0/12.0);
   } else if (keyword != "simple") {
     PetscPrintf(m_com, "PISM ERROR: Unknown time range keyword: %s.\n",
                 keyword.c_str());

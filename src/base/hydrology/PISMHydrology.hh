@@ -109,7 +109,8 @@ protected:
                 *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
   IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
-  PetscReal     inputtobed_period, inputtobed_reference_time;
+  unsigned int inputtobed_period;      // in years
+  PetscReal inputtobed_reference_time; // in seconds
   PISMVars *variables;
   bool report_mass_accounting;
   virtual PetscErrorCode get_input_rate(

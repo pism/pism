@@ -84,7 +84,8 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   profiler = new PISMProf(com, rank, size);
 
-  if (config.get_string("calendar") == "none") {
+  string calendar = config.get_string("calendar");
+  if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
     time = new PISMTime(com, config, m_unit_system);
   } else {
     time = new PISMTime_Calendar(com, config, m_unit_system);

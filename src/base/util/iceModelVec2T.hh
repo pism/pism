@@ -105,7 +105,7 @@ public:
   using IceModelVec2S::create;
   virtual PetscErrorCode create(IceGrid &mygrid, string my_short_name,
                                 bool local, int width = 1);
-  virtual PetscErrorCode init(string filename, double period, double reference_time);
+  virtual PetscErrorCode init(string filename, unsigned int period, double reference_time);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);
@@ -139,7 +139,8 @@ protected:
   LocalInterpCtx *lic;
 
   vector<unsigned int> m_interp_indices;
-  double m_period, m_reference_time;
+  unsigned int m_period;        // in years
+  double m_reference_time;      // in seconds
 
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode get_array3(PetscScalar*** &a3);

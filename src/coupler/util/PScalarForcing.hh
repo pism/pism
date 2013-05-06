@@ -75,7 +75,7 @@ protected:
     }
 
     if (bc_period_set) {
-      bc_period = g.convert(bc_period_years, "years", "seconds");
+      bc_period = bc_period_years;
     } else {
       bc_period = 0;
     }
@@ -111,8 +111,8 @@ protected:
   Timeseries *offset;
   string filename, offset_name, option_prefix;
 
-  PetscReal bc_period,          // in seconds
-    bc_reference_time;          // in seconds
+  unsigned int bc_period;       // in years
+  PetscReal bc_reference_time;  // in seconds
 };
 
 

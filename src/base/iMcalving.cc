@@ -404,9 +404,9 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
   ierr = PISMGlobalMax(&my_maxCalvingRate, &maxCalvingRate, grid.com); CHKERRQ(ierr);
 
   PetscScalar denom = maxCalvingRate/dx;
-  const double denom_regularization = grid.convert(0.001 / (grid.dx + grid.dy), "years", "seconds");
+  const double epsilon = grid.convert(0.001 / (grid.dx + grid.dy), "seconds", "years");
 
-  dt_from_eigencalving = 1.0/(denom + denom_regularization);
+  dt_from_eigencalving = 1.0/(denom + epsilon);
 
   ierr = verbPrintf(2, grid.com,
                     "!!!!! c_rate = %.0f m/year ( dt=%.5f a ) at point %d, %d with mean_c=%.0f m/year over %.0f cells \n",
