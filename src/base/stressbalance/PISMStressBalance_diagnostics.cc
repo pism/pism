@@ -399,11 +399,15 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec3 *result, *u3, *v3, *w3;
   IceModelVec2S *bed, *uplift, *thickness;
+  IceModelVec2Int *mask;
   PetscScalar *u, *v, *w, *res;
 
   result = new IceModelVec3;
   ierr = result->create(grid, "wvel", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+
+  mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   bed = dynamic_cast<IceModelVec2S*>(variables.get("bedrock_altitude"));
   if (bed == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
@@ -417,12 +421,19 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
   ierr = thickness->begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
   ierr = w3->begin_access(); CHKERRQ(ierr);
   ierr = uplift->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
+
+  MaskQuery M(*mask);
+
+  const double ice_density = grid.config.get("ice_density"),
+    sea_water_density = grid.config.get("sea_water_density"),
+    R = ice_density / sea_water_density;
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -434,13 +445,24 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
       int ks = grid.kBelowHeight((*thickness)(i,j));
 
       // in the ice:
-      for (int k = 0; k <= ks ; k++) {
-	res[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+      if (M.grounded(i,j)) {
+        for (int k = 0; k <= ks ; k++)
+          res[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+
+      } else {                  // floating
+        const double
+          z_sl = R * (*thickness)(i,j),
+          w_sl = w3->getValZ(i, j, z_sl);
+
+        for (int k = 0; k <= ks ; k++)
+          res[k] = w[k] - w_sl;
+
       }
+
       // above the ice:
-      for (int k = ks+1; k < grid.Mz ; k++) {
+      for (int k = ks+1; k < grid.Mz ; k++)
         res[k] = 0.0;
-      }
+
     }
   }
 
@@ -450,6 +472,7 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = u3->end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
 
   output = result;
