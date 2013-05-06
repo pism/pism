@@ -47,7 +47,8 @@ public:
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
   //! Add pointers to diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
 
   virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
   { }

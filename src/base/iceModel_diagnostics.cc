@@ -134,25 +134,25 @@ PetscErrorCode IceModel::init_diagnostics() {
 
   // Get diagnostics supported by the stress balance object:
   if (stress_balance != NULL)
-    stress_balance->get_diagnostics(diagnostics);
+    stress_balance->get_diagnostics(diagnostics, ts_diagnostics);
 
   // Get diagnostics supported by the surface model:
   if (surface != NULL)
-    surface->get_diagnostics(diagnostics);
+    surface->get_diagnostics(diagnostics, ts_diagnostics);
 
   // Get diagnostics supported by the ocean model:
   if (ocean != NULL)
-    ocean->get_diagnostics(diagnostics);
+    ocean->get_diagnostics(diagnostics, ts_diagnostics);
 
   // Get diagnostics supported by the bed deformation model:
   if (beddef != NULL)
-    beddef->get_diagnostics(diagnostics);
+    beddef->get_diagnostics(diagnostics, ts_diagnostics);
 
   if (basal_yield_stress != NULL)
-    basal_yield_stress->get_diagnostics(diagnostics);
+    basal_yield_stress->get_diagnostics(diagnostics, ts_diagnostics);
 
   if (subglacial_hydrology != NULL)
-    subglacial_hydrology->get_diagnostics(diagnostics);
+    subglacial_hydrology->get_diagnostics(diagnostics, ts_diagnostics);
 
   if (print_list_and_stop) {
     ierr = list_diagnostics(); CHKERRQ(ierr);

@@ -36,6 +36,7 @@ class IceGrid;
 class NCConfigVariable;
 class NCSpatialVariable;
 class PISMDiagnostic;
+class PISMTSDiagnostic;
 class PISMVars;
 
 //! \brief A class defining a common interface for most PISM sub-models.
@@ -115,7 +116,8 @@ public:
   virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO& /*nc*/) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
+                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {}
 
   // //! Add pointers to scalar diagnostic quantities to a dictionary.
   // virtual void get_scalar_diagnostics(map<string, PISMDiagnostic_Scalar*> &/*dict*/) {}
@@ -194,10 +196,11 @@ public:
     return 0;
   }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict)
   {
     if (input_model != NULL) {
-      input_model->get_diagnostics(dict);
+      input_model->get_diagnostics(dict, ts_dict);
     }
   }
 

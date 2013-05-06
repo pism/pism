@@ -137,7 +137,8 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 }
 
 
-void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                                    map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
   dict["enwat"] = new PISMHydrology_enwat(this, grid, *variables);
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);

@@ -52,7 +52,8 @@ public:
   { return 0; }
 
   // Does not have an atmosphere model.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
+                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {}
 };
 
 #endif /* _PSDUMMY_H_ */

@@ -22,7 +22,8 @@
 #include "SSB_Modifier.hh"
 #include "PISMVars.hh"
 
-void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                                        map<string, PISMTSDiagnostic*> &ts_dict) {
 
   dict["bfrict"]   = new PSB_bfrict(this, grid, *m_variables);
 
@@ -47,8 +48,8 @@ void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["strain_rates"] = new PSB_strain_rates(this, grid, *m_variables);
   dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, grid, *m_variables);
 
-  m_stress_balance->get_diagnostics(dict);
-  m_modifier->get_diagnostics(dict);
+  m_stress_balance->get_diagnostics(dict, ts_dict);
+  m_modifier->get_diagnostics(dict, ts_dict);
 }
 
 PSB_velbar::PSB_velbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)

@@ -38,7 +38,8 @@ public:
 
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);

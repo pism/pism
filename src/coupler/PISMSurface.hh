@@ -46,7 +46,8 @@ public:
 
   // provide default re-implementations of these parent's methods:
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);

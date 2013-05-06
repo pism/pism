@@ -433,7 +433,8 @@ PetscErrorCode SSA::write_variables(set<string> vars, const PIO &nc) {
   return 0;
 }
 
-void SSA::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+void SSA::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                          map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
     dict["taud"] = new SSA_taud(this, grid, *variables);
     dict["taud_mag"] = new SSA_taud_mag(this, grid, *variables);
 }

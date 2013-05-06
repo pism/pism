@@ -174,8 +174,9 @@ PetscErrorCode PISMRoutingHydrology::write_variables(set<string> vars, const PIO
 }
 
 
-void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  PISMHydrology::get_diagnostics(dict);
+void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                                           map<string, PISMTSDiagnostic*> &ts_dict) {
+  PISMHydrology::get_diagnostics(dict, ts_dict);
   dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
 }
 
@@ -912,7 +913,8 @@ PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const
 }
 
 
-void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
   dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);

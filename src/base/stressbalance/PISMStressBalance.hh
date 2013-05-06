@@ -117,7 +117,8 @@ public:
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
 
   //! \brief Returns a pointer to a stress balance solver implementation.
   virtual ShallowStressBalance* get_stressbalance()
