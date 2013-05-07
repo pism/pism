@@ -21,6 +21,7 @@ add_library (pismboundary
   ./ocean/PO_delta_SMB.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
+  ./surface/PSCache.cc
   ./surface/PSConstantPIK.cc
   ./surface/PSElevation.cc
   ./surface/PSStuffAsAnomaly.cc

@@ -1051,6 +1051,35 @@ See also to \texttt{-atmosphere~...,anomaly}
 (section~\ref{sec:atmosphere-anomaly}), which is similar, but applies anomalies
 at the atmosphere level.
 
+\subsection{Modifier: Caching}
+\label{sec:surface-cache}
+\optsection{SB@\surfacemods!\texttt{cache}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~...,cache} \index[options]{SB@\surfacemods!\texttt{cache}} \\
+    C++ class: & \class{PSCache}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier skips surface model updates, so that a surface model is
+called no more than every \texttt{-surface_cache_update_interval}
+years. A time-step of $1$ year is used every time a surface model is
+updated.
+
+This is useful in cases when inter-annual climate variability is
+important, but one year differs little from the next. (Coarse-grid
+paleo-climate runs, for example.)
+
+It takes the following options:
+\begin{itemize}
+\item \txtopt{surface_cache_update_interval}{\emph{years}} Specifies the
+  minimum interval between updates. PISM may take longer time-steps if
+  the adaptive scheme allows it, though.
+\end{itemize}
+
 
 \clearpage\newpage
 

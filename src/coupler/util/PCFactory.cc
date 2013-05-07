@@ -59,6 +59,7 @@
 #include "PSSimple.hh"
 #include "PSConstantPIK.hh"
 #include "PSForceThickness.hh"
+#include "PSCache.hh"
 
 // Atmosphere
 static void create_pa_constant_pik(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -192,8 +193,13 @@ static void create_ps_given(IceGrid& g, const NCConfigVariable& conf, PISMSurfac
 }
 
 static void create_ps_delta_T(IceGrid& g, const NCConfigVariable& conf,
-                                PISMSurfaceModel *input, PSModifier* &result) {
+                              PISMSurfaceModel *input, PSModifier* &result) {
   result = new PS_delta_T(g, conf, input);
+}
+
+static void create_ps_cache(IceGrid& g, const NCConfigVariable& conf,
+                            PISMSurfaceModel *input, PSModifier* &result) {
+  result = new PSCache(g, conf, input);
 }
 
 static void create_ps_stuff_as_anomaly(IceGrid& g, const NCConfigVariable& conf,
@@ -207,16 +213,17 @@ static void create_ps_anomaly(IceGrid& g, const NCConfigVariable& conf,
 }
 
 void PSFactory::add_standard_types() {
-  add_model("simple",        &create_ps_simple);
-  add_model("pdd",           &create_ps_temperatureindex); 
-  add_model("given",         &create_ps_given); 
-  add_model("pik",           &create_ps_constant_pik);
-  add_model("elevation",     &create_ps_elevation);
+  add_model("simple",    &create_ps_simple);           
+  add_model("pdd",       &create_ps_temperatureindex); 
+  add_model("given",     &create_ps_given);            
+  add_model("pik",       &create_ps_constant_pik);     
+  add_model("elevation", &create_ps_elevation);        
   set_default("given");
 
-  add_modifier("anomaly",    &create_ps_anomaly);
-  add_modifier("forcing",    &create_ps_forcing);
-  add_modifier("delta_T",    &create_ps_delta_T);
-  add_modifier("lapse_rate", &create_ps_lapse_rates);
-  add_modifier("turn_into_anomaly", &create_ps_stuff_as_anomaly);
+  add_modifier("anomaly",           &create_ps_anomaly);          
+  add_modifier("cache",             &create_ps_cache);            
+  add_modifier("forcing",           &create_ps_forcing);          
+  add_modifier("delta_T",           &create_ps_delta_T);          
+  add_modifier("lapse_rate",        &create_ps_lapse_rates);      
+  add_modifier("turn_into_anomaly", &create_ps_stuff_as_anomaly); 
 }
