@@ -758,24 +758,25 @@ kill -TERM 8920
 At each time step the PISM standard output includes ``flags'' and then a summary of the model state using a few numbers.  A typical example is
 \small
 \begin{verbatim}
- y SIA v$Eh d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)
-  SSA:     4 outer iterations
-S  -3456.41429:  3.35908  2.1664   2748.786  271.2114
+v$Eh  d (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)
+S -124791.571:  3.11640   2.25720      3.62041    18099.93737
+y  SSA:     3 outer iterations, ~17.0 KSP iterations each
 \end{verbatim}
 \normalsize
 \noindent The format of the third line, the summary, is simple:
 \small
 \begin{verbatim}
-S         YEAR:     ivol     iarea     max_diff
+P       YEAR:       ivol      iarea  max_diffusivity  max_hor_vel
+U      years   10^6_km^3  10^6_km^2         m^2 s^-1       m/year
 \end{verbatim}
 \normalsize
-That is, we have the total ice volume, total ice area, and the maximum diffusivity of the SIA mass conservation.  A ``\texttt{U}'' line near the beginning of the standard output indicates the units.
+That is, we have the total ice volume, total ice area, maximum diffusivity of the SIA mass conservation, and maximum horizontal velocity ($\max(\max(|u|), \max(|v|))$).  A ``\texttt{U}'' line near the beginning of the standard output indicates the units.
 
-The characters ``\texttt{ y SIA v\$Eh}'' at the beginning of the flag line give a very terse description of which physical processes were modeled in that time step.  Both the SIA and SSA stress balances were solved, and the latter, which is the most computationally-expensive, describes its nonlinear iterations.
+The characters ``\texttt{v\$Eh}'' at the beginning of the flag line give a very terse description of which physical processes were modeled in that time step.  Both the SIA and SSA stress balances were solved, and the latter, which is the most computationally-expensive, describes its nonlinear iterations.
 
 Now we explain what the rest of the flags line, namely
 
-``\texttt{d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)}''
+``\texttt{d (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)}''
 
 \noindent might mean.  Note that the PISM time step is determined by an
 adaptive mechanism.  PISM does each step explicitly when
@@ -785,8 +786,8 @@ requires such an adaptive time-stepping scheme \cite{BBL}.  The first character
 we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason''
 flag.  See Table \ref{tab:adaptiveflag}; ``\texttt{d}'' means that the time
 step was limited by the diffusivity of SIA mass conservation.  We also see that
-there was a major time step of 1.08 model years divided into 2 substeps of
-about 0.54 years.  The \intextoption{skip} option enables this mechanism, while
+there was a major time step of $0.83945$ model years divided into $2$ substeps of
+about $0.42$ years.  The \intextoption{skip} option enables this mechanism, while
 \intextoption{skip_max} sets the maximum number of such substeps. The adaptive
 mechanism may choose to take fewer substeps to satisfy numerical stability
 criteria, however.
@@ -838,8 +839,8 @@ criteria, however.
 \label{tab:time-stepping}
 \end{table}
 
-\subsection{PETSC options for PISM users}\label{subsect:petscoptions}
-\optsection{PETSC options for PISM users}
+\subsection{PETSc options for PISM users}\label{subsect:petscoptions}
+\optsection{PETSc options for PISM users}
 
 All PETSc programs including PISM accept command line options which control how PETSc distributes jobs among parallel processors, how it solves linear systems, what additional information it provides, and so on.  The PETSc manual \cite{petsc-user-ref} is the complete reference on these options.  We list some here that are useful to PISM users.  They can be mixed in any order with PISM options.
 
