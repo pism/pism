@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2010-2012 Andy Aschwanden
+# Copyright (C) 2010-2013 Andy Aschwanden
 
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
@@ -106,10 +106,10 @@ echo ""
 
 EB="-e 0.3"
 #PARAMS="$TILLPHI -pseudo_plastic_uthreshold $uth"
-#PARAMS="-plastic_phi $phi"
+PARAMS="-plastic_phi"
 
 #PETSCSTUFF="-pc_type lu -pc_factor_mat_solver_package mumps"
-PETSCSTUFF="-pc_type asm -sub_pc_type lu -ksp_type lgmres -ksp_right_pc"
+PETSCSTUFF="-ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
 
 
 FULLPHYS="-ssa_sliding -thk_eff $PARAMS $PETSCSTUFF"

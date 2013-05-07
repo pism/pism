@@ -522,6 +522,27 @@ PetscErrorCode PISMOptionsIsSet(string option, string text,
   return 0;
 }
 
+
+/**
+ * Checks if a command-line option `option` is set and is given an argument.
+ *
+ * @param option name of the option
+ * @param result true if `option` is set and has an argument, `false` otherwise
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PISMOptionsHasArgument(string option, bool &result) {
+  PetscErrorCode ierr;
+  string tmp;
+
+  ierr = PISMOptionsString(option, "", tmp, result, true); CHKERRQ(ierr);
+
+  if (result == false || tmp.empty() == true)
+    result = false;
+
+  return 0;
+}
+
 //! Initializes the config parameter and flag database.
 /*!
   Processes -config and -config_override command line options.
@@ -700,8 +721,15 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   // controls regularization of plastic basal sliding law
   ierr = config.scalar_from_option("plastic_reg", "plastic_regularization"); CHKERRQ(ierr);
 
-  // "friction angle" in degrees
-  ierr = config.scalar_from_option("plastic_phi", "default_till_phi"); CHKERRQ(ierr);
+  // "friction angle" in degrees. We allow -plastic_phi without an
+  // argument: PISMMohrCoulombYieldStress interprets that as "set
+  // constant till friction angle using the default read from a config
+  // file or an override file".
+  bool plastic_phi_set = false;
+  ierr = PISMOptionsHasArgument("-plastic_phi", plastic_phi_set); CHKERRQ(ierr);
+  if (plastic_phi_set == true) {
+    ierr = config.scalar_from_option("plastic_phi", "default_till_phi"); CHKERRQ(ierr);
+  }
 
   // use pseudo plastic instead of pure plastic; see iMbasal.cc
   ierr = config.flag_from_option("pseudo_plastic", "do_pseudo_plastic_till"); CHKERRQ(ierr);
