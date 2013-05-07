@@ -155,6 +155,7 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
 
+FIXME:  don't do this; treat vars as read-only
   // add variables to the context if not already there
   if (vars.get("enwat") == NULL) {
     ierr = vars.add(Wen); CHKERRQ(ierr);
@@ -167,6 +168,7 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
 
 
 void PISMDistributedHydrology::add_vars_to_output(string /*keyword*/, set<string> &result) {
+FIXME: base class has state vars, so call PISMRoutingHydrology::add_vars_...
   result.insert("bwat");
   result.insert("enwat");
   result.insert("bwp");
@@ -175,6 +177,7 @@ void PISMDistributedHydrology::add_vars_to_output(string /*keyword*/, set<string
 
 PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
+FIXME: base class has state vars, so call PISMRoutingHydrology::add_vars_...
   PetscErrorCode ierr;
   if (set_contains(vars, "bwat")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
@@ -190,6 +193,7 @@ PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, cons
 
 
 PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const PIO &nc) {
+FIXME: base class has state vars, so call PISMRoutingHydrology::add_vars_...
   PetscErrorCode ierr;
   if (set_contains(vars, "bwat")) {
     ierr = W.write(nc); CHKERRQ(ierr);

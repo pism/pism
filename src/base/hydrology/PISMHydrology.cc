@@ -181,11 +181,12 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 
 
 void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  dict["enwat"] = new PISMHydrology_enwat(this, grid, *variables);
+  dict["bwat"] = new PISMHydrology_bwat(this, grid, *variables);
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
   dict["tillwp"] = new PISMHydrology_tillwp(this, grid, *variables);
+  dict["enwat"] = new PISMHydrology_enwat(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
 }
@@ -300,30 +301,6 @@ PetscErrorCode PISMHydrology::check_Wtil_bounds() {
     }
   }
   ierr = Wtil.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Restrict calling model's time step if needed.
-/*!
-The only reason to restrict the time step taken by the calling model
-(i.e. IceModel) is if there is a time-dependent input file IceModelVec2T *inputtobed.
- */
-PetscErrorCode PISMHydrology::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt) {
-  if (inputtobed == NULL) {
-    my_dt = -1;
-    restrict_dt = false;
-  } else {
-    // "periodize" the forcing data
-    my_t = grid.time->mod(my_t - inputtobed_reference_time, inputtobed_period);
-    my_dt = inputtobed->max_timestep(my_t);
-    // if the user specifies periodized forcing, limit time-steps so that PISM
-    // never tries to average data over an interval that begins in one period and
-    // ends in the next one.
-    if (inputtobed_period > 1e-6)
-      my_dt = PetscMin(my_dt, inputtobed_period - my_t);
-    restrict_dt = (my_dt > 0);
-  }
   return 0;
 }
 

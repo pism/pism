@@ -103,15 +103,15 @@ public:
   virtual PetscErrorCode regrid(IceModelVec2S &myvar);
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
-  friend class PISMHydrology_hydroinput;
-
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt);
+  friend class PISMHydrology_hydroinput;  // needed because total_input is protected (and no interface for it)
 
   // in the base class these only add/define/write tillwat
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
+  // the interface to the outside:
+  
   // all PISMHydrology models have a Wtil state variable, which this returns
   virtual PetscErrorCode till_water_thickness(IceModelVec2S &result);
 
@@ -128,7 +128,7 @@ public:
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
   virtual PetscErrorCode till_water_pressure(IceModelVec2S &result) = 0;
-  using PISMComponent_TS::update;
+
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
 
 protected:
@@ -272,7 +272,7 @@ public:
   virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
-  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);  // FIXME: make protected but make bwatvel diagnositic a friend
 
 protected:
   // this model's state

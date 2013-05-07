@@ -138,6 +138,7 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars, bool i_set, bool 
   // however we initialized it, we could be asked to regrid from file
   ierr = regrid(W); CHKERRQ(ierr);
 
+FIXME remove:
   // add bwat to the variables in the context if it is not already there
   if (vars.get("bwat") == NULL) {
     ierr = vars.add(W); CHKERRQ(ierr);
@@ -147,12 +148,14 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars, bool i_set, bool 
 
 
 void PISMRoutingHydrology::add_vars_to_output(string /*keyword*/, set<string> &result) {
+FIXME: call base
   result.insert("bwat");
 }
 
 
 PetscErrorCode PISMRoutingHydrology::define_variables(set<string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
+FIXME: call base
   PetscErrorCode ierr;
   if (set_contains(vars, "bwat")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
@@ -162,6 +165,7 @@ PetscErrorCode PISMRoutingHydrology::define_variables(set<string> vars, const PI
 
 
 PetscErrorCode PISMRoutingHydrology::write_variables(set<string> vars, const PIO &nc) {
+FIXME: call base
   PetscErrorCode ierr;
   if (set_contains(vars, "bwat")) {
     ierr = W.write(nc); CHKERRQ(ierr);
@@ -171,7 +175,13 @@ PetscErrorCode PISMRoutingHydrology::write_variables(set<string> vars, const PIO
 
 
 void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  PISMHydrology::get_diagnostics(dict);
+  dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
+  dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
+  dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
+  dict["tillwp"] = new PISMHydrology_tillwp(this, grid, *variables);
+  dict["enwat"] = new PISMHydrology_enwat(this, grid, *variables);
+  dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
+  dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
   dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
 }
 
@@ -304,6 +314,7 @@ PetscErrorCode PISMRoutingHydrology::subglacial_water_pressure(IceModelVec2S &re
 This rule uses only the till water amount, so the pressure of till is mostly
 decoupled from the transportable water pressure.
  */
+FIXME: PUT IN BASE CLASS?  SHOULD THERE BE MAX ON THIS COMPUTED PRESSURE AND SEPARATE SCALED OVERBURDEN?
 PetscErrorCode PISMRoutingHydrology::till_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
@@ -446,6 +457,7 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
           result(i,j,o) = k * pow(Wstag(i,j,o),alpha-1.0);
         else {
           if ((result(i,j,o) <= 0.0) && (beta < 2.0)) {
+          FIXME:  instead *regularize* |\grad psi|^{beta - 2} ??
             result(i,j,o) = 1000.0 * k;  // FIXME: ad hoc
           } else {
             result(i,j,o) = k * pow(Wstag(i,j,o),alpha-1.0)
