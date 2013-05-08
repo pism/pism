@@ -47,6 +47,7 @@
 #include "PO_delta_SL.hh"
 #include "PO_delta_T.hh"
 #include "PO_delta_SMB.hh"
+#include "POCache.hh"
 
 // surface models:
 #include "PSAnomaly.hh"
@@ -150,6 +151,10 @@ static void create_po_delta_SMB(IceGrid& g, const NCConfigVariable& conf, PISMOc
   result = new PO_delta_SMB(g, conf, input);
 }
 
+static void create_po_cache(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
+  result = new POCache(g, conf, input);
+}
+
 void POFactory::add_standard_types() {
   add_model("constant", &create_po_constant);
   add_model("given",    &create_po_given);
@@ -159,6 +164,7 @@ void POFactory::add_standard_types() {
   add_modifier("delta_SL",  &create_po_delta_SL);
   add_modifier("delta_T",   &create_po_delta_T);
   add_modifier("delta_SMB", &create_po_delta_SMB);
+  add_modifier("cache",     &create_po_cache);
 }
 
 // Surface
