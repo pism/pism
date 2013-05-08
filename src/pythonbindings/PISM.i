@@ -526,9 +526,11 @@ namespace std {
 %include "pism_const.hh"
 %include "pism_options.hh"
 %include "Timeseries.hh"
+%ignore planeStar::operator[];
 %include "iceModelVec.hh"
 %include "PISMVars.hh"
 %include "PIO.hh"
+%ignore PISMUnit::operator=;
 %include "PISMUnits.hh"
 %include "PISMNCFile.hh"
 %include "PISMDiagnostic.hh"
