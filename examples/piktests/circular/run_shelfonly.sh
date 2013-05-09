@@ -1,34 +1,42 @@
 #!/bin/bash
 
-N=2
-xx=151   # FIXME:  for quick regression, try xx=51,yy=51
+N=4
+xx=151
 yy=151
-length=1 # FIXME:  for quick regression, make long enough to cause multiple time steps
+length=10
 
 infile="circular_shelfonly.nc"
 
+if [[ ! -r $infile ]]
+then
+    echo "generating the input file..."
+    ./circular_dirichlet.py -o $infile -shelf
+fi
+
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
-pismopts="-boot_file $infile $grid -verbose 3 -ssa_sliding -ssa_dirichlet_bc "
+extra="-extra_times 1 -extra_vars thk,mask,cbar,Href,velbar -extra_file "
 
-doit="mpiexec -n $N ../../../bin/pismr $pismopts"
-#doit="mpiexec -n $N pismr $pismopts"
+pismopts="-boot_file $infile $grid -verbose 3 -ssa_sliding -ssa_dirichlet_bc"
+
+doit="mpiexec -n $N pismr $pismopts"
 
 # run with strength extension, the old PISM method
-#$doit $pismopts -y $length -o old_so.nc
+#$doit $pismopts -y $length -o so_old.nc
 
 # check that this result is similar
-#$doit -y $length -cold -o old_cold_so.nc
+#$doit -y $length -cold -o so_old_cold.nc
+
 
 # run with strength extension and part_grid but no CFBC
 # this could be a regression for -part_grid and -part_redist
-$doit -y $length -part_grid -part_redist -o part_so.nc
+$doit -y $length -part_grid -part_redist -o so_part.nc $extra so_ex_part.nc
 
 # run with CFBC but no part_grid
 # this could be a regression for -ssa_method fd_pik only
-$doit -y $length -ssa_method fd -cfbc -o cfbc_so.nc
+$doit -y $length -ssa_method fd -cfbc -o so_cfbc.nc $extra so_ex_cfbc.nc
 
 # run with CFBC and part_grid
 # this could be a regression for -ssa_method fd_pik only
-$doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -part_redist -o partcfbc_so.nc
+$doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -part_redist -o so_partcfbc.nc $extra so_ex_partcfbc.nc
 

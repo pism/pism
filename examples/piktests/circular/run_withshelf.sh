@@ -1,30 +1,36 @@
 #!/bin/bash
 
-N=2
-xx=151   # FIXME:  for quick regression, try xx=51,yy=51
+N=4
+xx=151
 yy=151
-length=1 # FIXME:  for quick regression, make sure the run is long enough to cause multiple time steps
-infile=circular_withshelf_12km.nc
+length=10
+
+infile=circular_withshelf.nc
+
+if [[ ! -r $infile ]]
+then
+    echo "generating the input file..."
+    ./circular_ice_sheet.py -o $infile
+fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 4500 -Lbz 1000"
 
-pismopts="-boot_file $infile $grid -ssa_sliding -ssa_method fd"
+pismopts="-y $length -boot_file $infile $grid -ssa_sliding -ssa_method fd"
 
-doit="mpiexec -n $N ../../../bin/pismr $pismopts"
-#doit="mpiexec -n $N pismr $pismopts"
+doit="mpiexec -n $N pismr $pismopts"
 
-# run circular_with_shelf.py first to generate input file circular_with_shelf_12km.nc
+extra="-extra_times 1 -extra_vars thk,mask,cbar,Href,velbar -extra_file"
 
 # run with strength extension and part_grid but no CFBC
 # this could be a regression for the option combination "-part_grid -part_redist"
-$doit -y $length -part_grid -part_redist -o part_ws.nc
+$doit -part_grid -part_redist -o ws_part.nc $extra ws_ex_part.nc
 
 # run with CFBC but no part_grid
 # this could be a regression for the option "-cfbc"
-$doit -y $length -cfbc -o cfbc_ws.nc
+$doit -cfbc -o ws_cfbc.nc $extra ws_ex_cfbc.nc
 
 # run with CFBC and part_grid
 # this could be a regression for the option combination "-part_grid -part_redist -cfbc"
 # FIXME: with N=4 processors and xx=yy=301 I observe slight asymmetry in cbase here?
-$doit -y $length -part_grid -part_redist -cfbc -o partcfbc_ws.nc  
+$doit -part_grid -part_redist -cfbc -o ws_partcfbc.nc $extra ws_ex_partcfbc.nc
 
