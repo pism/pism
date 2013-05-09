@@ -68,22 +68,22 @@ PetscErrorCode IceModel::killIceBergs() {
  */
 PetscErrorCode IceModel::findIceBergCandidates() {
   PetscErrorCode ierr;
-  ierr = verbPrintf(4, grid.com, "######### findIceBergCandidates() start\n"); CHKERRQ(ierr);
-
-  const PetscInt Mx = grid.Mx, My = grid.My;
 
   PetscReal sea_level;
   if (ocean != NULL) {
     ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
+  } else {
+    SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL");
+  }
 
-  double ocean_rho = config.get("sea_water_density"),
-    ice_rho = config.get("ice_density");
+  double
+    ocean_rho = config.get("sea_water_density"),
+    ice_rho   = config.get("ice_density");
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access();           CHKERRQ(ierr);
+  ierr = vMask.begin_access();        CHKERRQ(ierr);
   ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access();         CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
@@ -91,7 +91,7 @@ PetscErrorCode IceModel::findIceBergCandidates() {
         hfloating = sea_level + (1.0 - ice_rho / ocean_rho) * vH(i, j);
 
       //cut of border of computational domain
-      if (hgrounded < hfloating && (i <= 0 || i >= Mx - 1 || j <= 0 || j >= My - 1)) {
+      if (hgrounded < hfloating && (i <= 0 || i >= grid.Mx - 1 || j <= 0 || j >= grid.My - 1)) {
         vH(i, j) = 0.0;
         vIcebergMask(i, j) = ICEBERGMASK_STOP_OCEAN;
         vMask(i, j) = MASK_ICE_FREE_OCEAN;
@@ -100,12 +100,12 @@ PetscErrorCode IceModel::findIceBergCandidates() {
       }
     }
   }
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access();           CHKERRQ(ierr);
+  ierr = vMask.end_access();        CHKERRQ(ierr);
   ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access();         CHKERRQ(ierr);
 
-  ierr = vMask.update_ghosts(); CHKERRQ(ierr);
+  ierr = vMask.update_ghosts();        CHKERRQ(ierr);
   ierr = vIcebergMask.update_ghosts(); CHKERRQ(ierr);
 
   // set all floating points to ICEBERGMASK_ICEBERG_CAND
@@ -234,10 +234,10 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid.com, "######### killIdentifiedIceBergs() start\n"); CHKERRQ(ierr);
   const bool vpik = config.get_flag("verbose_pik_messages");
-  
+
   PetscScalar
     my_discharge_flux = 0,
-    discharge_flux = 0; 
+    discharge_flux = 0;
   const PetscScalar dx = grid.dx, dy = grid.dy;
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -254,8 +254,8 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
          vh(i, j) = 0.0;
          vMask(i, j) = MASK_ICE_FREE_OCEAN;
          if (vpik) {
-           PetscSynchronizedPrintf(grid.com, 
-                     "PISM-PIK INFO: [rank %d] killed iceberg at i=%d, j=%d\n", 
+           PetscSynchronizedPrintf(grid.com,
+                     "PISM-PIK INFO: [rank %d] killed iceberg at i=%d, j=%d\n",
                      grid.rank, i, j);
          }
       }
@@ -267,7 +267,7 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
   ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vh.end_access(); CHKERRQ(ierr);
-  
+
   ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   discharge_flux_cumulative     += discharge_flux     * factor;
@@ -287,9 +287,9 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
  */
 PetscErrorCode IceModel::killEasyIceBergs() {
   PetscErrorCode ierr;
-  ierr = verbPrintf(4, grid.com, "######### killEasyIceBergs() start\n"); CHKERRQ(ierr);
+
   const bool vpik = config.get_flag("verbose_pik_messages");
-  
+
   PetscScalar
     my_discharge_flux = 0,
     discharge_flux = 0;
@@ -354,22 +354,26 @@ PetscErrorCode IceModel::killEasyIceBergs() {
         if (thk.n == 0.0) icount += 1;
         if (thk.s == 0.0) icount += 1;
 
-        if ((icount == 6 && hgrounded_eb < hfloating_eb && hgrounded_wb < hfloating_wb) ||
-            (jcount == 6 && hgrounded_nb < hfloating_nb && hgrounded_sb < hfloating_sb)) {
+        if ((icount == 6 &&
+             hgrounded_eb < hfloating_eb &&
+             hgrounded_wb < hfloating_wb) ||
+            (jcount == 6 &&
+             hgrounded_nb < hfloating_nb &&
+             hgrounded_sb < hfloating_sb)) {
 
-	  my_discharge_flux -= vHnew(i, j);
+          my_discharge_flux -= vHnew(i, j);
           vHnew(i, j) = 0.0;
           vh(i, j) = 0.0;
           vMask(i, j) = MASK_ICE_FREE_OCEAN;
           if (vpik) {
-            PetscSynchronizedPrintf(grid.com, 
+            PetscSynchronizedPrintf(grid.com,
               "PISM-PIK INFO: [rank %d] cut off nose or one-box-iceberg at i=%d, j=%d\n",
               grid.rank, i, j);
           }
         }
-      }
-    }
-  }
+      } // if (floating ice shelf)
+    } // j-loop
+  } // i-loop
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 
@@ -387,14 +391,15 @@ PetscErrorCode IceModel::killEasyIceBergs() {
       planeStar<PetscScalar> thk = vH.star(i, j);
 
       // instead of updating surface elevation, counting here floating or icefree neighbors
-      const PetscScalar hgrounded = vbed(i, j) + thk.ij,
+      const PetscScalar
+        hgrounded = vbed(i, j) + thk.ij,
         hfloating = sea_level + C * thk.ij;
 
       bool all_4neighbors_icefree = (thk.e == 0.0 && thk.w == 0.0 &&
                                      thk.n == 0.0 && thk.s == 0.0);
 
       if (thk.ij > 0.0 && hgrounded < hfloating && all_4neighbors_icefree) {
-	my_discharge_flux -= vHnew(i, j);
+        my_discharge_flux -= vHnew(i, j);
         vHnew(i, j) = 0.0;
         vh(i, j) = 0.0;
         vMask(i, j) = MASK_ICE_FREE_OCEAN;
@@ -427,10 +432,10 @@ PetscErrorCode IceModel::killEasyIceBergs() {
                                      vH(i, j + 1) == 0.0 &&
                                      vH(i, j - 1) == 0.0);
       if (vHref(i, j) > 0.0 && all_4neighbors_icefree) {
-	my_discharge_flux -= vHref(i, j);
+        my_discharge_flux -= vHref(i, j);
         vHref(i, j) = 0.0;
         if (vpik) {
-          PetscSynchronizedPrintf(grid.com, 
+          PetscSynchronizedPrintf(grid.com,
             "PISM-PIK INFO: [rank %d] killed lonely partially filled grid cell at i = %d, j = %d\n",
             grid.rank, i, j);
         }
@@ -443,7 +448,7 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   ierr = vHref.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
-  
+
   ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
   PetscScalar factor = config.get("ice_density") * (dx * dy);
   discharge_flux_cumulative     += discharge_flux     * factor;
@@ -458,4 +463,3 @@ PetscErrorCode IceModel::killEasyIceBergs() {
 
   return 0;
 }
-
