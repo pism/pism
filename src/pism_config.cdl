@@ -210,8 +210,8 @@ netcdf pism_config {
     pism_config:hydrology_const_bmelt = 3.168876461e-10;
     pism_config:hydrology_const_bmelt_doc = "m s-1; = 1 cm per year of melt; only used if hydrology_use_const_bmelt = 'yes'";
 
-    pism_config:hydrology_pressure_fraction = 0.95;
-    pism_config:hydrology_pressure_fraction_doc = "pure number; water pressure is this fraction of overburden in PISMTillCanHydrology and derived models; water pressure is scaled by this fraction in PISMRoutingHydrology";
+    pism_config:hydrology_pressure_fraction_till = 0.95;
+    pism_config:hydrology_pressure_fraction_till_doc = "pure number; till water pressure is this fraction of overburden in PISMHydrology and derived models";
 
     pism_config:hydrology_tillwat_max = 2.0;
     pism_config:hydrology_tillwat_max_doc = "m; maximum effective thickness of the water stored in till";

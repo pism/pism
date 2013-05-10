@@ -124,11 +124,14 @@ public:
   // this diagnostic method returns zero in the base class
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
+  // sets result = Bueler&Brown version of pressure of till water
+  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result);
+
+  // sets result = overburden pressure
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+
   // these methods MUST be implemented in the derived class
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result) = 0;
-
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
 
 protected:
@@ -158,12 +161,8 @@ protected:
 //! The PISM minimal model has till in a "can".  Water that overflows the can is not conserved.  Thus there is no true hydrology, i.e. no model for transport.
 /*!
 This is the minimum functional derived class.  It updates till water thickness.
-It returns a simple model for the pressure of the water stored in till.
 
 It has no tranportable water so subglacial_water_thickness() returns zero.
-
-The method subglacial_water_pressure() is trivialized: it returns overburden
-pressure.
 
 This model can give no meaningful report on conservation errors.
 
@@ -176,16 +175,8 @@ public:
     : PISMHydrology(g, conf) {}
   virtual ~PISMNullTransportHydrology() {}
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
-
   // sets result = 0
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
-
-  // sets result = overburden pressure
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
-
-  // sets result = Bueler&Brown version of pressure of till water
-  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result);
 
   // solves an implicit step of a highly-simplified ODE
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
@@ -266,13 +257,8 @@ public:
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
-  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result);
 
-  virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
-
-  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);  // FIXME: make protected but make bwatvel diagnositic a friend
 
 protected:
   // this model's state
@@ -301,9 +287,13 @@ protected:
              PetscReal &negativegain, PetscReal &nullstriplost);
 
   virtual PetscErrorCode check_W_nonnegative();
+
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
 
   virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, PetscReal &maxKW);
+  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
+  friend class PISMRoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(

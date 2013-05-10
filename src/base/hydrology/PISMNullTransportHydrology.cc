@@ -20,12 +20,6 @@
 #include "hydrology_diagnostics.hh"
 
 
-void PISMNullTransportHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  PISMHydrology::get_diagnostics(dict);
-  dict["bwat"] = new PISMHydrology_bwat(this, grid, *variables);
-}
-
-
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
 PetscErrorCode PISMNullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
@@ -33,45 +27,7 @@ PetscErrorCode PISMNullTransportHydrology::subglacial_water_thickness(IceModelVe
 }
 
 
-//! Returns the (trivial) overburden pressure as the pressure of the tranportable water.
-PetscErrorCode PISMNullTransportHydrology::subglacial_water_pressure(IceModelVec2S &result) {
-  PetscErrorCode ierr = overburden_pressure(result); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Computes till water pressure as a simple function of the amount of water in the till.
-/*!
-  \f[ Ptil = \lambda P_o \max\{1,W_{til} / W_{til}^{max}\} \f]
-where \f$\lambda\f$=hydrology_pressure_fraction, \f$P_o = \rho_i g H\f$,
-\f$W_{til}^{max}\f$=hydrology_tillwat_max.
- */
-PetscErrorCode PISMNullTransportHydrology::till_water_pressure(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-#if (PISM_DEBUG==1)
-  ierr = check_Wtil_bounds(); CHKERRQ(ierr);
-#endif
-
-  ierr = overburden_pressure(result); CHKERRQ(ierr);
-
-  const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-                  lam      = config.get("hydrology_pressure_fraction_till");
-
-  ierr = Wtil.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j) = lam * (Wtil(i,j) / Wtilmax) * result(i,j);
-    }
-  }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = Wtil.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Update both the till water thickness (by a step of a simplified ODE) and the tranportable water thickness (set to zero in non-conserving way).
+//! Update both the till water thickness (by a step of a simplified ODE).  There is no tranportable water thickness.
 /*!
 Does an implicit (backward Euler) step of the integration
   \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(W_{til}^{max} - W_{til}\right) + (m/\rho_w) - C\f]

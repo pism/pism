@@ -138,25 +138,20 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars, bool i_set, bool 
   // however we initialized it, we could be asked to regrid from file
   ierr = regrid(W); CHKERRQ(ierr);
 
-FIXME remove:
-  // add bwat to the variables in the context if it is not already there
-  if (vars.get("bwat") == NULL) {
-    ierr = vars.add(W); CHKERRQ(ierr);
-  }
   return 0;
 }
 
 
-void PISMRoutingHydrology::add_vars_to_output(string /*keyword*/, set<string> &result) {
-FIXME: call base
+void PISMRoutingHydrology::add_vars_to_output(string keyword, set<string> &result) {
+  PISMHydrology::add_vars_to_output(keyword, result);
   result.insert("bwat");
 }
 
 
 PetscErrorCode PISMRoutingHydrology::define_variables(set<string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
-FIXME: call base
   PetscErrorCode ierr;
+  ierr = PISMHydrology::define_variables(vars, nc, nctype); CHKERRQ(ierr);
   if (set_contains(vars, "bwat")) {
     ierr = W.define(nc, nctype); CHKERRQ(ierr);
   }
@@ -165,8 +160,8 @@ FIXME: call base
 
 
 PetscErrorCode PISMRoutingHydrology::write_variables(set<string> vars, const PIO &nc) {
-FIXME: call base
   PetscErrorCode ierr;
+  ierr = PISMHydrology::write_variables(vars, nc); CHKERRQ(ierr);
   if (set_contains(vars, "bwat")) {
     ierr = W.write(nc); CHKERRQ(ierr);
   }
@@ -175,6 +170,7 @@ FIXME: call base
 
 
 void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  // remove bwat from PISMHydrology version, because bwat is state
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
@@ -182,6 +178,7 @@ void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["enwat"] = new PISMHydrology_enwat(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
+  // add diagnostic that only makes sense if transport is modeled
   dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
 }
 
@@ -291,51 +288,6 @@ PetscErrorCode PISMRoutingHydrology::boundary_mass_changes(
 //! Copies the W variable, the modeled water layer thickness.
 PetscErrorCode PISMRoutingHydrology::subglacial_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = W.copy_to(result); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Computes pressure of transportable subglacial water diagnostically as fixed fraction of overburden.
-/*!
-Here
-  \f[ P = \lambda P_o = \lambda (\rho_i g H) \f]
-where \f$\lambda\f$=hydrology_pressure_fraction and \f$P_o\f$ is the overburden pressure.
- */
-PetscErrorCode PISMRoutingHydrology::subglacial_water_pressure(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = overburden_pressure(result); CHKERRQ(ierr);
-  ierr = result.scale(config.get("hydrology_pressure_fraction")); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Computes water pressure in till by the same rule as in PISMNullTransportHydrology.
-/*!
-This rule uses only the till water amount, so the pressure of till is mostly
-decoupled from the transportable water pressure.
- */
-FIXME: PUT IN BASE CLASS?  SHOULD THERE BE MAX ON THIS COMPUTED PRESSURE AND SEPARATE SCALED OVERBURDEN?
-PetscErrorCode PISMRoutingHydrology::till_water_pressure(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-#if (PISM_DEBUG==1)
-  ierr = check_Wtil_bounds(); CHKERRQ(ierr);
-#endif
-
-  ierr = overburden_pressure(result); CHKERRQ(ierr);
-
-  const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-                  lam      = config.get("hydrology_pressure_fraction_till");
-
-  ierr = Wtil.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j) = lam * (Wtil(i,j) / Wtilmax) * result(i,j);
-    }
-  }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = Wtil.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -453,16 +405,15 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       for (PetscInt o = 0; o < 2; ++o) {
-        if (beta == 2.0)
-          result(i,j,o) = k * pow(Wstag(i,j,o),alpha-1.0);
-        else {
-          if ((result(i,j,o) <= 0.0) && (beta < 2.0)) {
-          FIXME:  instead *regularize* |\grad psi|^{beta - 2} ??
-            result(i,j,o) = 1000.0 * k;  // FIXME: ad hoc
-          } else {
-            result(i,j,o) = k * pow(Wstag(i,j,o),alpha-1.0)
-                                * pow(result(i,j,o),(beta-2.0)/2.0);
-          }
+        result(i,j,o) = k * pow(Wstag(i,j,o),alpha-1.0);
+        // next cases skip eval of pow in common case beta=2
+        if (beta < 2.0) {
+          // regularize negative power |\grad psi|^{beta-2} by adding eps because
+          //   large head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m
+          const PetscReal eps = 1.0;   // Pa m-1
+          result(i,j,o) *= pow(result(i,j,o) + eps * eps,(beta-2.0)/2.0);
+        } else if (beta > 2.0) {
+          result(i,j,o) *= pow(result(i,j,o),(beta-2.0)/2.0);
         }
         mymaxKW = PetscMax( mymaxKW, result(i,j,o) * Wstag(i,j,o) );
       }
