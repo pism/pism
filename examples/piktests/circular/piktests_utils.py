@@ -36,6 +36,7 @@ def process_options(default_filename, domain_size):
     parser.add_argument("-domain_size", dest="domain_size", type=float,
                         default=domain_size)
     parser.add_argument("-shelf", dest="shelf", action="store_true")
+    parser.add_argument("-square", dest="square", action="store_true")
     return parser.parse_args()
 
     

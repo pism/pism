@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -95,7 +95,7 @@ PetscErrorCode IceModel::update_viewers() {
         viewers[name_2] = v2;
       }
 
-      IceModelVec2V *v2d = dynamic_cast<IceModelVec2V*>(v);
+      IceModelVec2 *v2d = dynamic_cast<IceModelVec2*>(v);
       if (v2d == NULL) SETERRQ(grid.com, 1,"get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
 
       ierr = v2d->view(v1, v2); CHKERRQ(ierr);
