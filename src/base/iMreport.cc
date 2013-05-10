@@ -131,7 +131,7 @@ PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
   ierr = tau3.begin_access(); CHKERRQ(ierr);
 
   const double one_year = grid.convert(1.0, "year", "seconds");
-  
+
   // compute local original volume
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {

@@ -35,7 +35,7 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   n_records        = 50;	// just a default
   report_range     = false;
   lic              = NULL;
-  m_period         = 0.0;
+  m_period         = 0;
   m_reference_time = 0.0;
   n_evaluations_per_year = 53;
 }
@@ -145,7 +145,7 @@ PetscErrorCode IceModelVec2T::end_access() {
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::init(string fname, double period, double reference_time) {
+PetscErrorCode IceModelVec2T::init(string fname, unsigned int period, double reference_time) {
   PetscErrorCode ierr;
 
   filename         = fname;
@@ -249,7 +249,7 @@ PetscErrorCode IceModelVec2T::init(string fname, double period, double reference
 
   ierr = nc.close(); CHKERRQ(ierr);
 
-  if (m_period > 1.0) {
+  if (m_period != 0) {
     if ((size_t)n_records < time.size())
       SETERRQ(grid->com, 1, "buffer has to be big enough to hold all records of periodic data");
 
@@ -530,7 +530,7 @@ PetscErrorCode IceModelVec2T::init_interpolation(const PetscScalar *ts, unsigned
 
   // Compute "periodized" times if necessary.
   vector<double> times_requested(ts_length);
-  if (m_period > 1) {
+  if (m_period != 0) {
     for (unsigned int k = 0; k < ts_length; ++k)
       times_requested[k] = grid->time->mod(ts[k] - m_reference_time, m_period);
   } else {

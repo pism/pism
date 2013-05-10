@@ -54,6 +54,8 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
 PetscErrorCode PISMOptionsIsSet(string option, bool &result);
 PetscErrorCode PISMOptionsIsSet(string option, string descr, bool &result);
 
+PetscErrorCode PISMOptionsHasArgument(string option, bool &result);
+
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]);
 PetscErrorCode stop_if_set(MPI_Comm com, const char name[]);

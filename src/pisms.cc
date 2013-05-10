@@ -67,6 +67,8 @@ int main(int argc, char *argv[]) {
     NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
 
+    config.set_string("calendar", "none");
+
     bool EISIIchosen, PSTexchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */

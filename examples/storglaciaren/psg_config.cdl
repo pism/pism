@@ -32,4 +32,6 @@ netcdf pism_overrides {
     pism_overrides:do_pseudo_plastic_till = "yes";
     pism_overrides:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
+    pism_overrides:output_variable_order = "zyx";
+    pism_overrides:output_variable_order_doc = "Variable order in output files.";
 }

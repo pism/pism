@@ -65,7 +65,8 @@ public:
   virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
     dict["taud"] = new SSB_taud(this, grid, *variables);
     dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
   }

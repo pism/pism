@@ -9,9 +9,26 @@ configure_file (${PROJECT_SOURCE_DIR}/util/nccmp.py ${PROJECT_BINARY_DIR}/nccmp.
 # Set the location of PISM regression test scripts
 set(PISM_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+set (MEMORYCHECK_COMMAND_OPTIONS "--dsymutil=yes --trace-children=yes --trace-children-skip=*python,*nccmp.py,*rm,*which,*env,*diff,*cp,*hydra_*")
+
+function(add_memcheck_test name binary)
+  set(memcheck_command "${MEMORYCHECK_COMMAND} ${MEMORYCHECK_COMMAND_OPTIONS}")
+  separate_arguments(memcheck_command)
+  add_test(memcheck_${name} ${memcheck_command} ${binary} ${ARGN})
+endfunction(add_memcheck_test)
+
+function(set_memcheck_test_properties name)
+  set_tests_properties(memcheck_${name} ${ARGN})
+endfunction(set_memcheck_test_properties)
+
 # A macro simplifying test creation:
 macro(pism_test name script)
   add_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
+  if (${Pism_TEST_USING_VALGRIND})
+    add_memcheck_test("${name}:${script}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
+    set_memcheck_test_properties("${name}:${script}"
+      PROPERTIES FAIL_REGULAR_EXPRESSION "ERROR SUMMARY: [^0]")
+  endif()
 endmacro()
 
 macro(pism_python_test name script)

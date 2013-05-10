@@ -212,7 +212,7 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
   
     // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
     stress_balance = new PISMStressBalance(grid, my_stress_balance,
-                                           modifier, NULL, config);
+                                           modifier, config);
 
     // Note that in PISM stress balance computations are diagnostic, i.e. do not
     // have a state that changes in time. This means that this call can be here

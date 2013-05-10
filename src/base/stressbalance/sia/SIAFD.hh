@@ -41,14 +41,14 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
 
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
   //! Add pointers to diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
 
   virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
   { }

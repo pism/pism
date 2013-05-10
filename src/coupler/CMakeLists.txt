@@ -13,6 +13,7 @@ add_library (pismboundary
   ./atmosphere/PA_delta_P.cc
   ./atmosphere/PA_paleo_precip.cc
   ./atmosphere/PAAnomaly.cc
+  ./ocean/POCache.cc
   ./ocean/POConstantPIK.cc
   ./ocean/POConstant.cc
   ./ocean/POGivenClimate.cc
@@ -21,6 +22,7 @@ add_library (pismboundary
   ./ocean/PO_delta_SMB.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
+  ./surface/PSCache.cc
   ./surface/PSConstantPIK.cc
   ./surface/PSElevation.cc
   ./surface/PSStuffAsAnomaly.cc

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -80,6 +80,12 @@ public:
   \f[
   w(s) = \tilde w(s) + \frac{\partial b}{\partial t} + U(s) \cdot \nabla b
   \f]
+  in grounded areas. In floating shelves
+  \f[
+  w(s) = \tilde w(s) - \tilde  w(z_{\text{sea level}}).
+  \f]
+
+  This ensures that \f$\tilde w(z_{\text{sea level}}) = 0\f$.
  */
 class PSB_wvel : public PISMDiag<PISMStressBalance>
 {

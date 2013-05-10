@@ -55,11 +55,11 @@ class testi_run(InvSSARun):
     PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NONE); # NONE makes a non-periodic grid
 
   def _initPhysics(self):
-    secpera = grid.convert(1.0, "year", "seconds")
     config = self.config
     config.set_flag("do_pseudo_plastic_till", True)
     config.set("pseudo_plastic_q", 1.0);
-    config.set("pseudo_plastic_uthreshold", 1.0/secpera) # so that tau_b = tauc * u
+    config.set("pseudo_plastic_uthreshold",
+               grid.convert(1.0, "m/second", "m/year")) # so that tau_b = tauc * u
 
     basal = PISM.IceBasalResistancePseudoPlasticLaw(config)
 
@@ -68,6 +68,7 @@ class testi_run(InvSSARun):
 
     ice = PISM.CustomGlenIce(self.grid.com, "", config, enthalpyconverter);
 
+    secpera = grid.convert(1.0, "year", "seconds")
     B = 7. * (secpera)**(1./3) * 1.e5 # units have to be kg, m, sec in PISM
     ice.setHardness(B)
 
@@ -204,7 +205,7 @@ else:
 if test_adjoint:
   secpera = grid.convert(1.0, "year", "seconds")
   d = PLV(pismssaforward.randVectorS(grid,1e5))
-  r = PLV(pismssaforward.randVectorV(grid,1./secpera))
+  r = PLV(pismssaforward.randVectorV(grid, 1./secpera))
   (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),d,r,3)
   siple.reporting.msg("domainip %g rangeip %g",domainIP,rangeIP)
   exit(0)

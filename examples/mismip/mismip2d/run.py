@@ -313,9 +313,18 @@ if __name__ == "__main__":
         run_mismip(opts.initials, opts.executable, opts.semianalytic)
         exit(0)
 
+    def escape(arg):
+        if arg.find(" ") >= 0:
+            parts = arg.split("=")
+            return "%s=\"%s\"" % (parts[0], ' '.join(parts[1:]))
+        else:
+            return arg
+
+    arg_list = [escape(a) for a in sys.argv]
+
     print "#!/bin/bash"
     print "# This script was created by examples/mismip/run.py. The command was:"
-    print "# %s" % (' '.join(sys.argv))
+    print "# %s" % (' '.join(arg_list))
 
     if opts.executable is None:
         print preamble

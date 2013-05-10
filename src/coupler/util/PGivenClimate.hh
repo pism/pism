@@ -98,8 +98,8 @@ protected:
   map<string, IceModelVec2T*> m_fields;
   string filename, option_prefix;
 
-  PetscReal bc_period,          // in seconds
-    bc_reference_time;          // in seconds
+  unsigned int bc_period;       // in years
+  PetscReal bc_reference_time;  // in seconds
 
   PetscErrorCode process_options()
   {
@@ -147,7 +147,9 @@ protected:
     }
 
     if (bc_period_set) {
-      bc_period = Model::grid.convert(bc_period_years, "years", "seconds");
+      bc_period = bc_period_years;
+    } else {
+      bc_period = 0;
     }
 
     return 0;
@@ -173,7 +175,7 @@ protected:
       // If -..._period is not set, make ..._n_records the minimum of the
       // buffer size and the number of available records. Otherwise try
       // to keep all available records in memory.
-      if (bc_period == 0.0)
+      if (bc_period == 0)
         n_records = PetscMin(n_records, buffer_size);
 
       if (n_records < 1) {

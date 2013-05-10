@@ -51,7 +51,7 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
   : PISMTime(c, conf, units_system) {
 
   m_calendar_string = m_config.get_string("calendar");
-  if (pism_validate_calendar_name(m_calendar_string) == 1) {
+  if (pism_is_valid_calendar_name(m_calendar_string) == false) {
     PetscPrintf(m_com, "PISM ERROR: unsupported calendar: %s\n", m_calendar_string.c_str());
     PISMEnd();
   }
@@ -73,6 +73,10 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
     PISMEnd();
   }
 
+  m_run_start = increment_date(0, m_config.get("start_year"));
+  m_run_end   = increment_date(m_run_start, m_config.get("run_length_years"));
+
+  m_time_in_seconds = m_run_start;
 }
 
 PISMTime_Calendar::~PISMTime_Calendar() {
@@ -187,7 +191,7 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
 
   ierr = nc.get_att_text(time_name, "calendar", new_calendar); CHKERRQ(ierr);
   if (new_calendar.empty() == false) {
-    if (pism_validate_calendar_name(new_calendar) == 1) {
+    if (pism_is_valid_calendar_name(new_calendar) == false) {
       PetscPrintf(m_com,
                   "PISM ERROR: unsupported calendar name '%s' found in a -time_file '%s'.\n",
                   new_calendar.c_str(), filename.c_str());
@@ -252,7 +256,7 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
   return 0;
 }
 
-double PISMTime_Calendar::mod(double time, double) {
+double PISMTime_Calendar::mod(double time, unsigned int) {
   // This class does not support the "mod" operation.
   return time;
 }

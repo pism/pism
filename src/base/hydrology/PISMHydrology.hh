@@ -102,7 +102,8 @@ public:
 
   virtual PetscErrorCode regrid(IceModelVec2S &myvar);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
   friend class PISMHydrology_hydroinput;  // needed because total_input is protected (and no interface for it)
 
   // in the base class these only add/define/write tillwat
@@ -146,11 +147,13 @@ protected:
                 *cellarea, // projection-dependent area of each cell, used in mass reporting
                 *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
+
+  IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
+  unsigned int inputtobed_period;      // in years
+  PetscReal inputtobed_reference_time; // in seconds
+
   PISMVars *variables;
 
-  // for time dependent input of water to bed (in addition to bmelt)
-  IceModelVec2T *inputtobed;
-  PetscReal     inputtobed_period, inputtobed_reference_time;
   virtual PetscErrorCode get_input_rate(
                             PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
 
@@ -252,7 +255,8 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
 
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
@@ -335,7 +339,8 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 

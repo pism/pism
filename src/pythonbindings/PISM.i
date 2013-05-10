@@ -526,9 +526,11 @@ namespace std {
 %include "pism_const.hh"
 %include "pism_options.hh"
 %include "Timeseries.hh"
+%ignore planeStar::operator[];
 %include "iceModelVec.hh"
 %include "PISMVars.hh"
 %include "PIO.hh"
+%ignore PISMUnit::operator=;
 %include "PISMUnits.hh"
 %include "PISMNCFile.hh"
 %include "PISMDiagnostic.hh"
@@ -541,14 +543,6 @@ namespace std {
 %include "stressbalance/ShallowStressBalance.hh"
 %include "SSB_Modifier.hh"
 %template(PISMDiag_SIAFD) PISMDiag<SIAFD>;
-# Swig is confused about SIAFD being concrete.  Changing
-# using PISMComponent_Diag::update;
-# in its interface to 
-# virtual PetscErrorCode update(bool) { return 0; }
-# convinces SWIG that it is concrete.  Is it because the
-# implementation of update comes from a class that is itself abstract?
-# Regardless, we assure SWIG that the class is concrete.
-%feature("notabstract") SIAFD;
 %include "stressbalance/sia/SIAFD.hh"
 
 %include "iceModel.hh"

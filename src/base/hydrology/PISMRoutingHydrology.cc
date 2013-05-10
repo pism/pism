@@ -167,8 +167,8 @@ PetscErrorCode PISMRoutingHydrology::write_variables(set<string> vars, const PIO
   return 0;
 }
 
-
-void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                                           map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
   // remove bwat from PISMHydrology version, because bwat is state
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);

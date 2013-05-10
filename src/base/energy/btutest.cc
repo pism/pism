@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
 
     // read the config option database:
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    config.set_string("calendar", "none");
 
     // when IceGrid constructor is called, these settings are used
     config.set_string("grid_ice_vertical_spacing","equal");

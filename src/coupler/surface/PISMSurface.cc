@@ -37,9 +37,10 @@ PISMSurfaceModel::~PISMSurfaceModel() {
   delete atmosphere;
 }
 
-void PISMSurfaceModel::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+void PISMSurfaceModel::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                                       map<string, PISMTSDiagnostic*> &ts_dict) {
   if (atmosphere)
-    atmosphere->get_diagnostics(dict);
+    atmosphere->get_diagnostics(dict, ts_dict);
 }
 
 void PISMSurfaceModel::attach_atmosphere_model(PISMAtmosphereModel *input) {

@@ -194,7 +194,8 @@ PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const
 }
 
 
-void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
   // remove bwat from PISMHydrology version, because bwat is state
   // remove bwp from PISMRoutingHydrology version, because bwp is state
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);

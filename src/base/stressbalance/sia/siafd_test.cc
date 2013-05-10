@@ -48,7 +48,7 @@ PetscErrorCode compute_strain_heating_errors(const NCConfigVariable &config,
   PetscScalar    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
   PetscScalar    **H;
   const PetscInt Mz = grid.Mz;
-  
+
   const PetscScalar LforFG = 750000; // m
 
   const PetscScalar
@@ -57,7 +57,7 @@ PetscErrorCode compute_strain_heating_errors(const NCConfigVariable &config,
 
   PetscScalar   *dummy1, *dummy2, *dummy3, *dummy4, *strain_heating_exact;
   PetscScalar   junk0, junk1;
-  
+
   strain_heating_exact = new PetscScalar[Mz];
   dummy1 = new PetscScalar[Mz];  dummy2 = new PetscScalar[Mz];
   dummy3 = new PetscScalar[Mz];  dummy4 = new PetscScalar[Mz];
@@ -70,7 +70,7 @@ PetscErrorCode compute_strain_heating_errors(const NCConfigVariable &config,
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar xx = grid.x[i], yy = grid.y[j],
         r = sqrt(PetscSqr(xx) + PetscSqr(yy));
-      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
+      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
                                                 // and not at central singularity
         bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
                   &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
@@ -93,7 +93,7 @@ PetscErrorCode compute_strain_heating_errors(const NCConfigVariable &config,
 
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
-  
+
   ierr = PISMGlobalMax(&max_strain_heating_error, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalSum(&av_strain_heating_error, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
   PetscScalar  gavcount;
@@ -127,7 +127,7 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar xx = grid.x[i], yy = grid.y[j],
         r = sqrt(PetscSqr(xx) + PetscSqr(yy));
-      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
+      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
                                                 // and not at central singularity
         PetscScalar radialUex,wex;
         PetscScalar dummy0,dummy1,dummy2,dummy3,dummy4;
@@ -169,7 +169,7 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
                                               IceModelVec3 &temperature,
                                               IceModelVec3 &enthalpy) {
   PetscErrorCode ierr;
-  
+
   ierr = temperature.begin_access(); CHKERRQ(ierr);
   ierr = enthalpy.begin_access(); CHKERRQ(ierr);
   ierr = thickness.begin_access(); CHKERRQ(ierr);
@@ -278,9 +278,9 @@ PetscErrorCode reportErrors(const NCConfigVariable &config,
                             grid,
                             max_strain_heating_error, av_strain_heating_error); CHKERRQ(ierr);
 
-  ierr = verbPrintf(1,grid.com, 
+  ierr = verbPrintf(1,grid.com,
                     "Sigma     :      maxSig       avSig\n"); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n", 
+  ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n",
                     max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6); CHKERRQ(ierr);
 
   // surface velocity errors if exact values are available; reported in m/year
@@ -292,13 +292,13 @@ PetscErrorCode reportErrors(const NCConfigVariable &config,
                                       maxUerr, avUerr,
                                       maxWerr, avWerr); CHKERRQ(ierr);
 
-  ierr = verbPrintf(1,grid.com, 
+  ierr = verbPrintf(1,grid.com,
                     "surf vels :     maxUvec      avUvec        maxW         avW\n"); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
-                    grid.convert(maxUerr, "m/s", "m/year"),  
-                    grid.convert(avUerr,  "m/s", "m/year"),  
-                    grid.convert(maxWerr, "m/s", "m/year"),  
-                    grid.convert(avWerr,  "m/s", "m/year")); CHKERRQ(ierr); 
+  ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
+                    grid.convert(maxUerr, "m/s", "m/year"),
+                    grid.convert(avUerr,  "m/s", "m/year"),
+                    grid.convert(maxWerr, "m/s", "m/year"),
+                    grid.convert(avWerr,  "m/s", "m/year")); CHKERRQ(ierr);
 
   return 0;
 }
@@ -315,9 +315,9 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {  
+  {
     PISMUnitSystem unit_system(NULL);
     NCConfigVariable config(unit_system), overrides(unit_system);
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
     grid.Lz = 4000;
     grid.Mx = grid.My = 61;
     grid.Mz = 61;
-    
+
     string output_file = "siafd_test_F.nc";
     ierr = PetscOptionsBegin(grid.com, "", "SIAFD_TEST options", ""); CHKERRQ(ierr);
     {
@@ -359,13 +359,13 @@ int main(int argc, char *argv[]) {
 
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
-    ierr = grid.compute_vertical_levels(); CHKERRQ(ierr); 
+    ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
     ierr = grid.allocate(); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
     ierr = grid.printInfo(1); CHKERRQ(ierr);
-    //ierr = grid.printVertLevels(1); CHKERRQ(ierr); 
+    //ierr = grid.printVertLevels(1); CHKERRQ(ierr);
 
     ICMEnthalpyConverter EC(config);
     ThermoGlenArrIce ice(grid.com, "", config, &EC);
@@ -414,7 +414,7 @@ int main(int argc, char *argv[]) {
     // grounded_dragging_floating integer mask
     ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
-			 "", ""); CHKERRQ(ierr);
+                           "", ""); CHKERRQ(ierr);
     vector<double> mask_values(4);
     mask_values[0] = MASK_ICE_FREE_BEDROCK;
     mask_values[1] = MASK_GROUNDED;
@@ -422,8 +422,8 @@ int main(int argc, char *argv[]) {
     mask_values[3] = MASK_ICE_FREE_OCEAN;
     ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
     ierr = vMask.set_attr("flag_meanings",
-			"ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-		  CHKERRQ(ierr);
+                          "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
+    CHKERRQ(ierr);
     vMask.output_data_type = PISM_BYTE;
     ierr = vars.add(vMask); CHKERRQ(ierr);
 
@@ -441,7 +441,6 @@ int main(int argc, char *argv[]) {
 
     PISMStressBalance stress_balance(grid,
                                      trivial_stress_balance, sia,
-                                     NULL, // no ocean model
                                      config);
 
     // fill the fields:
@@ -454,13 +453,13 @@ int main(int argc, char *argv[]) {
 
     // Solve (fast==true means "no 3D update and no strain heating computation"):
     bool fast = false;
-    ierr = stress_balance.update(fast); CHKERRQ(ierr); 
+    ierr = stress_balance.update(fast, 0.0); CHKERRQ(ierr);
 
     // Report errors relative to the exact solution:
     IceModelVec3 *u_sia, *v_sia, *w_sia, *sigma;
-    ierr = stress_balance.get_3d_velocity(u_sia, v_sia, w_sia); CHKERRQ(ierr); 
+    ierr = stress_balance.get_3d_velocity(u_sia, v_sia, w_sia); CHKERRQ(ierr);
 
-    ierr = stress_balance.get_volumetric_strain_heating(sigma); CHKERRQ(ierr); 
+    ierr = stress_balance.get_volumetric_strain_heating(sigma); CHKERRQ(ierr);
 
     ierr = reportErrors(config, grid,
                         &vH, u_sia, v_sia, w_sia, sigma); CHKERRQ(ierr);

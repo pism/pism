@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,8 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
 protected:
   virtual PetscErrorCode allocate_fd();
 

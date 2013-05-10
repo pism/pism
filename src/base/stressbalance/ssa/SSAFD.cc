@@ -1308,8 +1308,9 @@ PetscErrorCode SSAFD_nuH::compute(IceModelVec* &output) {
   return 0;
 }
 
-void SSAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  SSA::get_diagnostics(dict);
+void SSAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                            map<string, PISMTSDiagnostic*> &ts_dict) {
+  SSA::get_diagnostics(dict, ts_dict);
 
   dict["nuH"] = new SSAFD_nuH(this, grid, *variables);
 }

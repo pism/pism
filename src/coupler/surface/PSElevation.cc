@@ -164,7 +164,8 @@ void PSElevation::attach_atmosphere_model(PISMAtmosphereModel *input)
   delete input;
 }
 
-void PSElevation::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {
+void PSElevation::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
+                                  map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
   // empty
 }
 

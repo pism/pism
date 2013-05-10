@@ -110,7 +110,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   // the following inputtobed is not related to IceModel; we must read it ourselves
 
   if (itbfile_set) {
-    inputtobed_period = (itbperiod_set) ? grid.convert(itbperiod_years, "years", "seconds") : 0.0;
+    inputtobed_period = (itbperiod_set) ? itbperiod_years : 0.0;
     inputtobed_reference_time = (itbreference_set) ? grid.convert(itbreference_year, "years", "seconds") : 0.0;
 
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
@@ -174,7 +174,8 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 }
 
 
-void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                                    map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
   dict["bwat"] = new PISMHydrology_bwat(this, grid, *variables);
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);

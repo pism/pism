@@ -162,7 +162,8 @@ public:
 
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                               map<string, PISMTSDiagnostic*> &ts_dict);
 protected:
   virtual PetscErrorCode allocate();
 

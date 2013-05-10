@@ -27,17 +27,16 @@ class IceFlowLaw;
 class EnthalpyConverter;
 
 //! Shallow stress balance modifier (such as the non-sliding SIA).
-class SSB_Modifier : public PISMComponent_Diag
+class SSB_Modifier : public PISMComponent
 {
 public:
   SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
-    : PISMComponent_Diag(g, c), EC(e)
+    : PISMComponent(g, c), EC(e)
   { D_max = u_max = v_max = 0.0; variables = NULL; allocate(); }
   virtual ~SSB_Modifier() {}
 
   virtual PetscErrorCode init(PISMVars &vars) { variables = &vars; return 0; }
 
-  using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
@@ -87,7 +86,6 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
   virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
   { }

@@ -38,7 +38,7 @@
 #include "PISMDiagnostic.hh"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
-  : grid(g), 
+  : grid(g),
     mapping(g.get_unit_system()),
     config(conf),
     overrides(conf_overrides),
@@ -634,7 +634,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   grid.profiler->begin(event_velocity);
 
-  ierr = stress_balance->update(updateAtDepth == false); CHKERRQ(ierr); 
+  PetscReal sea_level = 0;
+  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+
+  ierr = stress_balance->update(updateAtDepth == false,
+                                sea_level); CHKERRQ(ierr);
 
   grid.profiler->end(event_velocity);
 

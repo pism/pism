@@ -20,7 +20,8 @@
 #include "PISMBedSmoother.hh"
 #include "PISMVars.hh"
 
-void SIAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+void SIAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict,
+                            map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
   dict["diffusivity"] = new SIAFD_diffusivity(this, grid, *variables);
   dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this, grid, *variables);
   dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, grid, *variables);

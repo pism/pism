@@ -123,7 +123,8 @@ PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
   return 0;
 }
 
-void PSConstantPIK::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/)
+void PSConstantPIK::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
+                                    map<string, PISMTSDiagnostic*> &/*ts_dict*/)
 {
   // empty (does not have an atmosphere model)
 }

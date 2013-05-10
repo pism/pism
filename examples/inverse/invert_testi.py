@@ -337,7 +337,7 @@ if __name__ == "__main__":
   u_obs_a = tz2.communicate(u_obs)
 
   secpera = grid.convert(1.0, "year", "seconds")
-  
+
   if do_final_plot and (not tauc_a is None):
     from matplotlib import pyplot
     pyplot.clf()

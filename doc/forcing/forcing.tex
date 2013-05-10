@@ -209,7 +209,7 @@ years.
 The \variable{time} variable  in a forcing file that is to  be used as periodic
 should start at $0$. (In other words, time in a file with periodic forcing data
 is  \emph{time  since   the  beginning  of  a  period}.)   Please  see  section
-\ref{sec:calendars}  for a  discussion  of time  units  appropriate in  forcing
+\ref*{userman-sec:calendars}  of the User's Manual for a  discussion  of time  units  appropriate in  forcing
 files.
 
 
@@ -1051,6 +1051,36 @@ See also to \texttt{-atmosphere~...,anomaly}
 (section~\ref{sec:atmosphere-anomaly}), which is similar, but applies anomalies
 at the atmosphere level.
 
+\subsection{Modifier: Caching}
+\label{sec:surface-cache}
+\optsection{SB@\surfacemods!\texttt{cache}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~...,cache} \index[options]{SB@\surfacemods!\texttt{cache}} \\
+    C++ class: & \class{PSCache}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier skips surface model updates, so that a surface model is
+called no more than every \texttt{-surface_cache_update_interval}
+years. A time-step of $1$ year is used every time a surface model is
+updated.
+
+This is useful in cases when inter-annual climate variability is
+important, but one year differs little from the next. (Coarse-grid
+paleo-climate runs, for example.)
+
+It takes the following options:
+\begin{itemize}
+\item \txtopt{surface_cache_update_interval}{\emph{years}} Specifies the
+  minimum interval between updates. PISM may take longer time-steps if
+  the adaptive scheme allows it, though.
+\end{itemize}
+
+See also section \ref{sec:ocean-cache}.
 
 \clearpage\newpage
 
@@ -1503,6 +1533,37 @@ It takes the following command-line options:
 \item \intextoption{ocean_delta_SMB_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
 \item \intextoption{ocean_delta_SMB_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
+
+\subsection{Modifier: Caching}
+\label{sec:ocean-cache}
+\optsection{SB@\oceanmods!\texttt{cache}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~...,cache} \index[options]{SB@\oceanmods!\texttt{cache}} \\
+    C++ class: & \class{POCache}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier skips ocean model updates, so that a ocean model is
+called no more than every \texttt{-ocean_cache_update_interval}
+years. A time-step of $1$ year is used every time a ocean model is
+updated.
+
+This is useful in cases when inter-annual climate variability is
+important, but one year differs little from the next. (Coarse-grid
+paleo-climate runs, for example.)
+
+It takes the following options:
+\begin{itemize}
+\item \txtopt{ocean_cache_update_interval}{\emph{years}} Specifies the
+  minimum interval between updates. PISM may take longer time-steps if
+  the adaptive scheme allows it, though.
+\end{itemize}
+
+See also section \ref{sec:surface-cache}.
 
 % The End
 
