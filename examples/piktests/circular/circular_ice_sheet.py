@@ -39,7 +39,7 @@ def MISMIP_thk(r):
     a       = -(thk_cf - thk_max)/(r_cf)**4
     b       = 2*(thk_cf - thk_max)/(r_cf)**2
     c       = thk_max
-    return  a * (radius)**4 + b* (radius)**2 + c
+    return  a * r**4 + b * r**2 + c
 
 # bedrock and ice thickness
 for j in range(options.My):
@@ -57,16 +57,11 @@ for j in range(options.My):
 bed[bed < p.topg_min] = p.topg_min
 
 # Compute the grounding line radius
-I = (options.Mx - 1) / 2
-J = (options.My - 1) / 2
-H = thk[J,I:]
-B = bed[J,I:]
-xx = x[I:]
 def f(x):
     "floatation criterion: rho_ice/rho_ocean * thk + bed = 0"
-    return np.interp(x, xx, p.rho_ice / p.rho_ocean * H + B)
+    return (p.rho_ice / p.rho_ocean) * MISMIP_thk(x) + MISMIP_bed(x)
 
-r_gl = opt.bisect(f, xx[0], xx[-1])
+r_gl = opt.bisect(f, 0, r_cf)
 print "grounding line radius = %.2f km" % (r_gl/1000.0)
 
 ncfile = PISMNC.PISMDataset(options.output_filename, 'w', format='NETCDF3_CLASSIC')
