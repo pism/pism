@@ -27,15 +27,15 @@ PetscErrorCode PISMNullTransportHydrology::subglacial_water_thickness(IceModelVe
 }
 
 
-//! Update both the till water thickness (by a step of a simplified ODE).  There is no tranportable water thickness.
+//! Update the till water thickness by an explicit step of a simplified ODE.  There is no tranportable water thickness variable.
 /*!
-Does an implicit (backward Euler) step of the integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(W_{til}^{max} - W_{til}\right) + (m/\rho_w) - C\f]
+Does an explicit (Euler) step of the integration
+  \f[ \frac{\partial W_{til}}{\partial t} = \min \left\{\frac{m}{\rho_w}, \mu \left(W_{til}^{max} - W_{til}\right)\right\} - C\f]
 where \f$\mu=\f$`hydrology_tillwat_rate`, \f$C=\f$`hydrology_tillwat_decay_rate_null`,
 and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is
 `total_input`.
 
-The solution satisfies the inequalities
+The solution is forced to satisfy the inequalities
   \f[ 0 \le W_{til} \le W_{til}^{max}.\f]
  */
 PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal icedt) {
@@ -64,8 +64,10 @@ PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal iced
   ierr = total_input.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscReal change = mu * Wtilmax + total_input(i,j) - C;
-      Wtil(i,j) = (Wtil(i,j) + icedt * change) / (1.0 + mu * icedt);
+      //const PetscReal change = mu * Wtilmax + total_input(i,j) - C;
+      //Wtil(i,j) = (Wtil(i,j) + icedt * change) / (1.0 + mu * icedt);
+      const PetscReal change = mu * (Wtilmax - Wtil(i,j));
+      Wtil(i,j) = Wtil(i,j) + icedt * (PetscMin(change, total_input(i,j)) - C);
       Wtil(i,j) = PetscMax(0.0, Wtil(i,j));
       Wtil(i,j) = PetscMin(Wtil(i,j), Wtilmax);
     }

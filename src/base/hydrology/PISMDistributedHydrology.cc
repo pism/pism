@@ -150,11 +150,12 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   } else {
     ierr = P.set(config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);
   }
+
   ierr = regrid(P); CHKERRQ(ierr); //  we could be asked to regrid from file
+
   if (init_P_from_steady) { // if so, overwrite all the other stuff
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
-
   return 0;
 }
 
@@ -223,36 +224,21 @@ PetscErrorCode PISMDistributedHydrology::subglacial_water_pressure(IceModelVec2S
 }
 
 
-FIXME:  is there a max(v,u) method in IceModelVec?;  in any case, avoid code duplication
-by calling PISMHydrology::till_water_pressure()
-//! Computes water pressure in till by taking the maximum of the transportable water pressure and the result of the rule as in PISMNullTransportHydrology.
+//! Computes water pressure in till by taking the maximum of the transportable water pressure and the result of the rule as in PISMHydrology.
 PetscErrorCode PISMDistributedHydrology::till_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-#if (PISM_DEBUG==1)
-  ierr = check_Wtil_bounds(); CHKERRQ(ierr);
-#endif
+  ierr = PISMHydrology::till_water_pressure(result); CHKERRQ(ierr);
 
-  ierr = overburden_pressure(Pover); CHKERRQ(ierr);
-
-  const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-                  lam      = config.get("hydrology_pressure_fraction_till");
-
-  ierr = Wtil.begin_access(); CHKERRQ(ierr);
   ierr = P.begin_access(); CHKERRQ(ierr);
-  ierr = Pover.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      const PetscReal
-          tillrule = lam * (Wtil(i,j) / Wtilmax) * Pover(i,j);
-      result(i,j) = PetscMax(tillrule,P(i,j));
+      result(i,j) = PetscMax(result(i,j),P(i,j));
     }
   }
   ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = Pover.end_access(); CHKERRQ(ierr);
   ierr = P.end_access(); CHKERRQ(ierr);
-  ierr = Wtil.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -468,17 +454,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   t = icet;
   dt = icedt;
 
-  const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-                  mu       = config.get("hydrology_tillwat_rate"),
-                  tau      = config.get("hydrology_tillwat_transfer_proportion");
-  if ((Wtilmax < 0.0) || (mu < 0.0) || (tau < 0.0)) {
-    PetscPrintf(grid.com,
-       "PISMDistributedHydrology ERROR: one of scalar config parameters for tillwat is negative\n"
-       "            this is not allowed\n"
-       "ENDING ... \n\n");
-    PISMEnd();
-  }
-
   // make sure W,P have valid ghosts before starting hydrology steps
   ierr = W.update_ghosts(); CHKERRQ(ierr);
   ierr = P.update_ghosts(); CHKERRQ(ierr);
@@ -660,22 +635,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
     ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
 
-    // FIXME: this is code duplication from PISMRoutingHydrology::update()
-    // update Wtil and W by (possibly) transfering water from bwat; implicit step
-    //   with no time-step restriction
-    ierr = Wtil.begin_access(); CHKERRQ(ierr);
-    ierr = W.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscReal
-            change = mu * PetscMin(tau * W(i,j), Wtilmax),
-            Wtilnew = (Wtil(i,j) + icedt * change) / (1.0 + mu * icedt);
-        W(i,j) = W(i,j) - (Wtilnew - Wtil(i,j));
-        Wtil(i,j) = Wtilnew;
-      }
-    }
-    ierr = Wtil.end_access(); CHKERRQ(ierr);
-    ierr = W.end_access(); CHKERRQ(ierr);
+    // update Wtil and W by modeling transer to/from till
+    ierr = PISMRoutingHydrology::exchange_with_till(hdt); CHKERRQ(ierr);
 
     ht += hdt;
   } // end of hydrology model time-stepping loop

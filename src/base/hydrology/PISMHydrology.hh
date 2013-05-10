@@ -254,11 +254,11 @@ public:
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
 
-  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
+  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
 protected:
   // this model's state
@@ -303,6 +303,7 @@ protected:
             PetscReal &dtCFL_result, PetscReal &dtDIFFW_result);
 
   PetscErrorCode raw_update_W(PetscReal hdt);
+  PetscErrorCode exchange_with_till(PetscReal hdt);
 
   inline bool in_null_strip(PetscInt i, PetscInt j) {
     if (stripwidth < 0.0) return false;

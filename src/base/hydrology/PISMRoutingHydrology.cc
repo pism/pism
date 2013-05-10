@@ -137,7 +137,6 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars, bool i_set, bool 
 
   // however we initialized it, we could be asked to regrid from file
   ierr = regrid(W); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -651,22 +650,54 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
 }
 
 
+//! Update both model state variables W and Wtil by applying one step of the till water evolution equation.
+/*!
+For updating Wtil, does an implicit (backward Euler) step of the integration
+  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(\min\{\tau W,W_{til}^{max} - W_{til}\right)\f]
+where \f$\mu=\f$`hydrology_tillwat_rate`, \f$\tau=\f$`hydrology_tillwat_transfer_proportion`,
+and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  There is no time-step restriction.
+The solution satisfies the inequalities
+  \f[ 0 \le W_{til} \le W_{til}^{max}.\f]
+The subglacial water amount is updated to conserve water.
+ */
+PetscErrorCode PISMRoutingHydrology::exchange_with_till(PetscReal hdt) {
+  PetscErrorCode ierr;
+  const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
+                  mu       = config.get("hydrology_tillwat_rate"),
+                  tau      = config.get("hydrology_tillwat_transfer_proportion");
+  if ((Wtilmax < 0.0) || (mu < 0.0) || (tau < 0.0)) {
+    PetscPrintf(grid.com,
+       "PISMRoutingHydrology ERROR: one of scalar config parameters for tillwat is negative\n"
+       "            this is not allowed\n"
+       "ENDING ... \n\n");
+    PISMEnd();
+  }
+
+  ierr = Wtil.begin_access(); CHKERRQ(ierr);
+  ierr = W.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscReal
+          change = mu * PetscMin(tau * W(i,j), Wtilmax),
+          Wtilnew = (Wtil(i,j) + hdt * change) / (1.0 + mu * hdt);
+      W(i,j) = W(i,j) - (Wtilnew - Wtil(i,j));
+      Wtil(i,j) = Wtilnew;
+    }
+  }
+  ierr = Wtil.end_access(); CHKERRQ(ierr);
+  ierr = W.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Update the model state variables W and Wtil by applying the subglacial hydrology model equations.
 /*!
 Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
 is generally on the order of months to years.  This hydrology model will take its
 own shorter time steps, perhaps hours to weeks.
 
-For updating W = `bwat`, see raw_update_W().
-
-For updating Wtil, does an implicit (backward Euler) step of the integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(\min\{\tau W,W_{til}^{max} - W_{til}\right)\f]
-where \f$\mu=\f$`hydrology_tillwat_rate`, \f$\tau=\f$`hydrology_tillwat_transfer_proportion`,
-and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.
-
-The solution satisfies the inequalities
-  \f[ 0 \le W_{til} \le W_{til}^{max}.\f]
-
+For updating W = `bwat`, calls raw_update_W().  For updating Wtil = `tillwat`,
+calls exchange_with_till().
  */
 PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
   PetscErrorCode ierr;
@@ -679,17 +710,6 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
   // update PISMComponent times: t = current time, t+dt = target time
   t = icet;
   dt = icedt;
-
-  const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-                  mu       = config.get("hydrology_tillwat_rate"),
-                  tau      = config.get("hydrology_tillwat_transfer_proportion");
-  if ((Wtilmax < 0.0) || (mu < 0.0) || (tau < 0.0)) {
-    PetscPrintf(grid.com,
-       "PISMRoutingHydrology ERROR: one of scalar config parameters for tillwat is negative\n"
-       "            this is not allowed\n"
-       "ENDING ... \n\n");
-    PISMEnd();
-  }
 
   // make sure W has valid ghosts before starting hydrology steps
   ierr = W.update_ghosts(); CHKERRQ(ierr);
@@ -741,21 +761,8 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
     // transfer Wnew into W
     ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
 
-    // update Wtil and W by (possibly) transfering water from bwat; implicit step
-    //   with no time-step restriction
-    ierr = Wtil.begin_access(); CHKERRQ(ierr);
-    ierr = W.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscReal
-            change = mu * PetscMin(tau * W(i,j), Wtilmax),
-            Wtilnew = (Wtil(i,j) + icedt * change) / (1.0 + mu * icedt);
-        W(i,j) = W(i,j) - (Wtilnew - Wtil(i,j));
-        Wtil(i,j) = Wtilnew;
-      }
-    }
-    ierr = Wtil.end_access(); CHKERRQ(ierr);
-    ierr = W.end_access(); CHKERRQ(ierr);
+    // update Wtil and W by modeling transfer to/from till
+    ierr = exchange_with_till(hdt); CHKERRQ(ierr);
 
     ht += hdt;
   } // end of hydrology model time-stepping loop

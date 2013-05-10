@@ -152,7 +152,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
   IceModelVec2S *Wtil_input = dynamic_cast<IceModelVec2S*>(vars.get("tillwat"));
-  if (Wtil_input != NULL) { // a variable called "bwat" is already in context
+  if (Wtil_input != NULL) { // a variable called "tillwat" is already in context
     ierr = Wtil.copy_from(*Wtil_input); CHKERRQ(ierr);
   } else if (i_set || bootstrap) {
     string filename;
@@ -170,12 +170,6 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 
   // whether or not we could initialize from file, we could be asked to regrid from file
   ierr = regrid(Wtil); CHKERRQ(ierr);
-
-  // add bwat to the variables in the context if it is not already there
-  if (vars.get("tillwat") == NULL) {
-    ierr = vars.add(Wtil); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
