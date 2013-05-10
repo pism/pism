@@ -155,21 +155,12 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
 
-FIXME:  don't do this; treat vars as read-only
-  // add variables to the context if not already there
-  if (vars.get("enwat") == NULL) {
-    ierr = vars.add(Wen); CHKERRQ(ierr);
-  }
-  if (vars.get("bwp") == NULL) {
-    ierr = vars.add(P); CHKERRQ(ierr);
-  }
   return 0;
 }
 
 
-void PISMDistributedHydrology::add_vars_to_output(string /*keyword*/, set<string> &result) {
-FIXME: base class has state vars, so call PISMRoutingHydrology::add_vars_...
-  result.insert("bwat");
+void PISMDistributedHydrology::add_vars_to_output(string keyword, set<string> &result) {
+  PISMRoutingHydrology::add_vars_to_output(keyword, result);
   result.insert("enwat");
   result.insert("bwp");
 }
@@ -177,11 +168,8 @@ FIXME: base class has state vars, so call PISMRoutingHydrology::add_vars_...
 
 PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
-FIXME: base class has state vars, so call PISMRoutingHydrology::add_vars_...
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwat")) {
-    ierr = W.define(nc, nctype); CHKERRQ(ierr);
-  }
+  ierr = PISMRoutingHydrology::define_variables(vars, nc, nctype); CHKERRQ(ierr);
   if (set_contains(vars, "enwat")) {
     ierr = Wen.define(nc, nctype); CHKERRQ(ierr);
   }
@@ -193,11 +181,8 @@ FIXME: base class has state vars, so call PISMRoutingHydrology::add_vars_...
 
 
 PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const PIO &nc) {
-FIXME: base class has state vars, so call PISMRoutingHydrology::add_vars_...
   PetscErrorCode ierr;
-  if (set_contains(vars, "bwat")) {
-    ierr = W.write(nc); CHKERRQ(ierr);
-  }
+  ierr = PISMRoutingHydrology::write_variables(vars, nc); CHKERRQ(ierr);
   if (set_contains(vars, "enwat")) {
     ierr = Wen.write(nc); CHKERRQ(ierr);
   }
@@ -209,11 +194,15 @@ FIXME: base class has state vars, so call PISMRoutingHydrology::add_vars_...
 
 
 void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  // remove bwat from PISMHydrology version, because bwat is state
+  // remove bwp from PISMRoutingHydrology version, because bwp is state
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
   dict["tillwp"] = new PISMHydrology_tillwp(this, grid, *variables);
+  // remove enwat from PISMRoutingHydrology version, because enwat is state
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
+  // keep diagnostic: it makes sense if transport is modeled
   dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
 }
 
@@ -234,6 +223,8 @@ PetscErrorCode PISMDistributedHydrology::subglacial_water_pressure(IceModelVec2S
 }
 
 
+FIXME:  is there a max(v,u) method in IceModelVec?;  in any case, avoid code duplication
+by calling PISMHydrology::till_water_pressure()
 //! Computes water pressure in till by taking the maximum of the transportable water pressure and the result of the rule as in PISMNullTransportHydrology.
 PetscErrorCode PISMDistributedHydrology::till_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
