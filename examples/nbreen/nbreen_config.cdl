@@ -17,7 +17,6 @@ netcdf pism_overrides {
     pism_overrides:ice_softness = 3.1689e-24;
     pism_overrides:ice_softness_doc = "; = A";
 
-
     // next four are k, alpha, beta, W_r (= h_r) just as in *both*
     //   Schoof et al (2012) Table 1  and  Hewitt et al (2012) Table 1
 
@@ -49,6 +48,9 @@ netcdf pism_overrides {
 
     pism_overrides:hydrology_lower_bound_creep_regularization = 0.001;
     pism_overrides:hydrology_lower_bound_creep_regularization_doc = "m; = Y_0";
+ 
+    pism_overrides:hydrology_tillwat_max = 0.0;
+    pism_overrides:hydrology_tillwat_max_doc = "m; turn off till water mechanism";
 
     pism_overrides:hydrology_maximum_time_step_years = 1.0;
     pism_overrides:hydrology_maximum_time_step_years_doc = "years; ";
