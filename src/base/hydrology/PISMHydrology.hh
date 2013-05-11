@@ -66,7 +66,6 @@ The till water pressure, not the tranportable water pressure, is used by the
 Mohr-Coulomb criterion to provide a yield stress.
 
 The base class does not implement the evolution of the till water thickness.
-It does not report a till water pressure.
 
 These models also either track the amount of englacial water, in a manner
 which allows computation of an effective thickness and which is returned by
@@ -76,18 +75,20 @@ englacial storage is [\ref Bartholomausetal2011].
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
 short physical timescales associated to liquid water moving under a glacier,
-PISMHydrology derived classes generally take many substeps in PISM's major
+PISMHydrology (and derived) classes generally take many substeps in PISM's major
 ice dynamics time steps.  Thus when an update() method in a PISMHydrology
-derived class is called it will advance its internal time to the new goal t+dt
+class is called it will advance its internal time to the new goal t+dt
 using its own internal time steps.
 
-Generally PISMHydrology and derived classes use the ice geometry, the basal melt
-rate, and the basal sliding velocity.  Note that the basal melt rate is an
-energy-conservation-derived field.  These fields generally
-come from IceModel and PISMStressBalance.  Additionally, time-dependent
-and spatially-variable water input to the basal layer, taken directly from a
-file, is possible too.  Potentially PISMSurfaceModel could supply such a
-quantity.
+Generally PISMHydrology classes use the ice geometry, the basal melt
+rate, and the basal sliding velocity in determining the evolution of the
+hydrology state variables.  Note that the basal melt rate is an
+energy-conservation-derived field and the basal-sliding velocity is derived
+from the solution of a stress balance.  In fact, the basal melt rate and 
+sliding velocity fields generally come from IceModel and PISMStressBalance.
+
+Additional, time-dependent and spatially-variable water input to the basal
+layer, taken directly from a file, is possible too.
 
 Ice geometry and energy fields are normally treated as constant in time
 during the update() call for the interval [t,t+dt].  Thus the coupling is
@@ -99,8 +100,6 @@ public:
   virtual ~PISMHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-
-  virtual PetscErrorCode regrid(IceModelVec2S &myvar);
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
                                map<string, PISMTSDiagnostic*> &ts_dict);
@@ -153,6 +152,8 @@ protected:
   PetscReal inputtobed_reference_time; // in seconds
 
   PISMVars *variables;
+
+  virtual PetscErrorCode regrid(IceModelVec2S &myvar);
 
   virtual PetscErrorCode get_input_rate(
                             PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);

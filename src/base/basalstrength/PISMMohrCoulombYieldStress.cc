@@ -35,8 +35,8 @@ Its initialization is nontrivial: either `-topg_to_phi`  heuristic or inverse
 modeling so that `tillphi` can be read-in at the beginning of the run. Currently
 `tillphi` does not evolve during the run.
 
-This submodel uses a pointer to a PISMHydrology instance to get the basal water
-pressure.  Then the effective pressure is combined with tillphi
+This submodel uses a pointer to a PISMHydrology instance to get the till (pore)
+water pressure.  Then the effective pressure is combined with tillphi
 to compute an updated `tauc` by the Mohr-Coulomb criterion.
 
 This submodel is inactive in floating areas.
@@ -57,11 +57,11 @@ PetscErrorCode PISMMohrCoulombYieldStress::allocate() {
                         "yield stress for basal till (plastic or pseudo-plastic model)",
                         "Pa", ""); CHKERRQ(ierr);
 
-  ierr = bwp.create(grid, "bwp-in-PISMYieldStress",
-                    true, grid.max_stencil_width); CHKERRQ(ierr);
-  ierr = bwp.set_attrs("internal",
-                       "copy of basal water pressure held by PISMMohrCoulombYieldStress",
-                       "Pa", ""); CHKERRQ(ierr);
+  ierr = tillwp.create(grid, "tillwp-in-PISMYieldStress",
+                       true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = tillwp.set_attrs("internal",
+                          "copy of till water pressure held by PISMMohrCoulombYieldStress",
+                          "Pa", ""); CHKERRQ(ierr);
   ierr = Po.create(grid, "overburden_pressure-in-PISMYieldStress",
                     true, grid.max_stencil_width); CHKERRQ(ierr);
   ierr = Po.set_attrs("internal",
@@ -89,15 +89,14 @@ See also IceBasalResistancePlasticLaw::drag().
 The strength of the saturated till material, the yield stress, is modeled by a
 Mohr-Coulomb relation [\ref Paterson, \ref SchoofStream],
     \f[   \tau_c = c_0 + (\tan \varphi) N, \f]
-where \f$N = P_o - P\f$ is the effective pressure on the till (see
-PISMHydrology::basal_water_pressure()),
+where \f$N = P_o - P\f$ is the effective pressure on the mineral till (see
+PISMHydrology::till_water_pressure()),
 
 The determination of the till friction angle \f$\varphi(x,y)\f$  is important.
-It is assumed in this default model to be a
-time-independent factor which describes the strength of the unsaturated "dry"
-till material.  Thus it is assumed to change more slowly than the basal water
-pressure, and it follows that it changes more slowly than the yield stress and
-the basal shear stress.
+It is assumed in this default model to be a time-independent factor which
+describes the strength of the unsaturated "dry" (mineral) till material.  Thus
+it is assumed to change more slowly than the till water pressure, and it follows
+that it changes more slowly than the yield stress and the basal shear stress.
 
 Option `-topg_to_phi` causes call to topg_to_phi() at the beginning of the run.
 This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
@@ -197,7 +196,8 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
     }
   }
 
-  ierr = regrid(); CHKERRQ(ierr);
+  // regrid if requested, regardless of how initialized
+  ierr = regrid(till_phi); CHKERRQ(ierr);
 
   if (tauc_to_phi_set) {
     string tauc_to_phi_file;
@@ -249,7 +249,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
 }
 
 
-PetscErrorCode PISMMohrCoulombYieldStress::regrid() {
+PetscErrorCode PISMMohrCoulombYieldStress::regrid(IceModelVec2S &myvar) {
   PetscErrorCode ierr;
   bool regrid_file_set, regrid_vars_set;
   string regrid_file;
@@ -264,14 +264,11 @@ PetscErrorCode PISMMohrCoulombYieldStress::regrid() {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  if (! regrid_file_set) return 0;
-
-  // stop if the user did not ask to regrid tillphi
-  if (!set_contains(regrid_vars, till_phi.string_attr("short_name")))
-    return 0;
-
-  ierr = till_phi.regrid(regrid_file, true); CHKERRQ(ierr);
-
+  if (regrid_file_set && regrid_vars_set && set_contains(regrid_vars, myvar.string_attr("short_name"))) {
+    ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
+                      myvar.string_attr("short_name").c_str(), regrid_file.c_str()); CHKERRQ(ierr);
+    ierr = myvar.regrid(regrid_file, true); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -301,15 +298,15 @@ PetscErrorCode PISMMohrCoulombYieldStress::write_variables(set<string> vars, con
 //! Update the till yield stress for use in the pseudo-plastic till basal stress
 //! model.  See also IceBasalResistancePlasticLaw.
 /*!
-Updates yield stress \f$\tau_c\f$ based on modeled basal water pressure.  We implement
+Updates yield stress \f$\tau_c\f$ based on modeled till water pressure.  We implement
 formula (2.4) in [\ref SchoofStream], the Mohr-Coulomb criterion:
     \f[   \tau_c = \mu (P_o - P), \f]
 where \f$\tau_c\f$ is the till yield stress, \f$P_o\f$ is the ice over-burden
-pressure, \f$P\f$ is the modeled basal water pressure, and \f$\mu\f$ is a
+pressure, \f$P\f$ is the modeled till water pressure, and \f$\mu\f$ is a
 strength coefficient for the mineral till (at least, it is independent of
 \f$p_w\f$).  The difference
     \f[   N = P_o - P   \f]
-is the effective pressure on the till.  Both \f$P_o,P\f$ are provided by
+is the effective pressure on the mineral till.  Both \f$P_o,P\f$ are provided by
 PISMHydrology.
 
 We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
@@ -335,7 +332,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
     high_tauc = config.get("high_tauc");
 
   if (hydrology) {
-    ierr = hydrology->subglacial_water_pressure(bwp); CHKERRQ(ierr);
+    ierr = hydrology->till_water_pressure(tillwp); CHKERRQ(ierr);
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 3,
@@ -344,12 +341,10 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
 
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
-  ierr = bwp.begin_access(); CHKERRQ(ierr);
+  ierr = tillwp.begin_access(); CHKERRQ(ierr);
   ierr = Po.begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
-
   MaskQuery m(*mask);
-
   PetscInt GHOSTS = grid.max_stencil_width;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
@@ -367,16 +362,15 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
       } else if (m.ice_free(i, j)) {
         tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
-        const PetscScalar N = Po(i,j) - bwp(i,j);
+        const PetscScalar N = Po(i,j) - tillwp(i,j);
         tauc(i, j) = till_c_0 + N * tan((M_PI/180.0) * till_phi(i, j));
       }
     }
   }
-
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = tauc.end_access(); CHKERRQ(ierr);
   ierr = till_phi.end_access(); CHKERRQ(ierr);
-  ierr = bwp.end_access(); CHKERRQ(ierr);
+  ierr = tillwp.end_access(); CHKERRQ(ierr);
   ierr = Po.end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -497,7 +491,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   PetscErrorCode ierr;
 
   if (hydrology) {
-    ierr = hydrology->subglacial_water_pressure(bwp); CHKERRQ(ierr);
+    ierr = hydrology->till_water_pressure(tillwp); CHKERRQ(ierr);
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 3,
@@ -507,31 +501,26 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = Po.begin_access(); CHKERRQ(ierr);
-  ierr = bwp.begin_access(); CHKERRQ(ierr);
+  ierr = tillwp.begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
-
   MaskQuery m(*mask);
-
   PetscInt GHOSTS = grid.max_stencil_width;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-
       if (m.ocean(i, j)) {
         // no change
       } else if (m.ice_free(i, j)) {
         // no change
       } else { // grounded and there is some ice
-        const PetscScalar N = Po(i,j) - bwp(i,j);
+        const PetscScalar N = Po(i,j) - tillwp(i,j);
         till_phi(i, j) = 180.0/M_PI * atan((tauc(i, j) - till_c_0) / N);
       }
     }
   }
-
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = tauc.end_access(); CHKERRQ(ierr);
   ierr = till_phi.end_access(); CHKERRQ(ierr);
   ierr = Po.end_access(); CHKERRQ(ierr);
-  ierr = bwp.end_access(); CHKERRQ(ierr);
-
+  ierr = tillwp.end_access(); CHKERRQ(ierr);
   return 0;
 }

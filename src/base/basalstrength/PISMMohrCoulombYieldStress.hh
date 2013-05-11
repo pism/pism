@@ -64,7 +64,7 @@ public:
 
 protected:
   PetscReal standard_gravity, ice_density, till_c_0;
-  IceModelVec2S till_phi, tauc, bwp, Po;
+  IceModelVec2S till_phi, tauc, tillwp, Po;
   IceModelVec2S *bed_topography;
   IceModelVec2Int *mask;
   PISMVars *variables;
@@ -73,7 +73,7 @@ protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode topg_to_phi();
   virtual PetscErrorCode tauc_to_phi();
-  virtual PetscErrorCode regrid();
+  virtual PetscErrorCode regrid(IceModelVec2S &myvar);
 };
 
 #endif /* _PISMMOHRCOULOMBYIELDSTRESS_H_ */
