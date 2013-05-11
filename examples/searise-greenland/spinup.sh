@@ -211,7 +211,7 @@ TS1NAME=ts_${PRE1NAME}
 TS1TIMES=0:100:${NOMASSSIARUNLENGTH}
 EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:500:${NOMASSSIARUNLENGTH}
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwat,bwp,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,tillwp,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM -i $PRE0NAME $COUPLER_SIMPLE \
@@ -237,7 +237,7 @@ TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
 EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,bwat,bwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,climatic_mass_balance_cumulative"
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,tillwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,climatic_mass_balance_cumulative"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
@@ -269,7 +269,7 @@ echo "$SCRIPTNAME      including bed deformation,"
 echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
      -bed_def lc $COUPLER_FORCING \
-     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat,bmelt -regrid_bed_special  \
+     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt -regrid_bed_special  \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
@@ -296,7 +296,7 @@ echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
      -bed_def lc $COUPLER_FTT \
      -force_to_thk $INNAME -force_to_thk_alpha 0.005 \
-     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat -regrid_bed_special  \
+     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,tillwat -regrid_bed_special  \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
      -ys $STARTTIME -ye $FTTENDTIME -o $OUTNAME"
