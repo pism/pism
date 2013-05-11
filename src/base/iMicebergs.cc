@@ -22,6 +22,7 @@
 #include "iceModel.hh"
 #include "Mask.hh"
 #include "PISMOcean.hh"
+#include "PISMIcebergRemover.hh"
 
 //! \file iMicebergs.cc Methods implementing PIK option -kill_icebergs [\ref Winkelmannetal2011].
 
@@ -53,9 +54,10 @@
 PetscErrorCode IceModel::killIceBergs() {
   PetscErrorCode ierr;
 
-  ierr = findIceBergCandidates(); CHKERRQ(ierr);
-  ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
-  ierr = killIdentifiedIceBergs(); CHKERRQ(ierr);
+  if (iceberg_remover != NULL) {
+    ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
+  }
+
   ierr = killEasyIceBergs(); CHKERRQ(ierr);
   return 0;
 }

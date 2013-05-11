@@ -59,6 +59,7 @@ class PISMBedDef;
 class PISMBedThermalUnit;
 class PISMDiagnostic;
 class PISMTSDiagnostic;
+class PISMIcebergRemover;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -209,6 +210,8 @@ protected:
 
   EnthalpyConverter *EC;
   PISMBedThermalUnit *btu;
+
+  PISMIcebergRemover *iceberg_remover;
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
@@ -369,6 +372,7 @@ protected:
   virtual PetscErrorCode sub_gl_position();
 
   // see iMicebergs.cc
+  virtual PetscErrorCode allocate_iceberg_remover();
   virtual PetscErrorCode killIceBergs();           // call this one to do proper sequence
   virtual PetscErrorCode findIceBergCandidates();
   virtual PetscErrorCode identifyNotAnIceBerg();

@@ -49,6 +49,7 @@
 #include "PISMProf.hh"
 #include "LocalInterpCtx.hh"
 #include "pism_options.hh"
+#include "PISMIcebergRemover.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -799,6 +800,21 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   return 0;
 }
 
+PetscErrorCode IceModel::allocate_iceberg_remover() {
+
+  if (iceberg_remover != NULL)
+    return 0;
+
+  iceberg_remover = new PISMIcebergRemover(grid, config);
+
+  if (iceberg_remover == NULL) {
+    PetscPrintf(grid.com, "PISM ERROR: failed to allocate the 'iceberg remover' object.\n");
+    PISMEnd();
+  }
+
+  return 0;
+}
+
 //! \brief Decide which bedrock thermal unit to use.
 PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
 
@@ -880,6 +896,8 @@ PetscErrorCode IceModel::allocate_submodels() {
   ierr = allocate_enthalpy_converter(); CHKERRQ(ierr);
   // then this:
   ierr = allocate_flowlaw(); CHKERRQ(ierr);
+
+  ierr = allocate_iceberg_remover(); CHKERRQ(ierr);
 
   // this has to happen before allocate_stressbalance() is called
   ierr = allocate_basal_resistance_law(); CHKERRQ(ierr);

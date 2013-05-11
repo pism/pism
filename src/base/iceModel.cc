@@ -36,6 +36,7 @@
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "PISMDiagnostic.hh"
+#include "PISMIcebergRemover.hh"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : grid(g),
@@ -68,6 +69,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 
   EC = NULL;
   btu = NULL;
+  iceberg_remover = NULL;
 
   executable_short_name = "pism"; // drivers typically override this
 
@@ -159,6 +161,8 @@ IceModel::~IceModel() {
   delete basal;
   delete EC;
   delete btu;
+
+  delete iceberg_remover;
 }
 
 
