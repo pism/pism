@@ -49,6 +49,7 @@
 #include "PISMProf.hh"
 #include "LocalInterpCtx.hh"
 #include "pism_options.hh"
+#include "PISMIcebergRemover.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -799,6 +800,23 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   return 0;
 }
 
+PetscErrorCode IceModel::allocate_iceberg_remover() {
+
+  if (iceberg_remover != NULL)
+    return 0;
+
+  if (config.get_flag("kill_icebergs")) {
+    iceberg_remover = new PISMIcebergRemover(grid, config);
+
+    if (iceberg_remover == NULL) {
+      PetscPrintf(grid.com, "PISM ERROR: failed to allocate the 'iceberg remover' object.\n");
+      PISMEnd();
+    }
+  }
+
+  return 0;
+}
+
 //! \brief Decide which bedrock thermal unit to use.
 PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
 
@@ -881,6 +899,8 @@ PetscErrorCode IceModel::allocate_submodels() {
   // then this:
   ierr = allocate_flowlaw(); CHKERRQ(ierr);
 
+  ierr = allocate_iceberg_remover(); CHKERRQ(ierr);
+
   // this has to happen before allocate_stressbalance() is called
   ierr = allocate_basal_resistance_law(); CHKERRQ(ierr);
 
@@ -949,9 +969,6 @@ PetscErrorCode IceModel::allocate_internal_objects() {
     snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
     ierr = vWork2d[j].create(grid, namestr, true, WIDE_STENCIL); CHKERRQ(ierr);
   }
-
-  ierr = vWork2dV.create(grid, "vWork2dV", true); CHKERRQ(ierr);
-  ierr = vWork2dV.set_attrs("internal", "velocity work vector", "", ""); CHKERRQ(ierr);
 
   // 3d work vectors
   ierr = vWork3d.create(grid,"work_vector_3d",false); CHKERRQ(ierr);

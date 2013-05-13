@@ -4,6 +4,7 @@ include_directories (
   base/stressbalance/sia
   base/stressbalance/ssa
   base/stressbalance/blatter
+  base/calving
   base/util
   base/util/io
   base/energy
@@ -125,7 +126,6 @@ add_library (pismbase
   base/iMenergy.cc
   base/iMenthalpy.cc
   base/iMgeometry.cc
-  base/iMicebergs.cc
   base/iMinit.cc
   base/iMIO.cc
   base/iMoptions.cc
@@ -143,6 +143,8 @@ add_library (pismbase
   base/basalstrength/basal_resistance.cc
   base/hydrology/PISMHydrology.cc
   base/hydrology/PISMDistributedHydrology.cc
+  base/calving/connected_components.cc
+  base/calving/PISMIcebergRemover.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 

@@ -452,9 +452,9 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
                  M_n = mask->as_int(i,j + 1),
                  M_s = mask->as_int(i,j - 1);
 
-        if ((*thickness)(i,j) > HminFrozen) {  
+        if ((*thickness)(i,j) > HminFrozen) {
           if ((*bed)(i-1,j) > (*surface)(i,j) && M.ice_free_land(M_w)) {
-            c_w = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));	    
+            c_w = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));
           }
           if ((*bed)(i+1,j) > (*surface)(i,j) && M.ice_free_land(M_e)) {
             c_e = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
@@ -620,6 +620,15 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       eq1[4]  += beta;
       eq2[13] += beta;
 
+      // check diagonal entries:
+      const double eps = 1e-16;
+      if (fabs(eq1[4]) < eps) {
+        SETERRQ2(grid.com, 1, "first (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d", i, j);
+      }
+      if (fabs(eq2[13]) < eps) {
+        SETERRQ2(grid.com, 1, "second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d", i, j);
+      }
+
       // build equations: NOTE TRANSPOSE
       row.j = i; row.i = j;
       for (PetscInt m = 0; m < sten; m++) {
@@ -639,7 +648,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   if (m_vel_bc && bc_locations) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
   }
-  
+
   if (sub_gl){
     ierr = gl_mask->end_access(); CHKERRQ(ierr);
    }
@@ -650,9 +659,9 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = nuH.end_access(); CHKERRQ(ierr);
 
   if (nuBedrockSet) {
-  	ierr =    thickness->end_access();    CHKERRQ(ierr);
-  	ierr =  		bed->end_access();  CHKERRQ(ierr);
-  	ierr =    	surface->end_access();    CHKERRQ(ierr);
+        ierr = thickness->end_access(); CHKERRQ(ierr);
+        ierr = bed->end_access();       CHKERRQ(ierr);
+        ierr = surface->end_access();   CHKERRQ(ierr);
   }
 
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
