@@ -390,10 +390,11 @@ PetscErrorCode IceModel::initFromFile(string filename) {
     if ((intent == "model_state") || (intent == "mapping") ||
         (intent == "climate_steady")) {
 
-      // skip "age" and "enthalpy" for now: we'll take care of them a
-      // little later
+      // skip "age", "enthalpy", and "Href" for now: we'll take care
+      // of them a little later
       if (var->string_attr("short_name") == "enthalpy" ||
-          var->string_attr("short_name") == "age")
+          var->string_attr("short_name") == "age"      ||
+          var->string_attr("short_name") == "Href")
         continue;
 
       ierr = var->read(filename, last_record); CHKERRQ(ierr);
