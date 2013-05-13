@@ -805,11 +805,13 @@ PetscErrorCode IceModel::allocate_iceberg_remover() {
   if (iceberg_remover != NULL)
     return 0;
 
-  iceberg_remover = new PISMIcebergRemover(grid, config);
+  if (config.get_flag("kill_icebergs")) {
+    iceberg_remover = new PISMIcebergRemover(grid, config);
 
-  if (iceberg_remover == NULL) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate the 'iceberg remover' object.\n");
-    PISMEnd();
+    if (iceberg_remover == NULL) {
+      PetscPrintf(grid.com, "PISM ERROR: failed to allocate the 'iceberg remover' object.\n");
+      PISMEnd();
+    }
   }
 
   return 0;
