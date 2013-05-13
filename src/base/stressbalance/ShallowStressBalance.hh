@@ -40,7 +40,6 @@ public:
     : PISMComponent(g, conf), basal(b), flow_law(NULL), EC(e)
   {
     m_vel_bc = NULL; bc_locations = NULL; variables = NULL;
-    max_u = max_v = 0.0;
     sea_level = 0;
     allocate();
   }
@@ -72,10 +71,6 @@ public:
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   virtual PetscErrorCode get_2D_advective_velocity(IceModelVec2V* &result)
   { result = &m_velocity; return 0; }
-
-  //! \brief Get the max advective velocity (for the adaptive mass-continuity time-stepping).
-  virtual PetscErrorCode get_max_2d_velocity(PetscReal &u_max, PetscReal &v_max)
-  { u_max = max_u; v_max = max_v; return 0; }
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
   virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result)
@@ -118,7 +113,6 @@ protected:
   IceModelVec2V m_velocity, *m_vel_bc;
   IceModelVec2Int *bc_locations;
   IceModelVec2S basal_frictional_heating;
-  PetscReal max_u, max_v;
 };
 
 //! \brief Computes the gravitational driving stress (diagnostically).

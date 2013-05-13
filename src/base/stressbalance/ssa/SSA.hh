@@ -171,8 +171,6 @@ protected:
 
   virtual PetscErrorCode solve()  = 0;
 
-  virtual PetscErrorCode compute_maximum_velocity();
-
   IceModelVec2Int *mask;
   IceModelVec2S *thickness, *tauc, *surface, *bed;
   IceModelVec2S *driving_stress_x;

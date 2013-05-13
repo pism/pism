@@ -53,8 +53,6 @@ PetscErrorCode SSB_Trivial::update(bool fast) {
 
   ierr = m_velocity.set(0.0); CHKERRQ(ierr);
 
-  max_u = max_v = 0.0;
-
   ierr = basal_frictional_heating.set(0.0); CHKERRQ(ierr);
 
   return 0;

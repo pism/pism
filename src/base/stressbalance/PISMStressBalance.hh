@@ -85,16 +85,10 @@ public:
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   virtual PetscErrorCode get_max_diffusivity(PetscReal &D);
 
-  //! \brief Get the max advective velocity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_2d_velocity(PetscReal &u, PetscReal &v);
-
   // for the energy/age time step:
 
   //! \brief Get the 3D velocity (for the energy/age time-stepping).
   virtual PetscErrorCode get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v, IceModelVec3* &w);
-
-  //! \brief Get the max 3D velocity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_3d_velocity(PetscReal &u, PetscReal &v, PetscReal &w);
 
   //! \brief Get the basal frictional heating (for the energy time-stepping).
   virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result);
@@ -136,7 +130,6 @@ protected:
   PISMVars *m_variables;
 
   IceModelVec3 m_w, m_strain_heating;
-  PetscReal m_w_max;
   IceModelVec2S *m_basal_melt_rate;
 
   ShallowStressBalance *m_stress_balance;
