@@ -39,7 +39,7 @@ void run_union(std::vector<unsigned int> &parent, unsigned int run1, unsigned in
 
 }
 
-void cc(double *image, unsigned int n_rows, unsigned int n_cols, double mask_grounded) {
+void cc(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_icebergs, double mask_grounded) {
   unsigned int max_runs = 2*n_rows;
   const double eps = 1e-6;
 
@@ -122,9 +122,16 @@ void cc(double *image, unsigned int n_rows, unsigned int n_cols, double mask_gro
   }
 
   // Second scan (re-label)
-  for (r = 0; r <= run_number; ++r) {
-    for (c = 0; c < lengths[r]; ++c)
-      image[rows[r]*n_cols + columns[r] + c] = 1 - grounded[parents[r]];
+  if (identify_icebergs) {
+    for (r = 0; r <= run_number; ++r) {
+      for (c = 0; c < lengths[r]; ++c)
+        image[rows[r]*n_cols + columns[r] + c] = 1 - grounded[parents[r]];
+    }
+  } else {
+    for (r = 0; r <= run_number; ++r) {
+      for (c = 0; c < lengths[r]; ++c)
+        image[rows[r]*n_cols + columns[r] + c] = parents[r];
+    }
   }
 
   // Done!

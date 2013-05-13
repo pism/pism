@@ -25,6 +25,18 @@
 
 /*! \brief PISM iceberg remover */
 /*!
+ * Identifies and removes free-floating icebergs, which cause
+ * well-posedness problems for stress solvers.
+ *
+ * Icebergs are, in this context, floating regions that are _not_
+ * attached, through a chain of positive thickness ice-filled cells,
+ * to at least one grounded cell.
+ *
+ * They cause the SSA operator to have a nontrivial null space.
+ *
+ * They are observed to cause unrealistically large velocities that
+ * may affect ice velocities elsewhere.
+ *
  * This class uses a serial connected component labeling algorithm to
  * remove "icebergs".
  */

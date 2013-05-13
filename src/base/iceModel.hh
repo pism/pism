@@ -147,6 +147,7 @@ public:
   virtual PetscErrorCode allocate_subglacial_hydrology();
   virtual PetscErrorCode allocate_basal_yield_stress();
   virtual PetscErrorCode allocate_couplers();
+  virtual PetscErrorCode allocate_iceberg_remover();
 
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_grid_from_options();
@@ -251,14 +252,11 @@ protected:
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
                          //!< grounded_ice, floating_ice, ice_free_ocean
     ocean_kill_mask,     //!< mask used by the -ocean_kill code 
-    vIcebergMask, //!< mask for iceberg identification
-
     vBCMask; //!< mask to determine Dirichlet boundary locations
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
   
   IceModelVec2S gl_mask; //!< mask to determine grounding line position
-
 
   IceModelVec3
         T3,		//!< absolute temperature of ice; K (ghosted)
@@ -371,13 +369,6 @@ protected:
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode sub_gl_position();
 
-  // see iMicebergs.cc
-  virtual PetscErrorCode allocate_iceberg_remover();
-  virtual PetscErrorCode killIceBergs();           // call this one to do proper sequence
-  virtual PetscErrorCode findIceBergCandidates();
-  virtual PetscErrorCode identifyNotAnIceBerg();
-  virtual PetscErrorCode killIdentifiedIceBergs();
-  virtual PetscErrorCode killEasyIceBergs();       // FIXME: do we want this one to happen even if eigencalving does not happen?  should we be calling this one before any time that principal values need to be computed?
 
   // see iMIO.cc
   virtual PetscErrorCode dumpToFile(string filename);

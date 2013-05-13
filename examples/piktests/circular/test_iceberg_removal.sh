@@ -17,7 +17,7 @@ grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
 pc_asm=" -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu "
 
-pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc -ssa_view_nuh -kill_icebergs -view_map mask,thk $pc_asm -eigen_calving -eigen_calving_K 1e18 -thickness_calving -calving_at_thickness 300"
+pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc -ssa_view_nuh -kill_icebergs -view_map mask,thk $pc_asm -eigen_calving -eigen_calving_K 1e18 -thickness_calving -calving_at_thickness 300 -o_order zyx"
 
 
 doit="mpiexec -n $N pismr $pismopts"

@@ -177,11 +177,6 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
     }
   }
 
-  if (config.get_flag("kill_icebergs")) {
-    // will be updated in updateSurfaceElevationAndMask()
-    ierr = vIcebergMask.set(ICEBERGMASK_NOT_SET); CHKERRQ(ierr);
-  }
-
   if (config.get_flag("do_eigen_calving")) {
     ierr = strain_rates.set(0.0); CHKERRQ(ierr);
   }

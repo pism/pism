@@ -47,22 +47,55 @@ PetscErrorCode PISMIcebergRemover::init(PISMVars &/*vars*/) {
 /**
  * Use PISM's ice cover mask to update ice thickness, removing "icebergs".
  *
- * FIXME: We already update ice thickness here; might as well update
- * the mask too (affected points become "ice free ocean").
- *
- * @param[in] pism_mask PISM's ice cover mask
+ * @param[in,out] pism_mask PISM's ice cover mask
  * @param[in,out] ice_thickness ice thickness
  */
 PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
                                           IceModelVec2S &ice_thickness) {
   PetscErrorCode ierr;
   PetscScalar **iceberg_mask;
-  int mask_grounded_ice = 1,
+  const int
+    mask_grounded_ice = 1,
     mask_floating_ice = 2;
-
-  ierr = VecSet(m_g2, 0.0); CHKERRQ(ierr);
-
   MaskQuery M(pism_mask);
+
+  // Find floating cells that have ice-free ocean neighbors both north
+  // and south (east and west). Set ice thickness to zero at these locations.
+  //
+  // This serves a double purpose:
+  //
+  // 1) locations like these don't have icy neighbors necessary to
+  // approximate strain rates used by the eigen-calving mechanism
+  //
+  // 2) when the calving front force boundary condition is applied,
+  // one-cell-wide strips of ice with low (or zero) basal drag result
+  // in assembling a matrix with a zero pivot.
+  //
+  // FIXME: because of 2) this loop should be executed whenever CFBC
+  // is "on".
+  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+
+      // check floating ice cells only:
+      if (M.floating_ice(i, j) == false)
+        continue;
+
+      if ((M.ice_free_ocean(i - 1, j) && M.ice_free_ocean(i + 1, j)) ||
+          (M.ice_free_ocean(i, j - 1) && M.ice_free_ocean(i, j + 1))) {
+        pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
+        ice_thickness(i, j) = 0.0;
+      }
+    }
+  }
+
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
+  ierr = pism_mask.end_access(); CHKERRQ(ierr);
+
+  // prepare the mask that will be handed to the connected component
+  // labeling code:
+  ierr = VecSet(m_g2, 0.0); CHKERRQ(ierr);
   ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
   ierr = pism_mask.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
@@ -82,7 +115,7 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
     PetscScalar *mask;
     ierr = VecGetArray(m_mask_p0, &mask); CHKERRQ(ierr);
 
-    cc(mask, grid.Mx, grid.My, mask_grounded_ice);
+    cc(mask, grid.Mx, grid.My, true, mask_grounded_ice);
 
     ierr = VecRestoreArray(m_mask_p0, &mask); CHKERRQ(ierr);
   }
@@ -91,14 +124,23 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
 
   ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (iceberg_mask[i][j] > 0.5)
+      if (iceberg_mask[i][j] > 0.5) {
         ice_thickness(i,j) = 0.0;
+        pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
+      }
     }
   }
+  ierr = pism_mask.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
+
+  // update ghosts of the mask and the ice thickness (then surface
+  // elevation can be updated redundantly)
+  ierr = pism_mask.update_ghosts(); CHKERRQ(ierr);
+  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -182,4 +224,3 @@ PetscErrorCode PISMIcebergRemover::write_variables(set<string>, const PIO& ) {
   // empty
   return 0;
 }
-

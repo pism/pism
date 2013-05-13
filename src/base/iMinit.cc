@@ -968,9 +968,6 @@ PetscErrorCode IceModel::allocate_internal_objects() {
     ierr = vWork2d[j].create(grid, namestr, true, WIDE_STENCIL); CHKERRQ(ierr);
   }
 
-  ierr = vWork2dV.create(grid, "vWork2dV", true); CHKERRQ(ierr);
-  ierr = vWork2dV.set_attrs("internal", "velocity work vector", "", ""); CHKERRQ(ierr);
-
   // 3d work vectors
   ierr = vWork3d.create(grid,"work_vector_3d",false); CHKERRQ(ierr);
   ierr = vWork3d.set_attrs(

@@ -275,27 +275,6 @@ PetscErrorCode IceModel::createVecs() {
   vMask.output_data_type = PISM_BYTE;
   ierr = variables.add(vMask); CHKERRQ(ierr);
 
-  // iceberg identifying integer mask
-  if (config.get_flag("kill_icebergs")) {
-    ierr = vIcebergMask.create(grid, "IcebergMask", true, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = vIcebergMask.set_attrs("internal", 
-                                  "iceberg-identifying integer mask",
-                                  "", ""); CHKERRQ(ierr);
-    vector<double> icebergmask_values(5);
-    icebergmask_values[0] = ICEBERGMASK_NO_ICEBERG;
-    icebergmask_values[1] = ICEBERGMASK_NOT_SET;
-    icebergmask_values[2] = ICEBERGMASK_ICEBERG_CAND;
-    icebergmask_values[3] = ICEBERGMASK_STOP_OCEAN;
-    icebergmask_values[4] = ICEBERGMASK_STOP_ATTACHED;
-    //more values to identify lakes?
-
-    ierr = vIcebergMask.set_attr("flag_values", icebergmask_values); CHKERRQ(ierr);
-    ierr = vIcebergMask.set_attr("flag_meanings",
-                                 "no_iceberg not_set iceberg_candidate ocean_boundary grounded_boundary"); CHKERRQ(ierr);
-    vIcebergMask.output_data_type = PISM_BYTE;
-    ierr = variables.add(vIcebergMask); CHKERRQ(ierr);
-  }
-
   // upward geothermal flux at bedrock surface
   ierr = vGhf.create(grid, "bheatflx", true, WIDE_STENCIL); CHKERRQ(ierr); // never differentiated
   // PROPOSED standard_name = lithosphere_upward_heat_flux

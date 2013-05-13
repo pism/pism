@@ -25,6 +25,7 @@
 #include "PISMOcean.hh"
 #include "PISMSurface.hh"
 #include "PISMStressBalance.hh"
+#include "PISMIcebergRemover.hh"
 
 //! \file iMgeometry.cc Methods of IceModel which update and maintain consistency of ice sheet geometry.
 
@@ -38,18 +39,19 @@
   other hand, we want the mask to reflect that the ice is floating if the flotation
   criterion applies at a point.
 
-  Also calls the (PIK) routines which remove icebergs, to avoid stress balance
+  Also calls the code which removes icebergs, to avoid stress balance
   solver problems associated to not-attached-to-grounded ice.
 */
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
 
-  ierr = update_mask(); CHKERRQ(ierr);
+  ierr = update_mask();              CHKERRQ(ierr);
   ierr = update_surface_elevation(); CHKERRQ(ierr);
 
-  if (config.get_flag("kill_icebergs")) {
-    ierr = killIceBergs(); CHKERRQ(ierr);
-    ierr = update_mask(); CHKERRQ(ierr);
+  if (config.get_flag("kill_icebergs") || iceberg_remover != NULL) {
+    ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
+    // the call above modifies ice thickness and updates the mask
+    // accordingly
     ierr = update_surface_elevation(); CHKERRQ(ierr);
   }
 

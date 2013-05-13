@@ -17,9 +17,4 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _CONNECTED_COMPONENTS_H_
-#define _CONNECTED_COMPONENTS_H_
-
-void cc(double *image, unsigned int n_rows, unsigned int n_cols, double mask_grounded);
-
-#endif /* _CONNECTED_COMPONENTS_H_ */
+void cc(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_icebergs, double mask_grounded);
