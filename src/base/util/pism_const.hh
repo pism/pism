@@ -19,13 +19,10 @@
 #ifndef __pism_const_hh
 #define __pism_const_hh
 
-#include <gsl/gsl_math.h>
 #include <petsc.h>
 #include <string>
 #include <vector>
 #include <set>
-
-#include "PISMUnits.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -38,17 +35,9 @@ extern const char *PISM_DefaultConfigFile;
 enum PismMask {
   MASK_UNKNOWN          = -1,
   MASK_ICE_FREE_BEDROCK = 0,
-  MASK_GROUNDED   = 2,
+  MASK_GROUNDED         = 2,
   MASK_FLOATING         = 3,
   MASK_ICE_FREE_OCEAN   = 4
-};
-
-enum PismIcebergMask {
-  ICEBERGMASK_NO_ICEBERG = -3,
-  ICEBERGMASK_NOT_SET = 0,
-  ICEBERGMASK_ICEBERG_CAND = 2,
-  ICEBERGMASK_STOP_OCEAN = 3,
-  ICEBERGMASK_STOP_ATTACHED = 4
 };
 
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
