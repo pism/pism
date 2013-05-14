@@ -355,8 +355,8 @@ protected:
 
   // see iMgeometry.cc
   virtual PetscErrorCode updateSurfaceElevationAndMask();
-  virtual PetscErrorCode update_mask();
-  virtual PetscErrorCode update_surface_elevation();
+  virtual PetscErrorCode update_mask(IceModelVec2S &bed, IceModelVec2S &ice_thickness, IceModelVec2Int &mask);
+  virtual PetscErrorCode update_surface_elevation(IceModelVec2S &bed, IceModelVec2S &ice_thickness, IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      planeStar<PISMVector2> input_velocity,

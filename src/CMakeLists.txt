@@ -145,6 +145,7 @@ add_library (pismbase
   base/hydrology/PISMDistributedHydrology.cc
   base/calving/connected_components.cc
   base/calving/PISMIcebergRemover.cc
+  base/calving/PISMCalvingAtThickness.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 
