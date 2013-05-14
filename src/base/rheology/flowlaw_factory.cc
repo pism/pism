@@ -163,7 +163,9 @@ PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
   IceFlowLaw *ice;
 
   PetscFunctionBegin;
+#if PETSC_VERSION_LT(3,4,0)
   PetscValidPointer(inice,3);
+#endif
   *inice = 0;
 
   // find the function that can create selected ice type:

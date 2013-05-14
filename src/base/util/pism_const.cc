@@ -18,6 +18,8 @@
 
 #include <petsc.h>
 #include <petscfix.h>
+#include <petsctime.h>
+
 #include "PIO.hh"
 #include "pism_const.hh"
 #include <sstream>
@@ -280,4 +282,13 @@ void PISMEnd() {
 void PISMEndQuiet() {
   PetscOptionsSetValue("-options_left","no");
   PISMEnd();
+}
+
+PetscErrorCode PISMGetTime(PetscLogDouble *result) {
+#if PETSC_VERSION_LT(3,4,0)
+  PetscErrorCode ierr = PetscGetTime(result); CHKERRQ(ierr);
+#else
+  PetscErrorCode ierr = PetscTime(result); CHKERRQ(ierr);
+#endif
+  return 0;
 }

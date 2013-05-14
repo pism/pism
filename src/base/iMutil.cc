@@ -118,7 +118,7 @@ PetscErrorCode IceModel::update_run_stats() {
   // timing stats
   PetscLogDouble current_time;
   PetscReal wall_clock_hours, proc_hours, mypph;
-  ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+  ierr = PISMGetTime(&current_time); CHKERRQ(ierr);
 
   wall_clock_hours = (current_time - start_time) / 3600.0;
 

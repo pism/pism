@@ -61,6 +61,8 @@ string pism_username_prefix(MPI_Comm com);
 string pism_args_string();
 string pism_filename_add_suffix(string filename, string separator, string suffix);
 
+PetscErrorCode PISMGetTime(PetscLogDouble *result);
+
 bool ends_with(string str, string suffix);
 
 inline bool set_contains(set<string> S, string name) {

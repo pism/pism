@@ -22,6 +22,9 @@
 #include "basal_resistance.hh"
 #include "flowlaws.hh"
 
+typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*,void*,Mat,Mat,MatStructure*,void*);
+typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*,void*,void*,void*);
+
 #include "pism_petsc32_compat.hh"
 
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
@@ -45,8 +48,8 @@ PetscErrorCode SSAFEM::allocate_fem() {
   // methods via SSAFEFunction and SSAFEJ
   callback_data.da = SSADA;
   callback_data.ssa = this;
-  ierr = DMDASetLocalFunction(SSADA, (DMDALocalFunction1)SSAFEFunction); CHKERRQ(ierr);
-  ierr = DMDASetLocalJacobian(SSADA, (DMDALocalFunction1)SSAFEJacobian); CHKERRQ(ierr);
+  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES, (DMDASNESFunctionLocal)SSAFEFunction, &callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(SSADA, (DMDASNESJacobianLocal)SSAFEJacobian, &callback_data); CHKERRQ(ierr);
 
 #if PISM_PETSC32_COMPAT==1
   Mat J;
@@ -772,11 +775,14 @@ PetscErrorCode SSAFEFunction(DMDALocalInfo *info,
   return fe->ssa->compute_local_function(info,xg,yg);
 }
 
-
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info,
-                             const PISMVector2 **xg, Mat J,
-                             SSAFEM_SNESCallbackData *fe)
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
+                             Mat /*A*/, Mat J,
+                             MatStructure *str, SSAFEM_SNESCallbackData *fe)
 {
-  return fe->ssa->compute_local_jacobian(info,xg,J);
+  PetscErrorCode ierr = fe->ssa->compute_local_jacobian(info, xg, J); CHKERRQ(ierr);
+
+  *str = SAME_NONZERO_PATTERN;
+
+  return 0;
 }
 

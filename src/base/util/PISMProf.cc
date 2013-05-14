@@ -106,7 +106,7 @@ void PISMProf::begin(int index) {
 
   event.parent = current_event;
 
-  PetscGetTime(&event.start_time);
+  PISMGetTime(&event.start_time);
   PetscLogEventBegin(event.petsc_event, 0, 0, 0, 0);
 
   current_event = index;
@@ -121,7 +121,8 @@ void PISMProf::end(int /*index*/) {
   PetscLogDouble time;
   PISMEvent &event = events[current_event];
 
-  PetscGetTime(&time);
+  PISMGetTime(&time);
+
   PetscLogEventEnd(event.petsc_event, 0, 0, 0, 0);
 
   event.total_time += (time - event.start_time);

@@ -739,7 +739,7 @@ PetscErrorCode IceModel::write_snapshot() {
     double wall_clock_hours;
     if (grid.rank == 0) {
       PetscLogDouble current_time;
-      ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+      ierr = PISMGetTime(&current_time); CHKERRQ(ierr);
       wall_clock_hours = (current_time - start_time) / 3600.0;
     }
 
@@ -792,7 +792,7 @@ PetscErrorCode IceModel::write_backup() {
 
   if (grid.rank == 0) {
     PetscLogDouble current_time;
-    ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+    ierr = PISMGetTime(&current_time); CHKERRQ(ierr);
     wall_clock_hours = (current_time - start_time) / 3600.0;
   }
 

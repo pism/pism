@@ -20,6 +20,8 @@
 #include <assert.h>
 #include <petscsnes.h>
 #include <petscmat.h>
+#include <petscdmda.h>
+#include <petscsys.h>
 
 #if defined __SSE2__
 #  include <emmintrin.h>
@@ -40,7 +42,7 @@ static PetscScalar Sqr(PetscScalar a) {return a*a;}
   This file contains the implementation of the \f$Q_1\f$ 3D FEM solver for
   the Blatter-Pattyn stress balance system.
 
-  Define the Blatter effective strain rate tensor \f$M\f$ 
+  Define the Blatter effective strain rate tensor \f$M\f$
   \f[
   M =
   \left(
@@ -81,18 +83,18 @@ static PetscScalar Sqr(PetscScalar a) {return a*a;}
   architecture (P8700, gcc-4.5 snapshot) (JB).
 
 */
-typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
 
+typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
 
 static void compute_surface_gradient(PetscReal dchi[4][4][2], const PrmNode parameters[],
-				     PetscReal dx, PetscReal dy, PetscReal ds[4][2]);
+                                     PetscReal dx, PetscReal dy, PetscReal ds[4][2]);
 
 static void compute_nodal_z_coordinates(const PrmNode parameters[], PetscInt k, PetscInt zm, PetscReal zn[]);
 
 static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
-						 Mat mrestrict, Vec rscale, Mat inject,
-						 DM coarse, void *ctx);
+                                                 Mat mrestrict, Vec rscale, Mat inject,
+                                                 DM coarse, void *ctx);
 
 
 /*! \brief Set up the DM and allocate storage for model parameters on the current grid level.
@@ -111,14 +113,17 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
   DM da3;
   Vec hardness;
 
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
+
   PetscFunctionBegin;
   ierr = DMDAGetInfo(dm, NULL,	/* dimensions */
-		     &Mz, &My, &Mx, /* grid size */
-		     0, &my, &mx,   /* number of processors in each direction */
-		     NULL,	    /* number of degrees of freedom */
-		     &stencil_width,
-		     NULL, NULL, NULL, /* types of ghost nodes at the boundary */
-		     &stencil_type); CHKERRQ(ierr);
+                     &Mz, &My, &Mx, /* grid size */
+                     0, &my, &mx,   /* number of processors in each direction */
+                     NULL,          /* number of degrees of freedom */
+                     &stencil_width,
+                     NULL, NULL, NULL, /* types of ghost nodes at the boundary */
+                     &stencil_type); CHKERRQ(ierr);
 
   ierr = DMDAGetOwnershipRanges(dm, NULL, &ly, &lx); CHKERRQ(ierr);
 
@@ -126,7 +131,7 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
   ierr = DMGetCoarsenLevel(dm, &coarsenlevel); CHKERRQ(ierr);
   level = refinelevel - coarsenlevel;
 
-  ierr = DMDACreate2d(((PetscObject)dm)->comm,
+  ierr = DMDACreate2d(comm,
                       DMDA_BOUNDARY_PERIODIC,
                       DMDA_BOUNDARY_PERIODIC,
                       stencil_type,
@@ -138,7 +143,7 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
                       &da2prm); CHKERRQ(ierr);
 
   {
-    ierr = PetscPrintf(((PetscObject)dm)->comm,
+    ierr = PetscPrintf(comm,
                        "Level %D domain size (m) %8.2g x %8.2g, num elements %3d x %3d x %3d (%8d), size (m) %g x %g\n",
                        level, ctx->Lx, ctx->Ly, Mx, My, Mz, Mx*My*Mz, ctx->Lx / Mx, ctx->Ly / My); CHKERRQ(ierr);
   }
@@ -151,17 +156,17 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
   ierr = DMDestroy(&da2prm); CHKERRQ(ierr);
   ierr = VecDestroy(&parameters); CHKERRQ(ierr);
 
-  
-  ierr = DMDACreate3d(((PetscObject)dm)->comm,
-		      DMDA_BOUNDARY_NONE, DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-		      DMDA_STENCIL_BOX,
-		      Mz, My, Mx,
-		      1, my, mx, /* number of processors in z, y, x directions. (Always *one* in the z-direction.) */
-		      1,	 /* number of degrees of freedom per node (one) */
-		      1,	 /* stencil width */
-		      NULL, ly, lx, /* number of nodes per processor */
-		      &da3); CHKERRQ(ierr);
-  
+
+  ierr = DMDACreate3d(comm,
+                      DMDA_BOUNDARY_NONE, DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                      DMDA_STENCIL_BOX,
+                      Mz, My, Mx,
+                      1, my, mx, /* number of processors in z, y, x directions. (Always *one* in the z-direction.) */
+                      1,         /* number of degrees of freedom per node (one) */
+                      1,         /* stencil width */
+                      NULL, ly, lx, /* number of nodes per processor */
+                      &da3); CHKERRQ(ierr);
+
   ierr = DMCreateLocalVector(da3, &hardness); CHKERRQ(ierr);
 
   ierr = PetscObjectCompose((PetscObject)dm, "DMDA_3D", (PetscObject)da3); CHKERRQ(ierr);
@@ -169,7 +174,7 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
 
   ierr = DMDestroy(&da3); CHKERRQ(ierr);
   ierr = VecDestroy(&hardness); CHKERRQ(ierr);
-  
+
   PetscFunctionReturn(0);
 }
 
@@ -184,38 +189,38 @@ static PetscErrorCode BlatterQ1_setup_level(BlatterQ1Ctx *ctx, DM dm)
  * \param[in] mat_name name to use when attaching the interpolation matrix to `dm_fine`
  */
 static PetscErrorCode BlatterQ1_create_restriction(DM dm_fine, DM dm_coarse,
-						     const char dm_name[],
-						     const char mat_name[]) {
+                                                     const char dm_name[],
+                                                     const char mat_name[]) {
   PetscErrorCode ierr;
   DM da2_fine, da2_coarse;
   Mat mat;
 
   /* 1. get the DM for parameters from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)dm_fine, dm_name,
-			  (PetscObject*)&da2_fine); CHKERRQ(ierr);
+                          (PetscObject*)&da2_fine); CHKERRQ(ierr);
   if (!da2_fine) SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-			  "No %s composed with given DMDA", dm_name);
-  
+                          "No %s composed with given DMDA", dm_name);
+
   /* 2. get the DM for parameters from the coarse grid DM */
   ierr = PetscObjectQuery((PetscObject)dm_coarse, dm_name,
-			  (PetscObject*)&da2_coarse); CHKERRQ(ierr);
+                          (PetscObject*)&da2_coarse); CHKERRQ(ierr);
   if (!da2_coarse) SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-			    "No %s composed with given DMDA", dm_name);
+                            "No %s composed with given DMDA", dm_name);
 
   /* call DMCreateInterpolation */
   ierr = DMCreateInterpolation(da2_coarse, da2_fine,
-			       &mat, PETSC_NULL); CHKERRQ(ierr);
+                               &mat, PETSC_NULL); CHKERRQ(ierr);
 
   /* attach to the fine grid DM */
   ierr = PetscObjectCompose((PetscObject)dm_fine, mat_name,
-			    (PetscObject)mat); CHKERRQ(ierr);
+                            (PetscObject)mat); CHKERRQ(ierr);
   ierr = MatDestroy(&mat); CHKERRQ(ierr);
 
   return 0;
 }
 
 /*! \brief Grid coarsening hook.
- *  
+ *
  * This hook is called *once* when SNES sets up the next coarse level.
  *
  * This hook does three things:
@@ -243,15 +248,15 @@ static PetscErrorCode BlatterQ1_coarsening_hook(DM dm_fine, DM dm_coarse, void *
   }
 
   ierr = DMCoarsenHookAdd(dm_coarse, BlatterQ1_coarsening_hook, BlatterQ1_restriction_hook,
-			  ctx); CHKERRQ(ierr);
+                          ctx); CHKERRQ(ierr);
 
   /* create 2D interpolation */
   ierr = BlatterQ1_create_restriction(dm_fine, dm_coarse,
-				      "DMDA_2D", "DMDA_2D_Restriction"); CHKERRQ(ierr);
+                                      "DMDA_2D", "DMDA_2D_Restriction"); CHKERRQ(ierr);
 
   /* create 3D interpolation */
   ierr = BlatterQ1_create_restriction(dm_fine, dm_coarse,
-				      "DMDA_3D", "DMDA_3D_Restriction"); CHKERRQ(ierr);
+                                      "DMDA_3D", "DMDA_3D_Restriction"); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -261,9 +266,9 @@ static PetscErrorCode BlatterQ1_coarsening_hook(DM dm_fine, DM dm_coarse, void *
  * This function uses the restriction matrix created by BlatterQ1_coarsening_hook().
  */
 static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
-					 const char dm_name[],
-					 const char mat_name[],
-					 const char vec_name[])
+                                         const char dm_name[],
+                                         const char mat_name[],
+                                         const char vec_name[])
 {
   PetscErrorCode ierr;
   Vec X_fine, X_fine_global, X_coarse, X_coarse_global;
@@ -274,40 +279,40 @@ static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
 
   /* get the restriction matrix from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, mat_name,
-			  (PetscObject*)&mat); CHKERRQ(ierr);
+                          (PetscObject*)&mat); CHKERRQ(ierr);
   if (!mat) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		    "No DMDA_Restriction composed with given DMDA");
+                    "No DMDA_Restriction composed with given DMDA");
 
   /* get the 2D DMDA from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, dm_name,
-			  (PetscObject*)&da2_fine); CHKERRQ(ierr);
+                          (PetscObject*)&da2_fine); CHKERRQ(ierr);
   if (!da2_fine) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-			 "No DMDA_Vec composed with given DMDA");
+                         "No DMDA_Vec composed with given DMDA");
 
   /* get the storage vector from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, vec_name,
-			  (PetscObject*)&X_fine); CHKERRQ(ierr);
+                          (PetscObject*)&X_fine); CHKERRQ(ierr);
   if (!X_fine) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		       "No DMDA_Vec composed with given DMDA");
+                       "No DMDA_Vec composed with given DMDA");
 
   /* get the 2D DMDA from the coarse grid DM */
   ierr = PetscObjectQuery((PetscObject)coarse, dm_name,
-			  (PetscObject*)&da2_coarse); CHKERRQ(ierr);
+                          (PetscObject*)&da2_coarse); CHKERRQ(ierr);
   if (!da2_coarse) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-			   "No DMDA_Vec composed with given DMDA");
+                           "No DMDA_Vec composed with given DMDA");
 
   /* get the storage vector from the coarse grid DM */
   ierr = PetscObjectQuery((PetscObject)coarse, vec_name,
-			  (PetscObject*)&X_coarse); CHKERRQ(ierr);
+                          (PetscObject*)&X_coarse); CHKERRQ(ierr);
   if (!X_coarse) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-			 "No DMDA_Vec composed with given DMDA");
+                         "No DMDA_Vec composed with given DMDA");
 
   ierr = DMGetGlobalVector(da2_fine, &X_fine_global); CHKERRQ(ierr);
   ierr = DMGetGlobalVector(da2_coarse, &X_coarse_global); CHKERRQ(ierr);
 
   ierr = DMLocalToGlobalBegin(da2_fine, X_fine, INSERT_VALUES, X_fine_global); CHKERRQ(ierr);
   ierr = DMLocalToGlobalEnd(da2_fine, X_fine, INSERT_VALUES, X_fine_global); CHKERRQ(ierr);
-  
+
   ierr = MatRestrict(mat, X_fine_global, X_coarse_global); CHKERRQ(ierr);
 
   ierr = DMGlobalToLocalBegin(da2_coarse, X_coarse_global, INSERT_VALUES, X_coarse); CHKERRQ(ierr);
@@ -330,8 +335,8 @@ static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
   This is called once per SNESSolve().
  */
 static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
-						 Mat mrestrict, Vec rscale, Mat inject,
-						 DM coarse, void *ctx)
+                                                 Mat mrestrict, Vec rscale, Mat inject,
+                                                 DM coarse, void *ctx)
 {
   PetscErrorCode ierr;
 
@@ -342,10 +347,10 @@ static PetscErrorCode BlatterQ1_restriction_hook(DM fine,
   (void) ctx;
 
   ierr = BlatterQ1_restrict(fine, coarse,
-			    "DMDA_2D", "DMDA_2D_Restriction", "DMDA_2D_Vec"); CHKERRQ(ierr);
+                            "DMDA_2D", "DMDA_2D_Restriction", "DMDA_2D_Vec"); CHKERRQ(ierr);
 
   ierr = BlatterQ1_restrict(fine, coarse,
-			    "DMDA_3D", "DMDA_3D_Restriction", "DMDA_3D_Vec"); CHKERRQ(ierr);
+                            "DMDA_3D", "DMDA_3D_Restriction", "DMDA_3D_Vec"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -367,14 +372,14 @@ PetscErrorCode BlatterQ1_begin_2D_parameter_access(DM da, PrmNode ***prm)
   PetscFunctionBegin;
 
   ierr = PetscObjectQuery((PetscObject)da, "DMDA_2D",
-			  (PetscObject*)&da2prm); CHKERRQ(ierr);
+                          (PetscObject*)&da2prm); CHKERRQ(ierr);
   if (!da2prm) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		       "No DMDA_2D composed with given DMDA");
+                       "No DMDA_2D composed with given DMDA");
 
   ierr = PetscObjectQuery((PetscObject)da, "DMDA_2D_Vec",
-			  (PetscObject*)&X); CHKERRQ(ierr);
+                          (PetscObject*)&X); CHKERRQ(ierr);
   if (!X) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		  "No DMDA_2D_Vec composed with given DMDA");
+                  "No DMDA_2D_Vec composed with given DMDA");
 
   ierr = DMDAVecGetArray(da2prm, X, prm); CHKERRQ(ierr);
 
@@ -393,14 +398,14 @@ PetscErrorCode BlatterQ1_end_2D_parameter_access(DM da, PrmNode ***prm)
   PetscFunctionBegin;
 
   ierr = PetscObjectQuery((PetscObject)da, "DMDA_2D",
-			  (PetscObject*)&da2prm); CHKERRQ(ierr);
+                          (PetscObject*)&da2prm); CHKERRQ(ierr);
   if (!da2prm) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		       "No DMDA_2D composed with given DMDA");
+                       "No DMDA_2D composed with given DMDA");
 
   ierr = PetscObjectQuery((PetscObject)da, "DMDA_2D_Vec",
-			  (PetscObject*)&X); CHKERRQ(ierr);
+                          (PetscObject*)&X); CHKERRQ(ierr);
   if (!X) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		  "No DMDA_2D_Vec composed with given DMDA");
+                  "No DMDA_2D_Vec composed with given DMDA");
 
   ierr = DMDAVecRestoreArray(da2prm, X, prm); CHKERRQ(ierr);
 
@@ -420,14 +425,14 @@ PetscErrorCode BlatterQ1_begin_hardness_access(DM da, PetscScalar ****hardness)
   PetscFunctionBegin;
 
   ierr = PetscObjectQuery((PetscObject)da, "DMDA3",
-			  (PetscObject*)&da3); CHKERRQ(ierr);
+                          (PetscObject*)&da3); CHKERRQ(ierr);
   if (!da3) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		       "No DMDA3 composed with given DMDA");
+                       "No DMDA3 composed with given DMDA");
 
   ierr = PetscObjectQuery((PetscObject)da, "DMDA3_Vec",
-			  (PetscObject*)&X); CHKERRQ(ierr);
+                          (PetscObject*)&X); CHKERRQ(ierr);
   if (!X) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		  "No DMDA3_Vec composed with given DMDA");
+                  "No DMDA3_Vec composed with given DMDA");
 
   ierr = DMDAVecGetArray(da3, X, hardness); CHKERRQ(ierr);
 
@@ -446,14 +451,14 @@ PetscErrorCode BlatterQ1_end_hardness_access(DM da, PetscScalar ****hardness)
   PetscFunctionBegin;
 
   ierr = PetscObjectQuery((PetscObject)da, "DMDA3",
-			  (PetscObject*)&da3); CHKERRQ(ierr);
+                          (PetscObject*)&da3); CHKERRQ(ierr);
   if (!da3) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		       "No DMDA3 composed with given DMDA");
+                       "No DMDA3 composed with given DMDA");
 
   ierr = PetscObjectQuery((PetscObject)da, "DMDA3_Vec",
-			  (PetscObject*)&X); CHKERRQ(ierr);
+                          (PetscObject*)&X); CHKERRQ(ierr);
   if (!X) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
-		  "No DMDA3_Vec composed with given DMDA");
+                  "No DMDA3_Vec composed with given DMDA");
 
   ierr = DMDAVecRestoreArray(da3, X, hardness); CHKERRQ(ierr);
 
@@ -465,12 +470,13 @@ PetscErrorCode BlatterQ1_end_hardness_access(DM da, PetscScalar ****hardness)
 /*!
  * FIXME: we need a callback similar to drag() and viscosity().
  */
-static PetscErrorCode BlatterQ1_initial_guess(DM da, Vec X)
+static PetscErrorCode BlatterQ1_initial_guess(SNES snes, Vec X, void* ctx)
 {
   PetscErrorCode ierr;
 
   /* Get rid of "unused argument" warnings: */
-  (void) da;
+  (void) snes;
+  (void) ctx;
 
   PetscFunctionBegin;
 
@@ -506,15 +512,15 @@ static PetscErrorCode BlatterQ1_initial_guess(DM da, Vec X)
  * \param[out] deta derivative of eta with respect to gamma \f$\frac{\partial \eta}{\partial \gamma}\f$
  */
 static void compute_nonlinearity(BlatterQ1Ctx *ctx,
-				 const Node velocity[restrict],
-				 const PetscReal phi[restrict],
-				 PetscReal dphi[restrict][3],
-				 PetscScalar *restrict u,
-				 PetscScalar *restrict v,
-				 PetscScalar du[restrict],
-				 PetscScalar dv[restrict],
-				 PetscReal *eta,
-				 PetscReal *deta)
+                                 const Node velocity[restrict],
+                                 const PetscReal phi[restrict],
+                                 PetscReal dphi[restrict][3],
+                                 PetscScalar *restrict u,
+                                 PetscScalar *restrict v,
+                                 PetscScalar du[restrict],
+                                 PetscScalar dv[restrict],
+                                 PetscReal *eta,
+                                 PetscReal *deta)
 {
   PetscInt l, ll;
   PetscScalar second_invariant;
@@ -547,7 +553,7 @@ static void compute_nonlinearity(BlatterQ1Ctx *ctx,
  * FIXME: I need to document this.
  */
 static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velocity, Node ***residual,
-					       BlatterQ1Ctx *ctx)
+                                               BlatterQ1Ctx *ctx)
 {
   PetscInt       xs, ys, xm, ym, zm, i, j, k, q, l;
   PetscReal      dx, dy;
@@ -599,14 +605,14 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
           /* Compute various quantities at this quadrature point in the *physical* element */
 
           compute_z_gradient(ctx->Q13D.dchi[q], zn, /* inputs (derivatives of shape functions, geometry) */
-			     grad_z); /* output (partial derivatives of z with respect to xi,eta,zeta) */
+                             grad_z); /* output (partial derivatives of z with respect to xi,eta,zeta) */
 
           compute_element_info(ctx->Q13D.chi, ctx->Q13D.dchi, q, dx, dy, grad_z, /* inputs */
-			       phi, dphi, &jw); /* outputs (values of shape functions, their derivatives, det(J)*weight */
+                               phi, dphi, &jw); /* outputs (values of shape functions, their derivatives, det(J)*weight */
 
           compute_nonlinearity(ctx, element_velocity, phi, dphi, /* inputs */
-			       &u, &v, du, dv, &eta, &deta); /* outputs u,v, partial derivatives of u,v,
-								effective viscosity (eta), derivative of eta with respect to gamma */
+                               &u, &v, du, dv, &eta, &deta); /* outputs u,v, partial derivatives of u,v,
+                                                                effective viscosity (eta), derivative of eta with respect to gamma */
 
           jw /= ctx->rhog;      /* scales residuals to be O(1) */
 
@@ -622,18 +628,18 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
         if (k == 0) { /* we are on a bottom face */
           if (ctx->no_slip) {
             /* Note: Non-Galerkin coarse grid operators are very sensitive to the scaling of Dirichlet boundary
-	     * conditions.  After shenanigans above, etabase contains the effective viscosity at the closest quadrature
-	     * point to the bed.  We want the diagonal entry in the Dirichlet condition to have similar magnitude to the
-	     * diagonal entry corresponding to the adjacent node.  The fundamental scaling of the viscous part is in
-	     * diagu, diagv below.  This scaling is easy to recognize by considering the finite difference operator after
-	     * scaling by element size.  The no-slip Dirichlet condition is scaled by this factor, and also in the
-	     * assembled matrix (see the similar block in BlatterQ1_Jacobian_local).
-	     *
-	     * Note that the residual at this Dirichlet node is linear in the state at this node, but also depends
-	     * (nonlinearly in general) on the neighboring interior nodes through the local viscosity.  This will make
-	     * a matrix-free Jacobian have extra entries in the corresponding row.  We assemble only the diagonal part,
-	     * so the solution will exactly satisfy the boundary condition after the first linear iteration.
-	     */
+             * conditions.  After shenanigans above, etabase contains the effective viscosity at the closest quadrature
+             * point to the bed.  We want the diagonal entry in the Dirichlet condition to have similar magnitude to the
+             * diagonal entry corresponding to the adjacent node.  The fundamental scaling of the viscous part is in
+             * diagu, diagv below.  This scaling is easy to recognize by considering the finite difference operator after
+             * scaling by element size.  The no-slip Dirichlet condition is scaled by this factor, and also in the
+             * assembled matrix (see the similar block in BlatterQ1_Jacobian_local).
+             *
+             * Note that the residual at this Dirichlet node is linear in the state at this node, but also depends
+             * (nonlinearly in general) on the neighboring interior nodes through the local viscosity.  This will make
+             * a matrix-free Jacobian have extra entries in the corresponding row.  We assemble only the diagonal part,
+             * so the solution will exactly satisfy the boundary condition after the first linear iteration.
+             */
             const PetscReal dz = PetscRealPart(parameters[0].thickness) / (zm - 1.0);
             const PetscScalar
               diagu = 2*etabase / ctx->rhog*(dx*dy / dz + dx*dz / dy + 4*dy*dz / dx),
@@ -644,7 +650,7 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
 
             for (q = 0; q < 4; q++) { /* for each quadrature point on the basal face... */
               const PetscReal jw = 0.25*dx*dy / ctx->rhog, /* FIXME: this Jacobian is incorrect */
-		*phi = ctx->Q12D.chi[q];
+                *phi = ctx->Q12D.chi[q];
 
               PetscScalar u = 0, v = 0, tauc = 0;
               PetscReal taub, dtaub;
@@ -654,8 +660,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
                 tauc += phi[l]*parameters[l].tauc;
               }
 
-	      ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
-				  &taub, &dtaub);
+              ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
+                                  &taub, &dtaub);
 
               for (l = 0; l < 4; l++) {
                 const PetscReal pp = phi[l];
@@ -681,7 +687,7 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
  * FIXME: I need to document this.
  */
 static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velocity, Mat A,
-					       Mat B, MatStructure *mstr, BlatterQ1Ctx *ctx)
+                                               Mat B, MatStructure *mstr, BlatterQ1Ctx *ctx)
 {
   PetscInt       xs, ys, xm, ym, zm, i, j, k, q, l, ll;
   PetscReal      dx, dy;
@@ -720,8 +726,8 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
         get_nodal_values_3d(velocity, i, j, k, element_velocity);
 
-	/* Ensure that values of velocity components at Dirichlet
-	   (no-slip) nodes are exactly equal to Dirichlet B.C. values. */
+        /* Ensure that values of velocity components at Dirichlet
+           (no-slip) nodes are exactly equal to Dirichlet B.C. values. */
         if (ctx->no_slip && k == 0) {
           for (l = 0; l < 4; l++) {
             element_velocity[l].u = 0.0;
@@ -736,17 +742,17 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
           /* Compute the gradient of z */
           compute_z_gradient(ctx->Q13D.dchi[q], zn, /* inputs */
-			     grad_z);		    /* output */
+                             grad_z);               /* output */
 
           /* compute values of shape functions, their derivatives, and
              quadrature weights at a quadrature point q. */
           compute_element_info(ctx->Q13D.chi, ctx->Q13D.dchi, q, dx, dy, grad_z, /* inputs */
-			       phi, dphi, &jw); /* outputs */
+                               phi, dphi, &jw); /* outputs */
 
           /* Compute u,v, their derivatives, plus effective viscosity and its
              derivative with respect to gamma. */
           compute_nonlinearity(ctx, element_velocity, phi, dphi, /* inputs */
-			       &u, &v, du, dv, &eta, &deta); /* outputs */
+                               &u, &v, du, dv, &eta, &deta); /* outputs */
 
           jw /= ctx->rhog;      /* residuals are scaled by this factor */
 
@@ -796,8 +802,8 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
               }
 #else
               /* This SSE2 code is an exact replica of above, but uses explicit packed instructions for some speed
-	       * benefit.  On my hardware, these intrinsics are almost twice as fast as above, reducing total assembly cost
-	       * by 25 to 30 percent. */
+               * benefit.  On my hardware, these intrinsics are almost twice as fast as above, reducing total assembly cost
+               * by 25 to 30 percent. */
               {
                 __m128d
                   keu = _mm_loadu_pd(&Ke[l*2+0][ll*2+0]),
@@ -805,23 +811,23 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
                   dpl01 = _mm_loadu_pd(&dpl[0]), dpl10 = _mm_shuffle_pd(dpl01, dpl01, _MM_SHUFFLE2(0, 1)), dpl2 = _mm_set_sd(dpl[2]),
                   t0, t3, pdgduv;
                 keu = _mm_add_pd(keu, _mm_add_pd(_mm_mul_pd(_mm_mul_pd(dp0jweta, p42), dpl01),
-						 _mm_add_pd(_mm_mul_pd(dp1jweta, dpl10),
-							    _mm_mul_pd(dp2jweta, dpl2))));
+                                                 _mm_add_pd(_mm_mul_pd(dp1jweta, dpl10),
+                                                            _mm_mul_pd(dp2jweta, dpl2))));
                 kev = _mm_add_pd(kev, _mm_add_pd(_mm_mul_pd(_mm_mul_pd(dp1jweta, p24), dpl01),
-						 _mm_add_pd(_mm_mul_pd(dp0jweta, dpl10),
-							    _mm_mul_pd(dp2jweta, _mm_shuffle_pd(dpl2, dpl2, _MM_SHUFFLE2(0, 1))))));
+                                                 _mm_add_pd(_mm_mul_pd(dp0jweta, dpl10),
+                                                            _mm_mul_pd(dp2jweta, _mm_shuffle_pd(dpl2, dpl2, _MM_SHUFFLE2(0, 1))))));
                 pdgduv = _mm_mul_pd(p05, _mm_add_pd(_mm_add_pd(_mm_mul_pd(p42, _mm_mul_pd(du0, dpl01)),
-							       _mm_mul_pd(p24, _mm_mul_pd(dv1, dpl01))),
-						    _mm_add_pd(_mm_mul_pd(du1pdv0, dpl10),
-							       _mm_mul_pd(pdu2dv2, _mm_set1_pd(dpl[2]))))); /* [dgdu, dgdv] */
+                                                               _mm_mul_pd(p24, _mm_mul_pd(dv1, dpl01))),
+                                                    _mm_add_pd(_mm_mul_pd(du1pdv0, dpl10),
+                                                               _mm_mul_pd(pdu2dv2, _mm_set1_pd(dpl[2]))))); /* [dgdu, dgdv] */
                 t0 = _mm_mul_pd(jwdeta, pdgduv);  /* jw deta [dgdu, dgdv] */
                 t3 = _mm_mul_pd(t0, du1pdv0);     /* t0 (du1 + dv0) */
                 _mm_storeu_pd(&Ke[l*2+0][ll*2+0], _mm_add_pd(keu, _mm_add_pd(_mm_mul_pd(t1, t0),
-									     _mm_add_pd(_mm_mul_pd(dp1, t3),
-											_mm_mul_pd(t0, _mm_mul_pd(dp2, du2))))));
+                                                                             _mm_add_pd(_mm_mul_pd(dp1, t3),
+                                                                                        _mm_mul_pd(t0, _mm_mul_pd(dp2, du2))))));
                 _mm_storeu_pd(&Ke[l*2+1][ll*2+0], _mm_add_pd(kev, _mm_add_pd(_mm_mul_pd(t2, t0),
-									     _mm_add_pd(_mm_mul_pd(dp0, t3),
-											_mm_mul_pd(t0, _mm_mul_pd(dp2, dv2))))));
+                                                                             _mm_add_pd(_mm_mul_pd(dp0, t3),
+                                                                                        _mm_mul_pd(t0, _mm_mul_pd(dp2, dv2))))));
               }
 #endif
             } /* ll-loop (trial functions) */
@@ -840,7 +846,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
             for (q = 0; q < 4; q++) {
               const PetscReal jw = 0.25*dx*dy / ctx->rhog, /* FIXME: det(J)*w is wrong here */
-		*phi = ctx->Q12D.chi[q]; 
+                *phi = ctx->Q12D.chi[q];
               PetscScalar u = 0, v = 0, tauc = 0;
               PetscReal taub, dtaub;
 
@@ -852,8 +858,8 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
               }
 
               /* Compute the friction coefficient at this quadrature point: */
-	      ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
-				  &taub, &dtaub);
+              ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
+                                  &taub, &dtaub);
 
               for (l = 0; l < 4; l++) {
                 const PetscReal pp = phi[l];
@@ -910,38 +916,38 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
   \param[out] result SNES object that will be used with SNESSolve later
 */
 PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
-				PetscInt Mz,
-				BlatterQ1Ctx *ctx, SNES *result) {
+                                PetscInt Mz,
+                                BlatterQ1Ctx *ctx, SNES *result) {
   PetscErrorCode ierr;
   PetscInt dim, Mx, My, Nx, Ny;
   DM da;
   const PetscInt *lx, *ly;
 
   ierr = DMDAGetInfo(pism_da,
-		     &dim,
-		     &My,
-		     &Mx,
-		     NULL, /* Mz */
-		     &Ny,  /* number of processors in y-direction */
-		     &Nx,  /* number of processors in x-direction */
-		     NULL, /* ditto, z-direction */
-		     NULL, /* number of degrees of freedom per node */
-		     NULL, /* stencil width */
-		     NULL, NULL, NULL, /* types of ghost nodes at the boundary */
-		     NULL); CHKERRQ(ierr); /* stencil type */
+                     &dim,
+                     &My,
+                     &Mx,
+                     NULL, /* Mz */
+                     &Ny,  /* number of processors in y-direction */
+                     &Nx,  /* number of processors in x-direction */
+                     NULL, /* ditto, z-direction */
+                     NULL, /* number of degrees of freedom per node */
+                     NULL, /* stencil width */
+                     NULL, NULL, NULL, /* types of ghost nodes at the boundary */
+                     NULL); CHKERRQ(ierr); /* stencil type */
   assert(dim == 2);
 
   ierr = DMDAGetOwnershipRanges(pism_da, &ly, &lx, NULL);
 
   ierr = DMDACreate3d(com,
-		      DMDA_BOUNDARY_NONE, DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-		      DMDA_STENCIL_BOX,
-		      Mz, My, Mx,
-		      1, Ny, Nx, /* number of processors in z, y, x directions. (Always *one* in the z-direction.) */
-		      sizeof(Node)/sizeof(PetscScalar),
-		      1, /* stencil width */
-		      NULL, ly, lx, /* number of nodes per processor */
-		      &da); CHKERRQ(ierr);
+                      DMDA_BOUNDARY_NONE, DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+                      DMDA_STENCIL_BOX,
+                      Mz, My, Mx,
+                      1, Ny, Nx, /* number of processors in z, y, x directions. (Always *one* in the z-direction.) */
+                      sizeof(Node)/sizeof(PetscScalar),
+                      1, /* stencil width */
+                      NULL, ly, lx, /* number of nodes per processor */
+                      &da); CHKERRQ(ierr);
 
   ierr = DMDASetFieldName(da, 0, "x-velocity"); CHKERRQ(ierr);
   ierr = DMDASetFieldName(da, 1, "y-velocity"); CHKERRQ(ierr);
@@ -950,23 +956,23 @@ PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
 
   /* ADD_VALUES, because BlatterQ1_residual_local contributes to ghosted values. */
   ierr = DMDASNESSetFunctionLocal(da, ADD_VALUES,
-				  (DMDASNESFunctionLocal)BlatterQ1_residual_local,
-				  ctx); CHKERRQ(ierr);
+                                  (DMDASNESFunctionLocal)BlatterQ1_residual_local,
+                                  ctx); CHKERRQ(ierr);
   ierr = DMDASNESSetJacobianLocal(da,
-				  (DMDASNESJacobianLocal)BlatterQ1_Jacobian_local,
-				  ctx); CHKERRQ(ierr);
+                                  (DMDASNESJacobianLocal)BlatterQ1_Jacobian_local,
+                                  ctx); CHKERRQ(ierr);
 
   ierr = DMCoarsenHookAdd(da, BlatterQ1_coarsening_hook,
-			  BlatterQ1_restriction_hook, ctx); CHKERRQ(ierr);
+                          BlatterQ1_restriction_hook, ctx); CHKERRQ(ierr);
   /* FIXME: do we need a refinement hook? */
 
   ierr = DMSetApplicationContext(da, ctx); CHKERRQ(ierr);
 
-  ierr = DMSetInitialGuess(da, BlatterQ1_initial_guess); CHKERRQ(ierr);
-
   ierr = SNESCreate(com, result); CHKERRQ(ierr);
   ierr = SNESSetDM(*result, da); CHKERRQ(ierr);
   ierr = DMDestroy(&da); CHKERRQ(ierr);
+
+  ierr = SNESSetComputeInitialGuess(*result, BlatterQ1_initial_guess, ctx); CHKERRQ(ierr);
   ierr = SNESSetFromOptions(*result); CHKERRQ(ierr);
 
   return 0;
@@ -978,7 +984,7 @@ PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
   surface elevation does not depend on \f$z\f$, values at the first 4 points (bottom
   "level") are all we need.
 
-  Using the 2D \f$Q_1\f$ basis expansion for the function \f$s(x,y)\f$, 
+  Using the 2D \f$Q_1\f$ basis expansion for the function \f$s(x,y)\f$,
 
   \f{eqnarray}{
   \frac{\partial s}{\partial x}(q_j) &=& \sum_{i=1}^4 \frac{\partial \phi_i}{\partial x}(q_j) s_i,\\
@@ -1012,8 +1018,8 @@ PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
   \param[out] ds values of the surface gradient
 */
 static void compute_surface_gradient(PetscReal dchi[4][4][2],
-				     const PrmNode parameters[], PetscReal dx, PetscReal dy,
-				     PetscReal ds[4][2])
+                                     const PrmNode parameters[], PetscReal dx, PetscReal dy,
+                                     PetscReal ds[4][2])
 {
   PetscInt i, q;
 
