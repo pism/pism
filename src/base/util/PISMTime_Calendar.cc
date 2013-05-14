@@ -73,8 +73,8 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
     PISMEnd();
   }
 
-  m_run_start = increment_date(0, m_config.get("start_year"));
-  m_run_end   = increment_date(m_run_start, m_config.get("run_length_years"));
+  m_run_start = increment_date(0, (int)m_config.get("start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config.get("run_length_years"));
 
   m_time_in_seconds = m_run_start;
 }
