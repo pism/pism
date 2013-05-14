@@ -121,7 +121,7 @@ This table lists required dependencies for PISM alphabetically.
     UDUNITS-2 & \url{http://www.unidata.ucar.edu/software/udunits/} & \\
     MPI &\url{http://www-unix.mcs.anl.gov/mpi/} & \\
     NetCDF &\url{http://www.unidata.ucar.edu/software/netcdf/} & version $\ge$ 4.1 \\
-    PETSc & \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/} & version $\ge$ 3.2 \\
+    PETSc & \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/} & version $\ge$ \PETSCREL \\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -358,7 +358,7 @@ Using shared libraries may be unwise on certain clusters, etc.; check with your 
 
 \item Finally, you will want to set the \texttt{PETSC_DIR} and the \texttt{PETSC_ARCH} environment variables in your \texttt{.profile} or \texttt{.bashrc} file.  Also remember to add the MPI \texttt{bin} directory to your \texttt{PATH}.  For instance, if you used the option \texttt{--download-mpich=1} in the PETSc configure, the MPI \texttt{bin} directory will have a path like \texttt{\$PETSC_DIR/\$PETSC_ARCH/bin}.  Therefore the lines
 \begin{verbatim}
-export PETSC_DIR=/home/user/petsc-3.2-p7/
+export PETSC_DIR=/home/user/petsc-3.4.0/
 export PETSC_ARCH=linux-gnu-opt
 export PATH=$PETSC_DIR/$PETSC_ARCH/bin/:$PATH
 \end{verbatim}
