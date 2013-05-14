@@ -36,7 +36,7 @@ public:
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode set_grid_defaults();
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode allocate_flowlaw();
+  virtual PetscErrorCode set_default_flowlaw();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_couplers();
   virtual PetscErrorCode init_couplers();

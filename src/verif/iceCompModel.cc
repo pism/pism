@@ -266,7 +266,7 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
   return 0;
 }
 
-PetscErrorCode IceCompModel::allocate_flowlaw() {
+PetscErrorCode IceCompModel::set_default_flowlaw() {
 
   if (testname == 'V') {
     config.set_string("ssa_flow_law", "isothermal_glen");

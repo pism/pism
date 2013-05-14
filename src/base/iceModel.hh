@@ -138,7 +138,7 @@ public:
   virtual PetscErrorCode grid_setup();
 
   virtual PetscErrorCode allocate_submodels();
-  virtual PetscErrorCode allocate_flowlaw();
+  virtual PetscErrorCode set_default_flowlaw();
   virtual PetscErrorCode allocate_enthalpy_converter();
   virtual PetscErrorCode allocate_basal_resistance_law();
   virtual PetscErrorCode allocate_stressbalance();
