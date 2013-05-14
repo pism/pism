@@ -245,33 +245,34 @@ The possible values of the \texttt{mask}\index{mask} are given in Table \ref{tab
 
 Assuming the geometry of the ice evolves (which can be turned off by option \texttt{-no_mass}), and assuming an ocean exists (which can be turned off by option \texttt{-dry}), then at each time step the mask changes by the flotation criterion.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is marked as \texttt{MASK_GROUNDED}.
 
+
 \subsection{Rheology}
 \label{sec:rheology}
 \optsection{Rheology}
 
-The ice rheologies available in PISM are of isotropic Glen-Nye type \cite{Paterson}.   A rheology in this class is described by a ``flow law'', which is a function $F(\sigma,T,\omega,P,d)$ in the ``constitutive relation''
+The ``rheology'' of a viscous fluid refers to the relation between the applied stress and the resulting deformation, specifically the strain rate.  The models of ice rheology available in PISM are of isotropic Glen-Nye type \cite{Paterson}.   A rheology in this class is described by a ``flow law'', which is a function $F(\sigma,T,\omega,P,d)$ in the ``constitutive relation''
 \begin{equation}
-\dot \eps_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'.  \label{eq:constitutive}
+D_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'.  \label{eq:constitutive}
 \end{equation}
-Here $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction, $P$ is the pressure, and $d$ is the grain size.  Also $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$, so $\sigma$ is the second invariant of the stress deviator tensor.
+Here $D_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction, $P$ is the pressure, and $d$ is the grain size.  Also $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F = \frac{1}{2} \sigma_{ij}' \sigma_{ij}'$; $\sigma$ is the second invariant of the stress deviator tensor.
 
 For example,
 \begin{equation}
-F = A(T) \sigma^{n-1}  \label{eq:isothermalglen}
+F(\sigma,T) = A(T) \sigma^{n-1}  \label{eq:isothermalglen}
 \end{equation}
-is the common temperature-dependent Glen law \cite{PatersonBudd,BBL}, which has no dependence on liquid water fraction, pressure, or grain size.  If the ice softness $A(T)=A_0$ is constant then the law is isothermal, whereas if there is dependence on temperature then $A(T)$ is most-commonly a generalization of ``Arrhenius'' form $A(T) = A \exp(-Q/RT^*)$.
+is the common temperature-dependent Glen law \cite{PatersonBudd,BBL}, which has no dependence on liquid water fraction, pressure, or grain size.  If the ice softness $A(T)=A_0$ is constant then the law is isothermal, whereas if there is dependence on temperature then $A(T)$ is most-commonly a generalization of ``Arrhenius'' form $A(T) = A \exp(-Q/RT^*)$.  The more elaborate Goldsby-Kohlstedt law \cite{GoldsbyKohlstedt} is a function $F(\sigma,T,P,d)$.
 
-Command-line options \intextoption{sia_flow_law} and \intextoption{ssa_flow_law} control which flow law is used by the SIA and SSA ice dynamics models in the \texttt{-cold} mode.  Allowed arguments are listed in table \ref{tab:flowlaw} below.
-% FIXME: is -ssa_flow_law setable in polythermal?
-In any case, form \eqref{eq:constitutive} of the flow law is used in the SIA.  However, the ``viscosity'' form of such a flow law, found by inverting the constitutive relation, in needed for ice shelf and ice stream (SSA) flow \cite{BBssasliding}:
-	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,\omega,P,d)\,\dot \eps_{ij} $$
-Here $\nu(\dot \eps,T,\omega,P,d)$ is the ``effective viscosity.''  Viscosity form is not known for the Goldsby-Kohlstedt law \cite{GoldsbyKohlstedt}, so option ``\texttt{-ssa_flow_law gk}'' is an error.
+In the enthalpy mode of PISM, which is the thermodynamical modeling default, there is only one choice for the flow law: the Glen-Paterson-Budd-Lliboutry-Duval law \cite{AschwandenBuelerKhroulevBlatter,LliboutryDuval1985,PatersonBudd}, a function $F(\sigma,T,\omega,P)$.  This law is the only one in the literature that depends on both the temperature and the liquid water fraction; it parameterizes the (observed) softening of pressure-melting-temperature ice as its liquid fraction increases.  One can use this polythermal law or one may choose among a number of ``cold ice'' laws listed in Table \ref{tab:flowlaw} which do not use the liquid water fraction.  
 
-In the enthalpy mode of PISM, which is the thermodynamical modeling default, there is only one choice for the flow law: the Glen-Paterson-Budd-Lliboutry-Duval law \cite{AschwandenBuelerKhroulevBlatter,LliboutryDuval1985,PatersonBudd}.  This law is the only one in the literature that depends on both the temperature and the liquid water fraction.  That is, it parameterizes the (observed) softening of pressure-melting-temperature ice as its liquid fraction increases.  One can use this polythermal law or one may choose among a number of ``cold ice'' laws listed in Table \ref{tab:flowlaw}.  One can also choose either \texttt{-sia_flow_law isothermal_glen} or \texttt{-ssa_flow_law isothermal_glen}, which is equation \eqref{eq:isothermalglen} and its inverse, respectively.
+Command-line options \intextoption{sia_flow_law} and \intextoption{ssa_flow_law} control which flow law is used by the SIA and SSA ice dynamics models.  Allowed arguments are listed in table \ref{tab:flowlaw} below.  Form \eqref{eq:constitutive} of the flow law is used in the SIA.  However, the ``viscosity'' form of such a flow law, found by inverting the constitutive relation, is needed for ice shelf and ice stream (SSA) flow \cite{BBssasliding}:
+	$$\sigma_{ij}' = 2 \nu(D,T,\omega,P,d)\,D_{ij} $$
+Here $\nu(D,T,\omega,P,d)$ is the ``effective viscosity'' and $D^2 = \frac{1}{2} D_{ij} D_{ij}$.  Viscosity form is not known for the Goldsby-Kohlstedt law \cite{GoldsbyKohlstedt}, so option ``\texttt{-ssa_flow_law gk}'' is an error.
 
-The command-line options \intextoption{sia_e} and \intextoption{ssa_e} set flow enhancement factors for the SIA and SSA respectively. These options can be used with any flow law.  Option \texttt{-sia_e} sets ``$e$'' in ``$\dot \eps_{ij} = e\, F(\sigma,T,\omega,P,d)\, \sigma_{ij}',$'' in equation \eqref{eq:constitutive}.  Option \texttt{-ssa_e} sets ``$e$'' in the viscosity form so that ``$\sigma_{ij}'  = e^{-1/n}\, 2\, \nu(\sigma,T,\omega,P,d)\, \dot \eps_{ij}.$''
+One can also choose either \texttt{-sia_flow_law isothermal_glen} or \texttt{-ssa_flow_law isothermal_glen}, which is $F(\sigma) = A_0 \sigma^{n-1}$ and its inverse $\nu(D) = \frac{1}{2} B_0 D^{(1-n)/(2n)}$, respectively, where $A_0$ is the isothermal ice softness and $B_0=A_0^{-1/n}$ is the isothermal ice hardness.
 
-Flow law parameters such as ice softness can be changed using configuration parameters (see section \ref{sec:pism-defaults} and the implementation of flow laws in the \emph{Source Code Browser}).  One can also choose the scalar function $F$ reasonably arbitrarily by modifying source code; see source files \texttt{flowlaws.hh}, \texttt{flowlaws.cc} in \texttt{src/base/rheology/}.  Table \ref{tab:flowlaw} lists the C++ classes declared in \texttt{flowlaw.hh}.
+The command-line options \intextoption{sia_e} and \intextoption{ssa_e} set flow enhancement factors for the SIA and SSA respectively. These options can be used with any flow law.  Option \texttt{-sia_e} sets ``$e$'' in ``$D_{ij} = e\, F(\sigma,T,\omega,P,d)\, \sigma_{ij}',$'' in equation \eqref{eq:constitutive}.  Option \texttt{-ssa_e} sets ``$e$'' in the viscosity form so that ``$\sigma_{ij}'  = e^{-1/n}\, 2\, \nu(D,T,\omega,P,d)\, D_{ij}.$''
+
+Flow law parameters such as ice softness can be changed using configuration parameters (see section \ref{sec:pism-defaults} and the implementation of flow laws in the \emph{Source Code Browser}).  One can also choose the scalar function $F$ reasonably arbitrarily by modifying source code; see source files \texttt{flowlaws.hh}, \texttt{flowlaws.cc} in \texttt{src/base/rheology/}.  Table \ref{tab:flowlaw} therefore also lists the C++ classes declared in \texttt{flowlaw.hh}.
 
 \begin{table}[ht]
 \centering
@@ -289,9 +290,10 @@ Flow law parameters such as ice softness can be changed using configuration para
 \bottomrule
 \normalsize	
 \end{tabular}
-\caption{\emph{For} \texttt{-cold} \emph{mode only:} Choosing the rheology using \texttt{-sia_flow_law} and \texttt{-ssa_flow_law}.}
+\caption{Choosing the rheology using \texttt{-sia_flow_law} and \texttt{-ssa_flow_law}.  These flow law choices do not use the liquid water fraction.}
 \label{tab:flowlaw}
 \end{table}
+
 
 \subsection{Choosing the stress balance}  \label{subsect:ssacontrol}
 \optsection{SSA as a sliding law}

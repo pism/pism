@@ -79,13 +79,13 @@ PetscErrorCode IceFlowLaw::setFromOptions() {
 }
 
 //! \brief Computes effective viscosity and its derivative with respect to the
-//! second invariant \f$ \gamma \f$.
+//! squared second invariant \f$ \gamma \f$.
 /*!
  *
  * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
  *
  * \param[in] hardness ice hardness
- * \param[in] gamma the second invariant \f$ \gamma \f$
+ * \param[in] gamma the second invariant \f$ \gamma = \frac{1}{2} D_{ij} D_{ij}\f$ if \f$D_{ij}\f$ is the strain rate tensor
  * \param[out] nu effective viscosity
  * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
  */
