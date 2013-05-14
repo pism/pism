@@ -25,21 +25,25 @@ Next look at the script which would run (i.e. a dry-run):
 
     $ PISM_DO=echo ./antspinCC.sh N | less 
 
-Finally, do the run.  This is a 15 km grid run with N processes.  The first
+Then actually do the run in the background, saving its `stdout` output in a
+file; this will take a number of processor-hours:
+
+    $ ./antspinCC.sh N &> out.ant30km &
+
+This is a 30 km grid run with N processes.  The first
 stage essentially smooths the surface, the second stage improves the enthalpy
 field, and then the third stage uses the "full" physics.  (I.e. sliding plus
-PIK calving front physics).  This is a long run which will take many
-processor-hours:
+PIK calving front physics).
 
-    $ ./antspinCC.sh N
-
-Higher-resolution runs can be achieved by modifying the script.
+Higher-resolution runs can be achieved by modifying the script; reset the `GRID`
+and `SKIP` variables.  Different parameter values can be set also.
 
 SeaRISE experiments
 ---------
 
 To perform the SeaRISE experiments, there are scripts that ran under PISM
-`stable0.4`; they will require modifications to run under `stable0.5`.
+`stable0.4`; they will require modifications to run under more recent versions
+of PISM.
 
     $ ./experiments.sh N
     $ ./postprocess.sh       # calls postprocess_mask.py
