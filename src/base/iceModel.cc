@@ -38,6 +38,7 @@
 #include "PISMDiagnostic.hh"
 #include "PISMIcebergRemover.hh"
 #include "PISMOceanKill.hh"
+#include "PISMCalvingAtThickness.hh"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : grid(g),
@@ -72,6 +73,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   btu = NULL;
   iceberg_remover = NULL;
   ocean_kill_calving = NULL;
+  thickness_threshold_calving = NULL;
 
   executable_short_name = "pism"; // drivers typically override this
 
@@ -163,6 +165,8 @@ IceModel::~IceModel() {
   delete btu;
 
   delete iceberg_remover;
+  delete ocean_kill_calving;
+  delete thickness_threshold_calving;
 }
 
 
@@ -694,9 +698,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     stdout_flags += "$";
   }
 
-  if (ocean_kill_calving != NULL) {
-    ierr = ocean_kill_calving->update(vMask, vH); CHKERRQ(ierr);
-  }
+  ierr = do_calving(); CHKERRQ(ierr);
 
   grid.profiler->end(event_mass);
 

@@ -61,6 +61,7 @@ class PISMDiagnostic;
 class PISMTSDiagnostic;
 class PISMIcebergRemover;
 class PISMOceanKill;
+class PISMCalvingAtThickness;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -152,7 +153,7 @@ public:
   virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
   virtual PetscErrorCode init_diagnostics();
-  virtual PetscErrorCode init_ocean_kill();
+  virtual PetscErrorCode init_calving();
 
   virtual PetscErrorCode list_diagnostics();
 
@@ -209,6 +210,7 @@ protected:
 
   PISMIcebergRemover *iceberg_remover;
   PISMOceanKill      *ocean_kill_calving;
+  PISMCalvingAtThickness *thickness_threshold_calving;
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
@@ -308,7 +310,6 @@ protected:
 
   // see iMcalving.cc
   virtual PetscErrorCode eigenCalving();
-  virtual PetscErrorCode calvingAtThickness();
   virtual PetscErrorCode dt_from_eigenCalving();
 
   // see iMenergy.cc
@@ -360,6 +361,7 @@ protected:
                            planeStar<PetscScalar> &SIA_flux);
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode sub_gl_position();
+  virtual PetscErrorCode do_calving();
 
 
   // see iMIO.cc

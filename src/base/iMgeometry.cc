@@ -828,10 +828,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = eigenCalving(); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("do_thickness_calving") && config.get_flag("part_grid")) {
-    ierr = calvingAtThickness(); CHKERRQ(ierr);
-  }
-
   // Check if the ice thickness exceeded the height of the computational box
   // and extend the grid if necessary:
   ierr = check_maximum_thickness(); CHKERRQ(ierr);

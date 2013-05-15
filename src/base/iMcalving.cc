@@ -23,7 +23,22 @@
 #include "pism_signal.h"
 #include "Mask.hh"
 #include "PISMOcean.hh"
+#include "PISMOceanKill.hh"
+#include "PISMCalvingAtThickness.hh"
 
+PetscErrorCode IceModel::do_calving() {
+  PetscErrorCode ierr;
+
+  if (ocean_kill_calving != NULL) {
+    ierr = ocean_kill_calving->update(vMask, vH); CHKERRQ(ierr);
+  }
+
+  if (thickness_threshold_calving != NULL) {
+    ierr = thickness_threshold_calving->update(vMask, vH); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
 
 //! \file iMcalving.cc Methods implementing PIK options -eigen_calving and -calving_at_thickness [\ref Winkelmannetal2011].
 
@@ -221,67 +236,6 @@ PetscErrorCode IceModel::eigenCalving() {
 
   return 0;
 }
-
-
-/*!
-  This calving condition applies for terminal floating ice shelf grid cells
-  when their thickness is less than a threshold.
-
-  Requires -part_grid to be "on".
-*/
-PetscErrorCode IceModel::calvingAtThickness() {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(4, grid.com, "######### calvingAtThickness() start\n");    CHKERRQ(ierr);
-
-  PetscScalar
-    my_discharge_flux = 0,
-    discharge_flux = 0;
-  const PetscScalar dx = grid.dx, dy = grid.dy;
-
-  ierr = vH.update_ghosts(); CHKERRQ(ierr);
-
-  IceModelVec2S vHnew = vWork2d[0];
-  ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
-
-  double ocean_rho = config.get("sea_water_density"),
-         ice_rho   = config.get("ice_density"),
-         Hcalving  = config.get("calving_at_thickness");
-
-  PetscReal sea_level;
-  if (ocean != NULL) {
-    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
-
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vHnew.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      bool hereFloating = (vH(i, j) > 0.0 && (vbed(i, j) < (sea_level - ice_rho / ocean_rho * vH(i, j))));
-      bool icefreeOceanNeighbor = ((vH(i + 1, j) == 0.0 && vbed(i + 1, j) < sea_level) ||
-                                    (vH(i - 1, j) == 0.0 && vbed(i - 1, j) < sea_level) ||
-                                    (vH(i, j + 1) == 0.0 && vbed(i, j + 1) < sea_level) ||
-                                    (vH(i, j - 1) == 0.0 && vbed(i, j - 1) < sea_level));
-      if (hereFloating && vH(i, j) <= Hcalving && icefreeOceanNeighbor) {
-        my_discharge_flux -= vHnew(i, j);
-        vHnew(i, j) = 0.0;
-      }
-    }
-  }
-  ierr = vHnew.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
-
-  ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
-  PetscScalar factor = config.get("ice_density") * (dx * dy);
-  discharge_flux_cumulative     += discharge_flux     * factor;
-
-  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 
 //! \brief This calculates the CFL timestep according to the calving rate based
 //! on principal strain rates ("eigencalving" with constant K).

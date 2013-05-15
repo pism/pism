@@ -34,11 +34,11 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 
-protected:
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO& nc);
+protected:
 
   double m_calving_threshold;
   IceModelVec2Int m_old_mask;

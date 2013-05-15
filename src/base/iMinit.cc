@@ -51,6 +51,7 @@
 #include "pism_options.hh"
 #include "PISMIcebergRemover.hh"
 #include "PISMOceanKill.hh"
+#include "PISMCalvingAtThickness.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -974,7 +975,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
 			 "medium", output_vars); CHKERRQ(ierr);
 
-  ierr = init_ocean_kill(); CHKERRQ(ierr);
+  ierr = init_calving(); CHKERRQ(ierr);
   ierr = init_diagnostics(); CHKERRQ(ierr);
   ierr = init_snapshots(); CHKERRQ(ierr);
   ierr = init_backups(); CHKERRQ(ierr);
@@ -1011,18 +1012,27 @@ PetscErrorCode IceModel::misc_setup() {
   return 0;
 }
 
-//! \brief Initialize the mask used by the -ocean_kill code.
-PetscErrorCode IceModel::init_ocean_kill() {
+//! \brief Initialize calving mechanisms.
+PetscErrorCode IceModel::init_calving() {
   PetscErrorCode ierr;
 
-  if (!config.get_flag("ocean_kill"))
-    return 0;
+  if (config.get_flag("ocean_kill") == true) {
 
-  if (ocean_kill_calving == NULL) {
-    ocean_kill_calving = new PISMOceanKill(grid, config);
+    if (ocean_kill_calving == NULL) {
+      ocean_kill_calving = new PISMOceanKill(grid, config);
+    }
+
+    ierr = ocean_kill_calving->init(variables); CHKERRQ(ierr);
   }
 
-  ierr = ocean_kill_calving->init(variables); CHKERRQ(ierr);
+  if (config.get_flag("do_thickness_calving") == true) {
+
+    if (thickness_threshold_calving == NULL) {
+      thickness_threshold_calving = new PISMCalvingAtThickness(grid, config);
+    }
+
+    ierr = thickness_threshold_calving->init(variables); CHKERRQ(ierr);
+  }
 
   return 0;
 }

@@ -38,6 +38,7 @@
 #include "PISMTime.hh"
 #include "PISMDiagnostic.hh"
 #include "PISMOceanKill.hh"
+#include "PISMCalvingAtThickness.hh"
 
 //! Save model state in NetCDF format.
 /*!
@@ -216,6 +217,10 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
       ierr = ocean_kill_calving->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
+    if (thickness_threshold_calving != NULL) {
+      ierr = thickness_threshold_calving->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
   }
   grid.profiler->end(event_output_define);
 
@@ -273,6 +278,10 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
 
   if (ocean_kill_calving != NULL) {
     ierr = ocean_kill_calving->write_variables(vars, nc); CHKERRQ(ierr);
+  }
+
+  if (thickness_threshold_calving != NULL) {
+    ierr = thickness_threshold_calving->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   // All the remaining names in vars must be of diagnostic quantities.
