@@ -37,6 +37,7 @@
 #include "IceGrid.hh"
 #include "PISMDiagnostic.hh"
 #include "PISMIcebergRemover.hh"
+#include "PISMOceanKill.hh"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : grid(g),
@@ -691,6 +692,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     stdout_flags += "h";
   } else {
     stdout_flags += "$";
+  }
+
+  if (ocean_kill_calving != NULL) {
+    ierr = ocean_kill_calving->update(vMask, vH); CHKERRQ(ierr);
   }
 
   grid.profiler->end(event_mass);

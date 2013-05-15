@@ -23,6 +23,13 @@
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
 
+/**
+ * This class implements the "-ocean_kill" mechanism: calving at a
+ * fixed calving front determined using ice thickness.
+ *
+ * FIXME: the ice extent computation should depend on the current sea
+ * level elevation (I suppose).
+ */
 class PISMOceanKill : public PISMComponent {
 public:
   PISMOceanKill(IceGrid &g, const NCConfigVariable &conf);
@@ -31,12 +38,12 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 
-protected:
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO& nc);
 
+protected:
   IceModelVec2Int m_ocean_kill_mask;
 };
 
