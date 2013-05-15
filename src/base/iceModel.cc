@@ -70,6 +70,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   EC = NULL;
   btu = NULL;
   iceberg_remover = NULL;
+  ocean_kill_calving = NULL;
 
   executable_short_name = "pism"; // drivers typically override this
 
@@ -115,10 +116,8 @@ void IceModel::reset_counters() {
   skipCountDown = 0;
 
   grounded_basal_ice_flux_cumulative = 0;
-  float_kill_flux_cumulative = 0;
   discharge_flux_cumulative = 0;
   nonneg_rule_flux_cumulative = 0;
-  ocean_kill_flux_cumulative = 0;
   sub_shelf_ice_flux_cumulative = 0;
   surface_ice_flux_cumulative = 0;
   sum_divQ_SIA_cumulative = 0;
@@ -235,16 +234,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vbed.set_attrs("model_state", "bedrock surface elevation",
 			"m", "bedrock_altitude"); CHKERRQ(ierr);
   ierr = variables.add(vbed); CHKERRQ(ierr);
-
-  if (config.get_flag("ocean_kill")) {
-    ierr = ocean_kill_mask.create(grid, "ocean_kill_mask", false); CHKERRQ(ierr);
-    ierr = ocean_kill_mask.set_attrs("internal",
-                                     "mask specifying fixed calving front locations",
-                                     "", ""); CHKERRQ(ierr);
-    ocean_kill_mask.time_independent = true;
-    ierr = variables.add(ocean_kill_mask); CHKERRQ(ierr);
-
-  }
 
   if (config.get_flag("sub_groundingline")) {
     ierr = gl_mask.create(grid, "gl_mask", false); CHKERRQ(ierr);
@@ -474,7 +463,6 @@ PetscErrorCode IceModel::createVecs() {
 
   // take care of 2D cumulative fluxes: we need to allocate special storage it
   // the user asked for climatic_mass_balance_cumulative or
-  // ocean_kill_flux_cumulative
 
   string vars;
   bool extra_vars_set;
@@ -494,16 +482,6 @@ PetscErrorCode IceModel::createVecs() {
       ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
                                                         "cumulative ice-equivalent surface mass balance",
                                                         "m", ""); CHKERRQ(ierr);
-    }
-
-    if (set_contains(ex_vars, "ocean_kill_flux_cumulative") ||
-        set_contains(ex_vars, "ocean_kill_flux")) {
-      ierr = ocean_kill_flux_2D_cumulative.create(grid, "ocean_kill_flux_cumulative", false); CHKERRQ(ierr);
-      ierr = ocean_kill_flux_2D_cumulative.set_attrs("diagnostic",
-                                                     "cumulative calving flux due to the -ocean_kill mechanism",
-                                                     "kg", ""); CHKERRQ(ierr);
-      ierr = ocean_kill_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
-      ocean_kill_flux_2D_cumulative.write_in_glaciological_units = true;
     }
 
     if (set_contains(ex_vars, "grounded_basal_flux_cumulative")) {

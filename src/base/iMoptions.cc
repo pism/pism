@@ -158,9 +158,6 @@ PetscErrorCode IceModel::set_output_size(string option,
   if (climatic_mass_balance_cumulative.was_created()) {
     result.insert("climatic_mass_balance_cumulative");
   }
-  if (ocean_kill_flux_2D_cumulative.was_created()) {
-    result.insert("ocean_kill_flux_2D_cumulative");
-  }
   if (grounded_basal_flux_2D_cumulative.was_created()) {
     result.insert("grounded_basal_flux_2D_cumulative");
   }

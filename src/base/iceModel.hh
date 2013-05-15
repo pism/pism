@@ -60,6 +60,7 @@ class PISMBedThermalUnit;
 class PISMDiagnostic;
 class PISMTSDiagnostic;
 class PISMIcebergRemover;
+class PISMOceanKill;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -87,8 +88,6 @@ class IceModel {
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
   friend class IceModel_climatic_mass_balance_cumulative;
-  friend class IceModel_ocean_kill_flux_2D;
-  friend class IceModel_ocean_kill_flux_2D_cumulative;
   friend class IceModel_dHdt;
   // scalar:
   friend class IceModel_ivol;
@@ -116,10 +115,6 @@ class IceModel {
   friend class IceModel_sub_shelf_flux_cumulative;
   friend class IceModel_nonneg_flux;
   friend class IceModel_nonneg_flux_cumulative;
-  friend class IceModel_ocean_kill_flux;
-  friend class IceModel_ocean_kill_flux_cumulative;
-  friend class IceModel_float_kill_flux;
-  friend class IceModel_float_kill_flux_cumulative;
   friend class IceModel_discharge_flux;
   friend class IceModel_discharge_flux_cumulative;
   friend class IceModel_nonneg_flux_2D_cumulative;
@@ -213,6 +208,7 @@ protected:
   PISMBedThermalUnit *btu;
 
   PISMIcebergRemover *iceberg_remover;
+  PISMOceanKill      *ocean_kill_calving;
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
@@ -237,7 +233,6 @@ protected:
     vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
     acab,		//!< accumulation/ablation rate; no ghosts
     climatic_mass_balance_cumulative,    //!< cumulative acab
-    ocean_kill_flux_2D_cumulative,       //!< cumulative ocean kill flux
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
     floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
@@ -251,7 +246,6 @@ protected:
 
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
                          //!< grounded_ice, floating_ice, ice_free_ocean
-    ocean_kill_mask,     //!< mask used by the -ocean_kill code 
     vBCMask; //!< mask to determine Dirichlet boundary locations
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
@@ -273,10 +267,8 @@ protected:
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
-    float_kill_flux_cumulative,
     discharge_flux_cumulative,
     nonneg_rule_flux_cumulative,
-    ocean_kill_flux_cumulative,
     sub_shelf_ice_flux_cumulative,
     surface_ice_flux_cumulative,
     sum_divQ_SIA_cumulative,

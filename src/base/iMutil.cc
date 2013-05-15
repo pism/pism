@@ -143,10 +143,8 @@ PetscErrorCode IceModel::update_run_stats() {
   run_stats.set("PETSc_MFlops", flops * 1.0e-6);
 
   run_stats.set("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);
-  run_stats.set("float_kill_flux_cumulative", float_kill_flux_cumulative);
   run_stats.set("discharge_flux_cumulative", discharge_flux_cumulative);
   run_stats.set("nonneg_rule_flux_cumulative", nonneg_rule_flux_cumulative);
-  run_stats.set("ocean_kill_flux_cumulative", ocean_kill_flux_cumulative);
   run_stats.set("sub_shelf_ice_flux_cumulative", sub_shelf_ice_flux_cumulative);
   run_stats.set("surface_ice_flux_cumulative", surface_ice_flux_cumulative);
   run_stats.set("sum_divQ_SIA_cumulative", sum_divQ_SIA_cumulative);

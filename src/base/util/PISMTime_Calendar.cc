@@ -165,9 +165,8 @@ PetscErrorCode PISMTime_Calendar::init() {
  */
 PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
   PetscErrorCode ierr;
-  PISMUnitSystem system = m_time_units.get_system();
-  NCTimeseries time_axis(system);
-  NCTimeBounds bounds(system);
+  NCTimeseries time_axis(m_unit_system);
+  NCTimeBounds bounds(m_unit_system);
   PetscMPIInt rank;
   vector<double> time, time_bounds;
   string time_units, time_bounds_name, new_calendar,
