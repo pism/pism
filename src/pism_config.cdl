@@ -616,8 +616,11 @@ netcdf pism_config {
     pism_config:timeseries_buffer_size = 10000;
     pism_config:timeseries_buffer_size_doc = "; Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
 
-    pism_config:summary_volarea_scale_factor_log10 = 6;
-    pism_config:summary_volarea_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume and area in summary line to stdout";
+    pism_config:summary_vol_scale_factor_log10 = 6;
+    pism_config:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";
+
+    pism_config:summary_area_scale_factor_log10 = 6;
+    pism_config:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
 
     pism_config:viewer_size = 320;
     pism_config:viewer_size_doc = "; default diagnostic viewer size";

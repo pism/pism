@@ -249,13 +249,16 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
   PetscErrorCode ierr;
   const bool do_energy = config.get_flag("do_energy");
 
-  const int log10scale = static_cast<int>(config.get("summary_volarea_scale_factor_log10"));
-  const double scale = pow(10.0, static_cast<double>(log10scale));
-  char  volscalestr[10] = "     ", // for special case: blank when 10^0 = 1 scaling
-    areascalestr[10] = "   ";  // ditto
-  if (log10scale != 0) {
-    snprintf(volscalestr, sizeof(volscalestr), "10^%1d_", log10scale);
-    strcpy(areascalestr,volscalestr);
+  const int log10scalevol  = static_cast<int>(config.get("summary_vol_scale_factor_log10")),
+            log10scalearea = static_cast<int>(config.get("summary_area_scale_factor_log10"));
+  const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
+               scalearea = pow(10.0, static_cast<double>(log10scalearea));
+  char  volscalestr[10] = "     ", areascalestr[10] = "   "; // blank when 10^0 = 1 scaling
+  if (log10scalevol != 0) {
+    snprintf(volscalestr, sizeof(volscalestr), "10^%1d_", log10scalevol);
+  }
+  if (log10scalearea != 0) {
+    snprintf(areascalestr, sizeof(areascalestr), "10^%1d_", log10scalearea);
   }
 
   // this version keeps track of what has been done so as to minimize stdout:
@@ -303,7 +306,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
 
     ierr = verbPrintf(2,grid.com,
                       "S %s: %8.5f %9.5f %12.5f %14.5f\n",
-                      date.c_str(), volume/(scale*1.0e9), area/(scale*1.0e6), max_diffusivity,
+                      date.c_str(), volume/(scalevol*1.0e9), area/(scalearea*1.0e6), max_diffusivity,
                       grid.convert(gmaxu > gmaxv ? gmaxu : gmaxv,
                                    "m/s", "m/year")); CHKERRQ(ierr);
 
