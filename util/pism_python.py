@@ -32,7 +32,7 @@ x = np.linspace(-Lx,Lx,Mx);
 y = np.linspace(-Ly,Ly,My);
 
 # create dummy fields
-[xx,yy] = np.meshgrid(x,y);
+[xx,yy] = np.meshgrid(x,y);  # if there were "ndgrid" in numpy we would use it
 acab = np.zeros((Mx,My));
 artm = np.zeros((Mx,My)) + 273.15 + 10.0; # 10 degrees Celsius
 topg = 1000.0 + 200.0 * (xx + yy) / max(Lx, Ly);  # change "1000.0" to "0.0" to test
