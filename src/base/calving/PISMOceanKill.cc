@@ -33,7 +33,7 @@ PISMOceanKill::PISMOceanKill(IceGrid &g, const NCConfigVariable &conf)
     PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for PISMOceanKill.\n");
     PISMEnd();
   }
-  
+
   ierr = m_ocean_kill_mask.set_attrs("internal",
                                      "mask specifying fixed calving front locations",
                                      "", ""); CHKERRCONTINUE(ierr);
@@ -48,6 +48,9 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
   PetscErrorCode ierr;
   string filename;
   bool flag;
+
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing calving at a fixed calving front...\n"); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Fixed calving front options", ""); CHKERRQ(ierr);
   {
@@ -64,14 +67,14 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
 
   if (filename.empty()) {
     ierr = verbPrintf(2, grid.com,
-       "* Option -ocean_kill seen: using ice thickness at the beginning of the run\n"
+       "  using ice thickness at the beginning of the run\n"
        "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
     tmp = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
     assert(tmp != 0);
   } else {
     ierr = verbPrintf(2, grid.com,
-       "* Option -ocean_kill seen: setting fixed calving front location using\n"
-       "  ice thickness from '%s'.\n",filename.c_str()); CHKERRQ(ierr);
+       "  setting fixed calving front location using\n"
+       "  ice thickness from '%s'.\n", filename.c_str()); CHKERRQ(ierr);
 
     ierr = thickness.create(grid, "thk", false); CHKERRQ(ierr);
     ierr = thickness.set_attrs("temporary", "land ice thickness",
@@ -84,8 +87,8 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
   }
 
   ierr = m_ocean_kill_mask.begin_access(); CHKERRQ(ierr);
-  ierr = tmp->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = tmp->begin_access();              CHKERRQ(ierr);
+  ierr = mask->begin_access();             CHKERRQ(ierr);
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
@@ -96,12 +99,12 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
     }
   }
 
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = tmp->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access();             CHKERRQ(ierr);
+  ierr = tmp->end_access();              CHKERRQ(ierr);
   ierr = m_ocean_kill_mask.end_access(); CHKERRQ(ierr);
 
   ierr = m_ocean_kill_mask.update_ghosts(); CHKERRQ(ierr);
-  
+
   return 0;
 }
 
@@ -110,8 +113,8 @@ PetscErrorCode PISMOceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &
   PetscErrorCode ierr;
 
   ierr = m_ocean_kill_mask.begin_access(); CHKERRQ(ierr);
-  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  ierr = pism_mask.begin_access();         CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access();     CHKERRQ(ierr);
   PetscInt GHOSTS = grid.max_stencil_width;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
@@ -121,10 +124,10 @@ PetscErrorCode PISMOceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &
       }
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = pism_mask.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access();     CHKERRQ(ierr);
+  ierr = pism_mask.end_access();         CHKERRQ(ierr);
   ierr = m_ocean_kill_mask.end_access(); CHKERRQ(ierr);
-  
+
   return 0;
 }
 
@@ -140,7 +143,7 @@ PetscErrorCode PISMOceanKill::define_variables(set<string> vars, const PIO &nc,
   if (set_contains(vars, m_ocean_kill_mask.string_attr("short_name"))) {
     ierr = m_ocean_kill_mask.define(nc, nctype); CHKERRQ(ierr);
   }
-  
+
   return 0;
 }
 
@@ -153,4 +156,3 @@ PetscErrorCode PISMOceanKill::write_variables(set<string> vars, const PIO& nc) {
 
   return 0;
 }
-
