@@ -25,16 +25,37 @@
 #include "PISMOcean.hh"
 #include "PISMOceanKill.hh"
 #include "PISMCalvingAtThickness.hh"
+#include "PISMStressBalance.hh"
+#include "PISMIcebergRemover.hh"
 
 PetscErrorCode IceModel::do_calving() {
   PetscErrorCode ierr;
 
+  if (config.get_flag("do_eigen_calving") && config.get_flag("use_ssa_velocity")) {
+    bool dteigencalving = config.get_flag("cfl_eigencalving");
+    if (dteigencalving == false){
+      // otherwise calculation of strain rates has been done in iMadaptive.cc already
+      IceModelVec2V *ssa_velocity;
+      ierr = stress_balance->get_2D_advective_velocity(ssa_velocity); CHKERRQ(ierr);
+      ierr = stress_balance->compute_2D_principal_strain_rates(*ssa_velocity,
+                                                               vMask, strain_rates); CHKERRQ(ierr);
+    }
+    ierr = eigenCalving(); CHKERRQ(ierr);
+  }
+  
   if (ocean_kill_calving != NULL) {
     ierr = ocean_kill_calving->update(vMask, vH); CHKERRQ(ierr);
   }
 
   if (thickness_threshold_calving != NULL) {
     ierr = thickness_threshold_calving->update(vMask, vH); CHKERRQ(ierr);
+  }
+
+  if (config.get_flag("kill_icebergs") || iceberg_remover != NULL) {
+    ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
+    // the call above modifies ice thickness and updates the mask
+    // accordingly
+    ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
   }
 
   return 0;
@@ -48,25 +69,12 @@ PetscErrorCode IceModel::do_calving() {
   See equation (26) in [\ref Winkelmannetal2011].
 */
 PetscErrorCode IceModel::eigenCalving() {
-  const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
-
-  PetscScalar my_discharge_flux = 0,
-    discharge_flux = 0;
+  const PetscScalar eigen_calving_K = config.get("eigen_calving_K");
 
   // is ghost communication really needed here?
   ierr = vH.update_ghosts(); CHKERRQ(ierr);
   ierr = vMask.update_ghosts(); CHKERRQ(ierr);
-
-  double ocean_rho = config.get("sea_water_density");
-  double ice_rho = config.get("ice_density");
-
-  const PetscScalar eigenCalvFactor = config.get("eigen_calving_K");
-
-  PetscReal sea_level = 0;
-  if (ocean != NULL) {
-    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
@@ -74,11 +82,11 @@ PetscErrorCode IceModel::eigenCalving() {
   IceModelVec2S vDiffCalvRate = vWork2d[1];
   ierr = vDiffCalvRate.set(0.0); CHKERRQ(ierr);
 
-  if (PetscAbs(dx - dy)/PetscMin(dx,dy) > 1e-2) {
+  if (PetscAbs(grid.dx - grid.dy) / PetscMin(grid.dx, grid.dy) > 1e-2) {
     PetscPrintf(grid.com,
-      "PISMPIK_ERROR: -eigen_calving using a non-square grid cell does not work (yet);\n"
-      "               since it has no direction!!!\n, dx = %f, dy = %f, rel. diff = %f",
-      dx,dy,PetscAbs(dx - dy)/PetscMax(dx,dy));
+      "PISM ERROR: -eigen_calving using a non-square grid cell is not implemented (yet);\n"
+      "            dx = %f, dy = %f, rel. diff = %f",
+      grid.dx, grid.dy, PetscAbs(grid.dx - grid.dy) / PetscMax(grid.dx, grid.dy));
     PISMEnd();
   }
 
@@ -111,25 +119,16 @@ PetscErrorCode IceModel::eigenCalving() {
       PetscInt M = 0;
 
       // find partially filled or empty grid boxes on the icefree ocean, which
-      // have floating ice neighbors after massContExplicitStep (mask not updated)
-
-      bool floating_e = (vH(i + 1, j) > 0.0 && (vbed(i + 1, j) < (sea_level - ice_rho / ocean_rho*vH(i + 1, j)))),
-           floating_w = (vH(i - 1, j) > 0.0 && (vbed(i - 1, j) < (sea_level - ice_rho / ocean_rho*vH(i - 1, j)))),
-           floating_n = (vH(i, j + 1) > 0.0 && (vbed(i, j + 1) < (sea_level - ice_rho / ocean_rho*vH(i, j + 1)))),
-           floating_s = (vH(i, j - 1) > 0.0 && (vbed(i, j - 1) < (sea_level - ice_rho / ocean_rho*vH(i, j - 1))));
-
-      bool next_to_floating = floating_e || floating_w || floating_n || floating_s;
-
-      bool ice_free_ocean = (vH(i, j) == 0.0 && vbed(i, j) < sea_level);
+      // have floating ice neighbors after the mass continuity step
 
       H_average = 0.0; eigen1 = 0.0; eigen2 = 0.0; M = 0, N = 0;
 
-      if (ice_free_ocean && next_to_floating) {
+      if (mask.ice_free_ocean(i, j) && mask.next_to_floating_ice(i, j)) {
 
-        if (floating_e) { N += 1; H_average += vH(i + 1, j); }
-        if (floating_w) { N += 1; H_average += vH(i - 1, j); }
-        if (floating_n) { N += 1; H_average += vH(i, j + 1); }
-        if (floating_s) { N += 1; H_average += vH(i, j - 1); }
+        if (mask.floating_ice(i + 1, j)) { N += 1; H_average += vH(i + 1, j); }
+        if (mask.floating_ice(i - 1, j)) { N += 1; H_average += vH(i - 1, j); }
+        if (mask.floating_ice(i, j + 1)) { N += 1; H_average += vH(i, j + 1); }
+        if (mask.floating_ice(i, j - 1)) { N += 1; H_average += vH(i, j - 1); }
 
         if (N > 0)
           H_average /= N;
@@ -165,29 +164,29 @@ PetscErrorCode IceModel::eigenCalving() {
 
         // calving law
         if (eigen2 > eigenCalvOffset && eigen1 > 0.0) { // if spreading in all directions
-          calvrateHorizontal = eigenCalvFactor * eigen1 * (eigen2 - eigenCalvOffset);
-          // eigen1 * eigen2 has units [s^ - 2] and calvrateHorizontal [m*s^1]
-          // hence, eigenCalvFactor has units [m*s]
+          calvrateHorizontal = eigen_calving_K * eigen1 * (eigen2 - eigenCalvOffset);
+          // eigen1 * eigen2 has units [s^-2] and calvrateHorizontal [m*s^1]
+          // hence, eigen_calving_K has units [m*s]
         } else calvrateHorizontal = 0.0;
 
         // calculate mass loss with respect to the associated ice thickness and the grid size:
-        PetscScalar calvrate = calvrateHorizontal * H_average / dx; // in m/s
+        PetscScalar calvrate = calvrateHorizontal * H_average / grid.dx; // in m/s
 
         // apply calving rate at partially filled or empty grid cells
         if (calvrate > 0.0) {
-          my_discharge_flux -= calvrate * dt; // no need to account for diffcalvrate further down, its all in this line
           vHref(i, j) -= calvrate * dt; // in m
           if(vHref(i, j) < 0.0) { // i.e. partially filled grid cell has completely calved off
-            vDiffCalvRate(i, j) =  - vHref(i, j) / dt;// in m/s, means additional ice loss
+            vDiffCalvRate(i, j) =  -vHref(i, j) / dt;// in m/s, means additional ice loss
             vHref(i, j) = 0.0;
             if(N > 0){
               vDiffCalvRate(i, j) = vDiffCalvRate(i, j) / N;
             }
           }
         }
-      }
-    }
-  }
+
+      } // end of "if (ice_free_ocean && next_to_floating)"
+    } // j-loop
+  } // i-loop
   ierr = vDiffCalvRate.end_access(); CHKERRQ(ierr);
 
   ierr = vDiffCalvRate.update_ghosts(); CHKERRQ(ierr);
@@ -197,9 +196,8 @@ PetscErrorCode IceModel::eigenCalving() {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       PetscScalar restCalvRate = 0.0;
-      bool hereFloating = (vH(i, j) > 0.0 && (vbed(i, j) < (sea_level - ice_rho / ocean_rho*vH(i, j))));
 
-      if (hereFloating &&
+      if (mask.floating_ice(i, j) &&
           (vDiffCalvRate(i + 1, j) > 0.0 || vDiffCalvRate(i - 1, j) > 0.0 ||
            vDiffCalvRate(i, j + 1) > 0.0 || vDiffCalvRate(i, j - 1) > 0.0)) {
 
@@ -218,8 +216,9 @@ PetscErrorCode IceModel::eigenCalving() {
           vHref(i, j) = 0.0;
         }
       }
-    }
-  }
+
+    } // j-loop
+  } // i-loop
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
@@ -227,10 +226,6 @@ PetscErrorCode IceModel::eigenCalving() {
   ierr = vHref.end_access(); CHKERRQ(ierr);
   ierr = strain_rates.end_access(); CHKERRQ(ierr);
   ierr = vDiffCalvRate.end_access(); CHKERRQ(ierr);
-
-  ierr = PISMGlobalSum(&my_discharge_flux,     &discharge_flux,     grid.com); CHKERRQ(ierr);
-  PetscScalar factor = config.get("ice_density") * (dx * dy);
-  discharge_flux_cumulative     += discharge_flux     * factor;
 
   ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
 

@@ -22,7 +22,7 @@ pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc -ssa_view_nuh 
 
 doit="mpiexec -n $N pismr $pismopts"
 
-extra="-extra_times 0.05 -extra_vars thk,mask,cbar,Href,velbar,IcebergMask -extra_file iceberg_ex.nc"
+extra="-extra_times 0.05 -extra_vars thk,mask,cbar,Href,velbar -extra_file iceberg_ex.nc"
 
 # run with CFBC and part_grid
 $doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -part_redist -o iceberg_o.nc $extra

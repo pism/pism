@@ -49,13 +49,6 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = update_mask(vbed, vH, vMask); CHKERRQ(ierr);
   ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
 
-  if (config.get_flag("kill_icebergs") || iceberg_remover != NULL) {
-    ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
-    // the call above modifies ice thickness and updates the mask
-    // accordingly
-    ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
-  }
-
   if (config.get_flag("sub_groundingline")) {
     ierr = sub_gl_position(); CHKERRQ(ierr);
   }
@@ -816,16 +809,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   // distribute residual ice mass if desired
   if (do_redist) {
     ierr = redistResiduals(); CHKERRQ(ierr);
-  }
-
-  if (config.get_flag("do_eigen_calving") && config.get_flag("use_ssa_velocity")) {
-    bool dteigencalving = config.get_flag("cfl_eigencalving");
-    if (!dteigencalving){ // calculation of strain rates has been done in iMadaptive.cc already
-      IceModelVec2V *ssa_velocity;
-      ierr = stress_balance->get_2D_advective_velocity(ssa_velocity); CHKERRQ(ierr);
-      ierr = stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, vMask, strain_rates); CHKERRQ(ierr);
-    }
-    ierr = eigenCalving(); CHKERRQ(ierr);
   }
 
   // Check if the ice thickness exceeded the height of the computational box
