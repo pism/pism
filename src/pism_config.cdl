@@ -289,7 +289,7 @@ netcdf pism_config {
     pism_config:max_low_temp_count_doc = "Maximum number of grid points with ice temperature below global_min_allowed_temp.";
 
     pism_config:eigen_calving_K = 0.0;
-    pism_config:eigen_calving_K_doc = "Set proportionality constant to determine calving rate from strain rates";
+    pism_config:eigen_calving_K_doc = "m s; Set proportionality constant to determine calving rate from strain rates.  Note references [\ref Levermannetal2012, \ref Martinetal2011] use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
 
     pism_config:calving_at_thickness = 50.0;
     pism_config:calving_at_thickness_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
