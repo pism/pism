@@ -54,9 +54,6 @@ public:
     is_dry_simulation = config.get_flag("is_dry_simulation");
   }
 
-  void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
-               IceModelVec2Int &out_mask, IceModelVec2S &out_surface);
-
   inline void compute(PetscReal bed, PetscReal thickness,
                       int *out_mask, PetscReal *out_surface) {
     const PetscReal  hgrounded = bed + thickness; // FIXME issue #15
