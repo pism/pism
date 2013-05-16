@@ -700,6 +700,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   ierr = do_calving(); CHKERRQ(ierr);
 
+  ierr = Href_cleanup(); CHKERRQ(ierr);
+
   grid.profiler->end(event_mass);
 
   //! \li compute the bed deformation, which only depends on current thickness

@@ -42,7 +42,7 @@ PetscErrorCode IceModel::do_calving() {
     }
     ierr = eigenCalving(); CHKERRQ(ierr);
   }
-  
+
   if (ocean_kill_calving != NULL) {
     ierr = ocean_kill_calving->update(vMask, vH); CHKERRQ(ierr);
   }
@@ -331,6 +331,48 @@ PetscErrorCode IceModel::dt_from_eigenCalving() {
                     calving_rate_counter); CHKERRQ(ierr);
 
   dt_from_eigencalving = PetscMax(dt_from_eigencalving, dt_from_eigencalving_min);
+
+  return 0;
+}
+
+/**
+ * Clean up the Href field.
+ *
+ * Href(i,j) > 0 is allowed only if vH(i,j) == 0 and (i,j) has a
+ * floating ice neighbor.
+ */
+PetscErrorCode IceModel::Href_cleanup() {
+  PetscErrorCode ierr;
+
+  if (vHref.was_created() == false)
+    return 0;
+
+  MaskQuery mask(vMask);
+
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vHref.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+
+      if (vH(i, j) > 0 &&
+          vHref(i, j) > 0) {
+        vH(i, j) += vHref(i, j);
+        vHref(i, j) = 0.0;
+      }
+
+      if (vHref(i, j) > 0.0 &&
+          mask.next_to_floating_ice(i, j) == false) {
+        vHref(i, j) = 0.0;
+      }
+
+    }
+  }
+
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vHref.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

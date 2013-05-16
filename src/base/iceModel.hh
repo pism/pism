@@ -362,6 +362,7 @@ protected:
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode sub_gl_position();
   virtual PetscErrorCode do_calving();
+  virtual PetscErrorCode Href_cleanup();
 
 
   // see iMIO.cc
