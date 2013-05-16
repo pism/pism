@@ -1,0 +1,29 @@
+netcdf pism_overrides {
+    variables:
+    byte pism_overrides;
+
+    pism_overrides:standard_gravity = 9.81;
+    pism_overrides:standard_gravity_doc = "m s-2; = g";
+
+    pism_overrides:ice_density = 1000.0;
+    pism_overrides:ice_density_doc = "kg m-3;";
+
+    pism_overrides:fresh_water_density = 1000.0;
+    pism_overrides:fresh_water_density_doc = "kg m-3;";
+
+    pism_overrides:bed_smoother_range = -1.0;
+    pism_overrides:bed_smoother_range_doc = "m; negative value de-activates bed smoother";
+
+    pism_overrides:summary_vol_scale_factor_log10 = -18;
+    pism_overrides:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; volume in mm^3";
+
+    pism_overrides:summary_area_scale_factor_log10 = -12;
+    pism_overrides:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area in summary line to stdout; area in mm^3";
+
+    pism_overrides:Glen_exponent = 5.9;
+    pism_overrides:Glen_exponent_doc = "; = n;  Sayag & Worster (2012) give 5.9+-0.2";
+
+    pism_overrides:ice_softness = 3.1689e-24;
+    pism_overrides:ice_softness_doc = "; = A   FIXME";
+
+}
