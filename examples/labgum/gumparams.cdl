@@ -1,4 +1,4 @@
-netcdf pism_overrides {
+netcdf gumparams {
     variables:
     byte pism_overrides;
 
@@ -6,13 +6,16 @@ netcdf pism_overrides {
     pism_overrides:standard_gravity_doc = "m s-2; = g";
 
     pism_overrides:ice_density = 1000.0;
-    pism_overrides:ice_density_doc = "kg m-3;";
-
-    pism_overrides:fresh_water_density = 1000.0;
-    pism_overrides:fresh_water_density_doc = "kg m-3;";
+    pism_overrides:ice_density_doc = "kg m-3; 1% Xanthan gum in water has same density as water";
 
     pism_overrides:bed_smoother_range = -1.0;
     pism_overrides:bed_smoother_range_doc = "m; negative value de-activates bed smoother";
+
+    pism_overrides:bootstrapping_geothermal_flux_value_no_var = 0.0;
+    pism_overrides:bootstrapping_geothermal_flux_value_no_var_doc = "W m-2; no geothermal";
+
+    pism_overrides:preliminary_time_step_duration = 0.01;
+    pism_overrides:preliminary_time_step_duration_doc = "s; ";
 
     pism_overrides:summary_time_unit_name = "second";
     pism_overrides:summary_time_unit_name_doc = "";
@@ -24,9 +27,8 @@ netcdf pism_overrides {
     pism_overrides:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area in summary line to stdout; area in mm^3";
 
     pism_overrides:Glen_exponent = 5.9;
-    pism_overrides:Glen_exponent_doc = "; = n;  Sayag & Worster (2012) give 5.9+-0.2";
+    pism_overrides:Glen_exponent_doc = "; = n;  Sayag & Worster (2012) give n = 5.9 +- 0.2";
 
-    pism_overrides:ice_softness = 3.1689e-24;
-    pism_overrides:ice_softness_doc = "; = A   FIXME";
-
+    pism_overrides:ice_softness = 9.7316e-09;  // vs (e.g.) 4e-25 Pa-3 s-1 for ice
+    pism_overrides:ice_softness_doc = "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2012) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)";
 }

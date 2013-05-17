@@ -27,6 +27,13 @@ pipeR = 20.0e-3  # m;  = 20 mm;  input pipe has this radius  FIXME: GUESS
 rho = 1000.0     # kg m-3;  density of gum = density of fresh water
 temp = 20.0      # C;  fluid is at 20 deg
 
+# see gumparams.cdl for additional parameter settings
+from subprocess import call
+CONF = 'gumparams'
+call(['rm', '-f', CONF + '.nc'])
+call(['ncgen', '-o', CONF + '.nc', CONF + '.cdl'])
+print('  PISM-readable config override file %s written' % (CONF + '.nc'))
+
 # set up the grid:
 Mx = 500
 My = 500
@@ -93,14 +100,8 @@ historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(nc, 'history', historystr)
 
-from subprocess import call
-CONF = 'gumparams'
-call(['rm', '-f', CONF + '.nc'])
-call(['ncgen', '-o', CONF + '.nc', CONF + '.cdl'])
-print('  PISM-readable config override file %s written' % (CONF + '.nc'))
-
 nc.close()
 print('  PISM-bootable NetCDF file %s written' % ncfile)
 print('  now run "rungum.sh"')
-print('  TRY:  $ pismr -boot_file initgum.nc -Mx 101 -My 101 -Mz 21 -Lz 1 -Mbz 0 -Lbz 0 -y 0.0000000001 -config_override gumparams.nc')
+print('  TRY:  $ pismr -config_override gumparams.nc -boot_file initgum.nc -no_energy -cold -sia_flow_law isothermal_glen -sia_e 1.0 -Mx 101 -My 101 -Mz 51 -Lz 0.050 -Mbz 0 -Lbz 0 -z_spacing equal -y 1e-7 -max_dt 1e-9')
 
