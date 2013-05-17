@@ -103,7 +103,7 @@ void IceModel::reset_counters() {
   CFLmaxdt = CFLmaxdt2D = 0.0;
   CFLviolcount = 0;
   dt_TempAge = 0.0;
-  dt_from_diffus = dt_from_cfl = 0.0;
+  dt_from_cfl = 0.0;
 
   // Do not reset the following: they are always re-computed before use (i.e.
   // aren't a part of the model state). Moreover, keeping these values allows
