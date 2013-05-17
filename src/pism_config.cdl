@@ -150,6 +150,9 @@ netcdf pism_config {
     pism_config:bootstrapping_no_smb_in_initial_temp = "no";
     pism_config:bootstrapping_no_smb_in_initial_temp_doc = "if 'no' then use the method in IceModel::putTempAtDepth() which includes the surface mass balance; if 'yes' use the old PISM method which does not use smb";
 
+    pism_config:preliminary_time_step_duration = 1.0;
+    pism_config:preliminary_time_step_duration_doc = "s; Duration of the time step taken before the run, so as to fill diagnostic quantities.";
+
     pism_config:sia_enhancement_factor = 1.0;
     pism_config:sia_enhancement_factor_doc = "; Flow enhancement factor for SIA";
 

@@ -772,9 +772,10 @@ PetscErrorCode IceModel::run() {
   int stepcount = (config.get_flag("count_time_steps")) ? 0 : -1;
 
   // do a one-step diagnostic run:
+  dt_TempAge = config.get("preliminary_time_step_duration");
   ierr = verbPrintf(2,grid.com,
-      "doing preliminary step of 1 s (one model second) to fill diagnostic quantities ...\n");
-      CHKERRQ(ierr);
+      "preliminary step of %.2f model seconds to fill diagnostic quantities ...\n",
+      dt_TempAge); CHKERRQ(ierr);
 
   // set verbosity to 1 to suppress reporting
   PetscInt tmp_verbosity = getVerbosityLevel();
@@ -785,7 +786,6 @@ PetscErrorCode IceModel::run() {
   maxdt_temporary = -1.0;
   skipCountDown = 0;
   t_TempAge = grid.time->start();
-  dt_TempAge = 1.0;             // one second (for the preliminary step)
   dt = 0.0;
   PetscReal run_end = grid.time->end();
 
