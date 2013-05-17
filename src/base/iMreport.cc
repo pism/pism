@@ -198,7 +198,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
   ierr = stress_balance->get_max_diffusivity(max_diffusivity); CHKERRQ(ierr);
 
   // main report: 'S' line
-  ierr = summaryPrintLine(PETSC_FALSE, tempAndAge, grid.time->date(), dt,
+  ierr = summaryPrintLine(PETSC_FALSE, tempAndAge, grid.time, dt,
                           gvolume,garea,meltfrac,max_diffusivity); CHKERRQ(ierr);
 
   return 0;
@@ -207,6 +207,10 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
 
 //! Print a line to stdout which summarizes the state of the modeled ice sheet at the end of the time step.
 /*!
+This method is for casual inspection of model behavior, and to provide the user
+with some indication of the state of the run.  Use of DiagnosticTimeseries is
+superior for precise analysis of model output.
+
 Generally, two lines are printed to stdout, the first starting with a space
 and the second starting with the character 'S' in the left-most column (column 1).
 
@@ -214,7 +218,7 @@ The first line shows flags for which processes executed, and the length of the
 time step (and/or substeps under option -skip).  See IceModel::run()
 for meaning of these flags.
 
-If IceModel::printPrototype is TRUE then the first line does not appear and
+If printPrototype is TRUE then the first line does not appear and
 the second line has alternate appearance.  Specifically, different column 1
 characters are printed:
   - 'P' line gives names of the quantities reported in the 'S' line, the
@@ -223,34 +227,32 @@ characters are printed:
 This column 1 convention allows automatic tools to read PISM stdout
 and produce time-series.  The 'P' and 'U' lines are intended to appear once at
 the beginning of the run, while an 'S' line appears at every time step.
-This base class version gives a report based on the information included in the
-EISMINT II intercomparison of ice sheet models[\ref EISMINT00].
 
-Note that the inputs `volume` and `area` to this method are in m^3 and m^2,
-respectively.  Thus all inputs to this method are in MKS except for `year`.
-
-The resulting numbers on an 'S' line have the following meaning in this base
-class version:
+These quantities are reported in this base class version:
+  - `time` is the current model time
   - `ivol` is the total ice sheet volume
   - `iarea` is the total area occupied by positive thickness ice
-  - `max_diff` is the maximum diffusivity
-thick0 and temp0 can be interpreted as "sanity checks", because they give
-information about a location which may or may not be "typical".
+  - `max_diffusivity` is the maximum diffusivity
+  - `max_hor_vel` is the maximum diffusivity
+
+Configuration parameters `summary_time_unit_name`, `summary_vol_scale_factor_log10`,
+and `summary_area_scale_factor_log10` control the appearance and units.
 
 For more description and examples, see the PISM User's Manual.
 Derived classes of IceModel may redefine this method and print alternate
-information.  Use of DiagnosticTimeseries may be superior, however.
+information.
  */
 PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAndAge,
-                                          string date,  PetscScalar delta_t,
+                                          PISMTime* date,  PetscScalar delta_t,
                                           PetscScalar volume,  PetscScalar area,
                                           PetscScalar /* meltfrac */,  PetscScalar max_diffusivity) {
 
   PetscErrorCode ierr;
   const bool do_energy = config.get_flag("do_energy");
-
   const int log10scalevol  = static_cast<int>(config.get("summary_vol_scale_factor_log10")),
             log10scalearea = static_cast<int>(config.get("summary_area_scale_factor_log10"));
+  const string tunitstr = config.get_string("summary_time_unit_name");
+
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));
   char  volscalestr[10] = "     ", areascalestr[10] = "   "; // blank when 10^0 = 1 scaling
@@ -261,20 +263,19 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
     snprintf(areascalestr, sizeof(areascalestr), "10^%1d_", log10scalearea);
   }
 
+  if (printPrototype == PETSC_TRUE) {
+    ierr = verbPrintf(2,grid.com,
+                      "P     time:       ivol      iarea  max_diffusivity  max_hor_vel\n");
+    ierr = verbPrintf(2,grid.com,
+                      "U     %s   %skm^3  %skm^2         m^2 s^-1       m/%s\n",
+                      tunitstr.c_str(),volscalestr,areascalestr,tunitstr.c_str());
+    return 0;
+  }
+
   // this version keeps track of what has been done so as to minimize stdout:
   static string stdout_flags_count0;
   static int    mass_cont_sub_counter = 0;
   static double mass_cont_sub_dtsum = 0.0;
-
-  if (printPrototype == PETSC_TRUE) {
-    ierr = verbPrintf(2,grid.com,
-                      "P       YEAR:       ivol      iarea  max_diffusivity  max_hor_vel\n");
-    ierr = verbPrintf(2,grid.com,
-                      "U      years   %skm^3  %skm^2         m^2 s^-1       m/year\n",
-                      volscalestr,areascalestr);
-    return 0;
-  }
-
   if (mass_cont_sub_counter == 0)
     stdout_flags_count0 = stdout_flags;
   if (delta_t > 0.0) {
@@ -283,15 +284,15 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
   }
 
   if ((tempAndAge == PETSC_TRUE) || (!do_energy) || (getVerbosityLevel() > 2)) {
-    char tempstr[90] = "";
-    const PetscScalar major_dt_years = grid.convert(mass_cont_sub_dtsum,
-                                                 "seconds", "years");
+    char tempstr[90] = "",
+         velunitstr[90] = "";
+    const PetscScalar major_dt = grid.convert(mass_cont_sub_dtsum, "seconds", tunitstr.c_str());
 
     if (mass_cont_sub_counter == 1) {
-      snprintf(tempstr,90, " (dt=%.5f)", major_dt_years);
+      snprintf(tempstr,90, " (dt=%.5f)", major_dt);
     } else {
       snprintf(tempstr,90, " (dt=%.5f in %d substeps; av dt_sub_mass_cont=%.5f)",
-               major_dt_years, mass_cont_sub_counter, major_dt_years / mass_cont_sub_counter);
+               major_dt, mass_cont_sub_counter, major_dt / mass_cont_sub_counter);
     }
 
     stdout_flags_count0 += tempstr;
@@ -304,11 +305,14 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
       ierr = verbPrintf(2, grid.com, "%s\n", stdout_ssa.c_str()); CHKERRQ(ierr);
     }
 
+    snprintf(velunitstr,90, "m/%s", tunitstr.c_str());
+    const double maxvel = grid.convert(gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", velunitstr);
+
     ierr = verbPrintf(2,grid.com,
-                      "S %s: %8.5f %9.5f %12.5f %14.5f\n",
-                      date.c_str(), volume/(scalevol*1.0e9), area/(scalearea*1.0e6), max_diffusivity,
-                      grid.convert(gmaxu > gmaxv ? gmaxu : gmaxv,
-                                   "m/s", "m/year")); CHKERRQ(ierr);
+                      "S %8.3f:   %8.5f  %9.5f     %12.5f %12.5f\n",
+                      grid.convert(date->current(), "seconds", tunitstr.c_str()),
+                      volume/(scalevol*1.0e9), area/(scalearea*1.0e6),
+                      max_diffusivity, maxvel); CHKERRQ(ierr);
 
     mass_cont_sub_counter = 0;
     mass_cont_sub_dtsum = 0.0;
@@ -317,7 +321,8 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
   return 0;
 }
 
-  //! Computes the ice volume, in m^3.
+
+//! Computes the ice volume, in m^3.
 PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     volume=0.0;

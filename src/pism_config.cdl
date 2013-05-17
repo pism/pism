@@ -630,6 +630,9 @@ netcdf pism_config {
    pism_config:time_dimension_name = "time";
    pism_config:time_dimension_name_doc = "The name of the time dimension in PISM output files.";
 
+   pism_config:summary_time_unit_name = "year";
+   pism_config:summary_time_unit_name_doc = "Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)";
+
    pism_config:calendar = "365_day";
    pism_config:calendar_doc = "The calendar to use. Choose from standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian.";
 

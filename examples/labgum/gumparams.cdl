@@ -14,6 +14,9 @@ netcdf pism_overrides {
     pism_overrides:bed_smoother_range = -1.0;
     pism_overrides:bed_smoother_range_doc = "m; negative value de-activates bed smoother";
 
+    pism_overrides:summary_time_unit_name = "second";
+    pism_overrides:summary_time_unit_name_doc = "";
+
     pism_overrides:summary_vol_scale_factor_log10 = -18;
     pism_overrides:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; volume in mm^3";
 

@@ -390,7 +390,7 @@ protected:
   virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(
               PetscBool printPrototype, bool tempAndAge,
-              string date, PetscScalar delta_t, 
+              PISMTime* date, PetscScalar delta_t,
               PetscScalar volume, PetscScalar area,
               PetscScalar meltfrac, PetscScalar max_diffusivity);
 
