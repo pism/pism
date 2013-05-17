@@ -11,7 +11,7 @@ set (latex_sources
   ross.tex
   getting-started.tex
   manual.tex
-  intro.tex
+  highlevelview.tex
   modeling-computational.tex
   modeling-dynamics.tex
   modeling-marine.tex
