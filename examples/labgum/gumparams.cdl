@@ -32,6 +32,9 @@ netcdf gumparams {
     pism_overrides:mask_is_floating_thickness_standard = 1e-8;
     pism_overrides:mask_is_floating_thickness_standard_doc = "m; should not matter";
 
+    pism_overrides:adaptive_timestepping_ratio = 0.08;
+    pism_overrides:adaptive_timestepping_ratio_doc = "; compare default 0.12; needs to be smaller because it is more shear-thinning?";
+
     pism_overrides:Glen_exponent = 5.9;
     pism_overrides:Glen_exponent_doc = "; = n;  Sayag & Worster (2012) give n = 5.9 +- 0.2";
 

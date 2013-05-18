@@ -1,30 +1,33 @@
 #!/bin/bash
 
-if [ $# -lt 1 ] ; then
-  echo "rungum.sh ERROR: needs one argument ... ENDING NOW"
+if [ $# -lt 2 ] ; then
+  echo "rungum.sh ERROR: needs two arguments ... ENDING NOW"
   echo "  format:"
-  echo "    rungum.sh PROCS"
+  echo "    rungum.sh PROCS MX"
   echo "  where"
   echo "    PROCS     = 1,2,3,... is number of MPI processes"
+  echo "    MX        = number of grid points in x,y directions;  MX -> cell width:"
+  echo "                51->8mm, 101->4mm, 201->2mm, 401->1mm, 801->500micron"
   exit
 fi
 
 NN="$1"
-
-FIXME
+myMx="$2"
 
 pismexec="pismr"
 
 data=initgum.nc
 
-grid="-Mx $myMx -My $myMy -Mz 11 -z_spacing equal -Lz 600"
+oname=lab$myMx.nc
 
-climate="-surface given -surface_given_file $data"
+grid="-Mx $myMx -My $myMx -Mz 26 -Lz 0.025 -Mbz 0 -Lbz 0 -z_spacing equal"
 
-physics="-config_override nbreen_config.nc -no_mass -no_energy"
+physics="-config_override gumparams.nc -no_energy -cold -sia_flow_law isothermal_glen -sia_e 1.0 -gradient mahaffy"
 
-diagnostics="-extra_file extras_$oname -extra_times $etimes -extra_vars $evarlist"
+endtime=9.5066e-06   # = 300 / 31556926 = 300 s
+ts_dt=3.1689e-09     # = 0.1 / 31556926 = 0.1 s
+diagnostics="-ts_file ts_$oname -ts_times 0:$ts_dt:$endtime"
 
-mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
-    $grid -max_dt $dtmax -ys 0.0 -y $YY $diagnostics -o $oname
+mpiexec -n $NN $pismexec -boot_file $data $physics $diagnostics \
+    $grid -ys 0.0 -y $endtime -max_dt 1e-8 -o $oname
 

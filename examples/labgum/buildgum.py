@@ -35,8 +35,8 @@ call(['ncgen', '-o', CONF + '.nc', CONF + '.cdl'])
 print('  PISM-readable config override file %s written' % (CONF + '.nc'))
 
 # set up the grid:
-Mx = 500
-My = 500
+Mx = 801
+My = 801
 x = np.linspace(-Lx,Lx,Mx)
 y = np.linspace(-Ly,Ly,My)
 
@@ -102,8 +102,5 @@ setattr(nc, 'history', historystr)
 
 nc.close()
 print('  PISM-bootable NetCDF file %s written' % ncfile)
-print('  now run "rungum.sh"')
-print('  TRY:  $ pismr -config_override gumparams.nc -boot_file initgum.nc -no_energy -cold -sia_flow_law isothermal_glen -sia_e 1.0 -Mx 51 -My 51 -Mz 51 -Lz 0.050 -Mbz 0 -Lbz 0 -z_spacing equal -y 1e-6 -max_dt 1e-8')
+print('  ... now run   rungum.sh')
 
-# longer run:
-# mpiexec -n 4 pismr -config_override gumparams.nc -boot_file initgum.nc -no_energy -cold -sia_flow_law isothermal_glen -sia_e 1.0 -Mx 101 -My 101 -Mz 51 -Lz 0.050 -Mbz 0 -Lbz 0 -z_spacing equal -y 5e-6 -max_dt 1e-8 -o lab2mm.nc &> out.lab2mm &
