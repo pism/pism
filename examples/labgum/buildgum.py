@@ -20,10 +20,10 @@ except:
 
 # lab setup is table with hole in the middle into which is piped the
 # shear-thinning fluid, which is Xanthan gum 1% solution
-Lx = 200.0e-3    # m;  = 200 mm;  table is approx 400 mm x 400 mm?
+Lx = 250.0e-3    # m;  = 250 mm;  table is approx 500 mm x 500 mm?
 Ly = Lx          # square table
 flux = 3.0e-3    # kg s-1;  = 3 g s-1;  
-pipeR = 30.0e-3  # m;  = 30 mm;  input pipe has this radius  FIXME: GUESS
+pipeR = 30.1e-3  # m;  = 30.1 mm;  input pipe has this radius  FIXME: GUESS
 rho = 1000.0     # kg m-3;  density of gum = density of fresh water
 temp = 20.0      # C;  fluid is at 20 deg
 
@@ -35,8 +35,8 @@ call(['ncgen', '-o', CONF + '.nc', CONF + '.cdl'])
 print('  PISM-readable config override file %s written' % (CONF + '.nc'))
 
 # set up the grid:
-Mx = 801
-My = 801
+Mx = 1001
+My = 1001
 x = np.linspace(-Lx,Lx,Mx)
 y = np.linspace(-Ly,Ly,My)
 
