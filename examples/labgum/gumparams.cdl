@@ -20,11 +20,17 @@ netcdf gumparams {
     pism_overrides:summary_time_unit_name = "second";
     pism_overrides:summary_time_unit_name_doc = "";
 
-    pism_overrides:summary_vol_scale_factor_log10 = -18;
-    pism_overrides:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; volume in mm^3";
+    pism_overrides:summary_vol_scale_factor_log10 = -15;
+    pism_overrides:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; volume in cm^3";
 
-    pism_overrides:summary_area_scale_factor_log10 = -12;
-    pism_overrides:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area in summary line to stdout; area in mm^3";
+    pism_overrides:summary_area_scale_factor_log10 = -10;
+    pism_overrides:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area in summary line to stdout; area in cm^2";
+
+    pism_overrides:mask_icefree_thickness_standard = 1e-8;
+    pism_overrides:mask_icefree_thickness_standard_doc = "m;";
+
+    pism_overrides:mask_is_floating_thickness_standard = 1e-8;
+    pism_overrides:mask_is_floating_thickness_standard_doc = "m; should not matter";
 
     pism_overrides:Glen_exponent = 5.9;
     pism_overrides:Glen_exponent_doc = "; = n;  Sayag & Worster (2012) give n = 5.9 +- 0.2";

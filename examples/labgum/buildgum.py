@@ -20,10 +20,10 @@ except:
 
 # lab setup is table with hole in the middle into which is piped the
 # shear-thinning fluid, which is Xanthan gum 1% solution
-Lx = 250.0e-3    # m;  = 250 mm;  table is approx 500 mm x 500 mm?
+Lx = 200.0e-3    # m;  = 200 mm;  table is approx 400 mm x 400 mm?
 Ly = Lx          # square table
 flux = 3.0e-3    # kg s-1;  = 3 g s-1;  
-pipeR = 20.0e-3  # m;  = 20 mm;  input pipe has this radius  FIXME: GUESS
+pipeR = 30.0e-3  # m;  = 30 mm;  input pipe has this radius  FIXME: GUESS
 rho = 1000.0     # kg m-3;  density of gum = density of fresh water
 temp = 20.0      # C;  fluid is at 20 deg
 
@@ -103,5 +103,7 @@ setattr(nc, 'history', historystr)
 nc.close()
 print('  PISM-bootable NetCDF file %s written' % ncfile)
 print('  now run "rungum.sh"')
-print('  TRY:  $ pismr -config_override gumparams.nc -boot_file initgum.nc -no_energy -cold -sia_flow_law isothermal_glen -sia_e 1.0 -Mx 101 -My 101 -Mz 51 -Lz 0.050 -Mbz 0 -Lbz 0 -z_spacing equal -y 1e-7 -max_dt 1e-9')
+print('  TRY:  $ pismr -config_override gumparams.nc -boot_file initgum.nc -no_energy -cold -sia_flow_law isothermal_glen -sia_e 1.0 -Mx 51 -My 51 -Mz 51 -Lz 0.050 -Mbz 0 -Lbz 0 -z_spacing equal -y 1e-6 -max_dt 1e-8')
 
+# longer run:
+# mpiexec -n 4 pismr -config_override gumparams.nc -boot_file initgum.nc -no_energy -cold -sia_flow_law isothermal_glen -sia_e 1.0 -Mx 101 -My 101 -Mz 51 -Lz 0.050 -Mbz 0 -Lbz 0 -z_spacing equal -y 5e-6 -max_dt 1e-8 -o lab2mm.nc &> out.lab2mm &
