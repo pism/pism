@@ -23,7 +23,7 @@ except:
 Lx = 250.0e-3    # m;  = 250 mm;  table is approx 500 mm x 500 mm?
 Ly = Lx          # square table
 flux = 3.0e-3    # kg s-1;  = 3 g s-1;  
-pipeR = 30.1e-3  # m;  = 30.1 mm;  input pipe has this radius  FIXME: GUESS
+pipeR = 20.1e-3  # m;  = 20.1 mm;  input pipe has this radius  FIXME: GUESS
 rho = 1000.0     # kg m-3;  density of gum = density of fresh water
 temp = 20.0      # C;  fluid is at 20 deg
 
