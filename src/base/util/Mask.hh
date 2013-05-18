@@ -52,6 +52,8 @@ public:
     sea_level = seaLevel;
     alpha = 1 - config.get("ice_density") / config.get("sea_water_density");
     is_dry_simulation = config.get_flag("is_dry_simulation");
+    icefree_thickness = config.get("mask_icefree_thickness_standard");
+    is_floating_thickness = config.get("mask_is_floating_thickness_standard");
   }
 
   void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
@@ -62,8 +64,8 @@ public:
     const PetscReal  hgrounded = bed + thickness; // FIXME issue #15
     const PetscReal  hfloating = sea_level + alpha*thickness;
 
-    const bool is_floating = hfloating > hgrounded + 1.0,
-      ice_free = thickness < 0.01;
+    const bool is_floating = (hfloating > hgrounded + is_floating_thickness),
+               ice_free    = (thickness < icefree_thickness);
 
     int mask_result;
     PetscReal surface_result;
@@ -104,7 +106,7 @@ public:
   }
 
 protected:
-  PetscReal alpha, sea_level;
+  PetscReal alpha, sea_level, icefree_thickness, is_floating_thickness;
   bool is_dry_simulation;
 };
 

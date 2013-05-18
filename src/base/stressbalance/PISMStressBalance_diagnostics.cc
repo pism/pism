@@ -77,6 +77,7 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   IceModelVec2S *thickness;
   IceModelVec2V *result;
   PetscScalar *u_ij, *v_ij;
+  PetscReal icefree_thickness = grid.config.get("mask_icefree_thickness_standard");
 
   result = new IceModelVec2V;
   ierr = result->create(grid, "bar", false); CHKERRQ(ierr);
@@ -100,7 +101,7 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
       PetscInt ks = grid.kBelowHeight(thk);
 
       // an "ice-free" cell:
-      if (thk < 0.1) {
+      if (thk < icefree_thickness) {
         (*result)(i,j).u = 0;
         (*result)(i,j).v = 0;
         continue;
