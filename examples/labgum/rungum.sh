@@ -26,8 +26,12 @@ physics="-config_override gumparams.nc -no_energy -cold -sia_flow_law isothermal
 
 endtime=2.2182e-05   # = 700 / 31556926 = 700 s;  see Figure 4(a) in Sayag & Worster (2012)
 ts_dt=3.1689e-09     # = 0.1 / 31556926 = 0.1 s
-diagnostics="-ts_file ts_$oname -ts_times $ts_dt:$ts_dt:$endtime"
+timediag="-ts_file ts_$oname -ts_times $ts_dt:$ts_dt:$endtime"
+ex_dt=3.1689e-07     # = 10 / 31556926 = 10 s
+exvars="diffusivity,cflx,cbar,csurf,mask,thk"
+exdiag="-extra_file ex_$oname -extra_vars $exvars -extra_times 0:$ex_dt:$endtime"
 
-mpiexec -n $NN $pismexec -boot_file $data $physics $diagnostics \
-    $grid -ys 0.0 -y $endtime -max_dt 1e-8 -o $oname
+mpiexec -n $NN $pismexec -boot_file $data $physics \
+    $timediag $exdiag \
+    $grid -ys 0.0 -y $endtime -max_dt $ts_dt -o $oname
 
