@@ -173,7 +173,7 @@ TSNAME=ts_y${ENDTIME}_${PISM_SRPREFIX2}.nc
 echo
 echo "$SCRIPTNAME control run with steady climate from $STARTTIME to $ENDTIME years w save every year:"
 echo
-cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -extra_file $EXNAME -extra_times $TIMES $expackage \
   -ts_file $TSNAME -ts_times $TSTIMES $tspackage"
 $PISM_DO $cmd
@@ -210,7 +210,7 @@ for climate_scale_factor in 1.0 1.5 2.0; do
     echo
     echo "$SCRIPTNAME run ${PISM_SRPREFIX2} with scaled AR4 climate from $STARTTIME to $ENDTIME years w save every year:"
     echo
-    cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+    cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
         -atmosphere_anomaly_file $AR4FILE \
        -extra_file $EXNAME -extra_times $TIMES $expackage \
        -ts_file $TSNAME -ts_times $TSTIMES $tspackage"
@@ -241,7 +241,7 @@ for sliding_scale_factor in 2 2.5 3; do
   echo
   echo "$SCRIPTNAME run ${PISM_SRPREFIX1} with steady climate from $STARTTIME to $ENDTIME years w save every year:"
   echo
-  cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+  cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -sliding_scale $sliding_scale_factor \
   -extra_file $EXNAME -extra_times $TIMES $expackage \
   -ts_file $TSNAME -ts_times $TSTIMES $tspackage "
@@ -272,7 +272,7 @@ for melt_rate in 2 20 200; do
   echo
   echo "$SCRIPTNAME run  ${PISM_SRPREFIX1} with steady climate from $STARTTIME to $ENDTIME years w save every year:"
   echo
-  cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+  cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $INNAME $COUPLER_CTRL -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -shelf_base_melt_rate $melt_rate \
   -extra_file $EXNAME -extra_times $TIMES $expackage \
   -ts_file $TSNAME -ts_times $TSTIMES $tspackage "
@@ -305,7 +305,7 @@ echo
 echo "$SCRIPTNAME combo run ${PISM_SRPREFIX2} with scaled AR4 climate from $STARTTIME to $ENDTIME years "
 echo "$SCRIPTNAME  and increased subshelf melting and basal sliding, w save every year:"
 echo
-cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $INNAME $COUPLER_AR4 -ys $STARTTIME -ye $ENDTIME -o $OUTNAME \
   -atmosphere_anomaly_file $AR4FILE \
   -shelf_base_melt_rate $melt_rate \
   -sliding_scale $sliding_scale_factor \
