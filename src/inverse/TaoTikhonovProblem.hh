@@ -28,6 +28,7 @@
 
 template<class ForwardProblem> class TaoTikhonovProblem;
 
+//! Iteration callback class for TaoTikhonovProblem
 /*! A class for objects receiving iteration callbacks from a TaoTikhonovProblem.  These 
     callbacks can be used to monitor the solution, plot iterations, print diagnostic messages, etc. 
     TaoTikhonovProblemListeners are ususally used via a reference counted pointer 
@@ -60,19 +61,18 @@ public:
 state variables and we wish to solve a possibly ill-posed problem of the form
 \f[ F(d) = u \f]
 where \f$u\f$ is know and \f$d\f$ is unknown.  Approximate solutions can be obtained by 
-finding minimizers of an associated Tikhonov problem
-\[
+finding minimizers of an associated Tikhonov functional
+\f[
 J(d) = J_{S}(F(d)-u) + \frac{1}{\eta}J_{D}(d-d_0)
-\]
+\f]
 where \$J_{D}\$ and \$J_{S}\$ are functionals on the spaces \f$D\f$ and \f$S\f$ respectively,
-$\eta$ is a penalty paramter, and \f$d_0\f$ is a best initial guess for the the solution.
-
-The TaoTikhonovProblemTAO class encapuslates all of the data required to formulate the minimization
+\f$\eta\f$ is a penalty paramter, and \f$d_0\f$ is a best a-priori guess for the the solution.
+The TaoTikhonovProblem class encapuslates all of the data required to formulate the minimization
 problem as a Problem tha can be solved using a TaoBasicSolver. It is templated on the
 the class ForwardProblem which defines the class of the forward map \f$F\f$ as well as the
 spaces \f$D\f$ and \f$S\f$. An instance of ForwardProblem, along with 
-specific functionals \f$J_D\f$ and f$J_S\f$, the parameter \f$\eta\f$, and the data 
-\f$y\f$ and $x_0$ are provided on constructing a TaoTikhonovProblem.
+specific functionals \f$J_D\f$ and \f$J_S\f$, the parameter \f$\eta\f$, and the data 
+\f$y\f$ and \f$x_0\f$ are provided on constructing a TaoTikhonovProblem.
 
 For example, if the SSATaucForwardProblem class defines the map taking yield stresses \f$\tau_c\f$
 to the corresponding surface velocity field solving the SSA, a schematic setup of solving
@@ -101,6 +101,43 @@ if(reason->succeeded()) {
 }
 \endcode
 
+The class ForwardProblem that defines the forward problem
+must have the following characteristics:
+
+<ol>
+<li> Contains typedefs for DesignVec and StateVec that effectively
+   define the function spaces \f$D\f$ and \f$S\f$.  E.g. 
+
+\code
+   typedef IceModelVec2S DesignVec;
+   typedef IceModelVec2V StateVec;
+\endcode
+   would be appropriate for a map from basal yeild stress to surface velocities.
+
+<li> A method
+\code
+  PetscErrorCode linearize_at( DesignVec &d, TerminationReason::Ptr &reason);
+\endcode
+that instructs the class to compute the value of F and 
+anything needed to compute its linearization at \a d.   This is the first method
+called when working with a new iterate of \a d.
+
+<li> A method
+\code
+  StateVec &solution()
+\endcode
+that returns the most recently computed value of \f$F(d)\f$ 
+as computed by a call to linearize_at.
+
+<li> A method
+\code
+PetscErrorCode apply_linearization_transpose(StateVec &du, DesignVec &dzeta);
+\endcode
+that computes the action of \f$(F')^t\f$,
+where \f$F'\f$ is the linearization of \f$F\f$ at the current iterate, and the transpose
+is computed **FIXME***
+</ol>
+
 */
 template<class ForwardProblem> class TaoTikhonovProblem
 {
@@ -110,8 +147,17 @@ public:
   typedef typename ForwardProblem::StateVec StateVec;
 
   /*! Constructs a Tikhonov problem:
-  Minimize \f$J(d) = J_Y(F(d)-u) + J_X(d-d0)
   
+           Minimize \f$J(d) = J_S(F(d)-u_obs) + \frac{1}{\eta} J_D(d-d0)  \f$
+
+      that can be solved with a TaoBasicSolver.
+      
+      @param forward Class defining the map F.  See class-level documentation for requirements of F.
+      @param      d0 Best a-priori guess for the design paramter.
+      @param   u_obs State parameter to match (i.e. approximately solve F(d)=u_obs)
+      @param     eta Penalty parameter/Lagrange multiplier.  Take eta to zero to impose more regularization to an ill posed problem.
+      @param   designFunctional The functional \f$J_D\f$
+      @param    stateFunctional The functional \f$J_S\f$
   */
 
   TaoTikhonovProblem( ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
@@ -119,32 +165,45 @@ public:
 
   virtual ~TaoTikhonovProblem();
 
+
+  //! Sets the initial guess for minimization iterations. If this isn't set explicitly,
+  //  the paramter \f$d0\f$ appearing the in the Tikhonov functional will be used.
   virtual PetscErrorCode setInitialGuess( DesignVec &d) {
     PetscErrorCode ierr;
-    ierr = m_dGlobal.copy_from(d); CHKERRQ(ierr);
+    ierr = m_d.copy_from(d); CHKERRQ(ierr);
     return 0;
   }
 
+  //! Callback provided to TAO for objective evaluation.
   virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient);
 
+  //! Add an object to the list of objects to be called after each iteration.
   virtual void addListener( typename TaoTikhonovProblemListener<ForwardProblem>::Ptr listener) {
     m_listeners.push_back(listener);
   }
 
+  //! Final value of \f$F(d)\f$, where \f$d\f$ is the solution of the minimization.
   virtual StateVec &stateSolution() {
     return m_forward.solution();
   }
 
+  //! Value of \f$d\f$, the solution of the minimization problem.
   virtual DesignVec &designSolution() {
     return m_d;
   }
 
+  //! Callback from TaoBasicSolver, used to wire the connections between a TaoSolver and 
+  //  the current class.
   virtual PetscErrorCode connect(TaoSolver tao);
 
+  //! Callback from TAO after each iteration.  The call is forwarded to each element of our list of listeners.
   virtual PetscErrorCode monitorTao(TaoSolver tao);
 
+  //! Callback from TAO to detect convergence.  Allows us to implement a custom convergence check.
   virtual PetscErrorCode convergenceTest(TaoSolver tao); 
 
+  //! Callback from TaoBasicProblem to form the starting iterate for the minimization.  See also
+  //  setInitialGuess.
   virtual PetscErrorCode formInitialGuess(Vec *v, TerminationReason::Ptr & reason) {
     *v = m_dGlobal.get_vec();
     reason = GenericTerminationReason::success();
@@ -159,32 +218,36 @@ protected:
   
   ForwardProblem &m_forward;
 
-  DesignVec m_dGlobal;
-  DesignVec m_d;
-  DesignVec &m_d0;
-  DesignVec m_d_diff;
+  DesignVec m_d;           ///< Current iterate of design parameter
+  DesignVec m_dGlobal;     ///< Initial iterate of design parameter, stored without ghosts for the benefit of TAO.
+  DesignVec &m_d0;         ///< A-priori estimate of design parameter
+  DesignVec m_d_diff;      ///< Storage for (m_d-m_d0)
 
-  StateVec &m_u_obs;
-  StateVec m_u_diff;
+  StateVec &m_u_obs;       ///< State paramter to match via F(d)=u_obs 
+  StateVec m_u_diff;       ///< Storage for F(d)-u_obs
 
-  StateVec m_adjointRHS;
+  StateVec m_adjointRHS;   ///< Temporary storage used in gradient computation.
 
-  DesignVec m_grad_design;
-  DesignVec m_grad_state;
-  DesignVec m_grad;
+  DesignVec m_grad_design; ///< Gradient of \f$J_D\f$ at the current iterate.
+  DesignVec m_grad_state;  ///< Gradient of \f$J_S\f$ at the current iterate.
+  DesignVec m_grad;        /**< Weighted sum of the design and state gradients
+                                corresponding to the gradient of the Tikhonov functional \f$J\f$. */
 
-  PetscReal m_eta;
+  PetscReal m_eta;         ///<  Penalty paramter/Lagrange multiplier.
 
-  PetscReal m_val_design;
-  PetscReal m_val_state;
+  PetscReal m_val_design;  ///<  Value of \f$J_D\f$ at the current iterate.
+  PetscReal m_val_state;   ///<  Value of \f$J_S\f$ at the current iterate.
 
-  Functional<IceModelVec2S> &m_designFunctional;
-  Functional<IceModelVec2V> &m_stateFunctional;
+  Functional<IceModelVec2S> &m_designFunctional;  //<! Implementation of \f$J_D\f$.
+  Functional<IceModelVec2V> &m_stateFunctional;   //<! Implementation of \f$J_S\f$.
 
-  std::vector<typename TaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners;
+  std::vector<typename TaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners; ///< List of iteration callbacks.
 
-  PetscReal m_tikhonov_atol;
-  PetscReal m_tikhonov_rtol;
+  PetscReal m_tikhonov_atol;  ///< Convergence paramter: convergence stops when \f$||J_D||_2 <\f$ m_tikhonov_rtol.
+  PetscReal m_tikhonov_rtol;  /**< Convergence paramter: convergence stops when \f$||J_D||_2 \f$ is 
+                                  less than m_tikhonov_rtol times the maximum of the gradient of \f$J_S\f$ and
+                                  \f$(1/\eta)J_D\f$.  This occurs when the two terms forming the sum of the gradient
+                                  of \f$J\f$ point in roughly opposite directions with the same magnitude. */
 
 };
 
