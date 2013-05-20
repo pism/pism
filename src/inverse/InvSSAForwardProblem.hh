@@ -27,6 +27,9 @@ class InvSSAForwardProblem : public SSAFEM
 {
 public:
 
+  typedef IceModelVec2S DesignVec;
+  typedef IceModelVec2V StateVec;
+
   InvSSAForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
     EnthalpyConverter &e, InvTaucParameterization &tp,
     const NCConfigVariable &c);

@@ -45,7 +45,7 @@
 #include "inverse/InvSSATikhonovGN.hh"
 #if (PISM_USE_TAO==1)
 #include "inverse/TaoUtil.hh"
-#include "inverse/InvSSATikhonov.hh"
+#include "inverse/SSATaucTikhonovProblem.hh"
 #include "inverse/InvSSATikhonovLCL.hh"
 #endif
 #include "stressbalance/ssa/SSAFD.hh"
@@ -591,10 +591,16 @@ namespace std {
 %shared_ptr(TAOTerminationReason)
 %include "inverse/TaoUtil.hh"
 
-%shared_ptr(InvSSATikhonovListener)
-%feature("director") InvSSATikhonovListener;
-%include "inverse/InvSSATikhonov.hh"
-%template(InvSSATikhonovSolver) TaoBasicSolver<InvSSATikhonov>;
+%include "inverse/TaoTikhonovProblem.hh"
+# Instantiate the base class for SSATaucTikhonovProblem
+# so that SWIG will implement the base class methods.
+%template(SSATaucTikhonovProblemBaseClass)  TaoTikhonovProblem<InvSSAForwardProblem>;
+
+%shared_ptr(TaoTikhonovProblemListener<InvSSAForwardProblem>)
+%feature("director") TaoTikhonovProblemListener<InvSSAForwardProblem>;
+%template(SSATaucTikhonovProblemListener)  TaoTikhonovProblemListener<InvSSAForwardProblem>;
+%include "inverse/SSATaucTikhonovProblem.hh"
+%template(SSATaucTikhonovSolver) TaoBasicSolver<SSATaucTikhonovProblem>;
 
 %shared_ptr(InvSSATikhonovLCLListener)
 %feature("director") InvSSATikhonovLCLListener;

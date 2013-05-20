@@ -19,7 +19,7 @@ set(PISM_INVERSE_SOURCES
 if(Pism_USE_TAO)
   list (APPEND PISM_INVERSE_SOURCES
     ./TaoUtil.cc
-    ./InvSSATikhonov.cc
+    ./SSATaucTikhonovProblem.cc
     ./InvSSATikhonovLCL.cc
     )
 endif()
