@@ -578,7 +578,6 @@ INPUT                  = pism_config.txt \
                          bombproof_enth.txt \
                          vertchange.txt \
                          bedrough.txt \
-                         hydrology.txt \
                          references.txt \
                          howto.txt \
                          ${PROJECT_SOURCE_DIR}/src/ \
