@@ -27,7 +27,7 @@
 
 
 #include "TaoUtil.hh"
-#include "Functional.hh"
+#include "functional/Functional.hh"
 
 
 class SSATaucTikhonovProblem: public TaoTikhonovProblem<InvSSAForwardProblem> {

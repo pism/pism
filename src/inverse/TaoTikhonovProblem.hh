@@ -23,7 +23,7 @@
 #include <tr1/memory>
 
 #include "TaoUtil.hh"
-#include "Functional.hh"
+#include "functional/Functional.hh"
 #include <assert.h>
 
 template<class ForwardProblem> class TaoTikhonovProblem;

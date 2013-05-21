@@ -4,16 +4,16 @@ set(PISM_INVERSE_SOURCES
 ./InvTaucParameterization.cc
 ./InvSSAForwardProblem.cc
 ./InvSSAForwardProblem_dep.cc
-./Functional.cc
-./L2NormFunctional.cc
-./H1NormFunctional.cc
-./GroundedIceH1NormFunctional.cc
-./LogRatioFunctional.cc
-./LogRelativeFunctional.cc
-./TotalVariationFunctional.cc
-./MeanSquareFunctional.cc
 ./TwoBlockVec.cc
 ./InvSSATikhonovGN.cc  
+./functional/Functional.cc
+./functional/L2NormFunctional.cc
+./functional/H1NormFunctional.cc
+./functional/GroundedIceH1NormFunctional.cc
+./functional/LogRatioFunctional.cc
+./functional/LogRelativeFunctional.cc
+./functional/TotalVariationFunctional.cc
+./functional/MeanSquareFunctional.cc
 )
 
 if(Pism_USE_TAO)

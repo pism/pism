@@ -21,7 +21,7 @@
 
 #include "iceModelVec.hh"
 #include "InvSSAForwardProblem.hh"
-#include "Functional.hh"
+#include "functional/Functional.hh"
 #include "TerminationReason.hh"
 
 template<class C,PetscErrorCode (C::*MultiplyCallback)(Vec,Vec) >

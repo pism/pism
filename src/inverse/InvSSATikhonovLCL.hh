@@ -26,7 +26,7 @@
 #include <tr1/memory>
 #include "iceModelVec.hh"
 #include "InvSSAForwardProblem.hh"
-#include "Functional.hh"
+#include "functional/Functional.hh"
 
 class InvSSATikhonovLCL;
 class InvSSATikhonovLCLListener {
