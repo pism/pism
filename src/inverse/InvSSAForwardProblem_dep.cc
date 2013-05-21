@@ -158,7 +158,7 @@ PetscErrorCode InvSSAForwardProblem_dep::set_initial_velocity_guess(  IceModelVe
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::set_zeta(IceModelVec2S &new_zeta )
+PetscErrorCode InvSSAForwardProblem_dep::set_design(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
   PetscInt i,j,q;
@@ -180,7 +180,7 @@ PetscErrorCode InvSSAForwardProblem_dep::set_zeta(IceModelVec2S &new_zeta )
       for (q=0; q<4; q++) {
         m_tauc_param.toTauc(zetaq[q],&(feS[q].tauc),dtauc_dzeta+q);
         if(std::isnan(feS[q].tauc)) {
-          PetscPrintf(PETSC_COMM_WORLD,"InvSSAForwardProblem_dep::set_zeta made a NaN: zeta=%g\n",zetaq[q]);
+          PetscPrintf(PETSC_COMM_WORLD,"InvSSAForwardProblem_dep::set_design made a NaN: zeta=%g\n",zetaq[q]);
         }
       }
     }
@@ -362,14 +362,14 @@ PetscErrorCode InvSSAForwardProblem_dep::solveT_FD(IceModelVec2S &dzeta, IceMode
   ierr = zeta1.copy_from(*zeta0); CHKERRQ(ierr);
   ierr = zeta1.add(h,dzeta); CHKERRQ(ierr);
 
-  ierr = this->set_zeta(zeta1); CHKERRQ(ierr);
+  ierr = this->set_design(zeta1); CHKERRQ(ierr);
   ierr = this->solveF_core(); CHKERRQ(ierr);
   ierr = result.copy_from(SSAX); CHKERRQ(ierr);
 
   ierr = result.add(-1,u0); CHKERRQ(ierr);
   ierr = result.scale(1/h); CHKERRQ(ierr);
 
-  ierr = this->set_zeta(*zeta0); CHKERRQ(ierr);
+  ierr = this->set_design(*zeta0); CHKERRQ(ierr);
   ierr = this->solveF_core(); CHKERRQ(ierr);
   
   return 0;

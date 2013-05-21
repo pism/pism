@@ -81,7 +81,7 @@ public:
     return 0;
   }
 
-  PetscErrorCode set_zeta(IceModelVec2S &zeta );
+  PetscErrorCode set_design(IceModelVec2S &zeta );
 
   PetscErrorCode solveF(IceModelVec2V &result);
 

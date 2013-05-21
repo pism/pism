@@ -205,7 +205,7 @@ PetscErrorCode InvSSATikhonovLCL::evaluateConstraints(TaoSolver, Vec x, Vec r) {
   ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
   ierr = m_u.copy_from(m_uGlobal); CHKERRQ(ierr);
 
-  ierr = m_ssaforward.set_zeta(m_d); CHKERRQ(ierr);
+  ierr = m_ssaforward.set_design(m_d); CHKERRQ(ierr);
 
   ierr = m_ssaforward.assemble_residual(m_u, r); CHKERRQ(ierr);
 
@@ -223,7 +223,7 @@ PetscErrorCode InvSSATikhonovLCL::evaluateConstraintsJacobianState(TaoSolver, Ve
   ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
   ierr = m_u.copy_from(m_uGlobal); CHKERRQ(ierr);
 
-  ierr = m_ssaforward.set_zeta(m_d); CHKERRQ(ierr);
+  ierr = m_ssaforward.set_design(m_d); CHKERRQ(ierr);
   ierr = m_ssaforward.assemble_jacobian_state(m_u,*Jstate); CHKERRQ(ierr);
   *s = SAME_NONZERO_PATTERN;
 
@@ -249,7 +249,7 @@ PetscErrorCode InvSSATikhonovLCL::applyConstraintsJacobianDesign(Vec x, Vec y) {
   PetscErrorCode ierr;
   ierr = m_dzeta.copy_from(x); CHKERRQ(ierr);
   
-  ierr = m_ssaforward.set_zeta(m_d_Jdesign); CHKERRQ(ierr);
+  ierr = m_ssaforward.set_design(m_d_Jdesign); CHKERRQ(ierr);
   
   ierr = m_ssaforward.apply_jacobian_design(m_u_Jdesign, m_dzeta, y); CHKERRQ(ierr);
   
@@ -263,7 +263,7 @@ PetscErrorCode InvSSATikhonovLCL::applyConstraintsJacobianDesignTranspose(Vec x,
 
   ierr = m_du.copy_from(x); CHKERRQ(ierr);
 
-  ierr = m_ssaforward.set_zeta(m_d_Jdesign); CHKERRQ(ierr);
+  ierr = m_ssaforward.set_design(m_d_Jdesign); CHKERRQ(ierr);
 
   ierr = m_ssaforward.apply_jacobian_design_transpose(m_u_Jdesign, m_du, y); CHKERRQ(ierr);
 

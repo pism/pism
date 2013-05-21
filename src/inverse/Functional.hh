@@ -50,7 +50,7 @@ public:
   //! Computes the gradient of the functional at the vector x.
   /*! On an \f$m\times n\f$ IceGrid, an IceModelVec \f$x\f$ with \f$d\f$
   degrees of freedom will be \f$d m n\f$-dimensional with components \f$x_i\f$.
-  The gradient computed here is the directional derivative \f$\nabla J\f$ of the functional 
+  The gradient computed here is the vector of directional derivatives \f$\nabla J\f$ of the functional 
   \f$J\f$ with respect to \f$x\f$. Concretely, the \f$i^{\rm th}\f$ component of \f$\nabla J\f$
   is
   \f[

@@ -23,9 +23,10 @@
 #include "NCVariable.hh"
 #include "iceModelVec.hh"
 
-/*! Encapsulates a parameterization of \f$\tau_c\f$.
-It is frequently when solving an inverse problem for \f$\tau_c\f$
-not to work with \f$\tau_c\f$ directly but to work with a different
+//! Encapsulates a parameterization of \f$\tau_c\f$.
+/*!
+When solving an inverse problem for \f$\tau_c\f$, one frequently does
+not work with \f$\tau_c\f$ directly but to work with a different
 variable \f$p\f$, and a relationship \f$\tau_c=F(p)\f$.
 A common choice in the glaciology literature is \f$F(p)=p^2\f$,
 which ensures that \f$\tau_c\f$ is non-negative, but has the 
@@ -34,7 +35,7 @@ more satisfactory choice is \f$F(p)=e^p\f$, which ensures
 positivitiy, is 1-1, and respects the wide scale variations of \f$\tau_c\f$.
 
 An InvTaucParameterization encapsulates a parameterization, and
-is intended to be used in conjuction with an \class InvSSAForwardProblem 
+is intended to be used in conjuction with an \ref InvSSAForwardProblem 
 to indicate the choice of parameterization.
 
 This method of encoding mathematical expressions is flexible and convenient,

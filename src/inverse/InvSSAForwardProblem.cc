@@ -73,7 +73,16 @@ PetscErrorCode InvSSAForwardProblem::destruct() {
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem::set_zeta(IceModelVec2S &new_zeta )
+//! Sets the current value of of the design paramter \f$\zeta\f$.
+/*! This method sets \f$\zeta\f$ but does not solve the %SSA.
+It it intended for inverse methods that simultaneously compute
+the pair \f$u\f$ and \f$\zeta\f$ without ever solving the %SSA
+directly.  Use this method in conjuction with 
+\ref assemble_jacobian_state and \ref apply_jacobian_design and their friends.
+The vector \f$\zeta\f$ is not copied; a reference to the IceModelVec is
+kept.
+*/
+PetscErrorCode InvSSAForwardProblem::set_design(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
   PetscInt i,j,q;
@@ -103,21 +112,28 @@ PetscErrorCode InvSSAForwardProblem::set_zeta(IceModelVec2S &new_zeta )
   }
   ierr = m_tauc->end_access(); CHKERRQ(ierr);
 
+  // Flag the state jacobian as needing rebuilding.
   m_rebuild_J_state = true;
 
   return 0;
 }
 
+//! Sets the current value of the design variable \f$\zeta\f$ and solves the %SSA to find the associated \f$u_{\rm SSA}\f$.
+/* Use this method for inverse methods employing the reduced gradient. Use this method
+in conjuction with apply_linearization and apply_linearization_transpose.*/
 PetscErrorCode InvSSAForwardProblem::linearize_at( IceModelVec2S &zeta, TerminationReason::Ptr &reason) {
 
   PetscErrorCode ierr;
-  ierr = this->set_zeta(zeta); CHKERRQ(ierr);
+  ierr = this->set_design(zeta); CHKERRQ(ierr);
 
   ierr = this->solve_nocache(reason); CHKERRQ(ierr);
 
   return 0;
 }
 
+//! Computes the residual function \f$\mathcal{R}(u,\zeta)\f$ as defined in the class-level documentation.
+/* The value of \f$\zeta\f$ is set prior to this call via set_design or linearize_at. The value
+of the residual is returned in \a RHS.*/
 PetscErrorCode InvSSAForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
   PetscErrorCode ierr;
 
@@ -135,6 +151,9 @@ PetscErrorCode InvSSAForwardProblem::assemble_residual(IceModelVec2V &u, IceMode
   return 0;
 }
 
+//! Computes the residual function \f$\mathcal{R}(u,\zeta)\f$ defined in the class-level documentation.
+/* The return value is specified via a Vec for the benefit of certain TAO routines.  Otherwise,
+the method is identical to the assemble_residual returning values as a StateVec (an IceModelVec2V).*/
 PetscErrorCode InvSSAForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
   PetscErrorCode ierr;
 
@@ -152,7 +171,14 @@ PetscErrorCode InvSSAForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS
   return 0; 
 }
 
-
+//! Assembles the state Jacobian matrix. 
+/* The matrix depends on the current value of the design variable \f$\zeta\f$ and the current
+value of the state variable \f$u\f$.  The specification of \f$\zeta\f$ is done earlier
+with set_design or linearize_at.  The value of \f$u\f$ is specified explicitly as an argument
+to this method.
+  @param[in] u Current state variable value.
+  @param[out] J computed state Jacobian.
+*/
 PetscErrorCode InvSSAForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
   PetscErrorCode ierr;
 
@@ -167,6 +193,10 @@ PetscErrorCode InvSSAForwardProblem::assemble_jacobian_state(IceModelVec2V &u, M
   return 0;
 }
 
+//! Applies the design Jacobian matrix to a perturbation of the design variable.
+/*! The return value uses a DesignVector (IceModelVec2V), which can be ghostless. Ghosts (if present) are updated.
+\overload
+*/
 PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, IceModelVec2V &du) {
   PetscErrorCode ierr;
   PISMVector2 **du_a;
@@ -176,6 +206,10 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceM
   return 0;
 }
 
+//! Applies the design Jacobian matrix to a perturbation of the design variable.
+/*! The return value is a Vec for the benefit of TAO. It is assumed to be ghostless; no communication is done.
+\overload 
+*/
 PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, Vec du) {
   PetscErrorCode ierr;
   PISMVector2 **du_a;
@@ -185,6 +219,18 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceM
   return 0;
 }
 
+//! Applies the design Jacobian matrix to a perturbation of the design variable.
+/*! The matrix depends on the current value of the design variable \f$\zeta\f$ and the current
+value of the state variable \f$u\f$.  The specification of \f$\zeta\f$ is done earlier
+with set_design or linearize_at.  The value of \f$u\f$ is specified explicitly as an argument
+to this method.
+  @param[in]   u      Current state variable value.
+  @param[in]   dzeta  Perturbation of the design variable. Prefers vectors with ghosts; will copy to a ghosted vector if needed.
+  @param[out]  du_a   Computed corresponding perturbation of the state variable. The array \a du_a 
+                      should be extracted first from a Vec or an IceModelVec.                      
+
+  Typically this method is called via one of its overloads.
+*/
 PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, PISMVector2 **du_a) {
   PetscErrorCode ierr;
 
@@ -315,7 +361,10 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceM
   return 0;
 }
 
-
+//! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
+/*! The return value uses a StateVector (IceModelVec2S) which can be ghostless; ghosts (if present) are updated.
+\overload
+*/
 PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,IceModelVec2S &dzeta) {
   PetscErrorCode ierr;
   PetscReal **dzeta_a;
@@ -325,6 +374,9 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec
   return 0;
 }
 
+//! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
+/*! The return value uses a Vec for the benefit of TAO.  It is assumed to be ghostless; no communication is done.
+\overload */
 PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta) {
   PetscErrorCode ierr;
   PetscReal **dzeta_a;
@@ -337,6 +389,18 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec
   return 0;
 }
 
+//! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
+/*! The matrix depends on the current value of the design variable \f$\zeta\f$ and the current
+value of the state variable \f$u\f$.  The specification of \f$\zeta\f$ is done earlier
+with set_design or linearize_at.  The value of \f$u\f$ is specified explicitly as an argument
+to this method.
+  @param[in]   u         Current state variable value.
+  @param[in]   du        Perturbation of the state variable.  Prefers vectors with ghosts; will copy to a ghosted vector if need be.
+  @param[out]  dzeta_a   Computed corresponding perturbation of the design variable. The array \a dzeta_a 
+                         should be extracted first from a Vec or an IceModelVec.                      
+
+  Typically this method is called via one of its overloads.
+*/
 PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,PetscReal **dzeta_a) {
   PetscInt         i,j;
   PetscErrorCode ierr;
@@ -348,7 +412,14 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec
   ierr = u.get_array(u_a); CHKERRQ(ierr);
 
   PISMVector2 **du_a;
-  ierr = du.get_array(du_a); CHKERRQ(ierr);
+  IceModelVec2V *du_local;
+  if(du.has_ghosts()) {
+    du_local = &du;
+  } else {
+    ierr = m_du_local.copy_from(du); CHKERRQ(ierr);
+    du_local = &m_du_local;
+  }
+  ierr = du_local->get_array(du_a); CHKERRQ(ierr);
 
   PISMVector2 u_e[FEQuadrature::Nk];
   PISMVector2 u_q[FEQuadrature::Nq];
@@ -446,11 +517,24 @@ PetscErrorCode InvSSAForwardProblem::apply_jacobian_design_transpose(IceModelVec
 
   ierr = m_zeta->end_access(); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);
-  ierr = du.end_access(); CHKERRQ(ierr);
+  ierr = du_local->end_access(); CHKERRQ(ierr);
 
   return 0;
 }
 
+/*!\brief Applies the linearization of the forward map (i.e. the reduced gradient \f$DF\f$ described in 
+the class-level documentation.) */
+/*! As described previously, 
+\f[
+Df = J_{\rm State}^{-1} J_{\rm Design}.
+\f]
+Applying the linearization then involves the solution of a linear equation.
+The matrices \f$J_{\rm State}\f$ and \f$J_{\rm Design}\f$ both depend on the value of the 
+design variable \f$\zeta\f$ and the value of the corresponding state variable \f$u=F(\zeta)\f$.  
+These are established by first calling linearize_at.
+  @param[in]   dzeta     Perturbation of the design variable
+  @param[out]  du        Computed corresponding perturbation of the state variable; ghosts (if present) are updated.
+*/
 PetscErrorCode InvSSAForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du) {
   
   PetscErrorCode ierr;
@@ -482,6 +566,23 @@ PetscErrorCode InvSSAForwardProblem::apply_linearization(IceModelVec2S &dzeta, I
   return 0;
 }
 
+/*! \brief Applies the transpose of the linearization of the forward map 
+ (i.e. the transpose of the reduced gradient \f$DF\f$ described in the class-level documentation.) */
+/*!  As described previously, 
+\f[
+Df = J_{\rm State}^{-1} J_{\rm Design}.
+\f]
+so
+\f[
+Df^t = J_{\rm Design}^t \; (J_{\rm State}^t)^{-1} .
+\f]
+Applying the transpose of the linearization then involves the solution of a linear equation.
+The matrices \f$J_{\rm State}\f$ and \f$J_{\rm Design}\f$ both depend on the value of the 
+design variable \f$\zeta\f$ and the value of the corresponding state variable \f$u=F(\zeta)\f$.  
+These are established by first calling linearize_at.
+  @param[in]   du     Perturbation of the state variable
+  @param[out]  dzeta  Computed corresponding perturbation of the design variable; ghosts (if present) are updated.
+*/
 PetscErrorCode InvSSAForwardProblem::apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta) {
   
   PetscErrorCode ierr;
@@ -520,9 +621,12 @@ PetscErrorCode InvSSAForwardProblem::apply_linearization_transpose(IceModelVec2V
     verbPrintf(4,grid.com,"InvSSAForwardProblem::apply_linearization converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
   
-  ierr = m_du_local.copy_from(m_du_global); CHKERRQ(ierr);
-  ierr = this->apply_jacobian_design_transpose(m_velocity,m_du_local,dzeta); CHKERRQ(ierr);
+  ierr = this->apply_jacobian_design_transpose(m_velocity,m_du_global,dzeta); CHKERRQ(ierr);
   ierr = dzeta.scale(-1); CHKERRQ(ierr);
+
+  if(dzeta.has_ghosts()) {
+    ierr = dzeta.update_ghosts();
+  }
 
   return 0;
 }

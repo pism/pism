@@ -135,7 +135,17 @@ PetscErrorCode apply_linearization_transpose(StateVec &du, DesignVec &dzeta);
 \endcode
 that computes the action of \f$(F')^t\f$,
 where \f$F'\f$ is the linearization of \f$F\f$ at the current iterate, and the transpose
-is computed **FIXME***
+is computed in the standard sense (i.e. thinking of \f$F'\f$ as a matrix with respect
+to the bases implied by the DesignVec and StateVec spaces).  The need for a transpose arises
+because
+\f[
+\frac{d}{dt} J_{S}(F(d+t\delta d)-u) = [DJ_S]_{k}\; F'_{kj} \; \delta d
+\f]
+and hence the gradient of the term \f$J_{S}(F(d)-u)\f$ with respect to \f$d\f$ is given
+by
+\f[
+(F')^t (\nabla J_S)^t.
+\f]
 </ol>
 
 */

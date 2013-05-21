@@ -122,7 +122,7 @@ if __name__ == "__main__":
   zeta2.copy_from(d_proj)
   zeta2.scale(eps)
   zeta2.add(1,zeta1)
-  ssarun.ssa.set_zeta(zeta2)
+  ssarun.ssa.set_design(zeta2)
 
   rhs2 = PISM.IceModelVec2V();
   rhs2.create(grid,"",PISM.kNoGhosts)
