@@ -94,6 +94,8 @@ PetscErrorCode PISMEigenCalving::update(PetscReal dt,
 
   ierr = m_thk_loss.set(0.0); CHKERRQ(ierr);
 
+  ierr = update_strain_rates(); CHKERRQ(ierr);
+
   MaskQuery mask(pism_mask);
 
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
