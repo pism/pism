@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "LogRatioFunctional.hh"
+#include "IPLogRatioFunctional.hh"
 
-PetscErrorCode LogRatioFunctional::normalize(PetscReal scale) {
+PetscErrorCode IPLogRatioFunctional::normalize(PetscReal scale) {
   PetscErrorCode   ierr;
 
   // The local value of the weights
@@ -35,7 +35,7 @@ PetscErrorCode LogRatioFunctional::normalize(PetscReal scale) {
   return 0;
 }
 
-PetscErrorCode LogRatioFunctional::valueAt(IceModelVec2V &x, PetscReal *OUTPUT)  {
+PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, PetscReal *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
@@ -72,7 +72,7 @@ PetscErrorCode LogRatioFunctional::valueAt(IceModelVec2V &x, PetscReal *OUTPUT) 
   return 0;
 }
 
-PetscErrorCode LogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
   PetscErrorCode   ierr;
 
   gradient.set(0);

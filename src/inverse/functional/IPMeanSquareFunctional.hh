@@ -16,17 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MEANSQUAREFUNCTIONAL_HH_DZ18EO5C
-#define MEANSQUAREFUNCTIONAL_HH_DZ18EO5C
+#ifndef IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C
+#define IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C
 
 
-#include "Functional.hh"
+#include "IPFunctional.hh"
 
-class MeanSquareFunctional2S : public IPFunctional<IceModelVec2S> {
+class IPMeanSquareFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  MeanSquareFunctional2S(IceGrid &grid, IceModelVec2S *weights=NULL) :
-  IPFunctional<IceModelVec2S>(grid), m_weights(weights), m_normalization(1.) {};
-  virtual ~MeanSquareFunctional2S() {};
+  IPMeanSquareFunctional2S(IceGrid &grid, IceModelVec2S *weights=NULL) :
+  IPInnerProductFunctional<IceModelVec2S>(grid), m_weights(weights), m_normalization(1.) {};
+  virtual ~IPMeanSquareFunctional2S() {};
 
   virtual PetscErrorCode normalize(PetscReal scale);
 
@@ -39,16 +39,16 @@ protected:
   PetscReal m_normalization;
 
 private:
-  MeanSquareFunctional2S(MeanSquareFunctional2S const &);
-  MeanSquareFunctional2S & operator=(MeanSquareFunctional2S const &);
+  IPMeanSquareFunctional2S(IPMeanSquareFunctional2S const &);
+  IPMeanSquareFunctional2S & operator=(IPMeanSquareFunctional2S const &);
 };
 
 
-class MeanSquareFunctional2V : public IPFunctional<IceModelVec2V> {
+class IPMeanSquareFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
-  MeanSquareFunctional2V(IceGrid &grid, IceModelVec2S *weights=NULL) :
-  IPFunctional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
-  virtual ~MeanSquareFunctional2V() {};
+  IPMeanSquareFunctional2V(IceGrid &grid, IceModelVec2S *weights=NULL) :
+  IPInnerProductFunctional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
+  virtual ~IPMeanSquareFunctional2V() {};
 
   virtual PetscErrorCode normalize(PetscReal scale);
 
@@ -61,9 +61,9 @@ protected:
   PetscReal m_normalization;
 
 private:
-  MeanSquareFunctional2V(MeanSquareFunctional2V const &);
-  MeanSquareFunctional2V & operator=(MeanSquareFunctional2V const &);
+  IPMeanSquareFunctional2V(IPMeanSquareFunctional2V const &);
+  IPMeanSquareFunctional2V & operator=(IPMeanSquareFunctional2V const &);
 };
 
 
-#endif /* end of include guard: MEANSQUAREFUNCTIONAL_HH_DZ18EO5C */
+#endif /* end of include guard: IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C */

@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Functional.hh"
+#include "IPFunctional.hh"
 
-PetscErrorCode gradientFD(Functional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
+PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
   IceGrid &grid = *x.get_grid();
   PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
@@ -46,7 +46,7 @@ PetscErrorCode gradientFD(Functional<IceModelVec2S> &f, IceModelVec2S &x, IceMod
   return 0;
 }
 
-PetscErrorCode gradientFD(Functional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
+PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
   PetscErrorCode ierr;
   IceGrid &grid = *x.get_grid();
   PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
@@ -85,4 +85,4 @@ PetscErrorCode gradientFD(Functional<IceModelVec2V> &f, IceModelVec2V &x, IceMod
   return 0;
 }
 
-// PetscErrorCode gradientFD(Functional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+// PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);

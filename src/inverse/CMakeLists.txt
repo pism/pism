@@ -6,14 +6,14 @@ set(PISM_INVERSE_SOURCES
 ./IP_SSATaucForwardProblem_dep.cc
 ./IPTwoBlockVec.cc
 ./IP_SSATaucTikhonovGNSolver.cc  
-./functional/Functional.cc
-./functional/L2NormFunctional.cc
-./functional/H1NormFunctional.cc
-./functional/GroundedIceH1NormFunctional.cc
-./functional/LogRatioFunctional.cc
-./functional/LogRelativeFunctional.cc
-./functional/TotalVariationFunctional.cc
-./functional/MeanSquareFunctional.cc
+./functional/IPFunctional.cc
+./functional/IP_L2NormFunctional.cc
+./functional/IP_H1NormFunctional.cc
+./functional/IPGroundedIceH1NormFunctional.cc
+./functional/IPLogRatioFunctional.cc
+./functional/IPLogRelativeFunctional.cc
+./functional/IPTotalVariationFunctional.cc
+./functional/IPMeanSquareFunctional.cc
 )
 
 if(Pism_USE_TAO)

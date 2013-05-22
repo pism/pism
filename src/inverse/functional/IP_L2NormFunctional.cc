@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "L2NormFunctional.hh"
+#include "IP_L2NormFunctional.hh"
 
-PetscErrorCode L2NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) {
+PetscErrorCode IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) {
 
   PetscErrorCode   ierr;
 
@@ -57,7 +57,7 @@ PetscErrorCode L2NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) 
   return 0;
 }
 
-PetscErrorCode L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT) {
+PetscErrorCode IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT) {
 
   PetscErrorCode   ierr;
 
@@ -100,7 +100,7 @@ PetscErrorCode L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, Petsc
   return 0;
 }
 
-PetscErrorCode L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
+PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
   PetscErrorCode   ierr;
 
@@ -154,7 +154,7 @@ PetscErrorCode L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   return 0;
 }
 
-PetscErrorCode L2NormFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OUTPUT) {
+PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OUTPUT) {
 
   PetscErrorCode   ierr;
 
@@ -194,7 +194,7 @@ PetscErrorCode L2NormFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OUTPUT) 
   return 0;
 }
 
-PetscErrorCode L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT) {
+PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT) {
 
   PetscErrorCode   ierr;
 
@@ -237,7 +237,7 @@ PetscErrorCode L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, Petsc
   return 0;
 }
 
-PetscErrorCode L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient) {
+PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient) {
 
   PetscErrorCode   ierr;
 

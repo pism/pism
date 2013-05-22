@@ -16,10 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "TotalVariationFunctional.hh"
+#include "IPTotalVariationFunctional.hh"
 
-TotalVariationFunctional2S::TotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal exponent, IceModelVec2Int *dirichletLocations)
-: Functional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations), m_c(c), m_lebesgue_exp(exponent) {
+IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal exponent, IceModelVec2Int *dirichletLocations)
+: IPFunctional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations), m_c(c), m_lebesgue_exp(exponent) {
   PetscReal schoofLen = grid.config.get("Schoof_regularizing_length",
                                         "km", "m"); // convert to meters
   PetscReal schoofVel = grid.config.get("Schoof_regularizing_velocity",
@@ -27,7 +27,7 @@ TotalVariationFunctional2S::TotalVariationFunctional2S(IceGrid &grid, PetscReal 
   m_schoofReg = PetscSqr(schoofVel/schoofLen);
 }
 
-PetscErrorCode TotalVariationFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) {
+PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) {
 
   PetscErrorCode   ierr;
 
@@ -73,7 +73,7 @@ PetscErrorCode TotalVariationFunctional2S::valueAt(IceModelVec2S &x, PetscReal *
   return 0;
 }
 
-PetscErrorCode TotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
+PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
   PetscErrorCode   ierr;
 

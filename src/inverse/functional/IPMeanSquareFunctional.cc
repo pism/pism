@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "MeanSquareFunctional.hh"
+#include "IPMeanSquareFunctional.hh"
 
-PetscErrorCode MeanSquareFunctional2V::normalize(PetscReal scale) {
+PetscErrorCode IPMeanSquareFunctional2V::normalize(PetscReal scale) {
   PetscErrorCode   ierr;
 
   // The local value of the weights
@@ -46,7 +46,7 @@ PetscErrorCode MeanSquareFunctional2V::normalize(PetscReal scale) {
   return 0;
 }
 
-PetscErrorCode MeanSquareFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OUTPUT)  {
+PetscErrorCode IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
@@ -82,7 +82,7 @@ PetscErrorCode MeanSquareFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OUTP
   return 0;
 }
 
-PetscErrorCode MeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT)  {
+PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
@@ -124,7 +124,7 @@ PetscErrorCode MeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, P
   return 0;
 }
 
-PetscErrorCode MeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+PetscErrorCode IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
   PetscErrorCode   ierr;
 
   gradient.set(0);
@@ -160,7 +160,7 @@ PetscErrorCode MeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2
   return 0;
 }
 
-PetscErrorCode MeanSquareFunctional2S::normalize(PetscReal scale) {
+PetscErrorCode IPMeanSquareFunctional2S::normalize(PetscReal scale) {
   PetscErrorCode   ierr;
 
   // The local value of the weights
@@ -188,7 +188,7 @@ PetscErrorCode MeanSquareFunctional2S::normalize(PetscReal scale) {
   return 0;
 }
 
-PetscErrorCode MeanSquareFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT)  {
+PetscErrorCode IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
@@ -224,7 +224,7 @@ PetscErrorCode MeanSquareFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTP
   return 0;
 }
 
-PetscErrorCode MeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT)  {
+PetscErrorCode IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
@@ -263,7 +263,7 @@ PetscErrorCode MeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, P
 }
 
 
-PetscErrorCode MeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient)  {
+PetscErrorCode IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient)  {
   PetscErrorCode   ierr;
 
   gradient.set(0);

@@ -23,7 +23,7 @@
 
 IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward,
 DesignVec &d0, StateVec &u_obs, PetscReal eta,
-IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional):
+IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
 m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
 {

@@ -1,4 +1,4 @@
-// Copyright (C) 2013  David Maxwell
+// Copyright (C) 2012  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,34 +16,32 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef GROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
-#define GROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
+#ifndef IP_H1NORMFUNCTIONAL_HH_TF8AKRNQ
+#define IP_H1NORMFUNCTIONAL_HH_TF8AKRNQ
 
+#include "IPFunctional.hh"
 
-#include "Functional.hh"
-#include "Mask.hh"
-
-class GroundedIceH1NormFunctional2S : public IPFunctional<IceModelVec2S> {
+class IP_H1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  GroundedIceH1NormFunctional2S(IceGrid &grid, PetscReal cL2, 
-      PetscReal cH1, IceModelVec2Int &ice_mask, IceModelVec2Int *dirichletLocations=NULL) :
-      IPFunctional<IceModelVec2S>(grid),
-      m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations),  m_ice_mask(ice_mask) {};
-  virtual ~GroundedIceH1NormFunctional2S() {};
+  IP_H1NormFunctional2S(IceGrid &grid, PetscReal cL2, 
+      PetscReal cH1, IceModelVec2Int *dirichletLocations=NULL) :
+      IPInnerProductFunctional<IceModelVec2S>(grid),
+      m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations) {};
+  virtual ~IP_H1NormFunctional2S() {};
   
   virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
   virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual PetscErrorCode assemble_form(Mat J);
 
 protected:
 
   PetscReal m_cL2, m_cH1;
   IceModelVec2Int *m_dirichletIndices;
-  IceModelVec2Int &m_ice_mask;
 
 private:
-  GroundedIceH1NormFunctional2S(GroundedIceH1NormFunctional2S const &);
-  GroundedIceH1NormFunctional2S & operator=(GroundedIceH1NormFunctional2S const &);  
+  IP_H1NormFunctional2S(IP_H1NormFunctional2S const &);
+  IP_H1NormFunctional2S & operator=(IP_H1NormFunctional2S const &);  
 };
 
-#endif /* end of include guard: GROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR */
+#endif /* end of include guard: H1NORMFUNCTIONAL_HH_TF8AKRNQ */

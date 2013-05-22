@@ -26,7 +26,7 @@
 #include <tr1/memory>
 #include "iceModelVec.hh"
 #include "IP_SSATaucForwardProblem.hh"
-#include "functional/Functional.hh"
+#include "functional/IPFunctional.hh"
 
 class IP_SSATaucTikhonovProblemLCL;
 class IP_SSATaucTikhonovProblemLCLListener {
@@ -59,7 +59,7 @@ public:
   typedef IP_SSATaucTikhonovProblemLCLListener Listener;
   
   IP_SSATaucTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta,
-                      Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional);
+                      IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
 
   virtual ~IP_SSATaucTikhonovProblemLCL();
 
@@ -128,8 +128,8 @@ protected:
   PetscReal m_constraintsScale;
   PetscReal m_velocityScale;
 
-  Functional<IceModelVec2S> &m_designFunctional;
-  Functional<IceModelVec2V> &m_stateFunctional;
+  IPFunctional<IceModelVec2S> &m_designFunctional;
+  IPFunctional<IceModelVec2V> &m_stateFunctional;
 
   std::vector<Listener::Ptr> m_listeners;
 };

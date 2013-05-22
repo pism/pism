@@ -21,7 +21,7 @@
 
 #include "iceModelVec.hh"
 #include "IP_SSATaucForwardProblem.hh"
-#include "functional/Functional.hh"
+#include "functional/IPFunctional.hh"
 #include "TerminationReason.hh"
 
 template<class C,PetscErrorCode (C::*MultiplyCallback)(Vec,Vec) >
@@ -49,7 +49,7 @@ public:
   // typedef IP_SSATaucTikhonovGNSolverListener Listener;
 
   IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
-                    IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
+                    IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional);
 
   ~IP_SSATaucTikhonovGNSolver();
   
@@ -134,8 +134,8 @@ protected:
   Mat m_mat_GN;
 
   PetscReal m_eta;
-  IPFunctional<DesignVec> &m_designFunctional;
-  IPFunctional<StateVec> &m_stateFunctional;
+  IPInnerProductFunctional<DesignVec> &m_designFunctional;
+  IPInnerProductFunctional<StateVec> &m_stateFunctional;
 
   PetscReal m_alpha;
   PetscReal m_logalpha;

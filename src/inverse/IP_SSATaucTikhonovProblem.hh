@@ -27,7 +27,7 @@
 
 
 #include "TaoUtil.hh"
-#include "functional/Functional.hh"
+#include "functional/IPFunctional.hh"
 
 
 class IP_SSATaucTikhonovProblem: public IPTaoTikhonovProblem<IP_SSATaucForwardProblem> {
@@ -36,8 +36,8 @@ public:
   IP_SSATaucTikhonovProblem( IP_SSATaucForwardProblem &forward, 
                           IP_SSATaucTikhonovProblem::DesignVec &d0, 
                           IP_SSATaucTikhonovProblem::StateVec &u_obs, PetscReal eta, 
-                          Functional<IP_SSATaucTikhonovProblem::DesignVec>&designFunctional, 
-                          Functional<IP_SSATaucTikhonovProblem::StateVec>&stateFunctional) :
+                          IPFunctional<IP_SSATaucTikhonovProblem::DesignVec>&designFunctional, 
+                          IPFunctional<IP_SSATaucTikhonovProblem::StateVec>&stateFunctional) :
                 IPTaoTikhonovProblem(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
 
   virtual ~IP_SSATaucTikhonovProblem() {};

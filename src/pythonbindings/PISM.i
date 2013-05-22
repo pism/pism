@@ -34,14 +34,14 @@
 #include "inverse/IP_SSATaucForwardProblem.hh"
 #include "inverse/IP_SSATaucForwardProblem_dep.hh"
 #include "inverse/IPTaucParameterization.hh"
-#include "inverse/functional/Functional.hh"
-#include "inverse/functional/L2NormFunctional.hh"
-#include "inverse/functional/H1NormFunctional.hh"
-#include "inverse/functional/GroundedIceH1NormFunctional.hh"
-#include "inverse/functional/TotalVariationFunctional.hh"
-#include "inverse/functional/MeanSquareFunctional.hh"
-#include "inverse/functional/LogRelativeFunctional.hh"
-#include "inverse/functional/LogRatioFunctional.hh"
+#include "inverse/functional/IPFunctional.hh"
+#include "inverse/functional/IP_L2NormFunctional.hh"
+#include "inverse/functional/IP_H1NormFunctional.hh"
+#include "inverse/functional/IPGroundedIceH1NormFunctional.hh"
+#include "inverse/functional/IPTotalVariationFunctional.hh"
+#include "inverse/functional/IPMeanSquareFunctional.hh"
+#include "inverse/functional/IPLogRelativeFunctional.hh"
+#include "inverse/functional/IPLogRatioFunctional.hh"
 #include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 #if (PISM_USE_TAO==1)
 #include "inverse/TaoUtil.hh"
@@ -569,18 +569,18 @@ namespace std {
 %include "regional/regional.hh"
 %include "stressbalance/ssa/FEEvaluator.hh"
 
-%include "inverse/functional/Functional.hh"
-%template(Functional2S) Functional< IceModelVec2S >;
-%template(Functional2V) Functional< IceModelVec2V >;
+%include "inverse/functional/IPFunctional.hh"
 %template(IPFunctional2S) IPFunctional< IceModelVec2S >;
 %template(IPFunctional2V) IPFunctional< IceModelVec2V >;
-%include "inverse/functional/L2NormFunctional.hh"
-%include "inverse/functional/H1NormFunctional.hh"
-%include "inverse/functional/GroundedIceH1NormFunctional.hh"
-%include "inverse/functional/TotalVariationFunctional.hh"
-%include "inverse/functional/MeanSquareFunctional.hh"
-%include "inverse/functional/LogRatioFunctional.hh"
-%include "inverse/functional/LogRelativeFunctional.hh"
+%template(IPInnerProductFunctional2S) IPInnerProductFunctional< IceModelVec2S >;
+%template(IPInnerProductFunctional2V) IPInnerProductFunctional< IceModelVec2V >;
+%include "inverse/functional/IP_L2NormFunctional.hh"
+%include "inverse/functional/IP_H1NormFunctional.hh"
+%include "inverse/functional/IPGroundedIceH1NormFunctional.hh"
+%include "inverse/functional/IPTotalVariationFunctional.hh"
+%include "inverse/functional/IPMeanSquareFunctional.hh"
+%include "inverse/functional/IPLogRatioFunctional.hh"
+%include "inverse/functional/IPLogRelativeFunctional.hh"
 %include "inverse/IPTaucParameterization.hh"
 %include "inverse/IP_SSATaucForwardProblem.hh"
 %include "inverse/IP_SSATaucForwardProblem_dep.hh"

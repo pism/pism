@@ -19,7 +19,7 @@
 #ifndef TOTALVARIATIONFUNCTIONAL_HH_HKBL1T7I
 #define TOTALVARIATIONFUNCTIONAL_HH_HKBL1T7I
 
-#include "Functional.hh"
+#include "IPFunctional.hh"
 
 //! Pseduo total variation functional
 /*! \f[
@@ -27,9 +27,9 @@ J(u) = c\int_\Omega |\nabla u|^q
 \f]
 */
 
-class TotalVariationFunctional2S : public Functional<IceModelVec2S> {
+class IPTotalVariationFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
-  TotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal q, IceModelVec2Int *dirichletLocations=NULL);
+  IPTotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal q, IceModelVec2Int *dirichletLocations=NULL);
 
   virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
@@ -43,8 +43,8 @@ protected:
 
 private:
   // Hide copy/assignment operations
-  TotalVariationFunctional2S(TotalVariationFunctional2S const &);
-  TotalVariationFunctional2S & operator=(TotalVariationFunctional2S const &);
+  IPTotalVariationFunctional2S(IPTotalVariationFunctional2S const &);
+  IPTotalVariationFunctional2S & operator=(IPTotalVariationFunctional2S const &);
 };
 
 #endif /* end of include guard: TOTALVARIATIONFUNCTIONAL_HH_HKBL1T7I */

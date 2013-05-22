@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2013  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -16,32 +16,34 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef H1NORMFUNCTIONAL_HH_TF8AKRNQ
-#define H1NORMFUNCTIONAL_HH_TF8AKRNQ
+#ifndef IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
+#define IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
 
-#include "Functional.hh"
 
-class H1NormFunctional2S : public IPFunctional<IceModelVec2S> {
+#include "IPFunctional.hh"
+#include "Mask.hh"
+
+class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  H1NormFunctional2S(IceGrid &grid, PetscReal cL2, 
-      PetscReal cH1, IceModelVec2Int *dirichletLocations=NULL) :
-      IPFunctional<IceModelVec2S>(grid),
-      m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations) {};
-  virtual ~H1NormFunctional2S() {};
+  IPGroundedIceH1NormFunctional2S(IceGrid &grid, PetscReal cL2, 
+      PetscReal cH1, IceModelVec2Int &ice_mask, IceModelVec2Int *dirichletLocations=NULL) :
+      IPInnerProductFunctional<IceModelVec2S>(grid),
+      m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations),  m_ice_mask(ice_mask) {};
+  virtual ~IPGroundedIceH1NormFunctional2S() {};
   
   virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
   virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
-  virtual PetscErrorCode assemble_form(Mat J);
 
 protected:
 
   PetscReal m_cL2, m_cH1;
   IceModelVec2Int *m_dirichletIndices;
+  IceModelVec2Int &m_ice_mask;
 
 private:
-  H1NormFunctional2S(H1NormFunctional2S const &);
-  H1NormFunctional2S & operator=(H1NormFunctional2S const &);  
+  IPGroundedIceH1NormFunctional2S(IPGroundedIceH1NormFunctional2S const &);
+  IPGroundedIceH1NormFunctional2S & operator=(IPGroundedIceH1NormFunctional2S const &);  
 };
 
-#endif /* end of include guard: H1NORMFUNCTIONAL_HH_TF8AKRNQ */
+#endif /* end of include guard: IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR */

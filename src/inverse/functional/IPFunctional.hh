@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef FUNCTIONAL_HH_1E2DIXE6
-#define FUNCTIONAL_HH_1E2DIXE6
+#ifndef IPFUNCTIONAL_HH_1E2DIXE6
+#define IPFUNCTIONAL_HH_1E2DIXE6
 
 #include "iceModelVec.hh"
 #include "FETools.hh"
@@ -35,14 +35,14 @@ surface velocities. Subclasses of Functional define such maps,
 and permit computation of their gradients.
 */
 template<class IMVecType>
-class Functional {
+class IPFunctional {
 
 public:  
-  Functional(IceGrid &grid) : m_grid(grid), m_element_index(m_grid) { 
+  IPFunctional(IceGrid &grid) : m_grid(grid), m_element_index(m_grid) { 
     m_quadrature.init(m_grid);
   }
 
-  virtual ~Functional() {};
+  virtual ~IPFunctional() {};
 
   //! Computes the value of the functional at the vector x.
   virtual PetscErrorCode valueAt(IMVecType &x, PetscReal *OUTPUT) = 0;
@@ -69,12 +69,12 @@ protected:
   
 private:
   // Hide copy/assignment operations
-  Functional(Functional const &);
-  Functional & operator=(Functional const &);
+  IPFunctional(IPFunctional const &);
+  IPFunctional & operator=(IPFunctional const &);
 
 };
 
-//! Abstract base class for Functionals arising from an inner product.
+//! Abstract base class for IPFunctionals arising from an inner product.
 /*!
 Frequently functionals have the structure
 \f[
@@ -82,18 +82,18 @@ J(u) = Q(u,u)
 \f]
 where \f$Q\f$ is a symmetric, positive definite, bilinear form. Certain
 minimization algorithms only apply to such functionals, which should subclass
-from IPFunctional. 
+from IPInnerProductFunctional. 
 */
 template<class IMVecType>
-class IPFunctional : public Functional<IMVecType>{
+class IPInnerProductFunctional : public IPFunctional<IMVecType>{
 
 public:
-  IPFunctional(IceGrid &grid) : Functional<IMVecType>(grid) {};
+  IPInnerProductFunctional(IceGrid &grid) : IPFunctional<IMVecType>(grid) {};
 
   //! Computes the inner product \f$Q(a,b)\f$.
   virtual PetscErrorCode dot(IMVecType &a, IMVecType &b, PetscReal *OUTPUT) = 0;
 
-  //! Computes the interior product of a vector with the IPFunctional's underlying bilinear form.
+  //! Computes the interior product of a vector with the IPIPInnerProductFunctional's underlying bilinear form.
   /*! If \f$Q(x,y)\f$ is a bilinear form, and \f$a\f$ is a vector, then the 
   interior product of \f$a\f$ with \f$Q\f$ is the functional 
   \f[
@@ -114,12 +114,12 @@ public:
   }
 };
 
-//! Computes finite difference approximations of a Functional<IceModelVec2S> gradient.
+//! Computes finite difference approximations of a IPFunctional<IceModelVec2S> gradient.
 /*! Useful for debugging a hand coded gradient. */
-PetscErrorCode gradientFD(Functional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient);
+PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient);
 
-//! Computes finite difference approximations of a Functional<IceModelVec2V> gradient.
+//! Computes finite difference approximations of a IPFunctional<IceModelVec2V> gradient.
 /*! Useful for debugging a hand coded gradient. */
-PetscErrorCode gradientFD(Functional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
 
 #endif /* end of include guard: FUNCTIONAL_HH_1E2DIXE6 */

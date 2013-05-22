@@ -23,7 +23,7 @@
 #include <tr1/memory>
 
 #include "TaoUtil.hh"
-#include "functional/Functional.hh"
+#include "functional/IPFunctional.hh"
 #include <assert.h>
 
 template<class ForwardProblem> class IPTaoTikhonovProblem;
@@ -171,7 +171,7 @@ public:
   */
 
   IPTaoTikhonovProblem( ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
-                  Functional<DesignVec>&designFunctional, Functional<StateVec>&stateFunctional);
+                  IPFunctional<DesignVec>&designFunctional, IPFunctional<StateVec>&stateFunctional);
 
   virtual ~IPTaoTikhonovProblem();
 
@@ -248,8 +248,8 @@ protected:
   PetscReal m_val_design;  ///<  Value of \f$J_D\f$ at the current iterate.
   PetscReal m_val_state;   ///<  Value of \f$J_S\f$ at the current iterate.
 
-  Functional<IceModelVec2S> &m_designFunctional;  //<! Implementation of \f$J_D\f$.
-  Functional<IceModelVec2V> &m_stateFunctional;   //<! Implementation of \f$J_S\f$.
+  IPFunctional<IceModelVec2S> &m_designFunctional;  //<! Implementation of \f$J_D\f$.
+  IPFunctional<IceModelVec2V> &m_stateFunctional;   //<! Implementation of \f$J_S\f$.
 
   std::vector<typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners; ///< List of iteration callbacks.
 
@@ -263,7 +263,7 @@ protected:
 
 template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem( ForwardProblem &forward,
                  DesignVec &d0, StateVec &u_obs, PetscReal eta,
-                 Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional ):
+                 IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional ):
                   m_forward(forward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
                   m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
 {

@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "LogRelativeFunctional.hh"
+#include "IPLogRelativeFunctional.hh"
 
-PetscErrorCode LogRelativeFunctional::normalize(PetscReal scale) {
+PetscErrorCode IPLogRelativeFunctional::normalize(PetscReal scale) {
   PetscErrorCode   ierr;
 
   // The local value of the weights
@@ -35,7 +35,7 @@ PetscErrorCode LogRelativeFunctional::normalize(PetscReal scale) {
   return 0;
 }
 
-PetscErrorCode LogRelativeFunctional::valueAt(IceModelVec2V &x, PetscReal *OUTPUT)  {
+PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, PetscReal *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
@@ -67,7 +67,7 @@ PetscErrorCode LogRelativeFunctional::valueAt(IceModelVec2V &x, PetscReal *OUTPU
   return 0;
 }
 
-PetscErrorCode LogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
   PetscErrorCode   ierr;
 
   gradient.set(0);

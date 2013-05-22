@@ -28,7 +28,7 @@ typedef IceModelVec2V  StateVec;
 
 IP_SSATaucTikhonovProblemLCL::IP_SSATaucTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward,
 IP_SSATaucTikhonovProblemLCL::DesignVec &d0, IP_SSATaucTikhonovProblemLCL::StateVec &u_obs, PetscReal eta,
-Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional):
+IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
 m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
 {

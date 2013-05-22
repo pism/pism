@@ -16,16 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef LOGRATIOFUNCTIONAL_HH_HSEWI0Q8
-#define LOGRATIOFUNCTIONAL_HH_HSEWI0Q8
+#ifndef IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG
+#define IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG
 
-#include "Functional.hh"
+#include "IPFunctional.hh"
 
-class LogRatioFunctional : public Functional<IceModelVec2V> {
+class IPLogRelativeFunctional : public IPFunctional<IceModelVec2V> {
 public:
-  LogRatioFunctional(IceGrid &grid, IceModelVec2V &u_observed) :
-  Functional<IceModelVec2V>(grid), m_u_observed(u_observed), m_normalization(1.) {};
-  virtual ~LogRatioFunctional() {};
+  IPLogRelativeFunctional(IceGrid &grid, IceModelVec2V &u_observed) :
+  IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_normalization(1.) {};
+  virtual ~IPLogRelativeFunctional() {};
 
   virtual PetscErrorCode normalize(PetscReal scale);
 
@@ -38,4 +38,5 @@ protected:
 
 };
 
-#endif /* end of include guard: LOGRATIOFUNCTIONAL_HH_HSEWI0Q8 */
+
+#endif /* end of include guard: IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG */
