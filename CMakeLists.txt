@@ -153,6 +153,21 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     examples/inverse/vel2tauc.py
     examples/inverse/verify_ssa_inv.py
     DESTINATION ${Pism_BIN_DIR} )
+
+    install(DIRECTORY
+      ${CMAKE_SOURCE_DIR}/site-packages/PISM
+      DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}
+      USE_SOURCE_PERMISSIONS
+      COMPONENT RuntimeLibraries
+    )
+
+    install(DIRECTORY
+      ${CMAKE_SOURCE_DIR}/site-packages/siple
+      DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}
+      USE_SOURCE_PERMISSIONS
+      COMPONENT RuntimeLibraries
+    )
+
 endif()
 
 add_subdirectory (src)

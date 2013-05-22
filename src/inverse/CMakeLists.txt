@@ -1,5 +1,7 @@
 # Classes for inverse problems.
 
+include_directories ( functional )
+
 set(PISM_INVERSE_SOURCES
 ./IPTaucParameterization.cc
 ./IP_SSATaucForwardProblem.cc
@@ -19,8 +21,8 @@ set(PISM_INVERSE_SOURCES
 if(Pism_USE_TAO)
   list (APPEND PISM_INVERSE_SOURCES
     ./TaoUtil.cc
-    ./IP_SSATaucTikhonovProblem.cc
-    ./IP_SSATaucTikhonovProblemLCL.cc
+    ./IP_SSATaucTaoTikhonovProblem.cc
+    ./IP_SSATaucTaoTikhonovProblemLCL.cc
     )
 endif()
 

@@ -80,7 +80,7 @@ Frequently functionals have the structure
 \f[
 J(u) = Q(u,u)
 \f]
-where \f$Q\f$ is a symmetric, positive definite, bilinear form. Certain
+where \f$Q\f$ is a symmetric, non-negative definite, bilinear form. Certain
 minimization algorithms only apply to such functionals, which should subclass
 from IPInnerProductFunctional. 
 */
@@ -93,7 +93,7 @@ public:
   //! Computes the inner product \f$Q(a,b)\f$.
   virtual PetscErrorCode dot(IMVecType &a, IMVecType &b, PetscReal *OUTPUT) = 0;
 
-  //! Computes the interior product of a vector with the IPIPInnerProductFunctional's underlying bilinear form.
+  //! Computes the interior product of a vector with the IPInnerProductFunctional's underlying bilinear form.
   /*! If \f$Q(x,y)\f$ is a bilinear form, and \f$a\f$ is a vector, then the 
   interior product of \f$a\f$ with \f$Q\f$ is the functional 
   \f[
@@ -112,6 +112,12 @@ public:
     ierr = y.scale(0.5); CHKERRQ(ierr);
     return 0;
   }
+
+  //! Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
+  /*! If \f$\{x_i}\f$ is a basis for the vector space IMVecType, 
+      \f$Q_{ij}= Q(x_i,x_j)\f$.*/
+  virtual PetscErrorCode assemble_form(Mat Q) = 0;
+
 };
 
 //! Computes finite difference approximations of a IPFunctional<IceModelVec2S> gradient.

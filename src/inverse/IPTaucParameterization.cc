@@ -20,10 +20,6 @@
 #include "pism_options.hh"
 #include <cmath>
 
-IPTaucParamIdent g_IPTaucParamIdent;
-IPTaucParamSquare g_IPTaucParamSquare;
-IPTaucParamExp g_IPTaucParamExp;
-
 PetscErrorCode IPTaucParameterization::init( const NCConfigVariable & config ) { 
   m_tauc_scale = config.get("tauc_param_tauc_scale");
   return 0;

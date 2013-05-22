@@ -28,40 +28,57 @@
 #include "IP_SSATaucForwardProblem.hh"
 #include "functional/IPFunctional.hh"
 
-class IP_SSATaucTikhonovProblemLCL;
-class IP_SSATaucTikhonovProblemLCLListener {
+class IP_SSATaucTaoTikhonovProblemLCL;
+
+//! Iteration callback class for IP_SSATaucTaoTikhonovProblemLCL
+/*! A class for objects receiving iteration callbacks from a IP_SSATaucTaoTikhonovProblemLCL.  These 
+    callbacks can be used to monitor the solution, plot iterations, print diagnostic messages, etc. 
+    IP_SSATaucTaoTikhonovProblemLCLListeners are ususally used via a reference counted pointer 
+    IP_SSATaucTaoTikhonovProblemLCLListeners::Ptr to allow for good memory management when Listeners are 
+    created as subclasses of python classes.*/
+class IP_SSATaucTaoTikhonovProblemLCLListener {
 public:
-  typedef std::tr1::shared_ptr<IP_SSATaucTikhonovProblemLCLListener> Ptr;
+  typedef std::tr1::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;
   
-  IP_SSATaucTikhonovProblemLCLListener() {}
-  virtual ~IP_SSATaucTikhonovProblemLCLListener() {}
+  IP_SSATaucTaoTikhonovProblemLCLListener() {}
+  virtual ~IP_SSATaucTaoTikhonovProblemLCLListener() {}
   
+  //!Callback called after each iteration.
   virtual PetscErrorCode 
-  iteration( IP_SSATaucTikhonovProblemLCL &problem,
-             PetscReal eta, PetscInt iter,
-             PetscReal objectiveValue, PetscReal designValue,
-             DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
-             StateVec &u,   StateVec &diff_u,  StateVec &grad_u,
-           StateVec &constraints) = 0;
+  iteration( IP_SSATaucTaoTikhonovProblemLCL &problem,  ///< The class calling the callback.
+             PetscReal eta,                             ///< Tikhonov penalty parameter.
+             PetscInt iter,                             ///< Current iteration count.
+             PetscReal objectiveValue,                  ///< Value of the state functional.
+             PetscReal designValue,                     ///< Value of the design functiona.
+             DesignVec &d,                              ///< Value of the design variable.
+             DesignVec &diff_d,                         ///< Diference between design variable and a-prior estimate.
+             DesignVec &grad_d,                         ///< Gradient of design functional
+             StateVec &u,                               ///< Value of state variable
+             StateVec &diff_u,                          ///< Difference between state variable and desired value.
+             StateVec &grad_u,                          ///< Gradient of state functional
+             StateVec &constraints                      ///< Residual for state variable being a solution of the %SSA
+             ) = 0;
 };
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y);
-PetscErrorCode IP_SSATaucTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y);
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y);
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y);
 
-class IP_SSATaucTikhonovProblemLCL {
+//! \brief Defines a Tikhonov minimization problem of determining \f$\tau_c\f$ from %SSA velocities to be solved with a TaoBasicSolver using the tao_lcl algorithm.
+/*! Experimental and not particularly functional. */
+class IP_SSATaucTaoTikhonovProblemLCL {
 public:
   
   typedef IceModelVec2S  DesignVec;
   typedef IceModelVec2V  StateVec;
 
-  typedef IP_SSATaucTikhonovProblemLCLListener Listener;
+  typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
   
-  IP_SSATaucTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta,
+  IP_SSATaucTaoTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta,
                       IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
 
-  virtual ~IP_SSATaucTikhonovProblemLCL();
+  virtual ~IP_SSATaucTaoTikhonovProblemLCL();
 
   virtual void addListener(Listener::Ptr listener) {
     m_listeners.push_back(listener);

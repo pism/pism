@@ -17,9 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#include "IP_SSATaucTikhonovProblem.hh"
+#include "IP_SSATaucTaoTikhonovProblem.hh"
 
-PetscErrorCode IP_SSATaucTikhonovProblem::connect(TaoSolver tao) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblem::connect(TaoSolver tao) {
   PetscErrorCode ierr;
 
   ierr = IPTaoTikhonovProblem<IP_SSATaucForwardProblem>::connect(tao); CHKERRQ(ierr);
@@ -27,13 +27,13 @@ PetscErrorCode IP_SSATaucTikhonovProblem::connect(TaoSolver tao) {
   const char *type;
   ierr = TaoGetType(tao,&type); CHKERRQ(ierr);
   if( strcmp(type,"blmvm") == 0 ) {
-    ierr = TaoGetVariableBoundsCallback<IP_SSATaucTikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);    
+    ierr = TaoGetVariableBoundsCallback<IP_SSATaucTaoTikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);    
   }  
   return 0;
 }
 
 
-PetscErrorCode IP_SSATaucTikhonovProblem::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblem::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
   PetscErrorCode ierr;
   PetscReal zeta_min, zeta_max, tauc_min, tauc_max;
 

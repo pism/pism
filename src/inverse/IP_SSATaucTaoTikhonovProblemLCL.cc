@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IP_SSATaucTikhonovProblemLCL.hh"
+#include "IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "pism_petsc32_compat.hh"
 #include <assert.h>
 
@@ -26,8 +26,8 @@ typedef IceModelVec2V  StateVec;
 // typedef TikhonovProblemListener<InverseProblem> Listener;
 // typedef typename Listener::Ptr ListenerPtr;
 
-IP_SSATaucTikhonovProblemLCL::IP_SSATaucTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward,
-IP_SSATaucTikhonovProblemLCL::DesignVec &d0, IP_SSATaucTikhonovProblemLCL::StateVec &u_obs, PetscReal eta,
+IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward,
+IP_SSATaucTaoTikhonovProblemLCL::DesignVec &d0, IP_SSATaucTaoTikhonovProblemLCL::StateVec &u_obs, PetscReal eta,
 IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
 m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
@@ -37,7 +37,7 @@ m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
   assert(ierr==0);
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::construct() {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
   PetscErrorCode ierr;
 
   IceGrid &grid = *m_d0.get_grid();
@@ -76,21 +76,21 @@ PetscErrorCode IP_SSATaucTikhonovProblemLCL::construct() {
   PetscInt nLocalNodes  = grid.xm*grid.ym;
   PetscInt nGlobalNodes = grid.Mx*grid.My;
   ierr = MatCreateShell(grid.com,2*nLocalNodes,nLocalNodes,2*nGlobalNodes,nGlobalNodes,this,&m_Jdesign); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(m_Jdesign,MATOP_MULT,(void(*)(void))IP_SSATaucTikhonovProblemLCL_applyJacobianDesign); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(m_Jdesign,MATOP_MULT_TRANSPOSE,(void(*)(void))IP_SSATaucTikhonovProblemLCL_applyJacobianDesignTranspose); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(m_Jdesign,MATOP_MULT,(void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(m_Jdesign,MATOP_MULT_TRANSPOSE,(void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose); CHKERRQ(ierr);
 
   m_x.reset(new IPTwoBlockVec(m_dGlobal.get_vec(),m_uGlobal.get_vec()));
   return 0;
 }
 
-IP_SSATaucTikhonovProblemLCL::~IP_SSATaucTikhonovProblemLCL() 
+IP_SSATaucTaoTikhonovProblemLCL::~IP_SSATaucTaoTikhonovProblemLCL() 
 {
   PetscErrorCode ierr;
   ierr = this->destruct();
   assert(ierr==0);
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::destruct() {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::destruct() {
   PetscErrorCode ierr;
   ierr = MatDestroy(&m_Jstate); CHKERRQ(ierr);
   ierr = MatDestroy(&m_Jdesign); CHKERRQ(ierr);
@@ -98,13 +98,13 @@ PetscErrorCode IP_SSATaucTikhonovProblemLCL::destruct() {
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::setInitialGuess( DesignVec &d0) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess( DesignVec &d0) {
   PetscErrorCode ierr;
   ierr = m_dGlobal.copy_from(d0); CHKERRQ(ierr);
   return 0;
 }
 
-IP_SSATaucTikhonovProblemLCL::StateVec &IP_SSATaucTikhonovProblemLCL::stateSolution() {
+IP_SSATaucTaoTikhonovProblemLCL::StateVec &IP_SSATaucTaoTikhonovProblemLCL::stateSolution() {
   // PetscErrorCode ierr;
   
   // FIXME!
@@ -114,21 +114,21 @@ IP_SSATaucTikhonovProblemLCL::StateVec &IP_SSATaucTikhonovProblemLCL::stateSolut
   return m_uGlobal;
 }
 
-IP_SSATaucTikhonovProblemLCL::DesignVec &IP_SSATaucTikhonovProblemLCL::designSolution() {
+IP_SSATaucTaoTikhonovProblemLCL::DesignVec &IP_SSATaucTaoTikhonovProblemLCL::designSolution() {
   m_x->scatterToA(m_d.get_vec()); //CHKERRQ(ierr);
   return m_d;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::connect(TaoSolver tao) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::connect(TaoSolver tao) {
   PetscErrorCode ierr;
   ierr = TaoSetStateDesignIS(tao, m_x->blockBIndexSet() /*state*/ , m_x->blockAIndexSet() /*design*/); CHKERRQ(ierr);
-  ierr = TaoObjGradCallback<IP_SSATaucTikhonovProblemLCL,&IP_SSATaucTikhonovProblemLCL::evaluateObjectiveAndGradient>::connect(tao,*this); CHKERRQ(ierr);
-  ierr = TaoLCLCallbacks<IP_SSATaucTikhonovProblemLCL>::connect(tao,*this,m_constraints.get_vec(),m_Jstate,m_Jdesign); CHKERRQ(ierr);
-  ierr = TaoMonitorCallback<IP_SSATaucTikhonovProblemLCL>::connect(tao,*this); CHKERRQ(ierr);
+  ierr = TaoObjGradCallback<IP_SSATaucTaoTikhonovProblemLCL,&IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient>::connect(tao,*this); CHKERRQ(ierr);
+  ierr = TaoLCLCallbacks<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao,*this,m_constraints.get_vec(),m_Jstate,m_Jdesign); CHKERRQ(ierr);
+  ierr = TaoMonitorCallback<IP_SSATaucTaoTikhonovProblemLCL>::connect(tao,*this); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::monitorTao(TaoSolver tao) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(TaoSolver tao) {
   PetscErrorCode ierr;
   
   PetscInt its;
@@ -146,7 +146,7 @@ PetscErrorCode IP_SSATaucTikhonovProblemLCL::monitorTao(TaoSolver tao) {
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::evaluateObjectiveAndGradient(TaoSolver /*tao*/, Vec x, PetscReal *value, Vec gradient) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(TaoSolver /*tao*/, Vec x, PetscReal *value, Vec gradient) {
   PetscErrorCode ierr;
 
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
@@ -175,7 +175,7 @@ PetscErrorCode IP_SSATaucTikhonovProblemLCL::evaluateObjectiveAndGradient(TaoSol
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::formInitialGuess(Vec *x,TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x,TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
   ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
   ierr = m_ssaforward.linearize_at(m_d,reason); CHKERRQ(ierr);
@@ -196,7 +196,7 @@ PetscErrorCode IP_SSATaucTikhonovProblemLCL::formInitialGuess(Vec *x,Termination
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::evaluateConstraints(TaoSolver, Vec x, Vec r) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(TaoSolver, Vec x, Vec r) {
   PetscErrorCode ierr;
 
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
@@ -214,7 +214,7 @@ PetscErrorCode IP_SSATaucTikhonovProblemLCL::evaluateConstraints(TaoSolver, Vec 
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::evaluateConstraintsJacobianState(TaoSolver, Vec x, Mat *Jstate, Mat * /*Jpc*/, Mat * /*Jinv*/, MatStructure *s) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState(TaoSolver, Vec x, Mat *Jstate, Mat * /*Jpc*/, Mat * /*Jinv*/, MatStructure *s) {
   PetscErrorCode ierr;
 
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
@@ -232,7 +232,7 @@ PetscErrorCode IP_SSATaucTikhonovProblemLCL::evaluateConstraintsJacobianState(Ta
   return 0;
 }
 
-PetscErrorCode  IP_SSATaucTikhonovProblemLCL::evaluateConstraintsJacobianDesign(TaoSolver, Vec x, Mat* /*Jdesign*/) {
+PetscErrorCode  IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(TaoSolver, Vec x, Mat* /*Jdesign*/) {
   PetscErrorCode ierr;
   // I'm not sure if the following are necessary (i.e. will the copies that happen
   // in evaluateObjectiveAndGradient be sufficient) but we'll do them here
@@ -245,7 +245,7 @@ PetscErrorCode  IP_SSATaucTikhonovProblemLCL::evaluateConstraintsJacobianDesign(
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec x, Vec y) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec x, Vec y) {
   PetscErrorCode ierr;
   ierr = m_dzeta.copy_from(x); CHKERRQ(ierr);
   
@@ -258,7 +258,7 @@ PetscErrorCode IP_SSATaucTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec 
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL::applyConstraintsJacobianDesignTranspose(Vec x, Vec y) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTranspose(Vec x, Vec y) {
   PetscErrorCode ierr;
 
   ierr = m_du.copy_from(x); CHKERRQ(ierr);
@@ -272,18 +272,18 @@ PetscErrorCode IP_SSATaucTikhonovProblemLCL::applyConstraintsJacobianDesignTrans
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y) {
   PetscErrorCode ierr;
-  IP_SSATaucTikhonovProblemLCL *ctx;
+  IP_SSATaucTaoTikhonovProblemLCL *ctx;
   ierr = MatShellGetContext(A,&ctx); CHKERRQ(ierr);
   ierr = ctx->applyConstraintsJacobianDesign(x,y); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y) {
   PetscErrorCode ierr;
-  IP_SSATaucTikhonovProblemLCL *ctx;
+  IP_SSATaucTaoTikhonovProblemLCL *ctx;
   ierr = MatShellGetContext(A,&ctx); CHKERRQ(ierr);
   ierr = ctx->applyConstraintsJacobianDesignTranspose(x,y); CHKERRQ(ierr);
 
