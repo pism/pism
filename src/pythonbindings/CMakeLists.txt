@@ -105,13 +105,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       COMPONENT RuntimeLibraries
     )
 
-    install(DIRECTORY
-      ${CMAKE_SOURCE_DIR}/site-packages/PISM
-      DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}
-      USE_SOURCE_PERMISSIONS
-      COMPONENT RuntimeLibraries
-      PATTERN ".svn" EXCLUDE
-    )
 
 # The python code snippet below returns 1 if python can
 # import a PISM and if the directory of said PISM matches

@@ -45,8 +45,8 @@
 #include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 #if (PISM_USE_TAO==1)
 #include "inverse/TaoUtil.hh"
-#include "inverse/IP_SSATaucTikhonovProblem.hh"
-#include "inverse/IP_SSATaucTikhonovProblemLCL.hh"
+#include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
+#include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
 #endif
 #include "stressbalance/ssa/SSAFD.hh"
 #include "pism_python.hh"
@@ -592,20 +592,20 @@ namespace std {
 %include "inverse/TaoUtil.hh"
 
 %include "inverse/IPTaoTikhonovProblem.hh"
-# Instantiate the base class for IP_SSATaucTikhonovProblem
+# Instantiate the base class for IP_SSATaucTaoTikhonovProblem
 # so that SWIG will implement the base class methods.
-%template(IP_SSATaucTikhonovProblemBaseClass)  IPTaoTikhonovProblem<IP_SSATaucForwardProblem>;
+%template(IP_SSATaucTaoTikhonovProblemBaseClass)  IPTaoTikhonovProblem<IP_SSATaucForwardProblem>;
 
 %shared_ptr(IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>)
 %feature("director") IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
-%template(IP_SSATaucTikhonovProblemListener)  IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
-%include "inverse/IP_SSATaucTikhonovProblem.hh"
-%template(IP_SSATaucTikhonovSolver) TaoBasicSolver<IP_SSATaucTikhonovProblem>;
+%template(IP_SSATaucTaoTikhonovProblemListener)  IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
+%include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
+%template(IP_SSATaucTaoTikhonovSolver) TaoBasicSolver<IP_SSATaucTaoTikhonovProblem>;
 
-%shared_ptr(IP_SSATaucTikhonovProblemLCLListener)
-%feature("director") IP_SSATaucTikhonovProblemLCLListener;
-%include "inverse/IP_SSATaucTikhonovProblemLCL.hh"
-%template(IP_SSATaucTikhonovProblemLCLSolver) TaoBasicSolver< IP_SSATaucTikhonovProblemLCL >;
+%shared_ptr(IP_SSATaucTaoTikhonovProblemLCLListener)
+%feature("director") IP_SSATaucTaoTikhonovProblemLCLListener;
+%include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
+%template(IP_SSATaucTaoTikhonovProblemLCLSolver) TaoBasicSolver< IP_SSATaucTaoTikhonovProblemLCL >;
 
 #endif
 
