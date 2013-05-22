@@ -52,6 +52,7 @@
 #include "PISMIcebergRemover.hh"
 #include "PISMOceanKill.hh"
 #include "PISMCalvingAtThickness.hh"
+#include "PISMEigenCalving.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -1034,6 +1035,17 @@ PetscErrorCode IceModel::init_calving() {
     ierr = thickness_threshold_calving->init(variables); CHKERRQ(ierr);
   }
 
+
+  if (config.get_flag("do_eigen_calving")) {
+
+    if (eigen_calving == NULL) {
+      eigen_calving = new PISMEigenCalving(grid, config,
+                                           stress_balance);
+    }
+
+    ierr = eigen_calving->init(variables); CHKERRQ(ierr);
+  }
+  
   return 0;
 }
 

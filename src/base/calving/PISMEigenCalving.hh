@@ -19,6 +19,11 @@
 #ifndef _PISMEIGENCALVING_H_
 #define _PISMEIGENCALVING_H_
 
+#include "iceModelvec.hh"
+#include "PISMComponent.hh"
+
+class PISMStressBalance;
+
 class PISMEigenCalving : public PISMComponent
 {
 public:
@@ -27,20 +32,28 @@ public:
   virtual ~PISMEigenCalving();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(IceModelVec2Int &pism_mask,
+  virtual PetscErrorCode update(PetscReal dt,
+                                IceModelVec2Int &pism_mask,
                                 IceModelVec2S &Href,
                                 IceModelVec2S &ice_thickness);
 
   virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
 
+  // empty methods that we're required to implement:
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO& nc);
 protected:
-
-  IceModelVec2S *Href;
   IceModelVec2 m_strain_rates;
+  IceModelVec2S m_thk_loss;
+  const int m_stencil_width;
+  IceModelVec2Int *m_mask;
+  PISMStressBalance *m_stress_balance;
+  double m_K;
+  bool m_restrict_timestep;
+
+  PetscErrorCode update_strain_rates();
 };
 
 

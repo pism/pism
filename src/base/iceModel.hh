@@ -62,6 +62,7 @@ class PISMTSDiagnostic;
 class PISMIcebergRemover;
 class PISMOceanKill;
 class PISMCalvingAtThickness;
+class PISMEigenCalving;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -211,6 +212,7 @@ protected:
   PISMIcebergRemover *iceberg_remover;
   PISMOceanKill      *ocean_kill_calving;
   PISMCalvingAtThickness *thickness_threshold_calving;
+  PISMEigenCalving *eigen_calving;
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
@@ -265,7 +267,7 @@ protected:
               dt_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
-              dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, dt_from_eigencalving,
+              dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
@@ -307,10 +309,6 @@ protected:
 
   // see iMage.cc
   virtual PetscErrorCode ageStep();
-
-  // see iMcalving.cc
-  virtual PetscErrorCode eigenCalving();
-  virtual PetscErrorCode dt_from_eigenCalving();
 
   // see iMenergy.cc
   virtual PetscErrorCode energyStep();

@@ -74,6 +74,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   iceberg_remover = NULL;
   ocean_kill_calving = NULL;
   thickness_threshold_calving = NULL;
+  eigen_calving = NULL;
 
   executable_short_name = "pism"; // drivers typically override this
 
@@ -167,6 +168,7 @@ IceModel::~IceModel() {
   delete iceberg_remover;
   delete ocean_kill_calving;
   delete thickness_threshold_calving;
+  delete eigen_calving;
 }
 
 
