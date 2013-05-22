@@ -16,12 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef INVSSAFORWARDPROBLEM_HH_4AEVR4Z
-#define INVSSAFORWARDPROBLEM_HH_4AEVR4Z
+#ifndef IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
+#define IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
 
 
 #include "SSAFEM.hh"
-#include "InvTaucParameterization.hh"
+#include "IPTaucParameterization.hh"
 
 //! Implements the forward problem of the map taking \f$\tau_c\f$ to the corresponding solution of the %SSA.
 /*! The class SSAFEM solves the %SSA, and the solution depends on a large number of parameters.  Considering
@@ -29,7 +29,7 @@ all of these to be fixed except for \f$\tau_c\f$, we obtain a map \f$F_{\rm SSA}
 \f$\tau_c\f$ to the corresponding solution \f$u_{\rm SSA}\f$ of the %SSA.  This is a forward problem which
 we would like to invert; given \f$u_{\rm SSA}\f$ determine \f$\tau_c\f$  such that 
 \f$F_{\rm SSA}(\tau_c) = u_{\rm SSA}\f$.  The forward problem actually implemented by 
-InvSSAForwardProblem is a mild variation \f$F_{\rm SSA}\f$.
+IP_SSATaucForwardProblem is a mild variation \f$F_{\rm SSA}\f$.
 
 First, given the constraint \f$\tau_c\ge 0\f$ it can be helpful to parameterize \f$\tau_c\f$ by some other 
 parameter \f$\zeta\f$,
@@ -37,13 +37,13 @@ parameter \f$\zeta\f$,
 \tau_c = g(\zeta),
 \f]
 where the function \f$g\f$ is non-negative.  The function \f$g\f$ is specified by an instance
-of InvTaucParameterization.
+of IPTaucParameterization.
 
 Second, there may be locations where the value of \f$\tau_c\f$ (and hence \f$\zeta\f$) 
 is known a-priori, and should not be adjusted.  Let \f$\pi\f$ be the map that replaces
 the values of \f$\zeta\f$ with known values at these locations.
 
-InvSSAForwardProblem implements the forward problem
+IP_SSATaucForwardProblem implements the forward problem
 \f[
 F(\zeta) = F_{\rm SSA}(g(\pi(\zeta))).
 \f]
@@ -96,7 +96,7 @@ apply \f$DF\f$ to a perturbation \f$d\zeta\f$, use \ref apply_linearization.  Ad
 methods require the transpose of this map; to apply \f$DF^t\f$ to \f$du\f$ use
 \ref apply_linearization_transpose.
 */
-class InvSSAForwardProblem : public SSAFEM
+class IP_SSATaucForwardProblem : public SSAFEM
 {
 public:
 
@@ -104,11 +104,11 @@ public:
   typedef IceModelVec2V StateVec;  ///< The function space for the state variable, \f$u_{\rm SSA}\f$.
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
-  InvSSAForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
-    EnthalpyConverter &e, InvTaucParameterization &tp,
+  IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
+    EnthalpyConverter &e, IPTaucParameterization &tp,
     const NCConfigVariable &c);
 
-  virtual ~InvSSAForwardProblem();
+  virtual ~IP_SSATaucForwardProblem();
 
   //! Selects nodes where \f$\tau_c\f$ (more specifically \f$\zeta\f$) should not be adjusted.
   /*! The paramter \a locations should be set to 1 at each node where \f$\tau_c\f$
@@ -133,7 +133,7 @@ public:
   }
 
   //! Exposes the \f$\tau_c\f$ parameterization being used.
-  virtual InvTaucParameterization & tauc_param() {
+  virtual IPTaucParameterization & tauc_param() {
     return m_tauc_param;
   }
 
@@ -175,7 +175,7 @@ protected:
 
   IceModelVec2Int *m_fixed_tauc_locations;   ///< Locations where \f$\tau_c\f$ should not be adjusted.
 
-  InvTaucParameterization &m_tauc_param;     ///< The function taking \f$\zeta\f$ to \f$\tau_c\f$.
+  IPTaucParameterization &m_tauc_param;     ///< The function taking \f$\zeta\f$ to \f$\tau_c\f$.
 
   IceModelVec2V  m_du_global;                ///< Temporary storage when state vectors need to be used without ghosts.
   IceModelVec2V  m_du_local;                 ///< Temporary storage when state vectors need to be used with ghosts.
@@ -193,4 +193,4 @@ protected:
 };
 
 
-#endif /* end of include guard: INVSSAFORWARDPROBLEM_HH_4AEVR4Z */
+#endif /* end of include guard: IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z */

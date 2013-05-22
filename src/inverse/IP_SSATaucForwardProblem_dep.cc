@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "InvSSAForwardProblem_dep.hh"
+#include "IP_SSATaucForwardProblem_dep.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
@@ -31,7 +31,7 @@
 
 /*! \brief Allocate PETSC structures needed for solving the various linearized
 problems associated with the forward problem. */
-PetscErrorCode InvSSAForwardProblem_dep::allocate_ksp()
+PetscErrorCode IP_SSATaucForwardProblem_dep::allocate_ksp()
 {
   PetscErrorCode ierr;
 
@@ -70,7 +70,7 @@ PetscErrorCode InvSSAForwardProblem_dep::allocate_ksp()
 }
 
 /*! \brief Undoes allocation in allocate_ksp */
-PetscErrorCode InvSSAForwardProblem_dep::deallocate_ksp()
+PetscErrorCode IP_SSATaucForwardProblem_dep::deallocate_ksp()
 {
   PetscErrorCode ierr;
 
@@ -117,7 +117,7 @@ PetscErrorCode InvSSAForwardProblem_dep::deallocate_ksp()
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::allocate_store()
+PetscErrorCode IP_SSATaucForwardProblem_dep::allocate_store()
 {
   // We own an FEElementMap that knows how many finite element
   // elements we need to access. We use it to determine the
@@ -127,14 +127,14 @@ PetscErrorCode InvSSAForwardProblem_dep::allocate_store()
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::deallocate_store(){
+PetscErrorCode IP_SSATaucForwardProblem_dep::deallocate_store(){
   delete [] m_dtauc_dzeta_store;
   return 0;
 }
 
 
 // Initialize the solver, called once by the client before use.
-PetscErrorCode InvSSAForwardProblem_dep::init(PISMVars &vars) {
+PetscErrorCode IP_SSATaucForwardProblem_dep::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = SSAFEM::init(vars); CHKERRQ(ierr);
@@ -150,7 +150,7 @@ PetscErrorCode InvSSAForwardProblem_dep::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::set_initial_velocity_guess(  IceModelVec2V &v )
+PetscErrorCode IP_SSATaucForwardProblem_dep::set_initial_velocity_guess(  IceModelVec2V &v )
 {
   PetscErrorCode ierr;
   ierr = v.copy_to(SSAX); CHKERRQ(ierr);
@@ -158,7 +158,7 @@ PetscErrorCode InvSSAForwardProblem_dep::set_initial_velocity_guess(  IceModelVe
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::set_design(IceModelVec2S &new_zeta )
+PetscErrorCode IP_SSATaucForwardProblem_dep::set_design(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
   PetscInt i,j,q;
@@ -180,7 +180,7 @@ PetscErrorCode InvSSAForwardProblem_dep::set_design(IceModelVec2S &new_zeta )
       for (q=0; q<4; q++) {
         m_tauc_param.toTauc(zetaq[q],&(feS[q].tauc),dtauc_dzeta+q);
         if(std::isnan(feS[q].tauc)) {
-          PetscPrintf(PETSC_COMM_WORLD,"InvSSAForwardProblem_dep::set_design made a NaN: zeta=%g\n",zetaq[q]);
+          PetscPrintf(PETSC_COMM_WORLD,"IP_SSATaucForwardProblem_dep::set_design made a NaN: zeta=%g\n",zetaq[q]);
         }
       }
     }
@@ -216,7 +216,7 @@ int findNextFile(const char *basename)
   return n;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::solveF_core()
+PetscErrorCode IP_SSATaucForwardProblem_dep::solveF_core()
 {
   PetscErrorCode ierr;
 
@@ -303,13 +303,13 @@ PetscErrorCode InvSSAForwardProblem_dep::solveF_core()
 
 
       SETERRQ1(grid.com, 1,
-        "InvSSAForwardProblem_dep solve failed to converge (SNES reason %s).\nSo we're giving up.\n\n", SNESConvergedReasons[reason]);
+        "IP_SSATaucForwardProblem_dep solve failed to converge (SNES reason %s).\nSo we're giving up.\n\n", SNESConvergedReasons[reason]);
 
 
       if(m_epsilon_ssa <= 0.)
       {
         SETERRQ1(grid.com, 1,
-          "InvSSAForwardProblem_dep solve failed to converge (SNES reason %s).\nRegularization parameter epsilon_ssa = %f <=0, so we're giving up.\n\n", SNESConvergedReasons[reason]);
+          "IP_SSATaucForwardProblem_dep solve failed to converge (SNES reason %s).\nRegularization parameter epsilon_ssa = %f <=0, so we're giving up.\n\n", SNESConvergedReasons[reason]);
       }
       else
       {
@@ -331,7 +331,7 @@ PetscErrorCode InvSSAForwardProblem_dep::solveF_core()
 }
 
 /* \brief Solves the nonlinear forward problem taking tauc to SSA velocities. */
-PetscErrorCode InvSSAForwardProblem_dep::solveF(IceModelVec2V &result)
+PetscErrorCode IP_SSATaucForwardProblem_dep::solveF(IceModelVec2V &result)
 {
   PetscErrorCode ierr;
   ierr = solveF_core(); CHKERRQ(ierr);
@@ -341,7 +341,7 @@ PetscErrorCode InvSSAForwardProblem_dep::solveF(IceModelVec2V &result)
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::solveT_FD(IceModelVec2S &dzeta, IceModelVec2V &result) {
+PetscErrorCode IP_SSATaucForwardProblem_dep::solveT_FD(IceModelVec2S &dzeta, IceModelVec2V &result) {
   PetscErrorCode ierr;
   
   PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
@@ -377,7 +377,7 @@ PetscErrorCode InvSSAForwardProblem_dep::solveT_FD(IceModelVec2S &dzeta, IceMode
 
 
 /* \brief Solves the linearized forward problem */
-PetscErrorCode InvSSAForwardProblem_dep::solveT( IceModelVec2S &dtauc, IceModelVec2V &result)
+PetscErrorCode IP_SSATaucForwardProblem_dep::solveT( IceModelVec2S &dtauc, IceModelVec2V &result)
 {
   PetscErrorCode ierr;
   
@@ -419,11 +419,11 @@ PetscErrorCode InvSSAForwardProblem_dep::solveT( IceModelVec2S &dtauc, IceModelV
   ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
   if (reason < 0) {
     SETERRQ1(grid.com, 1,
-      "InvSSAForwardProblem_dep::solveT solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
+      "IP_SSATaucForwardProblem_dep::solveT solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
   }
   else
   {
-    verbPrintf(4,grid.com,"InvSSAForwardProblem_dep::solveT converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"IP_SSATaucForwardProblem_dep::solveT converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
 
   // Extract the solution and communicate.
@@ -434,7 +434,7 @@ PetscErrorCode InvSSAForwardProblem_dep::solveT( IceModelVec2S &dtauc, IceModelV
 }
 
 //! \brief Solves the adjoint of the linearized forward problem.
-PetscErrorCode InvSSAForwardProblem_dep::solveTStar( IceModelVec2V &residual, IceModelVec2S &result)
+PetscErrorCode IP_SSATaucForwardProblem_dep::solveTStar( IceModelVec2V &residual, IceModelVec2S &result)
 {
   KSPConvergedReason  reason;
   PetscErrorCode ierr;
@@ -466,11 +466,11 @@ PetscErrorCode InvSSAForwardProblem_dep::solveTStar( IceModelVec2V &residual, Ic
   ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
   if (reason < 0) {
     SETERRQ1(grid.com, 1,
-      "InvSSAForwardProblem_dep::solveTStarA solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
+      "IP_SSATaucForwardProblem_dep::solveTStarA solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
   }
   else
   {
-    verbPrintf(4,grid.com,"InvSSAForwardProblem_dep::solveTStarA converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"IP_SSATaucForwardProblem_dep::solveTStarA converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
 
   ierr = DMGlobalToLocalBegin(SSADA, m_VecZ2, INSERT_VALUES, m_VecZ);  CHKERRQ(ierr);
@@ -496,10 +496,10 @@ PetscErrorCode InvSSAForwardProblem_dep::solveTStar( IceModelVec2V &residual, Ic
   ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
   if (reason < 0) {
     SETERRQ1(grid.com, 1,
-      "InvSSAForwardProblem_dep::solveTStarB solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
+      "IP_SSATaucForwardProblem_dep::solveTStarB solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
   }
   else  {
-    verbPrintf(4,grid.com,"InvSSAForwardProblem_dep::solveTStarB converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"IP_SSATaucForwardProblem_dep::solveTStarB converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
 
   // Extract the solution and communicate.
@@ -510,7 +510,7 @@ PetscErrorCode InvSSAForwardProblem_dep::solveTStar( IceModelVec2V &residual, Ic
 }
 
 //! \brief Builds the matrix for the linearized forward PDE.
-PetscErrorCode InvSSAForwardProblem_dep::assemble_T_matrix()
+PetscErrorCode IP_SSATaucForwardProblem_dep::assemble_T_matrix()
 {
   PISMVector2 **vel;
   PetscErrorCode ierr;
@@ -524,7 +524,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_T_matrix()
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::assemble_DomainNorm_matrix()
+PetscErrorCode IP_SSATaucForwardProblem_dep::assemble_DomainNorm_matrix()
 {
   // Just L2 matrix for now.
   PetscInt         i,j;
@@ -620,7 +620,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_DomainNorm_matrix()
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::domainIP(Vec a, Vec b, PetscScalar *OUTPUT)
+PetscErrorCode IP_SSATaucForwardProblem_dep::domainIP(Vec a, Vec b, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PetscScalar **A, **B;
@@ -635,7 +635,7 @@ PetscErrorCode InvSSAForwardProblem_dep::domainIP(Vec a, Vec b, PetscScalar *OUT
   ierr = DMDAVecRestoreArray(da2,b,&B); CHKERRQ(ierr);
   return 0;
 }
-PetscErrorCode InvSSAForwardProblem_dep::domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscScalar *OUTPUT)
+PetscErrorCode IP_SSATaucForwardProblem_dep::domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PetscReal **A, **B;
@@ -647,7 +647,7 @@ PetscErrorCode InvSSAForwardProblem_dep::domainIP(IceModelVec2S &a, IceModelVec2
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::rangeIP(Vec a, Vec b, PetscScalar *OUTPUT)
+PetscErrorCode IP_SSATaucForwardProblem_dep::rangeIP(Vec a, Vec b, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PISMVector2 **A, **B;
@@ -659,7 +659,7 @@ PetscErrorCode InvSSAForwardProblem_dep::rangeIP(Vec a, Vec b, PetscScalar *OUTP
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscScalar *OUTPUT)
+PetscErrorCode IP_SSATaucForwardProblem_dep::rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PISMVector2 **A, **B;
@@ -671,7 +671,7 @@ PetscErrorCode InvSSAForwardProblem_dep::rangeIP(IceModelVec2V &a, IceModelVec2V
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT)
+PetscErrorCode IP_SSATaucForwardProblem_dep::domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT)
 {
 
   // Just L2 matrix for now.
@@ -749,7 +749,7 @@ PetscErrorCode InvSSAForwardProblem_dep::domainIP_core(PetscReal **A, PetscReal*
 }
 
 /*
-PetscErrorCode InvSSAForwardProblem_dep::domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT)
+PetscErrorCode IP_SSATaucForwardProblem_dep::domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT)
 {
   PetscErrorCode ierr;
   PetscReal **zeta_fixed_a;
@@ -783,7 +783,7 @@ PetscErrorCode InvSSAForwardProblem_dep::domainIP_core(PetscReal **A, PetscReal*
 }
 */
 
-PetscErrorCode InvSSAForwardProblem_dep::rangeIP_core(PISMVector2 **A, PISMVector2**B, PetscScalar *OUTPUT)
+PetscErrorCode IP_SSATaucForwardProblem_dep::rangeIP_core(PISMVector2 **A, PISMVector2**B, PetscScalar *OUTPUT)
 {
   PetscInt         i,j;
   PetscErrorCode   ierr;
@@ -821,7 +821,7 @@ PetscErrorCode InvSSAForwardProblem_dep::rangeIP_core(PISMVector2 **A, PISMVecto
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::compute_range_l2_area(PetscScalar *OUTPUT)
+PetscErrorCode IP_SSATaucForwardProblem_dep::compute_range_l2_area(PetscScalar *OUTPUT)
 {
   PetscInt         i,j;
   PetscErrorCode   ierr;
@@ -856,7 +856,7 @@ PetscErrorCode InvSSAForwardProblem_dep::compute_range_l2_area(PetscScalar *OUTP
 }
 
 
-PetscErrorCode InvSSAForwardProblem_dep::assemble_T_rhs( PISMVector2 **gvel, PetscReal **gdtauc, PISMVector2 **grhs)
+PetscErrorCode IP_SSATaucForwardProblem_dep::assemble_T_rhs( PISMVector2 **gvel, PetscReal **gdtauc, PISMVector2 **grhs)
 {
   PetscInt         i,j,k,q;
   PetscErrorCode   ierr;
@@ -972,7 +972,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_T_rhs( PISMVector2 **gvel, Pet
   return 0;
 }
 
-PetscErrorCode InvSSAForwardProblem_dep::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2 **RHS)
+PetscErrorCode IP_SSATaucForwardProblem_dep::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2 **RHS)
 {
   PetscInt         i,j;
   PetscErrorCode   ierr;
@@ -1039,7 +1039,7 @@ PetscErrorCode InvSSAForwardProblem_dep::assemble_TStarA_rhs( PISMVector2 **R, P
 }
 
 
-PetscErrorCode InvSSAForwardProblem_dep::assemble_TStarB_rhs( PISMVector2 **Z,
+PetscErrorCode IP_SSATaucForwardProblem_dep::assemble_TStarB_rhs( PISMVector2 **Z,
                                                     PISMVector2 **U,
                                                     PetscScalar **RHS)
 {

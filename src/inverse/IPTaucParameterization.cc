@@ -16,20 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "InvTaucParameterization.hh"
+#include "IPTaucParameterization.hh"
 #include "pism_options.hh"
 #include <cmath>
 
-InvTaucParamIdent g_InvTaucParamIdent;
-InvTaucParamSquare g_InvTaucParamSquare;
-InvTaucParamExp g_InvTaucParamExp;
+IPTaucParamIdent g_IPTaucParamIdent;
+IPTaucParamSquare g_IPTaucParamSquare;
+IPTaucParamExp g_IPTaucParamExp;
 
-PetscErrorCode InvTaucParameterization::init( const NCConfigVariable & config ) { 
+PetscErrorCode IPTaucParameterization::init( const NCConfigVariable & config ) { 
   m_tauc_scale = config.get("tauc_param_tauc_scale");
   return 0;
 }
 
-PetscErrorCode InvTaucParameterization::convertToTauc( IceModelVec2S &zeta, IceModelVec2S &tauc, bool communicate ) {
+PetscErrorCode IPTaucParameterization::convertToTauc( IceModelVec2S &zeta, IceModelVec2S &tauc, bool communicate ) {
   PetscReal **zeta_a, **tauc_a;
   PetscErrorCode ierr;
   
@@ -52,7 +52,7 @@ PetscErrorCode InvTaucParameterization::convertToTauc( IceModelVec2S &zeta, IceM
   return 0;
 }
 
-PetscErrorCode InvTaucParameterization::convertFromTauc( IceModelVec2S &tauc, IceModelVec2S &zeta, bool communicate ) {
+PetscErrorCode IPTaucParameterization::convertFromTauc( IceModelVec2S &tauc, IceModelVec2S &zeta, bool communicate ) {
   PetscReal **zeta_a, **tauc_a;
   PetscErrorCode ierr;
   ierr = zeta.get_array(zeta_a); CHKERRQ(ierr);
@@ -74,7 +74,7 @@ PetscErrorCode InvTaucParameterization::convertFromTauc( IceModelVec2S &tauc, Ic
   return 0;
 }
 
-PetscErrorCode InvTaucParamIdent::toTauc( PetscReal p, PetscReal *value, 
+PetscErrorCode IPTaucParamIdent::toTauc( PetscReal p, PetscReal *value, 
                                           PetscReal *derivative)
 {
   if(value != NULL) *value = m_tauc_scale*p;
@@ -82,14 +82,14 @@ PetscErrorCode InvTaucParamIdent::toTauc( PetscReal p, PetscReal *value,
   return 0;
 }
 
-PetscErrorCode InvTaucParamIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
+PetscErrorCode IPTaucParamIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
   *OUTPUT = tauc/m_tauc_scale;
   return 0;
 }
 
 
-PetscErrorCode InvTaucParamSquare::toTauc( PetscReal p, PetscReal *value, 
+PetscErrorCode IPTaucParamSquare::toTauc( PetscReal p, PetscReal *value, 
                                            PetscReal *derivative)
 {
   if(value != NULL) *value = m_tauc_scale*p*p;
@@ -97,7 +97,7 @@ PetscErrorCode InvTaucParamSquare::toTauc( PetscReal p, PetscReal *value,
   return 0;
 }
 
-PetscErrorCode InvTaucParamSquare::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
+PetscErrorCode IPTaucParamSquare::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
   if(tauc<0) {
     tauc = 0;
@@ -106,14 +106,14 @@ PetscErrorCode InvTaucParamSquare::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
   return 0;
 }
 
-PetscErrorCode InvTaucParamExp::init( const NCConfigVariable &config ) { 
+PetscErrorCode IPTaucParamExp::init( const NCConfigVariable &config ) { 
   PetscErrorCode ierr;
-  ierr = InvTaucParameterization::init(config); CHKERRQ(ierr);
+  ierr = IPTaucParameterization::init(config); CHKERRQ(ierr);
   m_tauc_eps = config.get("tauc_param_tauc_eps");
   return 0;
 }
 
-PetscErrorCode InvTaucParamExp::toTauc( PetscReal p, PetscReal *value, 
+PetscErrorCode IPTaucParamExp::toTauc( PetscReal p, PetscReal *value, 
                                            PetscReal *derivative)
 {
   if(value != NULL) {
@@ -124,7 +124,7 @@ PetscErrorCode InvTaucParamExp::toTauc( PetscReal p, PetscReal *value,
   return 0;
 }
 
-PetscErrorCode InvTaucParamExp::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
+PetscErrorCode IPTaucParamExp::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
   if(tauc < m_tauc_eps)
   {
@@ -135,9 +135,9 @@ PetscErrorCode InvTaucParamExp::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
   return 0;
 }
 
-PetscErrorCode InvTaucParamTruncatedIdent::init( const NCConfigVariable &config ) {
+PetscErrorCode IPTaucParamTruncatedIdent::init( const NCConfigVariable &config ) {
   PetscErrorCode ierr;
-  ierr = InvTaucParameterization::init(config); CHKERRQ(ierr);
+  ierr = IPTaucParameterization::init(config); CHKERRQ(ierr);
   
   PetscReal tauc0 = config.get("tauc_param_trunc_tauc0"); 
   m_tauc0_sq = tauc0*tauc0/(m_tauc_scale*m_tauc_scale);
@@ -147,7 +147,7 @@ PetscErrorCode InvTaucParamTruncatedIdent::init( const NCConfigVariable &config 
   return 0;
 }
 
-PetscErrorCode InvTaucParamTruncatedIdent::toTauc( PetscReal p, 
+PetscErrorCode IPTaucParamTruncatedIdent::toTauc( PetscReal p, 
   PetscReal *value, PetscReal *derivative)
 {
   PetscReal alpha = sqrt(p*p+4*m_tauc0_sq);
@@ -156,7 +156,7 @@ PetscErrorCode InvTaucParamTruncatedIdent::toTauc( PetscReal p,
   return 0;
 }
 
-PetscErrorCode InvTaucParamTruncatedIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
+PetscErrorCode IPTaucParamTruncatedIdent::fromTauc( PetscReal tauc, PetscReal *OUTPUT)
 {
   if(tauc < m_tauc_eps)
   {

@@ -16,15 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef TWOBLOCKVEC_HH_51CJ6YY0
-#define TWOBLOCKVEC_HH_51CJ6YY0
+#ifndef IPTWOBLOCKVEC_HH_51CJ6YY0
+#define IPTWOBLOCKVEC_HH_51CJ6YY0
 
 #include <petsc.h>
 
-class TwoBlockVec {
+class IPTwoBlockVec {
 public:
-  TwoBlockVec(Vec a, Vec b);
-  ~TwoBlockVec();
+  IPTwoBlockVec(Vec a, Vec b);
+  ~IPTwoBlockVec();
 
   IS blockAIndexSet();
   IS blockBIndexSet();
@@ -64,4 +64,4 @@ protected:
   VecScatter m_scatter_b;
 };
 
-#endif /* end of include guard: TWOBLOCKVEC_HH_51CJ6YY0 */
+#endif /* end of include guard: IPTWOBLOCKVEC_HH_51CJ6YY0 */

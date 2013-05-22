@@ -16,30 +16,30 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef INVSSATIKHONOVLCL_HH_39UGM4S2
-#define INVSSATIKHONOVLCL_HH_39UGM4S2
+#ifndef IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
+#define IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
 
 
 #include "TaoUtil.hh"
-#include "TwoBlockVec.hh"
+#include "IPTwoBlockVec.hh"
 #include <petsc.h>
 #include <tr1/memory>
 #include "iceModelVec.hh"
-#include "InvSSAForwardProblem.hh"
+#include "IP_SSATaucForwardProblem.hh"
 #include "functional/Functional.hh"
 
-class InvSSATikhonovLCL;
-class InvSSATikhonovLCLListener {
+class IP_SSATaucTikhonovProblemLCL;
+class IP_SSATaucTikhonovProblemLCLListener {
 public:
-  typedef std::tr1::shared_ptr<InvSSATikhonovLCLListener> Ptr;
+  typedef std::tr1::shared_ptr<IP_SSATaucTikhonovProblemLCLListener> Ptr;
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;
   
-  InvSSATikhonovLCLListener() {}
-  virtual ~InvSSATikhonovLCLListener() {}
+  IP_SSATaucTikhonovProblemLCLListener() {}
+  virtual ~IP_SSATaucTikhonovProblemLCLListener() {}
   
   virtual PetscErrorCode 
-  iteration( InvSSATikhonovLCL &problem,
+  iteration( IP_SSATaucTikhonovProblemLCL &problem,
              PetscReal eta, PetscInt iter,
              PetscReal objectiveValue, PetscReal designValue,
              DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
@@ -47,21 +47,21 @@ public:
            StateVec &constraints) = 0;
 };
 
-PetscErrorCode InvSSATikhonovLCL_applyJacobianDesign(Mat A, Vec x, Vec y);
-PetscErrorCode InvSSATikhonovLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y);
+PetscErrorCode IP_SSATaucTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y);
+PetscErrorCode IP_SSATaucTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y);
 
-class InvSSATikhonovLCL {
+class IP_SSATaucTikhonovProblemLCL {
 public:
   
   typedef IceModelVec2S  DesignVec;
   typedef IceModelVec2V  StateVec;
 
-  typedef InvSSATikhonovLCLListener Listener;
+  typedef IP_SSATaucTikhonovProblemLCLListener Listener;
   
-  InvSSATikhonovLCL( InvSSAForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta,
+  IP_SSATaucTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta,
                       Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional);
 
-  virtual ~InvSSATikhonovLCL();
+  virtual ~IP_SSATaucTikhonovProblemLCL();
 
   virtual void addListener(Listener::Ptr listener) {
     m_listeners.push_back(listener);
@@ -94,9 +94,9 @@ protected:
   virtual PetscErrorCode construct();
   virtual PetscErrorCode destruct();
 
-  InvSSAForwardProblem &m_ssaforward;
+  IP_SSATaucForwardProblem &m_ssaforward;
 
-  std::auto_ptr<TwoBlockVec> m_x;
+  std::auto_ptr<IPTwoBlockVec> m_x;
 
   DesignVec m_dGlobal;
   DesignVec m_d;
@@ -135,4 +135,4 @@ protected:
 };
 
 
-#endif /* end of include guard: INVSSATIKHONOVLCL_HH_39UGM4S2 */
+#endif /* end of include guard: IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2 */

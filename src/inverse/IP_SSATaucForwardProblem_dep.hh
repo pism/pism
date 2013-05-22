@@ -20,7 +20,7 @@
 #define _INVSSAFORWARDPROBLEM_H_
 
 #include "SSAFEM.hh"
-#include "InvTaucParameterization.hh"
+#include "IPTaucParameterization.hh"
 
 //! \file 
 //! \brief Class for implementing the hard parts of a 'siple' 
@@ -32,13 +32,13 @@ is, and the inner products.
 */
 
 //! Forward problem for the map from yeild stress to velocities in the SSA
-class InvSSAForwardProblem_dep : public SSAFEM
+class IP_SSATaucForwardProblem_dep : public SSAFEM
 {
 
 public:
 
-  InvSSAForwardProblem_dep(IceGrid &g, IceBasalResistancePlasticLaw &b,
-    EnthalpyConverter &e, InvTaucParameterization &tp,
+  IP_SSATaucForwardProblem_dep(IceGrid &g, IceBasalResistancePlasticLaw &b,
+    EnthalpyConverter &e, IPTaucParameterization &tp,
                  const NCConfigVariable &c)
            : SSAFEM(g,b,e,c),
              m_KSP(0), m_KSP_B(0), m_MatA(0), m_MatB(0),
@@ -54,18 +54,18 @@ public:
   {
     PetscErrorCode ierr = allocate_ksp();
     if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: InvSSAForwardProblem_dep allocation failed.\n");
+      PetscPrintf(grid.com, "FATAL ERROR: IP_SSATaucForwardProblem_dep allocation failed.\n");
       PISMEnd();
     }
     // m_zeta.create(grid,"zeta",kHasGhosts,2);
     ierr = allocate_store();
     if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: InvSSAForwardProblem_dep allocation failed.\n");
+      PetscPrintf(grid.com, "FATAL ERROR: IP_SSATaucForwardProblem_dep allocation failed.\n");
       PISMEnd();
     }
   };
 
-  virtual ~InvSSAForwardProblem_dep()
+  virtual ~IP_SSATaucForwardProblem_dep()
   {
     deallocate_store();
     deallocate_ksp();
@@ -154,7 +154,7 @@ protected:
 
   PetscReal m_range_l2_area;
 
-  InvTaucParameterization &m_tauc_param;
+  IPTaucParameterization &m_tauc_param;
 
   bool m_reassemble_T_matrix_needed, m_forward_F_needed;
 };

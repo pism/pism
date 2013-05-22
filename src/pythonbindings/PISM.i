@@ -31,9 +31,9 @@
 #include "TerminationReason.hh"
 #include "exactTestsIJ.h"
 #include "stressbalance/ssa/SSAFEM.hh"
-#include "inverse/InvSSAForwardProblem.hh"
-#include "inverse/InvSSAForwardProblem_dep.hh"
-#include "inverse/InvTaucParameterization.hh"
+#include "inverse/IP_SSATaucForwardProblem.hh"
+#include "inverse/IP_SSATaucForwardProblem_dep.hh"
+#include "inverse/IPTaucParameterization.hh"
 #include "inverse/functional/Functional.hh"
 #include "inverse/functional/L2NormFunctional.hh"
 #include "inverse/functional/H1NormFunctional.hh"
@@ -42,11 +42,11 @@
 #include "inverse/functional/MeanSquareFunctional.hh"
 #include "inverse/functional/LogRelativeFunctional.hh"
 #include "inverse/functional/LogRatioFunctional.hh"
-#include "inverse/InvSSATikhonovGN.hh"
+#include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 #if (PISM_USE_TAO==1)
 #include "inverse/TaoUtil.hh"
-#include "inverse/SSATaucTikhonovProblem.hh"
-#include "inverse/InvSSATikhonovLCL.hh"
+#include "inverse/IP_SSATaucTikhonovProblem.hh"
+#include "inverse/IP_SSATaucTikhonovProblemLCL.hh"
 #endif
 #include "stressbalance/ssa/SSAFD.hh"
 #include "pism_python.hh"
@@ -581,31 +581,31 @@ namespace std {
 %include "inverse/functional/MeanSquareFunctional.hh"
 %include "inverse/functional/LogRatioFunctional.hh"
 %include "inverse/functional/LogRelativeFunctional.hh"
-%include "inverse/InvTaucParameterization.hh"
-%include "inverse/InvSSAForwardProblem.hh"
-%include "inverse/InvSSAForwardProblem_dep.hh"
-%include "inverse/InvSSATikhonovGN.hh"
+%include "inverse/IPTaucParameterization.hh"
+%include "inverse/IP_SSATaucForwardProblem.hh"
+%include "inverse/IP_SSATaucForwardProblem_dep.hh"
+%include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 
 #if (PISM_USE_TAO==1)
 %ignore TaoConvergedReasons;
 %shared_ptr(TAOTerminationReason)
 %include "inverse/TaoUtil.hh"
 
-%include "inverse/TaoTikhonovProblem.hh"
-# Instantiate the base class for SSATaucTikhonovProblem
+%include "inverse/IPTaoTikhonovProblem.hh"
+# Instantiate the base class for IP_SSATaucTikhonovProblem
 # so that SWIG will implement the base class methods.
-%template(SSATaucTikhonovProblemBaseClass)  TaoTikhonovProblem<InvSSAForwardProblem>;
+%template(IP_SSATaucTikhonovProblemBaseClass)  IPTaoTikhonovProblem<IP_SSATaucForwardProblem>;
 
-%shared_ptr(TaoTikhonovProblemListener<InvSSAForwardProblem>)
-%feature("director") TaoTikhonovProblemListener<InvSSAForwardProblem>;
-%template(SSATaucTikhonovProblemListener)  TaoTikhonovProblemListener<InvSSAForwardProblem>;
-%include "inverse/SSATaucTikhonovProblem.hh"
-%template(SSATaucTikhonovSolver) TaoBasicSolver<SSATaucTikhonovProblem>;
+%shared_ptr(IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>)
+%feature("director") IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
+%template(IP_SSATaucTikhonovProblemListener)  IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
+%include "inverse/IP_SSATaucTikhonovProblem.hh"
+%template(IP_SSATaucTikhonovSolver) TaoBasicSolver<IP_SSATaucTikhonovProblem>;
 
-%shared_ptr(InvSSATikhonovLCLListener)
-%feature("director") InvSSATikhonovLCLListener;
-%include "inverse/InvSSATikhonovLCL.hh"
-%template(InvSSATikhonovLCLSolver) TaoBasicSolver< InvSSATikhonovLCL >;
+%shared_ptr(IP_SSATaucTikhonovProblemLCLListener)
+%feature("director") IP_SSATaucTikhonovProblemLCLListener;
+%include "inverse/IP_SSATaucTikhonovProblemLCL.hh"
+%template(IP_SSATaucTikhonovProblemLCLSolver) TaoBasicSolver< IP_SSATaucTikhonovProblemLCL >;
 
 #endif
 

@@ -1,11 +1,11 @@
 # Classes for inverse problems.
 
 set(PISM_INVERSE_SOURCES
-./InvTaucParameterization.cc
-./InvSSAForwardProblem.cc
-./InvSSAForwardProblem_dep.cc
-./TwoBlockVec.cc
-./InvSSATikhonovGN.cc  
+./IPTaucParameterization.cc
+./IP_SSATaucForwardProblem.cc
+./IP_SSATaucForwardProblem_dep.cc
+./IPTwoBlockVec.cc
+./IP_SSATaucTikhonovGNSolver.cc  
 ./functional/Functional.cc
 ./functional/L2NormFunctional.cc
 ./functional/H1NormFunctional.cc
@@ -19,8 +19,8 @@ set(PISM_INVERSE_SOURCES
 if(Pism_USE_TAO)
   list (APPEND PISM_INVERSE_SOURCES
     ./TaoUtil.cc
-    ./SSATaucTikhonovProblem.cc
-    ./InvSSATikhonovLCL.cc
+    ./IP_SSATaucTikhonovProblem.cc
+    ./IP_SSATaucTikhonovProblemLCL.cc
     )
 endif()
 

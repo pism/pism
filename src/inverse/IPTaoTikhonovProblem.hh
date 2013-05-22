@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#ifndef TAOTIKHONOVPROBLEM_HH_4NMM724B
-#define TAOTIKHONOVPROBLEM_HH_4NMM724B
+#ifndef IPTAOTIKHONOVPROBLEM_HH_4NMM724B
+#define IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 
 #include <tr1/memory>
 
@@ -26,28 +26,28 @@
 #include "functional/Functional.hh"
 #include <assert.h>
 
-template<class ForwardProblem> class TaoTikhonovProblem;
+template<class ForwardProblem> class IPTaoTikhonovProblem;
 
-//! Iteration callback class for TaoTikhonovProblem
-/*! A class for objects receiving iteration callbacks from a TaoTikhonovProblem.  These 
+//! Iteration callback class for IPTaoTikhonovProblem
+/*! A class for objects receiving iteration callbacks from a IPTaoTikhonovProblem.  These 
     callbacks can be used to monitor the solution, plot iterations, print diagnostic messages, etc. 
-    TaoTikhonovProblemListeners are ususally used via a reference counted pointer 
-    TaoTikhonovProblemListener::Ptr to allow for good memory management when Listeners are 
+    IPTaoTikhonovProblemListeners are ususally used via a reference counted pointer 
+    IPTaoTikhonovProblemListener::Ptr to allow for good memory management when Listeners are 
     created as subclasses of python classes. It would have been better to nest this inside of 
-    TaoTikhonovProblem, but SWIG has a hard time with nested classes, so it's outer instead.*/
-template<class ForwardProblem> class TaoTikhonovProblemListener {
+    IPTaoTikhonovProblem, but SWIG has a hard time with nested classes, so it's outer instead.*/
+template<class ForwardProblem> class IPTaoTikhonovProblemListener {
 public:
-  typedef std::tr1::shared_ptr<TaoTikhonovProblemListener> Ptr;
+  typedef std::tr1::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
 
   typedef typename ForwardProblem::DesignVec DesignVec;
   typedef typename ForwardProblem::StateVec StateVec;
 
-  TaoTikhonovProblemListener() {}
-  virtual ~TaoTikhonovProblemListener() {}
+  IPTaoTikhonovProblemListener() {}
+  virtual ~IPTaoTikhonovProblemListener() {}
 
   //! The method called after each minimization iteration.
   virtual PetscErrorCode 
-  iteration( TaoTikhonovProblem<ForwardProblem> &problem,
+  iteration( IPTaoTikhonovProblem<ForwardProblem> &problem,
              PetscReal eta, PetscInt iter,
              PetscReal objectiveValue, PetscReal designValue,
              DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
@@ -67,12 +67,12 @@ J(d) = J_{S}(F(d)-u) + \frac{1}{\eta}J_{D}(d-d_0)
 \f]
 where \$J_{D}\$ and \$J_{S}\$ are functionals on the spaces \f$D\f$ and \f$S\f$ respectively,
 \f$\eta\f$ is a penalty paramter, and \f$d_0\f$ is a best a-priori guess for the the solution.
-The TaoTikhonovProblem class encapuslates all of the data required to formulate the minimization
+The IPTaoTikhonovProblem class encapuslates all of the data required to formulate the minimization
 problem as a Problem tha can be solved using a TaoBasicSolver. It is templated on the
 the class ForwardProblem which defines the class of the forward map \f$F\f$ as well as the
 spaces \f$D\f$ and \f$S\f$. An instance of ForwardProblem, along with 
 specific functionals \f$J_D\f$ and \f$J_S\f$, the parameter \f$\eta\f$, and the data 
-\f$y\f$ and \f$x_0\f$ are provided on constructing a TaoTikhonovProblem.
+\f$y\f$ and \f$x_0\f$ are provided on constructing a IPTaoTikhonovProblem.
 
 For example, if the SSATaucForwardProblem class defines the map taking yield stresses \f$\tau_c\f$
 to the corresponding surface velocity field solving the SSA, a schematic setup of solving
@@ -86,7 +86,7 @@ IceModelVec2V u_obs;     // Set this to the surface velocity observations.
 IceModelVec2S tauc_0;    // Set this to the initial guess for tauc.
 PetscReal eta;           // Set this to the desired penalty parameter.
 
-typedef InvSSATauc TaoTikhonovProblem<SSATaucForwardProblem>;
+typedef InvSSATauc IPTaoTikhonovProblem<SSATaucForwardProblem>;
 InvSSATauc tikhonovProblem(forwardProblem,tauc_0,u_obs,eta,designFunctional,stateFunctional);
 
 TaoBasicSolver<InvSSATauc> solver(com,"tao_cg",tikhonovProblem);
@@ -149,7 +149,7 @@ by
 </ol>
 
 */
-template<class ForwardProblem> class TaoTikhonovProblem
+template<class ForwardProblem> class IPTaoTikhonovProblem
 {
 public:
 
@@ -170,10 +170,10 @@ public:
       @param    stateFunctional The functional \f$J_S\f$
   */
 
-  TaoTikhonovProblem( ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
+  IPTaoTikhonovProblem( ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
                   Functional<DesignVec>&designFunctional, Functional<StateVec>&stateFunctional);
 
-  virtual ~TaoTikhonovProblem();
+  virtual ~IPTaoTikhonovProblem();
 
 
   //! Sets the initial guess for minimization iterations. If this isn't set explicitly,
@@ -188,7 +188,7 @@ public:
   virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient);
 
   //! Add an object to the list of objects to be called after each iteration.
-  virtual void addListener( typename TaoTikhonovProblemListener<ForwardProblem>::Ptr listener) {
+  virtual void addListener( typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr listener) {
     m_listeners.push_back(listener);
   }
 
@@ -251,7 +251,7 @@ protected:
   Functional<IceModelVec2S> &m_designFunctional;  //<! Implementation of \f$J_D\f$.
   Functional<IceModelVec2V> &m_stateFunctional;   //<! Implementation of \f$J_S\f$.
 
-  std::vector<typename TaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners; ///< List of iteration callbacks.
+  std::vector<typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners; ///< List of iteration callbacks.
 
   PetscReal m_tikhonov_atol;  ///< Convergence paramter: convergence stops when \f$||J_D||_2 <\f$ m_tikhonov_rtol.
   PetscReal m_tikhonov_rtol;  /**< Convergence paramter: convergence stops when \f$||J_D||_2 \f$ is 
@@ -261,7 +261,7 @@ protected:
 
 };
 
-template<class ForwardProblem> TaoTikhonovProblem<ForwardProblem>::TaoTikhonovProblem( ForwardProblem &forward,
+template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem( ForwardProblem &forward,
                  DesignVec &d0, StateVec &u_obs, PetscReal eta,
                  Functional<DesignVec> &designFunctional, Functional<StateVec> &stateFunctional ):
                   m_forward(forward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
@@ -273,7 +273,7 @@ template<class ForwardProblem> TaoTikhonovProblem<ForwardProblem>::TaoTikhonovPr
 }
 
 
-template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>::construct() {
+template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::construct() {
   PetscErrorCode ierr;
 
   m_grid = m_d0.get_grid();
@@ -299,14 +299,14 @@ template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>
   return 0;
 }
 
-template<class ForwardProblem> TaoTikhonovProblem<ForwardProblem>::~TaoTikhonovProblem() {}
+template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::~IPTaoTikhonovProblem() {}
 
-template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>::connect(TaoSolver tao) {
+template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::connect(TaoSolver tao) {
   PetscErrorCode ierr;
-  typedef TaoObjGradCallback<TaoTikhonovProblem<ForwardProblem>,&TaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback; 
+  typedef TaoObjGradCallback<IPTaoTikhonovProblem<ForwardProblem>,&IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback; 
   ierr = ObjGradCallback::connect(tao,*this); CHKERRQ(ierr);
-  ierr = TaoMonitorCallback< TaoTikhonovProblem<ForwardProblem> >::connect(tao,*this); CHKERRQ(ierr);
-  ierr = TaoConvergenceCallback< TaoTikhonovProblem<ForwardProblem> >::connect(tao,*this); CHKERRQ(ierr);
+  ierr = TaoMonitorCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this); CHKERRQ(ierr);
+  ierr = TaoConvergenceCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this); CHKERRQ(ierr);
 
   PetscReal fatol = 1e-10, frtol = 1e-20;
   PetscReal gatol = PETSC_DEFAULT, grtol = PETSC_DEFAULT, gttol = PETSC_DEFAULT;
@@ -315,7 +315,7 @@ template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>
   return 0;
 }
 
-template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>::monitorTao(TaoSolver tao) {
+template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::monitorTao(TaoSolver tao) {
   PetscErrorCode ierr;
   
   PetscInt its;
@@ -333,7 +333,7 @@ template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>
   return 0;
 }
 
-template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>::convergenceTest(TaoSolver tao) {
+template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::convergenceTest(TaoSolver tao) {
   PetscErrorCode ierr;
   PetscReal designNorm, stateNorm, sumNorm;
   PetscReal dWeight, sWeight;
@@ -356,7 +356,7 @@ template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>
   return 0;
 }
 
-template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient) {
+template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient) {
   PetscErrorCode ierr;
 
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
@@ -365,7 +365,7 @@ template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>
   TerminationReason::Ptr reason;
   ierr = m_forward.linearize_at(m_d, reason); CHKERRQ(ierr);
   if(reason->failed()) {
-    ierr = verbPrintf(2,m_grid->com,"TaoTikhonovProblem::evaluateObjectiveAndGradient failure in forward solve\n%s\n",reason->description().c_str()); CHKERRQ(ierr);
+    ierr = verbPrintf(2,m_grid->com,"IPTaoTikhonovProblem::evaluateObjectiveAndGradient failure in forward solve\n%s\n",reason->description().c_str()); CHKERRQ(ierr);
     ierr = TaoSetTerminationReason(tao,TAO_DIVERGED_USER); CHKERRQ(ierr);
     return 0;
   }
@@ -401,4 +401,4 @@ template<class ForwardProblem> PetscErrorCode TaoTikhonovProblem<ForwardProblem>
 
 
 
-#endif /* end of include guard: TAOTIKHONOVPROBLEM_HH_4NMM724B */
+#endif /* end of include guard: IPTAOTIKHONOVPROBLEM_HH_4NMM724B */

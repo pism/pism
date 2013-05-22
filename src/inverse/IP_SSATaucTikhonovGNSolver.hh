@@ -16,11 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef INVSSATIKHONOVGN_HH_SIU7F33G
-#define INVSSATIKHONOVGN_HH_SIU7F33G
+#ifndef IP_SSATAUCTIKHONOVGN_HH_SIU7F33G
+#define IP_SSATAUCTIKHONOVGN_HH_SIU7F33G
 
 #include "iceModelVec.hh"
-#include "InvSSAForwardProblem.hh"
+#include "IP_SSATaucForwardProblem.hh"
 #include "functional/Functional.hh"
 #include "TerminationReason.hh"
 
@@ -42,16 +42,16 @@ protected:
   }
 };
 
-class InvSSATikhonovGN {
+class IP_SSATaucTikhonovGNSolver {
 public:
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;
-  // typedef InvSSATikhonovGNListener Listener;
+  // typedef IP_SSATaucTikhonovGNSolverListener Listener;
 
-  InvSSATikhonovGN( InvSSAForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
+  IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
                     IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
 
-  ~InvSSATikhonovGN();
+  ~IP_SSATaucTikhonovGNSolver();
   
   virtual StateVec &stateSolution() {
     return m_ssaforward.solution();
@@ -93,7 +93,7 @@ protected:
   PetscErrorCode construct();
   PetscErrorCode destruct();
 
-  InvSSAForwardProblem &m_ssaforward;
+  IP_SSATaucForwardProblem &m_ssaforward;
 
   DesignVec m_x;
   DesignVec m_y;
@@ -152,4 +152,4 @@ protected:
 
 
 
-#endif /* end of include guard: INVSSATIKHONOVGN_HH_SIU7F33G */
+#endif /* end of include guard: IP_SSATAUCTIKHONOVGN_HH_SIU7F33G */

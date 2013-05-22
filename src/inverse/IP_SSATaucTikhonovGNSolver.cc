@@ -16,12 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "InvSSATikhonovGN.hh"
+#include "IP_SSATaucTikhonovGNSolver.hh"
 #include <assert.h>
 #include "TerminationReason.hh"
 #include "pism_options.hh"
 
-InvSSATikhonovGN::InvSSATikhonovGN( InvSSAForwardProblem &ssaforward,
+IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward,
 DesignVec &d0, StateVec &u_obs, PetscReal eta,
 IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
@@ -32,14 +32,14 @@ m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
   assert(ierr==0);
 }
 
-InvSSATikhonovGN::~InvSSATikhonovGN() {
+IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
   PetscErrorCode ierr;
   ierr = this->destruct(); CHKERRCONTINUE(ierr);
   assert(ierr==0);
 }
 
 
-PetscErrorCode InvSSATikhonovGN::construct() {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   PetscErrorCode ierr;
   IceGrid &grid = *m_d0.get_grid();
   m_comm = grid.com;
@@ -91,7 +91,7 @@ PetscErrorCode InvSSATikhonovGN::construct() {
   PetscInt nGlobalNodes = grid.Mx*grid.My;
   ierr = MatCreateShell(grid.com,nLocalNodes,nLocalNodes,nGlobalNodes,nGlobalNodes,this,&m_mat_GN); CHKERRQ(ierr);
 
-  typedef MatrixMultiplyCallback<InvSSATikhonovGN,&InvSSATikhonovGN::apply_GN> multCallback;
+  typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver,&IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
   ierr = multCallback::connect(m_mat_GN);
 
   m_alpha = 1./m_eta;
@@ -111,26 +111,26 @@ PetscErrorCode InvSSATikhonovGN::construct() {
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::destruct() {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::destruct() {
   PetscErrorCode ierr;
   ierr = KSPDestroy(&m_ksp); CHKERRQ(ierr);
   ierr = MatDestroy(&m_mat_GN);
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::init(TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::init(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
   ierr = m_ssaforward.linearize_at(m_d0,reason); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::apply_GN(IceModelVec2S &x,IceModelVec2S &y) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(IceModelVec2S &x,IceModelVec2S &y) {
   PetscErrorCode ierr;
   ierr = this->apply_GN(x.get_vec(),y.get_vec()); CHKERRQ(ierr);
   return 0; 
 }
 
-PetscErrorCode InvSSATikhonovGN::apply_GN(Vec x, Vec y) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   PetscErrorCode ierr;
 
   StateVec &tmp_gS    = m_tmp_S1Global;
@@ -156,7 +156,7 @@ PetscErrorCode InvSSATikhonovGN::apply_GN(Vec x, Vec y) {
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::assemble_GN_rhs(DesignVec &rhs) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
   PetscErrorCode ierr;
 
   ierr = rhs.set(0); CHKERRQ(ierr);
@@ -172,7 +172,7 @@ PetscErrorCode InvSSATikhonovGN::assemble_GN_rhs(DesignVec &rhs) {
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::solve_linearized(TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
   ierr = this->assemble_GN_rhs(m_GN_rhs); CHKERRQ(ierr);
@@ -190,7 +190,7 @@ PetscErrorCode InvSSATikhonovGN::solve_linearized(TerminationReason::Ptr &reason
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::evaluateGNFunctional(DesignVec h, PetscReal *value) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec h, PetscReal *value) {
   PetscErrorCode ierr;
   
   ierr = m_ssaforward.apply_linearization(h,m_tmp_S1Local); CHKERRQ(ierr);
@@ -213,7 +213,7 @@ PetscErrorCode InvSSATikhonovGN::evaluateGNFunctional(DesignVec h, PetscReal *va
 }
 
 
-PetscErrorCode InvSSATikhonovGN::check_convergence(TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
   PetscReal designNorm, stateNorm, sumNorm;
@@ -229,7 +229,7 @@ PetscErrorCode InvSSATikhonovGN::check_convergence(TerminationReason::Ptr &reaso
   ierr = m_gradient.norm(NORM_2,sumNorm); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,PETSC_COMM_WORLD,"----------------------------------------------------------\n",designNorm,stateNorm,sumNorm); CHKERRQ(ierr);
-  ierr = verbPrintf(2,PETSC_COMM_WORLD,"InvSSATikhonovGN Iteration %d: misfit %g; functional %g \n",m_iter,sqrt(m_val_state)*m_vel_scale,m_value*m_vel_scale*m_vel_scale); CHKERRQ(ierr);
+  ierr = verbPrintf(2,PETSC_COMM_WORLD,"IP_SSATaucTikhonovGNSolver Iteration %d: misfit %g; functional %g \n",m_iter,sqrt(m_val_state)*m_vel_scale,m_value*m_vel_scale*m_vel_scale); CHKERRQ(ierr);
   if(m_tikhonov_adaptive) {
     ierr = verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha); CHKERRQ(ierr);
   }
@@ -264,7 +264,7 @@ PetscErrorCode InvSSATikhonovGN::check_convergence(TerminationReason::Ptr &reaso
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::evaluate_objective_and_gradient(TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
   ierr = m_ssaforward.linearize_at(m_d,reason); CHKERRQ(ierr);
@@ -301,7 +301,7 @@ PetscErrorCode InvSSATikhonovGN::evaluate_objective_and_gradient(TerminationReas
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::linesearch(TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
   TerminationReason::Ptr step_reason;
@@ -345,7 +345,7 @@ PetscErrorCode InvSSATikhonovGN::linesearch(TerminationReason::Ptr &reason) {
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
   m_iter = 0;
@@ -404,7 +404,7 @@ PetscErrorCode InvSSATikhonovGN::solve(TerminationReason::Ptr &reason) {
   return 0;
 }
 
-PetscErrorCode InvSSATikhonovGN::compute_dlogalpha(PetscReal *dlogalpha, TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalpha, TerminationReason::Ptr &reason) {
 
   PetscErrorCode ierr;
 

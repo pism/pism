@@ -17,30 +17,30 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#include "SSATaucTikhonovProblem.hh"
+#include "IP_SSATaucTikhonovProblem.hh"
 
-PetscErrorCode SSATaucTikhonovProblem::connect(TaoSolver tao) {
+PetscErrorCode IP_SSATaucTikhonovProblem::connect(TaoSolver tao) {
   PetscErrorCode ierr;
 
-  ierr = TaoTikhonovProblem<InvSSAForwardProblem>::connect(tao); CHKERRQ(ierr);
+  ierr = IPTaoTikhonovProblem<IP_SSATaucForwardProblem>::connect(tao); CHKERRQ(ierr);
 
   const char *type;
   ierr = TaoGetType(tao,&type); CHKERRQ(ierr);
   if( strcmp(type,"blmvm") == 0 ) {
-    ierr = TaoGetVariableBoundsCallback<SSATaucTikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);    
+    ierr = TaoGetVariableBoundsCallback<IP_SSATaucTikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);    
   }  
   return 0;
 }
 
 
-PetscErrorCode SSATaucTikhonovProblem::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
+PetscErrorCode IP_SSATaucTikhonovProblem::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
   PetscErrorCode ierr;
   PetscReal zeta_min, zeta_max, tauc_min, tauc_max;
 
   tauc_min = m_grid->config.get("inv_ssa_tauc_min");
   tauc_max = m_grid->config.get("inv_ssa_tauc_max");
 
-  InvTaucParameterization &tauc_param = m_forward.tauc_param();
+  IPTaucParameterization &tauc_param = m_forward.tauc_param();
   ierr = tauc_param.fromTauc(tauc_min,&zeta_min); CHKERRQ(ierr);
   ierr = tauc_param.fromTauc(tauc_max,&zeta_max); CHKERRQ(ierr);
 

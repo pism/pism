@@ -17,30 +17,30 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#ifndef SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX
-#define SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX
+#ifndef IP_SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX
+#define IP_SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX
 
 #include <tr1/memory>
 
-#include "TaoTikhonovProblem.hh"
-#include "InvSSAForwardProblem.hh"
+#include "IPTaoTikhonovProblem.hh"
+#include "IP_SSATaucForwardProblem.hh"
 
 
 #include "TaoUtil.hh"
 #include "functional/Functional.hh"
 
 
-class SSATaucTikhonovProblem: public TaoTikhonovProblem<InvSSAForwardProblem> {
+class IP_SSATaucTikhonovProblem: public IPTaoTikhonovProblem<IP_SSATaucForwardProblem> {
 public:
 
-  SSATaucTikhonovProblem( InvSSAForwardProblem &forward, 
-                          SSATaucTikhonovProblem::DesignVec &d0, 
-                          SSATaucTikhonovProblem::StateVec &u_obs, PetscReal eta, 
-                          Functional<SSATaucTikhonovProblem::DesignVec>&designFunctional, 
-                          Functional<SSATaucTikhonovProblem::StateVec>&stateFunctional) :
-                TaoTikhonovProblem(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
+  IP_SSATaucTikhonovProblem( IP_SSATaucForwardProblem &forward, 
+                          IP_SSATaucTikhonovProblem::DesignVec &d0, 
+                          IP_SSATaucTikhonovProblem::StateVec &u_obs, PetscReal eta, 
+                          Functional<IP_SSATaucTikhonovProblem::DesignVec>&designFunctional, 
+                          Functional<IP_SSATaucTikhonovProblem::StateVec>&stateFunctional) :
+                IPTaoTikhonovProblem(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
 
-  virtual ~SSATaucTikhonovProblem() {};
+  virtual ~IP_SSATaucTikhonovProblem() {};
 
   virtual PetscErrorCode connect(TaoSolver tao);
 
@@ -48,5 +48,5 @@ public:
 
 };
 
-#endif /* end of include guard: SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX */
+#endif /* end of include guard: IP_SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX */
 

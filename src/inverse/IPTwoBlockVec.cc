@@ -16,22 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "TwoBlockVec.hh"
+#include "IPTwoBlockVec.hh"
 #include <assert.h>
 
-TwoBlockVec::TwoBlockVec(Vec a, Vec b) {
+IPTwoBlockVec::IPTwoBlockVec(Vec a, Vec b) {
   PetscErrorCode ierr;
   ierr = this->construct(a,b);
   assert(ierr==0);
 }
 
-TwoBlockVec::~TwoBlockVec() {
+IPTwoBlockVec::~IPTwoBlockVec() {
   PetscErrorCode ierr;
   ierr = this->destruct();
   assert(ierr==0);
 }
 
-PetscErrorCode TwoBlockVec::construct(Vec a, Vec b)  {
+PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
   PetscErrorCode ierr;
   
   MPI_Comm comm, comm_b;
@@ -68,7 +68,7 @@ PetscErrorCode TwoBlockVec::construct(Vec a, Vec b)  {
   return 0;
 }
 
-PetscErrorCode TwoBlockVec::destruct() {
+PetscErrorCode IPTwoBlockVec::destruct() {
   PetscErrorCode ierr;
 
   ierr = VecDestroy(&m_ab); CHKERRQ(ierr);
@@ -79,80 +79,80 @@ PetscErrorCode TwoBlockVec::destruct() {
   return 0;
 }
 
-IS TwoBlockVec::blockAIndexSet() {
+IS IPTwoBlockVec::blockAIndexSet() {
   return m_a_in_ab;
 }
 
-IS TwoBlockVec::blockBIndexSet() {
+IS IPTwoBlockVec::blockBIndexSet() {
   return m_b_in_ab;
 }
 
-PetscErrorCode TwoBlockVec::scatter(Vec a, Vec b) {
+PetscErrorCode IPTwoBlockVec::scatter(Vec a, Vec b) {
   PetscErrorCode ierr;
   ierr = this->scatterToA(m_ab,a); CHKERRQ(ierr);
   ierr = this->scatterToB(m_ab,b); CHKERRQ(ierr);
   return 0;
 }
-PetscErrorCode TwoBlockVec::scatterToA(Vec a) {
+PetscErrorCode IPTwoBlockVec::scatterToA(Vec a) {
   PetscErrorCode ierr;
   ierr = this->scatterToA(m_ab,a); CHKERRQ(ierr);
   return 0;
 }
-PetscErrorCode TwoBlockVec::scatterToB(Vec b) {
+PetscErrorCode IPTwoBlockVec::scatterToB(Vec b) {
   PetscErrorCode ierr;
   ierr = this->scatterToB(m_ab,b); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode TwoBlockVec::scatter(Vec ab, Vec a, Vec b) {
+PetscErrorCode IPTwoBlockVec::scatter(Vec ab, Vec a, Vec b) {
   this->scatterToA(ab,a);
   this->scatterToB(ab,b);  
   return 0;
 }
-PetscErrorCode TwoBlockVec::scatterToA(Vec ab, Vec a) {
+PetscErrorCode IPTwoBlockVec::scatterToA(Vec ab, Vec a) {
   PetscErrorCode ierr;
   ierr = VecScatterBegin(m_scatter_a, ab, a, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(m_scatter_a, ab, a, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);  
   return 0;
 }
-PetscErrorCode TwoBlockVec::scatterToB(Vec ab, Vec b) {
+PetscErrorCode IPTwoBlockVec::scatterToB(Vec ab, Vec b) {
   PetscErrorCode ierr;
   ierr = VecScatterBegin(m_scatter_b, ab, b, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(m_scatter_b, ab, b, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode TwoBlockVec::gather(Vec a, Vec b) {
+PetscErrorCode IPTwoBlockVec::gather(Vec a, Vec b) {
   PetscErrorCode ierr;
   ierr = this->gatherFromA(a,m_ab); CHKERRQ(ierr);
   ierr = this->gatherFromB(b,m_ab); CHKERRQ(ierr);
   return 0;
 }
-PetscErrorCode TwoBlockVec::gatherFromA(Vec a) {
+PetscErrorCode IPTwoBlockVec::gatherFromA(Vec a) {
   PetscErrorCode ierr;
   ierr = this->gatherFromA(a,m_ab); CHKERRQ(ierr);
   return 0;
 }
-PetscErrorCode TwoBlockVec::gatherFromB(Vec b) {
+PetscErrorCode IPTwoBlockVec::gatherFromB(Vec b) {
   PetscErrorCode ierr;
   ierr = this->gatherFromA(b,m_ab); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode TwoBlockVec::gather(Vec a, Vec b, Vec ab) {
+PetscErrorCode IPTwoBlockVec::gather(Vec a, Vec b, Vec ab) {
   PetscErrorCode ierr;
   ierr = this->gatherFromA(a,ab); CHKERRQ(ierr);
   ierr = this->gatherFromB(b,ab); CHKERRQ(ierr);
   return 0;
 }
-PetscErrorCode TwoBlockVec::gatherFromA(Vec a, Vec ab) {
+PetscErrorCode IPTwoBlockVec::gatherFromA(Vec a, Vec ab) {
   PetscErrorCode ierr;
   
   ierr = VecScatterBegin(m_scatter_a, a, ab, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(m_scatter_a, a, ab, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   return 0;
 }
-PetscErrorCode TwoBlockVec::gatherFromB(Vec b, Vec ab) {
+PetscErrorCode IPTwoBlockVec::gatherFromB(Vec b, Vec ab) {
   PetscErrorCode ierr;
   ierr = VecScatterBegin(m_scatter_b, b, ab, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecScatterEnd(m_scatter_b, b, ab, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);

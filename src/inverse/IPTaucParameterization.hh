@@ -34,8 +34,8 @@ disadvantage that it is a 2-1 parameterization.  A potentially
 more satisfactory choice is \f$F(p)=e^p\f$, which ensures
 positivitiy, is 1-1, and respects the wide scale variations of \f$\tau_c\f$.
 
-An InvTaucParameterization encapsulates a parameterization, and
-is intended to be used in conjuction with an \ref InvSSAForwardProblem 
+An IPTaucParameterization encapsulates a parameterization, and
+is intended to be used in conjuction with an \ref IP_SSATaucForwardProblem 
 to indicate the choice of parameterization.
 
 This method of encoding mathematical expressions is flexible and convenient,
@@ -44,13 +44,13 @@ needed if the expression is being called over and over again.  If this
 proves to be a significant source of slowness, we could look at 
 using the Expression Template idiom, http://drdobbs.com/184401627.
 */
-class InvTaucParameterization 
+class IPTaucParameterization 
 {
 public:
   
-  InvTaucParameterization(){ /*do nothing*/ };
+  IPTaucParameterization(){ /*do nothing*/ };
   
-  virtual ~InvTaucParameterization() {};
+  virtual ~IPTaucParameterization() {};
 
   virtual PetscErrorCode init( const NCConfigVariable &config);
 
@@ -73,12 +73,12 @@ protected:
 };
 
 /*! Parameterization \f$\tau_c=F(p)\f$ with $F(p)=p$. */
-class InvTaucParamIdent: public InvTaucParameterization
+class IPTaucParamIdent: public IPTaucParameterization
 {
 public:
-  InvTaucParamIdent(){ /*do nothing*/ };
+  IPTaucParamIdent(){ /*do nothing*/ };
 
-  virtual ~InvTaucParamIdent() {};
+  virtual ~IPTaucParamIdent() {};
 
   virtual PetscErrorCode toTauc( PetscReal p, PetscReal *value, PetscReal *derivative);
 
@@ -86,12 +86,12 @@ public:
 };
 
 /*! Parameterization \f$\tau_c=F(p)\f$ with $F(p)=p^2$. */
-class InvTaucParamSquare: public InvTaucParameterization
+class IPTaucParamSquare: public IPTaucParameterization
 {
 public:
-  InvTaucParamSquare(){ /*do nothing*/ };
+  IPTaucParamSquare(){ /*do nothing*/ };
 
-  virtual ~InvTaucParamSquare() {};
+  virtual ~IPTaucParamSquare() {};
 
   virtual PetscErrorCode toTauc( PetscReal p, PetscReal *value, PetscReal *derivative);
 
@@ -99,12 +99,12 @@ public:
 };
 
 /*! Parameterization \f$\tau_c=F(p)\f$ with $F(p)=exp(p)$. */
-class InvTaucParamExp: public InvTaucParameterization
+class IPTaucParamExp: public IPTaucParameterization
 {
 public:
-  InvTaucParamExp(){ /*do nothing*/ };
+  IPTaucParamExp(){ /*do nothing*/ };
 
-  virtual ~InvTaucParamExp() {};
+  virtual ~IPTaucParamExp() {};
 
   virtual PetscErrorCode init( const NCConfigVariable &config);
 
@@ -120,12 +120,12 @@ private:
 /*! Monotone parameterization \f$\tau_c=F(p)\f$ where \f$F(p)\rightarrow 0\f$
 as \f$p\rightarrow-\infty\f$ and \f$F(p)\approx p\f$ for large values of \f$p\f$.  The transition from a nonlinear to an approximately linear 
 function occurs in the neighbourhood of the parameter \f$tauc_0\f$.*/
-class InvTaucParamTruncatedIdent: public InvTaucParameterization
+class IPTaucParamTruncatedIdent: public IPTaucParameterization
 {
 public:
-  InvTaucParamTruncatedIdent( ) {};
+  IPTaucParamTruncatedIdent( ) {};
 
-  virtual ~InvTaucParamTruncatedIdent() {};
+  virtual ~IPTaucParamTruncatedIdent() {};
 
   virtual PetscErrorCode init( const NCConfigVariable &config);
 
@@ -139,9 +139,9 @@ private:
 };
 
 /*! Some handy pre-instantiated parameterizations. */
-extern InvTaucParamIdent g_InvTaucParamIdent;
-extern InvTaucParamSquare g_InvTaucParamSquare;
-extern InvTaucParamExp g_InvTaucParamExp;
+extern IPTaucParamIdent g_IPTaucParamIdent;
+extern IPTaucParamSquare g_IPTaucParamSquare;
+extern IPTaucParamExp g_IPTaucParamExp;
 
 #endif //_INVTAUCPARAM_H_
 
