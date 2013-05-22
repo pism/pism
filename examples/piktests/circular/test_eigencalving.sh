@@ -16,7 +16,7 @@ fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
-pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc -eigen_calving -eigen_calving_K 1e16 -view_map mask,thk"
+pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc -eigen_calving -eigen_calving_K 1e14 -view_map mask,thk -o_order zyx -no_sia -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
 
 doit="mpiexec -n $N pismr $pismopts"
 
