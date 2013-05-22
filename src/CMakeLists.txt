@@ -30,6 +30,7 @@ set(PISMUTIL_SRC
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
   base/util/IceGrid.cc
+  base/util/Mask.cc
   base/util/NCVariable.cc
   base/util/PISMComponent.cc
   base/util/PISMProf.cc
