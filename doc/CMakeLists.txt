@@ -70,10 +70,13 @@ if (PDFLATEX_COMPILER)
 
   add_subdirectory(forcing)
 
+  add_subdirectory(inverse)
+
   if (Pism_BUILD_PDFS)
     install (FILES
       "${CMAKE_CURRENT_BINARY_DIR}/userman/manual.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/forcing/forcing.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/inverse/ip_design.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/installation.pdf"
       DESTINATION ${Pism_DOC_DIR})
 

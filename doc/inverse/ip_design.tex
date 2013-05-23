@@ -1,0 +1,66 @@
+\documentclass[titlepage,letterpaper,final]{scrartcl}
+\usepackage{scrindex}           % multiple index support using the "index" package
+\usepackage{index}
+
+\input{pism-macros.tex}
+
+\begin{document}
+
+This document is an overview of how the algorithms for solving inverse problems have been grafted onto the main PISM library, intended to
+help with future maintenance of the code.
+
+Inverse problem solving in PISM consists of the following components:
+
+\begin{itemize}
+\item An older python-based library, {\tt siple}, that includes algorithms for iterative solutions of inverse problems, including steepest descent,
+nonlinear conjugate gradients, and the so-called incomplete Gauss-Newton method.
+
+\item A newer 
+C++ codebase within PISM implementing Tikhonov-type regularization
+algorithms, many of which use the TAO \cite{tao-user-ref} optimization library.
+
+\item A python PISM library that manages the interface between standard PISM components, selection of inverse algorithms, and the two inverse libraries mentioned above.
+
+\end{itemize}
+
+A typical inversion run for reconstructing basal yield stresses from surface velocities starts with the script \class{vel2tauc.py}. It instantiates an instance of \class{PISM.inv_ssa.InvSSARun}, which knows all of the data required to compute solutions of the SSA, and knows about the map from basal yield stress to surface velocities, but knows nothing more about the details 
+of the inverse problem, how it will be regularized, or the algorithm that will
+be used to solved the regularized problem.  The \class{InvSSARun} instance
+is then handed by {\tt vel2tauc.py} to a solver, e.g. \class{PISM.inv_ssa_tao.InvSSASolver_Tikhonov} or 
+\class{PISM.inv_ssa_siple.InvSSASolver_Iterative}.  The solvers are responsible
+for wiring up the algorithm library specific components to the \class{InvSSARun}, setting up any details about the regularization or algorithm, and present a uniform interface to call to solve the inverse problem. The actual solution of the problem is then delegated by the solver
+to the underlying library.
+
+Here are the key players common to all inversions.(TODO: All the details!)
+\begin{itemize}
+\item\class{vel2tauc.py}
+\item\class{SSAFEM}
+\item\class{PISM.model.ModelData}
+\item\class{PISM.ssa.SSARun}
+\item\class{PISM.sia.computeSIASurfaceVelocities}
+\item\class{PISM.inv_ssa.SSAInvRun}
+\item\class{IP_SSATaucForwardProblem}
+\end{itemize}
+
+For TAO-based Tikhonov problems, we have the additional parties involved.
+\begin{itemize}
+\item\class{PISM.inv_ssa_tao.InvSSASolver_Tikhonov}
+\item\class{TaoBasicSolver}
+\item\class{IPTaoTikhonovProblem}
+\item\class{IP_SSATaucTaoTikhonovProblem}
+\end{itemize}
+
+For siple-based inversions, the following classes are important.
+\begin{itemize}
+\item\class{PISM.inv_ssa_siple.InvSSASolver_Iterative}
+\item\class{siple.gradient.forward.NonlinearForwardProblem}
+\item\class{siple.gradient.InvertNLCG}/\class{siple.gradient.InvertIGN}
+\item\class{PISM.inv_ssa_siple.InvertSSANLCG}/\class{PISM.inv_ssa_siple.InvertSSAIGN}
+\end{itemize}
+
+SOMETHING ABOUT LISTENERS
+
+\bibliography{ice-bib}
+\bibliographystyle{siam}
+
+\end{document}
