@@ -26,10 +26,11 @@
 Specifically, given a reference function \f$u_{obs}=[U_i]\f$, and an
 IceModelVec2V \f$x=[X_i]\f$,
 \f[
-J(x) = c_N \sum_i \log\left(\frac{|X_i+U_i|+\epsilon}{|U_{i}|+\epsilon}\right)
+J(x) = c_N \sum_i \left[\log\left(\frac{|X_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}\right)\right]^2
 \f]
 where \f$\epsilon=10^{-4}{\tt inv_ssa_velocity_scale}\f$.  The term \f$X_i+U_i\f$
-appears because the argument is expected to already be in the form \f$X_i-U_i\f$.
+appears because the argument is expected to already be in the form \f$V_i-U_i\f$, where \f$v=[V_i]\f$
+is some approximation of \f$[U_i]\f$ and hence the integrand has the form \f$\log(|V_i|/|U_i|)\f$.
 
 The normalization constant \f$c_N\f$ is determined implicitly by ::normalize.
 */
