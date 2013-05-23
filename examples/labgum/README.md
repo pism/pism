@@ -9,7 +9,7 @@ The source of the set-up is the "constant flux" experiment in
 
   R. Sayag and M. G. Worster, 2012. *Axisymmetric gravity currents of
   power-law fluids over a rigid horizontal surface*, J. Fluid Mech.
-  doi:10.1017/jfm.2012.545, 1--9
+  [doi:10.1017/jfm.2012.545](http://dx.doi.org/10.1017/jfm.2012.545), 1--9
 
 They push the fluid through the bottom of a flat table in a tube of radius
 ~ 10 mm, at a mass rate of about 3 g / s.  The glaciological analog is an ice
@@ -60,4 +60,5 @@ Note you can compare multiple runs to the data in one figure:
 
 ## Changing configuration constants
 
-Edit `gumparams.cdl` and then rerun `buildgum.py` and then use `rungum.sh`.
+Edit `gumparams.cdl`.  These changes will be incorporated at the preprocessing
+stage when you run `rungum.sh`.
