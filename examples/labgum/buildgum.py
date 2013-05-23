@@ -32,18 +32,19 @@ args = parser.parse_args()
 Lx = 260.0e-3    # m;  = 260 mm;  maximum observed radius is 25.2 cm so we go out just a bit
 Ly = Lx          # square table
 flux = 3.8173e-3 # kg s-1;  = 3 g s-1; email from Sayag
-pipeR = 10.001e-3  # m;  = 10 mm;  input pipe has this radius; email from Sayag "8--10 mm"
+pipeR = 8.0e-3   # m;  = 8 mm;  input pipe has this radius; email from Sayag
 rho = 1000.0     # kg m-3;  density of gum = density of fresh water
 temp = 20.0      # C;  fluid is at 20 deg
 
 # set up the grid:
 Mx = int(args.Mx)
 My = Mx
+print "  creating grid of Mx = %d by My = %d points ..." % (Mx,My)
 x = np.linspace(-Lx,Lx,Mx)
 y = np.linspace(-Ly,Ly,My)
-
 dx = x[1]-x[0]
 dy = dx
+print "  cells have dimensions dx = %.3f mm by dy = %.3f mm ..." % (dx*1000.0,dy*1000.0)
 
 # create dummy fields
 [xx,yy] = np.meshgrid(x,y);  # if there were "ndgrid" in numpy we would use it
@@ -56,7 +57,13 @@ artm = np.zeros((Mx,My)) + 273.15 + temp; # 20 degrees Celsius
 #       even on a coarse grid
 smb = np.zeros((Mx,My));
 smb[xx**2 + yy**2 <= pipeR**2] = 1.0;
-smb = (flux / (rho * sum(sum(smb)) * dx**2) ) * smb
+smbpos = sum(sum(smb))
+if smbpos==0:
+  print "gridding ERROR: no cells have positive input flux ... ending now"
+  sys.exit(1)
+else:
+  print "  input flux > 0 at %d cells ..." % smbpos
+smb = (flux / (rho * smbpos * dx**2) ) * smb
 
 # Write the data:
 nc = CDF(args.ncfile, "w",format='NETCDF3_CLASSIC') # for netCDF4 module

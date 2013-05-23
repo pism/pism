@@ -8,6 +8,8 @@ if [ $# -lt 2 ] ; then
   echo "    PROCS     = 1,2,3,... is number of MPI processes"
   echo "    MX        = number of grid points in x,y directions;  MX -> cell width:"
   echo "                53 -> 10mm,  105 -> 5mm, 209 -> 2.5mm, 521 -> 1mm"
+  echo "  If environment variable 'NORUN' is set to a nonzero string then only"
+  echo "  the preprocess stage runs."
   exit
 fi
 
@@ -24,13 +26,16 @@ echo $CMD
 $CMD
 
 # preprocess stage 2: create bootstrap file
-initfile=initgum$myMx.nc
-echo "creating PISM-readable config override file gumparams.nc ..."
+initfile=initlab$myMx.nc
+echo "creating PISM-readable bootstrap file $initfile ..."
 CMD="python buildgum.py $myMx $initfile"
 echo $CMD
 $CMD
 
-#exit  # <-- to stop and look at input file
+if [ -n "$NORUN" ]; then
+    echo "NORUN set ... exiting before run"
+    exit 0
+fi
 
 # run stage
 pismexec="pismr"
