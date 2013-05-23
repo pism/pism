@@ -77,6 +77,11 @@ PetscErrorCode IceModel::init_diagnostics() {
     diagnostics["floating_basal_flux_cumulative"] = new IceModel_floating_basal_flux_2D_cumulative(this, grid, variables);
   }
 
+  if (discharge_flux_2D_cumulative.was_created() ||
+      print_list_and_stop) {
+    diagnostics["discharge_flux_cumulative"] = new IceModel_discharge_flux_2D_cumulative(this, grid, variables);
+  }
+
 #if (PISM_USE_PROJ4==1)
   if (mapping.has("proj4")) {
     string proj4 = mapping.get_string("proj4");
@@ -1572,9 +1577,9 @@ IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m, IceGrid &g, PISMVa
 
 PetscErrorCode IceModel_discharge_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  PetscReal value = 0.0;
 
-  value = model->discharge_flux_cumulative;
+  // FIXME!!!
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1594,9 +1599,9 @@ IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel 
 
 PetscErrorCode IceModel_discharge_flux_cumulative::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  PetscReal value = 0.0;
 
-  value = model->discharge_flux_cumulative;
+  // FIXME!!!
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1923,6 +1928,31 @@ PetscErrorCode IceModel_floating_basal_flux_2D_cumulative::compute(IceModelVec* 
   return 0;
 }
 
+
+IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("discharge_flux_cumulative", grid);
+
+  set_attrs("cumulative ice discharge (calving) flux (negative means ice loss)",
+            "",                 // no standard name
+            "kg", "Gt", 0);
+}
+
+PetscErrorCode IceModel_discharge_flux_2D_cumulative::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "discharge_flux_cumulative", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = result->copy_from(model->discharge_flux_2D_cumulative); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
 
 #if (PISM_USE_PROJ4==1)
 IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVars &my_vars,

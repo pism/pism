@@ -8,6 +8,8 @@ length=400
 
 infile="circular_noshelf.nc"
 
+output_basename="test_calving_at_thickness"
+
 if [[ ! -r $infile ]]
 then
     echo "generating the input file..."
@@ -18,9 +20,7 @@ grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
 stressbalance="-ssa_method fd -ssa_sliding -ssa_dirichlet_bc -no_sia -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
 
-output_basename="test_eigencalving"
-
-calving="-eigen_calving -eigen_calving_K 1e15"
+calving="-thickness_calving -calving_at_thickness 200"
 
 diagnostics="thk,mask,cbar,Href,velbar,discharge_flux_cumulative"
 

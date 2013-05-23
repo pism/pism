@@ -39,6 +39,7 @@
 #include "PISMIcebergRemover.hh"
 #include "PISMOceanKill.hh"
 #include "PISMCalvingAtThickness.hh"
+#include "PISMEigenCalving.hh"
 
 IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : grid(g),
@@ -120,7 +121,6 @@ void IceModel::reset_counters() {
   skipCountDown = 0;
 
   grounded_basal_ice_flux_cumulative = 0;
-  discharge_flux_cumulative = 0;
   nonneg_rule_flux_cumulative = 0;
   sub_shelf_ice_flux_cumulative = 0;
   surface_ice_flux_cumulative = 0;
@@ -521,6 +521,16 @@ PetscErrorCode IceModel::createVecs() {
       nonneg_flux_2D_cumulative.time_independent = false;
       ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
       nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
+    }
+
+    if (set_contains(ex_vars, "discharge_flux_cumulative")) {
+      ierr = discharge_flux_2D_cumulative.create(grid, "discharge_flux_cumulative", false); CHKERRQ(ierr);
+      ierr = discharge_flux_2D_cumulative.set_attrs("diagnostic",
+                                                    "cumulative discharge (calving) flux (positive means ice loss)",
+                                                    "kg", ""); CHKERRQ(ierr);
+      discharge_flux_2D_cumulative.time_independent = false;
+      ierr = discharge_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      discharge_flux_2D_cumulative.write_in_glaciological_units = true;
     }
   }
 

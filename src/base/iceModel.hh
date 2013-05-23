@@ -122,6 +122,7 @@ class IceModel {
   friend class IceModel_nonneg_flux_2D_cumulative;
   friend class IceModel_grounded_basal_flux_2D_cumulative;
   friend class IceModel_floating_basal_flux_2D_cumulative;
+  friend class IceModel_discharge_flux_2D_cumulative;
   friend class IceModel_max_hor_vel;
   friend class IceModel_sum_divQ_flux;
   friend class IceModel_H_to_Href_flux;
@@ -240,6 +241,7 @@ protected:
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
     floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
+    discharge_flux_2D_cumulative,      //!< cumulative discharge (calving) flux
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
@@ -271,7 +273,6 @@ protected:
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
-    discharge_flux_cumulative,
     nonneg_rule_flux_cumulative,
     sub_shelf_ice_flux_cumulative,
     surface_ice_flux_cumulative,
@@ -361,6 +362,10 @@ protected:
   virtual PetscErrorCode sub_gl_position();
   virtual PetscErrorCode do_calving();
   virtual PetscErrorCode Href_cleanup();
+  virtual PetscErrorCode update_cumulative_discharge(IceModelVec2S &thickness,
+                                                     IceModelVec2S &thickness_old,
+                                                     IceModelVec2S &Href,
+                                                     IceModelVec2S &Href_old);
 
 
   // see iMIO.cc

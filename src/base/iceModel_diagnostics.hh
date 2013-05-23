@@ -433,6 +433,14 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! \brief Reports the 2D cumulative discharge (calving) flux.
+class IceModel_discharge_flux_2D_cumulative : public PISMDiag<IceModel>
+{
+public:
+  IceModel_discharge_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 #if (PISM_USE_PROJ4==1)
 
 #include <proj_api.h>

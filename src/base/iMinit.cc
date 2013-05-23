@@ -603,9 +603,6 @@ PetscErrorCode IceModel::model_state_setup() {
     if (run_stats.has("grounded_basal_ice_flux_cumulative"))
       grounded_basal_ice_flux_cumulative = run_stats.get("grounded_basal_ice_flux_cumulative");
 
-    if (run_stats.has("discharge_flux_cumulative"))
-      discharge_flux_cumulative = run_stats.get("discharge_flux_cumulative");
-
     if (run_stats.has("nonneg_rule_flux_cumulative"))
       nonneg_rule_flux_cumulative = run_stats.get("nonneg_rule_flux_cumulative");
 
