@@ -15,19 +15,19 @@ netcdf gumparams {
     pism_overrides:bootstrapping_geothermal_flux_value_no_var_doc = "W m-2; no geothermal";
 
     pism_overrides:preliminary_time_step_duration = 0.01;
-    pism_overrides:preliminary_time_step_duration_doc = "s; ";
+    pism_overrides:preliminary_time_step_duration_doc = "s; 1 s is a long time, so this is better for starting up";
 
     pism_overrides:summary_time_unit_name = "second";
     pism_overrides:summary_time_unit_name_doc = "";
 
     pism_overrides:summary_vol_scale_factor_log10 = -15;
-    pism_overrides:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; volume in cm^3";
+    pism_overrides:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3";
 
     pism_overrides:summary_area_scale_factor_log10 = -10;
-    pism_overrides:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area in summary line to stdout; area in cm^2";
+    pism_overrides:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area in summary line to stdout; -10 gives area in cm^2";
 
     pism_overrides:mask_icefree_thickness_standard = 1e-8;
-    pism_overrides:mask_icefree_thickness_standard_doc = "m;";
+    pism_overrides:mask_icefree_thickness_standard_doc = "m; only if the fluid is less than this is a cell marked as ice free";
 
     pism_overrides:mask_is_floating_thickness_standard = 1e-8;
     pism_overrides:mask_is_floating_thickness_standard_doc = "m; should not matter";
