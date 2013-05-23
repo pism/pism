@@ -598,7 +598,7 @@ INPUT                  = pism_config.txt \
                          ${PROJECT_SOURCE_DIR}/src/coupler/util/ \
                          ${PROJECT_SOURCE_DIR}/src/earth/ \
                          ${PROJECT_SOURCE_DIR}/src/inverse/ \
-                         ${PROJECT_SOURCE_DIR}/src/inverse/functionals \
+                         ${PROJECT_SOURCE_DIR}/src/inverse/functional \
                          ${PROJECT_SOURCE_DIR}/src/verif/ \
                          ${PROJECT_SOURCE_DIR}/src/verif/tests/ \
                          ${PROJECT_SOURCE_DIR}/src/eismint/ \

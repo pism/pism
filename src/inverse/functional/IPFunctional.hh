@@ -114,7 +114,7 @@ public:
   }
 
   //! Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
-  /*! If \f$\{x_i}\f$ is a basis for the vector space IMVecType, 
+  /*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType, 
       \f$Q_{ij}= Q(x_i,x_j)\f$.*/
   virtual PetscErrorCode assemble_form(Mat Q) = 0;
 
