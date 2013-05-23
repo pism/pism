@@ -31,7 +31,7 @@ such such as the misfit
 J(u) = \int_\Omega |u-u_{\rm obs}|^2
 \f]
 between observed (\f$u_{\rm obs}\f$) and modeled (\f$u\f$)
-surface velocities. Subclasses of Functional define such maps,
+surface velocities. Subclasses of IPFunctional define such maps,
 and permit computation of their gradients.
 */
 template<class IMVecType>
@@ -113,8 +113,8 @@ public:
     return 0;
   }
 
-  //! Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
-  /*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType, 
+  ////! Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
+  ///*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType, 
       \f$Q_{ij}= Q(x_i,x_j)\f$.*/
   // virtual PetscErrorCode assemble_form(Mat Q) = 0;
 

@@ -22,9 +22,18 @@
 
 #include "IPFunctional.hh"
 
+//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an IceModelVec2S.
+/*! If the vector has components \f$x_i\f$ the functional is
+\f[
+J(x) = c_N \sum_{i} w_i x_i^2
+\f]
+where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
+of the normalization constant is set implicitly by a call to \member normalize.
+*/
 class IPMeanSquareFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IPMeanSquareFunctional2S(IceGrid &grid, IceModelVec2S *weights=NULL) :
+  IPMeanSquareFunctional2S(IceGrid &grid, 
+                           IceModelVec2S *weights=NULL) :  ///< Vector of weights (NULL implies all weights are 1)
   IPInnerProductFunctional<IceModelVec2S>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2S() {};
 
@@ -44,6 +53,14 @@ private:
 };
 
 
+//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an IceModelVec2S.
+/*! If the vector has component vectors \f$x_i\f$ the functional is
+\f[
+J(x) = c_N \sum_{i} w_i |x_i|^2
+\f]
+where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
+of the normalization constant is set implicitly by a call to \member normalize.
+*/
 class IPMeanSquareFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
   IPMeanSquareFunctional2V(IceGrid &grid, IceModelVec2S *weights=NULL) :

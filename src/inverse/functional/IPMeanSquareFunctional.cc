@@ -18,6 +18,13 @@
 
 #include "IPMeanSquareFunctional.hh"
 
+
+//! Implicitly set the normalization constant for the functional.
+/*! The normalization constant is selected so that if an input
+IceModelVec2V has component vectors all of length \a scale, then the funtional value will be 1. I.e.
+\f[
+c_N^{-1} = \sum_{i} w_i {\tt scale}^2.
+\f]*/
 PetscErrorCode IPMeanSquareFunctional2V::normalize(PetscReal scale) {
   PetscErrorCode   ierr;
 
@@ -160,6 +167,12 @@ PetscErrorCode IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVe
   return 0;
 }
 
+//! Implicitly set the normalization constant for the functional.
+/*! The normalization constant is selected so that if an input
+IceModelVec2S has entries all equal to \a scale, then the funtional value will be 1. I.e.
+\f[
+c_N^{-1} = \sum_{i} w_i {\tt scale}^2.
+\f]*/
 PetscErrorCode IPMeanSquareFunctional2S::normalize(PetscReal scale) {
   PetscErrorCode   ierr;
 

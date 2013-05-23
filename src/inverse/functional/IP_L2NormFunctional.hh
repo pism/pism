@@ -21,6 +21,14 @@
 
 #include "IPFunctional.hh"
 
+//! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a scalar valued function.
+/*! The functional is, in continuous terms 
+\f[
+J(f) = \int_{\Omega} f^2 \; dA
+\f]
+where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
+Q1 finite elements.
+*/
 class IP_L2NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
   IP_L2NormFunctional2S(IceGrid &grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
@@ -35,6 +43,14 @@ private:
   IP_L2NormFunctional2S & operator=(IP_L2NormFunctional2S const &);  
 };
 
+//! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a vector valued function.
+/*! The functional is, in continuous terms 
+\f[
+J(f) = \int_{\Omega} f^2 \; dA
+\f]
+where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
+Q1 finite elements.
+*/
 class IP_L2NormFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
   IP_L2NormFunctional2V(IceGrid &grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
