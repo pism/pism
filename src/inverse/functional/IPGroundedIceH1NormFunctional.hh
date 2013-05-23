@@ -23,6 +23,19 @@
 #include "IPFunctional.hh"
 #include "Mask.hh"
 
+//! Implements a functional corresponding to (the square of) an \f$H^1\f$ norm of a scalar valued function over a region with only grounded ice.
+/*! The functional is, in continuous terms 
+\f[
+J(f) = \int_{\Omega_g} c_{H^1} \left|\nabla f\right|^2 + c_{L^2}f^2 \; dA
+\f]
+where \f$\Omega_g\f$ is a subset of the square domain consisting of grounded ice. 
+Numerically it is implemented using  Q1 finite elements.  Only those elements where all nodes
+have grounded ice are included in the integration, which alleviates edge effects due to steep
+derivatives in parameters that can occur at the transition between icy/non-icy regions.
+Integration can be 'restricted', in a sense, to a subset of the domain
+using a projection that forces \f$f\f$ to equal zero at nodes specified
+by the constructor argument \a dirichletLocations.
+*/
 class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
   IPGroundedIceH1NormFunctional2S(IceGrid &grid, PetscReal cL2, 

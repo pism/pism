@@ -18,6 +18,13 @@
 
 #include "IPLogRatioFunctional.hh"
 
+//! Determine the normalization constant for the functional.
+/*! Sets the normalization constant \f$c_N\f$ so that
+\f[
+J(x)=1
+\f]
+if  \f$|x|^2/|u_{\rm obs}|^2=e\f$ everywhere. This needs improvement....
+*/
 PetscErrorCode IPLogRatioFunctional::normalize(PetscReal scale) {
   PetscErrorCode   ierr;
 

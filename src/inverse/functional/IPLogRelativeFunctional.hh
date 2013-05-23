@@ -21,6 +21,14 @@
 
 #include "IPFunctional.hh"
 
+//! Implements a functional for log-relative errors.
+/*!  Specifically, given a reference function \f$u_{obs}=[U_i]\f$,
+\f[
+J(x) = c_N \sum_i \log\left(1+\frac{|X_i|^2}{|U_{i}|^2+\epsilon^2}\right)
+\f]
+where \f$\epsilon=10^{-4}{\tt inv_ssa_velocity_scale}\f$.  The normalization
+constant \f$c_N\f$ is determined implicitly by ::normalize.
+*/
 class IPLogRelativeFunctional : public IPFunctional<IceModelVec2V> {
 public:
   IPLogRelativeFunctional(IceGrid &grid, IceModelVec2V &u_observed) :
