@@ -61,7 +61,6 @@
 #include "pism_options.hh"
 #include "SIAFD.hh"
 #include "regional/regional.hh"
-#include "FEEvaluator.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -567,7 +566,6 @@ namespace std {
 %include "PISMTime.hh"
 %feature("notabstract") SIAFD_Regional;
 %include "regional/regional.hh"
-%include "stressbalance/ssa/FEEvaluator.hh"
 
 %include "inverse/functional/IPFunctional.hh"
 %template(IPFunctional2S) IPFunctional< IceModelVec2S >;
