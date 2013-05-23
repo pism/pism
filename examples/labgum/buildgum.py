@@ -22,8 +22,8 @@ except:
 # shear-thinning fluid, which is Xanthan gum 1% solution
 Lx = 250.0e-3    # m;  = 250 mm;  table is approx 500 mm x 500 mm?
 Ly = Lx          # square table
-flux = 3.0e-3    # kg s-1;  = 3 g s-1;  
-pipeR = 20.1e-3  # m;  = 20.1 mm;  input pipe has this radius  FIXME: GUESS
+flux = 3.8173e-3 # kg s-1;  = 3 g s-1; email from Sayag
+pipeR = 10.001e-3  # m;  = 10 mm;  input pipe has this radius; email from Sayag "8--10 mm"
 rho = 1000.0     # kg m-3;  density of gum = density of fresh water
 temp = 20.0      # C;  fluid is at 20 deg
 

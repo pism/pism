@@ -21,10 +21,20 @@ creates `initgum.nc`:
 
     $ ./buildgum.py
 
-Here is a run for 300 seconds on an 8 mm grid
+Here is a run for 746 seconds on an 10 mm grid
 
     $ ./rungum.sh 4 51 &> out.lab51 &
 
+When it is done, show the radial time series
+
+    $ ./showradius.py -o r51.png ts_lab51.nc
+
+Show the radial time series compared to data from Sayag (not currently public):
+
+    $ ./showradius.py -o r51.png -d constantflux3.txt ts_lab51.nc
+
+Results are much better on finer grids because the input pipe radius is
+only 10 mm.
 
 ## Changing configuration constants
 
