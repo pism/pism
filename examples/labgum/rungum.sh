@@ -7,7 +7,7 @@ if [ $# -lt 2 ] ; then
   echo "  where"
   echo "    PROCS     = 1,2,3,... is number of MPI processes"
   echo "    MX        = number of grid points in x,y directions;  MX -> cell width:"
-  echo "                51->10mm, 101->5mm, 251->2mm, 501->1mm"
+  echo "                53 -> 10mm,  105 -> 5mm, 209 -> 2.5mm, 521 -> 1mm"
   exit
 fi
 

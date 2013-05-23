@@ -29,30 +29,34 @@ At this point this example does not include the original laboratory data.
 
 ## Basic usage
 
-Here is a run for 746 seconds on an 10 mm grid (500 mm / 50 subintervals) and
+Here is a run for 746 seconds on an 10 mm grid (520 mm / 52 subintervals) and
 using 4 processors:
 
-    $ ./rungum.sh 4 51 &> out.lab51 &
+    $ ./rungum.sh 4 53 &> out.lab53 &
 
 The preprocessing stage of this will both translate `gumparams.cdl` --> `gumparams.nc`
-and creates `initgum51.nc`.  The run will be generating `out.lab51` from `stdout`
+and creates `initgum53.nc`.  The run will be generating `out.lab53` from `stdout`
 but also generate diagnostic [NetCDF](http://www.unidata.ucar.edu/software/netcdf/)
-files `ts_lab51.nc` and `ex_lab51.nc`.
+files `ts_lab53.nc` and `ex_lab53.nc`.
 
 This run took about 10 minutes on my laptop.  When it is done, show the radial
 time series:
 
-    $ ./showradius.py -o r51.png ts_lab51.nc
+    $ ./showradius.py -o r53.png ts_lab53.nc
 
 Show the radial time series compared to data from Sayag (not currently public):
 
-    $ ./showradius.py -o r51.png -d constantflux3.txt ts_lab51.nc
+    $ ./showradius.py -o r53.png -d constantflux3.txt ts_lab53.nc
 
 Results are better on finer grids because the input pipe radius is
-only 10 mm.  For example, this uses a 2 mm grid, but will take an overnight run
+only 10 mm.  For example, this uses a 2.5 mm grid, but will take an overnight run
 at least:
 
-    $ ./rungum.sh 4 251 &> out.lab251 &
+    $ ./rungum.sh 4 209 &> out.lab209 &
+
+Note you can compare multiple runs to the data in one figure:
+
+    $ ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
 
 ## Changing configuration constants
 

@@ -29,7 +29,7 @@ args = parser.parse_args()
 
 # lab setup is table with hole in the middle into which is piped the
 # shear-thinning fluid, which is Xanthan gum 1% solution
-Lx = 250.0e-3    # m;  = 250 mm;  table is approx 500 mm x 500 mm?
+Lx = 260.0e-3    # m;  = 260 mm;  maximum observed radius is 25.2 cm so we go out just a bit
 Ly = Lx          # square table
 flux = 3.8173e-3 # kg s-1;  = 3 g s-1; email from Sayag
 pipeR = 10.001e-3  # m;  = 10 mm;  input pipe has this radius; email from Sayag "8--10 mm"
