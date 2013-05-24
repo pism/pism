@@ -1,0 +1,21 @@
+
+@import url("sphinxdoc.css");
+
+
+dl.class, dl.function {
+    margin-top: 40px;
+    padding-top: 15px;
+    border-top: 4px solid #888;
+}
+
+dl.method, dl.attribute {
+    padding-top: 5px;
+    margin-top: 20px;
+    border-top: 1px solid #aaa;
+}
+
+dl.glossary dt {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
