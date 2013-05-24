@@ -31,10 +31,15 @@ endmacro(pism_dont_use_rpath)
 macro(pism_strictly_static)
   set (CMAKE_SKIP_RPATH ON CACHE BOOL "Disable RPATH completely")
   set (CMAKE_FIND_LIBRARY_SUFFIXES .a)
+
   set (BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared Pism libraries" FORCE)
+
   SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "") # get rid of -rdynamic
   SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "") # ditto
-  set_property(GLOBAL PROPERTY LINK_SEARCH_END_STATIC 1) # get rid of -Bdynamic
+
+  set_property(GLOBAL PROPERTY LINK_SEARCH_END_STATIC 1)
+  set(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)       # remove -Wl,-Bdynamic
+  set(CMAKE_EXE_LINK_DYNAMIC_CXX_FLAGS)
 
   pism_dont_use_rpath()
 endmacro(pism_strictly_static)
