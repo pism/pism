@@ -133,6 +133,6 @@ add_custom_target (install_python_bindings_in_the_build_directory ALL
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${CMAKE_BINARY_DIR}/PISM/
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${CMAKE_BINARY_DIR}/PISM/
   VERBATIM
-  DEPENDS ${SWIG_MODULE_cpp_REAL_NAME})
+  DEPENDS ${SWIG_MODULE_cpp_REAL_NAME}  _petsc_version )
 
 endif(Pism_BUILD_PYTHON_BINDINGS)

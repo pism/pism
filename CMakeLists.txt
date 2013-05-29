@@ -168,6 +168,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       COMPONENT RuntimeLibraries
     )
 
+    add_subdirectory (doc/pythonlib EXCLUDE_FROM_ALL)
+
 endif()
 
 add_subdirectory (src)
@@ -179,6 +181,7 @@ else()
 endif()
 
 add_subdirectory (doc/browser EXCLUDE_FROM_ALL)
+
 
 # PISM regression testing
 ENABLE_TESTING()

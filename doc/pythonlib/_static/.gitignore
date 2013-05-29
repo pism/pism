@@ -1,3 +1,0 @@
-# Convince git to track an empty directory by adding a
-# do-nothing .gitignore
-!.gitignore
