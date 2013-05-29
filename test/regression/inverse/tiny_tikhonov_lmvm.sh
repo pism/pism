@@ -1,11 +1,11 @@
 #!/bin/bash
-# Tests a very simple inversion setup.
+# Tests a simple inversion setup.
 # Requires PISM's Python bindings and siple.
 PYTHONEXEC=$5
 PISM_BUILD_DIR=$1
 
 # make sure that Python imports the right modules
-export PYTHONPATH=$PISM_BUILD_DIR:$PYTHONPATH
+export PYTHONPATH=${PISM_BUILD_DIR}/site-packages:$PYTHONPATH
 
 set -x
 set -e
