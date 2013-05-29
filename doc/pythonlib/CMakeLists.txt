@@ -5,6 +5,7 @@ index.rst
 api/index.rst
 api/PISM.rst
 api/ssa.rst
+api/invert_ssa.rst
 )
 
 set (sphinx_helpers

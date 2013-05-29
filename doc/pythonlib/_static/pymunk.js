@@ -26,7 +26,7 @@ var createList = function(selector){
 }
 
 
-var c = $('<div style="float:left; min-width: 300px;">');
+var c = $('<div min-width: 300px;">');
 
 var ul0 = c.clone().append($('.submodule-index'))
 

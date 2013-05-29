@@ -57,7 +57,7 @@ if __name__ == "__main__":
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
     use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
 
-  ssarun = PISM.invert_ssa.InvSSAFromInputFile(input_filename,inv_data_filename)
+  ssarun = PISM.invert_ssa.SSATaucForwardRunFromInputFile(input_filename,inv_data_filename)
   ssarun.setup()
   
   vecs = ssarun.modeldata.vecs
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     vel_ssa_observed.copy_from(vel_surface_observed)
     vel_ssa_observed.add(-1,vel_sia_observed)
 
-  (designFunctional,stateFunctional) = PISM.invert_ssa.constructTikhonovFunctionals(ssarun)
+  (designFunctional,stateFunctional) = PISM.invert_ssa.createTikhonovFunctionals(ssarun)
   eta = config.get("tikhonov_penalty_weight")
 
   solver_gn = PISM.InvSSATikhonovGN(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)

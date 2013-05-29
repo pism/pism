@@ -7,6 +7,7 @@ API
 
    PISM.rst
    ssa.rst
+   invert_ssa.rst
 
 Indices and tables
 ==================

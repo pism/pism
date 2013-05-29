@@ -18,7 +18,7 @@ import sys, os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 # This will add the build directory to the path
-sys.path.insert(0, os.path.abspath('@CMAKE_BINARY_DIR@'))
+sys.path.insert(0, os.path.abspath('@CMAKE_BINARY_DIR@'+'/site-packages'))
 
 # -- General configuration -----------------------------------------------------
 

@@ -232,7 +232,7 @@ if __name__ == "__main__":
   PISM.setVerbosityLevel(verbosity)
   testi = testi_run(Mx,My)
   testi.setup()
-  solver = PISM.invert_ssa.InvSSASolver(testi)
+  solver = PISM.invert_ssa.createInvSSATaucSolver(testi)
   tauc_param = solver.ssarun.tauc_param
 
   grid = testi.grid
@@ -244,7 +244,7 @@ if __name__ == "__main__":
   # Convert tauc_true to zeta_true
   zeta_true = PISM.IceModelVec2S();
   zeta_true.create(grid,"zeta_true",PISM.kHasGhosts,kFEMStencilWidth)
-  tauc_param = PISM.invert_ssa.tauc_param_factory.create(config)
+  tauc_param = PISM.invert_ssa.createTaucParam(config)
   tauc_param.convertFromTauc(tauc_true,zeta_true)
 
   # Build the initial guess for tauc for the inversion.
