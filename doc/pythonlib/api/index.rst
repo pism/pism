@@ -6,8 +6,9 @@ API
    :maxdepth: 2
 
    PISM.rst
+   model.rst
    ssa.rst
-   sia.rst
+   sia.rst   
    invert.rst
 
 Indices and tables

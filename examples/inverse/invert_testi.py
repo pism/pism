@@ -132,7 +132,7 @@ class testi_run(PISM.invert_ssa.InvSSARun):
     Mx=self.Mx; My=self.My
     Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
     Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.X_PERIODIC);
+    PISM.model.initShallowGrid(self.grid,Lx,Ly,Mx,My,PISM.X_PERIODIC);
 
   def _initPhysics(self):
     config = self.config
@@ -149,14 +149,14 @@ class testi_run(PISM.invert_ssa.InvSSARun):
 
   def _initSSACoefficients(self):
     vecs = self.modeldata.vecs; grid = self.grid
-    vecs.add( util.standardIceThicknessVec( grid ), 'thickness')
-    vecs.add( util.standardBedrockElevationVec(grid), 'bed')
-    vecs.add( util.standardYieldStressVec( grid ), 'tauc')
-    vecs.add( util.standardEnthalpyVec( grid ), 'enthalpy' )
-    vecs.add( util.standardIceMask( grid ), 'ice_mask' )
-    vecs.add( util.standardDrivingStressX( grid ) )
-    vecs.add( util.standardDrivingStressY( grid ) )
-    vecs.add( util.standardVelocityMisfitWeight(grid) )
+    vecs.add( model.createIceThicknessVec( grid ), 'thickness')
+    vecs.add( model.createBedrockElevationVec(grid), 'bed')
+    vecs.add( model.createYieldStressVec( grid ), 'tauc')
+    vecs.add( model.createEnthalpyVec( grid ), 'enthalpy' )
+    vecs.add( model.createIceMaskVec( grid ), 'ice_mask' )
+    vecs.add( model.createDrivingStressXVec( grid ) )
+    vecs.add( model.createDrivingStressYVec( grid ) )
+    vecs.add( model.createVelocityMisfitWeightVec(grid) )
 
     self._allocateBCs()
 
@@ -238,7 +238,7 @@ if __name__ == "__main__":
   grid = testi.grid
 
   # Build the true yeild stress for test I
-  tauc_true = PISM.util.standardYieldStressVec(grid,name="tauc_true")
+  tauc_true = PISM.model.createYieldStressVec(grid,name="tauc_true")
   testi_tauc(grid, tauc_true)
 
   # Convert tauc_true to zeta_true
@@ -248,7 +248,7 @@ if __name__ == "__main__":
   tauc_param.convertFromTauc(tauc_true,zeta_true)
 
   # Build the initial guess for tauc for the inversion.
-  tauc = PISM.util.standardYieldStressVec(grid)
+  tauc = PISM.model.createYieldStressVec(grid)
   if not tauc_guess_const is None:
     tauc.set(tauc_guess_const)
   else:
@@ -286,7 +286,7 @@ if __name__ == "__main__":
 
   # Send the true yeild stress through the forward problem to 
   # get at true velocity field.
-  u_obs = PISM.util.standard2dVelocityVec( grid, name='_ssa_true', desc='SSA velocity boundary condition',intent='intent' )
+  u_obs = PISM.model.create2dVelocityVec( grid, name='_ssa_true', desc='SSA velocity boundary condition',intent='intent' )
   solver.solveForward(zeta_true,out=u_obs)
 
   # Attach various iteration listeners to the solver as needed for:

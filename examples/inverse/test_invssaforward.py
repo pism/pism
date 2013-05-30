@@ -41,6 +41,7 @@ def adjustTauc(mask,tauc):
       elif mq.ice_free(i,j):
         tauc[i,j] = high_tauc
 
+WIDE_STENCIL = 2
 
 ## Main code starts here
 if __name__ == "__main__":
@@ -66,9 +67,9 @@ if __name__ == "__main__":
   # Determine the prior guess for tauc. This can be one of 
   # a) tauc from the input file (default)
   # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
-  tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
+  tauc_prior = PISM.model.createYieldStressVec(grid,'tauc_prior')
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
-  tauc = PISM.util.standardYieldStressVec(grid)
+  tauc = PISM.model.createYieldStressVec(grid)
   if use_tauc_prior:
     tauc_prior.regrid(inv_data_filename,critical=True)
   else:
@@ -82,7 +83,7 @@ if __name__ == "__main__":
 
   # Convert tauc_prior -> zeta_prior
   zeta1 = PISM.IceModelVec2S();
-  zeta1.create(grid, "", PISM.kHasGhosts, PISM.util.WIDE_STENCIL)
+  zeta1.create(grid, "", PISM.kHasGhosts, WIDE_STENCIL)
   ssarun.tauc_param.convertFromTauc(tauc_prior,zeta1)
 
   ssarun.ssa.linearize_at(zeta1)
@@ -109,7 +110,7 @@ if __name__ == "__main__":
   r = PISM.util.randVectorV(grid, grid.convert(1.0, "m/year", "m/second"))
 
   u1 = PISM.IceModelVec2V();
-  u1.create(grid,"",PISM.kHasGhosts,PISM.util.WIDE_STENCIL)
+  u1.create(grid,"",PISM.kHasGhosts,WIDE_STENCIL)
   u1.copy_from(ssarun.ssa.solution())
 
   rhs1 = PISM.IceModelVec2V();
@@ -118,7 +119,7 @@ if __name__ == "__main__":
   
   eps = 1e-8
   zeta2 = PISM.IceModelVec2S();
-  zeta2.create(grid, "zeta_prior", PISM.kHasGhosts, PISM.util.WIDE_STENCIL)
+  zeta2.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
   zeta2.copy_from(d_proj)
   zeta2.scale(eps)
   zeta2.add(1,zeta1)
@@ -235,7 +236,7 @@ if __name__ == "__main__":
 
   eps = 1e-8
   zeta2 = PISM.IceModelVec2S();
-  zeta2.create(grid, "", PISM.kHasGhosts, PISM.util.WIDE_STENCIL)
+  zeta2.create(grid, "", PISM.kHasGhosts, WIDE_STENCIL)
   zeta2.copy_from(d_proj)
   zeta2.scale(eps)
   zeta2.add(1,zeta1)

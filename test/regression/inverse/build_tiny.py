@@ -61,16 +61,16 @@ if __name__ == '__main__':
   # Build the grid.
   grid = PISM.Context().newgrid()
   config = grid.config
-  PISM.util.init_grid(grid,Lx,Ly,Lz,Mx,My,Mz,PISM.NOT_PERIODIC)
+  PISM.util.PISM.model.initGrid(grid,Lx,Ly,Lz,Mx,My,Mz,PISM.NOT_PERIODIC)
   vecs = PISM.model.ModelVecs();
-  vecs.add( PISM.util.standardIceSurfaceVec( grid ), 'surface')
-  vecs.add( PISM.util.standardIceThicknessVec( grid ), 'thickness')
-  vecs.add( PISM.util.standardBedrockElevationVec(grid), 'bed')
-  vecs.add( PISM.util.standardYieldStressVec( grid ), 'tauc')
-  vecs.add( PISM.util.standardEnthalpyVec( grid ), 'enthalpy' )
-  vecs.add( PISM.util.standardIceMask( grid ), 'ice_mask' )
-  vecs.add( PISM.util.standardNoModelMask( grid ), 'no_model_mask' )
-  vecs.add( PISM.util.standard2dVelocityVec( grid, name='_ssa_bc',desc='SSA Dirichlet BC') )
+  vecs.add( PISM.model.createIceSurfaceVec( grid ), 'surface')
+  vecs.add( PISM.model.createIceThicknessVec( grid ), 'thickness')
+  vecs.add( PISM.model.createBedrockElevationVec(grid), 'bed')
+  vecs.add( PISM.model.createYieldStressVec( grid ), 'tauc')
+  vecs.add( PISM.model.createEnthalpyVec( grid ), 'enthalpy' )
+  vecs.add( PISM.model.createIceMaskVec( grid ), 'ice_mask' )
+  vecs.add( PISM.model.createNoModelMaskVec( grid ), 'no_model_mask' )
+  vecs.add( PISM.model.create2dVelocityVec( grid, name='_ssa_bc',desc='SSA Dirichlet BC') )
 
   # Set constant coefficients.
   vecs.enthalpy.set(enth0)

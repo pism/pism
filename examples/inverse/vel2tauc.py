@@ -207,6 +207,8 @@ if __name__ == "__main__":
   com = context.com
   PISM.set_abort_on_sigint(True)
 
+  WIDE_STENCIL = 2
+
   usage = \
   """  vel2tauc.py -i IN.nc [-o file.nc]
     where:
@@ -284,9 +286,9 @@ if __name__ == "__main__":
   # Determine the prior guess for tauc. This can be one of 
   # a) tauc from the input file (default)
   # b) tauc_prior from the inv_datafile if -inv_use_tauc_prior is set
-  tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
+  tauc_prior = PISM.model.createYieldStressVec(grid,'tauc_prior')
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
-  tauc = PISM.util.standardYieldStressVec(grid)
+  tauc = PISM.model.createYieldStressVec(grid)
   if use_tauc_prior:
     tauc_prior.regrid(inv_data_filename,critical=True)
     vecs.add(tauc_prior,writing=saving_inv_data)
@@ -302,7 +304,7 @@ if __name__ == "__main__":
 
   # Convert tauc_prior -> zeta_prior
   zeta_prior = PISM.IceModelVec2S();
-  zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, PISM.util.WIDE_STENCIL)
+  zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
   tauc_param.convertFromTauc(tauc_prior,zeta_prior)
   vecs.add(zeta_prior,writing=True)
 
@@ -310,7 +312,7 @@ if __name__ == "__main__":
   # a synthetic inversion.  We'll load it now so that it will get written
   # out, if needed, at the end of the computation in the output file.
   if PISM.util.fileHasVariable(inv_data_filename,"tauc_true"):
-    tauc_true = PISM.util.standardYieldStressVec(grid,'tauc_true')
+    tauc_true = PISM.model.createYieldStressVec(grid,'tauc_true')
     tauc_true.regrid(inv_data_filename,True)
     tauc_true.read_attributes(inv_data_filename)
     vecs.add(tauc_true,writing=saving_inv_data)
@@ -319,7 +321,7 @@ if __name__ == "__main__":
   # restarting, we convert tauc_prior to zeta.  If we are restarting,
   # we load in zeta from the output file.
   zeta = PISM.IceModelVec2S();
-  zeta.create(grid, "zeta_inv", True, PISM.util.WIDE_STENCIL)
+  zeta.create(grid, "zeta_inv", PISM.kHasGhosts, WIDE_STENCIL)
   if do_restart:
     # Just to be sure, verify that we have a 'zeta_inv' in the output file.
     if not PISM.util.fileHasVariable(output_filename,'zeta_inv'):
@@ -341,7 +343,7 @@ if __name__ == "__main__":
       (seed,seed_set) = PISM.optionsIntWasSet("-inv_test_adjoint_seed","")
       if seed_set:
         np.random.seed(seed+PISM.Context().rank)
-      d = PISM.util.randVectorS(grid,1e5,PISM.util.WIDE_STENCIL)
+      d = PISM.util.randVectorS(grid,1e5,WIDE_STENCIL)
       # If we're fixing some tauc values, we need to ensure that we don't
       # move in a direction 'd' that changes those values in this test.
       if vel2tauc.using_zeta_fixed_mask:
@@ -350,7 +352,7 @@ if __name__ == "__main__":
           for (i,j) in grid.points():
             if zeta_fixed_mask[i,j] != 0:
               d[i,j] = 0;
-      r = PISM.util.randVectorV(grid,1./secpera,PISM.util.WIDE_STENCIL)
+      r = PISM.util.randVectorV(grid,1./secpera,WIDE_STENCIL)
       from PISM.sipletools import PISMLocalVector as PLV
       forward_problem = solver.forward_problem
       (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),PLV(r),3)
@@ -359,7 +361,7 @@ if __name__ == "__main__":
       exit(0)
 
   vel_ssa_observed = None
-  vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed',stencil_width=2)
+  vel_ssa_observed = PISM.model.create2dVelocityVec(grid,'_ssa_observed',stencil_width=2)
   if PISM.util.fileHasVariable(inv_data_filename,"u_ssa_observed"):
     vel_ssa_observed.regrid(inv_data_filename,True)
     vecs.add(vel_ssa_observed,writing=saving_inv_data)
@@ -367,7 +369,7 @@ if __name__ == "__main__":
     if not PISM.util.fileHasVariable(inv_data_filename,"u_surface_observed"):
       PISM.verbPrintf(1,context.com,"Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
       exit(1)
-    vel_surface_observed = PISM.util.standard2dVelocityVec(grid,'_surface_observed',stencil_width=2)
+    vel_surface_observed = PISM.model.create2dVelocityVec(grid,'_surface_observed',stencil_width=2)
     vel_surface_observed.regrid(inv_data_filename,True)
     vecs.add(vel_surface_observed,writing=saving_inv_data)
     
@@ -462,7 +464,7 @@ if __name__ == "__main__":
   u.rename("_ssa_inv","SSA velocity computed by inversion","")
   vecs.add(u,writing=True)
 
-  residual = PISM.util.standard2dVelocityVec(grid,name='_inv_ssa_residual')
+  residual = PISM.model.create2dVelocityVec(grid,name='_inv_ssa_residual')
   residual.copy_from(u)
   residual.add(-1,vel_ssa_observed);
   

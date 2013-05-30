@@ -27,7 +27,7 @@ tauc_prior_const = None
 
 def groundedIceMisfitWeight(modeldata):
   grid = modeldata.grid
-  weight = PISM.util.standardVelocityMisfitWeight(grid)
+  weight = PISM.model.createVelocityMisfitWeightVec(grid)
   mask = modeldata.vecs.ice_mask
   with PISM.util.Access(comm=weight,nocomm=mask):
     weight.set(0.)
@@ -40,7 +40,7 @@ def groundedIceMisfitWeight(modeldata):
 
 def fastIceMisfitWeight(modeldata,threshold):
   grid = modeldata.grid
-  weight = PISM.util.standardVelocityMisfitWeight(grid)
+  weight = PISM.model.createVelocityMisfitWeightVec(grid)
   mask    = modeldata.vecs.ice_mask
   vel_ssa = modeldata.vecs.vel_ssa
   threshold = threshold*threshold
@@ -110,7 +110,7 @@ if __name__ == '__main__':
   vecs = modeldata.vecs
 
   # Generate a prior guess for tauc
-  tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior',desc="initial guess for (pseudo-plastic) basal yield stress in an inversion")
+  tauc_prior = PISM.model.createYieldStressVec(grid,name='tauc_prior',desc="initial guess for (pseudo-plastic) basal yield stress in an inversion")
   vecs.add(tauc_prior,writing=True)
   if not tauc_prior_const is None:
     tauc_prior.set(tauc_prior_const)
@@ -134,7 +134,7 @@ if __name__ == '__main__':
       sia_solver = PISM.SIAFD_Regional
     vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata,sia_solver)
     vel_ssa_observed.rename("_sia_observed","'observed' SIA velocities'","")
-    vel_surface_observed = PISM.util.standard2dVelocityVec(grid,"_surface_observed","observed surface velocities",stencil_width=1)
+    vel_surface_observed = PISM.model.create2dVelocityVec(grid,"_surface_observed","observed surface velocities",stencil_width=1)
     vel_surface_observed.copy_from(vel_sia_observed)
     vel_surface_observed.add(1.,vel_ssa_observed)
     vecs.markForWriting(vel_surface_observed)
@@ -147,10 +147,6 @@ if __name__ == '__main__':
   else:
     misfit_weight = groundedIceMisfitWeight(modeldata)
   modeldata.vecs.add(misfit_weight,writing=True)    
-
-  # Add a default element mask for now.
-  vecs.add( PISM.util.standardMisfitElementMask(grid), writing=True )
-  vecs.misfit_element_mask.set(1)
 
   if not noise is None:
     u_noise = PISM.sipletools.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())

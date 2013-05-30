@@ -66,9 +66,9 @@ if __name__ == "__main__":
   # Determine the prior guess for tauc. This can be one of 
   # a) tauc from the input file (default)
   # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
-  tauc_prior = PISM.util.standardYieldStressVec(grid,'tauc_prior')
+  tauc_prior = PISM.model.createYieldStressVec(grid,'tauc_prior')
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
-  tauc = PISM.util.standardYieldStressVec(grid)
+  tauc = PISM.model.createYieldStressVec(grid)
   if use_tauc_prior:
     tauc_prior.regrid(inv_data_filename,critical=True)
   else:
@@ -82,19 +82,20 @@ if __name__ == "__main__":
 
   # Convert tauc_prior -> zeta_prior
   zeta = PISM.IceModelVec2S();
-  zeta.create(grid, "", PISM.kHasGhosts, PISM.util.WIDE_STENCIL)
+  WIDE_STENCIL=2
+  zeta.create(grid, "", PISM.kHasGhosts, WIDE_STENCIL)
   ssarun.tauc_param.convertFromTauc(tauc_prior,zeta)
   ssarun.ssa.linearize_at(zeta)
 
   vel_ssa_observed = None
-  vel_ssa_observed = PISM.util.standard2dVelocityVec(grid,'_ssa_observed',stencil_width=2)
+  vel_ssa_observed = PISM.model.create2dVelocityVec(grid,'_ssa_observed',stencil_width=2)
   if PISM.util.fileHasVariable(inv_data_filename,"u_ssa_observed"):
     vel_ssa_observed.regrid(inv_data_filename,True)
   else:
     if not PISM.util.fileHasVariable(inv_data_filename,"u_surface_observed"):
       PISM.verbPrintf(1,context.com,"Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
       exit(1)
-    vel_surface_observed = PISM.util.standard2dVelocityVec(grid,'_surface_observed',stencil_width=2)
+    vel_surface_observed = PISM.model.create2dVelocityVec(grid,'_surface_observed',stencil_width=2)
     vel_surface_observed.regrid(inv_data_filename,True)
     
     sia_solver=PISM.SIAFD
