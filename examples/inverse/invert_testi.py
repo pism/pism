@@ -307,7 +307,7 @@ if __name__ == "__main__":
   if do_pause:
     solver.addIterationListener(PISM.invert_ssa.pauseListener)            
   # Iteration saving
-  solver.addXUpdateListener(PISM.invert_ssa.ZetaSaver(output_file)) 
+  solver.addDesignUpdateListener(PISM.invert_ssa.ZetaSaver(output_file)) 
 
   # Try solving
   reason = solver.solveInverse(zeta0,u_obs,zeta0)
