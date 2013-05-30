@@ -1,14 +1,14 @@
 ===========================
-API
+invert
 ===========================
 
 .. toctree::
    :maxdepth: 2
 
-   PISM.rst
-   ssa.rst
-   sia.rst
-   invert.rst
+   invert_ssa.rst
+   invert_ssa_tao.rst
+   invert_ssa_siple.rst
+   sipletools.rst
 
 Indices and tables
 ==================
