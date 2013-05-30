@@ -4,6 +4,7 @@ set(RST_FILES
 index.rst 
 api/index.rst
 api/PISM.rst
+api/options.rst
 api/logging.rst
 api/model.rst
 api/ssa.rst

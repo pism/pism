@@ -6,6 +6,7 @@ API
    :maxdepth: 2
 
    PISM.rst
+   options.rst
    logging.rst
    model.rst
    ssa.rst
