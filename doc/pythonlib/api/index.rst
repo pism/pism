@@ -7,6 +7,7 @@ API
 
    PISM.rst
    ssa.rst
+   sia.rst
    invert_ssa.rst
    invert_ssa_tao.rst
 

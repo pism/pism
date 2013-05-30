@@ -5,6 +5,7 @@ index.rst
 api/index.rst
 api/PISM.rst
 api/ssa.rst
+api/sia.rst
 api/invert_ssa.rst
 api/invert_ssa_tao.rst
 )
