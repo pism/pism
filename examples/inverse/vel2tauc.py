@@ -424,7 +424,7 @@ if __name__ == "__main__":
     solver.addIterationListener(progress_reporter)
 
   # Saving the current iteration
-  solver.addXUpdateListener(PISM.invert_ssa.ZetaSaver(output_filename)) 
+  solver.addDesignUpdateListener(PISM.invert_ssa.ZetaSaver(output_filename)) 
 
   # Solver is set up.  Give the user's prep module a chance to do any final
   # setup.
