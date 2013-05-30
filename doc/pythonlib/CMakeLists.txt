@@ -6,6 +6,7 @@ api/index.rst
 api/PISM.rst
 api/ssa.rst
 api/invert_ssa.rst
+api/invert_ssa_tao.rst
 )
 
 set (sphinx_helpers

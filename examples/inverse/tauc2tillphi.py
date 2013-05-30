@@ -30,7 +30,7 @@ class BasalTillStrength:
 
     self.setFromOptions()
 
-    config        = PISM.global_config()
+    config        = PISM.Context().config
     
     self.hydrology_pressure_fraction = config.get("hydrology_pressure_fraction")
     self.till_c_0 = config.get("till_c_0") * 1e3 # convert from kPa to Pa
@@ -66,7 +66,7 @@ class BasalTillStrength:
 # The updateYieldStress and getBasalWaterPressure come from iMBasal.
 
   def updateYieldStress(self,mask,thickness,bwat,bmr,tillphi,tauc):
-    config = PISM.global_config()
+    config = PISM.Context().config
     hydrology_pressure_fraction = self.hydrology_pressure_fraction#config.get("hydrology_pressure_fraction")
     till_c_0 = self.till_c_0#config.get("till_c_0") * 1e3 # convert from kPa to Pa
     bwat_max = self.bwat_max#config.get("bwat_max");
@@ -96,7 +96,7 @@ class BasalTillStrength:
           tauc[i,j] = till_c_0 + N * math.tan((math.pi/180.0) * tillphi[i,j])
 
   def updateTillPhi_algebraic(self,mask,thickness,bwat,bmr,tauc,tillphi,tillphi_prev=None):
-    config = PISM.global_config()
+    config = PISM.Context().config
     hydrology_pressure_fraction = self.hydrology_pressure_fraction#config.get("hydrology_pressure_fraction")
     till_c_0 = self.till_c_0#config.get("till_c_0") * 1e3 # convert from kPa to Pa
     bwat_max = self.bwat_max#config.get("bwat_max");
