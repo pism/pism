@@ -10,8 +10,12 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   
+   inverse/design.rst
 
    api/index.rst
+
+   bib
 
 Indices and tables
 ==================

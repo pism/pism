@@ -2,6 +2,7 @@ set(SPHYNX_BUILD_EXECUTABLE sphinx-build)
 
 set(RST_FILES
 index.rst 
+bib.rst
 api/index.rst
 api/PISM.rst
 api/options.rst
@@ -16,7 +17,7 @@ api/invert_ssa.rst
 api/invert_ssa_tao.rst
 api/invert_ssa_siple.rst
 api/sipletools.rst
-
+inverse/design.rst
 )
 
 set (sphinx_helpers
@@ -24,6 +25,8 @@ _static/pymunk.js
 pismdoc/theme.conf
 pismdoc/static/PISM.css )
 
+# Copy the bibliography file (note the change in the file name)
+configure_file (../ice_bib.bib ice_bib.bib COPYONLY)
 
 # copy all the files needed to generate browser sources
 foreach (filename ${sphinx_helpers})
