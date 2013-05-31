@@ -75,7 +75,7 @@ class BasalTillStrength:
 
 
     Nmin = 1e45
-    with PISM.util.Access(nocomm=[mask,thickness,bwat,bmr,tillphi],comm=tauc):
+    with PISM.vec.Access(nocomm=[mask,thickness,bwat,bmr,tillphi],comm=tauc):
       mq = PISM.MaskQuery(mask)
       GHOSTS = self.grid.max_stencil_width;
       for (i,j) in self.grid.points_with_ghosts(nGhosts = GHOSTS):
@@ -108,7 +108,7 @@ class BasalTillStrength:
     vars = [mask,thickness,bwat,bmr,tauc]
     if not tillphi_prev is None:
       vars.append(tillphi_prev)
-    with PISM.util.Access(nocomm=vars,comm=tillphi):
+    with PISM.vec.Access(nocomm=vars,comm=tillphi):
       mq = PISM.MaskQuery(mask)
       GHOSTS = self.grid.max_stencil_width;
       for (i,j) in self.grid.points_with_ghosts(nGhosts = GHOSTS):
@@ -189,7 +189,7 @@ for o in PISM.OptionsGroup(context.com,"","tauc2tillphi"):
   PISM.set_config_from_options(context.com,config)
 
 grid = PISM.Context().newgrid()
-PISM.util.PISM.model.initGridFromFile(grid,bootfile,
+PISM.model.initGridFromFile(grid,bootfile,
                                 periodicity=PISM.XY_PERIODIC);
 
 enthalpyconverter = PISM.EnthalpyConverter(config)

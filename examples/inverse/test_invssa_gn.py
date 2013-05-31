@@ -33,7 +33,7 @@ def adjustTauc(mask,tauc):
   grid = mask.get_grid()
   high_tauc = grid.config.get("high_tauc")
 
-  with PISM.util.Access(comm=tauc,nocomm=mask):
+  with PISM.vec.Access(comm=tauc,nocomm=mask):
     mq = PISM.MaskQuery(mask)
     for (i,j) in grid.points():
       if mq.ocean(i,j):
@@ -115,8 +115,8 @@ if __name__ == "__main__":
   if seed_set:
     np.random.seed(seed+PISM.Context().rank)
 
-  d1 = PISM.util.randVectorS(grid,1)
-  d2 = PISM.util.randVectorS(grid,1)
+  d1 = PISM.vec.randVectorS(grid,1)
+  d2 = PISM.vec.randVectorS(grid,1)
 
   GNd1 = PISM.IceModelVec2S();
   GNd1.create(grid,"",PISM.kNoGhosts)

@@ -33,7 +33,7 @@ def adjustTauc(mask,tauc):
   grid = mask.get_grid()
   high_tauc = grid.config.get("high_tauc")
 
-  with PISM.util.Access(comm=tauc,nocomm=mask):
+  with PISM.vec.Access(comm=tauc,nocomm=mask):
     mq = PISM.MaskQuery(mask)
     for (i,j) in grid.points():
       if mq.ocean(i,j):
@@ -96,18 +96,18 @@ if __name__ == "__main__":
 ######################################################################################################################
 # Jacobian design 
 
-  d = PISM.util.randVectorS(grid,1)
+  d = PISM.vec.randVectorS(grid,1)
   d_proj = PISM.IceModelVec2S()
   d_proj.create(grid,"",PISM.kNoGhosts)
   d_proj.copy_from(d)
   if vecs.has('zeta_fixed_mask'):
     zeta_fixed_mask = vecs.zeta_fixed_mask
-    with PISM.util.Access(nocomm=[d_proj,zeta_fixed_mask]):
+    with PISM.vec.Access(nocomm=[d_proj,zeta_fixed_mask]):
       for (i,j) in grid.points():
         if zeta_fixed_mask[i,j] != 0:
           d_proj[i,j] = 0;
 
-  r = PISM.util.randVectorV(grid, grid.convert(1.0, "m/year", "m/second"))
+  r = PISM.vec.randVectorV(grid, grid.convert(1.0, "m/year", "m/second"))
 
   u1 = PISM.IceModelVec2V();
   u1.create(grid,"",PISM.kHasGhosts,WIDE_STENCIL)
@@ -163,8 +163,8 @@ if __name__ == "__main__":
 
   stencil_width = 1
   u = ssarun.ssa.solution();
-  d = PISM.util.randVectorS(grid,1,stencil_width)
-  r = PISM.util.randVectorV(grid,1,stencil_width)
+  d = PISM.vec.randVectorS(grid,1,stencil_width)
+  r = PISM.vec.randVectorV(grid,1,stencil_width)
 
   Jd = PISM.IceModelVec2V();
   Jd.create(grid,"",PISM.kNoGhosts)
@@ -193,8 +193,8 @@ if __name__ == "__main__":
   ######################################################################################################################
   # Linearization transpose
   
-  d = PISM.util.randVectorS(grid,1)
-  r = PISM.util.randVectorV(grid,1)
+  d = PISM.vec.randVectorS(grid,1)
+  r = PISM.vec.randVectorV(grid,1)
 
   Td = PISM.IceModelVec2V()
   Td.create(grid,'',PISM.kNoGhosts)
@@ -214,13 +214,13 @@ if __name__ == "__main__":
   ######################################################################################################################
   # Linearization
 
-  d = PISM.util.randVectorS(grid,1)
+  d = PISM.vec.randVectorS(grid,1)
   d_proj = PISM.IceModelVec2S()
   d_proj.create(grid,"",PISM.kNoGhosts)
   d_proj.copy_from(d)
   if vecs.has('zeta_fixed_mask'):
     zeta_fixed_mask = vecs.zeta_fixed_mask
-    with PISM.util.Access(nocomm=[d_proj,zeta_fixed_mask]):
+    with PISM.vec.Access(nocomm=[d_proj,zeta_fixed_mask]):
       for (i,j) in grid.points():
         if zeta_fixed_mask[i,j] != 0:
           d_proj[i,j] = 0;

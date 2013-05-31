@@ -79,7 +79,7 @@ if __name__ == '__main__':
   bed = vecs.bed
   thickness = vecs.thickness
 
-  with PISM.util.Access(comm=[bed,thickness]):
+  with PISM.vec.Access(comm=[bed,thickness]):
     for (i,j) in grid.points():
       x=grid.x[i]; y=grid.y[j]
       (b,t) = geometry(x,y)
@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
   tauc = vecs.tauc; mask = vecs.ice_mask
   tauc_free_bedrock = config.get('high_tauc')
-  with PISM.util.Access(comm=tauc,nocomm=mask):
+  with PISM.vec.Access(comm=tauc,nocomm=mask):
     for (i,j) in grid.points():
       x=grid.x[i]; y=grid.y[j]
       tauc[i,j] = stream_tauc(x,y)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
   vecs.vel_ssa_bc.set(0.)
   no_model_mask = vecs.no_model_mask
   no_model_mask.set(0)
-  with PISM.util.Access(comm=[no_model_mask]):
+  with PISM.vec.Access(comm=[no_model_mask]):
     for (i,j) in grid.points():
       if (i==0) or (i==grid.Mx-1) or (j==0) or (j==grid.My-1):
         no_model_mask[i,j] = 1

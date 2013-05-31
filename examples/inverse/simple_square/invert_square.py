@@ -37,7 +37,7 @@ def testi_tauc(grid,ice,tauc):
   xsig = 1.e8 # = 2*\sigma^2 where \sigma is the std
   ysig = xsig
   secpera = grid.convert(1.0, "year", "seconds")
-  with PISM.util.Access(comm=tauc):
+  with PISM.vec.Access(comm=tauc):
     for (i,j) in grid.points():
       x=grid.x[i]
       y=grid.y[j]
@@ -96,7 +96,7 @@ class testi_run(InvSSARun):
     grid = self.grid
 
     vars = [vecs.bed,vecs.thickness,vecs.surface_altitude]
-    with PISM.util.Access(comm=vars):
+    with PISM.vec.Access(comm=vars):
       for (i,j) in grid.points():
         x=grid.x[i]; y=grid.y[j]
         vecs.thickness[i,j] = 1060. + 2.e-3*y # 900. + 2.e-3*y: different zero crossing because of different origin
@@ -105,13 +105,13 @@ class testi_run(InvSSARun):
 
 
     # standard_gravity = grid.config.get("standard_gravity");
-    # with PISM.util.Access(comm=[vecs.driving_y,vecs.driving_x]):
+    # with PISM.vec.Access(comm=[vecs.driving_y,vecs.driving_x]):
     #   for (i,j) in grid.points():
     #     vecs.driving_y[i,j] = 0.
     #     vecs.driving_x[i,j] = self.modeldata.ice.rho*standard_gravity*vecs.thickness[i,j]*slope
 
     # Dirichlet bc of 0 everywhere except for the lower boundary
-    with PISM.util.Access(comm=[vecs.bc_mask,vecs.vel_bc]):
+    with PISM.vec.Access(comm=[vecs.bc_mask,vecs.vel_bc]):
       for (i,j) in grid.points():
         edge = ( (j == grid.My-1) ) or ( (i==0) or (i==grid.Mx-1) ); # (j == 0) or
         if (edge):
@@ -121,7 +121,7 @@ class testi_run(InvSSARun):
 
     # Set misfit_weight to one everywhere
     misfit_weight=vecs.vel_misfit_weight
-    with PISM.util.Access(comm=misfit_weight):
+    with PISM.vec.Access(comm=misfit_weight):
       for (i,j) in grid.points():
         misfit_weight[i,j] = 1.
 
@@ -174,7 +174,7 @@ else:
   zeta_true = PISM.IceModelVec2S();
   WIDE_STENCIL = 2
   zeta_true.create(grid, "zeta_true", PISM.kHasGhosts, WIDE_STENCIL)
-  with PISM.util.Access(nocomm=[tauc_true],comm=[zeta_true]):
+  with PISM.vec.Access(nocomm=[tauc_true],comm=[zeta_true]):
     for (i,j) in grid.points():
       zeta_true[i,j] = tauc_param.fromTauc(tauc_true[i,j])
 
@@ -199,7 +199,7 @@ if config.get_string('inv_ssa_tauc_param')=='ident':
 else:
   zeta = PISM.IceModelVec2S();
   zeta.create(grid, "zeta", PISM.kHasGhosts, WIDE_STENCIL)
-  with PISM.util.Access(nocomm=[tauc],comm=[zeta]):
+  with PISM.vec.Access(nocomm=[tauc],comm=[zeta]):
     for (i,j) in grid.points():
       zeta[i,j] = tauc_param.fromTauc(tauc[i,j])
 
@@ -245,7 +245,7 @@ rms_error /= secpera # m/s
 if config.get_string('inv_ssa_tauc_param')=='ident':
   tauc = zeta
 else:
-  with PISM.util.Access(nocomm=[zeta],comm=[tauc]):
+  with PISM.vec.Access(nocomm=[zeta],comm=[tauc]):
     for (i,j) in grid.points():
       (tauc[i,j],dummy) = tauc_param.toTauc(zeta[i,j])
 

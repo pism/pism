@@ -49,6 +49,10 @@ copyright = u'2013, PISM Authors'
 # not the default (alphabetical).
 autodoc_member_order = 'bysource'
 
+# When automatically generating class documentation, include both the 
+# class docstring and the __init__ docstring.
+autoclass_content = 'both'
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.

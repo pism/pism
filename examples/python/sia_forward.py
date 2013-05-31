@@ -50,7 +50,7 @@ periodicity = PISM.XY_PERIODIC
 if is_regional:
   periodicity=PISM.NOT_PERIODIC
 grid = PISM.Context().newgrid()
-PISM.util.PISM.model.initGridFromFile(grid,input_file,periodicity);
+PISM.model.initGridFromFile(grid,input_file,periodicity);
 
 basal = PISM.IceBasalResistancePlasticLaw(config)
 

@@ -8,6 +8,8 @@ API
    PISM.rst
    options.rst
    logging.rst
+   vec.rst
+   util.rst
    model.rst
    ssa.rst
    sia.rst   

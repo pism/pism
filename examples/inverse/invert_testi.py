@@ -117,7 +117,7 @@ def testi_tauc(grid, tauc):
   ice_density = grid.config.get("ice_density");
   f = ice_density * standard_gravity * H0_schoof * slope
 
-  with PISM.util.Access(comm=tauc):
+  with PISM.vec.Access(comm=tauc):
     for (i,j) in grid.points():
       y=grid.y[j]
       tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
@@ -174,7 +174,7 @@ class testi_run(PISM.invert_ssa.InvSSARun):
     vecs.ssa_driving_stress_y.set(0)
     vecs.ssa_driving_stress_x.set(f)
     
-    with PISM.util.Access(comm=[vecs.bc_mask,vecs.vel_bc]):
+    with PISM.vec.Access(comm=[vecs.bc_mask,vecs.vel_bc]):
       for (i,j) in grid.points():
         if (j == 0) or (j==grid.My-1):
           vecs.bc_mask[i,j]=1
@@ -182,7 +182,7 @@ class testi_run(PISM.invert_ssa.InvSSARun):
           vecs.vel_bc[i,j].v=0
 
     misfit_weight=vecs.vel_misfit_weight
-    with PISM.util.Access(comm=misfit_weight):
+    with PISM.vec.Access(comm=misfit_weight):
       for (i,j) in grid.points():
         if grid.y[j] <= 0:
           misfit_weight[i,j] = 1.;
@@ -329,10 +329,10 @@ if __name__ == "__main__":
   u_obs.write(output_file)
 
   # Draw a pretty picture
-  tz = PISM.toproczero.ToProcZero(grid)
+  tz = PISM.vec.ToProcZero(grid)
   tauc_a = tz.communicate(tauc)
   tauc_true = tz.communicate(tauc_true)
-  tz2 = PISM.toproczero.ToProcZero(grid,dof=2,dim=2)
+  tz2 = PISM.vec.ToProcZero(grid,dof=2,dim=2)
   u_i_a = tz2.communicate(u_i)
   u_obs_a = tz2.communicate(u_obs)
 

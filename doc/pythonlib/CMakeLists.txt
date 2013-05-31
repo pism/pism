@@ -7,6 +7,8 @@ api/PISM.rst
 api/options.rst
 api/logging.rst
 api/model.rst
+api/util.rst
+api/vec.rst
 api/ssa.rst
 api/sia.rst
 api/invert.rst

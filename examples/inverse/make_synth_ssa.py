@@ -29,7 +29,7 @@ def groundedIceMisfitWeight(modeldata):
   grid = modeldata.grid
   weight = PISM.model.createVelocityMisfitWeightVec(grid)
   mask = modeldata.vecs.ice_mask
-  with PISM.util.Access(comm=weight,nocomm=mask):
+  with PISM.vec.Access(comm=weight,nocomm=mask):
     weight.set(0.)
     grounded = PISM.MASK_GROUNDED
     for (i,j) in grid.points():
@@ -44,7 +44,7 @@ def fastIceMisfitWeight(modeldata,threshold):
   mask    = modeldata.vecs.ice_mask
   vel_ssa = modeldata.vecs.vel_ssa
   threshold = threshold*threshold
-  with PISM.util.Access(comm=weight,nocomm=[vel_ssa,mask]):
+  with PISM.vec.Access(comm=weight,nocomm=[vel_ssa,mask]):
     weight.set(0.)
     grounded = PISM.MASK_GROUNDED
     for (i,j) in grid.points():

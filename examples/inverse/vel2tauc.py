@@ -192,7 +192,7 @@ def adjustTauc(mask,tauc):
   grid = mask.get_grid()
   high_tauc = grid.config.get("high_tauc")
 
-  with PISM.util.Access(comm=tauc,nocomm=mask):
+  with PISM.vec.Access(comm=tauc,nocomm=mask):
     mq = PISM.MaskQuery(mask)
     for (i,j) in grid.points():
       if mq.ocean(i,j):
@@ -343,16 +343,16 @@ if __name__ == "__main__":
       (seed,seed_set) = PISM.optionsIntWasSet("-inv_test_adjoint_seed","")
       if seed_set:
         np.random.seed(seed+PISM.Context().rank)
-      d = PISM.util.randVectorS(grid,1e5,WIDE_STENCIL)
+      d = PISM.vec.randVectorS(grid,1e5,WIDE_STENCIL)
       # If we're fixing some tauc values, we need to ensure that we don't
       # move in a direction 'd' that changes those values in this test.
       if vel2tauc.using_zeta_fixed_mask:
         zeta_fixed_mask = vecs.zeta_fixed_mask
-        with PISM.util.Access(comm=d, nocomm=zeta_fixed_mask):
+        with PISM.vec.Access(comm=d, nocomm=zeta_fixed_mask):
           for (i,j) in grid.points():
             if zeta_fixed_mask[i,j] != 0:
               d[i,j] = 0;
-      r = PISM.util.randVectorV(grid,1./secpera,WIDE_STENCIL)
+      r = PISM.vec.randVectorV(grid,1./secpera,WIDE_STENCIL)
       from PISM.sipletools import PISMLocalVector as PLV
       forward_problem = solver.forward_problem
       (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),PLV(r),3)
