@@ -27,7 +27,7 @@ class Vel2Tauc(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
   def write(self,filename,append=False):
     if not append:
-      PISM.ssa.SSAFromInputFile.write(self,filename)
+      PISM.invert.ssa.SSAForwardRunFromInputFile.write(self,filename)
     else:
       grid = self.grid
       vecs = self.modeldata.vecs
