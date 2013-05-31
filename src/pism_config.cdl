@@ -423,8 +423,8 @@ netcdf pism_config {
     pism_config:inv_ssa_tauc_param = "exp";
     pism_config:inv_ssa_tauc_param_doc = "parameterization of tauc used during inversion";
 
-    pism_config:inv_ssa_tauc_norm = "hilbert";
-    pism_config:inv_ssa_tauc_norm_doc = "norm used for inversion design variables";
+    pism_config:inv_ssa_design_functional = "hilbert";
+    pism_config:inv_ssa_design_functional_doc = "functional used for inversion design variables";
 
     pism_config:inv_ssa_cL2     = 1;
     pism_config:inv_ssa_cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";
