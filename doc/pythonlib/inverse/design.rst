@@ -29,7 +29,7 @@ for wiring up the algorithm library specific components to the :class:`PISM.inv_
 
 Here are the key players common to all inversions.(TODO: All the details!)
 
-  * :file:`vel2tauc.py`
+  * :file:`pismi.py`
   * :cpp:class:`SSAFEM`
   * :class:`PISM.model.ModelData`
   * :class:`PISM.ssa.SSARun`

@@ -150,7 +150,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     examples/python/ssa_forward.py
     examples/python/sia_forward.py
     examples/inverse/make_synth_ssa.py
-    examples/inverse/vel2tauc.py
+    examples/inverse/pismi.py
     examples/inverse/verify_ssa_inv.py
     DESTINATION ${Pism_BIN_DIR} )
 
