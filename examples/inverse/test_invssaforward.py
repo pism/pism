@@ -57,7 +57,7 @@ if __name__ == "__main__":
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
     use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
 
-  ssarun = PISM.invert.ssa.SSATaucForwardRunFromInputFile(input_filename,inv_data_filename)
+  ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename,inv_data_filename)
   ssarun.setup()
   
   vecs = ssarun.modeldata.vecs

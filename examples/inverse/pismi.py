@@ -23,7 +23,7 @@ import PISM.invert.ssa
 import numpy as np
 import sys, os, math
 
-class Vel2Tauc(PISM.invert.ssa.SSATaucForwardRunFromInputFile):
+class Vel2Tauc(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
   def write(self,filename,append=False):
     if not append:
@@ -269,10 +269,10 @@ if __name__ == "__main__":
   saving_inv_data = (inv_data_filename != output_filename)
 
   PISM.setVerbosityLevel(verbosity)
-  vel2tauc = Vel2Tauc(input_filename,inv_data_filename)
+  vel2tauc = Vel2Tauc(input_filename,inv_data_filename,'tauc')
   vel2tauc.setup()
   tauc_param = vel2tauc.tauc_param
-  solver = PISM.invert.ssa.createInvSSATaucSolver(vel2tauc)
+  solver = PISM.invert.ssa.createInvSSASolver(vel2tauc)
 
   # if forward_type == 'classic':
   #   forward_problem = SSAForwardProblem(vel2tauc)

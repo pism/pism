@@ -230,7 +230,7 @@ if __name__ == "__main__":
   PISM.setVerbosityLevel(verbosity)
   testi = testi_run(Mx,My)
   testi.setup()
-  solver = PISM.invert.ssa.createInvSSATaucSolver(testi)
+  solver = PISM.invert.ssa.createInvSSASolver(testi)
   tauc_param = solver.ssarun.tauc_param
 
   grid = testi.grid
