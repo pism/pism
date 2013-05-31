@@ -1,6 +1,6 @@
-**********
-sipletools
-**********
+*****************
+invert.sipletools
+*****************
 
 .. container:: custom-index
 
@@ -8,9 +8,6 @@ sipletools
 
         <script type="text/javascript" src='../_static/pymunk.js'></script>
 
-.. automodule:: PISM.sipletools
+.. automodule:: PISM.invert.sipletools
    :members:
-   :undoc-members:
-   :private-members:
-   :special-members:
    :show-inheritance:

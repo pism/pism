@@ -12,11 +12,11 @@ api/util.rst
 api/vec.rst
 api/ssa.rst
 api/sia.rst
-api/invert.rst
-api/invert_ssa.rst
-api/invert_ssa_tao.rst
-api/invert_ssa_siple.rst
-api/sipletools.rst
+api/invert/index.rst
+api/invert/ssa.rst
+api/invert/ssa_tao.rst
+api/invert/ssa_siple.rst
+api/invert/sipletools.rst
 inverse/design.rst
 )
 

@@ -13,5 +13,5 @@ API
    model.rst
    ssa.rst
    sia.rst   
-   invert.rst
+   invert/index.rst
 

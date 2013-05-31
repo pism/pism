@@ -19,8 +19,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PISM
-import PISM.invert_ssa
-import PISM.sipletools
 from PISM import util
 
 import numpy as np
@@ -28,14 +26,14 @@ import math
 
 import siple
 siple.reporting.clear_loggers()
-siple.reporting.add_logger(PISM.sipletools.pism_logger)
-siple.reporting.set_pause_callback(PISM.sipletools.pism_pause)
+siple.reporting.add_logger(PISM.invert.sipletools.pism_logger)
+siple.reporting.set_pause_callback(PISM.invert.sipletools.pism_pause)
 
 
 import matplotlib.pyplot as pp
 
 
-class PlotListener(PISM.invert_ssa.PlotListener):
+class PlotListener(PISM.invert.listener.PlotListener):
   def __call__(self,inv_solver,it,data):
 
     grid = self.grid
@@ -72,7 +70,7 @@ class PlotListener(PISM.invert_ssa.PlotListener):
       pp.show()
 
 
-class LinPlotListener(PISM.invert_ssa.PlotListener):
+class LinPlotListener(PISM.invert.listener.PlotListener):
   def __call__(self,inv_solver,it,data):
 
     grid = self.grid
@@ -122,7 +120,7 @@ def testi_tauc(grid, tauc):
       y=grid.y[j]
       tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
 
-class testi_run(PISM.invert_ssa.InvSSARun):
+class testi_run(PISM.invert.ssa.SSATaucForwardRun):
   def __init__(self,Mx,My):
     self.grid = PISM.Context().newgrid()
     self.Mx = Mx
@@ -232,7 +230,7 @@ if __name__ == "__main__":
   PISM.setVerbosityLevel(verbosity)
   testi = testi_run(Mx,My)
   testi.setup()
-  solver = PISM.invert_ssa.createInvSSATaucSolver(testi)
+  solver = PISM.invert.ssa.createInvSSATaucSolver(testi)
   tauc_param = solver.ssarun.tauc_param
 
   grid = testi.grid
@@ -244,7 +242,7 @@ if __name__ == "__main__":
   # Convert tauc_true to zeta_true
   zeta_true = PISM.IceModelVec2S();
   zeta_true.create(grid,"zeta_true",PISM.kHasGhosts,kFEMStencilWidth)
-  tauc_param = PISM.invert_ssa.createTaucParam(config)
+  tauc_param = PISM.invert.ssa.createTaucParam(config)
   tauc_param.convertFromTauc(tauc_true,zeta_true)
 
   # Build the initial guess for tauc for the inversion.
@@ -264,11 +262,11 @@ if __name__ == "__main__":
     if solver.method.startswith('tikhonov'):
       siple.reporting.msg("option -inv_test_adjoint cannot be used with inverse method %s",solver.method)
       exit(1)
-    from PISM.sipletools import PISMLocalVector as PLV
+    from PISM.invert.sipletools import PISMLocalVector as PLV
     stencil_width=1
     forward_problem = solver.forward_problem
-    d = PLV(PISM.sipletools.randVectorS(grid,1e5,stencil_width))
-    r = PLV(PISM.sipletools.randVectorV(grid,
+    d = PLV(PISM.vec.randVectorS(grid,1e5,stencil_width))
+    r = PLV(PISM.vec.randVectorV(grid,
                                         grid.convert(1.0, "m/year", "m/second"),
                                         stencil_width))
     (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta0),d,r,3)
@@ -292,10 +290,10 @@ if __name__ == "__main__":
   # Attach various iteration listeners to the solver as needed for:
   # progress reporting,
   if inv_method.startswith('tikhonov'):
-    solver.addIterationListener(PISM.invert_ssa.PrintTikhonovProgress)
+    solver.addIterationListener(PISM.invert.ssa.PrintTikhonovProgress)
   # adjoint monitoring,
   if monitor_adjoint:    
-    solver.addIterationListener(PISM.invert_ssa.MonitorAdjoint())
+    solver.addIterationListener(PISM.invert.ssa.MonitorAdjoint())
       # if inv_method=='ign':
       #   solver.addLinearIterationListener(MonitorAdjointLin())
   # Plotting
@@ -305,9 +303,9 @@ if __name__ == "__main__":
       solver.addLinearIterationListener(LinPlotListener(grid))
   # Pausing
   if do_pause:
-    solver.addIterationListener(PISM.invert_ssa.pauseListener)            
+    solver.addIterationListener(PISM.invert.listener.pauseListener)            
   # Iteration saving
-  solver.addDesignUpdateListener(PISM.invert_ssa.ZetaSaver(output_file)) 
+  solver.addDesignUpdateListener(PISM.invert.ssa.ZetaSaver(output_file)) 
 
   # Try solving
   reason = solver.solveInverse(zeta0,u_obs,zeta0)

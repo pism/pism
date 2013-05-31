@@ -149,7 +149,7 @@ if __name__ == '__main__':
   modeldata.vecs.add(misfit_weight,writing=True)    
 
   if not noise is None:
-    u_noise = PISM.sipletools.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
+    u_noise = PISM.vec.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
     final_velocity.add(grid.convert(1.0, "m/year", "m/second"),
                        u_noise)
 

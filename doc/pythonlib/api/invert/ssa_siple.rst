@@ -1,8 +1,8 @@
-**************
-invert_ssa_tao
-**************
+****************
+invert.ssa_siple
+****************
 
-Classes interfacing with TAO-based algorithms for inverting the SSA from :math:`\tau_c`.  
+Classes interfacing with siple-based algorithms for inverting the SSA from :math:`\tau_c`.  
 
 .. container:: custom-index
 
@@ -10,7 +10,7 @@ Classes interfacing with TAO-based algorithms for inverting the SSA from :math:`
 
         <script type="text/javascript" src='../_static/pymunk.js'></script>
 
-.. automodule:: PISM.invert_ssa_tao
+.. automodule:: PISM.invert.ssa_siple
    :members:
    :undoc-members:
    :private-members:
