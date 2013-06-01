@@ -230,7 +230,7 @@ if __name__ == "__main__":
   testi = testi_run(Mx,My)
   testi.setup()
   solver = PISM.invert.ssa.createInvSSASolver(testi)
-  tauc_param = solver.ssarun.tauc_param
+  tauc_param = solver.ssarun.designVariableParameterization()
 
   grid = testi.grid
 
@@ -241,7 +241,7 @@ if __name__ == "__main__":
   # Convert tauc_true to zeta_true
   zeta_true = PISM.IceModelVec2S();
   zeta_true.create(grid,"zeta_true",PISM.kHasGhosts,kFEMStencilWidth)
-  tauc_param = PISM.invert.ssa.createTaucParam(config)
+  tauc_param = PISM.invert.ssa.createDesignVariableParam(config,'tauc')
   tauc_param.convertFromDesignVariable(tauc_true,zeta_true)
 
   # Build the initial guess for tauc for the inversion.

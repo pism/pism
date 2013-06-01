@@ -83,7 +83,7 @@ if __name__ == "__main__":
   # Convert tauc_prior -> zeta_prior
   zeta1 = PISM.IceModelVec2S();
   zeta1.create(grid, "", PISM.kHasGhosts, WIDE_STENCIL)
-  ssarun.tauc_param.convertFromDesignVariable(tauc_prior,zeta1)
+  ssarun.designVariableParameterization().convertFromDesignVariable(tauc_prior,zeta1)
 
   ssarun.ssa.linearize_at(zeta1)
     
