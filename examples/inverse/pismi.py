@@ -210,12 +210,24 @@ if __name__ == "__main__":
   WIDE_STENCIL = 2
 
   usage = \
-  """  vel2tauc.py -i IN.nc [-o file.nc]
+  """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model] 
+                [-inv_design design_var] [-inv_method meth] 
     where:
-      -i      IN.nc is input file in NetCDF format: contains PISM-written model state
+    -i            IN.nc       is input file in NetCDF format: contains PISM-written model state
+    -o            OUT.nc      is output file in NetCDF format to be overwritten
+    -a            INOUT.nc    is input/output file in NetCDF format to be appended to
+    -inv_data     inv_data.nc is data file containing extra inversion data (e.g. observed surface velocities)
+    -inv_forward  model       forward model: only 'ssa' supported
+    -inv_design   design_var  design variable name; one of 'tauc'/'hardav' for SSA inversions
+    -inv_method   meth        algorithm for inversion [sd,nlcg,ign,tikhonov_lmvm]
+
     notes:
-      * -i is required
-    """
+      * only one of -i/-a is allowed; both specify the input file
+      * only one of -o/-a is allowed; both specify the output file
+      * if -o is used, only the variables involved in inversion are written to the output file.
+      * if -a is used, the varaibles involved in inversion are appended to the given file. No
+        original variables in the file are changed.
+   """
 
   append_mode = False
   PISM.setVerbosityLevel(1)
@@ -332,7 +344,7 @@ if __name__ == "__main__":
       exit(1)
 
     if solver.method == 'tikhonov_gn':
-      pass
+      raise NotImplementedError()
     else:
       import numpy as np
       (seed,seed_set) = PISM.optionsIntWasSet("-inv_test_adjoint_seed","")

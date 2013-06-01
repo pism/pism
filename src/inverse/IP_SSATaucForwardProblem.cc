@@ -335,7 +335,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
         const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
 
-        // Determine "dbeta/dtauc" at the quadrature point
+        // Determine "dbeta/dzeta" at the quadrature point
         PetscReal dbeta = 0;
         if( M.grounded_ice(feS->mask) ) {
           dbeta = basal.drag(dtauc_q[q],u_qq.u,u_qq.v);

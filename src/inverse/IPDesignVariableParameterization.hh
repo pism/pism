@@ -47,13 +47,13 @@ proves to be a significant source of slowness, we could look at
 using the Expression Template idiom, http://drdobbs.com/184401627.
 
 For certain Tikhonov inversions, it is important to mainain well-scaled
-variables.  Internally, the parameterizations use units of \f$d\f$ such that 
-the config parameter \a tauc_param_tauc_scale equals one. I.e.
-for a conversion function \f$g(\zeta)=\zeta^2\f$, then
+variables.  If the design parameter name is 'foo', internally the parameterizations 
+use units of \f$d\f$ such that  the config parameter \a design_param_foo_scale equals one. I.e.
+if 'foo' is 'tauc', then  for a conversion function \f$g(\zeta)=\zeta^2\f$, 
 \f[
 \frac{d} = d_{\rm scale}g(\zeta^2).
 \f]
-where \f$d_{\rm scale}\f$ is set
+where \f$d_{\rm scale}={\tt design_param_tauc_scale}\f$.
 */
 class IPDesignVariableParameterization 
 {
@@ -67,10 +67,10 @@ public:
   /*! Every IPDesignVariableParameterization has an associated scale for the design variable 
   \f$d_{\rm scale}\f that equals 1 in internal units.  The scale for a design variable named \a foo
   is stored in an NCConfigVariable file as design_param_foo_scale.  Subclasses may have additional
-  parameters that are follow the naming convention \a design_param_foo_*******.
+  parameters that are follow the naming convention \a design_param_foo_*.
   
   \param config          The config file to read the scale parameters from.
-  \param design_var_name The associated name of the design variable, e.g. 'tauc' or 'hardness'
+  \param design_var_name The associated name of the design variable, e.g. 'tauc' or 'hardav'
   */  
   virtual PetscErrorCode set_scales( const NCConfigVariable &config, const char *design_var_name);
 

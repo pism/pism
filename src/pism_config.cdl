@@ -423,7 +423,7 @@ netcdf pism_config {
     pism_config:inv_ssa_design_param = "exp";
     pism_config:inv_ssa_design_param_doc = "parameterization of design variables used during inversion";
 
-    pism_config:inv_ssa_design_functional = "hilbert";
+    pism_config:inv_ssa_design_functional = "sobolevH1";
     pism_config:inv_ssa_design_functional_doc = "functional used for inversion design variables";
 
     pism_config:inv_ssa_cL2     = 1;
@@ -469,7 +469,7 @@ netcdf pism_config {
     pism_config:design_param_tauc_eps_doc = "Pa; tiny yield stress used as a substitute for 0 in some tauc parameterizations";
 
     pism_config:design_param_trunc_tauc0 = 1000;
-    pism_config:design_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for tauc_parameterization type 'trunc'";
+    pism_config:design_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for design variable parameterization type 'trunc'";
 
 
     pism_config:beta_CC = 7.9e-8;
