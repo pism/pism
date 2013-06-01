@@ -254,7 +254,6 @@ if __name__ == "__main__":
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
-    monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
     prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
 
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
@@ -409,10 +408,6 @@ if __name__ == "__main__":
     solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax))
     if solver.method=='ign':
       solver.addLinearIterationListener(Vel2TaucLinPlotListener(grid,Vmax))
-  if monitor_adjoint:
-    solver.addIterationListener(PISM.invert.ssa.MonitorAdjoint())
-    if solver.method=='ign':
-      solver.addLinearIterationListener(PISM.invert.ssa.MonitorAdjointLin())
   # Pausing
   if do_pause:
     solver.addIterationListener(PISM.invert.listener.pauseListener)

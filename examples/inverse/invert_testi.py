@@ -205,7 +205,6 @@ if __name__ == "__main__":
     do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=True)
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
-    monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
 
   inv_method = config.get_string("inv_ssa_method")
 
@@ -291,11 +290,7 @@ if __name__ == "__main__":
   # progress reporting,
   if inv_method.startswith('tikhonov'):
     solver.addIterationListener(PISM.invert.ssa.PrintTikhonovProgress)
-  # adjoint monitoring,
-  if monitor_adjoint:    
-    solver.addIterationListener(PISM.invert.ssa.MonitorAdjoint())
-      # if inv_method=='ign':
-      #   solver.addLinearIterationListener(MonitorAdjointLin())
+
   # Plotting
   if do_plotting:
     solver.addIterationListener(PlotListener(grid))
