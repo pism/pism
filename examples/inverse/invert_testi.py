@@ -242,7 +242,7 @@ if __name__ == "__main__":
   zeta_true = PISM.IceModelVec2S();
   zeta_true.create(grid,"zeta_true",PISM.kHasGhosts,kFEMStencilWidth)
   tauc_param = PISM.invert.ssa.createTaucParam(config)
-  tauc_param.convertFromTauc(tauc_true,zeta_true)
+  tauc_param.convertFromDesignVariable(tauc_true,zeta_true)
 
   # Build the initial guess for tauc for the inversion.
   tauc = PISM.model.createYieldStressVec(grid)
@@ -255,7 +255,7 @@ if __name__ == "__main__":
   # Convert tauc guess to zeta guess
   zeta0 = PISM.IceModelVec2S();
   zeta0.create(grid, "zeta", PISM.kHasGhosts, kFEMStencilWidth)
-  tauc_param.convertFromTauc(tauc,zeta0)
+  tauc_param.convertFromDesignVariable(tauc,zeta0)
 
   if test_adjoint:
     if solver.method.startswith('tikhonov'):
@@ -311,7 +311,7 @@ if __name__ == "__main__":
 
   (zeta_i,u_i) = solver.inverseSolution()
 
-  tauc_param.convertToTauc(zeta_i,tauc)
+  tauc_param.convertToDesignVariable(zeta_i,tauc)
 
   # Write solution out to netcdf file
   testi.write(output_file)

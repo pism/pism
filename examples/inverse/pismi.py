@@ -270,7 +270,7 @@ if __name__ == "__main__":
   PISM.setVerbosityLevel(verbosity)
   vel2tauc = Vel2Tauc(input_filename,inv_data_filename,'tauc')
   vel2tauc.setup()
-  tauc_param = vel2tauc.tauc_param
+  tauc_param = vel2tauc.design_var_param
   solver = PISM.invert.ssa.createInvSSASolver(vel2tauc)
 
   # if forward_type == 'classic':
@@ -304,7 +304,7 @@ if __name__ == "__main__":
   # Convert tauc_prior -> zeta_prior
   zeta_prior = PISM.IceModelVec2S();
   zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
-  tauc_param.convertFromTauc(tauc_prior,zeta_prior)
+  tauc_param.convertFromDesignVariable(tauc_prior,zeta_prior)
   vecs.add(zeta_prior,writing=True)
 
   # If the inverse data file has a variable tauc_true, this is probably
@@ -447,7 +447,7 @@ if __name__ == "__main__":
   (zeta,u) = solver.inverseSolution()
 
   # Convert back from zeta to tauc
-  tauc_param.convertToTauc(zeta,tauc)
+  tauc_param.convertToDesignVariable(zeta,tauc)
 
   # It may be that a 'tauc' was read in earlier.  We replace it with
   # our newly generated one.

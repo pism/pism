@@ -40,9 +40,9 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblem::getVariableBounds(TaoSolver /*tao*/
   tauc_min = m_grid->config.get("inv_ssa_tauc_min");
   tauc_max = m_grid->config.get("inv_ssa_tauc_max");
 
-  IPTaucParameterization &tauc_param = m_forward.tauc_param();
-  ierr = tauc_param.fromTauc(tauc_min,&zeta_min); CHKERRQ(ierr);
-  ierr = tauc_param.fromTauc(tauc_max,&zeta_max); CHKERRQ(ierr);
+  IPDesignVariableParameterization &tauc_param = m_forward.tauc_param();
+  ierr = tauc_param.fromDesignVariable(tauc_min,&zeta_min); CHKERRQ(ierr);
+  ierr = tauc_param.fromDesignVariable(tauc_max,&zeta_max); CHKERRQ(ierr);
 
   ierr = VecSet(lo,zeta_min); CHKERRQ(ierr);
   ierr = VecSet(hi,zeta_max); CHKERRQ(ierr);

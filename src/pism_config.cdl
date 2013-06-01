@@ -420,8 +420,8 @@ netcdf pism_config {
     pism_config:inv_ssa_method = "tikhonov_lmvm";
     pism_config:inv_ssa_method_doc = "algorithm to use for SSA inversions";
 
-    pism_config:inv_ssa_tauc_param = "exp";
-    pism_config:inv_ssa_tauc_param_doc = "parameterization of tauc used during inversion";
+    pism_config:inv_ssa_design_param = "exp";
+    pism_config:inv_ssa_design_param_doc = "parameterization of design variables used during inversion";
 
     pism_config:inv_ssa_design_functional = "hilbert";
     pism_config:inv_ssa_design_functional_doc = "functional used for inversion design variables";
@@ -462,14 +462,14 @@ netcdf pism_config {
     pism_config:tikhonov_penalty_weight = 1;
     pism_config:tikhonov_penalty_weight_doc = "penalty parameter for Tikhonov inversion";
     
-    pism_config:tauc_param_tauc_scale = 100000;
-    pism_config:tauc_param_tauc_scale_doc = "Pa; typical size of yield stresses";
+    pism_config:design_param_tauc_scale = 100000;
+    pism_config:design_param_tauc_scale_doc = "Pa; typical size of yield stresses";
 
-    pism_config:tauc_param_tauc_eps     = 100;
-    pism_config:tauc_param_tauc_eps_doc = "Pa; tiny yield stress used as a substitute for 0 in some tauc parameterizations";
+    pism_config:design_param_tauc_eps     = 100;
+    pism_config:design_param_tauc_eps_doc = "Pa; tiny yield stress used as a substitute for 0 in some tauc parameterizations";
 
-    pism_config:tauc_param_trunc_tauc0 = 1000;
-    pism_config:tauc_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for tauc_parameterization type 'trunc'";
+    pism_config:design_param_trunc_tauc0 = 1000;
+    pism_config:design_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for tauc_parameterization type 'trunc'";
 
 
     pism_config:beta_CC = 7.9e-8;

@@ -178,7 +178,7 @@ PetscErrorCode IP_SSATaucForwardProblem_dep::set_design(IceModelVec2S &new_zeta 
       FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq];
       PetscReal *dtauc_dzeta = m_dtauc_dzeta_store + ij*FEQuadrature::Nq;
       for (q=0; q<4; q++) {
-        m_tauc_param.toTauc(zetaq[q],&(feS[q].tauc),dtauc_dzeta+q);
+        m_tauc_param.toDesignVariable(zetaq[q],&(feS[q].tauc),dtauc_dzeta+q);
         if(std::isnan(feS[q].tauc)) {
           PetscPrintf(PETSC_COMM_WORLD,"IP_SSATaucForwardProblem_dep::set_design made a NaN: zeta=%g\n",zetaq[q]);
         }
@@ -187,7 +187,7 @@ PetscErrorCode IP_SSATaucForwardProblem_dep::set_design(IceModelVec2S &new_zeta 
   }
   ierr = new_zeta.end_access(); CHKERRQ(ierr);
 
-  m_tauc_param.convertToTauc(new_zeta,*tauc);
+  m_tauc_param.convertToDesignVariable(new_zeta,*tauc);
 
   m_reassemble_T_matrix_needed = true;
   m_forward_F_needed = true;

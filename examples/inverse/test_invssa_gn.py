@@ -83,7 +83,7 @@ if __name__ == "__main__":
   zeta = PISM.IceModelVec2S();
   WIDE_STENCIL=2
   zeta.create(grid, "", PISM.kHasGhosts, WIDE_STENCIL)
-  ssarun.tauc_param.convertFromTauc(tauc_prior,zeta)
+  ssarun.tauc_param.convertFromDesignVariable(tauc_prior,zeta)
   ssarun.ssa.linearize_at(zeta)
 
   vel_ssa_observed = None

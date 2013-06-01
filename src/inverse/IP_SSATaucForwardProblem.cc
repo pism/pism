@@ -26,7 +26,7 @@
 
 
 IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
-  EnthalpyConverter &e, IPTaucParameterization &tp,
+  EnthalpyConverter &e, IPDesignVariableParameterization &tp,
   const NCConfigVariable &c) : SSAFEM(g,b,e,c),
   m_grid(grid), m_zeta(NULL), 
   m_fixed_tauc_locations(NULL), 
@@ -92,7 +92,7 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta )
   m_zeta = &new_zeta;
   
   // Convert zeta to tauc.
-  m_tauc_param.convertToTauc(*m_zeta,*m_tauc);
+  m_tauc_param.convertToDesignVariable(*m_zeta,*m_tauc);
 
   // Cache tauc at the quadrature points in feStore.
   PetscReal **tauc_a;
@@ -325,7 +325,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
       // Compute the change in tau_c with respect to zeta at the quad points.
       m_dofmap.extractLocalDOFs(i,j,zeta_a,zeta_e);
       for(PetscInt k=0;k<FEQuadrature::Nk;k++){
-        m_tauc_param.toTauc(zeta_e[k],NULL,dtauc_e + k);
+        m_tauc_param.toDesignVariable(zeta_e[k],NULL,dtauc_e + k);
         dtauc_e[k]*=dzeta_e[k];
       }
       m_quadrature.computeTrialFunctionValues(dtauc_e,dtauc_q);
@@ -503,7 +503,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   for( i=m_grid.xs;i<m_grid.xs+m_grid.xm;i++){
     for( j=m_grid.ys;j<m_grid.ys+m_grid.ym;j++){
       PetscReal dtauc_dzeta;
-      m_tauc_param.toTauc(zeta_a[i][j],NULL,&dtauc_dzeta);
+      m_tauc_param.toDesignVariable(zeta_a[i][j],NULL,&dtauc_dzeta);
       dzeta_a[i][j] *= dtauc_dzeta;
     }
   }

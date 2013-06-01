@@ -20,7 +20,7 @@
 #define _INVSSAFORWARDPROBLEM_H_
 
 #include "SSAFEM.hh"
-#include "IPTaucParameterization.hh"
+#include "IPDesignVariableParameterization.hh"
 
 //! \file 
 //! \brief Class for implementing the hard parts of a 'siple' 
@@ -38,7 +38,7 @@ class IP_SSATaucForwardProblem_dep : public SSAFEM
 public:
 
   IP_SSATaucForwardProblem_dep(IceGrid &g, IceBasalResistancePlasticLaw &b,
-    EnthalpyConverter &e, IPTaucParameterization &tp,
+    EnthalpyConverter &e, IPDesignVariableParameterization &tp,
                  const NCConfigVariable &c)
            : SSAFEM(g,b,e,c),
              m_KSP(0), m_KSP_B(0), m_MatA(0), m_MatB(0),
@@ -154,7 +154,7 @@ protected:
 
   PetscReal m_range_l2_area;
 
-  IPTaucParameterization &m_tauc_param;
+  IPDesignVariableParameterization &m_tauc_param;
 
   bool m_reassemble_T_matrix_needed, m_forward_F_needed;
 };

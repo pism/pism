@@ -21,7 +21,7 @@
 
 
 #include "SSAFEM.hh"
-#include "IPTaucParameterization.hh"
+#include "IPDesignVariableParameterization.hh"
 
 //! Implements the forward problem of the map taking \f$\tau_c\f$ to the corresponding solution of the %SSA.
 /*! The class SSAFEM solves the %SSA, and the solution depends on a large number of parameters.  Considering
@@ -37,7 +37,7 @@ parameter \f$\zeta\f$,
 \tau_c = g(\zeta),
 \f]
 where the function \f$g\f$ is non-negative.  The function \f$g\f$ is specified by an instance
-of IPTaucParameterization.
+of IPDesignVariableParameterization.
 
 Second, there may be locations where the value of \f$\tau_c\f$ (and hence \f$\zeta\f$) 
 is known a-priori, and should not be adjusted.  Let \f$\pi\f$ be the map that replaces
@@ -105,7 +105,7 @@ public:
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
   IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
-    EnthalpyConverter &e, IPTaucParameterization &tp,
+    EnthalpyConverter &e, IPDesignVariableParameterization &tp,
     const NCConfigVariable &c);
 
   virtual ~IP_SSATaucForwardProblem();
@@ -133,7 +133,7 @@ public:
   }
 
   //! Exposes the \f$\tau_c\f$ parameterization being used.
-  virtual IPTaucParameterization & tauc_param() {
+  virtual IPDesignVariableParameterization & tauc_param() {
     return m_tauc_param;
   }
 
@@ -175,7 +175,7 @@ protected:
 
   IceModelVec2Int *m_fixed_tauc_locations;   ///< Locations where \f$\tau_c\f$ should not be adjusted.
 
-  IPTaucParameterization &m_tauc_param;     ///< The function taking \f$\zeta\f$ to \f$\tau_c\f$.
+  IPDesignVariableParameterization &m_tauc_param;     ///< The function taking \f$\zeta\f$ to \f$\tau_c\f$.
 
   IceModelVec2V  m_du_global;                ///< Temporary storage when state vectors need to be used without ghosts.
   IceModelVec2V  m_du_local;                 ///< Temporary storage when state vectors need to be used with ghosts.

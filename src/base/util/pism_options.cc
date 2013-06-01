@@ -694,8 +694,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                     "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn");
   CHKERRQ(ierr);
 
-  ierr = config.keyword_from_option("inv_ssa_tauc_param",
-                                    "inv_ssa_tauc_param","ident,trunc,square,exp"); CHKERRQ(ierr);
+  ierr = config.keyword_from_option("inv_ssa_design_param",
+                                    "inv_ssa_design_param","ident,trunc,square,exp"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("rms_error","inv_ssa_target_rms_misfit"); CHKERRQ(ierr);
 
