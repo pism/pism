@@ -7,4 +7,3 @@ PISM
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: PISM.IceGrid

@@ -126,27 +126,6 @@ if(NOT PISM_PYTHON_MATCHES)
 endif()
 " )
 
-set({PISM_PYTHON_LIBRARY_FILES
-site-packages/PISM/__init__.py
-site-packages/PISM/invert/ssa.py
-site-packages/PISM/invert/ssa_gn.py
-site-packages/PISM/invert/ssa_siple.py
-site-packages/PISM/invert/ssa_tao.py
-site-packages/PISM/invert/sipletools.py
-site-packages/PISM/logging.py
-site-packages/PISM/model.py
-site-packages/PISM/options.py
-site-packages/PISM/sia.py
-site-packages/PISM/ssa.py
-site-packages/PISM/toproczero.py
-site-packages/PISM/util.py
-)
-
-add_custom_target (install_site_packages_in_the_build_directory ALL
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/site-packages/ ${CMAKE_BINARY_DIR}/site-packages
-  VERBATIM
-  DEPENDS ${PISM_PYTHON_LIBRARY_FILES}
-)
 
 add_custom_target (install_python_bindings_in_the_build_directory ALL
   COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_cpp_LOCATION} ${CMAKE_BINARY_DIR}/site-packages/PISM

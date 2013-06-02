@@ -42,11 +42,10 @@ endforeach()
 configure_file(conf.py conf.py @ONLY)
 
 
-add_custom_target (sphinx_docs
+add_custom_target (pismpython_docs
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/pythonlib/_static ${CMAKE_BINARY_DIR}/doc/pythonlib/_static
 
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/site-packages ${CMAKE_BINARY_DIR}/doc/site-packages
 
   COMMAND ${SPHYNX_BUILD_EXECUTABLE} -b html . html
-  DEPENDS ${RST_FILES} ${sphinx_helpers} install_python_bindings_in_the_build_directory
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+  DEPENDS ${RST_FILES} ${sphinx_helpers} install_site_packages_in_the_build_directory   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
