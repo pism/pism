@@ -11,11 +11,14 @@ Contents:
 .. toctree::
    :maxdepth: 2
    
+   python
+   
+   inverse/ssa.rst
    inverse/design.rst
 
    api/index.rst
 
-   bib
+   zbib
 
 Indices and tables
 ==================

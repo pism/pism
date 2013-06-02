@@ -2,7 +2,8 @@ set(SPHYNX_BUILD_EXECUTABLE sphinx-build)
 
 set(RST_FILES
 index.rst 
-bib.rst
+python.rst
+zbib.rst
 api/index.rst
 api/PISM.rst
 api/options.rst
@@ -17,6 +18,7 @@ api/invert/ssa.rst
 api/invert/ssa_tao.rst
 api/invert/ssa_siple.rst
 api/invert/sipletools.rst
+inverse/ssa.rst
 inverse/design.rst
 )
 
@@ -40,8 +42,10 @@ endforeach()
 configure_file(conf.py conf.py @ONLY)
 
 
-add_custom_target (sphinx_docs
+add_custom_target (pismpython_docs
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/pythonlib/_static ${CMAKE_BINARY_DIR}/doc/pythonlib/_static
+
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/site-packages ${CMAKE_BINARY_DIR}/doc/site-packages
+
   COMMAND ${SPHYNX_BUILD_EXECUTABLE} -b html . html
-  DEPENDS ${RST_FILES} ${sphinx_helpers} install_python_bindings_in_the_build_directory
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+  DEPENDS ${RST_FILES} ${sphinx_helpers} install_site_packages_in_the_build_directory   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
