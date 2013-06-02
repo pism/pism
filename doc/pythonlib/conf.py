@@ -19,6 +19,8 @@ import sys, os
 
 # This will add the build directory to the path
 sys.path.insert(0, os.path.abspath('@CMAKE_BINARY_DIR@'+'/site-packages'))
+sys.path.insert(0, os.path.abspath('../site-packages'))
+
 
 # -- General configuration -----------------------------------------------------
 

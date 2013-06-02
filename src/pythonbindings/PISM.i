@@ -437,6 +437,7 @@ namespace std {
 {
     %pythoncode {
     def points(self):
+        """Iterate over tuples ``(i,j)`` of nodes owned by the current processor."""
         for i in xrange(self.xs,self.xs+self.xm):
             for j in xrange(self.ys,self.ys+self.ym):
                 yield (i,j)
