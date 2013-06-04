@@ -1,15 +1,16 @@
-===============================
-PISM Python Overview
-===============================
+.. Scripting_
 
-PISM has two Python components: a set of bindings of a subset of 
-the PISM C++ libraries, and a library of Python code with an emphasis
-on script writing and on inversion algorithms. Both components are 
-accessed by importing the ``PISM`` Python package.
+===============================
+Scripting Overview
+===============================
 
 For the most part, the use of PISM from Python is intuitive and familiar 
 to a C++ PISM coder.  However, there are some additional features that
 a PISM Python user should be aware of to simplify working with PISM.
+
+Minimal Example
+----------------
+
 The following is a minimal script that initializes PISM, creates an :cpp:class:`IceGrid`, and creates an :cpp:class:`IceModelVec2S` on the grid::
 
   import PISM
@@ -28,81 +29,85 @@ The following is a minimal script that initializes PISM, creates an :cpp:class:`
 
 It's worth walking through this example to see exactly what happens in the background.
 
-  ::
-  
-    import PISM
 
-  When the ``PISM`` package is imported, there is a check done to see if
-  ``PETSc`` has already been initialized by the ``petsc4py`` package.  
-  If not, then ``PETSc`` is initialized with the 
-  system command line flags used to generate its options database.  You
-  can override this behavior by initializing ``PETSc`` manually 
-  before importing ``PISM``.
-
-  ::
+  1.  Initial import::
   
-    context = PISM.Context()
+        import PISM
 
-  The PISM Python libraries introduce a new :class:`~PISM.Context` class that
-  manages the following global information as public attributes:
+      When the ``PISM`` package is imported, there is a check done to see if
+      ``PETSc`` has already been initialized by the ``petsc4py`` package.  
+      If not, then ``PETSc`` is initialized with the 
+      system command line flags used to generate its options database.  You
+      can override this behavior by initializing ``PETSc`` manually 
+      before importing ``PISM``.
+
+  2.  PISM :class:`Context`::
   
-    * An MPI Communicator ``com``, always ``PETSc.COMM_WORLD``.
-    * MPI ``size`` and ``rank`` variables concerning the number of
-      processors and our processor's number within the collection.
-    * A :cpp:class:`NCConfigVariable`, ``config``, containing 
-      global configuration parameters.
+        context = PISM.Context()
+
+      The PISM Python libraries introduce a new :class:`~PISM.Context` 
+      class that manages the following global information as public
+      attributes:
+  
+        * An MPI Communicator ``com``, always ``PETSc.COMM_WORLD``.
+        * MPI ``size`` and ``rank`` variables concerning the number of
+          processors and our processor's number within the collection.
+        * A :cpp:class:`NCConfigVariable`, ``config``, containing 
+          global configuration parameters.
     
-  There is only every one :class:`~PISM.Context` instance, and it can always
-  be accessed by ``PISM.Context()``.  
+      There is only every one :class:`~PISM.Context` instance, and it
+      can always be accessed by ``PISM.Context()``.  
   
-  The :class:`~PISM.Context`\ 's ``config`` attribute is not created
-  until it is first accessed.  By default, on first access it reads in 
-  and merges a base and override config file specified by the flags 
-  ``-config`` and ``-config_override`` by using the PISM C++
-  :cpp:member:``init_config`` function, and then calls
-  :cpp:member:``set_config_from_options`` to further overwrite some parameters
-  from the command line.  This behavior can be modified somewhat by calling
-  :meth:`PISM.Context.init_config` before first accessing the ``config``  
-  attribute.
+      The :class:`~PISM.Context`\ 's ``config`` attribute is not created
+      until it is first accessed.  By default, on first access it reads in 
+      and merges a base and override config file specified by the flags 
+      ``-config`` and ``-config_override`` by using the PISM C++
+      :cpp:member:`init_config` function, and then calls
+      :cpp:member:`set_config_from_options` to further overwrite 
+      some parameters from the command line.  This behavior can be modified
+      somewhat by calling :meth:`PISM.Context.init_config` before 
+      first accessing the ``config`` attribute.
   
-  ::
+  3.  Grid construction::
   
-    grid = context.newgrid()
+        grid = context.newgrid()
   
-  A :class:`~PISM.Context` contains all the data needed to construct new 
-  :cpp:class:`IceGrid` objects, so it contains a convenience function to do
-  this.  This line is equivalent to ``grid = PISM.IceGrid(context.com,context.size,context.rank,context.config)``.
+      A :class:`~PISM.Context` contains all the data needed to construct new 
+      :cpp:class:`IceGrid` objects, so it contains a convenience function 
+      to do this.  This line is equivalent to::
+      
+         grid = PISM.IceGrid(context.com,context.size,context.rank,context.config)
   
-  ::
+  4.  Grid initialization::
   
-    Lx = 10000.; Ly=10000;    # 10 km half-width grid
-    Mx = 20; My = 20;         # 20x20 grid
-    PISM.model.initShallowGrid(grid,Lx,Ly,Mx,My,PISM.XY_PERIODIC)
+        Lx = 10000.; Ly=10000;    # 10 km half-width grid
+        Mx = 20; My = 20;         # 20x20 grid
+        PISM.model.initShallowGrid(grid,Lx,Ly,Mx,My,PISM.XY_PERIODIC)
   
-  A number of explicit steps need to occur to fully initialize the grid.  
-  The grid dimensions need to be specified, grid ownership needs to be
-  partitioned between the processors, grid spacing needs to be 
-  decided, and final allocation needs to occur.  To help with these
-  steps, see: 
+      A number of explicit steps need to occur to fully initialize the grid.  
+      The grid dimensions need to be specified, grid ownership needs to be
+      partitioned between the processors, grid spacing needs to be 
+      decided, and final allocation needs to occur.  To help with these
+      steps, see: 
   
-    * :func:`PISM.model.initShallowGrid`,
-    * :func:`PISM.model.initGrid`,
-    * :func:`PISM.model.initGridFromFile`.
+        * :func:`PISM.model.initShallowGrid`,
+        * :func:`PISM.model.initGrid`,
+        * :func:`PISM.model.initGridFromFile`.
   
-  ::
+  5.  Vector construction::
   
-    vec = PISM.IceModelVec2S()
-    stencil_width = 1
-    vec.create(grid, "tauc", PISM.kHasGhosts, stencil_width)
+        vec = PISM.IceModelVec2S()
+        stencil_width = 1
+        vec.create(grid, "tauc", PISM.kHasGhosts, stencil_width)
   
-  Little needs to be said about this last snippet; it behaves exactly as the
-  analogous C++ code
+      Little needs to be said about this last snippet; it behaves 
+      exactly as the analogous C++ code
   
-  .. code-block:: cpp
+      .. code-block:: cpp
   
-    IceModelVec2S vec;
-    int stencil_width = 1;
-    vec.create(grid,"tauc",kHasGhosts,stencil_width);
+        IceModelVec2S vec;
+        int stencil_width = 1;
+        vec.create(grid,"tauc",kHasGhosts,stencil_width);
 
 
 
@@ -169,7 +174,7 @@ can lead to bugs, and the distance of these calls from the initial
 
 The Python :class:`PISM.vec.Access` class allows specification at
 the start of a code block of the desired actions to take at the
-end of the block. Assuming that ``vg1`` and ``vg2`` are vectors with
+end of the block. In the following, ``vg1`` and ``vg2`` are vectors with
 ghosts and ``w`` is unghosted::
 
   grid = w.get_grid()

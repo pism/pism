@@ -8,8 +8,15 @@ else ()
 
   set(RST_FILES
   index.rst 
+  installation.rst 
   python.rst
   zbib.rst
+  inverse/index.rst
+  inverse/refresher.rst
+  inverse/ssa_forward.rst
+  inverse/ssa_inverse.rst
+  inverse/pismi.rst
+  inverse/design.rst
   api/index.rst
   api/PISM.rst
   api/options.rst
@@ -24,8 +31,6 @@ else ()
   api/invert/ssa_tao.rst
   api/invert/ssa_siple.rst
   api/invert/sipletools.rst
-  inverse/ssa.rst
-  inverse/design.rst
   )
 
   set (sphinx_helpers
@@ -46,6 +51,7 @@ else ()
   endforeach()
 
   configure_file(conf.py conf.py @ONLY)
+  configure_file(pism-sphinx-macros.tex pism-sphinx-macros.tex COPYONLY)
 
 
   add_custom_target (pismpython_docs

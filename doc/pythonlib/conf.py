@@ -31,6 +31,19 @@ sys.path.insert(0, os.path.abspath('../site-packages'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'sphinxcontrib.bibtex']
 
+pngmath_latex_preamble = r"""\input @CMAKE_BINARY_DIR@/doc/pythonlib/pism-sphinx-macros.tex"""
+
+pngmath_dvipng_args = ['-gamma', '1', '-D', '110', '-bg', 'Transparent']
+
+pngmath_use_preview = True
+
+
+rst_prolog = """
+.. role:: cfg
+
+.. role:: ncvar
+"""
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
