@@ -16,14 +16,14 @@ The PISM model for SSA velocities :math:`\vU=(U_1,U_2)` is
 for :math:`j=1,2`, and where
 
  * :math:`\nu` is the effective viscosity,
- * :math:`H` is ice thickness,
+ * :math:`H` is ice thickness :ncvar:`thk`,
  * :math:`\epsilon_{\mathrm{SSA}}` is a regularization parameter (:cfg:`epsilon_ssa`) 
  * :math:`\mathbf{\tau}_{b}` is the basal shear stress,
  * :math:`\mathbf{f}` is the driving stress :math:`-\rho g H \nabla h`, where
 
    * :math:`\rho` is ice density,
    * :math:`g` is gravitational acceleration, 
-   * :math:`h` is ice surface elevation
+   * :math:`h` is ice surface elevation :ncvar:`usurf`
 
 and where 
 
@@ -82,8 +82,8 @@ indirectly via the NC mask variable :ncvar:`no_model_mask`, otherwise the NC mas
 
 PISM supports a calving front boundary condition :cite:`AlbrechtLevermann2012` 
 that modifies the stress balance at the ice/ocean interface (config variable 
-:cfg:`calving_front_stress_boundary_condition`). This boundary condition is not 
-supported, however, by PISM's SSA inversion algorithms.
+:cfg:`calving_front_stress_boundary_condition`). This boundary condition is 
+**not supported**, however, by PISM's SSA inversion algorithms.
 
 
 .. _SSADiscrete:
