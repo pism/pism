@@ -1,127 +1,107 @@
 .. _SSAForward:
 
-SSA Forward Problem
-===================
+SSA Forward Problems
+====================
 
-Continuous Model
-------------------------
+PISM supports two forward problems for the SSA that can be passed to inversion 
+algorithms.  In each case, all of the parameters appearing in the 
+SSA equations described in :ref:`PISM_SSA` are held constant, except 
+for one of
 
-The PISM model for SSA velocities :math:`\vU=(U_1,U_2)` is
+  1. effective yield stress :math:`\tau_c`, or
+  2. vertically averaged ice hardness :math:`B`,
 
-.. math::
-  -\sum_{i=1}^2 \partial_i \left( 2[\nu H+\epsilon_{\mathrm{SSA}}]
-  \left[D_{ij}\vU + \Div \vU \;\delta_{ij}\right]\right) + \tau_{b,j} = f_j
-  :label: SSA
+which are the design variables. The corresponding state variable is 
+the SSA velocity :math:`\vU`.  Roughly speaking, the forward problem 
+is then "given a vector of  :math:`\tau_c` (or :math:`B`) at the grid 
+points, determine :math:`\vU` at the grid points".  
 
-for :math:`j=1,2`, and where
-
- * :math:`\nu` is the effective viscosity,
- * :math:`H` is ice thickness :ncvar:`thk`,
- * :math:`\epsilon_{\mathrm{SSA}}` is a regularization parameter (:cfg:`epsilon_ssa`) 
- * :math:`\mathbf{\tau}_{b}` is the basal shear stress,
- * :math:`\mathbf{f}` is the driving stress :math:`-\rho g H \nabla h`, where
-
-   * :math:`\rho` is ice density,
-   * :math:`g` is gravitational acceleration, 
-   * :math:`h` is ice surface elevation :ncvar:`usurf`
-
-and where 
+There are two clarifications that need to be made to this description, 
+however.  For concreteness, suppose :math:`\tau_c` is the design variable,
+and let :math:`\calF` be the map taking :math:`\tau_c` to :math:`\vU`,
 
 .. math::
-  D_{ij} \vU =  \frac{1}{2}\left[ \frac{\partial U_i}{\partial x_j} + \frac{\partial U_j}{\partial x_i}\right].
+  \vU=\calF_{\rm SSA}(\tau_c).
 
-The viscosity :math:`\nu` and basal shear stress :math:`\tau_{b}`
-are themselves functions of :math:`\vU`.  Viscosity is given by
-any of a few flow laws, one choice being thermocoupled Glen ice
-
-.. math::
-  \nu(\vU) = \frac{B}{2}\left( \epsilon_{\mathrm{Schoof}}^2+\frac{1}{2} |\vD \vU|^2 + \frac{1}{2} (\Div \vU)^2 \right)^{(p-2)/2}
-
-where 
-
-  * :math:`p=1+(1/n)` where :math:`n` is the Glen flow exponent :cfg:`Glen_exponent`.
-  * :math:`B` is vertically averaged ice hardness,
-  * :math:`\epsilon_{\mathrm{Schoof}}` is a regularizing parameter
-    (:cfg:`Schoof_regularizing_velocity` divided by 
-    :cfg:`Schoof_regularizing_length`).
-
-All of the flow laws contain a linear factor :math:`B`, which is one of
-the potential inversion design variables.
-
-The basal shear stress is determined by a pseudo-plastic till law
+This forward problem is modified by allowing for a parameterization of the 
+design variable.  For example, it is frequently the case in the 
+glaciology literature that :math:`\tau_c` is written as the square 
+of some other parameter to 
+ensure its positivity.  Other parameterization 
+choices are possible, and we assume
+that :math:`\tau_c` is a function of a second variable, :math:`\zeta` (:ncvar:`zeta_inv`), which is the true design variable.  So there is a function :math:`g` such that
 
 .. math::
+  \tau_c = g(\zeta)
 
-  \mathbf{\tau}_b(\vU) = \tau_c\; U_{\mathrm{th}}^q (\epsilon_{\mathrm{reg}}^2+ |\vU|^2)^{\frac{q-1}{2}}\vU
+and the forward problem is
 
-where
+.. math::
+  \vU=\calF(\zeta)=\calF_{\rm SSA}(g(\zeta)).
+  
+PISM supports a number of parameterizations, described in detail in :ref:`DesignParam`.  Sometimes we will speak loosely of :math:`\tau_c`
+or :math:`B` as being the design variables, but strictly speaking
+it is always :math:`\zeta` that corresponds to the design variables
+:math:`\vd` from :ref:`inverse-background`.  If we need to make
+a distinction we will call :math:`\tau_c` (or :math:`B`) the physical
+design variable and :math:`\zeta` the parameterized design variable.
 
-  * :math:`\tau_c` is effective yield stress, a potential inversion design variable,
-  * :math:`U_{\mathrm{th}}` is a threshold velocity (:cfg:`pseudo_u_threshold`) 
-  * :math:`\epsilon_{\mathrm{reg}}` is a regularization parameter (:cfg:`plastic_regularization`)
-  * :math:`0\le q \le 1`   
-    controls till plasticity; 1 is plastic and 0 is linearly-viscous
-    (:cfg:`pseudo_plastic_q`).
-
-The continuous forward problem is to determine :math:`\vU` from the other 
-variables and parameters by solving an elliptic PDE.
-
-Boundary Conditions
--------------------
-
-PISM solves the SSA on a rectangular domain. For regional models (:cfg:`-regional`), the domain is non-periodic, whereas the domain
-is otherwise periodic on both pairs of edges.  Ice need not be present
-over the entire domain, though the SSA is applied in ice-free 
-regions as discussed in :ref:`SSADiscrete`.
-
-Dirichlet boundary conditions (i.e. locations where :math:`\vU` is known)
-can be turned on with the :cfg:`-ssa_dirichlet_bc` flag, in which case
-the known velocities are taken from the NC variable
-:ncvar:`vel_ssa_bc`.  For regional models, the Dirichlet locations are specified
-indirectly via the NC mask variable :ncvar:`no_model_mask`, otherwise the NC mask variable :ncvar:`bc_mask` determines these locations.
-
-PISM supports a calving front boundary condition :cite:`AlbrechtLevermann2012` 
-that modifies the stress balance at the ice/ocean interface (config variable 
-:cfg:`calving_front_stress_boundary_condition`). This boundary condition is 
-**not supported**, however, by PISM's SSA inversion algorithms.
+The second clarification is that there are locations where :math:`\tau_c` 
+is not really free to change in PISM.  At grid points where ice is floating,
+or where land is ice-free, the design variable :math:`\tau_c` is ignored and
+replaced in computations with different constants.  This effectively reduces
+the dimension of the space of design variables. The inversion algorithms use 
+a mask, :ncvar:`zeta_fixed_mask`, to indicate grid points where :math:`\zeta` 
+(and hence :math:`\tau_c`) is to be held constant.  The design 
+variable :math:`zeta` is free to change only at points where 
+:ncvar:`zeta_fixed_mask` :math:`=0`.  At points where
+:ncvar:`zeta_fixed_mask` :math:`=1`, :math:`\zeta` is maintained at the value
+it had at the start of the inversion.  The :ncvar:`zeta_fixed_mask` can be
+supplied explicitly to the inversion algorithms, but more frequently one
+lets the routines determine the mask based on the choice of design variable.
 
 
-.. _SSADiscrete:
+.. _DesignParam:
 
-Discretization Considerations
------------------------------
+Design Variable Parameterizations
+---------------------------------
 
-PISM supports two discretization schemes for solving the SSA: 
-finite-differences 
-(:cfg:`-ssa_method fd`) and finite-elements (:cfg:`-ssa_method fem`).  The
-finite difference version contains support for the calving front
-boundary condition which is not available in the finite element version.
-On the other hand, the finite element version uses PETSc's ``SNES``
-Newton-method routines for solving the nonlinear problem, which leads to a 
-robust convergence criterion independent of the number of processors.  
-SSA inversion in PISM is based **only** on the finite-element implementation.
+For concreteness, we suppose that :math:`\tau_c` is the
+physical design variable.  PISM uses a scale parameter
+:math:`\tau_{c,\scale}=`\ :cfg:`design_param_tauc_scale` to keep
+:math:`\zeta` of order 1 for typical values of :math:`\tau_c`.
+The following four parameterizations are supported:
 
-PISM treats the SSA as if it applies to the entire grid domain, even in 
-ice-free locations.  Each grid point can be either icy or ice-free,
-and either grounded or ocean, for a total of four states.  It is determined
-to be ice-free if the thickness :math:`H` falls below a 
-small threshold :cfg:`mask_icefree_thickness_standard`.  The distinction between
-ground and ocean is made by computing what the surface elevation would be at that location for grounded vs. floating ice with the given thickness, sea level, and bedrock elevation; the maximum elevation determines the state.
+  * :cfg:`ident`\ : The most straightforward transformation between :math:`\zeta` and :math:`\tau_c`:
 
-In regions where :math:`H` is zero, the term 
-:math:`\nu H` in equation :eq:`SSA` vanishes, and the ellipticity of this
-equation is preserved only by the regularizing constant  :math:`\epsilon_{\rm SSA}`.  PISM has a second mechanism for maintaining the ellipticity
-of this equation by by enforcing a minimum value for :math:`\nu H`.  
-If the ice thickness falls below
-a threshold :math:`H_{\rm ext}=` :cfg:`min_thickness_strength_extension_ssa`, 
-then :math:`[\nu H+\epsilon_{\mathrm{SSA}}]` is replaced with 
-:math:`\nu_{\mathrm{ext}} H_{\mathrm{ext}}` where 
-:math:`\nu_{\rm ext}=` :cfg:`constant_nu_strength_extension_ssa`.  Note that this replacement
-depends on the thickness :math:`H_{\rm ext}`, not the icy/ice-free mask 
-condition.
+    .. math::
+       \tau_c = \tau_{c,\scale}\; \zeta.
+  
+    Positivity is not enforced.
+  
+  * :cfg:`square`: A common choice in the glaciology literature to enforce positivity:
 
-The value of :math:`\tau_b` is also adjusted based on the ice/ice-free grounded/ocean status of a grid point.  For floating locations, the
-value is set to 0, and for ice-free ground it is a 
-large constant (:cfg:`beta_ice_free_bedrock`).  Consequently, :math:`\tau_b`
-depends on the effective yield stress :math:`\tau_c` only for
-grounded ice.
+    .. math::
+      \tau_c = \tau_{c,\scale}\;\zeta^2.
+      
+  * :cfg:`exp`: An alternative choice for enforcing positivity:
+   
+    .. math::
+      \tau_c = \tau_{c,\scale}\;\exp(\zeta).
+  
+  * :cfg:`trunc`: A kind of truncated identity map that enforces positivity.  
+    For large values of :math:`\zeta`, 
+    :math:`\tau_c\approx \tau_{c,0}\zeta`, and :math:`\tau_c\ra 0` as
+    :math:`\zeta\ra -\infty`.  Specifically:
+             
+      .. math::
+        \tau_c = \tau_{c,\scale}\; \frac{\zeta+\sqrt{\zeta^2+4\zeta_0^2}}{2}
+    
+    where :math:`\zeta_0=` :cfg:`design_param_trunc_tauc0` / :cfg:`design_param_tauc_scale`.  The parameter :cfg:`design_param_trunc_tauc0`
+    is the approximate point where the linear relationship between
+    :math:`\tau_c` and :math:`\zeta` begins.
+
+The same parameterizations can be used when :math:`B` is the physical design 
+variable, in which case :cfg:`hardav` replaces :cfg:`tauc` in the 
+configuration variable names.
+

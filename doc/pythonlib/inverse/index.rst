@@ -14,6 +14,7 @@ command-line tool for running these algorithms.
 
 .. toctree::
   refresher
+  pism_ssa
   ssa_forward
   ssa_inverse
   pismi

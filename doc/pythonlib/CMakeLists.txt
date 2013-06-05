@@ -13,6 +13,7 @@ else ()
   zbib.rst
   inverse/index.rst
   inverse/refresher.rst
+  inverse/pism_ssa.rst
   inverse/ssa_forward.rst
   inverse/ssa_inverse.rst
   inverse/pismi.rst

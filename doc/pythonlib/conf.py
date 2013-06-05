@@ -29,20 +29,40 @@ sys.path.insert(0, os.path.abspath('../site-packages'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'sphinxcontrib.bibtex']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'sphinxcontrib.bibtex', 'breathe']
 
+
+# -- Math output --------------------------------------------------------------
+
+# Tell sphinx where to find our preamble file.
 pngmath_latex_preamble = r"""\input @CMAKE_BINARY_DIR@/doc/pythonlib/pism-sphinx-macros.tex"""
 
+# Small tweak to clear up png output.
 pngmath_dvipng_args = ['-gamma', '1', '-D', '110', '-bg', 'Transparent']
 
+# This command ensures that the baseline of the images will agree with the
+# baseline of the HTML text.  It requires the preview-latex latex package,
+# which seems to be commonly installed.
 pngmath_use_preview = True
 
 
+# Add a couple of new rst roles for config variables and NC file variables.
+# They will be formatted using rules in PISM.css
 rst_prolog = """
 .. role:: cfg
 
 .. role:: ncvar
 """
+
+# -- breathe is a bridge to doxygen ----------------------------------------------
+
+breathe_projects = { "browser_inverse": "@CMAKE_BINARY_DIR@/doc/browser/inverse/xml/",
+                     "browser_util": "@CMAKE_BINARY_DIR@/doc/browser/util/xml/"}
+
+breathe_default_project = "browser_base"
+breathe_domain_by_extension = {
+        "hh" : "cpp",
+        }
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

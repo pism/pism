@@ -61,10 +61,10 @@ of a Fourier sine series
 where
 
 .. math::
-  c_k = -\frac{2}{k^2}\int_0^{2\pi} \sin(kx) d(x) \;dx.
+  c_k = -\frac{1}{\pi k^2}\int_0^{2\pi} \sin(kx) d(x) \;dx.
 
 The inverse problem is to determine :math:`d` from :math:`u`, which
-looks like nothing more than taking two derivatives.  However,
+is nothing more than taking two derivatives.  However,
 taking a derivative is an unstable operation. 
 Suppose :math:`u` is contaminated with small errors
 
@@ -347,7 +347,7 @@ choices include
 
   * state and design functionals
   * regularization strategy
-  * initial estimates :math:`d_0`
+  * initial estimates :math:`\vd_0`
   * misfit levels :math:`M` (as determined by  choices 
     of :math:`\delta` and :math:`\eta` for gradient and Tikhonov algorithms).
 
