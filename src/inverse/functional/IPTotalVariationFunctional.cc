@@ -20,11 +20,7 @@
 
 IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal exponent, IceModelVec2Int *dirichletLocations)
 : IPFunctional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations), m_c(c), m_lebesgue_exp(exponent) {
-  PetscReal schoofLen = grid.config.get("Schoof_regularizing_length",
-                                        "km", "m"); // convert to meters
-  PetscReal schoofVel = grid.config.get("Schoof_regularizing_velocity",
-                                        "m/year", "m/s"); // convert to m/s
-  m_schoofReg = PetscSqr(schoofVel/schoofLen);
+  m_epsilon_sq = PetscSqr(grid.config.get("inv_ssa_tv_epsilon"));
 }
 
 PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) {
@@ -59,7 +55,7 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, PetscReal
       m_quadrature.computeTrialFunctionValues(x_e,x_q,dxdx_q,dxdy_q);
 
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        value += m_c*JxW[q]*pow(m_schoofReg + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q],m_lebesgue_exp/2);
+        value += m_c*JxW[q]*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q],m_lebesgue_exp/2);
       } // q
     } // j
   } // i
@@ -124,7 +120,7 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
         const PetscReal &dxdx_qq=dxdx_q[q],  &dxdy_qq=dxdy_q[q]; 
         for(PetscInt k=0; k<FEQuadrature::Nk; k++ ) {
-          gradient_e[k] += m_c*JxW[q]*(m_lebesgue_exp)*pow(m_schoofReg + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q],m_lebesgue_exp/2-1) 
+          gradient_e[k] += m_c*JxW[q]*(m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q],m_lebesgue_exp/2-1) 
             *(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy);
         } // k
       } // q
