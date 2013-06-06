@@ -447,8 +447,8 @@ netcdf pism_config {
     pism_config:inv_ssa_tauc_max = 5e7;
     pism_config:inv_ssa_tauc_max_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
     
-    pism_config:inv_ssa_target_rms_misfit = 100;
-    pism_config:inv_ssa_target_rms_misfit_doc = "m/year; desired RMS misfit for SSA inversions";
+    pism_config:inv_root_misfit = 100;
+    pism_config:inv_root_misfit_doc = "m/year; desired root misfit for SSA inversions";
     
     pism_config:tikhonov_atol  = 1e-10;
     pism_config:tikhonov_atol_doc = "m/year; absolute threshold for Tikhonov stopping criterion";

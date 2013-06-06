@@ -97,7 +97,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   m_alpha = 1./m_eta;
   m_logalpha = log(m_alpha);
   m_vel_scale = grid.config.get("inv_ssa_velocity_scale");
-  m_rms_error = grid.config.get("inv_ssa_target_rms_misfit")/m_vel_scale;
+  m_rms_error = grid.config.get("inv_root_misfit")/m_vel_scale;
 
   ierr = PISMOptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
   

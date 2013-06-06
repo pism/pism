@@ -18,6 +18,7 @@ else ()
   inverse/ssa_inverse.rst
   inverse/pismi.rst
   inverse/design.rst
+  inverse/listeners.rst
   api/index.rst
   api/PISM.rst
   api/options.rst

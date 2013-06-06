@@ -31,7 +31,7 @@ State functionals are specified with the :cfg:`-inv_ssa_misfit` flag.
 
 .. _meansquare:
 
-*  **Weighted Mean Square** (:cfg:`meansquare`)
+*  **Weighted Mean Square** (:cfg:`meansquare`) [Default]
 
    A common choice of misfit functional has the form
  
@@ -100,10 +100,10 @@ State functionals are specified with the :cfg:`-inv_ssa_misfit` flag.
 Design Functionals
 ------------------
 
-Design functionals are specified with the :cfg:`-inf_ssa_design_functional` 
+Design functionals are specified with the :cfg:`-inv_ssa_design_functional` 
 flag.
 
-* **Sobolev** :math:`H^1` (:cfg:`sobolevH1`)
+* **Sobolev** :math:`H^1` (:cfg:`sobolevH1`) [Default]
 
   The primary design functional has the form
   
@@ -192,6 +192,8 @@ flag.
 Algorithm Selection
 -------------------
 
+.. _InvGradAlg:
+
 Iterative Gradient Algorithms
 '''''''''''''''''''''''''''''
 
@@ -216,8 +218,10 @@ where the normalization constant :math:`c_N` is chosen so :math:`J_S=1` if
 functional therefore effectively has units of 
 :math:`Y_\scale^2`.
 
+.. _InvGradStop:
+
 The stopping criterion is provided by a parameter 
-:math:`\delta=` :cfg:`inv_ssa_target_rms_misfit` in 
+:math:`\delta=` :cfg:`-inv_root_misfit` in 
 units of :math:`m/a`, and iterations are stopped when
 
 .. math::
@@ -246,6 +250,8 @@ minimizing :math:`J_\misfit`, which are specified by the command-line flag
   :cite:`Habermannetal2012`.  In many cases it is the fastest of 
   the three methods, but it can also sometimes generate solutions with more
   artifacts.
+
+.. _TikhonovAlg:
 
 Tikhonov Algorithms
 '''''''''''''''''''
@@ -284,3 +290,36 @@ The following algorithms are also available, but are still works in progress.
   :cfg:`-design_param ident`.
   
 * **Gauss Newton** (:cfg:`tikhonov_gn`)
+
+.. _TikConverge:
+
+Tikhonov Convergence
+''''''''''''''''''''
+
+TAO minimization routines detect convergence based on parameters set by
+flags :cfg:`-tao_fatol`, :cfg:`-tao-frtol` and some others.  See the TAO
+User's Manual :cite:`tao-user-ref` for details.  In addition to these stopping criteria, PISM adds an additional convergence check.
+
+The Tikhonov functional has the form
+
+.. math::
+  J_\Tik(\zeta) = \eta J_\misfit(\zeta) + J_D(\zeta-\zeta_0)
+
+and at a minimizer :math:`\zeta_\reg`, 
+:math:`\nabla J_\Tik(\zeta_\reg)=0`.  Hence
+
+.. math::
+  \nabla J_D(\zeta_\reg-\zeta_0) = -\eta \nabla J_\misfit(\zeta_\reg).
+
+So convergence occurs when :math:`\nabla J_D(\zeta_\reg-\zeta_0)` and
+:math:`\nabla J_\misfit(\zeta_\reg)` point in opposite directions (and
+have the correct relative lengths determined by :math:`\eta`).  This leads to
+the condition
+
+.. math::
+  |\nabla J_\Tik(\zeta)| < \epsilon \max(|\nabla J_D(\zeta-\zeta_0)|, |\nabla J_\misfit(\zeta)|)
+
+where :math:`\epsilon` is specified by :cfg:`-tikhonov_rtol`.
+
+
+
