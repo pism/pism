@@ -8,8 +8,7 @@ PISM Python Documentation
 
 PISM has two Python components: bindings of a subset of 
 the PISM C++ libraries, and a library of Python code with an emphasis
-on script writing and on inverse problem algorithms. Both components are 
-accessed via ``import PISM`` from within Python.
+on script writing and on inverse problem algorithms.
 
 Contents:
 
@@ -20,9 +19,11 @@ Contents:
    python
    inverse/index.rst
 
-   api/index.rst
+.. toctree::
+  :maxdepth: 1
 
-   zbib
+  api/index.rst
+  zbib
 
 Indices and tables
 ==================

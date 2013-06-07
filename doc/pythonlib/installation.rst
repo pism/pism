@@ -45,7 +45,7 @@ on Mac OS X.
 
 ``petsc4py``  
 is a set of Python bindings for PETSc.  `Download
-<http://code.google.com/p/petsc4py/>`
+<http://code.google.com/p/petsc4py/>`__
 a version appropriate for your version of PETSc; version
 3.3 works with PETSc 3.2 and 3.3.  Then, assuming you 
 built PISM with ``PETSC_DIR=/home/user/petsc-3.2-p7/``
@@ -87,8 +87,9 @@ TAO is a software library, based on PETSc, for large-scale
 optimization problems.  Its use is optional; if it is not installed,
 some of the inverse problem algorithms in PISM will simply not be available.
 
-`Download <http://www.mcs.anl.gov/research/projects/tao/download/index.html>` a copy
-of a version that is compatible with your version of PETSc (TAO 2.1 is compatible with PETSc 3.2 and 3.3). Then
+`Download <http://www.mcs.anl.gov/research/projects/tao/download/index.html>`_-
+a copy of a version that is compatible with your version of PETSc 
+(TAO 2.1 is compatible with PETSc 3.2 and 3.3). Then
 
 .. code-block:: bash
 
@@ -109,7 +110,7 @@ in your :file:`.profile` or :file:`.bashrc`, e.g.
 
 Sphinx is a documentation generation tool and
 can be installed via ``apt-get`` or ``macports``.
-See the `installation instructions <http://sphinx-doc.org/latest/install.html>`
+See the `installation instructions <http://sphinx-doc.org/latest/install.html>`_
 for more details.  It is only required if you wish to 
 build the python/inverse documentation.
 
@@ -137,7 +138,7 @@ in in your ``PYTHONPATH`` (i.e. ``python -c "import petsc4py"`` returns
 error free).
 
 PISM will link to TAO automatically if it can find a TAO installation.
-If you wish to include TAO support and see the ``cmake`` log messages::
+If you wish to include TAO support and see the ``cmake`` log messages:
 
 .. code-block:: bash
 
@@ -160,5 +161,5 @@ The main page for the documentation is then in
 :file:`doc/pismpython/html/index.html`. The
 documentation build can take some time while it
 builds a large number of small images from
-:math:`\text{LaTeX}` formulas.
+:math:`\text{\LaTeX}` formulas.
 
