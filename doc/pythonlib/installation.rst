@@ -15,37 +15,150 @@ that a working version of PISM has already been setup
 (as described in the PISM Installation Manual
 :cite:`pism-installation-manual`).
 
+Prerequisites
+=============
+
 Python is already required to build PISM.  The following 
 prerequisites will also be needed for the bindings
 and inverse library.
 
 ``SWIG``
-=========
+-----------
 
 ``SWIG`` (http://www.swig.org) is a software tool for automatically generating wrappers for C/C++ code. It can be be installed via
 
 .. code-block:: bash
+
   sudo apt-get install swig
 
 on Linux or 
 
 .. code-block:: bash
+
   sudo port install swig
 
 on Mac OS X.
 
+
+``petsc4py``
+------------
+
+``petsc4py``  
+is a set of Python bindings for PETSc.  `Download
+<http://code.google.com/p/petsc4py/>`
+a version appropriate for your version of PETSc; version
+3.3 works with PETSc 3.2 and 3.3.  Then, assuming you 
+built PISM with ``PETSC_DIR=/home/user/petsc-3.2-p7/``
+and ``PETSC_ARCH=linux-gnu-opt``
+
+.. code-block:: bash
+
+  export PETSC_DIR=/home/user/petsc-3.2-p7/
+  export PETSC_ARCH=linux-gnu-opt
+  python setup.py build
+  python setup.py install --prefix INSTALL_LOCATION
+
+This will install a copy of ``petsc4py`` in
+:file:`{INSTALL_LOCATION}/lib/python{X}.{X}/site-packages`.
+For example, for Python 2.7 and 
+``INSTALL_LOCATION=/home/user/lib`` the install
+location will be :file:`/home/user/lib/python2.7/site-packages`.
+You will then want to add the install location to your ``PYTHONPATH``
+by adding, e.g.,
+
+.. code-block:: bash
+
+  export PYTHONPATH=`/home/user/lib/python2.7/site-packages`:${PYTHONPATH}
+
+to your :file:`.profile` or :file:`.bashrc`.
+
+You can verify that you have installed ``petsc4py`` if the command
+
+.. code-block:: bash
+
+  python -c "import petsc4py"
+
+Returns error free.
+
+TAO
+---
+
+TAO is a software library, based on PETSc, for large-scale 
+optimization problems.  Its use is optional; if it is not installed,
+some of the inverse problem algorithms in PISM will simply not be available.
+
+`Download <http://www.mcs.anl.gov/research/projects/tao/download/index.html>` a copy
+of a version that is compatible with your version of PETSc (TAO 2.1 is compatible with PETSc 3.2 and 3.3). Then
+
+.. code-block:: bash
+
+  export PETSC_DIR=/home/user/petsc-3.2-p7/
+  export PETSC_ARCH=linux-gnu-opt
+  export TAO_DIR=`pwd`
+  make all
+
+You will need to add the ``TAO_DIR`` environment variable 
+in your :file:`.profile` or :file:`.bashrc`, e.g.
+
+.. code-block:: bash
+
+  export TAO_DIR=/home/user/tao-2.1-p1
+
 ``Sphinx``
-==========
+----------
 
 Sphinx is a documentation generation tool and
 can be installed via ``apt-get`` or ``macports``.
-See the :ref:`installation instructions <http://sphinx-doc.org/latest/install.html>`
-for more details.
+See the `installation instructions <http://sphinx-doc.org/latest/install.html>`
+for more details.  It is only required if you wish to 
+build the python/inverse documentation.
 
-``petsc4py``
-============
+Building PISM with Python bindings
+==================================
+
+To setup a PISM build with Python bindings, either use
+
+.. code-block:: bash
+
+  cmake -DPism_BUILD_PYTHON_BINDINGS=1 ...
+
+or, if using ``ccmake``, set ``Pism_BUILD_PYTHON_BINDINGS`` to ``ON``
+in the user interface.
+
+If ``cmake`` is unable to find ``petsc4py``, it will terminate
+with the error 
+
+.. code-block:: bash
+
+  Could NOT find PETSc4Py (missing: PETSC4PY_INCLUDES)
+
+If this occurs, verify that ``petsc4py`` can be found
+in in your ``PYTHONPATH`` (i.e. ``python -c "import petsc4py"`` returns
+error free).
+
+PISM will link to TAO automatically if it can find a TAO installation.
+If you wish to include TAO support and see the ``cmake`` log messages::
+
+.. code-block:: bash
+
+  -- Checking for package 'TAO'
+  -- TAO_DIR is TAO_DIR-NOTFOUND
+
+verify that you have set your ``TAO_DIR`` environment variable correctly.
 
 
-TAO
-===
+Building the Documentation
+==========================
+
+In the PISM build directory, 
+
+.. code-block:: bash
+
+  make pismpython_docs
+
+The main page for the documentation is then in
+:file:`doc/pismpython/html/index.html`. The
+documentation build can take some time while it
+builds a large number of small images from
+:math:`\text{LaTeX}` formulas.
 
