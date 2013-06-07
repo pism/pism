@@ -27,10 +27,10 @@ $PYTHONEXEC make_synth_ssa.py -i tiny.nc -o inv_data.nc \
               -tauc_prior_const 70000
 
 # Run the inversion code
-$PYTHONEXEC vel2tauc.py \
+$PYTHONEXEC pismi.py \
               -i tiny.nc -pseudo_plastic -pseudo_plastic_q 0.25 -inv_data inv_data.nc \
               -o tiny_inv.nc -regional -ssa_dirichlet_bc -inv_use_tauc_prior \
-              -inv_ssa_tauc_param trunc -inv_ssa_cL2 1 -inv_ssa_cH1 0 \
+              -inv_ssa_design_param trunc -inv_ssa_cL2 1 -inv_ssa_cH1 0 \
               -inv_method nlcg -rms_error 100
 
 # Check if we succeeded

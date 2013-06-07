@@ -3,7 +3,7 @@
 include_directories ( functional )
 
 set(PISM_INVERSE_SOURCES
-./IPTaucParameterization.cc
+./IPDesignVariableParameterization.cc
 ./IP_SSATaucForwardProblem.cc
 ./IP_SSATaucForwardProblem_dep.cc
 ./IPTwoBlockVec.cc

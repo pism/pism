@@ -23,7 +23,7 @@ import PISM.invert.ssa
 import numpy as np
 import sys, os, math
 
-class Vel2Tauc(PISM.invert.ssa.SSATaucForwardRunFromInputFile):
+class Vel2Tauc(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
   def write(self,filename,append=False):
     if not append:
@@ -254,7 +254,6 @@ if __name__ == "__main__":
     ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
-    monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
     prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
 
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
@@ -269,10 +268,10 @@ if __name__ == "__main__":
   saving_inv_data = (inv_data_filename != output_filename)
 
   PISM.setVerbosityLevel(verbosity)
-  vel2tauc = Vel2Tauc(input_filename,inv_data_filename)
+  vel2tauc = Vel2Tauc(input_filename,inv_data_filename,'tauc')
   vel2tauc.setup()
   tauc_param = vel2tauc.tauc_param
-  solver = PISM.invert.ssa.createInvSSATaucSolver(vel2tauc)
+  solver = PISM.invert.ssa.createInvSSASolver(vel2tauc)
 
   # if forward_type == 'classic':
   #   forward_problem = SSAForwardProblem(vel2tauc)
@@ -305,7 +304,7 @@ if __name__ == "__main__":
   # Convert tauc_prior -> zeta_prior
   zeta_prior = PISM.IceModelVec2S();
   zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
-  tauc_param.convertFromTauc(tauc_prior,zeta_prior)
+  tauc_param.convertFromDesignVariable(tauc_prior,zeta_prior)
   vecs.add(zeta_prior,writing=True)
 
   # If the inverse data file has a variable tauc_true, this is probably
@@ -409,10 +408,6 @@ if __name__ == "__main__":
     solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax))
     if solver.method=='ign':
       solver.addLinearIterationListener(Vel2TaucLinPlotListener(grid,Vmax))
-  if monitor_adjoint:
-    solver.addIterationListener(PISM.invert.ssa.MonitorAdjoint())
-    if solver.method=='ign':
-      solver.addLinearIterationListener(PISM.invert.ssa.MonitorAdjointLin())
   # Pausing
   if do_pause:
     solver.addIterationListener(PISM.invert.listener.pauseListener)
@@ -452,7 +447,7 @@ if __name__ == "__main__":
   (zeta,u) = solver.inverseSolution()
 
   # Convert back from zeta to tauc
-  tauc_param.convertToTauc(zeta,tauc)
+  tauc_param.convertToDesignVariable(zeta,tauc)
 
   # It may be that a 'tauc' was read in earlier.  We replace it with
   # our newly generated one.

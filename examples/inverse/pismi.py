@@ -23,11 +23,11 @@ import PISM.invert.ssa
 import numpy as np
 import sys, os, math
 
-class Vel2Tauc(PISM.invert.ssa.SSATaucForwardRunFromInputFile):
+class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
   def write(self,filename,append=False):
     if not append:
-      PISM.ssa.SSAFromInputFile.write(self,filename)
+      PISM.invert.ssa.SSAForwardRunFromInputFile.write(self,filename)
     else:
       grid = self.grid
       vecs = self.modeldata.vecs
@@ -38,7 +38,7 @@ class Vel2Tauc(PISM.invert.ssa.SSATaucForwardRunFromInputFile):
       self.modeldata.vecs.write(filename)
       pio.close()
 
-class Vel2TaucPlotListener(PISM.invert.listener.PlotListener):
+class InvSSAPlotListener(PISM.invert.listener.PlotListener):
   def __init__(self,grid,Vmax):
     PISM.invert.listener.PlotListener.__init__(self,grid)
     self.Vmax = Vmax
@@ -133,7 +133,7 @@ class Vel2TaucPlotListener(PISM.invert.listener.PlotListener):
       pp.ion()
       pp.show()
 
-class Vel2TaucLinPlotListener(PISM.invert.listener.PlotListener):
+class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
   def __init__(self,grid,Vmax):
     PISM.invert.listener.PlotListener.__init__(self,grid)
     self.Vmax = Vmax
@@ -210,16 +210,28 @@ if __name__ == "__main__":
   WIDE_STENCIL = 2
 
   usage = \
-  """  vel2tauc.py -i IN.nc [-o file.nc]
+  """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model] 
+                [-inv_design design_var] [-inv_method meth] 
     where:
-      -i      IN.nc is input file in NetCDF format: contains PISM-written model state
+    -i            IN.nc       is input file in NetCDF format: contains PISM-written model state
+    -o            OUT.nc      is output file in NetCDF format to be overwritten
+    -a            INOUT.nc    is input/output file in NetCDF format to be appended to
+    -inv_data     inv_data.nc is data file containing extra inversion data (e.g. observed surface velocities)
+    -inv_forward  model       forward model: only 'ssa' supported
+    -inv_design   design_var  design variable name; one of 'tauc'/'hardav' for SSA inversions
+    -inv_method   meth        algorithm for inversion [sd,nlcg,ign,tikhonov_lmvm]
+
     notes:
-      * -i is required
-    """
+      * only one of -i/-a is allowed; both specify the input file
+      * only one of -o/-a is allowed; both specify the output file
+      * if -o is used, only the variables involved in inversion are written to the output file.
+      * if -a is used, the varaibles involved in inversion are appended to the given file. No
+        original variables in the file are changed.
+   """
 
   append_mode = False
   PISM.setVerbosityLevel(1)
-  for o in PISM.OptionsGroup(context.com,"","vel2tauc"):
+  for o in PISM.OptionsGroup(context.com,"","pismi"):
     input_filename = PISM.optionsString("-i","input file")
     append_filename = PISM.optionsString("-a","append file",default=None)
     output_filename = PISM.optionsString("-o","output file",default=None)
@@ -246,15 +258,16 @@ if __name__ == "__main__":
 
     do_plotting = PISM.optionsFlag("-inv_plot","perform visualization during the computation",default=False)
     do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
-    do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
-    test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
-    ls_verbose = PISM.optionsFlag("-inv_ls_verbose","Turn on a verbose linesearch.",default=False)
-    do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
-    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
-    ign_theta  = PISM.optionsReal("-ign_theta","theta parameter for IGN algorithm",default=0.5)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
-    monitor_adjoint = PISM.optionsFlag("-inv_monitor_adjoint","Track accuracy of the adjoint during computation",default=False)
+    do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
+
+    test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
+
+    do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
+    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
+
+
     prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
 
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
@@ -262,24 +275,18 @@ if __name__ == "__main__":
 
   inv_method = config.get_string("inv_ssa_method")
   
-  
   if output_filename is None:
-    output_filename = "vel2tauc_"+os.path.basename(input_filename)    
+    output_filename = "pismi_"+os.path.basename(input_filename)    
 
   saving_inv_data = (inv_data_filename != output_filename)
 
   PISM.setVerbosityLevel(verbosity)
-  vel2tauc = Vel2Tauc(input_filename,inv_data_filename)
-  vel2tauc.setup()
-  tauc_param = vel2tauc.tauc_param
-  solver = PISM.invert.ssa.createInvSSATaucSolver(vel2tauc)
+  forward_run = SSAForwardRun(input_filename,inv_data_filename,'tauc')
+  forward_run.setup()
+  design_param = forward_run.designVariableParameterization()
+  solver = PISM.invert.ssa.createInvSSASolver(forward_run)
 
-  # if forward_type == 'classic':
-  #   forward_problem = SSAForwardProblem(vel2tauc)
-  # else:
-  #   forward_problem = SSAForwardProblemFIXME(vel2tauc)
-
-  modeldata = vel2tauc.modeldata
+  modeldata = forward_run.modeldata
   vecs = modeldata.vecs
   grid = modeldata.grid
 
@@ -305,7 +312,7 @@ if __name__ == "__main__":
   # Convert tauc_prior -> zeta_prior
   zeta_prior = PISM.IceModelVec2S();
   zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
-  tauc_param.convertFromTauc(tauc_prior,zeta_prior)
+  design_param.convertFromDesignVariable(tauc_prior,zeta_prior)
   vecs.add(zeta_prior,writing=True)
 
   # If the inverse data file has a variable tauc_true, this is probably
@@ -337,7 +344,7 @@ if __name__ == "__main__":
       exit(1)
 
     if solver.method == 'tikhonov_gn':
-      pass
+      raise NotImplementedError()
     else:
       import numpy as np
       (seed,seed_set) = PISM.optionsIntWasSet("-inv_test_adjoint_seed","")
@@ -346,7 +353,7 @@ if __name__ == "__main__":
       d = PISM.vec.randVectorS(grid,1e5,WIDE_STENCIL)
       # If we're fixing some tauc values, we need to ensure that we don't
       # move in a direction 'd' that changes those values in this test.
-      if vel2tauc.using_zeta_fixed_mask:
+      if forward_run.using_zeta_fixed_mask:
         zeta_fixed_mask = vecs.zeta_fixed_mask
         with PISM.vec.Access(comm=d, nocomm=zeta_fixed_mask):
           for (i,j) in grid.points():
@@ -383,7 +390,7 @@ if __name__ == "__main__":
     vecs.add(vel_ssa_observed,writing=True)
 
   # Establish a logger which will save logging messages to the output file.  
-  logger = PISM.logging.CaptureLogger(output_filename,'vel2tauc_log');
+  logger = PISM.logging.CaptureLogger(output_filename,'pismi_log');
   PISM.logging.add_logger(logger)
   if append_mode or do_restart:
     logger.readOldLog()
@@ -406,13 +413,9 @@ if __name__ == "__main__":
   # Attach various iteration listeners to the solver as needed for:
   # Plotting
   if do_plotting:
-    solver.addIterationListener(Vel2TaucPlotListener(grid,Vmax))
+    solver.addIterationListener(InvSSAPlotListener(grid,Vmax))
     if solver.method=='ign':
-      solver.addLinearIterationListener(Vel2TaucLinPlotListener(grid,Vmax))
-  if monitor_adjoint:
-    solver.addIterationListener(PISM.invert.ssa.MonitorAdjoint())
-    if solver.method=='ign':
-      solver.addLinearIterationListener(PISM.invert.ssa.MonitorAdjointLin())
+      solver.addLinearIterationListener(InvSSALinPlotListener(grid,Vmax))
   # Pausing
   if do_pause:
     solver.addIterationListener(PISM.invert.listener.pauseListener)
@@ -452,7 +455,7 @@ if __name__ == "__main__":
   (zeta,u) = solver.inverseSolution()
 
   # Convert back from zeta to tauc
-  tauc_param.convertToTauc(zeta,tauc)
+  design_param.convertToDesignVariable(zeta,tauc)
 
   # It may be that a 'tauc' was read in earlier.  We replace it with
   # our newly generated one.
@@ -485,7 +488,7 @@ if __name__ == "__main__":
   vecs.add(r_mag,writing=True)
 
   # Write solution out to netcdf file
-  vel2tauc.write(output_filename,append=append_mode)
+  forward_run.write(output_filename,append=append_mode)
   # If we're not in append mode, the previous command just nuked
   # the output file.  So we rewrite the siple log.
   if not append_mode:
