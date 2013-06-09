@@ -60,7 +60,7 @@ Observed SSA Velocities
 
 SSA velocities to be matched by the inversion algorithms are 
 provided in the inverse data file, and can be provided directly
-as the variables ncvar:`u_ssa_observed`\ /:ncvar:`v_ssa_observed`.
+as the variables :ncvar:`u_ssa_observed`\ /:ncvar:`v_ssa_observed`.
 
 On the other hand, the PISM hybrid model :cite:`BBssasliding` 
 for horizontal surface velocities :math:`\vU` writes them as a sum
