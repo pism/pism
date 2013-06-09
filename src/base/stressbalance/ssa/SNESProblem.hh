@@ -42,6 +42,9 @@ public:
 
 protected:
 
+  typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*,void*,Mat,Mat,MatStructure*,void*);
+  typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*,void*,void*,void*);
+
   virtual PetscErrorCode initialize();
 
   virtual PetscErrorCode setFromOptions();
@@ -139,8 +142,13 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
   // methods via SSAFEFunction and SSAFEJ
   m_callbackData.da = m_DA;
   m_callbackData.solver = this;
+#if PETSC_VERSION_LT(3,4,0)  
   ierr = DMDASetLocalFunction(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalFunction);CHKERRQ(ierr);
   ierr = DMDASetLocalJacobian(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalJacobian);CHKERRQ(ierr);
+#else
+  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES, (DMDASNESFunctionLocal)SNESProblem<DOF,U>::LocalFunction,&m_callbackData);CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobianLocal)SNESProblem<DOF,U>::LocalJacobian,&m_callbackData);CHKERRQ(ierr);
+#endif
 
 #if PISM_PETSC32_COMPAT==1
   Mat J;
