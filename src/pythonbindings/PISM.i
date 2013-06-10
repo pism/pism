@@ -248,6 +248,7 @@ namespace std {
 %apply PetscReal & OUTPUT {PetscReal & result};
 %apply PetscScalar & OUTPUT {PetscScalar & result};
 %apply PetscReal & OUTPUT {PetscReal & out};
+%apply double & OUTPUT {double &};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
 
 %Pism_pointer_reference_is_always_output(IceModelVec2S)
