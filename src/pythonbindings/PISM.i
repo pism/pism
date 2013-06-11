@@ -408,6 +408,34 @@ namespace std {
     }
 };
 
+%ignore IceModelVec3D::operator();
+%extend IceModelVec3D
+{
+
+  PetscReal getitem(int i, int j, int k)
+  {
+      return (*($self))(i,j,k);
+  }
+
+  void setitem(int i, int j, int k, PetscReal val)
+  {
+      (*($self))(i,j,k) = val;
+  }
+
+
+    %pythoncode {
+    def __getitem__(self,*args):
+        return self.getitem(args[0][0],args[0][1],args[0][2])
+
+    def __setitem__(self,*args):
+        if(len(args)==2):
+            self.setitem(args[0][0],args[0][1],args[0][2],args[1])
+        else:
+            raise ValueError("__setitem__ requires 2 arguments; received %d" % len(args));
+    }
+};
+
+
 // FIXME
 // IceModelVec2 imports IceModelVec::write with a 'using' declaration,
 // and implements a write method with the same signature as one of the
