@@ -27,7 +27,7 @@ algorithms, which we turn to now.
 State Functionals
 -----------------
 
-State functionals are specified with the :cfg:`-inv_ssa_misfit` flag.
+State functionals are specified with the :cfg:`-inv_misfit_func` flag.
 
 .. _meansquare:
 
@@ -100,7 +100,7 @@ State functionals are specified with the :cfg:`-inv_ssa_misfit` flag.
 Design Functionals
 ------------------
 
-Design functionals are specified with the :cfg:`-inv_ssa_design_functional` 
+Design functionals are specified with the :cfg:`-inv_design_func` 
 flag.
 
 * **Sobolev** :math:`H^1` (:cfg:`sobolevH1`) [Default]
@@ -287,7 +287,7 @@ The following algorithms are also available, but are still works in progress.
 * **TAO Bound Constraint Limited Memory Variable Metric** (:cfg:`tikhonov_blmvm`)
 
   A variation of :cfg:`tikhonov_lmvm` that enforces the constraint :math:`\zeta\ge 0`.  It is intended to be used only with 
-  :cfg:`-design_param ident`.
+  :cfg:`-inv_design_param ident`.
   
 * **Gauss Newton** (:cfg:`tikhonov_gn`)
 

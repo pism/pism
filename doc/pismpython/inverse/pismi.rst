@@ -102,7 +102,7 @@ using :cfg:`-inv_ssa tauc` or :cfg:`-inv_ssa hardav` respectively.
 The default is :cfg:`tauc`.
 
 A parameterization for the design variable must also be specified
-using :cfg:`-design_param` and a name of one of the
+using :cfg:`-inv_design_param` and a name of one of the
 :ref:`parameterizations <DesignParam>`.
 
 The inversion algorithms require a best initial estimate for the
@@ -131,7 +131,7 @@ Design and State Functionals
 ----------------------------
 
 The choice of design and state functionals are made
-with :cfg:`-inv_ssa_misfit` and :cfg:`-inv_ssa_design_functional`
+with :cfg:`-inv_misfit_func` and :cfg:`-inv_design_func`
 with a value among those documented in :ref:`state <statefunc>` and
 :ref:`design <designfunc>` functional sections.
 

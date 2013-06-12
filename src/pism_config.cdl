@@ -420,11 +420,11 @@ netcdf pism_config {
     pism_config:inv_ssa_method = "tikhonov_lmvm";
     pism_config:inv_ssa_method_doc = "algorithm to use for SSA inversions";
 
-    pism_config:inv_ssa_design_param = "exp";
-    pism_config:inv_ssa_design_param_doc = "parameterization of design variables used during inversion";
+    pism_config:inv_design_param = "exp";
+    pism_config:inv_design_param_doc = "parameterization of design variables used during inversion";
 
-    pism_config:inv_ssa_design_functional = "sobolevH1";
-    pism_config:inv_ssa_design_functional_doc = "functional used for inversion design variables";
+    pism_config:inv_design_func = "sobolevH1";
+    pism_config:inv_design_func_doc = "functional used for inversion design variables";
 
     pism_config:inv_ssa_cL2     = 1;
     pism_config:inv_ssa_cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";

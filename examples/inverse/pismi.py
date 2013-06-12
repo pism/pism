@@ -260,6 +260,7 @@ if __name__ == "__main__":
     do_final_plot = PISM.optionsFlag("-inv_final_plot","perform visualization at the end of the computation",default=False)
     Vmax = PISM.optionsReal("-inv_plot_vmax","maximum velocity for plotting residuals",default=30)
 
+    design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
 
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
@@ -273,6 +274,7 @@ if __name__ == "__main__":
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
 
 
+
   inv_method = config.get_string("inv_ssa_method")
   
   if output_filename is None:
@@ -281,7 +283,7 @@ if __name__ == "__main__":
   saving_inv_data = (inv_data_filename != output_filename)
 
   PISM.setVerbosityLevel(verbosity)
-  forward_run = SSAForwardRun(input_filename,inv_data_filename,'tauc')
+  forward_run = SSAForwardRun(input_filename, inv_data_filename, design_var)
   forward_run.setup()
   design_param = forward_run.designVariableParameterization()
   solver = PISM.invert.ssa.createInvSSASolver(forward_run)
