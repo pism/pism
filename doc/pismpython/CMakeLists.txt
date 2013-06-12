@@ -57,7 +57,7 @@ else ()
 
 
   add_custom_target (pismpython_docs
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/pythonlib/_static ${CMAKE_BINARY_DIR}/doc/pythonlib/_static
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/pismpython/_static ${CMAKE_BINARY_DIR}/doc/pismpython/_static
 
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/site-packages ${CMAKE_BINARY_DIR}/doc/site-packages
 
