@@ -27,7 +27,7 @@ algorithms, which we turn to now.
 State Functionals
 -----------------
 
-State functionals are specified with the :cfg:`-inv_misfit_func` flag.
+State functionals are specified with the :cfg:`-inv_state_func` flag.
 
 .. _meansquare:
 
@@ -221,7 +221,7 @@ functional therefore effectively has units of
 .. _InvGradStop:
 
 The stopping criterion is provided by a parameter 
-:math:`\delta=` :cfg:`-inv_root_misfit` in 
+:math:`\delta=` :cfg:`-inv_target_misfit` in 
 units of :math:`m/a`, and iterations are stopped when
 
 .. math::

@@ -697,7 +697,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.keyword_from_option("inv_design_param",
                                     "inv_design_param","ident,trunc,square,exp"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("inv_root_misfit","inv_root_misfit"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("inv_target_misfit","inv_target_misfit"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("tikhonov_penalty","tikhonov_penalty_weight"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("tikhonov_atol","tikhonov_atol"); CHKERRQ(ierr);

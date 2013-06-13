@@ -139,7 +139,7 @@ protected:
 
   PetscReal m_alpha;
   PetscReal m_logalpha;
-  PetscReal m_rms_error;
+  PetscReal m_target_misfit;
 
   PetscInt m_iter, m_iter_max;
   bool m_tikhonov_adaptive;

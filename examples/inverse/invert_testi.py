@@ -103,8 +103,6 @@ p_schoof = 4.0/3.0;   # = 1 + 1/n
 
 slope = 0.001
 
-rms_error = 1. #m/a
-
 right_side_weight = 1.
 
 tauc_guess_scale = 0.3

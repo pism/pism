@@ -149,6 +149,11 @@ If there exists a solution of :math:`\calF(d)=\vu_{\obs}`, it will be a
 minimizer of :eq:`J-misfit`.  But we don't want to find this exact solution
 (i.e. the exact minimizer) because it will be contaminated with errors.  
 
+.. note::
+  We call :math:`J_\misfit` the misfit functional, but we use the 
+  word *misfit* for :math:`\sqrt{J_\misfit}` for sum-of-squares misfit
+  functionals.  See also the :ref:`remarks below <misfit-clarify>`.
+
 The regularized problem requires two pieces of *a-priori* data:
 
   1. An estimate for the size :math:`\delta` of the errors in
@@ -189,7 +194,7 @@ also :cite:`Habermannetal2012`.
 .. note::
   Inverse gradient algorithms are generally referred to as control theory
   algorithms in the glaciology literature, where they were introduced in
-  :cite:`MacAyealtutorial`.  Traditionally slow minimization methods (e.g. 
+  :cite:`MacAyealtutorial`.  Traditionally, slow minimization methods (e.g. 
   steepest descent) have been used to minimize :math:`J_\misfit`, 
   which obscured the need for a careful consideration of the stopping
   criterion.  The use of the Morozov discrepancy principle stopping 
@@ -212,6 +217,8 @@ the total-variation functional
 
 is an acceptable functional that is not in sum-of-squares form.
 
+.. _misfit-clarify:
+
 Again, as with inverse gradient algorithms, we consider the 
 misfit functional
 
@@ -219,6 +226,14 @@ misfit functional
   J_\misfit(\vd) = J_S(\vu_{\obs}-\calF(\vd)),
 
 which is minimized by an exact solution of the inverse problem.
+Since :math:`J_S` need not be of sum-of-squares type,
+it need not make sense to call :math:`\sqrt{J_\misfit}`.
+We leave the word *misfit* undefined in general; though it 
+will typically be a root of the misfit functional.
+In the remainder of this section we will only speak of
+"the value of the misfit functional", which is
+unambiguous, and equals the square of the misfit for
+sum-of-squares functionals.
 
 For Tikhonov regularization, we provide a best-guess
 initial estimate :math:`\vd_0` for the design parameters
@@ -230,7 +245,8 @@ and a penalty parameter :math:`\eta`.  We then
 
 To explain the meaning of the parameter :math:`\eta`, suppose
 that :math:`\vd_{\reg}` is a minimizer of the Tikhonov functional,
-and let :math:`M=J_\misfit(\vd_\reg)` be the misfit at the minimizer.
+and let :math:`M=J_\misfit(\vd_\reg)` be the 
+value of the misfit functional at the minimizer.
 At the minimizer, the derivative of :math:`J_\Tik` vanishes and we have
 
 .. math::
@@ -248,11 +264,12 @@ it can be shown that this is the same as minimizing
 :math:`\vd \mapsto J_D(\vd-\vd_0)` subject to the constraint  :math:`J_\misfit(\vd)\le M` :cite:`Tarantola`.
 
 Selection of the penalty parameter :math:`\eta` therefore 
-indirectly determines the acceptable level of misfit :math:`M`.
+indirectly determines the acceptable value :math:`M` of the
+misfit functional.
 The inverse problem is regularized by seeking the design parameters 
 :math:`\vd` that are closest (as measured by :math:`J_D`) 
-to the initial estimate :math:`\vd_0` and such that their 
-associated misfit is consistent with the misfit :math:`M` 
+to the initial estimate :math:`\vd_0` and such that the 
+value of the misfit functional is consistent with the value 
 specified indirectly by :math:`\eta`.  
 
 .. note::
@@ -306,18 +323,19 @@ The condition that ":math:`\calF(\vd)` needs to be close to
 the observed state variables :math:`\vu_\obs`" is specified differently
 in the two approaches.  
 
-  * For gradient algorithms, an estimate for the final misfit :math:`M`
-    is directly specified via :math:`\delta` according to the formula 
-    :math:`M\le \delta^2`. The final misfit is guaranteed to satisfy
-    this inequality.
-    
-  * For Tikhonov minimization, the misfit is specified indirectly via
+  * For gradient algorithms, an estimate for the final value
+    :math:`M` of the misfit functional 
+    directly specified via :math:`\delta` according to the formula 
+    :math:`M\le \delta^2`. 
+        
+  * For Tikhonov minimization, the final value of the misfit functional
+    is specified indirectly via
     :math:`\eta`.  Once the Tikhonov functional has been minimized
     to for a fixed parameter :math:`\eta` to determine :math:`d_\reg`, 
-    the final misfit :math:`M`
-    can be computed by :math:`M=J_\misfit(d_\reg)`.  The regularized
-    solution is then the closest solution to :math:`d_0` having 
-    misfit :math:`M`. Adjusting the value of of :math:`\eta` can then
+    let :math:`M=J_\misfit(d_\reg)`.  The regularized
+    solution is then the closest solution to :math:`d_0` 
+    such that :math:`J_\misfit=M`. Adjusting the value of of 
+    :math:`\eta` can then
     be used to adjust :math:`M`.  Increasing :math:`\eta`
     leads to a greater emphasis on the misfit in the Tikhonov functional
     and therefore a decrease in the misfit at the minimizer.
@@ -348,7 +366,7 @@ choices include
   * state and design functionals
   * regularization strategy
   * initial estimates :math:`\vd_0`
-  * misfit levels :math:`M` (as determined by  choices 
+  * Final values :math:`M` of the misfit functional (as determined by  choices 
     of :math:`\delta` and :math:`\eta` for gradient and Tikhonov algorithms).
 
 There is *no preferred way* to make these choices.  

@@ -131,7 +131,7 @@ Design and State Functionals
 ----------------------------
 
 The choice of design and state functionals are made
-with :cfg:`-inv_misfit_func` and :cfg:`-inv_design_func`
+with :cfg:`-inv_state_func` and :cfg:`-inv_design_func`
 with a value among those documented in :ref:`state <statefunc>` and
 :ref:`design <designfunc>` functional sections.
 
@@ -149,7 +149,7 @@ Regularization Constants
 ------------------------
 
 For iterative gradient algorithms,
-:cfg:`-inv_root_misfit` specifies
+:cfg:`-inv_target_misfit` specifies
 the :ref:`stopping criterion <InvGradStop>`.
 
 For Tikhonov algorithms use :cfg:`-tikhonov_penalty`
