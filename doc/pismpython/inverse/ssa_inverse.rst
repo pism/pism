@@ -114,15 +114,15 @@ flag.
   
   * :math:`|\Omega|` is the area of the rectangular grid domain,
   * :math:`\ell=` :cfg:`inv_ssa_length_scale`,
-  * :math:`c_{H^1}=` :cfg:`inv_ssa_cH1`, and
-  * :math:`c_{L^2}=` :cfg:`inv_ssa_cL2`.
+  * :math:`c_{H^1}=` :cfg:`inv_design_cH1`, and
+  * :math:`c_{L^2}=` :cfg:`inv_design_cL2`.
   
   Integration is done with 
   numerical quadrature of finite element functions.
   
   Typical values for :math:`c_{H^1}` and :math:`c_{L^2}` range between
   0 and 1, and can be specified with the option flags
-  :cfg:`-inv_ssa_cH1` and :cfg:`-inv_ssa_cL2`. 
+  :cfg:`-inv_design_cH1` and :cfg:`-inv_design_cL2`. 
   Setting either (but not both!) of these equal to zero is acceptable.  Note 
   that :math:`\zeta` is scaled to have typical values of 1, and hence typical
   values of :math:`J_D` are expected to be on the order of 1 as well.

@@ -552,8 +552,8 @@ PetscErrorCode IP_SSATaucForwardProblem_dep::assemble_DomainNorm_matrix()
     ierr = m_zeta_fixed_locations->get_array(zeta_fixed_mask);CHKERRQ(ierr);
   }
 
-  PetscReal cH1 = config.get("inv_ssa_cH1");
-  PetscReal cL2 = config.get("inv_ssa_cL2");
+  PetscReal cH1 = config.get("inv_design_cH1");
+  PetscReal cL2 = config.get("inv_design_cL2");
   PetscReal area = 4*grid.Lx*grid.Ly;
   PetscReal length_scale = grid.config.get("inv_ssa_length_scale");
   cL2 /= area;
@@ -700,8 +700,8 @@ PetscErrorCode IP_SSATaucForwardProblem_dep::domainIP_core(PetscReal **A, PetscR
     ierr = m_zeta_fixed_locations->get_array(zeta_fixed_mask);CHKERRQ(ierr);
   }
 
-  PetscReal cH1 = config.get("inv_ssa_cH1");
-  PetscReal cL2 = config.get("inv_ssa_cL2");
+  PetscReal cH1 = config.get("inv_design_cH1");
+  PetscReal cL2 = config.get("inv_design_cL2");
   PetscReal area = 4*grid.Lx*grid.Ly;
   PetscReal length_scale = grid.config.get("inv_ssa_length_scale");
   cL2 /= area;

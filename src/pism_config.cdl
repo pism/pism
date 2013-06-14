@@ -429,11 +429,11 @@ netcdf pism_config {
     pism_config:inv_design_func = "sobolevH1";
     pism_config:inv_design_func_doc = "functional used for inversion design variables";
 
-    pism_config:inv_ssa_cL2     = 1;
-    pism_config:inv_ssa_cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";
+    pism_config:inv_design_cL2     = 1;
+    pism_config:inv_design_cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";
     
-    pism_config:inv_ssa_cH1     = 0;
-    pism_config:inv_ssa_cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
+    pism_config:inv_design_cH1     = 0;
+    pism_config:inv_design_cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
 
     pism_config:inv_ssa_tv_exponent = 1.2;
     pism_config:inv_ssa_tv_exponent_doc = "Lebesgue exponent for pseudo-TV norm";
