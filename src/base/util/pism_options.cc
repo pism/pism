@@ -704,6 +704,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.scalar_from_option("tikhonov_rtol","tikhonov_rtol"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("tikhonov_ptol","tikhonov_ptol"); CHKERRQ(ierr);
 
+  ierr = config.keyword_from_option("inv_state_func","inv_state_func","meansquare,log_ratio,log_relative"); CHKERRQ(ierr);
   ierr = config.keyword_from_option("inv_design_func","inv_design_func","sobolevH1,tv"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("inv_ssa_cL2","inv_ssa_cL2"); CHKERRQ(ierr);

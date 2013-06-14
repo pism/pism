@@ -392,10 +392,10 @@ if __name__ == "__main__":
     vecs.add(vel_ssa_observed,writing=True)
 
   # Establish a logger which will save logging messages to the output file.  
-  logger = PISM.logging.CaptureLogger(output_filename,'pismi_log');
-  PISM.logging.add_logger(logger)
+  message_logger = PISM.logging.CaptureLogger(output_filename,'pismi_log');
+  PISM.logging.add_logger(message_logger)
   if append_mode or do_restart:
-    logger.readOldLog()
+    message_logger.readOldLog()
   
   # Prep the output file from the grid so that we can save zeta to it during the runs.
   if not append_mode:
@@ -413,6 +413,20 @@ if __name__ == "__main__":
   PISM.util.writeProvenance(output_filename)    
 
   # Attach various iteration listeners to the solver as needed for:
+
+  # Iteration report.
+  solver.addIterationListener(PISM.invert.ssa.printIteration)
+
+  # Misfit reporting/logging.
+  misfit_logger = PISM.invert.ssa.MisfitLogger()
+  solver.addIterationListener(misfit_logger)
+
+  if inv_method.startswith('tikhonov'):
+    solver.addIterationListener(PISM.invert.ssa.printTikhonovProgress)
+
+  # Saving the current iteration
+  solver.addDesignUpdateListener(PISM.invert.ssa.ZetaSaver(output_filename)) 
+
   # Plotting
   if do_plotting:
     solver.addIterationListener(InvSSAPlotListener(grid,Vmax))
@@ -421,17 +435,6 @@ if __name__ == "__main__":
   # Pausing
   if do_pause:
     solver.addIterationListener(PISM.invert.listener.pauseListener)
-  # Progress reporting
-  progress_reporter = None
-  if inv_method.startswith('tik'):
-    progress_reporter = PISM.invert.ssa.PrintTikhonovProgress()
-  else:
-    progress_reporter = PISM.invert.ssa.PrintRMSMisfit()
-  if progress_reporter is not None:
-    solver.addIterationListener(progress_reporter)
-
-  # Saving the current iteration
-  solver.addDesignUpdateListener(PISM.invert.ssa.ZetaSaver(output_filename)) 
 
   # Solver is set up.  Give the user's prep module a chance to do any final
   # setup.
@@ -494,8 +497,7 @@ if __name__ == "__main__":
   # If we're not in append mode, the previous command just nuked
   # the output file.  So we rewrite the siple log.
   if not append_mode:
-    logger.write(output_filename)
+    message_logger.write(output_filename)
 
   # Save the misfit history
-  if progress_reporter is not None:
-    progress_reporter.write(output_filename)
+  misfit_logger.write(output_filename)

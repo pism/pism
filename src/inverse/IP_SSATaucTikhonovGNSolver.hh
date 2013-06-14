@@ -67,6 +67,12 @@ public:
     return 0;
   }
 
+  //! Sets the desired target misfit (in units of \f$\sqrt{J_{\rm misfit}}\f$).
+  virtual PetscErrorCode setTargetMisfit( PetscReal misfit) {
+    m_target_misfit = misfit;
+    return 0;
+  }
+
   virtual PetscErrorCode evaluateGNFunctional(DesignVec h, PetscReal *value);
 
   virtual PetscErrorCode apply_GN(IceModelVec2S &h, IceModelVec2S &out);

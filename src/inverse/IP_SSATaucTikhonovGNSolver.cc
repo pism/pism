@@ -25,7 +25,8 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem
 DesignVec &d0, StateVec &u_obs, PetscReal eta,
 IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
-m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
+m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
+m_target_misfit(0.)
 {
   PetscErrorCode ierr;
   ierr = this->construct();
@@ -96,8 +97,6 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
 
   m_alpha = 1./m_eta;
   m_logalpha = log(m_alpha);
-  m_vel_scale = grid.config.get("inv_ssa_velocity_scale");
-  m_target_misfit = grid.config.get("inv_target_misfit")/m_vel_scale;
 
   ierr = PISMOptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
   
@@ -347,6 +346,11 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
 
 PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
+
+
+  if(m_target_misfit == 0) {
+    SETERRQ(m_d0.get_grid()->com,1,"Call set target misfit prior to calling IP_SSATaucTikhonovGNSolver::solve.");
+  }
 
   m_iter = 0;
   ierr = m_d.copy_from(m_d0); CHKERRQ(ierr);

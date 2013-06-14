@@ -251,8 +251,13 @@ in the model state and inverse data files:
     residuals.
 
 The output file also contains a log of the inversion run
-in the NC variable :ncvar:`pismi_log`.  **TODO: Saved misfit
-history.**
+in the NC variable :ncvar:`pismi_log`.  The output file 
+also contains a log of the misfit at each iteration
+in the variable :ncvar:`inv_ssa_misfit`.  For 
+:cfg:`-inv_state_func meansquare`, the values will
+be square roots of the misfit functional, in units of m/a.  
+Otherwise, these will be the values of the misfit functional
+itself.
 
 A copy of the command line used to run the inversion is saved
 in the :ncvar:`history` attribute of the output file.

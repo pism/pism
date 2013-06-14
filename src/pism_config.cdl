@@ -423,6 +423,9 @@ netcdf pism_config {
     pism_config:inv_design_param = "exp";
     pism_config:inv_design_param_doc = "parameterization of design variables used during inversion";
 
+    pism_config:inv_state_func = "meansquare";
+    pism_config:inv_state_func_doc = "functional used for inversion design variables";
+
     pism_config:inv_design_func = "sobolevH1";
     pism_config:inv_design_func_doc = "functional used for inversion design variables";
 
