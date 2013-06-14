@@ -34,4 +34,4 @@ $PYTHONEXEC pismi.py \
               -inv_method nlcg -inv_target_misfit 100
 
 # Check if we succeeded
-$PYTHONEXEC verify_ssa_inv.py tiny_inv.nc --desired_misfit 110 --iter_max 35 --morozov
+$PYTHONEXEC verify_ssa_inv.py tiny_inv.nc --desired_misfit 100 --iter_max 35 --morozov
