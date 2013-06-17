@@ -115,6 +115,14 @@ choice can be overridden by providing a variable
 :ncvar:`tauc_prior` in the inverse data file **and** by
 using the :cfg:`-inv_use_tauc_prior` flag.  
 
+Locations where :math:`\tau_c` (or :math:`B`) are to be held
+constant at their initial estimates can be specified
+with :ncvar:`zeta_fixed_mask`.  By default, these locations
+are determined automatically.  If :ncvar:`zeta_fixed_mask`
+is provided in the inverse data file, it will be used instead.
+Use :cfg:`-no_use_zeta_fixed_mask` to disable the use
+of :ncvar:`zeta_fixed_mask`.
+
 In regions where PISM overrides the value of :math:`\tau_c` or
 :math:`B` (i.e. in floating regions for :math:`\tau_c`) the 
 initial estimate is adjusted to account for the PISM model.
@@ -194,7 +202,6 @@ If PISM is being used in regional model mode (:cfg:`-regional`), this last varia
 An initial estimate for the design variable :ncvar:`tauc` or :ncvar:`hardav`
 can be provided as well, as discussed in the :ref:`design variable <pismi_design_var>` section.
 
-
 Inverse Data File Contents
 --------------------------
 
@@ -217,11 +224,16 @@ The following variables may be present in the inverse data file:
      or :cfg:`-inv_use_hardav_prior` flags must be set to use
      these estimates.
 
+  5. :ncvar:`zeta_fixed_mask`\ : Locations where the design variable is 
+      to be  held at its initial estimate.  If this variable is not present,
+      an appropriate mask will be generated, unless
+      :cfg:`-no_use_zeta_fixed_mask` is specified.
+
 All of these are optional, except:
 
   * At least one of :cfg:`ssa_observed` or :cfg:`surface_observed`
     velocities must be present, with :cfg:`ssa_observed` velocities
-    used preferentially.
+    used if both are present.
 
   * For :math:`\tau_c` inversions, if :ncvar:`tauc_prior` 
     is not present, or if :cfg:`-inv_use_tauc_prior` is not set,

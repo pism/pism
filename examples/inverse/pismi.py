@@ -22,6 +22,7 @@ import PISM
 import PISM.invert.ssa
 import numpy as np
 import sys, os, math
+from PISM.logging import logMessage
 
 class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
@@ -189,6 +190,8 @@ class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
 def adjustTauc(mask,tauc):
   """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
+  logMessage("Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
+  
   grid = mask.get_grid()
   high_tauc = grid.config.get("high_tauc")
 
@@ -273,7 +276,11 @@ if __name__ == "__main__":
 
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
 
+    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
+      "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
 
+    old_zeta_semantics =  PISM.optionsFlag("-inv_old_zeta_semantics",
+        "Compatibility flag for emulating older code. Ignore.",default=True)
 
   inv_method = config.get_string("inv_ssa_method")
   
@@ -325,6 +332,26 @@ if __name__ == "__main__":
     tauc_true.regrid(inv_data_filename,True)
     tauc_true.read_attributes(inv_data_filename)
     vecs.add(tauc_true,writing=saving_inv_data)
+
+  if using_zeta_fixed_mask:
+    if PISM.util.fileHasVariable(inv_data_filename,"zeta_fixed_mask"):
+      zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
+      zeta_fixed_mask.regrid(inv_data_filename)
+      vecs.add(zeta_fixed_mask)
+    else:
+      if design_var == 'tauc':
+        logMessage("Computing 'zeta_fixed_mask' (i.e. locations where 'tauc' has a fixed value).\n")
+        zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
+        zeta_fixed_mask.set(1);
+        mask = vecs.ice_mask
+        with PISM.vec.Access(comm=zeta_fixed_mask,nocomm=mask):
+          mq = PISM.MaskQuery(mask)
+          for (i,j) in grid.points():
+            if mq.grounded_ice(i,j):
+              zeta_fixed_mask[i,j] = 0;
+        vecs.add(zeta_fixed_mask)
+      else:
+        raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
 
   # Determine the initial guess for zeta.  If we are not
   # restarting, we convert tauc_prior to zeta.  If we are restarting,
