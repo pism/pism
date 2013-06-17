@@ -114,6 +114,27 @@ See the `installation instructions <http://sphinx-doc.org/latest/install.html>`_
 for more details.  It is only required if you wish to 
 build the python/inverse documentation.
 
+Note that if you install ``sphinx`` using macports,
+you will install a version that depends on your python
+version, and its executables will have names that
+depend on the python version, e.g. ``sphinx-build-2.7``
+rather than ``sphinx-build`` for Python 2.7.  You will want to
+set up aliases so that the standard names work as well. To do this,
+
+.. code-block:: bash
+
+  sudo port select sphinx py27-sphinx
+
+(replacing py27-sphinx with py26-sphinx for Python 2.6, etc.)
+
+If you opt not to do this, you can tell ``cmake`` the
+name of your sphinx executable using
+
+.. code-block:: bash
+
+  cmake -DSPHINX_EXECUTABLE=sphinx-build-2.7 ...
+
+
 Building PISM with Python bindings
 ==================================
 
