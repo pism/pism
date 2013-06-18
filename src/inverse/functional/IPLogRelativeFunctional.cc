@@ -23,7 +23,7 @@
 \f[
 J(x)=1
 \f]
-if  \f$1+|x|^2/|u_{\rm obs}|^2|=e\f$ everywhere. This needs improvement....
+if |x| = \a scale everywhere.
 */
 PetscErrorCode IPLogRelativeFunctional::normalize(PetscReal scale) {
   PetscErrorCode   ierr;

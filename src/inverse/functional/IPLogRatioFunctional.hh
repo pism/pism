@@ -36,8 +36,9 @@ The normalization constant \f$c_N\f$ is determined implicitly by ::normalize.
 */
 class IPLogRatioFunctional : public IPFunctional<IceModelVec2V> {
 public:
-  IPLogRatioFunctional(IceGrid &grid, IceModelVec2V &u_observed) :
-  IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_normalization(1.) {};
+  IPLogRatioFunctional(IceGrid &grid, IceModelVec2V &u_observed, PetscReal eps) :
+  IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_normalization(1.),
+  m_eps(eps) {};
   virtual ~IPLogRatioFunctional() {};
 
   virtual PetscErrorCode normalize(PetscReal scale);
@@ -48,6 +49,7 @@ public:
 protected:
   IceModelVec2V &m_u_observed;
   PetscReal m_normalization;
+  PetscReal m_eps;
 
 };
 
