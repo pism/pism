@@ -47,7 +47,7 @@ that were used in the course of the inversion.  Thus:
 
   pismi.py -i model.nc -inv_data inv.nc -o solution.nc [OTHER FLAGS]
   
-  pismi.py -i solution.nc -o solution2.nc -inv_data solution.nc [OTHER FLAGS]
+  pismi.py -i solution.nc -o solution2.nc -inv_data solution.nc -no_inv_use_tauc_prior [OTHER FLAGS]
 
 should always result in a second inversion run that terminates immediately
 because it is already at a solution.  The data in :file:`solution.nc` and
