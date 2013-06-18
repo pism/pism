@@ -132,6 +132,7 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
       pp.title('zeta')
     
       pp.ion()
+      pp.draw()
       pp.show()
 
 class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
