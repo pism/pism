@@ -26,19 +26,21 @@
 Specifically, given a reference function \f$u_{obs}=[U_i]\f$, and an
 IceModelVec2V \f$x=[X_i]\f$,
 \f[
-J(x) = c_N \sum_i \left[\log\left(\frac{|X_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}\right)\right]^2
+J(x) = c_N \sum_i W_i\left[\log\left(\frac{|X_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}\right)\right]^2
 \f]
-where \f$\epsilon=10^{-4}{\tt inv_ssa_velocity_scale}\f$.  The term \f$X_i+U_i\f$
-appears because the argument is expected to already be in the form \f$V_i-U_i\f$, where \f$v=[V_i]\f$
-is some approximation of \f$[U_i]\f$ and hence the integrand has the form \f$\log(|V_i|/|U_i|)\f$.
+where \f$\epsilon\f$ is a regularizing constant and \f$[W_i]\f$ is a vector of weights.  
+The term \f$X_i+U_i\f$ appears because the argument is expected to already be in the form 
+\f$V_i-U_i\f$, where \f$v=[V_i]\f$ is some approximation of \f$[U_i]\f$ and hence the 
+integrand has the form \f$\log(|V_i|/|U_i|)\f$.
 
 The normalization constant \f$c_N\f$ is determined implicitly by ::normalize.
 */
 class IPLogRatioFunctional : public IPFunctional<IceModelVec2V> {
 public:
-  IPLogRatioFunctional(IceGrid &grid, IceModelVec2V &u_observed, PetscReal eps) :
-  IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_normalization(1.),
-  m_eps(eps) {};
+  IPLogRatioFunctional(IceGrid &grid, IceModelVec2V &u_observed, PetscReal eps,
+                       IceModelVec2S *weights=NULL) :
+  IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), 
+  m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRatioFunctional() {};
 
   virtual PetscErrorCode normalize(PetscReal scale);
@@ -48,6 +50,7 @@ public:
 
 protected:
   IceModelVec2V &m_u_observed;
+  IceModelVec2S *m_weights;
   PetscReal m_normalization;
   PetscReal m_eps;
 

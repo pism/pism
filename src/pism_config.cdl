@@ -438,6 +438,9 @@ netcdf pism_config {
     pism_config:inv_ssa_tv_exponent = 1.2;
     pism_config:inv_ssa_tv_exponent_doc = "Lebesgue exponent for pseudo-TV norm";
 
+    pism_config:inv_log_ratio_scale = 10;
+    pism_config:inv_log_ratio_scale_doc = "Reference scale for log-ratio functionals";
+
     pism_config:inv_ssa_velocity_scale = 100;
     pism_config:inv_ssa_velocity_scale_doc = "m/year; typical size of ice velocities expected during inversion";
 
