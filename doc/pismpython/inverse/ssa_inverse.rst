@@ -177,18 +177,21 @@ flag.
   The pseudo total variation functional has the form
 
   .. math::
-    J_D(Z) = \frac{1}{|\Omega|} \int_\Omega (\epsilon^2+\ell^2|\nabla Z|^2)^{q/2}
+    J_D(Z) = \frac{(\ell)^q}{|\Omega|} 
+    \int_\Omega (\epsilon^2+|\nabla Z|^2)^{q/2}
 
   where 
 
     * :math:`|\Omega|` is the rectangular grid area,
     * :math:`\ell=` :cfg:`inv_ssa_length_scale`,
     * :math:`q=`\ :cfg:`inv_ssa_tv_exponent`,
-    * :math:`\epsilon=` :cfg:`inv_ssa_tv_epsilon` is a regularizing parameter.
-  
-  Since :math:`\ell|\nabla Z|` is dimensionless and is of size on the order of
-  1, the value of :math:`\epsilon` should be chosen relative to 1.
-  
+    * :math:`\epsilon` is either specified directly with
+      :cfg:`-inv_ssa_tv_epsilon` or has a default value of
+      :math:`1/`\ :cfg:`Schoof_regularizing_length`.
+
+  With these parameters, assuming that :math:`Z` is dimensionless, the
+  functional is dimensionless.
+    
   Strictly speaking, the total-variational functional corresponds to the case
   :math:`q=1` and :math:`\epsilon=0`.  
   Such functionals have the nice property that they do not
@@ -197,9 +200,9 @@ flag.
   numerical difficulties due to its lack of differentiability, and either of
   these parameters can be adjusted to help with this.  Note that if
   :math:`q=2` and :math:`\epsilon=0`, this is exactly the same functional
-  as the Sobolev :math:`H^1` functional with :math:`c_{H^1}=1` and :math:`c_{L^2}=0`.
-  
-  
+  as the Sobolev :math:`H^1` functional with :math:`c_{H^1}=1` 
+  and :math:`c_{L^2}=0`.
+
 Algorithm Selection
 -------------------
 

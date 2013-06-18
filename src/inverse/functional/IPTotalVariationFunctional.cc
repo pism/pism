@@ -18,9 +18,11 @@
 
 #include "IPTotalVariationFunctional.hh"
 
-IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal exponent, IceModelVec2Int *dirichletLocations)
-: IPFunctional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations), m_c(c), m_lebesgue_exp(exponent) {
-  m_epsilon_sq = PetscSqr(grid.config.get("inv_ssa_tv_epsilon"));
+IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid &grid, 
+  PetscReal c, PetscReal exponent, PetscReal eps, 
+  IceModelVec2Int *dirichletLocations) : 
+    IPFunctional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations),
+    m_c(c), m_lebesgue_exp(exponent), m_epsilon_sq(eps*eps) {
 }
 
 PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) {
