@@ -441,6 +441,9 @@ netcdf pism_config {
     pism_config:inv_ssa_velocity_scale = 100;
     pism_config:inv_ssa_velocity_scale_doc = "m/year; typical size of ice velocities expected during inversion";
 
+    pism_config:inv_ssa_velocity_eps = .1;
+    pism_config:inv_ssa_velocity_eps_doc = "m/year; tiny size of ice velocities during inversion";
+
     pism_config:inv_ssa_length_scale = 50e3;
     pism_config:inv_ssa_length_scale_doc = "m; typical length scale for rescaling derivative norms";
 
