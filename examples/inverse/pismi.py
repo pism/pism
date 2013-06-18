@@ -269,8 +269,7 @@ if __name__ == "__main__":
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
 
     do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
-    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
-
+    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=True)
 
     prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
 
@@ -305,13 +304,15 @@ if __name__ == "__main__":
   tauc_prior = PISM.model.createYieldStressVec(grid,'tauc_prior')
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
   tauc = PISM.model.createYieldStressVec(grid)
-  if use_tauc_prior:
+  if PISM.util.fileHasVariable(input_filename,"tauc") and use_tauc_prior:
+    PISM.logging.logMessage("Reading 'tauc_prior' from inverse data file.\n");
     tauc_prior.regrid(inv_data_filename,critical=True)
     vecs.add(tauc_prior,writing=saving_inv_data)
   else:
     if not PISM.util.fileHasVariable(input_filename,"tauc"):
       PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
       exit(1)
+    PISM.logging.logMessage("Reading 'tauc_prior' from 'tauc' in input file.\n");
     tauc.regrid(input_filename,True)
     tauc_prior.copy_from(tauc)
     vecs.add(tauc_prior,writing=True)

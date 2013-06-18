@@ -107,13 +107,12 @@ using :cfg:`-inv_design_param` and a name of one of the
 
 The inversion algorithms require a best initial estimate for the
 design variable, which is part of the *a-priori* data used to
-regularize the inversion.  By default, it is taken from its
-value as it appears in the model state file.  That is, if
-the design variable is :math:`\tau_c`, then the initial
-estimate is :ncvar:`tauc` in the model state file.  This
-choice can be overridden by providing a variable
-:ncvar:`tauc_prior` in the inverse data file **and** by
-using the :cfg:`-inv_use_tauc_prior` flag.  
+regularize the inversion.  If there is a variable :ncvar:`tauc_prior`
+in the inverse data file, it specifies the initial value.
+Otherwise the initial value is taken from :ncvar:`tauc`
+in the input file.  Use :cfg:`-no_use_tauc_prior` to
+ignore the value of :ncvar:`tauc_prior` in the inverse data file
+and to force the use of :ncvar:`tauc` instead.
 
 Locations where :math:`\tau_c` (or :math:`B`) are to be held
 constant at their initial estimates can be specified
