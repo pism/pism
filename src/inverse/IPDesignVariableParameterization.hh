@@ -30,7 +30,7 @@
 /*!
 When solving an inverse problem for a design variable \f$d\f$ (think of
 \f$\tau_c\f$ or hardness for SSA inversions), one frequently does
-not work with \f$\d\f$ directly but with a different
+not work with \f$d\f$ directly but with a different
 variable \f$\zeta\f$, and a relationship \f$d=g(\zeta)\f$.
 A common choice in the glaciology literature for \f$\tau_c\f$
 is \f$\tau_c=g(\zeta)=\zeta^2\f$, which ensures that \f$\tau_c\f$ is 
@@ -63,15 +63,6 @@ public:
   
   virtual ~IPDesignVariableParameterization() {};
 
-  //! Initializes the scale parameters of the parameterization.
-  /*! Every IPDesignVariableParameterization has an associated scale for the design variable 
-  \f$d_{\rm scale}\f that equals 1 in internal units.  The scale for a design variable named \a foo
-  is stored in an NCConfigVariable file as design_param_foo_scale.  Subclasses may have additional
-  parameters that are follow the naming convention \a design_param_foo_*.
-  
-  \param config          The config file to read the scale parameters from.
-  \param design_var_name The associated name of the design variable, e.g. 'tauc' or 'hardav'
-  */  
   virtual PetscErrorCode set_scales( const NCConfigVariable &config, const char *design_var_name);
 
   //! Converts from parameterization value \f$\zeta\f$ to \f$d=g(\zeta)\f$.
@@ -85,14 +76,12 @@ public:
   /*! More than one such \f$\zeta\f$ may exist; only one is returned. */
   virtual PetscErrorCode fromDesignVariable( PetscReal d, PetscReal *OUTPUT) = 0;
 
-  //! Transforms a vector of \f$\zeta\f$ values to a vector of \f$d\f$ values.
   virtual PetscErrorCode convertToDesignVariable( IceModelVec2S &zeta, IceModelVec2S &d, bool communicate = true);
 
-  //! Transforms a vector of \f$d\f$ values to a vector of \f$\zeta\f$ values.
   virtual PetscErrorCode convertFromDesignVariable( IceModelVec2S &d, IceModelVec2S &zeta,  bool communicate = true);
 protected:
   
-  PetscReal m_d_scale;  ///< Value of \f$\d\f$ in PISM units that equals 1 for IPDesignVariableParameterization's units.
+  PetscReal m_d_scale;  ///< Value of \f$d\f$ in PISM units that equals 1 for IPDesignVariableParameterization's units.
 };
 
 //! Parameterization \f$d=d_{\rm scale}g(\zeta)\f$ with \f$g(\zeta)=\zeta\f$.
