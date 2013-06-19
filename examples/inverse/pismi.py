@@ -206,7 +206,7 @@ class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
 def adjustTauc(mask,tauc):
   """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
-  logMessage("Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
+  logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
   
   grid = mask.get_grid()
   high_tauc = grid.config.get("high_tauc")
@@ -318,7 +318,7 @@ if __name__ == "__main__":
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
   tauc = PISM.model.createYieldStressVec(grid)
   if PISM.util.fileHasVariable(input_filename,"tauc") and use_tauc_prior:
-    PISM.logging.logMessage("Reading 'tauc_prior' from inverse data file.\n");
+    PISM.logging.logMessage("  Reading 'tauc_prior' from inverse data file %s.\n" % inv_data_filename);
     tauc_prior.regrid(inv_data_filename,critical=True)
     vecs.add(tauc_prior,writing=saving_inv_data)
   else:
@@ -354,7 +354,7 @@ if __name__ == "__main__":
       vecs.add(zeta_fixed_mask)
     else:
       if design_var == 'tauc':
-        logMessage("Computing 'zeta_fixed_mask' (i.e. locations where 'tauc' has a fixed value).\n")
+        logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where 'tauc' has a fixed value).\n")
         zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
         zeta_fixed_mask.set(1);
         mask = vecs.ice_mask
@@ -372,11 +372,13 @@ if __name__ == "__main__":
   # we load in zeta from the output file.
   zeta = PISM.IceModelVec2S();
   zeta.create(grid, "zeta_inv", PISM.kHasGhosts, WIDE_STENCIL)
+  zeta.set_attrs("diagnostic", "zeta_inv", "1", "zeta_inv")
   if do_restart:
     # Just to be sure, verify that we have a 'zeta_inv' in the output file.
     if not PISM.util.fileHasVariable(output_filename,'zeta_inv'):
       PISM.verbPrintf(1,com,"Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
       exit(1)
+    PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % output_filename )
     zeta.regrid(output_filename,True)
   else:
     zeta.copy_from(zeta_prior)
