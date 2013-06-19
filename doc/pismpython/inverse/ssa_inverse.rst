@@ -64,30 +64,11 @@ State functionals are specified with the :cfg:`-inv_state_func` flag.
    :math:`|\tY_{i,j}|=`\ :cfg:`inv_ssa_velocity_scale` 
    at all grid points, then :math:`J_S(\tY)=1`.
     
-* **Log-Relative** (:cfg:`log_relative`)
-
- This is a functional of the form
- 
- .. math::
-   J_S(\tY) = c_N \sum_{i,j} 
-          \log\left( 
-              1 + \tw_{i,j}\frac{|\tY_{i,j}|^2}{|\tU_{i,j}|^2+\epsilon^2}
-               \right)
-
- where 
-   * :math:`\tU_{(i,j)}` are the observed SSA velocities,
-   * :math:`c_N` is a normalization constant, and
-   * :math:`\tw` is a weight vector provided in :ncvar:`vel_misfit_weight`.
-
-   The normalization constant :math:`c_N` is selected so that if
-   :math:`|\tY_{i,j}|=`\ :cfg:`inv_ssa_velocity_scale` 
-   at all grid points, then :math:`J_S(\tY)=1`. 
-
 * **Log-Ratio** (:cfg:`log_ratio`)
   This is a functional similar to one appearing in :cite:`Morlighemetal2010`:
   
   .. math::
-    J_S(\tY) = c_N \sum_i \left[ \tw_{i,j}
+    J_S(\tY) = c_N \sum_i  \tw_{i,j} \left[
       \log\left( 
             \frac{|\tY_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}
          \right)
@@ -102,6 +83,27 @@ State functionals are specified with the :cfg:`-inv_state_func` flag.
   The normalization constant :math:`c_N` is selected so that if
   :math:`|\tY_{i,j}|=s|\tU_{i,j}|` at all grid points, 
   then :math:`J_S(\tY)=1`, where :math:`s=`\ :cfg:`log_ratio_scale`. 
+
+* **Log-Relative** (:cfg:`log_relative`)
+
+ This is an experimental functional of the form
+
+ .. math::
+   J_S(\tY) = c_N \sum_{i,j} 
+          \log\left( 
+              1 + \tw_{i,j}\frac{|\tY_{i,j}|^2}{|\tU_{i,j}|^2+\epsilon^2}
+               \right)
+
+ where 
+   * :math:`\tU_{(i,j)}` are the observed SSA velocities,
+   * :math:`c_N` is a normalization constant, and
+   * :math:`\tw` is a weight vector provided in :ncvar:`vel_misfit_weight`.
+
+   The normalization constant :math:`c_N` is selected so that if
+   :math:`|\tY_{i,j}|=`\ :cfg:`inv_ssa_velocity_scale` 
+   at all grid points, then :math:`J_S(\tY)=1`.
+
+
 
 Note that all these functionals supports grid points without SSA velocity
 observations by setting the weight function :math:`\tw=0` at such points.

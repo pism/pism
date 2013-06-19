@@ -473,16 +473,19 @@ if __name__ == "__main__":
     solver.addIterationListener(InvSSAPlotListener(grid,Vmax))
     if solver.method=='ign':
       solver.addLinearIterationListener(InvSSALinPlotListener(grid,Vmax))
-  # Pausing
-  if do_pause:
-    solver.addIterationListener(PISM.invert.listener.pauseListener)
 
   # Solver is set up.  Give the user's prep module a chance to do any final
   # setup.
   
   if prep_module is not None:
+    if prep_module.endswith(".py"):
+      prep_module = prep_module[0:-2]
     exec "import %s as user_prep_module" % prep_module
     user_prep_module.prep_solver(solver)
+
+  # Pausing (add this after the user's listeners)
+  if do_pause:
+    solver.addIterationListener(PISM.invert.listener.pauseListener)
 
   # Run the inverse solver!
   if do_restart:

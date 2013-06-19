@@ -241,7 +241,7 @@ and a penalty parameter :math:`\eta`.  We then
 *exactly* minimize the Tikhonov functional
 
 .. math::
-  J_{\Tik}(\vd) = \eta J_\misfit(\vd) + J_D(\vd-\vd_0).
+  J_{\Tik}(\vd) = J_\misfit(\vd) + \frac{1}{\eta} J_D(\vd-\vd_0).
 
 To explain the meaning of the parameter :math:`\eta`, suppose
 that :math:`\vd_{\reg}` is a minimizer of the Tikhonov functional,
@@ -273,18 +273,31 @@ value of the misfit functional is consistent with the value
 specified indirectly by :math:`\eta`.  
 
 .. note::
-  In many texts, the Tikhonov functional is expressed in the form
+  Usually the Tikhonov functional is expressed in the form
   
   .. math::
     J_{\Tik}(\vd) = J_\misfit(\vd) + \mu J_D(\vd-\vd_0).
+    :label: tikhonov_dual
   
-  for some penalty parameter :math:`\mu`.  Minimizers of the two functionals
+  for some penalty parameter :math:`\mu`.  The two functionals
   are the same after identifying :math:`\mu=1/\eta`, so there is no 
-  real difference between the formulations.  We have chosen to associate 
-  the penalty parameter with the  term :math:`J_\misfit` because of the 
-  naturality of the constraint :math:`J_\misfit(\vd)=M`.  The alternative
-  formulation leads to a constraint on the design variables, 
-  a quantity that is less observable than a constraint on the state variables.
+  real difference between the formulations. Minimizing
+  :math:`J_{\Tik}(\vd)` is equivalent to minimizing
+  
+  .. math::
+    \vd \mapsto \eta J_\misfit(\vd) + J_D(\vd-\vd_0),
+  
+  which has the interpretation of minimizing the :math:`J_D` term subject
+  to a constraint given by :math:`J_\misfit` (with :math:`\eta` being
+  the Lagrange multiplier).  The dual interpretation of 
+  equation :eq:`tikhonov_dual` is that we are minimizing :math:`J_\misfit`
+  with a constraint given by the :math:`J_D` term (and :math:`\mu` being the
+  Lagrange multiplier).  The constraint given by the misfit term is 
+  more natural, and to emphasize this we specify the penalty weight 
+  with :math:`\eta`.  For larger values of :math:`\eta`, you can expect
+  that a minimization algorithm will take a greater
+  number of iterations to terminate with a smaller resulting value 
+  of :math:`J_\misfit`.
 
 .. _InvAlgCompare:
 
