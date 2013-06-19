@@ -48,20 +48,21 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
 
   def __call__(self,inverse_solver,count,data):
 
-    if self.l2_weight_init == False:
+    if not self.l2_weight_init:
       vecs = inverse_solver.ssarun.modeldata.vecs;
-      self.l2_weight=self.toproczero(vecs.vel_misfit_weight)
+      if vecs.has('vel_misfit_weight'):
+        self.l2_weight=self.toproczero(vecs.vel_misfit_weight)
       self.l2_weight_init = True
 
     method = inverse_solver.method
 
-    r=self.toproczero(data.r)
+    r=self.toproczero(data.residual)
     Td = None
-    if data.has_key('Td'): Td = self.toproczero(data.Td)
+    if data.has_key('T_zeta_step'): Td = self.toproczero(data.T_zeta_step)
     TStarR = None
-    if data.has_key('TStarR'): TStarR = self.toproczero(data.TStarR)
+    if data.has_key('TStar_residual'): TStarR = self.toproczero(data.TStar_residual)
     d = None
-    if data.has_key('d'): d = self.toproczero(data.d)
+    if data.has_key('zeta_step'): d = self.toproczero(data.zeta_step)
     zeta = self.toproczero(data.zeta)      
 
     secpera = grid.convert(1.0, "year", "second")
@@ -78,16 +79,22 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
       V = self.Vmax
 
       pp.subplot(2,3,1)
-      rx = l2_weight*r[0,:,:]*secpera
+      if l2_weight is not None:
+        rx = l2_weight*r[0,:,:]*secpera
+      else:
+        rx = r[0,:,:]*secpera
       rx = np.maximum(rx,-V)
       rx = np.minimum(rx,V)
       pp.imshow(rx,origin='lower',interpolation='nearest')
       pp.colorbar()
       pp.title('r_x')
       pp.jet()
-
+      
       pp.subplot(2,3,4)
-      ry = l2_weight*r[1,:,:]*secpera
+      if l2_weight is not None:
+        ry = l2_weight*r[1,:,:]*secpera
+      else:
+        ry = r[1,:,:]*secpera        
       ry = np.maximum(ry,-V)
       ry = np.minimum(ry,V)
       pp.imshow(ry,origin='lower',interpolation='nearest')
@@ -121,9 +128,17 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
         d *= -1
         pp.subplot(2,3,3)      
         pp.imshow(d,origin='lower',interpolation='nearest')
-        pp.colorbar()
-        pp.jet()
-        pp.title('-d')
+
+        # colorbar does a divide by zero if 'd' is all zero,
+        # as it will be at the start of iteration zero.
+        # The warning message is a distraction, so we suppress it.
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            pp.colorbar()
+            pp.jet()
+          
+        pp.title('-zeta_step')
 
       pp.subplot(2,3,6)
       pp.imshow(zeta,origin='lower',interpolation='nearest')
@@ -278,9 +293,6 @@ if __name__ == "__main__":
 
     using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
       "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
-
-    old_zeta_semantics =  PISM.optionsFlag("-inv_old_zeta_semantics",
-        "Compatibility flag for emulating older code. Ignore.",default=True)
 
   inv_method = config.get_string("inv_ssa_method")
   

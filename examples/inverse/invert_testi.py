@@ -41,14 +41,14 @@ class PlotListener(PISM.invert.listener.PlotListener):
     zeta = self.toproczero(data.zeta)
     u    = self.toproczero(data.u)
     if inv_solver.method.startswith('tikhonov'):
-      eta = data.eta
+      eta = data.tikhonov_penalty
       sWeight=1
       dWeight=1/eta
-      grad_zeta = self.toproczero(data.grad_zeta)
-      grad_u = self.toproczero(data.grad_u)
-      grad= self.toproczero(data.grad)
+      grad_zeta = self.toproczero(data.grad_JDesign)
+      grad_u = self.toproczero(data.grad_JState)
+      grad= self.toproczero(data.grad_JTikhonov)
     else:
-      r = self.toproczero(data.r)
+      r = self.toproczero(data.residual)
 
     if zeta is not None:
       pp.figure(self.figure())
