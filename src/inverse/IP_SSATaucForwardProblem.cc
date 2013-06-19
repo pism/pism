@@ -350,7 +350,8 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
     } // j
   } // i
 
-  // if(dirichletBC) dirichletBC.fixResidualHomogeneous(du_a);
+  if(dirichletBC) dirichletBC.fixResidualHomogeneous(du_a);
+
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
   ierr = fixedZeta.finish(); CHKERRQ(ierr);
 
