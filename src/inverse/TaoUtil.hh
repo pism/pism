@@ -147,6 +147,12 @@ public:
     return 0;
   }
 
+  virtual PetscErrorCode setMaximumIterations(int max_it) {
+    PetscErrorCode ierr;
+    ierr = TaoSetMaximumIterations(m_tao, max_it); CHKERRQ(ierr);
+    return 0;
+  }
+  
   virtual Problem &problem() {
     return m_problem;
   }

@@ -47,7 +47,7 @@ that were used in the course of the inversion.  Thus:
 
   pismi.py -i model.nc -inv_data inv.nc -o solution.nc [OTHER FLAGS]
   
-  pismi.py -i solution.nc -o solution2.nc -inv_data solution.nc -no_inv_use_tauc_prior [OTHER FLAGS]
+  pismi.py -i solution.nc -o solution2.nc [OTHER FLAGS]
 
 should always result in a second inversion run that terminates immediately
 because it is already at a solution.  The data in :file:`solution.nc` and
@@ -149,7 +149,8 @@ Inverse Algorithm Selection
 The choice of inverse algorithm is made with the 
 option :cfg:`-inv_method` with a value 
 among those documented in the :ref:`iterative gradient <InvGradAlg>`
-and :ref:`Tikhonov <TikhonovAlg>` algorithm sections.
+and :ref:`Tikhonov <TikhonovAlg>` algorithm sections.  The :cfg:`-inv_max_it`
+flag determines the maximum number of iterations allowed by the algorithm.
 
 
 Regularization Constants
@@ -218,15 +219,18 @@ The following variables may be present in the inverse data file:
      in the :ref:`oberved SSA Velocity <ObsSSAVel>` section.
 
   4. :ncvar:`tauc_prior` or :ncvar:`hardav_prior`\ : The
-     initial guess for the physical design variable overriding the
-     value in the model state file.  The :cfg:`-inv_use_tauc_prior`
-     or :cfg:`-inv_use_hardav_prior` flags must be set to use
-     these estimates.
+     *a-priori* best estimate for the physical design variable, overriding the
+     value in the model state file.  
 
   5. :ncvar:`zeta_fixed_mask`\ : Locations where the design variable is 
       to be  held at its initial estimate.  If this variable is not present,
       an appropriate mask will be generated, unless
       :cfg:`-no_use_zeta_fixed_mask` is specified.
+
+  6. :ncvar:`zeta_inv`\ : The initial value of the parameterized 
+     design variable to start iterating from.  If it is absent,
+     it will be constructed from :ncvar:`tauc_prior` 
+     (or :ncvar:`hardav_prior`).
 
 All of these are optional, except:
 
@@ -235,7 +239,7 @@ All of these are optional, except:
     used if both are present.
 
   * For :math:`\tau_c` inversions, if :ncvar:`tauc_prior` 
-    is not present, or if :cfg:`-inv_use_tauc_prior` is not set,
+    is not present, or if :cfg:`-no_inv_use_tauc_prior` is set,
     then :ncvar:`tauc` must be present in the input file.  A similar
     caveat holds for hardness inversions replacing :ncvar:`tauc`.
     with :ncvar:`hardav`.

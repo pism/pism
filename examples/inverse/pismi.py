@@ -317,7 +317,7 @@ if __name__ == "__main__":
   tauc_prior = PISM.model.createYieldStressVec(grid,'tauc_prior')
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
   tauc = PISM.model.createYieldStressVec(grid)
-  if PISM.util.fileHasVariable(input_filename,"tauc") and use_tauc_prior:
+  if PISM.util.fileHasVariable(inv_data_filename,"tauc_prior") and use_tauc_prior:
     PISM.logging.logMessage("  Reading 'tauc_prior' from inverse data file %s.\n" % inv_data_filename);
     tauc_prior.regrid(inv_data_filename,critical=True)
     vecs.add(tauc_prior,writing=saving_inv_data)
@@ -367,9 +367,9 @@ if __name__ == "__main__":
       else:
         raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
 
-  # Determine the initial guess for zeta.  If we are not
-  # restarting, we convert tauc_prior to zeta.  If we are restarting,
-  # we load in zeta from the output file.
+  # Determine the initial guess for zeta.  If we are restarting, load it from
+  # the output file.  Otherwise, if 'zeta_inv' is in the inverse data file, use it.
+  # If none of the above, copy from 'zeta_prior'.
   zeta = PISM.IceModelVec2S();
   zeta.create(grid, "zeta_inv", PISM.kHasGhosts, WIDE_STENCIL)
   zeta.set_attrs("diagnostic", "zeta_inv", "1", "zeta_inv")
@@ -380,6 +380,10 @@ if __name__ == "__main__":
       exit(1)
     PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % output_filename )
     zeta.regrid(output_filename,True)
+
+  elif PISM.util.fileHasVariable(inv_data_filename, 'zeta_inv'):
+    PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % inv_data_filename )
+    zeta.regrid(inv_data_filename,True)    
   else:
     zeta.copy_from(zeta_prior)
 
