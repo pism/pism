@@ -32,7 +32,6 @@
 #include "exactTestsIJ.h"
 #include "stressbalance/ssa/SSAFEM.hh"
 #include "inverse/IP_SSATaucForwardProblem.hh"
-#include "inverse/IP_SSATaucForwardProblem_dep.hh"
 #include "inverse/IPDesignVariableParameterization.hh"
 #include "inverse/functional/IPFunctional.hh"
 #include "inverse/functional/IP_L2NormFunctional.hh"
@@ -620,7 +619,6 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "inverse/functional/IPLogRelativeFunctional.hh"
 %include "inverse/IPDesignVariableParameterization.hh"
 %include "inverse/IP_SSATaucForwardProblem.hh"
-%include "inverse/IP_SSATaucForwardProblem_dep.hh"
 %include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 
 #if (PISM_USE_TAO==1)
