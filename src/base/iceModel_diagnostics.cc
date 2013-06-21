@@ -57,6 +57,11 @@ PetscErrorCode IceModel::init_diagnostics() {
   diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid, variables);
   diagnostics["dHdt"]             = new IceModel_dHdt(this, grid, variables);
 
+  if (flux_divergence.was_created() ||
+      print_list_and_stop) {
+    diagnostics["flux_divergence"] = new IceModel_flux_divergence(this, grid, variables);
+  }
+
   if (climatic_mass_balance_cumulative.was_created() ||
       print_list_and_stop) {
     diagnostics["climatic_mass_balance_cumulative"] = new IceModel_climatic_mass_balance_cumulative(this, grid, variables);
@@ -1007,6 +1012,30 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   ierr = result->end_access(); CHKERRQ(ierr);
 
   ierr = result->mask_by(model->vH, grid.config.get("fill_value")); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("flux_divergence", grid);
+
+  set_attrs("cumulative ice-equivalent climatic mass balance", "",
+            "s-1", "year-1", 0);
+}
+
+PetscErrorCode IceModel_flux_divergence::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "flux_divergence", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  ierr = result->copy_from(model->flux_divergence); CHKERRQ(ierr);
 
   output = result;
   return 0;

@@ -90,6 +90,7 @@ class IceModel {
   friend class IceModel_ocean_kill_flux_2D;
   friend class IceModel_ocean_kill_flux_2D_cumulative;
   friend class IceModel_dHdt;
+  friend class IceModel_flux_divergence;
   // scalar:
   friend class IceModel_ivol;
   friend class IceModel_slvol;
@@ -245,7 +246,8 @@ protected:
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
-    cell_area;		//!< cell areas (computed using the WGS84 datum)
+    cell_area,		//!< cell areas (computed using the WGS84 datum)
+    flux_divergence;
 
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
 
