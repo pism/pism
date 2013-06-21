@@ -746,7 +746,11 @@ Enter the directory you just untarred and install:
 $  cd netCDF4-NUMBER/
 $  sudo python setup.py install
 \end{verbatim}
-assuming that NetCDF was installed in the \texttt{/usr/} tree.
+assuming that NetCDF was installed in the \texttt{/usr/} tree. If you
+are using python installed via MacPorts, you can get netdf4-python by doing
+\begin{verbatim}
+$  sudo port install py-netcdf4
+\end{verbatim}
 
 The scripts in directories \texttt{util/}, \texttt{examples/...}, and so on,
 which need \texttt{netCDF4}, should now work.
