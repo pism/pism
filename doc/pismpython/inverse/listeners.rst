@@ -17,12 +17,12 @@ or a callable class that implements::
 
 where
 
-  * ``solver`` is an instance of :class:`PISM.inverse.InvSSASolver`
+  * ``solver`` is an instance of :class:`PISM.invert.ssa.InvSSASolver`
   * ``iteration`` is the current iteration count
   * ``data`` is a :class:`PISM.util.Bunch` with data as described below.
 
 Prior to starting the solution algorithm, listeners are attached to the 
-solver using :meth:``PISM.inverse.InvSSASolver.addIterationListener``.
+solver using :meth:``PISM.invert.ssa.InvSSASolver.addIterationListener``.
 Each listener is called in turn at each step of the inversion,
 with extra data provided in the ``data`` argument.  The following
 attributes are always available in ``data``:
