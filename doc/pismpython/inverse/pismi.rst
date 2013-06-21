@@ -47,7 +47,7 @@ that were used in the course of the inversion.  Thus:
 
   pismi.py -i model.nc -inv_data inv.nc -o solution.nc [OTHER FLAGS]
   
-  pismi.py -i solution.nc -o solution2.nc -inv_data solution.nc [OTHER FLAGS]
+  pismi.py -i solution.nc -o solution2.nc [OTHER FLAGS]
 
 should always result in a second inversion run that terminates immediately
 because it is already at a solution.  The data in :file:`solution.nc` and
@@ -107,13 +107,20 @@ using :cfg:`-inv_design_param` and a name of one of the
 
 The inversion algorithms require a best initial estimate for the
 design variable, which is part of the *a-priori* data used to
-regularize the inversion.  By default, it is taken from its
-value as it appears in the model state file.  That is, if
-the design variable is :math:`\tau_c`, then the initial
-estimate is :ncvar:`tauc` in the model state file.  This
-choice can be overridden by providing a variable
-:ncvar:`tauc_prior` in the inverse data file **and** by
-using the :cfg:`-inv_use_tauc_prior` flag.  
+regularize the inversion.  If there is a variable :ncvar:`tauc_prior`
+in the inverse data file, it specifies the initial value.
+Otherwise the initial value is taken from :ncvar:`tauc`
+in the input file.  Use :cfg:`-no_use_tauc_prior` to
+ignore the value of :ncvar:`tauc_prior` in the inverse data file
+and to force the use of :ncvar:`tauc` instead.
+
+Locations where :math:`\tau_c` (or :math:`B`) are to be held
+constant at their initial estimates can be specified
+with :ncvar:`zeta_fixed_mask`.  By default, these locations
+are determined automatically.  If :ncvar:`zeta_fixed_mask`
+is provided in the inverse data file, it will be used instead.
+Use :cfg:`-no_use_zeta_fixed_mask` to disable the use
+of :ncvar:`zeta_fixed_mask`.
 
 In regions where PISM overrides the value of :math:`\tau_c` or
 :math:`B` (i.e. in floating regions for :math:`\tau_c`) the 
@@ -131,7 +138,7 @@ Design and State Functionals
 ----------------------------
 
 The choice of design and state functionals are made
-with :cfg:`-inv_misfit_func` and :cfg:`-inv_design_func`
+with :cfg:`-inv_state_func` and :cfg:`-inv_design_func`
 with a value among those documented in :ref:`state <statefunc>` and
 :ref:`design <designfunc>` functional sections.
 
@@ -142,14 +149,15 @@ Inverse Algorithm Selection
 The choice of inverse algorithm is made with the 
 option :cfg:`-inv_method` with a value 
 among those documented in the :ref:`iterative gradient <InvGradAlg>`
-and :ref:`Tikhonov <TikhonovAlg>` algorithm sections.
+and :ref:`Tikhonov <TikhonovAlg>` algorithm sections.  The :cfg:`-inv_max_it`
+flag determines the maximum number of iterations allowed by the algorithm.
 
 
 Regularization Constants
 ------------------------
 
 For iterative gradient algorithms,
-:cfg:`-inv_root_misfit` specifies
+:cfg:`-inv_target_misfit` specifies
 the :ref:`stopping criterion <InvGradStop>`.
 
 For Tikhonov algorithms use :cfg:`-tikhonov_penalty`
@@ -194,7 +202,6 @@ If PISM is being used in regional model mode (:cfg:`-regional`), this last varia
 An initial estimate for the design variable :ncvar:`tauc` or :ncvar:`hardav`
 can be provided as well, as discussed in the :ref:`design variable <pismi_design_var>` section.
 
-
 Inverse Data File Contents
 --------------------------
 
@@ -212,19 +219,27 @@ The following variables may be present in the inverse data file:
      in the :ref:`oberved SSA Velocity <ObsSSAVel>` section.
 
   4. :ncvar:`tauc_prior` or :ncvar:`hardav_prior`\ : The
-     initial guess for the physical design variable overriding the
-     value in the model state file.  The :cfg:`-inv_use_tauc_prior`
-     or :cfg:`-inv_use_hardav_prior` flags must be set to use
-     these estimates.
+     *a-priori* best estimate for the physical design variable, overriding the
+     value in the model state file.  
+
+  5. :ncvar:`zeta_fixed_mask`\ : Locations where the design variable is 
+      to be  held at its initial estimate.  If this variable is not present,
+      an appropriate mask will be generated, unless
+      :cfg:`-no_use_zeta_fixed_mask` is specified.
+
+  6. :ncvar:`zeta_inv`\ : The initial value of the parameterized 
+     design variable to start iterating from.  If it is absent,
+     it will be constructed from :ncvar:`tauc_prior` 
+     (or :ncvar:`hardav_prior`).
 
 All of these are optional, except:
 
   * At least one of :cfg:`ssa_observed` or :cfg:`surface_observed`
     velocities must be present, with :cfg:`ssa_observed` velocities
-    used preferentially.
+    used if both are present.
 
   * For :math:`\tau_c` inversions, if :ncvar:`tauc_prior` 
-    is not present, or if :cfg:`-inv_use_tauc_prior` is not set,
+    is not present, or if :cfg:`-no_inv_use_tauc_prior` is set,
     then :ncvar:`tauc` must be present in the input file.  A similar
     caveat holds for hardness inversions replacing :ncvar:`tauc`.
     with :ncvar:`hardav`.
@@ -251,8 +266,13 @@ in the model state and inverse data files:
     residuals.
 
 The output file also contains a log of the inversion run
-in the NC variable :ncvar:`pismi_log`.  **TODO: Saved misfit
-history.**
+in the NC variable :ncvar:`pismi_log`.  The output file 
+also contains a log of the misfit at each iteration
+in the variable :ncvar:`inv_ssa_misfit`.  For 
+:cfg:`-inv_state_func meansquare`, the values will
+be square roots of the misfit functional, in units of m/a.  
+Otherwise, these will be the values of the misfit functional
+itself.
 
 A copy of the command line used to run the inversion is saved
 in the :ncvar:`history` attribute of the output file.

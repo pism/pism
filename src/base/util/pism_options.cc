@@ -697,19 +697,22 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.keyword_from_option("inv_design_param",
                                     "inv_design_param","ident,trunc,square,exp"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("inv_root_misfit","inv_root_misfit"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("inv_target_misfit","inv_target_misfit"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("tikhonov_penalty","tikhonov_penalty_weight"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("tikhonov_atol","tikhonov_atol"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("tikhonov_rtol","tikhonov_rtol"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("tikhonov_ptol","tikhonov_ptol"); CHKERRQ(ierr);
 
+  ierr = config.keyword_from_option("inv_state_func","inv_state_func","meansquare,log_ratio,log_relative"); CHKERRQ(ierr);
   ierr = config.keyword_from_option("inv_design_func","inv_design_func","sobolevH1,tv"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("inv_ssa_cL2","inv_ssa_cL2"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("inv_ssa_cH1","inv_ssa_cH1"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("inv_design_cL2","inv_design_cL2"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("inv_design_cH1","inv_design_cH1"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("inv_ssa_tv_exponent","inv_ssa_tv_exponent"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("inv_log_ratio_scale","inv_log_ratio_scale"); CHKERRQ(ierr);
 
   // Basal strength
 

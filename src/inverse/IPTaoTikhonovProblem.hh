@@ -180,7 +180,7 @@ public:
   //  the paramter \f$d0\f$ appearing the in the Tikhonov functional will be used.
   virtual PetscErrorCode setInitialGuess( DesignVec &d) {
     PetscErrorCode ierr;
-    ierr = m_d.copy_from(d); CHKERRQ(ierr);
+    ierr = m_dGlobal.copy_from(d); CHKERRQ(ierr);
     return 0;
   }
 

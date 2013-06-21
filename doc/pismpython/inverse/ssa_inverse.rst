@@ -27,7 +27,7 @@ algorithms, which we turn to now.
 State Functionals
 -----------------
 
-State functionals are specified with the :cfg:`-inv_misfit_func` flag.
+State functionals are specified with the :cfg:`-inv_state_func` flag.
 
 .. _meansquare:
 
@@ -63,37 +63,50 @@ State functionals are specified with the :cfg:`-inv_misfit_func` flag.
    The normalization constant :math:`c_N` is selected so that if
    :math:`|\tY_{i,j}|=`\ :cfg:`inv_ssa_velocity_scale` 
    at all grid points, then :math:`J_S(\tY)=1`.
- 
-   Note that this functional supports grid points without SSA velocity
-   observations by setting :math:`\tw=0` at such points.
-   
-* **Log-Relative** (:cfg:`log_relative`)
-
- This is a functional of the form
- 
- .. math::
-   J_S(\tY) = c_N \sum_{i,j} 
-          \log\left( 
-              1 + \frac{|\tY_{i,j}|^2}{|\tU_{i,j}|^2+\epsilon^2}
-               \right)
-
- where :math:`\tU_{(i,j)}` are the observed SSA velocities.  It is 
- experimental and subject to change in the future.
-
+    
 * **Log-Ratio** (:cfg:`log_ratio`)
-  This is a functional of the form
-
+  This is a functional similar to one appearing in :cite:`Morlighemetal2010`:
+  
   .. math::
-    J_S(\tY) = c_N \sum_i \left[
+    J_S(\tY) = c_N \sum_i  \tw_{i,j} \left[
       \log\left( 
             \frac{|\tY_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}
          \right)
     \right]^2
 
-  where :math:`\tU_{(i,j)}` are the observed SSA velocities.  It is
-  similar to one appearing in :cite:`Morlighemetal2010`, is experimental,
-  and subject to change.
+  where
 
+  * :math:`\tU_{(i,j)}` are the observed SSA velocities,
+  * :math:`c_N` is a normalization constant, and
+  * :math:`\tw` is a weight vector provided in :ncvar:`vel_misfit_weight`.
+  
+  The normalization constant :math:`c_N` is selected so that if
+  :math:`|\tY_{i,j}|=s|\tU_{i,j}|` at all grid points, 
+  then :math:`J_S(\tY)=1`, where :math:`s=`\ :cfg:`log_ratio_scale`. 
+
+* **Log-Relative** (:cfg:`log_relative`)
+
+ This is an experimental functional of the form
+
+ .. math::
+   J_S(\tY) = c_N \sum_{i,j} 
+          \log\left( 
+              1 + \tw_{i,j}\frac{|\tY_{i,j}|^2}{|\tU_{i,j}|^2+\epsilon^2}
+               \right)
+
+ where 
+   * :math:`\tU_{(i,j)}` are the observed SSA velocities,
+   * :math:`c_N` is a normalization constant, and
+   * :math:`\tw` is a weight vector provided in :ncvar:`vel_misfit_weight`.
+
+   The normalization constant :math:`c_N` is selected so that if
+   :math:`|\tY_{i,j}|=`\ :cfg:`inv_ssa_velocity_scale` 
+   at all grid points, then :math:`J_S(\tY)=1`.
+
+
+
+Note that all these functionals supports grid points without SSA velocity
+observations by setting the weight function :math:`\tw=0` at such points.
 
 .. _designfunc:
 
@@ -114,15 +127,15 @@ flag.
   
   * :math:`|\Omega|` is the area of the rectangular grid domain,
   * :math:`\ell=` :cfg:`inv_ssa_length_scale`,
-  * :math:`c_{H^1}=` :cfg:`inv_ssa_cH1`, and
-  * :math:`c_{L^2}=` :cfg:`inv_ssa_cL2`.
+  * :math:`c_{H^1}=` :cfg:`inv_design_cH1`, and
+  * :math:`c_{L^2}=` :cfg:`inv_design_cL2`.
   
   Integration is done with 
   numerical quadrature of finite element functions.
   
   Typical values for :math:`c_{H^1}` and :math:`c_{L^2}` range between
   0 and 1, and can be specified with the option flags
-  :cfg:`-inv_ssa_cH1` and :cfg:`-inv_ssa_cL2`. 
+  :cfg:`-inv_design_cH1` and :cfg:`-inv_design_cL2`. 
   Setting either (but not both!) of these equal to zero is acceptable.  Note 
   that :math:`\zeta` is scaled to have typical values of 1, and hence typical
   values of :math:`J_D` are expected to be on the order of 1 as well.
@@ -166,18 +179,21 @@ flag.
   The pseudo total variation functional has the form
 
   .. math::
-    J_D(Z) = \frac{1}{|\Omega|} \int_\Omega (\epsilon^2+\ell^2|\nabla Z|^2)^{q/2}
+    J_D(Z) = \frac{(\ell)^q}{|\Omega|} 
+    \int_\Omega (\epsilon^2+|\nabla Z|^2)^{q/2}
 
   where 
 
     * :math:`|\Omega|` is the rectangular grid area,
     * :math:`\ell=` :cfg:`inv_ssa_length_scale`,
     * :math:`q=`\ :cfg:`inv_ssa_tv_exponent`,
-    * :math:`\epsilon=` :cfg:`inv_ssa_tv_epsilon` is a regularizing parameter.
-  
-  Since :math:`\ell|\nabla Z|` is dimensionless and is of size on the order of
-  1, the value of :math:`\epsilon` should be chosen relative to 1.
-  
+    * :math:`\epsilon` is either specified directly with
+      :cfg:`-inv_ssa_tv_epsilon` or has a default value of
+      :math:`1/`\ :cfg:`Schoof_regularizing_length`.
+
+  With these parameters, assuming that :math:`Z` is dimensionless, the
+  functional is dimensionless.
+    
   Strictly speaking, the total-variational functional corresponds to the case
   :math:`q=1` and :math:`\epsilon=0`.  
   Such functionals have the nice property that they do not
@@ -186,9 +202,9 @@ flag.
   numerical difficulties due to its lack of differentiability, and either of
   these parameters can be adjusted to help with this.  Note that if
   :math:`q=2` and :math:`\epsilon=0`, this is exactly the same functional
-  as the Sobolev :math:`H^1` functional with :math:`c_{H^1}=1` and :math:`c_{L^2}=0`.
-  
-  
+  as the Sobolev :math:`H^1` functional with :math:`c_{H^1}=1` 
+  and :math:`c_{L^2}=0`.
+
 Algorithm Selection
 -------------------
 
@@ -221,7 +237,7 @@ functional therefore effectively has units of
 .. _InvGradStop:
 
 The stopping criterion is provided by a parameter 
-:math:`\delta=` :cfg:`-inv_root_misfit` in 
+:math:`\delta=` :cfg:`-inv_target_misfit` in 
 units of :math:`m/a`, and iterations are stopped when
 
 .. math::

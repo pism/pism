@@ -67,6 +67,12 @@ public:
     return 0;
   }
 
+  //! Sets the desired target misfit (in units of \f$\sqrt{J_{\rm misfit}}\f$).
+  virtual PetscErrorCode setTargetMisfit( PetscReal misfit) {
+    m_target_misfit = misfit;
+    return 0;
+  }
+
   virtual PetscErrorCode evaluateGNFunctional(DesignVec h, PetscReal *value);
 
   virtual PetscErrorCode apply_GN(IceModelVec2S &h, IceModelVec2S &out);
@@ -139,7 +145,7 @@ protected:
 
   PetscReal m_alpha;
   PetscReal m_logalpha;
-  PetscReal m_rms_error;
+  PetscReal m_target_misfit;
 
   PetscInt m_iter, m_iter_max;
   bool m_tikhonov_adaptive;

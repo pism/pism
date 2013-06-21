@@ -49,7 +49,7 @@ public:
                           IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, PetscReal eta, 
                           IPFunctional<IP_SSATaucTaoTikhonovProblem::DesignVec>&designFunctional, 
                           IPFunctional<IP_SSATaucTaoTikhonovProblem::StateVec>&stateFunctional) :
-                IPTaoTikhonovProblem(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
+        IPTaoTikhonovProblem<IP_SSATaucForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
 
   virtual ~IP_SSATaucTaoTikhonovProblem() {};
 

@@ -56,9 +56,8 @@ a mask, :ncvar:`zeta_fixed_mask`, to indicate grid points where :math:`\zeta`
 variable :math:`\zeta` is free to change only at points where 
 :ncvar:`zeta_fixed_mask` :math:`=0`;  at points where
 :ncvar:`zeta_fixed_mask` :math:`=1`, :math:`\zeta` is maintained at the value
-it had at the start of the inversion.  The :ncvar:`zeta_fixed_mask` can be
-supplied explicitly to the inversion algorithms, but more frequently one
-lets the routines determine the mask based on the choice of design variable.
+it had at the start of the inversion.  By default, :cfg:`zeta_fixed_mask`
+is computed automatically, though it can be provided explicitly, if desired.
 
 .. _DesignParam:
 

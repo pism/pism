@@ -22,6 +22,7 @@ import PISM
 import PISM.invert.ssa
 import numpy as np
 import sys, os, math
+from PISM.logging import logMessage
 
 class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
 
@@ -47,20 +48,21 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
 
   def __call__(self,inverse_solver,count,data):
 
-    if self.l2_weight_init == False:
+    if not self.l2_weight_init:
       vecs = inverse_solver.ssarun.modeldata.vecs;
-      self.l2_weight=self.toproczero(vecs.vel_misfit_weight)
+      if vecs.has('vel_misfit_weight'):
+        self.l2_weight=self.toproczero(vecs.vel_misfit_weight)
       self.l2_weight_init = True
 
     method = inverse_solver.method
 
-    r=self.toproczero(data.r)
+    r=self.toproczero(data.residual)
     Td = None
-    if data.has_key('Td'): Td = self.toproczero(data.Td)
+    if data.has_key('T_zeta_step'): Td = self.toproczero(data.T_zeta_step)
     TStarR = None
-    if data.has_key('TStarR'): TStarR = self.toproczero(data.TStarR)
+    if data.has_key('TStar_residual'): TStarR = self.toproczero(data.TStar_residual)
     d = None
-    if data.has_key('d'): d = self.toproczero(data.d)
+    if data.has_key('zeta_step'): d = self.toproczero(data.zeta_step)
     zeta = self.toproczero(data.zeta)      
 
     secpera = grid.convert(1.0, "year", "second")
@@ -77,16 +79,22 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
       V = self.Vmax
 
       pp.subplot(2,3,1)
-      rx = l2_weight*r[0,:,:]*secpera
+      if l2_weight is not None:
+        rx = l2_weight*r[0,:,:]*secpera
+      else:
+        rx = r[0,:,:]*secpera
       rx = np.maximum(rx,-V)
       rx = np.minimum(rx,V)
       pp.imshow(rx,origin='lower',interpolation='nearest')
       pp.colorbar()
       pp.title('r_x')
       pp.jet()
-
+      
       pp.subplot(2,3,4)
-      ry = l2_weight*r[1,:,:]*secpera
+      if l2_weight is not None:
+        ry = l2_weight*r[1,:,:]*secpera
+      else:
+        ry = r[1,:,:]*secpera        
       ry = np.maximum(ry,-V)
       ry = np.minimum(ry,V)
       pp.imshow(ry,origin='lower',interpolation='nearest')
@@ -120,9 +128,17 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
         d *= -1
         pp.subplot(2,3,3)      
         pp.imshow(d,origin='lower',interpolation='nearest')
-        pp.colorbar()
-        pp.jet()
-        pp.title('-d')
+
+        # colorbar does a divide by zero if 'd' is all zero,
+        # as it will be at the start of iteration zero.
+        # The warning message is a distraction, so we suppress it.
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            pp.colorbar()
+            pp.jet()
+          
+        pp.title('-zeta_step')
 
       pp.subplot(2,3,6)
       pp.imshow(zeta,origin='lower',interpolation='nearest')
@@ -131,6 +147,7 @@ class InvSSAPlotListener(PISM.invert.listener.PlotListener):
       pp.title('zeta')
     
       pp.ion()
+      pp.draw()
       pp.show()
 
 class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
@@ -189,6 +206,8 @@ class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
 def adjustTauc(mask,tauc):
   """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
+  logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
+  
   grid = mask.get_grid()
   high_tauc = grid.config.get("high_tauc")
 
@@ -266,14 +285,14 @@ if __name__ == "__main__":
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
 
     do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
-    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
-
+    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=True)
 
     prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
 
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
 
-
+    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
+      "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
 
   inv_method = config.get_string("inv_ssa_method")
   
@@ -298,13 +317,15 @@ if __name__ == "__main__":
   tauc_prior = PISM.model.createYieldStressVec(grid,'tauc_prior')
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
   tauc = PISM.model.createYieldStressVec(grid)
-  if use_tauc_prior:
+  if PISM.util.fileHasVariable(inv_data_filename,"tauc_prior") and use_tauc_prior:
+    PISM.logging.logMessage("  Reading 'tauc_prior' from inverse data file %s.\n" % inv_data_filename);
     tauc_prior.regrid(inv_data_filename,critical=True)
     vecs.add(tauc_prior,writing=saving_inv_data)
   else:
     if not PISM.util.fileHasVariable(input_filename,"tauc"):
       PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
       exit(1)
+    PISM.logging.logMessage("Reading 'tauc_prior' from 'tauc' in input file.\n");
     tauc.regrid(input_filename,True)
     tauc_prior.copy_from(tauc)
     vecs.add(tauc_prior,writing=True)
@@ -326,17 +347,43 @@ if __name__ == "__main__":
     tauc_true.read_attributes(inv_data_filename)
     vecs.add(tauc_true,writing=saving_inv_data)
 
-  # Determine the initial guess for zeta.  If we are not
-  # restarting, we convert tauc_prior to zeta.  If we are restarting,
-  # we load in zeta from the output file.
+  if using_zeta_fixed_mask:
+    if PISM.util.fileHasVariable(inv_data_filename,"zeta_fixed_mask"):
+      zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
+      zeta_fixed_mask.regrid(inv_data_filename)
+      vecs.add(zeta_fixed_mask)
+    else:
+      if design_var == 'tauc':
+        logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where 'tauc' has a fixed value).\n")
+        zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
+        zeta_fixed_mask.set(1);
+        mask = vecs.ice_mask
+        with PISM.vec.Access(comm=zeta_fixed_mask,nocomm=mask):
+          mq = PISM.MaskQuery(mask)
+          for (i,j) in grid.points():
+            if mq.grounded_ice(i,j):
+              zeta_fixed_mask[i,j] = 0;
+        vecs.add(zeta_fixed_mask)
+      else:
+        raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
+
+  # Determine the initial guess for zeta.  If we are restarting, load it from
+  # the output file.  Otherwise, if 'zeta_inv' is in the inverse data file, use it.
+  # If none of the above, copy from 'zeta_prior'.
   zeta = PISM.IceModelVec2S();
   zeta.create(grid, "zeta_inv", PISM.kHasGhosts, WIDE_STENCIL)
+  zeta.set_attrs("diagnostic", "zeta_inv", "1", "zeta_inv")
   if do_restart:
     # Just to be sure, verify that we have a 'zeta_inv' in the output file.
     if not PISM.util.fileHasVariable(output_filename,'zeta_inv'):
       PISM.verbPrintf(1,com,"Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
       exit(1)
+    PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % output_filename )
     zeta.regrid(output_filename,True)
+
+  elif PISM.util.fileHasVariable(inv_data_filename, 'zeta_inv'):
+    PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % inv_data_filename )
+    zeta.regrid(inv_data_filename,True)    
   else:
     zeta.copy_from(zeta_prior)
 
@@ -392,10 +439,10 @@ if __name__ == "__main__":
     vecs.add(vel_ssa_observed,writing=True)
 
   # Establish a logger which will save logging messages to the output file.  
-  logger = PISM.logging.CaptureLogger(output_filename,'pismi_log');
-  PISM.logging.add_logger(logger)
+  message_logger = PISM.logging.CaptureLogger(output_filename,'pismi_log');
+  PISM.logging.add_logger(message_logger)
   if append_mode or do_restart:
-    logger.readOldLog()
+    message_logger.readOldLog()
   
   # Prep the output file from the grid so that we can save zeta to it during the runs.
   if not append_mode:
@@ -413,32 +460,38 @@ if __name__ == "__main__":
   PISM.util.writeProvenance(output_filename)    
 
   # Attach various iteration listeners to the solver as needed for:
+
+  # Iteration report.
+  solver.addIterationListener(PISM.invert.ssa.printIteration)
+
+  # Misfit reporting/logging.
+  misfit_logger = PISM.invert.ssa.MisfitLogger()
+  solver.addIterationListener(misfit_logger)
+
+  if inv_method.startswith('tikhonov'):
+    solver.addIterationListener(PISM.invert.ssa.printTikhonovProgress)
+
+  # Saving the current iteration
+  solver.addDesignUpdateListener(PISM.invert.ssa.ZetaSaver(output_filename)) 
+
   # Plotting
   if do_plotting:
     solver.addIterationListener(InvSSAPlotListener(grid,Vmax))
     if solver.method=='ign':
       solver.addLinearIterationListener(InvSSALinPlotListener(grid,Vmax))
-  # Pausing
-  if do_pause:
-    solver.addIterationListener(PISM.invert.listener.pauseListener)
-  # Progress reporting
-  progress_reporter = None
-  if inv_method.startswith('tik'):
-    progress_reporter = PISM.invert.ssa.PrintTikhonovProgress()
-  else:
-    progress_reporter = PISM.invert.ssa.PrintRMSMisfit()
-  if progress_reporter is not None:
-    solver.addIterationListener(progress_reporter)
-
-  # Saving the current iteration
-  solver.addDesignUpdateListener(PISM.invert.ssa.ZetaSaver(output_filename)) 
 
   # Solver is set up.  Give the user's prep module a chance to do any final
   # setup.
   
   if prep_module is not None:
+    if prep_module.endswith(".py"):
+      prep_module = prep_module[0:-2]
     exec "import %s as user_prep_module" % prep_module
     user_prep_module.prep_solver(solver)
+
+  # Pausing (add this after the user's listeners)
+  if do_pause:
+    solver.addIterationListener(PISM.invert.listener.pauseListener)
 
   # Run the inverse solver!
   if do_restart:
@@ -494,8 +547,7 @@ if __name__ == "__main__":
   # If we're not in append mode, the previous command just nuked
   # the output file.  So we rewrite the siple log.
   if not append_mode:
-    logger.write(output_filename)
+    message_logger.write(output_filename)
 
   # Save the misfit history
-  if progress_reporter is not None:
-    progress_reporter.write(output_filename)
+  misfit_logger.write(output_filename)

@@ -20,6 +20,15 @@
 #include "pism_options.hh"
 #include <cmath>
 
+//! Initializes the scale parameters of the parameterization.
+/*! Every IPDesignVariableParameterization has an associated scale for the design variable 
+\f$d_{\rm scale}\f that equals 1 in internal units.  The scale for a design variable named \a foo
+is stored in an NCConfigVariable file as design_param_foo_scale.  Subclasses may have additional
+parameters that are follow the naming convention \a design_param_foo_*.
+
+\param config          The config file to read the scale parameters from.
+\param design_var_name The associated name of the design variable, e.g. 'tauc' or 'hardav'
+*/  
 PetscErrorCode IPDesignVariableParameterization::set_scales( const NCConfigVariable & config, const char *design_var_name ) { 
   std::string key("design_param_");
   key += design_var_name;
@@ -28,6 +37,7 @@ PetscErrorCode IPDesignVariableParameterization::set_scales( const NCConfigVaria
   return 0;
 }
 
+//! Transforms a vector of \f$\zeta\f$ values to a vector of \f$d\f$ values.
 PetscErrorCode IPDesignVariableParameterization::convertToDesignVariable( IceModelVec2S &zeta, IceModelVec2S &d, bool communicate ) {
   PetscReal **zeta_a, **d_a;
   PetscErrorCode ierr;
@@ -51,6 +61,7 @@ PetscErrorCode IPDesignVariableParameterization::convertToDesignVariable( IceMod
   return 0;
 }
 
+  //! Transforms a vector of \f$d\f$ values to a vector of \f$\zeta\f$ values.
 PetscErrorCode IPDesignVariableParameterization::convertFromDesignVariable( IceModelVec2S &d, IceModelVec2S &zeta, bool communicate ) {
   PetscReal **zeta_a, **d_a;
   PetscErrorCode ierr;

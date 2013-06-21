@@ -25,13 +25,12 @@
 /*! \f[
 J(u) = c\int_\Omega (\epsilon^2+|\nabla u|^2)^{q/2} 
 \f]
-The parameters \f$c\f$ and \f$q\f$ are provided at construction.  Taking \f$q\f$=1 would
-yield a total variation functional, save for the regularizing parameter \f$\epsilon\f$
-which is determined from config parameters {\tt inv_ssa_tv_epsilon}.
+The parameters \f$c\f$, \f$q\f$ and \f$\epsilon\f$ are provided at construction.  Taking \f$q\f$=1 would
+yield a total variation functional, save for the regularizing parameter \f$\epsilon\f$.
 */
 class IPTotalVariationFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
-  IPTotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal q, IceModelVec2Int *dirichletLocations=NULL);
+  IPTotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal q, PetscReal eps, IceModelVec2Int *dirichletLocations=NULL);
 
   virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
@@ -39,9 +38,9 @@ public:
 protected:
 
   IceModelVec2Int *m_dirichletIndices;
-  PetscReal m_epsilon_sq; // Regularization parameter.
   PetscReal m_c; // scale parameter.
   PetscReal m_lebesgue_exp;
+  PetscReal m_epsilon_sq; // Regularization parameter.
 
 private:
   // Hide copy/assignment operations

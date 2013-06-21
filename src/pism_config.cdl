@@ -423,20 +423,29 @@ netcdf pism_config {
     pism_config:inv_design_param = "exp";
     pism_config:inv_design_param_doc = "parameterization of design variables used during inversion";
 
+    pism_config:inv_state_func = "meansquare";
+    pism_config:inv_state_func_doc = "functional used for inversion design variables";
+
     pism_config:inv_design_func = "sobolevH1";
     pism_config:inv_design_func_doc = "functional used for inversion design variables";
 
-    pism_config:inv_ssa_cL2     = 1;
-    pism_config:inv_ssa_cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";
+    pism_config:inv_design_cL2     = 1;
+    pism_config:inv_design_cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";
     
-    pism_config:inv_ssa_cH1     = 0;
-    pism_config:inv_ssa_cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
+    pism_config:inv_design_cH1     = 0;
+    pism_config:inv_design_cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
 
     pism_config:inv_ssa_tv_exponent = 1.2;
     pism_config:inv_ssa_tv_exponent_doc = "Lebesgue exponent for pseudo-TV norm";
 
+    pism_config:inv_log_ratio_scale = 10;
+    pism_config:inv_log_ratio_scale_doc = "Reference scale for log-ratio functionals";
+
     pism_config:inv_ssa_velocity_scale = 100;
     pism_config:inv_ssa_velocity_scale_doc = "m/year; typical size of ice velocities expected during inversion";
+
+    pism_config:inv_ssa_velocity_eps = .1;
+    pism_config:inv_ssa_velocity_eps_doc = "m/year; tiny size of ice velocities during inversion";
 
     pism_config:inv_ssa_length_scale = 50e3;
     pism_config:inv_ssa_length_scale_doc = "m; typical length scale for rescaling derivative norms";
@@ -447,8 +456,8 @@ netcdf pism_config {
     pism_config:inv_ssa_tauc_max = 5e7;
     pism_config:inv_ssa_tauc_max_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
     
-    pism_config:inv_root_misfit = 100;
-    pism_config:inv_root_misfit_doc = "m/year; desired root misfit for SSA inversions";
+    pism_config:inv_target_misfit = 100;
+    pism_config:inv_target_misfit_doc = "m/year; desired root misfit for SSA inversions";
     
     pism_config:tikhonov_atol  = 1e-10;
     pism_config:tikhonov_atol_doc = "m/year; absolute threshold for Tikhonov stopping criterion";

@@ -24,15 +24,17 @@
 //! Implements a functional for log-relative errors.
 /*!  Specifically, given a reference function \f$u_{obs}=[U_i]\f$,
 \f[
-J(x) = c_N \sum_i \log\left(1+\frac{|X_i|^2}{|U_{i}|^2+\epsilon^2}\right)
+J(x) = c_N \sum_i \log\left(1+W_i\frac{|X_i|^2}{|U_{i}|^2+\epsilon^2}\right)
 \f]
-where \f$\epsilon=10^{-4}{\tt inv_ssa_velocity_scale}\f$.  The normalization
-constant \f$c_N\f$ is determined implicitly by ::normalize.
+where \f$\epsilon={\tt inv_ssa_velocity_eps}\f$ and \f$w\f$ is an optionally
+provided weight function.  The normalization constant \f$c_N\f$ is determined 
+implicitly by ::normalize.
 */
 class IPLogRelativeFunctional : public IPFunctional<IceModelVec2V> {
 public:
-  IPLogRelativeFunctional(IceGrid &grid, IceModelVec2V &u_observed) :
-  IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_normalization(1.) {};
+  IPLogRelativeFunctional(IceGrid &grid, IceModelVec2V &u_observed, PetscReal eps,
+                          IceModelVec2S *weights=NULL) :
+  IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRelativeFunctional() {};
 
   virtual PetscErrorCode normalize(PetscReal scale);
@@ -42,8 +44,9 @@ public:
 
 protected:
   IceModelVec2V &m_u_observed;
+  IceModelVec2S *m_weights;
   PetscReal m_normalization;
-
+  PetscReal m_eps;
 };
 
 
