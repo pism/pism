@@ -18,13 +18,42 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+# Compares the computations of the key methods of a forward problem
+# with alternative computations (finite differences for derivatives, etc.)
+# Takes all the arguments of pismi.py, plus -inv_test with the name of 
+# one of the tests in the file.  The solver is set with its initial value
+# of tauc equal to what it would be for pismi, and then the tests occur.
+#
+# Tests:
+# lin -- the linearized forward map, compared to finite difference approximations.
+# lin_transpose -- the transpose of this map, T^*, compared to the formula <Td,r> = <d,T^*r>
+# j_design -- the derivative of the SSA residual with respect to the design variable, compared to finite difference approx
+# J_design_transpose -- the transpose of this map, J^*, compared to the formula <Jd,r> = <d,J^*r>
+
 import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
 import numpy as np
 import os, math
+import PISM.invert.ssa
 
 import PISM
+
+def view(vec,viewer):  
+  if(isinstance(vec,PISM.IceModelVec2S)):
+    v_global = PISM.IceModelVec2S()
+  else:
+    v_global = PISM.IceModelVec2V()
+  v_global.create(vec.get_grid(),"",PISM.kNoGhosts)
+  v_global.copy_from(vec)
+  v_global.get_vec().view(viewer)
+
+# def view2(vec,viewer):
+#   v_global = PISM.IceModelVec2V()
+#   v_global.create(vec.get_grid(),"",PISM.kNoGhosts)
+#   v_global.copy_from(vec)
+#   v_global.get_vec().view(viewer)
+
 
 def adjustTauc(mask,tauc):
   """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
@@ -42,6 +71,335 @@ def adjustTauc(mask,tauc):
 
 WIDE_STENCIL = 2
 
+def test_lin(ssarun):
+  grid = ssarun.grid
+
+  PISM.verbPrintf(1,grid.com,"\nTest Linearization (Comparison with finite differences):\n")
+
+  S=250
+  d_viewer = PETSc.Viewer().createDraw(title="d",size=S)
+  Td_viewer = PETSc.Viewer().createDraw(title="Td",size=S)
+  Td_fd_viewer = PETSc.Viewer().createDraw(title="Td_fd",size=S)
+  d_Td_viewer = PETSc.Viewer().createDraw(title="d_Td",size=S)
+
+  for (i,j) in grid.points():
+    d = PISM.IceModelVec2S()
+    d.create(grid,"",PISM.kHasGhosts)
+    d.set(0)
+    with PISM.vec.Access(comm = d):
+      d[i,j] = 1
+
+    ssarun.ssa.linearize_at(zeta1)
+    u1 = PISM.IceModelVec2V();
+    u1.create(grid,"",PISM.kHasGhosts)
+    u1.copy_from(ssarun.ssa.solution())
+
+    Td = PISM.IceModelVec2V()
+    Td.create(grid,"",PISM.kHasGhosts)
+    ssarun.ssa.apply_linearization(d,Td)
+
+    eps = 1e-8
+    zeta2 = PISM.IceModelVec2S();
+    zeta2.create(grid, "", PISM.kHasGhosts)
+    zeta2.copy_from(d)
+    zeta2.scale(eps)
+    zeta2.add(1,zeta1)
+    ssarun.ssa.linearize_at(zeta2)
+    u2 = PISM.IceModelVec2V();
+    u2.create(grid,"",PISM.kHasGhosts)
+    u2.copy_from(ssarun.ssa.solution())
+
+    Td_fd = PISM.IceModelVec2V();
+    Td_fd.create(grid,"",PISM.kHasGhosts)
+    Td_fd.copy_from(u2)
+    Td_fd.add(-1,u1)
+    Td_fd.scale(1./eps)
+
+    d_Td = PISM.IceModelVec2V()
+    d_Td.create(grid,"",PISM.kHasGhosts)
+    d_Td.copy_from(Td_fd)
+    d_Td.add(-1,Td)
+
+    n_Td_fd = Td_fd.norm(PETSc.NormType.NORM_2)
+    n_Td_l2 = Td.norm(PETSc.NormType.NORM_2)
+    n_Td_l1 = Td.norm(PETSc.NormType.NORM_1)
+    n_Td_linf = Td.norm(PETSc.NormType.NORM_INFINITY)
+
+    n_d_Td_l2 = d_Td.norm(PETSc.NormType.NORM_2)
+    n_d_Td_l1 = d_Td.norm(PETSc.NormType.NORM_1)
+    n_d_Td_linf = d_Td.norm(PETSc.NormType.NORM_INFINITY)
+
+    PISM.verbPrintf(1,grid.com,"(i,j)=(%d,%d)\n" % (i,j))
+    PISM.verbPrintf(1,grid.com,"apply_linearization(d): l2 norm %.10g; finite difference %.10g\n" % (n_Td_l2,n_Td_fd) )
+
+    r_d_l2 = 0
+    if n_Td_l2 != 0:
+      r_d_l2 = n_d_Td_l2/n_Td_l2
+    r_d_l1 = 0
+    if n_Td_l1 != 0:
+      r_d_l1 = n_d_Td_l1/n_Td_l1
+
+    r_d_linf = 0
+    if n_Td_linf != 0:
+      r_d_linf = n_d_Td_linf/n_Td_linf
+    PISM.verbPrintf(1,grid.com,"relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (r_d_l2, r_d_l1, r_d_linf) )
+
+    PISM.verbPrintf(1,grid.com,"\n")
+
+    d_global = PISM.IceModelVec2S()
+    d_global.create(grid,"",PISM.kNoGhosts)
+    d_global.copy_from(d)
+    d_global.get_vec().view(d_viewer)
+
+    Td_global = PISM.IceModelVec2V()
+    Td_global.create(grid,"",PISM.kNoGhosts)
+    Td_global.copy_from(Td)
+    # if n_Td_linf > 0:
+    #   Td_global.scale(1./n_Td_linf)
+    Td_global.get_vec().view(Td_viewer)
+
+    Td_fd_global = PISM.IceModelVec2V()
+    Td_fd_global.create(grid,"",PISM.kNoGhosts)
+    Td_fd_global.copy_from(Td_fd)
+    # if n_Td_fd_linf > 0:
+    #   Td_fd_global.scale(1./n_Td_linf)
+    Td_fd_global.get_vec().view(Td_fd_viewer)
+
+    d_Td_global = PISM.IceModelVec2V()
+    d_Td_global.create(grid,"",PISM.kNoGhosts)
+    d_Td_global.copy_from(d_Td)
+    # if n_Td_linf > 0:
+    #   d_Td_global.scale(1./n_Td_linf)
+    d_Td_global.get_vec().view(d_Td_viewer)
+
+
+    PISM.logging.pause()
+
+# ######################################################################################################################
+# Jacobian design 
+
+def test_j_design(ssarun):
+  grid = ssarun.grid
+
+  S=250
+  d_viewer = PETSc.Viewer().createDraw(title="d",size=S)
+  drhs_viewer = PETSc.Viewer().createDraw(title="drhs",size=S)
+  drhs_fd_viewer = PETSc.Viewer().createDraw(title="drhs_fd",size=S)
+  d_drhs_viewer = PETSc.Viewer().createDraw(title="d_drhs",size=S)
+
+  ssarun.ssa.linearize_at(zeta1)
+  u1 = PISM.IceModelVec2V();
+  u1.create(grid,"",PISM.kHasGhosts)
+  u1.copy_from(ssarun.ssa.solution())
+  
+  for (i,j) in grid.points():
+    d = PISM.IceModelVec2S()
+    d.create(grid,"",PISM.kHasGhosts)
+    d.set(0)
+    with PISM.vec.Access(comm = d):
+      d[i,j] = 1
+
+    ssarun.ssa.linearize_at(zeta1)
+
+    rhs1 = PISM.IceModelVec2V();
+    rhs1.create(grid,"",PISM.kNoGhosts)
+    ssarun.ssa.assemble_residual(u1,rhs1)
+
+    eps = 1e-8
+    zeta2 = PISM.IceModelVec2S();
+    zeta2.create(grid, "zeta_prior", PISM.kHasGhosts)
+    zeta2.copy_from(d)
+    zeta2.scale(eps)
+    zeta2.add(1,zeta1)
+    ssarun.ssa.set_design(zeta2)
+
+    rhs2 = PISM.IceModelVec2V();
+    rhs2.create(grid,"",PISM.kNoGhosts)
+    ssarun.ssa.assemble_residual(u1,rhs2)
+
+    drhs_fd = PISM.IceModelVec2V();
+    drhs_fd.create(grid,"",PISM.kNoGhosts)
+    drhs_fd.copy_from(rhs2)
+    drhs_fd.add(-1,rhs1)
+    drhs_fd.scale(1./eps)
+
+    drhs = PISM.IceModelVec2V();
+    drhs.create(grid,"",PISM.kNoGhosts)
+    ssarun.ssa.apply_jacobian_design(u1,d,drhs)
+
+    d_drhs = PISM.IceModelVec2V();
+    d_drhs.create(grid,"",PISM.kNoGhosts)
+  
+    d_drhs.copy_from(drhs)
+    d_drhs.add(-1,drhs_fd)
+
+    n_drhs_fd = drhs_fd.norm(PETSc.NormType.NORM_2)
+    n_drhs_l2 = drhs.norm(PETSc.NormType.NORM_2)
+    n_drhs_l1 = drhs.norm(PETSc.NormType.NORM_1)
+    n_drhs_linf = drhs.norm(PETSc.NormType.NORM_INFINITY)
+
+    n_d_drhs_l2 = d_drhs.norm(PETSc.NormType.NORM_2)
+    n_d_drhs_l1 = d_drhs.norm(PETSc.NormType.NORM_1)
+    n_d_drhs_linf = d_drhs.norm(PETSc.NormType.NORM_INFINITY)
+
+    PISM.verbPrintf(1,grid.com,"\nTest Jacobian Design (Comparison with finite differences):\n")
+    PISM.verbPrintf(1,grid.com,"jacobian_design(d): l2 norm %.10g; finite difference %.10g\n" % (n_drhs_l2,n_drhs_fd) )
+    if n_drhs_linf == 0:
+      PISM.verbPrintf(1,grid.com,"difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_drhs_l2,n_d_drhs_l1,n_d_drhs_linf) )
+    else:
+      PISM.verbPrintf(1,grid.com,"relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_drhs_l2/n_drhs_l2,n_d_drhs_l1/n_drhs_l1,n_d_drhs_linf/n_drhs_linf) )
+
+    view(d,d_viewer)
+    view(drhs,drhs_viewer)
+    view(drhs_fd,drhs_fd_viewer)
+    view(d_drhs,d_drhs_viewer)
+
+    PISM.logging.pause()
+
+def test_j_design_transpose(ssarun):
+  grid = ssarun.grid
+
+  S=250
+  r_viewer = PETSc.Viewer().createDraw(title="r",size=S)
+  JStarR_viewer = PETSc.Viewer().createDraw(title="JStarR",size=S)
+  JStarR_indirect_viewer = PETSc.Viewer().createDraw(title="JStarR (ind)",size=S)
+  d_JStarR_viewer = PETSc.Viewer().createDraw(title="d_JStarR_fd",size=S)
+
+  ssarun.ssa.linearize_at(zeta1)
+  u = PISM.IceModelVec2V();
+  u.create(grid,"",PISM.kHasGhosts)
+  u.copy_from(ssarun.ssa.solution())
+
+  Jd = PISM.IceModelVec2V();
+  Jd.create(grid,"",PISM.kNoGhosts)
+
+  JStarR = PISM.IceModelVec2S();
+  JStarR.create(grid,"",PISM.kNoGhosts)
+
+  JStarR_indirect = PISM.IceModelVec2S();
+  JStarR_indirect.create(grid,"",PISM.kNoGhosts)
+  
+  for (i,j) in grid.points():
+
+    for k in range(2):
+      
+      r = PISM.IceModelVec2V()
+      r.create(grid,"",PISM.kHasGhosts)
+      r.set(0)
+      with PISM.vec.Access(comm = r):
+        if k==0:
+          r[i,j].u = 1
+        else:
+          r[i,j].v = 1
+          
+
+      ssarun.ssa.apply_jacobian_design_transpose(u,r,JStarR)
+
+      r_global = PISM.IceModelVec2V();
+      r_global.create(grid,"",PISM.kNoGhosts)
+      r_global.copy_from(r)
+  
+      for(k,l) in grid.points():
+        with PISM.vec.Access(nocomm=JStarR_indirect):
+          d = PISM.IceModelVec2S()
+          d.create(grid,"",PISM.kHasGhosts)
+          d.set(0)
+          with PISM.vec.Access(comm = d):
+            d[k,l] = 1
+
+          ssarun.ssa.apply_jacobian_design(u,d,Jd)
+
+          JStarR_indirect[k,l] = Jd.get_vec().dot(r_global.get_vec())
+
+
+      d_JStarR = PISM.IceModelVec2S();
+      d_JStarR.create(grid,"",PISM.kNoGhosts)
+
+      d_JStarR.copy_from(JStarR)
+      d_JStarR.add(-1,JStarR_indirect)
+   
+      PISM.verbPrintf(1,grid.com,"\nTest Jacobian Design Transpose (%d,%d):\n" %(i,j))
+
+      view(r_global,r_viewer)
+      view(JStarR,JStarR_viewer)
+      view(JStarR_indirect,JStarR_indirect_viewer)
+      view(d_JStarR,d_JStarR_viewer)
+
+      PISM.logging.pause()
+
+def test_linearization_transpose(ssarun):
+  grid = ssarun.grid
+
+  S=250
+  r_viewer = PETSc.Viewer().createDraw(title="r",size=S)
+  TStarR_viewer = PETSc.Viewer().createDraw(title="TStarR",size=S)
+  TStarR_indirect_viewer = PETSc.Viewer().createDraw(title="TStarR (ind)",size=S)
+  d_TStarR_viewer = PETSc.Viewer().createDraw(title="d_TStarR_fd",size=S)
+
+  ssarun.ssa.linearize_at(zeta1)
+  u = PISM.IceModelVec2V();
+  u.create(grid,"",PISM.kHasGhosts)
+  u.copy_from(ssarun.ssa.solution())
+
+  Td = PISM.IceModelVec2V();
+  Td.create(grid,"",PISM.kNoGhosts)
+
+  TStarR = PISM.IceModelVec2S();
+  TStarR.create(grid,"",PISM.kNoGhosts)
+
+  TStarR_indirect = PISM.IceModelVec2S();
+  TStarR_indirect.create(grid,"",PISM.kNoGhosts)
+
+  for (i,j) in grid.points():
+
+    for k in range(2):
+
+      r = PISM.IceModelVec2V()
+      r.create(grid,"",PISM.kHasGhosts)
+      r.set(0)
+      with PISM.vec.Access(comm = r):
+        if k==0:
+          r[i,j].u = 1
+        else:
+          r[i,j].v = 1
+
+
+      ssarun.ssa.apply_linearization_transpose(r,TStarR)
+
+      r_global = PISM.IceModelVec2V();
+      r_global.create(grid,"",PISM.kNoGhosts)
+      r_global.copy_from(r)
+
+      for(k,l) in grid.points():
+        with PISM.vec.Access(nocomm=TStarR_indirect):
+          d = PISM.IceModelVec2S()
+          d.create(grid,"",PISM.kHasGhosts)
+          d.set(0)
+          with PISM.vec.Access(comm = d):
+            d[k,l] = 1
+
+          ssarun.ssa.apply_linearization(d,Td)
+
+          TStarR_indirect[k,l] = Td.get_vec().dot(r_global.get_vec())
+
+
+      d_TStarR = PISM.IceModelVec2S();
+      d_TStarR.create(grid,"",PISM.kNoGhosts)
+
+      d_TStarR.copy_from(TStarR)
+      d_TStarR.add(-1,TStarR_indirect)
+
+      PISM.verbPrintf(1,grid.com,"\nTest Linearization Transpose (%d,%d):\n" %(i,j))
+
+      view(r_global,r_viewer)
+      view(TStarR,TStarR_viewer)
+      view(TStarR_indirect,TStarR_indirect_viewer)
+      view(d_TStarR,d_TStarR_viewer)
+
+      PISM.logging.pause()
+
+
+
 ## Main code starts here
 if __name__ == "__main__":
   context = PISM.Context()
@@ -55,28 +413,32 @@ if __name__ == "__main__":
     input_filename = PISM.optionsString("-i","input file")
     inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=False)
+    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=True)
 
-  ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename,inv_data_filename)
+  ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename,inv_data_filename,'tauc')
   ssarun.setup()
   
   vecs = ssarun.modeldata.vecs
   grid = ssarun.grid
 
+
   # Determine the prior guess for tauc. This can be one of 
   # a) tauc from the input file (default)
-  # b) tauc_prior from the inv_datafile if -use_tauc_prior is set
+  # b) tauc_prior from the inv_datafile if -inv_use_tauc_prior is set
   tauc_prior = PISM.model.createYieldStressVec(grid,'tauc_prior')
   tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
   tauc = PISM.model.createYieldStressVec(grid)
-  if use_tauc_prior:
+  if PISM.util.fileHasVariable(inv_data_filename,"tauc_prior") and use_tauc_prior:
+    PISM.logging.logMessage("  Reading 'tauc_prior' from inverse data file %s.\n" % inv_data_filename);
     tauc_prior.regrid(inv_data_filename,critical=True)
   else:
     if not PISM.util.fileHasVariable(input_filename,"tauc"):
       PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
       exit(1)
+    PISM.logging.logMessage("Reading 'tauc_prior' from 'tauc' in input file.\n");
     tauc.regrid(input_filename,True)
     tauc_prior.copy_from(tauc)
+    vecs.add(tauc_prior,writing=True)
 
   adjustTauc(vecs.ice_mask,tauc_prior)
 
@@ -86,192 +448,19 @@ if __name__ == "__main__":
   ssarun.designVariableParameterization().convertFromDesignVariable(tauc_prior,zeta1)
 
   ssarun.ssa.linearize_at(zeta1)
-    
-  (seed,seed_set) = PISM.optionsIntWasSet("-inv_seed","")
-  if seed_set:
-    np.random.seed(seed+PISM.Context().rank)
 
+  for o in PISM.OptionsGroup(title="test_invssaforward"):
+    test_type = PISM.optionsList(grid.com, "-inv_test", "",["j_design","j_design_transpose","lin","lin_transpose"],"")
 
-######################################################################################################################
-# Jacobian design 
-
-  d = PISM.vec.randVectorS(grid,1)
-  d_proj = PISM.IceModelVec2S()
-  d_proj.create(grid,"",PISM.kNoGhosts)
-  d_proj.copy_from(d)
-  if vecs.has('zeta_fixed_mask'):
-    zeta_fixed_mask = vecs.zeta_fixed_mask
-    with PISM.vec.Access(nocomm=[d_proj,zeta_fixed_mask]):
-      for (i,j) in grid.points():
-        if zeta_fixed_mask[i,j] != 0:
-          d_proj[i,j] = 0;
-
-  r = PISM.vec.randVectorV(grid, grid.convert(1.0, "m/year", "m/second"))
-
-  u1 = PISM.IceModelVec2V();
-  u1.create(grid,"",PISM.kHasGhosts,WIDE_STENCIL)
-  u1.copy_from(ssarun.ssa.solution())
-
-  rhs1 = PISM.IceModelVec2V();
-  rhs1.create(grid,"",PISM.kNoGhosts)
-  ssarun.ssa.assemble_residual(u1,rhs1)
+  if test_type == "":
+    PISM.verbPrintf(1,com,"Must specify a test type via -inv_test\n")
+    exit(1)
   
-  eps = 1e-8
-  zeta2 = PISM.IceModelVec2S();
-  zeta2.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
-  zeta2.copy_from(d_proj)
-  zeta2.scale(eps)
-  zeta2.add(1,zeta1)
-  ssarun.ssa.set_design(zeta2)
-
-  rhs2 = PISM.IceModelVec2V();
-  rhs2.create(grid,"",PISM.kNoGhosts)
-  ssarun.ssa.assemble_residual(u1,rhs2)
-
-  drhs_fd = PISM.IceModelVec2V();
-  drhs_fd.create(grid,"",PISM.kNoGhosts)
-  drhs_fd.copy_from(rhs2)
-  drhs_fd.add(-1,rhs1)
-  drhs_fd.scale(1./eps)
-
-  drhs = PISM.IceModelVec2V();
-  drhs.create(grid,"",PISM.kNoGhosts)
-  ssarun.ssa.apply_jacobian_design(u1,d,drhs)
-
-  d_drhs = PISM.IceModelVec2V();
-  d_drhs.create(grid,"",PISM.kNoGhosts)
-  
-  d_drhs.copy_from(drhs)
-  d_drhs.add(-1,drhs_fd)
-
-  n_drhs_fd = drhs_fd.norm(PETSc.NormType.NORM_2)
-  n_drhs_l2 = drhs.norm(PETSc.NormType.NORM_2)
-  n_drhs_l1 = drhs.norm(PETSc.NormType.NORM_1)
-  n_drhs_linf = drhs.norm(PETSc.NormType.NORM_INFINITY)
-
-  n_d_drhs_l2 = d_drhs.norm(PETSc.NormType.NORM_2)
-  n_d_drhs_l1 = d_drhs.norm(PETSc.NormType.NORM_1)
-  n_d_drhs_linf = d_drhs.norm(PETSc.NormType.NORM_INFINITY)
-
-  PISM.verbPrintf(1,grid.com,"\nTest Jacobian Design (Comparison with finite differences):\n")
-  PISM.verbPrintf(1,grid.com,"jacobian_design_transpose(d): l2 norm %.10g; finite difference %.10g\n" % (n_drhs_l2,n_drhs_fd) )
-  PISM.verbPrintf(1,grid.com,"relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_drhs_l2/n_drhs_l2,n_d_drhs_l1/n_drhs_l1,n_d_drhs_linf/n_drhs_linf) )
-
-######################################################################################################################
-# Jacobian design transpose
-
-  stencil_width = 1
-  u = ssarun.ssa.solution();
-  d = PISM.vec.randVectorS(grid,1,stencil_width)
-  r = PISM.vec.randVectorV(grid,1,stencil_width)
-
-  Jd = PISM.IceModelVec2V();
-  Jd.create(grid,"",PISM.kNoGhosts)
-
-  JStarR = PISM.IceModelVec2S();
-  JStarR.create(grid,"",PISM.kNoGhosts)
-
-  ssarun.ssa.apply_jacobian_design(u,d,Jd)
-  ssarun.ssa.apply_jacobian_design_transpose(u,r,JStarR)
-
-  r_global = PISM.IceModelVec2V();
-  r_global.create(grid,"",PISM.kNoGhosts)
-  r_global.copy_from(r)
-
-  d_global = PISM.IceModelVec2S();
-  d_global.create(grid,"",PISM.kNoGhosts)
-  d_global.copy_from(d)
-  
-  ip1 = Jd.get_vec().dot(r_global.get_vec())
-  ip2 = JStarR.get_vec().dot(d_global.get_vec())
-
-  PISM.verbPrintf(1,grid.com,"\nTest Jacobian Design Transpose (comparison of r^T*(J*d) versus (J^T*r)^T*d):\n")
-  PISM.verbPrintf(1,grid.com,"ip1 %.10g ip2 %.10g\n" % (ip1,ip2) )
-  PISM.verbPrintf(1,grid.com,"relative error %.10g\n",abs((ip1-ip2)/ip1))
-
-  ######################################################################################################################
-  # Linearization transpose
-  
-  d = PISM.vec.randVectorS(grid,1)
-  r = PISM.vec.randVectorV(grid,1)
-
-  Td = PISM.IceModelVec2V()
-  Td.create(grid,'',PISM.kNoGhosts)
-  TStarR = PISM.IceModelVec2S()
-  TStarR.create(grid,'',PISM.kNoGhosts)
-  
-  ssarun.ssa.apply_linearization(d,Td)
-  ssarun.ssa.apply_linearization_transpose(r,TStarR)
-
-  ip1 = Td.get_vec().dot(r.get_vec())
-  ip2 = TStarR.get_vec().dot(d.get_vec())
-
-  PISM.verbPrintf(1,grid.com,"\nTest Linearization Transpose (comparison of r^t*(T*d) versus (T^t*r)^t*d):\n")
-  PISM.verbPrintf(1,grid.com,"ip1 %.10g ip2 %.10g\n" % (ip1,ip2) )
-  PISM.verbPrintf(1,grid.com,"relative error %.10g\n",abs((ip1-ip2)/ip1))
-
-  ######################################################################################################################
-  # Linearization
-
-  d = PISM.vec.randVectorS(grid,1)
-  d_proj = PISM.IceModelVec2S()
-  d_proj.create(grid,"",PISM.kNoGhosts)
-  d_proj.copy_from(d)
-  if vecs.has('zeta_fixed_mask'):
-    zeta_fixed_mask = vecs.zeta_fixed_mask
-    with PISM.vec.Access(nocomm=[d_proj,zeta_fixed_mask]):
-      for (i,j) in grid.points():
-        if zeta_fixed_mask[i,j] != 0:
-          d_proj[i,j] = 0;
-
-  ssarun.ssa.linearize_at(zeta1)
-  u1 = PISM.IceModelVec2V();
-  u1.create(grid,"",PISM.kHasGhosts,stencil_width)
-  u1.copy_from(ssarun.ssa.solution())
-
-  Td = PISM.IceModelVec2V()
-  Td.create(grid,"",PISM.kHasGhosts,stencil_width)
-  ssarun.ssa.apply_linearization(d,Td)
-
-  eps = 1e-8
-  zeta2 = PISM.IceModelVec2S();
-  zeta2.create(grid, "", PISM.kHasGhosts, WIDE_STENCIL)
-  zeta2.copy_from(d_proj)
-  zeta2.scale(eps)
-  zeta2.add(1,zeta1)
-  ssarun.ssa.linearize_at(zeta2)
-  u2 = PISM.IceModelVec2V();
-  u2.create(grid,"",PISM.kHasGhosts,stencil_width)
-  u2.copy_from(ssarun.ssa.solution())
-  
-  Td_fd = PISM.IceModelVec2V();
-  Td_fd.create(grid,"",PISM.kHasGhosts,stencil_width)
-  Td_fd.copy_from(u2)
-  Td_fd.add(-1,u1)
-  Td_fd.scale(1./eps)
-
-  d_Td = PISM.IceModelVec2V()
-  d_Td.create(grid,"",PISM.kHasGhosts,stencil_width)
-  d_Td.copy_from(Td_fd)
-  d_Td.add(-1,Td)
-
-  n_Td_fd = Td_fd.norm(PETSc.NormType.NORM_2)
-  n_Td_l2 = Td.norm(PETSc.NormType.NORM_2)
-  n_Td_l1 = Td.norm(PETSc.NormType.NORM_1)
-  n_Td_linf = Td.norm(PETSc.NormType.NORM_INFINITY)
-
-  n_d_Td_l2 = d_Td.norm(PETSc.NormType.NORM_2)
-  n_d_Td_l1 = d_Td.norm(PETSc.NormType.NORM_1)
-  n_d_Td_linf = d_Td.norm(PETSc.NormType.NORM_INFINITY)
-
-  PISM.verbPrintf(1,grid.com,"\nTest Linearization (Comparison with finite differences):\n")
-  PISM.verbPrintf(1,grid.com,"apply_linearization(d): l2 norm %.10g; finite difference %.10g\n" % (n_Td_l2,n_Td_fd) )
-  PISM.verbPrintf(1,grid.com,"relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_Td_l2/n_Td_l2,n_d_Td_l1/n_Td_l1,n_d_Td_linf/n_Td_linf) )
-  
-  PISM.verbPrintf(1,grid.com,"\n")
-
-  d_Td_global = PISM.IceModelVec2V()
-  d_Td_global.create(grid,"",PISM.kNoGhosts)
-  d_Td_global.copy_from(d_Td)
-  d_Td_global.scale(1./n_Td_linf)
-  d_Td_global.get_vec().view(PETSc.Viewer.DRAW())
+  if test_type=="j_design":
+    test_j_design(ssarun)
+  elif test_type == "j_design_transpose":
+    test_j_design_transpose(ssarun)
+  elif test_type=="lin":
+    test_lin(ssarun)
+  elif test_type == "lin_transpose":
+    test_linearization_transpose(ssarun)
