@@ -8,7 +8,7 @@ Classes interfacing with siple-based algorithms for inverting the SSA from :math
 
     .. raw:: html
 
-        <script type="text/javascript" src='../_static/pymunk.js'></script>
+        <script type="text/javascript" src='../../_static/pymunk.js'></script>
 
 .. automodule:: PISM.invert.ssa_siple
    :members:

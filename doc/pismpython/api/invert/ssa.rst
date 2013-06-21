@@ -8,16 +8,16 @@ The forward problem for inversion is defined by an :cpp:class:`IP_SSAForwardProb
 a :class:`~PISM.invert.ssa.SSAForwardRunFromInputFile`, which is a subclass 
 of :class:`PISM.ssa.SSARun`.
 
-With the forward problem defined, a solver needs to be constructed that
-will apply a specific algorithm for solving the inverse problem.  The
-factory function :func:`~.createInvSSASolver` constructs a solver
-based on command line arguments.
+With the forward problem defined, a subclass of :class:`PISM.invert.ssa.InvSSASovler`
+needs to be constructed that will apply a specific algorithm for solving 
+the inverse problem.  The factory function :func:`~.createInvSSASolver`
+constructs a solver based on command line arguments.
 
 .. container:: custom-index
 
     .. raw:: html
 
-        <script type="text/javascript" src='../_static/pymunk.js'></script>
+        <script type="text/javascript" src='../../_static/pymunk.js'></script>
 
 .. automodule:: PISM.invert.ssa
    :members:
