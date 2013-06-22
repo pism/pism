@@ -472,7 +472,7 @@ PetscErrorCode IceModel::createVecs() {
   // do not add; boundary models are in charge here
   // ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
 
-  // take care of 2D cumulative fluxes: we need to allocate special storage it
+  // take care of 2D cumulative fluxes: we need to allocate special storage if
   // the user asked for climatic_mass_balance_cumulative or
   // ocean_kill_flux_cumulative
 
@@ -496,13 +496,16 @@ PetscErrorCode IceModel::createVecs() {
                                                         "m", ""); CHKERRQ(ierr);
     }
 
-    if (set_contains(ex_vars, "flux_divergence")) {
+    string o_size = get_output_size("-o_size");
+
+    if (set_contains(ex_vars, "flux_divergence") || o_size == "big") {
       ierr = flux_divergence.create(grid, "flux_divergence", false); CHKERRQ(ierr);
       ierr = flux_divergence.set_attrs("diagnostic",
                                                      "flux divergence",
                                                      "s-1", ""); CHKERRQ(ierr);
       ierr = flux_divergence.set_glaciological_units("year-1"); CHKERRQ(ierr);
       flux_divergence.write_in_glaciological_units = true;
+      ierr = variables.add(flux_divergence); CHKERRQ(ierr);
     }
 
     if (set_contains(ex_vars, "ocean_kill_flux_cumulative") ||
