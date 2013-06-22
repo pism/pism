@@ -247,7 +247,7 @@ protected:
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
     cell_area,		//!< cell areas (computed using the WGS84 datum)
-    flux_divergence;
+    flux_divergence;    //!< flux divergence
 
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
 
