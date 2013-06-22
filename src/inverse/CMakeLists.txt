@@ -5,6 +5,7 @@ include_directories ( functional )
 set(PISM_INVERSE_SOURCES
 ./IPDesignVariableParameterization.cc
 ./IP_SSATaucForwardProblem.cc
+./IP_SSAHardavForwardProblem.cc
 ./IPTwoBlockVec.cc
 ./IP_SSATaucTikhonovGNSolver.cc  
 ./functional/IPFunctional.cc

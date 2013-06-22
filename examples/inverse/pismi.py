@@ -219,6 +219,17 @@ def adjustTauc(mask,tauc):
       elif mq.ice_free(i,j):
         tauc[i,j] = high_tauc
 
+def createDesignVec(grid,design_var,name=None,**kwargs):
+  if design_var == "tauc":
+    if name is None:
+      name = 'tauc'
+    design_vec = PISM.model.createYieldStressVec(grid,name=name,**kwargs)
+  elif design_var == "hardav":
+    design_vec = PISM.model.createAveragedHardnessVec(grid,name=name,**kwargs)
+  else:
+    raise ValueError("Unknown design variable %s" % design_var)
+  return design_vec
+
 ## Main code starts here
 if __name__ == "__main__":
   context = PISM.Context()
@@ -282,10 +293,8 @@ if __name__ == "__main__":
     design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
     do_pause = PISM.optionsFlag("-inv_pause","pause each iteration",default=False)
 
-    test_adjoint = PISM.optionsFlag("-inv_test_adjoint","Test that the adjoint is working",default=False)
-
     do_restart = PISM.optionsFlag("-inv_restart","Restart a stopped computation.",default=False)
-    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=True)
+    use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
 
     prep_module = PISM.optionsString("-inv_prep_module","Python module used to do final setup of inverse solver",default=None)
 
@@ -311,41 +320,44 @@ if __name__ == "__main__":
   vecs = modeldata.vecs
   grid = modeldata.grid
 
-  # Determine the prior guess for tauc. This can be one of 
-  # a) tauc from the input file (default)
-  # b) tauc_prior from the inv_datafile if -inv_use_tauc_prior is set
-  tauc_prior = PISM.model.createYieldStressVec(grid,'tauc_prior')
-  tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
-  tauc = PISM.model.createYieldStressVec(grid)
-  if PISM.util.fileHasVariable(inv_data_filename,"tauc_prior") and use_tauc_prior:
-    PISM.logging.logMessage("  Reading 'tauc_prior' from inverse data file %s.\n" % inv_data_filename);
-    tauc_prior.regrid(inv_data_filename,critical=True)
-    vecs.add(tauc_prior,writing=saving_inv_data)
+  # Determine the prior guess for tauc/hardav. This can be one of 
+  # a) tauc/hardav from the input file (default)
+  # b) tauc/hardav_prior from the inv_datafile if -inv_use_design_prior is set
+  design_prior = createDesignVec(grid,design_var,'%s_prior' % design_var)
+  long_name = design_prior.string_attr("long_name")
+  units = design_prior.string_attr("units")
+  design_prior.set_attrs("", "best prior estimate for %s (used for inversion)" % long_name, units, "");
+  if PISM.util.fileHasVariable(inv_data_filename,"%s_prior" % design_var) and use_design_prior:
+    PISM.logging.logMessage("  Reading '%s_prior' from inverse data file %s.\n" % (design_var,inv_data_filename));
+    design_prior.regrid(inv_data_filename,critical=True)
+    vecs.add(design_prior,writing=saving_inv_data)
   else:
-    if not PISM.util.fileHasVariable(input_filename,"tauc"):
-      PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
+    if not PISM.util.fileHasVariable(input_filename,design_var):
+      PISM.verbPrintf(1,com,"Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file." % (design_var,input_filename) )
       exit(1)
-    PISM.logging.logMessage("Reading 'tauc_prior' from 'tauc' in input file.\n");
-    tauc.regrid(input_filename,True)
-    tauc_prior.copy_from(tauc)
-    vecs.add(tauc_prior,writing=True)
+    PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var,design_var) );
+    design = createDesignVec(grid,design_var)
+    design.regrid(input_filename,True)
+    design_prior.copy_from(design)
+    vecs.add(design_prior,writing=True)
 
-  adjustTauc(vecs.ice_mask,tauc_prior)
+  if design_var == 'tauc':
+    adjustTauc(vecs.ice_mask,design_prior)
 
-  # Convert tauc_prior -> zeta_prior
+  # Convert design_prior -> zeta_prior
   zeta_prior = PISM.IceModelVec2S();
   zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
-  design_param.convertFromDesignVariable(tauc_prior,zeta_prior)
+  design_param.convertFromDesignVariable(design_prior,zeta_prior)
   vecs.add(zeta_prior,writing=True)
 
-  # If the inverse data file has a variable tauc_true, this is probably
+  # If the inverse data file has a variable tauc/hardav_true, this is probably
   # a synthetic inversion.  We'll load it now so that it will get written
   # out, if needed, at the end of the computation in the output file.
-  if PISM.util.fileHasVariable(inv_data_filename,"tauc_true"):
-    tauc_true = PISM.model.createYieldStressVec(grid,'tauc_true')
-    tauc_true.regrid(inv_data_filename,True)
-    tauc_true.read_attributes(inv_data_filename)
-    vecs.add(tauc_true,writing=saving_inv_data)
+  if PISM.util.fileHasVariable(inv_data_filename,"%s_true" % design_var):
+    design_true = createDesignVec(grid,design_var,'%s_true' % design_var)
+    design_true.regrid(inv_data_filename,True)
+    design_true.read_attributes(inv_data_filename)
+    vecs.add(design_true,writing=saving_inv_data)
 
   if using_zeta_fixed_mask:
     if PISM.util.fileHasVariable(inv_data_filename,"zeta_fixed_mask"):
@@ -354,7 +366,7 @@ if __name__ == "__main__":
       vecs.add(zeta_fixed_mask)
     else:
       if design_var == 'tauc':
-        logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where 'tauc' has a fixed value).\n")
+        logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
         zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
         zeta_fixed_mask.set(1);
         mask = vecs.ice_mask
@@ -386,35 +398,6 @@ if __name__ == "__main__":
     zeta.regrid(inv_data_filename,True)    
   else:
     zeta.copy_from(zeta_prior)
-
-  if test_adjoint:
-    if solver.method.startswith('tikhonov') and solver.method != 'tikhonov_gn':
-      PISM.logging.logMessage("option -inv_test_adjoint cannot be used with inverse method %s",solver.method)
-      exit(1)
-
-    if solver.method == 'tikhonov_gn':
-      raise NotImplementedError()
-    else:
-      import numpy as np
-      (seed,seed_set) = PISM.optionsIntWasSet("-inv_test_adjoint_seed","")
-      if seed_set:
-        np.random.seed(seed+PISM.Context().rank)
-      d = PISM.vec.randVectorS(grid,1e5,WIDE_STENCIL)
-      # If we're fixing some tauc values, we need to ensure that we don't
-      # move in a direction 'd' that changes those values in this test.
-      if forward_run.using_zeta_fixed_mask:
-        zeta_fixed_mask = vecs.zeta_fixed_mask
-        with PISM.vec.Access(comm=d, nocomm=zeta_fixed_mask):
-          for (i,j) in grid.points():
-            if zeta_fixed_mask[i,j] != 0:
-              d[i,j] = 0;
-      r = PISM.vec.randVectorV(grid,1./secpera,WIDE_STENCIL)
-      from PISM.invert.sipletools import PISMLocalVector as PLV
-      forward_problem = solver.forward_problem
-      (domainIP,rangeIP)=forward_problem.testTStar(PLV(zeta),PLV(d),PLV(r),3)
-      PISM.logging.logMessage("domainip %.10g rangeip %.10g\n" % (domainIP,rangeIP) )
-      PISM.logging.logMessage("relative error %.10g\n" % abs((domainIP-rangeIP)/domainIP))
-      exit(0)
 
   vel_ssa_observed = None
   vel_ssa_observed = PISM.model.create2dVelocityVec(grid,'_ssa_observed',stencil_width=2)
@@ -510,12 +493,13 @@ if __name__ == "__main__":
   (zeta,u) = solver.inverseSolution()
 
   # Convert back from zeta to tauc
-  design_param.convertToDesignVariable(zeta,tauc)
+  design = createDesignVec(grid,design_var)
+  design_param.convertToDesignVariable(zeta,design)
 
-  # It may be that a 'tauc' was read in earlier.  We replace it with
+  # It may be that a 'tauc'/'hardav' was read in earlier.  We replace it with
   # our newly generated one.
-  if vecs.has('tauc'): vecs.remove('tauc')
-  vecs.add(tauc,writing=True)
+  if vecs.has(design_var): vecs.remove(design_var)
+  vecs.add(design,writing=True)
 
   vecs.add(zeta,writing=True)
 
