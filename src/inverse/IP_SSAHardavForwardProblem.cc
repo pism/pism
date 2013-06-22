@@ -427,6 +427,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
 
   PISMVector2 du_e[FEQuadrature::Nk];
   PISMVector2 du_q[FEQuadrature::Nq];
+  PISMVector2 du_dx_q[FEQuadrature::Nq];
+  PISMVector2 du_dy_q[FEQuadrature::Nq];
 
   PetscReal dzeta_e[FEQuadrature::Nk];
 
@@ -465,7 +467,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
       // Compute the solution values and symmetric gradient at the quadrature points.
       m_dofmap.extractLocalDOFs(i,j,du_a,du_e);
       if(dirichletBC) dirichletBC.updateHomogeneous(m_dofmap,du_e);
-      m_quadrature.computeTrialFunctionValues(du_e,du_q);
+      m_quadrature.computeTrialFunctionValues(du_e,du_q,du_dx_q,du_dy_q);
 
       m_dofmap.extractLocalDOFs(i,j,u_a,u_e);
       if(dirichletBC) dirichletBC.update(m_dofmap,u_e);
@@ -477,23 +479,23 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
       }
 
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        PISMVector2 du_qq = du_q[q];
+        // Symmetric gradient at the quadrature point.
         PetscScalar *Duqq = Du_q[q];
 
         const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
 
         // Determine "d_nuH/dB" at the quadrature point
-        PetscReal d_nuH = 0;
+        PetscReal d_nuH_dB = 0;
         if (feS->H >= strength_extension->get_min_thickness()) {
-          flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH, NULL);
-          d_nuH  *= (2*feS->H);
+          flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
+          d_nuH_dB  *= (2*feS->H);
         }
 
         for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
-          const FEFunctionGerm &testqk = test[q][k];
-          dzeta_e[k] += JxW[q]*d_nuH*( 
-               (testqk.dx*(2*Duqq[0]+Duqq[1]) + testqk.dy*Duqq[2])*du_qq.u +
-               (testqk.dy*(2*Duqq[1]+Duqq[0]) + testqk.dx*Duqq[2])*du_qq.v );
+          dzeta_e[k] += JxW[q]*d_nuH_dB*test[q][k].val*(
+            (du_dx_q[q].u*(2*Duqq[0]+Duqq[1]) + du_dy_q[q].u*Duqq[2]) +
+            (du_dy_q[q].v*(2*Duqq[1]+Duqq[0]) + du_dx_q[q].v*Duqq[2])
+            );
         }
       } // q
 
