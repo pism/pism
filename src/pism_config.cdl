@@ -480,6 +480,15 @@ netcdf pism_config {
     pism_config:design_param_trunc_tauc0 = 1000;
     pism_config:design_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for design variable parameterization type 'trunc'";
 
+    pism_config:design_param_hardav_scale = 1e8;
+    pism_config:design_param_hardav_scale_doc = "Pa s^-3; typical size of ice hardness";
+
+    pism_config:design_param_hardav_eps     = 1e4;
+    pism_config:design_param_hardav_eps_doc = "Pa  s^-3; tiny hardav used as a substitute for 0 in some tauc parameterizations";
+
+    pism_config:design_param_trunc_hardav0 = 1e6;
+    pism_config:design_param_trunc_hardav0_doc = "Pa s^-3; transition point of change to linear behaviour for design variable parameterization type 'trunc'";
+
 
     pism_config:beta_CC = 7.9e-8;
     pism_config:beta_CC_doc = "K Pa-1; Clausius-Clapeyron constant [\\ref Luethi2002]";

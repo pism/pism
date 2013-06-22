@@ -32,6 +32,7 @@
 #include "exactTestsIJ.h"
 #include "stressbalance/ssa/SSAFEM.hh"
 #include "inverse/IP_SSATaucForwardProblem.hh"
+#include "inverse/IP_SSAHardavForwardProblem.hh"
 #include "inverse/IPDesignVariableParameterization.hh"
 #include "inverse/functional/IPFunctional.hh"
 #include "inverse/functional/IP_L2NormFunctional.hh"
@@ -131,6 +132,7 @@ namespace std {
 // to all arguments of this type, use 
 // %apply MyType *& OUTPUT { MyType *&}
 // or use %Pism_pointer_reference_is_always_ouput(MyType) in the first place
+
 %define %Pism_pointer_reference_typemaps(TYPE)
 %typemap(in, numinputs=0,noblock=1) TYPE *& OUTPUT (TYPE *temp) {
     $1 = &temp;
@@ -140,9 +142,25 @@ namespace std {
     %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, 0 | %newpointer_flags));
 };
 %enddef
+
 %define %Pism_pointer_reference_is_always_output(TYPE)
 %Pism_pointer_reference_typemaps(TYPE);
 %apply TYPE *& OUTPUT { TYPE *&}
+%enddef
+
+%define %Pism_pointer_pointer_typemaps(TYPE)
+%typemap(in, numinputs=0,noblock=1) TYPE ** OUTPUT (TYPE *temp) {
+    $1 = &temp;
+}
+%typemap(argout,noblock=1) TYPE ** OUTPUT
+{
+    %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, 0 | %newpointer_flags));
+};
+%enddef
+
+%define %Pism_pointer_pointer_is_always_output(TYPE)
+%Pism_pointer_pointer_typemaps(TYPE);
+%apply TYPE ** OUTPUT { TYPE **}
 %enddef
 
 
@@ -253,6 +271,8 @@ namespace std {
 %Pism_pointer_reference_is_always_output(IceModelVec2S)
 %Pism_pointer_reference_is_always_output(IceModelVec2V)
 %Pism_pointer_reference_is_always_output(IceModelVec3)
+
+%Pism_pointer_pointer_is_always_output(IceFlowLaw)
 
 
 // These methods are called from PISM.options.
@@ -581,6 +601,7 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "SSB_Modifier.hh"
 %template(PISMDiag_SIAFD) PISMDiag<SIAFD>;
 %include "stressbalance/sia/SIAFD.hh"
+%include "flowlaw_factory.hh"
 
 %include "iceModel.hh"
 
@@ -619,6 +640,7 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "inverse/functional/IPLogRelativeFunctional.hh"
 %include "inverse/IPDesignVariableParameterization.hh"
 %include "inverse/IP_SSATaucForwardProblem.hh"
+%include "inverse/IP_SSAHardavForwardProblem.hh"
 %include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 
 #if (PISM_USE_TAO==1)

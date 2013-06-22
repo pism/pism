@@ -220,9 +220,9 @@ def adjustTauc(mask,tauc):
         tauc[i,j] = high_tauc
 
 def createDesignVec(grid,design_var,name=None,**kwargs):
+  if name is None:
+      name = design_var
   if design_var == "tauc":
-    if name is None:
-      name = 'tauc'
     design_vec = PISM.model.createYieldStressVec(grid,name=name,**kwargs)
   elif design_var == "hardav":
     design_vec = PISM.model.createAveragedHardnessVec(grid,name=name,**kwargs)
@@ -333,7 +333,7 @@ if __name__ == "__main__":
     vecs.add(design_prior,writing=saving_inv_data)
   else:
     if not PISM.util.fileHasVariable(input_filename,design_var):
-      PISM.verbPrintf(1,com,"Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file." % (design_var,input_filename) )
+      PISM.verbPrintf(1,com,"Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (design_var,input_filename) )
       exit(1)
     PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var,design_var) );
     design = createDesignVec(grid,design_var)

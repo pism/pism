@@ -69,6 +69,18 @@ def adjustTauc(mask,tauc):
       elif mq.ice_free(i,j):
         tauc[i,j] = high_tauc
 
+def createDesignVec(grid,design_var,name=None,**kwargs):
+  if name is None:
+      name = design_var
+  if design_var == "tauc":
+    design_vec = PISM.model.createYieldStressVec(grid,name=name,**kwargs)
+  elif design_var == "hardav":
+    design_vec = PISM.model.createAveragedHardnessVec(grid,name=name,**kwargs)
+  else:
+    raise ValueError("Unknown design variable %s" % design_var)
+  return design_vec
+
+
 WIDE_STENCIL = 2
 
 def test_lin(ssarun):
@@ -413,39 +425,41 @@ if __name__ == "__main__":
     input_filename = PISM.optionsString("-i","input file")
     inv_data_filename = PISM.optionsString("-inv_data","inverse data file",default=input_filename)
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
-    use_tauc_prior = PISM.optionsFlag("-inv_use_tauc_prior","Use tauc_prior from inverse data file as initial guess.",default=True)
+    use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
+    design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
 
-  ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename,inv_data_filename,'tauc')
+  ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename,inv_data_filename,design_var)
   ssarun.setup()
   
   vecs = ssarun.modeldata.vecs
   grid = ssarun.grid
 
-
-  # Determine the prior guess for tauc. This can be one of 
-  # a) tauc from the input file (default)
-  # b) tauc_prior from the inv_datafile if -inv_use_tauc_prior is set
-  tauc_prior = PISM.model.createYieldStressVec(grid,'tauc_prior')
-  tauc_prior.set_attrs("diagnostic", "initial guess for (pseudo-plastic) basal yield stress in an inversion", "Pa", "");
-  tauc = PISM.model.createYieldStressVec(grid)
-  if PISM.util.fileHasVariable(inv_data_filename,"tauc_prior") and use_tauc_prior:
-    PISM.logging.logMessage("  Reading 'tauc_prior' from inverse data file %s.\n" % inv_data_filename);
-    tauc_prior.regrid(inv_data_filename,critical=True)
+  # Determine the prior guess for tauc/hardav. This can be one of 
+  # a) tauc/hardav from the input file (default)
+  # b) tauc/hardav_prior from the inv_datafile if -inv_use_design_prior is set
+  design_prior = createDesignVec(grid,design_var,'%s_prior' % design_var)
+  long_name = design_prior.string_attr("long_name")
+  units = design_prior.string_attr("units")
+  design_prior.set_attrs("", "best prior estimate for %s (used for inversion)" % long_name, units, "");
+  if PISM.util.fileHasVariable(inv_data_filename,"%s_prior" % design_var) and use_design_prior:
+    PISM.logging.logMessage("  Reading '%s_prior' from inverse data file %s.\n" % (design_var,inv_data_filename));
+    design_prior.regrid(inv_data_filename,critical=True)
   else:
-    if not PISM.util.fileHasVariable(input_filename,"tauc"):
-      PISM.verbPrintf(1,com,"Initial guess for tauc is not available as 'tauc' in %s.\nYou can provide an initial guess as 'tauc_prior' using the command line option -use_tauc_prior." % input_filename)
+    if not PISM.util.fileHasVariable(input_filename,design_var):
+      PISM.verbPrintf(1,com,"Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (design_var,input_filename) )
       exit(1)
-    PISM.logging.logMessage("Reading 'tauc_prior' from 'tauc' in input file.\n");
-    tauc.regrid(input_filename,True)
-    tauc_prior.copy_from(tauc)
-    vecs.add(tauc_prior,writing=True)
+    PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var,design_var) );
+    design = createDesignVec(grid,design_var)
+    design.regrid(input_filename,True)
+    design_prior.copy_from(design)
 
-  adjustTauc(vecs.ice_mask,tauc_prior)
+  if design_var == 'tauc':
+    adjustTauc(vecs.ice_mask,design_prior)
 
-  # Convert tauc_prior -> zeta_prior
+  # Convert design_prior -> zeta_prior
   zeta1 = PISM.IceModelVec2S();
   zeta1.create(grid, "", PISM.kHasGhosts, WIDE_STENCIL)
-  ssarun.designVariableParameterization().convertFromDesignVariable(tauc_prior,zeta1)
+  ssarun.designVariableParameterization().convertFromDesignVariable(design_prior,zeta1)
 
   ssarun.ssa.linearize_at(zeta1)
 
