@@ -36,6 +36,7 @@ from petsc4py import PETSc
 import numpy as np
 import os, math
 import PISM.invert.ssa
+from PISM.logging import logMessage
 
 import PISM
 
@@ -427,6 +428,8 @@ if __name__ == "__main__":
     verbosity = PISM.optionsInt("-verbose","verbosity level",default=2)
     use_design_prior = PISM.optionsFlag("-inv_use_design_prior","Use prior from inverse data file as initial guess.",default=True)
     design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
+    using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
+      "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)",default=True)
 
   ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename,inv_data_filename,design_var)
   ssarun.setup()
@@ -453,8 +456,30 @@ if __name__ == "__main__":
     design.regrid(input_filename,True)
     design_prior.copy_from(design)
 
-  if design_var == 'tauc':
-    adjustTauc(vecs.ice_mask,design_prior)
+
+  if using_zeta_fixed_mask:
+    if PISM.util.fileHasVariable(inv_data_filename,"zeta_fixed_mask"):
+      zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
+      zeta_fixed_mask.regrid(inv_data_filename)
+      vecs.add(zeta_fixed_mask)
+    else:
+      if design_var == 'tauc':
+        logMessage("  Computing 'zeta_fixed_mask' (i.e. locations where design variable '%s' has a fixed value).\n" % design_var)
+        zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
+        zeta_fixed_mask.set(1);
+        mask = vecs.ice_mask
+        with PISM.vec.Access(comm=zeta_fixed_mask,nocomm=mask):
+          mq = PISM.MaskQuery(mask)
+          for (i,j) in grid.points():
+            if mq.grounded_ice(i,j):
+              zeta_fixed_mask[i,j] = 0;
+        vecs.add(zeta_fixed_mask)
+
+        adjustTauc(vecs.ice_mask,design_prior)
+      elif design_var == 'hardav':
+        pass
+      else:
+        raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
 
   # Convert design_prior -> zeta_prior
   zeta1 = PISM.IceModelVec2S();

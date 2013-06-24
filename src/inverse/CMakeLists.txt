@@ -23,6 +23,7 @@ if(Pism_USE_TAO)
     ./TaoUtil.cc
     ./IP_SSATaucTaoTikhonovProblem.cc
     ./IP_SSATaucTaoTikhonovProblemLCL.cc
+    ./IP_SSAHardavTaoTikhonovProblem.cc
     )
 endif()
 

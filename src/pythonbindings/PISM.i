@@ -47,6 +47,7 @@
 #include "inverse/TaoUtil.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
+#include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 #endif
 #include "stressbalance/ssa/SSAFD.hh"
 #include "pism_python.hh"
@@ -649,20 +650,47 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "inverse/TaoUtil.hh"
 
 %include "inverse/IPTaoTikhonovProblem.hh"
+
+#################### IP_SSATauc... #############################
+
 # Instantiate the base class for IP_SSATaucTaoTikhonovProblem
 # so that SWIG will implement the base class methods.
-%template(IP_SSATaucTaoTikhonovProblemBaseClass)  IPTaoTikhonovProblem<IP_SSATaucForwardProblem>;
+%template(IP_SSATaucTaoTikhonovProblemBaseClass)  
+          IPTaoTikhonovProblem<IP_SSATaucForwardProblem>;
 
 %shared_ptr(IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>)
+
 %feature("director") IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
+
 %template(IP_SSATaucTaoTikhonovProblemListener)  IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
+
 %include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
+
 %template(IP_SSATaucTaoTikhonovSolver) TaoBasicSolver<IP_SSATaucTaoTikhonovProblem>;
+
 
 %shared_ptr(IP_SSATaucTaoTikhonovProblemLCLListener)
 %feature("director") IP_SSATaucTaoTikhonovProblemLCLListener;
 %include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
 %template(IP_SSATaucTaoTikhonovProblemLCLSolver) TaoBasicSolver< IP_SSATaucTaoTikhonovProblemLCL >;
+
+
+#################### IP_SSAHardav... #############################
+
+%template(IP_SSAHardavTaoTikhonovProblemBaseClass)
+          IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>;
+
+%shared_ptr(IPTaoTikhonovProblemListener<IP_SSAHardavForwardProblem>)
+
+%feature("director") IPTaoTikhonovProblemListener<IP_SSAHardavForwardProblem>;
+
+%template(IP_SSAHardavTaoTikhonovProblemListener)
+          IPTaoTikhonovProblemListener<IP_SSAHardavForwardProblem>;
+
+%include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
+
+%template(IP_SSAHardavTaoTikhonovSolver)
+          TaoBasicSolver<IP_SSAHardavTaoTikhonovProblem>;
 
 #endif
 

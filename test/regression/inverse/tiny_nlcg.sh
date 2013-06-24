@@ -24,7 +24,7 @@ $PYTHONEXEC build_tiny.py -Mx 9 -My 9
 $PYTHONEXEC make_synth_ssa.py -i tiny.nc -o inv_data.nc \
               -pseudo_plastic -pseudo_plastic_q 0.25 -regional \
               -ssa_dirichlet_bc -generate_ssa_observed -ssa_method fem \
-              -tauc_prior_const 70000
+              -design_prior_const 70000 -inv_ssa tauc
 
 # Run the inversion code
 $PYTHONEXEC pismi.py \

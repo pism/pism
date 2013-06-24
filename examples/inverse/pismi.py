@@ -341,24 +341,6 @@ if __name__ == "__main__":
     design_prior.copy_from(design)
     vecs.add(design_prior,writing=True)
 
-  if design_var == 'tauc':
-    adjustTauc(vecs.ice_mask,design_prior)
-
-  # Convert design_prior -> zeta_prior
-  zeta_prior = PISM.IceModelVec2S();
-  zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
-  design_param.convertFromDesignVariable(design_prior,zeta_prior)
-  vecs.add(zeta_prior,writing=True)
-
-  # If the inverse data file has a variable tauc/hardav_true, this is probably
-  # a synthetic inversion.  We'll load it now so that it will get written
-  # out, if needed, at the end of the computation in the output file.
-  if PISM.util.fileHasVariable(inv_data_filename,"%s_true" % design_var):
-    design_true = createDesignVec(grid,design_var,'%s_true' % design_var)
-    design_true.regrid(inv_data_filename,True)
-    design_true.read_attributes(inv_data_filename)
-    vecs.add(design_true,writing=saving_inv_data)
-
   if using_zeta_fixed_mask:
     if PISM.util.fileHasVariable(inv_data_filename,"zeta_fixed_mask"):
       zeta_fixed_mask = PISM.model.createZetaFixedMaskVec(grid)
@@ -376,8 +358,19 @@ if __name__ == "__main__":
             if mq.grounded_ice(i,j):
               zeta_fixed_mask[i,j] = 0;
         vecs.add(zeta_fixed_mask)
+
+        adjustTauc(vecs.ice_mask,design_prior)
+      elif design_var == 'hardav':
+        PISM.logging.logPrattle("Skipping 'zeta_fixed_mask' for design variable 'hardav'; no natural locations to fix its value.")
+        pass
       else:
         raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
+
+  # Convert design_prior -> zeta_prior
+  zeta_prior = PISM.IceModelVec2S();
+  zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
+  design_param.convertFromDesignVariable(design_prior,zeta_prior)
+  vecs.add(zeta_prior,writing=True)
 
   # Determine the initial guess for zeta.  If we are restarting, load it from
   # the output file.  Otherwise, if 'zeta_inv' is in the inverse data file, use it.
@@ -420,6 +413,15 @@ if __name__ == "__main__":
     vel_ssa_observed.copy_from(vel_surface_observed)
     vel_ssa_observed.add(-1,vel_sia_observed)
     vecs.add(vel_ssa_observed,writing=True)
+
+  # If the inverse data file has a variable tauc/hardav_true, this is probably
+  # a synthetic inversion.  We'll load it now so that it will get written
+  # out, if needed, at the end of the computation in the output file.
+  if PISM.util.fileHasVariable(inv_data_filename,"%s_true" % design_var):
+    design_true = createDesignVec(grid,design_var,'%s_true' % design_var)
+    design_true.regrid(inv_data_filename,True)
+    design_true.read_attributes(inv_data_filename)
+    vecs.add(design_true,writing=saving_inv_data)
 
   # Establish a logger which will save logging messages to the output file.  
   message_logger = PISM.logging.CaptureLogger(output_filename,'pismi_log');

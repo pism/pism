@@ -132,7 +132,7 @@ public:
     return m_velocity;
   }
 
-  //! Exposes the \f$\tau_c\f$ parameterization being used.
+  //! Exposes the design variable parameterization being used.
   virtual IPDesignVariableParameterization & design_param() {
     return m_design_param;
   }

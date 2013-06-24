@@ -455,7 +455,13 @@ netcdf pism_config {
     
     pism_config:inv_ssa_tauc_max = 5e7;
     pism_config:inv_ssa_tauc_max_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
-    
+
+    pism_config:inv_ssa_hardav_min = 0;
+    pism_config:inv_ssa_hardav_min_doc = "Pa s^(1/3); Minimum allowed value of hardav for inversions with bound constraints";
+
+    pism_config:inv_ssa_hardav_max = 1e10;
+    pism_config:inv_ssa_hardav_max_doc = "Pa s^(1/3); Maximum allowed value of hardav for inversions with bound constraints";
+
     pism_config:inv_target_misfit = 100;
     pism_config:inv_target_misfit_doc = "m/year; desired root misfit for SSA inversions";
     
@@ -481,13 +487,13 @@ netcdf pism_config {
     pism_config:design_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for design variable parameterization type 'trunc'";
 
     pism_config:design_param_hardav_scale = 1e8;
-    pism_config:design_param_hardav_scale_doc = "Pa s^-3; typical size of ice hardness";
+    pism_config:design_param_hardav_scale_doc = "Pa s^(1/3); typical size of ice hardness";
 
     pism_config:design_param_hardav_eps     = 1e4;
-    pism_config:design_param_hardav_eps_doc = "Pa  s^-3; tiny hardav used as a substitute for 0 in some tauc parameterizations";
+    pism_config:design_param_hardav_eps_doc = "Pa  s^(1/3); tiny hardav used as a substitute for 0 in some tauc parameterizations";
 
     pism_config:design_param_trunc_hardav0 = 1e6;
-    pism_config:design_param_trunc_hardav0_doc = "Pa s^-3; transition point of change to linear behaviour for design variable parameterization type 'trunc'";
+    pism_config:design_param_trunc_hardav0_doc = "Pa s^(1/3); transition point of change to linear behaviour for design variable parameterization type 'trunc'";
 
 
     pism_config:beta_CC = 7.9e-8;
