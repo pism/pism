@@ -341,8 +341,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 
         for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
           const FEFunctionGerm &testqk = test[q][k];
-          du_e[k].u += JxW[q]*(d_nuH*(testqk.dx*(2*Duqq[0]+Duqq[1] + testqk.dy*Duqq[2])));
-          du_e[k].v += JxW[q]*(d_nuH*(testqk.dy*(2*Duqq[1]+Duqq[0] + testqk.dx*Duqq[2])));
+          du_e[k].u += JxW[q]*d_nuH*(testqk.dx*(2*Duqq[0]+Duqq[1]) + testqk.dy*Duqq[2]);
+          du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1]+Duqq[0]) + testqk.dx*Duqq[2]);
         }
       } // q
       m_dofmap.addLocalResidualBlock(du_e,du_a);
