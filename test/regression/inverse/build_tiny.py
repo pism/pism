@@ -61,16 +61,16 @@ if __name__ == '__main__':
   # Build the grid.
   grid = PISM.Context().newgrid()
   config = grid.config
-  PISM.util.init_grid(grid,Lx,Ly,Lz,Mx,My,Mz,PISM.NOT_PERIODIC)
+  PISM.util.PISM.model.initGrid(grid,Lx,Ly,Lz,Mx,My,Mz,PISM.NOT_PERIODIC)
   vecs = PISM.model.ModelVecs();
-  vecs.add( PISM.util.standardIceSurfaceVec( grid ), 'surface')
-  vecs.add( PISM.util.standardIceThicknessVec( grid ), 'thickness')
-  vecs.add( PISM.util.standardBedrockElevationVec(grid), 'bed')
-  vecs.add( PISM.util.standardYieldStressVec( grid ), 'tauc')
-  vecs.add( PISM.util.standardEnthalpyVec( grid ), 'enthalpy' )
-  vecs.add( PISM.util.standardIceMask( grid ), 'ice_mask' )
-  vecs.add( PISM.util.standardNoModelMask( grid ), 'no_model_mask' )
-  vecs.add( PISM.util.standard2dVelocityVec( grid, name='_ssa_bc',desc='SSA Dirichlet BC') )
+  vecs.add( PISM.model.createIceSurfaceVec( grid ), 'surface')
+  vecs.add( PISM.model.createIceThicknessVec( grid ), 'thickness')
+  vecs.add( PISM.model.createBedrockElevationVec(grid), 'bed')
+  vecs.add( PISM.model.createYieldStressVec( grid ), 'tauc')
+  vecs.add( PISM.model.createEnthalpyVec( grid ), 'enthalpy' )
+  vecs.add( PISM.model.createIceMaskVec( grid ), 'ice_mask' )
+  vecs.add( PISM.model.createNoModelMaskVec( grid ), 'no_model_mask' )
+  vecs.add( PISM.model.create2dVelocityVec( grid, name='_ssa_bc',desc='SSA Dirichlet BC') )
 
   # Set constant coefficients.
   vecs.enthalpy.set(enth0)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
   bed = vecs.bed
   thickness = vecs.thickness
 
-  with PISM.util.Access(comm=[bed,thickness]):
+  with PISM.vec.Access(comm=[bed,thickness]):
     for (i,j) in grid.points():
       x=grid.x[i]; y=grid.y[j]
       (b,t) = geometry(x,y)
@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
   tauc = vecs.tauc; mask = vecs.ice_mask
   tauc_free_bedrock = config.get('high_tauc')
-  with PISM.util.Access(comm=tauc,nocomm=mask):
+  with PISM.vec.Access(comm=tauc,nocomm=mask):
     for (i,j) in grid.points():
       x=grid.x[i]; y=grid.y[j]
       tauc[i,j] = stream_tauc(x,y)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
   vecs.vel_ssa_bc.set(0.)
   no_model_mask = vecs.no_model_mask
   no_model_mask.set(0)
-  with PISM.util.Access(comm=[no_model_mask]):
+  with PISM.vec.Access(comm=[no_model_mask]):
     for (i,j) in grid.points():
       if (i==0) or (i==grid.Mx-1) or (j==0) or (j==grid.My-1):
         no_model_mask[i,j] = 1

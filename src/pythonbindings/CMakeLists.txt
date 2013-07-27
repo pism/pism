@@ -105,13 +105,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       COMPONENT RuntimeLibraries
     )
 
-    install(DIRECTORY
-      ${CMAKE_SOURCE_DIR}/site-packages/PISM
-      DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}
-      USE_SOURCE_PERMISSIONS
-      COMPONENT RuntimeLibraries
-      PATTERN ".svn" EXCLUDE
-    )
 
 # The python code snippet below returns 1 if python can
 # import a PISM and if the directory of said PISM matches
@@ -133,13 +126,13 @@ if(NOT PISM_PYTHON_MATCHES)
 endif()
 " )
 
+
 add_custom_target (install_python_bindings_in_the_build_directory ALL
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/site-packages/ ${CMAKE_BINARY_DIR}
-  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_cpp_LOCATION} ${CMAKE_BINARY_DIR}/PISM/
-  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_petsc_version_LOCATION} ${CMAKE_BINARY_DIR}/PISM/
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${CMAKE_BINARY_DIR}/PISM/
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${CMAKE_BINARY_DIR}/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_cpp_LOCATION} ${CMAKE_BINARY_DIR}/site-packages/PISM
+  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_petsc_version_LOCATION} ${CMAKE_BINARY_DIR}/site-packages/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
   VERBATIM
-  DEPENDS ${SWIG_MODULE_cpp_REAL_NAME})
+  DEPENDS ${SWIG_MODULE_cpp_REAL_NAME}  _petsc_version install_site_packages_in_the_build_directory )
 
 endif(Pism_BUILD_PYTHON_BINDINGS)

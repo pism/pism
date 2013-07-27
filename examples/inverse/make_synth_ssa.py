@@ -21,15 +21,14 @@
 
 import PISM, sys, time, math
 
-tauc_prior_scale = 0.2
-tauc_prior_const = None
-
+design_prior_scale = 0.2
+design_prior_const = None
 
 def groundedIceMisfitWeight(modeldata):
   grid = modeldata.grid
-  weight = PISM.util.standardVelocityMisfitWeight(grid)
+  weight = PISM.model.createVelocityMisfitWeightVec(grid)
   mask = modeldata.vecs.ice_mask
-  with PISM.util.Access(comm=weight,nocomm=mask):
+  with PISM.vec.Access(comm=weight,nocomm=mask):
     weight.set(0.)
     grounded = PISM.MASK_GROUNDED
     for (i,j) in grid.points():
@@ -40,11 +39,11 @@ def groundedIceMisfitWeight(modeldata):
 
 def fastIceMisfitWeight(modeldata,threshold):
   grid = modeldata.grid
-  weight = PISM.util.standardVelocityMisfitWeight(grid)
+  weight = PISM.model.createVelocityMisfitWeightVec(grid)
   mask    = modeldata.vecs.ice_mask
   vel_ssa = modeldata.vecs.vel_ssa
   threshold = threshold*threshold
-  with PISM.util.Access(comm=weight,nocomm=[vel_ssa,mask]):
+  with PISM.vec.Access(comm=weight,nocomm=[vel_ssa,mask]):
     weight.set(0.)
     grounded = PISM.MASK_GROUNDED
     for (i,j) in grid.points():
@@ -86,14 +85,15 @@ if __name__ == '__main__':
   for o in PISM.OptionsGroup(com,"","SSA Forward"):
     input_file_name = PISM.optionsString("-i","file to bootstrap from")
     output_file_name = PISM.optionsString("-o","output file",default="make_synth_ssa.nc")
-    tauc_prior_scale = PISM.optionsReal("-tauc_prior_scale","initial guess for tauc to be this factor of the true value",default=tauc_prior_scale)
-    tauc_prior_const = PISM.optionsReal("-tauc_prior_const","initial guess for tauc to be this constant",default=tauc_prior_const)
+    design_prior_scale = PISM.optionsReal("-design_prior_scale","initial guess for design variable to be this factor of the true value",default=design_prior_scale)
+    design_prior_const = PISM.optionsReal("-design_prior_const","initial guess for design variable to be this constant",default=design_prior_const)
     noise = PISM.optionsReal("-rms_noise","pointwise rms noise to add (in m/a)",default=None)
     misfit_weight_type = PISM.optionsList(context.com,"-misfit_type","Choice of misfit weight function",["grounded","fast"],"grounded")
     fast_ice_speed = PISM.optionsReal("-fast_ice_speed","Threshold in m/a for determining if ice is fast", 500.)
     generate_ssa_observed = PISM.optionsFlag("-generate_ssa_observed","generate observed SSA velocities",default=False)
     is_regional = PISM.optionsFlag("-regional","Compute SIA/SSA using regional model semantics",default=False)
-
+    design_var = PISM.optionsList(context.com,"-inv_ssa","design variable for inversion", ["tauc", "hardav"], "tauc")
+    
   
   ssa_run = PISM.ssa.SSAFromInputFile(input_file_name)
 
@@ -109,19 +109,45 @@ if __name__ == '__main__':
   grid = modeldata.grid
   vecs = modeldata.vecs
 
-  # Generate a prior guess for tauc
-  tauc_prior = PISM.util.standardYieldStressVec(grid,name='tauc_prior',desc="initial guess for (pseudo-plastic) basal yield stress in an inversion")
-  vecs.add(tauc_prior,writing=True)
-  if not tauc_prior_const is None:
-    tauc_prior.set(tauc_prior_const)
-  else:
-    tauc_prior.copy_from(modeldata.vecs.tauc)
-    tauc_prior.scale(tauc_prior_scale)
+  if design_var == 'tauc':
+    # Generate a prior guess for tauc
+    tauc_prior = PISM.model.createYieldStressVec(grid,name='tauc_prior',desc="initial guess for (pseudo-plastic) basal yield stress in an inversion")
+    vecs.add(tauc_prior,writing=True)
+    if design_prior_const is not None:
+      tauc_prior.set(design_prior_const)
+    else:
+      tauc_prior.copy_from(modeldata.vecs.tauc)
+      tauc_prior.scale(design_prior_scale)
   
-  tauc_true = modeldata.vecs.tauc
-  tauc_true.set_name('tauc_true')
-  tauc_true.set_attrs("diagnostic", "value of basal yield stress used to generate synthetic SSA velocities", "Pa", ""); 
-  vecs.markForWriting(tauc_true)
+    tauc_true = modeldata.vecs.tauc
+    tauc_true.set_name('tauc_true')
+    tauc_true.set_attrs("diagnostic", "value of basal yield stress used to generate synthetic SSA velocities", "Pa", ""); 
+    vecs.markForWriting(tauc_true)
+  elif design_var == 'hardav':
+    # Generate a prior guess for hardav
+
+    EC = PISM.EnthalpyConverter(config)
+    ice_factory = PISM.IceFlowLawFactory(grid.com, "ssa_", config, EC);
+    ice_factory.removeType(PISM.ICE_GOLDSBY_KOHLSTEDT);
+    ice_factory.setType(config.get_string("ssa_flow_law")); 
+    ice_factory.setFromOptions();
+    flow_law = ice_factory.create()
+    hardav = PISM.model.createAveragedHardnessVec(grid)
+    flow_law.averaged_hardness_vec(vecs.thickness, vecs.enthalpy, hardav)
+    vecs.add(hardav)
+
+    hardav_prior = PISM.model.createAveragedHardnessVec(grid,name='hardav_prior',desc="initial guess for vertically averaged ice hardness in an inversion")
+    vecs.add(hardav_prior,writing=True)
+    if design_prior_const is not None:
+      hardav_prior.set(design_prior_const)
+    else:
+      hardav_prior.copy_from(modeldata.vecs.hardav)
+      hardav_prior.scale(hardav_prior_scale)
+  
+    hardav_true = modeldata.vecs.hardav
+    hardav_true.set_name('hardav_true')
+    hardav_true.set_attrs("diagnostic", "vertically averaged ice hardness used to generate synthetic SSA velocities", "Pa s^0.33333", ""); 
+    vecs.markForWriting(hardav_true)
 
   vel_ssa_observed = vecs.vel_ssa
   vel_ssa_observed.rename("_ssa_observed","'observed' SSA velocities'","")
@@ -134,7 +160,7 @@ if __name__ == '__main__':
       sia_solver = PISM.SIAFD_Regional
     vel_sia_observed = PISM.sia.computeSIASurfaceVelocities(modeldata,sia_solver)
     vel_ssa_observed.rename("_sia_observed","'observed' SIA velocities'","")
-    vel_surface_observed = PISM.util.standard2dVelocityVec(grid,"_surface_observed","observed surface velocities",stencil_width=1)
+    vel_surface_observed = PISM.model.create2dVelocityVec(grid,"_surface_observed","observed surface velocities",stencil_width=1)
     vel_surface_observed.copy_from(vel_sia_observed)
     vel_surface_observed.add(1.,vel_ssa_observed)
     vecs.markForWriting(vel_surface_observed)
@@ -148,12 +174,8 @@ if __name__ == '__main__':
     misfit_weight = groundedIceMisfitWeight(modeldata)
   modeldata.vecs.add(misfit_weight,writing=True)    
 
-  # Add a default element mask for now.
-  vecs.add( PISM.util.standardMisfitElementMask(grid), writing=True )
-  vecs.misfit_element_mask.set(1)
-
   if not noise is None:
-    u_noise = PISM.sipletools.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
+    u_noise = PISM.vec.randVectorV(grid,noise/math.sqrt(2),final_velocity.get_stencil_width())
     final_velocity.add(grid.convert(1.0, "m/year", "m/second"),
                        u_noise)
 

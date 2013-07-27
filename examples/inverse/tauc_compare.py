@@ -61,7 +61,7 @@ pp.imshow(tauc_diff.transpose()/tauc_true.transpose(),origin='lower',vmin=-optio
 pp.title(r'$(\tau_c$ - true) / true')
 pp.colorbar()
 
-# side-by-side comparison like from 'vel2tauc.py -inv_final_plot'
+# side-by-side comparison
 pp.figure()
 pp.subplot(1,2,1)
 pp.imshow(tauc.transpose(),origin='lower',vmin=0.0,vmax=options.tauc_cap)

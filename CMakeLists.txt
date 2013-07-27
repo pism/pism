@@ -23,7 +23,7 @@ file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_c
 # The default options cache
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
-option (Pism_BUILD_PYTHON_BINDINGS "Build (experimental) python bindings" OFF)
+option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_USE_FFTW "Use FFTW in the bed deformation code." ON)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." ON)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." ON)
@@ -144,18 +144,8 @@ install (PROGRAMS
   util/pism_config_editor.py
   DESTINATION ${Pism_BIN_DIR})
 
-# Install some python-based pieces of PISM
-if (Pism_BUILD_PYTHON_BINDINGS)
-  install (PROGRAMS
-    examples/python/ssa_forward.py
-    examples/python/sia_forward.py
-    examples/inverse/make_synth_ssa.py
-    examples/inverse/vel2tauc.py
-    examples/inverse/verify_ssa_inv.py
-    DESTINATION ${Pism_BIN_DIR} )
-endif()
-
 add_subdirectory (src)
+add_subdirectory (site-packages)
 
 if (Pism_BUILD_PDFS)
   add_subdirectory (doc)
@@ -164,6 +154,8 @@ else()
 endif()
 
 add_subdirectory (doc/browser EXCLUDE_FROM_ALL)
+
+add_subdirectory (doc/pismpython EXCLUDE_FROM_ALL)
 
 # PISM regression testing
 ENABLE_TESTING()

@@ -47,16 +47,17 @@ historystr = asctime() + ': ' + historysep.join(argv) + '\n'
 setattr(ncfile, 'history', historystr)
 
 # define time dimension, then time variable
-Stdim = ncfile.createDimension('t', None)
-Stvar = ncfile.createVariable('t', 'f4', ('t',))
+Stdim = ncfile.createDimension('time', None)
+Stvar = ncfile.createVariable('time', 'f4', ('time',))
 setattr(Stvar, 'units', 'years since 1-1-1')
+setattr(Stvar, 'calendar', '365_day')
 
 # define climate data variables and attributes
-d18Oseavar = ncfile.createVariable('delta_18_O', 'f4', ('t',))
+d18Oseavar = ncfile.createVariable('delta_18_O', 'f4', ('time',))
 setattr(d18Oseavar, 'units', 'normalized O-18') # see specmap_readme.txt
 setattr(d18Oseavar, 'long_name', 'change in oxygen isotope ratio (18^O to 16^O) from present')
 setattr(d18Oseavar, 'interpolation', 'linear')
-dSeavar = ncfile.createVariable('delta_sea_level', 'f4', ('t',))
+dSeavar = ncfile.createVariable('delta_sea_level', 'f4', ('time',))
 setattr(dSeavar, 'units', 'm')
 setattr(dSeavar, 'long_name', 'change in sea level from present')
 
@@ -88,16 +89,17 @@ historystr = asctime() + ': ' + historysep.join(argv) + '\n'
 setattr(ncfile, 'history', historystr)
 
 # define time dimension, variable
-Ttdim = ncfile.createDimension('t', None)
-Ttvar = ncfile.createVariable('t', 'f4', ('t',))
+Ttdim = ncfile.createDimension('time', None)
+Ttvar = ncfile.createVariable('time', 'f4', ('time',))
 setattr(Ttvar, 'units', 'years since 1-1-1')
+setattr(Ttvar, 'calendar', '365_day')
 
 # define climate data variables and attributes
-d18Ovar = ncfile.createVariable('delta_18_O', 'f4', ('t',))
+d18Ovar = ncfile.createVariable('delta_18_O', 'f4', ('time',))
 setattr(d18Ovar, 'units', 'per mil relative to the SMOW standard') # see grip18o.readme
 setattr(d18Ovar, 'long_name', 'change in isotope ratio 18^O to 16^O (oxygen) from present')
 setattr(d18Ovar, 'interpolation', 'constant_piecewise_forward')
-dTvar = ncfile.createVariable('delta_T', 'f4', ('t',))
+dTvar = ncfile.createVariable('delta_T', 'f4', ('time',))
 setattr(dTvar, 'units', 'Celsius')
 setattr(dTvar, 'long_name', 'change in surface temperature from present')
 setattr(dTvar, 'interpolation', 'constant_piecewise_forward')

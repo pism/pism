@@ -423,23 +423,32 @@ netcdf pism_config {
     pism_config:inv_ssa_method = "tikhonov_lmvm";
     pism_config:inv_ssa_method_doc = "algorithm to use for SSA inversions";
 
-    pism_config:inv_ssa_tauc_param = "exp";
-    pism_config:inv_ssa_tauc_param_doc = "parameterization of tauc used during inversion";
+    pism_config:inv_design_param = "exp";
+    pism_config:inv_design_param_doc = "parameterization of design variables used during inversion";
 
-    pism_config:inv_ssa_tauc_norm = "hilbert";
-    pism_config:inv_ssa_tauc_norm_doc = "norm used for inversion design variables";
+    pism_config:inv_state_func = "meansquare";
+    pism_config:inv_state_func_doc = "functional used for inversion design variables";
 
-    pism_config:inv_ssa_cL2     = 1;
-    pism_config:inv_ssa_cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";
+    pism_config:inv_design_func = "sobolevH1";
+    pism_config:inv_design_func_doc = "functional used for inversion design variables";
+
+    pism_config:inv_design_cL2     = 1;
+    pism_config:inv_design_cL2_doc = "weight of derivative-free part of an H1 norm for inversion design variables";
     
-    pism_config:inv_ssa_cH1     = 0;
-    pism_config:inv_ssa_cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
+    pism_config:inv_design_cH1     = 0;
+    pism_config:inv_design_cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
 
     pism_config:inv_ssa_tv_exponent = 1.2;
     pism_config:inv_ssa_tv_exponent_doc = "Lebesgue exponent for pseudo-TV norm";
 
+    pism_config:inv_log_ratio_scale = 10;
+    pism_config:inv_log_ratio_scale_doc = "Reference scale for log-ratio functionals";
+
     pism_config:inv_ssa_velocity_scale = 100;
     pism_config:inv_ssa_velocity_scale_doc = "m/year; typical size of ice velocities expected during inversion";
+
+    pism_config:inv_ssa_velocity_eps = .1;
+    pism_config:inv_ssa_velocity_eps_doc = "m/year; tiny size of ice velocities during inversion";
 
     pism_config:inv_ssa_length_scale = 50e3;
     pism_config:inv_ssa_length_scale_doc = "m; typical length scale for rescaling derivative norms";
@@ -449,9 +458,15 @@ netcdf pism_config {
     
     pism_config:inv_ssa_tauc_max = 5e7;
     pism_config:inv_ssa_tauc_max_doc = "Pa; Maximum allowed value of tauc for inversions with bound constraints";
-    
-    pism_config:inv_ssa_target_rms_misfit = 100;
-    pism_config:inv_ssa_target_rms_misfit_doc = "m/year; desired RMS misfit for SSA inversions";
+
+    pism_config:inv_ssa_hardav_min = 0;
+    pism_config:inv_ssa_hardav_min_doc = "Pa s^(1/3); Minimum allowed value of hardav for inversions with bound constraints";
+
+    pism_config:inv_ssa_hardav_max = 1e10;
+    pism_config:inv_ssa_hardav_max_doc = "Pa s^(1/3); Maximum allowed value of hardav for inversions with bound constraints";
+
+    pism_config:inv_target_misfit = 100;
+    pism_config:inv_target_misfit_doc = "m/year; desired root misfit for SSA inversions";
     
     pism_config:tikhonov_atol  = 1e-10;
     pism_config:tikhonov_atol_doc = "m/year; absolute threshold for Tikhonov stopping criterion";
@@ -465,14 +480,23 @@ netcdf pism_config {
     pism_config:tikhonov_penalty_weight = 1;
     pism_config:tikhonov_penalty_weight_doc = "penalty parameter for Tikhonov inversion";
     
-    pism_config:tauc_param_tauc_scale = 100000;
-    pism_config:tauc_param_tauc_scale_doc = "Pa; typical size of yield stresses";
+    pism_config:design_param_tauc_scale = 100000;
+    pism_config:design_param_tauc_scale_doc = "Pa; typical size of yield stresses";
 
-    pism_config:tauc_param_tauc_eps     = 100;
-    pism_config:tauc_param_tauc_eps_doc = "Pa; tiny yield stress used as a substitute for 0 in some tauc parameterizations";
+    pism_config:design_param_tauc_eps     = 100;
+    pism_config:design_param_tauc_eps_doc = "Pa; tiny yield stress used as a substitute for 0 in some tauc parameterizations";
 
-    pism_config:tauc_param_trunc_tauc0 = 1000;
-    pism_config:tauc_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for tauc_parameterization type 'trunc'";
+    pism_config:design_param_trunc_tauc0 = 1000;
+    pism_config:design_param_trunc_tauc0_doc = "Pa; transition point of change to linear behaviour for design variable parameterization type 'trunc'";
+
+    pism_config:design_param_hardav_scale = 1e8;
+    pism_config:design_param_hardav_scale_doc = "Pa s^(1/3); typical size of ice hardness";
+
+    pism_config:design_param_hardav_eps     = 1e4;
+    pism_config:design_param_hardav_eps_doc = "Pa  s^(1/3); tiny hardav used as a substitute for 0 in some tauc parameterizations";
+
+    pism_config:design_param_trunc_hardav0 = 1e6;
+    pism_config:design_param_trunc_hardav0_doc = "Pa s^(1/3); transition point of change to linear behaviour for design variable parameterization type 'trunc'";
 
 
     pism_config:beta_CC = 7.9e-8;
@@ -711,7 +735,7 @@ netcdf pism_config {
    pism_config:output_medium = "acab artm tillwat tillwp cbar cbase csurf cflx climatic_mass_balance diffusivity ice_surface_temp mask schoofs_theta tauc taud_mag thksmooth topgsmooth usurf wvelsurf temp_pa liqfrac enthalpy IcebergMask edot_1 edot_2";
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size is selected. Does not include fields written by boundary models.";
 
-   pism_config:output_big = "acab age artm bfrict bheatflx bmelt tillwat tillwp cbar cbase cell_area cflx climatic_mass_balance csurf dbdt diffusivity enthalpy enthalpybase enthalpysurf hardav ice_surface_temp lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf nuH";
+   pism_config:output_big = "acab age artm bfrict bheatflx bmelt tillwat tillwp cbar cbase cell_area cflx climatic_mass_balance csurf dbdt diffusivity enthalpy enthalpybase enthalpysurf flux_divergence hardav ice_surface_temp lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf nuH";
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 
    pism_config:backup_interval = 1.0;

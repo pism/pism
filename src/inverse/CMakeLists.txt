@@ -1,26 +1,29 @@
 # Classes for inverse problems.
 
+include_directories ( functional )
+
 set(PISM_INVERSE_SOURCES
-./InvTaucParameterization.cc
-./InvSSAForwardProblem.cc
-./InvSSAForwardProblem_dep.cc
-./Functional.cc
-./L2NormFunctional.cc
-./H1NormFunctional.cc
-./GroundedIceH1NormFunctional.cc
-./LogRatioFunctional.cc
-./LogRelativeFunctional.cc
-./TotalVariationFunctional.cc
-./MeanSquareFunctional.cc
-./TwoBlockVec.cc
-./InvSSATikhonovGN.cc  
+./IPDesignVariableParameterization.cc
+./IP_SSATaucForwardProblem.cc
+./IP_SSAHardavForwardProblem.cc
+./IPTwoBlockVec.cc
+./IP_SSATaucTikhonovGNSolver.cc  
+./functional/IPFunctional.cc
+./functional/IP_L2NormFunctional.cc
+./functional/IP_H1NormFunctional.cc
+./functional/IPGroundedIceH1NormFunctional.cc
+./functional/IPLogRatioFunctional.cc
+./functional/IPLogRelativeFunctional.cc
+./functional/IPTotalVariationFunctional.cc
+./functional/IPMeanSquareFunctional.cc
 )
 
 if(Pism_USE_TAO)
   list (APPEND PISM_INVERSE_SOURCES
     ./TaoUtil.cc
-    ./InvSSATikhonov.cc
-    ./InvSSATikhonovLCL.cc
+    ./IP_SSATaucTaoTikhonovProblem.cc
+    ./IP_SSATaucTaoTikhonovProblemLCL.cc
+    ./IP_SSAHardavTaoTikhonovProblem.cc
     )
 endif()
 

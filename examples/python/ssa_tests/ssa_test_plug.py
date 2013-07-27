@@ -32,7 +32,7 @@ glen_n = 3.
 class test_plug(PISM.ssa.SSAExactTestCase):
   def _initGrid(self):
     Mx = self.Mx; My = self.My
-    PISM.util.init_shallow_grid(self.grid,L,L,Mx,My,PISM.NONE)
+    PISM.model.initShallowGrid(self.grid,L,L,Mx,My,PISM.NONE)
 
   def _initPhysics(self):
     config = self.config
@@ -66,7 +66,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     surface = vecs.surface
     
     grid = self.grid
-    with PISM.util.Access(comm=[bc_mask, vel_bc, bed, surface]):
+    with PISM.vec.Access(comm=[bc_mask, vel_bc, bed, surface]):
       for (i,j) in grid.points():
         x=grid.x[i]; y=grid.y[j]
         

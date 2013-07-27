@@ -22,6 +22,9 @@
 #include <petscsys.h>
 #include "PISMUnits.hh"
 
+class IceModelVec2S;
+class IceModelVec3;
+
 class EnthalpyConverter;
 class NCConfigVariable;
 
@@ -70,6 +73,10 @@ public:
                                       PetscInt kbelowH,
                                       const PetscReal *zlevels,
                                       const PetscReal *enthalpy) const;
+
+  virtual PetscErrorCode averaged_hardness_vec(
+    IceModelVec2S &thickness, IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
+
   virtual PetscReal exponent() const { return n; }
   virtual PetscReal enhancement_factor() const { return e; }
 

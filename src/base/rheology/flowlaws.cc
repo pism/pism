@@ -20,6 +20,7 @@
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
 #include "pism_options.hh"
+#include "iceModelVec.hh"
 
 #include "NCVariable.hh"
 
@@ -118,6 +119,43 @@ PetscReal IceFlowLaw::flow(PetscReal stress, PetscReal enthalpy,
 PetscReal IceFlowLaw::hardness_parameter(PetscReal E, PetscReal p) const {
   return pow(softness_parameter(E, p), -1.0/n);
 }
+
+PetscErrorCode IceFlowLaw::averaged_hardness_vec(
+  IceModelVec2S &thickness, IceModelVec3& enthalpy, IceModelVec2S &hardav) const {
+    PetscErrorCode ierr;
+    
+    IceGrid *grid = thickness.get_grid();
+    
+    PetscReal **thickness_a;
+    PetscReal **hardav_a;
+    
+    ierr = thickness.get_array(thickness_a); CHKERRQ(ierr);
+    ierr = hardav.get_array(hardav_a); CHKERRQ(ierr);
+    ierr = enthalpy.begin_access(); CHKERRQ(ierr);
+    
+    for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
+      for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
+
+        // Evaluate column integrals in flow law at every quadrature point's column
+        PetscReal H = thickness_a[i][j];
+        PetscReal *enthColumn;
+        ierr = enthalpy.getInternalColumn(i, j, &enthColumn); CHKERRQ(ierr);
+        hardav_a[i][j] = this->averaged_hardness(H, grid->kBelowHeight(H),
+                                                  &(grid->zlevels[0]), enthColumn);
+      }
+    }
+
+    ierr = thickness.end_access(); CHKERRQ(ierr);
+    ierr = hardav.end_access(); CHKERRQ(ierr);
+    ierr = enthalpy.end_access(); CHKERRQ(ierr);
+
+    if(hardav.has_ghosts()) {
+      hardav.update_ghosts();
+    }
+    
+    return 0;
+}
+
 
 //! Computes vertical average of B(E, pressure) ice hardness, namely \f$\bar
 //! B(E, p)\f$. See comment for hardness_parameter().

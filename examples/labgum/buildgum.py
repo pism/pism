@@ -18,42 +18,55 @@ try:
 except:
     from netCDF3 import Dataset as CDF
 
+import argparse
+
+parser = argparse.ArgumentParser(description='Create PISM-readable bootstrap file for validation using constant flux experiment from Sayag & Worster (2012).')
+parser.add_argument('Mx',
+                   help='number of points in each direction (square grid)')
+parser.add_argument('ncfile', metavar='FILENAME',
+                   help='output file name to create (NetCDF)')
+args = parser.parse_args()
+
 # lab setup is table with hole in the middle into which is piped the
 # shear-thinning fluid, which is Xanthan gum 1% solution
-Lx = 250.0e-3    # m;  = 250 mm;  table is approx 500 mm x 500 mm?
+Lx = 260.0e-3    # m;  = 260 mm;  maximum observed radius is 25.2 cm so we go out just a bit
 Ly = Lx          # square table
-flux = 3.0e-3    # kg s-1;  = 3 g s-1;  
-pipeR = 20.1e-3  # m;  = 20.1 mm;  input pipe has this radius  FIXME: GUESS
+flux = 3.8173e-3 # kg s-1;  = 3 g s-1; email from Sayag
+pipeR = 8.0e-3   # m;  = 8 mm;  input pipe has this radius; email from Sayag
 rho = 1000.0     # kg m-3;  density of gum = density of fresh water
 temp = 20.0      # C;  fluid is at 20 deg
 
-# see gumparams.cdl for additional parameter settings
-from subprocess import call
-CONF = 'gumparams'
-call(['rm', '-f', CONF + '.nc'])
-call(['ncgen', '-o', CONF + '.nc', CONF + '.cdl'])
-print('  PISM-readable config override file %s written' % (CONF + '.nc'))
-
 # set up the grid:
-Mx = 1001
-My = 1001
+Mx = int(args.Mx)
+My = Mx
+print "  creating grid of Mx = %d by My = %d points ..." % (Mx,My)
 x = np.linspace(-Lx,Lx,Mx)
 y = np.linspace(-Ly,Ly,My)
+dx = x[1]-x[0]
+dy = dx
+print "  cells have dimensions dx = %.3f mm by dy = %.3f mm ..." % (dx*1000.0,dy*1000.0)
 
 # create dummy fields
 [xx,yy] = np.meshgrid(x,y);  # if there were "ndgrid" in numpy we would use it
+
 topg = np.zeros((Mx,My))
 thk  = np.zeros((Mx,My))  # no fluid on table at start
 artm = np.zeros((Mx,My)) + 273.15 + temp; # 20 degrees Celsius
-fluxthickness = flux / (rho * np.pi * pipeR**2)  # flux as m s-1
-acab = np.zeros((Mx,My)) + fluxthickness;
-acab[xx**2 + yy**2 > pipeR**2] = 0.0;
 
-# Output filename
-ncfile = 'initgum.nc'
+# smb = flux as m s-1, but scaled so that the total is actually flux,
+#       even on a coarse grid
+smb = np.zeros((Mx,My));
+smb[xx**2 + yy**2 <= pipeR**2] = 1.0;
+smbpos = sum(sum(smb))
+if smbpos==0:
+  print "gridding ERROR: no cells have positive input flux ... ending now"
+  sys.exit(1)
+else:
+  print "  input flux > 0 at %d cells ..." % smbpos
+smb = (flux / (rho * smbpos * dx**2) ) * smb
 
 # Write the data:
-nc = CDF(ncfile, "w",format='NETCDF3_CLASSIC') # for netCDF4 module
+nc = CDF(args.ncfile, "w",format='NETCDF3_CLASSIC') # for netCDF4 module
 
 # Create dimensions x and y
 nc.createDimension("x", size=Mx)
@@ -87,9 +100,9 @@ thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
-acab_var = def_var(nc, "climatic_mass_balance", "m s-1", fill_value)
-acab_var.standard_name = "land_ice_surface_specific_mass_balance"
-acab_var[:] = acab
+smb_var = def_var(nc, "climatic_mass_balance", "m s-1", fill_value)
+smb_var.standard_name = "land_ice_surface_specific_mass_balance"
+smb_var[:] = smb
 
 artm_var = def_var(nc, "ice_surface_temp", "K", fill_value)
 artm_var[:] = artm
@@ -101,6 +114,6 @@ historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(nc, 'history', historystr)
 
 nc.close()
-print('  PISM-bootable NetCDF file %s written' % ncfile)
-print('  ... now run   rungum.sh')
+
+print('  ... PISM-bootable NetCDF file %s written' % args.ncfile)
 

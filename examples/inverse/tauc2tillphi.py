@@ -30,7 +30,7 @@ class BasalTillStrength:
 
     self.setFromOptions()
 
-    config        = PISM.global_config()
+    config        = PISM.Context().config
     
     self.hydrology_pressure_fraction = config.get("hydrology_pressure_fraction")
     self.till_c_0 = config.get("till_c_0") * 1e3 # convert from kPa to Pa
@@ -66,7 +66,7 @@ class BasalTillStrength:
 # The updateYieldStress and getBasalWaterPressure come from iMBasal.
 
   def updateYieldStress(self,mask,thickness,bwat,bmr,tillphi,tauc):
-    config = PISM.global_config()
+    config = PISM.Context().config
     hydrology_pressure_fraction = self.hydrology_pressure_fraction#config.get("hydrology_pressure_fraction")
     till_c_0 = self.till_c_0#config.get("till_c_0") * 1e3 # convert from kPa to Pa
     bwat_max = self.bwat_max#config.get("bwat_max");
@@ -75,7 +75,7 @@ class BasalTillStrength:
 
 
     Nmin = 1e45
-    with PISM.util.Access(nocomm=[mask,thickness,bwat,bmr,tillphi],comm=tauc):
+    with PISM.vec.Access(nocomm=[mask,thickness,bwat,bmr,tillphi],comm=tauc):
       mq = PISM.MaskQuery(mask)
       GHOSTS = self.grid.max_stencil_width;
       for (i,j) in self.grid.points_with_ghosts(nGhosts = GHOSTS):
@@ -96,7 +96,7 @@ class BasalTillStrength:
           tauc[i,j] = till_c_0 + N * math.tan((math.pi/180.0) * tillphi[i,j])
 
   def updateTillPhi_algebraic(self,mask,thickness,bwat,bmr,tauc,tillphi,tillphi_prev=None):
-    config = PISM.global_config()
+    config = PISM.Context().config
     hydrology_pressure_fraction = self.hydrology_pressure_fraction#config.get("hydrology_pressure_fraction")
     till_c_0 = self.till_c_0#config.get("till_c_0") * 1e3 # convert from kPa to Pa
     bwat_max = self.bwat_max#config.get("bwat_max");
@@ -108,7 +108,7 @@ class BasalTillStrength:
     vars = [mask,thickness,bwat,bmr,tauc]
     if not tillphi_prev is None:
       vars.append(tillphi_prev)
-    with PISM.util.Access(nocomm=vars,comm=tillphi):
+    with PISM.vec.Access(nocomm=vars,comm=tillphi):
       mq = PISM.MaskQuery(mask)
       GHOSTS = self.grid.max_stencil_width;
       for (i,j) in self.grid.points_with_ghosts(nGhosts = GHOSTS):
@@ -189,7 +189,7 @@ for o in PISM.OptionsGroup(context.com,"","tauc2tillphi"):
   PISM.set_config_from_options(context.com,config)
 
 grid = PISM.Context().newgrid()
-PISM.util.init_grid_from_file(grid,bootfile,
+PISM.model.initGridFromFile(grid,bootfile,
                                 periodicity=PISM.XY_PERIODIC);
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
@@ -203,21 +203,21 @@ if PISM.optionsIsSet("-ssa_glen"):
 else:
   config.set_string("ssa_flow_law", "gpbld")
 
-surface    = PISM.util.standardIceSurfaceVec( grid )
-thickness  = PISM.util.standardIceThicknessVec( grid )
-bed        = PISM.util.standardBedrockElevationVec( grid )
-enthalpy   = PISM.util.standardEnthalpyVec( grid )
-ice_mask   = PISM.util.standardIceMask( grid )
+surface    = PISM.model.createIceSurfaceVec( grid )
+thickness  = PISM.model.createIceThicknessVec( grid )
+bed        = PISM.model.createBedrockElevationVec( grid )
+enthalpy   = PISM.model.createEnthalpyVec( grid )
+ice_mask   = PISM.model.createIceMaskVec( grid )
 v = [surface,thickness,bed,enthalpy,ice_mask]
 for var in v:
   var.regrid(bootfile,True)
-tauc       = PISM.util.standardYieldStressVec( grid )
+tauc       = PISM.model.createYieldStressVec( grid )
 
 # Compute yield stress from PISM state variables
 # (basal melt rate, tillphi, and basal water height)
-bmr   = PISM.util.standardBasalMeltRateVec(grid)
-tillphi = PISM.util.standardTillPhiVec(grid)
-bwat = PISM.util.standardBasalWaterVec(grid)
+bmr   = PISM.model.createBasalMeltRateVec(grid)
+tillphi = PISM.model.createTillPhiVec(grid)
+bwat = PISM.model.createBasalWaterVec(grid)
 for v in [bmr,tillphi,bwat]:
   v.regrid(bootfile,True)
 
@@ -226,7 +226,7 @@ ice_rho = config.get("ice_density")
 basal_till = BasalTillStrength(grid, ice_rho, standard_gravity)
 
 basal_till.updateYieldStress(ice_mask, thickness, bwat, bmr, tillphi,tauc)
-tillphi2 = PISM.util.standardTillPhiVec(grid,name="tillphi_2")
+tillphi2 = PISM.model.createTillPhiVec(grid,name="tillphi_2")
 tillphi2.set(0.)
 basal_till.updateTillPhi_algebraic(ice_mask, thickness, bwat, bmr, tauc, tillphi2, tillphi_prev=tillphi)
 
