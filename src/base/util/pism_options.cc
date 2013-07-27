@@ -791,8 +791,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
                                    "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);
 
-  ierr = config.flag_from_option("vpik", "verbose_pik_messages");  CHKERRQ(ierr);
-
   // Metadata
   ierr = config.string_from_option("title", "run_title"); CHKERRQ(ierr);
   ierr = config.string_from_option("institution", "institution"); CHKERRQ(ierr);
@@ -819,10 +817,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   // kill_icebergs requires part_grid
   if (config.get_flag("kill_icebergs")) {
     config.set_flag_from_option("part_grid", true);
-
-    if (getVerbosityLevel() > 2) {
-      config.set_flag_from_option("verbose_pik_messages", true);
-    }
   }
 
   
