@@ -52,6 +52,8 @@ public:
     sea_level = seaLevel;
     alpha = 1 - config.get("ice_density") / config.get("sea_water_density");
     is_dry_simulation = config.get_flag("is_dry_simulation");
+    icefree_thickness = config.get("mask_icefree_thickness_standard");
+    is_floating_thickness = config.get("mask_is_floating_thickness_standard");
   }
 
   void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
@@ -62,8 +64,8 @@ public:
     const PetscReal  hgrounded = bed + thickness; // FIXME issue #15
     const PetscReal  hfloating = sea_level + alpha*thickness;
 
-    const bool is_floating = hfloating > hgrounded + 1.0,
-      ice_free = thickness < 0.01;
+    const bool is_floating = (hfloating > hgrounded + is_floating_thickness),
+               ice_free    = (thickness < icefree_thickness);
 
     int mask_result;
     PetscReal surface_result;
@@ -104,7 +106,7 @@ public:
   }
 
 protected:
-  PetscReal alpha, sea_level;
+  PetscReal alpha, sea_level, icefree_thickness, is_floating_thickness;
   bool is_dry_simulation;
 };
 
@@ -142,23 +144,24 @@ public:
     return (icy(i + 1, j) || icy(i - 1, j) || icy(i, j + 1) || icy(i, j - 1));
   }
 
-  //! \brief Ice-free margin (at least one of four neighbors has floating ice).
   inline bool next_to_floating_ice(int i, int j)
   {
     return (floating_ice(i + 1, j) || floating_ice(i - 1, j) || floating_ice(i, j + 1) || floating_ice(i, j - 1));
   }
 
-  //! \brief Ice-free margin (at least one of four neighbors has grounded ice).
   inline bool next_to_grounded_ice(int i, int j)
   {
     return (grounded_ice(i + 1, j) || grounded_ice(i - 1, j) || grounded_ice(i, j + 1) || grounded_ice(i, j - 1));
   }
 
- //! \brief belongs to margin of an ice shelf but has ice free land neighbor.
-  inline bool floating_ice_next_to_icefree_land(int i, int j)
+  inline bool next_to_ice_free_land(int i, int j)
   {
-    return floating_ice(i, j) &&
-      (ice_free_land(i + 1, j) || ice_free_land(i - 1, j) || ice_free_land(i, j + 1) || ice_free_land(i, j - 1));
+    return (ice_free_land(i + 1, j) || ice_free_land(i - 1, j) || ice_free_land(i, j + 1) || ice_free_land(i, j - 1));
+  }
+
+  inline bool next_to_ice_free_ocean(int i, int j)
+  {
+    return (ice_free_ocean(i + 1, j) || ice_free_ocean(i - 1, j) || ice_free_ocean(i, j + 1) || ice_free_ocean(i, j - 1));
   }
 
 

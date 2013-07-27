@@ -692,8 +692,8 @@ PetscErrorCode IceModel::set_vars_from_options() {
   return 0;
 }
 
-//! \brief Decide which ice flow law to use.
-PetscErrorCode IceModel::allocate_flowlaw() {
+//! \brief Decide which ice flow law to use by default.
+PetscErrorCode IceModel::set_default_flowlaw() {
   PetscErrorCode ierr;
   string sia_flow_law = config.get_string("sia_flow_law"),
     ssa_flow_law = config.get_string("ssa_flow_law");
@@ -898,7 +898,7 @@ PetscErrorCode IceModel::allocate_submodels() {
   // this has to go first:
   ierr = allocate_enthalpy_converter(); CHKERRQ(ierr);
   // then this:
-  ierr = allocate_flowlaw(); CHKERRQ(ierr);
+  ierr = set_default_flowlaw(); CHKERRQ(ierr);
 
   ierr = allocate_iceberg_remover(); CHKERRQ(ierr);
 

@@ -151,8 +151,8 @@ PetscErrorCode IceModel::eigenCalving() {
         // calving law
         if (eigen2 > eigenCalvOffset && eigen1 > 0.0) { // if spreading in all directions
           calvrateHorizontal = eigenCalvFactor * eigen1 * (eigen2 - eigenCalvOffset);
-          // eigen1 * eigen2 has units [s^ - 2] and calvrateHorizontal [m*s^1]
-          // hence, eigenCalvFactor has units [m*s]
+          // eigen1 * eigen2 has units [s^-2] and calvrateHorizontal [m s^-1]
+          // hence, eigenCalvFactor has units [m s]
         } else calvrateHorizontal = 0.0;
 
         // calculate mass loss with respect to the associated ice thickness and the grid size:

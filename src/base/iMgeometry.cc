@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstring>
 #include <petscdmda.h>
+#include <assert.h>
 
 #include "iceModel.hh"
 #include "Mask.hh"
@@ -45,14 +46,14 @@
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
 
-  ierr = update_mask();              CHKERRQ(ierr);
-  ierr = update_surface_elevation(); CHKERRQ(ierr);
+  ierr = update_mask(vbed, vH, vMask); CHKERRQ(ierr);
+  ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
 
   if (config.get_flag("kill_icebergs") || iceberg_remover != NULL) {
     ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
     // the call above modifies ice thickness and updates the mask
     // accordingly
-    ierr = update_surface_elevation(); CHKERRQ(ierr);
+    ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
   }
 
   if (config.get_flag("sub_groundingline")) {
@@ -62,68 +63,84 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   return 0;
 }
 
-
-PetscErrorCode IceModel::update_mask() {
+/**
+ * Update ice cover mask using the floatation criterion, sea level
+ * elevation, ice thickness, and bed topography.
+ *
+ * @param[in]  bed_topography
+ * @param[in]  ice_thickness
+ * @param[out] result
+ *
+ * @return 0 on success.
+ */
+PetscErrorCode IceModel::update_mask(IceModelVec2S &bed_topography,
+                                     IceModelVec2S &ice_thickness,
+                                     IceModelVec2Int &result) {
   PetscErrorCode ierr;
-
-  if (ocean == PETSC_NULL) {
-    SETERRQ(grid.com, 1, "PISM ERROR: ocean == PETSC_NULL");
-  }
   PetscReal sea_level;
+
+  assert(ocean != NULL);
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   GeometryCalculator gc(sea_level, config);
-  MaskQuery mask(vMask);
 
-  ierr =    vH.begin_access(); CHKERRQ(ierr);
-  ierr =  vbed.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access();  CHKERRQ(ierr);
+  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access();         CHKERRQ(ierr);
 
   PetscInt GHOSTS = 2;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+  for (PetscInt i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      vMask(i, j) = gc.mask(vbed(i, j), vH(i,j));
+      result(i, j) = gc.mask(bed_topography(i, j), ice_thickness(i,j));
     } // inner for loop (j)
   } // outer for loop (i)
 
-  ierr =    vH.end_access(); CHKERRQ(ierr);
-  ierr =  vbed.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access();  CHKERRQ(ierr);
+  ierr = bed_topography.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access();         CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode IceModel::update_surface_elevation() {
+/** 
+ * Update ice surface elevation using the floatation criterion, sea
+ * level elevation, ice thickness, and bed topography.
+ *
+ * @param[in] bed_topography 
+ * @param[in] ice_thickness 
+ * @param[out] result 
+ *
+ * @return 0 on success.
+ */
+PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed_topography,
+                                                  IceModelVec2S &ice_thickness,
+                                                  IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  MaskQuery mask(vMask);
-
-  if (ocean == PETSC_NULL) {  SETERRQ(grid.com, 1, "PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal sea_level;
+
+  assert(ocean != NULL);
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   GeometryCalculator gc(sea_level, config);
 
-  ierr =    vh.begin_access(); CHKERRQ(ierr);
-  ierr =    vH.begin_access(); CHKERRQ(ierr);
-  ierr =  vbed.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access();         CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access();  CHKERRQ(ierr);
+  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
 
   PetscInt GHOSTS = 2;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      // take this opportunity to check that vH(i, j) >= 0
-      if (vH(i, j) < 0) {
+      // take this opportunity to check that ice_thickness(i, j) >= 0
+      if (ice_thickness(i, j) < 0) {
         SETERRQ2(grid.com, 1, "Thickness negative at point i=%d, j=%d", i, j);
       }
-      vh(i, j) = gc.surface(vbed(i, j), vH(i, j));
+      result(i, j) = gc.surface(bed_topography(i, j), ice_thickness(i, j));
     }
   }
 
-  ierr =    vh.end_access(); CHKERRQ(ierr);
-  ierr =    vH.end_access(); CHKERRQ(ierr);
-  ierr =  vbed.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access();         CHKERRQ(ierr);
+  ierr = ice_thickness.end_access();  CHKERRQ(ierr);
+  ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

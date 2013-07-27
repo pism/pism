@@ -103,7 +103,7 @@ void IceModel::reset_counters() {
   CFLmaxdt = CFLmaxdt2D = 0.0;
   CFLviolcount = 0;
   dt_TempAge = 0.0;
-  dt_from_diffus = dt_from_cfl = 0.0;
+  dt_from_cfl = 0.0;
 
   // Do not reset the following: they are always re-computed before use (i.e.
   // aren't a part of the model state). Moreover, keeping these values allows
@@ -772,9 +772,10 @@ PetscErrorCode IceModel::run() {
   int stepcount = (config.get_flag("count_time_steps")) ? 0 : -1;
 
   // do a one-step diagnostic run:
+  dt_TempAge = config.get("preliminary_time_step_duration");
   ierr = verbPrintf(2,grid.com,
-      "doing preliminary step of 1 s (one model second) to fill diagnostic quantities ...\n");
-      CHKERRQ(ierr);
+      "preliminary step of %.2f model seconds to fill diagnostic quantities ...\n",
+      dt_TempAge); CHKERRQ(ierr);
 
   // set verbosity to 1 to suppress reporting
   PetscInt tmp_verbosity = getVerbosityLevel();
@@ -785,7 +786,6 @@ PetscErrorCode IceModel::run() {
   maxdt_temporary = -1.0;
   skipCountDown = 0;
   t_TempAge = grid.time->start();
-  dt_TempAge = 1.0;             // one second (for the preliminary step)
   dt = 0.0;
   PetscReal run_end = grid.time->end();
 
@@ -825,7 +825,7 @@ PetscErrorCode IceModel::run() {
   ierr = verbPrintf(2,grid.com, "running forward ...\n"); CHKERRQ(ierr);
 
   stdout_flags.erase(); // clear it out
-  ierr = summaryPrintLine(PETSC_TRUE, do_energy, "", 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE, do_energy, NULL, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
 
@@ -935,7 +935,7 @@ PetscErrorCode IceModel::init() {
   //! \dotfile initialization-sequence.dot "IceModel initialization sequence"
 
   ierr = MPI_Barrier(grid.com); CHKERRQ(ierr);
-  ierr = PetscGetTime(&start_time); CHKERRQ(ierr);
+  ierr = PISMGetTime(&start_time); CHKERRQ(ierr);
 
   return 0; 
 }

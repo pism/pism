@@ -131,23 +131,10 @@ PetscErrorCode PISMStressBalance::get_max_diffusivity(PetscReal &D) {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::get_max_2d_velocity(PetscReal &u_max, PetscReal &v_max) {
-  PetscErrorCode ierr;
-  ierr = m_stress_balance->get_max_2d_velocity(u_max, v_max); CHKERRQ(ierr);
-  return 0;
-}
-
 PetscErrorCode PISMStressBalance::get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v, IceModelVec3* &w_out) {
   PetscErrorCode ierr;
   ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
   w_out = &m_w;
-  return 0;
-}
-
-PetscErrorCode PISMStressBalance::get_max_3d_velocity(PetscReal &u, PetscReal &v, PetscReal &w_out) {
-  PetscErrorCode ierr;
-  ierr = m_modifier->get_max_horizontal_velocity(u, v); CHKERRQ(ierr);
-  w_out = m_w_max;
   return 0;
 }
 
@@ -242,7 +229,6 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
 
   PetscScalar *w_ij, *u_ij, *u_im1, *u_ip1, *v_ij, *v_jm1, *v_jp1;
 
-  PetscReal my_w_max = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result.getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
@@ -295,7 +281,6 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
       } else {
         w_ij[0] = 0.0;
       }
-      my_w_max = PetscMax(my_w_max, PetscAbs(w_ij[0]));
 
       double u_x = D_x * (west * (u_ij[0] - u_im1[0]) + east * (u_ip1[0] - u_ij[0])),
         v_y = D_y * (south * (v_ij[0] - v_jm1[0]) + north * (v_jp1[0] - v_ij[0]));
@@ -312,8 +297,6 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
         w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
 
         old_integrand = new_integrand;
-
-        my_w_max = PetscMax(my_w_max, PetscAbs(w_ij[k]));
       }
 
     } // j-loop
@@ -327,8 +310,6 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
   ierr = u->end_access(); CHKERRQ(ierr);
   ierr = v->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-
-  ierr = PISMGlobalMax(&my_w_max, &m_w_max, grid.com); CHKERRQ(ierr);
 
   return 0;
 }

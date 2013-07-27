@@ -1,4 +1,4 @@
-netcdf pism_overrides {
+netcdf nbreen_config {
     variables:
     byte pism_overrides;
 

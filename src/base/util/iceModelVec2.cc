@@ -19,6 +19,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <petscdmda.h>
+#include <gsl/gsl_math.h>
 
 #include "PIO.hh"
 #include "iceModelVec.hh"

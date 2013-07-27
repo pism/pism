@@ -788,8 +788,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.keyword_from_option("o_format", "output_format",
                                     "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
-                                   "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("summary_vol_scale_factor_log10",
+                                   "summary_vol_scale_factor_log10"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("summary_area_scale_factor_log10",
+                                   "summary_area_scale_factor_log10"); CHKERRQ(ierr);
 
   // Metadata
   ierr = config.string_from_option("title", "run_title"); CHKERRQ(ierr);

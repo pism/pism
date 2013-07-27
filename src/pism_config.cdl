@@ -153,6 +153,9 @@ netcdf pism_config {
     pism_config:bootstrapping_no_smb_in_initial_temp = "no";
     pism_config:bootstrapping_no_smb_in_initial_temp_doc = "if 'no' then use the method in IceModel::putTempAtDepth() which includes the surface mass balance; if 'yes' use the old PISM method which does not use smb";
 
+    pism_config:preliminary_time_step_duration = 1.0;
+    pism_config:preliminary_time_step_duration_doc = "s; Duration of the time step taken before the run, so as to fill diagnostic quantities.";
+
     pism_config:sia_enhancement_factor = 1.0;
     pism_config:sia_enhancement_factor_doc = "; Flow enhancement factor for SIA";
 
@@ -292,7 +295,7 @@ netcdf pism_config {
     pism_config:max_low_temp_count_doc = "Maximum number of grid points with ice temperature below global_min_allowed_temp.";
 
     pism_config:eigen_calving_K = 0.0;
-    pism_config:eigen_calving_K_doc = "Set proportionality constant to determine calving rate from strain rates";
+    pism_config:eigen_calving_K_doc = "m s; Set proportionality constant to determine calving rate from strain rates.  Note references [\ref Levermannetal2012, \ref Martinetal2011] use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
 
     pism_config:calving_at_thickness = 50.0;
     pism_config:calving_at_thickness_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
@@ -619,8 +622,17 @@ netcdf pism_config {
     pism_config:timeseries_buffer_size = 10000;
     pism_config:timeseries_buffer_size_doc = "; Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
 
-    pism_config:summary_volarea_scale_factor_log10 = 6;
-    pism_config:summary_volarea_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume and area in summary line to stdout";
+    pism_config:summary_vol_scale_factor_log10 = 6;
+    pism_config:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";
+
+    pism_config:summary_area_scale_factor_log10 = 6;
+    pism_config:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
+
+    pism_config:mask_icefree_thickness_standard = 0.01;
+    pism_config:mask_icefree_thickness_standard_doc = "m; If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.";
+
+    pism_config:mask_is_floating_thickness_standard = 1.0;
+    pism_config:mask_is_floating_thickness_standard_doc = "m; If flotation criterion is different by more than this amount then mask is set to MASK_ICE_FREE_OCEAN or MASK_FLOATING.";
 
     pism_config:viewer_size = 320;
     pism_config:viewer_size_doc = "; default diagnostic viewer size";
@@ -629,6 +641,9 @@ netcdf pism_config {
 
    pism_config:time_dimension_name = "time";
    pism_config:time_dimension_name_doc = "The name of the time dimension in PISM output files.";
+
+   pism_config:summary_time_unit_name = "year";
+   pism_config:summary_time_unit_name_doc = "Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)";
 
    pism_config:calendar = "365_day";
    pism_config:calendar_doc = "The calendar to use. Choose from standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian.";

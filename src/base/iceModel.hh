@@ -138,7 +138,7 @@ public:
   virtual PetscErrorCode grid_setup();
 
   virtual PetscErrorCode allocate_submodels();
-  virtual PetscErrorCode allocate_flowlaw();
+  virtual PetscErrorCode set_default_flowlaw();
   virtual PetscErrorCode allocate_enthalpy_converter();
   virtual PetscErrorCode allocate_basal_resistance_law();
   virtual PetscErrorCode allocate_stressbalance();
@@ -269,7 +269,7 @@ protected:
               dt_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
-              dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, dt_from_eigencalving,
+              dt_from_cfl, CFLmaxdt, CFLmaxdt2D, dt_from_eigencalving,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
@@ -355,8 +355,8 @@ protected:
 
   // see iMgeometry.cc
   virtual PetscErrorCode updateSurfaceElevationAndMask();
-  virtual PetscErrorCode update_mask();
-  virtual PetscErrorCode update_surface_elevation();
+  virtual PetscErrorCode update_mask(IceModelVec2S &bed, IceModelVec2S &ice_thickness, IceModelVec2Int &mask);
+  virtual PetscErrorCode update_surface_elevation(IceModelVec2S &bed, IceModelVec2S &ice_thickness, IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      planeStar<PISMVector2> input_velocity,
@@ -390,7 +390,7 @@ protected:
   virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(
               PetscBool printPrototype, bool tempAndAge,
-              string date, PetscScalar delta_t, 
+              PISMTime* date, PetscScalar delta_t,
               PetscScalar volume, PetscScalar area,
               PetscScalar meltfrac, PetscScalar max_diffusivity);
 

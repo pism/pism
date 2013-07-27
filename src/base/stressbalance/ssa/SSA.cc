@@ -202,8 +202,6 @@ PetscErrorCode SSA::update(bool fast) {
   ierr = compute_basal_frictional_heating(m_velocity, *tauc, *mask,
 					  basal_frictional_heating); CHKERRQ(ierr);
   
-  ierr = compute_maximum_velocity(); CHKERRQ(ierr);
-
   grid.profiler->end(event_ssa);
 
   return 0;
@@ -360,36 +358,6 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   ierr =   surface->end_access(); CHKERRQ(ierr);
   ierr =      mask->end_access(); CHKERRQ(ierr);
   ierr =     result.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! \brief Compute maximum ice velocity; uses the mask to ignore values in
-//!  ice-free areas.
-PetscErrorCode SSA::compute_maximum_velocity() {
-  PetscErrorCode ierr;
-  PetscReal my_max_u = 0.0,
-    my_max_v = 0.0;
-
-  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-
-  MaskQuery m(*mask);
-
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (m.icy(i, j)) {
-        my_max_u = PetscMax(my_max_u, PetscAbs(m_velocity(i,j).u));
-        my_max_v = PetscMax(my_max_v, PetscAbs(m_velocity(i,j).v));
-      }
-    }
-  }
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = m_velocity.end_access(); CHKERRQ(ierr);
-
-  ierr = PISMGlobalMax(&my_max_u, &max_u, grid.com); CHKERRQ(ierr); 
-  ierr = PISMGlobalMax(&my_max_v, &max_v, grid.com); CHKERRQ(ierr); 
   return 0;
 }
 

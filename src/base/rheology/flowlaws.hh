@@ -25,13 +25,13 @@
 class EnthalpyConverter;
 class NCConfigVariable;
 
-// This uses the definition of second invariant from Hutter and several others, namely
-// \f$ \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
+// This uses the definition of squared second invariant from Hutter and several others, namely the output is
+// \f$ D^2 = \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
 static inline PetscReal secondInvariant_2D(PetscReal u_x, PetscReal u_y,
 					   PetscReal v_x, PetscReal v_y)
 { return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y) + 0.5*PetscSqr(u_y + v_x)); }
 
-// The second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
+// The squared second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
 static inline PetscReal secondInvariantDu_2D(const PetscReal Du[])
 { return 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2])); }
 

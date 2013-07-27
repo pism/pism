@@ -51,8 +51,6 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = w3->begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
-  const double epsilon = grid.convert(0.001 / (grid.dx + grid.dy), "seconds", "years");
-
   // update global max of abs of velocities for CFL; only velocities under surface
   PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
@@ -63,15 +61,14 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
         ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
         ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
         for (PetscInt k = 0; k <= ks; ++k) {
-          const PetscScalar absu = PetscAbs(u[k]),
-            absv = PetscAbs(v[k]);
+          const PetscReal absu = PetscAbs(u[k]),
+                          absv = PetscAbs(v[k]);
           maxu = PetscMax(maxu, absu);
           maxv = PetscMax(maxv, absv);
-          // make sure the denominator below is positive:
-          PetscScalar tempdenom = epsilon;
-          tempdenom += PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
-          locCFLmaxdt = PetscMin(locCFLmaxdt, 1.0 / tempdenom);
           maxw = PetscMax(maxw, PetscAbs(w[k]));
+          const PetscReal denom = PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
+          if (denom > 0.0)
+            locCFLmaxdt = PetscMin(locCFLmaxdt, 1.0 / denom);
         }
       }
     }
@@ -110,16 +107,14 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   IceModelVec2V *vel_advective;
   ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
 
-  const double epsilon = grid.convert(0.01 / (grid.dx + grid.dy), "seconds", "years");
-
   ierr = vel_advective->get_array(vel); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (mask.icy(i, j)) {
-        PetscScalar denom = PetscAbs(vel[i][j].u)/grid.dx + PetscAbs(vel[i][j].v)/grid.dy;
-        denom += epsilon;
-        locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
+        const PetscReal denom = PetscAbs(vel[i][j].u)/grid.dx + PetscAbs(vel[i][j].v)/grid.dy;
+        if (denom > 0.0)
+          locCFLmaxdt2D = PetscMin(locCFLmaxdt2D, 1.0/denom);
       }
     }
   }
@@ -132,39 +127,47 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
 
 
 //! Compute the maximum time step allowed by the diffusive SIA.
-/*! Note adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio *
-dx^2/maxD (if dx=dy)
+/*!
+Updates gDmax.  If gDmax is positive (i.e. if there is diffusion going on) then
+updates dt.  Updates skipCountDown if it is zero.
+
+Note adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio *
+dx^2/maxD (if dx=dy).
 
 Reference: [\ref MortonMayers] pp 62--63.
  */
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   PetscErrorCode ierr;
 
-  bool do_skip = config.get_flag("do_skip");
-
-  const PetscScalar adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
-
-  const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
-
   ierr = stress_balance->get_max_diffusivity(gDmax); CHKERRQ(ierr);
 
-  const PetscScalar
+  PetscReal dt_from_diffus = -1.0;
+  if (gDmax > 0.0) {
+    const PetscReal adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
+    const PetscReal
           gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
-  dt_from_diffus = adaptTimeStepRatio
-                     * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
+    dt_from_diffus = adaptTimeStepRatio
+                       * 2 / (gDmax * gridfactor);
+    if (dt_from_diffus < dt) {
+      dt = dt_from_diffus;
+      adaptReasonFlag = 'd';
+    }
+  }
+
+  bool do_skip = config.get_flag("do_skip");
   if (do_skip && (skipCountDown == 0)) {
     const PetscInt skip_max = static_cast<PetscInt>(config.get("skip_max"));
-    const PetscScalar  conservativeFactor = 0.95;
-    // typically "dt" in next line is from CFL for advection in temperature equation,
-    //   but in fact it might be from other restrictions, e.g. CFL for mass continuity
-    //   in basal sliding case, or max_dt
-    skipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
-    skipCountDown = ( skipCountDown >  skip_max) ?  skip_max :  skipCountDown;
-  } // if  skipCountDown > 0 then it will get decremented at the mass balance step
-  if (dt_from_diffus < dt) {
-    dt = dt_from_diffus;
-    adaptReasonFlag = 'd';
+    if (dt_from_diffus > 0.0) {
+      const PetscReal  conservativeFactor = 0.95;
+      // typically "dt" in next line is from CFL for advection in temperature equation,
+      //   but in fact it might be from other restrictions, e.g. CFL for mass continuity
+      //   in basal sliding case, or max_dt
+      skipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
+      skipCountDown = ( skipCountDown >  skip_max) ?  skip_max :  skipCountDown;
+    } else
+      skipCountDown = skip_max;
   }
+
   return 0;
 }
 
@@ -221,7 +224,8 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       }
     }
     if (do_mass_conserve) {
-      // note: if do_skip then skipCountDown = floor(dt_from_cfl/dt_from_diffus)
+      // note: also sets skipCountDown;  if skipCountDown > 0 then it will get
+      // decremented at the mass balance step
       ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
     }
 

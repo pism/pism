@@ -11,8 +11,10 @@ set (latex_sources
   ross.tex
   getting-started.tex
   manual.tex
-  modeling-choices.tex
-  pism-pik.tex
+  highlevelview.tex
+  modeling-computational.tex
+  modeling-dynamics.tex
+  modeling-marine.tex
   practical-usage.tex
   simplified-geometry.tex
   storglaciaren.tex

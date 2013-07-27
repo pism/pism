@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2012 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2013 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -49,7 +49,9 @@ struct SSAFEM_SNESCallbackData {
 /*! These simply forward the call on to the SSAFEM memeber of the SSAFEM_SNESCallbackData */
 PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, 
                              PISMVector2 **, SSAFEM_SNESCallbackData *);
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
+                             Mat A, Mat J,
+                             MatStructure *str, SSAFEM_SNESCallbackData *fe);
 
 //! Factory function for constructing a new SSAFEM.
 SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &,
@@ -63,7 +65,9 @@ The SSAFEM duplicates the functionality of SSAFD, using the finite element metho
 class SSAFEM : public SSA
 {
   friend PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, PISMVector2 **, SSAFEM_SNESCallbackData *);
-  friend PetscErrorCode SSAFEJacobian(DMDALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
+  friend PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
+                                      Mat A, Mat J,
+                                      MatStructure *str, SSAFEM_SNESCallbackData *fe);
 public:
   SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b,
          EnthalpyConverter &e, const NCConfigVariable &c)

@@ -45,7 +45,7 @@ public:
   virtual PetscErrorCode set_grid_defaults();     // called by IceModel::grid_setup()
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode allocate_flowlaw();
+  virtual PetscErrorCode set_default_flowlaw();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_bedrock_thermal_unit();
   virtual PetscErrorCode allocate_bed_deformation();

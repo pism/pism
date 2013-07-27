@@ -179,10 +179,10 @@ PetscErrorCode IceEISModel::setFromOptions() {
 }
 
 //! \brief Decide which flow law to use.
-PetscErrorCode  IceEISModel::allocate_flowlaw() {
+PetscErrorCode  IceEISModel::set_default_flowlaw() {
   PetscErrorCode ierr;
 
-  ierr = IceModel::allocate_flowlaw(); CHKERRQ(ierr);
+  ierr = IceModel::set_default_flowlaw(); CHKERRQ(ierr);
 
   // Make bedrock thermal material properties into ice properties.  Note that
   // zero thickness bedrock layer is the default, but we want the ice/rock

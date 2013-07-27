@@ -1,17 +1,12 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2009-2013 the PISM Authors
+# Copyright (C) 2013 the PISM Authors
 
-## @package pism_python
-# \author the PISM authors
-# \brief Creates "from scratch" a boring dataset with the right format
-# to use as a PISM bootstrapping file.
-# \details Example use of Python for this purpose.
-#
-# Usage, including a minimal PISM call to bootstrap from this file:
-#
-# \verbatim $ pism_python.py  # creates foo.nc \endverbatim
-# \verbatim $ pismr -boot_file foo.nc -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1 \endverbatim
+# This script sets up the bootstrap file.  It also converts the configuration
+# parameter file into NetCDF:
+#   gumparams.cdl  -->  gumparams.nc
+# See also the run script:
+#   $ ./rungum.sh
 
 import sys
 import time
@@ -23,25 +18,39 @@ try:
 except:
     from netCDF3 import Dataset as CDF
 
+# lab setup is table with hole in the middle into which is piped the
+# shear-thinning fluid, which is Xanthan gum 1% solution
+Lx = 250.0e-3    # m;  = 250 mm;  table is approx 500 mm x 500 mm?
+Ly = Lx          # square table
+flux = 3.0e-3    # kg s-1;  = 3 g s-1;  
+pipeR = 20.1e-3  # m;  = 20.1 mm;  input pipe has this radius  FIXME: GUESS
+rho = 1000.0     # kg m-3;  density of gum = density of fresh water
+temp = 20.0      # C;  fluid is at 20 deg
+
+# see gumparams.cdl for additional parameter settings
+from subprocess import call
+CONF = 'gumparams'
+call(['rm', '-f', CONF + '.nc'])
+call(['ncgen', '-o', CONF + '.nc', CONF + '.cdl'])
+print('  PISM-readable config override file %s written' % (CONF + '.nc'))
+
 # set up the grid:
-Lx = 1e6;
-Ly = 1e6;
-Mx = 51;
-My = 71;
-x = np.linspace(-Lx,Lx,Mx);
-y = np.linspace(-Ly,Ly,My);
+Mx = 1001
+My = 1001
+x = np.linspace(-Lx,Lx,Mx)
+y = np.linspace(-Ly,Ly,My)
 
 # create dummy fields
 [xx,yy] = np.meshgrid(x,y);  # if there were "ndgrid" in numpy we would use it
-acab = np.zeros((Mx,My));
-artm = np.zeros((Mx,My)) + 273.15 + 10.0; # 10 degrees Celsius
-topg = 1000.0 + 200.0 * (xx + yy) / max(Lx, Ly);  # change "1000.0" to "0.0" to test
-                                                  # flotation criterion, etc.
-thk  = 3000.0 * (1.0 - 3.0 * (xx**2 + yy**2) / Lx**2);
-thk[thk < 0.0] = 0.0;
+topg = np.zeros((Mx,My))
+thk  = np.zeros((Mx,My))  # no fluid on table at start
+artm = np.zeros((Mx,My)) + 273.15 + temp; # 20 degrees Celsius
+fluxthickness = flux / (rho * np.pi * pipeR**2)  # flux as m s-1
+acab = np.zeros((Mx,My)) + fluxthickness;
+acab[xx**2 + yy**2 > pipeR**2] = 0.0;
 
 # Output filename
-ncfile = 'foo.nc'
+ncfile = 'initgum.nc'
 
 # Write the data:
 nc = CDF(ncfile, "w",format='NETCDF3_CLASSIC') # for netCDF4 module
@@ -78,7 +87,7 @@ thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
-acab_var = def_var(nc, "climatic_mass_balance", "m year-1", fill_value)
+acab_var = def_var(nc, "climatic_mass_balance", "m s-1", fill_value)
 acab_var.standard_name = "land_ice_surface_specific_mass_balance"
 acab_var[:] = acab
 
@@ -86,13 +95,12 @@ artm_var = def_var(nc, "ice_surface_temp", "K", fill_value)
 artm_var[:] = artm
 
 # set global attributes
-nc.Conventions = "CF-1.4"
+nc.Conventions = 'CF-1.4'
 historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(nc, 'history', historystr)
 
 nc.close()
 print('  PISM-bootable NetCDF file %s written' % ncfile)
-print('  for example, run:')
-print('    $ pismr -boot_file foo.nc -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')
+print('  ... now run   rungum.sh')
 

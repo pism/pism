@@ -20,6 +20,7 @@
 #include <sstream>
 #include <set>
 #include <assert.h>
+#include <gsl/gsl_math.h>
 
 #include "NCVariable.hh"
 #include "NCSpatialVariable.hh"

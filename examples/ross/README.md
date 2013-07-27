@@ -40,7 +40,7 @@ Do:
 
 A file `out_211.nc` will be produced.  View it with `ncview` or other NetCDF viewer.  If python tools `numpy`, `matplotlib`, and `netcdf4-python` are present, do this
 
-    $ ./plot.py
+    $ ./plot.py out_211.nc
 
 and view the resulting `.png` images.
 
