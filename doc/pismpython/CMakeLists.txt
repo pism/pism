@@ -40,7 +40,7 @@ else ()
   pismdoc/theme.conf
   pismdoc/static/PISM.css )
 
-  # Copy the bibliography file (note the change in the file name)
+  # Copy the bibliography file
   configure_file (../ice_bib.bib ice_bib.bib COPYONLY)
 
   # copy all the files needed to generate browser sources

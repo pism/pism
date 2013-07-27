@@ -720,8 +720,7 @@ If you're lucky, you might be able to install all the Python packages mentioned
 in section \ref{sec:prerequisites} using a package manager. On the other hand,
 the Python packages below are not currently available in Debian package
 repositories. They are easy to install using Python \texttt{setuptools},
-however; these tools are included with recent versions of Python. And you might
-not be using a package manager!
+however; these tools are included with recent versions of Python.
 
 \subsubsection*{Python module \texttt{netCDF4}, from package
   \texttt{netcdf4-python}}
@@ -781,5 +780,56 @@ documentation evolve together. These tools are required: \bigskip
     \texttt{make browser_util} & to build the \emph{PISM Utility Class Browser}\\
   \end{tabular}
 \end{center}
+\bigskip
+
+\subsection{Building documentation for PISM's Python bindings and inversion tools}
+The documentation for PISM's Python bindings uses the documentation-generation tool Sphinx; see \href{http://sphinx-doc.org/}{sphinx-doc.org}.  The bindings make scripting and interactive PISM possible, but many PISM users will not need them.  Installing them is required to use PISM for inversion of surface velocities for basal shear stress and ice hardness.  Building their documentation is strongly-recommended before use.
+
+Sphinx can be installed via \texttt{apt-get} or \texttt{macports}.
+See \url{http://sphinx-doc.org/latest/install.html} for more details.  For example, do
+\begin{verbatim}
+  sudo apt-get install sphinx-common
+\end{verbatim}
+
+The bindings documentation also requires the Sphinx extension called \texttt{sphinxcontrib.bibtex}, which may come with some Sphinx packages (but not with Debian packages at this time).  Without it you will see this error when you try to build the bindings documentation:
+\begin{verbatim}
+  Extension error:
+  Could not import extension sphinxcontrib.bibtex (exception: No module named bibtex)
+\end{verbatim}
+To install it see \url{http://sphinxcontrib-bibtex.readthedocs.org}.
+
+Note that if you install Sphinx using macports,
+you will install a version that depends on your python
+version, and its executables will have names that
+depend on the python version, e.g. \texttt{sphinx-build-2.7}
+rather than \texttt{sphinx-build} for Python 2.7.  You will want to
+set up aliases so that the standard names work as well. To do this,
+\begin{verbatim}
+  sudo port select sphinx py27-sphinx
+\end{verbatim}
+(replacing \texttt{py27-sphinx} with \texttt{py26-sphinx} for Python 2.6, etc.)
+If you opt not to do this, you can tell CMake the
+name of your sphinx executable using
+\begin{verbatim}
+  cmake -DSPHINX_EXECUTABLE=sphinx-build-2.7 ...
+\end{verbatim}
+for example.
+
+Now you can build the documentation.  In the PISM build directory, do
+\begin{verbatim}
+  make pismpython_docs
+\end{verbatim}
+If you get an error like
+\begin{verbatim}
+  make: *** No rule to make target `pismpython_docs'.  Stop.
+\end{verbatim}
+then re-run \texttt{cmake ..} or  \texttt{ccmake ..}, making sure that Sphinx is installed
+(see above); the  \texttt{pismpython_docs} make target will then be present.
+
+The main page for the documentation is then in
+ \texttt{doc/pismpython/html/index.html} inside your build directory. The
+documentation build can take some time while it
+builds a large number of small images from
+\LaTeX formulas.
 
 \end{document}
