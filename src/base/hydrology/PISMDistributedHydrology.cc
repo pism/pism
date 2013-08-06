@@ -29,29 +29,11 @@ PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVar
     : PISMRoutingHydrology(g, conf)
 {
     stressbalance = sb;
-    if (allocate_englacial() != 0) {
-      PetscPrintf(grid.com,
-        "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor (englacial).\n");
-      PISMEnd();
-    }
     if (allocate_pressure() != 0) {
       PetscPrintf(grid.com,
         "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor (pressure).\n");
       PISMEnd();
     }
-}
-
-
-PetscErrorCode PISMDistributedHydrology::allocate_englacial() {
-  PetscErrorCode ierr;
-
-  // additional conserved (mass) variable
-  ierr = Wen.create(grid, "enwat", false); CHKERRQ(ierr);
-  ierr = Wen.set_attrs("model_state",
-                       "effective thickness of englacial water",
-                       "m", ""); CHKERRQ(ierr);
-  ierr = Wen.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  return 0;
 }
 
 
@@ -118,23 +100,6 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
     ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
   }
 
-  // initialize Wen: present or -i file or -bootstrap file or set to constant;
-  //   then overwrite by regrid
-  IceModelVec2S *Wen_input = dynamic_cast<IceModelVec2S*>(vars.get("enwat"));
-  if (Wen_input != NULL) { // a variable called "enwat" is already in context
-    ierr = Wen.copy_from(*Wen_input); CHKERRQ(ierr);
-  } else if (i_set || bootstrap_set) {
-    if (i_set) {
-      ierr = Wen.read(filename, start); CHKERRQ(ierr);
-    } else {
-      ierr = Wen.regrid(filename,
-                        config.get("bootstrapping_enwat_value_no_var")); CHKERRQ(ierr);
-    }
-  } else {
-    ierr = Wen.set(config.get("bootstrapping_enwat_value_no_var")); CHKERRQ(ierr);
-  }
-  ierr = regrid(Wen); CHKERRQ(ierr); //  we could be asked to regrid from file
-
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
   IceModelVec2S *P_input = dynamic_cast<IceModelVec2S*>(vars.get("bwp"));
@@ -162,7 +127,6 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
 
 void PISMDistributedHydrology::add_vars_to_output(string keyword, set<string> &result) {
   PISMRoutingHydrology::add_vars_to_output(keyword, result);
-  result.insert("enwat");
   result.insert("bwp");
 }
 
@@ -171,9 +135,6 @@ PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, cons
                                                  PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   ierr = PISMRoutingHydrology::define_variables(vars, nc, nctype); CHKERRQ(ierr);
-  if (set_contains(vars, "enwat")) {
-    ierr = Wen.define(nc, nctype); CHKERRQ(ierr);
-  }
   if (set_contains(vars, "bwp")) {
     ierr = P.define(nc, nctype); CHKERRQ(ierr);
   }
@@ -184,9 +145,6 @@ PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, cons
 PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   ierr = PISMRoutingHydrology::write_variables(vars, nc); CHKERRQ(ierr);
-  if (set_contains(vars, "enwat")) {
-    ierr = Wen.write(nc); CHKERRQ(ierr);
-  }
   if (set_contains(vars, "bwp")) {
     ierr = P.write(nc); CHKERRQ(ierr);
   }
@@ -201,19 +159,10 @@ void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dic
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
   dict["tillwp"] = new PISMHydrology_tillwp(this, grid, *variables);
-  // remove enwat from PISMRoutingHydrology version, because enwat is state
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
   // keep diagnostic: it makes sense if transport is modeled
   dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
-}
-
-
-//! Copies the Wen state variable which is the modeled effective englacial water thickness.
-PetscErrorCode PISMDistributedHydrology::englacial_water_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = Wen.copy_to(result); CHKERRQ(ierr);
-  return 0;
 }
 
 
@@ -227,6 +176,8 @@ PetscErrorCode PISMDistributedHydrology::subglacial_water_pressure(IceModelVec2S
 
 //! Computes water pressure in till by taking the maximum of the transportable water pressure and the result of the rule as in PISMHydrology.
 PetscErrorCode PISMDistributedHydrology::till_water_pressure(IceModelVec2S &result) {
+// FIXME:  WHAT IS THE MODEL FOR TILL WATER PRESSURE?  ONCE DETERMINED,
+//         SHOULDN'T THIS EITHER BE IN PISMHydrology OR PISMRoutingHydrology?
   PetscErrorCode ierr;
 
   ierr = PISMHydrology::till_water_pressure(result); CHKERRQ(ierr);
@@ -240,26 +191,6 @@ PetscErrorCode PISMDistributedHydrology::till_water_pressure(IceModelVec2S &resu
   }
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = P.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Check Wen >= 0 and fails with message if not satisfied.
-PetscErrorCode PISMDistributedHydrology::check_Wen_nonnegative() {
-  PetscErrorCode ierr;
-  ierr = Wen.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (Wen(i,j) < 0.0) {
-        PetscPrintf(grid.com,
-           "PISM ERROR: disallowed negative englacial effective water layer thickness (enwat)\n"
-           "    Wen(i,j) = %.6f m at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", Wen(i,j),i,j);
-        PISMEnd();
-      }
-    }
-  }
-  ierr = Wen.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -392,51 +323,6 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
 }
 
 
-//! Update englacial amount Wen using the new subglacial pressure and the new total water amount Wnew_tot.  At exit, Wnew_tot is the subglacial water.
-/*!
-Given the pressure Pnew at a location, the key function here is of the form
-        \f[W_{en}^{l+1} = F((W+W_{en})^{l+1})\f]
-where Wnew_tot = \f$(W+W_{en})^{l+1}\f$ is the already-updated total water amount.
-In this implementation the function \f$F\f$ is piecewise linear,
-\f$F\le (\phi/(\rho_w g)) P_{new}\f$, and gives
-\f$W_{en}^{l+1} \le 0.5 (W+W_{en})^{l+1}\f$.  Once this function is computed,
-the new value \f$W^{l+1}\f$ is also established in a mass conserving manner.
- */
-PetscErrorCode PISMDistributedHydrology::update_englacial_storage(
-                                    IceModelVec2S &myPnew, IceModelVec2S &Wnew_tot) {
-  PetscErrorCode ierr;
-  const PetscReal rg = config.get("fresh_water_density") * config.get("standard_gravity"),
-                  porosity = config.get("hydrology_englacial_porosity"), // the true porosity
-                  CCpor = porosity / rg;
-  PetscReal Wen_max;
-  ierr = myPnew.begin_access(); CHKERRQ(ierr);
-  ierr = Wen.begin_access(); CHKERRQ(ierr);
-  ierr = Wnew_tot.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // in next line: Wen_new satisfies scaled version of bounds 0 <= P <= P_o
-      Wen_max = CCpor * myPnew(i,j);
-      if (Wnew_tot(i,j) > Wen_max) {  // if there is enough water to charge englacial
-                                      //   system and still have subglacial water present
-        if (Wnew_tot(i,j) > 2.0 * Wen_max) {  // if there is plenty of water
-          Wen(i,j) = Wen_max;
-        } else {
-          Wen(i,j) = Wnew_tot(i,j) - Wen_max;
-        }
-        Wnew_tot(i,j) -= Wen(i,j); // so the same amount moved out of subglacial
-      } else {
-        Wen(i,j) = 0.0;
-      }
-      // now the meaning can revert:  Wnew(i,j) := Wnew_tot(i,j)
-    }
-  }
-  ierr = myPnew.end_access(); CHKERRQ(ierr);
-  ierr = Wen.end_access(); CHKERRQ(ierr);
-  ierr = Wnew_tot.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Update the model state variables W,P by running the subglacial hydrology model.
 /*!
 Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
@@ -470,6 +356,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             c2 = config.get("hydrology_creep_closure_coefficient"),
             Wr = config.get("hydrology_roughness_scale"),
             Y0 = config.get("hydrology_lower_bound_creep_regularization"),
+            // FIXME:  REMOVE ONE OF NEXT TWO PARAMS
             phisum = config.get("hydrology_englacial_porosity")
                        + config.get("hydrology_regularizing_porosity");
 
@@ -497,7 +384,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
 #if (PISM_DEBUG==1)
     ierr = check_W_nonnegative(); CHKERRQ(ierr);
     ierr = check_Wtil_bounds(); CHKERRQ(ierr);
-    ierr = check_Wen_nonnegative(); CHKERRQ(ierr);
 #endif
 
     // note that ice dynamics can change overburden pressure, so we can only check P
@@ -528,7 +414,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     }
 
     // update Pnew from time step
-    const PetscReal  CC = (rg * hdt) / phisum;
+    const PetscReal  CC = (rg * hdt) / phisum;  // FIXME: phisum SHOULD BE REPLACED BY phi0 OR SOMETHING
     PetscReal  Open, Close, divflux,
                dpsie, dpsiw, dpsin, dpsis;
     ierr = overburden_pressure(Pover); CHKERRQ(ierr);
@@ -623,21 +509,11 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     negativegain += delta_neggain;
     nullstriplost+= delta_nullstrip;
 
-    // now include Wen = englacial into total water supply at new state
-    //    Wnew_tot = (Wnew + Wen)^{l+1}
-    ierr = Wnew.add(1.0,Wen); CHKERRQ(ierr);
-
-    // now update Wen from knowledge of Pnew and Wnew_tot:
-    //    Wen = C Pnew    if there is sufficient water, less otherwise
-    // and then Wnew_tot -= Wen
-    // and then revert meaning: Wnew_tot --> Wnew^{l+1}
-    ierr = update_englacial_storage(Pnew, Wnew); CHKERRQ(ierr);
-
     ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
     ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
 
     // update Wtil and W by modeling transer to/from till
-    ierr = PISMRoutingHydrology::exchange_with_till(hdt); CHKERRQ(ierr);
+    ierr = PISMRoutingHydrology::exchange_with_till(hdt); CHKERRQ(ierr);  // FIXME:  PUT BEFORE raw_update_W()
 
     ht += hdt;
   } // end of hydrology model time-stepping loop

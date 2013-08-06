@@ -34,7 +34,6 @@ name:
   * effbwp
   * hydroinput
   * wallmelt
-  * enwat [replace by state var in PISMDistributedHydrology]
   * tillwp
 Interfaces for the following diagnostics which are handled by
 PISMRoutingHydrology instances:
@@ -92,15 +91,6 @@ class PISMHydrology_wallmelt : public PISMDiag<PISMHydrology>
 {
 public:
   PISMHydrology_wallmelt(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Reports the amount of englacial water as an effective thickness.
-class PISMHydrology_enwat : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_enwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

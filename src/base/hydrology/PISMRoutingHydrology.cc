@@ -174,7 +174,6 @@ void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
   dict["tillwp"] = new PISMHydrology_tillwp(this, grid, *variables);
-  dict["enwat"] = new PISMHydrology_enwat(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
   // add diagnostic that only makes sense if transport is modeled
@@ -204,6 +203,8 @@ PetscErrorCode PISMRoutingHydrology::check_W_nonnegative() {
 
 //! Correct the new water thickness based on boundary requirements.  Do mass accounting.
 /*!
+FIXME: SHOULDN'T THIS BE ZEROING OUT Wtil AT THE BOUNDARY TOO?
+
 At ice free locations and ocean locations we require that the water thickness
 is zero at the end of each time step.  Also we require that any negative water
 thicknesses be set to zero (i.e. projection to enforce \f$W\ge 0\f$).
@@ -613,6 +614,8 @@ PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
 
 //! The computation of Wnew, called by update().
 PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
+// FIXME:  NEW UNDERSTANDING SAYS UPDATE Wtil EVERYWHERE BY IMPLICIT STEP, THEN
+//         GO THROUGH AND SUBTRACT  (Wtil^{l+1} - Wtil^l) / dt  AS SOURCE TERM
     PetscErrorCode ierr;
     const PetscReal
       wux  = 1.0 / (grid.dx * grid.dx),
@@ -652,6 +655,9 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
 
 //! Update both model state variables W and Wtil by applying one step of the till water evolution equation.
 /*!
+// FIXME:  NEW UNDERSTANDING SAYS UPDATE Wtil EVERYWHERE BY IMPLICIT STEP, THEN
+//         GO THROUGH AND SUBTRACT  (Wtil^{l+1} - Wtil^l) / dt  AS SOURCE TERM
+
 For updating Wtil, does an implicit (backward Euler) step of the integration
   \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(\min\{\tau W,W_{til}^{max} - W_{til}\right)\f]
 where \f$\mu=\f$`hydrology_tillwat_rate`, \f$\tau=\f$`hydrology_tillwat_transfer_proportion`,
@@ -762,7 +768,7 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
 
     // update Wtil and W by modeling transfer to/from till
-    ierr = exchange_with_till(hdt); CHKERRQ(ierr);
+    ierr = exchange_with_till(hdt); CHKERRQ(ierr);  // FIXME:  PUT BEFORE raw_update_W()
 
     ht += hdt;
   } // end of hydrology model time-stepping loop

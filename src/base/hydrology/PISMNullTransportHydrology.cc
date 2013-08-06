@@ -29,6 +29,8 @@ PetscErrorCode PISMNullTransportHydrology::subglacial_water_thickness(IceModelVe
 
 //! Update the till water thickness by an explicit step of a simplified ODE.  There is no tranportable water thickness variable.
 /*!
+FIXME: THIS DOES NOT MATCH NOTES
+
 Does an explicit (Euler) step of the integration
   \f[ \frac{\partial W_{til}}{\partial t} = \min \left\{\frac{m}{\rho_w}, \mu \left(W_{til}^{max} - W_{til}\right)\right\} - C\f]
 where \f$\mu=\f$`hydrology_tillwat_rate`, \f$C=\f$`hydrology_tillwat_decay_rate_null`,

@@ -149,7 +149,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
     ierr = inputtobed->init(itbfilename, inputtobed_period, inputtobed_reference_time); CHKERRQ(ierr);
   }
 
-  // initialize water layer thickness from the context if present,
+  // initialize till water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
   IceModelVec2S *Wtil_input = dynamic_cast<IceModelVec2S*>(vars.get("tillwat"));
   if (Wtil_input != NULL) { // a variable called "tillwat" is already in context
@@ -181,7 +181,6 @@ void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
   dict["tillwp"] = new PISMHydrology_tillwp(this, grid, *variables);
-  dict["enwat"] = new PISMHydrology_enwat(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
 }
@@ -245,13 +244,6 @@ PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
   // FIXME issue #15
   ierr = result.copy_from(*thk); CHKERRQ(ierr);  // copies into ghosts if result has them
   ierr = result.scale(config.get("ice_density") * config.get("standard_gravity")); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Set the englacial storage to zero.  (By default, basic subglacial hydrologies have no englacial storage.)
-PetscErrorCode PISMHydrology::englacial_water_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
   return 0;
 }
 
@@ -352,6 +344,8 @@ PetscErrorCode PISMHydrology::get_input_rate(
 
 //! Computes till water pressure as a simple function of the amount of water in the till.
 /*!
+FIXME: WHAT IS THE MODEL HERE?
+
   \f[ Ptil = \lambda P_o \max\{1,W_{til} / W_{til}^{max}\} \f]
 where \f$\lambda\f$=hydrology_pressure_fraction_till, \f$P_o = \rho_i g H\f$,
 \f$W_{til}^{max}\f$=hydrology_tillwat_max.

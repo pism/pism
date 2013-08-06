@@ -35,7 +35,6 @@ The purpose of this class and its derived classes is to provide
 \code
   subglacial_water_thickness(IceModelVec2S &result)
   subglacial_water_pressure(IceModelVec2S &result)
-  englacial_water_thickness(IceModelVec2S &result)
   till_water_thickness(IceModelVec2S &result)
   till_water_pressure(IceModelVec2S &result)
 \endcode
@@ -55,23 +54,19 @@ For more information see [\ref vanPeltBuelerDRAFT].  Background references for
 such models include [\ref FlowersClarke2002_theory, \ref Hewittetal2012,
 \ref Schoofetal2012].
 
-These models alway have a separate, but potentially coupled, amount of water
+These models always have a separate, but potentially coupled, amount of water
 which is held in local till storage.  Generally the transportable water (bwat)
 and till water (tillwat) thicknesses are different.  Also, generally the
-tranportable water (bwp) till water (tillwp) pressures are different.
+transportable water (bwp) and the till water (tillwp) pressures are different.
 References for models with till storage include [\ref BBssasliding,
 \ref SchoofTill, \ref TrufferEchelmeyerHarrison, \ref Tulaczyketal2000b].
 
-The till water pressure, not the tranportable water pressure, is used by the
+The till water pressure, not the transportable water pressure, is used by the
 Mohr-Coulomb criterion to provide a yield stress.
 
-The base class does not implement the evolution of the till water thickness.
-
-These models also either track the amount of englacial water, in a manner
-which allows computation of an effective thickness and which is returned by
-englacial_water_thickness(), or they lack the mechanism and
-englacial_water_thickness() returns zero.  A reference for such a model with
-englacial storage is [\ref Bartholomausetal2011].
+The base class does not implement the evolution of the till water thickness,
+nor the evolution of the transportable subglacial water thickness, nor even
+the reporting of the transportable subglacial water thickness.
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
 short physical timescales associated to liquid water moving under a glacier,
@@ -84,7 +79,7 @@ Generally PISMHydrology classes use the ice geometry, the basal melt
 rate, and the basal sliding velocity in determining the evolution of the
 hydrology state variables.  Note that the basal melt rate is an
 energy-conservation-derived field and the basal-sliding velocity is derived
-from the solution of a stress balance.  In fact, the basal melt rate and 
+from the solution of a stress balance.  The basal melt rate and
 sliding velocity fields generally come from IceModel and PISMStressBalance.
 
 Additional, time-dependent and spatially-variable water input to the basal
@@ -110,13 +105,8 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
 
-  // the interface to the outside:
-  
   // all PISMHydrology models have a Wtil state variable, which this returns
   virtual PetscErrorCode till_water_thickness(IceModelVec2S &result);
-
-  // this exists in the base class and sets result = 0:
-  virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
 
   // this diagnostic method returns the standard shallow approximation
   virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
@@ -166,7 +156,7 @@ protected:
 /*!
 This is the minimum functional derived class.  It updates till water thickness.
 
-It has no tranportable water so subglacial_water_thickness() returns zero.
+It has no transportable water so subglacial_water_thickness() returns zero.
 
 This model can give no meaningful report on conservation errors.
 
@@ -349,12 +339,10 @@ public:
 
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
   virtual PetscErrorCode till_water_pressure(IceModelVec2S &result);
-  virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
 
 protected:
   // this model's state, in addition to what is in PISMRoutingHydrology
-  IceModelVec2S Wen,    // englacial water thickness
-                P;      // water pressure
+  IceModelVec2S P;      // water pressure
   // this model's auxiliary variables, in addition ...
   IceModelVec2S psi,    // hydraulic potential
                 cbase,  // sliding speed of overlying ice
@@ -363,10 +351,8 @@ protected:
   // need to get basal sliding velocity (thus speed):
   PISMStressBalance* stressbalance;
 
-  virtual PetscErrorCode allocate_englacial();
   virtual PetscErrorCode allocate_pressure();
 
-  virtual PetscErrorCode check_Wen_nonnegative();
   virtual PetscErrorCode check_P_bounds(bool enforce_upper);
 
   virtual PetscErrorCode update_cbase(IceModelVec2S &result);
@@ -377,9 +363,6 @@ protected:
                            PetscReal &dt_result,
                            PetscReal &maxV_result, PetscReal &maxD_result,
                            PetscReal &PtoCFLratio);
-
-  virtual PetscErrorCode update_englacial_storage(
-                               IceModelVec2S &myPnew, IceModelVec2S &Wnew_tot);
 };
 
 #endif /* _PISMHYDROLOGY_H_ */

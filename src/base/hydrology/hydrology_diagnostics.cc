@@ -164,24 +164,6 @@ PetscErrorCode PISMHydrology_wallmelt::compute(IceModelVec* &output) {
 }
 
 
-PISMHydrology_enwat::PISMHydrology_enwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiag<PISMHydrology>(m, g, my_vars) {
-  vars[0].init_2d("enwat", grid);
-  set_attrs("effective thickness of englacial water", "", "m", "m", 0);
-}
-
-
-PetscErrorCode PISMHydrology_enwat::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "enwat", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = model->englacial_water_thickness(*result); CHKERRQ(ierr);
-  output = result;
-  return 0;
-}
-
-
 PISMHydrology_tillwp::PISMHydrology_tillwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
     : PISMDiag<PISMHydrology>(m, g, my_vars) {
   vars[0].init_2d("tillwp", grid);
