@@ -57,7 +57,7 @@ DT="$5"
 etimes="0:$DT:$YY"
 
 # these extra_ diagnostics apply to "dist" and "event":
-evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp,enwat,wallmelt"
+evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp,wallmelt"
 
 if [ "$4" = "dist" ]; then
 
