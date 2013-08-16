@@ -158,7 +158,6 @@ void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dic
   // remove bwp from PISMRoutingHydrology version, because bwp is state
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
-  dict["tillwp"] = new PISMHydrology_tillwp(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
   // keep diagnostic: it makes sense if transport is modeled
@@ -170,27 +169,6 @@ void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dic
 PetscErrorCode PISMDistributedHydrology::subglacial_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = P.copy_to(result); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Computes water pressure in till by taking the maximum of the transportable water pressure and the result of the rule as in PISMHydrology.
-PetscErrorCode PISMDistributedHydrology::till_water_pressure(IceModelVec2S &result) {
-// FIXME:  WHAT IS THE MODEL FOR TILL WATER PRESSURE?  ONCE DETERMINED,
-//         SHOULDN'T THIS EITHER BE IN PISMHydrology OR PISMRoutingHydrology?
-  PetscErrorCode ierr;
-
-  ierr = PISMHydrology::till_water_pressure(result); CHKERRQ(ierr);
-
-  ierr = P.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j) = PetscMax(result(i,j),P(i,j));
-    }
-  }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = P.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

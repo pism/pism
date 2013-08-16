@@ -173,7 +173,6 @@ void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
-  dict["tillwp"] = new PISMHydrology_tillwp(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
   // add diagnostic that only makes sense if transport is modeled

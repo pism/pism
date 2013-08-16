@@ -332,7 +332,10 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
     high_tauc = config.get("high_tauc");
 
   if (hydrology) {
-    ierr = hydrology->till_water_pressure(tillwp); CHKERRQ(ierr);
+    // FIXME: new implementation needed
+    //ierr = hydrology->till_water_pressure(tillwp); CHKERRQ(ierr);
+    SETERRQ(grid.com, 99,
+            "NOT IMPLEMENTED ERROR in PISMMohrCoulombYieldStress::update()");
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 3,
@@ -491,7 +494,10 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   PetscErrorCode ierr;
 
   if (hydrology) {
-    ierr = hydrology->till_water_pressure(tillwp); CHKERRQ(ierr);
+    // FIXME: new implementation needed
+    //ierr = hydrology->till_water_pressure(tillwp); CHKERRQ(ierr);
+    SETERRQ(grid.com, 99,
+            "NOT IMPLEMENTED ERROR in PISMMohrCoulombYieldStress::tauc_to_phi()");
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 3,

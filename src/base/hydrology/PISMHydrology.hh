@@ -36,8 +36,10 @@ The purpose of this class and its derived classes is to provide
   subglacial_water_thickness(IceModelVec2S &result)
   subglacial_water_pressure(IceModelVec2S &result)
   till_water_thickness(IceModelVec2S &result)
-  till_water_pressure(IceModelVec2S &result)
 \endcode
+These correspond to state variables \f$W\f$, \f$P\f$, and \f$W_{\text{til}}\f$
+in [\ref BuelervanPeltDRAFT], though not all derived classes of PISMHydrology
+have all of them as state variables.
 
 Additional modeled fields, for diagnostic purposes, are
 \code
@@ -45,28 +47,26 @@ Additional modeled fields, for diagnostic purposes, are
   wall_melt(IceModelVec2S &result)
 \endcode
 
-This interface is specific to subglacial hydrology models which track a
+This interface is appropriate to subglacial hydrology models which track a
 two-dimensional water layer with a well-defined thickness and pressure at each
 map-plane location.  The methods subglacial_water_thickness() and
 subglacial_water_pressure() return amount and pressure.  This subglacial water
 is *transportable*, that is, it moves along a modeled hydraulic head gradient.
-For more information see [\ref vanPeltBuelerDRAFT].  Background references for
-such models include [\ref FlowersClarke2002_theory, \ref Hewittetal2012,
-\ref Schoofetal2012].
+Background references for such models include [\ref FlowersClarke2002_theory,
+\ref Hewittetal2012, \ref Schoofetal2012, \ref Hewitt2013].
 
-These models always have a separate, but potentially coupled, amount of water
+These models always have a separate, but potentially-coupled, amount of water
 which is held in local till storage.  Generally the transportable water (bwat)
-and till water (tillwat) thicknesses are different.  Also, generally the
-transportable water (bwp) and the till water (tillwp) pressures are different.
-References for models with till storage include [\ref BBssasliding,
-\ref SchoofTill, \ref TrufferEchelmeyerHarrison, \ref Tulaczyketal2000b].
+and till water (tillwat) thicknesses are different.  Models with such till
+storage include [\ref BBssasliding, \ref SchoofTill,
+\ref TrufferEchelmeyerHarrison, \ref Tulaczyketal2000b].
 
-The till water pressure, not the transportable water pressure, is used by the
-Mohr-Coulomb criterion to provide a yield stress.
-
-The base class does not implement the evolution of the till water thickness,
-nor the evolution of the transportable subglacial water thickness, nor even
-the reporting of the transportable subglacial water thickness.
+The till water thickness is can be used, via the theory of
+[\ref Tulaczyketal2000], to compute an effective pressure for the water in the
+pore spaces of the till, which can then be used by the Mohr-Coulomb criterion
+to provide a yield stress.  Class PISMMohrCoulombYieldStress does this
+calculation; here in PISMHydrology only the till water thickness tillwat is
+computed.
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
 short physical timescales associated to liquid water moving under a glacier,
@@ -80,7 +80,8 @@ rate, and the basal sliding velocity in determining the evolution of the
 hydrology state variables.  Note that the basal melt rate is an
 energy-conservation-derived field and the basal-sliding velocity is derived
 from the solution of a stress balance.  The basal melt rate and
-sliding velocity fields generally come from IceModel and PISMStressBalance.
+sliding velocity fields therefore generally come from IceModel and
+PISMStressBalance, respectively.
 
 Additional, time-dependent and spatially-variable water input to the basal
 layer, taken directly from a file, is possible too.
@@ -113,9 +114,6 @@ public:
 
   // this diagnostic method returns zero in the base class
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
-
-  // sets result = Bueler&Brown version of pressure of till water
-  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result);
 
   // sets result = overburden pressure
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
@@ -152,11 +150,11 @@ protected:
 };
 
 
-//! The PISM minimal model has till in a "can".  Water that overflows the can is not conserved.  Thus there is no true hydrology, i.e. no model for transport.
+//! The PISM minimal model has till in a "can".  Water that overflows the can is not conserved.  There is no model for lateral transport.
 /*!
 This is the minimum functional derived class.  It updates till water thickness.
 
-It has no transportable water so subglacial_water_thickness() returns zero.
+It has no transportable water and subglacial_water_thickness() returns zero.
 
 This model can give no meaningful report on conservation errors.
 
@@ -196,8 +194,8 @@ This (essential) model has been used for finding locations of subglacial lakes
 at local minima of the hydraulic potential.  If water builds up significantly
 (e.g. thickness of 10s of meters or more) then in the model here the resulting
 lakes diffuse instead of becoming infinitely deep.  Thus we avoid delta
-functions at the minima of the hydraulic potential.  This model is a
-well-posed PDE which finds subglacial lakes.
+functions of water thickness at the minima of the hydraulic potential in this
+well-posed model.
 
 This model should generally be tested using static ice geometry first, i.e.
 using option -no_mass.
@@ -223,17 +221,16 @@ where \f$\psi\f$ is the hydraulic potential
     \f[ \psi = P + \rho_w g (b + W). \f]
 The generalized conductivity \f$K\f$ is nontrivial and it generally also
 depends on the water thickness:
-    \f[ K = k W^{\alpha-1} |\nabla (P+\rho_w g b)|^{\beta - 2}. \f]
+    \f[ K = k W^{\alpha-1} |\nabla (P+\rho_w g b)|^{\beta-2}. \f]
 
-This model contains enough information (modeled fields) so that we can
+This model contains enough information (enough modeled fields) so that we can
 compute the wall melt generated by dissipating the gravitational
 potential energy in the moving, presumably turbulent, subglacial water.  If we
 suppose that this heat is dissipated immediately as melt on the
 cavity/conduit walls then we get a formula for a wall melt contribution.  (This
 is in addition to the `bmelt` field coming from conserving energy in the flowing
 ice.)  See wall_melt().  At this time the wall melt is diagnostic only and does
-not add to the water amount in the till, because that addition is clearly
-unstable.
+not add to the water amount W; such an addition is generally unstable.
  */
 class PISMRoutingHydrology : public PISMHydrology {
 public:
@@ -310,7 +307,7 @@ protected:
 
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
 /*!
-This implements the new van Pelt & Bueler model documented at the repo (currently
+This implements the new Bueler & van Pelt model documented at the repo (currently
 private):
   https://github.com/bueler/hydrolakes
 Unlike PISMRoutingHydrology, the water pressure P is a state variable, and there
@@ -338,7 +335,6 @@ public:
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
-  virtual PetscErrorCode till_water_pressure(IceModelVec2S &result);
 
 protected:
   // this model's state, in addition to what is in PISMRoutingHydrology
