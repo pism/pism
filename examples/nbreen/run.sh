@@ -95,6 +95,10 @@ physics="-config_override nbreen_config.nc -no_mass -no_energy"
 
 diagnostics="-extra_file extras_$oname -extra_times $etimes -extra_vars $evarlist"
 
+set -x
+
 mpiexec -n $NN $pismexec -boot_file $data $climate $physics $hydro \
     $grid -max_dt $dtmax -ys 0.0 -y $YY $diagnostics -o $oname
+
+set +x
 
