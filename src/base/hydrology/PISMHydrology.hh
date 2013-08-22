@@ -56,16 +56,16 @@ Background references for such models include [\ref FlowersClarke2002_theory,
 \ref Hewittetal2012, \ref Schoofetal2012, \ref Hewitt2013].
 
 These models always have a separate, but potentially-coupled, amount of water
-which is held in local till storage.  Generally the transportable water (bwat)
-and till water (tillwat) thicknesses are different.  Models with such till
-storage include [\ref BBssasliding, \ref SchoofTill,
+which is held in local till storage.  It is important to note that the
+transportable water (bwat) and till water (tillwat) thicknesses are different.
+Published models with till storage include [\ref BBssasliding, \ref SchoofTill,
 \ref TrufferEchelmeyerHarrison, \ref Tulaczyketal2000b].
 
 The till water thickness is can be used, via the theory of
 [\ref Tulaczyketal2000], to compute an effective pressure for the water in the
 pore spaces of the till, which can then be used by the Mohr-Coulomb criterion
 to provide a yield stress.  Class PISMMohrCoulombYieldStress does this
-calculation; here in PISMHydrology only the till water thickness tillwat is
+calculation.  Here in PISMHydrology only the till water thickness tillwat is
 computed.
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
@@ -115,11 +115,9 @@ public:
   // this diagnostic method returns zero in the base class
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
-  // sets result = overburden pressure
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
-
   // these methods MUST be implemented in the derived class
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
 
 protected:
@@ -169,6 +167,9 @@ public:
 
   // sets result = 0
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+
+  // returns the overburden pressure in hope it is harmless
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
   // solves an implicit step of a highly-simplified ODE
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
@@ -249,6 +250,8 @@ public:
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
 

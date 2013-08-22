@@ -291,6 +291,13 @@ PetscErrorCode PISMRoutingHydrology::subglacial_water_thickness(IceModelVec2S &r
 }
 
 
+//! Returns the (trivial) overburden pressure as the pressure of the transportable water, because this is the model.
+PetscErrorCode PISMRoutingHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+  PetscErrorCode ierr = overburden_pressure(result); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Get the hydraulic potential from bedrock topography and current state variables.
 /*!
 Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.

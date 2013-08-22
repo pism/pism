@@ -27,6 +27,13 @@ PetscErrorCode PISMNullTransportHydrology::subglacial_water_thickness(IceModelVe
 }
 
 
+//! Returns the (trivial) overburden pressure as the pressure of the non-existent transportable water, because this is the least harmful output if this is misused.
+PetscErrorCode PISMNullTransportHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+  PetscErrorCode ierr = overburden_pressure(result); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Update the till water thickness by an explicit step of a simplified ODE.  There is no tranportable water thickness variable.
 /*!
 FIXME: THIS DOES NOT MATCH NOTES

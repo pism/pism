@@ -340,9 +340,3 @@ PetscErrorCode PISMHydrology::get_input_rate(
   return 0;
 }
 
-
-//! Returns the (trivial) overburden pressure as the pressure of the tranportable water.
-PetscErrorCode PISMHydrology::subglacial_water_pressure(IceModelVec2S &result) {
-  PetscErrorCode ierr = overburden_pressure(result); CHKERRQ(ierr);
-  return 0;
-}
