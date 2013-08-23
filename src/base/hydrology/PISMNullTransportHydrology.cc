@@ -34,18 +34,13 @@ PetscErrorCode PISMNullTransportHydrology::subglacial_water_pressure(IceModelVec
 }
 
 
-//! Update the till water thickness by an explicit step of a simplified ODE.  There is no tranportable water thickness variable.
+//! Update the till water thickness by simply integrating the melt input.  There is no tranportable water thickness variable and no interaction with it.
 /*!
-FIXME: THIS DOES NOT MATCH NOTES
-
 Does an explicit (Euler) step of the integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \min \left\{\frac{m}{\rho_w}, \mu \left(W_{til}^{max} - W_{til}\right)\right\} - C\f]
-where \f$\mu=\f$`hydrology_tillwat_rate`, \f$C=\f$`hydrology_tillwat_decay_rate_null`,
-and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is
-`total_input`.
-
-The solution is forced to satisfy the inequalities
-  \f[ 0 \le W_{til} \le W_{til}^{max}.\f]
+  \f[ \frac{\partial W_{til}}{\partial t} = \min \left\{\frac{m}{\rho_w} - C\f]
+where \f$C=\f$`hydrology_tillwat_decay_rate_null`.  Enforces bounds
+\f$0 \le W_{til} \le W_{til}^{max}\f$ where the upper bound is
+`hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
  */
 PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal icedt) {
   // if asked for the identical time interval as last time, then do nothing
@@ -59,13 +54,11 @@ PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal iced
   ierr = get_input_rate(icet,icedt,total_input); CHKERRQ(ierr);
 
   const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-                  mu       = config.get("hydrology_tillwat_rate"),
                   C        = config.get("hydrology_tillwat_decay_rate_null");
-  if ((Wtilmax < 0.0) || (mu < 0.0) || (C < 0.0)) {
+  if (Wtilmax < 0.0) {
     PetscPrintf(grid.com,
-       "PISMNullTransportHydrology ERROR: one of scalar config parameters is negative\n"
-       "            this is not allowed\n"
-       "ENDING ... \n\n");
+       "PISMNullTransportHydrology ERROR: hydrology_tillwat_max is negative\n"
+       "            this is not allowed ... ENDING ... \n\n");
     PISMEnd();
   }
 
@@ -73,12 +66,8 @@ PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal iced
   ierr = total_input.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      //const PetscReal change = mu * Wtilmax + total_input(i,j) - C;
-      //Wtil(i,j) = (Wtil(i,j) + icedt * change) / (1.0 + mu * icedt);
-      const PetscReal change = mu * (Wtilmax - Wtil(i,j));
-      Wtil(i,j) = Wtil(i,j) + icedt * (PetscMin(change, total_input(i,j)) - C);
-      Wtil(i,j) = PetscMax(0.0, Wtil(i,j));
-      Wtil(i,j) = PetscMin(Wtil(i,j), Wtilmax);
+      Wtil(i,j) += icedt * (total_input(i,j) - C);
+      Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), Wtilmax);
     }
   }
   ierr = Wtil.end_access(); CHKERRQ(ierr);
