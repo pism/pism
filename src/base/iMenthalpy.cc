@@ -332,6 +332,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = bwatcurr.set_attrs("internal", "current amount of basal water", "m", ""); CHKERRQ(ierr);
   ierr = bwatcurr.set_glaciological_units("m");
   if (subglacial_hydrology) {
+    // FIXME:  this should be sum of till and subglacial, or just till for now?
     ierr = subglacial_hydrology->subglacial_water_thickness(bwatcurr); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 3,"PISM ERROR: PISMHydrology* subglacial_hydrology is NULL in enthalpyAndDrainageStep()");
