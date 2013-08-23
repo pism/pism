@@ -22,7 +22,7 @@ fi
 $MPIDO ${PATHTO}pismr -i start.nc -hydrology null $INPUTCHOICE -ys 0 -y 1 $EXTRASNULL -extra_file extras_null.nc  -o null.nc
 
 # finer grid -hydrology null
-$MPIDO ${PATHTO}pismr -boot_file start.nc -Mx 241 -My 241 -Lz 4100 -Mz 201 -hydrology null $INPUTCHOICE -ys 0 -y 1 -extra_file extras_finenull.nc $EXTRASNULL -o finenull.nc
+#$MPIDO ${PATHTO}pismr -boot_file start.nc -Mx 241 -My 241 -Lz 4100 -Mz 201 -hydrology null $INPUTCHOICE -ys 0 -y 1 -extra_file extras_finenull.nc $EXTRASNULL -o finenull.nc
 
 # -hydrology routing
 cp start.nc start_withbwat.nc
@@ -31,7 +31,7 @@ ncks -A -v tillwat start.nc start_withbwat.nc
 $MPIDO ${PATHTO}pismr -i start_withbwat.nc -hydrology routing $INPUTCHOICE -report_mass_accounting -ys 0 -y 1 -extra_file extras_routing.nc $EXTRASROUT -o routing.nc
 
 # finer grid -hydrology routing
-$MPIDO ${PATHTO}pismr -boot_file start_withbwat.nc -Mx 241 -My 241 -Lz 4100 -Mz 201 -hydrology routing $INPUTCHOICE -report_mass_accounting -ys 0 -y 1 -extra_file extras_finerouting.nc $EXTRASROUT -o finerouting.nc
+#$MPIDO ${PATHTO}pismr -boot_file start_withbwat.nc -Mx 241 -My 241 -Lz 4100 -Mz 201 -hydrology routing $INPUTCHOICE -report_mass_accounting -ys 0 -y 1 -extra_file extras_finerouting.nc $EXTRASROUT -o finerouting.nc
 
 # -hydrology distributed
 # see for basic tests see
