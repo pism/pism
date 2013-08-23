@@ -78,9 +78,14 @@ PetscErrorCode PISMRoutingHydrology::allocate() {
   // temporaries during update; do not need ghosts
   ierr = Wnew.create(grid, "Wnew_internal", false); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
-                     "new thickness of subglacial water layer during update",
+                     "new thickness of transportable subglacial water layer during update",
                      "m", ""); CHKERRQ(ierr);
   ierr = Wnew.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = Wtilnew.create(grid, "Wtilnew_internal", false); CHKERRQ(ierr);
+  ierr = Wtilnew.set_attrs("internal",
+                     "new thickness of till (subglacial) water layer during update",
+                     "m", ""); CHKERRQ(ierr);
+  ierr = Wtilnew.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -167,9 +172,10 @@ PetscErrorCode PISMRoutingHydrology::write_variables(set<string> vars, const PIO
   return 0;
 }
 
+
 void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
                                            map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
-  // remove bwat from PISMHydrology version, because bwat is state
+  // bwat is state
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
@@ -180,111 +186,104 @@ void PISMRoutingHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
 }
 
 
-//! Check W >= 0 and fails with message if not satisfied.
-PetscErrorCode PISMRoutingHydrology::check_W_nonnegative() {
+//! Check thk >= 0 and fails with message if not satisfied.
+PetscErrorCode PISMRoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
   PetscErrorCode ierr;
-  ierr = W.begin_access(); CHKERRQ(ierr);
+  ierr = waterthk.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (W(i,j) < 0.0) {
+      if (waterthk(i,j) < 0.0) {
         PetscPrintf(grid.com,
-           "PISMRoutingHydrology ERROR: disallowed negative subglacial water layer thickness (bwat)\n"
-           "    W(i,j) = %.6f m at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", W(i,j),i,j);
+           "PISMRoutingHydrology ERROR: disallowed negative water layer thickness\n"
+           "    waterthk(i,j) = %.6f m at (i,j)=(%d,%d)\n"
+           "ENDING ... \n\n", waterthk(i,j),i,j);
         PISMEnd();
       }
     }
   }
-  ierr = W.end_access(); CHKERRQ(ierr);
+  ierr = waterthk.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Correct the new water thickness based on boundary requirements.  Do mass accounting.
 /*!
-FIXME: SHOULDN'T THIS BE ZEROING OUT Wtil AT THE BOUNDARY TOO?
+At ice free locations and ocean locations we require that water thicknesses
+(i.e. both the transportable water thickness \f$W\f$ and the till water
+thickness \f$W_{til}\f$) be zero at the end of each time step.  Also we require
+that any negative water thicknesses be set to zero (i.e. we dp projection to
+enforce lower bound).  This method does not enforce any upper bounds.
 
-At ice free locations and ocean locations we require that the water thickness
-is zero at the end of each time step.  Also we require that any negative water
-thicknesses be set to zero (i.e. projection to enforce \f$W\ge 0\f$).
+This method should be called once for each thickness field which needs to be
+processed.  This method takes alters the "new" field newthk in-place and sums
+the boundary removals.
 
-This method takes care of these requirements by altering Wnew appropriately.
-
-We report accounts for these mass changes.
+This method does no reporting at stdout; the calling routine can do that.
  */
 PetscErrorCode PISMRoutingHydrology::boundary_mass_changes(
-            IceModelVec2S &myWnew,
+            IceModelVec2S &newthk,
             PetscReal &icefreelost, PetscReal &oceanlost,
             PetscReal &negativegain, PetscReal &nullstriplost) {
   PetscErrorCode ierr;
   PetscReal fresh_water_density = config.get("fresh_water_density");
   PetscReal my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
   MaskQuery M(*mask);
-  ierr = Wnew.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
+
+  ierr = newthk.begin_access(); CHKERRQ(ierr);
   ierr = cellarea->begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscReal dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-      if (Wnew(i,j) < 0.0) {
-        my_negativegain += -Wnew(i,j) * dmassdz;
-        Wnew(i,j) = 0.0;
+      if (newthk(i,j) < 0.0) {
+        my_negativegain += -newthk(i,j) * dmassdz;
+        newthk(i,j) = 0.0;
       }
-      if (M.ice_free_land(i,j) && (Wnew(i,j) > 0.0)) {
-        my_icefreelost += Wnew(i,j) * dmassdz;
-        Wnew(i,j) = 0.0;
+      if (M.ice_free_land(i,j) && (newthk(i,j) > 0.0)) {
+        my_icefreelost += newthk(i,j) * dmassdz;
+        newthk(i,j) = 0.0;
       }
-      if (M.ocean(i,j) && (Wnew(i,j) > 0.0)) {
-        my_oceanlost += Wnew(i,j) * dmassdz;
-        Wnew(i,j) = 0.0;
+      if (M.ocean(i,j) && (newthk(i,j) > 0.0)) {
+        my_oceanlost += newthk(i,j) * dmassdz;
+        newthk(i,j) = 0.0;
       }
     }
   }
-  ierr = Wnew.end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = newthk.end_access(); CHKERRQ(ierr);
   ierr = cellarea->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
 
   // make global over all proc domains (i.e. whole glacier/ice sheet)
   ierr = PISMGlobalSum(&my_icefreelost, &icefreelost, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalSum(&my_oceanlost, &oceanlost, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalSum(&my_negativegain, &negativegain, grid.com); CHKERRQ(ierr);
 
-  // this reporting is redundant for the simpler models but shows short time step
-  // reporting for nontrivially-distributed (possibly adaptive) hydrology models
-  ierr = verbPrintf(4, grid.com,
-    "  mass losses in hydrology time step:\n"
-    "     land margin loss = %.3e kg, ocean margin loss = %.3e kg, (W<0) gain = %.3e kg\n",
-    icefreelost, oceanlost, negativegain); CHKERRQ(ierr);
-
   if (stripwidth <= 0.0) {
     nullstriplost = 0.0;
     return 0;
   }
-
-  PetscReal my_nullstriplost = 0.0;
-
-  ierr = myWnew.begin_access(); CHKERRQ(ierr);
+  ierr = newthk.begin_access(); CHKERRQ(ierr);
   ierr = cellarea->begin_access(); CHKERRQ(ierr);
+  PetscReal my_nullstriplost = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscReal dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
       if (in_null_strip(i,j)) {
-        my_nullstriplost += Wnew(i,j) * dmassdz;
-        Wnew(i,j) = 0.0;
+        my_nullstriplost += newthk(i,j) * dmassdz;
+        newthk(i,j) = 0.0;
       }
     }
   }
-  ierr = myWnew.end_access(); CHKERRQ(ierr);
+  ierr = newthk.end_access(); CHKERRQ(ierr);
   ierr = cellarea->end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&my_nullstriplost, &nullstriplost, grid.com); CHKERRQ(ierr);
-  ierr = verbPrintf(4, grid.com,
-    "     null strip loss = %.3e kg\n",nullstriplost); CHKERRQ(ierr);
+
   return 0;
 }
 
 
-//! Copies the W variable, the modeled water layer thickness.
+//! Copies the W variable, the modeled transportable water layer thickness.
 PetscErrorCode PISMRoutingHydrology::subglacial_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = W.copy_to(result); CHKERRQ(ierr);
   return 0;
@@ -354,12 +353,12 @@ PetscErrorCode PISMRoutingHydrology::water_thickness_staggered(IceModelVec2Stag 
 /*!
 Computes
     \f[ K = K(W,\nabla P, \nabla b) = k W^{\alpha-1} |\nabla(P+\rho_w g b)|^{\beta-2} \f]
-on the staggered grid.  We denote \f$R = P+\rho_w g b\f$ internally.  The quantity
-    \f[ \Pi = |\nabla(P+\rho_w g b)|^2 = |\nabla R|^2 \f]
-is computed on a staggered grid by a [\ref Mahaffy] -like scheme.  This requires
-\f$R\f$ to be defined on a box stencil of width 1.
+on the staggered grid.  We denote \f$R = P+\rho_w g b\f$ and
+\f$\Pi = |\nabla R|^2\f$ internally; the latter is computed on a staggered grid
+by a [\ref Mahaffy] -like scheme.  This requires \f$R\f$ to be defined on a box
+stencil of width 1.
 
-Also computes the maximum over all staggered points of \f$ K W \f$.
+Also returns the maximum over all staggered points of \f$ K W \f$.
  */
 PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
                        IceModelVec2Stag &result, PetscReal &maxKW) {
@@ -376,13 +375,10 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
     PISMEnd();
   }
 
-  if (beta == 2.0) {
-    ierr = verbPrintf(4, grid.com,
-      "    in PISMRoutingHydrology::conductivity_staggered(): "
-      "beta == 2.0 exactly; simplifying calculation\n"); CHKERRQ(ierr);
-  } else {
-    // general case where beta is used; put norm of square gradient temporarily
-    //   in result
+  // the following calculation is bypassed if beta == 2.0 exactly; it puts
+  // the squared norm of the gradient of the simplified hydrolic potential
+  // temporarily in "result"
+  if (beta != 2.0) {
     ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // yes, it updates ghosts
     ierr = R.add(rg, (*bed)); CHKERRQ(ierr); // R  <-- P + rhow g b
     ierr = R.update_ghosts(); CHKERRQ(ierr);
@@ -404,28 +400,27 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
     ierr = result.end_access(); CHKERRQ(ierr);
   }
 
-  PetscReal mymaxKW = 0.0;
-  ierr = R.begin_access(); CHKERRQ(ierr);
+  PetscReal betapow = (beta-2.0)/2.0, mymaxKW = 0.0;
   ierr = Wstag.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       for (PetscInt o = 0; o < 2; ++o) {
-        result(i,j,o) = k * pow(Wstag(i,j,o),alpha-1.0);
-        // next cases skip eval of pow in common case beta=2
+        PetscReal Ktmp = k * pow(Wstag(i,j,o),alpha-1.0);
         if (beta < 2.0) {
           // regularize negative power |\grad psi|^{beta-2} by adding eps because
           //   large head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m
           const PetscReal eps = 1.0;   // Pa m-1
-          result(i,j,o) *= pow(result(i,j,o) + eps * eps,(beta-2.0)/2.0);
+          result(i,j,o) = Ktmp * pow(result(i,j,o) + eps * eps,betapow);
         } else if (beta > 2.0) {
-          result(i,j,o) *= pow(result(i,j,o),(beta-2.0)/2.0);
+          result(i,j,o) = Ktmp * pow(result(i,j,o),betapow);
+        } else { // beta == 2.0
+          result(i,j,o) = Ktmp;
         }
         mymaxKW = PetscMax( mymaxKW, result(i,j,o) * Wstag(i,j,o) );
       }
     }
   }
-  ierr = R.end_access(); CHKERRQ(ierr);
   ierr = Wstag.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
@@ -607,7 +602,7 @@ PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
   maxD_result = rg * maxKW;
-  dtCFL_result = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy); // is regularization needed?
+  dtCFL_result = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy); // FIXME: is regularization needed?
   dtDIFFW_result = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
   dtDIFFW_result = 0.25 / (maxD_result * dtDIFFW_result);
   // dt = min { te-t, dtmax, dtCFL, dtDIFFW }
@@ -618,10 +613,47 @@ PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
 }
 
 
+//! The computation of Wtilnew, called by update().
+/*!
+Does an implicit (backward Euler) step of the integration
+  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(\min\{\omega W,W_{til}^{max} - W_{til}\right)\f]
+where \f$\mu=\f$`hydrology_tillwat_rate`, \f$\omega=\f$`hydrology_tillwat_transfer_proportion`,
+and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  There is no time-step restriction.
+The solution satisfies the inequalities
+  \f[ 0 \le W_{til} \le W_{til}^{max}.\f]
+ */
+PetscErrorCode PISMRoutingHydrology::raw_update_Wtil(PetscReal hdt) {
+    PetscErrorCode ierr;
+    PetscReal tmpmin;
+    const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
+                    mu       = config.get("hydrology_tillwat_rate"),
+                    omega    = config.get("hydrology_tillwat_transfer_proportion"),
+                    denom    = 1.0 + mu * hdt;
+    if ((Wtilmax < 0.0) || (mu < 0.0) || (omega < 0.0)) {
+      PetscPrintf(grid.com,
+         "PISMRoutingHydrology ERROR: scalar config parameter is negative in raw_update_Wtil();\n"
+         "            this is not allowed ... ENDING ... \n\n");
+      PISMEnd();
+    }
+    ierr = W.begin_access(); CHKERRQ(ierr);
+    ierr = Wtil.begin_access(); CHKERRQ(ierr);
+    ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        tmpmin = PetscMin(omega * W(i,j), Wtilmax);
+        Wtilnew(i,j) = (Wtil(i,j) + mu * hdt * tmpmin) / denom;
+      }
+    }
+    ierr = W.end_access(); CHKERRQ(ierr);
+    ierr = Wtil.end_access(); CHKERRQ(ierr);
+    ierr = Wtilnew.end_access(); CHKERRQ(ierr);
+
+    return 0;
+}
+
+
 //! The computation of Wnew, called by update().
 PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
-// FIXME:  NEW UNDERSTANDING SAYS UPDATE Wtil EVERYWHERE BY IMPLICIT STEP, THEN
-//         GO THROUGH AND SUBTRACT  (Wtil^{l+1} - Wtil^l) / dt  AS SOURCE TERM
     PetscErrorCode ierr;
     const PetscReal
       wux  = 1.0 / (grid.dx * grid.dx),
@@ -630,6 +662,8 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
     PetscReal divadflux, diffW;
 
     ierr = W.begin_access(); CHKERRQ(ierr);
+    ierr = Wtil.begin_access(); CHKERRQ(ierr);
+    ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = Kstag.begin_access(); CHKERRQ(ierr);
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
@@ -645,10 +679,13 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
                          Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
         diffW =   wux * (  De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)) )
                 + wuy * (  Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)) );
-        Wnew(i,j) = W(i,j) + hdt * (- divadflux + diffW + total_input(i,j));
+        Wnew(i,j) = W(i,j) - Wtilnew(i,j) + Wtil(i,j)
+                    + hdt * (- divadflux + diffW + total_input(i,j));
       }
     }
     ierr = W.end_access(); CHKERRQ(ierr);
+    ierr = Wtil.end_access(); CHKERRQ(ierr);
+    ierr = Wtilnew.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = Kstag.end_access(); CHKERRQ(ierr);
     ierr = Qstag.end_access(); CHKERRQ(ierr);
@@ -659,49 +696,6 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
 }
 
 
-//! Update both model state variables W and Wtil by applying one step of the till water evolution equation.
-/*!
-// FIXME:  NEW UNDERSTANDING SAYS UPDATE Wtil EVERYWHERE BY IMPLICIT STEP, THEN
-//         GO THROUGH AND SUBTRACT  (Wtil^{l+1} - Wtil^l) / dt  AS SOURCE TERM
-
-For updating Wtil, does an implicit (backward Euler) step of the integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(\min\{\tau W,W_{til}^{max} - W_{til}\right)\f]
-where \f$\mu=\f$`hydrology_tillwat_rate`, \f$\tau=\f$`hydrology_tillwat_transfer_proportion`,
-and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  There is no time-step restriction.
-The solution satisfies the inequalities
-  \f[ 0 \le W_{til} \le W_{til}^{max}.\f]
-The subglacial water amount is updated to conserve water.
- */
-PetscErrorCode PISMRoutingHydrology::exchange_with_till(PetscReal hdt) {
-  PetscErrorCode ierr;
-  const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-                  mu       = config.get("hydrology_tillwat_rate"),
-                  tau      = config.get("hydrology_tillwat_transfer_proportion");
-  if ((Wtilmax < 0.0) || (mu < 0.0) || (tau < 0.0)) {
-    PetscPrintf(grid.com,
-       "PISMRoutingHydrology ERROR: one of scalar config parameters for tillwat is negative\n"
-       "            this is not allowed\n"
-       "ENDING ... \n\n");
-    PISMEnd();
-  }
-
-  ierr = Wtil.begin_access(); CHKERRQ(ierr);
-  ierr = W.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscReal
-          change = mu * PetscMin(tau * W(i,j), Wtilmax),
-          Wtilnew = (Wtil(i,j) + hdt * change) / (1.0 + mu * hdt);
-      W(i,j) = W(i,j) - (Wtilnew - Wtil(i,j));
-      Wtil(i,j) = Wtilnew;
-    }
-  }
-  ierr = Wtil.end_access(); CHKERRQ(ierr);
-  ierr = W.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Update the model state variables W and Wtil by applying the subglacial hydrology model equations.
 /*!
 Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
@@ -709,7 +703,7 @@ is generally on the order of months to years.  This hydrology model will take it
 own shorter time steps, perhaps hours to weeks.
 
 For updating W = `bwat`, calls raw_update_W().  For updating Wtil = `tillwat`,
-calls exchange_with_till().
+calls raw_update_Wtil().
  */
 PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
   PetscErrorCode ierr;
@@ -737,7 +731,7 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
     hydrocount++;
 
 #if (PISM_DEBUG==1)
-    ierr = check_W_nonnegative(); CHKERRQ(ierr);
+    ierr = check_water_thickness_nonnegative(W); CHKERRQ(ierr);
     ierr = check_Wtil_bounds(); CHKERRQ(ierr);
 #endif
 
@@ -760,9 +754,17 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
       ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
 
-    // update Wnew (the actual step) from W, Wstag, Qstag, total_input
-    ierr = raw_update_W(hdt); CHKERRQ(ierr);
+    // update Wtilnew (the actual step) from W and Wtil
+    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
+    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
+    nullstriplost+= delta_nullstrip;
 
+    // update Wnew (the actual step) from W, Wtil, Wtilnew, Wstag, Qstag, total_input
+    ierr = raw_update_W(hdt); CHKERRQ(ierr);
     ierr = boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
     icefreelost  += delta_icefree;
@@ -770,11 +772,9 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
     negativegain += delta_neggain;
     nullstriplost+= delta_nullstrip;
 
-    // transfer Wnew into W
+    // transfer new into old
     ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
-
-    // update Wtil and W by modeling transfer to/from till
-    ierr = exchange_with_till(hdt); CHKERRQ(ierr);  // FIXME:  PUT BEFORE raw_update_W()
+    ierr = Wtilnew.copy_to(Wtil); CHKERRQ(ierr);
 
     ht += hdt;
   } // end of hydrology model time-stepping loop

@@ -360,7 +360,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     hydrocount++;
 
 #if (PISM_DEBUG==1)
-    ierr = check_W_nonnegative(); CHKERRQ(ierr);
+    ierr = check_water_thickness_nonnegative(W); CHKERRQ(ierr);
     ierr = check_Wtil_bounds(); CHKERRQ(ierr);
 #endif
 
@@ -475,11 +475,19 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Kstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
-    // update Wtotnew from W, Wstag, Qstag, total_input; the physics is
-    // subglacial water movement:
-    //    Wnew^{l+1} = W + (subglacial fluxes) + dt * total_input
-    ierr = PISMRoutingHydrology::raw_update_W(hdt); CHKERRQ(ierr);
+    // FIXME: following chunk is dangerous code duplication with PISMRoutingHydrology::update()
 
+    // update Wtilnew (the actual step) from W and Wtil
+    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
+    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
+    nullstriplost+= delta_nullstrip;
+
+    // update Wnew (the actual step) from W, Wtil, Wtilnew, Wstag, Qstag, total_input
+    ierr = raw_update_W(hdt); CHKERRQ(ierr);
     ierr = boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
     icefreelost  += delta_icefree;
@@ -487,11 +495,10 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     negativegain += delta_neggain;
     nullstriplost+= delta_nullstrip;
 
-    ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
+    // transfer new into old
     ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
-
-    // update Wtil and W by modeling transer to/from till
-    ierr = PISMRoutingHydrology::exchange_with_till(hdt); CHKERRQ(ierr);  // FIXME:  PUT BEFORE raw_update_W()
+    ierr = Wtilnew.copy_to(Wtil); CHKERRQ(ierr);
+    ierr = Pnew.update_ghosts(P); CHKERRQ(ierr);
 
     ht += hdt;
   } // end of hydrology model time-stepping loop

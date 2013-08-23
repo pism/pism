@@ -266,7 +266,7 @@ protected:
                    Kstag,// edge-centered (staggered) values of nonlinear conductivity
                    Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S Wnew, Pover, R;
+  IceModelVec2S Wnew, Wtilnew, Pover, R;
 
   PetscReal stripwidth; // width in m of strip around margin where V and W are set to zero;
                         // if negative then the strip mechanism is inactive inactive
@@ -274,14 +274,15 @@ protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode init_bwat(PISMVars &vars, bool i_set, bool bootstrap_set);
 
-  // when we update the transportable water, careful mass accounting at the
-  // boundary is needed; we update Wnew and so model state (Wtil or W) is not touched
+  // when we update the water amounts, careful mass accounting at the
+  // boundary is needed; we update the new thickness variable, typically a
+  // temporary during the update
   bool report_mass_accounting;
-  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
+  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &newthk,
              PetscReal &icefreelost, PetscReal &oceanlost,
              PetscReal &negativegain, PetscReal &nullstriplost);
 
-  virtual PetscErrorCode check_W_nonnegative();
+  virtual PetscErrorCode check_water_thickness_nonnegative(IceModelVec2S &thk);
 
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
@@ -298,7 +299,7 @@ protected:
             PetscReal &dtCFL_result, PetscReal &dtDIFFW_result);
 
   PetscErrorCode raw_update_W(PetscReal hdt);
-  PetscErrorCode exchange_with_till(PetscReal hdt);
+  PetscErrorCode raw_update_Wtil(PetscReal hdt);
 
   inline bool in_null_strip(PetscInt i, PetscInt j) {
     if (stripwidth < 0.0) return false;
