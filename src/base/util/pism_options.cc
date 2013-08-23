@@ -646,8 +646,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                    "hydrology_creep_closure_coefficient"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_lower_bound_creep_regularization",
                                    "hydrology_lower_bound_creep_regularization"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_englacial_porosity",
-                                   "hydrology_englacial_porosity"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_regularizing_porosity",
                                    "hydrology_regularizing_porosity"); CHKERRQ(ierr);
 

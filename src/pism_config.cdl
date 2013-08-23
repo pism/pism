@@ -252,11 +252,8 @@ netcdf pism_config {
     pism_config:hydrology_lower_bound_creep_regularization = 0.001;
     pism_config:hydrology_lower_bound_creep_regularization_doc = "m; Y_0 in notes; creep closure term in evolution of layer thickness remains positive (active) even at zero water if this is positive; in PISMDistributedHydrology";
 
-    pism_config:hydrology_englacial_porosity = 0.001;
-    pism_config:hydrology_englacial_porosity_doc = "[pure]; phi in notes; macroporosity of englacial system, following [\\ref Bartholomausetal2011]";
-
     pism_config:hydrology_regularizing_porosity = 0.01;
-    pism_config:hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes; added to hydrology_englacial_porosity in pressure equation time derivative term";
+    pism_config:hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes; regularizes pressure equation by multiplying time derivative term";
 
     pism_config:hydrology_maximum_time_step_years = 1.0;
     pism_config:hydrology_maximum_time_step_years_doc = "years; maximum allowed time step length used by PISMRoutingHydrology and PISMDistributedHydrology";

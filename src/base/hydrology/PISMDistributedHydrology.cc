@@ -154,13 +154,12 @@ PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const
 
 void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
                                                map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
-  // remove bwat from PISMHydrology version, because bwat is state
-  // remove bwp from PISMRoutingHydrology version, because bwp is state
+  // bwat is state
+  // bwp is state
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
   dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
-  // keep diagnostic: it makes sense if transport is modeled
   dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
 }
 
@@ -277,9 +276,8 @@ PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
   ierr = adaptive_for_W_evolution(t_current,t_end, maxKW,
               dt_result,maxV_result,maxD_result,dtCFL,dtDIFFW); CHKERRQ(ierr);
 
-  const PetscReal phisum   = config.get("hydrology_englacial_porosity")
-                               + config.get("hydrology_regularizing_porosity");
-  dtDIFFP = 2.0 * phisum * dtDIFFW;
+  const PetscReal phi0 = config.get("hydrology_regularizing_porosity");
+  dtDIFFP = 2.0 * phi0 * dtDIFFW;
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
   dt_result = PetscMin(dt_result, dtDIFFP);
@@ -334,15 +332,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             c2 = config.get("hydrology_creep_closure_coefficient"),
             Wr = config.get("hydrology_roughness_scale"),
             Y0 = config.get("hydrology_lower_bound_creep_regularization"),
-            // FIXME:  REMOVE ONE OF NEXT TWO PARAMS
-            phisum = config.get("hydrology_englacial_porosity")
-                       + config.get("hydrology_regularizing_porosity");
-
-  if (phisum <= 0.0) {
-    PetscPrintf(grid.com,
-        "PISM ERROR:  phisum = englacial_porosity + regularizing_porosity <= 0 ... ENDING\n");
-    PISMEnd();
-  }
+            phi0 = config.get("hydrology_regularizing_porosity");
 
   const PetscReal  omegax = 1.0 / (grid.dx * grid.dx),
                    omegay = 1.0 / (grid.dy * grid.dy);
@@ -392,7 +382,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     }
 
     // update Pnew from time step
-    const PetscReal  CC = (rg * hdt) / phisum;  // FIXME: phisum SHOULD BE REPLACED BY phi0 OR SOMETHING
+    const PetscReal  CC = (rg * hdt) / phi0;
     PetscReal  Open, Close, divflux,
                dpsie, dpsiw, dpsin, dpsis;
     ierr = overburden_pressure(Pover); CHKERRQ(ierr);
@@ -456,6 +446,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
                             Ks = Kstag(i,j-1,1);
             divflux += omegay * ( Kn * Wn * dpsin - Ks * Ws * dpsis );
           }
+
+          // FIXME:  need dWtil/dt term a la notes with "Z_{ij}"
 
           // candidate for pressure update
           Pnew(i,j) = P(i,j) + CC * ( divflux + Close - Open + total_input(i,j) );
