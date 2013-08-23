@@ -39,7 +39,7 @@ elif [ "$2" -eq "125" ]; then
   myMy=207
 elif [ "$2" -eq "62" ]; then
   echo ""
-  echo "WARNING: 62 m run is computationally intensive; may exceed 100 proc.-hours"
+  echo "WARNING: 62 m run is computationally intensive"
   echo ""
   dx=62
   dtmax=0.01  # more frequent just because so many hydrology substeps occur
@@ -57,7 +57,7 @@ DT="$5"
 etimes="0:$DT:$YY"
 
 # these extra_ diagnostics apply to "dist" and "event":
-evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp,wallmelt"
+evarlist="thk,cbase,bmelt,hydroinput,bwat,bwp,bwatvel,bwprel,effbwp,wallmelt,tillwat"
 
 if [ "$4" = "dist" ]; then
 
@@ -76,7 +76,7 @@ elif [ "$4" = "routing" ]; then
   # routing run: very fast
   oname=nbreen_y${YY}_${dx}m_routing.nc
   hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3"
-  evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt"  # revised
+  evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt,tillwat"  # revised
 
 else
   echo "invalid fourth argument; must be in $TYPELIST"
