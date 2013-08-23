@@ -40,7 +40,7 @@ netcdf nbreen_config {
     pism_overrides:hydrology_creep_closure_coefficient = 0.040;
     pism_overrides:hydrology_creep_closure_coefficient_doc = "; = c_2";
 
-    pism_overrides:hydrology_englacial_porosity = 0.001;
+    pism_overrides:hydrology_englacial_porosity = 0.001;  // FIXME  this parameter is not used any more
     pism_overrides:hydrology_englacial_porosity_doc = "[pure]; = phi";
 
     pism_overrides:hydrology_regularizing_porosity = 0.005;
