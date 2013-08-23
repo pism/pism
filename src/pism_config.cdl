@@ -225,7 +225,7 @@ netcdf pism_config {
     pism_config:hydrology_tillwat_rate = 1.0e-6;
     pism_config:hydrology_tillwat_rate_doc = "s-1; exponential rate at which tillwat approaches tillwat_max";
 
-    pism_config:hydrology_tillwat_transfer_proportion = 10.0;
+    pism_config:hydrology_tillwat_transfer_proportion = 100.0;
     pism_config:hydrology_tillwat_transfer_proportion_doc = "; tillwat should be comparable to this multiple of bwat";
 
     pism_config:hydrology_tillwat_decay_rate_null = 3.16887646154128e-11;
