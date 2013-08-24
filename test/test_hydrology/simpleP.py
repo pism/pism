@@ -5,7 +5,7 @@ simpleP_c_result="""$ ./simpleP
 Enter  r  (in km; 0 <= r <= TESTP_L = 22.5):   20.0
 Results from Test P:
     h = 180.0000 (m)  Po = 16.0687800 (bar)  |vb| = 46.26644 (m/year)
-    W_c = 0.58184968 (m)  W = 0.67507258 (m)  P = 2.0086731 (bar)"""
+    W_c = 0.58226741 (m)  W = 0.67537710 (m)  P = 2.0082437 (bar)"""
 
 import numpy as np
 from exactP import exactP_list
