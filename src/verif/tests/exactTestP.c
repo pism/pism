@@ -35,12 +35,11 @@
 /* major model parameters: */
 #define Aglen    3.1689e-24    /* Pa-3 s-1 */
 #define k        (0.01/(rhow*g))   /* FIXME:  this is extremely low but it matches what we were using */
+#define alpha    1.0           /* [pure] */
+#define beta     2.0           /* [pure] */
 #define Wr       1.0           /* m */
 #define c1       0.500         /* m-1 */
 #define c2       0.040         /* [pure] */
-
-/* model regularizations */
-#define Y0       0.001         /* m */
 
 /* specific to exact solution */
 #define m0       ((0.20/SperA)*rhow)  /* kg m-2 s-1; = 20 cm/year */
@@ -70,7 +69,7 @@ double criticalW(double r) {
   getsb(r,&sb,&dsb);
   sbcube = sb * sb * sb;
   Pocube = Po * Po * Po;
-  return ((sbcube * Wr - Pocube * Y0) / (sbcube + Pocube));
+  return (sbcube / (sbcube + Pocube)) * Wr;
 }
 
 
@@ -97,10 +96,10 @@ int funcP(double r, const double W[], double f[], void *params) {
     getsb(r,&sb,&dsb);
     omega0 = m0 / (2.0 * rhow * k);
     dPo   = - (2.0 * rhoi * g * h0 / (TESTP_R0*TESTP_R0)) * r;
-    tmp1  = pow(W[0] + Y0,4.0/3.0) * pow(Wr - W[0],2.0/3.0);
-    numer = dsb * (W[0] + Y0) * (Wr - W[0]);
+    tmp1  = pow(W[0],4.0/3.0) * pow(Wr - W[0],2.0/3.0);
+    numer = dsb * W[0] * (Wr - W[0]);
     numer = numer - ( omega0 * r / W[0] + dPo ) * tmp1;
-    denom = (1.0/3.0) * (Wr + Y0) * sb + rhow * g * tmp1;
+    denom = (1.0/3.0) * sb * Wr + rhow * g * tmp1;
     f[0] = numer / denom;
     return GSL_SUCCESS;
   }
@@ -113,14 +112,14 @@ double initialconditionW() {
   hL  = h0 * (1.0 - (TESTP_L/TESTP_R0) * (TESTP_L/TESTP_R0));
   PoL = rhoi * g * hL;
   sbL = pow( c1 * v0 / (c2 * Aglen), 1.0/3.0);
-  return (pow(sbL,3.0) * Wr - pow(PoL,3.0) * Y0) / (pow(sbL,3.0) + pow(PoL,3.0));
+  return (pow(sbL,3.0) / (pow(sbL,3.0) + pow(PoL,3.0))) * Wr;
 }
 
 
 double psteady(double W, double magvb, double Po) {
   double sbcube, frac, P;
   sbcube = c1 * fabs(magvb) / (c2 * Aglen);
-  frac = (W < Wr) ? (Wr - W) / (W + Y0) : 0.0;
+  frac = (W < Wr) ? (Wr - W) / W : 0.0;
   P = Po - pow(sbcube * frac, 1.0/3.0);
   if (P < 0.0)  P = 0.0;
   return P;
