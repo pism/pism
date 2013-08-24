@@ -786,10 +786,10 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
                       "        (last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
                       "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
                       "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
-                      hydrocount,
-                      grid.convert(dt/hydrocount, "seconds", "years"),
-                      dt/hydrocount, maxV, maxD,
-                      icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
+                      hydrocount, grid.convert(dt/hydrocount, "seconds", "years"), dt/hydrocount,
+                      maxV, maxD,
+                      icefreelost, oceanlost,
+                      negativegain, nullstriplost); CHKERRQ(ierr);
   }
   return 0;
 }

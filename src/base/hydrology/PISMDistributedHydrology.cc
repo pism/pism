@@ -70,6 +70,8 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
     "* Initializing the vanPelt-Bueler distributed (linked-cavities) subglacial hydrology model...\n");
     CHKERRQ(ierr);
 
+// FIXME this looks like unnecessary code duplication relative to PISMRoutingHydrology::init()
+
   // initialize water layer thickness and wate pressure from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant values
   bool i_set, bootstrap_set, init_P_from_steady, stripset;
@@ -79,13 +81,15 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
     ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap_set); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-init_P_from_steady",
-                            "initialize P from formula P(W) which applies in steady state",
-                            init_P_from_steady); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-report_mass_accounting",
+      "Report to stdout on mass accounting in hydrology models", report_mass_accounting); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-hydrology_null_strip",
                            "set the width, in km, of the strip around the edge of the computational domain in which hydrology is inactivated",
                            stripwidth,stripset); CHKERRQ(ierr);
     if (stripset) stripwidth *= 1.0e3;
+    ierr = PISMOptionsIsSet("-init_P_from_steady",
+                            "initialize P from formula P(W) which applies in steady state",
+                            init_P_from_steady); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -495,18 +499,19 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
+// FIXME this looks like unnecessary code duplication relative to PISMRoutingHydrology::update() version of reporting
+
   if (report_mass_accounting) {
-    const PetscReal dtavyears = grid.convert(dt/hydrocount, "seconds", "years");
     ierr = verbPrintf(2, grid.com,
                       " 'distributed' hydrology summary:\n"
                       "     %d hydrology sub-steps with average dt = %.7f years = %.2f s\n"
                       "        (average of %.2f steps per CFL time; last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
                       "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
                       "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
-                      hydrocount, dtavyears,
-                      grid.convert(dtavyears, "seconds", "years"),
+                      hydrocount, grid.convert(dt/hydrocount, "seconds", "years"), dt/hydrocount,
                       cumratio/hydrocount, maxV, maxD,
-                      icefreelost, oceanlost, negativegain, nullstriplost); CHKERRQ(ierr);
+                      icefreelost, oceanlost,
+                      negativegain, nullstriplost); CHKERRQ(ierr);
   }
   return 0;
 }
