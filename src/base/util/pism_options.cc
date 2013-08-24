@@ -614,7 +614,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.flag_from_option("energy", "do_energy"); CHKERRQ(ierr);
   ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);
 
-  // choose hydrology submodel (and options that apply to all objects)
+  // hydrology
   ierr = config.keyword_from_option("hydrology", "hydrology_model",
                                     "null,routing,distributed"); CHKERRQ(ierr);
   ierr = config.flag_from_option("hydrology_use_const_bmelt",
@@ -623,29 +623,27 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                    "hydrology_const_bmelt"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_tillwat_max",
                                    "hydrology_tillwat_max"); CHKERRQ(ierr);
+  // this only applies to PISMNullTransportHydrology:
+  ierr = config.scalar_from_option("hydrology_tillwat_decay_rate_null",
+                                   "hydrology_tillwat_decay_rate_null"); CHKERRQ(ierr);
+  // these only apply to PISMRoutingHydrology:
   ierr = config.scalar_from_option("hydrology_tillwat_rate",
                                    "hydrology_tillwat_rate"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_tillwat_transfer_proportion",
                                    "hydrology_tillwat_transfer_proportion"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_tillwat_decay_rate_null",
-                                   "hydrology_tillwat_decay_rate_null"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_pressure_fraction_till",
-                                   "hydrology_pressure_fraction_till"); CHKERRQ(ierr);
-  // these only apply to PISMRoutingHydrology and PISMDistributedHydrology:
   ierr = config.scalar_from_option("hydrology_hydraulic_conductivity",
                                    "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_thickness_power_in_flux",
                                    "hydrology_thickness_power_in_flux"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_potential_gradient_power_in_flux",
                                    "hydrology_potential_gradient_power_in_flux"); CHKERRQ(ierr);
+  // additional to PISMRoutingHydrology, these apply to PISMDistributedHydrology:
   ierr = config.scalar_from_option("hydrology_roughness_scale",
                                    "hydrology_roughness_scale"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_cavitation_opening_coefficient",
                                    "hydrology_cavitation_opening_coefficient"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_creep_closure_coefficient",
                                    "hydrology_creep_closure_coefficient"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_lower_bound_creep_regularization",
-                                   "hydrology_lower_bound_creep_regularization"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_regularizing_porosity",
                                    "hydrology_regularizing_porosity"); CHKERRQ(ierr);
 

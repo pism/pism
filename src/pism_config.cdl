@@ -216,9 +216,6 @@ netcdf pism_config {
     pism_config:hydrology_const_bmelt = 3.168876461e-10;
     pism_config:hydrology_const_bmelt_doc = "m s-1; = 1 cm per year of melt; only used if hydrology_use_const_bmelt = 'yes'";
 
-    pism_config:hydrology_pressure_fraction_till = 0.95;
-    pism_config:hydrology_pressure_fraction_till_doc = "pure number; till water pressure is this fraction of overburden in PISMHydrology and derived models";
-
     pism_config:hydrology_tillwat_max = 2.0;
     pism_config:hydrology_tillwat_max_doc = "m; maximum effective thickness of the water stored in till";
 
@@ -228,8 +225,8 @@ netcdf pism_config {
     pism_config:hydrology_tillwat_transfer_proportion = 100.0;
     pism_config:hydrology_tillwat_transfer_proportion_doc = "; tillwat should be comparable to this multiple of bwat";
 
-    pism_config:hydrology_tillwat_decay_rate_null = 3.16887646154128e-11;
-    pism_config:hydrology_tillwat_decay_rate_null_doc = "m s-1; = 1 m per 1000 years; rate at which tillwat is reduced to zero, in absence of other effects like input; only used by -hydrology null model";
+    pism_config:hydrology_tillwat_decay_rate_null = 3.16887646154128e-10;
+    pism_config:hydrology_tillwat_decay_rate_null_doc = "m s-1; = 1 cm per year; rate at which tillwat is reduced to zero, in absence of other effects like input; only used by -hydrology null model";
 
     pism_config:hydrology_hydraulic_conductivity = 1.0e-2;
     pism_config:hydrology_hydraulic_conductivity_doc = "m^{2 beta - alpha} s^{2 beta - 3} kg^{1-beta}; = k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; units depend on powers alpha = hydrology_thickness_power_in_flux and beta = hydrology_potential_gradient_power_in_flux; used by PISMRoutingHydrology and PISMDistributedHydrology";
@@ -248,9 +245,6 @@ netcdf pism_config {
 
     pism_config:hydrology_creep_closure_coefficient = 0.04;
     pism_config:hydrology_creep_closure_coefficient_doc = "[pure]; c_2 in notes; coefficient of creep closure term in evolution of layer thickness in PISMDistributedHydrology";
-
-    pism_config:hydrology_lower_bound_creep_regularization = 0.001;
-    pism_config:hydrology_lower_bound_creep_regularization_doc = "m; Y_0 in notes; creep closure term in evolution of layer thickness remains positive (active) even at zero water if this is positive; in PISMDistributedHydrology";
 
     pism_config:hydrology_regularizing_porosity = 0.01;
     pism_config:hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes; regularizes pressure equation by multiplying time derivative term";
