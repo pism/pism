@@ -34,17 +34,11 @@ public:
   {
     bed_topography = NULL;
     mask = NULL;
-
     hydrology = hydro;
-
     if (allocate() != 0) {
       PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMYieldStress constructor.\n");
       PISMEnd();
     }
-
-    ice_density = config.get("ice_density");
-    standard_gravity = config.get("standard_gravity");
-    till_c_0 = config.get("till_c_0", "kPa", "Pa");
   }
 
   virtual ~PISMMohrCoulombYieldStress() {}
@@ -63,8 +57,7 @@ public:
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 
 protected:
-  PetscReal standard_gravity, ice_density, till_c_0;
-  IceModelVec2S till_phi, tauc, tillwp, Po;
+  IceModelVec2S till_phi, tauc, tillwat;
   IceModelVec2S *bed_topography;
   IceModelVec2Int *mask;
   PISMVars *variables;
