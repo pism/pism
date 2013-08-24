@@ -176,7 +176,8 @@ COUPLER_FORCING="-atmosphere searise_greenland,delta_T,paleo_precip -surface pdd
 COUPLER_FTT="-atmosphere searise_greenland,delta_T,paleo_precip -surface pdd,forcing -atmosphere_paleo_precip_file $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES -ocean_kill $INNAME"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
-TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
+#TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
+TILLPHI="-topg_to_phi 15.0,40.0,-300.0,700.0"
 
 FULLPHYS="-ssa_sliding ${TILLPHI}"
 
@@ -211,7 +212,7 @@ TS1NAME=ts_${PRE1NAME}
 TS1TIMES=0:100:${NOMASSSIARUNLENGTH}
 EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:500:${NOMASSSIARUNLENGTH}
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,tillwp,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM -i $PRE0NAME $COUPLER_SIMPLE \
@@ -237,7 +238,7 @@ TSNAME=ts_$OUTNAME
 TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
 EXNAME=ex_$OUTNAME
 EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,tillwp,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,climatic_mass_balance_cumulative"
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,climatic_mass_balance_cumulative"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"

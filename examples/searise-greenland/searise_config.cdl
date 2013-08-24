@@ -8,9 +8,6 @@ netcdf pism_overrides {
     pism_overrides:pseudo_plastic_q = 0.25;
     pism_overrides:pseudo_plastic_q_doc = "; The exponent of the pseudo-plastic basal resistance model";
 
-    pism_overrides:till_pw_fraction = 0.98;
-    pism_overrides:till_pw_fraction_doc = "pure number; pore water pressure is this fraction of overburden";
-
    pism_overrides:institution = "University of Alaska Fairbanks";
    pism_overrides:institution_doc = "Institution name. This string is written to output files as the 'institution' global attribute.";
 
