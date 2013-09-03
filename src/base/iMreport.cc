@@ -308,9 +308,17 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
     snprintf(velunitstr,90, "m/%s", tunitstr.c_str());
     const double maxvel = grid.convert(gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", velunitstr);
 
+// FIXME:  The date conversion used in iMutil.cc: IceModel::endOfTimeStepHook()
+//         gives a much better date so I used it here.  Under the old "grid.convert()"
+//         scheme, the SeaRISE-Greenland run with option "-ys -125000" gave
+//         "S -124917.110:    2.98555    1.84680 ..." for the first summary line,
+//         while this version gives "S -125000.000:    2.98555    1.84680 ...".
+//         What is preferred way to get a string for the current date?
     ierr = verbPrintf(2,grid.com,
-                      "S %8.3f:   %8.5f  %9.5f     %12.5f %12.5f\n",
-                      grid.convert(date->current(), "seconds", tunitstr.c_str()),
+                      "S %s:   %8.5f  %9.5f     %12.5f %12.5f\n",
+                      //"S %8.3f:   %8.5f  %9.5f     %12.5f %12.5f\n",
+                      grid.time->date().c_str(),
+                      //grid.convert(date->current(), "seconds", tunitstr.c_str()),
                       volume/(scalevol*1.0e9), area/(scalearea*1.0e6),
                       max_diffusivity, maxvel); CHKERRQ(ierr);
 
