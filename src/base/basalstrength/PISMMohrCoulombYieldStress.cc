@@ -364,6 +364,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
         tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
         if (Wtilmax > 0.0) {
+// FIXME: N0 should scale with the overburden pressure
           Ntil = N0 * pow(10.0, e0overCc * (1.0 - (tillwat(i,j) / Wtilmax)));
           tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * till_phi(i, j));
         } else {
