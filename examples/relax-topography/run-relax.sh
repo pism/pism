@@ -15,7 +15,7 @@ SCRIPTNAME="#(run-relax.sh)"
 
 echo
 echo "# =================================================================================="
-echo "# PISM pre-spinup "
+echo "# PISM run for relaxation experiment "
 echo "# =================================================================================="
 echo
 

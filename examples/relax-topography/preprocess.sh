@@ -2,8 +2,6 @@
 
 # Copyright (C) 2009-2013 Ed Bueler and Andy Aschwanden
 
-# PISM SeaRISE Greenland
-#
 # downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts metadata,
 # saves under new name, ready for PISM
 
@@ -12,7 +10,7 @@
 set -e  # exit on error
 
 echo "# =================================================================================="
-echo "# PISM SeaRISE Greenland: preprocessing"
+echo "# preprocessing SeaRISE-Greenland data for relaxation experiment"
 echo "# =================================================================================="
 echo
 
