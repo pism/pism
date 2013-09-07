@@ -43,8 +43,8 @@ echo "done."
 echo
 
 echo "create target ice thickness file"
-ncap2 -O -s "thk=thk*0." $PISMVERSION target_$PISMVERSION
-
+ncap2 -O -s "thk=thk*0.; climatic_mass_balance[\$time,\$y1,\$x1]=-500.f" $PISMVERSION target_$PISMVERSION
+ncatted -a units,climatic_mass_balance,o,c,"m year-1" target_$PISMVERSION
 echo "done."
 echo
 

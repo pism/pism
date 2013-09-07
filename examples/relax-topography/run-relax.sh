@@ -173,7 +173,7 @@ fi
 echo ""
 
 OCEAN="-ocean_kill"
-COUPLER="-surface given,forcing -force_to_thk $PISM_TARGETNAME"
+COUPLER="-surface given -surface_given_file $PISM_TARGETNAME"
 PISM="${PISM_PREFIX}${PISM_EXEC} -no_energy -bed_def lc"
 # output file size
 OSIZE="big"
@@ -181,7 +181,7 @@ OSIZE="big"
 BOOTNAME=$PISM_DATANAME
 
 STARTTIME=0
-ENDTIME=1000
+ENDTIME=100
 
 OUTNAME=g${GS}km_removeice.nc
 TSNAME=ts_$OUTNAME
