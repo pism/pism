@@ -273,7 +273,7 @@ netcdf pism_config {
     pism_config:till_compressibility_coefficient = 0.12;
     pism_config:till_compressibility_coefficient_doc = "[pure]; coefficient of compressiblity of till; value from [\ref Tulaczyketal2000]";
 
-    pism_config:till_effective_fraction_overburden = 0.03;
+    pism_config:till_effective_fraction_overburden = 0.01;
     pism_config:till_effective_fraction_overburden_doc = "[pure]; = delta in notes; N_0 = delta P_o where P_o is overburden pressure; N_0 is reference (low) value of effective pressure (i.e. normal stress); N_0 scales with overburden pressure unlike [\ref Tulaczyketal2000]";
 
     pism_config:mu_sliding = 0.0;
