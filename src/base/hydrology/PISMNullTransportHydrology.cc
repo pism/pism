@@ -20,6 +20,15 @@
 #include "hydrology_diagnostics.hh"
 
 
+PetscErrorCode PISMNullTransportHydrology::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(2, grid.com,
+    "* Initializing the null-transport (till only) subglacial hydrology model ...\n"); CHKERRQ(ierr);
+  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
 PetscErrorCode PISMNullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);

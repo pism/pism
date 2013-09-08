@@ -165,6 +165,8 @@ public:
     : PISMHydrology(g, conf) {}
   virtual ~PISMNullTransportHydrology() {}
 
+  virtual PetscErrorCode init(PISMVars &vars);
+
   // sets result = 0
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
 
