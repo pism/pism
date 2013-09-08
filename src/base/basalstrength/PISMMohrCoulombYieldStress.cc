@@ -68,6 +68,11 @@ PetscErrorCode PISMMohrCoulombYieldStress::allocate() {
   ierr = tillwat.set_attrs("internal",
                            "copy of till water thickness held by PISMMohrCoulombYieldStress",
                            "m", ""); CHKERRQ(ierr);
+  ierr = Po.create(grid, "overburden_pressure_for_MohrCoulomb",
+                   true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = Po.set_attrs("internal",
+                      "copy of overburden pressure held by PISMMohrCoulombYieldStress",
+                      "Pa", ""); CHKERRQ(ierr);
 
   return 0;
 }
@@ -307,12 +312,19 @@ a (typically small) till cohesion \f$c_0\f$
 and by expressing the coefficient as the tangent of a till friction angle
 \f$\varphi\f$:
     \f[   \tau_c = c_0 + (\tan \varphi) N_{til}. \f]
-Option  `-plastic_c0` controls it \f$c_0\f$; see [\ref Paterson] table 8.1
-regarding values.  The effective pressure on the till is empirically-related
+where \f$c_0\$f=`till_c_0`; see [\ref Paterson] table 8.1
+regarding values.
+
+The effective pressure on the till is empirically-related
 to the amount of water in the till, namely this formula derived from
 [\ref Tulaczyketal2000]:
-    \f[   N_til = N_0 10^{(e_0/C_c) (1 - W_{til}/W_{til}^{max})}  \f]
-where \f$N_0\f$=`till_reference_effective_pressure` is the reference effective pressure, \f$e_0\f$=`till_reference_void_ratio` is the void ratio at that effective pressure, and \f$C_c\f$==`till_compressibility_coefficient` is the coefficient of compressibility of the till; all of these are derived by [\ref Tulaczyketal2000] from laboratory experiments on actual saturated till.  Also \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.
+    \f[   N_til = \delta P_o 10^{(e_0/C_c) (1 - W_{til}/W_{til}^{max})}  \f]
+where \f$\delta\f$=`till_effective_fraction_overburden`, \f$P_o\f$ is the
+overburden pressure, \f$e_0\f$=`till_reference_void_ratio` is the void ratio
+at the effective pressure minimum, and \f$C_c\f$==`till_compressibility_coefficient`
+is the coefficient of compressibility of the till.  Constants \f$e_0,C_c\f$ are
+derived by [\ref Tulaczyketal2000] from laboratory experiments on samples of
+till.  Also \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.
  */
 PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
@@ -326,15 +338,16 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
 
   bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
 
-  const PetscReal c0        = config.get("till_c_0"),
-                  high_tauc = config.get("high_tauc"),
+  const PetscReal high_tauc = config.get("high_tauc"),
+                  Wtilmax   = config.get("hydrology_tillwat_max"),
+                  c0        = config.get("till_c_0"),
                   e0overCc  = config.get("till_reference_void_ratio")
                                 / config.get("till_compressibility_coefficient"),
-                  N0        = config.get("till_reference_effective_pressure"),
-                  Wtilmax   = config.get("hydrology_tillwat_max");
+                  delta     = config.get("till_effective_fraction_overburden");
 
   if (hydrology) {
     ierr = hydrology->till_water_thickness(tillwat); CHKERRQ(ierr);
+    ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 3,
             "PISM ERROR: PISMHydrology* hydrology is NULL in PISMMohrCoulombYieldStress::update()");
@@ -343,6 +356,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = tillwat.begin_access(); CHKERRQ(ierr);
+  ierr = Po.begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
   MaskQuery m(*mask);
   PetscInt GHOSTS = grid.max_stencil_width;
@@ -364,8 +378,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
         tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
         if (Wtilmax > 0.0) {
-// FIXME: N0 should scale with the overburden pressure
-          Ntil = N0 * pow(10.0, e0overCc * (1.0 - (tillwat(i,j) / Wtilmax)));
+          Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (tillwat(i,j) / Wtilmax)));
           tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * till_phi(i, j));
         } else {
           // large yield stress if user has turned off till water model
@@ -378,6 +391,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   ierr = tauc.end_access(); CHKERRQ(ierr);
   ierr = till_phi.end_access(); CHKERRQ(ierr);
   ierr = tillwat.end_access(); CHKERRQ(ierr);
+  ierr = Po.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -496,15 +510,16 @@ PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
 
 PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   PetscErrorCode ierr;
-
+  PetscReal Ntil;
   const PetscReal c0        = config.get("till_c_0"),
                   e0overCc  = config.get("till_reference_void_ratio")
                                 / config.get("till_compressibility_coefficient"),
-                  N0        = config.get("till_reference_effective_pressure"),
+                  delta     = config.get("till_effective_fraction_overburden"),
                   Wtilmax   = config.get("hydrology_tillwat_max");
 
   if (hydrology) {
     ierr = hydrology->till_water_thickness(tillwat); CHKERRQ(ierr);
+    ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 3,
             "PISM ERROR: PISMHydrology* hydrology is NULL in PISMMohrCoulombYieldStress::tauc_to_phi()");
@@ -513,6 +528,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = tillwat.begin_access(); CHKERRQ(ierr);
+  ierr = Po.begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
   MaskQuery m(*mask);
   PetscInt GHOSTS = grid.max_stencil_width;
@@ -523,7 +539,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
       } else if (m.ice_free(i, j)) {
         // no change
       } else { // grounded and there is some ice
-        const PetscScalar Ntil = N0 * pow(10.0, e0overCc * (1.0 - tillwat(i,j) / Wtilmax));
+        Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (tillwat(i,j) / Wtilmax)));
         till_phi(i, j) = 180.0/M_PI * atan((tauc(i, j) - c0) / Ntil);
       }
     }
@@ -532,5 +548,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   ierr = tauc.end_access(); CHKERRQ(ierr);
   ierr = till_phi.end_access(); CHKERRQ(ierr);
   ierr = tillwat.end_access(); CHKERRQ(ierr);
+  ierr = Po.end_access(); CHKERRQ(ierr);
+
   return 0;
 }

@@ -57,7 +57,7 @@ public:
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 
 protected:
-  IceModelVec2S till_phi, tauc, tillwat;
+  IceModelVec2S till_phi, tauc, tillwat, Po;
   IceModelVec2S *bed_topography;
   IceModelVec2Int *mask;
   PISMVars *variables;
