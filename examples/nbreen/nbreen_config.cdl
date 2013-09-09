@@ -32,19 +32,14 @@ netcdf nbreen_config {
     pism_overrides:hydrology_roughness_scale = 0.1;
     pism_overrides:hydrology_roughness_scale_doc = "m; = W_r; = h_r in Schoof/Hewitt work";
 
-    // end
-
     pism_overrides:hydrology_cavitation_opening_coefficient = 0.500;
     pism_overrides:hydrology_cavitation_opening_coefficient_doc = "m-1; = c_1";
 
     pism_overrides:hydrology_creep_closure_coefficient = 0.040;
     pism_overrides:hydrology_creep_closure_coefficient_doc = "; = c_2";
 
-    pism_overrides:hydrology_regularizing_porosity = 0.005;
+    pism_overrides:hydrology_regularizing_porosity = 0.01;
     pism_overrides:hydrology_regularizing_porosity_doc = "[pure]; phi_0";
-
-    pism_overrides:hydrology_lower_bound_creep_regularization = 0.001;
-    pism_overrides:hydrology_lower_bound_creep_regularization_doc = "m; = Y_0";
  
     pism_overrides:hydrology_tillwat_max = 0.0;
     pism_overrides:hydrology_tillwat_max_doc = "m; turn off till water mechanism";
