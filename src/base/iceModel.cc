@@ -501,11 +501,10 @@ PetscErrorCode IceModel::createVecs() {
     if (set_contains(ex_vars, "flux_divergence") || o_size == "big") {
       ierr = flux_divergence.create(grid, "flux_divergence", false); CHKERRQ(ierr);
       ierr = flux_divergence.set_attrs("diagnostic",
-                                                     "flux divergence",
-                                                     "s-1", ""); CHKERRQ(ierr);
+                                       "flux divergence",
+                                       "s-1", ""); CHKERRQ(ierr);
       ierr = flux_divergence.set_glaciological_units("year-1"); CHKERRQ(ierr);
       flux_divergence.write_in_glaciological_units = true;
-      ierr = variables.add(flux_divergence); CHKERRQ(ierr);
     }
 
     if (set_contains(ex_vars, "ocean_kill_flux_cumulative") ||

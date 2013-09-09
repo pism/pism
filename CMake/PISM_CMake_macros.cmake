@@ -147,6 +147,11 @@ macro(pism_find_prerequisites)
     message(FATAL_ERROR  "PISM configuration failed: PETSc was not found.")
   endif()
 
+  if (PETSC_VERSION VERSION_LESS 3.3)
+    message(FATAL_ERROR "\nPISM requires PETSc version 3.3 or newer.\n\n")
+  endif()
+
+
   # MPI
   # Use the PETSc compiler as a hint when looking for an MPI compiler
   # FindMPI.cmake changed between 2.8.4 and 2.8.5, so we try to support both...
