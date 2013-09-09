@@ -312,8 +312,7 @@ a (typically small) till cohesion \f$c_0\f$
 and by expressing the coefficient as the tangent of a till friction angle
 \f$\varphi\f$:
     \f[   \tau_c = c_0 + (\tan \varphi) N_{til}. \f]
-where \f$c_0\$f=`till_c_0`; see [\ref Paterson] table 8.1
-regarding values.
+See [\ref Paterson] table 8.1 regarding values.
 
 The effective pressure on the till is empirically-related
 to the amount of water in the till, namely this formula derived from
@@ -345,6 +344,29 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
                                 / config.get("till_compressibility_coefficient"),
                   delta     = config.get("till_effective_fraction_overburden");
 
+  // apply greatly-simplified model if either no need for tauc on land
+  //   or if the user has turned off till water model by setting
+  //   hydrology_tillwat_max = 0
+  if ((use_ssa_when_grounded == false) || (Wtilmax <= 0.0)) {
+    ierr = mask->begin_access(); CHKERRQ(ierr);
+    ierr = tauc.begin_access(); CHKERRQ(ierr);
+    MaskQuery m(*mask);
+    PetscInt GHOSTS = grid.max_stencil_width;
+    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+        if (m.grounded(i, j)) {
+          tauc(i, j) = high_tauc;
+        } else {
+          tauc(i, j) = 0.0;
+        }
+      }
+    }
+    ierr = mask->end_access(); CHKERRQ(ierr);
+    ierr = tauc.end_access(); CHKERRQ(ierr);
+    return 0;
+  }
+
+  // usual case: ask hydrology model for water and pressure
   if (hydrology) {
     ierr = hydrology->till_water_thickness(tillwat); CHKERRQ(ierr);
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
@@ -363,27 +385,13 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   PetscReal Ntil;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      if (use_ssa_when_grounded == false) {
-        if (m.grounded(i, j)) {
-          // large yield stress if grounded and -ssa_floating_only is set
-          tauc(i, j) = high_tauc;
-        } else {
-          tauc(i, j) = 0.0;
-        }
-        continue;
-      }
       if (m.ocean(i, j)) {
         tauc(i, j) = 0.0;
       } else if (m.ice_free(i, j)) {
         tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
-        if (Wtilmax > 0.0) {
-          Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (tillwat(i,j) / Wtilmax)));
-          tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * till_phi(i, j));
-        } else {
-          // large yield stress if user has turned off till water model
-          tauc(i, j) = high_tauc;
-        }
+        Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (tillwat(i,j) / Wtilmax)));
+        tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * till_phi(i, j));
       }
     }
   }

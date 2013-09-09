@@ -46,7 +46,7 @@ PetscErrorCode PISMNullTransportHydrology::subglacial_water_pressure(IceModelVec
 //! Update the till water thickness by simply integrating the melt input.  There is no tranportable water thickness variable and no interaction with it.
 /*!
 Does an explicit (Euler) step of the integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \min \left\{\frac{m}{\rho_w} - C\f]
+  \f[ \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C\f]
 where \f$C=\f$`hydrology_tillwat_decay_rate_null`.  Enforces bounds
 \f$0 \le W_{til} \le W_{til}^{max}\f$ where the upper bound is
 `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
