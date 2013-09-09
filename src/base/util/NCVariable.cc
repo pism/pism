@@ -1887,6 +1887,9 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, PISMTime *time,
 
   ierr = change_units(data, input_units, m_units); CHKERRQ(ierr);
 
+  // FIXME: check that time intervals described by the time bounds
+  // variable are contiguous (without gaps) and stop if they are not.
+
   return 0;
 }
 
