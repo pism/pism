@@ -21,8 +21,6 @@
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
-#include "pism_petsc32_compat.hh"
-
 
 
 IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
