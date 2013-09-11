@@ -1,21 +1,21 @@
-/* The discretization of the first SSA equation: */
+/* -*- mode: maxima -*- */
+
+/* The discretization of the first SSA equation (without the drag term): */
 lhs1: '(- 2 * w[i+1/2,j] * N[i+1/2,j]/dx * (2 * d_px(u[i,j])/dx + (D_y(v[i,j]) + D_y(v[i+1,j]))/(4*dy))
         + 2 * w[i-1/2,j] * N[i-1/2,j]/dx * (2 * d_mx(u[i,j])/dx + (D_y(v[i,j]) + D_y(v[i-1,j]))/(4*dy))
             - w[i,j+1/2] * N[i,j+1/2]/dy * (1 * d_py(u[i,j])/dy + (D_x(v[i,j]) + D_x(v[i,j+1]))/(4*dx))
-            + w[i,j-1/2] * N[i,j-1/2]/dy * (1 * d_my(u[i,j])/dy + (D_x(v[i,j]) + D_x(v[i,j-1]))/(4*dx))
-            - tau[b,1][i,j])$
+            + w[i,j-1/2] * N[i,j-1/2]/dy * (1 * d_my(u[i,j])/dy + (D_x(v[i,j]) + D_x(v[i,j-1]))/(4*dx)))$
 
-rhs1: '(-rho * g * H[i,j] * D_x(h[i,j]) / (2*dx))$
+rhs1: '(-rho * g * H[i,j] * D_x(h[i,j]) / (2*dx) + tau[b,1][i,j])$
 
 eq1: lhs1 = rhs1$
 
-/* The discretization of the second SSA equation: */
+/* The discretization of the second SSA equation (without the drag term): */
 lhs2: '(- 2 * w[i,j+1/2] * N[i,j+1/2]/dy * (2 * d_py(v[i,j])/dy + (D_x(u[i,j]) + D_x(u[i,j+1]))/(4*dx))
         + 2 * w[i,j-1/2] * N[i,j-1/2]/dy * (2 * d_my(v[i,j])/dy + (D_x(u[i,j]) + D_x(u[i,j-1]))/(4*dx))
             - w[i+1/2,j] * N[i+1/2,j]/dx * (1 * d_px(v[i,j])/dx + (D_y(u[i,j]) + D_y(u[i+1,j]))/(4*dy))
-            + w[i-1/2,j] * N[i-1/2,j]/dx * (1 * d_mx(v[i,j])/dx + (D_y(u[i,j]) + D_y(u[i-1,j]))/(4*dy))
-            - tau[b,2][i,j])$
+            + w[i-1/2,j] * N[i-1/2,j]/dx * (1 * d_mx(v[i,j])/dx + (D_y(u[i,j]) + D_y(u[i-1,j]))/(4*dy)))$
 
-rhs2: '(-rho * g * H[i,j] * D_y(h[i,j]) / (2*dy))$
+rhs2: '(-rho * g * H[i,j] * D_y(h[i,j]) / (2*dy) + taub[b,2][i,j])$
 
 eq2: lhs2 = rhs2$
