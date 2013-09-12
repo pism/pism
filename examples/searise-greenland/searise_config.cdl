@@ -8,6 +8,9 @@ netcdf pism_overrides {
     pism_overrides:do_pseudo_plastic_till = "yes";
     pism_overrides:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
+    pism_overrides:tauc_slippery_grounding_lines = "yes";
+    pism_overrides:tauc_slippery_grounding_lines_doc = "Make the last grounded base slippery, regardless of computed value of water amount in till.";
+
     pism_overrides:pseudo_plastic_q = 0.25;
     pism_overrides:pseudo_plastic_q_doc = "The exponent of the pseudo-plastic basal resistance model";
 

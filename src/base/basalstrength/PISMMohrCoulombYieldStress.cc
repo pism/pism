@@ -335,7 +335,8 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   t = my_t; dt = my_dt;
   // this model performs a "diagnostic" computation (i.e. without time-stepping)
 
-  bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
+  bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded"),
+       slipperygl = config.get_flag("tauc_slippery_grounding_lines");
 
   const PetscReal high_tauc = config.get("high_tauc"),
                   Wtilmax   = config.get("hydrology_tillwat_max"),
@@ -389,7 +390,14 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
       } else if (m.ice_free(i, j)) {
         tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
-        Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (tillwat(i,j) / Wtilmax)));
+        // user can ask that grounding lines get special treatment
+        PetscReal water;
+        if ( slipperygl && (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j)) ) {
+          water = Wtilmax;
+        } else {
+          water = tillwat(i,j); // usual case
+        }
+        Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (water / Wtilmax)));
         Ntil = PetscMin(Po(i,j), Ntil);
         tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * till_phi(i, j));
       }

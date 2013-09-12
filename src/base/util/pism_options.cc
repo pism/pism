@@ -712,9 +712,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   ierr = config.scalar_from_option("inv_design_cL2","inv_design_cL2"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("inv_design_cH1","inv_design_cH1"); CHKERRQ(ierr);
-
   ierr = config.scalar_from_option("inv_ssa_tv_exponent","inv_ssa_tv_exponent"); CHKERRQ(ierr);
-
   ierr = config.scalar_from_option("inv_log_ratio_scale","inv_log_ratio_scale"); CHKERRQ(ierr);
 
   // Basal strength
@@ -722,6 +720,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.scalar_from_option("till_reference_void_ratio", "till_reference_void_ratio");      CHKERRQ(ierr);
   ierr = config.scalar_from_option("till_compressibility_coefficient", "till_compressibility_coefficient");      CHKERRQ(ierr);
   ierr = config.scalar_from_option("till_effective_fraction_overburden", "till_effective_fraction_overburden");      CHKERRQ(ierr);
+  ierr = config.flag_from_option("tauc_slippery_grounding_lines", "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
 
   // all basal strength models use this in ice-free areas
   ierr = config.scalar_from_option("high_tauc", "high_tauc");      CHKERRQ(ierr);
