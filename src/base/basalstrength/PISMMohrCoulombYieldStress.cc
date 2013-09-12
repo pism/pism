@@ -381,10 +381,9 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   ierr = Po.begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
   MaskQuery m(*mask);
-  PetscInt GHOSTS = grid.max_stencil_width;
   PetscReal Ntil;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (m.ocean(i, j)) {
         tauc(i, j) = 0.0;
       } else if (m.ice_free(i, j)) {
@@ -401,6 +400,8 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   ierr = till_phi.end_access(); CHKERRQ(ierr);
   ierr = tillwat.end_access(); CHKERRQ(ierr);
   ierr = Po.end_access(); CHKERRQ(ierr);
+
+  ierr = tauc.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }
