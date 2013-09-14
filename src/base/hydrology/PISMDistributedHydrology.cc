@@ -70,17 +70,10 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
     "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
     CHKERRQ(ierr);
 
-// FIXME this looks like unnecessary code duplication relative to PISMRoutingHydrology::init()
-
-  // initialize water layer thickness and wate pressure from the context if present,
-  //   otherwise from -i or -boot_file, otherwise with constant values
-  bool i_set, bootstrap_set, init_P_from_steady, stripset;
+  bool init_P_from_steady, stripset;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
-                            bootstrap_set); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-report_mass_accounting",
       "Report to stdout on mass accounting in hydrology models", report_mass_accounting); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-hydrology_null_strip",
@@ -95,22 +88,43 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
 
   ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
 
-  ierr = PISMRoutingHydrology::init_bwat(vars,i_set,bootstrap_set); CHKERRQ(ierr);
+  ierr = PISMRoutingHydrology::init_bwat(vars); CHKERRQ(ierr);
 
-  // prepare for -i or -bootstrap
-  string filename;
-  int start;
-  if (i_set || bootstrap_set) {
-    ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
+  ierr = init_bwp(vars); CHKERRQ(ierr);
+
+  if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
+    ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
+
+  return 0;
+}
+
+
+PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  // initialize water layer thickness from the context if present,
+  //   otherwise from -i or -boot_file, otherwise with constant value
+  bool i, bootstrap;
+  ierr = PetscOptionsBegin(grid.com, "",
+            "Options for initializing bwp in the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsIsSet("-i", "PISM input file", i); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
+                            bootstrap); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
   IceModelVec2S *P_input = dynamic_cast<IceModelVec2S*>(vars.get("bwp"));
   if (P_input != NULL) { // a variable called "bwp" is already in context
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
-  } else if (i_set || bootstrap_set) {
-    if (i_set) {
+  } else if (i || bootstrap) {
+    string filename;
+    int start;
+    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+    if (i) {
       ierr = P.read(filename, start); CHKERRQ(ierr);
     } else {
       ierr = P.regrid(filename,
@@ -121,10 +135,6 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   }
 
   ierr = regrid(P); CHKERRQ(ierr); //  we could be asked to regrid from file
-
-  if (init_P_from_steady) { // if so, overwrite all the other stuff
-    ierr = P_from_W_steady(P); CHKERRQ(ierr);
-  }
   return 0;
 }
 
@@ -503,8 +513,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
 
     ht += hdt;
   } // end of hydrology model time-stepping loop
-
-// FIXME this looks like unnecessary code duplication relative to PISMRoutingHydrology::update() version of reporting
 
   if (report_mass_accounting) {
     ierr = verbPrintf(2, grid.com,

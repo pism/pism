@@ -274,7 +274,7 @@ protected:
                         // if negative then the strip mechanism is inactive inactive
 
   virtual PetscErrorCode allocate();
-  virtual PetscErrorCode init_bwat(PISMVars &vars, bool i_set, bool bootstrap_set);
+  virtual PetscErrorCode init_bwat(PISMVars &vars);
 
   // when we update the water amounts, careful mass accounting at the
   // boundary is needed; we update the new thickness variable, typically a
@@ -354,6 +354,7 @@ protected:
   PISMStressBalance* stressbalance;
 
   virtual PetscErrorCode allocate_pressure();
+  virtual PetscErrorCode init_bwp(PISMVars &vars);
 
   virtual PetscErrorCode check_P_bounds(bool enforce_upper);
 

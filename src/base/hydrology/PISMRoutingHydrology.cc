@@ -97,13 +97,10 @@ PetscErrorCode PISMRoutingHydrology::init(PISMVars &vars) {
     "* Initializing the routing subglacial hydrology model ...\n"); CHKERRQ(ierr);
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  bool i, bootstrap, stripset;
+  bool stripset;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'routing' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsIsSet("-i", "PISM input file", i); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
-                            bootstrap); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-report_mass_accounting",
       "Report to stdout on mass accounting in hydrology models", report_mass_accounting); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-hydrology_null_strip",
@@ -115,22 +112,34 @@ PetscErrorCode PISMRoutingHydrology::init(PISMVars &vars) {
 
   ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
 
-  ierr = init_bwat(vars,i,bootstrap); CHKERRQ(ierr);
+  ierr = init_bwat(vars); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars, bool i_set, bool bootstrap_set) {
+PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars) {
   PetscErrorCode ierr;
+
+  // initialize water layer thickness from the context if present,
+  //   otherwise from -i or -boot_file, otherwise with constant value
+  bool i, bootstrap;
+  ierr = PetscOptionsBegin(grid.com, "",
+            "Options for initializing bwat in the 'routing' subglacial hydrology model", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsIsSet("-i", "PISM input file", i); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
+                            bootstrap); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
   if (W_input != NULL) { // a variable called "bwat" is already in context
     ierr = W.copy_from(*W_input); CHKERRQ(ierr);
-  } else if (i_set || bootstrap_set) {
+  } else if (i || bootstrap) {
     string filename;
     int start;
-    ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
-    if (i_set) {
+    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+    if (i) {
       ierr = W.read(filename, start); CHKERRQ(ierr);
     } else {
       ierr = W.regrid(filename,
