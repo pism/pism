@@ -32,22 +32,22 @@ def generate_config():
     pism_overrides.fresh_water_density_doc = "kg m-3; = rhow";
 
     pism_overrides.ice_softness = 3.1689e-24
-    pism_overrides.ice_softness_doc = "Pa-3 s-1; ice softness;"
+    pism_overrides.ice_softness_doc = "Pa-3 s-1; ice softness; NOT DEFAULT"
 
-    pism_overrides.hydrology_hydraulic_conductivity = 1.01936799184506e-6;
-    pism_overrides.hydrology_hydraulic_conductivity_doc = "; = k; = 0.01 / (rhow*g)";
+    pism_overrides.hydrology_hydraulic_conductivity = 1.0e-2 / (1000.0 * 9.81)
+    pism_overrides.hydrology_hydraulic_conductivity_doc = "= k; NOT DEFAULT"
+
+    pism_overrides.hydrology_tillwat_max = 0.0;
+    pism_overrides.hydrology_tillwat_max_doc = "m; turn off till water mechanism";
 
     pism_overrides.hydrology_thickness_power_in_flux = 1.0;
-    pism_overrides.hydrology_thickness_power_in_flux_doc = ";; = alpha";
+    pism_overrides.hydrology_thickness_power_in_flux_doc = "; = alpha in notes";
 
     pism_overrides.hydrology_potential_gradient_power_in_flux = 2.0;
-    pism_overrides.hydrology_potential_gradient_power_in_flux_doc = "; = beta";
+    pism_overrides.hydrology_potential_gradient_power_in_flux_doc = "; = beta in notes";
 
     pism_overrides.hydrology_roughness_scale = 1.0;
-    pism_overrides.hydrology_roughness_scale_doc = "m; = W_r";
-
-    pism_overrides.hydrology_englacial_porosity = 0.0;
-    pism_overrides.hydrology_englacial_porosity_doc = "[pure]; phi in notes; NOT DEFAULT";
+    pism_overrides.hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale";
 
     pism_overrides.hydrology_regularizing_porosity = 0.01;
     pism_overrides.hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes";
@@ -64,10 +64,10 @@ def check_drift(file1, file2):
     nc1 = NC(file1)
     nc2 = NC(file2)
 
-    stored_drift = {'bwat_max' : 0.033977176396989717,
-                    'bwp_max'  : 103793.75919843616,
-                    'bwp_avg'  : 6285.7038819618074,
-                    'bwat_avg' : 0.0044137440344120754}
+    stored_drift = {'bwat_max' : 0.033966557506423412,
+                    'bwp_max'  : 103628.85605749754,
+                    'bwp_avg'  : 6060.1465307949247,
+                    'bwat_avg' : 0.0044208602982725182}
 
     drift = {}
     for name in ("bwat", "bwp"):

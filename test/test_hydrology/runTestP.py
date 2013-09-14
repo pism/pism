@@ -45,17 +45,17 @@ def generate_config():
   pism_overrides.hydrology_regularizing_porosity = 0.01;
   pism_overrides.hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes";
 
-  pism_overrides:hydrology_tillwat_max = 0.0;
-  pism_overrides:hydrology_tillwat_max_doc = "m; turn off till water mechanism";
+  pism_overrides.hydrology_tillwat_max = 0.0;
+  pism_overrides.hydrology_tillwat_max_doc = "m; turn off till water mechanism";
 
-  pism_overrides:hydrology_thickness_power_in_flux = 1.0;
-  pism_overrides:hydrology_thickness_power_in_flux_doc = "; = alpha in notes";
+  pism_overrides.hydrology_thickness_power_in_flux = 1.0;
+  pism_overrides.hydrology_thickness_power_in_flux_doc = "; = alpha in notes";
 
-  pism_overrides:hydrology_potential_gradient_power_in_flux = 2.0;
-  pism_overrides:hydrology_potential_gradient_power_in_flux_doc = "; = beta in notes";
+  pism_overrides.hydrology_potential_gradient_power_in_flux = 2.0;
+  pism_overrides.hydrology_potential_gradient_power_in_flux_doc = "; = beta in notes";
 
-  pism_overrides:hydrology_roughness_scale = 1.0;
-  pism_overrides:hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale";
+  pism_overrides.hydrology_roughness_scale = 1.0;
+  pism_overrides.hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale";
 
   nc.close()
 

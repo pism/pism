@@ -67,7 +67,7 @@ PetscErrorCode PISMDistributedHydrology::allocate_pressure() {
 PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
-    "* Initializing the vanPelt-Bueler distributed (linked-cavities) subglacial hydrology model...\n");
+    "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
     CHKERRQ(ierr);
 
 // FIXME this looks like unnecessary code duplication relative to PISMRoutingHydrology::init()
@@ -228,7 +228,6 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
                     (config.get("hydrology_creep_closure_coefficient") * config.get("ice_softness")),
             powglen = 1.0 / config.get("Glen_exponent"),
             Wr = config.get("hydrology_roughness_scale"),
-            Y0 = config.get("hydrology_lower_bound_creep_regularization"),
             sb, Wratio;
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
@@ -238,11 +237,18 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       sb     = pow(CC * cbase(i,j),powglen);
-      Wratio = PetscMax(0.0,Wr - W(i,j)) / (W(i,j) + Y0);
-      // in cases where steady state is actually possible this will
-      //   come out positive, but otherwise we should get underpressure P=0,
-      //   and that is what it yields
-      result(i,j) = PetscMax( 0.0,Pover(i,j) - sb * pow(Wratio,powglen) );
+      if (W(i,j) == 0.0) {
+        if (sb > 0.0)
+          result(i,j) = 0.0;        // no water + cavitation = underpressure
+        else
+          result(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
+      } else {
+        Wratio = PetscMax(0.0,Wr - W(i,j)) / W(i,j);
+        // in cases where steady state is actually possible this will
+        //   come out positive, but otherwise we should get underpressure P=0,
+        //   and that is what it yields
+        result(i,j) = PetscMax( 0.0,Pover(i,j) - sb * pow(Wratio,powglen) );
+      }
     }
   }
   ierr = W.end_access(); CHKERRQ(ierr);
@@ -335,7 +341,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             c1 = config.get("hydrology_cavitation_opening_coefficient"),
             c2 = config.get("hydrology_creep_closure_coefficient"),
             Wr = config.get("hydrology_roughness_scale"),
-            Y0 = config.get("hydrology_lower_bound_creep_regularization"),
             phi0 = config.get("hydrology_regularizing_porosity");
 
   const PetscReal  omegax = 1.0 / (grid.dx * grid.dx),
@@ -414,7 +419,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
         else {
           // opening and closure terms in pressure equation
           Open = PetscMax(0.0,c1 * cbase(i,j) * (Wr - W(i,j)));
-          Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * (W(i,j) + Y0);
+          Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
           // divergence of flux
           const bool knowne = (M.ice_free_land(i+1,j) || M.ocean(i+1,j)),
                      knownw = (M.ice_free_land(i-1,j) || M.ocean(i-1,j)),
