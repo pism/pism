@@ -54,6 +54,11 @@ PetscErrorCode SSAFD::allocate_fd() {
   PC pc;
   ierr = KSPGetPC(SSAKSP,&pc); CHKERRQ(ierr);
   ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
+
+  // Use non-zero initial guess (i.e. SSA velocities from the last
+  // solve() call or the previous outer iteration).
+  ierr = KSPSetInitialGuessNonzero(SSAKSP, PETSC_TRUE); CHKERRQ(ierr);
+
   ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
 
   const PetscScalar power = 1.0 / flow_law->exponent();
@@ -742,7 +747,11 @@ PetscErrorCode SSAFD::solve() {
   // this has no units; epsilon goes up by this ratio when previous value failed
   const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
 
+  // save the old solution in case we need to restart:
   ierr = m_velocity.copy_to(m_velocity_old); CHKERRQ(ierr);
+
+  // set the initial guess:
+  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
 
   // computation of RHS only needs to be done once; does not depend on
   // solution; but matrix changes under nonlinear iteration (loop over k below)
