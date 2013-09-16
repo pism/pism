@@ -632,7 +632,23 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   ierr = stress_balance->update(updateAtDepth == false,
-                                sea_level); CHKERRQ(ierr);
+                                sea_level);
+  if (ierr != 0) {
+    string o_file = "stressbalance_failed.nc";
+    bool o_file_set;
+    ierr = PISMOptionsString("-o", "output file name",
+                             o_file, o_file_set); CHKERRQ(ierr);
+
+    o_file = pism_filename_add_suffix(o_file, "_stressbalance_failed", "");
+    ierr = PetscPrintf(grid.com,
+                       "PISM ERROR: stress balance computation failed. Saving model state to '%s'...\n",
+                       o_file.c_str());
+
+    ierr = dumpToFile(o_file); CHKERRQ(ierr);
+
+    ierr = PetscPrintf(grid.com, "ending...\n");
+    PISMEnd();
+  }
 
   grid.profiler->end(event_velocity);
 
