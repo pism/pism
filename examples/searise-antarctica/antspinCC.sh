@@ -55,7 +55,7 @@ DO=$PISM_DO
 
 # grids
 THIRTYKMGRID="-Mx 200 -My 200 -Lz 5000 -Lbz 2000 -Mz 41 -Mbz 16"
-TWENTYKMGRID="-Mx 300 -My 300 -Lz 5000 -Lbz 2000 -Mz 41 -Mbz 16"
+TWENTYKMGRID="-Mx 300 -My 300 -Lz 5000 -Lbz 2000 -Mz 81 -Mbz 21"
 FIFTEENKMGRID="-Mx 400 -My 400 -Lz 5000 -Lbz 2000 -Mz 81 -Mbz 21"
 TWELVEKMGRID="-Mx 500 -My 500 -Lz 5000 -Lbz 2000 -Mz 101 -Mbz 31"
 TENKMGRID="-Mx 600 -My 600 -Lz 5000 -Lbz 2000 -Mz 101 -Mbz 31"
@@ -75,6 +75,7 @@ SKIPFIVEKM=200
 # "production" or science
 GRID=$THIRTYKMGRID
 SKIP=$SKIPTHIRTYKM
+GRIDNAME=30km
 
 SIA_ENHANCEMENT="-sia_e 5.6"
 
@@ -82,16 +83,15 @@ SIA_ENHANCEMENT="-sia_e 5.6"
 # 1)   '-pik' = '-cfbc -part_grid -part_redist -kill_icebergs'
 # 2)   -meltfactor_pik 5e-3 is default when using -ocean pik
 PIKPHYS="-ssa_method fd -ssa_e 0.6 -pik -eigen_calving -eigen_calving_K 2.0e18 -thickness_calving -calving_at_thickness 50.0"
-#PIKPHYS_COUPLING="-atmosphere pik -ocean pik -meltfactor_pik 1.5e-2"
 PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANAME -surface simple -ocean pik -meltfactor_pik 1.5e-2"
 
 # sliding related options:
-PARAMS="-pseudo_plastic -pseudo_plastic_q 0.25 -hydrology_pressure_fraction 0.97"
-TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0"
+PARAMS="-pseudo_plastic -pseudo_plastic_q 0.25 -till_effective_fraction_overburden 0.01"
 #TILLPHI="-topg_to_phi 5.0,20.0,-1000.0,0.0,10.0" # as in Martin et al 2012
-FULLPHYS="-ssa_sliding -hydrology diffuseonly $PARAMS $TILLPHI"
+TILLPHI="-topg_to_phi 15.0,40.0,-300.0,700.0"
+FULLPHYS="-ssa_sliding -hydrology null $PARAMS $TILLPHI"
 
-# use these KSP "diverged" errors occur
+# use these if KSP "diverged" errors occur
 STRONGKSP="-ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
 
 
@@ -106,7 +106,7 @@ echo "$SCRIPTNAME PIKPHYS_COUPLING = $PIKPHYS_COUPLING"
 # #######################################
 stage=earlyone
 INNAME=$PISM_INDATANAME
-RESNAMEONE=${RESDIR}$stage.nc
+RESNAMEONE=${RESDIR}${stage}_${GRIDNAME}.nc
 RUNTIME=1
 echo
 echo "$SCRIPTNAME  bootstrapping plus SIA run for $RUNTIME a"
@@ -134,7 +134,7 @@ $DO $cmd
 
 
 stage=smoothing
-RESNAME=${RESDIR}$stage.nc
+RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 RUNTIME=100
 echo
 echo "$SCRIPTNAME  short SIA run for $RUNTIME a"
@@ -148,11 +148,11 @@ $DO $cmd
 # #######################################
 stage=nomass
 INNAME=$RESNAME
-RESNAME=${RESDIR}$stage.nc
-TSNAME=${RESDIR}ts_$stage.nc
+RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
+TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 RUNTIME=200000 
-EXTRANAME=${RESDIR}extra_$stage.nc
-expackage="-extra_times 0:1000:$RUNTIME -extra_vars bmelt,bwat,csurf,temppabase,diffusivity,hardav"
+EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
+expackage="-extra_times 0:1000:$RUNTIME -extra_vars bmelt,tillwat,csurf,temppabase,diffusivity,hardav"
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -i $INNAME $PIKPHYS_COUPLING  \
@@ -169,11 +169,11 @@ $DO $cmd
 # #######################################
 stage=run
 INNAME=$RESNAME
-RESNAME=${RESDIR}$stage.nc
-TSNAME=${RESDIR}ts_$stage.nc
+RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
+TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 RUNTIME=100000 
-EXTRANAME=${RESDIR}extra_$stage.nc
-exvars="thk,usurf,cbase,cbar,mask,diffusivity,tauc,bmelt,bwat,temppabase,hardav"
+EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
+exvars="thk,usurf,cbase,cbar,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav"
 expackage="-extra_times 0:1000:$RUNTIME -extra_vars $exvars"
 
 echo
@@ -186,12 +186,14 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i $INNAME \
 	$STRONGKSP \
 	-o $RESNAME -o_size big"
 $DO $cmd
-#exit # <-- uncomment to continue
+
+
+exit # <-- uncomment to continue
 
 # #######################################
 ## do a regridding to 10km and reset year to 0 (demonstrate for only 100 model years):
 # #######################################
-stage=run_regrid10km
+stage=run_regrid_10km
 INNAME=$RESNAME
 RESNAME=${RESDIR}$stage.nc
 TSNAME=${RESDIR}ts_$stage.nc
@@ -203,7 +205,7 @@ echo
 echo "$SCRIPTNAME  continue but regrid to 10km"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIPTENKM \
     -boot_file $PISM_INDATANAME $TENKMGRID \
-    -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,bwat,bmelt \
+    -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \
     -ts_file $TSNAME -ts_times 0:1:$RUNTIME \

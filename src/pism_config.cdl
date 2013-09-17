@@ -228,8 +228,8 @@ netcdf pism_config {
     pism_config:hydrology_tillwat_transfer_proportion = 100.0;
     pism_config:hydrology_tillwat_transfer_proportion_doc = "; tillwat should be comparable to this multiple of bwat";
 
-    pism_config:hydrology_tillwat_decay_rate_null = 3.16887646154128e-10;
-    pism_config:hydrology_tillwat_decay_rate_null_doc = "m s-1; = 1 cm per year; rate at which tillwat is reduced to zero, in absence of other effects like input; only used by -hydrology null model";
+    pism_config:hydrology_tillwat_decay_rate_null = 3.16887646154128e-11;
+    pism_config:hydrology_tillwat_decay_rate_null_doc = "m s-1; = 1 mm per year; rate at which tillwat is reduced to zero, in absence of other effects like input; only used by -hydrology null model";
 
     pism_config:hydrology_hydraulic_conductivity = 0.01;
     pism_config:hydrology_hydraulic_conductivity_doc = "m^{2 beta - alpha} s^{2 beta - 3} kg^{1-beta}; = k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; units depend on powers alpha = hydrology_thickness_power_in_flux and beta = hydrology_potential_gradient_power_in_flux; used by PISMRoutingHydrology and PISMDistributedHydrology";

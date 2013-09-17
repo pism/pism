@@ -71,6 +71,9 @@ PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal iced
     PISMEnd();
   }
 
+// FIXME: use mask.  if mask is ice-free ocean or floating then set to zero
+// (note that there is no "boundary_mass_changes()" method in PISMNullTransportHydrology)
+
   ierr = Wtil.begin_access(); CHKERRQ(ierr);
   ierr = total_input.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
