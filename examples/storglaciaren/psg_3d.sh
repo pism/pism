@@ -58,14 +58,18 @@ echo
 PCONFIG=psg_config.nc
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -cts -config_override $PCONFIG"
+PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PCONFIG"
 
 
 DATANAME=storglaciaren_3d.nc
 PISM_DATANAME=pism_$DATANAME
 INNAME=$PISM_DATANAME
 
+EB="-e_sia 0.3"
+PARAMS="-plastic_phi"
+FULLPHYS="-ssa_sliding -thk_eff $PARAMS"
 COUPLER="-surface given" # FIXME  should be using PSElevation as in flowline example
+COUPLER_FORCING="-surface given,forcing -surface_given_file $PISM_DATANAME"
 
 # 40 m grid
 GRID="-Mx 94 -My 51 -Mz 151 -Mbz 1 -Lz 300 -z_spacing equal"
@@ -93,14 +97,32 @@ $PISM_DO $cmd
 # FIXME:  reasonable to run SIA somewhat longer to equilibrium to establish stable thermodynamical state before any attempt to invert surface velocities; this is the start of it
 # FIXME:  also reasonable to use hybrid model with ad hoc specification of basal yield stress
 INNAME=$OUTNAME
-incSTEADYNAME=inc_psg_3d_${GS}m_Tsteady.nc  # FIXME: missing a field because of bug
-STEADYNAME=psg_3d_${GS}m_Tsteady.nc
+#incSTEADYNAME=inc_psg_3d_${GS}m_Tsteady.nc  # FIXME: missing a field because of bug
+STEADYNAME=psg_3d_${GS}m_steady.nc
 echo
 echo "$SCRIPTNAME  running toward thermodynamical steady state"
 cmd="$PISM_MPIDO $NN $PISM -i $INNAME \
-  $COUPLER -y 200 -no_mass -o $incSTEADYNAME"
+  $COUPLER -y 500 -no_mass -o $STEADYNAME"
 $PISM_DO $cmd
 
 echo
 echo "$SCRIPTNAME  done"
 
+# We use the force-to-thickness mechanism to infer the mass balance
+
+STARTYEAR=0
+RUNLENGTH=100
+ENDTIME=$(($STARTYEAR + $RUNLENGTH))
+INNAME=$OUTNAME
+OUTNAME=ssa_ftt_${RUNLENGTH}a.nc
+OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
+TSNAME=ts_${OUTNAME}
+TSTIMES=$STARTYEAR:$STEP:$ENDTIME
+echo
+echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
+cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_FORCING $FULLPHYS\
+     -force_to_thk $PISM_DATANAME \
+     -ts_file $TSNAME -ts_times $TSTIMES \
+     -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
+$PISM_DO $cmd
+echo

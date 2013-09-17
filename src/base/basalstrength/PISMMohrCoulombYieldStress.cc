@@ -367,13 +367,11 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
     return 0;
   }
 
-  // usual case: ask hydrology model for water and pressure
+  assert(hydrology != NULL);
+
   if (hydrology) {
     ierr = hydrology->till_water_thickness(tillwat); CHKERRQ(ierr);
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 3,
-            "PISM ERROR: PISMHydrology* hydrology is NULL in PISMMohrCoulombYieldStress::update()");
   }
 
   ierr = mask->begin_access(); CHKERRQ(ierr);
@@ -460,9 +458,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
   ierr = PISMOptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
                               inarray, topg_to_phi_set); CHKERRQ(ierr);
 
-  if (topg_to_phi_set == false) {
-    SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
-  }
+  assert(topg_to_phi_set == true);
 
   if (inarray.size() != 4) {
     PetscPrintf(grid.com,
@@ -535,12 +531,11 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
                   delta     = config.get("till_effective_fraction_overburden"),
                   Wtilmax   = config.get("hydrology_tillwat_max");
 
+  assert(hydrology != NULL);
+
   if (hydrology) {
     ierr = hydrology->till_water_thickness(tillwat); CHKERRQ(ierr);
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 3,
-            "PISM ERROR: PISMHydrology* hydrology is NULL in PISMMohrCoulombYieldStress::tauc_to_phi()");
   }
 
   ierr = mask->begin_access(); CHKERRQ(ierr);

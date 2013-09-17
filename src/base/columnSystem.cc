@@ -20,8 +20,7 @@
 #include "pism_const.hh"
 #include "iceModelVec.hh"
 #include "columnSystem.hh"
-
-#include "pism_petsc32_compat.hh"
+#include <assert.h>
 
 //! Allocate a tridiagonal system of maximum size my_nmax.
 /*!
@@ -165,12 +164,8 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
                                                  const PetscScalar *v, PetscInt m, const char* info) const {
   PetscErrorCode ierr;
 
-  if (v==NULL) {
-    SETERRQ1(PETSC_COMM_SELF, 2,"columnSystem ERROR: can't view '%s' by v=NULL pointer ... ending ...\n", info);
-  }
-  if (m<1) {
-    SETERRQ1(PETSC_COMM_SELF, 3,"columnSystem ERROR: can't view '%s' because m<1 ... ending ...\n",info);
-  }
+  assert(v != NULL);
+  assert(m >= 1);
 
   PetscBool iascii;
   if (!viewer) {
@@ -214,15 +209,9 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
   ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
   if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for ColumnSystem\n"); }
 
-  if (L==NULL) {
-    SETERRQ1(PETSC_COMM_SELF, 2,"columnSystemCtx ERROR: can't matrix '%s' because L==NULL ... ending ...\n", info);
-  }
-  if (D==NULL) {
-    SETERRQ1(PETSC_COMM_SELF, 3,"columnSystemCtx ERROR: can't matrix '%s' because D==NULL ... ending ...\n", info);
-  }
-  if (U==NULL) {
-    SETERRQ1(PETSC_COMM_SELF, 4,"columnSystemCtx ERROR: can't matrix '%s' because U==NULL ... ending ...\n", info);
-  }
+  assert(L != NULL);
+  assert(D != NULL);
+  assert(U != NULL);
 
   if (nmax < 2) {
     ierr = PetscViewerASCIIPrintf(viewer,
@@ -303,12 +292,11 @@ Negative return code indicates a software problem.
 PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
                   const PetscInt n, PetscScalar **x) {
 #if (PISM_DEBUG==1)
-  if (x == NULL) { SETERRQ(PETSC_COMM_SELF, -999,"x is NULL in columnSystemCtx"); }
-  if (*x == NULL) { SETERRQ(PETSC_COMM_SELF, -998,"*x is NULL in columnSystemCtx"); }
-  if (n < 1) { SETERRQ(PETSC_COMM_SELF, -997,"instance size n < 1 in columnSystemCtx"); }
-  if (n > nmax) { SETERRQ(PETSC_COMM_SELF, -996,"instance size n too large in columnSystemCtx"); }
-
-  if (!indicesValid) { SETERRQ(PETSC_COMM_SELF, -995,"column indices not valid in columnSystemCtx"); }
+  assert(x != NULL);
+  assert(*x != NULL);
+  assert(indicesValid == true);
+  assert(n >= 1);
+  assert(n <= nmax);
 #endif
   PetscScalar b;
   b = D[0];

@@ -53,6 +53,10 @@ public:
     return m_time_units.format();
   }
 
+  virtual string CF_units_to_PISM_units(string input) {
+    return input;               // return unchanged CF units
+  }
+
   virtual bool use_reference_date()
   { return true; }
 

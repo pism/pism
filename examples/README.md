@@ -18,5 +18,6 @@ The others are experimental and/or undocumented at this time:
 * nbreen/
 * python/
 * piktests/
+* relax-topography
 * searise-antarctica/
 

@@ -22,8 +22,6 @@
 #include "pism_options.hh"
 #include "flowlaws.hh"
 
-#include "pism_petsc32_compat.hh"
-
 SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                   EnthalpyConverter &ec, const NCConfigVariable &c)
 {

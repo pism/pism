@@ -19,6 +19,8 @@
 
 #include <cmath>
 #include <petscdmda.h>
+#include <assert.h>
+
 #include "iceModel.hh"
 #include "pism_signal.h"
 #include "Mask.hh"
@@ -48,10 +50,10 @@ PetscErrorCode IceModel::eigenCalving() {
 
   const PetscScalar eigenCalvFactor = config.get("eigen_calving_K");
 
+  assert(ocean != NULL);
+
   PetscReal sea_level = 0;
-  if (ocean != NULL) {
-    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
-  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
+  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
