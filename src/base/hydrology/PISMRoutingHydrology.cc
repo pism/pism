@@ -341,17 +341,42 @@ PetscErrorCode PISMRoutingHydrology::subglacial_hydraulic_potential(IceModelVec2
 
 
 //! Average the regular grid water thickness to values at the center of cell edges.
+/*! Uses mask values to avoid averaging using water thickness values from
+either ice-free or floating areas. */
 PetscErrorCode PISMRoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
 
+  MaskQuery M(*mask);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j  ));
-      result(i,j,1) = 0.5 * (W(i,j) + W(i  ,j+1));
+      // east
+      if (M.grounded_ice(i,j))
+        if (M.grounded_ice(i+1,j))
+          result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j));
+        else
+          result(i,j,0) = W(i,j);
+      else
+        if (M.grounded_ice(i+1,j))
+          result(i,j,0) = W(i+1,j);
+        else
+          result(i,j,0) = 0.0;
+      // north
+      if (M.grounded_ice(i,j))
+        if (M.grounded_ice(i,j+1))
+          result(i,j,1) = 0.5 * (W(i,j) + W(i,j+1));
+        else
+          result(i,j,1) = W(i,j);
+      else
+        if (M.grounded_ice(i,j+1))
+          result(i,j,1) = W(i,j+1);
+        else
+          result(i,j,1) = 0.0;
     }
   }
+  ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = W.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
