@@ -373,6 +373,15 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = check_Wtil_bounds(); CHKERRQ(ierr);
 #endif
 
+    // update Wtilnew (the actual step) from W and Wtil
+    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
+    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
+    nullstriplost+= delta_nullstrip;
+
     // note that ice dynamics can change overburden pressure, so we can only check P
     //   bounds if thk has not changed; if thk could have just changed, such as in the
     //   first time through the current loop, we enforce them
@@ -402,7 +411,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
 
     // update Pnew from time step
     const PetscReal  CC = (rg * hdt) / phi0;
-    PetscReal  Open, Close, divflux,
+    PetscReal  Open, Close, divflux, ZZ,
                dpsie, dpsiw, dpsin, dpsis;
     ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
@@ -410,6 +419,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
 
     ierr = P.begin_access(); CHKERRQ(ierr);
     ierr = W.begin_access(); CHKERRQ(ierr);
+    ierr = Wtil.begin_access(); CHKERRQ(ierr);
+    ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
     ierr = cbase.begin_access(); CHKERRQ(ierr);
     ierr = psi.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
@@ -466,10 +477,9 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             divflux += omegay * ( Kn * Wn * dpsin - Ks * Ws * dpsis );
           }
 
-          // FIXME:  need dWtil/dt term a la notes with "Z_{ij}"
-
-          // candidate for pressure update
-          Pnew(i,j) = P(i,j) + CC * ( divflux + Close - Open + total_input(i,j) );
+          // pressure update equation
+          ZZ = Close - Open + total_input(i,j) - (Wtilnew(i,j) - Wtil(i,j)) / hdt;
+          Pnew(i,j) = P(i,j) + CC * ( divflux + ZZ );
           // projection to enforce  0 <= P <= P_o
           Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pover(i,j));
         }
@@ -477,6 +487,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     }
     ierr = P.end_access(); CHKERRQ(ierr);
     ierr = W.end_access(); CHKERRQ(ierr);
+    ierr = Wtil.end_access(); CHKERRQ(ierr);
+    ierr = Wtilnew.end_access(); CHKERRQ(ierr);
     ierr = cbase.end_access(); CHKERRQ(ierr);
     ierr = Pnew.end_access(); CHKERRQ(ierr);
     ierr = Pover.end_access(); CHKERRQ(ierr);
@@ -486,16 +498,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Kstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
-    // FIXME: following chunk is dangerous code duplication with PISMRoutingHydrology::update()
-
-    // update Wtilnew (the actual step) from W and Wtil
-    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
-    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
-                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
+    // FIXME: following chunk is code duplication with PISMRoutingHydrology::update()
 
     // update Wnew (the actual step) from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);

@@ -769,6 +769,15 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = check_Wtil_bounds(); CHKERRQ(ierr);
 #endif
 
+    // update Wtilnew (the actual step) from W and Wtil
+    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
+    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
+    nullstriplost+= delta_nullstrip;
+
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
 
@@ -787,15 +796,6 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
     if ((inputtobed != NULL) || (hydrocount==1)) {
       ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
-
-    // update Wtilnew (the actual step) from W and Wtil
-    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
-    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
-                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
 
     // update Wnew (the actual step) from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);
