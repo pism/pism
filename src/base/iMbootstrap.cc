@@ -264,12 +264,14 @@ a velocity of zero at the base:
 This is a two-point boundary value problem for a linear ODE.  In fact, if
 \f$K = k_i / (\rho_i c)\f$ then we can write the ODE as
   \f[K T'' + \frac{m z}{H} T' = 0.\f]
-Let
+If \f$m \neq 0\f$, then let
   \f[C_0 = \frac{g \sqrt{\pi H K}}{k_i \sqrt{2 m}}, \qquad \gamma_0 = \sqrt{\frac{mH}{2K}}.\f]
 (Note \f$\gamma_0\f$ is, up to a constant, the square root of the Peclet number
 [\ref Paterson]; compare [\ref vanderWeletal2013].)  The solution to the
 two-point boundary value problem is
   \f[T(z) = T_s + C_0 \left(\operatorname{erf}(\gamma_0) - \operatorname{erf}\left(\gamma_0 \frac{z}{H}\right)\right).\f]
+  If \f$m = 0\f$, then the solution is
+\f[ T(z) = \frac{g}{k_i} \left( H - z \right) + T_s. \f]
 2. If `dontusesmb` is true then the formula which was in older versions of PISM is
 used.  Namely, within the ice we set
 \f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
@@ -329,18 +331,32 @@ PetscErrorCode IceModel::putTempAtDepth() {
                         Ts = artm(i,j),
                         gg = vGhf(i,j);
       const PetscInt    ks = grid.kBelowHeight(HH);
-      
+
       // within ice
-      if (!dontusesmb) {
+      if (dontusesmb == false) {
         // method 1:  includes surface mass balance in estimate
-        const PetscScalar mm = acab(i,j),
-                          C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
-                          gamma0 = sqrt(mm * HH / (2.0 * KK));
-        for (PetscInt k = 0; k < ks; k++) {
-          const PetscScalar z = grid.zlevels[k],
-                            Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
-          T[k] = Ts + C0 * ( erf(gamma0) - erf(gamma0 * z / HH) );
-          T[k] = PetscMin(Tpmp,T[k]);
+        const PetscScalar mm = acab(i,j);
+
+        if (mm == 0.0) {
+          // zero surface mass balance case
+          for (PetscInt k = 0; k < ks; k++) {
+            const PetscScalar z = grid.zlevels[k],
+              Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
+            T[k] = gg / ice_k * (HH - z) + Ts;
+            T[k] = PetscMin(Tpmp,T[k]);
+          }
+
+        } else {
+          // non-zero surface mass balance case
+          const PetscScalar C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
+            gamma0 = sqrt(mm * HH / (2.0 * KK));
+
+          for (PetscInt k = 0; k < ks; k++) {
+            const PetscScalar z = grid.zlevels[k],
+              Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
+            T[k] = Ts + C0 * ( erf(gamma0) - erf(gamma0 * z / HH) );
+            T[k] = PetscMin(Tpmp,T[k]);
+          }
         }
       } else {
         // method 2:  does not use smb
