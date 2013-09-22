@@ -11,8 +11,8 @@ ENDTIME=1
 EXTRASNULL="-extra_times 0:0.02:$ENDTIME -extra_vars thk,tillwat,hydroinput"
 EXTRASROUT="-extra_times 0:0.02:$ENDTIME -extra_vars thk,tillwat,hydroinput,bwat,bwp,bwatvel"
 
-if [ "" ]; then      # zero length string is false
-#if [ "pre" ]; then  # <-- do this to create "start.nc" for comparison runs
+#if [ "" ]; then      # zero length string is false
+if [ "pre" ]; then  # <-- do this to create "start.nc" for comparison runs
   $MPIDO ${PATHTO}pisms -Mx 121 -My 121 -Mz 101 -y 10 -o pre.nc
   $MPIDO ${PATHTO}pismr -i pre.nc -ye 8000 -o start.nc
 fi
@@ -32,7 +32,7 @@ ncks -A -v tillwat start.nc start_withbwat.nc
 $MPIDO ${PATHTO}pismr -i start_withbwat.nc -hydrology routing $INPUTCHOICE -report_mass_accounting -ys 0 -y $ENDTIME -extra_file extras_routing.nc $EXTRASROUT -o routing.nc
 
 # finer grid -hydrology routing
-#$MPIDO ${PATHTO}pismr -boot_file start_withbwat.nc -Mx 241 -My 241 -Lz 4100 -Mz 201 -hydrology routing $INPUTCHOICE -report_mass_accounting -ys 0 -y $ENDTIME -extra_file extras_finerouting.nc $EXTRASROUT -o finerouting.nc
+$MPIDO ${PATHTO}pismr -boot_file start_withbwat.nc -Mx 241 -My 241 -Lz 4100 -Mz 201 -hydrology routing $INPUTCHOICE -report_mass_accounting -ys 0 -y $ENDTIME -extra_file extras_finerouting.nc $EXTRASROUT -o finerouting.nc
 
 # -hydrology distributed
 # see for basic tests see
