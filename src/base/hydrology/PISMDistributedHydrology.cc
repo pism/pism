@@ -353,9 +353,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             Wr = config.get("hydrology_roughness_scale"),
             phi0 = config.get("hydrology_regularizing_porosity");
 
-  const PetscReal  omegax = 1.0 / (grid.dx * grid.dx),
-                   omegay = 1.0 / (grid.dy * grid.dy);
-
   PetscReal ht = t, hdt, // hydrology model time and time step
             maxKW, maxV, maxD;
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
@@ -414,8 +411,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
                      wux  = 1.0 / (grid.dx * grid.dx),
                      wuy  = 1.0 / (grid.dy * grid.dy);
     PetscReal  Open, Close, divflux, ZZ,
-               divadflux, diffW,
-               dpsie, dpsiw, dpsin, dpsis;
+               divadflux, diffW;
     ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
     MaskQuery M(*mask);
@@ -446,43 +442,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           Open = PetscMax(0.0,c1 * cbase(i,j) * (Wr - W(i,j)));
           Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
 
-#if 1
-          // divergence of flux
-          const bool knowne = (M.ice_free_land(i+1,j) || M.ocean(i+1,j)),
-                     knownw = (M.ice_free_land(i-1,j) || M.ocean(i-1,j)),
-                     knownn = (M.ice_free_land(i,j+1) || M.ocean(i,j+1)),
-                     knowns = (M.ice_free_land(i,j-1) || M.ocean(i,j-1));
-          dpsie = psi(i+1,j) - psi(i,j);
-          dpsiw = psi(i,j)   - psi(i-1,j);
-          dpsin = psi(i,j+1) - psi(i,j);
-          dpsis = psi(i,j)   - psi(i,j-1);
-          if (stripwidth > 0.0) {
-            const bool nullij = (in_null_strip(i,j));
-            if (nullij || in_null_strip(i+1,j))
-              dpsie = 0.0;
-            if (nullij || in_null_strip(i-1,j))
-              dpsiw = 0.0;
-            if (nullij || in_null_strip(i,j+1))
-              dpsin = 0.0;
-            if (nullij || in_null_strip(i,j-1))
-              dpsis = 0.0;
-          }
-          divflux = 0.0;
-          if (!knowne && !knownw) {
-            const PetscReal We = Wstag(i,  j,0),
-                            Ww = Wstag(i-1,j,0),
-                            Ke = Kstag(i,  j,0),
-                            Kw = Kstag(i-1,j,0);
-            divflux += omegax * ( Ke * We * dpsie - Kw * Ww * dpsiw );
-          }
-          if (!knownn && !knowns) {
-            const PetscReal Wn = Wstag(i,j  ,1),
-                            Ws = Wstag(i,j-1,1);
-            const PetscReal Kn = Kstag(i,j  ,1),
-                            Ks = Kstag(i,j-1,1);
-            divflux += omegay * ( Kn * Wn * dpsin - Ks * Ws * dpsis );
-          }
-#else
+          // compute the flux divergence the same way as in raw_update_W()
           divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
                       + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
           const PetscReal  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
@@ -492,7 +452,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           diffW =   wux * (  De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)) )
                   + wuy * (  Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)) );
           divflux = - divadflux + diffW;
-#endif
+
           // pressure update equation
           ZZ = Close - Open + total_input(i,j) - (Wtilnew(i,j) - Wtil(i,j)) / hdt;
           Pnew(i,j) = P(i,j) + CC * ( divflux + ZZ );

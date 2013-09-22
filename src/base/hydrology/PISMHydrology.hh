@@ -368,5 +368,15 @@ protected:
                            PetscReal &PtoCFLratio);
 };
 
+
+//! \brief A form of the PISM subglacial hydrology model for a distributed linked-cavity system with an alternate (more "elliptic") way of updating pressure.
+class PISMDistHydrologyALT : public PISMDistributedHydrology {
+public:
+  PISMDistHydrologyALT(IceGrid &g, const NCConfigVariable &conf, PISMStressBalance *sb)
+    : PISMDistributedHydrology(g,conf,sb) {}
+  virtual ~PISMDistHydrologyALT() {}
+  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+};
+
 #endif /* _PISMHYDROLOGY_H_ */
 
