@@ -24,6 +24,9 @@
 
 
 //! Update the model state variables W,P by running the subglacial hydrology model, but use a different update method for pressure than is in PISMDistributedHydrology::update().
+/*! In contrast to PISMDistributedHydrology::update() this method uses the
+hydraulic potential (i.e. it computes the gradient of it) but it does not use
+Qstag, the staggered-grid values of the advective flux. */
 PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
   PetscErrorCode ierr;
 
@@ -97,10 +100,6 @@ PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
 
     ierr = velocity_staggered(V); CHKERRQ(ierr);
 
-    // to get Qstag, W needs valid ghosts
-    ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
-    ierr = Qstag.update_ghosts(); CHKERRQ(ierr);
-
     ierr = adaptive_for_WandP_evolution(ht, t+dt, maxKW, hdt, maxV, maxD, PtoCFLratio); CHKERRQ(ierr);
     cumratio += PtoCFLratio;
 
@@ -124,7 +123,6 @@ PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
     ierr = psi.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = Kstag.begin_access(); CHKERRQ(ierr);
-    ierr = Qstag.begin_access(); CHKERRQ(ierr);
     ierr = total_input.begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
     ierr = Pover.begin_access(); CHKERRQ(ierr);
@@ -198,7 +196,6 @@ PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
     ierr = total_input.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = Kstag.end_access(); CHKERRQ(ierr);
-    ierr = Qstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
     // FIXME: following chunk is code duplication with PISMRoutingHydrology::update()

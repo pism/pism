@@ -384,9 +384,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     //   first time through the current loop, we enforce them
     ierr = check_P_bounds((hydrocount == 1)); CHKERRQ(ierr);
 
-    ierr = subglacial_hydraulic_potential(psi); CHKERRQ(ierr);
-    ierr = psi.update_ghosts(); CHKERRQ(ierr);
-
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
 
@@ -421,7 +418,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = Wtil.begin_access(); CHKERRQ(ierr);
     ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
     ierr = cbase.begin_access(); CHKERRQ(ierr);
-    ierr = psi.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = Kstag.begin_access(); CHKERRQ(ierr);
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
@@ -468,7 +464,6 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = cbase.end_access(); CHKERRQ(ierr);
     ierr = Pnew.end_access(); CHKERRQ(ierr);
     ierr = Pover.end_access(); CHKERRQ(ierr);
-    ierr = psi.end_access(); CHKERRQ(ierr);
     ierr = total_input.end_access(); CHKERRQ(ierr);
     ierr = Wstag.end_access(); CHKERRQ(ierr);
     ierr = Kstag.end_access(); CHKERRQ(ierr);
