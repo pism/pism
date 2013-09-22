@@ -2,9 +2,9 @@
 \section{Modeling choices:  Ice dynamics and the subglacier}
 \label{sec:modeling-dynamics}
 
-\subsection{Rheology}
+\subsection{Ice rheology}
 \label{sec:rheology}
-\optsection{Rheology}
+\optsection{Ice rheology}
 
 The ``rheology'' of a viscous fluid refers to the relation between the applied stress and the resulting deformation, specifically the strain rate.  The models of ice rheology available in PISM are of isotropic Glen-Nye type \cite{Paterson}.   A rheology in this class is described by a ``flow law'', which is a function $F(\sigma,T,\omega,P,d)$ in the ``constitutive relation''
 \begin{equation}
@@ -46,7 +46,7 @@ Flow law parameters such as ice softness can be changed using configuration para
 \bottomrule
 \normalsize	
 \end{tabular}
-\caption{Choosing the rheology using \texttt{-sia_flow_law} and \texttt{-ssa_flow_law}.  These flow law choices do not use the liquid water fraction.}
+\caption{Choosing the ice rheology using \texttt{-sia_flow_law} and \texttt{-ssa_flow_law}.  These flow law choices do not use the liquid water fraction.}
 \label{tab:flowlaw}
 \end{table}
 
@@ -133,7 +133,7 @@ PISM writes fields \texttt{topgsmooth}, \texttt{schoofs_theta}, \texttt{thksmoot
 \subsection{Controlling basal strength}  \label{subsect:basestrength}
 \optsection{Basal strength and sliding}
 
-When using option \texttt{-ssa_sliding}, the SIA+SSA hybrid model, a sub-model for basal resistance is required.  That is, a \emph{sliding law} is must be chosen.  Table \ref{tab:basal-strength} describes the options that control how basal resistance is computed.
+When using option \texttt{-ssa_sliding}, the SIA+SSA hybrid model, a sub-model for basal resistance is required.  That is, a \emph{sliding law} must be chosen.  Table \ref{tab:basal-strength} describes the options that control how basal resistance is computed.
 
 \begin{table}
   \centering
@@ -156,15 +156,28 @@ When using option \texttt{-ssa_sliding}, the SIA+SSA hybrid model, a sub-model f
 \label{tab:basal-strength}
 \end{table}
 
-In PISM the strength value is always a basal yield stress $\tau_c$.  This parameter represents the strength of the aggregate material at the base of an ice sheet, a poorly observed mixture of liquid water, ice, granular till, and bedrock bumps.  The yield stress concept is also extended to the power law form, and thus most standard sliding laws can be chosen by user options (below).  One reason that the yield stress is a useful parameter is that it can be compared, when looking at PISM output files, to the driving stress.  Specifically, where \verb|tauc| $<$ \verb|taud_mag| you are likely to see sliding if option \verb|ssa_sliding| is used.
+In PISM the strength value is always a basal yield stress $\tau_c$ (=\verb|tauc| in PISM output files).  This parameter represents the strength of the aggregate material at the base of an ice sheet, a poorly-observed mixture of liquid water, ice, granular till, and bedrock bumps.  The yield stress concept also extends to the power law form, and thus most standard sliding laws can be chosen by user options (below).
 
-The value of $\tau_c$ is determined in part by a subglacial hydrology model, including the modeled basal water pressure $p_w$ (subsection \ref{subsect:subhydro}), and in part by a stored basal material property $\phi=$\texttt{tillphi}, the ``till friction angle'' \cite{Paterson}.  These quantities combine in the Mohr-Coulomb criterion \cite[Chapter 8]{Paterson} to determine the basal yield stress:
+One reason that the yield stress is a useful parameter is that it can be compared, when looking at PISM output files, to the driving stress.  Specifically, where \verb|tauc| $<$ \verb|taud_mag| you are likely to see sliding if option \verb|ssa_sliding| is used.
+
+The value of $\tau_c$ is determined in part by a subglacial hydrology model, including the modeled till-pore water pressure \verb|tillwat| (subsection \ref{subsect:subhydro}).  The value of $\tau_c$ is also determined in part by a stored basal material property $\phi=$\texttt{tillphi}, the ``till friction angle'' \cite{Paterson}.  These quantities combine in the Mohr-Coulomb criterion \cite[Chapter 8]{Paterson} to determine the basal yield stress:
 \begin{equation}
-   \tau_c = c_{0} + (\tan\phi)\,(\rho g H - p_w).  \label{eq:mohrcoulomb}
+   \tau_c = c_{0} + (\tan\phi)\,N_{til}.  \label{eq:mohrcoulomb}
 \end{equation}
-Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, and $c_0$ is called the ``till cohesion''.  The default value in PISM for the till cohesion value $c_0$ is zero \cite[formula (2.4)]{SchoofStream}.
+Here $c_0$ is called the ``till cohesion'', whose default value in PISM is zero \cite[formula (2.4)]{SchoofStream}.
 
-The product $\rho g H$ is the ice overburden pressure.  The difference $N=\rho g H - p_w$ is the modelled value of the ``effective pressure'' on the basal material.  Lower effective pressure means that more of the weight of the ice is carried by pressurized water and thus that the ice can slide more easily because the shear stress needed to slide is smaller.  See section \ref{subsect:subhydro} on models for the subglacial water pressure.  Note that the hydrology model \verb|-hydrology tillcan| has been extensively used in modelling ice streaming \cite{BBssasliding,BKAJS,Winkelmannetal2011} but that most of the many other possible combinations of basal strength models and hydrology models have not been tested.  For model \verb|-hydrology tillcan|, note that parameter option \verb|-hydrology_pressure_fraction| is  a critical parameter value in practice.
+The effective pressure on the till $N_{til}$ is a modeled quantity determined by assuming a compressible saturated till.  In this compressible-till model the till effective pressure $N_{til}$ is a locally-computable function of the amount of water in the till $W_{til} =$ \verb|tillwat| \cite{BuelervanPeltDRAFT}:
+\begin{equation}
+N_{til} = \delta P_o \, 10^{(e_0/C_c) \left(1 - (W_{til}/W_{til}^{max})\right)}  \label{eq:computeNtil}
+\end{equation}
+The following options control this local model:\begin{itemize}
+\item \verb|-till_reference_void_ratio|$= e_0$, dimensionless, with default value 0.69 \cite{Tulaczyketal2000b},
+\item \verb|-till_compressibility_coefficient| $= C_c$, dimensionless, with default value 0.12 \cite{Tulaczyketal2000b},
+\item \verb|-till_effective_fraction_overburden|$= \delta$, dimensionless, with default value 0.01, and
+\item \verb|-hydrology_tillwat_max|$= W_{til}^{max}$, with units of meters and default value 2 meters.
+\end{itemize}
+
+Lower effective pressure means that more of the weight of the ice is carried by pressurized water and thus that the ice can slide more easily because the shear stress needed to slide is smaller.  The amount of water in the till is a nontrivial output of the hydrology and conservation-of-energy submodels in PISM.  The non-conserving hydrology model \verb|-hydrology null| has been extensively used in modelling ice streaming \cite{BBssasliding,BKAJS,Winkelmannetal2011}, while many other possible combinations of basal strength models and hydrology models have not been extensively tested.
 
 In any case the meaning of the yield stress is that the (vector) basal shear stress is at most the yield stress, and only once the shear stress reaches the yield value can there be sliding:
 \begin{equation*}
