@@ -26,8 +26,8 @@ netcdf nbreen_config {
     pism_overrides:hydrology_thickness_power_in_flux = 1.25;
     pism_overrides:hydrology_thickness_power_in_flux_doc = "; = 5/4; = alpha";
 
-    pism_overrides:hydrology_potential_gradient_power_in_flux = 1.5;
-    pism_overrides:hydrology_potential_gradient_power_in_flux_doc = "; = 3/2; = beta";
+    pism_overrides:hydrology_gradient_power_in_flux = 1.5;
+    pism_overrides:hydrology_gradient_power_in_flux_doc = "; = 3/2; = beta";
 
     pism_overrides:hydrology_roughness_scale = 0.1;
     pism_overrides:hydrology_roughness_scale_doc = "m; = W_r; = h_r in Schoof/Hewitt work";

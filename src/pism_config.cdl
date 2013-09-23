@@ -237,8 +237,8 @@ netcdf pism_config {
     pism_config:hydrology_thickness_power_in_flux = 1.2;
     pism_config:hydrology_thickness_power_in_flux_doc = "; = alpha in notes; power alpha in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
 
-    pism_config:hydrology_potential_gradient_power_in_flux = 1.5;
-    pism_config:hydrology_potential_gradient_power_in_flux_doc = "; = beta in notes; power beta in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
+    pism_config:hydrology_gradient_power_in_flux = 1.5;
+    pism_config:hydrology_gradient_power_in_flux_doc = "; = beta in notes; power beta in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
 
     pism_config:hydrology_roughness_scale = 0.1;
     pism_config:hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale determining maximum amount of cavitation opening in PISMDistributedHydrology";

@@ -400,7 +400,7 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
   const PetscReal
     k     = config.get("hydrology_hydraulic_conductivity"),
     alpha = config.get("hydrology_thickness_power_in_flux"),
-    beta  = config.get("hydrology_potential_gradient_power_in_flux"),
+    beta  = config.get("hydrology_gradient_power_in_flux"),
     rg    = config.get("standard_gravity") * config.get("fresh_water_density");
   if (alpha < 1.0) {
     PetscPrintf(grid.com,
@@ -484,7 +484,7 @@ PetscErrorCode PISMRoutingHydrology::wall_melt(IceModelVec2S &result) {
     k     = config.get("hydrology_hydraulic_conductivity"),
     L     = config.get("water_latent_heat_fusion"),
     alpha = config.get("hydrology_thickness_power_in_flux"),
-    beta  = config.get("hydrology_potential_gradient_power_in_flux"),
+    beta  = config.get("hydrology_gradient_power_in_flux"),
     rhow  = config.get("standard_gravity"),
     g     = config.get("fresh_water_density"),
     rg    = rhow * g,
