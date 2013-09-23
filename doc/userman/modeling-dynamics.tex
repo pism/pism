@@ -259,35 +259,55 @@ A final note on basal sliding is in order.  Sliding in the SIA stress balance mo
 \subsection{Subglacial hydrology}  \label{subsect:subhydro}
 \optsection{Subglacial hydrology}
 
-FIXME
+At the present time, only simple subglacial hydrology models are implemented and documented in PISM.  At the most basic level, the energy conservation calculation generates basal melt.  According to the hydrology model, some of that water is stored locally in a layer of modeled till under the ice sheet.  That till is a key part of the model for sliding and ice streams \cite{Clarke05,SchoofTill,SchoofStream}.  In one documented model, water can be transported horizontally down the gradient of the modeled hydraulic potential.
+
+Table \ref{tab:hydrology} documents subglacial hydrology model choices, and options for controlling them.
+
+In the default model (\intextoption{hydrology} \texttt{null}) the water is \emph{not} conserved but it is stored locally in the till up to a specified amount \cite{BBssasliding}; option \intextoption{hydrology_tillwat_max} controls that amount.  The water is not conserved in the sense that water above the \texttt{tillwat_max} level is lost permanently.
+
+In the other documented model (\texttt{-hydrology routing}) the water \emph{is} conserved in the map-plane.  Some water still gets put into the till, with the same maximum, but excess water is horizontally-transported.  It will flow in the direction of the negative of the gradient of the modeled hydraulic potential.  In the \texttt{routing} model the potential is calculated by assuming that the transportable subglacial water is at the overburden pressure \cite{Siegertetal2009}, an assumption which does not relate to the modeled effective pressure on the till.  Ultimately the transportable water will reach the ice sheet grounding line or ice-free-land margin, at which point it will be lost.  The amount that is lost this way is reported to the user.
+
+In either model, a state (i.e.~input and output) variable \texttt{tillwat} is the effective thickness of the layer of liquid water in the till.  This layer of water relates to the basal boundary condition of the stress balance scheme, that is, it is used in computing the till yield stress $\tau_c$=\texttt{tauc}; see the previous subsection.  An additional state variable \texttt{bwat} is used by the \intextoption{hydrology} \texttt{routing} model.  It is the effective thickness of the layer of transportable water.
+
+Several parameters are used in determining how water flows in the \texttt{routing} model.  Specifically, the horizontal subglacial water flux is determined by a generalized Darcy flux relation \cite{Clarke05,Schoofetal2012}
+\begin{equation}  \label{eq:flux}
+\bq = - k\, W^\alpha\, |\grad \psi|^{\beta-2} \grad \psi
+\end{equation}
+where $\bq$ is the lateral water flux, $W$(= bwat) is the effective thickness of the layer of transportable water, $\psi$ is the hydraulic potential, and $k$, $\alpha$, $\beta$ are controllable parameters (Table \ref{tab:hydrology}).  As noted, in the \texttt{routing} model the hydraulic potential is determined by the ice overburden pressure, so that $\psi = \rho_i g H + \rho_w g (b + W)$ where $g$ is gravity, $\rho_i$ is ice density, $\rho_w$ is fresh water density, $H$ is ice thickness, and $b$ is the local bedrock elevation.
+
+For most choices of the relevant parameters and most grid spacings, the \texttt{routing} model is at least two orders of magnitude more expensive computationally than is the \texttt{null} model.  This follows directly from the CFL-type time-step restriction on lateral flow of a fluid with velocity on the order of centimeters to meters per second  (subglacial liquid water) compared to the much slower velocity of the flowing ice above.  Therefore the user should start with short runs of order a few model years, use option \intextoption{report_mass_accounting} to see the time-stepping behavior at \texttt{stdout}, and use \texttt{daily} or even \texttt{hourly} reporting for scalar and spatially-distributed time-series to see hydrology model behavior.
+ 
+% FIXME   the transfer mechanism  W_til <--> W is not documented; controlled by options
+% hydrology_tillwat_rate, hydrology_tillwat_transfer_proportion
+
+% FIXME  -hydrology distributed is not documented; controlled by options
+% hydrology_roughness_scale, hydrology_cavitation_opening_coefficient,
+% hydrology_creep_closure_coefficient, hydrology_regularizing_porosity
 
 \begin{table}
   \centering
- \begin{tabular}{lp{0.6\linewidth}}
+ \begin{tabular}{lp{0.55\linewidth}}
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \intextoption{hydrology} & Choose one of \texttt{tillcan}, \texttt{diffuseonly}, \texttt{routing}, \texttt{distributed} FIXME \\
-    \txtopt{hydrology_null_strip}{(km)} & FIXME only applies to \texttt{routing} and \texttt{distributed} \\
-    \intextoption{report_mass_accounting} & FIXME \\
-    \intextoption{input_to_bed_file} & FIXME \\
-    \intextoption{input_to_bed_period} & FIXME \\
-    \intextoption{init_P_from_steady}  & FIXME only applies to \texttt{distributed} \\
-    \intextoption{hydrology_use_const_bmelt} & FIXME \\
-    \intextoption{hydrology_const_bmelt} & FIXME \\
-    \intextoption{hydrology_pressure_fraction} & FIXME.  Sets what fraction of overburden pressure is assumed as the till pore water pressure in \texttt{tillcan}; scales overburden pressure in \texttt{routing}.  Only relevant at basal points where there is a positive amount of basal water.\\
-    \intextoption{hydrology_hydraulic_conductivity} & FIXME only applies to \texttt{routing} and \texttt{distributed} \\
+    \intextoption{hydrology} [\texttt{null}$\big|$\texttt{routing}] & Choose subglacial hydrology model. \\
+%    \intextoption{hydrology} & Choose one of \texttt{null}, \texttt{routing}, \texttt{distributed}. \\
+    \txtopt{hydrology_hydraulic_conductivity}{$k$} &  Applies to \texttt{-hydrology routing}; $=k$ in formula \eqref{eq:flux}.  \\
+    \txtopt{hydrology_null_strip}{(km)} &  Applies to \texttt{-hydrology routing}.  In the boundary strip water is removed and this is reported.  This option simply specifies the width of this strip, which should typically be one or two grid cells. \\
+    \txtopt{hydrology_gradient_power_in_flux}{$\beta$} &  Applies to \texttt{-hydrology routing}; power $\beta$ in formula \eqref{eq:flux}.  \\
+    \txtopt{hydrology_tillwat_max}{(m)} & Maximum effective thickness for water stored in till. \\
+    \small\txtopt{hydrology_tillwat_decay_rate_null}{(m/a)}\normalsize &  Applies only to \texttt{-hydrology null}.  Water stored in till accumulates at the computed basal melt rate minus this rate. \\
+    \txtopt{hydrology_thickness_power_in_flux}{$\alpha$} &  Applies to \texttt{-hydrology routing}; power $\alpha$ in formula \eqref{eq:flux}.  \\
+    \intextoption{hydrology_use_const_bmelt} & Replace the conservation-of-energy computed basal melt rate with a constant.  Use option \intextoption{hydrology_const_bmelt} to specify the rate (as water thickness per time). \\
+%    \intextoption{init_P_from_steady}  & Only applies to \texttt{-hydrology distributed}. \\
+    \intextoption{input_to_bed_file} & Option \texttt{-input_to_bed_file foo.nc} specifies that file \texttt{foo.nc} contains time-dependent field \texttt{inputtobed} which has units of water thickness per time.  Additional options \intextoption{input_to_bed_period} and \intextoption{input_to_bed_reference_year} allow additional control. \\
+    \intextoption{report_mass_accounting} &  At each major model time-step the amount of subglacial water lost to ice-free land, to the ocean, and into the ``null strip'' is reported. \\
     \bottomrule
   \end{tabular}
 \caption{Subglacial hydrology command-line options}
 \label{tab:hydrology}
 \end{table}
 
-In models \verb|tillcan|, option \texttt{-hydrology_pressure_fraciton} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=\mathtt{bwat}$; see the next subsection.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
-
-Currently, only fairly-simple hydrology models are implemented in PISM.  By default, the energy conservation calculation generates basal melt and that water is stored locally in the ``till'' under the ice sheet.  The output variable \texttt{bwat} is the effective thickness of this layer of liquid water.  This layer of water relates to the basal boundary condition of the conservation of energy scheme, and it is involved in computing basal water pressure and thus the till yield stress; see the previous subsection.
-
-The minimal model \verb|tillcan| which is on by default is that water is added by basal melt rate, subtracted by refreeze onto the base of the ice, and it decays away in the absence of other inputs according to the configuration parameter \texttt{bwat_decay_rate}.  The amount is bounded above by the configuration constant \texttt{bwat_max}, an effective thickness.  Water above that level is lost in an unmodeled manner.
 
 \subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}
 \optsection{Earth deformation models}
