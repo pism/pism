@@ -75,7 +75,7 @@ elif [ "$4" = "routing" ]; then
 
   # routing run: very fast
   oname=nbreen_y${YY}_${dx}m_routing.nc
-  hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_hydraulic_conductivity_at_large_W 1.0e-3"
+  hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting"
   evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt,tillwat"  # revised
 
 else
