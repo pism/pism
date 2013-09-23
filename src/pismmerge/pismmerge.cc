@@ -105,6 +105,9 @@ int process_all_variables(string input_file, string output_file,
   // Create the output file
   ierr = output.create(output_file); CHKERRQ(ierr);
 
+  // global attributes
+  ierr = copy_attributes(input, output, "PISM_GLOBAL"); CHKERRQ(ierr);
+
   // define all variables (except for {x,y}_patch)
   ierr = input.inq_nvars(n_vars); check(ierr);
 
