@@ -131,6 +131,13 @@ public:
   //! \brief Returns current time, in years. Only for reporting.
   virtual string date();
 
+#if (PISM_DEBUG==1)
+  //! \brief Returns current time, in years. Only for debugging.
+  virtual double current_years() {
+    return seconds_to_years(current());
+  }
+#endif
+
   //! Date corresponding to the beginning of the run.
   virtual string start_date();
 
