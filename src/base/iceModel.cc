@@ -262,7 +262,7 @@ PetscErrorCode IceModel::createVecs() {
   } else {
     ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
   }
-  ierr = vMask.set_attrs("diagnostic", "grounded_dragging_floating integer mask",
+  ierr = vMask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
 			 "", ""); CHKERRQ(ierr);
   vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;

@@ -61,6 +61,24 @@ int process_one_variable(string var_name, string input_file, string output_file,
     ierr = define_variable(input, output, "pism_override"); CHKERRQ(ierr);
   }
 
+  // run_stats
+  ierr = input.inq_varid("run_stats", exists); CHKERRQ(ierr);
+  if (exists) {
+    ierr = define_variable(input, output, "run_stats"); CHKERRQ(ierr);
+  }
+
+  // lat
+  ierr = input.inq_varid("lat", exists); CHKERRQ(ierr);
+  if (exists) {
+    ierr = define_variable(input, output, "lat"); CHKERRQ(ierr);
+  }
+
+  // lon
+  ierr = input.inq_varid("lon", exists); CHKERRQ(ierr);
+  if (exists) {
+    ierr = define_variable(input, output, "lon"); CHKERRQ(ierr);
+  }
+
   ierr = input.close(); CHKERRQ(ierr);
 
   ierr = copy_all_variables(input_file, output); CHKERRQ(ierr);
@@ -86,6 +104,9 @@ int process_all_variables(string input_file, string output_file,
 
   // Create the output file
   ierr = output.create(output_file); CHKERRQ(ierr);
+
+  // global attributes
+  ierr = copy_attributes(input, output, "PISM_GLOBAL"); CHKERRQ(ierr);
 
   // define all variables (except for {x,y}_patch)
   ierr = input.inq_nvars(n_vars); check(ierr);

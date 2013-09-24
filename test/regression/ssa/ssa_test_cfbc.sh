@@ -4,7 +4,7 @@
 
 PISM_PATH=$1
 MPIEXEC=$2
-MPIEXEC_COMMAND="$MPIEXEC -n 2"
+MPIEXEC_COMMAND="$MPIEXEC -n 1"
 PISM_SOURCE_DIR=$3
 EXT=""
 if [ $# -ge 4 ] && [ "$4" == "-python" ]
@@ -24,7 +24,7 @@ rm -f $files
 set -e
 set -x
 
-OPTS="-verbose 1 -o foo-V.nc -My 5 -ksp_rtol 1e-6"
+OPTS="-verbose 1 -o foo-V.nc -My 5 -ksp_type richardson -pc_type lu"
 
 # do stuff
 $MPIEXEC_COMMAND $PISM_PATH/ssa_test_cfbc${EXT} -Mx 201 $OPTS > test-V-out.txt
@@ -36,11 +36,11 @@ set +e
 diff test-V-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                1.1712      0.06978    1.1712    0.0030    0.6806    0.0002
+                1.3578      0.08462    1.3578    0.0000    0.8254    0.0000
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.2831      0.01672    0.2831    0.0062    0.1632    0.0004
+                0.6137      0.03548    0.6137    0.0000    0.3463    0.0000
 NUM ERRORS DONE
 END-OF-OUTPUT
 

@@ -90,7 +90,7 @@ SKIP=200
 OUTNAME=psg_3d_${GS}m_pre1.nc
 echo
 echo "$SCRIPTNAME  bootstrapping plus short smoothing run for 1 a"
-cmd="$PISM_MPIDO $NN $PISM -skip $SKIP -boot_file $INNAME $GRID \
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -boot_file $INNAME $GRID \
   $COUPLER -y 1 -o $OUTNAME"
 $PISM_DO $cmd
 
@@ -117,12 +117,17 @@ INNAME=$OUTNAME
 OUTNAME=ssa_ftt_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
 TSNAME=ts_${OUTNAME}
-TSTIMES=$STARTYEAR:$STEP:$ENDTIME
+EXNAME=ex_${OUTNAME}
+TSSTEP=monthly
+EXSTEP=monthly
+EXVARS="usurf,grounded_basal_flux_cumulative,bwat,nonneg_flux_cumulative,h_x,h_y,bmelt,strain_rates,csurf,lon,diffusivity,taud_mag,ocean_kill_flux_cumulative,climatic_mass_balance_cumulative,bwp,hardav,topg,velbar,tauc,lat,taud,bfrict,mask,Href,thk,temppabase,cbase,diffusivity_staggered,IcebergMask,tempicethk_basal"
+
 echo
 echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_FORCING $FULLPHYS\
+cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_FORCING $FULLPHYS\
      -force_to_thk $PISM_DATANAME \
-     -ts_file $TSNAME -ts_times $TSTIMES \
+     -ts_file $TSNAME -ts_times $TSSTEP \
+     -extra_file $EXNAME -extra_times $EXSTEP -extra_vars $EXVARS \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo

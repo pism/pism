@@ -8,8 +8,11 @@ netcdf pism_overrides {
     pism_overrides:bed_smoother_range = 0.;
     pism_overrides:bed_smoother_range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [\\ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
 
-    pism_overrides:summary_volarea_scale_factor_log10 = 0;
-    pism_overrides:summary_volarea_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume and area in summary line to stdout";
+    pism_overrides:summary_vol_scale_factor_log10 = 0;
+    pism_overrides:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";
+
+    pism_overrides:summary_area_scale_factor_log10 = 0;
+    pism_overrides:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
 
     pism_overrides:drainage_target_water_frac = 0.02;
     pism_overrides:drainage_target_water_frac_doc = "; liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [\\ref AschwandenBuelerBlatter]";
@@ -32,6 +35,4 @@ netcdf pism_overrides {
     pism_overrides:do_pseudo_plastic_till = "yes";
     pism_overrides:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
-    pism_overrides:output_variable_order = "zyx";
-    pism_overrides:output_variable_order_doc = "Variable order in output files.";
 }
