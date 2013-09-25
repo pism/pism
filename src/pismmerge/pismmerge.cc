@@ -67,6 +67,12 @@ int process_one_variable(string var_name, string input_file, string output_file,
     ierr = define_variable(input, output, "run_stats"); CHKERRQ(ierr);
   }
 
+  // timestamp
+  ierr = input.inq_varid("timestamp", exists); CHKERRQ(ierr);
+  if (exists) {
+    ierr = define_variable(input, output, "timestamp"); CHKERRQ(ierr);
+  }
+
   // lat
   ierr = input.inq_varid("lat", exists); CHKERRQ(ierr);
   if (exists) {
