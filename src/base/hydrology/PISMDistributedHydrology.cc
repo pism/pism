@@ -248,6 +248,8 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       sb     = pow(CC * cbase(i,j),powglen);
       if (W(i,j) == 0.0) {
+        // see P(W) formula in steady state; note P(W) is continuous (in steady
+        // state); these facts imply:
         if (sb > 0.0)
           result(i,j) = 0.0;        // no water + cavitation = underpressure
         else
@@ -431,9 +433,14 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           Pnew(i,j) = 0.0;
         else if (M.ocean(i,j))
           Pnew(i,j) = Pover(i,j);
-        else if (W(i,j) <= 0.0)
-          Pnew(i,j) = Pover(i,j);
-        else {
+        else if (W(i,j) <= 0.0) {
+          // see P(W) formula *in steady state*; note P(W) is continuous (in steady
+          // state); these facts imply:
+          if (cbase(i,j) > 0.0)
+            Pnew(i,j) = 0.0;        // no water + cavitation = underpressure
+          else
+            Pnew(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
+        } else {
           // opening and closure terms in pressure equation
           Open = PetscMax(0.0,c1 * cbase(i,j) * (Wr - W(i,j)));
           Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
