@@ -40,7 +40,7 @@ PetscErrorCode PISMRoutingHydrology::allocate() {
   // model state variables; need ghosts
   ierr = W.create(grid, "bwat", true, 1); CHKERRQ(ierr);
   ierr = W.set_attrs("model_state",
-                     "thickness of subglacial water layer",
+                     "thickness of transportable subglacial water layer",
                      "m", ""); CHKERRQ(ierr);
   ierr = W.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
@@ -817,7 +817,7 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
     ierr = verbPrintf(2, grid.com,
                       " 'routing' hydrology summary:\n"
                       "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
-                      "        (last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
+                      "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
                       "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
                       "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
                       hydrocount, grid.convert(dt/hydrocount, "seconds", "years"), dt/hydrocount,

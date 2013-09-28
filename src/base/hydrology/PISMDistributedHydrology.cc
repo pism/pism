@@ -43,17 +43,17 @@ PetscErrorCode PISMDistributedHydrology::allocate_pressure() {
   // additional variables beyond PISMRoutingHydrology::allocate()
   ierr = P.create(grid, "bwp", true, 1); CHKERRQ(ierr);
   ierr = P.set_attrs("model_state",
-                     "pressure of water in subglacial layer",
+                     "pressure of transportable water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
   ierr = P.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = cbase.create(grid, "ice_sliding_speed", false); CHKERRQ(ierr);
   ierr = cbase.set_attrs("internal",
-                         "ice sliding speed seen by subglacial water layer",
+                         "ice sliding speed seen by subglacial hydrology",
                          "m s-1", ""); CHKERRQ(ierr);
   ierr = cbase.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = Pnew.create(grid, "Pnew_internal", false); CHKERRQ(ierr);
   ierr = Pnew.set_attrs("internal",
-                     "new subglacial water pressure during update",
+                     "new transportable subglacial water pressure during update",
                      "Pa", ""); CHKERRQ(ierr);
   ierr = Pnew.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = psi.create(grid, "hydraulic_potential", true, 1); CHKERRQ(ierr);
@@ -500,7 +500,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = verbPrintf(2, grid.com,
                       " 'distributed' hydrology summary:\n"
                       "     %d hydrology sub-steps with average dt = %.7f years = %.2f s\n"
-                      "        (average of %.2f steps per CFL time; last max |V| = %.2e m s-1; last max D = %.2e m^2 s-1)\n"
+                      "        (average of %.2f steps per CFL time; max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
                       "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
                       "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
                       hydrocount, grid.convert(dt/hydrocount, "seconds", "years"), dt/hydrocount,
