@@ -78,6 +78,12 @@ elif [ "$4" = "routing" ]; then
   hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting"
   evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt,tillwat"  # revised
 
+elif [ "$4" = "disttill" ]; then
+
+  # distributed run with till on (tillwat_max = 2.0)
+  oname=nbreen_y${YY}_${dx}m_disttill.nc
+  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc -hydrology_tillwat_max 2.0"
+
 else
   echo "invalid fourth argument; must be in $TYPELIST"
   exit
