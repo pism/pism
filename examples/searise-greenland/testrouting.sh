@@ -17,7 +17,7 @@ etimes="0:$DT:$YY"
 PRESTART=${PREFIX}_steady
 STARTFILE=${PRESTART}_bwat.nc
 oname=${PREFIX}_routing.nc
-evarlist="thk,mask,csurf,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt,tillwat"
+evarlist="thk,mask,csurf,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt,tillwat,temppabase,tempicethk_basal"
 diagnostics="-extra_file extras_$oname -extra_times $etimes -extra_vars $evarlist"
 ncap2 -O -s "bwat=0.0*tillwat" ${PRESTART}.nc $STARTFILE
 ncatted -O -a long_name,bwat,m,c,"effective thickness of transportable subglacial water" $STARTFILE
@@ -36,7 +36,7 @@ cmd="mpiexec -n $N pismr -config_override searise_config.nc -i $STARTFILE $clima
 PRESTART=${PREFIX}_0
 STARTFILE=${PRESTART}_bwat.nc
 oname=${PREFIX}_routing.nc
-evarlist="thk,mask,cbase,csurf,tauc,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt,tillwat"
+evarlist="thk,mask,cbase,csurf,tauc,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt,tillwat,temppabase,tempicethk_basal"
 diagnostics="-extra_file extras_$oname -extra_times $etimes -extra_vars $evarlist"
 ncap2 -O -s "bwat=0.0*tillwat" ${PRESTART}.nc $STARTFILE
 ncatted -O -a long_name,bwat,m,c,"effective thickness of transportable subglacial water" $STARTFILE
