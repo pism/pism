@@ -886,6 +886,9 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
   bool verbose = getVerbosityLevel() >= 2,
     very_verbose = getVerbosityLevel() > 2;
 
+  // set the initial guess:
+  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
+
   stdout_ssa.clear();
 
   ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
