@@ -483,13 +483,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           ierr = esys->setBasalHeatFlux(G0(i,j) + (*Rb)(i,j)); CHKERRQ(ierr);
         } else {
           // warm, grounded base case
-          if (k1_istemperate) {
-            // positive thickness of temperate ice; homogeneous Neumann case:  q . n = 0
-            ierr = esys->setBasalHeatFlux(0.0); CHKERRQ(ierr);
-          } else {
-            // no thickness of temperate ice:  Dirichlet  H = H_s(pbasal)
-            ierr = esys->setDirichletBasal(esys->Enth_s[0]); CHKERRQ(ierr);
-          }
+          ierr = esys->setBasalHeatFlux(0.0); CHKERRQ(ierr);
         }
 
         // solve the system
