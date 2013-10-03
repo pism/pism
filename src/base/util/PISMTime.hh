@@ -173,7 +173,7 @@ protected:
   const NCConfigVariable &m_config;
   PISMUnitSystem m_unit_system;
   PISMUnit m_time_units;
-  double m_year_length;      //!< number of seconds in a year, "mod" and "year fraction"
+  double m_year_length;      //!< number of seconds in a year, for "mod" and "year fraction"
   double m_time_in_seconds, //!< current time, in seconds since the reference time
     m_run_start,                  //!< run start time, in seconds since the reference time
     m_run_end;                    //!< run end tim, in seconds since the reference time

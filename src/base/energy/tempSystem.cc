@@ -17,96 +17,100 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
+#include <assert.h>
 #include "pism_const.hh"
 #include "iceModelVec.hh"
 #include "tempSystem.hh"
 #include "Mask.hh"
 
 tempSystemCtx::tempSystemCtx(PetscInt my_Mz, string my_prefix)
-      : columnSystemCtx(my_Mz, my_prefix) {
-  Mz = my_Mz;
+  : columnSystemCtx(my_Mz, my_prefix), Mz(my_Mz) {
+
   // set flags to indicate nothing yet set
-  initAllDone = false;
+  initAllDone       = false;
   schemeParamsValid = false;
-  surfBCsValid = false;
-  basalBCsValid = false;
+  surfBCsValid      = false;
+  basalBCsValid     = false;
+
   // set values so we can check if init was called on all
-  dx = -1;
-  dy = -1;
-  dtTemp = -1;
-  dzEQ = -1;
+  dx      = -1;
+  dy      = -1;
+  dtTemp  = -1;
+  dzEQ    = -1;
   ice_rho = -1;
   ice_c_p = -1;
-  ice_k = -1;
-  T = NULL;
-  u = NULL;
-  v = NULL;
-  w = NULL;
+  ice_k   = -1;
+  T       = NULL;
+  u       = NULL;
+  v       = NULL;
+  w       = NULL;
+  T3      = NULL;
   strain_heating = NULL;
-  T3 = NULL;
 }
 
 
 PetscErrorCode tempSystemCtx::initAllColumns() {
   // check whether each parameter & pointer got set
-  if (dx <= 0.0) { SETERRQ(PETSC_COMM_SELF, 2,"un-initialized dx in tempSystemCtx"); }
-  if (dy <= 0.0) { SETERRQ(PETSC_COMM_SELF, 3,"un-initialized dy in tempSystemCtx"); }
-  if (dtTemp <= 0.0) { SETERRQ(PETSC_COMM_SELF, 4,"un-initialized dtTemp in tempSystemCtx"); }
-  if (dzEQ <= 0.0) { SETERRQ(PETSC_COMM_SELF, 5,"un-initialized dzEQ in tempSystemCtx"); }
-  if (ice_rho <= 0.0) { SETERRQ(PETSC_COMM_SELF, 7,"un-initialized ice_rho in tempSystemCtx"); }
-  if (ice_c_p <= 0.0) { SETERRQ(PETSC_COMM_SELF, 8,"un-initialized ice_c_p in tempSystemCtx"); }
-  if (ice_k <= 0.0) { SETERRQ(PETSC_COMM_SELF, 9,"un-initialized ice_k in tempSystemCtx"); }
-  if (T == NULL) { SETERRQ(PETSC_COMM_SELF, 13,"un-initialized pointer T in tempSystemCtx"); }
-  if (u == NULL) { SETERRQ(PETSC_COMM_SELF, 15,"un-initialized pointer u in tempSystemCtx"); }
-  if (v == NULL) { SETERRQ(PETSC_COMM_SELF, 16,"un-initialized pointer v in tempSystemCtx"); }
-  if (w == NULL) { SETERRQ(PETSC_COMM_SELF, 17,"un-initialized pointer w in tempSystemCtx"); }
-  if (strain_heating == NULL) { SETERRQ(PETSC_COMM_SELF, 18,"un-initialized pointer strain_heating in tempSystemCtx"); }
-  if (T3 == NULL) { SETERRQ(PETSC_COMM_SELF, 19,"un-initialized pointer T3 in tempSystemCtx"); }
+  assert(dx > 0.0);
+  assert(dy > 0.0);
+  assert(dtTemp > 0.0);
+  assert(dzEQ > 0.0);
+  assert(ice_rho > 0.0);
+  assert(ice_c_p > 0.0);
+  assert(ice_k > 0.0);
+
+  assert(T != NULL);
+  assert(u != NULL);
+  assert(v != NULL);
+  assert(w != NULL);
+  assert(strain_heating != NULL);
+  assert(T3 != NULL);
+
   // set derived constants
-  nuEQ = dtTemp / dzEQ;
-  rho_c_I = ice_rho * ice_c_p;
-  iceK = ice_k / rho_c_I;
-  iceR = iceK * dtTemp / PetscSqr(dzEQ);
+  nuEQ        = dtTemp / dzEQ;
+  rho_c_I     = ice_rho * ice_c_p;
+  iceK        = ice_k / rho_c_I;
+  iceR        = iceK * dtTemp / PetscSqr(dzEQ);
   // done
   initAllDone = true;
   return 0;
 }
 
 
-PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(
-                     PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda) {
-  if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
-     "setSchemeParamsThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
-  if (schemeParamsValid) {  SETERRQ(PETSC_COMM_SELF, 3,
-     "setSchemeParamsThisColumn() called twice (?) in tempSystemCtx"); }
-  mask = my_mask;
-  isMarginal = my_isMarginal;
-  lambda = my_lambda;
+PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(PismMask my_mask,
+                                                        bool my_isMarginal, PetscScalar my_lambda) {
+  assert(initAllDone == true);
+  // allow setting scheme parameters only once:
+  assert(schemeParamsValid == false);
+
+  mask              = my_mask;
+  isMarginal        = my_isMarginal;
+  lambda            = my_lambda;
   schemeParamsValid = true;
   return 0;
 }
 
 
 PetscErrorCode tempSystemCtx::setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts) {
-  if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
-     "setSurfaceBoundaryValuesThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
-  if (surfBCsValid) {  SETERRQ(PETSC_COMM_SELF, 3,
-     "setSurfaceBoundaryValuesThisColumn() called twice (?) in tempSystemCtx"); }
-  Ts = my_Ts;
+  assert(initAllDone == true);
+  // allow setting surface BCs only once:
+  assert(surfBCsValid == false);
+
+  Ts           = my_Ts;
   surfBCsValid = true;
   return 0;
 }
 
 
-PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(
-                     PetscScalar my_G0, PetscScalar my_Tshelfbase, PetscScalar my_Rb) {
-  if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
-     "setIndicesThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
-  if (basalBCsValid) {  SETERRQ(PETSC_COMM_SELF, 3,
-     "setBasalBoundaryValuesThisColumn() called twice (?) in tempSystemCtx"); }
-  G0 = my_G0;
-  Tshelfbase = my_Tshelfbase;
-  Rb = my_Rb;
+PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(PetscScalar my_G0,
+                                                               PetscScalar my_Tshelfbase, PetscScalar my_Rb) {
+  assert(initAllDone == true);
+  // allow setting basal BCs only once:
+  assert(basalBCsValid == false);
+
+  G0            = my_G0;
+  Tshelfbase    = my_Tshelfbase;
+  Rb            = my_Rb;
   basalBCsValid = true;
   return 0;
 }
@@ -114,14 +118,10 @@ PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(
 
 PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
 
-  if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
-     "solveThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
-  if (!schemeParamsValid) {  SETERRQ(PETSC_COMM_SELF, 3,
-     "solveThisColumn() should only be called after setSchemeParamsThisColumn() in tempSystemCtx"); }
-  if (!surfBCsValid) {  SETERRQ(PETSC_COMM_SELF, 3,
-     "solveThisColumn() should only be called after setSurfaceBoundaryValuesThisColumn() in tempSystemCtx"); }
-  if (!basalBCsValid) {  SETERRQ(PETSC_COMM_SELF, 3,
-     "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in tempSystemCtx"); }
+  assert(initAllDone == true);
+  assert(schemeParamsValid == true);
+  assert(surfBCsValid == true);
+  assert(basalBCsValid == true);
 
   Mask M;
 
