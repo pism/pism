@@ -112,9 +112,6 @@ the eigenvalues `result(i,j,0)` = (maximum eigenvalue), `result(i,j,1)` = (minim
 eigenvalue).  Uses the provided thickness to make decisions (PIK) about computing
 strain rates near calving front.
 
-Though there are two eigenvalues, such do not form a vector, so the output is not
-an IceModelVec2V, though it could be a std::vector<IceModelVec2S> or such.
-
 Note that `result(i,j,0)` >= `result(i,j,1)`, but there is no necessary relation between 
 the magnitudes, and either principal strain rate could be negative or positive.
 
