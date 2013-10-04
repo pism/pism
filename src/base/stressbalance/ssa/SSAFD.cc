@@ -803,8 +803,11 @@ PetscErrorCode SSAFD::solve() {
   }
 
   // Try with default settings:
-  if (m_default_pc_failure_count < m_default_pc_failure_max_count) {
-    ierr = pc_setup_bjacobi(); CHKERRQ(ierr);
+  {
+    if (m_default_pc_failure_count < m_default_pc_failure_max_count) {
+      ierr = pc_setup_bjacobi(); CHKERRQ(ierr);
+    }
+
     ierr = picard_iteration(static_cast<PetscInt>(config.get("max_iterations_ssafd")),
                             config.get("ssafd_relative_convergence"),
                             config.get("epsilon_ssa"));
@@ -991,11 +994,13 @@ PetscErrorCode SSAFD::strategy_1_regularization() {
   
   while (k < max_tries) {
     ierr = m_velocity.copy_from(m_velocity_old); CHKERRQ(ierr);
-    nuH_regularization *= DEFAULT_EPSILON_MULTIPLIER_SSA;
-
     ierr = verbPrintf(1, grid.com,
+                      "  failed with nuH_regularization = %8.2f.\n"
                       "  re-trying with nuH_regularization multiplied by %8.2f...\n",
+                      nuH_regularization,
                       DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
+
+    nuH_regularization *= DEFAULT_EPSILON_MULTIPLIER_SSA;
 
 
     ierr = picard_iteration(static_cast<PetscInt>(config.get("max_iterations_ssafd")),
