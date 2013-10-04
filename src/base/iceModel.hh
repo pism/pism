@@ -271,7 +271,7 @@ protected:
               dt_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
-              dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
+              dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,

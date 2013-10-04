@@ -243,7 +243,7 @@ Derived classes of IceModel may redefine this method and print alternate
 information.
  */
 PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAndAge,
-                                          PISMTime* date,  PetscScalar delta_t,
+                                          PISMTime* /*date*/,  PetscScalar delta_t,
                                           PetscScalar volume,  PetscScalar area,
                                           PetscScalar /* meltfrac */,  PetscScalar max_diffusivity) {
 
