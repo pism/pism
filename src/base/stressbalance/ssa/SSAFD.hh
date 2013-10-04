@@ -101,8 +101,9 @@ protected:
   Vec m_b;
   PetscScalar m_scaling;
 
-  PC m_bjacobi, m_asm;
-
+  unsigned int m_default_pc_failure_count,
+    m_default_pc_failure_max_count;
+  
   bool view_nuh;
   PetscViewer nuh_viewer;
   PetscInt nuh_viewer_size;

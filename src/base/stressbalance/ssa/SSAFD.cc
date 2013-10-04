@@ -32,70 +32,56 @@ SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
 
 PetscErrorCode SSAFD::pc_setup_bjacobi() {
   PetscErrorCode ierr;
+  PC pc;
 
-  if (m_bjacobi != NULL) {
-    ierr = KSPSetPC(m_KSP, m_bjacobi); CHKERRQ(ierr);
-  } else {
-    // Get the PC from the KSP solver:
-    ierr = KSPGetPC(m_KSP, &m_bjacobi); CHKERRQ(ierr);
+  // Get the PC from the KSP solver:
+  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
 
-    // Make sure KSP does not destroy it when KSPSetPC is called:
-    ierr = PetscObjectReference((PetscObject)m_bjacobi); CHKERRQ(ierr);
+  // Set the PC type:
+  ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
 
-    // Set the default type:
-    ierr = PCSetType(m_bjacobi, PCBJACOBI); CHKERRQ(ierr);
-
-    // Process options:
-    ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
-  }
+  // Process options:
+  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
 
   return 0;
 }
 
 PetscErrorCode SSAFD::pc_setup_asm() {
   PetscErrorCode ierr;
+  PC pc, sub_pc;
 
-  if (m_asm != NULL) {
-    ierr = KSPSetPC(m_KSP, m_asm); CHKERRQ(ierr);
-  } else {
+  // Set parameters equivalent to
+  // -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu
 
-    // Set parameters equivalent to
-    // -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu
-
-    ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
     
-     // Switch to using the "unpreconditioned" norm.
-    ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
+  // Switch to using the "unpreconditioned" norm.
+  ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
 
-    // Switch to "right" preconditioning.
-    ierr = KSPSetPCSide(m_KSP, PC_RIGHT); CHKERRQ(ierr);
+  // Switch to "right" preconditioning.
+  ierr = KSPSetPCSide(m_KSP, PC_RIGHT); CHKERRQ(ierr);
 
-    // Get the PC from the KSP solver:
-    ierr = KSPGetPC(m_KSP, &m_asm); CHKERRQ(ierr);
+  // Get the PC from the KSP solver:
+  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
+  
+  // Set the PC type:
+  ierr = PCSetType(pc, PCASM); CHKERRQ(ierr);
 
-    // Make sure KSP does not destroy it when KSPSetPC is called:
-    ierr = PetscObjectReference((PetscObject)m_asm); CHKERRQ(ierr);
+  // Set the sub-KSP object to "preonly"
+  KSP *sub_ksp;
+  ierr = PCSetUp(pc); CHKERRQ(ierr);
+  ierr = PCASMGetSubKSP(pc, NULL, NULL, &sub_ksp); CHKERRQ(ierr);
 
-    // Set the default type:
-    ierr = PCSetType(m_asm, PCASM); CHKERRQ(ierr);
+  ierr = KSPSetType(*sub_ksp, KSPPREONLY); CHKERRQ(ierr);
 
-    // Set the sub-KSP object to "preonly"
-    KSP *sub_ksp;
-    ierr = PCSetUp(m_asm); CHKERRQ(ierr);
-    ierr = PCASMGetSubKSP(m_asm, NULL, NULL, &sub_ksp); CHKERRQ(ierr);
+  // Set the PC of the sub-KSP to "LU".
+  ierr = KSPGetPC(*sub_ksp, &sub_pc); CHKERRQ(ierr);
 
-    ierr = KSPSetType(*sub_ksp, KSPPREONLY); CHKERRQ(ierr);
-
-    // Set the PC of the sub-KSP to "LU".
-    PC sub_pc;
-    ierr = KSPGetPC(*sub_ksp, &sub_pc); CHKERRQ(ierr);
-
-    ierr = PCSetType(sub_pc, PCLU); CHKERRQ(ierr);
+  ierr = PCSetType(sub_pc, PCLU); CHKERRQ(ierr);
     
-    // Let the user override all this:
-    // Process options:
-    ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
-  }
+  // Let the user override all this:
+  // Process options:
+  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
 
   return 0;
 }
@@ -112,9 +98,6 @@ where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
 PetscErrorCode SSAFD::allocate_fd() {
   PetscErrorCode ierr;
 
-  m_bjacobi = PETSC_NULL;
-  m_asm     = PETSC_NULL;
-
   // note SSADA and SSAX are allocated in SSA::allocate()
   ierr = VecDuplicate(SSAX, &m_b); CHKERRQ(ierr);
 
@@ -127,10 +110,6 @@ PetscErrorCode SSAFD::allocate_fd() {
   // solve() call).
   ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE); CHKERRQ(ierr);
   
-  // the default PC type somehow is ILU, which now fails (?) while block jacobi
-  //   seems to work; runtime options can override (see test J in vfnow.py)
-  ierr = pc_setup_bjacobi(); CHKERRQ(ierr);
-
   const PetscScalar power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
@@ -164,14 +143,6 @@ PetscErrorCode SSAFD::allocate_fd() {
 //! \brief De-allocate SIAFD internal objects.
 PetscErrorCode SSAFD::deallocate_fd() {
   PetscErrorCode ierr;
-
-  if (m_bjacobi != PETSC_NULL) {
-    ierr = PCDestroy(&m_bjacobi); CHKERRQ(ierr);
-  }
-
-  if (m_asm != PETSC_NULL) {
-    ierr = PCDestroy(&m_asm); CHKERRQ(ierr);
-  }
 
   if (m_KSP != PETSC_NULL) {
     ierr = KSPDestroy(&m_KSP); CHKERRQ(ierr);
@@ -224,6 +195,9 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   string tempPrefix;
   ierr = PISMOptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format",
 			  dump_system_matlab); CHKERRQ(ierr);
+
+  m_default_pc_failure_count     = 0;
+  m_default_pc_failure_max_count = 5;
 
   return 0;
 }
@@ -829,7 +803,7 @@ PetscErrorCode SSAFD::solve() {
   }
 
   // Try with default settings:
-  {
+  if (m_default_pc_failure_count < m_default_pc_failure_max_count) {
     ierr = pc_setup_bjacobi(); CHKERRQ(ierr);
     ierr = picard_iteration(static_cast<PetscInt>(config.get("max_iterations_ssafd")),
                             config.get("ssafd_relative_convergence"),
@@ -837,6 +811,7 @@ PetscErrorCode SSAFD::solve() {
   }
 
   if (ierr != 0) {
+    m_default_pc_failure_count += 1;
     ierr = strategy_1_regularization();
   }
 
