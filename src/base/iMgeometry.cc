@@ -514,7 +514,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
     compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),
     compute_cumulative_nonneg_flux = nonneg_flux_2D_cumulative.was_created(),
     compute_cumulative_grounded_basal_flux = grounded_basal_flux_2D_cumulative.was_created(),
-    compute_cumulative_floating_basal_flux = floating_basal_flux_2D_cumulative.was_created();
+    compute_cumulative_floating_basal_flux = floating_basal_flux_2D_cumulative.was_created(),
+    compute_flux_divergence = flux_divergence.was_created();
 
   // FIXME: use corrected cell areas (when available)
   PetscScalar factor = config.get("ice_density") * (dx * dy);
@@ -577,6 +578,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   if (compute_cumulative_floating_basal_flux) {
     ierr = floating_basal_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+  }
+
+  if (compute_flux_divergence) {
+    ierr = flux_divergence.begin_access(); CHKERRQ(ierr);
   }
 
   MaskQuery mask(vMask);
@@ -691,6 +696,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
         divQ_SSA             = 0.0;
       }
 
+      if (compute_flux_divergence == 1) {
+	flux_divergence(i, j) = divQ_SIA + divQ_SSA;
+      }
+
       vHnew(i, j) += (dt * (surface_mass_balance // accumulation/ablation
                             - meltrate_grounded // basal melt rate (grounded)
                             - meltrate_floating // sub-shelf melt rate
@@ -744,6 +753,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
+
+  if (compute_flux_divergence) {
+    ierr = flux_divergence.end_access(); CHKERRQ(ierr);
+  }
 
   if (compute_cumulative_grounded_basal_flux) {
     ierr = grounded_basal_flux_2D_cumulative.end_access(); CHKERRQ(ierr);

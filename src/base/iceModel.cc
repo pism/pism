@@ -109,7 +109,7 @@ void IceModel::reset_counters() {
   CFLmaxdt = CFLmaxdt2D = 0.0;
   CFLviolcount = 0;
   dt_TempAge = 0.0;
-  dt_from_diffus = dt_from_cfl = 0.0;
+  dt_from_cfl = 0.0;
 
   // Do not reset the following: they are always re-computed before use (i.e.
   // aren't a part of the model state). Moreover, keeping these values allows
@@ -186,7 +186,7 @@ PetscErrorCode IceModel::createVecs() {
   PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
   ierr = verbPrintf(3, grid.com,
-		    "Allocating memory...\n"); CHKERRQ(ierr);
+                    "Allocating memory...\n"); CHKERRQ(ierr);
 
   // The following code creates (and documents -- to some extent) the
   // variables. The main (and only) principle here is using standard names from
@@ -208,7 +208,7 @@ PetscErrorCode IceModel::createVecs() {
     ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
     ierr = variables.add(T3); CHKERRQ(ierr);
 
-    ierr = Enth3.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr); 
+    ierr = Enth3.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr);
   }
 
   // age of ice but only if age will be computed
@@ -226,20 +226,20 @@ PetscErrorCode IceModel::createVecs() {
   // ice upper surface elevation
   ierr = vh.create(grid, "usurf", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vh.set_attrs("diagnostic", "ice upper surface elevation",
-		      "m", "surface_altitude"); CHKERRQ(ierr);
+                      "m", "surface_altitude"); CHKERRQ(ierr);
   ierr = variables.add(vh); CHKERRQ(ierr);
 
   // land ice thickness
   ierr = vH.create(grid, "thk", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vH.set_attrs("model_state", "land ice thickness",
-		      "m", "land_ice_thickness"); CHKERRQ(ierr);
+                      "m", "land_ice_thickness"); CHKERRQ(ierr);
   ierr = vH.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = variables.add(vH); CHKERRQ(ierr);
 
   // bedrock surface elevation
   ierr = vbed.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vbed.set_attrs("model_state", "bedrock surface elevation",
-			"m", "bedrock_altitude"); CHKERRQ(ierr);
+                        "m", "bedrock_altitude"); CHKERRQ(ierr);
   ierr = variables.add(vbed); CHKERRQ(ierr);
 
   if (config.get_flag("sub_groundingline")) {
@@ -253,13 +253,13 @@ PetscErrorCode IceModel::createVecs() {
 
   // grounded_dragging_floating integer mask
   if(config.get_flag("do_eigen_calving")) {
-    ierr = vMask.create(grid, "mask", true, 3); CHKERRQ(ierr); 
+    ierr = vMask.create(grid, "mask", true, 3); CHKERRQ(ierr);
     // The wider stencil is needed for parallel calculation in iMcalving.cc when asking for mask values at the front (offset+1)
   } else {
     ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
   }
-  ierr = vMask.set_attrs("diagnostic", "grounded_dragging_floating integer mask",
-			 "", ""); CHKERRQ(ierr);
+  ierr = vMask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
+                         "", ""); CHKERRQ(ierr);
   vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
@@ -267,7 +267,7 @@ PetscErrorCode IceModel::createVecs() {
   mask_values[3] = MASK_ICE_FREE_OCEAN;
   ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = vMask.set_attr("flag_meanings",
-			"ice_free_bedrock grounded_ice floating_ice ice_free_ocean"); CHKERRQ(ierr);
+                        "ice_free_bedrock grounded_ice floating_ice ice_free_ocean"); CHKERRQ(ierr);
   vMask.output_data_type = PISM_BYTE;
   ierr = variables.add(vMask); CHKERRQ(ierr);
 
@@ -275,7 +275,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vGhf.create(grid, "bheatflx", true, WIDE_STENCIL); CHKERRQ(ierr); // never differentiated
   // PROPOSED standard_name = lithosphere_upward_heat_flux
   ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
-			"W m-2", ""); CHKERRQ(ierr);
+                        "W m-2", ""); CHKERRQ(ierr);
   ierr = vGhf.set_glaciological_units("mW m-2");
   vGhf.write_in_glaciological_units = true;
   vGhf.time_independent = true;
@@ -302,7 +302,7 @@ PetscErrorCode IceModel::createVecs() {
   // bedrock uplift rate
   ierr = vuplift.create(grid, "dbdt", false); CHKERRQ(ierr);
   ierr = vuplift.set_attrs("model_state", "bedrock uplift rate",
-			   "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
+                           "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
   ierr = vuplift.set_glaciological_units("m year-1");
   vuplift.write_in_glaciological_units = true;
   ierr = variables.add(vuplift); CHKERRQ(ierr);
@@ -410,7 +410,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = cell_area.set_attr("comment",
                             "values are equal to dx*dy "
                             "if projection parameters are not available; "
-                            "otherwise WGS84 ellipsoid is used"); CHKERRQ(ierr); 
+                            "otherwise WGS84 ellipsoid is used"); CHKERRQ(ierr);
   cell_area.time_independent = true;
   ierr = cell_area.set_glaciological_units("km2"); CHKERRQ(ierr);
   cell_area.write_in_glaciological_units = true;
@@ -435,7 +435,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = artm.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "annual average ice surface temperature, below firn processes",
-                        "K", 
+                        "K",
                         "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
   CHKERRQ(ierr);
 
@@ -451,7 +451,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = shelfbmassflux.create(grid, "shelfbmassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
   ierr = shelfbmassflux.set_attrs(
                                   "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                                  "m s-1", ""); CHKERRQ(ierr); 
+                                  "m s-1", ""); CHKERRQ(ierr);
   // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
   // rescales from m/s to m/year when writing to NetCDF and std out:
   shelfbmassflux.write_in_glaciological_units = true;
@@ -468,7 +468,7 @@ PetscErrorCode IceModel::createVecs() {
   // do not add; boundary models are in charge here
   // ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
 
-  // take care of 2D cumulative fluxes: we need to allocate special storage it
+  // take care of 2D cumulative fluxes: we need to allocate special storage if
   // the user asked for climatic_mass_balance_cumulative or
 
   string vars;
@@ -489,6 +489,17 @@ PetscErrorCode IceModel::createVecs() {
       ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
                                                         "cumulative ice-equivalent surface mass balance",
                                                         "m", ""); CHKERRQ(ierr);
+    }
+
+    string o_size = get_output_size("-o_size");
+
+    if (set_contains(ex_vars, "flux_divergence") || o_size == "big") {
+      ierr = flux_divergence.create(grid, "flux_divergence", false); CHKERRQ(ierr);
+      ierr = flux_divergence.set_attrs("diagnostic",
+                                       "flux divergence",
+                                       "s-1", ""); CHKERRQ(ierr);
+      ierr = flux_divergence.set_glaciological_units("year-1"); CHKERRQ(ierr);
+      flux_divergence.write_in_glaciological_units = true;
     }
 
     if (set_contains(ex_vars, "grounded_basal_flux_cumulative")) {
@@ -556,9 +567,9 @@ PetscErrorCode IceModel::setExecName(string my_executable_short_name) {
 During the time-step we perform the following actions:
  */
 PetscErrorCode IceModel::step(bool do_mass_continuity,
-			      bool do_energy,
-			      bool do_age,
-			      bool do_skip) {
+                              bool do_energy,
+                              bool do_age,
+                              bool do_skip) {
   PetscErrorCode ierr;
 
   grid.profiler->begin(event_step);
@@ -616,7 +627,23 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   ierr = stress_balance->update(updateAtDepth == false,
-                                sea_level); CHKERRQ(ierr);
+                                sea_level);
+  if (ierr != 0) {
+    string o_file = "stressbalance_failed.nc";
+    bool o_file_set;
+    ierr = PISMOptionsString("-o", "output file name",
+                             o_file, o_file_set); CHKERRQ(ierr);
+
+    o_file = pism_filename_add_suffix(o_file, "_stressbalance_failed", "");
+    ierr = PetscPrintf(grid.com,
+                       "PISM ERROR: stress balance computation failed. Saving model state to '%s'...\n",
+                       o_file.c_str());
+
+    ierr = dumpToFile(o_file); CHKERRQ(ierr);
+
+    ierr = PetscPrintf(grid.com, "ending...\n");
+    PISMEnd();
+  }
 
   grid.profiler->end(event_velocity);
 
@@ -628,11 +655,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   stdout_flags += (updateAtDepth ? "v" : "V");
 
   // communication here for global max; sets CFLmaxdt2D
-  ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);   
+  ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);
 
   if (updateAtDepth) {
     // communication here for global max; sets CFLmaxdt
-    ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
+    ierr = computeMax3DVelocities(); CHKERRQ(ierr);
   }
 
   //! \li determine the time step according to a variety of stability criteria;
@@ -758,7 +785,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
 
 //! Do the time-stepping for an evolution run.
-/*! 
+/*!
 This procedure is the main time-stepping loop.
  */
 PetscErrorCode IceModel::run() {
@@ -771,9 +798,10 @@ PetscErrorCode IceModel::run() {
   int stepcount = (config.get_flag("count_time_steps")) ? 0 : -1;
 
   // do a one-step diagnostic run:
+  dt_TempAge = config.get("preliminary_time_step_duration");
   ierr = verbPrintf(2,grid.com,
-      "doing preliminary step of 1 s (one model second) to fill diagnostic quantities ...\n");
-      CHKERRQ(ierr);
+      "preliminary step of %.2f model seconds to fill diagnostic quantities ...\n",
+      dt_TempAge); CHKERRQ(ierr);
 
   // set verbosity to 1 to suppress reporting
   PetscInt tmp_verbosity = getVerbosityLevel();
@@ -784,7 +812,6 @@ PetscErrorCode IceModel::run() {
   maxdt_temporary = -1.0;
   skipCountDown = 0;
   t_TempAge = grid.time->start();
-  dt_TempAge = 1.0;             // one second (for the preliminary step)
   dt = 0.0;
   PetscReal run_end = grid.time->end();
 
@@ -824,7 +851,7 @@ PetscErrorCode IceModel::run() {
   ierr = verbPrintf(2,grid.com, "running forward ...\n"); CHKERRQ(ierr);
 
   stdout_flags.erase(); // clear it out
-  ierr = summaryPrintLine(PETSC_TRUE, do_energy, "", 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE, do_energy, NULL, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
 
@@ -861,7 +888,7 @@ PetscErrorCode IceModel::run() {
   bool flag;
   PetscInt pause_time = 0;
   ierr = PISMOptionsInt("-pause", "Pause after the run, seconds",
-			pause_time, flag); CHKERRQ(ierr);
+                        pause_time, flag); CHKERRQ(ierr);
   if (pause_time > 0) {
     ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
@@ -880,7 +907,7 @@ PetscErrorCode IceModel::run() {
 
 //! Manage the initialization of the IceModel object.
 /*!
-Please see the documenting comments of the functions called below to find 
+Please see the documenting comments of the functions called below to find
 explanations of their intended uses.
  */
 PetscErrorCode IceModel::init() {
@@ -936,5 +963,5 @@ PetscErrorCode IceModel::init() {
   ierr = MPI_Barrier(grid.com); CHKERRQ(ierr);
   ierr = PISMGetTime(&start_time); CHKERRQ(ierr);
 
-  return 0; 
+  return 0;
 }

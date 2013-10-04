@@ -694,22 +694,25 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                     "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn");
   CHKERRQ(ierr);
 
-  ierr = config.keyword_from_option("inv_ssa_tauc_param",
-                                    "inv_ssa_tauc_param","ident,trunc,square,exp"); CHKERRQ(ierr);
+  ierr = config.keyword_from_option("inv_design_param",
+                                    "inv_design_param","ident,trunc,square,exp"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("rms_error","inv_ssa_target_rms_misfit"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("inv_target_misfit","inv_target_misfit"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("tikhonov_penalty","tikhonov_penalty_weight"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("tikhonov_atol","tikhonov_atol"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("tikhonov_rtol","tikhonov_rtol"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("tikhonov_ptol","tikhonov_ptol"); CHKERRQ(ierr);
 
-  ierr = config.keyword_from_option("inv_ssa_tauc_norm","inv_ssa_tauc_norm","hilbert,tv"); CHKERRQ(ierr);
+  ierr = config.keyword_from_option("inv_state_func","inv_state_func","meansquare,log_ratio,log_relative"); CHKERRQ(ierr);
+  ierr = config.keyword_from_option("inv_design_func","inv_design_func","sobolevH1,tv"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("inv_ssa_cL2","inv_ssa_cL2"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("inv_ssa_cH1","inv_ssa_cH1"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("inv_design_cL2","inv_design_cL2"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("inv_design_cH1","inv_design_cH1"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("inv_ssa_tv_exponent","inv_ssa_tv_exponent"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("inv_log_ratio_scale","inv_log_ratio_scale"); CHKERRQ(ierr);
 
   // Basal strength
 
@@ -781,8 +784,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.keyword_from_option("o_format", "output_format",
                                     "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
-                                   "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("summary_vol_scale_factor_log10",
+                                   "summary_vol_scale_factor_log10"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("summary_area_scale_factor_log10",
+                                   "summary_area_scale_factor_log10"); CHKERRQ(ierr);
 
   // Metadata
   ierr = config.string_from_option("title", "run_title"); CHKERRQ(ierr);

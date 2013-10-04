@@ -50,7 +50,7 @@ periodicity = PISM.XY_PERIODIC
 if is_regional:
   periodicity=PISM.NOT_PERIODIC
 grid = PISM.Context().newgrid()
-PISM.util.init_grid_from_file(grid,input_file,periodicity);
+PISM.model.initGridFromFile(grid,input_file,periodicity);
 
 basal = PISM.IceBasalResistancePlasticLaw(config)
 
@@ -64,11 +64,11 @@ modeldata.setPhysics(basal,enthalpyconverter)
 
 vecs = modeldata.vecs;
 
-vecs.add( PISM.util.standardIceSurfaceVec( grid ), 'surface' )
-vecs.add( PISM.util.standardIceThicknessVec( grid ), 'thickness' )
-vecs.add( PISM.util.standardBedrockElevationVec( grid ), 'bed' )
-vecs.add( PISM.util.standardEnthalpyVec( grid ), 'enthalpy' )
-vecs.add( PISM.util.standardIceMask( grid ), 'ice_mask' )
+vecs.add( PISM.model.createIceSurfaceVec( grid ), 'surface' )
+vecs.add( PISM.model.createIceThicknessVec( grid ), 'thickness' )
+vecs.add( PISM.model.createBedrockElevationVec( grid ), 'bed' )
+vecs.add( PISM.model.createEnthalpyVec( grid ), 'enthalpy' )
+vecs.add( PISM.model.createIceMaskVec( grid ), 'ice_mask' )
 
 # Read in the PISM state variables that are used directly in the SSA solver
 for v in [vecs.thickness, vecs.bed, vecs.enthalpy]:
@@ -81,11 +81,11 @@ gc.compute(vecs.bed,vecs.thickness,vecs.ice_mask,vecs.surface)
 
 # If running in regional mode, load in regional variables
 if is_regional:
-  vecs.add( PISM.util.standardNoModelMask( grid ), 'no_model_mask' )
+  vecs.add( PISM.model.createNoModelMask( grid ), 'no_model_mask' )
   vecs.no_model_mask.regrid(input_file,critical=True)
   
   if PISM.util.fileHasVariable(input_file,'usurfstore'):
-    vecs.add( PISM.util.standardIceSurfaceStoreVec(grid) )
+    vecs.add( PISM.model.createIceSurfaceStoreVec(grid) )
     vecs.usurfstore.regrid(input_file,critical=True)
   else:        
     vecs.add( vecs.surface, 'usurfstore')

@@ -2,6 +2,7 @@
 #
 
 ./sg_create_flowline.py
+./sg_create_3d.py
 DATANAME=storglaciaren_flowline.nc
 PISM_DATANAME=pism_$DATANAME
 flowline.py -e -o $PISM_DATANAME $DATANAME

@@ -20,8 +20,7 @@
 #include "pism_const.hh"
 #include "iceModelVec.hh"
 #include "columnSystem.hh"
-
-#include "pism_petsc32_compat.hh"
+#include <assert.h>
 
 //! Allocate a tridiagonal system of maximum size my_nmax.
 /*!
@@ -105,7 +104,7 @@ PetscScalar columnSystemCtx::norm1(const PetscInt n) const {
 //! Compute diagonal-dominance ratio.  If this is less than one then the matrix is strictly diagonally-dominant.
 /*!
 Let \f$A = (a_{ij})\f$ be the tridiagonal matrix
-described by L,D,U for row indices 0 through `n`.  The computed ratio is 
+described by L,D,U for row indices 0 through `n`.  The computed ratio is
   \f[ \max_{j=1,\dots,n} \frac{|a_{j,j-1}|+|a_{j,j+1}|}{|a_{jj}|}, \f]
 where \f$a_{1,0}\f$ and \f$a_{n,n+1}\f$ are interpreted as zero.
 
@@ -129,7 +128,7 @@ PetscScalar columnSystemCtx::ddratio(const PetscInt n) const {
     if ( (fabs(D[k]) / scale) < 1.0e-12)  return -1.0;
     const PetscScalar s = fabs(L[k]) + fabs(U[k]);
     z = PetscMax(z, s / fabs(D[k]) );
-  } 
+  }
 
   if ( (fabs(D[n-1]) / scale) < 1.0e-12)  return -1.0;
   z = PetscMax(z, fabs(L[n-1]) / fabs(D[n-1]) );
@@ -147,7 +146,7 @@ PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(
   ks = my_ks;
 
   resetColumn();
-  
+
   indicesValid = true;
   return 0;
 }
@@ -165,12 +164,8 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
                                                  const PetscScalar *v, PetscInt m, const char* info) const {
   PetscErrorCode ierr;
 
-  if (v==NULL) {
-    SETERRQ1(PETSC_COMM_SELF, 2,"columnSystem ERROR: can't view '%s' by v=NULL pointer ... ending ...\n", info);
-  }
-  if (m<1) {
-    SETERRQ1(PETSC_COMM_SELF, 3,"columnSystem ERROR: can't view '%s' because m<1 ... ending ...\n",info);
-  }
+  assert(v != NULL);
+  assert(m >= 1);
 
   PetscBool iascii;
   if (!viewer) {
@@ -187,7 +182,7 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
   for (PetscInt k=0; k<m; k++) {
     ierr = PetscViewerASCIIPrintf(viewer,
       "  %5d %.12f",k,v[k]); CHKERRQ(ierr);
-    if (k == m-1) { 
+    if (k == m-1) {
       ierr = PetscViewerASCIIPrintf(viewer, "];\n"); CHKERRQ(ierr);
     } else {
       ierr = PetscViewerASCIIPrintf(viewer, ";\n"); CHKERRQ(ierr);
@@ -200,7 +195,7 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
 
 
 //! View the tridiagonal matrix.  Views as a full matrix if nmax <= 120, otherwise by listing diagonals.
-/*! 
+/*!
 Give first argument NULL to get standard out.  No binary viewer.
 
 Give description string as `info` argument.
@@ -214,15 +209,9 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
   ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
   if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for ColumnSystem\n"); }
 
-  if (L==NULL) {
-    SETERRQ1(PETSC_COMM_SELF, 2,"columnSystemCtx ERROR: can't matrix '%s' because L==NULL ... ending ...\n", info);
-  }
-  if (D==NULL) {
-    SETERRQ1(PETSC_COMM_SELF, 3,"columnSystemCtx ERROR: can't matrix '%s' because D==NULL ... ending ...\n", info);
-  }
-  if (U==NULL) {
-    SETERRQ1(PETSC_COMM_SELF, 4,"columnSystemCtx ERROR: can't matrix '%s' because U==NULL ... ending ...\n", info);
-  }
+  assert(L != NULL);
+  assert(D != NULL);
+  assert(U != NULL);
 
   if (nmax < 2) {
     ierr = PetscViewerASCIIPrintf(viewer,
@@ -264,7 +253,7 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
         }
         ierr = PetscViewerASCIIPrintf(viewer,"%.12f %.12f ",L[k],D[k]); CHKERRQ(ierr);
       }
-      
+
       if (k == nmax-1) {
         ierr = PetscViewerASCIIPrintf(viewer,"];\n\n"); CHKERRQ(ierr);  // end final row
       } else {
@@ -272,7 +261,7 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
       }
     }
   }
-  
+
   return 0;
 }
 
@@ -300,29 +289,34 @@ Solution of system in x.
 Success is return code zero.  Positive return code gives location of zero pivot.
 Negative return code indicates a software problem.
  */
-PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
-                  const PetscInt n, PetscScalar **x) {
+PetscErrorCode columnSystemCtx::solveTridiagonalSystem(const PetscInt n, PetscScalar **x) {
 #if (PISM_DEBUG==1)
-  if (x == NULL) { SETERRQ(PETSC_COMM_SELF, -999,"x is NULL in columnSystemCtx"); }
-  if (*x == NULL) { SETERRQ(PETSC_COMM_SELF, -998,"*x is NULL in columnSystemCtx"); }
-  if (n < 1) { SETERRQ(PETSC_COMM_SELF, -997,"instance size n < 1 in columnSystemCtx"); }
-  if (n > nmax) { SETERRQ(PETSC_COMM_SELF, -996,"instance size n too large in columnSystemCtx"); }
-
-  if (!indicesValid) { SETERRQ(PETSC_COMM_SELF, -995,"column indices not valid in columnSystemCtx"); }
+  assert(x != NULL);
+  assert(*x != NULL);
+  assert(indicesValid == true);
+  assert(n >= 1);
+  assert(n <= nmax);
 #endif
-  PetscScalar b;
-  b = D[0];
-  if (b == 0.0) { return 1; }
-  (*x)[0] = rhs[0]/b;
-  for (int k=1; k<n; ++k) {
-    work[k] = U[k-1]/b;
+  PetscScalar b = D[0];
+
+  if (b == 0.0)
+    return 1;
+
+  (*x)[0] = rhs[0] / b;
+
+  for (int k = 1; k < n; ++k) {
+    work[k] = U[k - 1] / b;
+
     b = D[k] - L[k] * work[k];
-    if (b == 0.0) { return k+1; }
-    (*x)[k] = (rhs[k] - L[k] * (*x)[k-1]) / b;
+
+    if (b == 0.0)
+      return k + 1;
+
+    (*x)[k] = (rhs[k] - L[k] * (*x)[k - 1]) / b;
   }
-  for (int k=n-2; k>=0; --k) {
-    (*x)[k] -= work[k+1] * (*x)[k+1];
-  }
+
+  for (int k = n - 2; k >= 0; --k)
+    (*x)[k] -= work[k + 1] * (*x)[k + 1];
 
   indicesValid = false;
   return 0;
@@ -341,7 +335,7 @@ PetscErrorCode columnSystemCtx::reportColumnZeroPivotErrorMFile(const PetscError
 
 
 //! Write system matrix, right-hand-side, and (provided) solution into an m-file.  Constructs file name from prefix.
-/*! 
+/*!
 An example of the use of this procedure is from <c>examples/searise-greenland/</c>
 running the enthalpy formulation.  First run spinup.sh in that directory  (FIXME:
 which was modified to have equal spacing in z, when I did this example) to
@@ -402,4 +396,3 @@ PetscErrorCode columnSystemCtx::viewColumnInfoMFile(char *filename, PetscScalar 
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   return 0;
 }
-

@@ -18,7 +18,7 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-help_description = """Verifies that the end result of an SSA inversion using 'vel2tauc.py'
+help_description = """Verifies that the end result of an SSA inversion using 'pismi.py'
 terminates after an expected number of iterations and with an expected final misfit."""
 help_epilog = """E.g.
 

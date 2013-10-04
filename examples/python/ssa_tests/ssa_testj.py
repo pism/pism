@@ -25,7 +25,7 @@ class testj(PISM.ssa.SSAExactTestCase):
   def _initGrid(self):
     halfWidth = 300.0e3
     Lx = halfWidth; Ly = halfWidth
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,self.Mx,self.My,PISM.XY_PERIODIC);
+    PISM.model.initShallowGrid(self.grid,Lx,Ly,self.Mx,self.My,PISM.XY_PERIODIC);
 
   def _initPhysics(self):
     config = self.modeldata.config
@@ -53,11 +53,11 @@ class testj(PISM.ssa.SSAExactTestCase):
     ocean_rho = self.config.get("sea_water_density");
     ice_rho = self.config.get("ice_density");
     
-    # The PISM.utils.Access object ensures that we call beginAccess for each
+    # The PISM.vec.Access object ensures that we call beginAccess for each
     # variable in 'vars', and that endAccess is called for each one on exiting
     # the 'with' block.
     
-    with PISM.util.Access(comm=[vecs.thickness, vecs.surface, vecs.bc_mask, vecs.vel_bc]):
+    with PISM.vec.Access(comm=[vecs.thickness, vecs.surface, vecs.bc_mask, vecs.vel_bc]):
       grid = self.grid
       for (i,j) in grid.points():
         x = grid.x[i]; y = grid.y[j]

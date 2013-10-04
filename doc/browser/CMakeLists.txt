@@ -10,7 +10,6 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     doxybib.bst
     doxybib.py
     bedrough.txt
-    hydrology.txt
     bombproof_enth.txt
     pages.txt
     std_names.txt

@@ -31,10 +31,15 @@ endmacro(pism_dont_use_rpath)
 macro(pism_strictly_static)
   set (CMAKE_SKIP_RPATH ON CACHE BOOL "Disable RPATH completely")
   set (CMAKE_FIND_LIBRARY_SUFFIXES .a)
+
   set (BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared Pism libraries" FORCE)
+
   SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "") # get rid of -rdynamic
   SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "") # ditto
-  set_property(GLOBAL PROPERTY LINK_SEARCH_END_STATIC 1) # get rid of -Bdynamic
+
+  set_property(GLOBAL PROPERTY LINK_SEARCH_END_STATIC 1)
+  set(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)       # remove -Wl,-Bdynamic
+  set(CMAKE_EXE_LINK_DYNAMIC_CXX_FLAGS)
 
   pism_dont_use_rpath()
 endmacro(pism_strictly_static)
@@ -140,6 +145,14 @@ macro(pism_find_prerequisites)
 	"  rm CMakeCache.txt && cmake -DCMAKE_C_COMPILER=${PETSC_COMPILER} ${CMAKE_SOURCE_DIR}")
     endif()
     message(FATAL_ERROR  "PISM configuration failed: PETSc was not found.")
+  endif()
+
+  if ((DEFINED PETSC_VERSION) AND (PETSC_VERSION VERSION_LESS 3.3))
+    # Force PISM to look for PETSc again if the version we just found
+    # is too old:
+    set(PETSC_CURRENT "OFF" CACHE BOOL "" FORCE)
+    # Stop with an error message.
+    message(FATAL_ERROR "\nPISM requires PETSc version 3.3 or newer (found ${PETSC_VERSION}).\n\n")
   endif()
 
   # MPI

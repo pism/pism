@@ -32,7 +32,7 @@ tauc0 = 1.e4; #// 1kPa
 
 class test_linear(PISM.ssa.SSAExactTestCase):
   def _initGrid(self):
-    PISM.util.init_shallow_grid(self.grid,L,L,self.Mx,self.My,PISM.NONE);
+    PISM.model.initShallowGrid(self.grid,L,L,self.Mx,self.My,PISM.NONE);
 
   def _initPhysics(self):
     config = self.config
@@ -63,7 +63,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     vel_bc  = vecs.vel_bc
     
     grid = self.grid
-    with PISM.util.Access(comm=[bc_mask, vel_bc]):
+    with PISM.vec.Access(comm=[bc_mask, vel_bc]):
       for (i,j) in grid.points():
         edge = ( (j == 0) or (j == grid.My - 1) ) or ( (i==0) or (i==grid.Mx-1) );
         if edge:

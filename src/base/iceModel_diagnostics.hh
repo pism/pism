@@ -133,6 +133,13 @@ public:
   IceModel_tempicethk_basal(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
+//! \brief Computes the flux divergence.
+class IceModel_flux_divergence : public PISMDiag<IceModel>
+{
+public:
+  IceModel_flux_divergence(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
 
 //! \brief Computes the total ice volume.
 class IceModel_ivol : public PISMTSDiag<IceModel>

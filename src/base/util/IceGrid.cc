@@ -578,6 +578,7 @@ PetscErrorCode IceGrid::report_parameters() {
   }
 
   // report on time axis
+  //   FIXME:  this could use pism_config:summary_time_unit_name instead of fixed "years"
   ierr = verbPrintf(2, com,
            "   time interval (length)   [%s, %s]  (%s years)\n",
                     time->start_date().c_str(),

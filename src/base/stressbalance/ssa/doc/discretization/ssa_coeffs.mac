@@ -1,17 +1,20 @@
+/* -*- mode: maxima -*- */
 isolate_wrt_times:true$
 
+/* Shifts in x and y directions. */
+shift_x(expr, d) := op(expr)[args(expr)[1]+d, args(expr)[2]]$
+shift_y(expr, d) := op(expr)[args(expr)[1], args(expr)[2]+d]$
+shift[x] : shift_x; shift[y] : shift_y;
+
 /* weights */
-a_p(var) := w[part(var,1) + 1/2, part(var,2)]$
-a_m(var) := w[part(var,1) - 1/2, part(var,2)]$
-b_p(var) := w[part(var,1), part(var,2) + 1/2]$
-b_m(var) := w[part(var,1), part(var,2) - 1/2]$
+weight(var, direction, d) := shift[direction](subst(w, op(var), var), d)$
 
 /* one-sided differences with weights */
-d_px(foo) := a_p(foo) * (part(foo,0)[part(foo,1) + 1, part(foo,2)] - part(foo,0)[part(foo,1), part(foo,2)])$
-d_mx(foo) := a_m(foo) * (part(foo,0)[part(foo,1), part(foo,2)] - part(foo,0)[part(foo,1) - 1, part(foo,2)])$
+d_px(var) := weight(var, x,  1/2) * (shift[x](var, 1) - var)$
+d_mx(var) := weight(var, x, -1/2) * (var - shift[x](var, -1))$
 
-d_py(foo) := b_p(foo) * (part(foo,0)[part(foo,1), part(foo,2) + 1] - part(foo,0)[part(foo,1), part(foo,2)])$
-d_my(foo) := b_m(foo) * (part(foo,0)[part(foo,1), part(foo,2)] - part(foo,0)[part(foo,1), part(foo,2) - 1])$
+d_py(var) := weight(var, y,  1/2) * (shift[y](var, 1) - var)$
+d_my(var) := weight(var, y, -1/2) * (var - shift[y](var, -1))$
 
 /* centered differences defined as sums of one-sided differences with weights */
 D_x(foo) := d_px(foo) + d_mx(foo)$

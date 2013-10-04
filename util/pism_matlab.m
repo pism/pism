@@ -6,14 +6,9 @@ function pism_matlab()
 %    $ matlab
 %    >> pism_matlab  % creates bar.nc
 %    >> exit
-%    $ pismr -boot_file foo.nc -Mx 51 -My 101 \
-%            -Mz 21 -Lz 4000 -Mbz 6 -Lbz 2000 -y 1
-% 
-% Incidentally, next run shows good mass conservation, with no basal melt losses:
-%    $ pismr -boot_file foo.nc -Mx 51 -My 101 \
-%            -Mz 21 -Lz 4000 -Mbz 6 -Lbz 2000 -y 1000 -no_energy
+%    $ pismr -boot_file bar.nc -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1
 
-% tested in MATLAB Version 7.7.0.471 (R2008b) and Version 7.9.0.529 (R2009b)
+% tested in MATLAB Version R2012b (8.0.0.783)
 
 % set up the grid:
 Lx = 1e6;
@@ -43,18 +38,27 @@ y_id = netcdf.defDim(ncid, 'y', My);
 x_var_id = netcdf.defVar(ncid, 'x', 'float', [x_id]);
 y_var_id = netcdf.defVar(ncid, 'y', 'float', [y_id]);
 
+% write attributes:
+netcdf.putAtt(ncid, x_var_id, 'long_name', 'easting');
+netcdf.putAtt(ncid, x_var_id, 'standard_name', 'projection_x_coordinate');
+netcdf.putAtt(ncid, y_var_id, 'long_name', 'northing');
+netcdf.putAtt(ncid, y_var_id, 'standard_name', 'projection_y_coordinate');
+
 % create variables corresponding to spatial fields:
 % dimension transpose is standard: "float thk(y, x)" in NetCDF file
-acab_id = netcdf.defVar(ncid, 'acab', 'float', [x_id,y_id]);
-artm_id= netcdf.defVar(ncid, 'artm', 'float', [x_id,y_id]);
 topg_id = netcdf.defVar(ncid, 'topg', 'float', [x_id,y_id]);
-thk_id = netcdf.defVar(ncid, 'thk', 'float', [x_id,y_id]);
+thk_id  = netcdf.defVar(ncid, 'thk',  'float', [x_id,y_id]);
+acab_id = netcdf.defVar(ncid, 'climatic_mass_balance', 'float', [x_id,y_id]);
+artm_id = netcdf.defVar(ncid, 'ice_surface_temp', 'float', [x_id,y_id]);
 
 % write attributes:
-netcdf.putAtt(ncid, artm_id, 'units', 'K');
-netcdf.putAtt(ncid, thk_id, 'units', 'm');
 netcdf.putAtt(ncid, topg_id, 'units', 'm');
+netcdf.putAtt(ncid, topg_id, 'standard_name', 'bedrock_altitude');
+netcdf.putAtt(ncid, thk_id, 'units', 'm');
+netcdf.putAtt(ncid, thk_id, 'standard_name', 'land_ice_thickness');
 netcdf.putAtt(ncid, acab_id, 'units', 'm year-1');
+netcdf.putAtt(ncid, acab_id, 'standard_name', 'land_ice_surface_specific_mass_balance');
+netcdf.putAtt(ncid, artm_id, 'units', 'K');
 
 % done defining dimensions and variables:
 netcdf.endDef(ncid);
@@ -78,4 +82,6 @@ netcdf.putVar(ncid, thk_id, thk);
 netcdf.close(ncid);
 
 disp('  PISM-bootable NetCDF file "bar.nc" written')
+disp('  for example, run:')
+disp('    $ pismr -boot_file bar.nc -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')
 

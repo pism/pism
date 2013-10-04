@@ -57,9 +57,11 @@ write('------------------------------\n')
 
 # data dir
 data_dir = './'
-# Bed and Surface DEMs for Storglaciaren
+# X is Northing (http://en.wikipedia.org/wiki/Swedish_grid)
 XFile     = data_dir + 'X.txt.gz'
+# Y is Easting (http://en.wikipedia.org/wiki/Swedish_grid)
 YFile     = data_dir + 'Y.txt.gz'
+# Bed and Surface DEMs for Storglaciaren
 zBaseFile = data_dir + 'zBase.txt.gz'
 zSurfFile = data_dir + 'zSurf.txt.gz'
 
@@ -97,8 +99,8 @@ except IOError:
 # Grid size. DEM has 10m spacing.
 N  = zBase.shape[1]
 M  = zBase.shape[0]
-e0 = Y.min()
-n0 = X.min()
+n0 = X[-1,0]
+e0 = Y[0,0]
 de = 10 # m
 dn = 10 # m
 
@@ -110,23 +112,9 @@ northing = np.linspace(n0, n1, M)
 
 # convert to lat/lon
 
-# From http://lists.maptools.org/pipermail/proj/2008-December/004165.html:
-#
-# However, a simpler method, now recommended by the Swedish Land Survey
-# instead of a 7-parameter shift, is to start from the WGS84 datum, and than
-# tweak the projection parameters a little: just use a Transverse Mercator
-# with
-#   central meridian: 15" 48' 22.624306" E  
-#   scale factor:     1.00000561024
-#   false easting:    1500064.274 m
-#   false northing:   -667.711 m
-# ( http://www.lantmateriet.se/templates/LMV_Page.aspx?id=5197&lang=EN )
-
-projRT90 = "+proj=tmerc +datum=WGS84 +lon_0=-15.806284 +x_0=1500064.274 +y_0=-667.711 +k=1.00000561024 +units=m"
-
 ee, nn = np.meshgrid(easting, northing)
 
-projection = Proj(projRT90)
+projection = Proj(init="epsg:3021")
 longitude, latitude = projection(ee, nn, inverse=True)
 
 write("Coordinates of the lower-left grid corner:\n"
@@ -250,7 +238,8 @@ nc.Conventions = "CF-1.4"
 historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(nc, 'history', historystr)
-nc.projection = projRT90
+# proj4 string equivalent to EPSG 3021
+nc.projection = "+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 +x_0=1500000 +y_0=0 +ellps=bessel +towgs84=419.384,99.3335,591.345,0.850389,1.81728,-7.86224,-0.99496 +units=m +no_defs"
 nc.close()
 write('Done writing NetCDF file %s!\n' % ncfile)
 

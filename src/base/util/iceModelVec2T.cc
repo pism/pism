@@ -161,7 +161,7 @@ PetscErrorCode IceModelVec2T::init(string fname, unsigned int period, double ref
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
-  if (!exists) {
+  if (exists == false) {
     PetscPrintf(grid->com, "PISM ERROR: can't find %s (%s) in %s.\n",
                 vars[0].get_string("long_name").c_str(), vars[0].short_name.c_str(),
                 filename.c_str());
@@ -198,7 +198,7 @@ PetscErrorCode IceModelVec2T::init(string fname, unsigned int period, double ref
     ierr = time_dimension.get_bounds_name(nc, bounds_name);
 
     if (time.size() > 1) {
-      if (!bounds_name.empty()) {
+      if (bounds_name.empty() == false) {
         // read time bounds data from a file
         NCTimeBounds tb(grid->get_unit_system());
         tb.init(bounds_name, dimname, grid->com, grid->rank);
@@ -237,7 +237,7 @@ PetscErrorCode IceModelVec2T::init(string fname, unsigned int period, double ref
     time_bounds[1] =  1;
   }
 
-  if (!is_increasing(time)) {
+  if (is_increasing(time) == false) {
     ierr = PetscPrintf(grid->com, "PISM ERROR: times have to be strictly increasing (read from '%s').\n",
 		       filename.c_str());
     PISMEnd();

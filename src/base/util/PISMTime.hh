@@ -131,6 +131,13 @@ public:
   //! \brief Returns current time, in years. Only for reporting.
   virtual string date();
 
+#if (PISM_DEBUG==1)
+  //! \brief Returns current time, in years. Only for debugging.
+  virtual double current_years() {
+    return seconds_to_years(current());
+  }
+#endif
+
   //! Date corresponding to the beginning of the run.
   virtual string start_date();
 
@@ -166,7 +173,7 @@ protected:
   const NCConfigVariable &m_config;
   PISMUnitSystem m_unit_system;
   PISMUnit m_time_units;
-  double m_year_length;      //!< number of seconds in a year, "mod" and "year fraction"
+  double m_year_length;      //!< number of seconds in a year, for "mod" and "year fraction"
   double m_time_in_seconds, //!< current time, in seconds since the reference time
     m_run_start,                  //!< run start time, in seconds since the reference time
     m_run_end;                    //!< run end tim, in seconds since the reference time

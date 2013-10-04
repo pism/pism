@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2012 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2013 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,8 +20,6 @@
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
 #include "NCVariable.hh"
-
-#include "pism_petsc32_compat.hh"
 
 EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1

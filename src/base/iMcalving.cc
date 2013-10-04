@@ -19,6 +19,8 @@
 
 #include <cmath>
 #include <petscdmda.h>
+#include <assert.h>
+
 #include "iceModel.hh"
 #include "pism_signal.h"
 #include "Mask.hh"

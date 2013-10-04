@@ -31,22 +31,23 @@
 #include "TerminationReason.hh"
 #include "exactTestsIJ.h"
 #include "stressbalance/ssa/SSAFEM.hh"
-#include "inverse/InvSSAForwardProblem.hh"
-#include "inverse/InvSSAForwardProblem_dep.hh"
-#include "inverse/InvTaucParameterization.hh"
-#include "inverse/Functional.hh"
-#include "inverse/L2NormFunctional.hh"
-#include "inverse/H1NormFunctional.hh"
-#include "inverse/GroundedIceH1NormFunctional.hh"
-#include "inverse/TotalVariationFunctional.hh"
-#include "inverse/MeanSquareFunctional.hh"
-#include "inverse/LogRelativeFunctional.hh"
-#include "inverse/LogRatioFunctional.hh"
-#include "inverse/InvSSATikhonovGN.hh"
+#include "inverse/IP_SSATaucForwardProblem.hh"
+#include "inverse/IP_SSAHardavForwardProblem.hh"
+#include "inverse/IPDesignVariableParameterization.hh"
+#include "inverse/functional/IPFunctional.hh"
+#include "inverse/functional/IP_L2NormFunctional.hh"
+#include "inverse/functional/IP_H1NormFunctional.hh"
+#include "inverse/functional/IPGroundedIceH1NormFunctional.hh"
+#include "inverse/functional/IPTotalVariationFunctional.hh"
+#include "inverse/functional/IPMeanSquareFunctional.hh"
+#include "inverse/functional/IPLogRelativeFunctional.hh"
+#include "inverse/functional/IPLogRatioFunctional.hh"
+#include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 #if (PISM_USE_TAO==1)
 #include "inverse/TaoUtil.hh"
-#include "inverse/InvSSATikhonov.hh"
-#include "inverse/InvSSATikhonovLCL.hh"
+#include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
+#include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
+#include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 #endif
 #include "stressbalance/ssa/SSAFD.hh"
 #include "pism_python.hh"
@@ -61,7 +62,6 @@
 #include "pism_options.hh"
 #include "SIAFD.hh"
 #include "regional/regional.hh"
-#include "FEEvaluator.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -133,6 +133,7 @@ namespace std {
 // to all arguments of this type, use 
 // %apply MyType *& OUTPUT { MyType *&}
 // or use %Pism_pointer_reference_is_always_ouput(MyType) in the first place
+
 %define %Pism_pointer_reference_typemaps(TYPE)
 %typemap(in, numinputs=0,noblock=1) TYPE *& OUTPUT (TYPE *temp) {
     $1 = &temp;
@@ -142,9 +143,25 @@ namespace std {
     %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, 0 | %newpointer_flags));
 };
 %enddef
+
 %define %Pism_pointer_reference_is_always_output(TYPE)
 %Pism_pointer_reference_typemaps(TYPE);
 %apply TYPE *& OUTPUT { TYPE *&}
+%enddef
+
+%define %Pism_pointer_pointer_typemaps(TYPE)
+%typemap(in, numinputs=0,noblock=1) TYPE ** OUTPUT (TYPE *temp) {
+    $1 = &temp;
+}
+%typemap(argout,noblock=1) TYPE ** OUTPUT
+{
+    %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, 0 | %newpointer_flags));
+};
+%enddef
+
+%define %Pism_pointer_pointer_is_always_output(TYPE)
+%Pism_pointer_pointer_typemaps(TYPE);
+%apply TYPE ** OUTPUT { TYPE **}
 %enddef
 
 
@@ -249,11 +266,14 @@ namespace std {
 %apply PetscReal & OUTPUT {PetscReal & result};
 %apply PetscScalar & OUTPUT {PetscScalar & result};
 %apply PetscReal & OUTPUT {PetscReal & out};
+%apply double & OUTPUT {double &};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
 
 %Pism_pointer_reference_is_always_output(IceModelVec2S)
 %Pism_pointer_reference_is_always_output(IceModelVec2V)
 %Pism_pointer_reference_is_always_output(IceModelVec3)
+
+%Pism_pointer_pointer_is_always_output(IceFlowLaw)
 
 
 // These methods are called from PISM.options.
@@ -408,6 +428,34 @@ namespace std {
     }
 };
 
+%ignore IceModelVec3D::operator();
+%extend IceModelVec3D
+{
+
+  PetscReal getitem(int i, int j, int k)
+  {
+      return (*($self))(i,j,k);
+  }
+
+  void setitem(int i, int j, int k, PetscReal val)
+  {
+      (*($self))(i,j,k) = val;
+  }
+
+
+    %pythoncode {
+    def __getitem__(self,*args):
+        return self.getitem(args[0][0],args[0][1],args[0][2])
+
+    def __setitem__(self,*args):
+        if(len(args)==2):
+            self.setitem(args[0][0],args[0][1],args[0][2],args[1])
+        else:
+            raise ValueError("__setitem__ requires 2 arguments; received %d" % len(args));
+    }
+};
+
+
 // FIXME
 // IceModelVec2 imports IceModelVec::write with a 'using' declaration,
 // and implements a write method with the same signature as one of the
@@ -438,6 +486,7 @@ namespace std {
 {
     %pythoncode {
     def points(self):
+        """Iterate over tuples ``(i,j)`` of nodes owned by the current processor."""
         for i in xrange(self.xs,self.xs+self.xm):
             for j in xrange(self.ys,self.ys+self.ym):
                 yield (i,j)
@@ -454,6 +503,15 @@ namespace std {
 
 /* This is needed to wrap IceGrid::get_dm() */
 %apply DM &OUTPUT {DM &result};
+/* The following overrides petsc4py's argument checking
+for DM & types. For some reason, petsc4py does not allow
+a DM=PETSC_NULL to be passed in by reference.  But if pointer variables
+are being automatically set to zero, then an output argument might 
+in fact be equal to PETSC_NULL, and this is OK. */
+%typemap(check,noblock=1) DM& {
+  if ($1 == NULL)
+    %argument_nullref("$type", $symname, $argnum);
+}
 
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 
 // be a more elegant solution using SWIG_From(int) and so forth that I'm not familiar with.  The
@@ -544,6 +602,7 @@ namespace std {
 %include "SSB_Modifier.hh"
 %template(PISMDiag_SIAFD) PISMDiag<SIAFD>;
 %include "stressbalance/sia/SIAFD.hh"
+%include "flowlaw_factory.hh"
 
 %include "iceModel.hh"
 
@@ -567,39 +626,71 @@ namespace std {
 %include "PISMTime.hh"
 %feature("notabstract") SIAFD_Regional;
 %include "regional/regional.hh"
-%include "stressbalance/ssa/FEEvaluator.hh"
 
-%include "inverse/Functional.hh"
-%template(Functional2S) Functional< IceModelVec2S >;
-%template(Functional2V) Functional< IceModelVec2V >;
+%include "inverse/functional/IPFunctional.hh"
 %template(IPFunctional2S) IPFunctional< IceModelVec2S >;
 %template(IPFunctional2V) IPFunctional< IceModelVec2V >;
-%include "inverse/L2NormFunctional.hh"
-%include "inverse/H1NormFunctional.hh"
-%include "inverse/GroundedIceH1NormFunctional.hh"
-%include "inverse/TotalVariationFunctional.hh"
-%include "inverse/MeanSquareFunctional.hh"
-%include "inverse/LogRatioFunctional.hh"
-%include "inverse/LogRelativeFunctional.hh"
-%include "inverse/InvTaucParameterization.hh"
-%include "inverse/InvSSAForwardProblem.hh"
-%include "inverse/InvSSAForwardProblem_dep.hh"
-%include "inverse/InvSSATikhonovGN.hh"
+%template(IPInnerProductFunctional2S) IPInnerProductFunctional< IceModelVec2S >;
+%template(IPInnerProductFunctional2V) IPInnerProductFunctional< IceModelVec2V >;
+%include "inverse/functional/IP_L2NormFunctional.hh"
+%include "inverse/functional/IP_H1NormFunctional.hh"
+%include "inverse/functional/IPGroundedIceH1NormFunctional.hh"
+%include "inverse/functional/IPTotalVariationFunctional.hh"
+%include "inverse/functional/IPMeanSquareFunctional.hh"
+%include "inverse/functional/IPLogRatioFunctional.hh"
+%include "inverse/functional/IPLogRelativeFunctional.hh"
+%include "inverse/IPDesignVariableParameterization.hh"
+%include "inverse/IP_SSATaucForwardProblem.hh"
+%include "inverse/IP_SSAHardavForwardProblem.hh"
+%include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 
 #if (PISM_USE_TAO==1)
 %ignore TaoConvergedReasons;
 %shared_ptr(TAOTerminationReason)
 %include "inverse/TaoUtil.hh"
 
-%shared_ptr(InvSSATikhonovListener)
-%feature("director") InvSSATikhonovListener;
-%include "inverse/InvSSATikhonov.hh"
-%template(InvSSATikhonovSolver) TaoBasicSolver<InvSSATikhonov>;
+%include "inverse/IPTaoTikhonovProblem.hh"
 
-%shared_ptr(InvSSATikhonovLCLListener)
-%feature("director") InvSSATikhonovLCLListener;
-%include "inverse/InvSSATikhonovLCL.hh"
-%template(InvSSATikhonovLCLSolver) TaoBasicSolver< InvSSATikhonovLCL >;
+#################### IP_SSATauc... #############################
+
+# Instantiate the base class for IP_SSATaucTaoTikhonovProblem
+# so that SWIG will implement the base class methods.
+%template(IP_SSATaucTaoTikhonovProblemBaseClass)  
+          IPTaoTikhonovProblem<IP_SSATaucForwardProblem>;
+
+%shared_ptr(IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>)
+
+%feature("director") IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
+
+%template(IP_SSATaucTaoTikhonovProblemListener)  IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
+
+%include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
+
+%template(IP_SSATaucTaoTikhonovSolver) TaoBasicSolver<IP_SSATaucTaoTikhonovProblem>;
+
+
+%shared_ptr(IP_SSATaucTaoTikhonovProblemLCLListener)
+%feature("director") IP_SSATaucTaoTikhonovProblemLCLListener;
+%include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
+%template(IP_SSATaucTaoTikhonovProblemLCLSolver) TaoBasicSolver< IP_SSATaucTaoTikhonovProblemLCL >;
+
+
+#################### IP_SSAHardav... #############################
+
+%template(IP_SSAHardavTaoTikhonovProblemBaseClass)
+          IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>;
+
+%shared_ptr(IPTaoTikhonovProblemListener<IP_SSAHardavForwardProblem>)
+
+%feature("director") IPTaoTikhonovProblemListener<IP_SSAHardavForwardProblem>;
+
+%template(IP_SSAHardavTaoTikhonovProblemListener)
+          IPTaoTikhonovProblemListener<IP_SSAHardavForwardProblem>;
+
+%include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
+
+%template(IP_SSAHardavTaoTikhonovSolver)
+          TaoBasicSolver<IP_SSAHardavTaoTikhonovProblem>;
 
 #endif
 

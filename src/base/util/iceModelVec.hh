@@ -641,6 +641,14 @@ public:
 
   virtual PetscScalar    getValZ(PetscInt i, PetscInt j, PetscScalar z);
   virtual PetscErrorCode isLegalLevel(PetscScalar z);
+
+  inline PetscScalar& operator() (int i, int j, int k) {
+#if (PISM_DEBUG==1)
+    // check_array_indices(i, j, k);
+#endif
+    return static_cast<PetscScalar***>(array)[i][j][k];
+  }
+
 protected:
   virtual PetscErrorCode allocate(IceGrid &mygrid, string my_short_name,
                                   bool has_ghosts, vector<double> levels, int stencil_width = 1);

@@ -5,7 +5,6 @@ add_library (pismstressbalance
   PISMStressBalance_diagnostics.cc
   ShallowStressBalance.cc
   SSB_Modifier.cc
-  ssa/FEEvaluator.cc
   ssa/FETools.cc
   ssa/SSA.cc
   ssa/SSAFD.cc

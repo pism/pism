@@ -36,7 +36,7 @@ class testi(PISM.ssa.SSAExactTestCase):
     Mx = self.Mx; My = self.My;
     Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
     Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.NOT_PERIODIC);
+    PISM.model.initShallowGrid(self.grid,Lx,Ly,Mx,My,PISM.NOT_PERIODIC);
 
   def _initPhysics(self):
     config = self.config
@@ -71,7 +71,7 @@ class testi(PISM.ssa.SSAExactTestCase):
     theta = math.atan(0.001)
     f = ice_rho*standard_gravity*H0_schoof*math.tan(theta)
     grid = self.grid
-    with PISM.util.Access(comm=[vecs.tauc]):
+    with PISM.vec.Access(comm=[vecs.tauc]):
       for (i,j) in grid.points():
         y=grid.y[j]
         vecs.tauc[i,j] = f* (abs(y/L_schoof)**m_schoof)
@@ -81,7 +81,7 @@ class testi(PISM.ssa.SSAExactTestCase):
     surface = vecs.surface
     bed     = vecs.bed
     grid = self.grid
-    with PISM.util.Access(comm=[surface,bed,vel_bc,bc_mask]):
+    with PISM.vec.Access(comm=[surface,bed,vel_bc,bc_mask]):
       for (i,j) in grid.points():
         x=grid.x[i]; y=grid.y[j]
         (bed_ij,junk,u,v) = PISM.exactI(m_schoof,x,y)

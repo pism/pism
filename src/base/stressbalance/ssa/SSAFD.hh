@@ -57,7 +57,19 @@ protected:
 
   virtual PetscErrorCode deallocate_fd();
 
+  virtual PetscErrorCode pc_setup_bjacobi();
+
+  virtual PetscErrorCode pc_setup_asm();
+  
   virtual PetscErrorCode solve();
+
+  virtual PetscErrorCode picard_iteration(unsigned int max_iterations,
+                                          double ssa_relative_tolerance,
+                                          double nuH_regularization);
+
+  virtual PetscErrorCode strategy_1_regularization();
+
+  virtual PetscErrorCode strategy_2_asm();
 
   virtual PetscErrorCode compute_hardav_staggered(IceModelVec2Stag &result);
 
@@ -71,7 +83,9 @@ protected:
 
   virtual PetscErrorCode assemble_rhs(Vec rhs);
 
-  virtual PetscErrorCode writeSSAsystemMatlab();
+  virtual PetscErrorCode write_system_petsc();
+
+  virtual PetscErrorCode write_system_matlab();
 
   virtual PetscErrorCode update_nuH_viewers();
 
@@ -82,10 +96,12 @@ protected:
 
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
-  KSP SSAKSP;
-  Mat SSAStiffnessMatrix;
-  Vec SSARHS;
-  PetscScalar scaling;
+  KSP m_KSP;
+  Mat m_A;
+  Vec m_b;
+  PetscScalar m_scaling;
+
+  PC m_bjacobi, m_asm;
 
   bool view_nuh;
   PetscViewer nuh_viewer;
@@ -108,4 +124,3 @@ public:
 };
 
 #endif /* _SSAFD_H_ */
-

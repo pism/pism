@@ -1,7 +1,0 @@
-Comparison between FENicS and PISM/siple for 'simple_square' example
-
-- Run '~/UAF-inverse/maxwell_inverse/python/experiments/simple_square/comp_pism.py' to get a noise-free inversion of the simple_square example with FENicS.
-
-- Run 'invert_square.py' to get a noise-free inversion of the simple_square example with PISM/siple
-
-- Run 'view_fenics_vs_pism.py' to compare the two results.

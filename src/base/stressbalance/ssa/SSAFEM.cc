@@ -25,8 +25,6 @@
 typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*,void*,Mat,Mat,MatStructure*,void*);
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*,void*,void*,void*);
 
-#include "pism_petsc32_compat.hh"
-
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                    EnthalpyConverter &ec, const NCConfigVariable &c)
 {
@@ -51,22 +49,8 @@ PetscErrorCode SSAFEM::allocate_fem() {
   ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES, (DMDASNESFunctionLocal)SSAFEFunction, &callback_data); CHKERRQ(ierr);
   ierr = DMDASNESSetJacobianLocal(SSADA, (DMDASNESJacobianLocal)SSAFEJacobian, &callback_data); CHKERRQ(ierr);
 
-#if PISM_PETSC32_COMPAT==1
-  Mat J;
-  Vec r;
-  ierr = DMGetMatrix(SSADA, "baij",  &J); CHKERRQ(ierr);
-  ierr = DMCreateGlobalVector(SSADA, &r); CHKERRQ(ierr);
-
-  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data); CHKERRQ(ierr);
-
-  // Thanks to reference counting these two are destroyed during the SNESDestroy() call below.
-  ierr = MatDestroy(&J); CHKERRQ(ierr);
-  ierr = VecDestroy(&r); CHKERRQ(ierr);
-#else
   ierr = DMSetMatType(SSADA, "baij"); CHKERRQ(ierr);
   ierr = DMSetApplicationContext(SSADA, &callback_data); CHKERRQ(ierr);
-#endif
 
   ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
 

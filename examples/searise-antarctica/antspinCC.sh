@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2012 Maria Martin and Ed Bueler
+# Copyright (C) 2009-2013  Maria Martin and Ed Bueler
 ##################################################################################
 # Spinup of Antarctic ice sheet model using data from Anne Le Brocq (from SeaRISE wiki).
 # Uses PIK physics and enthalpy model (see Publications at www.pism-docs.org) 
@@ -24,7 +24,7 @@ set -e  # exit on error
 
 echo "$SCRIPTNAME   Constant-climate spinup-script using SeaRISE-Antarctica data"
 echo "$SCRIPTNAME      and -ssa_sliding and -pik"
-echo "$SCRIPTNAME   Run as './antspinCC.sh NN' for NN procs and 15km grid"
+echo "$SCRIPTNAME   Run as './antspinCC.sh NN' for NN procs and 30km grid"
 
 
 # naming files, directories, executables
@@ -104,18 +104,44 @@ echo "$SCRIPTNAME PIKPHYS_COUPLING = $PIKPHYS_COUPLING"
 # #######################################
 # bootstrap and SHORT smoothing run to 100 years
 # #######################################
-stage=smoothing
+stage=earlyone
 INNAME=$PISM_INDATANAME
-RESNAME=${RESDIR}$stage.nc
-RUNTIME=100 
+RESNAMEONE=${RESDIR}$stage.nc
+RUNTIME=1
 echo
-echo "$SCRIPTNAME  bootstrapping plus short SIA run for $RUNTIME a"
+echo "$SCRIPTNAME  bootstrapping plus SIA run for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -boot_file ${INNAME} $GRID \
 	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -ocean_kill \
-	-y $RUNTIME -o $RESNAME"
+	-y $RUNTIME -o $RESNAMEONE"
 $DO $cmd
 #exit # <-- uncomment to stop here
 
+# replace topg with topgsmooth (does nothing if $RESNAMEONE is absent)
+echo
+echo "$SCRIPTNAME  replacing topg in $RESNAMEONE with topgsmooth"
+cmd="ncatted -O -a standard_name,topg,d,, $RESNAMEONE"
+$DO $cmd
+cmd="ncrename -O -v topg,topgoriginal $RESNAMEONE"
+$DO $cmd
+cmd="ncrename -O -v topgsmooth,topg $RESNAMEONE"
+$DO $cmd
+cmd="ncatted -O -a standard_name,topg,o,c,bedrock_altitude $RESNAMEONE"
+$DO $cmd
+cmd="ncatted -O -a long_name,topg,d,, $RESNAMEONE"
+$DO $cmd
+cmd="ncatted -O -a pism_intent,topg,d,, $RESNAMEONE"
+$DO $cmd
+
+
+stage=smoothing
+RESNAME=${RESDIR}$stage.nc
+RUNTIME=100
+echo
+echo "$SCRIPTNAME  short SIA run for $RUNTIME a"
+cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i $RESNAMEONE \
+	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -ocean_kill \
+	-y $RUNTIME -o $RESNAME"
+$DO $cmd
 
 # #######################################
 # run with -no_mass (no surface change) on 15km for 200ka
@@ -147,7 +173,8 @@ RESNAME=${RESDIR}$stage.nc
 TSNAME=${RESDIR}ts_$stage.nc
 RUNTIME=100000 
 EXTRANAME=${RESDIR}extra_$stage.nc
-exfilepackage="-extra_times 0:1000:$RUNTIME -extra_vars thk,usurf,cbase,cbar,mask,diffusivity,tauc,bmelt,bwat,temp "
+exvars="thk,usurf,cbase,cbar,mask,diffusivity,tauc,bmelt,bwat,temppabase,hardav"
+expackage="-extra_times 0:1000:$RUNTIME -extra_vars $exvars"
 
 echo
 echo "$SCRIPTNAME  run into steady state with constant climate forcing for $RUNTIME a"
@@ -155,97 +182,41 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i $INNAME \
 	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
 	-ys 0 -y $RUNTIME \
 	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
-	-extra_file $EXTRANAME $exfilepackage \
+	-extra_file $EXTRANAME $expackage \
 	$STRONGKSP \
 	-o $RESNAME -o_size big"
 $DO $cmd
+#exit # <-- uncomment to continue
+
+# #######################################
+## do a regridding to 10km and reset year to 0 (demonstrate for only 100 model years):
+# #######################################
+stage=run_regrid10km
+INNAME=$RESNAME
+RESNAME=${RESDIR}$stage.nc
+TSNAME=${RESDIR}ts_$stage.nc
+RUNTIME=100
+EXTRANAME=${RESDIR}extra_$stage.nc
+expackage="-extra_times 0:10:$RUNTIME -extra_vars $exvars"
+
+echo
+echo "$SCRIPTNAME  continue but regrid to 10km"
+cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIPTENKM \
+    -boot_file $PISM_INDATANAME $TENKMGRID \
+    -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,bwat,bmelt \
+    $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
+    -ys 0 -y $RUNTIME \
+    -ts_file $TSNAME -ts_times 0:1:$RUNTIME \
+    -extra_file $EXTRANAME $expackage \
+    $STRONGKSP \
+    -o $RESNAME -o_size big"
+
+$DO $cmd
 #exit # <-- uncomment to stop here
 
-# #######################################
-## do a regridding to 10km:
-# #######################################
-#NN=64
-#stage=run_regrid10km
-#INNAME=${RESDIR}run.nc
-#RESNAME=${RESDIR}$stage.nc
-#OUTNAME=${OUTDIR}$stage.out
-#TSNAME=${RESDIR}ts_$stage.nc
-#RUNTIME=10000
-#EXTRANAME=${RESDIR}extra_$stage.nc
-#exfilepackage="-extra_times 0:500:$RUNTIME -extra_vars thk,usurf,cbase,cbar,mask,diffusivity,bmelt,bwat "
-
-#echo
-#echo "$SCRIPTNAME  run into steady state with constant climate forcing.. regridding to 10km"
-#cmd="$PISM_MPIDO $NN $PISM_EXEC -skip $SKIPTENKM -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,bwat\
-#	-boot_file $PISM_INDATANAME $TENKMGRID \
-#	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
-#	-ys 0 -y $RUNTIME \
-#	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
-#	-extra_file $EXTRANAME $exfilepackage \
-#	$STRONGKSP \
-#	-o $RESNAME -o_size big"
-#	
-#echo $DO $cmd 
-#$DO $cmd >> $OUTNAME
-##exit # <-- uncomment to stop here
-
-# #######################################
-## do a regridding to 6.7km:
-# #######################################
-#NN=128
-#stage=run_regrid7km
-#INNAME=${RESDIR}run.nc
-#RESNAME=${RESDIR}$stage.nc
-#OUTNAME=${OUTDIR}$stage.out
-#TSNAME=${RESDIR}ts_$stage.nc
-#RUNTIME=5000
-#EXTRANAME=${RESDIR}extra_$stage.nc
-#exfilepackage="-extra_times 0:500:$RUNTIME -extra_vars thk,usurf,cbase,cbar,mask,diffusivity,bmelt,bwat "
-
-#echo
-#echo "$SCRIPTNAME  run into steady state with constant climate forcing.. regridding to 6.7km"
-#cmd="$PISM_MPIDO $NN $PISM_EXEC -skip $SKIPSEVENKM -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,bwat\
-#	-boot_file $PISM_INDATANAME $SEVENKMGRID \
-#	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
-#	-ys 0 -y $RUNTIME \
-#	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
-#	-extra_file $EXTRANAME $exfilepackage \
-#	$STRONGKSP \
-#	-o $RESNAME -o_size big"
-#	
-#echo $DO $cmd 
-#$DO $cmd >> $OUTNAME
-##exit # <-- uncomment to stop here
-
-# #######################################
-## do a regridding to 5km:
-# #######################################
-#NN=128
-#stage=run_regrid_5km
-#INNAME=${RESDIR}run.nc
-#RESNAME=${RESDIR}$stage.nc
-#OUTNAME=${OUTDIR}$stage.out
-#TSNAME=${RESDIR}ts_$stage.nc
-#RUNTIME=1000
-#EXTRANAME=${RESDIR}extra_$stage.nc
-#exfilepackage="-extra_times 0:250:$RUNTIME -extra_vars thk,usurf,cbase,cbar,mask,diffusivity,bmelt,bwat "
-
-#echo
-#echo "$SCRIPTNAME  run into steady state with constant climate forcing"
-#cmd="$PISM_MPIDO $NN $PISM_EXEC -skip $SKIPFIVEKM -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,bwat\
-#	-boot_file $PISM_INDATANAME $FIVEKMGRID \
-#	$SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
-#	-ys 0 -y $RUNTIME \
-#	-ts_file $TSNAME -ts_times 0:1:$RUNTIME \
-#	-extra_file $EXTRANAME $exfilepackage \
-#	$STRONGKSP \
-#	-o $RESNAME -o_size big"
-#	
-#echo $DO $cmd 
-#$DO $cmd >> $OUTNAME
-##exit # <-- uncomment to stop here
+# one can do a regridding to 6.7km, 5km and so on, if the number of model years
+# (RUNTIME) is appropriately shortened, and sufficient memory is available
 
 echo
 echo "$SCRIPTNAME  spinup done"
-
 

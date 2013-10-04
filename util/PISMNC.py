@@ -7,7 +7,7 @@ except:
 
 class PISMDataset(netCDF.Dataset):
 
-    def create_time(self, use_bounds = False, length = None, units = None):
+    def create_time(self, use_bounds=False, length=None, units=None):
         self.createDimension('time', size = length)
         t_var = self.createVariable('time', 'f8', ('time',))
 
@@ -23,7 +23,7 @@ class PISMDataset(netCDF.Dataset):
             self.createVariable("time_bounds", 'f8', ('time', 'n_bounds'))
             t_var.bounds = "time_bounds"
     
-    def create_dimensions(self, x, y, time_dependent = False, use_time_bounds = False):
+    def create_dimensions(self, x, y, time_dependent=False, use_time_bounds=False):
         """
         Create PISM-compatible dimensions in a NetCDF file.
         """
@@ -52,7 +52,7 @@ class PISMDataset(netCDF.Dataset):
 
         self.sync()
 
-    def append_time(self, value, bounds = None):
+    def append_time(self, value, bounds=None):
         if 'time' in self.dimensions.keys():
             time = self.variables['time']
             N = time.size
@@ -67,9 +67,11 @@ class PISMDataset(netCDF.Dataset):
             return
         
         for (name, value) in attrs.iteritems():
+            if name == "_FillValue":
+                continue
             setattr(self.variables[var_name], name, value)
 
-    def define_2d_field(self, var_name, time_dependent = False, dims = None, nc_type = 'f8', attrs = None):
+    def define_2d_field(self, var_name, time_dependent=False, dims=None, nc_type = 'f8', attrs=None):
         """
         time_dependent: boolean
 
@@ -87,14 +89,23 @@ class PISMDataset(netCDF.Dataset):
         try:
             var = self.variables[var_name]
         except:
-            var = self.createVariable(var_name, nc_type, dims)
+            if attrs is not None and '_FillValue' in attrs.keys():
+                var = self.createVariable(var_name, nc_type, dims,
+                                          fill_value=attrs['_FillValue'])
+            else:
+                var = self.createVariable(var_name, nc_type, dims)
+
             self.set_attrs(var_name, attrs)
 
         return var
 
-    def define_timeseries(self, var_name, attrs = None):
+    def define_timeseries(self, var_name, attrs=None):
         try:
-            var = self.createVariable(var_name, 'f8', ('time',))
+            if attrs is not None and '_FillValue' in attrs.keys():
+                var = self.createVariable(var_name, 'f8', ('time',),
+                                          fill_value=attrs['_FillValue'])
+            else:
+                var = self.createVariable(var_name, 'f8', ('time',))
         except:
             var = self.variables[var_name]
 
@@ -102,24 +113,24 @@ class PISMDataset(netCDF.Dataset):
 
         return var
 
-    def write(self, var_name, data, time_dependent = False):
+    def write(self, var_name, data, time_dependent=False, attrs=None):
         """
         Write time-series or a 2D field to a file.
         """
 
         if data.ndim == 1:
-            return self.write_timeseries(var_name, data)
+            return self.write_timeseries(var_name, data, attrs=attrs)
         elif data.ndim == 2:
-            return self.write_2d_field(var_name, data, time_dependent)
+            return self.write_2d_field(var_name, data, time_dependent, attrs=attrs)
         else:
             return None
 
-    def write_2d_field(self, var_name, data, time_dependent = False):
+    def write_2d_field(self, var_name, data, time_dependent=False, attrs=None):
         """
         Write a 2D numpy array to a file in a format PISM can read.
         """
 
-        var = self.define_2d_field(var_name, time_dependent, None)
+        var = self.define_2d_field(var_name, time_dependent, attrs=attrs)
 
         if time_dependent:
             last_record = self.variables['time'].size - 1
@@ -129,10 +140,10 @@ class PISMDataset(netCDF.Dataset):
 
         return var
 
-    def write_timeseries(self, var_name, data):
+    def write_timeseries(self, var_name, data, attrs=None):
         """Write a 1D (time-series) array to a file."""
 
-        var = self.define_timeseries(var_name, None)
+        var = self.define_timeseries(var_name, attrs=attrs)
         var[:] = data
 
         return var

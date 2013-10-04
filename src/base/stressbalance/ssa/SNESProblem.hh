@@ -23,8 +23,6 @@
 #include "IceGrid.hh"           // inline implementation in the header uses IceGrid
 #include "iceModelVec.hh"       // to get PISMVector2
 
-#include "pism_petsc32_compat.hh"
-
 template<int DOF, class U> class SNESProblem{
 public:
   SNESProblem(IceGrid &g);
@@ -41,6 +39,9 @@ public:
   }
 
 protected:
+
+  typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*,void*,Mat,Mat,MatStructure*,void*);
+  typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*,void*,void*,void*);
 
   virtual PetscErrorCode initialize();
 
@@ -139,25 +140,16 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
   // methods via SSAFEFunction and SSAFEJ
   m_callbackData.da = m_DA;
   m_callbackData.solver = this;
+#if PETSC_VERSION_LT(3,4,0)  
   ierr = DMDASetLocalFunction(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalFunction);CHKERRQ(ierr);
   ierr = DMDASetLocalJacobian(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalJacobian);CHKERRQ(ierr);
-
-#if PISM_PETSC32_COMPAT==1
-  Mat J;
-  Vec F;
-  ierr = DMGetMatrix(m_DA, "baij",  &J); CHKERRQ(ierr);
-  ierr = DMCreateGlobalVector(m_DA, &F); CHKERRQ(ierr);
-
-  ierr = SNESSetFunction(m_snes, F, SNESDAFormFunction, &m_callbackData); CHKERRQ(ierr);
-  ierr = SNESSetJacobian(m_snes, J, J, SNESDAComputeJacobian, &m_callbackData); CHKERRQ(ierr);
-
-  // Thanks to reference counting these two are destroyed during the SNESDestroy() call below.
-  ierr = MatDestroy(&J); CHKERRQ(ierr);
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
 #else
+  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES, (DMDASNESFunctionLocal)SNESProblem<DOF,U>::LocalFunction,&m_callbackData);CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobianLocal)SNESProblem<DOF,U>::LocalJacobian,&m_callbackData);CHKERRQ(ierr);
+#endif
+
   ierr = DMSetMatType(m_DA, "baij"); CHKERRQ(ierr);
   ierr = DMSetApplicationContext(m_DA, &m_callbackData); CHKERRQ(ierr);
-#endif
 
   ierr = SNESSetDM(m_snes, m_DA); CHKERRQ(ierr);
 

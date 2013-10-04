@@ -60,7 +60,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     self.grid = PISM.Context().newgrid()
     halfWidth = 250.0e3;  # 500.0 km length
     Lx = halfWidth; Ly = halfWidth;
-    PISM.util.init_shallow_grid(self.grid,Lx,Ly,self.Mx,self.My,PISM.Y_PERIODIC)
+    PISM.model.initShallowGrid(self.grid,Lx,Ly,self.Mx,self.My,PISM.Y_PERIODIC)
 
   def _initPhysics(self):
     config = self.config
@@ -95,7 +95,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     ocean_rho = self.config.get("sea_water_density");
     ice_rho   = self.config.get("ice_density")
     
-    with PISM.util.Access(comm=[thickness,surface,bc_mask,vel_bc,ice_mask]):
+    with PISM.vec.Access(comm=[thickness,surface,bc_mask,vel_bc,ice_mask]):
       for (i,j) in grid.points():
         x = grid.x[i]
         if x <= 0:

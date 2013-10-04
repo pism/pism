@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2009-2012 the PISM Authors
+# Copyright (C) 2009-2013 the PISM Authors
 
 ## @package pism_python
 # \author the PISM authors
@@ -11,12 +11,7 @@
 # Usage, including a minimal PISM call to bootstrap from this file:
 #
 # \verbatim $ pism_python.py  # creates foo.nc \endverbatim
-# \verbatim $ pismr -boot_file foo.nc -Mx 51 -My 101 \
-#       -Mz 21 -Lz 4000 -Mbz 6 -Lbz 2000 -y 1  \endverbatim
-# 
-# Incidentally, next run shows good mass conservation, with no basal melt losses:
-# \verbatim $ pismr -boot_file foo.nc -Mx 51 -My 101 \
-#       -Mz 21 -Lz 4000 -Mbz 6 -Lbz 2000 -y 1000 -no_energy  \endverbatim
+# \verbatim $ pismr -boot_file foo.nc -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1 \endverbatim
 
 import sys
 import time
@@ -37,7 +32,7 @@ x = np.linspace(-Lx,Lx,Mx);
 y = np.linspace(-Ly,Ly,My);
 
 # create dummy fields
-[xx,yy] = np.meshgrid(x,y);
+[xx,yy] = np.meshgrid(x,y);  # if there were "ndgrid" in numpy we would use it
 acab = np.zeros((Mx,My));
 artm = np.zeros((Mx,My)) + 273.15 + 10.0; # 10 degrees Celsius
 topg = 1000.0 + 200.0 * (xx + yy) / max(Lx, Ly);  # change "1000.0" to "0.0" to test
@@ -83,11 +78,11 @@ thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
-acab_var = def_var(nc, "acab", "m year-1", fill_value)
+acab_var = def_var(nc, "climatic_mass_balance", "m year-1", fill_value)
 acab_var.standard_name = "land_ice_surface_specific_mass_balance"
 acab_var[:] = acab
 
-artm_var = def_var(nc, "artm", "K", fill_value)
+artm_var = def_var(nc, "ice_surface_temp", "K", fill_value)
 artm_var[:] = artm
 
 # set global attributes
@@ -98,4 +93,6 @@ setattr(nc, 'history', historystr)
 
 nc.close()
 print('  PISM-bootable NetCDF file %s written' % ncfile)
+print('  for example, run:')
+print('    $ pismr -boot_file foo.nc -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')
 
