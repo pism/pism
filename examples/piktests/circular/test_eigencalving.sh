@@ -14,9 +14,9 @@ then
     ./circular_dirichlet.py -o $infile
 fi
 
-grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
+grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 1500 -Lbz 1000"
 
-stressbalance="-ssa_method fd -ssa_sliding -ssa_dirichlet_bc -no_sia -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
+stressbalance="-ssa_method fd -ssa_sliding -ssa_dirichlet_bc -no_sia"
 
 output_basename="test_eigencalving"
 

@@ -847,9 +847,6 @@ PetscErrorCode SSAFD::solve() {
   if (ierr != 0) {
     PetscPrintf(grid.com,
                 "PISM ERROR: all SSAFD strategies failed.\n");
-
-    ierr = write_system_matlab(); CHKERRQ(ierr);
-
     return ierr;
   }
 
