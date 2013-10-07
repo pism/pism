@@ -343,38 +343,6 @@ public:
   virtual PetscErrorCode update(PetscReal a, PetscReal b);
 };
 
-//! \brief Reports the -ocean_kill flux.
-class IceModel_ocean_kill_flux : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_ocean_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
-//! \brief Reports the cumulative -ocean_kill flux.
-class IceModel_ocean_kill_flux_cumulative : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_ocean_kill_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
-//! \brief Reports the total -float_kill flux.
-class IceModel_float_kill_flux : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_float_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
-//! \brief Reports the cumulative total -float_kill flux.
-class IceModel_float_kill_flux_cumulative : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_float_kill_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
 //! \brief Reports the total discharge flux.
 class IceModel_discharge_flux : public PISMTSDiag<IceModel>
 {
@@ -397,27 +365,6 @@ class IceModel_climatic_mass_balance_cumulative : public PISMDiag<IceModel>
 public:
   IceModel_climatic_mass_balance_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Reports cumulative ocean kill flux.
-class IceModel_ocean_kill_flux_2D_cumulative : public PISMDiag<IceModel>
-{
-public:
-  IceModel_ocean_kill_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Computes ocean_kill_flux, the calving flux due to the "-ocean_kill"
-//! mechanism.
-class IceModel_ocean_kill_flux_2D : public PISMDiag<IceModel>
-{
-public:
-  IceModel_ocean_kill_flux_2D(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-  virtual PetscErrorCode update_cumulative();
-protected:
-  IceModelVec2S last_ocean_kill_flux_cumulative;
-  PetscReal last_report_time;
 };
 
 //! \brief Computes dHdt, the ice thickness rate of change.
@@ -490,6 +437,14 @@ class IceModel_floating_basal_flux_2D_cumulative : public PISMDiag<IceModel>
 {
 public:
   IceModel_floating_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the 2D cumulative discharge (calving) flux.
+class IceModel_discharge_flux_2D_cumulative : public PISMDiag<IceModel>
+{
+public:
+  IceModel_discharge_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

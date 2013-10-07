@@ -22,6 +22,7 @@
 #include "PISMStressBalance.hh"
 #include "bedrockThermalUnit.hh"
 #include "PISMTime.hh"
+#include "PISMEigenCalving.hh"
 
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!
@@ -210,7 +211,8 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
     if (btu) {
       PetscReal btu_dt;
       bool restrict;
-      ierr = btu->max_timestep(grid.time->current(), btu_dt, restrict); CHKERRQ(ierr); // returns years
+      ierr = btu->max_timestep(grid.time->current(),
+                               btu_dt, restrict); CHKERRQ(ierr);
       if (restrict && btu_dt < dt) {
         dt = btu_dt;
         adaptReasonFlag = 'b';
@@ -229,13 +231,12 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
     }
 
-    bool dteigencalving = config.get_flag("cfl_eigencalving");
-    if (dteigencalving) {
-      IceModelVec2V *ssa_velocity;
-      ierr = stress_balance->get_2D_advective_velocity(ssa_velocity); CHKERRQ(ierr);
-      ierr = stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, vMask, strain_rates); CHKERRQ(ierr);
-      ierr = dt_from_eigenCalving(); CHKERRQ(ierr);
-      if (dt_from_eigencalving < dt) {
+    if (eigen_calving != NULL) {
+      bool restrict;
+      PetscReal dt_from_eigencalving;
+      ierr = eigen_calving->max_timestep(grid.time->current(),
+                                         dt_from_eigencalving, restrict); CHKERRQ(ierr);
+      if (restrict == true && dt_from_eigencalving < dt) {
         dt = dt_from_eigencalving;
         adaptReasonFlag = 'k';
       }

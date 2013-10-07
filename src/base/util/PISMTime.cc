@@ -55,7 +55,7 @@ PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem unit
   }
 
   m_run_start = years_to_seconds(m_config.get("start_year"));
-  m_run_end   = increment_date(m_run_start, m_config.get("run_length_years"));
+  m_run_end   = increment_date(m_run_start, (int)m_config.get("run_length_years"));
 
   m_time_units.parse("seconds");
 
@@ -211,7 +211,7 @@ PetscErrorCode PISMTime::init() {
   } else if (y_set == true) {
     m_run_end = m_run_start + y_seconds;
   } else {
-    m_run_end = increment_date(m_run_start, m_config.get("run_length_years"));
+    m_run_end = increment_date(m_run_start, (int)m_config.get("run_length_years"));
   }
 
   return 0;

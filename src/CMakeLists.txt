@@ -146,6 +146,8 @@ add_library (pismbase
   base/calving/connected_components.cc
   base/calving/PISMIcebergRemover.cc
   base/calving/PISMCalvingAtThickness.cc
+  base/calving/PISMOceanKill.cc
+  base/calving/PISMEigenCalving.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
 

@@ -38,7 +38,11 @@ PISMCalvingAtThickness::~PISMCalvingAtThickness() {
 
 
 PetscErrorCode PISMCalvingAtThickness::init(PISMVars &/*vars*/) {
-  // empty
+  PetscErrorCode ierr;
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the 'calving at a threshold thickness' mechanism...\n"
+                    "  thickness threshold: %3.3f meters\n", m_calving_threshold); CHKERRQ(ierr);
+
   return 0;
 }
 

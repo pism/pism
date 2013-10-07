@@ -32,25 +32,7 @@
 #include "pism_options.hh"
 #include "IceGrid.hh"
 
-//! \file iMoptions.cc Reading runtime options and setting configuration parameters.
-
-
-//! Read runtime (command line) options and alter the corresponding parameters or flags as appropriate.
-/*!
-A critical principle of this procedure is that it will not alter IceModel parameters and flags
-\e unless the user sets an option to do so.  This base class setFromOptions() can be
-called by an IceModel-derived class after the it has set its own defaults.
-
-In fact this procedure only reads the majority of the options.  Some are read in 
-initFromOptions(), writeFiles(), and setStartRunEndYearsFromOptions(), among other places.
-
-There are no options to directly set `dx`, `dy`, `dz`, `Lbz`, and `year` as the user 
-should not directly set these grid parameters.  There are, however, options for directly 
-setting `Mx`, `My`, `Mz`, `Mbz` and also `Lx`, `Ly`, `Lz`.
-
-Note that additional options are read by PISM{Atmosphere|Surface|Ocean}Model
-instances, including -pdd... others.
- */
+//! Read some runtime (command line) options and alter the corresponding parameters or flags as appropriate.
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
   bool flag;
@@ -157,9 +139,6 @@ PetscErrorCode IceModel::set_output_size(string option,
   // add cumulative quantities to ensure continuity after restarting
   if (climatic_mass_balance_cumulative.was_created()) {
     result.insert("climatic_mass_balance_cumulative");
-  }
-  if (ocean_kill_flux_2D_cumulative.was_created()) {
-    result.insert("ocean_kill_flux_2D_cumulative");
   }
   if (grounded_basal_flux_2D_cumulative.was_created()) {
     result.insert("grounded_basal_flux_2D_cumulative");

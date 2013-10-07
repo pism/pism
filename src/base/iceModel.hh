@@ -60,6 +60,9 @@ class PISMBedThermalUnit;
 class PISMDiagnostic;
 class PISMTSDiagnostic;
 class PISMIcebergRemover;
+class PISMOceanKill;
+class PISMCalvingAtThickness;
+class PISMEigenCalving;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -87,8 +90,6 @@ class IceModel {
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
   friend class IceModel_climatic_mass_balance_cumulative;
-  friend class IceModel_ocean_kill_flux_2D;
-  friend class IceModel_ocean_kill_flux_2D_cumulative;
   friend class IceModel_dHdt;
   friend class IceModel_flux_divergence;
   // scalar:
@@ -117,15 +118,12 @@ class IceModel {
   friend class IceModel_sub_shelf_flux_cumulative;
   friend class IceModel_nonneg_flux;
   friend class IceModel_nonneg_flux_cumulative;
-  friend class IceModel_ocean_kill_flux;
-  friend class IceModel_ocean_kill_flux_cumulative;
-  friend class IceModel_float_kill_flux;
-  friend class IceModel_float_kill_flux_cumulative;
   friend class IceModel_discharge_flux;
   friend class IceModel_discharge_flux_cumulative;
   friend class IceModel_nonneg_flux_2D_cumulative;
   friend class IceModel_grounded_basal_flux_2D_cumulative;
   friend class IceModel_floating_basal_flux_2D_cumulative;
+  friend class IceModel_discharge_flux_2D_cumulative;
   friend class IceModel_max_hor_vel;
   friend class IceModel_sum_divQ_flux;
   friend class IceModel_H_to_Href_flux;
@@ -158,7 +156,7 @@ public:
   virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
   virtual PetscErrorCode init_diagnostics();
-  virtual PetscErrorCode init_ocean_kill();
+  virtual PetscErrorCode init_calving();
 
   virtual PetscErrorCode list_diagnostics();
 
@@ -214,6 +212,9 @@ protected:
   PISMBedThermalUnit *btu;
 
   PISMIcebergRemover *iceberg_remover;
+  PISMOceanKill      *ocean_kill_calving;
+  PISMCalvingAtThickness *thickness_threshold_calving;
+  PISMEigenCalving *eigen_calving;
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
@@ -238,10 +239,10 @@ protected:
     vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
     acab,		//!< accumulation/ablation rate; no ghosts
     climatic_mass_balance_cumulative,    //!< cumulative acab
-    ocean_kill_flux_2D_cumulative,       //!< cumulative ocean kill flux
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
     floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
+    discharge_flux_2D_cumulative,      //!< cumulative discharge (calving) flux
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
@@ -253,7 +254,6 @@ protected:
 
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
                          //!< grounded_ice, floating_ice, ice_free_ocean
-    ocean_kill_mask,     //!< mask used by the -ocean_kill code 
     vBCMask; //!< mask to determine Dirichlet boundary locations
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
@@ -271,14 +271,11 @@ protected:
               dt_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
-              dt_from_cfl, CFLmaxdt, CFLmaxdt2D, dt_from_eigencalving,
+              dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
               gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
-    float_kill_flux_cumulative,
-    discharge_flux_cumulative,
     nonneg_rule_flux_cumulative,
-    ocean_kill_flux_cumulative,
     sub_shelf_ice_flux_cumulative,
     surface_ice_flux_cumulative,
     sum_divQ_SIA_cumulative,
@@ -315,11 +312,6 @@ protected:
 
   // see iMage.cc
   virtual PetscErrorCode ageStep();
-
-  // see iMcalving.cc
-  virtual PetscErrorCode eigenCalving();
-  virtual PetscErrorCode calvingAtThickness();
-  virtual PetscErrorCode dt_from_eigenCalving();
 
   // see iMenergy.cc
   virtual PetscErrorCode energyStep();
@@ -370,6 +362,12 @@ protected:
                            planeStar<PetscScalar> &SIA_flux);
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode sub_gl_position();
+  virtual PetscErrorCode do_calving();
+  virtual PetscErrorCode Href_cleanup();
+  virtual PetscErrorCode update_cumulative_discharge(IceModelVec2S &thickness,
+                                                     IceModelVec2S &thickness_old,
+                                                     IceModelVec2S &Href,
+                                                     IceModelVec2S &Href_old);
 
 
   // see iMIO.cc

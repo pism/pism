@@ -197,7 +197,11 @@ PetscErrorCode SSA::update(bool fast) {
 
   grid.profiler->begin(event_ssa);
 
-  ierr = solve(); CHKERRQ(ierr); 
+  ierr = solve();
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "PISM ERROR: SSA solver failed.\n");
+    return ierr;
+  }
 
   ierr = compute_basal_frictional_heating(m_velocity, *tauc, *mask,
 					  basal_frictional_heating); CHKERRQ(ierr);

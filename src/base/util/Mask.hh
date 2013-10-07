@@ -22,8 +22,6 @@
 // the following three includes are needed here because of inlined code
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
-#include "flowlaws.hh"
-#include "IceGrid.hh"
 
 class Mask
 {
@@ -164,44 +162,6 @@ public:
     return (ice_free_ocean(i + 1, j) || ice_free_ocean(i - 1, j) || ice_free_ocean(i, j + 1) || ice_free_ocean(i, j - 1));
   }
 
-
-  inline PetscErrorCode fill_where_grounded(IceModelVec2S &result, const PetscScalar fillval) {
-    PetscErrorCode ierr;
-
-    IceGrid *grid = result.get_grid();
-
-    ierr = mask.begin_access(); CHKERRQ(ierr);
-    ierr = result.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i = grid->xs; i < grid->xs + grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j < grid->ys + grid->ym; ++j) {
-        if (grounded(i,j))
-          result(i,j) = fillval;
-      }
-    }
-    ierr = result.end_access(); CHKERRQ(ierr);
-    ierr = mask.end_access(); CHKERRQ(ierr);
-
-    return 0;
-  }
-
-  inline PetscErrorCode fill_where_floating(IceModelVec2S &result, const PetscScalar fillval) {
-    PetscErrorCode ierr;
-
-    IceGrid *grid = result.get_grid();
-
-    ierr = mask.begin_access(); CHKERRQ(ierr);
-    ierr = result.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i = grid->xs; i < grid->xs + grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j < grid->ys + grid->ym; ++j) {
-        if (ocean(i,j))
-          result(i,j) = fillval;
-      }
-    }
-    ierr = result.end_access(); CHKERRQ(ierr);
-    ierr = mask.end_access(); CHKERRQ(ierr);
-
-    return 0;
-  }
 protected:
   IceModelVec2Int &mask;
 };

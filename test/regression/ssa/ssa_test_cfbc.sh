@@ -24,7 +24,7 @@ rm -f $files
 set -e
 set -x
 
-OPTS="-verbose 1 -o foo-V.nc -My 5 -ksp_type richardson -pc_type lu"
+OPTS="-verbose 1 -o foo-V.nc -My 5 -ssafd_ksp_type richardson -ssafd_pc_type lu"
 
 # do stuff
 $MPIEXEC_COMMAND $PISM_PATH/ssa_test_cfbc${EXT} -Mx 201 $OPTS > test-V-out.txt

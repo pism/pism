@@ -49,13 +49,6 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = update_mask(vbed, vH, vMask); CHKERRQ(ierr);
   ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
 
-  if (config.get_flag("kill_icebergs") || iceberg_remover != NULL) {
-    ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
-    // the call above modifies ice thickness and updates the mask
-    // accordingly
-    ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
-  }
-
   if (config.get_flag("sub_groundingline")) {
     ierr = sub_gl_position(); CHKERRQ(ierr);
   }
@@ -469,10 +462,6 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
   [equation (15) in \ref Winkelmannetal2011].  The hybrid described by equations
   (21) and (22) in \ref BBL is no longer used.
 
-  Checks are made which can generate zero thickness according to minimal calving
-  relations, specifically the mechanisms turned-on by options `-ocean_kill` and
-  `-float_kill`.
-
 We also compute total ice fluxes in kg s-1 at 3 interfaces:
 
   \li the ice-atmosphere interface: gets surface mass balance rate from
@@ -503,10 +492,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
     // totals over the processor's domain:
     proc_H_to_Href_flux = 0,
     proc_Href_to_H_flux = 0,
-    proc_float_kill_flux = 0,
     proc_grounded_basal_ice_flux = 0,
     proc_nonneg_rule_flux = 0,
-    proc_ocean_kill_flux = 0,
     proc_sub_shelf_ice_flux = 0,
     proc_sum_divQ_SIA = 0,
     proc_sum_divQ_SSA = 0,
@@ -514,21 +501,17 @@ PetscErrorCode IceModel::massContExplicitStep() {
     // totals over all processors:
     total_H_to_Href_flux = 0,
     total_Href_to_H_flux = 0,
-    total_float_kill_flux = 0,
     total_grounded_basal_ice_flux = 0,
     total_nonneg_rule_flux = 0,
-    total_ocean_kill_flux = 0,
     total_sub_shelf_ice_flux = 0,
     total_sum_divQ_SIA = 0,
     total_sum_divQ_SSA = 0,
     total_surface_ice_flux = 0;
 
   const PetscScalar dx = grid.dx, dy = grid.dy;
-  bool do_ocean_kill = config.get_flag("ocean_kill"),
-    floating_ice_killed = config.get_flag("floating_ice_killed"),
+  bool
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),
-    compute_cumulative_ocean_kill_flux = ocean_kill_flux_2D_cumulative.was_created(),
     compute_cumulative_nonneg_flux = nonneg_flux_2D_cumulative.was_created(),
     compute_cumulative_grounded_basal_flux = grounded_basal_flux_2D_cumulative.was_created(),
     compute_cumulative_floating_basal_flux = floating_basal_flux_2D_cumulative.was_created(),
@@ -581,16 +564,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = vBCvel.begin_access();  CHKERRQ(ierr);
   }
 
-  if (do_ocean_kill) {
-    ierr = ocean_kill_mask.begin_access(); CHKERRQ(ierr);
-  }
-
   if (compute_cumulative_climatic_mass_balance) {
     ierr = climatic_mass_balance_cumulative.begin_access(); CHKERRQ(ierr);
-  }
-
-  if (compute_cumulative_ocean_kill_flux) {
-    ierr = ocean_kill_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
   }
 
   if (compute_cumulative_nonneg_flux) {
@@ -624,8 +599,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
         meltrate_floating = 0.0,
         H_to_Href_flux    = 0.0,
         Href_to_H_flux    = 0.0,
-        ocean_kill_flux   = 0.0,
-        float_kill_flux   = 0.0,
         nonneg_rule_flux  = 0.0;
 
       if (include_bmr_in_continuity) {
@@ -743,36 +716,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
         vHnew(i, j) = 0.0;
       }
 
-      // "Calving" mechanisms
-
-      // FIXME: we should update the mask first and then do calving. These
-      // should go into separate methods (and it's OK to loop over the grid again).
-      {
-        // the following conditionals, both -ocean_kill and -float_kill, are also applied in
-        //   IceModel::computeMax2DSlidingSpeed() when determining CFL
-
-        // force zero thickness at points which were originally ocean (if "-ocean_kill");
-        //   this is calving at original calving front location
-        if (do_ocean_kill && ocean_kill_mask.as_int(i, j) == 1) {
-          ocean_kill_flux = -vHnew(i, j);
-
-          if (compute_cumulative_ocean_kill_flux)
-            ocean_kill_flux_2D_cumulative(i,j) += ocean_kill_flux * factor; // factor=dx*dy*rho
-
-          // this has to go *after* accounting above!
-          vHnew(i, j) = 0.0;
-        }
-
-        // force zero thickness at points which are floating (if "-float_kill");
-        //   this is calving at grounding line
-        if ( floating_ice_killed && mask.ocean(i, j) ) { // FIXME: *was* ocean???
-          float_kill_flux = -vHnew(i, j);
-
-          // this has to go *after* accounting above!
-          vHnew(i, j) = 0.0;
-        }
-      }
-
       // Track cumulative surface mass balance. Note that this keeps track of
       // cumulative acab at all the grid cells (including ice-free cells).
       if (compute_cumulative_climatic_mass_balance) {
@@ -792,8 +735,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
         proc_grounded_basal_ice_flux -= meltrate_grounded;
         proc_sub_shelf_ice_flux      -= meltrate_floating;
         proc_surface_ice_flux        += surface_mass_balance;
-        proc_float_kill_flux         += float_kill_flux;
-        proc_ocean_kill_flux         += ocean_kill_flux;
         proc_nonneg_rule_flux        += nonneg_rule_flux;
         proc_sum_divQ_SIA += - divQ_SIA;
         proc_sum_divQ_SSA += - divQ_SSA;
@@ -829,10 +770,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = nonneg_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
   }
 
-  if (compute_cumulative_ocean_kill_flux) {
-    ierr = ocean_kill_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
-  }
-
   if (compute_cumulative_climatic_mass_balance) {
     ierr = climatic_mass_balance_cumulative.end_access(); CHKERRQ(ierr);
   }
@@ -849,16 +786,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = vBCvel.end_access();  CHKERRQ(ierr);
   }
 
-  if (do_ocean_kill) {
-    ierr = ocean_kill_mask.end_access(); CHKERRQ(ierr);
-  }
-
   // flux accounting
   {
     ierr = PISMGlobalSum(&proc_grounded_basal_ice_flux, &total_grounded_basal_ice_flux, grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&proc_float_kill_flux,    &total_float_kill_flux,    grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&proc_nonneg_rule_flux,   &total_nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&proc_ocean_kill_flux,    &total_ocean_kill_flux,    grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&proc_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&proc_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&proc_sum_divQ_SIA,       &total_sum_divQ_SIA,       grid.com); CHKERRQ(ierr);
@@ -874,9 +805,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
     sum_divQ_SIA_cumulative       += total_sum_divQ_SIA       * factor * dt;
     sum_divQ_SSA_cumulative       += total_sum_divQ_SSA       * factor * dt;
     // these are computed using ice thickness and are "cumulative" already
-    float_kill_flux_cumulative    += total_float_kill_flux    * factor;
     nonneg_rule_flux_cumulative   += total_nonneg_rule_flux   * factor;
-    ocean_kill_flux_cumulative    += total_ocean_kill_flux    * factor;
     Href_to_H_flux_cumulative     += total_Href_to_H_flux     * factor;
     H_to_Href_flux_cumulative     += total_H_to_Href_flux     * factor;
   }
@@ -893,20 +822,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   // distribute residual ice mass if desired
   if (do_redist) {
     ierr = redistResiduals(); CHKERRQ(ierr);
-  }
-
-  if (config.get_flag("do_eigen_calving") && config.get_flag("use_ssa_velocity")) {
-    bool dteigencalving = config.get_flag("cfl_eigencalving");
-    if (!dteigencalving){ // calculation of strain rates has been done in iMadaptive.cc already
-      IceModelVec2V *ssa_velocity;
-      ierr = stress_balance->get_2D_advective_velocity(ssa_velocity); CHKERRQ(ierr);
-      ierr = stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, vMask, strain_rates); CHKERRQ(ierr);
-    }
-    ierr = eigenCalving(); CHKERRQ(ierr);
-  }
-
-  if (config.get_flag("do_thickness_calving") && config.get_flag("part_grid")) {
-    ierr = calvingAtThickness(); CHKERRQ(ierr);
   }
 
   // Check if the ice thickness exceeded the height of the computational box

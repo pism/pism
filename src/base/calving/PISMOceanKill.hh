@@ -17,19 +17,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PISMCALVINGATTHICKNESS_H_
-#define _PISMCALVINGATTHICKNESS_H_
+#ifndef _PISMOCEANKILL_H_
+#define _PISMOCEANKILL_H_
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
 
-/*! \brief Calving mechanism removing the ice at the shelf front that
-    has thickness below a given threshold. */
-class PISMCalvingAtThickness : public PISMComponent
-{
+/**
+ * This class implements the "-ocean_kill" mechanism: calving at a
+ * fixed calving front determined using ice thickness.
+ *
+ * FIXME: the ice extent computation should depend on the current sea
+ * level elevation (I suppose).
+ */
+class PISMOceanKill : public PISMComponent {
 public:
-  PISMCalvingAtThickness(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PISMCalvingAtThickness();
+  PISMOceanKill(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PISMOceanKill();
 
   virtual PetscErrorCode init(PISMVars &vars);
   PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
@@ -38,10 +42,9 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO& nc);
-protected:
 
-  double m_calving_threshold;
-  IceModelVec2Int m_old_mask;
+protected:
+  IceModelVec2Int m_ocean_kill_mask;
 };
 
-#endif /* _PISMCALVINGATTHICKNESS_H_ */
+#endif /* _PISMOCEANKILL_H_ */
