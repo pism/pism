@@ -121,13 +121,14 @@ void IceModel::reset_counters() {
   skipCountDown = 0;
 
   grounded_basal_ice_flux_cumulative = 0;
-  nonneg_rule_flux_cumulative = 0;
-  sub_shelf_ice_flux_cumulative = 0;
-  surface_ice_flux_cumulative = 0;
-  sum_divQ_SIA_cumulative = 0;
-  sum_divQ_SSA_cumulative = 0;
-  Href_to_H_flux_cumulative = 0;
-  H_to_Href_flux_cumulative = 0;
+  nonneg_rule_flux_cumulative        = 0;
+  sub_shelf_ice_flux_cumulative      = 0;
+  surface_ice_flux_cumulative        = 0;
+  sum_divQ_SIA_cumulative            = 0;
+  sum_divQ_SSA_cumulative            = 0;
+  Href_to_H_flux_cumulative          = 0;
+  H_to_Href_flux_cumulative          = 0;
+  discharge_flux_cumulative          = 0;
 }
 
 

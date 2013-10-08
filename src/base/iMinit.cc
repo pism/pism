@@ -623,6 +623,9 @@ PetscErrorCode IceModel::model_state_setup() {
 
     if (run_stats.has("H_to_Href_flux_cumulative"))
       H_to_Href_flux_cumulative = run_stats.get("H_to_Href_flux_cumulative");
+
+    if (run_stats.has("discharge_flux_cumulative"))
+      H_to_Href_flux_cumulative = run_stats.get("discharge_flux_cumulative");
   }
 
   ierr = compute_cell_areas(); CHKERRQ(ierr);

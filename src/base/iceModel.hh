@@ -242,7 +242,7 @@ protected:
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
     floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
-    discharge_flux_2D_cumulative,      //!< cumulative discharge (calving) flux
+    discharge_flux_2D_cumulative,      //!< cumulative discharge (calving) flux (2D field)
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
@@ -281,7 +281,8 @@ protected:
     sum_divQ_SIA_cumulative,
     sum_divQ_SSA_cumulative,
     Href_to_H_flux_cumulative,
-    H_to_Href_flux_cumulative;
+    H_to_Href_flux_cumulative,
+    discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
   PetscInt    skipCountDown;
 
   // physical parameters used frequently enough to make looking up via

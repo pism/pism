@@ -150,6 +150,7 @@ PetscErrorCode IceModel::update_run_stats() {
   run_stats.set("sum_divQ_SSA_cumulative", sum_divQ_SSA_cumulative);
   run_stats.set("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
   run_stats.set("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
+  run_stats.set("discharge_flux_cumulative", discharge_flux_cumulative);
 
   return 0;
 }
