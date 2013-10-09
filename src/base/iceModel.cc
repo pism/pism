@@ -432,8 +432,8 @@ PetscErrorCode IceModel::createVecs() {
 
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
-  ierr = artm.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-  ierr = artm.set_attrs(
+  ierr = ice_surface_temp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "annual average ice surface temperature, below firn processes",
                         "K",

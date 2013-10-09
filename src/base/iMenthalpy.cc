@@ -38,7 +38,7 @@ First this method makes sure the temperatures is at most the pressure-melting
 value, before computing the enthalpy for that temperature, using zero liquid
 fraction.
 
-Because of how EnthalpyConverter::getPressureFromDepth() works, the energy 
+Because of how EnthalpyConverter::getPressureFromDepth() works, the energy
 content in the air is set to the value that ice would have if it a chunk of it
 occupied the air; the atmosphere actually has much lower energy content.  It is
 done this way for regularity (i.e. dEnth/dz computations).
@@ -47,7 +47,7 @@ Because Enth3 gets set, does ghost communication to finish.
  */
 PetscErrorCode IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result) {
   PetscErrorCode ierr;
-  
+
   ierr = temperature.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
@@ -83,7 +83,7 @@ PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
                                           IceModelVec3 &liquid_water_fraction,
                                           IceModelVec3 &result) {
   PetscErrorCode ierr;
-  
+
   ierr = temperature.begin_access(); CHKERRQ(ierr);
   ierr = liquid_water_fraction.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -115,7 +115,7 @@ PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
 
 //! Compute the liquid fraction corresponding to Enth3, and put in a global IceModelVec3 provided by user.
 /*!
-Does not communicate ghosts for IceModelVec3 useForLiquidFrac.
+Does not communicate ghosts for IceModelVec3 result
  */
 PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
                                                        IceModelVec3 &result) {
@@ -152,24 +152,24 @@ PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
 /*!
 The actual cold-temperate transition surface (CTS) is the level set CTS = 1.
 
-Does not communicate ghosts for IceModelVec3 useForCTS.
+Does not communicate ghosts for IceModelVec3 result.
  */
-PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
+PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
   PetscErrorCode ierr;
 
-  ierr = useForCTS.set_name("cts"); CHKERRQ(ierr);
-  ierr = useForCTS.set_attrs(
+  ierr = result.set_name("cts"); CHKERRQ(ierr);
+  ierr = result.set_attrs(
      "diagnostic",
      "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
      "", ""); CHKERRQ(ierr);
 
   PetscScalar *CTSij, *Enthij; // columns of these values
-  ierr = useForCTS.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = useForCTS.getInternalColumn(i,j,&CTSij); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i,j,&CTSij); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME issue #15
@@ -178,59 +178,10 @@ PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
     }
   }
   ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = useForCTS.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   return 0;
 }
-
-
-//! Compute the CTS value of enthalpy in an ice column.
-/*!
-Return argument Enth_s[Mz] has the enthalpy value for the pressure-melting 
-temperature at the corresponding z level.
- */
-PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
-					      PetscScalar thk,
-					      PetscInt ks,
-					      PetscScalar **Enth_s) {
-
-  for (PetscInt k = 0; k <= ks; k++) {
-    const PetscScalar p = EC->getPressureFromDepth(thk - grid.zlevels_fine[k]); // FIXME issue #15
-    (*Enth_s)[k] = EC->getEnthalpyCTS(p);
-  }
-  const PetscScalar Es_air = EC->getEnthalpyCTS(p_air);
-  for (PetscInt k = ks+1; k < grid.Mz_fine; k++) {
-    (*Enth_s)[k] = Es_air;
-  }
-  return 0;
-}
-
-
-//! Compute the lambda for BOMBPROOF.
-/*!
-See page \ref bombproofenth.
- */
-PetscErrorCode IceModel::getlambdaColumn(PetscInt ks,
-					 PetscScalar ice_rho_c,
-                                         PetscScalar ice_k,
-					 const PetscScalar *Enth,
-					 const PetscScalar *Enth_s,
-					 const PetscScalar *w,
-					 PetscScalar *lambda) {
-  const double epsilon = 1e-6 / 3.15569259747e7;
-  *lambda = 1.0;  // start with centered implicit for more accuracy
-  for (PetscInt k = 0; k <= ks; k++) {
-    if (Enth[k] > Enth_s[k]) { // lambda = 0 if temperate ice present in column
-      *lambda = 0.0;
-    } else {
-      const PetscScalar 
-          denom = (PetscAbs(w[k]) + epsilon) * ice_rho_c * grid.dz_fine;
-      *lambda = PetscMin(*lambda, 2.0 * ice_k / denom);
-    }
-  }
-  return 0;
-}
-
 
 //! Update ice enthalpy field based on conservation of energy.
 /*!
@@ -246,100 +197,60 @@ Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references th
 
 \image html BC-decision-chart.png "Setting the basal boundary condition"
  */
-PetscErrorCode IceModel::enthalpyAndDrainageStep(
-                      PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
-                      PetscScalar* bulgeCount) {
+PetscErrorCode IceModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
+                                                 PetscScalar* liquifiedVol,
+                                                 PetscScalar* bulgeCount) {
   PetscErrorCode  ierr;
 
-  if (config.get_flag("do_cold_ice_methods")) {
-    SETERRQ(grid.com, 1,
-      "PISM ERROR:  enthalpyAndDrainageStep() called but do_cold_ice_methods==true\n");
-  }
+  assert(config.get_flag("do_cold_ice_methods") == false);
 
-  const PetscReal dt_secs = dt_TempAge;
-
-  // get fine grid levels in ice
-  PetscInt    fMz = grid.Mz_fine;  
-  PetscScalar fdz = grid.dz_fine;
-  vector<double> &fzlev = grid.zlevels_fine;
-
-  // essentially physical constants
+  // essentially physical constants:
   const PetscScalar
-    p_air     = config.get("surface_pressure"),          // Pa
-    ice_rho   = config.get("ice_density"),               // kg m-3
-    L         = config.get("water_latent_heat_fusion");  // J kg-1
-
-  // constants used in controlling numerical scheme
-  const PetscScalar
-    default_ice_k = config.get("ice_thermal_conductivity"),   // used in setting lambda
-    default_ice_c = config.get("ice_specific_heat_capacity"), // used in setting lambda
-    bulgeEnthMax  = config.get("enthalpy_cold_bulge_max");    // J kg-1
-
-  DrainageCalculator dc(config);
-  
-  IceModelVec2S *Rb;
-  IceModelVec3 *u3, *v3, *w3, *strain_heating3;
-  ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
-  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
-  ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr); 
-
-  PetscScalar *Enthnew;
-  Enthnew = new PetscScalar[fMz];  // new enthalpy in column
-
-  enthSystemCtx *esys;
-  if (config.get_flag("use_temperature_dependent_thermal_conductivity") ||
-      config.get_flag("use_linear_in_temperature_heat_capacity")) {
-    esys  = new varenthSystemCtx(config, Enth3, fMz, "varenth", EC);
-  } else {
-    esys  = new enthSystemCtx(config, Enth3, fMz, "enth");
-  }
-  ierr = esys->initAllColumns(grid.dx, grid.dy, dt_secs, fdz); CHKERRQ(ierr);
+    ice_rho      = config.get("ice_density"), // kg m-3
+    L            = config.get("water_latent_heat_fusion"), // J kg-1
+    // constants controlling the numerical method:
+    bulgeEnthMax = config.get("enthalpy_cold_bulge_max"); // J kg-1
 
   bool viewOneColumn;
   ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-  if (getVerbosityLevel() >= 4) {  // view: all column-independent constants correct?
-    ierr = EC->viewConstants(NULL); CHKERRQ(ierr);
-    ierr = esys->viewConstants(NULL, false); CHKERRQ(ierr);
-  }
+  DrainageCalculator dc(config);
 
-  // now get map-plane coupler fields: Dirichlet upper surface boundary and
-  //    mass balance lower boundary under shelves
-  if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(artm);
-    ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
-    CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 4,"PISM ERROR: surface == PETSC_NULL");
-  }
-  if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_mass_flux(shelfbmassflux);
-        CHKERRQ(ierr);
-    ierr = ocean->shelf_base_temperature(shelfbtemp);
-        CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 5,"PISM ERROR: ocean == PETSC_NULL");
-  }
+  IceModelVec2S *Rb;
+  IceModelVec3 *u3, *v3, *w3, *strain_heating3;
+  ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
-  IceModelVec2S G0 = vWork2d[0];
-  ierr = G0.set_attrs("internal","upward geothermal flux at z=0","W m-2", ""); CHKERRQ(ierr);
-  ierr = G0.set_glaciological_units("mW m-2");
-  if (btu) {
-    ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 3,"PISM ERROR: PISMBedThermalUnit* btu == PETSC_NULL in enthalpyAndDrainageStep()");
-  }
+  PetscScalar *Enthnew;
+  Enthnew = new PetscScalar[grid.Mz_fine];  // new enthalpy in column
 
-  IceModelVec2S bwatcurr = vWork2d[1];
-  ierr = bwatcurr.set_attrs("internal", "current amount of basal water", "m", ""); CHKERRQ(ierr);
-  ierr = bwatcurr.set_glaciological_units("m");
-  if (subglacial_hydrology) {
-    ierr = subglacial_hydrology->subglacial_water_thickness(bwatcurr); CHKERRQ(ierr);
-  } else {
-    SETERRQ(grid.com, 3,"PISM ERROR: PISMHydrology* subglacial_hydrology is NULL in enthalpyAndDrainageStep()");
-  }
+  enthSystemCtx esys(config, Enth3, grid.dx, grid.dy, dt_TempAge,
+                     grid.dz_fine, grid.Mz_fine, "enth", EC);
 
-  ierr = artm.begin_access(); CHKERRQ(ierr);
+  // Now get map-plane coupler fields: Dirichlet upper surface
+  // boundary and mass balance lower boundary under shelves
+  assert(surface != NULL);
+  ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
+  ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
+
+  assert(ocean != NULL);
+  ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
+  ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
+
+  IceModelVec2S basal_heat_flux = vWork2d[0];
+  ierr = basal_heat_flux.set_attrs("internal", "upward heat flux at z=0",
+                                   "W m-2", ""); CHKERRQ(ierr);
+  assert(btu != NULL);
+  ierr = btu->get_upward_geothermal_flux(basal_heat_flux); CHKERRQ(ierr);
+
+  IceModelVec2S basal_water_thickness = vWork2d[1];
+  ierr = basal_water_thickness.set_attrs("internal", "current amount of basal water",
+                                         "m", ""); CHKERRQ(ierr);
+  assert(subglacial_hydrology != NULL);
+  ierr = subglacial_hydrology->subglacial_water_thickness(basal_water_thickness); CHKERRQ(ierr);
+
+  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
@@ -348,8 +259,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.begin_access(); CHKERRQ(ierr);
   ierr = Rb->begin_access(); CHKERRQ(ierr);
-  ierr = G0.begin_access(); CHKERRQ(ierr);
-  ierr = bwatcurr.begin_access(); CHKERRQ(ierr);
+  ierr = basal_heat_flux.begin_access(); CHKERRQ(ierr);
+  ierr = basal_water_thickness.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   // these are accessed a column at a time
@@ -367,198 +278,166 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
-      const PetscInt ks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
-#if (PISM_DEBUG==1)
-      // check if ks is valid
-      if ((ks < 0) || (ks >= grid.Mz_fine)) {
-        PetscPrintf(grid.com,
-                    "ERROR: ks = %d computed at i = %d, j = %d is invalid,"
-                    " possibly because of invalid ice thickness.\n",
-                    ks, i, j);
-        SETERRQ(grid.com, 1, "invalid ks");
-      }
-#endif
+      // ignore advection and strain heating in ice if isMarginal
+      const bool isMarginal = checkThinNeigh(vH(i+1, j), vH(i+1, j+1), vH(i, j+1), vH(i-1, j+1),
+                                             vH(i-1, j), vH(i-1, j-1), vH(i, j-1), vH(i+1, j-1));
 
-      const bool ice_free_column = (ks == 0),
-                 is_floating     = mask.ocean(i,j);
+      ierr = esys.initThisColumn(i, j, isMarginal, vH(i, j),
+                                  u3, v3, w3, strain_heating3); CHKERRQ(ierr);
+
+      const int ks = esys.ks();
+      const bool
+        ice_free_column = (ks == 0),
+        is_floating     = mask.ocean(i, j);
 
       // enthalpy and pressures at top of ice
-      const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]); // FIXME issue #15
+      const PetscScalar
+        depth_ks = vH(i, j) - ks * grid.dz_fine,
+        p_ks     = EC->getPressureFromDepth(depth_ks); // FIXME issue #15
+
       PetscScalar Enth_ks;
-      ierr = EC->getEnthPermissive(artm(i,j), liqfrac_surface(i,j), p_ks, Enth_ks); CHKERRQ(ierr);
+      ierr = EC->getEnthPermissive(ice_surface_temp(i, j), liqfrac_surface(i, j),
+                                   p_ks, Enth_ks); CHKERRQ(ierr);
 
       // deal completely with columns with no ice; enthalpy and vbmr need setting
       if (ice_free_column) {
-        ierr = vWork3d.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
-        if (mask.floating_ice(i,j)) {
-          vbmr(i,j) = shelfbmassflux(i,j);
+        ierr = vWork3d.setColumn(i, j, Enth_ks); CHKERRQ(ierr);
+        if (mask.floating_ice(i, j)) {
+          vbmr(i, j) = shelfbmassflux(i, j);
         } else {
-          vbmr(i,j) = 0.0;    // no basal melt rate on ice free land
+          vbmr(i, j) = 0.0;    // no basal melt rate on ice free land
         }
-        goto donewithcolumn;
+        continue;
       } // end of if (ice_free_column)
 
-      { // explicit scoping to deal with goto and initializers
+      if (esys.lambda() < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
 
-        // ignore advection and strain heating in ice if isMarginal
-        const bool isMarginal = checkThinNeigh(
-                                 vH(i+1,j),vH(i+1,j+1),vH(i,j+1),vH(i-1,j+1),
-                                 vH(i-1,j),vH(i-1,j-1),vH(i,j-1),vH(i+1,j-1)  );
+      bool base_is_cold = (esys.Enth[0] < esys.Enth_s[0]);
+      const PetscScalar p1 = EC->getPressureFromDepth(vH(i, j) - grid.dz_fine); // FIXME issue #15
+      const bool k1_istemperate = EC->isTemperate(esys.Enth[1], p1); // level  z = + \Delta z
 
-        ierr = Enth3.getValColumn(i,j,ks,esys->Enth); CHKERRQ(ierr);
-        ierr = w3->getValColumn(i,j,ks,esys->w); CHKERRQ(ierr);
+      // if there is subglacial water, don't allow ice base enthalpy to be below
+      // pressure-melting; that is, assume subglacial water is at the pressure-
+      // melting temperature and enforce continuity of temperature
+      if (basal_water_thickness(i, j) > 0.0 && base_is_cold) {
+        esys.Enth[0] = esys.Enth_s[0];
+        base_is_cold = false;
+      }
 
-        ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, &esys->Enth_s); CHKERRQ(ierr);
-
-        PetscScalar lambda;
-        ierr = getlambdaColumn(ks, ice_rho * default_ice_c, default_ice_k,
-                               esys->Enth, esys->Enth_s, esys->w,
-                               &lambda); CHKERRQ(ierr);
-        if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
-
-        // if there is subglacial water, don't allow ice base enthalpy to be below
-        // pressure-melting; that is, assume subglacial water is at the pressure-
-        // melting temperature and enforce continuity of temperature
-        if ((bwatcurr(i,j) > 0.0) && (esys->Enth[0] < esys->Enth_s[0])) { 
-          esys->Enth[0] = esys->Enth_s[0];
-        }
-
-        const bool base_is_cold = (esys->Enth[0] < esys->Enth_s[0]);
-        const PetscScalar p1 = EC->getPressureFromDepth(vH(i,j) - fdz); // FIXME issue #15
-        const bool k1_istemperate = EC->isTemperate(esys->Enth[1], p1); // level  z = + \Delta z
-
-        // can now determine melt, but only preliminarily because of drainage,
-        //   from heat flux out of bedrock, heat flux into ice, and frictional heating
-        if (is_floating) {
-          vbmr(i,j) = shelfbmassflux(i,j);
+      // can now determine melt, but only preliminarily because of drainage,
+      //   from heat flux out of bedrock, heat flux into ice, and frictional heating
+      if (is_floating) {
+        vbmr(i, j) = shelfbmassflux(i, j);
+      } else {
+        if (base_is_cold) {
+          vbmr(i, j) = 0.0;  // zero melt rate if cold base
         } else {
-          if (base_is_cold) {
-              vbmr(i,j) = 0.0;  // zero melt rate if cold base
+          const PetscScalar p_0 = EC->getPressureFromDepth(vH(i, j)); // FIXME issue #15
+          PetscScalar hf_up;
+          if (k1_istemperate) {
+            const PetscScalar
+              Tpmp_0 = EC->getMeltingTemp(p_0),
+              Tpmp_1 = EC->getMeltingTemp(p1);
+
+            hf_up = -esys.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / grid.dz_fine;
           } else {
-            const PetscScalar pbasal = EC->getPressureFromDepth(vH(i,j)); // FIXME issue #15
-            PetscScalar hf_up;
-            if (k1_istemperate) {
-              const PetscScalar Tpmpbasal = EC->getMeltingTemp(pbasal);
-              hf_up = - esys->k_from_T(Tpmpbasal) * (EC->getMeltingTemp(p1) - Tpmpbasal) / fdz;
-            } else {
-              PetscScalar Tbasal;
-              ierr = EC->getAbsTemp(esys->Enth[0], pbasal, Tbasal); CHKERRQ(ierr);
-              const PetscScalar Kbasal = esys->k_from_T(Tbasal) / EC->c_from_T(Tbasal);
-              hf_up = - Kbasal * (esys->Enth[1] - esys->Enth[0]) / fdz;
-            }
+            PetscScalar T_0;
+            ierr = EC->getAbsTemp(esys.Enth[0], p_0, T_0); CHKERRQ(ierr);
+            const PetscScalar K_0 = esys.k_from_T(T_0) / EC->c_from_T(T_0);
 
-            // compute basal melt rate from flux balance; vbmr = - Mb / rho in
-            //   efgis paper; after we compute it we make sure there is no
-            //   refreeze if there is no available basal water
-            vbmr(i,j) = ( (*Rb)(i,j) + G0(i,j) - hf_up ) / (ice_rho * L);
+            hf_up = - K_0 * (esys.Enth[1] - esys.Enth[0]) / grid.dz_fine;
+          }
 
-            if ((bwatcurr(i,j) <= 0) && (vbmr(i,j) < 0))
-              vbmr(i,j) = 0.0;
+          // compute basal melt rate from flux balance:
+          //
+          // vbmr = - Mb / rho in [\ref AschwandenBuelerKhroulevBlatter];
+          //
+          // after we compute it we make sure there is no refreeze if
+          // there is no available basal water
+          vbmr(i, j) = ( (*Rb)(i, j) + basal_heat_flux(i, j) - hf_up ) / (ice_rho * L);
+
+          if (basal_water_thickness(i, j) <= 0 && vbmr(i, j) < 0)
+            vbmr(i, j) = 0.0;
+        }
+      }
+
+      ierr = esys.setDirichletSurface(Enth_ks); CHKERRQ(ierr);
+
+      // determine lowest-level equation at bottom of ice; see decision chart
+      //   in [\ref AschwandenBuelerKhroulevBlatter], and page documenting BOMBPROOF
+      if (is_floating) {
+        // floating base: Dirichlet application of known temperature from ocean
+        //   coupler; assumes base of ice shelf has zero liquid fraction
+        PetscScalar Enth0;
+        ierr = EC->getEnthPermissive(shelfbtemp(i, j), 0.0, EC->getPressureFromDepth(vH(i, j)),
+                                     Enth0); CHKERRQ(ierr);
+        ierr = esys.setDirichletBasal(Enth0); CHKERRQ(ierr);
+      } else if (base_is_cold) {
+        // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
+        ierr = esys.setBasalHeatFlux(basal_heat_flux(i, j) + (*Rb)(i, j)); CHKERRQ(ierr);
+      } else {
+        // warm, grounded base case
+        ierr = esys.setBasalHeatFlux(0.0); CHKERRQ(ierr);
+      }
+
+      // solve the system
+      ierr = esys.solveThisColumn(&Enthnew); CHKERRQ(ierr);
+
+      if (viewOneColumn && issounding(i, j)) {
+        ierr = esys.viewColumnInfoMFile(Enthnew, grid.Mz_fine); CHKERRQ(ierr);
+      }
+
+      // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
+      //   using DrainageCalculator dc
+      PetscScalar Hdrainedtotal = 0.0;
+      for (PetscInt k=0; k < ks; k++) {
+        if (Enthnew[k] > esys.Enth_s[k]) { // avoid doing any more work if cold
+          if (Enthnew[k] >= esys.Enth_s[k] + 0.5 * L) {
+            liquifiedCount++; // count these rare events ...
+            Enthnew[k] = esys.Enth_s[k] + 0.5 * L; //  but lose the energy
+          }
+          const PetscReal depth = vH(i, j) - k * grid.dz_fine,
+            p = EC->getPressureFromDepth(depth); // FIXME issue #15
+          PetscReal omega;
+          EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked
+          if (omega > 0.01) {
+            PetscReal fractiondrained = dc.get_drainage_rate(omega) * dt_TempAge; // pure number
+            fractiondrained = PetscMin(fractiondrained, omega - 0.01); // only drain down to 0.01
+            Hdrainedtotal += fractiondrained * grid.dz_fine;  // always a positive contribution
+            Enthnew[k] -= fractiondrained * L;
           }
         }
+      }
 
-        // now set-up for solve in ice; note esys->Enth[], esys->w[],
-        //   esys->Enth_s[] are already filled
-        ierr = esys->setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
+      // in grounded case, add to basal melt rate; if floating,
+      // Hdrainedtotal is discarded because ocean determines basal melt rate
+      if (mask.grounded(i, j)) {
+        vbmr(i, j) += Hdrainedtotal / dt_TempAge;
+      }
 
-        ierr = u3->getValColumn(i,j,ks,esys->u); CHKERRQ(ierr);
-        ierr = v3->getValColumn(i,j,ks,esys->v); CHKERRQ(ierr);
-        ierr = strain_heating3->getValColumn(i,j,ks,esys->strain_heating); CHKERRQ(ierr);
-
-        ierr = esys->initThisColumn(isMarginal, lambda, vH(i, j)); CHKERRQ(ierr);
-        ierr = esys->setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
-
-        // determine lowest-level equation at bottom of ice; see decision chart
-        //   in [\ref AschwandenBuelerKhroulevBlatter], and page documenting BOMBPROOF
-        if (is_floating) {
-          // floating base: Dirichlet application of known temperature from ocean
-          //   coupler; assumes base of ice shelf has zero liquid fraction
-          PetscScalar Enth0;
-          ierr = EC->getEnthPermissive(shelfbtemp(i,j), 0.0, EC->getPressureFromDepth(vH(i,j)),
-                                       Enth0); CHKERRQ(ierr);
-          ierr = esys->setDirichletBasal(Enth0); CHKERRQ(ierr);
-        } else if (base_is_cold) {
-          // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
-          ierr = esys->setBasalHeatFlux(G0(i,j) + (*Rb)(i,j)); CHKERRQ(ierr);
-        } else {
-          // warm, grounded base case
-          ierr = esys->setBasalHeatFlux(0.0); CHKERRQ(ierr);
+      // finalize Enthnew[]:  apply bulge limiter and transfer column
+      //   into vWork3d; communication will occur later
+      const PetscReal lowerEnthLimit = Enth_ks - bulgeEnthMax;
+      for (PetscInt k=0; k < ks; k++) {
+        if (Enthnew[k] < lowerEnthLimit) {
+          *bulgeCount += 1;      // count the columns which have very large cold
+          Enthnew[k] = lowerEnthLimit;  // limit advection bulge ... enthalpy not too low
         }
-
-        // solve the system
-        PetscErrorCode pivoterr;
-        ierr = esys->solveThisColumn(&Enthnew,pivoterr); CHKERRQ(ierr);
-        if (pivoterr != 0) {
-          ierr = PetscPrintf(PETSC_COMM_SELF,
-            "\n\ntridiagonal solve of enthSystemCtx in enthalpyAndDrainageStep() FAILED at (%d,%d)\n"
-                " with zero pivot position %d; viewing system to m-file ... \n",
-            i, j, pivoterr); CHKERRQ(ierr);
-          ierr = esys->reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
-          SETERRQ(grid.com, 1,"PISM ERROR in enthalpyDrainageStep()\n");
-        }
-        if (viewOneColumn && issounding(i,j)) {
-          ierr = PetscPrintf(PETSC_COMM_SELF,
-            "\n\nin enthalpyAndDrainageStep(): viewing enthSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
-            i, j); CHKERRQ(ierr);
-          ierr = esys->viewColumnInfoMFile(Enthnew, fMz); CHKERRQ(ierr);
-        }
-
-        // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
-        //   using DrainageCalculator dc
-        PetscScalar Hdrainedtotal = 0.0;
-        for (PetscInt k=0; k < ks; k++) {
-          if (Enthnew[k] > esys->Enth_s[k]) { // avoid doing any more work if cold
-            if (Enthnew[k] >= esys->Enth_s[k] + 0.5 * L) {
-              liquifiedCount++; // count these rare events ...
-              Enthnew[k] = esys->Enth_s[k] + 0.5 * L; //  but lose the energy
-            }
-            const PetscReal p = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME issue #15
-            PetscReal omega;
-            EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked
-            if (omega > 0.01) {
-              PetscReal fractiondrained = dc.get_drainage_rate(omega) * dt_secs; // pure number
-              fractiondrained = PetscMin(fractiondrained, omega - 0.01); // only drain down to 0.01
-              Hdrainedtotal += fractiondrained * fdz;  // always a positive contribution
-              Enthnew[k] -= fractiondrained * L;
-            }
-          }
-        }
-
-        // in grounded case, add to basal melt rate; if floating,
-        // Hdrainedtotal is discarded because ocean determines basal melt rate
-        if (mask.grounded(i,j)) {
-          vbmr(i,j) += Hdrainedtotal / dt_secs;
-        }
-
-        // finalize Enthnew[]:  apply bulge limiter and transfer column
-        //   into vWork3d; communication will occur later
-        const PetscReal lowerEnthLimit = Enth_ks - bulgeEnthMax;
-        for (PetscInt k=0; k < ks; k++) {
-          if (Enthnew[k] < lowerEnthLimit) {
-            *bulgeCount += 1;      // count the columns which have very large cold 
-            Enthnew[k] = lowerEnthLimit;  // limit advection bulge ... enthalpy not too low
-          }
-        }
-        ierr = vWork3d.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
-
-      } // end explicit scoping
-      
-      donewithcolumn: 
-      { }  // odd thing: something needs to follow goto target to get compilation
+      }
+      ierr = vWork3d.setValColumnPL(i, j, Enthnew); CHKERRQ(ierr);
 
     }
   }
 
-  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
 
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = Rb->end_access(); CHKERRQ(ierr);
-  ierr = G0.end_access(); CHKERRQ(ierr);
-  ierr = bwatcurr.end_access(); CHKERRQ(ierr);
+  ierr = basal_heat_flux.end_access(); CHKERRQ(ierr);
+  ierr = basal_water_thickness.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = liqfrac_surface.end_access(); CHKERRQ(ierr);
 
@@ -570,9 +449,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
 
   delete [] Enthnew;
-  delete esys;
 
-  *liquifiedVol = ((double) liquifiedCount) * fdz * grid.dx * grid.dy;
+  *liquifiedVol = ((double) liquifiedCount) * grid.dz_fine * grid.dx * grid.dy;
   return 0;
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler
+// Copyright (C) 2011, 2013 The PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,19 +32,16 @@ ice.  Everything is the same except that we use formulas (4.37) and (4.39) in
 class varenthSystemCtx : public enthSystemCtx {
 
 public:
-  varenthSystemCtx(const NCConfigVariable &config, IceModelVec3 &my_Enth3,
-                    int my_Mz, string my_prefix, EnthalpyConverter *EC);
+  varenthSystemCtx(const NCConfigVariable &config,
+                   IceModelVec3 &my_Enth3,
+                   PetscScalar my_dx, PetscScalar my_dy,
+                   PetscScalar my_dtTemp, PetscScalar my_dzEQ,
+                   int my_Mz, string my_prefix, EnthalpyConverter *my_EC);
   virtual ~varenthSystemCtx() {}
 
   PetscScalar k_from_T(PetscScalar T);
-
-  PetscErrorCode initThisColumn(bool my_ismarginal,
-                                PetscScalar my_lambda,
-                                PetscReal ice_thickness);  
 protected:
   virtual PetscErrorCode assemble_R();
-  EnthalpyConverter *EC;  // conductivity has known dependence on T, not enthalpy
-  PetscReal ice_thickness;
   bool k_depends_on_T;
 };
 

@@ -46,9 +46,9 @@ PetscErrorCode IceEISModel::createVecs() {
   // this ensures that these variables are saved to an output file and are read
   // back in if -i option is used (they are "model_state", in a sense, since
   // PSDummy is used):
-  ierr = variables.add(artm); CHKERRQ(ierr);
+  ierr = variables.add(ice_surface_temp); CHKERRQ(ierr);
   ierr = variables.add(acab); CHKERRQ(ierr);
-  ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
 
   return 0;
@@ -246,7 +246,7 @@ PetscErrorCode IceEISModel::init_couplers() {
   CHKERRQ(ierr);
 
   // now fill in accum and surface temp
-  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
 
   PetscScalar cx = grid.Lx, cy = grid.Ly;
@@ -259,11 +259,11 @@ PetscErrorCode IceEISModel::init_couplers() {
       // set accumulation from formula (7) in (Payne et al 2000)
       acab(i,j) = PetscMin(M_max, S_b * (R_el-r));
       // set surface temperature
-      artm(i,j) = T_min + S_T * r;  // formula (8) in (Payne et al 2000)
+      ice_surface_temp(i,j) = T_min + S_T * r;  // formula (8) in (Payne et al 2000)
     }
   }
 
-  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
   ierr = acab.end_access(); CHKERRQ(ierr);
   return 0;
 }

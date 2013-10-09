@@ -26,7 +26,6 @@
 #include "PISMOcean.hh"
 #include "PISMSurface.hh"
 #include "PISMStressBalance.hh"
-#include "PISMIcebergRemover.hh"
 
 //! \file iMgeometry.cc Methods of IceModel which update and maintain consistency of ice sheet geometry.
 

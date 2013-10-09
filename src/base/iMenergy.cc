@@ -128,7 +128,7 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
   // will need coupler fields in ice-free land and 
   assert(surface != NULL);
-  ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
+  ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
 
   assert(ocean != NULL);
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
@@ -142,12 +142,12 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (mask.grounded(i,j)) {
         if (mask.ice_free(i,j)) { // no ice: sees air temp
-          result(i,j) = artm(i,j);
+          result(i,j) = ice_surface_temp(i,j);
         } else { // ice: sees temp of base of ice
           const PetscReal pressure = EC->getPressureFromDepth(vH(i,j));
           PetscReal temp;
@@ -165,7 +165,7 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
 
   return 0;

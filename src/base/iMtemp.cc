@@ -185,7 +185,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     PetscScalar  **basalMeltRate;
 
     if (surface != PETSC_NULL) {
-      ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
+      ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
     } else {
       SETERRQ(grid.com, 1,"PISM ERROR: surface == PETSC_NULL");
     }
@@ -214,7 +214,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
       SETERRQ(grid.com, 3,"PISM ERROR: PISMHydrology* subglacial_hydrology is NULL in temperatureStep()");
     }
 
-    ierr = artm.begin_access(); CHKERRQ(ierr);
+    ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
     ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
     ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
@@ -267,8 +267,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           // go through column and find appropriate lambda for BOMBPROOF
           PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
           for (PetscInt k = 1; k < ks; k++) {
-            const PetscScalar denom = (PetscAbs(system.w[k]) + epsilon)
-              * ice_rho * ice_c * fdz;
+            const PetscScalar denom = (PetscAbs(system.w[k]) + epsilon) * ice_rho * ice_c * fdz;
             lambda = PetscMin(lambda, 2.0 * ice_k / denom);
           }
           if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
@@ -281,21 +280,12 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           CHKERRQ(ierr);
 
           // set boundary values for tridiagonal system
-          ierr = system.setSurfaceBoundaryValuesThisColumn(artm(i,j)); CHKERRQ(ierr);
+          ierr = system.setSurfaceBoundaryValuesThisColumn(ice_surface_temp(i,j)); CHKERRQ(ierr);
           ierr = system.setBasalBoundaryValuesThisColumn(G0(i,j),shelfbtemp(i,j),(*Rb)(i,j)); CHKERRQ(ierr);
 
           // solve the system for this column; melting not addressed yet
-          PetscErrorCode pivoterr;
-          ierr = system.solveThisColumn(&x, pivoterr); CHKERRQ(ierr);
+          ierr = system.solveThisColumn(&x); CHKERRQ(ierr);
 
-          if (pivoterr != 0) {
-            ierr = PetscPrintf(PETSC_COMM_SELF,
-              "\n\ntridiagonal solve of tempSystemCtx in temperatureStep() FAILED at (%d,%d)\n"
-                  " with zero pivot position %d; viewing system to m-file ... \n",
-              i, j, pivoterr); CHKERRQ(ierr);
-            ierr = system.reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
-            SETERRQ(grid.com, 1,"PISM ERROR in temperatureStep()\n");
-          }
           if (viewOneColumn && issounding(i,j)) {
             ierr = PetscPrintf(grid.com,
               "\n\nin temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
@@ -333,8 +323,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
                                        "m/s", "m/year")); CHKERRQ(ierr);
             myLowTempCount++;
           }
-          if (Tnew[k] < artm(i,j) - bulgeMax) {
-            Tnew[k] = artm(i,j) - bulgeMax;  bulgeCount++;   }
+          if (Tnew[k] < ice_surface_temp(i,j) - bulgeMax) {
+            Tnew[k] = ice_surface_temp(i,j) - bulgeMax;  bulgeCount++;   }
         }
 
         // insert solution for ice base segment
@@ -364,13 +354,13 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
                                grid.convert(system.w[0], "m/s", "m/year")); CHKERRQ(ierr);
             myLowTempCount++;
           }
-          if (Tnew[0] < artm(i,j) - bulgeMax) {
-            Tnew[0] = artm(i,j) - bulgeMax;   bulgeCount++;   }
+          if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {
+            Tnew[0] = ice_surface_temp(i,j) - bulgeMax;   bulgeCount++;   }
         }
 
         // set to air temp above ice
         for (PetscInt k=ks; k<fMz; k++) {
-          Tnew[k] = artm(i,j);
+          Tnew[k] = ice_surface_temp(i,j);
         }
 
         // transfer column into vWork3d; communication later
@@ -406,7 +396,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
   ierr = bwatcurr.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);
 
-  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
 
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = shelfbtemp.end_access(); CHKERRQ(ierr);

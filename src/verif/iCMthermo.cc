@@ -70,7 +70,7 @@ PetscErrorCode IceCompModel::initTestFG() {
   T = new PetscScalar[grid.Mz];
 
   ierr = acab.get_array(accum); CHKERRQ(ierr);
-  ierr = artm.get_array(Ts); CHKERRQ(ierr);
+  ierr = ice_surface_temp.get_array(Ts); CHKERRQ(ierr);
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
@@ -103,7 +103,7 @@ PetscErrorCode IceCompModel::initTestFG() {
   ierr =     T3.end_access(); CHKERRQ(ierr);
 
   ierr = acab.end_access(); CHKERRQ(ierr);
-  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
 
   ierr = vH.update_ghosts(); CHKERRQ(ierr);
   
@@ -717,7 +717,7 @@ PetscErrorCode IceCompModel::initTestsKO() {
   }
 
   ierr = acab.set(0.0); CHKERRQ(ierr);
-  ierr = artm.set(223.15); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set(223.15); CHKERRQ(ierr);
 
   ierr = vbed.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.042); CHKERRQ(ierr);
