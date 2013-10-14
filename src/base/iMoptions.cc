@@ -149,6 +149,9 @@ PetscErrorCode IceModel::set_output_size(string option,
   if (nonneg_flux_2D_cumulative.was_created()) {
     result.insert("nonneg_flux_2D_cumulative");
   }
+  if (discharge_flux_2D_cumulative.was_created()) {
+    result.insert("discharge_flux_cumulative");
+  }
 
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):
