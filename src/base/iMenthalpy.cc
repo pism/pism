@@ -18,7 +18,6 @@
 
 #include "iceModel.hh"
 #include "enthSystem.hh"
-#include "varenthSystem.hh"
 #include "DrainageCalculator.hh"
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
