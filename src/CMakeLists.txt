@@ -125,6 +125,7 @@ add_library (pismbase
   base/iMcalving.cc
   base/iMenergy.cc
   base/iMenthalpy.cc
+  base/iMfractures.cc
   base/iMgeometry.cc
   base/iMinit.cc
   base/iMIO.cc

@@ -70,6 +70,12 @@ netcdf pism_config {
     pism_config:do_thickness_calving = "false";
     pism_config:do_thickness_calving_doc = "ad hoc calving at certain threshold for terminal ice thickness";
 
+    pism_config:do_fracture_density = "no";
+    pism_config:do_fracture_density_doc = "Calculation of fracture density according to stresses and strain rate field.";
+
+    pism_config:write_fd_fields = "no";
+    pism_config:write_fd_fields_doc = "Writing of fracture density related fields to nc-file.";
+
     pism_config:bed_deformation_model = "none";
     pism_config:bed_deformation_model_doc = "Selects a bed deformation model to use; possible choices are 'none', 'iso' (point-wise isostasy), 'lc' (see [\\ref LingleClark], requires FFTW3).";
 
