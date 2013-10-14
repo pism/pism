@@ -233,7 +233,13 @@ protected:
     vLatitude,	//!< Latitude; ghosted to compute cell areas
     vbed,		//!< bed topography; ghosted
     vuplift,	//!< bed uplift rate; no ghosts
-    vGhf,		//!< geothermal flux; no ghosts
+    vGhf,   //!< geothermal flux; no ghosts
+    vFD,    //!< fracture density
+    vFG,    //!< fracture growth rate
+    vFH,    //!< fracture healing rate
+    vFE,    //!< fracture flow enhancement
+    vFA,    //!< fracture age
+    vFT,    //!< fracture toughness
     bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
     vHref,          //!< accumulated mass advected to a partially filled grid cell
     vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
@@ -251,6 +257,9 @@ protected:
     flux_divergence;    //!< flux divergence
 
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
+  
+  IceModelVec2 deviatoric_stresses; //!< components of horizontal stress tensor along axes and shear stress
+  IceModelVec2 principal_stresses; //!< major and minor principal components of horizontal stress tensor
 
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
                          //!< grounded_ice, floating_ice, ice_free_ocean
@@ -375,6 +384,9 @@ protected:
   virtual PetscErrorCode dumpToFile(string filename);
   virtual PetscErrorCode regrid(int dimensions);
   virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
+
+  // see iMfractures.cc
+  virtual PetscErrorCode calculateFractureDensity();
 
   // see iMpartgrid.cc
   PetscReal get_average_thickness(bool do_redist, planeStar<int> M,

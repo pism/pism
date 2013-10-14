@@ -355,7 +355,7 @@ PetscErrorCode IceModel::createVecs() {
     }
   }
 
-  if (config.get_flag("do_eigen_calving") == true) {
+  if (config.get_flag("do_eigen_calving") == true || config.get_flag("do_fracture_density")== true) {
 
     ierr = strain_rates.create(grid, "edot", true,
                                2, // stencil width, has to match or exceed the "offset" in eigenCalving
@@ -370,6 +370,28 @@ PetscErrorCode IceModel::createVecs() {
     ierr = strain_rates.set_attrs("internal",
                                   "minor principal component of horizontal strain-rate",
                                   "1/s", "", 1); CHKERRQ(ierr);
+  }
+
+  if (config.get_flag("do_fracture_density")== true) {
+    
+    ierr = deviatoric_stresses.create(grid, "sigma", true,
+                               2, // stencil width
+                               3); CHKERRQ(ierr);
+    
+    ierr = deviatoric_stresses.set_name("sigma_xx", 0); CHKERRQ(ierr);
+    ierr = deviatoric_stresses.set_attrs("internal",
+                                  "deviatoric stress in x direction",
+                                  "Pa", "", 0); CHKERRQ(ierr);
+                                  
+    ierr = deviatoric_stresses.set_name("sigma_yy", 1); CHKERRQ(ierr);
+    ierr = deviatoric_stresses.set_attrs("internal",
+                                         "deviatoric stress in y direction",
+                                         "Pa", "", 1); CHKERRQ(ierr);   
+                                         
+    ierr = deviatoric_stresses.set_name("sigma_xy", 2); CHKERRQ(ierr);
+    ierr = deviatoric_stresses.set_attrs("internal",
+                                         "deviatoric shear stress",
+                                         "Pa", "", 2); CHKERRQ(ierr);
   }
 
   if (config.get_flag("ssa_dirichlet_bc") == true) {
@@ -404,6 +426,38 @@ PetscErrorCode IceModel::createVecs() {
     ierr = variables.add(vBCvel); CHKERRQ(ierr);
   }
 
+  // fracture density field
+  if (config.get_flag("do_fracture_density")) {
+    ierr = vFD.create(grid, "fracture_density", true, WIDE_STENCIL); CHKERRQ(ierr); 
+    // PROPOSED standard_name = fracture_density
+    ierr = vFD.set_attrs("model_state", "fracture density in ice shelf", "", ""); CHKERRQ(ierr);
+    ierr = vFD.set_attr("valid_max", 1.0); CHKERRQ(ierr);
+    ierr = vFD.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+    ierr = variables.add(vFD); CHKERRQ(ierr);
+
+    if (config.get_flag("write_fd_fields")) {
+      ierr = vFG.create(grid, "fracture_growth_rate", true, WIDE_STENCIL); CHKERRQ(ierr); 
+      ierr = vFG.set_attrs("model_state", "fracture growth rate",	"1/s", ""); CHKERRQ(ierr);
+      ierr = vFG.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+      ierr = variables.add(vFG); CHKERRQ(ierr);
+
+      ierr = vFH.create(grid, "fracture_healing_rate", true, WIDE_STENCIL); CHKERRQ(ierr); 
+      ierr = vFH.set_attrs("model_state", "fracture healing rate",	"1/s", ""); CHKERRQ(ierr);
+      ierr = variables.add(vFH); CHKERRQ(ierr);
+
+      ierr = vFE.create(grid, "fracture_flow_enhancement", true, WIDE_STENCIL); CHKERRQ(ierr); 
+      ierr = vFE.set_attrs("model_state", "fracture-induced flow enhancement", "", ""); CHKERRQ(ierr);
+      ierr = variables.add(vFE); CHKERRQ(ierr);
+
+      ierr = vFA.create(grid, "fracture_age", true, WIDE_STENCIL); CHKERRQ(ierr); 
+      ierr = vFA.set_attrs("model_state", "age since fracturing",	"years", ""); CHKERRQ(ierr);
+      ierr = variables.add(vFA); CHKERRQ(ierr);
+      
+      ierr = vFT.create(grid, "fracture_toughness", true, WIDE_STENCIL); CHKERRQ(ierr); 
+      ierr = vFT.set_attrs("model_state", "fracture toughness",	"Pa", ""); CHKERRQ(ierr);
+      ierr = variables.add(vFT); CHKERRQ(ierr);
+    }
+  }
 
   // cell areas
   ierr = cell_area.create(grid, "cell_area", false); CHKERRQ(ierr);

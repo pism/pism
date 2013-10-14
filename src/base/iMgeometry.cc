@@ -488,6 +488,11 @@ earlier. (CK)
 */
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
+  
+  if (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity")) {
+    ierr = calculateFractureDensity(); CHKERRQ(ierr);
+  }
+    
   PetscScalar
     // totals over the processor's domain:
     proc_H_to_Href_flux = 0,
