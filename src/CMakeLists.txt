@@ -117,7 +117,6 @@ add_library (pismbase
   base/columnSystem.cc
   base/energy/bedrockThermalUnit.cc
   base/energy/enthSystem.cc
-  base/energy/varenthSystem.cc
   base/energy/tempSystem.cc
   base/iMadaptive.cc
   base/iMage.cc

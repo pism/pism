@@ -19,7 +19,7 @@
 #ifndef __DrainageCalculator_hh
 #define __DrainageCalculator_hh
 
-class NCConfigVariable;
+#include "NCVariable.hh"
 
 //! Compute the rate of drainage D(omega) for temperate ice.
 class DrainageCalculator {

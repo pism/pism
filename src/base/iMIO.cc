@@ -491,7 +491,7 @@ PetscErrorCode IceModel::initFromFile(string filename) {
       if (liqfrac_exists) {
         ierr = verbPrintf(2, grid.com,
                           "* Computing enthalpy using ice temperature,"
-                          " liquid water fraction and thickness...\n"); CHKERRQ(ierr);
+                          "  liquid water fraction and thickness...\n"); CHKERRQ(ierr);
 
         // use vWork3d as already-allocated space
         ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);

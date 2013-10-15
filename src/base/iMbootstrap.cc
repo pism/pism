@@ -153,17 +153,11 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
     ierr = vLatitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
   }
 
-  ierr =         vH.regrid(filename, 
-                           config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
-  ierr =       vbed.regrid(filename,  
-                           config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
-  ierr =       vbmr.regrid(filename,  
-                           config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
-  ierr =       vGhf.regrid(filename,  
-                           config.get("bootstrapping_geothermal_flux_value_no_var"));
-  CHKERRQ(ierr);
-  ierr =    vuplift.regrid(filename,  
-                           config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
+  ierr = vH.regrid(filename, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
+  ierr = vbed.regrid(filename, config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
+  ierr = basal_melt_rate.regrid(filename, config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
+  ierr = vGhf.regrid(filename, config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
+  ierr = vuplift.regrid(filename, config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
   if (config.get_flag("part_grid")) {
     // if part_grid is "on", set fields tracking contents of partially-filled
@@ -305,7 +299,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
     KK = ice_k / (config.get("ice_density") * config.get("ice_specific_heat_capacity"));
 
   if (surface != NULL) {
-    ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
     if (!dontusesmb) {
       ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
     }
@@ -319,7 +313,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   else
     result = &Enth3;
 
-  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr =   vH.begin_access();   CHKERRQ(ierr);
   ierr = vGhf.begin_access(); CHKERRQ(ierr);
@@ -328,7 +322,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar HH = vH(i,j),
-                        Ts = artm(i,j),
+                        Ts = ice_surface_temp(i,j),
                         gg = vGhf(i,j);
       const PetscInt    ks = grid.kBelowHeight(HH);
 
@@ -372,7 +366,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
       // above ice
       for (PetscInt k = ks; k < grid.Mz; k++)
-        T[k] = artm(i,j);
+        T[k] = ice_surface_temp(i,j);
       
       // convert to enthalpy if that's what we are calculuting
       if (!do_cold) {
@@ -392,7 +386,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr =     vH.end_access(); CHKERRQ(ierr);
   ierr =   vGhf.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
-  ierr =   artm.end_access(); CHKERRQ(ierr);
+  ierr =   ice_surface_temp.end_access(); CHKERRQ(ierr);
   ierr =   acab.end_access(); CHKERRQ(ierr);
 
   delete [] T;

@@ -189,7 +189,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   ierr = IceModel::model_state_setup(); CHKERRQ(ierr);
 
   // Now save the basal melt rate at the beginning of the run.
-  ierr = bmr_stored.copy_from(vbmr); CHKERRQ(ierr);
+  ierr = bmr_stored.copy_from(basal_melt_rate); CHKERRQ(ierr);
 
   bool zgwnm;
   ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
@@ -245,7 +245,7 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   ierr = stress_balance->init(variables); CHKERRQ(ierr);
 
   if (config.get_flag("include_bmr_in_continuity")) {
-    ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
+    ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
   }
 
   return 0;
@@ -442,19 +442,19 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
 
-  // set vbmr; ghosts are comminucated later (in IceModel::energyStep()).
-  ierr = vbmr.begin_access(); CHKERRQ(ierr);
+  // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
+  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = bmr_stored.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (no_model_mask(i, j) < 0.5)
         continue;
 
-      vbmr(i, j) = bmr_stored(i, j);
+      basal_melt_rate(i, j) = bmr_stored(i, j);
     }
   }
   ierr = bmr_stored.end_access(); CHKERRQ(ierr);
-  ierr = vbmr.end_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
 
   ierr = no_model_mask.end_access(); CHKERRQ(ierr);
 

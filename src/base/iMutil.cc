@@ -254,7 +254,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   // PISMSurfaceModel.
 
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
     ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 1,"PISM ERROR: surface == PETSC_NULL");
@@ -265,16 +265,16 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   PetscReal p_air = EC->getPressureFromDepth(0.0);
   ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
-  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = EC->getEnthPermissive(artm(i,j), liqfrac_surface(i,j), p_air,
+      ierr = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air,
                                    vWork2d[0](i,j));
          CHKERRQ(ierr);
     }
   }
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
   ierr = liqfrac_surface.end_access(); CHKERRQ(ierr);
 
   // Model state 3D vectors:
@@ -284,7 +284,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr = vWork3d.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods")) {
-    ierr =    T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
+    ierr =    T3.extend_vertically(old_Mz, ice_surface_temp); CHKERRQ(ierr);
   }
 
   // deal with 3D age conditionally

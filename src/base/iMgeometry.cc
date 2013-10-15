@@ -26,7 +26,6 @@
 #include "PISMOcean.hh"
 #include "PISMSurface.hh"
 #include "PISMStressBalance.hh"
-#include "PISMIcebergRemover.hh"
 
 //! \file iMgeometry.cc Methods of IceModel which update and maintain consistency of ice sheet geometry.
 
@@ -468,7 +467,7 @@ We also compute total ice fluxes in kg s-1 at 3 interfaces:
       PISMSurfaceModel *surface,
   \li the ice-ocean interface at the bottom of ice shelves: gets ocean-imposed
       basal melt rate from PISMOceanModel *ocean, and
-  \li the ice-bedrock interface: gets basal melt rate from IceModelVec2S vbmr.
+  \li the ice-bedrock interface: gets basal melt rate from IceModelVec2S basal_melt_rate.
 
 A unit-conversion occurs for all three quantities, from ice-equivalent m s-1
 to kg s-1.  The sign convention about these fluxes is that positve flux means
@@ -543,7 +542,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vbmr.begin_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = Qdiff->begin_access(); CHKERRQ(ierr);
   ierr = vel_advective->begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
@@ -608,7 +607,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       if (include_bmr_in_continuity) {
         meltrate_floating = shelfbmassflux(i, j);
-        meltrate_grounded = vbmr(i, j);
+        meltrate_grounded = basal_melt_rate(i, j);
       }
 
       planeStar<PetscScalar> Q, v;
@@ -750,7 +749,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
     } // end of the inner (j) for loop
   } // end of the outer (i) for loop
 
-  ierr = vbmr.end_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = Qdiff->end_access(); CHKERRQ(ierr);
   ierr = vel_advective->end_access(); CHKERRQ(ierr);

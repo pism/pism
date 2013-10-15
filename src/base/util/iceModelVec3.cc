@@ -294,19 +294,10 @@ PetscErrorCode IceModelVec3::getPlaneStar_fine(PetscInt i, PetscInt j, PetscInt 
   return 0;
 }
 
-//! Return values of ice scalar quantity at given levels (m) above base of ice, using piecewise linear interpolation.
+//! \brief Return values of ice scalar quantity at given levels (m)
+//! above base of ice, using piecewise linear interpolation.
 /*!
-Input array `levelsIN` must be an allocated array of `nlevels` scalars 
-(`PetscScalar`).
-
-`levelsIN` must be strictly increasing and positive. Exceeding Lz is allowed,
-extrapolation (by the value at the top-most level) is performed in this case.
-
-Return array `valsOUT` must be an allocated array of `nlevels` scalars 
-(`PetscScalar`).
-
-Upon return, `valsOUT` will be filled with values of scalar quantity at 
-the \f$z\f$ values in `levelsIN`.
+ * ks is the top-most fine vertical grid level within the ice
  */
 PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
 					    PetscScalar *result) {
@@ -340,12 +331,8 @@ PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
   return 0;
 }
 
-//! Return values of ice scalar quantity on the fine computational grid, using local quadratic interpolation.
-/*!
-
-Return array `valsOUT` must be an allocated array of `grid.Mz_fine` scalars 
-(`PetscScalar`).
- */
+//! \brief Return values of ice scalar quantity on the fine
+//! computational grid, using local quadratic interpolation.
 PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt ks,
 					       PetscScalar *result) {
 #if (PISM_DEBUG==1)
@@ -358,7 +345,7 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
 
   for (PetscInt k = 0; k < grid->Mz_fine; k++) {
     if (k > ks) {
-      result[k] = arr[i][j][grid->ice_storage2fine[k]];
+      result[k] = column[grid->ice_storage2fine[k]];
       continue;
     }
 

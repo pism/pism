@@ -309,15 +309,15 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vuplift); CHKERRQ(ierr);
 
   // basal melt rate
-  ierr = vbmr.create(grid, "bmelt", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = basal_melt_rate.create(grid, "bmelt", true, WIDE_STENCIL); CHKERRQ(ierr);
   // ghosted to allow the "redundant" computation of tauc
-  ierr = vbmr.set_attrs("model_state",
+  ierr = basal_melt_rate.set_attrs("model_state",
             "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
             "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
-  ierr = vbmr.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vbmr.write_in_glaciological_units = true;
-  vbmr.set_attr("comment", "positive basal melt rate corresponds to ice loss");
-  ierr = variables.add(vbmr); CHKERRQ(ierr);
+  ierr = basal_melt_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  basal_melt_rate.write_in_glaciological_units = true;
+  basal_melt_rate.set_attr("comment", "positive basal melt rate corresponds to ice loss");
+  ierr = variables.add(basal_melt_rate); CHKERRQ(ierr);
 
   // longitude
   ierr = vLongitude.create(grid, "lon", true); CHKERRQ(ierr);
@@ -486,8 +486,8 @@ PetscErrorCode IceModel::createVecs() {
 
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
-  ierr = artm.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-  ierr = artm.set_attrs(
+  ierr = ice_surface_temp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "annual average ice surface temperature, below firn processes",
                         "K",

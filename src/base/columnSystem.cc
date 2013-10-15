@@ -39,19 +39,12 @@ Thus the index into the arrays L, D, U is always the row number.
 
 Note L[0] is not allocated and U[N-1] is not allocated.
  */
-columnSystemCtx::columnSystemCtx(PetscInt my_nmax, string my_prefix) : nmax(my_nmax), prefix(my_prefix) {
-  if (nmax < 1) {
-    PetscPrintf(PETSC_COMM_WORLD,
-      "columnSystemCtx ERROR: nmax of system too small\n");
-    PISMEnd();
-  }
-  if (nmax > 1000000) {
-    PetscPrintf(PETSC_COMM_WORLD,
-      "columnSystemCtx ERROR: nmax of system unreasonable (> 10^6)\n");
-    PISMEnd();
-  }
+columnSystemCtx::columnSystemCtx(PetscInt my_nmax, string my_prefix)
+  : nmax(my_nmax), prefix(my_prefix) {
+  assert(nmax >= 1 && nmax < 1e6);
+
   Lp   = new PetscScalar[nmax-1];
-  L    = Lp-1; // ptr arith.; note L[0]=Lp[-1] not allocated
+  L    = Lp-1; // ptr arithmetic; note L[0]=Lp[-1] not allocated
   D    = new PetscScalar[nmax];
   U    = new PetscScalar[nmax-1];
   rhs  = new PetscScalar[nmax];
@@ -60,7 +53,6 @@ columnSystemCtx::columnSystemCtx(PetscInt my_nmax, string my_prefix) : nmax(my_n
   resetColumn();
 
   indicesValid = false;
-
 }
 
 
@@ -137,12 +129,14 @@ PetscScalar columnSystemCtx::ddratio(const PetscInt n) const {
 }
 
 
-PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(
-                  PetscInt my_i, PetscInt my_j, PetscInt my_ks) {
-  if (indicesValid) {  SETERRQ(PETSC_COMM_SELF, 3,
-     "setIndicesAndClearThisColumn() called twice in same column"); }
-  i = my_i;
-  j = my_j;
+PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(PetscInt my_i, PetscInt my_j,
+                                                             PetscInt my_ks) {
+  if (indicesValid && i == my_i && j == my_j) {
+    SETERRQ(PETSC_COMM_SELF, 3, "setIndicesAndClearThisColumn() called twice in same column");
+  }
+
+  i  = my_i;
+  j  = my_j;
   ks = my_ks;
 
   resetColumn();
@@ -290,13 +284,12 @@ Success is return code zero.  Positive return code gives location of zero pivot.
 Negative return code indicates a software problem.
  */
 PetscErrorCode columnSystemCtx::solveTridiagonalSystem(const PetscInt n, PetscScalar **x) {
-#if (PISM_DEBUG==1)
   assert(x != NULL);
   assert(*x != NULL);
   assert(indicesValid == true);
   assert(n >= 1);
   assert(n <= nmax);
-#endif
+
   PetscScalar b = D[0];
 
   if (b == 0.0)
@@ -366,6 +359,12 @@ and row and column sums, and so on.
 PetscErrorCode columnSystemCtx::viewColumnInfoMFile(PetscScalar *x, PetscInt n) {
   PetscErrorCode ierr;
   char fname[PETSC_MAX_PATH_LEN];
+
+  ierr = PetscPrintf(PETSC_COMM_SELF,
+                     "\n\n"
+                     "saving %s column system at (i,j)=(%d,%d) to m-file...\n\n",
+                     prefix.c_str(), i, j); CHKERRQ(ierr);
+
   snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d.m", prefix.c_str(), i,j);
   ierr = viewColumnInfoMFile(fname, x, n); CHKERRQ(ierr);
   return 0;
