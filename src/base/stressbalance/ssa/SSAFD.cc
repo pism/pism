@@ -1129,6 +1129,18 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = m_velocity.get_array(uv); CHKERRQ(ierr);
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
+  
+  //////////////////////////////////////////////////////////////////////////////////////
+  IceModelVec2S &fd = *fracdens; 
+  bool dofd = (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity"));
+  if (dofd) 
+    ierr = fd.begin_access(); CHKERRQ(ierr);
+    
+  PetscScalar soft_residual = 1.0;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-fracture_softening", &soft_residual, PETSC_NULL);
+  //assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
+  //more: T. Albrecht, A. Levermann; Fracture-induced softening for large-scale ice dynamics; (2013), 
+  //The Cryosphere Discussions 7; 4501-4544; DOI:10.5194/tcd-7-4501-2013
 
   PetscScalar ssa_enhancement_factor = flow_law->enhancement_factor(),
     n_glen = flow_law->exponent(),
@@ -1164,11 +1176,23 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
           v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
         }
 
-	PetscReal nu;
-	flow_law->effective_viscosity(hardness(i,j,o),
-				      secondInvariant_2D(u_x, u_y, v_x, v_y),
-				      &nu, NULL);
+        PetscReal nu;
+        if (dofd) {
+          PetscScalar frdens=0.0;
+          if (o == 0) {
+            frdens = 0.5*(fd(i+1,j)+fd(i,j));
+          } else {
+            frdens = 0.5*(fd(i,j+1)+fd(i,j));
+          }
+          PetscScalar softening = pow((1.0-(1.0-soft_residual)*frdens),-n_glen);
+          flow_law->effective_viscosity(hardness(i,j,o)/pow(softening,1/n_glen),secondInvariant_2D(u_x, u_y, v_x, v_y),&nu, NULL);
+        }
+        else
+          flow_law->effective_viscosity(hardness(i,j,o),secondInvariant_2D(u_x, u_y, v_x, v_y),&nu, NULL);
+
         result(i,j,o) = nu * H;
+
+
 
         if (! finite(result(i,j,o)) || false) {
           ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));
@@ -1192,6 +1216,8 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = hardness.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = m_velocity.end_access(); CHKERRQ(ierr);
+  
+  if (dofd) { ierr = fd.end_access(); CHKERRQ(ierr); }
 
   // Some communication
   ierr = result.update_ghosts(); CHKERRQ(ierr);
