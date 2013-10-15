@@ -6,7 +6,7 @@
 #     (can be reduced to '-cfbc -kill_icebergs')
 # -ssa_method fem seems not to work?
 
-NN=4  # default number of processors
+NN=1  # default number of processors
 if [ $# -gt 0 ] ; then  # if user says "run_prog.sh 8" then NN = 8
   NN="$1"
 fi
@@ -35,7 +35,7 @@ if [ $# -gt 4 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16" then ...
 fi
 
 PISMPREFIX=""
-# PISMPREFIX="../../../bin/"
+#PISMPREFIX="../../../bin/"
 
 cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file Ross_combined_prog.nc -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given -no_sia \

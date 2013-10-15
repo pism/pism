@@ -60,8 +60,8 @@ fi
 
 # options ###############################
 
-#PISMPREFIX=""
-PISMPREFIX="../../../bin/"
+PISMPREFIX=""
+#PISMPREFIX="../../../bin/"
 
 output="-o Mx${M}_year-000${YEARS}.nc -o_order zyx -o_size big"
 
@@ -102,7 +102,8 @@ cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file Ross_combined_prog.nc -Mx
   -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx -fractures 0,0,0,0 -write_fd_fields "
 
 cmd_prog_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc -surface given \
-  ${ssa} -y ${YEARS} ${output} ${calving} ${fractures} ${extra} ${timeseries} -verbose 3 "
+  ${ssa} -y ${YEARS} ${output} ${calving} ${fractures} ${extra} ${timeseries} -verbose 4 "
+
 
 
 # -ssa_rtol 1.0e-3 -ssa_eps 5.0e15
