@@ -20,23 +20,18 @@
 #include <cmath>
 #include <petscdmda.h>
 #include "iceModel.hh"
-#include "pism_signal.h"
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
-#include "PISMTime.hh"
 
+// FIXME: remove unused commented-out code.
 
 //! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
 
-
 PetscErrorCode IceModel::calculateFractureDensity() {
-  const PetscScalar   dx = grid.dx, dy = grid.dy, dz=grid.dz_fine, Mx = grid.Mx, My = grid.My, Mz = grid.Mz;
+  const PetscScalar dx = grid.dx, dy = grid.dy, Mx = grid.Mx, My = grid.My;
   PetscErrorCode ierr;
-  ierr = verbPrintf(3, grid.com, "######### calculateFractureDensity() start \n");    CHKERRQ(ierr);
-  PetscScalar mathpi = 3.14159265358979;
   
-  IceModelVec2S vFDnew = vWork2d[0];
-  IceModelVec2S vFAnew = vWork2d[1];
+  IceModelVec2S vFDnew = vWork2d[0], vFAnew = vWork2d[1];
   
   // get SSA velocities and related strain rates and stresses
   IceModelVec2V *ssa_velocity;
@@ -52,7 +47,6 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   ierr = vFD.copy_to(vFDnew); CHKERRQ(ierr);
   ierr = vFDnew.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access();  CHKERRQ(ierr);
-  
   
   const bool dirichlet_bc = config.get_flag("ssa_dirichlet_bc");
   if (dirichlet_bc) {
@@ -101,14 +95,13 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     PISMEnd();
   }
   PetscReal gamma = inarrayf[0], 
-             initThreshold = inarrayf[1], 
-             gammaheal= inarrayf[2], 
-             healThreshold = inarrayf[3];
+    initThreshold = inarrayf[1], 
+    gammaheal     = inarrayf[2], 
+    healThreshold = inarrayf[3];
   
   ierr = verbPrintf(3, grid.com,"PISM-PIK INFO: fracture density is found with parameters:\n gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n", gamma,initThreshold,gammaheal,healThreshold,soft_residual); 
   CHKERRQ(ierr);
-  
-  
+    
   //const bool do_fracground = config.get_flag("do_frac_on_grounded"); 
   PetscBool do_fracground;   
   ierr = PetscOptionsHasName(NULL,"-do_frac_on_grounded",&do_fracground); CHKERRQ(ierr);
@@ -133,8 +126,6 @@ PetscErrorCode IceModel::calculateFractureDensity() {
    
   PetscBool fd2d_scheme;   
   ierr = PetscOptionsHasName(NULL,"-scheme_fd2d",&fd2d_scheme); CHKERRQ(ierr);
-  
-   
   
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
@@ -164,7 +155,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         else if (uvel>=-dx*vvel/dy && vvel<=0.0) //8
           tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx - vvel*(vFD(i-1,j)-vFD(i-1,j+1))/dy;
         else{
-          ierr = verbPrintf(3,grid.com,"######### missing case of angle %f of %f and %f at %d, %d \n",atan(vvel/uvel)/mathpi*180.,uvel*3e7,vvel*3e7,i,j);
+          ierr = verbPrintf(3,grid.com,"######### missing case of angle %f of %f and %f at %d, %d \n",atan(vvel/uvel)/M_PI*180.,uvel*3e7,vvel*3e7,i,j);
         }
       }
       else{
@@ -175,7 +166,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
       vFDnew(i,j)-= tempFD * dt;
           
       //sources /////////////////////////////////////////////////////////////////
-      ///van mises crierion
+      ///von mises criterion
       PetscScalar txx = deviatoric_stresses(i , j, 0),
                   tyy = deviatoric_stresses(i , j, 1),
                   txy = deviatoric_stresses(i , j, 2),
@@ -188,33 +179,34 @@ PetscErrorCode IceModel::calculateFractureDensity() {
       ///max shear stress criterion (more stringent than von mises)
       if (max_shear_stress){
         PetscScalar maxshear=PetscAbs(T1);
-                    maxshear=PetscMax(maxshear,PetscAbs(T2));
-                    maxshear=PetscMax(maxshear,PetscAbs(T1-T2));
+        maxshear=PetscMax(maxshear,PetscAbs(T2));
+        maxshear=PetscMax(maxshear,PetscAbs(T1-T2));
   
         sigmat=maxshear;
       }
       
       ///lefm mixed-mode criterion
       if (lefm){
-        PetscScalar sigmabeta = 45.0*mathpi/180.0; //crack orientation with respect to principal stress axes
+        // PetscScalar sigmabeta = 45.0*M_PI/180.0; //crack orientation with respect to principal stress axes
         PetscScalar sigmamu = 0.1; //friction coefficient between crack faces
         
         //PetscScalar sigmac = 0.08; //initial crack depth 8cm
-        //PetscScalar sigmac = 1/mathpi; //initial crack depth 32cm
-        PetscScalar sigmac = 0.64/mathpi; //initial crack depth 20cm
+        //PetscScalar sigmac = 1/M_PI; //initial crack depth 32cm
+        PetscScalar sigmac = 0.64/M_PI; //initial crack depth 20cm
         
         // PetscScalar sigmateta = 0.0;
         // if ((txx(i,j)-tyy(i,j))!=0.0)
         //   sigmateta = 0.5*atan(2.0*txy(i,j)/(txx(i,j)-tyy(i,j)));
         // else
-        //   sigmateta = 45.0*mathpi/180.0;
-        //sigmateta = sigmateta +45.*mathpi/180;
+        //   sigmateta = 45.0*M_PI/180.0;
+        //sigmateta = sigmateta +45.*M_PI/180;
           
-        PetscScalar sigmabetatest, sigmanor, sigmatau, sigmatau1, sigmatau2, Kone, Ktwo, KSI, KSImax, sigmabetanull, sigmatetanull;
+        PetscScalar sigmabetatest, sigmanor, sigmatau, Kone, Ktwo,
+          KSI, KSImax, sigmabetanull, sigmatetanull;
         KSImax=0.0;
         sigmabetanull=0.0;
         for (PetscInt l = 46; l <= 90; ++l) { //optimize for various precursor angles beta 
-          sigmabetatest = l*mathpi/180.0;
+          sigmabetatest = l*M_PI/180.0;
           
           //rist_sammonds99
           sigmanor = 0.5*(T1+T2)-(T1-T2)*cos(2*sigmabetatest);
@@ -232,8 +224,8 @@ PetscErrorCode IceModel::calculateFractureDensity() {
           }
             
           //stress intensity factors
-          Kone = sigmanor*sqrt(mathpi*sigmac);//normal
-          Ktwo = sigmatau*sqrt(mathpi*sigmac);//shear
+          Kone = sigmanor*sqrt(M_PI*sigmac);//normal
+          Ktwo = sigmatau*sqrt(M_PI*sigmac);//shear
             
           if (Ktwo==0.0)
             sigmatetanull=0.0;
@@ -386,7 +378,6 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   ierr = strain_rates.end_access(); CHKERRQ(ierr);
   ierr = deviatoric_stresses.end_access(); CHKERRQ(ierr);
   ierr = vFDnew.update_ghosts(vFD); CHKERRQ(ierr);
-
  
   return 0;
 }
