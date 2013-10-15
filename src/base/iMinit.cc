@@ -779,7 +779,7 @@ PetscErrorCode IceModel::allocate_stressbalance() {
     ierr = stress_balance->init(variables); CHKERRQ(ierr);
 
     if (config.get_flag("include_bmr_in_continuity")) {
-      ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
+      ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
     }
   }
 

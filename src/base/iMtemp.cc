@@ -112,8 +112,8 @@ This method should be kept because it is worth having alternative physics, and
 
     An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
-    In this procedure two scalar fields are modified: vbmr and vWork3d.
-    But vbmr will never need to communicate ghosted values (horizontal stencil
+    In this procedure two scalar fields are modified: basal_melt_rate and vWork3d.
+    But basal_melt_rate will never need to communicate ghosted values (horizontal stencil
     neighbors).  The ghosted values for T3 are updated from the values in vWork3d in the
     communication done by energyStep().
 
@@ -219,7 +219,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
     ierr = vH.begin_access(); CHKERRQ(ierr);
-    ierr = vbmr.get_array(basalMeltRate); CHKERRQ(ierr);
+    ierr = basal_melt_rate.get_array(basalMeltRate); CHKERRQ(ierr);
     ierr = vMask.begin_access(); CHKERRQ(ierr);
     ierr = G0.begin_access(); CHKERRQ(ierr);
     ierr = bwatcurr.begin_access(); CHKERRQ(ierr);
@@ -394,7 +394,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
   ierr = Rb->end_access(); CHKERRQ(ierr);
   ierr = G0.end_access(); CHKERRQ(ierr);
   ierr = bwatcurr.end_access(); CHKERRQ(ierr);
-  ierr = vbmr.end_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
 
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
 

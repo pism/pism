@@ -153,17 +153,11 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
     ierr = vLatitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
   }
 
-  ierr =         vH.regrid(filename, 
-                           config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
-  ierr =       vbed.regrid(filename,  
-                           config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
-  ierr =       vbmr.regrid(filename,  
-                           config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
-  ierr =       vGhf.regrid(filename,  
-                           config.get("bootstrapping_geothermal_flux_value_no_var"));
-  CHKERRQ(ierr);
-  ierr =    vuplift.regrid(filename,  
-                           config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
+  ierr = vH.regrid(filename, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
+  ierr = vbed.regrid(filename, config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
+  ierr = basal_melt_rate.regrid(filename, config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
+  ierr = vGhf.regrid(filename, config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
+  ierr = vuplift.regrid(filename, config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
   if (config.get_flag("part_grid")) {
     // if part_grid is "on", set fields tracking contents of partially-filled

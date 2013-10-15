@@ -221,7 +221,7 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
     ierr = stress_balance->init(variables); CHKERRQ(ierr);
 
     if (config.get_flag("include_bmr_in_continuity")) {
-      ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
+      ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
     }
   }
   
@@ -342,7 +342,7 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   // communicate b in any case; it will be horizontally-differentiated
   ierr = vbed.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = vbmr.set(0.0); CHKERRQ(ierr);
+  ierr = basal_melt_rate.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.042); CHKERRQ(ierr);  // EISMINT II value; J m-2 s-1
 
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start

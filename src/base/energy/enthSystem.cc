@@ -59,11 +59,11 @@ enthSystemCtx::enthSystemCtx(const NCConfigVariable &config,
 
   Enth3 = &my_Enth3;  // points to IceModelVec3
 
-  dx     = my_dx;
-  dy     = my_dy;
-  dt     = my_dt;
-  dz     = my_dz;
-  nu     = dt / dz;
+  dx = my_dx;
+  dy = my_dy;
+  dt = my_dt;
+  dz = my_dz;
+  nu = dt / dz;
 
   R_factor = dt / (PetscSqr(dz) * ice_rho);
   R_cold = ice_K * R_factor;

@@ -31,7 +31,7 @@
 /*!
 This method updates three fields:
   - IceModelVec3 Enth3
-  - IceModelVec2 vbmr
+  - IceModelVec2 basal_melt_rate
   - IceModelVec2 vHmelt
 That is, energyStep() is in charge of calling other methods that actually update, and
 then it is in charge of doing the ghost communication as needed.  If
@@ -89,7 +89,7 @@ PetscErrorCode IceModel::energyStep() {
 
   // Both cases above update the basal melt rate field; here we update its
   // ghosts, which are needed to compute tauc locally
-  ierr = vbmr.update_ghosts(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.update_ghosts(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 

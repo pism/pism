@@ -631,15 +631,15 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
   // we just need one constant from exact solution:
   ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
 
-  ierr = vbmr.begin_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      err = PetscAbs(vbmr(i,j) - bmelt);
+      err = PetscAbs(basal_melt_rate(i,j) - bmelt);
       maxbmelterr = PetscMax(maxbmelterr, err);
       minbmelterr = PetscMin(minbmelterr, err);
     }
   }
-  ierr = vbmr.end_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalMax(&maxbmelterr, &gmaxbmelterr, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalMin(&minbmelterr, &gminbmelterr, grid.com); CHKERRQ(ierr);
@@ -697,7 +697,7 @@ PetscErrorCode IceCompModel::fillBasalMeltRateSolnTestO() {
   // we just need one constant from exact solution:
   ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
 
-  ierr = vbmr.set(bmelt); CHKERRQ(ierr);
+  ierr = basal_melt_rate.set(bmelt); CHKERRQ(ierr);
   return 0;
 }
 

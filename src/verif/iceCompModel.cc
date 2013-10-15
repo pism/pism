@@ -352,7 +352,7 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   // all have no uplift
   ierr = vuplift.set(0.0); CHKERRQ(ierr);
 
-  ierr = vbmr.set(0.0); CHKERRQ(ierr); // this is the correct initialization for
+  ierr = basal_melt_rate.set(0.0); CHKERRQ(ierr); // this is the correct initialization for
                                        // Test O (and every other Test; they
                                        // all generate zero basal melt rate)
 
