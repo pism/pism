@@ -38,6 +38,9 @@ SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
   enthalpy = NULL;
   driving_stress_x = NULL;
   driving_stress_y = NULL;
+  if (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity")) {
+    fracdens = NULL;
+  }
   if (config.get_flag("sub_groundingline")) {
     gl_mask = NULL;
   }
@@ -83,6 +86,11 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
+  
+  if (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity")) {
+    fracdens = dynamic_cast<IceModelVec2S*>(vars.get("fracture_density"));
+    if (fracdens == NULL) SETERRQ(grid.com, 1, "fracture density is not available");
+  }
 
 
   // Check if PISM is being initialized from an output file from a previous run

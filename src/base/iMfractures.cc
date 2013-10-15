@@ -76,6 +76,13 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   
   //options
   /////////////////////////////////////////////////////////
+  PetscScalar soft_residual = 1.0;
+  PetscBool fracture_soft; 
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-fracture_softening", &soft_residual, &fracture_soft);
+  //assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
+  //more: T. Albrecht, A. Levermann; Fracture-induced softening for large-scale ice dynamics; (2013), 
+  //The Cryosphere Discussions 7; 4501-4544; DOI:10.5194/tcd-7-4501-2013
+  
   //get four options for calculation of fracture density.
   //1st: fracture growth constant gamma
   //2nd: fracture initiation stress threshold sigma_cr 
@@ -98,7 +105,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
              gammaheal= inarrayf[2], 
              healThreshold = inarrayf[3];
   
-  ierr = verbPrintf(3, grid.com,"PISM-PIK INFO: fracture density is found with parameters:\n gamma=%.2f, sigma_cr=%.2f, gammah=%.2f and healing_cr=%e \n", gamma,initThreshold,gammaheal,healThreshold); 
+  ierr = verbPrintf(3, grid.com,"PISM-PIK INFO: fracture density is found with parameters:\n gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n", gamma,initThreshold,gammaheal,healThreshold,soft_residual); 
   CHKERRQ(ierr);
   
   
@@ -127,12 +134,6 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   PetscBool fd2d_scheme;   
   ierr = PetscOptionsHasName(NULL,"-scheme_fd2d",&fd2d_scheme); CHKERRQ(ierr);
   
-  PetscScalar soft_residual = 1.0;
-  PetscBool fracture_soft; 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-fracture_softening", &soft_residual, &fracture_soft);
-  //assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
-  //more: T. Albrecht, A. Levermann; Fracture-induced softening for large-scale ice dynamics; (2013), 
-  //The Cryosphere Discussions 7; 4501-4544; DOI:10.5194/tcd-7-4501-2013
    
   
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
