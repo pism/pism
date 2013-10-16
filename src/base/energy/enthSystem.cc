@@ -104,6 +104,7 @@ PetscScalar enthSystemCtx::k_from_T(PetscScalar T) {
 
 PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
                                              PetscReal my_ice_thickness,
+                                             PetscReal till_water_thickness,
                                              IceModelVec3 *u3,
                                              IceModelVec3 *v3,
                                              IceModelVec3 *w3,
@@ -134,9 +135,16 @@ PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismargi
   ierr = v3->getValColumn(i, j, m_ks, v); CHKERRQ(ierr);
   ierr = w3->getValColumn(i, j, m_ks, w); CHKERRQ(ierr);
   ierr = strain_heating3->getValColumn(i, j, m_ks, strain_heating); CHKERRQ(ierr);
-  ierr = Enth3->getValColumn(i, j, m_ks, Enth); CHKERRQ(ierr);
 
-  ierr     = compute_enthalpy_CTS(); CHKERRQ(ierr);
+  ierr = Enth3->getValColumn(i, j, m_ks, Enth); CHKERRQ(ierr);
+  ierr = compute_enthalpy_CTS(); CHKERRQ(ierr);
+  // if there is subglacial water, don't allow ice base enthalpy to be below
+  // pressure-melting; that is, assume subglacial water is at the pressure-
+  // melting temperature and enforce continuity of temperature
+  if (till_water_thickness > 0.0 && Enth[0] < Enth_s[0]) {
+    Enth[0] = Enth_s[0];
+  }
+
   m_lambda = compute_lambda();
 
   ierr = assemble_R(); CHKERRQ(ierr);

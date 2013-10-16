@@ -24,6 +24,7 @@
 #include "pism_options.hh"
 #include "flowlaw_factory.hh"
 #include "PIO.hh"
+#include "enthalpyConverter.hh"
 
 SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
          EnthalpyConverter &e,
@@ -242,8 +243,6 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   bool cfbc = config.get_flag("calving_front_stress_boundary_condition");
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
-  PetscReal standard_gravity = config.get("standard_gravity"),
-    ice_rho = config.get("ice_density");
   bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
   ierr =   surface->begin_access();    CHKERRQ(ierr);
@@ -257,7 +256,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = ice_rho * standard_gravity * thk(i,j); // FIXME issue #15
+      const PetscScalar pressure = EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
       if (pressure <= 0.0) {
         result(i,j).u = 0.0;
         result(i,j).v = 0.0;

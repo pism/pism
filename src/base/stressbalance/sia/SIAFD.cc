@@ -542,17 +542,14 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   IceModelVec2S thk_smooth = work_2d[0],
     theta = work_2d[1];
 
-  bool full_update = !fast;
+  bool full_update = (fast == false);
 
   ierr = result.set(0.0); CHKERRQ(ierr);
 
   PetscScalar *delta_ij;
   delta_ij = new PetscScalar[grid.Mz];
 
-  const double enhancement_factor = flow_law->enhancement_factor(),
-    standard_gravity = config.get("standard_gravity"),
-    ice_rho = config.get("ice_density");
-
+  const double enhancement_factor = flow_law->enhancement_factor();
   double ice_grain_size = config.get("ice_grain_size");
 
   bool compute_grain_size_using_age = config.get_flag("compute_grain_size_using_age");
@@ -637,7 +634,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
           PetscReal depth = thk - grid.zlevels[k]; // FIXME issue #15
           // pressure added by the ice (i.e. pressure difference between the
           // current level and the top of the column)
-          const PetscScalar pressure = ice_rho * standard_gravity * depth;
+          const PetscScalar pressure = EC.getPressureFromDepth(depth);
 
           PetscScalar flow;
           if (use_age) {
