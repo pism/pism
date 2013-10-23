@@ -165,7 +165,9 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
 
         discharge  = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
 
-        discharge_flux_2D_cumulative(i,j) += discharge;
+        if (update_2d_discharge)
+          discharge_flux_2D_cumulative(i,j) += discharge;
+
         my_total_discharge += discharge;
       }
     }
