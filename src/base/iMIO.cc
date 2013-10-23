@@ -697,7 +697,6 @@ PetscErrorCode IceModel::init_snapshots() {
   //! Writes a snapshot of the model state (if necessary)
 PetscErrorCode IceModel::write_snapshot() {
   PetscErrorCode ierr;
-  PIO nc(grid, grid.config.get_string("output_format"));
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
   // value is never used, because saving_after
   // is only used if save_now == true, and in
@@ -739,6 +738,8 @@ PetscErrorCode IceModel::write_snapshot() {
                     filename, grid.time->date().c_str(),
                     grid.time->date(saving_after).c_str());
   CHKERRQ(ierr);
+
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   if (!snapshots_file_is_ready) {
     // Prepare the snapshots file:
@@ -815,7 +816,6 @@ PetscErrorCode IceModel::init_backups() {
 PetscErrorCode IceModel::write_backup() {
   PetscErrorCode ierr;
   double wall_clock_hours;
-  PIO nc(grid, grid.config.get_string("output_format"));
 
   if (grid.rank == 0) {
     PetscLogDouble current_time;
@@ -844,6 +844,8 @@ PetscErrorCode IceModel::write_backup() {
                     backup_filename.c_str(), wall_clock_hours); CHKERRQ(ierr);
 
   stampHistory(tmp);
+
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   // write metadata:
   ierr = nc.open(backup_filename, PISM_WRITE); CHKERRQ(ierr);

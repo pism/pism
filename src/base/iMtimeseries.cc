@@ -369,7 +369,6 @@ PetscErrorCode IceModel::init_extras() {
 //! Write spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::write_extras() {
   PetscErrorCode ierr;
-  PIO nc(grid, grid.config.get_string("output_format"));
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
 				 // value is never used, because saving_after
 				 // is only used if save_now == true, and in
@@ -460,6 +459,8 @@ PetscErrorCode IceModel::write_extras() {
   }
 
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
+
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   if (!extra_file_is_ready) {
     // default behavior is to move the file aside if it exists already; option allows appending
