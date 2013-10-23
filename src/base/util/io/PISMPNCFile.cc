@@ -633,7 +633,7 @@ void PISMPNCFile::init_hints() {
 
   std::vector<std::string>::iterator j = mpi_io_hints.begin();
   while (j != mpi_io_hints.end()) {
-    istringstream arg(*j);
+    std::istringstream arg(*j);
     std::vector<std::string> words;
     std::string word;
     while (getline(arg, word, ':'))
