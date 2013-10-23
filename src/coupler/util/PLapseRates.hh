@@ -98,12 +98,12 @@ protected:
   unsigned int bc_period;
   PetscReal bc_reference_time,          // in seconds
     temp_lapse_rate;
-  string option_prefix;
+  std::string option_prefix;
 
   virtual PetscErrorCode init_internal(PISMVars &vars)
   {
     PetscErrorCode ierr;
-    string filename;
+    std::string filename;
     bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
 
     IceGrid &g = Mod::grid;

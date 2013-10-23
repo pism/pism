@@ -165,7 +165,7 @@ PetscErrorCode IcePSTexModel::prepare_series() {
   strncpy(seriesname,"ser_pst_", PETSC_MAX_PATH_LEN);
   strcat(seriesname,outname);
 
-  string time_dimension_name = config.get_string("time_dimension_name");
+  std::string time_dimension_name = config.get_string("time_dimension_name");
 
   ierr = verbPrintf(2,grid.com, 
     "  will write time series with special PST information to %s ...\n",
@@ -352,7 +352,7 @@ PetscErrorCode IcePSTexModel::allocate_stressbalance() {
   return 0;
 }
 
-PetscErrorCode IcePSTexModel::initFromFile(string fname) {
+PetscErrorCode IcePSTexModel::initFromFile(std::string fname) {
   PetscErrorCode      ierr;
 
   ierr = IceEISModel::initFromFile(fname); CHKERRQ(ierr);

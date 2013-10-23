@@ -186,7 +186,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
 PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode  ierr;
 
-  const string method = config.get_string("surface_gradient_method");
+  const std::string method = config.get_string("surface_gradient_method");
 
   if (method == "eta") {
 

@@ -239,7 +239,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
    
           if (KSI>KSImax)
             sigmabetanull=sigmabetatest;
-          KSImax=max(KSI,KSImax);
+          KSImax=std::max(KSI,KSImax);
           }
           sigmat=KSImax;      
           //sigmat=PetscAbs(0.5*(T1+T2)-(T1-T2)*cos(2*sigmabetanull));        

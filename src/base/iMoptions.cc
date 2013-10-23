@@ -99,13 +99,13 @@ PetscErrorCode  IceModel::setFromOptions() {
 }
 
 //! Assembles a list of variables corresponding to an output file size.
-PetscErrorCode IceModel::set_output_size(string option,
-					 string description,
-					 string default_value,
-					 set<string> &result) {
+PetscErrorCode IceModel::set_output_size(std::string option,
+					 std::string description,
+					 std::string default_value,
+					 std::set<std::string> &result) {
   PetscErrorCode ierr;
-  set<string> choices;
-  string keyword;
+  std::set<std::string> choices;
+  std::string keyword;
   bool flag;
 
   result.clear();
@@ -123,13 +123,13 @@ PetscErrorCode IceModel::set_output_size(string option,
 			 default_value, keyword, flag); CHKERRQ(ierr);
 
   // Add all the model-state variables:
-  set<string> vars = variables.keys();
+  std::set<std::string> vars = variables.keys();
 
-  set<string>::iterator i = vars.begin();
+  std::set<std::string>::iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i);
 
-    string intent = var->string_attr("pism_intent");
+    std::string intent = var->string_attr("pism_intent");
     if ((intent == "model_state") || (intent == "mapping") || (intent == "climate_steady")) {
       result.insert(*i);
     }
@@ -155,8 +155,8 @@ PetscErrorCode IceModel::set_output_size(string option,
 
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):
-    string tmp = config.get_string("output_medium");
-    istringstream keywords(tmp);
+    std::string tmp = config.get_string("output_medium");
+    std::istringstream keywords(tmp);
 
     // split the list; note that this also removes any duplicate entries
     while (getline(keywords, tmp, ' ')) {
@@ -165,8 +165,8 @@ PetscErrorCode IceModel::set_output_size(string option,
     }
   } else if (keyword == "big") {
     // add all the variables listed in the config file ("big" size):
-    string tmp = config.get_string("output_big");
-    istringstream keywords(tmp);
+    std::string tmp = config.get_string("output_big");
+    std::istringstream keywords(tmp);
 
     // split the list; note that this also removes any duplicate entries
     while (getline(keywords, tmp, ' ')) {
@@ -212,9 +212,9 @@ PetscErrorCode IceModel::set_output_size(string option,
 
 
 //! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
-string IceModel::get_output_size(string option) {
-  set<string> choices;
-  string keyword;
+std::string IceModel::get_output_size(std::string option) {
+  std::set<std::string> choices;
+  std::string keyword;
   bool flag;
   choices.insert("none");
   choices.insert("small");

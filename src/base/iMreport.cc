@@ -251,7 +251,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
   const bool do_energy = config.get_flag("do_energy");
   const int log10scalevol  = static_cast<int>(config.get("summary_vol_scale_factor_log10")),
             log10scalearea = static_cast<int>(config.get("summary_area_scale_factor_log10"));
-  const string tunitstr = config.get_string("summary_time_unit_name");
+  const std::string tunitstr = config.get_string("summary_time_unit_name");
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));
@@ -273,7 +273,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
   }
 
   // this version keeps track of what has been done so as to minimize stdout:
-  static string stdout_flags_count0;
+  static std::string stdout_flags_count0;
   static int    mass_cont_sub_counter = 0;
   static double mass_cont_sub_dtsum = 0.0;
   if (mass_cont_sub_counter == 0)

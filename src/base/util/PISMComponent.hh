@@ -99,25 +99,25 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &result) = 0;
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) = 0;
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/) = 0;
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO& /*nc*/) = 0;
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO& /*nc*/) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
-                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {}
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
+                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {}
 
   // //! Add pointers to scalar diagnostic quantities to a dictionary.
   // virtual void get_scalar_diagnostics(map<string, PISMDiagnostic_Scalar*> &/*dict*/) {}
 protected:
-  virtual PetscErrorCode find_pism_input(string &filename, bool &regrid, int &start);
+  virtual PetscErrorCode find_pism_input(std::string &filename, bool &regrid, int &start);
   IceGrid &grid;
   const NCConfigVariable &config;
 };
@@ -167,14 +167,14 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(string keyword, set<string> &result)
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result)
   {
     if (input_model != NULL) {
       input_model->add_vars_to_output(keyword, result);
     }
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype)
   {
     if (input_model != NULL) {
@@ -183,7 +183,7 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc)
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc)
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
@@ -191,8 +191,8 @@ public:
     return 0;
   }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict)
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict)
   {
     if (input_model != NULL) {
       input_model->get_diagnostics(dict, ts_dict);

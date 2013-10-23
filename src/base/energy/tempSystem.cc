@@ -23,7 +23,7 @@
 #include "tempSystem.hh"
 #include "Mask.hh"
 
-tempSystemCtx::tempSystemCtx(PetscInt my_Mz, string my_prefix)
+tempSystemCtx::tempSystemCtx(PetscInt my_Mz, std::string my_prefix)
   : columnSystemCtx(my_Mz, my_prefix), Mz(my_Mz) {
 
   // set flags to indicate nothing yet set

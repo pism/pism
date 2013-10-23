@@ -38,10 +38,10 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO& nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc);
 
 protected:
   IceModelVec2Int m_ocean_kill_mask;

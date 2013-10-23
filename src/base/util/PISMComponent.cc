@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
 */
-PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the file found
+PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name of the file found
 					      bool &regrid, //!< specifies whether regridding is necessary
 					      int &start    //!< "start" to use when reading from filename
 					      ) {

@@ -133,7 +133,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     // set up fine grid in ice
     PetscInt    fMz    = grid.Mz_fine;
     PetscScalar fdz    = grid.dz_fine;
-    vector<double> &fzlev = grid.zlevels_fine;
+    std::vector<double> &fzlev = grid.zlevels_fine;
 
     ierr = verbPrintf(5,grid.com,
                       "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f]",

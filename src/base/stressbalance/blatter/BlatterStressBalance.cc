@@ -110,13 +110,13 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
 	        	  "W m-3", ""); CHKERRQ(ierr);
   ierr = strain_heating.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
 
-  vector<double> sigma(blatter_Mz);
+  std::vector<double> sigma(blatter_Mz);
   double dz = 1.0 / (blatter_Mz - 1);
   for (int i = 0; i < blatter_Mz; ++i)
     sigma[i] = i * dz;
   sigma.back() = 1.0;
 
-  map<string,string> z_attrs;
+  std::map<std::string,std::string> z_attrs;
   z_attrs["axis"]          = "Z";
   z_attrs["long_name"]     = "scaled Z-coordinate in the ice (z_base=0, z_surface=1)";
   z_attrs["units"]         = "1";
@@ -459,13 +459,13 @@ PetscErrorCode BlatterStressBalance::compute_volumetric_strain_heating() {
   return 0;
 }
 
-void BlatterStressBalance::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void BlatterStressBalance::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("u_sigma");
   result.insert("v_sigma");
 }
 
 //! Defines requested couplings fields.
-PetscErrorCode BlatterStressBalance::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode BlatterStressBalance::define_variables(std::set<std::string> vars, const PIO &nc,
 						      PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -481,7 +481,7 @@ PetscErrorCode BlatterStressBalance::define_variables(set<string> vars, const PI
 }
 
 //! Writes requested couplings fields to file.
-PetscErrorCode BlatterStressBalance::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode BlatterStressBalance::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "u_sigma") || set_contains(vars, "v_sigma")) {

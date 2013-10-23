@@ -45,7 +45,7 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  map<string, string> standard_names;
+  std::map<std::string, std::string> standard_names;
   standard_names["climatic_mass_balance"] = "land_ice_surface_specific_mass_balance";
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 

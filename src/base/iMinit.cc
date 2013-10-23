@@ -62,7 +62,7 @@
 PetscErrorCode IceModel::set_grid_defaults() {
   PetscErrorCode ierr;
   bool Mx_set, My_set, Mz_set, Lz_set, boot_file_set;
-  string filename;
+  std::string filename;
   grid_info input(grid.get_unit_system());
 
   // Get the bootstrapping file name:
@@ -92,7 +92,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
   // better way of specifying PISM's computational grid at bootstrapping.
-  vector<string> names;
+  std::vector<std::string> names;
   names.push_back("land_ice_thickness");
   names.push_back("bedrock_altitude");
   names.push_back("thk");
@@ -102,7 +102,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
 
     ierr = nc.inq_var(names[i], grid_info_found); CHKERRQ(ierr);
     if (grid_info_found == false) {
-      string dummy1;
+      std::string dummy1;
       bool dummy2;
       ierr = nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2); CHKERRQ(ierr);
     }
@@ -195,15 +195,15 @@ PetscErrorCode IceModel::set_grid_from_options() {
   ierr = PISMOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
                         grid.Mz, Mz_set); CHKERRQ(ierr);
 
-  vector<double> x_range, y_range;
+  std::vector<double> x_range, y_range;
   bool x_range_set, y_range_set;
   ierr = PISMOptionsRealArray("-x_range", "min,max x coordinate values",
                               x_range, x_range_set); CHKERRQ(ierr);
   ierr = PISMOptionsRealArray("-y_range", "min,max y coordinate values",
                               y_range, y_range_set); CHKERRQ(ierr);
 
-  string keyword;
-  set<string> z_spacing_choices;
+  std::string keyword;
+  std::set<std::string> z_spacing_choices;
   z_spacing_choices.insert("quadratic");
   z_spacing_choices.insert("equal");
   // Determine the vertical grid spacing in the ice:
@@ -217,7 +217,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   }
 
   // Determine grid periodicity:
-  set<string> periodicity_choices;
+  std::set<std::string> periodicity_choices;
   periodicity_choices.insert("none");
   periodicity_choices.insert("x");
   periodicity_choices.insert("y");
@@ -278,7 +278,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
 PetscErrorCode IceModel::grid_setup() {
   PetscErrorCode ierr;
   bool i_set;
-  string filename;
+  std::string filename;
 
   ierr = PetscOptionsBegin(grid.com, "",
                            "Options controlling input and computational grid parameters",
@@ -293,7 +293,7 @@ PetscErrorCode IceModel::grid_setup() {
 
   if (i_set) {
     PIO nc(grid, "guess_mode");
-    string source;
+    std::string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
@@ -316,7 +316,7 @@ PetscErrorCode IceModel::grid_setup() {
                         "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
                         "     ncatted -a source,global,c,c,PISM %s\n",
                         filename.c_str(), filename.c_str(), filename.c_str()); CHKERRQ(ierr);
-    } else if (source.find("PISM") == string::npos) {
+    } else if (source.find("PISM") == std::string::npos) {
       // If the 'source' attribute does not contain the string "PISM", then print
       // a message and stop:
       ierr = verbPrintf(1, grid.com,
@@ -325,7 +325,7 @@ PetscErrorCode IceModel::grid_setup() {
                         filename.c_str()); CHKERRQ(ierr);
     }
 
-    vector<string> names;
+    std::vector<std::string> names;
     names.push_back("enthalpy");
     names.push_back("temp");
 
@@ -411,7 +411,7 @@ PetscErrorCode IceModel::grid_setup() {
     }
 
     bool procs_x_set, procs_y_set;
-    vector<PetscInt> tmp_x, tmp_y;
+    std::vector<PetscInt> tmp_x, tmp_y;
     ierr = PISMOptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
                                tmp_x, procs_x_set); CHKERRQ(ierr);
     ierr = PISMOptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
@@ -485,7 +485,7 @@ PetscErrorCode IceModel::grid_setup() {
 PetscErrorCode IceModel::model_state_setup() {
   PetscErrorCode ierr;
   bool i_set;
-  string filename;
+  std::string filename;
 
   reset_counters();
 
@@ -660,7 +660,7 @@ PetscErrorCode IceModel::model_state_setup() {
 PetscErrorCode IceModel::set_vars_from_options() {
   PetscErrorCode ierr;
   bool boot_file_set;
-  string filename;
+  std::string filename;
 
   ierr = verbPrintf(3, grid.com,
 		    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
@@ -681,7 +681,7 @@ PetscErrorCode IceModel::set_vars_from_options() {
 //! \brief Decide which ice flow law to use by default.
 PetscErrorCode IceModel::set_default_flowlaw() {
   PetscErrorCode ierr;
-  string sia_flow_law = config.get_string("sia_flow_law"),
+  std::string sia_flow_law = config.get_string("sia_flow_law"),
     ssa_flow_law = config.get_string("ssa_flow_law");
 
   if (config.get_flag("do_cold_ice_methods") == false) {
@@ -750,7 +750,7 @@ PetscErrorCode IceModel::allocate_stressbalance() {
     } else {
       ShallowStressBalance *my_stress_balance;
       if (use_ssa_velocity) {
-        string ssa_method = config.get_string("ssa_method");
+        std::string ssa_method = config.get_string("ssa_method");
         if( ssa_method == "fd" ) {
           my_stress_balance = new SSAFD(grid, *basal, *EC, config);
         } else if(ssa_method == "fem") {
@@ -816,7 +816,7 @@ PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
 
 //! \brief Decide which subglacial hydrology model to use.
 PetscErrorCode IceModel::allocate_subglacial_hydrology() {
-  string hydrology_model = config.get_string("hydrology_model");
+  std::string hydrology_model = config.get_string("hydrology_model");
 
   if (subglacial_hydrology != NULL) // indicates it has already been allocated
     return 0;
@@ -987,7 +987,7 @@ PetscErrorCode IceModel::misc_setup() {
   // Make sure that we use the output_variable_order that works with NetCDF-4,
   // "quilt", and HDF5 parallel I/O. (For different reasons, but mainly because
   // it is faster.)
-  string o_format = config.get_string("output_format");
+  std::string o_format = config.get_string("output_format");
   if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
       config.get_string("output_variable_order") != "xyz") {
     PetscPrintf(grid.com,
@@ -1051,8 +1051,8 @@ PetscErrorCode IceModel::init_calving() {
 
 PetscErrorCode IceModel::allocate_bed_deformation() {
   PetscErrorCode ierr;
-  string model = config.get_string("bed_deformation_model");
-  set<string> choices;
+  std::string model = config.get_string("bed_deformation_model");
+  std::set<std::string> choices;
 
   ierr = check_old_option_and_stop(grid.com, "-bed_def_iso", "-bed_def"); CHKERRQ(ierr);
   ierr = check_old_option_and_stop(grid.com, "-bed_def_lc",  "-bed_def"); CHKERRQ(ierr);

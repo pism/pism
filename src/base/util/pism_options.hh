@@ -26,30 +26,30 @@ class NCConfigVariable;
 PetscErrorCode verbosityLevelFromOptions();
 
 // handy functions for processing options:
-PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string text, set<string> choices,
-			       string default_value, string &result, bool &flag);
+PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string text, std::set<std::string> choices,
+			       std::string default_value, std::string &result, bool &flag);
 
-PetscErrorCode PISMOptionsString(string option, string text,
-				 string &result, bool &flag, bool allow_empty_arg = false);
-PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_value,
-				      vector<string>& result, bool &flag);
-PetscErrorCode PISMOptionsStringSet(string opt, string text, string default_value,
-                                    set<string>& result, bool &flag);
+PetscErrorCode PISMOptionsString(std::string option, std::string text,
+				 std::string &result, bool &flag, bool allow_empty_arg = false);
+PetscErrorCode PISMOptionsStringArray(std::string opt, std::string text, std::string default_value,
+				      std::vector<std::string>& result, bool &flag);
+PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::string default_value,
+                                    std::set<std::string>& result, bool &flag);
 
-PetscErrorCode PISMOptionsInt(string option, string text,
+PetscErrorCode PISMOptionsInt(std::string option, std::string text,
 			      PetscInt &result, bool &is_set);
-PetscErrorCode PISMOptionsIntArray(string option, string text,
-				   vector<PetscInt> &result, bool &is_set);
+PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
+				   std::vector<PetscInt> &result, bool &is_set);
 
-PetscErrorCode PISMOptionsReal(string option, string text,
+PetscErrorCode PISMOptionsReal(std::string option, std::string text,
 			       PetscReal &result, bool &is_set);
-PetscErrorCode PISMOptionsRealArray(string option, string text,
-				    vector<PetscReal> &result, bool &is_set);
+PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
+				    std::vector<PetscReal> &result, bool &is_set);
 
-PetscErrorCode PISMOptionsIsSet(string option, bool &result);
-PetscErrorCode PISMOptionsIsSet(string option, string descr, bool &result);
+PetscErrorCode PISMOptionsIsSet(std::string option, bool &result);
+PetscErrorCode PISMOptionsIsSet(std::string option, std::string descr, bool &result);
 
-PetscErrorCode PISMOptionsHasArgument(string option, bool &result);
+PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result);
 
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]);
@@ -61,7 +61,7 @@ PetscErrorCode stop_on_version_option();
 PetscErrorCode show_usage_and_quit(MPI_Comm com, const char execname[], const char usage[]);
 
 PetscErrorCode show_usage_check_req_opts(MPI_Comm com, const char execname[],
-                                         vector<string> required_options,
+                                         std::vector<std::string> required_options,
                                          const char usage[]);
 
 // config file initialization:

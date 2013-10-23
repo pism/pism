@@ -45,15 +45,15 @@ public:
 
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &)
   { return 0; }
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/) {}
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/, PISM_IO_Type /*nctype*/)
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/) {}
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/, PISM_IO_Type /*nctype*/)
   { return 0; }
-  virtual PetscErrorCode write_variables(set<string>, const PIO &)
+  virtual PetscErrorCode write_variables(std::set<std::string>, const PIO &)
   { return 0; }
 
   // Does not have an atmosphere model.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
-                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {}
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
+                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {}
 };
 
 #endif /* _PSDUMMY_H_ */

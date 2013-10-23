@@ -25,7 +25,7 @@
 #include "PIO.hh"
 #include "PISMTime.hh"
 
-Timeseries::Timeseries(IceGrid *g, string name, string dimension_name)
+Timeseries::Timeseries(IceGrid *g, std::string name, std::string dimension_name)
   : dimension(g->get_unit_system()), var(g->get_unit_system()),
     bounds(g->get_unit_system()),
     m_unit_system(g->get_unit_system()) {
@@ -33,14 +33,14 @@ Timeseries::Timeseries(IceGrid *g, string name, string dimension_name)
 }
 
 Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, PISMUnitSystem units_system,
-                       string name, string dimension_name)
+                       std::string name, std::string dimension_name)
   : dimension(units_system), var(units_system), bounds(units_system),
     m_unit_system(units_system) {
   private_constructor(c, r, name, dimension_name);
 }
 
 void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r,
-                                     string name, string dimension_name) {
+                                     std::string name, std::string dimension_name) {
   com = c;
   rank = r;
   dimension.init(dimension_name, dimension_name, com, rank);
@@ -58,8 +58,8 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
   PetscErrorCode ierr;
 
   bool exists, found_by_standard_name;
-  vector<string> dims;
-  string time_name, standard_name = var.get_string("standard_name"),
+  std::vector<std::string> dims;
+  std::string time_name, standard_name = var.get_string("standard_name"),
     name_found;
 
   ierr = nc.inq_var(short_name, standard_name,
@@ -105,7 +105,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
     PISMEnd();
   }
 
-  string time_bounds_name;
+  std::string time_bounds_name;
   ierr = dimension.get_bounds_name(nc, time_bounds_name); CHKERRQ(ierr);
 
   if (!time_bounds_name.empty()) {
@@ -160,7 +160,7 @@ double Timeseries::operator()(double t) {
 
   // piecewise-constant case:
   if (use_bounds) {
-    vector<double>::iterator j;
+    std::vector<double>::iterator j;
 
     j = lower_bound(time_bounds.begin(), time_bounds.end(), t); // binary search
 
@@ -184,7 +184,7 @@ double Timeseries::operator()(double t) {
   }
 
   // piecewise-linear case:
-  vector<double>::iterator end = time.end(), j;
+  std::vector<double>::iterator end = time.end(), j;
   
   j = lower_bound(time.begin(), end, t); // binary search
 
@@ -223,7 +223,7 @@ double Timeseries::operator[](unsigned int j) const {
 //! \brief Compute an average of a time-series over interval (t,t+dt) using
 //! trapezoidal rule with N sub-intervals.
 double Timeseries::average(double t, double dt, unsigned int N) {
-  vector<double> V(N+1);
+  std::vector<double> V(N+1);
  
   for (unsigned int i = 0; i < N+1; ++i) {
     double t_i = t + (dt / N) * i;
@@ -249,7 +249,7 @@ PetscErrorCode Timeseries::append(double v, double a, double b) {
 
 
 //! Set the internal units for the values of a time-series.
-PetscErrorCode Timeseries::set_units(string units, string glaciological_units) {
+PetscErrorCode Timeseries::set_units(std::string units, std::string glaciological_units) {
   if (!units.empty())
     var.set_units(units);
   if (!glaciological_units.empty())
@@ -258,7 +258,7 @@ PetscErrorCode Timeseries::set_units(string units, string glaciological_units) {
 }
 
 //! Set the internal units for the dimension variable of a time-series.
-PetscErrorCode Timeseries::set_dimension_units(string units, string glaciological_units) {
+PetscErrorCode Timeseries::set_dimension_units(std::string units, std::string glaciological_units) {
   if (!units.empty()) {
     dimension.set_units(units);
     bounds.set_units(units);
@@ -271,18 +271,18 @@ PetscErrorCode Timeseries::set_dimension_units(string units, string glaciologica
 }
 
 //! Set a string attribute.
-PetscErrorCode Timeseries::set_attr(string name, string value) {
+PetscErrorCode Timeseries::set_attr(std::string name, std::string value) {
   var.set_string(name, value);
   return 0;
 }
 
 //! Get a string attribute.
-string Timeseries::get_string(string name) {
+std::string Timeseries::get_string(std::string name) {
   return var.get_string(name);
 }
 
 //! Set a single-valued scalar attribute.
-PetscErrorCode Timeseries::set_attr(string name, double value) {
+PetscErrorCode Timeseries::set_attr(std::string name, double value) {
   var.set(name, value);
   return 0;
 }
@@ -298,7 +298,7 @@ int Timeseries::length() {
 
 //----- DiagnosticTimeseries
 
-DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, string name, string dimension_name)
+DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, std::string name, std::string dimension_name)
   : Timeseries(g, name, dimension_name) {
 
   buffer_size = (size_t)g->config.get("timeseries_buffer_size");
@@ -389,7 +389,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
 
   return 0;
 }
-PetscErrorCode DiagnosticTimeseries::init(string filename) {
+PetscErrorCode DiagnosticTimeseries::init(std::string filename) {
   PetscErrorCode ierr;
   PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
@@ -403,7 +403,7 @@ PetscErrorCode DiagnosticTimeseries::init(string filename) {
     ierr = nc.inq_dimlen(dimension.short_name, len); CHKERRQ(ierr);
     if (len > 0) {
       // read the last value and initialize v_previous and v[0]
-      vector<double> tmp;
+      std::vector<double> tmp;
       bool var_exists;
 
       ierr = nc.inq_var(short_name, var_exists); CHKERRQ(ierr);

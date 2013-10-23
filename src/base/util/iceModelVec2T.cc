@@ -83,7 +83,7 @@ unsigned int IceModelVec2T::get_n_records() {
   return n_records;
 }
 
-PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, string my_short_name,
+PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, std::string my_short_name,
                                      bool local, int width) {
   PetscErrorCode ierr;
 
@@ -145,7 +145,7 @@ PetscErrorCode IceModelVec2T::end_access() {
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::init(string fname, unsigned int period, double reference_time) {
+PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, double reference_time) {
   PetscErrorCode ierr;
 
   filename         = fname;
@@ -156,7 +156,7 @@ PetscErrorCode IceModelVec2T::init(string fname, unsigned int period, double ref
   // try to find the corresponding time dimension.
 
   PIO nc(*grid, "guess_mode");
-  string name_found;
+  std::string name_found;
   bool exists, found_by_standard_name;
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
@@ -169,10 +169,10 @@ PetscErrorCode IceModelVec2T::init(string fname, unsigned int period, double ref
   }
 
   // find the time dimension:
-  vector<string> dims;
+  std::vector<std::string> dims;
   ierr = nc.inq_vardims(name_found, dims); CHKERRQ(ierr);
   
-  string dimname = "";
+  std::string dimname = "";
   bool time_found = false;
   for (unsigned int i = 0; i < dims.size(); ++i) {
     AxisType dimtype;
@@ -194,7 +194,7 @@ PetscErrorCode IceModelVec2T::init(string fname, unsigned int period, double ref
     ierr = time_dimension.set_units(grid->time->units_string()); CHKERRQ(ierr);
     ierr = time_dimension.read(nc, grid->time, time); CHKERRQ(ierr);
 
-    string bounds_name;
+    std::string bounds_name;
     ierr = time_dimension.get_bounds_name(nc, bounds_name);
 
     if (time.size() > 1) {
@@ -263,7 +263,7 @@ PetscErrorCode IceModelVec2T::init(string fname, unsigned int period, double ref
 //! Read some data to make sure that the interval (my_t, my_t + my_dt) is covered.
 PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
-  vector<double>::iterator i, j;
+  std::vector<double>::iterator i, j;
   unsigned int m, n, last;
 
   if (N > 0) {
@@ -441,7 +441,7 @@ PetscErrorCode IceModelVec2T::get_record(int n) {
  */
 double IceModelVec2T::max_timestep(double my_t) {
   // only allow going to the next record
-  vector<double>::iterator l = upper_bound(time_bounds.begin(),
+  std::vector<double>::iterator l = upper_bound(time_bounds.begin(),
                                            time_bounds.end(), my_t);
   if (l != time_bounds.end()) {
     PetscReal tmp = *l - my_t;
@@ -497,7 +497,7 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   if (M < 1)
     M = 1;
 
-  vector<double> ts(M);
+  std::vector<double> ts(M);
   double dt = my_dt / M;
   for (int k = 0; k < M; k++)
     ts[k] = my_t + k * dt;
@@ -529,7 +529,7 @@ PetscErrorCode IceModelVec2T::init_interpolation(const PetscScalar *ts, unsigned
     last = first + N - 1;
 
   // Compute "periodized" times if necessary.
-  vector<double> times_requested(ts_length);
+  std::vector<double> times_requested(ts_length);
   if (m_period != 0) {
     for (unsigned int k = 0; k < ts_length; ++k)
       times_requested[k] = grid->time->mod(ts[k] - m_reference_time, m_period);
@@ -604,7 +604,7 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double &result) {
     PetscScalar ***a3 = (PetscScalar***) array3;
     result = a3[i][j][0];
   } else {
-    vector<PetscScalar> values(M);
+    std::vector<PetscScalar> values(M);
 
     ierr = interp(i, j, &values[0]); CHKERRQ(ierr);
 

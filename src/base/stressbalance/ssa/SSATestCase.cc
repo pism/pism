@@ -87,7 +87,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ierr = ice_mask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = ice_mask.set_attrs("model_state", 
           "grounded_dragging_floating integer mask", "", ""); CHKERRQ(ierr);
-  vector<double> mask_values(4);
+  std::vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
   mask_values[2] = MASK_FLOATING;
@@ -161,10 +161,10 @@ PetscErrorCode SSATestCase::run()
 }
 
 //! Report on the generated solution
-PetscErrorCode SSATestCase::report(string testname) {
+PetscErrorCode SSATestCase::report(std::string testname) {
   PetscErrorCode  ierr;
     
-  string ssa_stdout;
+  std::string ssa_stdout;
   ierr = ssa->stdout_report(ssa_stdout); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,ssa_stdout.c_str()); CHKERRQ(ierr);
   
@@ -248,7 +248,7 @@ PetscErrorCode SSATestCase::report(string testname) {
   return 0;
 }
 
-PetscErrorCode SSATestCase::report_netcdf(string testname,
+PetscErrorCode SSATestCase::report_netcdf(std::string testname,
                                           double max_vector,
                                           double rel_vector,
                                           double max_u,
@@ -258,7 +258,7 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
   PetscErrorCode ierr;
   NCTimeseries err(grid.get_unit_system());
   unsigned int start;
-  string filename;
+  std::string filename;
   bool flag, append;
   NCGlobalAttributes global_attributes(grid.get_unit_system());
 
@@ -277,7 +277,7 @@ PetscErrorCode SSATestCase::report_netcdf(string testname,
                           append); CHKERRQ(ierr);
 
   global_attributes.init("global_attributes", grid.com, grid.rank);
-  global_attributes.set_string("source", string("PISM ") + PISM_Revision);
+  global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
   // Find the number of records in this file:
   PIO nc(grid, "netcdf3");      // OK to use NetCDF3.
@@ -352,7 +352,7 @@ PetscErrorCode SSATestCase::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
 }
 
 //! Save the computation and data to a file.
-PetscErrorCode SSATestCase::write(const string &filename)
+PetscErrorCode SSATestCase::write(const std::string &filename)
 {
   PetscErrorCode ierr;
 

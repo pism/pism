@@ -63,7 +63,7 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c, const char pre[], const NCConfigVariable &con
   n            = config.get("Glen_exponent");
 
   if (strlen(prefix) > 0)
-    e = config.get(string(prefix) + "enhancement_factor");
+    e = config.get(std::string(prefix) + "enhancement_factor");
 
   A_cold = config.get("Paterson-Budd_A_cold");
   A_warm = config.get("Paterson-Budd_A_warm");

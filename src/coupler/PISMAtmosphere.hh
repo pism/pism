@@ -57,7 +57,7 @@ public:
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result) = 0;
 protected:
 
-  vector<double> m_ts_times;
+  std::vector<double> m_ts_times;
 };
 
 #endif	// __PISMAtmosphere_hh

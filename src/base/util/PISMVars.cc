@@ -19,7 +19,7 @@
 #include "PISMVars.hh"
 
 //! \brief Add an IceModelVec v using the name `name`.
-PetscErrorCode PISMVars::add(IceModelVec &v, string name) {
+PetscErrorCode PISMVars::add(IceModelVec &v, std::string name) {
 
   variables[name] = &v;
 
@@ -34,11 +34,11 @@ PetscErrorCode PISMVars::add(IceModelVec &v, string name) {
  */
 PetscErrorCode PISMVars::add(IceModelVec &v) {
 
-  string short_name = v.string_attr("name");
+  std::string short_name = v.string_attr("name");
 
   if (v.has_attr("standard_name")) {
 
-    string standard_name = v.string_attr("standard_name");
+    std::string standard_name = v.string_attr("standard_name");
     if (standard_names[standard_name] == NULL)
       standard_names[standard_name] = &v;
     else
@@ -57,12 +57,12 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
 }
 
 //! Removes a variable with the key `name` from the dictionary.
-void PISMVars::remove(string name) {
+void PISMVars::remove(std::string name) {
   IceModelVec *v = variables[name];
 
   if (v != NULL) {              // the argument is a "short" name
     if (v->has_attr("standard_name")) {
-      string std_name = v->string_attr("standard_name");
+      std::string std_name = v->string_attr("standard_name");
 
       variables.erase(name);
       standard_names.erase(std_name);
@@ -71,7 +71,7 @@ void PISMVars::remove(string name) {
     v = standard_names[name];
 
     if (v != NULL) {            // the argument is a standard_name
-      string short_name = v->string_attr("name");
+      std::string short_name = v->string_attr("name");
 
       variables.erase(short_name);
       standard_names.erase(name);
@@ -85,8 +85,8 @@ void PISMVars::remove(string name) {
 /*!
  * Checks standard_name first, then short name
  */
-IceModelVec* PISMVars::get(string name) const {
-  map<string, IceModelVec* >::const_iterator j = standard_names.find(name);
+IceModelVec* PISMVars::get(std::string name) const {
+  std::map<std::string, IceModelVec* >::const_iterator j = standard_names.find(name);
   if (j != standard_names.end())
     return (j->second);
 
@@ -105,10 +105,10 @@ IceModelVec* PISMVars::get(string name) const {
  * displaying or de-allocating variables (without worrying that a variable will
  * get written or de-allocated twice).
  */
-set<string> PISMVars::keys() const {
-  set<string> result;
+std::set<std::string> PISMVars::keys() const {
+  std::set<std::string> result;
 
-  map<string,IceModelVec*>::iterator i = variables.begin();
+  std::map<std::string,IceModelVec*>::iterator i = variables.begin();
   while (i != variables.end())
     result.insert((*i++).first);
 
@@ -118,9 +118,9 @@ set<string> PISMVars::keys() const {
 //! Debugging: checks if IceModelVecs in the dictionary have NANs.
 PetscErrorCode PISMVars::check_for_nan() const {
   PetscErrorCode ierr;
-  set<string> names = keys();
+  std::set<std::string> names = keys();
 
-  set<string>::iterator i = names.begin();
+  std::set<std::string>::iterator i = names.begin();
   while (i != names.end()) {
     IceModelVec *var = get(*i);
     ierr = var->has_nan(); CHKERRQ(ierr);

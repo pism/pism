@@ -63,8 +63,8 @@ public:
      : IceModel(g,c,o) {};
 protected:
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode bootstrap_2d(string filename);
-  virtual PetscErrorCode initFromFile(string filename);
+  virtual PetscErrorCode bootstrap_2d(std::string filename);
+  virtual PetscErrorCode initFromFile(std::string filename);
   virtual PetscErrorCode model_state_setup();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode allocate_stressbalance();
@@ -138,7 +138,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
     "", ""); CHKERRQ(ierr); // no units and no standard name
   double NMMASK_NORMAL   = 0.0,
          NMMASK_ZERO_OUT = 1.0;
-  vector<double> mask_values(2);
+  std::vector<double> mask_values(2);
   mask_values[0] = NMMASK_NORMAL;
   mask_values[1] = NMMASK_ZERO_OUT;
   ierr = no_model_mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
@@ -276,7 +276,7 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
 }
 
 
-PetscErrorCode IceRegionalModel::bootstrap_2d(string filename) {
+PetscErrorCode IceRegionalModel::bootstrap_2d(std::string filename) {
   PetscErrorCode ierr;
 
   ierr = IceModel::bootstrap_2d(filename); CHKERRQ(ierr);
@@ -288,7 +288,7 @@ PetscErrorCode IceRegionalModel::bootstrap_2d(string filename) {
 }
 
 
-PetscErrorCode IceRegionalModel::initFromFile(string filename) {
+PetscErrorCode IceRegionalModel::initFromFile(std::string filename) {
   PetscErrorCode  ierr;
   PIO nc(grid, "guess_mode");
 
@@ -482,7 +482,7 @@ int main(int argc, char *argv[]) {
     bool iset, bfset;
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
-    string usage =
+    std::string usage =
       "  pismo {-i IN.nc|-boot_file IN.nc} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
@@ -498,7 +498,7 @@ int main(int argc, char *argv[]) {
          "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
       ierr = show_usage_and_quit(com, "pismo", usage.c_str()); CHKERRQ(ierr);
     } else {
-      vector<string> required;
+      std::vector<std::string> required;
       required.clear();
       ierr = show_usage_check_req_opts(com, "pismo", required, usage.c_str()); CHKERRQ(ierr);
     }

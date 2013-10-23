@@ -134,12 +134,12 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-void POConstant::add_vars_to_output(string, set<string> &result) {
+void POConstant::add_vars_to_output(std::string, std::set<std::string> &result) {
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-PetscErrorCode POConstant::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode POConstant::define_variables(std::set<std::string> vars, const PIO &nc,
                                             PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -154,7 +154,7 @@ PetscErrorCode POConstant::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode POConstant::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode POConstant::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 

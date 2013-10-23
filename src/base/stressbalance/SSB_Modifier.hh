@@ -59,7 +59,7 @@ public:
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
-  virtual PetscErrorCode stdout_report(string &result)
+  virtual PetscErrorCode stdout_report(std::string &result)
   { result = ""; return 0; }
 
   IceFlowLaw* get_flow_law()
@@ -87,18 +87,18 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
   { }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 };
 #endif /* _SSB_MODIFIER_H_ */

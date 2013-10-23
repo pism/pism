@@ -92,7 +92,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   standard_gravity = config.get("standard_gravity");
 
   global_attributes.set_string("Conventions", "CF-1.5");
-  global_attributes.set_string("source", string("PISM ") + PISM_Revision);
+  global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
   // Do not save snapshots by default:
   save_snapshots = false;
@@ -137,16 +137,16 @@ IceModel::~IceModel() {
   deallocate_internal_objects();
 
   // de-allocate time-series diagnostics
-  map<string,PISMTSDiagnostic*>::iterator i = ts_diagnostics.begin();
+  std::map<std::string,PISMTSDiagnostic*>::iterator i = ts_diagnostics.begin();
   while (i != ts_diagnostics.end()) delete (i++)->second;
 
   // de-allocate diagnostics
-  map<string,PISMDiagnostic*>::iterator j = diagnostics.begin();
+  std::map<std::string,PISMDiagnostic*>::iterator j = diagnostics.begin();
   while (j != diagnostics.end()) delete (j++)->second;
 
 
   // de-allocate viewers
-  map<string,PetscViewer>::iterator k = viewers.begin();
+  std::map<std::string,PetscViewer>::iterator k = viewers.begin();
   while (k != viewers.end()) {
     if ((*k).second != PETSC_NULL) {
       PetscViewerDestroy(&(*k).second);
@@ -261,7 +261,7 @@ PetscErrorCode IceModel::createVecs() {
   }
   ierr = vMask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                          "", ""); CHKERRQ(ierr);
-  vector<double> mask_values(4);
+  std::vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
   mask_values[2] = MASK_FLOATING;
@@ -399,7 +399,7 @@ PetscErrorCode IceModel::createVecs() {
     ierr = vBCMask.create(grid, "bcflag", true, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = vBCMask.set_attrs("model_state", "Dirichlet boundary mask",
                              "", ""); CHKERRQ(ierr);
-    vector<double> bc_mask_values(2);
+    std::vector<double> bc_mask_values(2);
     bc_mask_values[0] = 0;
     bc_mask_values[1] = 1;
     ierr = vBCMask.set_attr("flag_values", bc_mask_values); CHKERRQ(ierr);
@@ -526,13 +526,13 @@ PetscErrorCode IceModel::createVecs() {
   // take care of 2D cumulative fluxes: we need to allocate special storage if
   // the user asked for climatic_mass_balance_cumulative or
 
-  string vars;
+  std::string vars;
   bool extra_vars_set;
   ierr = PISMOptionsString("-extra_vars", "", vars, extra_vars_set); CHKERRQ(ierr);
   if (extra_vars_set) {
-    istringstream arg(vars);
-    string var_name;
-    set<string> ex_vars;
+    std::istringstream arg(vars);
+    std::string var_name;
+    std::set<std::string> ex_vars;
 
     while (getline(arg, var_name, ','))
       ex_vars.insert(var_name);
@@ -546,7 +546,7 @@ PetscErrorCode IceModel::createVecs() {
                                                         "m", ""); CHKERRQ(ierr);
     }
 
-    string o_size = get_output_size("-o_size");
+    std::string o_size = get_output_size("-o_size");
 
     if (set_contains(ex_vars, "flux_divergence") || o_size == "big") {
       ierr = flux_divergence.create(grid, "flux_divergence", false); CHKERRQ(ierr);
@@ -612,7 +612,7 @@ PetscErrorCode IceModel::deallocate_internal_objects() {
   return 0;
 }
 
-PetscErrorCode IceModel::setExecName(string my_executable_short_name) {
+PetscErrorCode IceModel::setExecName(std::string my_executable_short_name) {
   executable_short_name = my_executable_short_name;
   return 0;
 }
@@ -684,7 +684,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   ierr = stress_balance->update(updateAtDepth == false,
                                 sea_level);
   if (ierr != 0) {
-    string o_file = "stressbalance_failed.nc";
+    std::string o_file = "stressbalance_failed.nc";
     bool o_file_set;
     ierr = PISMOptionsString("-o", "output file name",
                              o_file, o_file_set); CHKERRQ(ierr);
@@ -702,7 +702,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   grid.profiler->end(event_velocity);
 
-  string sb_stdout;
+  std::string sb_stdout;
   ierr = stress_balance->stdout_report(sb_stdout); CHKERRQ(ierr);
 
   stdout_flags += sb_stdout;

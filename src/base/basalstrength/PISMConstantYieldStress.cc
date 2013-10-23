@@ -23,7 +23,7 @@ PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   bool i_set, bootstrap, tauc_set;
   PetscReal constant_tauc;
-  string filename;
+  std::string filename;
   int start;
 
   ierr = verbPrintf(2, grid.com, "* Initializing the constant basal yield stress model...\n"); CHKERRQ(ierr);
@@ -59,12 +59,12 @@ PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
 }
 
 
-void PISMConstantYieldStress::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PISMConstantYieldStress::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("tauc");
 }
 
 
-PetscErrorCode PISMConstantYieldStress::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PISMConstantYieldStress::define_variables(std::set<std::string> vars, const PIO &nc,
                                                          PISM_IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
     PetscErrorCode ierr = tauc.define(nc, nctype); CHKERRQ(ierr);
@@ -73,7 +73,7 @@ PetscErrorCode PISMConstantYieldStress::define_variables(set<string> vars, const
 }
 
 
-PetscErrorCode PISMConstantYieldStress::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMConstantYieldStress::write_variables(std::set<std::string> vars, const PIO &nc) {
   if (set_contains(vars, "tauc")) {
     PetscErrorCode ierr = tauc.write(nc); CHKERRQ(ierr);
   }
@@ -106,8 +106,8 @@ PetscErrorCode PISMConstantYieldStress::allocate() {
 PetscErrorCode PISMConstantYieldStress::regrid() {
   PetscErrorCode ierr;
   bool regrid_file_set, regrid_vars_set;
-  string regrid_file;
-  set<string> regrid_vars;
+  std::string regrid_file;
+  std::set<std::string> regrid_vars;
 
   ierr = PetscOptionsBegin(grid.com, "", "PISMMohrCoulombYieldStress regridding options", ""); CHKERRQ(ierr);
   {

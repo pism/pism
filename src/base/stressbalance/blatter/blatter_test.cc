@@ -30,7 +30,7 @@ static char help[] =
 #include "PISMTime.hh"
 #include "POConstant.hh"
 
-static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
+static PetscErrorCode get_grid_from_file(std::string filename, IceGrid &grid) {
   PetscErrorCode ierr;
   int grid_Mz = grid.Mz;
   double grid_Lz = grid.Lz;
@@ -58,13 +58,13 @@ static PetscErrorCode get_grid_from_file(string filename, IceGrid &grid) {
 }
 
 //! \brief Read data from an input file.
-static PetscErrorCode read_input_data(string filename, PISMVars &variables,
+static PetscErrorCode read_input_data(std::string filename, PISMVars &variables,
 				      EnthalpyConverter &EC) {
   PetscErrorCode ierr;
   // Get the names of all the variables allocated earlier:
-  set<string> vars = variables.keys();
+  std::set<std::string> vars = variables.keys();
 
-  for (set<string>::iterator i = vars.begin(); i != vars.end(); ++i) {
+  for (std::set<std::string>::iterator i = vars.begin(); i != vars.end(); ++i) {
     if (*i != "enthalpy") {
       ierr = variables.get(*i)->regrid(filename, true); CHKERRQ(ierr);
     } else {
@@ -78,12 +78,12 @@ static PetscErrorCode read_input_data(string filename, PISMVars &variables,
 }
 
 //! \brief Write data to an output file.
-static PetscErrorCode write_data(string filename, PISMVars &variables) {
+static PetscErrorCode write_data(std::string filename, PISMVars &variables) {
   PetscErrorCode ierr;
   // Get the names of all the variables allocated earlier:
-  set<string> vars = variables.keys();
+  std::set<std::string> vars = variables.keys();
 
-  for (set<string>::iterator i = vars.begin(); i != vars.end(); ++i) {
+  for (std::set<std::string>::iterator i = vars.begin(); i != vars.end(); ++i) {
     ierr = variables.get(*i)->write(filename); CHKERRQ(ierr);
   }
 
@@ -129,9 +129,9 @@ static PetscErrorCode allocate_variables(IceGrid &grid, PISMVars &variables) {
 //! \brief De-allocate IceModelVec2S variables.
 static PetscErrorCode deallocate_variables(PISMVars &variables) {
   // Get the names of all the variables allocated earlier:
-  set<string> vars = variables.keys();
+  std::set<std::string> vars = variables.keys();
 
-  set<string>::iterator i = vars.begin();
+  std::set<std::string>::iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i);
     delete var;
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
 
     IceGrid grid(com, rank, size, config);
 
-    string input_file, output_file = "blatter_test.nc";
+    std::string input_file, output_file = "blatter_test.nc";
     ierr = PetscOptionsBegin(grid.com, "", "BLATTER_TEST options", ""); CHKERRQ(ierr);
     {
       bool flag;
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
                         grid.time->CF_units_string()); CHKERRQ(ierr);
     ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0);
 
-    set<string> blatter_vars;
+    std::set<std::string> blatter_vars;
     blatter_vars.insert("u_sigma");
     blatter_vars.insert("v_sigma");
     ierr = blatter.define_variables(blatter_vars, pio, PISM_DOUBLE); CHKERRQ(ierr);

@@ -176,17 +176,17 @@ PetscErrorCode PISMIcebergRemover::transfer_from_proc0() {
   return 0;
 }
 
-void PISMIcebergRemover::add_vars_to_output(string, set<string> &) {
+void PISMIcebergRemover::add_vars_to_output(std::string, std::set<std::string> &) {
   // empty
 }
 
-PetscErrorCode PISMIcebergRemover::define_variables(set<string>, const PIO &,
+PetscErrorCode PISMIcebergRemover::define_variables(std::set<std::string>, const PIO &,
                                                     PISM_IO_Type) {
   // empty
   return 0;
 }
 
-PetscErrorCode PISMIcebergRemover::write_variables(set<string>, const PIO& ) {
+PetscErrorCode PISMIcebergRemover::write_variables(std::set<std::string>, const PIO& ) {
   // empty
   return 0;
 }

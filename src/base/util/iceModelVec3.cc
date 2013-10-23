@@ -33,7 +33,7 @@
 
 IceModelVec3D::IceModelVec3D() : IceModelVec() {
   sounding_buffer = PETSC_NULL;
-  sounding_viewers = new map<string, PetscViewer>;
+  sounding_viewers = new std::map<std::string, PetscViewer>;
 }
 
 IceModelVec3D::~IceModelVec3D() {
@@ -50,8 +50,8 @@ IceModelVec3D::IceModelVec3D(const IceModelVec3D &other)
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.
-PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, string my_name,
-                                        bool local, vector<double> levels, int stencil_width) {
+PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, std::string my_name,
+                                        bool local, std::vector<double> levels, int stencil_width) {
   PetscErrorCode ierr;
 
   if (v != PETSC_NULL) {
@@ -85,7 +85,7 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, string my_name,
 
 PetscErrorCode IceModelVec3D::destroy() {
   PetscErrorCode ierr;
-  map<string,PetscViewer>::iterator i;
+  std::map<std::string,PetscViewer>::iterator i;
 
   // soundings:
   if (sounding_viewers != NULL) {
@@ -130,7 +130,7 @@ PetscErrorCode  IceModelVec3::setValColumnPL(PetscInt i, PetscInt j, PetscScalar
   check_array_indices(i, j);
 #endif
 
-  vector<double> &zlevels_fine = grid->zlevels_fine;
+  std::vector<double> &zlevels_fine = grid->zlevels_fine;
 
   PetscScalar ***arr = (PetscScalar***) array;
   
@@ -306,7 +306,7 @@ PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
   check_array_indices(i, j);
 #endif
 
-  vector<double> &zlevels_fine = grid->zlevels_fine;
+  std::vector<double> &zlevels_fine = grid->zlevels_fine;
   PetscScalar ***arr = (PetscScalar***) array;
 
   for (PetscInt k = 0; k < grid->Mz_fine; k++) {
@@ -339,7 +339,7 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
   check_array_indices(i, j);
 #endif
 
-  vector<double> &zlevels_fine = grid->zlevels_fine;
+  std::vector<double> &zlevels_fine = grid->zlevels_fine;
   const PetscScalar ***arr = (const PetscScalar***) array;
   const PetscScalar *column = arr[i][j];
 
@@ -513,7 +513,7 @@ PetscErrorCode  IceModelVec3D::setInternalColumn(PetscInt i, PetscInt j, PetscSc
 }
 
 
-PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, string my_name, bool local,
+PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, std::string my_name, bool local,
                                      int stencil_width) {
 
   PetscErrorCode ierr = IceModelVec3D::allocate(my_grid, my_name, local,
@@ -635,7 +635,7 @@ PetscErrorCode IceModelVec3D::view_sounding(int i, int j, PetscInt viewer_size) 
 
   // create the title:
   if ((*sounding_viewers)[name] == PETSC_NULL) {
-    string title = string_attr("long_name") + " sounding (" + string_attr("glaciological_units") + ")";
+    std::string title = string_attr("long_name") + " sounding (" + string_attr("glaciological_units") + ")";
 
     ierr = grid->create_viewer(viewer_size, title, (*sounding_viewers)[name]); CHKERRQ(ierr);
   }
@@ -654,7 +654,7 @@ PetscErrorCode IceModelVec3D::view_sounding(int i, int j, PetscViewer my_viewer)
     check_array_indices(i, j);
 #endif
 
-  const string tname = string_attr("long_name"),
+  const std::string tname = string_attr("long_name"),
     tunits = " (" + string_attr("glaciological_units") + ")",
     title = tname + tunits;
 

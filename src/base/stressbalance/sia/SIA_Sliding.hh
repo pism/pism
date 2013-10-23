@@ -51,22 +51,22 @@ public:
 
   virtual PetscErrorCode update(bool fast);
 
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
   { }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
     dict["taud"] = new SSB_taud(this, grid, *variables);
     dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
   }
@@ -91,7 +91,7 @@ protected:
   double standard_gravity;
 
   bool verification_mode;
-  string eisII_experiment;
+  std::string eisII_experiment;
 };
 
 #endif /* _SIA_SLIDING_H_ */

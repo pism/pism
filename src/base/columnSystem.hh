@@ -38,7 +38,7 @@ the system in each column.
 class columnSystemCtx {
 
 public:
-  columnSystemCtx(PetscInt my_nmax, string my_prefix);
+  columnSystemCtx(PetscInt my_nmax, std::string my_prefix);
   virtual ~columnSystemCtx();
 
   PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
@@ -64,7 +64,7 @@ protected:
   // deliberately protected so only derived classes can use
   PetscErrorCode solveTridiagonalSystem(const PetscInt n, PetscScalar **x);
   
-  string      prefix;
+  std::string      prefix;
 private:
   bool        indicesValid;
   PetscErrorCode resetColumn();

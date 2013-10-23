@@ -35,16 +35,16 @@ public:
 
   virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
 protected:
   NCSpatialVariable air_temp, precipitation;
-  vector<double> m_offset_values;
+  std::vector<double> m_offset_values;
 private:
   PetscErrorCode allocate_PA_delta_P();
 };

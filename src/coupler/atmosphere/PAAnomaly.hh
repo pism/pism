@@ -42,18 +42,18 @@ public:
   virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
   virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
 protected:
-  vector<PetscReal> ts_mod, ts_values;
+  std::vector<PetscReal> ts_mod, ts_values;
   NCSpatialVariable air_temp, precipitation;
   IceModelVec2T *air_temp_anomaly, *precipitation_anomaly;
-  vector<double> m_mass_flux_anomaly, m_temp_anomaly;
+  std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 private:
   PetscErrorCode allocate_PAAnomaly();
 };

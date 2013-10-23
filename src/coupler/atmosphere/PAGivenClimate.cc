@@ -48,7 +48,7 @@ PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  map<string, string> standard_names;
+  std::map<std::string, std::string> standard_names;
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = air_temp->create(grid, "air_temp", false); CHKERRQ(ierr);

@@ -380,17 +380,17 @@ PetscErrorCode PISMEigenCalving::max_timestep(PetscReal /*my_t*/,
   return 0;
 }
 
-void PISMEigenCalving::add_vars_to_output(string /*keyword*/, set<string> &/*result*/) {
+void PISMEigenCalving::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/) {
   // empty
 }
 
-PetscErrorCode PISMEigenCalving::define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+PetscErrorCode PISMEigenCalving::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                                   PISM_IO_Type /*nctype*/) {
   // empty
   return 0;
 }
 
-PetscErrorCode PISMEigenCalving::write_variables(set<string> /*vars*/, const PIO& /*nc*/) {
+PetscErrorCode PISMEigenCalving::write_variables(std::set<std::string> /*vars*/, const PIO& /*nc*/) {
   // empty
   return 0;
 }

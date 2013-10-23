@@ -31,7 +31,7 @@ Most viewers are updated by this routine, but some other are updated elsewhere.
  */
 PetscErrorCode IceModel::update_viewers() {
   PetscErrorCode ierr;
-  set<string>::iterator i;
+  std::set<std::string>::iterator i;
 
   PetscInt viewer_size = (PetscInt)config.get("viewer_size");
 
@@ -66,7 +66,7 @@ PetscErrorCode IceModel::update_viewers() {
     }
 
     if (v->get_dof() == 1) {    // scalar fields
-      string name = v->string_attr("short_name");
+      std::string name = v->string_attr("short_name");
       PetscViewer viewer = viewers[name];
 
       if (viewer == PETSC_NULL) {
@@ -80,7 +80,7 @@ PetscErrorCode IceModel::update_viewers() {
       ierr = v2d->view(viewer, PETSC_NULL); CHKERRQ(ierr);
 
     } else if (v->get_dof() == 2) { // vector fields
-      string name_1 = v->string_attr("short_name", 0),
+      std::string name_1 = v->string_attr("short_name", 0),
         name_2 = v->string_attr("short_name", 1);
       PetscViewer v1 = viewers[name_1],
         v2 = viewers[name_2];
@@ -133,7 +133,7 @@ PetscErrorCode IceModel::update_viewers() {
       PISMEnd();
     }
 
-    string name = v->string_attr("short_name");
+    std::string name = v->string_attr("short_name");
     PetscViewer viewer = viewers[name];
 
     if (viewer == PETSC_NULL) {
@@ -172,9 +172,9 @@ PetscErrorCode IceModel::init_viewers() {
   // map-plane (and surface) viewers:
   ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",
 			    tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
-  string var_name;
+  std::string var_name;
   if (flag) {
-    istringstream arg(tmp);
+    std::istringstream arg(tmp);
 
     while (getline(arg, var_name, ',')) {
       map_viewers.insert(var_name);
@@ -185,7 +185,7 @@ PetscErrorCode IceModel::init_viewers() {
   ierr = PetscOptionsString("-view_sounding", "specifies the comma-separated list of sounding viewers", "", "empty",
 			    tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
   if (flag) {
-    istringstream arg(tmp);
+    std::istringstream arg(tmp);
 
     while (getline(arg, var_name, ','))
       sounding_viewers.insert(var_name);

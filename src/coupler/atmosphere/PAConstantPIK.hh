@@ -33,14 +33,14 @@ public:
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
   virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
   virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
 protected:
   IceModelVec2S *usurf, *lat;
-  string input_file;
+  std::string input_file;
   IceModelVec2S precipitation, air_temp;
   NCSpatialVariable air_temp_snapshot;
 private:

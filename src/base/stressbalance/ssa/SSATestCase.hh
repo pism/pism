@@ -74,9 +74,9 @@ public:
 
   virtual PetscErrorCode run();
 
-  virtual PetscErrorCode report(string testname);
+  virtual PetscErrorCode report(std::string testname);
 
-  virtual PetscErrorCode write(const string &filename);
+  virtual PetscErrorCode write(const std::string &filename);
 
 protected:
 
@@ -97,7 +97,7 @@ protected:
   virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
     PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
 
-  PetscErrorCode report_netcdf(string testname,
+  PetscErrorCode report_netcdf(std::string testname,
                                double max_vector,
                                double rel_vector,
                                double max_u,

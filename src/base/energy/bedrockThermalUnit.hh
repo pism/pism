@@ -73,7 +73,7 @@ bedrock, the ice/bedrock interface.  (Note \f$z=0\f$ is the base of the ice in
 IceModel, and thus a different location if ice is floating.)
 Let \f$G\f$ be the lithosphere geothermal flux rate, namely the PISM input
 variable `bheatflx`; see Related Page \ref std_names .  Let \f$k_b\f$
-(= `bedrock_thermal_conductivity` in pism_config.cdl) be the constant thermal
+= `bedrock_thermal_conductivity` in pism_config.cdl) be the constant thermal
 conductivity of the upper lithosphere.  In these terms the actual
 upward heat flux into the ice/bedrock interface is the quantity,
   \f[G_0 = -k_b \frac{\partial T_b}{\partial z}.\f]
@@ -107,9 +107,9 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);  
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);  
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   virtual PetscErrorCode max_timestep(PetscReal /*my_t*/, PetscReal &my_dt, bool &restrict);
 
@@ -131,7 +131,7 @@ protected:
   
   PetscInt Mbz;
   PetscReal Lbz;
-  string m_input_file;		//!< non-empty if "-i" was set
+  std::string m_input_file;		//!< non-empty if "-i" was set
 
   IceModelVec2S *bedtoptemp, //!< upper boundary temp, owned by the model to which we are attached
                 *ghf; //!< lower boundary flux, owned by the model to which we are attached

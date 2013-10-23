@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2013 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -46,7 +46,7 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode allocate_basal_yield_stress();
   virtual PetscErrorCode allocate_stressbalance();
-  virtual PetscErrorCode initFromFile(string fname);
+  virtual PetscErrorCode initFromFile(std::string fname);
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode additionalAtEndTimestep();
 
@@ -70,7 +70,7 @@ protected:
 class PSTYieldStress : public PISMMohrCoulombYieldStress
 {
 public:
-  PSTYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro, int e, string name)
+  PSTYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro, int e, std::string name)
     : PISMMohrCoulombYieldStress(g, conf, hydro),
       experiment(e), experiment_name(name) {}
   virtual ~PSTYieldStress() {}
@@ -78,7 +78,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 protected:
   int experiment;
-  string experiment_name;
+  std::string experiment_name;
   PetscErrorCode init_till_phi();
   PetscScalar phiLocal(const PetscScalar width, 
          const PetscScalar x, const PetscScalar y,

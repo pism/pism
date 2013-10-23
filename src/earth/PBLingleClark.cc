@@ -170,7 +170,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   PetscErrorCode ierr;
   bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
     topg_exists, topg_initial_exists, regrid_vars_set;
-  string boot_filename, regrid_filename;
+  std::string boot_filename, regrid_filename;
   PIO nc(grid, "guess_mode");
 
   ierr = PISMOptionsIsSet("-regrid_bed_special",
@@ -201,7 +201,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   }
 
   // Stop if the user asked to regrid topg (in this case no correction is necessary).
-  set<string> regrid_vars;
+  std::set<std::string> regrid_vars;
   ierr = PISMOptionsStringSet("-regrid_vars", "Specifies regridding variables", "",
                               regrid_vars, regrid_vars_set); CHKERRQ(ierr);
 

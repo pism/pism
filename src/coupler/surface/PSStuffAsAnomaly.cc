@@ -69,7 +69,7 @@ PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
 
 PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  string input_file;
+  std::string input_file;
   bool regrid = false;
   int start = 0;
 
@@ -155,7 +155,7 @@ PetscErrorCode PSStuffAsAnomaly::ice_surface_temperature(IceModelVec2S &result) 
   return temp.copy_to(result);
 }
 
-void PSStuffAsAnomaly::add_vars_to_output(string keyword, set<string> &result) {
+void PSStuffAsAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (input_model != NULL) {
     input_model->add_vars_to_output(keyword, result);
   }
@@ -164,7 +164,7 @@ void PSStuffAsAnomaly::add_vars_to_output(string keyword, set<string> &result) {
   result.insert("climatic_mass_balance");
 }
 
-PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSStuffAsAnomaly::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -186,7 +186,7 @@ PetscErrorCode PSStuffAsAnomaly::define_variables(set<string> vars, const PIO &n
   return 0;
 }
 
-PetscErrorCode PSStuffAsAnomaly::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSStuffAsAnomaly::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

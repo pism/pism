@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
     grid.Mx = grid.My = 61;
     grid.Mz = 61;
 
-    string output_file = "siafd_test_F.nc";
+    std::string output_file = "siafd_test_F.nc";
     ierr = PetscOptionsBegin(grid.com, "", "SIAFD_TEST options", ""); CHKERRQ(ierr);
     {
       bool flag;
@@ -415,7 +415,7 @@ int main(int argc, char *argv[]) {
     ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
                            "", ""); CHKERRQ(ierr);
-    vector<double> mask_values(4);
+    std::vector<double> mask_values(4);
     mask_values[0] = MASK_ICE_FREE_BEDROCK;
     mask_values[1] = MASK_GROUNDED;
     mask_values[2] = MASK_FLOATING;

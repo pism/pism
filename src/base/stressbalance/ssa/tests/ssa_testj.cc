@@ -181,12 +181,12 @@ int main(int argc, char *argv[]) {
     // Parameters that can be overridden by command line options
     PetscInt Mx=61;
     PetscInt My=61;
-    string output_file = "ssa_test_j.nc";
+    std::string output_file = "ssa_test_j.nc";
 
-    set<string> ssa_choices;
+    std::set<std::string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
-    string driver = "fem";
+    std::string driver = "fem";
 
     ierr = PetscOptionsBegin(com, "", "SSA_TESTJ options", ""); CHKERRQ(ierr);
     {
