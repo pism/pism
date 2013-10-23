@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,11 +22,6 @@
 #include <mpi.h>
 #include <string>
 #include <vector>
-
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
 
 // This is a subset of NetCDF data-types.
 enum PISM_IO_Type {

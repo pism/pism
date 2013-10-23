@@ -29,11 +29,6 @@
 #include "IceGrid.hh"           // Needed for Periodicity enum declaration.
 #include "PISMNCFile.hh"
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
 class grid_info;

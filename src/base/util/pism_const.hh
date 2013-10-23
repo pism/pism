@@ -24,11 +24,6 @@
 #include <vector>
 #include <set>
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 

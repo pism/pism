@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Ed Bueler
+// Copyright (C) 2009-2011, 2013 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -21,11 +21,6 @@
 
 #include <string>
 #include <petsc.h>
-
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
 
 //! Virtual base class.  Abstracts a tridiagonal system to solve in a column of ice and/or bedrock.
 /*!

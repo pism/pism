@@ -28,8 +28,6 @@
 #include <stdlib.h>
 #include <cstdio>
 
-using namespace std;
-
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
 #ifndef MPI_INCLUDED

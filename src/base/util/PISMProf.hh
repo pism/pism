@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,10 +27,6 @@
 #include <vector>
 #include <petsc.h>
 #include "PISMNCFile.hh"
-
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
 
 //! \brief A class storing and writing PISM profiling event data.
 class PISMEvent {

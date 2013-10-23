@@ -27,11 +27,6 @@
 #include "PISMUnits.hh"
 #include "PIO.hh"
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 class PISMTime;
 
 //! \brief A class for handling variable metadata, reading, writing and converting

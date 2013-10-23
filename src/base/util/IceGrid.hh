@@ -25,11 +25,6 @@
 #include <map>
 #include "PISMUnits.hh"
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 class PISMTime;
 class PISMProf;
 class NCConfigVariable;

@@ -64,11 +64,6 @@ class PISMOceanKill;
 class PISMCalvingAtThickness;
 class PISMEigenCalving;
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {

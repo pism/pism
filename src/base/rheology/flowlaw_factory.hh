@@ -23,11 +23,6 @@
 #include <map>
 #include <string>
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 #define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
 #define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
 #define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (PolyThermalGPBLDIce) */
