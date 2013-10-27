@@ -17,6 +17,24 @@ find_library (GSL_LIB NAMES gsl)
 
 find_library(GSL_CBLAS_LIB NAMES gslcblas)
 
+if (NOT GSL_INCLUDES)
+  message(STATUS "Trying to use 'gsl-config' to find GSL...")
+  find_program(GSL_CONFIG "gsl-config")
+  if (GSL_CONFIG)
+    execute_process(COMMAND "${GSL_CONFIG} --prefix"
+      OUTPUT_VARIABLE GSL_PREFIX)
+
+    find_path(GSL_INCLUDES gsl/gsl_math.h
+      HINTS ${GSL_PREFIX})
+
+    find_library (GSL_LIB NAMES gsl
+      HINTS ${GSL_PREFIX})
+
+    find_library(GSL_CBLAS_LIB NAMES gslcblas
+      HINTS ${GSL_PREFIX})
+  endif()
+endif()
+
 set (GSL_LIBRARIES "${GSL_LIB}" "${GSL_CBLAS_LIB}")
 
 # handle the QUIETLY and REQUIRED arguments and set GSL_FOUND to TRUE if

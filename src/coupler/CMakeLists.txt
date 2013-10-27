@@ -17,6 +17,7 @@ add_library (pismboundary
   ./ocean/POConstantPIK.cc
   ./ocean/POConstant.cc
   ./ocean/POGivenClimate.cc
+  ./ocean/POGivenTH.cc
   ./ocean/PO_delta_SL.cc
   ./ocean/PO_delta_T.cc
   ./ocean/PO_delta_SMB.cc
