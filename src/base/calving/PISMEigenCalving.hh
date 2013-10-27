@@ -16,32 +16,45 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#ifndef _PISMEIGENCALVING_H_
+#define _PISMEIGENCALVING_H_
 
-#ifndef _PISMCALVINGATTHICKNESS_H_
-#define _PISMCALVINGATTHICKNESS_H_
-
+#include "iceModelvec.hh"
 #include "PISMComponent.hh"
-#include "iceModelVec.hh"
 
-/*! \brief Calving mechanism removing the ice at the shelf front that
-    has thickness below a given threshold. */
-class PISMCalvingAtThickness : public PISMComponent
+class PISMStressBalance;
+
+class PISMEigenCalving : public PISMComponent
 {
 public:
-  PISMCalvingAtThickness(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PISMCalvingAtThickness();
+  PISMEigenCalving(IceGrid &g, const NCConfigVariable &conf,
+                   PISMStressBalance *stress_balance);
+  virtual ~PISMEigenCalving();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
+  virtual PetscErrorCode update(PetscReal dt,
+                                IceModelVec2Int &pism_mask,
+                                IceModelVec2S &Href,
+                                IceModelVec2S &ice_thickness);
 
+  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+
+  // empty methods that we're required to implement:
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, const PIO& nc);
 protected:
+  IceModelVec2 m_strain_rates;
+  IceModelVec2S m_thk_loss;
+  const int m_stencil_width;
+  IceModelVec2Int *m_mask;
+  PISMStressBalance *m_stress_balance;
+  double m_K;
+  bool m_restrict_timestep;
 
-  double m_calving_threshold;
-  IceModelVec2Int m_old_mask;
+  PetscErrorCode update_strain_rates();
 };
 
-#endif /* _PISMCALVINGATTHICKNESS_H_ */
+
+#endif /* _PISMEIGENCALVING_H_ */

@@ -75,7 +75,7 @@ protected:
     }
 
     if (bc_period_set) {
-      bc_period = bc_period_years;
+      bc_period = (unsigned int)bc_period_years;
     } else {
       bc_period = 0;
     }

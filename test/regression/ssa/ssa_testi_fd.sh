@@ -24,7 +24,7 @@ rm -f $files
 set -e
 set -x
 
-OPTS="-verbose 1 -ssa_method fd -o foo-fd-i.nc -ssa_rtol 5e-07 -ksp_rtol 1e-12 -Mx 5"
+OPTS="-verbose 1 -ssa_method fd -o foo-fd-i.nc -ssa_rtol 5e-07 -ssafd_ksp_rtol 1e-12 -Mx 5"
 
 # do stuff
 $MPIEXEC_COMMAND $PISM_PATH/ssa_testi${EXT} -My 61 $OPTS > test-I-out-fd.txt

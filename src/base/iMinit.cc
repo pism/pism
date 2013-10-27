@@ -50,6 +50,9 @@
 #include "LocalInterpCtx.hh"
 #include "pism_options.hh"
 #include "PISMIcebergRemover.hh"
+#include "PISMOceanKill.hh"
+#include "PISMCalvingAtThickness.hh"
+#include "PISMEigenCalving.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -553,17 +556,6 @@ PetscErrorCode IceModel::model_state_setup() {
     }
   }
 
-  if (ocean_kill_flux_2D_cumulative.was_created()) {
-    if (i_set) {
-      ierr = verbPrintf(2, grid.com,
-                        "* Trying to read cumulative ocean kill flux from '%s'...\n",
-                        filename.c_str()); CHKERRQ(ierr);
-      ierr = ocean_kill_flux_2D_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
-    } else {
-      ierr = ocean_kill_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
-    }
-  }
-
   if (grounded_basal_flux_2D_cumulative.was_created()) {
     if (i_set) {
       ierr = verbPrintf(2, grid.com,
@@ -611,17 +603,8 @@ PetscErrorCode IceModel::model_state_setup() {
     if (run_stats.has("grounded_basal_ice_flux_cumulative"))
       grounded_basal_ice_flux_cumulative = run_stats.get("grounded_basal_ice_flux_cumulative");
 
-    if (run_stats.has("float_kill_flux_cumulative"))
-      float_kill_flux_cumulative = run_stats.get("float_kill_flux_cumulative");
-
-    if (run_stats.has("discharge_flux_cumulative"))
-      discharge_flux_cumulative = run_stats.get("discharge_flux_cumulative");
-
     if (run_stats.has("nonneg_rule_flux_cumulative"))
       nonneg_rule_flux_cumulative = run_stats.get("nonneg_rule_flux_cumulative");
-
-    if (run_stats.has("ocean_kill_flux_cumulative"))
-      ocean_kill_flux_cumulative = run_stats.get("ocean_kill_flux_cumulative");
 
     if (run_stats.has("sub_shelf_ice_flux_cumulative"))
       sub_shelf_ice_flux_cumulative = run_stats.get("sub_shelf_ice_flux_cumulative");
@@ -991,7 +974,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
 			 "medium", output_vars); CHKERRQ(ierr);
 
-  ierr = init_ocean_kill(); CHKERRQ(ierr);
+  ierr = init_calving(); CHKERRQ(ierr);
   ierr = init_diagnostics(); CHKERRQ(ierr);
   ierr = init_snapshots(); CHKERRQ(ierr);
   ierr = init_backups(); CHKERRQ(ierr);
@@ -1028,63 +1011,39 @@ PetscErrorCode IceModel::misc_setup() {
   return 0;
 }
 
-//! \brief Initialize the mask used by the -ocean_kill code.
-PetscErrorCode IceModel::init_ocean_kill() {
+//! \brief Initialize calving mechanisms.
+PetscErrorCode IceModel::init_calving() {
   PetscErrorCode ierr;
-  string filename;
-  bool flag;
 
-  if (!config.get_flag("ocean_kill"))
-    return 0;
+  if (config.get_flag("ocean_kill") == true) {
 
-  ierr = PetscOptionsBegin(grid.com, "", "Fixed calving front options", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-ocean_kill", "Specifies a file to get -ocean_kill thickness from",
-                             filename, flag, true); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  MaskQuery m(vMask);
-
-  IceModelVec2S thickness, *tmp;
-
-  if (filename.empty()) {
-    ierr = verbPrintf(2, grid.com,
-       "* Option -ocean_kill seen: using ice thickness at the beginning of the run\n"
-       "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
-    tmp = &vH;
-  } else {
-    ierr = verbPrintf(2, grid.com,
-       "* Option -ocean_kill seen: setting fixed calving front location using\n"
-       "  ice thickness from '%s'.\n",filename.c_str()); CHKERRQ(ierr);
-
-    ierr = thickness.create(grid, "thk", false); CHKERRQ(ierr);
-    ierr = thickness.set_attrs("temporary", "land ice thickness",
-                               "m", "land_ice_thickness"); CHKERRQ(ierr);
-    ierr = thickness.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-
-    ierr = thickness.regrid(filename, true); CHKERRQ(ierr);
-
-    tmp = &thickness;
-  }
-
-  ierr = ocean_kill_mask.begin_access(); CHKERRQ(ierr);
-  ierr = tmp->begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if ((*tmp)(i, j) > 0 || m.grounded(i, j) ) // FIXME: use GeometryCalculator
-        ocean_kill_mask(i, j) = 0;
-      else
-        ocean_kill_mask(i, j) = 1;
+    if (ocean_kill_calving == NULL) {
+      ocean_kill_calving = new PISMOceanKill(grid, config);
     }
+
+    ierr = ocean_kill_calving->init(variables); CHKERRQ(ierr);
   }
 
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = tmp->end_access(); CHKERRQ(ierr);
-  ierr = ocean_kill_mask.end_access(); CHKERRQ(ierr);
+  if (config.get_flag("do_thickness_calving") == true) {
 
+    if (thickness_threshold_calving == NULL) {
+      thickness_threshold_calving = new PISMCalvingAtThickness(grid, config);
+    }
+
+    ierr = thickness_threshold_calving->init(variables); CHKERRQ(ierr);
+  }
+
+
+  if (config.get_flag("do_eigen_calving")) {
+
+    if (eigen_calving == NULL) {
+      eigen_calving = new PISMEigenCalving(grid, config,
+                                           stress_balance);
+    }
+
+    ierr = eigen_calving->init(variables); CHKERRQ(ierr);
+  }
+  
   return 0;
 }
 

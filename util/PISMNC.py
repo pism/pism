@@ -67,6 +67,8 @@ class PISMDataset(netCDF.Dataset):
             return
         
         for (name, value) in attrs.iteritems():
+            if name == "_FillValue":
+                continue
             setattr(self.variables[var_name], name, value)
 
     def define_2d_field(self, var_name, time_dependent=False, dims=None, nc_type = 'f8', attrs=None):
@@ -87,14 +89,23 @@ class PISMDataset(netCDF.Dataset):
         try:
             var = self.variables[var_name]
         except:
-            var = self.createVariable(var_name, nc_type, dims)
+            if attrs is not None and '_FillValue' in attrs.keys():
+                var = self.createVariable(var_name, nc_type, dims,
+                                          fill_value=attrs['_FillValue'])
+            else:
+                var = self.createVariable(var_name, nc_type, dims)
+
             self.set_attrs(var_name, attrs)
 
         return var
 
     def define_timeseries(self, var_name, attrs=None):
         try:
-            var = self.createVariable(var_name, 'f8', ('time',))
+            if attrs is not None and '_FillValue' in attrs.keys():
+                var = self.createVariable(var_name, 'f8', ('time',),
+                                          fill_value=attrs['_FillValue'])
+            else:
+                var = self.createVariable(var_name, 'f8', ('time',))
         except:
             var = self.variables[var_name]
 

@@ -96,7 +96,11 @@ PetscErrorCode PISMStressBalance::update(bool fast, double sea_level) {
   // Tell the ShallowStressBalance object about the current sea level:
   m_stress_balance->set_sea_level_elevation(sea_level);
 
-  ierr = m_stress_balance->update(fast); CHKERRQ(ierr);
+  ierr = m_stress_balance->update(fast);
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "PISM ERROR: Shallow stress balance solver failed.\n");
+    return ierr;
+  }
 
   ierr = m_stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr);
 

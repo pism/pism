@@ -59,40 +59,6 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
     mask_floating_ice = 2;
   MaskQuery M(pism_mask);
 
-  // Find floating cells that have ice-free ocean neighbors both north
-  // and south (east and west). Set ice thickness to zero at these locations.
-  //
-  // This serves a double purpose:
-  //
-  // 1) locations like these don't have icy neighbors necessary to
-  // approximate strain rates used by the eigen-calving mechanism
-  //
-  // 2) when the calving front force boundary condition is applied,
-  // one-cell-wide strips of ice with low (or zero) basal drag result
-  // in assembling a matrix with a zero pivot.
-  //
-  // FIXME: because of 2) this loop should be executed whenever CFBC
-  // is "on".
-  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-
-      // check floating ice cells only:
-      if (M.floating_ice(i, j) == false)
-        continue;
-
-      if ((M.ice_free_ocean(i - 1, j) && M.ice_free_ocean(i + 1, j)) ||
-          (M.ice_free_ocean(i, j - 1) && M.ice_free_ocean(i, j + 1))) {
-        pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
-        ice_thickness(i, j) = 0.0;
-      }
-    }
-  }
-
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = pism_mask.end_access(); CHKERRQ(ierr);
-
   // prepare the mask that will be handed to the connected component
   // labeling code:
   ierr = VecSet(m_g2, 0.0); CHKERRQ(ierr);
