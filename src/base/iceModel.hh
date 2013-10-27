@@ -228,7 +228,7 @@ protected:
   IceModelVec2S vh,		//!< ice surface elevation; ghosted
     vH,		//!< ice thickness; ghosted
     vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
-    vbmr,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
+    basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
     vLongitude,	//!< Longitude; ghosted to compute cell areas
     vLatitude,	//!< Latitude; ghosted to compute cell areas
     vbed,		//!< bed topography; ghosted
@@ -249,7 +249,7 @@ protected:
     floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
     discharge_flux_2D_cumulative,      //!< cumulative discharge (calving) flux (2D field)
-    artm,		//!< ice temperature at the ice surface but below firn; no ghosts
+    ice_surface_temp,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
@@ -336,26 +336,10 @@ protected:
                                           IceModelVec3 &result);
   virtual PetscErrorCode compute_liquid_water_fraction(IceModelVec3 &enthalpy, IceModelVec3 &result);
 
-  virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &useForCTS);
+  virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &result);
 
-  virtual PetscErrorCode getEnthalpyCTSColumn(PetscScalar p_air, //!< atmospheric pressure
-					      PetscScalar thk,	 //!< ice thickness
-					      PetscInt ks,	 //!< index of the level just below the surface
-					      PetscScalar **Enth_s //!< enthalpy of pressure-melting temperature cold ice
-					      );
-
-  virtual PetscErrorCode getlambdaColumn(PetscInt ks,	       //!< index of the level just below the surface
-					 PetscScalar ice_rho_c,//!< default value only
-                                         PetscScalar ice_k,    //!< default value only
-					 const PetscScalar *Enth,   //!< enthalpy in the column
-					 const PetscScalar *Enth_s, //!< enthalpy of pressure-melting temperature cold ice
-					 const PetscScalar *w, //!< vert. velocity
-					 PetscScalar *lambda //!< constant controlling choice of implicit method
-					 );
-
-  virtual PetscErrorCode enthalpyAndDrainageStep(
-                PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
-                PetscScalar* bulgeCount);
+  virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
+                                                 PetscScalar* liquifiedVol, PetscScalar* bulgeCount);
 
   // see iMgeometry.cc
   virtual PetscErrorCode updateSurfaceElevationAndMask();

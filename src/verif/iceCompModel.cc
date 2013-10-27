@@ -78,9 +78,9 @@ PetscErrorCode IceCompModel::createVecs() {
   // this ensures that these variables are saved to an output file and are read
   // back in if -i option is used (they are "model_state", in a sense, since
   // PSDummy is used):
-  ierr = variables.add(artm); CHKERRQ(ierr);
+  ierr = variables.add(ice_surface_temp); CHKERRQ(ierr);
   ierr = variables.add(acab); CHKERRQ(ierr);
-  ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
 
   return 0;
@@ -352,7 +352,7 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   // all have no uplift
   ierr = vuplift.set(0.0); CHKERRQ(ierr);
 
-  ierr = vbmr.set(0.0); CHKERRQ(ierr); // this is the correct initialization for
+  ierr = basal_melt_rate.set(0.0); CHKERRQ(ierr); // this is the correct initialization for
                                        // Test O (and every other Test; they
                                        // all generate zero basal melt rate)
 
@@ -398,7 +398,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
-  ierr = artm.set(T0); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
 
@@ -478,7 +478,7 @@ PetscErrorCode IceCompModel::initTestL() {
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
-  ierr = artm.set(T0); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
 
@@ -1338,7 +1338,7 @@ PetscErrorCode IceCompModel::test_V_init() {
   PetscErrorCode ierr;
 
   // initialize temperature; the value used does not matter
-  ierr = artm.set(273.15); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set(273.15); CHKERRQ(ierr);
 
   // initialize mass balance:
   ierr = acab.set(0.0); CHKERRQ(ierr);

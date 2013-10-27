@@ -116,7 +116,7 @@ PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(PetscScalar my_G0
 }
 
 
-PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
+PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
 
   assert(initAllDone == true);
   assert(schemeParamsValid == true);
@@ -210,7 +210,17 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
   basalBCsValid = false;
 
   // solve it; note melting not addressed yet
-  pivoterrorindex = solveTridiagonalSystem(ks+1,x);
+  int pivoterr = solveTridiagonalSystem(ks+1,x);
+
+  if (pivoterr != 0) {
+    PetscErrorCode ierr = PetscPrintf(PETSC_COMM_SELF,
+                       "\n\ntridiagonal solve of tempSystemCtx in temperatureStep() FAILED at (%d,%d)\n"
+                       " with zero pivot position %d; viewing system to m-file ... \n",
+                       i, j, pivoterr); CHKERRQ(ierr);
+    ierr = reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
+    SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in temperatureStep()\n");
+  }
+
   return 0;
 }
 

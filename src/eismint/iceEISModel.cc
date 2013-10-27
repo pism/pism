@@ -46,9 +46,9 @@ PetscErrorCode IceEISModel::createVecs() {
   // this ensures that these variables are saved to an output file and are read
   // back in if -i option is used (they are "model_state", in a sense, since
   // PSDummy is used):
-  ierr = variables.add(artm); CHKERRQ(ierr);
+  ierr = variables.add(ice_surface_temp); CHKERRQ(ierr);
   ierr = variables.add(acab); CHKERRQ(ierr);
-  ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
 
   return 0;
@@ -221,7 +221,7 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
     ierr = stress_balance->init(variables); CHKERRQ(ierr);
 
     if (config.get_flag("include_bmr_in_continuity")) {
-      ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
+      ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
     }
   }
   
@@ -246,7 +246,7 @@ PetscErrorCode IceEISModel::init_couplers() {
   CHKERRQ(ierr);
 
   // now fill in accum and surface temp
-  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
 
   PetscScalar cx = grid.Lx, cy = grid.Ly;
@@ -259,11 +259,11 @@ PetscErrorCode IceEISModel::init_couplers() {
       // set accumulation from formula (7) in (Payne et al 2000)
       acab(i,j) = PetscMin(M_max, S_b * (R_el-r));
       // set surface temperature
-      artm(i,j) = T_min + S_T * r;  // formula (8) in (Payne et al 2000)
+      ice_surface_temp(i,j) = T_min + S_T * r;  // formula (8) in (Payne et al 2000)
     }
   }
 
-  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
   ierr = acab.end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -342,7 +342,7 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   // communicate b in any case; it will be horizontally-differentiated
   ierr = vbed.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = vbmr.set(0.0); CHKERRQ(ierr);
+  ierr = basal_melt_rate.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.042); CHKERRQ(ierr);  // EISMINT II value; J m-2 s-1
 
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
