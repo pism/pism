@@ -55,10 +55,10 @@ protected:
   PetscErrorCode transfer_to_proc0();
   PetscErrorCode transfer_from_proc0();
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO& nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc);
   
   Vec m_g2, m_g2natural;  //!< global Vecs used to transfer data to/from processor 0.
   VecScatter m_scatter; //!< VecScatter used to transfer data to/from processor 0.

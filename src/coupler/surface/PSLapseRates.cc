@@ -105,7 +105,7 @@ PetscErrorCode PSLapseRates::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSLapseRates::add_vars_to_output(string keyword, set<string> &result) {
+void PSLapseRates::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
@@ -114,7 +114,7 @@ void PSLapseRates::add_vars_to_output(string keyword, set<string> &result) {
   input_model->add_vars_to_output(keyword, result);
 }
 
-PetscErrorCode PSLapseRates::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSLapseRates::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -130,7 +130,7 @@ PetscErrorCode PSLapseRates::define_variables(set<string> vars, const PIO &nc, P
   return 0;
 }
 
-PetscErrorCode PSLapseRates::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSLapseRates::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

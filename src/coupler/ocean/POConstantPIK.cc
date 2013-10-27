@@ -171,14 +171,14 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-void POConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
+void POConstantPIK::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("shelfbtemp");
     result.insert("shelfbmassflux");
   }
 }
 
-PetscErrorCode POConstantPIK::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode POConstantPIK::define_variables(std::set<std::string> vars, const PIO &nc,
                                                PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -193,7 +193,7 @@ PetscErrorCode POConstantPIK::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode POConstantPIK::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode POConstantPIK::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 

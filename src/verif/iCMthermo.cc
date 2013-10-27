@@ -353,7 +353,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   if (my_btu == NULL) SETERRQ(grid.com, 1, "my_btu == NULL");
   ierr = my_btu->get_temp(bedrock_temp); CHKERRQ(ierr);
 
-  vector<double> zblevels = bedrock_temp->get_levels();
+  std::vector<double> zblevels = bedrock_temp->get_levels();
   int Mbz = (int)zblevels.size();
   Tbex = new PetscScalar[Mbz];
 
@@ -738,7 +738,7 @@ PetscErrorCode BTU_Verification::bootstrap() {
 
   if (Mbz < 2) return 0;
 
-  vector<double> Tbcol(Mbz),
+  std::vector<double> Tbcol(Mbz),
     zlevels = temp.get_levels();
   PetscScalar       dum1, dum2, dum3, dum4;
   PetscScalar    FF;

@@ -93,7 +93,7 @@ public:
   virtual PetscErrorCode extend_the_grid(PetscInt /*old_Mz*/)
   { return 0; }
   //! \brief Produce a report string for the standard output.
-  virtual PetscErrorCode stdout_report(string &result)
+  virtual PetscErrorCode stdout_report(std::string &result)
   { result = ""; return 0; }
 
   IceFlowLaw* get_flow_law()
@@ -158,24 +158,24 @@ public:
   }
   virtual PetscErrorCode update(bool fast);
 
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
   { }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
     dict["taud"] = new SSB_taud(this, grid, *variables);
     dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
   }
 
   //! Defines requested couplings fields and/or asks an attached model
   //! to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 };
 

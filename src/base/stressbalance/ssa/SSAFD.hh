@@ -50,8 +50,8 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
 protected:
   virtual PetscErrorCode allocate_fd();
 

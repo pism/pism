@@ -90,19 +90,19 @@ PetscErrorCode PISMCalvingAtThickness::update(IceModelVec2Int &pism_mask,
 }
 
 
-void PISMCalvingAtThickness::add_vars_to_output(string /*keyword*/,
-                                                set<string> &/*result*/) {
+void PISMCalvingAtThickness::add_vars_to_output(std::string /*keyword*/,
+                                                std::set<std::string> &/*result*/) {
   // empty
 }
 
-PetscErrorCode PISMCalvingAtThickness::define_variables(set<string> /*vars*/,
+PetscErrorCode PISMCalvingAtThickness::define_variables(std::set<std::string> /*vars*/,
                                                         const PIO &/*nc*/,
                                                         PISM_IO_Type /*nctype*/) {
   // empty
   return 0;
 }
 
-PetscErrorCode PISMCalvingAtThickness::write_variables(set<string> /*vars*/,
+PetscErrorCode PISMCalvingAtThickness::write_variables(std::set<std::string> /*vars*/,
                                                        const PIO& /*nc*/) {
   // empty
   return 0;

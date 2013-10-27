@@ -114,10 +114,10 @@ typedef int NormType; // YUCK.
 
 
 namespace std {
-   %template(IntVector) vector<PetscInt>;
-   %template(DoubleVector) vector<PetscReal>;
-   %template(StringVector) vector<string>;
-   %template(StringSet) set<string>;
+   %template(IntVector) std::vector<PetscInt>;
+   %template(DoubleVector) std::vector<PetscReal>;
+   %template(StringVector) std::vector<std::string>;
+   %template(StringSet) std::set<std::string>;
 }
 
 // Why did I include this?
@@ -199,7 +199,7 @@ namespace std {
     %append_output(SWIG_From(int)(*$1));
 };
 
-%typemap(in, numinputs=0,noblock=1) string& result (string temp) {
+%typemap(in, numinputs=0,noblock=1) std::string& result (std::string temp) {
     $1 = &temp;
 }
 
@@ -212,10 +212,10 @@ namespace std {
 }
 %apply std::string &OUTPUT { std::string &result}
 
-%typemap(in, numinputs=0,noblock=1) vector<PetscInt> & OUTPUT (vector<PetscInt> temp) {
+%typemap(in, numinputs=0,noblock=1) std::vector<PetscInt> & OUTPUT (std::vector<PetscInt> temp) {
     $1 = &temp;
 }
-%typemap(argout,noblock=1) vector<PetscInt> & OUTPUT
+%typemap(argout,noblock=1) std::vector<PetscInt> & OUTPUT
 {
     int len;
     len = $1->size();
@@ -227,10 +227,10 @@ namespace std {
      }
 }
 
-%typemap(in, numinputs=0,noblock=1) vector<PetscReal> & OUTPUT (vector<PetscReal> temp) {
+%typemap(in, numinputs=0,noblock=1) std::vector<PetscReal> & OUTPUT (std::vector<PetscReal> temp) {
     $1 = &temp;
 }
-%typemap(argout,noblock=1) vector<PetscReal> & OUTPUT
+%typemap(argout,noblock=1) std::vector<PetscReal> & OUTPUT
 {
     int len;
     len = $1->size();
@@ -255,9 +255,9 @@ namespace std {
 };
 %apply std::tr1::shared_ptr<TerminationReason> & OUTPUT { std::tr1::shared_ptr<TerminationReason> &reason };
 
-%apply vector<PetscInt> & OUTPUT {vector<PetscInt> &result};
-%apply vector<PetscReal> & OUTPUT {vector<PetscReal> &result};
-%apply vector<string> & OUTPUT {vector<string> & result};
+%apply std::vector<PetscInt> & OUTPUT {std::vector<PetscInt> &result};
+%apply std::vector<PetscReal> & OUTPUT {std::vector<PetscReal> &result};
+%apply std::vector<std::string> & OUTPUT {std::vector<std::string> & result};
  
 %apply int &OUTPUT {int &result};
 %apply int *OUTPUT {int *out_mask};
@@ -327,9 +327,9 @@ namespace std {
 //
 //  To access the version of regrid taking a default value, call
 //  var.regrid_with_default(filename, value)
-%rename(regrid_with_default) IceModelVec::regrid(string, PetscScalar);
-%rename(regrid_with_critical) IceModelVec::regrid(string, bool);
-%rename(regrid_with_critical_and_start) IceModelVec::regrid(string, bool, int);
+%rename(regrid_with_default) IceModelVec::regrid(std::string, PetscScalar);
+%rename(regrid_with_critical) IceModelVec::regrid(std::string, bool);
+%rename(regrid_with_critical_and_start) IceModelVec::regrid(std::string, bool, int);
 %rename(regrid_with_default_pio) IceModelVec::regrid(const PIO&, PetscScalar);
 %rename(regrid_with_critical_pio) IceModelVec::regrid(const PIO&, bool);
 %rename(regrid_with_critical_and_start_pio) IceModelVec::regrid(const PIO&, bool, int);
@@ -342,9 +342,9 @@ namespace std {
 }
 
 // We also make the same fix for IceModelVec2's.
-%rename(regrid_with_default) IceModelVec2::regrid(string, PetscScalar);
-%rename(regrid_with_critical) IceModelVec2::regrid(string, bool);
-%rename(regrid_with_critical_and_start) IceModelVec2::regrid(string, bool, int);
+%rename(regrid_with_default) IceModelVec2::regrid(std::string, PetscScalar);
+%rename(regrid_with_critical) IceModelVec2::regrid(std::string, bool);
+%rename(regrid_with_critical_and_start) IceModelVec2::regrid(std::string, bool, int);
 %rename(read_with_pio) IceModelVec2::read(const PIO&, unsigned int const);
 %rename(read_attributes_with_pio) IceModelVec::read_attributes(const PIO&, int);
 %extend IceModelVec2
@@ -465,7 +465,7 @@ namespace std {
 // thing, and the warning is wrong.  Trying to reproduce the warning
 // in a simple test setting failed.  This should get cleaned up, and
 // a bug reported to SWIG if needed.  For now, we do the following hack.
-%rename(write_as_type) IceModelVec2::write(string,PISM_IO_Type);
+%rename(write_as_type) IceModelVec2::write(std::string,PISM_IO_Type);
 
 %extend Timeseries
 {

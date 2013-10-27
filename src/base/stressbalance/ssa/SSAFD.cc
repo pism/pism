@@ -192,7 +192,7 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   // numerical solution of SSA equations; can be given with or without filename prefix
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
-  string tempPrefix;
+  std::string tempPrefix;
   ierr = PISMOptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format",
 			  dump_system_matlab); CHKERRQ(ierr);
 
@@ -1052,7 +1052,7 @@ a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
 PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) {
   PetscErrorCode ierr;
 
-  vector<PetscReal> nuNorm, nuChange;
+  std::vector<PetscReal> nuNorm, nuChange;
 
   const PetscScalar area = grid.dx * grid.dy;
 #define MY_NORM     NORM_1
@@ -1394,7 +1394,7 @@ PetscErrorCode SSAFD::write_system_petsc() {
 PetscErrorCode SSAFD::write_system_matlab() {
   PetscErrorCode ierr;
   PetscViewer    viewer;
-  string prefix = "pism_SSAFD", file_name;
+  std::string prefix = "pism_SSAFD", file_name;
   char           yearappend[PETSC_MAX_PATH_LEN];
 
   IceModelVec2S component;
@@ -1407,7 +1407,7 @@ PetscErrorCode SSAFD::write_system_matlab() {
 
   snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m",
            grid.convert(grid.time->current(), "seconds", "years"));
-  file_name = prefix + string(yearappend);
+  file_name = prefix + std::string(yearappend);
 
   ierr = verbPrintf(2, grid.com,
                     "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
@@ -1418,7 +1418,7 @@ PetscErrorCode SSAFD::write_system_matlab() {
   ierr = PetscViewerFileSetName(viewer, file_name.c_str());CHKERRQ(ierr);
 
   // get the command which started the run
-  string cmdstr = pism_args_string();
+  std::string cmdstr = pism_args_string();
 
   // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
   ierr = PetscViewerASCIIPrintf(viewer,
@@ -1507,8 +1507,8 @@ PetscErrorCode SSAFD_nuH::compute(IceModelVec* &output) {
   return 0;
 }
 
-void SSAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                            map<string, PISMTSDiagnostic*> &ts_dict) {
+void SSAFD::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                            std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
   SSA::get_diagnostics(dict, ts_dict);
 
   dict["nuH"] = new SSAFD_nuH(this, grid, *variables);

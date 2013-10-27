@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Ed Bueler
+// Copyright (C) 2009-2011, 2013 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -22,11 +22,6 @@
 #include <string>
 #include <petsc.h>
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 //! Virtual base class.  Abstracts a tridiagonal system to solve in a column of ice and/or bedrock.
 /*!
 Because both the age evolution and conservation of energy equations require us to set up
@@ -43,7 +38,7 @@ the system in each column.
 class columnSystemCtx {
 
 public:
-  columnSystemCtx(PetscInt my_nmax, string my_prefix);
+  columnSystemCtx(PetscInt my_nmax, std::string my_prefix);
   virtual ~columnSystemCtx();
 
   PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
@@ -69,7 +64,7 @@ protected:
   // deliberately protected so only derived classes can use
   PetscErrorCode solveTridiagonalSystem(const PetscInt n, PetscScalar **x);
   
-  string      prefix;
+  std::string      prefix;
 private:
   bool        indicesValid;
   PetscErrorCode resetColumn();

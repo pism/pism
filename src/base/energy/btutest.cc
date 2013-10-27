@@ -44,7 +44,7 @@ PetscErrorCode BTU_Test::bootstrap() {
 
   // fill exact bedrock temperature from Test K at time ys
   if (Mbz > 1) {
-    vector<double> zlevels = temp.get_levels();
+    std::vector<double> zlevels = temp.get_levels();
 
     ierr = temp.begin_access(); CHKERRQ(ierr);
     PetscScalar *Tb; // columns of these values
@@ -90,8 +90,8 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 
 static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
   // Get the names of all the variables allocated earlier:
-  set<string> vars = variables.keys();
-  set<string>::iterator i = vars.begin();
+  std::set<std::string> vars = variables.keys();
+  std::set<std::string>::iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i);
     delete var;
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     // check required options
-    vector<string> required;
+    std::vector<std::string> required;
     required.push_back("-Mbz");
     ierr = show_usage_check_req_opts(com, "btutest", required,
       "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
 	"  initializing IceGrid from options ...\n"); CHKERRQ(ierr);
     bool flag;
     PetscReal dt_years = 1.0;
-    string outname="unnamed_btutest.nc";
+    std::string outname="unnamed_btutest.nc";
     ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
@@ -281,12 +281,12 @@ int main(int argc, char *argv[]) {
                       maxghferr,100.0*maxghferr/FF,avghferr); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
 
-    set<string> vars;
+    std::set<std::string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
 
     PIO pio(grid, grid.config.get_string("output_format"));
 
-    string time_name = config.get_string("time_dimension_name");
+    std::string time_name = config.get_string("time_dimension_name");
     ierr = pio.open(outname, PISM_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(time_name, grid.time->calendar(),
                         grid.time->CF_units_string()); CHKERRQ(ierr);

@@ -53,15 +53,15 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
   //! Defines requested fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/);
 
   //! Writes requested fields to a file.
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   //! \brief Set the vertically-averaged ice velocity boundary condition.
   /*!
@@ -106,13 +106,13 @@ public:
                                              IceModelVec2 &result);
 
   //! \brief Produce a report string for the standard output.
-  virtual PetscErrorCode stdout_report(string &result);
+  virtual PetscErrorCode stdout_report(std::string &result);
 
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
 
   //! \brief Returns a pointer to a stress balance solver implementation.
   virtual ShallowStressBalance* get_stressbalance()

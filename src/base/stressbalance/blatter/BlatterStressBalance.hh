@@ -106,7 +106,7 @@ public:
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
   //! \brief Produce a report string for the standard output.
-  virtual PetscErrorCode stdout_report(string &/*result*/)
+  virtual PetscErrorCode stdout_report(std::string &/*result*/)
   { return 0; }
 
   virtual PetscErrorCode update(bool fast); // almost done (compute vertically-averaged u,v and sigma)
@@ -114,12 +114,12 @@ public:
   virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
   { u_result = &u; v_result = &v; return 0; }
 
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &result);
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/);
 
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/);
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/);
 
 protected: 
   PetscErrorCode allocate_blatter();
@@ -141,7 +141,7 @@ protected:
   SNES snes;
 
   PetscReal min_thickness; 	// FIXME: this should be used to set boundary conditions at ice margins
-  string stdout_blatter;
+  std::string stdout_blatter;
 
   // profiling
   int event_blatter;

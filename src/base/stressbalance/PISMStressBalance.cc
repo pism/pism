@@ -488,9 +488,9 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::stdout_report(string &result) {
+PetscErrorCode PISMStressBalance::stdout_report(std::string &result) {
   PetscErrorCode ierr;
-  string tmp1, tmp2;
+  std::string tmp1, tmp2;
 
   ierr = m_stress_balance->stdout_report(tmp1); CHKERRQ(ierr);
 
@@ -501,7 +501,7 @@ PetscErrorCode PISMStressBalance::stdout_report(string &result) {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PISMStressBalance::define_variables(std::set<std::string> vars, const PIO &nc,
                                                    PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -512,7 +512,7 @@ PetscErrorCode PISMStressBalance::define_variables(set<string> vars, const PIO &
 }
 
 
-PetscErrorCode PISMStressBalance::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMStressBalance::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   ierr = m_stress_balance->write_variables(vars, nc); CHKERRQ(ierr);
@@ -521,7 +521,7 @@ PetscErrorCode PISMStressBalance::write_variables(set<string> vars, const PIO &n
   return 0;
 }
 
-void PISMStressBalance::add_vars_to_output(string keyword, set<string> &result) {
+void PISMStressBalance::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
 
   m_stress_balance->add_vars_to_output(keyword, result);
   m_modifier->add_vars_to_output(keyword, result);

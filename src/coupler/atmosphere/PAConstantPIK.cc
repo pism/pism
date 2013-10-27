@@ -106,7 +106,7 @@ PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-void PAConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
+void PAConstantPIK::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   result.insert("precipitation");
   result.insert("air_temp");
 
@@ -115,7 +115,7 @@ void PAConstantPIK::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PAConstantPIK::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PAConstantPIK::define_variables(std::set<std::string> vars, const PIO &nc,
                                             PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -134,7 +134,7 @@ PetscErrorCode PAConstantPIK::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PAConstantPIK::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {

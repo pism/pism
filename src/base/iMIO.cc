@@ -47,9 +47,9 @@ Optionally allows saving of full velocity field.
 
 Calls dumpToFile() to do the actual work.
  */
-PetscErrorCode  IceModel::writeFiles(string default_filename) {
+PetscErrorCode  IceModel::writeFiles(std::string default_filename) {
   PetscErrorCode ierr;
-  string filename = default_filename,
+  std::string filename = default_filename,
     config_out;
   bool o_set, dump_config;
 
@@ -83,7 +83,7 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
 #ifdef PISM_PROFILE
   bool flag;
   ierr = PISMOptionsIsSet("-prof", flag); CHKERRQ(ierr);
-  string prof_output_name;
+  std::string prof_output_name;
   if (flag) {
     prof_output_name = pism_filename_add_suffix(filename, "-prof", "");
 
@@ -125,12 +125,12 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
 }
 
 
-PetscErrorCode IceModel::dumpToFile(string filename) {
+PetscErrorCode IceModel::dumpToFile(std::string filename) {
   PetscErrorCode ierr;
   PIO nc(grid, config.get_string("output_format"));
 
   // Prepare the file
-  string time_name = config.get_string("time_dimension_name");
+  std::string time_name = config.get_string("time_dimension_name");
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
   ierr = nc.def_time(time_name, grid.time->calendar(),
                      grid.time->CF_units_string()); CHKERRQ(ierr);
@@ -148,7 +148,7 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
-PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
+PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> vars,
 					 PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
@@ -159,7 +159,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
 
   // Define all the variables:
   {
-    set<string>::iterator i;
+    std::set<std::string>::iterator i;
     for (i = vars.begin(); i != vars.end(); ++i) {
       v = variables.get(*i);
 
@@ -230,7 +230,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
   grid.profiler->end(event_output_define);
 
   // Write all the IceModel variables:
-  set<string>::iterator i;
+  std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end();) {
     v = variables.get(*i);
 
@@ -334,7 +334,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
 
 PetscErrorCode IceModel::write_model_state(const PIO &nc) {
   PetscErrorCode ierr;
-  string o_size = get_output_size("-o_size");
+  std::string o_size = get_output_size("-o_size");
 
   // only write out these extra diagnostics if decently big
   if (o_size == "medium" || o_size == "big") {
@@ -392,7 +392,7 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
     grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
     box from the same input file.
   */
-PetscErrorCode IceModel::initFromFile(string filename) {
+PetscErrorCode IceModel::initFromFile(std::string filename) {
   PetscErrorCode  ierr;
   PIO nc(grid, "guess_mode");
 
@@ -407,13 +407,13 @@ PetscErrorCode IceModel::initFromFile(string filename) {
   last_record -= 1;
 
   // Read the model state, mapping and climate_steady variables:
-  set<string> vars = variables.keys();
+  std::set<std::string> vars = variables.keys();
 
-  set<string>::iterator i = vars.begin();
+  std::set<std::string>::iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i++);
 
-    string intent = var->string_attr("pism_intent");
+    std::string intent = var->string_attr("pism_intent");
     if ((intent == "model_state") || (intent == "mapping") ||
         (intent == "climate_steady")) {
 
@@ -515,7 +515,7 @@ PetscErrorCode IceModel::initFromFile(string filename) {
       
   } // end of enthalpy initialization
 
-  string history;
+  std::string history;
   ierr = nc.get_att_text("PISM_GLOBAL", "history", history); CHKERRQ(ierr);
   global_attributes.prepend_history(history);
 
@@ -540,9 +540,9 @@ PetscErrorCode IceModel::initFromFile(string filename) {
   */
   PetscErrorCode IceModel::regrid(int dimensions) {
     PetscErrorCode ierr;
-    string filename;
+    std::string filename;
     bool regrid_vars_set, regrid_file_set;
-    set<string> regrid_vars;
+    std::set<std::string> regrid_vars;
 
     if (! (dimensions == 0 ||
            dimensions == 2 ||
@@ -593,10 +593,10 @@ PetscErrorCode IceModel::initFromFile(string filename) {
     return 0;
   }
 
-PetscErrorCode IceModel::regrid_variables(string filename, set<string> vars, int ndims) {
+PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::string> vars, int ndims) {
   PetscErrorCode ierr;
 
-  set<string>::iterator i;
+  std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
     IceModelVec *v = variables.get(*i);
 
@@ -604,7 +604,7 @@ PetscErrorCode IceModel::regrid_variables(string filename, set<string> vars, int
 
     if (v->get_ndims() != ndims) continue;
 
-    string pism_intent = v->string_attr("pism_intent");
+    std::string pism_intent = v->string_attr("pism_intent");
     if (pism_intent != "model_state") {
       ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
                         (*i).c_str()); CHKERRQ(ierr);
@@ -622,7 +622,7 @@ PetscErrorCode IceModel::regrid_variables(string filename, set<string> vars, int
 PetscErrorCode IceModel::init_snapshots() {
   PetscErrorCode ierr;
   bool save_times_set, save_file_set, split;
-  string tmp;
+  std::string tmp;
   current_snapshot = 0;
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling the snapshot-saving mechanism", ""); CHKERRQ(ierr);
@@ -697,7 +697,6 @@ PetscErrorCode IceModel::init_snapshots() {
   //! Writes a snapshot of the model state (if necessary)
 PetscErrorCode IceModel::write_snapshot() {
   PetscErrorCode ierr;
-  PIO nc(grid, grid.config.get_string("output_format"));
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
   // value is never used, because saving_after
   // is only used if save_now == true, and in
@@ -739,6 +738,8 @@ PetscErrorCode IceModel::write_snapshot() {
                     filename, grid.time->date().c_str(),
                     grid.time->date(saving_after).c_str());
   CHKERRQ(ierr);
+
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   if (!snapshots_file_is_ready) {
     // Prepare the snapshots file:
@@ -815,7 +816,6 @@ PetscErrorCode IceModel::init_backups() {
 PetscErrorCode IceModel::write_backup() {
   PetscErrorCode ierr;
   double wall_clock_hours;
-  PIO nc(grid, grid.config.get_string("output_format"));
 
   if (grid.rank == 0) {
     PetscLogDouble current_time;
@@ -833,7 +833,7 @@ PetscErrorCode IceModel::write_backup() {
   last_backup_time = wall_clock_hours;
 
   // create a history string:
-  string date_str = pism_timestamp();
+  std::string date_str = pism_timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
            "%s automatic backup at %s, %3.3f hours after the beginning of the run\n",
@@ -844,6 +844,8 @@ PetscErrorCode IceModel::write_backup() {
                     backup_filename.c_str(), wall_clock_hours); CHKERRQ(ierr);
 
   stampHistory(tmp);
+
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   // write metadata:
   ierr = nc.open(backup_filename, PISM_WRITE); CHKERRQ(ierr);

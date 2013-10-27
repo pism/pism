@@ -202,7 +202,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     usurf = NULL;
   }
 
-  string input_file;
+  std::string input_file;
   bool regrid = false;
   int start = -1;
   
@@ -261,7 +261,7 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
   PetscInt Nseries = mbscheme->get_timeseries_length(my_dt);
 
   const double dtseries = my_dt / Nseries;
-  vector<double> ts(Nseries), T(Nseries), P(Nseries), PDDs(Nseries);
+  std::vector<double> ts(Nseries), T(Nseries), P(Nseries), PDDs(Nseries);
   for (int k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
 
@@ -402,7 +402,7 @@ PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result
   return 0;
 }
 
-void PSTemperatureIndex::add_vars_to_output(string keyword, set<string> &result) {
+void PSTemperatureIndex::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
 
   PISMSurfaceModel::add_vars_to_output(keyword, result);
 
@@ -420,7 +420,7 @@ void PSTemperatureIndex::add_vars_to_output(string keyword, set<string> &result)
   }
 }
 
-PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSTemperatureIndex::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -453,7 +453,7 @@ PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const PIO 
 
 }
 
-PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSTemperatureIndex::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

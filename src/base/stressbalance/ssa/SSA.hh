@@ -154,16 +154,16 @@ public:
 
   virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
 
-  virtual PetscErrorCode stdout_report(string &result);
+  virtual PetscErrorCode stdout_report(std::string &result);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
 protected:
   virtual PetscErrorCode allocate();
 
@@ -180,7 +180,7 @@ protected:
   IceModelVec2S *fracdens;
   IceModelVec2S *gl_mask;
 
-  string stdout_ssa;
+  std::string stdout_ssa;
 
   // objects used by the SSA solver (internally)
   DM  SSADA;                    // dof=2 DA (grid.da2 has dof=1)

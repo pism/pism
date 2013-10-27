@@ -39,7 +39,7 @@ Thus the index into the arrays L, D, U is always the row number.
 
 Note L[0] is not allocated and U[N-1] is not allocated.
  */
-columnSystemCtx::columnSystemCtx(PetscInt my_nmax, string my_prefix)
+columnSystemCtx::columnSystemCtx(PetscInt my_nmax, std::string my_prefix)
   : nmax(my_nmax), prefix(my_prefix) {
   assert(nmax >= 1 && nmax < 1e6);
 

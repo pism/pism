@@ -31,29 +31,29 @@ public:
 
   virtual PetscErrorCode init();
 
-  virtual PetscErrorCode init_from_file(string filename);
+  virtual PetscErrorCode init_from_file(std::string filename);
 
   virtual double mod(double time, unsigned int);
 
   virtual double year_fraction(double T);
 
-  virtual string date(double T);
+  virtual std::string date(double T);
 
-  virtual string date();
+  virtual std::string date();
 
-  virtual string start_date();
+  virtual std::string start_date();
 
-  virtual string end_date();
+  virtual std::string end_date();
 
-  virtual string units_string() {
+  virtual std::string units_string() {
     return CF_units_string();
   }
 
-  virtual string CF_units_string() {
+  virtual std::string CF_units_string() {
     return m_time_units.format();
   }
 
-  virtual string CF_units_to_PISM_units(string input) {
+  virtual std::string CF_units_to_PISM_units(std::string input) {
     return input;               // return unchanged CF units
   }
 
@@ -66,20 +66,20 @@ public:
 
 protected:
   virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
-                                       string keyword,
-                                       vector<double> &result);
+                                       std::string keyword,
+                                       std::vector<double> &result);
 
   virtual PetscErrorCode process_ys(double &result, bool &flag);
   virtual PetscErrorCode process_y(double &result, bool &flag);
   virtual PetscErrorCode process_ye(double &result, bool &flag);
 
-  virtual PetscErrorCode parse_date(string spec, double *result);
+  virtual PetscErrorCode parse_date(std::string spec, double *result);
 
-  virtual PetscErrorCode parse_interval_length(string spec, string &keyword, double *result);
+  virtual PetscErrorCode parse_interval_length(std::string spec, std::string &keyword, double *result);
 
-  PetscErrorCode compute_times_monthly(vector<double> &result);
+  PetscErrorCode compute_times_monthly(std::vector<double> &result);
 
-  PetscErrorCode compute_times_yearly(vector<double> &result);
+  PetscErrorCode compute_times_yearly(std::vector<double> &result);
 private:
   // Hide copy constructor / assignment operator.
   PISMTime_Calendar(PISMTime_Calendar const &);

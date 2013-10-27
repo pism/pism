@@ -64,7 +64,7 @@ void PISMProf::set_grid_size(int n) {
 /*!
  * Checks if an event with this name already exists.
  */
-int PISMProf::create(string name, string description) {
+int PISMProf::create(std::string name, std::string description) {
   PISMEvent tmp;
   int index = get(name);
 
@@ -84,7 +84,7 @@ int PISMProf::create(string name, string description) {
 /*!
  * Returns -1 if an event was not found.
  */
-int PISMProf::get(string name) {
+int PISMProf::get(std::string name) {
 
   for (unsigned int i = 0; i < events.size(); ++i)
     if (events[i].name == name)
@@ -132,7 +132,7 @@ void PISMProf::end(int /*index*/) {
 #endif
 
 //! Save a profiling report to a file.
-PetscErrorCode PISMProf::save_report(string filename) {
+PetscErrorCode PISMProf::save_report(std::string filename) {
   PetscErrorCode ierr;
   PISMNC3File nc(com, rank);
 
@@ -142,7 +142,7 @@ PetscErrorCode PISMProf::save_report(string filename) {
   ierr = nc.def_dim("y", Ny); CHKERRQ(ierr);
 
   for (unsigned int j = 0; j < events.size(); ++j) {
-    string &name = events[j].name;
+    std::string &name = events[j].name;
     if (name == "unknown")
       continue;
 
@@ -164,15 +164,15 @@ PetscErrorCode PISMProf::save_report(string filename) {
 }
 
 //! Save the report corresponding to an event events[index].
-PetscErrorCode PISMProf::save_report(int index, const PISMNCFile &nc, string variable_name) {
+PetscErrorCode PISMProf::save_report(int index, const PISMNCFile &nc, std::string variable_name) {
   PetscErrorCode ierr;
   double data[1];
-  vector<unsigned int> start(2), count(2);
+  std::vector<unsigned int> start(2), count(2);
 
   ierr = define_variable(nc, variable_name); CHKERRQ(ierr);
 
   int parent_index = events[index].parent;
-  string descr = events[index].description,
+  std::string descr = events[index].description,
     parent = parent_index == -1 ? "root" : events[parent_index].name;
 
   ierr = nc.put_att_text(variable_name, "units",     events[index].units); CHKERRQ(ierr); 
@@ -193,9 +193,9 @@ PetscErrorCode PISMProf::save_report(int index, const PISMNCFile &nc, string var
 }
 
 //! Define a NetCDF variable to store a profiling report in.
-PetscErrorCode PISMProf::define_variable(const PISMNCFile &nc, string name) {
+PetscErrorCode PISMProf::define_variable(const PISMNCFile &nc, std::string name) {
   PetscErrorCode ierr;
-  vector<string> dims;
+  std::vector<std::string> dims;
   bool exists = false;
 
   ierr = nc.inq_varid(name, exists); CHKERRQ(ierr);

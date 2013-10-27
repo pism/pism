@@ -28,7 +28,7 @@
 class ageSystemCtx : public columnSystemCtx {
 
 public:
-  ageSystemCtx(PetscInt my_Mz, string my_prefix);
+  ageSystemCtx(PetscInt my_Mz, std::string my_prefix);
   PetscErrorCode initAllColumns();
 
   PetscErrorCode solveThisColumn(PetscScalar **x);  
@@ -51,7 +51,7 @@ protected: // used internally
 };
 
 
-ageSystemCtx::ageSystemCtx(PetscInt my_Mz, string my_prefix)
+ageSystemCtx::ageSystemCtx(PetscInt my_Mz, std::string my_prefix)
       : columnSystemCtx(my_Mz, my_prefix) { // size of system is Mz
   initAllDone = false;
   // set values so we can check if init was called on all

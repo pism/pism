@@ -61,7 +61,7 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
   vars[0].init_3d(name, mygrid, zlevels);
   vars[0].dimensions["z"] = "zb";
 
-  map<string,string> &attrs = vars[0].z_attrs;
+  std::map<std::string,std::string> &attrs = vars[0].z_attrs;
   attrs["axis"]          = "Z";
   attrs["long_name"]     = "Z-coordinate in bedrock";
   // PROPOSED: attrs["standard_name"] = "projection_z_coordinate_in_lithosphere";
@@ -240,14 +240,14 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
 }
 
 
-void PISMBedThermalUnit::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PISMBedThermalUnit::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   if (temp.was_created()) {
     result.insert(temp.string_attr("short_name"));
   }
 }
 
 PetscErrorCode PISMBedThermalUnit::define_variables(
-                         set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+                         std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.string_attr("short_name"))) {
@@ -257,7 +257,7 @@ PetscErrorCode PISMBedThermalUnit::define_variables(
   return 0;
 }
 
-PetscErrorCode PISMBedThermalUnit::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMBedThermalUnit::write_variables(std::set<std::string> vars, const PIO &nc) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.string_attr("short_name"))) {
@@ -369,7 +369,7 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
   const PetscReal bed_R  = bed_D * my_dt / (dzb * dzb);
 
   PetscScalar *Tbold;
-  vector<PetscScalar> Tbnew(Mbz);
+  std::vector<PetscScalar> Tbnew(Mbz);
 
   ierr = temp.begin_access(); CHKERRQ(ierr);
   ierr = ghf->begin_access(); CHKERRQ(ierr);
@@ -443,8 +443,8 @@ PetscErrorCode PISMBedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &res
 PetscErrorCode PISMBedThermalUnit::regrid() {
   PetscErrorCode ierr;
   bool regrid_file_set, regrid_vars_set;
-  string regrid_file;
-  set<string> regrid_vars;
+  std::string regrid_file;
+  std::set<std::string> regrid_vars;
 
   ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit regridding options", ""); CHKERRQ(ierr);
   {

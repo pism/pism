@@ -52,11 +52,11 @@ PetscErrorCode PISMBedDef::pismbeddef_allocate() {
   return 0;
 }
 
-void PISMBedDef::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PISMBedDef::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("topg_initial");
 }
 
-PetscErrorCode PISMBedDef::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PISMBedDef::define_variables(std::set<std::string> vars, const PIO &nc,
                                             PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -67,7 +67,7 @@ PetscErrorCode PISMBedDef::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode PISMBedDef::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMBedDef::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "topg_initial")) {

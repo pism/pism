@@ -22,8 +22,8 @@
 #include "SSB_Modifier.hh"
 #include "PISMVars.hh"
 
-void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                                        map<string, PISMTSDiagnostic*> &ts_dict) {
+void PISMStressBalance::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                                        std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
 
   dict["bfrict"]   = new PSB_bfrict(this, grid, *m_variables);
 

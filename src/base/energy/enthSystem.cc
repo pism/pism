@@ -26,7 +26,7 @@ enthSystemCtx::enthSystemCtx(const NCConfigVariable &config,
                              IceModelVec3 &my_Enth3,
                              PetscScalar my_dx,  PetscScalar my_dy,
                              PetscScalar my_dt,  PetscScalar my_dz,
-                             int my_Mz, string my_prefix,
+                             int my_Mz, std::string my_prefix,
                              EnthalpyConverter *my_EC)
   : columnSystemCtx(my_Mz, my_prefix), EC(my_EC) {  // <- critical: sets size of sys
   Mz = my_Mz;
@@ -473,7 +473,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
 //! View the tridiagonal system A x = b to a PETSc viewer, both A as a full matrix and b as a vector.
 PetscErrorCode enthSystemCtx::viewSystem(PetscViewer viewer) const {
   PetscErrorCode ierr;
-  string info;
+  std::string info;
   info = prefix + "_A";
   ierr = viewMatrix(viewer,info.c_str()); CHKERRQ(ierr);
   info = prefix + "_rhs";

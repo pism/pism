@@ -103,9 +103,9 @@ public:
   virtual void set_n_evaluations_per_year(unsigned int N);
   virtual unsigned int get_n_records();
   using IceModelVec2S::create;
-  virtual PetscErrorCode create(IceGrid &mygrid, string my_short_name,
+  virtual PetscErrorCode create(IceGrid &mygrid, std::string my_short_name,
                                 bool local, int width = 1);
-  virtual PetscErrorCode init(string filename, unsigned int period, double reference_time);
+  virtual PetscErrorCode init(std::string filename, unsigned int period, double reference_time);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);
@@ -123,9 +123,9 @@ public:
   virtual PetscErrorCode init_interpolation(const PetscScalar *ts, unsigned int ts_length);
 
 protected:
-  vector<double> time,		//!< all the times available in filename
+  std::vector<double> time,		//!< all the times available in filename
     time_bounds;		//!< time bounds
-  string filename;		//!< file to read (regrid) from
+  std::string filename;		//!< file to read (regrid) from
   DM da3;
   Vec v3;			//!< a 3D Vec used to store records
   void ***array3;
@@ -138,7 +138,7 @@ protected:
 
   LocalInterpCtx *lic;
 
-  vector<unsigned int> m_interp_indices;
+  std::vector<unsigned int> m_interp_indices;
   unsigned int m_period;        // in years
   double m_reference_time;      // in seconds
 

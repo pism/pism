@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,7 @@ public:
   virtual ~PCFactory<Model,Modifier>() {}
 
   //! Sets the default type name.
-  virtual PetscErrorCode set_default(string name) {
+  virtual PetscErrorCode set_default(std::string name) {
     void (*func) (IceGrid&, const NCConfigVariable&, Model*&);
 
     func = models[name];
@@ -51,12 +51,12 @@ public:
   virtual PetscErrorCode create(Model* &result) {
     void (*F) (IceGrid&, const NCConfigVariable&, Model*&);
     PetscErrorCode ierr;
-    vector<string> choices;
-    string model_list, modifier_list, descr;
+    std::vector<std::string> choices;
+    std::string model_list, modifier_list, descr;
     bool flag = false;
 
     // build a list of available models:
-    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*&)>::iterator k;
+    typename std::map<std::string,void(*)(IceGrid&, const NCConfigVariable&, Model*&)>::iterator k;
     k = models.begin();
     model_list = "[" + (k++)->first;
     for(; k != models.end(); k++) {
@@ -65,7 +65,7 @@ public:
     model_list += "]";
 
     // build a list of available modifiers:
-    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)>::iterator p;
+    typename std::map<std::string,void(*)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)>::iterator p;
     p = modifiers.begin();
     modifier_list = "[" + (p++)->first;
     for(; p != modifiers.end(); p++) {
@@ -89,7 +89,7 @@ public:
 
     // the first element has to be an *actual* model (not a modifier), so we
     // create it:
-    vector<string>::iterator j = choices.begin();
+    std::vector<std::string>::iterator j = choices.begin();
 
     F = models[*j];
     if (!F) {
@@ -131,20 +131,20 @@ public:
   }
 
   //! Adds a boundary model to the dictionary.
-  virtual void add_model(string name, void(*func)(IceGrid&, const NCConfigVariable&, Model*&)) {
+  virtual void add_model(std::string name, void(*func)(IceGrid&, const NCConfigVariable&, Model*&)) {
     models[name] = func;
   }
 
-  virtual void add_modifier(string name, void(*func)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)) {
+  virtual void add_modifier(std::string name, void(*func)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)) {
     modifiers[name] = func;
   }
 
   //! Removes a boundary model from the dictionary.
-  virtual void remove_model(string name) {
+  virtual void remove_model(std::string name) {
     models.erase(name);
   }
 
-  virtual void remove_modifier(string name) {
+  virtual void remove_modifier(std::string name) {
     modifiers.erase(name);
   }
 
@@ -158,9 +158,9 @@ public:
   }
 protected:
   virtual void add_standard_types() {}
-  string default_type, option;
-  map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*&)> models;
-  map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)> modifiers;
+  std::string default_type, option;
+  std::map<std::string,void(*)(IceGrid&, const NCConfigVariable&, Model*&)> models;
+  std::map<std::string,void(*)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)> modifiers;
   IceGrid& grid;
   const NCConfigVariable& config;
 };

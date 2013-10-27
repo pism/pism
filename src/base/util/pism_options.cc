@@ -23,11 +23,6 @@
 #include "pism_options.hh"
 #include "NCVariable.hh"
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 //! Determine verbosity level from user options.
 /*!
 \verbatim
@@ -162,7 +157,7 @@ PetscErrorCode show_usage_and_quit(
 
 //! In a single call a driver program can provide a usage string to the user and check if required options are given, and if not, end.
 PetscErrorCode show_usage_check_req_opts(
-    MPI_Comm com, const char execname[], vector<string> required_options,
+    MPI_Comm com, const char execname[], std::vector<std::string> required_options,
     const char usage[]) {
   PetscErrorCode ierr;
 
@@ -224,18 +219,18 @@ PetscErrorCode show_usage_check_req_opts(
   This is to make it possible to pass a parameter to a module selected using a
   command-line option without adding one mode option.
  */
-PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set<string> choices,
-			       string default_value, string &result, bool &flag) {
+PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string description, std::set<std::string> choices,
+			       std::string default_value, std::string &result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
-  string list, descr;
+  std::string list, descr;
   PetscBool opt_set = PETSC_FALSE;
 
   if (choices.empty()) {
     SETERRQ(com, 1, "PISMOptionsList: empty choices argument");
   }
 
-  set<string>::iterator j = choices.begin();
+  std::set<std::string>::iterator j = choices.begin();
   list = "[" + *j++;
   while (j != choices.end()) {
     list += ", " + (*j++);
@@ -254,10 +249,10 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set
     return 0;
   }
 
-  string keyword = tmp;
+  std::string keyword = tmp;
   // find ":" and discard everything that goes after
   size_t n = keyword.find(":");
-  if (n != string::npos)
+  if (n != std::string::npos)
     keyword.resize(n);
 
   // return the choice if it is valid and stop if it is not
@@ -274,8 +269,8 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set
 }
 
 //! \brief Process a command-line option taking a string as an argument.
-PetscErrorCode PISMOptionsString(string option, string text,
-				 string &result, bool &is_set, bool allow_empty_arg) {
+PetscErrorCode PISMOptionsString(std::string option, std::string text,
+				 std::string &result, bool &is_set, bool allow_empty_arg) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -304,8 +299,8 @@ PetscErrorCode PISMOptionsString(string option, string text,
 }
 
 //! PISM wrapper replacing PetscOptionsStringArray.
-PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_value,
-				      vector<string>& result, bool &flag) {
+PetscErrorCode PISMOptionsStringArray(std::string opt, std::string text, std::string default_value,
+				      std::vector<std::string>& result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool opt_set = PETSC_FALSE;
@@ -315,9 +310,9 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
 
   result.clear();
 
-  string word;
+  std::string word;
   if (opt_set) {
-    istringstream arg(tmp);
+    std::istringstream arg(tmp);
     while (getline(arg, word, ','))
       result.push_back(word);
 
@@ -330,7 +325,7 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
 
     flag = true;
   } else {                      // parse the default list given
-    istringstream arg(default_value);
+    std::istringstream arg(default_value);
     while (getline(arg, word, ','))
       result.push_back(word);
 
@@ -341,15 +336,15 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
 }
 
 //! Process a command-line option and return a set of strings.
-PetscErrorCode PISMOptionsStringSet(string opt, string text, string default_value,
-                                    set<string>& result, bool &flag) {
-  vector<string> tmp;
+PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::string default_value,
+                                    std::set<std::string>& result, bool &flag) {
+  std::vector<std::string> tmp;
   PetscErrorCode ierr;
 
   ierr = PISMOptionsStringArray(opt, text, default_value, tmp, flag); CHKERRQ(ierr);
 
   result.clear();
-  vector<string>::iterator j = tmp.begin();
+  std::vector<std::string>::iterator j = tmp.begin();
   while(j != tmp.end()) {
     result.insert(*j);
     ++j;
@@ -359,7 +354,7 @@ PetscErrorCode PISMOptionsStringSet(string opt, string text, string default_valu
 }
 
 //! \brief Process a command-line option taking an integer as an argument.
-PetscErrorCode PISMOptionsInt(string option, string text,
+PetscErrorCode PISMOptionsInt(std::string option, std::string text,
 			      PetscInt &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
@@ -393,7 +388,7 @@ PetscErrorCode PISMOptionsInt(string option, string text,
 }
 
 //! \brief Process a command-line option taking a real number as an argument.
-PetscErrorCode PISMOptionsReal(string option, string text,
+PetscErrorCode PISMOptionsReal(std::string option, std::string text,
 			       PetscReal &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
@@ -430,8 +425,8 @@ PetscErrorCode PISMOptionsReal(string option, string text,
 }
 //! \brief Process a command-line option taking a comma-separated list of reals
 //! as an argument.
-PetscErrorCode PISMOptionsRealArray(string option, string text,
-				    vector<PetscReal> &result, bool &is_set) {
+PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
+				    std::vector<PetscReal> &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -443,8 +438,8 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
   is_set = (flag == PETSC_TRUE);
 
   if (is_set) {
-    istringstream arg(str);
-    string tmp;
+    std::istringstream arg(str);
+    std::string tmp;
 
     result.clear();
     while(getline(arg, tmp, ',')) {
@@ -468,10 +463,10 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
 
 //! \brief Process a command-line option taking a comma-separated list of
 //! integers as an argument.
-PetscErrorCode PISMOptionsIntArray(string option, string text,
-				    vector<PetscInt> &result, bool &is_set) {
+PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
+				    std::vector<PetscInt> &result, bool &is_set) {
   PetscErrorCode ierr;
-  vector<PetscReal> tmp;
+  std::vector<PetscReal> tmp;
 
   ierr = PISMOptionsRealArray(option, text, tmp, is_set); CHKERRQ(ierr);
 
@@ -495,7 +490,7 @@ PetscErrorCode PISMOptionsIntArray(string option, string text,
   This unpredictability is bad. We want a function that does not depend on the
   argument given with an option.
  */
-PetscErrorCode PISMOptionsIsSet(string option, bool &result) {
+PetscErrorCode PISMOptionsIsSet(std::string option, bool &result) {
   PetscErrorCode ierr;
   char tmp[1];
   PetscBool flag;
@@ -508,7 +503,7 @@ PetscErrorCode PISMOptionsIsSet(string option, bool &result) {
 }
 
 //! A version of PISMOptionsIsSet that prints a -help message.
-PetscErrorCode PISMOptionsIsSet(string option, string text,
+PetscErrorCode PISMOptionsIsSet(std::string option, std::string text,
 				bool &result) {
   PetscErrorCode ierr;
   char tmp[1];
@@ -531,9 +526,9 @@ PetscErrorCode PISMOptionsIsSet(string option, string text,
  *
  * @return 0 on success
  */
-PetscErrorCode PISMOptionsHasArgument(string option, bool &result) {
+PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result) {
   PetscErrorCode ierr;
-  string tmp;
+  std::string tmp;
 
   ierr = PISMOptionsString(option, "", tmp, result, true); CHKERRQ(ierr);
 
@@ -555,7 +550,7 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
   config.init("pism_config", com, rank);
   overrides.init("pism_overrides", com, rank);
 
-  string alt_config = PISM_DefaultConfigFile,
+  std::string alt_config = PISM_DefaultConfigFile,
     override_config;
   bool use_alt_config, use_override_config;
   

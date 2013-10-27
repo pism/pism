@@ -27,11 +27,6 @@
 #include "PISMUnits.hh"
 #include "PIO.hh"
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 class PISMTime;
 
 //! \brief A class for handling variable metadata, reading, writing and converting
@@ -60,18 +55,18 @@ class NCVariable {
 public:
   NCVariable(PISMUnitSystem system);
   virtual ~NCVariable() {}
-  void init(string name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode set_units(string);
-  virtual PetscErrorCode set_glaciological_units(string);
+  void init(std::string name, MPI_Comm c, PetscMPIInt r);
+  virtual PetscErrorCode set_units(std::string);
+  virtual PetscErrorCode set_glaciological_units(std::string);
   virtual PetscErrorCode reset();
-  virtual void set(string, double);
-  virtual double get(string) const;
-  virtual void set_string(string name, string value);
-  virtual string get_string(string) const;
-  virtual bool has(string) const;
+  virtual void set(std::string, double);
+  virtual double get(std::string) const;
+  virtual void set_string(std::string name, std::string value);
+  virtual std::string get_string(std::string) const;
+  virtual bool has(std::string) const;
   virtual bool is_valid(PetscScalar a) const;
   virtual int get_ndims() const;
-  string short_name;
+  std::string short_name;
 
   // Attributes:
   /*! Typical attributes stored here:
@@ -82,7 +77,7 @@ public:
     \li units
     \li glaciological_units
    */
-  map<string, vector<double> > doubles; //!< scalar and array attributes
+  std::map<std::string, std::vector<double> > doubles; //!< scalar and array attributes
 
   virtual PetscErrorCode read_attributes(const PIO &nc);
 
@@ -91,10 +86,10 @@ public:
 protected:
   virtual PetscErrorCode write_attributes(const PIO &nc, PISM_IO_Type nctype,
 					  bool write_in_glaciological_units) const;
-  virtual PetscErrorCode read_valid_range(const PIO &nc, string name);
+  virtual PetscErrorCode read_valid_range(const PIO &nc, std::string name);
   MPI_Comm com;
   PetscMPIInt rank;
-  map<string, string> strings;  //!< string and boolean attributes
+  std::map<std::string, std::string> strings;  //!< string and boolean attributes
   PISMUnit m_units,		      //!< internal (PISM) units
     m_glaciological_units; //!< \brief for diagnostic variables: units
   //!< to use when writing to a NetCDF file and for standard out reports
@@ -111,28 +106,28 @@ public:
   virtual PetscErrorCode read(const PIO &nc);
   virtual PetscErrorCode write(const PIO &nc);
 
-  virtual PetscErrorCode read(string filename);
-  virtual PetscErrorCode write(string filename);
+  virtual PetscErrorCode read(std::string filename);
+  virtual PetscErrorCode write(std::string filename);
 
-  virtual string get_config_filename() const;
+  virtual std::string get_config_filename() const;
   virtual PISMUnitSystem get_unit_system() const;
-  virtual double get(string) const;
-  virtual double get(string name, string u1, string u2) const;
-  virtual bool   get_flag(string) const;
-  virtual string get_string(string name) const;
+  virtual double get(std::string) const;
+  virtual double get(std::string name, std::string u1, std::string u2) const;
+  virtual bool   get_flag(std::string) const;
+  virtual std::string get_string(std::string name) const;
   // Set a flag (overriding the default in pism_config.cdl). Should not be used
   // in pismr code.
-  virtual void   set_flag(string, bool);
+  virtual void   set_flag(std::string, bool);
   // Set parameters and remember that they were set using a command-line option
-  virtual PetscErrorCode set_flag_from_option(string name, bool value);
-  virtual PetscErrorCode set_scalar_from_option(string name, double value);
-  virtual PetscErrorCode set_string_from_option(string name, string value);
-  virtual PetscErrorCode set_keyword_from_option(string name, string value);
+  virtual PetscErrorCode set_flag_from_option(std::string name, bool value);
+  virtual PetscErrorCode set_scalar_from_option(std::string name, double value);
+  virtual PetscErrorCode set_string_from_option(std::string name, std::string value);
+  virtual PetscErrorCode set_keyword_from_option(std::string name, std::string value);
   // Set parameters by ptocessing a command-line option
-  virtual PetscErrorCode flag_from_option(string, string);
-  virtual PetscErrorCode scalar_from_option(string, string);
-  virtual PetscErrorCode string_from_option(string, string);
-  virtual PetscErrorCode keyword_from_option(string, string, string);
+  virtual PetscErrorCode flag_from_option(std::string, std::string);
+  virtual PetscErrorCode scalar_from_option(std::string, std::string);
+  virtual PetscErrorCode string_from_option(std::string, std::string);
+  virtual PetscErrorCode keyword_from_option(std::string, std::string, std::string);
   // Import settings from an override file
   virtual void import_from(const NCConfigVariable &other);
   virtual void update_from(const NCConfigVariable &other);
@@ -140,17 +135,17 @@ public:
   virtual PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype,
                                 bool write_in_glaciological_units = true);
 protected:
-  string config_filename;       //!< \brief the name of the file this config database
+  std::string config_filename;       //!< \brief the name of the file this config database
                                 //!< was initialized from 
   virtual PetscErrorCode write_attributes(const PIO &nc, PISM_IO_Type nctype,
 					  bool write_in_glaciological_units) const;
 
-  double get_quiet(string) const;
-  string get_string_quiet(string) const;
-  bool   get_flag_quiet(string) const;
+  double get_quiet(std::string) const;
+  std::string get_string_quiet(std::string) const;
+  bool   get_flag_quiet(std::string) const;
 
-  std::set<string> parameters_set;
-  mutable std::set<string> parameters_used;
+  std::set<std::string> parameters_set;
+  mutable std::set<std::string> parameters_used;
   bool options_left_set;
   PISMUnitSystem m_unit_system;
 };
@@ -167,7 +162,7 @@ public:
   virtual PetscErrorCode read(const PIO &nc);
   virtual PetscErrorCode write(const PIO &nc);
 
-  virtual void prepend_history(string message);
+  virtual void prepend_history(std::string message);
   virtual void set_from_config(const NCConfigVariable &input);
 protected:
   virtual PetscErrorCode write_attributes(const PIO &nc, PISM_IO_Type, bool) const;
@@ -177,16 +172,16 @@ protected:
 class NCTimeseries : public NCVariable {
 public:
   NCTimeseries(PISMUnitSystem system);
-  string dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
-  void    init(string name, string dim_name, MPI_Comm c, PetscMPIInt r);
+  std::string dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
+  void    init(std::string name, std::string dim_name, MPI_Comm c, PetscMPIInt r);
 
-  virtual PetscErrorCode read(const PIO &nc, PISMTime *time, vector<double> &data);
-  virtual PetscErrorCode write(const PIO &nc, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
+  virtual PetscErrorCode read(const PIO &nc, PISMTime *time, std::vector<double> &data);
+  virtual PetscErrorCode write(const PIO &nc, size_t start, std::vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
   virtual PetscErrorCode write(const PIO &nc, size_t start, double data, PISM_IO_Type nctype = PISM_DOUBLE);
 
-  virtual PetscErrorCode change_units(vector<double> &data, PISMUnit &from, PISMUnit &to);
-  virtual PetscErrorCode get_bounds_name(const PIO &nc, string &result);
-  virtual PetscErrorCode report_range(vector<double> &data);
+  virtual PetscErrorCode change_units(std::vector<double> &data, PISMUnit &from, PISMUnit &to);
+  virtual PetscErrorCode get_bounds_name(const PIO &nc, std::string &result);
+  virtual PetscErrorCode report_range(std::vector<double> &data);
 
   virtual PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype, bool);
 };
@@ -195,16 +190,16 @@ class NCTimeBounds : public NCVariable
 {
 public:
   NCTimeBounds(PISMUnitSystem system);
-  void init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode read(const PIO &nc, PISMTime *time, vector<double> &data);
-  virtual PetscErrorCode write(const PIO &nc, size_t start, vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
+  void init(std::string var_name, std::string dim_name, MPI_Comm c, PetscMPIInt r);
+  virtual PetscErrorCode read(const PIO &nc, PISMTime *time, std::vector<double> &data);
+  virtual PetscErrorCode write(const PIO &nc, size_t start, std::vector<double> &data, PISM_IO_Type nctype = PISM_DOUBLE);
   virtual PetscErrorCode write(const PIO &nc, size_t start, double a, double b, PISM_IO_Type nctype = PISM_DOUBLE);
 
-  virtual PetscErrorCode change_units(vector<double> &data, PISMUnit &from, PISMUnit &to);
+  virtual PetscErrorCode change_units(std::vector<double> &data, PISMUnit &from, PISMUnit &to);
 
   virtual PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype, bool);
 protected:
-  string dimension_name, bounds_name;
+  std::string dimension_name, bounds_name;
 };
 
 #endif  // __NCVariable_hh

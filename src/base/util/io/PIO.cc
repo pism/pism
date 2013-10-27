@@ -40,14 +40,14 @@
 #include "PISMNC4_HDF5.hh"
 #endif
 
-static PISMNCFile* create_backend(MPI_Comm com, int rank, string mode) {
+static PISMNCFile* create_backend(MPI_Comm com, int rank, std::string mode) {
   if (mode == "netcdf3") {
     return new PISMNC3File(com, rank);
   } else if (mode.find("quilt") == 0) {
     size_t n = mode.find(":");
     int compression_level = 0;
 
-    if (n != string::npos) {
+    if (n != std::string::npos) {
       mode.replace(0, 6, "");
       char *endptr;
       compression_level = strtol(mode.c_str(), &endptr, 10);
@@ -81,7 +81,7 @@ static PISMNCFile* create_backend(MPI_Comm com, int rank, string mode) {
 }
 
 //! \brief The code shared by different PIO constructors.
-void PIO::constructor(MPI_Comm c, int r, string mode) {
+void PIO::constructor(MPI_Comm c, int r, std::string mode) {
   com = c;
   rank = r;
   shallow_copy = false;
@@ -98,12 +98,12 @@ void PIO::constructor(MPI_Comm c, int r, string mode) {
   }
 }
 
-PIO::PIO(MPI_Comm c, int r, string mode, PISMUnitSystem units_system)
+PIO::PIO(MPI_Comm c, int r, std::string mode, PISMUnitSystem units_system)
   : m_unit_system(units_system) {
   constructor(c, r, mode);
 }
 
-PIO::PIO(IceGrid &grid, string mode)
+PIO::PIO(IceGrid &grid, std::string mode)
   : m_unit_system(grid.get_unit_system()) {
   constructor(grid.com, grid.rank, mode);
   if (nc != NULL)
@@ -126,7 +126,7 @@ PIO::~PIO() {
 }
 
 // Chooses the best I/O backend for reading from 'filename'.
-PetscErrorCode PIO::detect_mode(string filename) {
+PetscErrorCode PIO::detect_mode(std::string filename) {
   int stat;
 
   // Bail if someone made a decision already.
@@ -141,11 +141,11 @@ PetscErrorCode PIO::detect_mode(string filename) {
     PISMEnd();
   }
 
-  string format = nc3.get_format();
+  std::string format = nc3.get_format();
 
   stat = nc3.close(); CHKERRQ(stat);
 
-  vector<string> modes;
+  std::vector<std::string> modes;
   if (format == "netcdf4") {
     modes.push_back("netcdf4_parallel");
     modes.push_back("netcdf3");
@@ -176,7 +176,7 @@ PetscErrorCode PIO::detect_mode(string filename) {
   return 0;
 }
 
-PetscErrorCode PIO::check_if_exists(string filename, bool &result) {
+PetscErrorCode PIO::check_if_exists(std::string filename, bool &result) {
   PetscErrorCode ierr;
 
   int file_exists = 0;
@@ -200,7 +200,7 @@ PetscErrorCode PIO::check_if_exists(string filename, bool &result) {
 }
 
 
-PetscErrorCode PIO::open(string filename, int mode, bool append) {
+PetscErrorCode PIO::open(std::string filename, int mode, bool append) {
   PetscErrorCode stat;
 
   // opening for reading
@@ -274,7 +274,7 @@ PetscErrorCode PIO::enddef() const {
   return 0;
 }
 
-string PIO::inq_filename() const {
+std::string PIO::inq_filename() const {
   return nc->get_filename();
 }
 
@@ -282,7 +282,7 @@ string PIO::inq_filename() const {
 //! \brief Get the number of records. Uses the length of an unlimited dimension.
 PetscErrorCode PIO::inq_nrecords(unsigned int &result) const {
   PetscErrorCode ierr;
-  string dim;
+  std::string dim;
 
   ierr = nc->inq_unlimdim(dim); CHKERRQ(ierr);
 
@@ -297,11 +297,11 @@ PetscErrorCode PIO::inq_nrecords(unsigned int &result) const {
 
 //! \brief Get the number of records of a certain variable. Uses the length of
 //! an associated "time" dimension.
-PetscErrorCode PIO::inq_nrecords(string name, string std_name, unsigned int &result) const {
+PetscErrorCode PIO::inq_nrecords(std::string name, std::string std_name, unsigned int &result) const {
   PetscErrorCode ierr;
 
   bool exists = false, found_by_standard_name = false;
-  string name_found;
+  std::string name_found;
 
   ierr = this->inq_var(name, std_name, exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
@@ -310,7 +310,7 @@ PetscErrorCode PIO::inq_nrecords(string name, string std_name, unsigned int &res
     return 0;
   }
 
-  vector<string> dims;
+  std::vector<std::string> dims;
   ierr = nc->inq_vardimid(name_found, dims); CHKERRQ(ierr);
 
   for (unsigned int j = 0; j < dims.size(); ++j) {
@@ -334,8 +334,8 @@ PetscErrorCode PIO::inq_nrecords(string name, string std_name, unsigned int &res
 /*!
  * Sets "result" to the short name found.
  */
-PetscErrorCode PIO::inq_var(string short_name, string std_name, bool &exists,
-                            string &result, bool &found_by_standard_name) const {
+PetscErrorCode PIO::inq_var(std::string short_name, std::string std_name, bool &exists,
+                            std::string &result, bool &found_by_standard_name) const {
   PetscErrorCode ierr;
 
   exists = false;
@@ -346,7 +346,7 @@ PetscErrorCode PIO::inq_var(string short_name, string std_name, bool &exists,
     ierr = nc->inq_nvars(nvars); CHKERRQ(ierr);
 
     for (int j = 0; j < nvars; ++j) {
-      string name, attribute;
+      std::string name, attribute;
       ierr = nc->inq_varname(j, name); CHKERRQ(ierr);
 
       ierr = nc->get_att_text(name, "standard_name", attribute); CHKERRQ(ierr);
@@ -387,21 +387,21 @@ PetscErrorCode PIO::inq_var(string short_name, string std_name, bool &exists,
 }
 
 //! \brief Checks if a variable exists.
-PetscErrorCode PIO::inq_var(string name, bool &exists) const {
+PetscErrorCode PIO::inq_var(std::string name, bool &exists) const {
 
   PetscErrorCode ierr = nc->inq_varid(name, exists); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PIO::inq_vardims(string name, vector<string> &result) const {
+PetscErrorCode PIO::inq_vardims(std::string name, std::vector<std::string> &result) const {
   PetscErrorCode ierr = nc->inq_vardimid(name, result); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! \brief Checks if a dimension exists.
-PetscErrorCode PIO::inq_dim(string name, bool &exists) const {
+PetscErrorCode PIO::inq_dim(std::string name, bool &exists) const {
 
   PetscErrorCode ierr = nc->inq_dimid(name, exists); CHKERRQ(ierr);
 
@@ -412,7 +412,7 @@ PetscErrorCode PIO::inq_dim(string name, bool &exists) const {
 /*!
  * Sets result to 0 if a dimension does not exist.
  */
-PetscErrorCode PIO::inq_dimlen(string name, unsigned int &result) const {
+PetscErrorCode PIO::inq_dimlen(std::string name, unsigned int &result) const {
   bool exists = false;
   PetscErrorCode ierr;
 
@@ -431,9 +431,9 @@ PetscErrorCode PIO::inq_dimlen(string name, unsigned int &result) const {
 /*!
  * The "type" is one of X_AXIS, Y_AXIS, Z_AXIS, T_AXIS.
  */
-PetscErrorCode PIO::inq_dimtype(string name, AxisType &result) const {
+PetscErrorCode PIO::inq_dimtype(std::string name, AxisType &result) const {
   PetscErrorCode ierr;
-  string axis, standard_name, units;
+  std::string axis, standard_name, units;
   PISMUnit tmp_units(m_unit_system);
   bool exists;
 
@@ -515,9 +515,9 @@ PetscErrorCode PIO::inq_dimtype(string name, AxisType &result) const {
   return 0;
 }
 
-PetscErrorCode PIO::inq_dim_limits(string name, double *min, double *max) const {
+PetscErrorCode PIO::inq_dim_limits(std::string name, double *min, double *max) const {
   PetscErrorCode ierr;
-  vector<double> data;
+  std::vector<double> data;
 
   ierr = this->get_dim(name, data); CHKERRQ(ierr);
 
@@ -539,7 +539,7 @@ PetscErrorCode PIO::inq_dim_limits(string name, double *min, double *max) const 
 
 
 //! \brief Sets grid parameters using data read from the file.
-PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid, Periodicity periodicity) const {
+PetscErrorCode PIO::inq_grid(std::string var_name, IceGrid *grid, Periodicity periodicity) const {
   PetscErrorCode ierr;
 
   if (grid == NULL)
@@ -603,9 +603,9 @@ PetscErrorCode PIO::inq_grid(string var_name, IceGrid *grid, Periodicity periodi
   variables: in these two cases we need to handle the reference date
   correctly.
  */
-PetscErrorCode PIO::inq_units(string name, bool &has_units, PISMUnit &units) const {
+PetscErrorCode PIO::inq_units(std::string name, bool &has_units, PISMUnit &units) const {
   PetscErrorCode ierr;
-  string units_string;
+  std::string units_string;
 
   // Get the string:
   ierr = nc->get_att_text(name, "units", units_string); CHKERRQ(ierr);
@@ -633,12 +633,12 @@ PetscErrorCode PIO::inq_units(string name, bool &has_units, PISMUnit &units) con
 }
 
 
-PetscErrorCode PIO::inq_grid_info(string name, grid_info &g) const {
+PetscErrorCode PIO::inq_grid_info(std::string name, grid_info &g) const {
   PetscErrorCode ierr;
 
-  vector<string> dims;
+  std::vector<std::string> dims;
   bool exists, found_by_standard_name;
-  string name_found;
+  std::string name_found;
 
   // try "name" as the standard_name first, then as the short name:
   ierr = this->inq_var(name, name, exists, name_found, found_by_standard_name); CHKERRQ(ierr);
@@ -661,7 +661,7 @@ PetscErrorCode PIO::inq_grid_info(string name, grid_info &g) const {
   }
 
   for (unsigned int i = 0; i < dims.size(); ++i) {
-    string dimname = dims[i];
+    std::string dimname = dims[i];
 
     AxisType dimtype = UNKNOWN_AXIS;
     ierr = this->inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
@@ -707,7 +707,7 @@ PetscErrorCode PIO::inq_grid_info(string name, grid_info &g) const {
 }
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set string attributes.
-PetscErrorCode PIO::def_dim(string name, long int length, map<string,string> attrs) const {
+PetscErrorCode PIO::def_dim(std::string name, long int length, std::map<std::string,std::string> attrs) const {
   PetscErrorCode ierr;
 
   ierr = nc->redef();
@@ -715,14 +715,14 @@ PetscErrorCode PIO::def_dim(string name, long int length, map<string,string> att
 
   ierr = nc->def_dim(name, length); CHKERRQ(ierr);
 
-  vector<string> dims(1);
+  std::vector<std::string> dims(1);
   dims[0] = name;
 
   ierr = nc->def_var(name, PISM_DOUBLE, dims); CHKERRQ(ierr);
 
-  map<string,string>::iterator j;
+  std::map<std::string,std::string>::iterator j;
   for (j = attrs.begin(); j != attrs.end(); ++j) {
-    const string &att_name = j->first,
+    const std::string &att_name = j->first,
       &att_value = j->second;
 
     ierr = nc->put_att_text(name, att_name, att_value); CHKERRQ(ierr);
@@ -732,17 +732,17 @@ PetscErrorCode PIO::def_dim(string name, long int length, map<string,string> att
 }
 
 //! \brief Define a variable.
-PetscErrorCode PIO::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
+PetscErrorCode PIO::def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const {
   PetscErrorCode ierr;
 
   ierr = nc->def_var(name, nctype, dims); CHKERRQ(ierr);
 
   return 0;
 }
-PetscErrorCode PIO::get_1d_var(string name, unsigned int s, unsigned int c,
-                               vector<double> &result) const {
+PetscErrorCode PIO::get_1d_var(std::string name, unsigned int s, unsigned int c,
+                               std::vector<double> &result) const {
   PetscErrorCode ierr;
-  vector<unsigned int> start(1), count(1);
+  std::vector<unsigned int> start(1), count(1);
 
   result.resize(c);
 
@@ -757,10 +757,10 @@ PetscErrorCode PIO::get_1d_var(string name, unsigned int s, unsigned int c,
 }
 
 
-PetscErrorCode PIO::put_1d_var(string name, unsigned int s, unsigned int c,
-                               const vector<double> &data) const {
+PetscErrorCode PIO::put_1d_var(std::string name, unsigned int s, unsigned int c,
+                               const std::vector<double> &data) const {
   PetscErrorCode ierr;
-  vector<unsigned int> start(1), count(1);
+  std::vector<unsigned int> start(1), count(1);
 
   start[0] = s;
   count[0] = c;
@@ -775,7 +775,7 @@ PetscErrorCode PIO::put_1d_var(string name, unsigned int s, unsigned int c,
 
 
 //! \brief Get dimension data (a coordinate variable).
-PetscErrorCode PIO::get_dim(string name, vector<double> &data) const {
+PetscErrorCode PIO::get_dim(std::string name, std::vector<double> &data) const {
   PetscErrorCode ierr;
 
   unsigned int dim_length = 0;
@@ -789,15 +789,15 @@ PetscErrorCode PIO::get_dim(string name, vector<double> &data) const {
 }
 
 //! \brief Write dimension data (a coordinate variable).
-PetscErrorCode PIO::put_dim(string name, const vector<double> &data) const {
+PetscErrorCode PIO::put_dim(std::string name, const std::vector<double> &data) const {
   PetscErrorCode ierr = this->put_1d_var(name, 0,
                                          (unsigned int)data.size(), data); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PIO::def_time(string name, string calendar, string units) const {
+PetscErrorCode PIO::def_time(std::string name, std::string calendar, std::string units) const {
   PetscErrorCode ierr;
-  map<string,string> attrs;
+  std::map<std::string,std::string> attrs;
 
   bool time_exists;
   ierr = nc->inq_varid(name, time_exists); CHKERRQ(ierr);
@@ -817,10 +817,10 @@ PetscErrorCode PIO::def_time(string name, string calendar, string units) const {
 
 
 //! \brief Append to the time dimension.
-PetscErrorCode PIO::append_time(string name, double value) const {
+PetscErrorCode PIO::append_time(std::string name, double value) const {
   PetscErrorCode ierr;
 
-  vector<unsigned int> start(1), count(1);
+  std::vector<unsigned int> start(1), count(1);
   unsigned int dim_length = 0;
 
   ierr = nc->inq_dimlen(name, dim_length); CHKERRQ(ierr);
@@ -839,9 +839,9 @@ PetscErrorCode PIO::append_time(string name, double value) const {
 /*!
  * Use put_att_text("PISM_GLOBAL", "history", ...) to overwrite "history".
  */
-PetscErrorCode PIO::append_history(string history) const {
+PetscErrorCode PIO::append_history(std::string history) const {
   PetscErrorCode ierr;
-  string old_history;
+  std::string old_history;
 
   ierr = nc->redef(); CHKERRQ(ierr);
 
@@ -852,8 +852,8 @@ PetscErrorCode PIO::append_history(string history) const {
 }
 
 //! \brief Write a multiple-valued double attribute.
-PetscErrorCode PIO::put_att_double(string var_name, string att_name, PISM_IO_Type nctype,
-                                   vector<double> values) const {
+PetscErrorCode PIO::put_att_double(std::string var_name, std::string att_name, PISM_IO_Type nctype,
+                                   std::vector<double> values) const {
   PetscErrorCode ierr;
 
   ierr = nc->redef(); CHKERRQ(ierr);
@@ -864,10 +864,10 @@ PetscErrorCode PIO::put_att_double(string var_name, string att_name, PISM_IO_Typ
 }
 
 //! \brief Write a single-valued double attribute.
-PetscErrorCode PIO::put_att_double(string var_name, string att_name, PISM_IO_Type nctype,
+PetscErrorCode PIO::put_att_double(std::string var_name, std::string att_name, PISM_IO_Type nctype,
                                    double value) const {
   PetscErrorCode ierr;
-  vector<double> tmp; tmp.push_back(value);
+  std::vector<double> tmp; tmp.push_back(value);
 
   ierr = nc->redef(); CHKERRQ(ierr);
 
@@ -877,12 +877,12 @@ PetscErrorCode PIO::put_att_double(string var_name, string att_name, PISM_IO_Typ
 }
 
 //! \brief Write a text attribute.
-PetscErrorCode PIO::put_att_text(string var_name, string att_name, string value) const {
+PetscErrorCode PIO::put_att_text(std::string var_name, std::string att_name, std::string value) const {
   PetscErrorCode ierr;
 
   ierr = nc->redef(); CHKERRQ(ierr);
 
-  string tmp = value + "\0";    // ensure that the string is null-terminated
+  std::string tmp = value + "\0";    // ensure that the string is null-terminated
 
   ierr = nc->put_att_text(var_name, att_name, tmp); CHKERRQ(ierr);
 
@@ -890,8 +890,8 @@ PetscErrorCode PIO::put_att_text(string var_name, string att_name, string value)
 }
 
 //! \brief Get a double attribute.
-PetscErrorCode PIO::get_att_double(string var_name, string att_name,
-                                   vector<double> &result) const {
+PetscErrorCode PIO::get_att_double(std::string var_name, std::string att_name,
+                                   std::vector<double> &result) const {
 
   PetscErrorCode ierr;
   PISM_IO_Type att_type;
@@ -903,7 +903,7 @@ PetscErrorCode PIO::get_att_double(string var_name, string att_name,
   // a number (or a list of numbers) was expected. (We've seen datasets with
   // "valid_min" stored as a string...)
   if (att_type == PISM_CHAR) {
-    string tmp;
+    std::string tmp;
     ierr = nc->get_att_text(var_name, att_name, tmp); CHKERRQ(ierr);
 
     PetscPrintf(com,
@@ -921,7 +921,7 @@ PetscErrorCode PIO::get_att_double(string var_name, string att_name,
 }
 
 //! \brief Get a text attribute.
-PetscErrorCode PIO::get_att_text(string var_name, string att_name, string &result) const {
+PetscErrorCode PIO::get_att_text(std::string var_name, std::string att_name, std::string &result) const {
 
   PetscErrorCode ierr = nc->get_att_text(var_name, att_name, result); CHKERRQ(ierr);
 
@@ -934,10 +934,10 @@ PetscErrorCode PIO::get_att_text(string var_name, string att_name, string &resul
  *
  * Vec g has to be "global" (i.e. without ghosts).
  */
-PetscErrorCode PIO::get_vec(IceGrid *grid, string var_name, unsigned int z_count, int t, Vec g) const {
+PetscErrorCode PIO::get_vec(IceGrid *grid, std::string var_name, unsigned int z_count, int t, Vec g) const {
   PetscErrorCode ierr;
 
-  vector<unsigned int> start, count, imap;
+  std::vector<unsigned int> start, count, imap;
   ierr = compute_start_and_count(var_name,
                                  t,
                                  grid->xs, grid->xm,
@@ -959,19 +959,19 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, string var_name, unsigned int z_count
   return 0;
 }
 
-PetscErrorCode PIO::inq_nattrs(string var_name, int &result) const {
+PetscErrorCode PIO::inq_nattrs(std::string var_name, int &result) const {
   PetscErrorCode ierr = nc->inq_varnatts(var_name, result); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode PIO::inq_attname(string var_name, unsigned int n, string &result) const {
+PetscErrorCode PIO::inq_attname(std::string var_name, unsigned int n, std::string &result) const {
   PetscErrorCode ierr = nc->inq_attname(var_name, n, result); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode PIO::inq_atttype(string var_name, string att_name, PISM_IO_Type &result) const {
+PetscErrorCode PIO::inq_atttype(std::string var_name, std::string att_name, PISM_IO_Type &result) const {
   PetscErrorCode ierr = nc->inq_atttype(var_name, att_name, result); CHKERRQ(ierr);
   return 0;
 }
@@ -986,7 +986,7 @@ PetscErrorCode PIO::inq_atttype(string var_name, string att_name, PISM_IO_Type &
  *
  * This method always writes to the last record in the file.
  */
-PetscErrorCode PIO::put_vec(IceGrid *grid, string var_name, unsigned int z_count, Vec g) const {
+PetscErrorCode PIO::put_vec(IceGrid *grid, std::string var_name, unsigned int z_count, Vec g) const {
   PetscErrorCode ierr;
 
   unsigned int t;
@@ -997,7 +997,7 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, string var_name, unsigned int z_count
     fprintf(stderr, "time dimension length (%d) is less than 1!\n", t);
 #endif
 
-  vector<unsigned int> start, count, imap;
+  std::vector<unsigned int> start, count, imap;
   ierr = compute_start_and_count(var_name,
                                  t - 1,
                                  grid->xs, grid->xm,
@@ -1026,12 +1026,12 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, string var_name, unsigned int z_count
 
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
-PetscErrorCode PIO::regrid_vec(IceGrid *grid, string var_name,
-                               const vector<double> &zlevels_out,
+PetscErrorCode PIO::regrid_vec(IceGrid *grid, std::string var_name,
+                               const std::vector<double> &zlevels_out,
                                LocalInterpCtx *lic, Vec g) const {
   PetscErrorCode ierr;
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
-  vector<unsigned int> start, count, imap;
+  std::vector<unsigned int> start, count, imap;
 
   int t_start = lic->start[T],
     x_start = lic->start[X],
@@ -1058,7 +1058,7 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, string var_name,
   return 0;
 }
 
-int PIO::k_below(double z, const vector<double> &zlevels) const {
+int PIO::k_below(double z, const std::vector<double> &zlevels) const {
   double z_min = zlevels.front(), z_max = zlevels.back();
   PetscInt mcurr = 0;
 
@@ -1088,11 +1088,11 @@ int PIO::k_below(double z, const vector<double> &zlevels) const {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out, LocalInterpCtx *lic, Vec g) const {
+PetscErrorCode PIO::regrid(IceGrid *grid, const std::vector<double> &zlevels_out, LocalInterpCtx *lic, Vec g) const {
   const int Y = 2, Z = 3; // indices, just for clarity
   PetscErrorCode ierr;
 
-  vector<double> &zlevels_in = lic->zlevels;
+  std::vector<double> &zlevels_in = lic->zlevels;
   unsigned int nlevels = (int)zlevels_out.size();
   double *input_array = lic->a;
 
@@ -1189,15 +1189,15 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out, Loc
 }
 
 
-PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
+PetscErrorCode PIO::compute_start_and_count(std::string short_name, int t_start,
                                             int x_start, int x_count,
                                             int y_start, int y_count,
                                             int z_start, int z_count,
-                                            vector<unsigned int> &start,
-                                            vector<unsigned int> &count,
-                                            vector<unsigned int> &imap) const {
+                                            std::vector<unsigned int> &start,
+                                            std::vector<unsigned int> &count,
+                                            std::vector<unsigned int> &imap) const {
   PetscErrorCode ierr;
-  vector<string> dims;
+  std::vector<std::string> dims;
 
   ierr = nc->inq_vardimid(short_name, dims); CHKERRQ(ierr);
   int ndims = (int)dims.size();
@@ -1209,7 +1209,7 @@ PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
 
   // Assemble start, count and imap:
   for (int j = 0; j < ndims; j++) {
-    string dimname = dims[j];
+    std::string dimname = dims[j];
 
     AxisType dimtype;
     ierr = this->inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
@@ -1249,9 +1249,9 @@ PetscErrorCode PIO::compute_start_and_count(string short_name, int t_start,
   return 0;
 }
 
-PetscErrorCode PIO::get_vara_double(string variable_name,
-                                    vector<unsigned int> start,
-                                    vector<unsigned int> count,
+PetscErrorCode PIO::get_vara_double(std::string variable_name,
+                                    std::vector<unsigned int> start,
+                                    std::vector<unsigned int> count,
                                     double *ip) const {
   PetscErrorCode ierr;
 
@@ -1263,9 +1263,9 @@ PetscErrorCode PIO::get_vara_double(string variable_name,
 }
 
 
-PetscErrorCode PIO::put_vara_double(string variable_name,
-                                    vector<unsigned int> start,
-                                    vector<unsigned int> count,
+PetscErrorCode PIO::put_vara_double(std::string variable_name,
+                                    std::vector<unsigned int> start,
+                                    std::vector<unsigned int> count,
                                     double *op) const {
   PetscErrorCode ierr;
 
@@ -1276,10 +1276,10 @@ PetscErrorCode PIO::put_vara_double(string variable_name,
   return 0;
 }
 
-PetscErrorCode PIO::get_varm_double(string variable_name,
-                                    vector<unsigned int> start,
-                                    vector<unsigned int> count,
-                                    vector<unsigned int> imap, double *ip) const {
+PetscErrorCode PIO::get_varm_double(std::string variable_name,
+                                    std::vector<unsigned int> start,
+                                    std::vector<unsigned int> count,
+                                    std::vector<unsigned int> imap, double *ip) const {
   PetscErrorCode ierr;
 
   ierr = nc->enddef(); CHKERRQ(ierr);
@@ -1290,10 +1290,10 @@ PetscErrorCode PIO::get_varm_double(string variable_name,
 }
 
 
-PetscErrorCode PIO::put_varm_double(string variable_name,
-                                    vector<unsigned int> start,
-                                    vector<unsigned int> count,
-                                    vector<unsigned int> imap, double *op) const {
+PetscErrorCode PIO::put_varm_double(std::string variable_name,
+                                    std::vector<unsigned int> start,
+                                    std::vector<unsigned int> count,
+                                    std::vector<unsigned int> imap, double *op) const {
   PetscErrorCode ierr;
 
   ierr = nc->enddef(); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,14 +30,14 @@
 class PISMVars {
 public:
   PetscErrorCode add(IceModelVec &);
-  PetscErrorCode add(IceModelVec &, string name);
-  void remove(string);
-  IceModelVec* get(string) const;
-  set<string> keys() const;
+  PetscErrorCode add(IceModelVec &, std::string name);
+  void remove(std::string);
+  IceModelVec* get(std::string) const;
+  std::set<std::string> keys() const;
   PetscErrorCode check_for_nan() const;
 
 protected:
-  mutable map<string, IceModelVec*> variables,
+  mutable std::map<std::string, IceModelVec*> variables,
     standard_names;             //!< stores standard names of variables that
                                 //! have standard names, allowing looking them
                                 //! up using either short or standard names and

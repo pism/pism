@@ -115,7 +115,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
   PetscErrorCode ierr;
   bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set,
     tauc_to_phi_set;
-  string filename;
+  std::string filename;
   int start;
 
   variables = &vars;
@@ -207,7 +207,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
   ierr = regrid(till_phi); CHKERRQ(ierr);
 
   if (tauc_to_phi_set) {
-    string tauc_to_phi_file;
+    std::string tauc_to_phi_file;
     bool flag;
     ierr = PISMOptionsString("-tauc_to_phi", "Specifies the file tauc will be read from",
                              tauc_to_phi_file, flag, true); CHKERRQ(ierr);
@@ -259,8 +259,8 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
 PetscErrorCode PISMMohrCoulombYieldStress::regrid(IceModelVec2S &myvar) {
   PetscErrorCode ierr;
   bool regrid_file_set, regrid_vars_set;
-  string regrid_file;
-  set<string> regrid_vars;
+  std::string regrid_file;
+  std::set<std::string> regrid_vars;
 
   ierr = PetscOptionsBegin(grid.com, "", "PISMMohrCoulombYieldStress regridding options", ""); CHKERRQ(ierr);
   {
@@ -280,13 +280,12 @@ PetscErrorCode PISMMohrCoulombYieldStress::regrid(IceModelVec2S &myvar) {
 }
 
 
-
-void PISMMohrCoulombYieldStress::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PISMMohrCoulombYieldStress::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("tillphi");
 }
 
 
-PetscErrorCode PISMMohrCoulombYieldStress::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PISMMohrCoulombYieldStress::define_variables(std::set<std::string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
   if (set_contains(vars, "tillphi")) {
     PetscErrorCode ierr = till_phi.define(nc, nctype); CHKERRQ(ierr);
@@ -295,7 +294,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::define_variables(set<string> vars, co
 }
 
 
-PetscErrorCode PISMMohrCoulombYieldStress::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMMohrCoulombYieldStress::write_variables(std::set<std::string> vars, const PIO &nc) {
   if (set_contains(vars, "tillphi")) {
     PetscErrorCode ierr = till_phi.write(nc); CHKERRQ(ierr);
   }
@@ -446,7 +445,7 @@ is not used. Instead, the same rule as above for grounded ice is used.
 PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
   PetscErrorCode ierr;
   bool  topg_to_phi_set;
-  vector<double> inarray(4);
+  std::vector<double> inarray(4);
 
   // default values:
   inarray[0] = 5.0;

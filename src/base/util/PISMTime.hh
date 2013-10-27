@@ -25,7 +25,7 @@
 /**
  * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
  */
-inline bool pism_is_valid_calendar_name(string name) {
+inline bool pism_is_valid_calendar_name(std::string name) {
   // Calendar names from the CF Conventions document (except the
   // 366_day (all_leap)):
   if (name == "standard"            ||
@@ -79,33 +79,33 @@ public:
   double end();
 
   //! \brief Returns the calendar string.
-  string calendar();
+  std::string calendar();
 
   //! \brief Returns the length of the current run, in years.
-  string run_length();
+  std::string run_length();
 
   // Virtual methods:
 
   //! \brief Intialize using command-line options.
   virtual PetscErrorCode init();
 
-  PetscErrorCode parse_times(string spec, vector<double> &result);
+  PetscErrorCode parse_times(std::string spec, std::vector<double> &result);
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
   /*!
    * This units string is saved in the output file. Always contains a reference
    * date, even if it is not used by PISM.
    */
-  virtual string CF_units_string();
+  virtual std::string CF_units_string();
 
   //! \brief Internal time units.
   /*!
    * May or may not contain a reference date. (The base class PISMTime does not
    * use the reference date, while PISMTime_Calendar does.)
    */
-  virtual string units_string();
+  virtual std::string units_string();
 
-  virtual string CF_units_to_PISM_units(string input);
+  virtual std::string CF_units_to_PISM_units(std::string input);
 
   //! \brief Returns time since the origin modulo period.
   virtual double mod(double time, unsigned int period_years);
@@ -126,10 +126,10 @@ public:
   virtual double increment_date(double T, int years);
 
   //! \brief Returns the date corresponding to time T.
-  virtual string date(double T);
+  virtual std::string date(double T);
 
   //! \brief Returns current time, in years. Only for reporting.
-  virtual string date();
+  virtual std::string date();
 
 #if (PISM_DEBUG==1)
   //! \brief Returns current time, in years. Only for debugging.
@@ -139,30 +139,30 @@ public:
 #endif
 
   //! Date corresponding to the beginning of the run.
-  virtual string start_date();
+  virtual std::string start_date();
 
   //! Date corresponding to the end of the run.
-  virtual string end_date();
+  virtual std::string end_date();
 
 protected:
-  PetscErrorCode parse_list(string spec, vector<double> &result);
+  PetscErrorCode parse_list(std::string spec, std::vector<double> &result);
 
   virtual PetscErrorCode process_ys(double &result, bool &flag);
   virtual PetscErrorCode process_y(double &result, bool &flag);
   virtual PetscErrorCode process_ye(double &result, bool &flag);
 
   virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
-                                       string keyword,
-                                       vector<double> &result);
+                                       std::string keyword,
+                                       std::vector<double> &result);
 
   PetscErrorCode compute_times_simple(double time_start, double delta, double time_end,
-                                      vector<double> &result);
+                                      std::vector<double> &result);
 
-  virtual PetscErrorCode parse_range(string spec, vector<double> &result);
+  virtual PetscErrorCode parse_range(std::string spec, std::vector<double> &result);
 
-  virtual PetscErrorCode parse_date(string spec, double *result);
+  virtual PetscErrorCode parse_date(std::string spec, double *result);
 
-  virtual PetscErrorCode parse_interval_length(string spec, string &keyword, double *result);
+  virtual PetscErrorCode parse_interval_length(std::string spec, std::string &keyword, double *result);
 
 private:
   double years_to_seconds(double input);
@@ -177,7 +177,7 @@ protected:
   double m_time_in_seconds, //!< current time, in seconds since the reference time
     m_run_start,                  //!< run start time, in seconds since the reference time
     m_run_end;                    //!< run end tim, in seconds since the reference time
-  string m_calendar_string;       //!< CF calendar string
+  std::string m_calendar_string;       //!< CF calendar string
 };
 
 #endif /* _PISMTIME_H_ */

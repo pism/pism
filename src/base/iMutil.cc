@@ -103,10 +103,10 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
 
   snprintf(startstr, sizeof(startstr), 
            "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size);
-  ierr = stampHistory(string(startstr)); CHKERRQ(ierr);
+  ierr = stampHistory(std::string(startstr)); CHKERRQ(ierr);
 
   // Create a string with space-separated command-line arguments:
-  string cmdstr = pism_args_string();
+  std::string cmdstr = pism_args_string();
 
   global_attributes.prepend_history(cmdstr);
 
@@ -179,7 +179,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 
 
 //! Get time and user/host name and add it to the given string.
-PetscErrorCode  IceModel::stampHistory(string str) {
+PetscErrorCode  IceModel::stampHistory(std::string str) {
 
   global_attributes.prepend_history(pism_username_prefix(grid.com) + (str + "\n"));
   
@@ -193,7 +193,7 @@ PetscErrorCode  IceModel::stampHistory(string str) {
 PetscErrorCode IceModel::check_maximum_thickness() {
   PetscErrorCode  ierr;
   PetscReal H_min, H_max, dz_top;
-  vector<double> new_zlevels;
+  std::vector<double> new_zlevels;
   const int old_Mz = grid.Mz;
   int N = 0; 			// the number of new levels
 

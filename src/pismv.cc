@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-    vector<string> required;
+    std::vector<std::string> required;
     required.push_back("-test");
     ierr = show_usage_check_req_opts(com, "pismv", required,
         "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     IceGrid g(com, rank, size, config);
 
     // determine test (and whether to report error)
-    string testname = "A";
+    std::string testname = "A";
     bool   test_chosen;
     ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", ""); CHKERRQ(ierr);
     {

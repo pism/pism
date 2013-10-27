@@ -26,7 +26,7 @@
 #include "utCalendar2_cal.h"
 #include "calcalcs.h"
 
-static inline string string_strip(string input) {
+static inline std::string string_strip(std::string input) {
   if (input.empty() == true)
     return input;
 
@@ -56,7 +56,7 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
     PISMEnd();
   }
 
-  string ref_date = m_config.get_string("reference_date");
+  std::string ref_date = m_config.get_string("reference_date");
 
   int errcode = parse_date(ref_date, NULL);
   if (errcode != 0) {
@@ -65,7 +65,7 @@ PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
     PISMEnd();
   }
 
-  string tmp = "seconds since " + ref_date;
+  std::string tmp = "seconds since " + ref_date;
   errcode = m_time_units.parse(tmp);
   if (errcode != 0) {
     PetscPrintf(m_com, "PISM ERROR: time units '%s' are invalid.\n",
@@ -84,7 +84,7 @@ PISMTime_Calendar::~PISMTime_Calendar() {
 
 PetscErrorCode PISMTime_Calendar::process_ys(double &result, bool &flag) {
   PetscErrorCode ierr;
-  string tmp;
+  std::string tmp;
   result = m_config.get("start_year", "years", "seconds");
 
   ierr = PISMOptionsString("-ys", "Start date", tmp, flag); CHKERRQ(ierr);
@@ -116,7 +116,7 @@ PetscErrorCode PISMTime_Calendar::process_y(double &result, bool &flag) {
 
 PetscErrorCode PISMTime_Calendar::process_ye(double &result, bool &flag) {
   PetscErrorCode ierr;
-  string tmp;
+  std::string tmp;
   result = (m_config.get("start_year", "years", "seconds") +
             m_config.get("run_length_years", "years", "seconds"));
 
@@ -136,7 +136,7 @@ PetscErrorCode PISMTime_Calendar::process_ye(double &result, bool &flag) {
 
 PetscErrorCode PISMTime_Calendar::init() {
   PetscErrorCode ierr;
-  string time_file;
+  std::string time_file;
   bool flag;
 
   ierr = PISMTime::init(); CHKERRQ(ierr);
@@ -163,13 +163,13 @@ PetscErrorCode PISMTime_Calendar::init() {
 /*!
  * This allows running PISM for the duration of the available forcing.
  */
-PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
+PetscErrorCode PISMTime_Calendar::init_from_file(std::string filename) {
   PetscErrorCode ierr;
   NCTimeseries time_axis(m_unit_system);
   NCTimeBounds bounds(m_unit_system);
   PetscMPIInt rank;
-  vector<double> time, time_bounds;
-  string time_units, time_bounds_name, new_calendar,
+  std::vector<double> time, time_bounds;
+  std::string time_units, time_bounds_name, new_calendar,
     time_name = m_config.get_string("time_dimension_name");
   bool exists;
 
@@ -214,13 +214,13 @@ PetscErrorCode PISMTime_Calendar::init_from_file(string filename) {
   {
     // Check if the time_file has a reference date set:
     size_t position = time_units.find("since");
-    if (position == string::npos) {
+    if (position == std::string::npos) {
       PetscPrintf(m_com, "PISM ERROR: time units string '%s' does not contain a reference date.\n",
                   time_units.c_str());
       PISMEnd();
     }
 
-    string tmp = "seconds " + time_units.substr(position);
+    std::string tmp = "seconds " + time_units.substr(position);
     ierr = m_time_units.parse(tmp);
     if (ierr != 0) {
       PetscPrintf(m_com,
@@ -285,7 +285,7 @@ double PISMTime_Calendar::year_fraction(double T) {
   return (T - year_start) / (next_year_start - year_start);
 }
 
-string PISMTime_Calendar::date(double T) {
+std::string PISMTime_Calendar::date(double T) {
   char tmp[256];
   int year, month, day, hour, minute;
   double second;
@@ -296,18 +296,18 @@ string PISMTime_Calendar::date(double T) {
 
   snprintf(tmp, 256, "%04d-%02d-%02d", year, month, day);
 
-  return string(tmp);
+  return std::string(tmp);
 }
 
-string PISMTime_Calendar::date() {
+std::string PISMTime_Calendar::date() {
   return this->date(m_time_in_seconds);
 }
 
-string PISMTime_Calendar::start_date() {
+std::string PISMTime_Calendar::start_date() {
   return this->date(m_run_start);
 }
 
-string PISMTime_Calendar::end_date() {
+std::string PISMTime_Calendar::end_date() {
   return this->date(m_run_end);
 }
 
@@ -380,16 +380,16 @@ double PISMTime_Calendar::increment_date(double T, int years) {
  *
  * @return 0 on success, 1 otherwise
  */
-PetscErrorCode PISMTime_Calendar::parse_date(string spec, double *result) {
+PetscErrorCode PISMTime_Calendar::parse_date(std::string spec, double *result) {
   int errcode, dummy;
   calcalcs_cal *cal = NULL;
-  vector<int> numbers;
+  std::vector<int> numbers;
   bool year_is_negative = false;
-  string tmp;
+  std::string tmp;
 
   spec = string_strip(spec);
 
-  istringstream arg(spec);
+  std::istringstream arg(spec);
 
   if (spec.empty() == true)
     goto failure;
@@ -455,7 +455,7 @@ PetscErrorCode PISMTime_Calendar::parse_date(string spec, double *result) {
   return 1;
 }
 
-int PISMTime_Calendar::parse_interval_length(string spec, string &keyword, double *result) {
+int PISMTime_Calendar::parse_interval_length(std::string spec, std::string &keyword, double *result) {
 
   int ierr;
 
@@ -464,7 +464,7 @@ int PISMTime_Calendar::parse_interval_length(string spec, string &keyword, doubl
     return 1;
 
   // do not allow intervals specified in terms of "fuzzy" units
-  if (spec.find("year") != string::npos || spec.find("month") != string::npos) {
+  if (spec.find("year") != std::string::npos || spec.find("month") != std::string::npos) {
     PetscPrintf(m_com, "PISM ERROR: interval length '%s' with the calendar '%s' is not supported.\n",
                 spec.c_str(), m_calendar_string.c_str());
     return 1;
@@ -474,7 +474,7 @@ int PISMTime_Calendar::parse_interval_length(string spec, string &keyword, doubl
 }
 
 
-PetscErrorCode PISMTime_Calendar::compute_times_monthly(vector<double> &result) {
+PetscErrorCode PISMTime_Calendar::compute_times_monthly(std::vector<double> &result) {
   int errcode;
 
   int year, month, day, hour, minute;
@@ -515,7 +515,7 @@ PetscErrorCode PISMTime_Calendar::compute_times_monthly(vector<double> &result) 
   return 0;
 }
 
-PetscErrorCode PISMTime_Calendar::compute_times_yearly(vector<double> &result) {
+PetscErrorCode PISMTime_Calendar::compute_times_yearly(std::vector<double> &result) {
   int errcode;
 
   int year, month, day, hour, minute;
@@ -551,8 +551,8 @@ PetscErrorCode PISMTime_Calendar::compute_times_yearly(vector<double> &result) {
 }
 
 PetscErrorCode PISMTime_Calendar::compute_times(double time_start, double delta, double time_end,
-                                                string keyword,
-                                                vector<double> &result) {
+                                                std::string keyword,
+                                                std::vector<double> &result) {
   if (keyword == "simple") {
     return compute_times_simple(time_start, delta, time_end, result);
   }

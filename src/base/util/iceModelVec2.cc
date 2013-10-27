@@ -31,7 +31,7 @@
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
-PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, string my_name, bool local, int width) {
+PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, std::string my_name, bool local, int width) {
 
   if (v != PETSC_NULL) {
     SETERRQ1(grid->com, 2,"IceModelVec2S with name='%s' already allocated\n", my_name.c_str());
@@ -313,7 +313,7 @@ PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
   if (dof > 2) SETERRQ(grid->com, 1, "dof > 2 is not supported");
 
   for (int j = 0; j < dof; ++j) {
-    string c_name = vars[j].short_name,
+    std::string c_name = vars[j].short_name,
       long_name = vars[j].get_string("long_name"),
       units = vars[j].get_string("glaciological_units"),
       title = long_name + " (" + units + ")";
@@ -345,7 +345,7 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) {
   PetscViewer viewers[2] = {v1, v2};
 
   for (int i = 0; i < dof; ++i) {
-    string long_name = vars[i].get_string("long_name"),
+    std::string long_name = vars[i].get_string("long_name"),
       units = vars[i].get_string("glaciological_units"),
       title = long_name + " (" + units + ")";
 
@@ -367,7 +367,7 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) {
 
 PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   PetscErrorCode ierr;
-  string long_name = vars[0].get_string("long_name");
+  std::string long_name = vars[0].get_string("long_name");
   Vec g2;
 
   DM da2;
@@ -655,7 +655,7 @@ PetscErrorCode IceModelVec2::set_component(int n, IceModelVec2S &source) {
   return 0;
 }
 
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, string my_name, bool local,
+PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, std::string my_name, bool local,
                                      int stencil_width, int my_dof) {
   PetscErrorCode ierr;
 
@@ -764,7 +764,7 @@ PetscErrorCode IceModelVec2S::multiply_by(IceModelVec &x) {
 
 
 // IceModelVec2Stag
-PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, string my_short_name, bool my_has_ghosts,
+PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, std::string my_short_name, bool my_has_ghosts,
                                         int stencil_width) {
   PetscErrorCode ierr;
 

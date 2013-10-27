@@ -25,11 +25,6 @@
 #include <map>
 #include "PISMUnits.hh"
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 class PISMTime;
 class PISMProf;
 class NCConfigVariable;
@@ -112,12 +107,12 @@ public:
   PetscErrorCode report_parameters();
 
   PetscErrorCode allocate();  // destructor checks if DA was created, and destroys
-  PetscErrorCode set_vertical_levels(vector<double> z_levels);
+  PetscErrorCode set_vertical_levels(std::vector<double> z_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
   void compute_point_neighbors(PetscReal x, PetscReal y,
                                int &i, int &j);
-  vector<PetscReal> compute_interp_weights(PetscReal x, PetscReal y);
+  std::vector<PetscReal> compute_interp_weights(PetscReal x, PetscReal y);
 
   void check_parameters();
 
@@ -127,7 +122,7 @@ public:
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
   int       kBelowHeight(PetscScalar height);
-  PetscErrorCode create_viewer(int viewer_size, string title, PetscViewer &viewer);
+  PetscErrorCode create_viewer(int viewer_size, std::string title, PetscViewer &viewer);
   PetscReal      radius(int i, int j);
   PetscErrorCode get_dm(PetscInt dm_dof, PetscInt stencil_width, DM &result);
   double convert(double, const char*, const char*) const;
@@ -141,13 +136,13 @@ public:
     ys,                         //!< starting y-index of a processor sub-domain
     ym; //!< number of grid points (in the y-direction) in a processor sub-domain
 
-  vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
+  std::vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
 
-  vector<double> x,             //!< x-coordinates of grid points
+  std::vector<double> x,             //!< x-coordinates of grid points
     y;                          //!< y-coordinates of grid points
 
   // Fine vertical grid and the interpolation setup:
-  vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
+  std::vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
   PetscReal   dz_fine;                    //!< spacing of the fine vertical grid
   int    Mz_fine;          //!< number of levels of the fine vertical grid in the ice
 
@@ -155,7 +150,7 @@ public:
   // that are just below a level of the fine grid. I.e. ice_storage2fine[k] is
   // the storage grid level just below fine-grid level k (zlevels_fine[k]).
   // Similarly for other arrays below.
-  vector<int> ice_storage2fine, ice_fine2storage;
+  std::vector<int> ice_storage2fine, ice_fine2storage;
 
   SpacingType ice_vertical_spacing;
   Periodicity periodicity;
@@ -174,7 +169,7 @@ public:
   int    Nx, //!< number of processors in the x-direction
     Ny;      //!< number of processors in the y-direction
 
-  vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
+  std::vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
     procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
 
   PetscScalar dx,               //!< horizontal grid spacing
@@ -192,7 +187,7 @@ public:
   PISMProf *profiler;           //!< PISM profiler object; allows tracking how long a computation takes
   PISMTime *time;               //!< The time management object (hides calendar computations)
 protected:
-  map<int,DM> dms;
+  std::map<int,DM> dms;
   PetscScalar lambda;	 //!< quadratic vertical spacing parameter
   PISMUnitSystem m_unit_system;
 

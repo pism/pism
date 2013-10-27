@@ -96,7 +96,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
   bool i_set;
-  string filename;
+  std::string filename;
   ierr = PISMOptionsString("-i", "PISM input file",
                            filename, i_set); CHKERRQ(ierr);
 
@@ -156,7 +156,7 @@ PetscErrorCode SSA::allocate() {
                                   "m s-1", ""); CHKERRQ(ierr);
 
   // override velocity metadata
-  vector<string> long_names;
+  std::vector<std::string> long_names;
   long_names.push_back("SSA model ice velocity in the X direction");
   long_names.push_back("SSA model ice velocity in the Y direction");
   ierr = m_velocity.rename("_ssa",long_names,""); CHKERRQ(ierr);
@@ -373,7 +373,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   return 0;
 }
 
-PetscErrorCode SSA::stdout_report(string &result) {
+PetscErrorCode SSA::stdout_report(std::string &result) {
   result = stdout_ssa;
   return 0;
 }
@@ -387,12 +387,12 @@ PetscErrorCode SSA::set_initial_guess(IceModelVec2V &guess) {
 }
 
 
-void SSA::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void SSA::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("vel_ssa");
 }
 
 
-PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode SSA::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {
@@ -403,7 +403,7 @@ PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, PISM_IO_Ty
 }
 
 
-PetscErrorCode SSA::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode SSA::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {
@@ -413,8 +413,8 @@ PetscErrorCode SSA::write_variables(set<string> vars, const PIO &nc) {
   return 0;
 }
 
-void SSA::get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                          map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void SSA::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                          std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
     dict["taud"] = new SSA_taud(this, grid, *variables);
     dict["taud_mag"] = new SSA_taud_mag(this, grid, *variables);
 }

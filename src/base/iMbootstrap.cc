@@ -33,7 +33,7 @@ This procedure is called by the base class when option `-boot_file` is used.
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
-PetscErrorCode IceModel::bootstrapFromFile(string filename) {
+PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
   PetscErrorCode  ierr;
 
   // Bootstrap 2D fields:
@@ -92,7 +92,7 @@ PetscErrorCode IceModel::bootstrapFromFile(string filename) {
   return 0;
 }
 
-PetscErrorCode IceModel::bootstrap_2d(string filename) {
+PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
   PetscErrorCode ierr;
 
   PIO nc(grid, "guess_mode");
@@ -114,12 +114,12 @@ PetscErrorCode IceModel::bootstrap_2d(string filename) {
                     grid.Lz); 
   CHKERRQ(ierr);
 
-  string usurf_name;
+  std::string usurf_name;
   bool hExists=false, maskExists=false, usurf_found_by_std_name;
   ierr = nc.inq_var("usurf", "surface_altitude", hExists, usurf_name, usurf_found_by_std_name); CHKERRQ(ierr);
   ierr = nc.inq_var("mask", maskExists); CHKERRQ(ierr);
 
-  string lon_name, lat_name;
+  std::string lon_name, lat_name;
   bool lonExists=false, latExists=false, lon_found_by_std_name, lat_found_by_std_name;
   ierr = nc.inq_var("lon", "longitude", lonExists, lon_name, lon_found_by_std_name); CHKERRQ(ierr);
   ierr = nc.inq_var("lat", "latitude",  latExists, lat_name, lat_found_by_std_name); CHKERRQ(ierr);

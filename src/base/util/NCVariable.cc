@@ -57,7 +57,7 @@ PetscErrorCode NCVariable::reset() {
 }
 
 //! Initialize a NCVariable instance.
-void NCVariable::init(string name, MPI_Comm c, PetscMPIInt r) {
+void NCVariable::init(std::string name, MPI_Comm c, PetscMPIInt r) {
   short_name = name;
 
   com = c;
@@ -73,7 +73,7 @@ int NCVariable::get_ndims() const {
 PetscErrorCode NCVariable::read_attributes(const PIO &nc) {
   PetscErrorCode ierr;
   bool variable_exists, found_by_std_name;
-  string name_found;
+  std::string name_found;
   int nattrs;
 
   ierr = nc.inq_var(short_name, strings["standard_name"], variable_exists,
@@ -93,18 +93,18 @@ PetscErrorCode NCVariable::read_attributes(const PIO &nc) {
   ierr = nc.inq_nattrs(name_found, nattrs); CHKERRQ(ierr);
 
   for (int j = 0; j < nattrs; ++j) {
-    string attname;
+    std::string attname;
     PISM_IO_Type nctype;
     ierr = nc.inq_attname(name_found, j, attname); CHKERRQ(ierr);
     ierr = nc.inq_atttype(name_found, attname, nctype); CHKERRQ(ierr);
 
     if (nctype == PISM_CHAR) {
-      string value;
+      std::string value;
       ierr = nc.get_att_text(name_found, attname, value); CHKERRQ(ierr);
 
       strings[attname] = value;
     } else {
-      vector<double> values;
+      std::vector<double> values;
 
       ierr = nc.get_att_double(name_found, attname, values); CHKERRQ(ierr);
       doubles[attname] = values;
@@ -119,7 +119,7 @@ PetscErrorCode NCVariable::read_attributes(const PIO &nc) {
 /*! Units should not be set by accessing the `strings` member directly. This
   method also checks if `new_units` are valid and initializes the `units` structure.
  */
-PetscErrorCode NCVariable::set_units(string new_units) {
+PetscErrorCode NCVariable::set_units(std::string new_units) {
   strings["units"] = new_units;
   strings["glaciological_units"] = new_units;
 
@@ -142,8 +142,8 @@ PetscErrorCode NCVariable::set_units(string new_units) {
   directly. This method also checks if `new_units` are valid and compatible
   with the internal units.
  */
-PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
-  string &units_string = strings["units"];
+PetscErrorCode NCVariable::set_glaciological_units(std::string new_units) {
+  std::string &units_string = strings["units"];
 
   PISMUnitSystem unit_system = m_units.get_system();
 
@@ -234,14 +234,14 @@ NCSpatialVariable::~NCSpatialVariable() {
   // empty
 }
 
-void NCSpatialVariable::init_2d(string name, IceGrid &g) {
-  vector<double> z(1);
+void NCSpatialVariable::init_2d(std::string name, IceGrid &g) {
+  std::vector<double> z(1);
 
   init_3d(name, g, z);
 }
 
 //! \brief Initialize a NCSpatialVariable instance.
-void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_levels) {
+void NCSpatialVariable::init_3d(std::string name, IceGrid &g, std::vector<double> &z_levels) {
   NCVariable::init(name, g.com, g.rank);
   short_name = name;
   grid = &g;
@@ -261,7 +261,7 @@ void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_level
   variable_order = grid->config.get_string("output_variable_order");
 }
 
-void NCSpatialVariable::set_levels(const vector<double> &levels) {
+void NCSpatialVariable::set_levels(const std::vector<double> &levels) {
   zlevels = levels;
   nlevels = (int)zlevels.size();
 }
@@ -276,7 +276,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
     SETERRQ(com, 1, "NCVariable::read: grid is NULL.");
 
   // Find the variable:
-  string name_found;
+  std::string name_found;
   bool found_by_standard_name = false, variable_exists = false;
   ierr = nc.inq_var(short_name, strings["standard_name"],
                     variable_exists, name_found, found_by_standard_name); CHKERRQ(ierr);
@@ -301,12 +301,12 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
       axes.insert(Z_AXIS);
     }
 
-    vector<string> input_dims;
+    std::vector<std::string> input_dims;
     int input_ndims = 0;                 // number of spatial dimensions (input file)
     size_t matching_dim_count = 0; // number of matching dimensions
 
     ierr = nc.inq_vardims(name_found, input_dims);
-    vector<string>::iterator j = input_dims.begin();
+    std::vector<std::string>::iterator j = input_dims.begin();
     while (j != input_dims.end()) {
       AxisType tmp;
       ierr = nc.inq_dimtype(*j, tmp); CHKERRQ(ierr);
@@ -325,9 +325,9 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
 
       // Join input dimension names:
       j = input_dims.begin();
-      string tmp = *j++;
+      std::string tmp = *j++;
       while (j != input_dims.end())
-        tmp += string(", ") + *j++;
+        tmp += std::string(", ") + *j++;
 
       // Print the error message and stop:
       PetscPrintf(com,
@@ -348,7 +348,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
   if ( has("units") && (!input_has_units) ) {
-    string &units_string = strings["units"],
+    std::string &units_string = strings["units"],
       &long_name = strings["long_name"];
     ierr = verbPrintf(2, com,
 		      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
@@ -373,7 +373,7 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, PISM_IO_Type nctype,
   PetscErrorCode ierr;
 
   // find or define the variable
-  string name_found;
+  std::string name_found;
   bool exists, found_by_standard_name;
   ierr = nc.inq_var(short_name, strings["standard_name"],
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
@@ -411,7 +411,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
 
   // Find the variable
   bool exists, found_by_standard_name;
-  string name_found;
+  std::string name_found;
   ierr = nc.inq_var(short_name, strings["standard_name"],
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
@@ -424,7 +424,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
       PISMEnd();
     }
 
-    string spacer(short_name.size(), ' ');
+    std::string spacer(short_name.size(), ' ');
 
     if (set_default_value) {	// if it's not and we have a default value, set it
       double tmp;
@@ -500,10 +500,10 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, LocalInterpCtx *lic,
 /*! Reads `valid_min`, `valid_max` and `valid_range` attributes; if \c
     valid_range is found, sets the pair `valid_min` and `valid_max` instead.
  */
-PetscErrorCode NCVariable::read_valid_range(const PIO &nc, string name) {
-  string input_units_string;
+PetscErrorCode NCVariable::read_valid_range(const PIO &nc, std::string name) {
+  std::string input_units_string;
   PISMUnit input_units(m_units.get_system());
-  vector<double> bounds;
+  std::vector<double> bounds;
   int ierr;
 
   // Never reset valid_min/max if any of them was set internally.
@@ -555,7 +555,7 @@ PetscErrorCode NCSpatialVariable::to_glaciological_units(Vec v) {
  */
 PetscErrorCode NCSpatialVariable::change_units(Vec v, PISMUnit &from, PISMUnit &to) {
   PetscErrorCode ierr;
-  string from_name, to_name;
+  std::string from_name, to_name;
 
   from_name = from.format();
   to_name   = to.format();
@@ -599,7 +599,7 @@ PetscErrorCode NCVariable::write_attributes(const PIO &nc, PISM_IO_Type nctype,
 
   // units, valid_min, valid_max and valid_range need special treatment:
   if (has("units")) {
-    string output_units = get_string("units");
+    std::string output_units = get_string("units");
 
     if (write_in_glaciological_units)
       output_units = get_string("glaciological_units");
@@ -607,7 +607,7 @@ PetscErrorCode NCVariable::write_attributes(const PIO &nc, PISM_IO_Type nctype,
     ierr = nc.put_att_text(short_name, "units", output_units); CHKERRQ(ierr);
   }
 
-  vector<double> bounds(2);
+  std::vector<double> bounds(2);
   double fill_value = 0.0;
 
   if (has("_FillValue")) {
@@ -646,9 +646,9 @@ PetscErrorCode NCVariable::write_attributes(const PIO &nc, PISM_IO_Type nctype,
   CHKERRQ(ierr);
 
   // Write text attributes:
-  map<string, string>::const_iterator i;
+  std::map<std::string, std::string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
-    string name  = i->first, value = i->second;
+    std::string name  = i->first, value = i->second;
 
     if (name == "units" || name == "glaciological_units" || value.empty())
       continue;
@@ -657,10 +657,10 @@ PetscErrorCode NCVariable::write_attributes(const PIO &nc, PISM_IO_Type nctype,
   }
 
   // Write double attributes:
-  map<string, vector<double> >::const_iterator j;
+  std::map<std::string, std::vector<double> >::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
-    string name  = j->first;
-    vector<double> values = j->second;
+    std::string name  = j->first;
+    std::vector<double> values = j->second;
 
     if (name == "valid_min" ||
 	name == "valid_max" ||
@@ -690,7 +690,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   max = cv_convert_double(c, max);
   cv_free(c);
 
-  string spacer(short_name.size(), ' ');
+  std::string spacer(short_name.size(), ' ');
 
   if (has("standard_name")) {
 
@@ -724,7 +724,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 }
 
 //! Check if the range of a \b global Vec `v` is in the range specified by valid_min and valid_max attributes.
-PetscErrorCode NCSpatialVariable::check_range(string filename, Vec v) {
+PetscErrorCode NCSpatialVariable::check_range(std::string filename, Vec v) {
   PetscScalar min, max;
   PetscErrorCode ierr;
   bool failed = false;
@@ -736,7 +736,7 @@ PetscErrorCode NCSpatialVariable::check_range(string filename, Vec v) {
   ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
 
-  string &units_string = strings["units"];
+  std::string &units_string = strings["units"];
 
   if (has("valid_min") && has("valid_max")) {
     double valid_min = get("valid_min"),
@@ -781,7 +781,7 @@ PetscErrorCode NCSpatialVariable::check_range(string filename, Vec v) {
 //! \brief Define dimensions a variable depends on.
 PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
   PetscErrorCode ierr;
-  string dimname;
+  std::string dimname;
   bool exists;
 
   // x
@@ -817,7 +817,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
 PetscErrorCode NCSpatialVariable::define(const PIO &nc, PISM_IO_Type nctype,
                                          bool write_in_glaciological_units) {
   int ierr;
-  vector<string> dims;
+  std::vector<std::string> dims;
   bool exists;
 
   ierr = nc.inq_var(short_name, exists); CHKERRQ(ierr);
@@ -832,7 +832,7 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, PISM_IO_Type nctype,
   if (ends_with(short_name, "_bounds") && variable_order == "zyx")
     variable_order = "yxz";
 
-  string x = dimensions["x"],
+  std::string x = dimensions["x"],
     y = dimensions["y"],
     z = dimensions["z"],
     t = dimensions["t"];
@@ -877,9 +877,9 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, PISM_IO_Type nctype,
 
 //! Checks if an attribute is present. Ignores empty strings, except
 //! for the "units" attribute.
-bool NCVariable::has(string name) const {
+bool NCVariable::has(std::string name) const {
 
-  map<string,string>::const_iterator j = strings.find(name);
+  std::map<std::string,std::string>::const_iterator j = strings.find(name);
   if (j != strings.end()) {
     if (name != "units" && (j->second).empty())
       return false;
@@ -894,13 +894,13 @@ bool NCVariable::has(string name) const {
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-void NCVariable::set(string name, double value) {
-  doubles[name] = vector<double>(1, value);
+void NCVariable::set(std::string name, double value) {
+  doubles[name] = std::vector<double>(1, value);
 }
 
 //! Get a single-valued scalar attribute.
-double NCVariable::get(string name) const {
-  map<string,vector<double> >::const_iterator j = doubles.find(name);
+double NCVariable::get(std::string name) const {
+  std::map<std::string,std::vector<double> >::const_iterator j = doubles.find(name);
   if (j != doubles.end())
     return (j->second)[0];
   else
@@ -908,7 +908,7 @@ double NCVariable::get(string name) const {
 }
 
 //! Set a string attribute.
-void NCVariable::set_string(string name, string value) {
+void NCVariable::set_string(std::string name, std::string value) {
   if (name == "short_name") {
     short_name = name;
     return;
@@ -921,14 +921,14 @@ void NCVariable::set_string(string name, string value) {
 /*!
  * Returns an empty string if an attribute is not set.
  */
-string NCVariable::get_string(string name) const {
+std::string NCVariable::get_string(std::string name) const {
   if (name == "short_name") return short_name;
 
-  map<string,string>::const_iterator j = strings.find(name);
+  std::map<std::string,std::string>::const_iterator j = strings.find(name);
   if (j != strings.end())
     return j->second;
   else
-    return string();
+    return std::string();
 }
 
 //! \brief Check if a value `a` is in the valid range defined by `valid_min`
@@ -959,7 +959,7 @@ NCConfigVariable::~NCConfigVariable() {
 }
 
 
-PetscErrorCode NCConfigVariable::read(string filename) {
+PetscErrorCode NCConfigVariable::read(std::string filename) {
   PetscErrorCode ierr;
   PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
 
@@ -972,7 +972,7 @@ PetscErrorCode NCConfigVariable::read(string filename) {
   return 0;
 }
 
-PetscErrorCode NCConfigVariable::write(string filename) {
+PetscErrorCode NCConfigVariable::write(std::string filename) {
   PetscErrorCode ierr;
   PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
 
@@ -1025,7 +1025,7 @@ PetscErrorCode NCConfigVariable::define(const PIO &nc, PISM_IO_Type type, bool) 
 
   ierr = nc.redef(); CHKERRQ(ierr);
 
-  vector<string> dims;
+  std::vector<std::string> dims;
   ierr = nc.def_var(short_name, type, dims); CHKERRQ(ierr);
 
   ierr = write_attributes(nc, PISM_DOUBLE, false); CHKERRQ(ierr);
@@ -1033,7 +1033,7 @@ PetscErrorCode NCConfigVariable::define(const PIO &nc, PISM_IO_Type type, bool) 
   return 0;
 }
 
-double NCConfigVariable::get_quiet(string name) const {
+double NCConfigVariable::get_quiet(std::string name) const {
   if (doubles.find(name) != doubles.end()) {
     return NCVariable::get(name);
   } else {
@@ -1045,8 +1045,8 @@ double NCConfigVariable::get_quiet(string name) const {
   return 0;			// can't happen
 }
 
-string NCConfigVariable::get_string_quiet(string name) const {
-  map<string,string>::const_iterator j = strings.find(name);
+std::string NCConfigVariable::get_string_quiet(std::string name) const {
+  std::map<std::string,std::string>::const_iterator j = strings.find(name);
   if (j != strings.end())
     return j->second;
   else {
@@ -1056,14 +1056,14 @@ string NCConfigVariable::get_string_quiet(string name) const {
     PISMEnd();
   }
 
-  return string();		// will never happen
+  return std::string();		// will never happen
 }
 
-bool NCConfigVariable::get_flag_quiet(string name) const {
-  map<string,string>::const_iterator j = strings.find(name);
+bool NCConfigVariable::get_flag_quiet(std::string name) const {
+  std::map<std::string,std::string>::const_iterator j = strings.find(name);
   if (j != strings.end()) {
 
-    const string &value = j->second;
+    const std::string &value = j->second;
 
     if ((value == "false") ||
 	(value == "no") ||
@@ -1092,14 +1092,14 @@ bool NCConfigVariable::get_flag_quiet(string name) const {
 
 
 //! Returns a `double` parameter. Stops if it was not found.
-double NCConfigVariable::get(string name) const {
+double NCConfigVariable::get(std::string name) const {
   if (options_left_set)
     parameters_used.insert(name);
 
   return this->get_quiet(name);
 }
 
-double NCConfigVariable::get(string name, string u1, string u2) const {
+double NCConfigVariable::get(std::string name, std::string u1, std::string u2) const {
   // always use get() (*not* _quiet) here
   return m_unit_system.convert(this->get(name),  u1.c_str(),  u2.c_str());
 }
@@ -1111,7 +1111,7 @@ double NCConfigVariable::get(string name, string u1, string u2) const {
 
   Any other string produces an error.
  */
-bool NCConfigVariable::get_flag(string name) const {
+bool NCConfigVariable::get_flag(std::string name) const {
   if (options_left_set)
     parameters_used.insert(name);
 
@@ -1119,7 +1119,7 @@ bool NCConfigVariable::get_flag(string name) const {
 }
 
 //! \brief Get a string attribute by name.
-string NCConfigVariable::get_string(string name) const {
+std::string NCConfigVariable::get_string(std::string name) const {
   if (options_left_set)
     parameters_used.insert(name);
 
@@ -1127,7 +1127,7 @@ string NCConfigVariable::get_string(string name) const {
 }
 
 //! Set a value of a boolean flag.
-void NCConfigVariable::set_flag(string name, bool value) {
+void NCConfigVariable::set_flag(std::string name, bool value) {
   if (value)
     strings[name] = "true";
   else
@@ -1140,9 +1140,9 @@ PetscErrorCode NCConfigVariable::write_attributes(const PIO &nc, PISM_IO_Type nc
   int ierr;
 
   // Write text attributes:
-  map<string, string>::const_iterator i;
+  std::map<std::string, std::string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
-    const string &name  = i->first,
+    const std::string &name  = i->first,
       &value = i->second;
 
     if (value.empty()) continue;
@@ -1151,10 +1151,10 @@ PetscErrorCode NCConfigVariable::write_attributes(const PIO &nc, PISM_IO_Type nc
   }
 
   // Write double attributes:
-  map<string, vector<double> >::const_iterator j;
+  std::map<std::string, std::vector<double> >::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
-    const string &name  = j->first;
-    const vector<double> &values = j->second;
+    const std::string &name  = j->first;
+    const std::vector<double> &values = j->second;
 
     if (values.empty()) continue;
 
@@ -1177,7 +1177,7 @@ PetscErrorCode NCConfigVariable::write_attributes(const PIO &nc, PISM_IO_Type nc
   \li if none, does nothing.
 
  */
-PetscErrorCode NCConfigVariable::flag_from_option(string name, string flag) {
+PetscErrorCode NCConfigVariable::flag_from_option(std::string name, std::string flag) {
   PetscErrorCode ierr;
   bool foo = false,
     no_foo = false;
@@ -1210,7 +1210,7 @@ PetscErrorCode NCConfigVariable::flag_from_option(string name, string flag) {
   input units and converted as needed. (This allows saving parameters without
   converting again.)
  */
-PetscErrorCode NCConfigVariable::scalar_from_option(string name, string parameter) {
+PetscErrorCode NCConfigVariable::scalar_from_option(std::string name, std::string parameter) {
   PetscErrorCode ierr;
   PetscReal value = get_quiet(parameter);
   bool flag;
@@ -1225,9 +1225,9 @@ PetscErrorCode NCConfigVariable::scalar_from_option(string name, string paramete
   return 0;
 }
 
-PetscErrorCode NCConfigVariable::string_from_option(string name, string parameter) {
+PetscErrorCode NCConfigVariable::string_from_option(std::string name, std::string parameter) {
   PetscErrorCode ierr;
-  string value = get_string_quiet(parameter);
+  std::string value = get_string_quiet(parameter);
   bool flag;
 
   ierr = PISMOptionsString("-" + name,
@@ -1246,13 +1246,13 @@ PetscErrorCode NCConfigVariable::string_from_option(string name, string paramete
  * option. This option requires an argument, which has to match one of the
  * keyword given in a comma-separated list "choices_list".
  */
-PetscErrorCode NCConfigVariable::keyword_from_option(string name,
-                                                     string parameter,
-                                                     string choices_list) {
+PetscErrorCode NCConfigVariable::keyword_from_option(std::string name,
+                                                     std::string parameter,
+                                                     std::string choices_list) {
   PetscErrorCode ierr;
-  istringstream arg(choices_list);
-  std::set<string> choices;     // resolve the name clash: "this->set(...)" vs. "std::set"
-  string keyword, tmp;
+  std::istringstream arg(choices_list);
+  std::set<std::string> choices;
+  std::string keyword, tmp;
   bool flag;
 
   // Split the list:
@@ -1271,7 +1271,7 @@ PetscErrorCode NCConfigVariable::keyword_from_option(string name,
   return 0;
 }
 
-PetscErrorCode NCConfigVariable::set_flag_from_option(string name, bool value) {
+PetscErrorCode NCConfigVariable::set_flag_from_option(std::string name, bool value) {
 
   parameters_set.insert(name);
 
@@ -1280,7 +1280,7 @@ PetscErrorCode NCConfigVariable::set_flag_from_option(string name, bool value) {
   return 0;
 }
 
-PetscErrorCode NCConfigVariable::set_scalar_from_option(string name, double value) {
+PetscErrorCode NCConfigVariable::set_scalar_from_option(std::string name, double value) {
 
   parameters_set.insert(name);
 
@@ -1289,7 +1289,7 @@ PetscErrorCode NCConfigVariable::set_scalar_from_option(string name, double valu
   return 0;
 }
 
-PetscErrorCode NCConfigVariable::set_string_from_option(string name, string value) {
+PetscErrorCode NCConfigVariable::set_string_from_option(std::string name, std::string value) {
 
   parameters_set.insert(name);
 
@@ -1298,7 +1298,7 @@ PetscErrorCode NCConfigVariable::set_string_from_option(string name, string valu
   return 0;
 }
 
-PetscErrorCode NCConfigVariable::set_keyword_from_option(string name, string value) {
+PetscErrorCode NCConfigVariable::set_keyword_from_option(std::string name, std::string value) {
 
   this->set_string_from_option(name, value);
 
@@ -1314,10 +1314,10 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
 		    config_filename.c_str());
 
   // Print text attributes:
-  map<string, string>::const_iterator i;
+  std::map<std::string, std::string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
-    string name  = i->first;
-    string value = i->second;
+    std::string name  = i->first;
+    std::string value = i->second;
 
     if (value.empty()) continue;
 
@@ -1326,10 +1326,10 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
   }
 
   // Print double attributes:
-  map<string, vector<double> >::const_iterator j;
+  std::map<std::string, std::vector<double> >::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
-    string name  = j->first;
-    vector<double> values = j->second;
+    std::string name  = j->first;
+    std::vector<double> values = j->second;
 
     if (values.empty()) continue;
 
@@ -1344,8 +1344,8 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
 
   }
 
-  std::set<string>::const_iterator k;
-  string output;
+  std::set<std::string>::const_iterator k;
+  std::string output;
 
   for (k = parameters_set.begin(); k != parameters_set.end(); ++k) {
 
@@ -1355,7 +1355,7 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
     if (k == parameters_set.begin())
       output += *k;
     else
-      output += string(", ") + (*k);
+      output += std::string(", ") + (*k);
   }
 
   if (output.empty() == false) {
@@ -1367,7 +1367,7 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
 }
 
 //! \brief Returns the name of the file used to initialize the database.
-string NCConfigVariable::get_config_filename() const {
+std::string NCConfigVariable::get_config_filename() const {
   return config_filename;
 }
 
@@ -1377,13 +1377,13 @@ PISMUnitSystem NCConfigVariable::get_unit_system() const {
 
 //! Imports values from the other config variable, silently overwriting present values.
 void NCConfigVariable::import_from(const NCConfigVariable &other) {
-  map<string, vector<double> >::const_iterator j;
+  std::map<std::string, std::vector<double> >::const_iterator j;
   for (j = other.doubles.begin(); j != other.doubles.end(); ++j) {
     doubles[j->first] = j->second;
     parameters_set.insert(j->first);
   }
 
-  map<string,string>::const_iterator k;
+  std::map<std::string,std::string>::const_iterator k;
   for (k = other.strings.begin(); k != other.strings.end(); ++k) {
     strings[k->first] = k->second;
     parameters_set.insert(k->first);
@@ -1392,8 +1392,8 @@ void NCConfigVariable::import_from(const NCConfigVariable &other) {
 
 //! Update values from the other config variable, overwriting present values but avoiding adding new ones.
 void NCConfigVariable::update_from(const NCConfigVariable &other) {
-  map<string, vector<double> >::iterator j;
-  map<string, vector<double> >::const_iterator i;
+  std::map<std::string, std::vector<double> >::iterator j;
+  std::map<std::string, std::vector<double> >::const_iterator i;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
     i = other.doubles.find(j->first);
     if (i != other.doubles.end()) {
@@ -1401,8 +1401,8 @@ void NCConfigVariable::update_from(const NCConfigVariable &other) {
     }
   }
 
-  map<string,string>::iterator k;
-  map<string,string>::const_iterator m;
+  std::map<std::string,std::string>::iterator k;
+  std::map<std::string,std::string>::const_iterator m;
   for (k = strings.begin(); k != strings.end(); ++k) {
     m = other.strings.find(k->first);
     if (m != other.strings.end()) {
@@ -1417,7 +1417,7 @@ PetscErrorCode NCConfigVariable::warn_about_unused_parameters() const {
   if (options_left_set == false)
     return 0;
 
-  std::set<string>::const_iterator k;
+  std::set<std::string>::const_iterator k;
   for (k = parameters_set.begin(); k != parameters_set.end(); ++k) {
 
     if (ends_with(*k, "_doc"))
@@ -1441,7 +1441,7 @@ NCTimeseries::NCTimeseries(PISMUnitSystem system)
 
 
 //! \brief Initialize the time-series object.
-void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
+void NCTimeseries::init(std::string n, std::string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(n, c, r);
   dimension_name = dim_name;
   ndims = 1;
@@ -1449,13 +1449,13 @@ void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
 PetscErrorCode NCTimeseries::read(const PIO &nc, PISMTime *time,
-                                  vector<double> &data) {
+                                  std::vector<double> &data) {
 
   PetscErrorCode ierr;
   bool variable_exists;
 
   // Find the variable:
-  string name_found;
+  std::string name_found;
   bool found_by_standard_name;
   ierr = nc.inq_var(short_name, strings["standard_name"],
                     variable_exists, name_found, found_by_standard_name); CHKERRQ(ierr);
@@ -1469,7 +1469,7 @@ PetscErrorCode NCTimeseries::read(const PIO &nc, PISMTime *time,
     PISMEnd();
   }
 
-  vector<string> dims;
+  std::vector<std::string> dims;
   ierr = nc.inq_vardims(name_found, dims); CHKERRQ(ierr);
 
   if (dims.size() != 1) {
@@ -1499,7 +1499,7 @@ PetscErrorCode NCTimeseries::read(const PIO &nc, PISMTime *time,
   ierr = nc.get_1d_var(name_found, 0, length, data); CHKERRQ(ierr);
 
   bool input_has_units;
-  string input_units_string;
+  std::string input_units_string;
   PISMUnit input_units(m_units.get_system());
 
   ierr = nc.get_att_text(name_found, "units", input_units_string); CHKERRQ(ierr);
@@ -1518,7 +1518,7 @@ PetscErrorCode NCTimeseries::read(const PIO &nc, PISMTime *time,
   }
   
   if (has("units") == true && input_has_units == false) {
-    string &units_string = strings["units"],
+    std::string &units_string = strings["units"],
       &long_name = strings["long_name"];
     ierr = verbPrintf(2, com,
 		      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
@@ -1533,10 +1533,10 @@ PetscErrorCode NCTimeseries::read(const PIO &nc, PISMTime *time,
   return 0;
 }
 
-PetscErrorCode NCTimeseries::get_bounds_name(const PIO &nc, string &result) {
+PetscErrorCode NCTimeseries::get_bounds_name(const PIO &nc, std::string &result) {
   PetscErrorCode ierr;
   bool exists, found_by_standard_name;
-  string name_found;
+  std::string name_found;
 
   ierr = nc.inq_var(short_name, strings["standard_name"],
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
@@ -1551,7 +1551,7 @@ PetscErrorCode NCTimeseries::get_bounds_name(const PIO &nc, string &result) {
 
 
 //! \brief Report the range of a time-series stored in `data`.
-PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
+PetscErrorCode NCTimeseries::report_range(std::vector<double> &data) {
   PetscErrorCode ierr;
   PetscReal min, max;
 
@@ -1564,7 +1564,7 @@ PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
   max = cv_convert_double(c, max);
   cv_free(c);
 
-  string spacer(short_name.size(), ' ');
+  std::string spacer(short_name.size(), ' ');
 
   ierr = verbPrintf(2, com,
 		    "  FOUND  %s / %-60s\n"
@@ -1589,13 +1589,13 @@ PetscErrorCode NCTimeseries::define(const PIO &nc, PISM_IO_Type nctype, bool) {
 
   ierr = nc.inq_dim(dimension_name, exists); CHKERRQ(ierr);
   if (exists == false) {
-    map<string,string> tmp;
+    std::map<std::string,std::string> tmp;
     ierr = nc.def_dim(dimension_name, PISM_UNLIMITED, tmp); CHKERRQ(ierr);
   }
 
   ierr = nc.inq_var(short_name, exists); CHKERRQ(ierr);
   if (exists == false) {
-    vector<string> dims(1);
+    std::vector<std::string> dims(1);
     dims[0] = dimension_name;
     ierr = nc.redef(); CHKERRQ(ierr);
     ierr = nc.def_var(short_name, nctype, dims); CHKERRQ(ierr);
@@ -1608,7 +1608,7 @@ PetscErrorCode NCTimeseries::define(const PIO &nc, PISM_IO_Type nctype, bool) {
 
 //! \brief Write a time-series `data` to a file.
 PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
-				   vector<double> &data, PISM_IO_Type nctype) {
+				   std::vector<double> &data, PISM_IO_Type nctype) {
 
   PetscErrorCode ierr;
   bool variable_exists = false;
@@ -1635,7 +1635,7 @@ PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
 //! \brief Write a single value of a time-series to a file.
 PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
 				   double data, PISM_IO_Type nctype) {
-  vector<double> tmp(1);
+  std::vector<double> tmp(1);
   tmp[0] = data;
   PetscErrorCode ierr = write(nc, start, tmp, nctype); CHKERRQ(ierr);
 
@@ -1643,9 +1643,9 @@ PetscErrorCode NCTimeseries::write(const PIO &nc, size_t start,
 }
 
 //! Convert `data`.
-PetscErrorCode NCTimeseries::change_units(vector<double> &data, PISMUnit &from, PISMUnit &to) {
+PetscErrorCode NCTimeseries::change_units(std::vector<double> &data, PISMUnit &from, PISMUnit &to) {
   PetscErrorCode ierr;
-  string from_name, to_name;
+  std::string from_name, to_name;
 
   // Get string representations of units:
   from_name = from.format();
@@ -1684,18 +1684,18 @@ PetscErrorCode NCGlobalAttributes::read(const PIO &nc) {
   ierr = nc.inq_nattrs("PISM_GLOBAL", nattrs); CHKERRQ(ierr);
 
   for (int j = 0; j < nattrs; ++j) {
-    string attname;
+    std::string attname;
     PISM_IO_Type nctype;
     ierr = nc.inq_attname("PISM_GLOBAL", j, attname); CHKERRQ(ierr);
     ierr = nc.inq_atttype("PISM_GLOBAL", attname, nctype); CHKERRQ(ierr);
 
     if (nctype == PISM_CHAR) {
-      string value;
+      std::string value;
       ierr = nc.get_att_text("PISM_GLOBAL", attname, value); CHKERRQ(ierr);
 
       strings[attname] = value;
     } else {
-      vector<double> values;
+      std::vector<double> values;
 
       ierr = nc.get_att_double("PISM_GLOBAL", attname, values); CHKERRQ(ierr);
       doubles[attname] = values;
@@ -1724,14 +1724,14 @@ void NCGlobalAttributes::set_from_config(const NCConfigVariable &config) {
 //! Writes global attributes to a file. Prepends the history string.
 PetscErrorCode NCGlobalAttributes::write_attributes(const PIO &nc, PISM_IO_Type, bool) const {
   int ierr;
-  string old_history;
+  std::string old_history;
 
   ierr = nc.get_att_text("PISM_GLOBAL", "history", old_history); CHKERRQ(ierr);
 
   // Write text attributes:
-  map<string, string>::const_iterator i;
+  std::map<std::string, std::string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
-    string name  = i->first,
+    std::string name  = i->first,
       value = i->second;
 
     if (value.empty()) continue;
@@ -1745,10 +1745,10 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const PIO &nc, PISM_IO_Type,
   }
 
   // Write double attributes:
-  map<string, vector<double> >::const_iterator j;
+  std::map<std::string, std::vector<double> >::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
-    string name  = j->first;
-    vector<double> values = j->second;
+    std::string name  = j->first;
+    std::vector<double> values = j->second;
 
     if (values.empty()) continue;
 
@@ -1759,7 +1759,7 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const PIO &nc, PISM_IO_Type,
 }
 
 //! Prepends `message` to the history string.
-void NCGlobalAttributes::prepend_history(string message) {
+void NCGlobalAttributes::prepend_history(std::string message) {
   strings["history"] = message + strings["history"];
 }
 
@@ -1772,7 +1772,7 @@ NCTimeBounds::NCTimeBounds(PISMUnitSystem system)
   // empty
 }
 
-void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIInt r) {
+void NCTimeBounds::init(std::string var_name, std::string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(var_name, c, r);
   dimension_name = dim_name;
   bounds_name    = "nv";        // number of vertices
@@ -1780,7 +1780,7 @@ void NCTimeBounds::init(string var_name, string dim_name, MPI_Comm c, PetscMPIIn
 }
 
 PetscErrorCode NCTimeBounds::read(const PIO &nc, PISMTime *time,
-                                  vector<double> &data) {
+                                  std::vector<double> &data) {
   PetscErrorCode ierr;
   bool variable_exists;
 
@@ -1795,7 +1795,7 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, PISMTime *time,
     PISMEnd();
   }
 
-  vector<string> dims;
+  std::vector<std::string> dims;
   ierr = nc.inq_vardims(short_name, dims); CHKERRQ(ierr);
 
   if (dims.size() != 2) {
@@ -1837,7 +1837,7 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, PISMTime *time,
 
   ierr = nc.enddef(); CHKERRQ(ierr);
 
-  vector<unsigned int> start(2), count(2);
+  std::vector<unsigned int> start(2), count(2);
   start[0] = 0;
   start[1] = 0;
   count[0] = length;
@@ -1857,7 +1857,7 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, PISMTime *time,
   }
 
   bool input_has_units;
-  string input_units_string;
+  std::string input_units_string;
   PISMUnit input_units(m_units.get_system());
 
   ierr = nc.get_att_text(dimension_name, "units", input_units_string); CHKERRQ(ierr);
@@ -1876,7 +1876,7 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, PISMTime *time,
   }
 
   if ( has("units") && input_has_units == false ) {
-    string &units_string = strings["units"];
+    std::string &units_string = strings["units"];
     ierr = verbPrintf(2, com,
 		      "PISM WARNING: Variable '%s' does not have the units attribute.\n"
 		      "              Assuming that it is in '%s'.\n",
@@ -1893,7 +1893,7 @@ PetscErrorCode NCTimeBounds::read(const PIO &nc, PISMTime *time,
   return 0;
 }
 
-PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t s, vector<double> &data, PISM_IO_Type nctype) {
+PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t s, std::vector<double> &data, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   bool variable_exists = false;
 
@@ -1907,7 +1907,7 @@ PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t s, vector<double> &data
 
   ierr = nc.enddef(); CHKERRQ(ierr);
 
-  vector<unsigned int> start(2), count(2);
+  std::vector<unsigned int> start(2), count(2);
   start[0] = static_cast<unsigned int>(s);
   start[1] = 0;
   count[0] = static_cast<unsigned int>(data.size()) / 2;
@@ -1922,7 +1922,7 @@ PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t s, vector<double> &data
 }
 
 PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t start, double a, double b, PISM_IO_Type nctype) {
-  vector<double> tmp(2);
+  std::vector<double> tmp(2);
   tmp[0] = a;
   tmp[1] = b;
   PetscErrorCode ierr = write(nc, start, tmp, nctype); CHKERRQ(ierr);
@@ -1930,9 +1930,9 @@ PetscErrorCode NCTimeBounds::write(const PIO &nc, size_t start, double a, double
   return 0;
 }
 
-PetscErrorCode NCTimeBounds::change_units(vector<double> &data, PISMUnit &from, PISMUnit &to) {
+PetscErrorCode NCTimeBounds::change_units(std::vector<double> &data, PISMUnit &from, PISMUnit &to) {
   PetscErrorCode ierr;
-  string from_name, to_name;
+  std::string from_name, to_name;
 
   from_name = from.format();
   to_name   = to.format();
@@ -1955,7 +1955,7 @@ PetscErrorCode NCTimeBounds::change_units(vector<double> &data, PISMUnit &from, 
 
 PetscErrorCode NCTimeBounds::define(const PIO &nc, PISM_IO_Type nctype, bool) {
   PetscErrorCode ierr;
-  vector<string> dims;
+  std::vector<std::string> dims;
   bool exists;
 
   ierr = nc.inq_var(short_name, exists); CHKERRQ(ierr);
@@ -1966,13 +1966,13 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, PISM_IO_Type nctype, bool) {
 
   ierr = nc.inq_dim(dimension_name, exists); CHKERRQ(ierr);
   if (exists == false) {
-    map<string,string> tmp;
+    std::map<std::string,std::string> tmp;
     ierr = nc.def_dim(dimension_name, PISM_UNLIMITED, tmp); CHKERRQ(ierr);
   }
 
   ierr = nc.inq_dim(bounds_name, exists); CHKERRQ(ierr);
   if (exists == false) {
-    map<string,string> tmp;
+    std::map<std::string,std::string> tmp;
     ierr = nc.def_dim(bounds_name, 2, tmp); CHKERRQ(ierr);
   }
 

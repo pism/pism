@@ -39,7 +39,7 @@ public:
                 IceModelVec3 &my_Enth3,
                 PetscScalar my_dx,  PetscScalar my_dy,
                 PetscScalar my_dt,  PetscScalar my_dz,
-                int my_Mz, string my_prefix,
+                int my_Mz, std::string my_prefix,
                 EnthalpyConverter *my_EC);
   virtual ~enthSystemCtx();
 
@@ -83,7 +83,7 @@ protected:
     Enth_ks;             //!< top surface Dirichlet B.C.
   PetscReal a0, a1, b;   // coefficients of the first (basal) equation
   bool ismarginal, c_depends_on_T, k_depends_on_T;
-  vector<PetscScalar> R; // values of k \Delta t / (\rho c \Delta x^2)
+  std::vector<PetscScalar> R; // values of k \Delta t / (\rho c \Delta x^2)
 
   IceModelVec3 *Enth3;
   EnthalpyConverter *EC;  // conductivity has known dependence on T, not enthalpy

@@ -46,13 +46,13 @@ IceFlowLawFactory::~IceFlowLawFactory()
 {
 }
 
-PetscErrorCode IceFlowLawFactory::registerType(string name, IceFlowLawCreator icreate)
+PetscErrorCode IceFlowLawFactory::registerType(std::string name, IceFlowLawCreator icreate)
 {
   flow_laws[name] = icreate;
   return 0;
 }
 
-PetscErrorCode IceFlowLawFactory::removeType(string name) {
+PetscErrorCode IceFlowLawFactory::removeType(std::string name) {
   flow_laws.erase(name);
   return 0;
 }
@@ -109,7 +109,7 @@ PetscErrorCode IceFlowLawFactory::registerAll()
   return 0;
 }
 
-PetscErrorCode IceFlowLawFactory::setType(string type)
+PetscErrorCode IceFlowLawFactory::setType(std::string type)
 {
   IceFlowLawCreator r;
   PetscErrorCode ierr;
@@ -130,14 +130,14 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
 {
   PetscErrorCode ierr;
   bool flag;
-  string my_type_name;
+  std::string my_type_name;
 
   ierr = PetscOptionsBegin(com, prefix, "IceFlowLawFactory options", "IceFlowLaw");CHKERRQ(ierr);
   {
 
     // build the list of choices
-    map<string,IceFlowLawCreator>::iterator j = flow_laws.begin();
-    set<string> choices;
+    std::map<std::string,IceFlowLawCreator>::iterator j = flow_laws.begin();
+    std::set<std::string> choices;
     while (j != flow_laws.end()) {
       choices.insert(j->first);
       ++j;

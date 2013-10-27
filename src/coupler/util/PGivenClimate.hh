@@ -32,16 +32,16 @@ public:
     : Model(g, conf, in) {}
 
   virtual ~PGivenClimate() {
-    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
       delete k->second;
       ++k;
     }
   }
 
-  virtual void add_vars_to_output(string keyword, set<string> &result)
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result)
   {
-    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
       result.insert(k->first);
       ++k;
@@ -53,11 +53,11 @@ public:
 
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype)
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype)
   {
     PetscErrorCode ierr;
 
-    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
       if (set_contains(vars, k->first)) {
         ierr = (k->second)->define(nc, nctype);
@@ -73,11 +73,11 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc)
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc)
   {
     PetscErrorCode ierr;
 
-    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
 
       if (set_contains(vars, k->first)) {
@@ -95,8 +95,8 @@ public:
   }
 
 protected:
-  map<string, IceModelVec2T*> m_fields;
-  string filename, option_prefix;
+  std::map<std::string, IceModelVec2T*> m_fields;
+  std::string filename, option_prefix;
 
   unsigned int bc_period;       // in years
   PetscReal bc_reference_time;  // in seconds
@@ -155,7 +155,7 @@ protected:
     return 0;
   }
 
-  PetscErrorCode set_vec_parameters(map<string, string> standard_names)
+  PetscErrorCode set_vec_parameters(std::map<std::string, std::string> standard_names)
   {
     PetscErrorCode ierr;
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size");
@@ -164,10 +164,10 @@ protected:
            Model::grid.get_unit_system());
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
-    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
       unsigned int n_records = 0;
-      string short_name = k->first,
+      std::string short_name = k->first,
         standard_name = standard_names[short_name];
 
       ierr = nc.inq_nrecords(short_name, standard_name, n_records); CHKERRQ(ierr);
@@ -214,7 +214,7 @@ protected:
       ierr = Model::input_model->update(Model::t, Model::dt); CHKERRQ(ierr);
     }
 
-    map<string, IceModelVec2T*>::iterator k = m_fields.begin();
+    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
       ierr = (k->second)->update(Model::t, Model::dt); CHKERRQ(ierr);
 

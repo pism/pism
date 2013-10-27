@@ -31,38 +31,38 @@ public:
   virtual ~PISMNC4_Quilt() {}
 
   // open/create/close
-  virtual int open(string filename, int mode);
+  virtual int open(std::string filename, int mode);
 
-  virtual int create(string filename);
+  virtual int create(std::string filename);
 
   virtual int close();
 
   // dim
-  virtual int def_dim(string name, size_t length) const;
+  virtual int def_dim(std::string name, size_t length) const;
 
   // var
-  virtual int def_var(string name, PISM_IO_Type nctype, vector<string> dims) const;
+  virtual int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
   // att
   using PISMNCFile::put_att_double;
-  virtual int put_att_double(string variable_name, string att_name, PISM_IO_Type xtype, vector<double> &data) const;
+  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, std::vector<double> &data) const;
 
-  virtual int put_att_text(string variable_name, string att_name, string value) const;
+  virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 
-  virtual int move_if_exists(string filename, int rank_to_use = 0);
+  virtual int move_if_exists(std::string filename, int rank_to_use = 0);
 private:
-  virtual int get_put_var_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
-                                 vector<unsigned int> imap, double *ip,
+  virtual int get_put_var_double(std::string variable_name,
+                                 std::vector<unsigned int> start,
+                                 std::vector<unsigned int> count,
+                                 std::vector<unsigned int> imap, double *ip,
                                  bool get,
                                  bool mapped) const;
   
-  void correct_start_and_count(string name,
-                               vector<unsigned int> &start,
-                               vector<unsigned int> &count) const;
+  void correct_start_and_count(std::string name,
+                               std::vector<unsigned int> &start,
+                               std::vector<unsigned int> &count) const;
   int global_stat(int stat) const;
 
-  const string suffix;
+  const std::string suffix;
 };
 
 #endif /* _PISMNC4FILE_1FPP_H_ */

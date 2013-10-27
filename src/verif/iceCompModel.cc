@@ -320,7 +320,7 @@ PetscErrorCode IceCompModel::allocate_bed_deformation() {
 
   f = config.get("ice_density") / config.get("lithosphere_density");  // for simple isostasy
 
-  string bed_def_model = config.get_string("bed_deformation_model");
+  std::string bed_def_model = config.get_string("bed_deformation_model");
 
   if ( (testname == 'H') && bed_def_model != "iso" ) {
     ierr = verbPrintf(1,grid.com,
@@ -1044,7 +1044,7 @@ PetscErrorCode IceCompModel::reportErrors() {
   CHKERRQ(ierr);
 
   unsigned int start;
-  string filename;
+  std::string filename;
   bool netcdf_report, append;
   NCTimeseries err(grid.get_unit_system());
 

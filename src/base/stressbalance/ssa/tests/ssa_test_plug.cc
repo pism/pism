@@ -204,12 +204,12 @@ int main(int argc, char *argv[]) {
     // Parameters that can be overridden by command line options
     PetscInt Mx=11;
     PetscInt My=61;
-    string output_file = "ssa_test_plug.nc";
+    std::string output_file = "ssa_test_plug.nc";
 
-    set<string> ssa_choices;
+    std::set<std::string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
-    string driver = "fem";
+    std::string driver = "fem";
 
     // PetscScalar H0dim = 1.;
     PetscScalar glen_n = 3.;
