@@ -30,9 +30,9 @@ public:
   NCSpatialVariable(PISMUnitSystem system);
   NCSpatialVariable(const NCSpatialVariable &other);
   virtual ~NCSpatialVariable();
-  virtual void init_2d(string name, IceGrid &g);
-  virtual void init_3d(string name, IceGrid &g, vector<double> &zlevels);
-  virtual void set_levels(const vector<double> &levels);
+  virtual void init_2d(std::string name, IceGrid &g);
+  virtual void init_3d(std::string name, IceGrid &g, std::vector<double> &zlevels);
+  virtual void set_levels(const std::vector<double> &levels);
   virtual PetscErrorCode reset();
   virtual PetscErrorCode read(const PIO &file, unsigned int time, Vec v);
   virtual PetscErrorCode write(const PIO &file, PISM_IO_Type nctype,
@@ -45,18 +45,18 @@ public:
   PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype,
                         bool write_in_glaciological_units);
 
-  mutable map<string,string> dimensions,
+  mutable std::map<std::string,std::string> dimensions,
     x_attrs, y_attrs, z_attrs;
   bool time_independent;        //!< a variable in a NetCDF file will not
                                 //! depend on 't' if this is true.
-  string variable_order;        //!< variable order in output files;
+  std::string variable_order;        //!< variable order in output files;
 protected:
   int nlevels;
-  vector<double> zlevels;
+  std::vector<double> zlevels;
   IceGrid *grid;
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode change_units(Vec v, PISMUnit &from, PISMUnit &to);
-  PetscErrorCode check_range(string filename, Vec v);
+  PetscErrorCode check_range(std::string filename, Vec v);
   PetscErrorCode define_dimensions(const PIO &nc);
 };
 

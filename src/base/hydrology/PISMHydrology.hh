@@ -99,7 +99,7 @@ public:
 
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
                                std::map<std::string, PISMTSDiagnostic*> &ts_dict);
-  friend class PISMHydrology_hydroinput;  // needed because total_input is protected (and no interface for it)
+  friend class PISMHydrology_hydroinput;
 
   // in the base class these only add/define/write tillwat
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);

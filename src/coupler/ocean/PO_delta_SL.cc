@@ -85,14 +85,14 @@ PetscErrorCode PO_delta_SL::sea_level_elevation(PetscReal &result) {
   return 0;
 }
 
-void PO_delta_SL::add_vars_to_output(string keyword, set<string> &result) {
+void PO_delta_SL::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-PetscErrorCode PO_delta_SL::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PO_delta_SL::define_variables(std::set<std::string> vars, const PIO &nc,
                                              PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -111,7 +111,7 @@ PetscErrorCode PO_delta_SL::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode PO_delta_SL::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PO_delta_SL::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 

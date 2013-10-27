@@ -30,7 +30,7 @@
 PetscErrorCode IceModel::init_timeseries() {
   PetscErrorCode ierr;
   bool ts_file_set, ts_times_set, ts_vars_set;
-  string times, vars;
+  std::string times, vars;
   bool append;
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling scalar diagnostic time-series", ""); CHKERRQ(ierr);
@@ -85,16 +85,16 @@ PetscErrorCode IceModel::init_timeseries() {
   current_ts = 0;
 
 
-  string var_name;
+  std::string var_name;
   if (ts_vars_set) {
     ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
-    istringstream arg(vars);
+    std::istringstream arg(vars);
 
     while (getline(arg, var_name, ','))
       ts_vars.insert(var_name);
 
   } else {
-    map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+    std::map<std::string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
     while (j != ts_diagnostics.end()) {
       ts_vars.insert(j->first);
       ++j;
@@ -106,7 +106,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
   if (append == true) {
     double time_max;
-    string time_name = config.get_string("time_dimension_name");
+    std::string time_name = config.get_string("time_dimension_name");
     bool time_exists = false;
 
     ierr = nc.inq_var(time_name, time_exists); CHKERRQ(ierr);
@@ -130,7 +130,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
 
   // set the output file:
-  map<string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+  std::map<std::string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
   while (j != ts_diagnostics.end()) {
     ierr = (j->second)->init(ts_filename); CHKERRQ(ierr);
     ++j;
@@ -146,7 +146,7 @@ PetscErrorCode IceModel::init_timeseries() {
   }
 
   // discard requested times before the beginning of the run
-  vector<double> tmp(ts_times.size() - current_ts);
+  std::vector<double> tmp(ts_times.size() - current_ts);
   for (unsigned int k = 0; k < tmp.size(); ++k)
     tmp[k] = ts_times[current_ts + k];
 
@@ -171,7 +171,7 @@ PetscErrorCode IceModel::write_timeseries() {
   if (ts_times[current_ts] > grid.time->current())
     return 0;
   
-  for (set<string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
+  for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
     PISMTSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {
@@ -188,7 +188,7 @@ PetscErrorCode IceModel::write_timeseries() {
     if (current_ts == 0)
       continue;
 
-    for (set<string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
+    for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
       PISMTSDiagnostic *diag = ts_diagnostics[*j];
 
       if (diag != NULL) {
@@ -205,7 +205,7 @@ PetscErrorCode IceModel::write_timeseries() {
 PetscErrorCode IceModel::init_extras() {
   PetscErrorCode ierr;
   bool split, extra_times_set, extra_file_set, extra_vars_set;
-  string times, vars;
+  std::string times, vars;
 
   last_extra = 0;               // will be set in write_extras()
   next_extra = 0;
@@ -257,7 +257,7 @@ PetscErrorCode IceModel::init_extras() {
 
   if (append) {
     PIO nc(grid, grid.config.get_string("output_format"));
-    string time_name = config.get_string("time_dimension_name");
+    std::string time_name = config.get_string("time_dimension_name");
     bool time_exists;
 
     ierr = nc.open(extra_filename, PISM_NOWRITE); CHKERRQ(ierr);
@@ -277,7 +277,7 @@ PetscErrorCode IceModel::init_extras() {
       }
 
       // discard requested times before the beginning of the run
-      vector<double> tmp(extra_times.size() - next_extra);
+      std::vector<double> tmp(extra_times.size() - next_extra);
       for (unsigned int k = 0; k < tmp.size(); ++k)
         tmp[k] = extra_times[next_extra + k];
 
@@ -316,10 +316,10 @@ PetscErrorCode IceModel::init_extras() {
     CHKERRQ(ierr);
   }
 
-  string var_name;
+  std::string var_name;
   if (extra_vars_set) {
     ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
-    istringstream arg(vars);
+    std::istringstream arg(vars);
 
     while (getline(arg, var_name, ','))
       extra_vars.insert(var_name);
@@ -328,13 +328,13 @@ PetscErrorCode IceModel::init_extras() {
     ierr = verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
                       " Writing model_state, mapping and climate_steady variables...\n"); CHKERRQ(ierr);
 
-    set<string> vars_set = variables.keys();
+    std::set<std::string> vars_set = variables.keys();
 
-    set<string>::iterator i = vars_set.begin();
+    std::set<std::string>::iterator i = vars_set.begin();
     while (i != vars_set.end()) {
       IceModelVec *var = variables.get(*i);
 
-      string intent = var->string_attr("pism_intent");
+      std::string intent = var->string_attr("pism_intent");
       if ((intent == "model_state") ||
           (intent == "mapping") ||
           (intent == "climate_steady")) {
@@ -343,7 +343,7 @@ PetscErrorCode IceModel::init_extras() {
       i++;
     }
 
-    set<string> list;
+    std::set<std::string> list;
     if (stress_balance)
       stress_balance->add_vars_to_output("small", extra_vars);
 
@@ -369,7 +369,6 @@ PetscErrorCode IceModel::init_extras() {
 //! Write spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::write_extras() {
   PetscErrorCode ierr;
-  PIO nc(grid, grid.config.get_string("output_format"));
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
 				 // value is never used, because saving_after
 				 // is only used if save_now == true, and in
@@ -407,7 +406,7 @@ PetscErrorCode IceModel::write_extras() {
     // store cumulative quantities that may be needed to compute rates of
     // change.
 
-    set<string>::iterator j = extra_vars.begin();
+    std::set<std::string>::iterator j = extra_vars.begin();
     while(j != extra_vars.end()) {
       PISMDiagnostic *diag = diagnostics[*j];
 
@@ -460,6 +459,8 @@ PetscErrorCode IceModel::write_extras() {
   }
 
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
+
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   if (!extra_file_is_ready) {
     // default behavior is to move the file aside if it exists already; option allows appending
@@ -522,7 +523,7 @@ PetscErrorCode IceModel::extras_max_timestep(double my_t, double& my_dt, bool &r
     return 0;
   }
 
-  vector<double>::iterator j;
+  std::vector<double>::iterator j;
   j = upper_bound(extra_times.begin(), extra_times.end(), my_t);
 
   if (j == extra_times.end()) {
@@ -577,7 +578,7 @@ PetscErrorCode IceModel::ts_max_timestep(double my_t, double& my_dt, bool &restr
     return 0;
   }
 
-  vector<double>::iterator j;
+  std::vector<double>::iterator j;
   j = upper_bound(ts_times.begin(), ts_times.end(), my_t);
 
   if (j == ts_times.end()) {
@@ -596,7 +597,7 @@ PetscErrorCode IceModel::ts_max_timestep(double my_t, double& my_dt, bool &restr
 PetscErrorCode IceModel::flush_timeseries() {
   PetscErrorCode ierr;
   // flush all the time-series buffers:
-  for (set<string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
+  for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
     PISMTSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {

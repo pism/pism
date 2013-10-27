@@ -34,7 +34,7 @@ public:
     y_max,			//!< [y_min, y_max] is the Y extent of the grid
     z_min,			//!< minimal value of the z dimension
     z_max;			//!< maximal value of the z dimension
-  vector<double> x, y, z;       //!< coordinates
+  std::vector<double> x, y, z;       //!< coordinates
   PetscErrorCode print(MPI_Comm com, int threshold = 3);
 private:
   PISMUnitSystem m_unit_system;
@@ -60,11 +60,11 @@ The arrays `start` and `count` have 4 integer entries, corresponding to the dime
 class LocalInterpCtx {
 public:
   unsigned int start[4], count[4]; // Indices in netCDF file.
-  vector<int> x_left, x_right, y_left, y_right; // neighbors
-  vector<double> x_alpha, y_alpha;
+  std::vector<int> x_left, x_right, y_left, y_right; // neighbors
+  std::vector<double> x_alpha, y_alpha;
   double *a;                       //!< temporary buffer
   int a_len;                       //!< the size of the buffer
-  vector<double> zlevels;          //!< input z levels
+  std::vector<double> zlevels;          //!< input z levels
   bool report_range;
   MPI_Comm com;			//!< MPI Communicator (for printing, mostly)
   PetscMPIInt rank;		//!< MPI rank, to allocate a_raw on proc 0 only

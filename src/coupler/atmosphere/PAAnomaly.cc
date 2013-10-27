@@ -45,7 +45,7 @@ PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  map<string, string> standard_names;
+  std::map<std::string, std::string> standard_names;
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = air_temp_anomaly->create(grid, "air_temp_anomaly", false); CHKERRQ(ierr);
@@ -186,7 +186,7 @@ PetscErrorCode PAAnomaly::precip_time_series(int i, int j, PetscReal *result) {
   return 0;
 }
 
-void PAAnomaly::add_vars_to_output(string keyword, set<string> &result) {
+void PAAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -196,7 +196,7 @@ void PAAnomaly::add_vars_to_output(string keyword, set<string> &result) {
 }
 
 
-PetscErrorCode PAAnomaly::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PAAnomaly::define_variables(std::set<std::string> vars, const PIO &nc,
                                            PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -216,7 +216,7 @@ PetscErrorCode PAAnomaly::define_variables(set<string> vars, const PIO &nc,
 }
 
 
-PetscErrorCode PAAnomaly::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PAAnomaly::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

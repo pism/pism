@@ -203,12 +203,12 @@ int main(int argc, char *argv[]) {
     PetscInt Mx=61;
     PetscInt My=61;
     PetscScalar basal_q = 1.; // linear
-    string output_file = "ssa_test_const.nc";
+    std::string output_file = "ssa_test_const.nc";
 
-    set<string> ssa_choices;
+    std::set<std::string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
-    string driver = "fem";
+    std::string driver = "fem";
 
     ierr = PetscOptionsBegin(com, "", "SSA_TEST_CONST options", ""); CHKERRQ(ierr);
     {

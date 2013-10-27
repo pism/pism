@@ -84,7 +84,7 @@ PetscErrorCode PS_delta_T::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PS_delta_T::add_vars_to_output(string keyword, set<string> &result) {
+void PS_delta_T::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -93,7 +93,7 @@ void PS_delta_T::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PS_delta_T::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PS_delta_T::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -109,7 +109,7 @@ PetscErrorCode PS_delta_T::define_variables(set<string> vars, const PIO &nc, PIS
   return 0;
 }
 
-PetscErrorCode PS_delta_T::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PS_delta_T::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

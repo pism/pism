@@ -46,7 +46,7 @@ PISMOceanKill::~PISMOceanKill() {
 
 PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  string filename;
+  std::string filename;
   bool flag;
 
   ierr = verbPrintf(2, grid.com,
@@ -131,12 +131,12 @@ PetscErrorCode PISMOceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &
   return 0;
 }
 
-void PISMOceanKill::add_vars_to_output(string keyword, set<string> &result) {
+void PISMOceanKill::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big")
     result.insert(m_ocean_kill_mask.string_attr("short_name"));
 }
 
-PetscErrorCode PISMOceanKill::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PISMOceanKill::define_variables(std::set<std::string> vars, const PIO &nc,
                                                PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -147,7 +147,7 @@ PetscErrorCode PISMOceanKill::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode PISMOceanKill::write_variables(set<string> vars, const PIO& nc) {
+PetscErrorCode PISMOceanKill::write_variables(std::set<std::string> vars, const PIO& nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_ocean_kill_mask.string_attr("short_name"))) {

@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-    vector<string> required;
+    std::vector<std::string> required;
     required.clear(); // no actually required options; "-eisII A" is default
     ierr = show_usage_check_req_opts(com, "pisms", required,
       "  pisms [-eisII x|-pst -xxx] [OTHER PISM & PETSc OPTIONS]\n"

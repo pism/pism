@@ -100,7 +100,7 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   return 0;
 }
 
-void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
+void PAYearlyCycle::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   result.insert("precipitation");
 
   if (keyword == "big") {
@@ -111,7 +111,7 @@ void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
 }
 
 
-PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PAYearlyCycle::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {
@@ -134,7 +134,7 @@ PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, 
 }
 
 
-PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PAYearlyCycle::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {

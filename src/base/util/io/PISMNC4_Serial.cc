@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 #endif
 #include <netcdf.h>
 
-int PISMNC4_Serial::open(string fname, int mode) {
+int PISMNC4_Serial::open(std::string fname, int mode) {
   int stat;
 
   m_filename = fname;
@@ -37,7 +37,7 @@ int PISMNC4_Serial::open(string fname, int mode) {
   return stat;
 }
 
-int PISMNC4_Serial::create(string fname) {
+int PISMNC4_Serial::create(std::string fname) {
   int stat;
 
   m_filename = fname;

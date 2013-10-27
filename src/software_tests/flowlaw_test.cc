@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     IceFlowLaw *flow_law = NULL;
     IceFlowLawFactory ice_factory(com, NULL, config, &EC);
 
-    string flow_law_name = ICE_GPBLD;
+    std::string flow_law_name = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type
 
     ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);

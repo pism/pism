@@ -47,7 +47,7 @@ PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  map<string, string> standard_names;
+  std::map<std::string, std::string> standard_names;
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = ice_surface_temp_anomaly->create(grid, "ice_surface_temp_anomaly", false); CHKERRQ(ierr);
@@ -128,7 +128,7 @@ PetscErrorCode PSAnomaly::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSAnomaly::add_vars_to_output(string keyword, set<string> &result) {
+void PSAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -137,7 +137,7 @@ void PSAnomaly::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PSAnomaly::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSAnomaly::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -153,7 +153,7 @@ PetscErrorCode PSAnomaly::define_variables(set<string> vars, const PIO &nc, PISM
   return 0;
 }
 
-PetscErrorCode PSAnomaly::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSAnomaly::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

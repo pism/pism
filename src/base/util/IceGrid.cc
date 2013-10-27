@@ -33,7 +33,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
   x0 = 0.0;
   y0 = 0.0;
 
-  string word = config.get_string("grid_periodicity");
+  std::string word = config.get_string("grid_periodicity");
   if (word == "none")
     periodicity = NONE;
   else if (word == "x")
@@ -84,7 +84,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   profiler = new PISMProf(com, rank, size);
 
-  string calendar = config.get_string("calendar");
+  std::string calendar = config.get_string("calendar");
   if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
     time = new PISMTime(com, config, m_unit_system);
   } else {
@@ -373,7 +373,7 @@ PetscErrorCode IceGrid::allocate() {
 }
 
 //! Sets grid vertical levels; sets Mz and Lz from input.  Checks input for consistency.
-PetscErrorCode IceGrid::set_vertical_levels(vector<double> new_zlevels) {
+PetscErrorCode IceGrid::set_vertical_levels(std::vector<double> new_zlevels) {
   PetscErrorCode ierr;
 
   if (new_zlevels.size() < 2) {
@@ -624,7 +624,7 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
 }
 
 //! Creates a run-time diagnostic viewer.
-PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer) {
+PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, std::string title, PetscViewer &viewer) {
   PetscErrorCode ierr;
   int X, Y;
 
@@ -669,8 +669,8 @@ void IceGrid::compute_point_neighbors(PetscReal X, PetscReal Y,
 //! \brief Compute 4 interpolation weights necessary for linear interpolation
 //! from the current grid. See compute_point_neighbors for the ordering of
 //! neighbors.
-vector<PetscReal> IceGrid::compute_interp_weights(PetscReal X, PetscReal Y) {
-  vector<PetscReal> result;
+std::vector<PetscReal> IceGrid::compute_interp_weights(PetscReal X, PetscReal Y) {
+  std::vector<PetscReal> result;
   int i,j;
   double alpha, beta;
 
@@ -775,7 +775,7 @@ double IceGrid::convert(double value, const char *unit1, const char *unit2) cons
 
 void IceGrid::destroy_dms() {
 
-  map<int, DM>::iterator j = dms.begin();
+  std::map<int, DM>::iterator j = dms.begin();
   while (j != dms.end()) {
     DMDestroy(&j->second);
 

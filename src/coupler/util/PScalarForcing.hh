@@ -109,7 +109,7 @@ protected:
 
   Model *input;
   Timeseries *offset;
-  string filename, offset_name, option_prefix;
+  std::string filename, offset_name, option_prefix;
 
   unsigned int bc_period;       // in years
   PetscReal bc_reference_time;  // in seconds

@@ -37,8 +37,8 @@ PISMSurfaceModel::~PISMSurfaceModel() {
   delete atmosphere;
 }
 
-void PISMSurfaceModel::get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                                       map<string, PISMTSDiagnostic*> &ts_dict) {
+void PISMSurfaceModel::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                                       std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
   if (atmosphere)
     atmosphere->get_diagnostics(dict, ts_dict);
 }
@@ -101,7 +101,7 @@ PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PISMSurfaceModel::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {
@@ -111,7 +111,7 @@ PetscErrorCode PISMSurfaceModel::define_variables(set<string> vars, const PIO &n
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMSurfaceModel::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {
@@ -134,7 +134,7 @@ PetscErrorCode PISMSurfaceModel::max_timestep(PetscReal my_t, PetscReal &my_dt, 
   return 0;
 }
 
-void PISMSurfaceModel::add_vars_to_output(string keyword, set<string> &result) {
+void PISMSurfaceModel::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (atmosphere != NULL) {
     atmosphere->add_vars_to_output(keyword, result);
   }

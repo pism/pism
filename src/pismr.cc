@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     bool iset, bfset;
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
-    string usage =
+    std::string usage =
       "  pismr {-i IN.nc|-boot_file IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
          "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
       ierr = show_usage_and_quit(com, "pismr", usage.c_str()); CHKERRQ(ierr);
     } else {
-      vector<string> required;  required.clear();
+      std::vector<std::string> required;  required.clear();
       ierr = show_usage_check_req_opts(com, "pismr", required, usage.c_str()); CHKERRQ(ierr);
     }
 

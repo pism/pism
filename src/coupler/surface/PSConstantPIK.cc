@@ -123,8 +123,8 @@ PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
   return 0;
 }
 
-void PSConstantPIK::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
-                                    map<string, PISMTSDiagnostic*> &/*ts_dict*/)
+void PSConstantPIK::get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
+                                    std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/)
 {
   // empty (does not have an atmosphere model)
 }
@@ -145,13 +145,13 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSConstantPIK::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PSConstantPIK::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("climatic_mass_balance");
   result.insert("ice_surface_temp");
   // does not call atmosphere->add_vars_to_output().
 }
 
-PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSConstantPIK::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -167,7 +167,7 @@ PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const PIO &nc, 
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSConstantPIK::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

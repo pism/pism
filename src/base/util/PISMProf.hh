@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,15 +28,11 @@
 #include <petsc.h>
 #include "PISMNCFile.hh"
 
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 //! \brief A class storing and writing PISM profiling event data.
 class PISMEvent {
 public:
   PISMEvent();
-  string name,			//!< NetCDF variable name
+  std::string name,			//!< NetCDF variable name
     description,		//!< NetCDF variable long_name attribute
     units;                      //!< NetCDF variable units
   int parent;			//!< index of the parent event
@@ -70,23 +66,23 @@ class PISMProf {
 public:
   PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s);
   ~PISMProf() {}
-  int create(string name, string description);
-  int get(string name);
+  int create(std::string name, std::string description);
+  int get(std::string name);
   void begin(int index);
   void end(int index);
   PetscErrorCode barrier();
-  PetscErrorCode save_report(string filename);
+  PetscErrorCode save_report(std::string filename);
   void set_grid_size(int n);
   int Nx, Ny;
 protected:
-  vector<PISMEvent> events;
+  std::vector<PISMEvent> events;
   int current_event;
   PetscMPIInt rank, size;
   MPI_Comm com;
 
-  PetscErrorCode save_report(int index, const PISMNCFile &nc, string name);
-  PetscErrorCode find_variables(PISMNCFile &nc, string name, bool &exists);
-  PetscErrorCode define_variable(const PISMNCFile &nc, string name);
+  PetscErrorCode save_report(int index, const PISMNCFile &nc, std::string name);
+  PetscErrorCode find_variables(PISMNCFile &nc, std::string name, bool &exists);
+  PetscErrorCode define_variable(const PISMNCFile &nc, std::string name);
   PetscErrorCode create_dimensions(const PISMNCFile &nc);
 };
 

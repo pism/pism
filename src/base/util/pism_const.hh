@@ -24,11 +24,6 @@
 #include <vector>
 #include <set>
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 
@@ -42,7 +37,7 @@ enum PismMask {
 
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
-bool is_increasing(const vector<double> &a);
+bool is_increasing(const std::vector<double> &a);
 
 PetscErrorCode setVerbosityLevel(PetscInt level);
 PetscInt       getVerbosityLevel();
@@ -56,16 +51,16 @@ void endPrintRank();
 void PISMEnd()  __attribute__((noreturn));
 void PISMEndQuiet()  __attribute__((noreturn));
 
-string pism_timestamp();
-string pism_username_prefix(MPI_Comm com);
-string pism_args_string();
-string pism_filename_add_suffix(string filename, string separator, string suffix);
+std::string pism_timestamp();
+std::string pism_username_prefix(MPI_Comm com);
+std::string pism_args_string();
+std::string pism_filename_add_suffix(std::string filename, std::string separator, std::string suffix);
 
 PetscErrorCode PISMGetTime(PetscLogDouble *result);
 
-bool ends_with(string str, string suffix);
+bool ends_with(std::string str, std::string suffix);
 
-inline bool set_contains(set<string> S, string name) {
+inline bool set_contains(std::set<std::string> S, std::string name) {
   return (S.find(name) != S.end());
 }
 

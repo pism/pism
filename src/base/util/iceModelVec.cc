@@ -38,7 +38,7 @@ IceModelVec::IceModelVec() {
 
   localp = true;
 
-  map_viewers = new map<string,PetscViewer>;
+  map_viewers = new std::map<std::string,PetscViewer>;
 
   n_levels = 1;
   name = "unintialized variable";
@@ -152,7 +152,7 @@ PetscErrorCode  IceModelVec::destroy() {
 
   // map-plane viewers:
   if (map_viewers != NULL) {
-    map<string,PetscViewer>::iterator i;
+    std::map<std::string,PetscViewer>::iterator i;
     for (i = (*map_viewers).begin(); i != (*map_viewers).end(); ++i) {
       if ((*i).second != PETSC_NULL) {
 	ierr = PetscViewerDestroy(&(*i).second); CHKERRQ(ierr);
@@ -377,7 +377,7 @@ Vec IceModelVec::get_vec() {
 }
 
 //! Sets the variable name to `name` and resets metadata.
-PetscErrorCode  IceModelVec::set_name(string new_name, int N) {
+PetscErrorCode  IceModelVec::set_name(std::string new_name, int N) {
   reset_attrs(N);
 
   if (N == 0)
@@ -389,9 +389,9 @@ PetscErrorCode  IceModelVec::set_name(string new_name, int N) {
 }
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec::rename(const string &short_name, const string &long_name,
-                                   const string &standard_name, int N)
-{
+PetscErrorCode IceModelVec::rename(const std::string &short_name, const std::string &long_name,
+                                   const std::string &standard_name, int N) {
+
   if(!short_name.empty()){
     if (N == 0) name = short_name;
     vars[N].short_name = short_name;
@@ -409,8 +409,7 @@ PetscErrorCode IceModelVec::rename(const string &short_name, const string &long_
 }
 
 //! Changes the variable's pism_intent.
-PetscErrorCode  IceModelVec::set_intent(string pism_intent, int component)
-{
+PetscErrorCode  IceModelVec::set_intent(std::string pism_intent, int component) {
   vars[component].set_string("pism_intent", pism_intent);
   return 0;
 }
@@ -421,7 +420,7 @@ This affects NCVariable::report_range() and IceModelVec::write().  In write(),
 if IceModelVec::write_in_glaciological_units == true, then that variable is written
 with a conversion to the glaciological units set here.
  */
-PetscErrorCode  IceModelVec::set_glaciological_units(string my_units) {
+PetscErrorCode  IceModelVec::set_glaciological_units(std::string my_units) {
 
   PetscErrorCode ierr;
 
@@ -455,10 +454,10 @@ PetscErrorCode IceModelVec::reset_attrs(unsigned int N) {
   If my_units != "", this also resets glaciological_units, so that they match
   internal units.
  */
-PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
-				      string my_long_name,
-				      string my_units,
-				      string my_standard_name,
+PetscErrorCode IceModelVec::set_attrs(std::string my_pism_intent,
+				      std::string my_long_name,
+				      std::string my_units,
+				      std::string my_standard_name,
 				      int N) {
 
   vars[N].set_string("long_name", my_long_name);
@@ -479,7 +478,7 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 PetscErrorCode IceModelVec::get_interp_context(const PIO &nc, LocalInterpCtx* &lic) {
   PetscErrorCode ierr;
   bool exists, found_by_std_name;
-  string name_found;
+  std::string name_found;
 
   ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
                     exists, name_found, found_by_std_name); CHKERRQ(ierr);
@@ -634,7 +633,7 @@ PetscErrorCode IceModelVec::read_attributes(const PIO &nc, int N) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::read_attributes(string filename, int N) {
+PetscErrorCode IceModelVec::read_attributes(std::string filename, int N) {
   PIO nc(*grid, "netcdf3");     // OK to use netcdf3
   PetscErrorCode ierr;
 
@@ -889,7 +888,7 @@ bool IceModelVec::is_valid(PetscScalar a, int N) {
 //! Set a string attribute of an IceModelVec.
 /*! Attributes "units" and "glaciological_units" are also parsed to be used for unit conversion.
  */
-PetscErrorCode IceModelVec::set_attr(string attr, string value, int N) {
+PetscErrorCode IceModelVec::set_attr(std::string attr, std::string value, int N) {
   PetscErrorCode ierr;
 
   if (attr == "units") {
@@ -907,30 +906,30 @@ PetscErrorCode IceModelVec::set_attr(string attr, string value, int N) {
 }
 
 //! Sets a single-valued double attribute.
-PetscErrorCode IceModelVec::set_attr(string my_name, double value, int N) {
+PetscErrorCode IceModelVec::set_attr(std::string my_name, double value, int N) {
   vars[N].set(my_name, value);
   return 0;
 }
 
 //! Sets an array attribute.
-PetscErrorCode IceModelVec::set_attr(string my_name, vector<double> values,
+PetscErrorCode IceModelVec::set_attr(std::string my_name, std::vector<double> values,
 				     int N) {
   vars[N].doubles[my_name] = values;
   return 0;
 }
 
 //! \brief Returns true if component N has attribute my_name.
-bool IceModelVec::has_attr(string my_name, int N) {
+bool IceModelVec::has_attr(std::string my_name, int N) {
   return vars[N].has(my_name);
 }
 
 //! Returns a single-valued double attribute.
-double IceModelVec::double_attr(string my_name, int N) {
+double IceModelVec::double_attr(std::string my_name, int N) {
   return vars[N].get(my_name);
 }
 
 //! Returns a string attribute.
-string IceModelVec::string_attr(string n, int N) {
+std::string IceModelVec::string_attr(std::string n, int N) {
 
   if (n == "name")
     return name;
@@ -939,7 +938,7 @@ string IceModelVec::string_attr(string n, int N) {
 }
 
 //! Returns an array attribute.
-vector<double> IceModelVec::array_attr(string my_name, int N) {
+std::vector<double> IceModelVec::array_attr(std::string my_name, int N) {
   return vars[N].doubles[my_name];
 }
 
@@ -1019,7 +1018,7 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
 }
 
 //! \brief Computes the norm of all components.
-PetscErrorCode IceModelVec::norm_all(NormType n, vector<PetscReal> &result) {
+PetscErrorCode IceModelVec::norm_all(NormType n, std::vector<PetscReal> &result) {
   PetscErrorCode ierr;
   PetscReal *norm_result;
 
@@ -1070,7 +1069,7 @@ PetscErrorCode IceModelVec::norm_all(NormType n, vector<PetscReal> &result) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::write(string filename) {
+PetscErrorCode IceModelVec::write(std::string filename) {
   PetscErrorCode ierr;
 
   ierr = this->write(filename, output_data_type); CHKERRQ(ierr);
@@ -1078,7 +1077,7 @@ PetscErrorCode IceModelVec::write(string filename) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec::write(std::string filename, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   PIO nc(*grid, grid->config.get_string("output_format"));
@@ -1092,7 +1091,7 @@ PetscErrorCode IceModelVec::write(string filename, PISM_IO_Type nctype) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::read(string filename, unsigned int time) {
+PetscErrorCode IceModelVec::read(std::string filename, unsigned int time) {
   PetscErrorCode ierr;
 
   PIO nc(*grid, "guess_mode");
@@ -1106,7 +1105,7 @@ PetscErrorCode IceModelVec::read(string filename, unsigned int time) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
+PetscErrorCode IceModelVec::regrid(std::string filename, bool critical, int start) {
   PetscErrorCode ierr;
 
   PIO nc(*grid, "guess_mode");
@@ -1120,7 +1119,7 @@ PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
+PetscErrorCode IceModelVec::regrid(std::string filename, PetscScalar default_value) {
   PetscErrorCode ierr;
 
   PIO nc(*grid, "guess_mode");

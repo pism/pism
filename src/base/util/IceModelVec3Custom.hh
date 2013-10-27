@@ -38,10 +38,10 @@ public:
   virtual ~IceModelVec3Custom();
 
   virtual PetscErrorCode create(IceGrid &mygrid,
-                                string short_name,
-                                string z_name,
-                                vector<double> my_zlevels,
-                                map<string, string> z_attrs);
+                                std::string short_name,
+                                std::string z_name,
+                                std::vector<double> my_zlevels,
+                                std::map<std::string, std::string> z_attrs);
 };
 
 #endif /* _ICEMODELVEC3CUSTOM_H_ */

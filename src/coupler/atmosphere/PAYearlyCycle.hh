@@ -32,9 +32,9 @@ public:
   virtual ~PAYearlyCycle();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   //! This method implements the parameterization.
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
@@ -49,10 +49,10 @@ public:
 protected:
   PISMVars *variables;
   PetscScalar snow_temp_july_day;
-  string reference, precip_filename;
+  std::string reference, precip_filename;
   IceModelVec2S air_temp_mean_annual, air_temp_mean_july, precipitation;
   NCSpatialVariable air_temp_snapshot;
-  vector<double> m_ts_times, m_cosine_cycle;
+  std::vector<double> m_ts_times, m_cosine_cycle;
 private:
   PetscErrorCode allocate_PAYearlyCycle();
 };

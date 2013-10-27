@@ -134,7 +134,7 @@ PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, unsigned int N) {
 
 PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
   PetscErrorCode ierr;
-  vector<PetscScalar> usurf(m_ts_times.size());
+  std::vector<PetscScalar> usurf(m_ts_times.size());
 
   ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
 
@@ -149,7 +149,7 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
 
 PetscErrorCode PALapseRates::precip_time_series(int i, int j, PetscReal *values) {
   PetscErrorCode ierr;
-  vector<PetscScalar> usurf(m_ts_times.size());
+  std::vector<PetscScalar> usurf(m_ts_times.size());
 
   ierr = input_model->precip_time_series(i, j, values); CHKERRQ(ierr);
 
@@ -169,7 +169,7 @@ PetscErrorCode PALapseRates::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PALapseRates::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -185,7 +185,7 @@ PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, P
   return 0;
 }
 
-PetscErrorCode PALapseRates::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PALapseRates::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -217,7 +217,7 @@ PetscErrorCode PALapseRates::write_variables(set<string> vars, const PIO &nc) {
   return 0;
 }
 
-void PALapseRates::add_vars_to_output(string keyword, set<string> &result) {
+void PALapseRates::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {

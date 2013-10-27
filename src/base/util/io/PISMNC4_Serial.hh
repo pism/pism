@@ -29,9 +29,9 @@ public:
   virtual ~PISMNC4_Serial() {}
 
   // open/create/close
-  virtual int open(string filename, int mode);
+  virtual int open(std::string filename, int mode);
 
-  virtual int create(string filename);
+  virtual int create(std::string filename);
 };
 
 

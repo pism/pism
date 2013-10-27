@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -48,7 +48,7 @@ PetscErrorCode IceModel::compute_cell_areas() {
     return 0;
   }
 
-  string proj_string = mapping.get_string("proj4");
+  std::string proj_string = mapping.get_string("proj4");
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (lonlat == NULL) {

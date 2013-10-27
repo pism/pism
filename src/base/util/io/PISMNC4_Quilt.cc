@@ -27,13 +27,13 @@
 #endif
 #include <netcdf.h>
 
-static string patch_filename(string input, int mpi_rank) {
+static std::string patch_filename(std::string input, int mpi_rank) {
   char tmp[TEMPORARY_STRING_LENGTH];
 
   snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
 
-  string::size_type n = input.find("RANK");
-  if (n != string::npos) {
+  std::string::size_type n = input.find("RANK");
+  if (n != std::string::npos) {
     snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
     input.replace(n, 4, tmp);
   } else {
@@ -44,7 +44,7 @@ static string patch_filename(string input, int mpi_rank) {
   return input;
 }
 
-int PISMNC4_Quilt::open(string fname, int mode) {
+int PISMNC4_Quilt::open(std::string fname, int mode) {
   int stat;
 
   m_filename = patch_filename(fname, rank);
@@ -57,7 +57,7 @@ int PISMNC4_Quilt::open(string fname, int mode) {
 }
 
 
-int PISMNC4_Quilt::create(string fname) {
+int PISMNC4_Quilt::create(std::string fname) {
   int stat;
 
   m_filename = patch_filename(fname, rank);
@@ -81,7 +81,7 @@ int PISMNC4_Quilt::close() {
   return global_stat(stat);
 }
 
-int PISMNC4_Quilt::def_dim(string name, size_t length) const {
+int PISMNC4_Quilt::def_dim(std::string name, size_t length) const {
   int stat;
   size_t length_local = 0;
 
@@ -102,11 +102,11 @@ int PISMNC4_Quilt::def_dim(string name, size_t length) const {
   return global_stat(stat);
 }
 
-int PISMNC4_Quilt::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
+int PISMNC4_Quilt::def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const {
   int stat;
 
   if (name == "x" || name == "y") {
-    vector<string> dims_local;
+    std::vector<std::string> dims_local;
     dims_local.push_back(name + suffix);
     stat = this->def_var(name + suffix, nctype, dims_local); check(stat);
 
@@ -131,8 +131,8 @@ int PISMNC4_Quilt::def_var(string name, PISM_IO_Type nctype, vector<string> dims
   return global_stat(stat);
 }
 
-int PISMNC4_Quilt::put_att_double(string name, string att_name,
-                                      PISM_IO_Type xtype, vector<double> &data) const {
+int PISMNC4_Quilt::put_att_double(std::string name, std::string att_name,
+                                      PISM_IO_Type xtype, std::vector<double> &data) const {
   int stat;
 
   if (name == "x" || name == "y") {
@@ -145,7 +145,7 @@ int PISMNC4_Quilt::put_att_double(string name, string att_name,
 }
 
 
-int PISMNC4_Quilt::put_att_text(string name, string att_name, string value) const {
+int PISMNC4_Quilt::put_att_text(std::string name, std::string att_name, std::string value) const {
   int stat;
 
   if (name == "x" || name == "y") {
@@ -158,10 +158,10 @@ int PISMNC4_Quilt::put_att_text(string name, string att_name, string value) cons
 }
 
 
-void PISMNC4_Quilt::correct_start_and_count(string name,
-                                            vector<unsigned int> &start,
-                                            vector<unsigned int> &count) const {
-  vector<string> dim_names;
+void PISMNC4_Quilt::correct_start_and_count(std::string name,
+                                            std::vector<unsigned int> &start,
+                                            std::vector<unsigned int> &count) const {
+  std::vector<std::string> dim_names;
 
   this->inq_vardimid(name, dim_names);
 
@@ -181,10 +181,10 @@ void PISMNC4_Quilt::correct_start_and_count(string name,
 
 }
 
-int PISMNC4_Quilt::get_put_var_double(string name,
-                                      vector<unsigned int> start,
-                                      vector<unsigned int> count,
-                                      vector<unsigned int> imap, double *data,
+int PISMNC4_Quilt::get_put_var_double(std::string name,
+                                      std::vector<unsigned int> start,
+                                      std::vector<unsigned int> count,
+                                      std::vector<unsigned int> imap, double *data,
                                       bool get,
                                       bool mapped) const {
   int stat;
@@ -234,7 +234,7 @@ int PISMNC4_Quilt::global_stat(int stat) const {
   return tmp != 0;
 }
 
-int PISMNC4_Quilt::move_if_exists(string file, int /*rank_to_use*/) {
+int PISMNC4_Quilt::move_if_exists(std::string file, int /*rank_to_use*/) {
   int stat;
 
   stat = PISMNCFile::move_if_exists(patch_filename(file, rank), rank);

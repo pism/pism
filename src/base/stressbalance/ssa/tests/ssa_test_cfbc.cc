@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
     // Parameters that can be overridden by command line options
     PetscInt Mx=61;
     PetscInt My=61;
-    string output_file = "ssa_test_cfbc.nc";
+    std::string output_file = "ssa_test_cfbc.nc";
 
     ierr = PetscOptionsBegin(com, "", "SSA_TESTCFBC options", ""); CHKERRQ(ierr);
     {

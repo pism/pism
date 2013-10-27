@@ -22,7 +22,7 @@ int main(int argc, char**argv) {
   int mpi_size, mpi_rank, mpi_namelen, ierr;
   char mpi_name[MPI_MAX_PROCESSOR_NAME];
   MPI_Comm mpi_comm = MPI_COMM_WORLD;
-  string basename = "pism_netcdf_test",
+  std::string basename = "pism_netcdf_test",
     mode = "netcdf3";
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
@@ -86,7 +86,7 @@ int main(int argc, char**argv) {
       x0 = start_x * Lx, y0 = start_y * Ly,
       *data;
 
-    vector<double> x(Mx), y(My), z(Mz);
+    std::vector<double> x(Mx), y(My), z(Mz);
 
     for (int i = 0; i < Mx; ++i)
       x[i] = x0 + dx * i;
@@ -132,7 +132,7 @@ int main(int argc, char**argv) {
 
       PISMNCFile *nc = NULL;
 
-      set<string> modes;
+      std::set<std::string> modes;
       modes.insert("netcdf3"); modes.insert("netcdf4"); modes.insert("pnetcdf");
       ierr = PISMOptionsList(mpi_comm, "-mode", "I/O mode", modes, mode, mode, flag); CHKERRQ(ierr);
 
@@ -188,7 +188,7 @@ int main(int argc, char**argv) {
           ierr = nc->def_dim("y", My * Ny); CHKERRQ(ierr);
           ierr = nc->def_dim("z", Mz); CHKERRQ(ierr);
 
-          vector<string> dims(4);
+          std::vector<std::string> dims(4);
           dims[0] = "t";
           dims[1] = "x";
           dims[2] = "y";
@@ -223,7 +223,7 @@ int main(int argc, char**argv) {
 
         profiler.begin(event_write);
         {
-          vector<unsigned int> start(4), count(4), imap(4);
+          std::vector<unsigned int> start(4), count(4), imap(4);
           const int T = 0, X = 1, Y = 2, Z = 3;
 
           start[T] = 0;

@@ -250,7 +250,7 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
 PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode  ierr;
 
-  const string method = config.get_string("surface_gradient_method");
+  const std::string method = config.get_string("surface_gradient_method");
 
   if (method == "eta") {
 

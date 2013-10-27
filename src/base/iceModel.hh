@@ -64,11 +64,6 @@ class PISMOceanKill;
 class PISMCalvingAtThickness;
 class PISMEigenCalving;
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -164,20 +159,20 @@ public:
   PetscErrorCode init();
   virtual PetscErrorCode run();
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
-  virtual PetscErrorCode setExecName(string my_executable_short_name);
+  virtual PetscErrorCode setExecName(std::string my_executable_short_name);
   virtual void reset_counters();
 
   // see iMbootstrap.cc 
-  virtual PetscErrorCode bootstrapFromFile(string fname);
-  virtual PetscErrorCode bootstrap_2d(string fname);
+  virtual PetscErrorCode bootstrapFromFile(std::string fname);
+  virtual PetscErrorCode bootstrap_2d(std::string fname);
   virtual PetscErrorCode bootstrap_3d();
   virtual PetscErrorCode putTempAtDepth();
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode set_output_size(string option, string description,
-					 string default_value, set<string> &result);
-  virtual string         get_output_size(string option);
+  virtual PetscErrorCode set_output_size(std::string option, std::string description,
+					 std::string default_value, std::set<std::string> &result);
+  virtual std::string         get_output_size(std::string option);
 
   // see iMutil.cc
   virtual PetscErrorCode additionalAtStartTimestep();
@@ -185,13 +180,13 @@ public:
   virtual PetscErrorCode compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
-  virtual PetscErrorCode initFromFile(string);
-  virtual PetscErrorCode writeFiles(string default_filename);
+  virtual PetscErrorCode initFromFile(std::string);
+  virtual PetscErrorCode writeFiles(std::string default_filename);
   virtual PetscErrorCode write_model_state(const PIO &nc);
   virtual PetscErrorCode write_metadata(const PIO &nc,
                                         bool write_mapping,
                                         bool write_run_stats);
-  virtual PetscErrorCode write_variables(const PIO &nc, set<string> vars,
+  virtual PetscErrorCode write_variables(const PIO &nc, std::set<std::string> vars,
 					 PISM_IO_Type nctype);
 protected:
 
@@ -304,9 +299,9 @@ protected:
   PetscBool  repeatRedist, putOnTop;
   char        adaptReasonFlag;
 
-  string      stdout_flags, stdout_ssa;
+  std::string      stdout_flags, stdout_ssa;
 
-  string executable_short_name;
+  std::string executable_short_name;
   
 protected:
   // see iceModel.cc
@@ -365,9 +360,9 @@ protected:
 
 
   // see iMIO.cc
-  virtual PetscErrorCode dumpToFile(string filename);
+  virtual PetscErrorCode dumpToFile(std::string filename);
   virtual PetscErrorCode regrid(int dimensions);
-  virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
+  virtual PetscErrorCode regrid_variables(std::string filename, std::set<std::string> regrid_vars, int ndims);
 
   // see iMfractures.cc
   virtual PetscErrorCode calculateFractureDensity();
@@ -415,7 +410,7 @@ protected:
   virtual int            endOfTimeStepHook();
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
-  virtual PetscErrorCode stampHistory(string);
+  virtual PetscErrorCode stampHistory(std::string);
   virtual PetscErrorCode update_run_stats();
   virtual PetscErrorCode check_maximum_thickness();
   virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
@@ -432,27 +427,27 @@ protected:
 
   PISMStressBalance *stress_balance;
 
-  map<string,PISMDiagnostic*> diagnostics;
-  map<string,PISMTSDiagnostic*> ts_diagnostics;
+  std::map<std::string,PISMDiagnostic*> diagnostics;
+  std::map<std::string,PISMTSDiagnostic*> ts_diagnostics;
 
   // Set of variables to put in the output file:
-  set<string> output_vars;
+  std::set<std::string> output_vars;
 
   // This is related to the snapshot saving feature
-  string snapshots_filename;
+  std::string snapshots_filename;
   bool save_snapshots, snapshots_file_is_ready, split_snapshots;
-  vector<double> snapshot_times;
-  set<string> snapshot_vars;
+  std::vector<double> snapshot_times;
+  std::set<std::string> snapshot_vars;
   unsigned int current_snapshot;
   PetscErrorCode init_snapshots();
   PetscErrorCode write_snapshot();
 
   // scalar time-series
   bool save_ts;			//! true if the user requested time-series output
-  string ts_filename;		//! file to write time-series to
-  vector<double> ts_times;	//! times requested
+  std::string ts_filename;		//! file to write time-series to
+  std::vector<double> ts_times;	//! times requested
   unsigned int current_ts;	//! index of the current time
-  set<string> ts_vars;		//! variables requested
+  std::set<std::string> ts_vars;		//! variables requested
   PetscErrorCode init_timeseries();
   PetscErrorCode flush_timeseries();
   PetscErrorCode write_timeseries();
@@ -460,11 +455,11 @@ protected:
 
   // spatially-varying time-series
   bool save_extra, extra_file_is_ready, split_extra;
-  string extra_filename;
-  vector<double> extra_times;
+  std::string extra_filename;
+  std::vector<double> extra_times;
   unsigned int next_extra;
   double last_extra;
-  set<string> extra_vars;
+  std::set<std::string> extra_vars;
   NCTimeBounds extra_bounds;
   NCTimeseries timestamp;
   PetscErrorCode init_extras();
@@ -473,18 +468,18 @@ protected:
 
   // automatic backups
   double backup_interval;
-  string backup_filename;
+  std::string backup_filename;
   PetscReal last_backup_time;
-  set<string> backup_vars;
+  std::set<std::string> backup_vars;
   PetscErrorCode init_backups();
   PetscErrorCode write_backup();
 
   // diagnostic viewers; see iMviewers.cc
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();
-  set<string> map_viewers, slice_viewers, sounding_viewers;
+  std::set<std::string> map_viewers, slice_viewers, sounding_viewers;
   PetscInt     id, jd;	     // sounding indices
-  map<string,PetscViewer> viewers;
+  std::map<std::string,PetscViewer> viewers;
 
   // time step decision helper; see step()
   inline void revise_maxdt(PetscReal new_dt, PetscReal &my_maxdt) {

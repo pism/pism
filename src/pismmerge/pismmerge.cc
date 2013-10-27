@@ -23,7 +23,7 @@
 static char help[] =
   "Tool for merging PISM output files produced using '-o_format quilt'.\n";
 
-int process_one_variable(string var_name, string input_file, string output_file,
+int process_one_variable(std::string var_name, std::string input_file, std::string output_file,
                          unsigned int compression_level) {
   PISMNC4_Serial input(MPI_COMM_SELF, 0, 0),
     output(MPI_COMM_SELF, 0, compression_level);
@@ -96,7 +96,7 @@ int process_one_variable(string var_name, string input_file, string output_file,
   return 0;
 }
 
-int process_all_variables(string input_file, string output_file,
+int process_all_variables(std::string input_file, std::string output_file,
                           unsigned int compression_level) {
   int ierr, n_vars;
   PISMNC4_Serial input(MPI_COMM_SELF, 0, 0),
@@ -118,7 +118,7 @@ int process_all_variables(string input_file, string output_file,
   ierr = input.inq_nvars(n_vars); check(ierr);
 
   for (int j = 0; j < n_vars; ++j) {
-    string var_name;
+    std::string var_name;
 
     ierr = input.inq_varname(j, var_name); check(ierr);
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     bool i_set, o_set, var_name_set, compression_level_set;
-    string i_name, o_name, var_name;
+    std::string i_name, o_name, var_name;
     int compression_level = 0;
     ierr = PISMOptionsString("-i", "Input file name",
                              i_name, i_set); CHKERRQ(ierr);
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
                              var_name, var_name_set); CHKERRQ(ierr);
     ierr = PISMOptionsInt("-L", "Output compression level",
                           compression_level, compression_level_set); CHKERRQ(ierr);
-    string usage =
+    std::string usage =
       "  Merges output file created using '-o_format quilt'.\n\n"
       "  pismmerge {-i in.nc} [-o out.nc]\n"
       "where:\n"
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
       "notes:\n"
       "  * -o is optional\n";
 
-    vector<string> required;
+    std::vector<std::string> required;
     required.push_back("-i");
     ierr = show_usage_check_req_opts(com, "pismmerge", required, usage.c_str()); CHKERRQ(ierr);
 

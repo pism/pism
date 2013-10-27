@@ -34,7 +34,7 @@ PACosineYearlyCycle::~PACosineYearlyCycle() {
 PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool input_file_flag, scaling_flag;
-  string input_file, scaling_file;
+  std::string input_file, scaling_file;
 
   t = dt = GSL_NAN;  // every re-init restarts the clock
 

@@ -164,8 +164,8 @@ void PSElevation::attach_atmosphere_model(PISMAtmosphereModel *input)
   delete input;
 }
 
-void PSElevation::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
-                                  map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void PSElevation::get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
+                                  std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
   // empty
 }
 
@@ -244,14 +244,14 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSElevation::add_vars_to_output(string keyword, set<string> &result) {
+void PSElevation::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }
 }
 
-PetscErrorCode PSElevation::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSElevation::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -267,7 +267,7 @@ PetscErrorCode PSElevation::define_variables(set<string> vars, const PIO &nc, PI
   return 0;
 }
 
-PetscErrorCode PSElevation::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSElevation::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

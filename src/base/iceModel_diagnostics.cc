@@ -89,7 +89,7 @@ PetscErrorCode IceModel::init_diagnostics() {
 
 #if (PISM_USE_PROJ4==1)
   if (mapping.has("proj4")) {
-    string proj4 = mapping.get_string("proj4");
+    std::string proj4 = mapping.get_string("proj4");
     diagnostics["lat_bounds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lat", proj4);
     diagnostics["lon_bounds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lon", proj4);
   }
@@ -169,7 +169,7 @@ PetscErrorCode IceModel::list_diagnostics() {
 
   // quantities with dedicated storage
   {
-    set<string> list = variables.keys();
+    std::set<std::string> list = variables.keys();
 
     if (beddef != NULL)
       beddef->add_vars_to_output("big", list);
@@ -198,14 +198,14 @@ PetscErrorCode IceModel::list_diagnostics() {
                   "======== Available %dD quantities with dedicated storage ========\n",
                   d);
 
-      set<string>::iterator j = list.begin();
+      std::set<std::string>::iterator j = list.begin();
       while(j != list.end()) {
         IceModelVec *v = variables.get(*j);
 
         if (v != NULL && v->get_ndims() == d) {
           NCSpatialVariable var = v->get_metadata();
 
-          string
+          std::string
             name                = var.short_name,
             units               = var.get_string("units"),
             glaciological_units = var.get_string("glaciological_units"),
@@ -232,11 +232,11 @@ PetscErrorCode IceModel::list_diagnostics() {
                 "======== Available %dD diagnostic quantities ========\n",
                 d);
 
-    map<string, PISMDiagnostic*>::iterator j = diagnostics.begin();
+    std::map<std::string, PISMDiagnostic*>::iterator j = diagnostics.begin();
     while (j != diagnostics.end()) {
       PISMDiagnostic *diag = j->second;
 
-      string name           = j->first,
+      std::string name           = j->first,
         units               = diag->get_metadata().get_string("units"),
         glaciological_units = diag->get_metadata().get_string("glaciological_units");
 
@@ -250,7 +250,7 @@ PetscErrorCode IceModel::list_diagnostics() {
         for (int k = 0; k < diag->get_nvars(); ++k) {
           NCSpatialVariable var = diag->get_metadata(k);
 
-          string long_name = var.get_string("long_name");
+          std::string long_name = var.get_string("long_name");
 
           PetscPrintf(grid.com, "      -  %s\n", long_name.c_str());
         }
@@ -266,11 +266,11 @@ PetscErrorCode IceModel::list_diagnostics() {
   // scalar time-series
   PetscPrintf(grid.com, "======== Available time-series ========\n");
 
-  map<string, PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+  std::map<std::string, PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
   while (j != ts_diagnostics.end()) {
     PISMTSDiagnostic *diag = j->second;
 
-    string name = j->first,
+    std::string name = j->first,
       long_name = diag->get_string("long_name"),
       units = diag->get_string("units"),
       glaciological_units = diag->get_string("glaciological_units");
@@ -1980,13 +1980,13 @@ PetscErrorCode IceModel_discharge_flux_2D_cumulative::compute(IceModelVec* &outp
 
 #if (PISM_USE_PROJ4==1)
 IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVars &my_vars,
-                                                 string var_name, string proj_string)
+                                                 std::string var_name, std::string proj_string)
   :PISMDiag<IceModel>(m, g, my_vars) {
   assert(var_name == "lat" || var_name == "lon");
   m_var_name = var_name;
 
   // set metadata:
-  vector<double> levels(4);
+  std::vector<double> levels(4);
   for (int k = 0; k < 4; ++k)
     levels[k] = k;
 
@@ -2030,8 +2030,8 @@ PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec3Custom *result = new IceModelVec3Custom;
-  map<string,string> attrs;
-  vector<double> indices(4);
+  std::map<std::string,std::string> attrs;
+  std::vector<double> indices(4);
 
   ierr = result->create(grid, m_var_name + "_bounds", "grid_corners",
                         indices, attrs); CHKERRQ(ierr);

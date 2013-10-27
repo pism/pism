@@ -457,12 +457,12 @@ class IceModel_lat_lon_bounds : public PISMDiag<IceModel>
 {
 public:
   IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVars &my_vars,
-                          string var_name,
-                          string proj_string);
+                          std::string var_name,
+                          std::string proj_string);
   ~IceModel_lat_lon_bounds();
   virtual PetscErrorCode compute(IceModelVec* &result);
 protected:
-  string m_var_name;
+  std::string m_var_name;
   projPJ pism, lonlat;
 };
 #elif (PISM_USE_PROJ4==0)
