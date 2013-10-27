@@ -61,7 +61,7 @@ PISMHydrology::PISMHydrology(IceGrid &g, const NCConfigVariable &conf)
 
 PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  string itbfilename;  // itb = input_to_bed
+  std::string itbfilename;  // itb = input_to_bed
   bool itbfile_set, itbperiod_set, itbreference_set;
   bool i_set, bootstrap;
   PetscReal itbperiod_years = 0.0, itbreference_year = 0.0;
@@ -155,7 +155,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   if (Wtil_input != NULL) { // a variable called "tillwat" is already in context
     ierr = Wtil.copy_from(*Wtil_input); CHKERRQ(ierr);
   } else if (i_set || bootstrap) {
-    string filename;
+    std::string filename;
     int start;
     ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
     if (i_set) {
@@ -174,8 +174,8 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
 }
 
 
-void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                                    map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void PISMHydrology::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                                    std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
   dict["bwat"] = new PISMHydrology_bwat(this, grid, *variables);
   dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
@@ -185,12 +185,12 @@ void PISMHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
 }
 
 
-void PISMHydrology::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PISMHydrology::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("tillwat");
 }
 
 
-PetscErrorCode PISMHydrology::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PISMHydrology::define_variables(std::set<std::string> vars, const PIO &nc,
                                                PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   if (set_contains(vars, "tillwat")) {
@@ -200,7 +200,7 @@ PetscErrorCode PISMHydrology::define_variables(set<string> vars, const PIO &nc,
 }
 
 
-PetscErrorCode PISMHydrology::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMHydrology::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   if (set_contains(vars, "tillwat")) {
     ierr = Wtil.write(nc); CHKERRQ(ierr);
@@ -212,8 +212,8 @@ PetscErrorCode PISMHydrology::write_variables(set<string> vars, const PIO &nc) {
 PetscErrorCode PISMHydrology::regrid(IceModelVec2S &myvar) {
   PetscErrorCode ierr;
   bool file_set, vars_set;
-  string file;
-  set<string> vars;
+  std::string file;
+  std::set<std::string> vars;
 
   ierr = PetscOptionsBegin(grid.com, "", "PISMHydrology regridding options", ""); CHKERRQ(ierr);
   {

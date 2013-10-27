@@ -121,7 +121,7 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
   if (P_input != NULL) { // a variable called "bwp" is already in context
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
   } else if (i || bootstrap) {
-    string filename;
+    std::string filename;
     int start;
     ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
     if (i) {
@@ -139,13 +139,13 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
 }
 
 
-void PISMDistributedHydrology::add_vars_to_output(string keyword, set<string> &result) {
+void PISMDistributedHydrology::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   PISMRoutingHydrology::add_vars_to_output(keyword, result);
   result.insert("bwp");
 }
 
 
-PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PISMDistributedHydrology::define_variables(std::set<std::string> vars, const PIO &nc,
                                                  PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   ierr = PISMRoutingHydrology::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -156,7 +156,7 @@ PetscErrorCode PISMDistributedHydrology::define_variables(set<string> vars, cons
 }
 
 
-PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMDistributedHydrology::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   ierr = PISMRoutingHydrology::write_variables(vars, nc); CHKERRQ(ierr);
   if (set_contains(vars, "bwp")) {
@@ -166,8 +166,8 @@ PetscErrorCode PISMDistributedHydrology::write_variables(set<string> vars, const
 }
 
 
-void PISMDistributedHydrology::get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void PISMDistributedHydrology::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
   // bwp is state
   dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
