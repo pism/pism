@@ -1605,9 +1605,7 @@ IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m, IceGrid &g, PISMVa
 
 PetscErrorCode IceModel_discharge_flux::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
-  PetscReal value = 0.0;
-
-  // FIXME!!!
+  PetscReal value = model->discharge_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1627,9 +1625,7 @@ IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel 
 
 PetscErrorCode IceModel_discharge_flux_cumulative::update(PetscReal a, PetscReal b) {
   PetscErrorCode ierr;
-  PetscReal value = 0.0;
-
-  // FIXME!!!
+  PetscReal value = model->discharge_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 

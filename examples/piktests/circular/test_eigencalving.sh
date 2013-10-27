@@ -28,9 +28,11 @@ viewers="-view_map $diagnostics"
 
 extra="-extra_times 10 -extra_vars $diagnostics -extra_file ${output_basename}_ex.nc"
 
+ts="-ts_times 10 -ts_file ${output_basename}_ts.nc"
+
 misc_options="-cfbc -part_grid -part_redist -o_order zyx"
 
-pismopts="-boot_file $infile $grid $stressbalance $calving $viewers $extra $misc_options"
+pismopts="-boot_file $infile $grid $stressbalance $calving $viewers $extra $ts $misc_options"
 
 doit="mpiexec -n $N pismr $pismopts"
 

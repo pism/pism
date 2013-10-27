@@ -67,9 +67,7 @@ PetscErrorCode IceModel::do_calving() {
 
   ierr = Href_cleanup(); CHKERRQ(ierr);
 
-  if (compute_cumulative_discharge) {
-    ierr = update_cumulative_discharge(vH, old_H, vHref, old_Href); CHKERRQ(ierr);
-  }
+  ierr = update_cumulative_discharge(vH, old_H, vHref, old_Href); CHKERRQ(ierr);
 
   return 0;
 }
@@ -135,35 +133,61 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
   MaskQuery mask(vMask);
 
   const double ice_density = config.get("ice_density");
+  const bool update_2d_discharge = discharge_flux_2D_cumulative.was_created(),
+    use_Href = Href.was_created() && Href_old.was_created();
+  PetscReal my_total_discharge = 0.0, total_discharge;
 
   ierr = thickness.begin_access(); CHKERRQ(ierr);
   ierr = thickness_old.begin_access(); CHKERRQ(ierr);
-  ierr = Href.begin_access(); CHKERRQ(ierr);
-  ierr = Href_old.begin_access(); CHKERRQ(ierr);
-  ierr = discharge_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
+
+  if (update_2d_discharge) {
+    ierr = discharge_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+  }
+
+  if (use_Href) {
+    ierr = Href.begin_access(); CHKERRQ(ierr);
+    ierr = Href_old.begin_access(); CHKERRQ(ierr);
+  }
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (mask.ice_free_ocean(i,j)) {
         double
           delta_H    = thickness(i,j) - thickness_old(i,j),
-          delta_Href = Href(i,j) - Href_old(i,j),
-          discharge  = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
+          delta_Href, discharge;
+
+        if (use_Href)
+          delta_Href = Href(i,j) - Href_old(i,j);
+        else
+          delta_Href = 0.0;
+
+        discharge  = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
 
         discharge_flux_2D_cumulative(i,j) += discharge;
+        my_total_discharge += discharge;
       }
     }
   }
 
+  if (use_Href) {
+    ierr = Href_old.end_access(); CHKERRQ(ierr);
+    ierr = Href.end_access(); CHKERRQ(ierr);
+  }
+
+  if (update_2d_discharge) {
+    ierr = discharge_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
+  }
+
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = discharge_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
-  ierr = Href_old.end_access(); CHKERRQ(ierr);
-  ierr = Href.end_access(); CHKERRQ(ierr);
   ierr = thickness_old.end_access(); CHKERRQ(ierr);
   ierr = thickness.end_access(); CHKERRQ(ierr);
+
+  ierr = PISMGlobalSum(&my_total_discharge, &total_discharge, grid.com); CHKERRQ(ierr);
+
+  this->discharge_flux_cumulative += total_discharge;
 
   return 0;
 }

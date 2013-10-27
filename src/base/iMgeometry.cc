@@ -488,6 +488,11 @@ earlier. (CK)
 */
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
+  
+  if (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity")) {
+    ierr = calculateFractureDensity(); CHKERRQ(ierr);
+  }
+    
   PetscScalar
     // totals over the processor's domain:
     proc_H_to_Href_flux = 0,
@@ -856,14 +861,22 @@ PetscErrorCode IceModel::sub_gl_position() {
     rhoq = ice_rho/ocean_rho;
 
   IceModelVec2S gl_mask_new = vWork2d[0];
+  IceModelVec2S gl_mask_unground_x = vWork2d[0];
+  IceModelVec2S gl_mask_unground_y = vWork2d[0];
 
   ierr =    vH.begin_access(); CHKERRQ(ierr);
   ierr =  vbed.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = gl_mask.begin_access(); CHKERRQ(ierr);
   ierr = gl_mask_new.begin_access(); CHKERRQ(ierr);
-
+  ierr = gl_mask_unground_x.begin_access(); CHKERRQ(ierr);
+  ierr = gl_mask_unground_y.begin_access(); CHKERRQ(ierr);
+  
   ierr = gl_mask_new.set(0.0); CHKERRQ(ierr);
+  //gl_mask_unground_x/y state fraction of ungrounding in each, hence start with 1.0
+  //only used for floating or ice free regions
+  ierr = gl_mask_unground_x.set(1.0); CHKERRQ(ierr);
+  ierr = gl_mask_unground_y.set(1.0); CHKERRQ(ierr);
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
@@ -882,7 +895,8 @@ PetscErrorCode IceModel::sub_gl_position() {
         if (interpol<0.5)
           gl_mask_x+=(interpol-0.5);
         else
-          gl_mask_new(i+1,j)+=(interpol-0.5);
+          gl_mask_unground_x(i+1,j)-=(interpol-0.5);
+          //gl_mask_new(i+1,j)+=(interpol-0.5);
 
         ierr = verbPrintf(2, grid.com,"!!! PISM_INFO: h1=%f, h2=%f, interpol=%f at i=%d, j=%d\n",xpart1,xpart2,interpol,i,j); CHKERRQ(ierr);
       }
@@ -894,8 +908,8 @@ PetscErrorCode IceModel::sub_gl_position() {
         if (interpol<0.5)
           gl_mask_x+=(interpol-0.5);
         else{
-
-          gl_mask_new(i-1,j)+=(interpol-0.5);
+          gl_mask_unground_x(i-1,j)-=(interpol-0.5);
+          //gl_mask_new(i-1,j)+=(interpol-0.5);
         }
 
         ierr = verbPrintf(2, grid.com,"!!! PISM_INFO: h1=%f, h2=%f, interpol=%f at i=%d, j=%d\n",xpart1,xpart2,interpol,i,j); CHKERRQ(ierr);
@@ -908,7 +922,8 @@ PetscErrorCode IceModel::sub_gl_position() {
         if (interpol<0.5)
           gl_mask_y+=(interpol-0.5);
         else
-          gl_mask_new(i,j+1)+=(interpol-0.5);
+          gl_mask_unground_y(i,j+1)-=(interpol-0.5);
+          //gl_mask_new(i,j+1)+=(interpol-0.5);
 
         ierr = verbPrintf(2, grid.com,"!!! PISM_INFO: h1=%f, h2=%f, interpol=%f at i=%d, j=%d\n",xpart1,xpart2,interpol,i,j); CHKERRQ(ierr);
       }
@@ -920,7 +935,9 @@ PetscErrorCode IceModel::sub_gl_position() {
         if (interpol<0.5)
           gl_mask_y+=(interpol-0.5);
         else
-          gl_mask_new(i,j-1)+=(interpol-0.5);
+          gl_mask_unground_y(i,j-1)-=(interpol-0.5);
+          //gl_mask_new(i,j-1)+=(interpol-0.5);
+          
 
         ierr = verbPrintf(2, grid.com,"!!! PISM_INFO: h1=%f, h2=%f, interpol=%f at i=%d, j=%d\n",xpart1,xpart2,interpol,i,j); CHKERRQ(ierr);
       }
@@ -929,11 +946,21 @@ PetscErrorCode IceModel::sub_gl_position() {
     } // inner for loop (j)
   } // outer for loop (i)
 
+  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) { 
+      if (mask.floating_ice(i,j) || mask.ice_free_ocean(i,j))
+        gl_mask_new(i,j) = 1.0 - gl_mask_unground_x(i,j) * gl_mask_unground_y(i,j);
+    }
+  }
+
   ierr =         vH.end_access(); CHKERRQ(ierr);
   ierr =       vbed.end_access(); CHKERRQ(ierr);
   ierr =      vMask.end_access(); CHKERRQ(ierr);
   ierr =     gl_mask.end_access(); CHKERRQ(ierr);
   ierr =     gl_mask_new.end_access(); CHKERRQ(ierr);
+  ierr =     gl_mask_unground_x.end_access(); CHKERRQ(ierr);
+  ierr =     gl_mask_unground_y.end_access(); CHKERRQ(ierr);
+  
 
   ierr = gl_mask_new.copy_to(gl_mask); CHKERRQ(ierr);
 
