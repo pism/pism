@@ -19,7 +19,7 @@
 #ifndef _PISMEIGENCALVING_H_
 #define _PISMEIGENCALVING_H_
 
-#include "iceModelvec.hh"
+#include "iceModelVec.hh"
 #include "PISMComponent.hh"
 
 class PISMStressBalance;
