@@ -277,6 +277,8 @@ cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGR
 $PISM_DO $cmd
 
 
+exit  # uncomment for more runs and post-processing
+
 # ######################################
 # "force-to-thickness" run
 # ######################################
