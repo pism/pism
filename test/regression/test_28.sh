@@ -20,8 +20,8 @@ OPTS="-boot_file foo-28.nc -Mx 61 -My 61 -Mz 11 -y 10 -Lz 1000"
 # bootstrap and run for 100 years:
 $MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o bar-28.nc
 
-# remove topg and bwat (all contain zeros in the file and will default to zero):
-ncks -x -v bmelt,bwat,dbdt,lon,lat -O foo-28.nc foo-28.nc
+# remove topg and tillwat (all contain zeros in the file and will default to zero):
+ncks -x -v bmelt,tillwat,dbdt,lon,lat -O foo-28.nc foo-28.nc
 
 # bootstrap and run for 100 years:
 $MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o baz-28.nc
