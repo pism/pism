@@ -96,14 +96,14 @@ int main(int argc, char *argv[]) {
     ierr = usurf.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
 
     // actually use the smoother/bed-roughness-parameterizer
+    config.set("Glen_exponent", 3.0);
+    config.set("bed_smoother_range", 50.0e3);
     PISMBedSmoother smoother(grid, config, 1);
-    const PetscReal n = 3.0, 
-                    lambda = 50.0e3;
-    ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
+    ierr = smoother.preprocess_bed(topg); CHKERRQ(ierr);
     PetscInt Nx,Ny;
     ierr = smoother.get_smoothing_domain(Nx,Ny); CHKERRQ(ierr);
     PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
-    ierr = smoother.get_theta(usurf, n, 1, &theta); CHKERRQ(ierr);
+    ierr = smoother.get_theta(usurf, &theta); CHKERRQ(ierr);
 
     if (show) {
       const PetscInt  window = 400;

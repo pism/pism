@@ -46,17 +46,16 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars
 PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result, *surface;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
-
-  result = new IceModelVec2S;
-  ierr = result->create(grid, "schoofs_theta", true, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
-  ierr = model->bed_smoother->get_theta(*surface, grid.config.get("Glen_exponent"),
-                                        WIDE_STENCIL, result); CHKERRQ(ierr);
+  result = new IceModelVec2S;
+  ierr = result->create(grid, "schoofs_theta", true,
+                        surface->get_stencil_width()); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+
+  ierr = model->bed_smoother->get_theta(*surface, result); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -98,13 +97,8 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
 
 PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
   IceModelVec2S *result, *surface, *thickness;
   IceModelVec2Int *mask;
-
-  result = new IceModelVec2S;
-  ierr = result->create(grid, "thksmooth", true, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
@@ -115,7 +109,12 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
   mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
-  ierr = model->bed_smoother->get_smoothed_thk(*surface, *thickness, *mask, WIDE_STENCIL,
+  result = new IceModelVec2S;
+  ierr = result->create(grid, "thksmooth", true,
+                        surface->get_stencil_width()); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+
+  ierr = model->bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                                result); CHKERRQ(ierr);
 
   output = result;

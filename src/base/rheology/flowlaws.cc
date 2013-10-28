@@ -120,8 +120,9 @@ PetscReal IceFlowLaw::hardness_parameter(PetscReal E, PetscReal p) const {
   return pow(softness_parameter(E, p), -1.0/n);
 }
 
-PetscErrorCode IceFlowLaw::averaged_hardness_vec(
-  IceModelVec2S &thickness, IceModelVec3& enthalpy, IceModelVec2S &hardav) const {
+PetscErrorCode IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
+                                                 IceModelVec3& enthalpy,
+                                                 IceModelVec2S &hardav) const {
     PetscErrorCode ierr;
     
     IceGrid *grid = thickness.get_grid();

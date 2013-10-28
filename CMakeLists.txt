@@ -128,7 +128,7 @@ else()
 endif()
 
 add_custom_target (etags
-  COMMAND find -E src -regex ".*\\.(c|cc|h|hh)" | xargs etags
+  COMMAND find -E . -regex ".*\\.(c|cc|h|hh|py|tex)" | xargs etags
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )

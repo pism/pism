@@ -126,10 +126,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   // Check if the smoothed bed computed by PISMBedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > bed_state_counter) {
-    ierr = bed_smoother->preprocess_bed(*bed,
-                                        config.get("Glen_exponent"),
-                                        config.get("bed_smoother_range"));
-    CHKERRQ(ierr);
+    ierr = bed_smoother->preprocess_bed(*bed); CHKERRQ(ierr);
     bed_state_counter = bed->get_state_counter();
   }
 
@@ -575,11 +572,9 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
   // have stencil width WIDE_GHOSTS for this too work
-  ierr = bed_smoother->get_theta(*surface, config.get("Glen_exponent"),
-                                 WIDE_STENCIL, &theta); CHKERRQ(ierr);
+  ierr = bed_smoother->get_theta(*surface, &theta); CHKERRQ(ierr);
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
-                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = theta.begin_access(); CHKERRQ(ierr);
@@ -745,7 +740,6 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   IceModelVec2S thk_smooth = work_2d[0];
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
-                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
@@ -829,7 +823,6 @@ PetscErrorCode SIAFD::compute_I() {
   IceModelVec3 I[2] = {work_3d[0], work_3d[1]};
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
-                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = delta[0].begin_access(); CHKERRQ(ierr);
