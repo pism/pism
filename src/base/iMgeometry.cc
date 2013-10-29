@@ -26,6 +26,8 @@
 #include "PISMOcean.hh"
 #include "PISMSurface.hh"
 #include "PISMStressBalance.hh"
+#include "PISMIcebergRemover.hh"
+
 
 //! \file iMgeometry.cc Methods of IceModel which update and maintain consistency of ice sheet geometry.
 
@@ -47,6 +49,13 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
   ierr = update_mask(vbed, vH, vMask); CHKERRQ(ierr);
   ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
+
+  if (config.get_flag("kill_icebergs") || iceberg_remover != NULL) {
+    ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
+    // the call above modifies ice thickness and updates the mask
+    // accordingly
+    ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
+  }
 
   if (config.get_flag("sub_groundingline")) {
     ierr = sub_gl_position(); CHKERRQ(ierr);

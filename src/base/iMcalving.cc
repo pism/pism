@@ -57,13 +57,8 @@ PetscErrorCode IceModel::do_calving() {
     ierr = thickness_threshold_calving->update(vMask, vH); CHKERRQ(ierr);
   }
 
-  if (iceberg_remover != NULL) {
-    ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
-  }
-
-  // The calls above modify ice thickness and update the mask
-  // accordingly.
-  ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
+  // This call removes icebergs, too.
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
   ierr = Href_cleanup(); CHKERRQ(ierr);
 
