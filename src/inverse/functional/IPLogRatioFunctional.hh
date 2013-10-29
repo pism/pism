@@ -33,7 +33,7 @@ The term \f$X_i+U_i\f$ appears because the argument is expected to already be in
 \f$V_i-U_i\f$, where \f$v=[V_i]\f$ is some approximation of \f$[U_i]\f$ and hence the 
 integrand has the form \f$\log(|V_i|/|U_i|)\f$.
 
-The normalization constant \f$c_N\f$ is determined implicitly by ::normalize.
+The normalization constant \f$c_N\f$ is determined implicitly by normalize().
 */
 class IPLogRatioFunctional : public IPFunctional<IceModelVec2V> {
 public:

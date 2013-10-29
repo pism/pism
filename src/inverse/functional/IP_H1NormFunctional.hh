@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2013  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ by the constructor argument \a dirichletLocations.
 */
 class IP_H1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IP_H1NormFunctional2S(IceGrid &grid, 
+  IP_H1NormFunctional2S(IceGrid &grid, ///< computational grid
       PetscReal cL2, ///< The constant \f$c_{L^2}\f$.
       PetscReal cH1, ///< The constant \f$c_{H^1}\f$.
       IceModelVec2Int *dirichletLocations=NULL ///< Nodes where the function will be set to zero prior to integration.

@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2013  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@
 J(x) = c_N \sum_{i} w_i x_i^2
 \f]
 where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
-of the normalization constant is set implicitly by a call to \member normalize.
+of the normalization constant is set implicitly by a call to normalize().
 */
 class IPMeanSquareFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
@@ -59,7 +59,7 @@ private:
 J(x) = c_N \sum_{i} w_i |x_i|^2
 \f]
 where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
-of the normalization constant is set implicitly by a call to \member normalize.
+of the normalization constant is set implicitly by a call to normalize().
 */
 class IPMeanSquareFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:

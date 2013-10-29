@@ -22,7 +22,7 @@
 
 //! Initializes the scale parameters of the parameterization.
 /*! Every IPDesignVariableParameterization has an associated scale for the design variable 
-\f$d_{\rm scale}\f that equals 1 in internal units.  The scale for a design variable named \a foo
+\f$d_{\rm scale}\f$ that equals 1 in internal units.  The scale for a design variable named \a foo
 is stored in an NCConfigVariable file as design_param_foo_scale.  Subclasses may have additional
 parameters that are follow the naming convention \a design_param_foo_*.
 
