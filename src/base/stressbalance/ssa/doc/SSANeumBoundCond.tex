@@ -16,7 +16,7 @@ The force balance at calving fronts has been formulated by Morland~\cite{Morland
 \int_{-\frac{\rho}{\rho_w}H}^{(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}dz = -\frac{\rho_w}{2}g\left(\frac{\rho}{\rho_w}H \right)^2\mathbf{n}
 \label{MacAyeal1}
 \end{equation}
-with $\mathbf{n}$ being the normal std::vector pointing from the ice
+with $\mathbf{n}$ being the normal vector pointing from the ice
 oceanward, $\mathbf{\sigma}$ the \emph{Cauchy} stress tensor, $H$ the ice thickness and $\rho$ and $\rho_{w}$ the densities of ice and seawater, respectively. A slightly different form allows for changing sealevel $z_s$:
 \begin{equation}
 \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s+(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}dz = \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s}\rho_w g (z-z_s) dz\mathbf{n}.
@@ -92,7 +92,7 @@ z$ may not depend on z, too. This allows to rewrite the left side of eq.\eqref{t
 & = & \rho g\tilde{\nu} \frac{\partial u}{\partial x} +  \frac{1}{2}\rho gH^2 - \rho g \frac{\rho}{\rho_w}H^2 -\varrho\rho gH^2+\rho g \tilde{\nu}\left( \frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right) \\
 & = & \rho g \left(2\tilde{\nu}\frac{\partial u}{\partial x} + \tilde{\nu}\frac{\partial v}{\partial y} - \frac{1}{2}H^2   \right) 
 \end{eqnarray*}
-and of eq.\eqref{tensorY}, accordingly. Therefore, the boundary conditions at the calving front for an arbitrary normal std::vector $\mathbf{n}=n_x\overrightarrow{e}_x+n_y\overrightarrow{e}_y$ in terms of velocity gradients are: 
+and of eq.\eqref{tensorY}, accordingly. Therefore, the boundary conditions at the calving front for an arbitrary normal vector $\mathbf{n}=n_x\overrightarrow{e}_x+n_y\overrightarrow{e}_y$ in terms of velocity gradients are: 
 \begin{eqnarray*}
 n_x\left(2\tilde{\nu}\frac{\partial u}{\partial x}+\tilde{\nu}\frac{\partial v}{\partial y}  \right) + \frac{n_y}{2} \left(\tilde{\nu}\frac{\partial u}{\partial y} + \tilde{\nu}\frac{\partial v}{\partial x} \right) & =  & \frac{n_x}{2}\left(1-\frac{\rho}{\rho_w}\right)H^2\\  
 \frac{n_x}{2} \left(\tilde{\nu}\frac{\partial u}{\partial y} + \tilde{\nu}\frac{\partial v}{\partial x} \right) + n_y\left(\tilde{\nu}\frac{\partial u}{\partial x}+2\tilde{\nu}\frac{\partial v}{\partial y}  \right) & = & \frac{n_y}{2}\left(1-\frac{\rho}{\rho_w}\right)H^2 
@@ -125,7 +125,7 @@ with
 \frac{\rho g}{4}\left(H^2-\frac{\rho_w}{\rho} ( z_s-b)^2 \right) & \text{if sheet}
 \end{array} \right.
 \end{equation}
-Obviously, there is no need to normalize the `normal std::vector' $\mathbf{n}$.
+Obviously, there is no need to normalize the `normal vector' $\mathbf{n}$.
 %\newpage
 \section{Discretization}
 
