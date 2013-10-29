@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -403,16 +403,6 @@ const PetscReal FEQuadrature::quadPoints[FEQuadrature::Nq][2] =
 
 //! The weights w_i for gaussian quadrature on the reference element with these quadrature points
 const PetscReal FEQuadrature::quadWeights[FEQuadrature::Nq]  = {1,1,1,1};
-
-
-
-//! Legacy code that needs to vanish. \todo Make it go away.
-PetscBool Floating(PetscReal ice_rho, PetscReal ocean_rho,
-                   PetscReal H, PetscReal bed)
-{
-  return ice_rho*H + ocean_rho*bed < 0 ? PETSC_TRUE : PETSC_FALSE;
-}
-
 
 //! Legacy code that needs to vanish. \todo Make it go away.
 int PismIntMask(PetscScalar maskvalue) {
