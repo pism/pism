@@ -25,7 +25,7 @@ fi
 cmd="mpiexec -n $NN pismr -boot_file Ross_combined.nc -Mx $M -My $M \
   -Mz 21 -Lz 3000 -z_spacing equal -surface given -no_sia -no_energy \
   -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_view_nuh \
-  -y 0 -o out_$M.nc -o_order zyx -ssa_e $SSAE"
+  -y 0 -o out_$M.nc -o_order zyx -ssa_e $SSAE -ssafd_ksp_monitor"
 
 echo "running command:"
 echo
