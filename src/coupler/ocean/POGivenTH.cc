@@ -138,7 +138,7 @@ PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
   const PetscScalar reference_pressure = 1.01325; // pressure of atmosphere in bar
 
 
-  PetscReal pressure_at_shelf_base, bmeltrate, temp_insitu, temp_base, sal_base;
+  PetscReal pressure_at_shelf_base, bmeltrate, temp_insitu, temp_base;
 
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = theta_ocean->begin_access(); CHKERRQ(ierr);
@@ -182,8 +182,8 @@ PetscErrorCode POGivenTH::shelf_base_mass_flux(IceModelVec2S &result) {
 }
 
 PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
-                                                        PetscReal sal_ocean, PetscReal temp_insitu, PetscReal zice,
-                                                        PetscReal &temp_base, PetscReal &meltrate){
+                                           PetscReal sal_ocean, PetscReal temp_insitu, PetscReal zice,
+                                           PetscReal &temp_base, PetscReal &meltrate){
 
   // This function solves the three equation model of ice-shelf ocean interaction (Hellmer and Olbers, 1989).
   // Equations are
@@ -206,34 +206,21 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
   //        We could do this better by usings PISMs ice temperature or heat flux
   //        calculus at the bottom layers of the ice shelf.
 
-  PetscErrorCode ierr;
   PetscReal rhor, sal_base;
-  PetscReal gats1, gats2;
   PetscReal ep1,ep2,ep3,ep4,ep5;
   PetscReal ex1,ex2,ex3,ex4,ex5;
-  PetscReal vt1,sr1,sr2,sf1,sf2,tf1,tf2,tf,sf,seta,re;
-  PetscInt n, n3, nk;
+  PetscReal sr1,sr2,sf1,sf2,tf1,tf2,tf,sf;
 
   PetscReal a   = -0.0575;                // Foldvik&Kvinge (1974) [°C/psu]
   PetscReal b   =  0.0901;                // [°C]
   PetscReal c   =  7.61e-4;               // [°C/m]
 
-  PetscReal pr  =  13.8;                  //Prandtl number      [dimensionless]
-  PetscReal sc  =  2432.;                 //Schmidt number      [dimensionless]
-  PetscReal ak  =  2.50e-3;               //dimensionless drag coeff.
-  PetscReal sak1=  sqrt(ak);
-  PetscReal un  =  1.95e-6;               //kinematic viscosity [m2/s]
-  PetscReal pr1 =  pow(pr,(2./3.));       //Jenkins (1991)
-  PetscReal sc1 =  pow(sc,(2./3.));
   PetscReal tob=  -20.;                   //temperature at the ice surface
-  //   PetscReal rhoi=  920.;               //mean ice density
   PetscReal cpw =  4180.0;                //Barnier et al. (1995)
   PetscReal lhf =  3.33e+5;               //latent heat of fusion
   PetscReal atk =  273.15;                //0 deg C in Kelvin
   //FIXME: can use PISMs surface temp for tob?
   PetscReal cpi =  152.5+7.122*(atk+tob); //Paterson:"The Physics of Glaciers"
-
-  PetscReal L    = 334000.;               // [J/Kg]
 
   // Prescribe the turbulent heat and salt transfer coeff. GAT and GAS
   PetscReal gat  = 1.00e-4;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
