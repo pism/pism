@@ -488,6 +488,7 @@ earlier. (CK)
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
   
+  // FIXME: this call does not belong here.
   if (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity")) {
     ierr = calculateFractureDensity(); CHKERRQ(ierr);
   }

@@ -71,7 +71,7 @@ protected:
 
   virtual PetscErrorCode strategy_2_asm();
 
-  virtual PetscErrorCode compute_hardav_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode compute_hardav_staggered();
 
   virtual PetscErrorCode compute_nuH_staggered(IceModelVec2Stag &result,
                                                PetscReal epsilon);
@@ -94,12 +94,16 @@ protected:
 
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
+  virtual PetscErrorCode fracture_induced_softening();
+
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
   KSP m_KSP;
   Mat m_A;
   Vec m_b;
   PetscScalar m_scaling;
+
+  IceModelVec2S *fracture_density;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;

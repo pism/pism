@@ -759,6 +759,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   // fracture density
   ierr = config.flag_from_option("fractures", "do_fracture_density"); CHKERRQ(ierr);
   ierr = config.flag_from_option("write_fd_fields", "write_fd_fields"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("fracture_softening", "fracture_density_softening_lower_limit"); CHKERRQ(ierr);
 
 
   // Calving

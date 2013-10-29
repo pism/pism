@@ -38,12 +38,7 @@ SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
   enthalpy = NULL;
   driving_stress_x = NULL;
   driving_stress_y = NULL;
-  if (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity")) {
-    fracdens = NULL;
-  }
-  if (config.get_flag("sub_groundingline")) {
-    gl_mask = NULL;
-  }
+  gl_mask = NULL;
 
   strength_extension = new SSAStrengthExtension(config);
   allocate();
@@ -60,39 +55,40 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   
   if (config.get_flag("sub_groundingline")) {
     gl_mask = dynamic_cast<IceModelVec2S*>(vars.get("gl_mask"));
-    if (gl_mask == NULL) SETERRQ(grid.com, 1, "subgrid_grounding_line_position is not available");
+    if (gl_mask == NULL)
+      SETERRQ(grid.com, 1, "subgrid_grounding_line_position is not available");
   }
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  if (mask == NULL)
+    SETERRQ(grid.com, 1, "mask is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  if (thickness == NULL)
+    SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
-  if (tauc == NULL) SETERRQ(grid.com, 1, "tauc is not available");
+  if (tauc == NULL)
+    SETERRQ(grid.com, 1, "tauc is not available");
 
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
   driving_stress_x = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_x"));
   driving_stress_y = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_y"));
   if( (driving_stress_x==NULL) || (driving_stress_y==NULL) ) {
     if(surface == NULL) {
-      SETERRQ(grid.com, 1, "neither surface_altitude nor the pair ssa_driving_stress_x/y is available");
+      SETERRQ(grid.com, 1,
+              "neither surface_altitude nor the pair ssa_driving_stress_x/y is available");
     }
  }
 
   bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
+  if (bed == NULL)
+    SETERRQ(grid.com, 1, "bedrock_altitude is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
+  if (enthalpy == NULL)
+    SETERRQ(grid.com, 1, "enthalpy is not available");
   
-  if (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity")) {
-    fracdens = dynamic_cast<IceModelVec2S*>(vars.get("fracture_density"));
-    if (fracdens == NULL) SETERRQ(grid.com, 1, "fracture density is not available");
-  }
-
-
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
   bool i_set;

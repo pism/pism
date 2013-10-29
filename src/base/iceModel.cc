@@ -355,7 +355,8 @@ PetscErrorCode IceModel::createVecs() {
     }
   }
 
-  if (config.get_flag("do_eigen_calving") == true || config.get_flag("do_fracture_density")== true) {
+  if (config.get_flag("do_eigen_calving") == true ||
+      config.get_flag("do_fracture_density") == true) {
 
     ierr = strain_rates.create(grid, "edot", true,
                                2, // stencil width, has to match or exceed the "offset" in eigenCalving
@@ -372,16 +373,16 @@ PetscErrorCode IceModel::createVecs() {
                                   "1/s", "", 1); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("do_fracture_density")== true) {
+  if (config.get_flag("do_fracture_density") == true) {
     
     ierr = deviatoric_stresses.create(grid, "sigma", true,
-                               2, // stencil width
-                               3); CHKERRQ(ierr);
+                                      2, // stencil width
+                                      3); CHKERRQ(ierr);
     
     ierr = deviatoric_stresses.set_name("sigma_xx", 0); CHKERRQ(ierr);
     ierr = deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric stress in x direction",
-                                  "Pa", "", 0); CHKERRQ(ierr);
+                                         "deviatoric stress in x direction",
+                                         "Pa", "", 0); CHKERRQ(ierr);
                                   
     ierr = deviatoric_stresses.set_name("sigma_yy", 1); CHKERRQ(ierr);
     ierr = deviatoric_stresses.set_attrs("internal",
@@ -429,7 +430,6 @@ PetscErrorCode IceModel::createVecs() {
   // fracture density field
   if (config.get_flag("do_fracture_density")) {
     ierr = vFD.create(grid, "fracture_density", true, WIDE_STENCIL); CHKERRQ(ierr); 
-    // PROPOSED standard_name = fracture_density
     ierr = vFD.set_attrs("model_state", "fracture density in ice shelf", "", ""); CHKERRQ(ierr);
     ierr = vFD.set_attr("valid_max", 1.0); CHKERRQ(ierr);
     ierr = vFD.set_attr("valid_min", 0.0); CHKERRQ(ierr);

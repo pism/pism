@@ -73,6 +73,9 @@ netcdf pism_config {
     pism_config:do_fracture_density = "no";
     pism_config:do_fracture_density_doc = "Calculation of fracture density according to stresses and strain rate field.";
 
+    pism_config:fracture_density_softening_lower_limit = 1.0;
+    pism_config:fracture_density_softening_lower_limit_doc = "1; epsilon in equation (6) in Albrecht and Levermann, 'Fracture-induced softening for large-scale ice dynamics'";
+
     pism_config:write_fd_fields = "no";
     pism_config:write_fd_fields_doc = "Writing of fracture density related fields to nc-file.";
 

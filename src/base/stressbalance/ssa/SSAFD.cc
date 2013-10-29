@@ -21,6 +21,7 @@
 #include "basal_resistance.hh"
 #include "pism_options.hh"
 #include "flowlaws.hh"
+#include "PISMVars.hh"
 
 #include <assert.h>
 
@@ -97,6 +98,8 @@ where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
 PetscErrorCode SSAFD::allocate_fd() {
   PetscErrorCode ierr;
+
+  fracture_density = NULL;
 
   // note SSADA and SSAX are allocated in SSA::allocate()
   ierr = VecDuplicate(SSAX, &m_b); CHKERRQ(ierr);
@@ -194,10 +197,16 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
   std::string tempPrefix;
   ierr = PISMOptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format",
-			  dump_system_matlab); CHKERRQ(ierr);
+                          dump_system_matlab); CHKERRQ(ierr);
 
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;
+
+  if (config.get_flag("do_fracture_density")) {
+    fracture_density = dynamic_cast<IceModelVec2S*>(vars.get("fracture_density"));
+    if (fracture_density == NULL)
+      SETERRQ(grid.com, 1, "fracture density is not available");
+  }
 
   return 0;
 }
@@ -799,7 +808,7 @@ PetscErrorCode SSAFD::solve() {
     // These computations do not depend on the solution, so they need
     // to be done once.
     ierr = assemble_rhs(m_b); CHKERRQ(ierr);
-    ierr = compute_hardav_staggered(hardness); CHKERRQ(ierr);
+    ierr = compute_hardav_staggered(); CHKERRQ(ierr);
   }
 
   // Try with default settings:
@@ -1075,7 +1084,7 @@ PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) 
 }
 
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
-PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
+PetscErrorCode SSAFD::compute_hardav_staggered() {
   PetscErrorCode ierr;
   PetscScalar *E, *E_ij, *E_offset;
 
@@ -1083,7 +1092,7 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
 
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = hardness.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
@@ -1093,7 +1102,7 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
         const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
 
         if (H == 0) {
-          result(i,j,o) = -1e6; // an obviously impossible value
+          hardness(i,j,o) = -1e6; // an obviously impossible value
           continue;
         }
 
@@ -1103,17 +1112,87 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        result(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
-                                                    &grid.zlevels[0], E); CHKERRQ(ierr);
+        hardness(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
+                                                      &grid.zlevels[0], E); CHKERRQ(ierr);
       } // o
     }   // j
   }     // i
 
-  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = hardness.end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
 
   delete [] E;
+
+  ierr = fracture_induced_softening(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+/*! @brief Correct vertically-averaged hardness using a
+    parameterization of the fracture-induced softening.
+
+  See T. Albrecht, A. Levermann; Fracture-induced softening for
+  large-scale ice dynamics; (2013), The Cryosphere Discussions 7;
+  4501-4544; DOI:10.5194/tcd-7-4501-2013
+
+  Note that this paper proposes an adjustment of the enhancement factor:
+
+  \f[E_{\text{effective}} = E \cdot (1 - (1-\epsilon) \phi)^{-n}.\f]
+
+  Let \f$E_{\text{effective}} = E\cdot C\f$, where \f$C\f$ is the
+  factor defined by the formula above.
+
+  Recall that the effective viscosity is defined by
+
+  \f[\nu(D) = \frac12 B D^{(1-n)/(2n)}\f]
+
+  and the viscosity form of the flow law is
+
+  \f[\sigma'_{ij} = E_{\text{effective}}^{-\frac1n}2\nu(D) D_{ij}.\f]
+
+  Then
+
+  \f[\sigma'_{ij} = E_{\text{effective}}^{-\frac1n}BD^{(1-n)/(2n)}D_{ij}.\f]
+
+  Using the fact that \f$E_{\text{effective}} = E\cdot C\f$, this can be rewritten as
+
+  \f[\sigma'_{ij} = E^{-\frac1n} \left(C^{-\frac1n}B\right) D^{(1-n)/(2n)}D_{ij}.\f]
+
+  So scaling the enhancement factor by \f$C\f$ is equivalent to scaling
+  ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
+*/
+PetscErrorCode SSAFD::fracture_induced_softening() {
+  PetscErrorCode ierr;
+
+  if (config.get_flag("do_fracture_density") == false)
+    return 0;
+
+  const PetscScalar
+    epsilon = config.get("fracture_density_softening_lower_limit"),
+    n_glen  = flow_law->exponent();
+
+  ierr = hardness.begin_access(); CHKERRQ(ierr);
+  ierr = fracture_density->begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      for (PetscInt o=0; o<2; o++) {
+        const PetscInt oi = 1-o, oj=o;
+
+        const PetscScalar
+          // fracture density on the staggered grid:
+          phi       = 0.5 * ((*fracture_density)(i,j) + (*fracture_density)(i+oi,j+oj)),
+          // the line below implements equation (6) in the paper
+          softening = pow((1.0-(1.0-epsilon)*phi), -n_glen);
+
+        hardness(i,j,o) *= pow(softening,-1.0/n_glen);
+      }
+    }
+  }
+  ierr = fracture_density->end_access(); CHKERRQ(ierr);
+  ierr = hardness.end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -1179,18 +1258,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
   ierr = m_velocity.get_array(uv); CHKERRQ(ierr);
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
-  
-  //////////////////////////////////////////////////////////////////////////////////////
-  IceModelVec2S &fd = *fracdens; 
-  bool dofd = (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity"));
-  if (dofd) 
-    ierr = fd.begin_access(); CHKERRQ(ierr);
-    
-  PetscScalar soft_residual = 1.0;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-fracture_softening", &soft_residual, PETSC_NULL);
-  //assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
-  //more: T. Albrecht, A. Levermann; Fracture-induced softening for large-scale ice dynamics; (2013), 
-  //The Cryosphere Discussions 7; 4501-4544; DOI:10.5194/tcd-7-4501-2013
 
   PetscScalar ssa_enhancement_factor = flow_law->enhancement_factor(),
     n_glen = flow_law->exponent(),
@@ -1227,22 +1294,11 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
         }
 
         PetscReal nu;
-        if (dofd) {
-          PetscScalar frdens=0.0;
-          if (o == 0) {
-            frdens = 0.5*(fd(i+1,j)+fd(i,j));
-          } else {
-            frdens = 0.5*(fd(i,j+1)+fd(i,j));
-          }
-          PetscScalar softening = pow((1.0-(1.0-soft_residual)*frdens),-n_glen);
-          flow_law->effective_viscosity(hardness(i,j,o)/pow(softening,1/n_glen),secondInvariant_2D(u_x, u_y, v_x, v_y),&nu, NULL);
-        }
-        else
-          flow_law->effective_viscosity(hardness(i,j,o),secondInvariant_2D(u_x, u_y, v_x, v_y),&nu, NULL);
+        flow_law->effective_viscosity(hardness(i,j,o),
+                                      secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                      &nu, NULL);
 
         result(i,j,o) = nu * H;
-
-
 
         if (! finite(result(i,j,o)) || false) {
           ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));
@@ -1266,8 +1322,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
   ierr = hardness.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = m_velocity.end_access(); CHKERRQ(ierr);
-  
-  if (dofd) { ierr = fd.end_access(); CHKERRQ(ierr); }
 
   // Some communication
   ierr = result.update_ghosts(); CHKERRQ(ierr);
@@ -1344,7 +1398,7 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
  * consistent.
  */
 bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
-	
+
   const PetscInt M_ij = mask->as_int(i,j),
     // direct neighbors
     M_e = mask->as_int(i + 1,j),
@@ -1513,4 +1567,3 @@ void SSAFD::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
 
   dict["nuH"] = new SSAFD_nuH(this, grid, *variables);
 }
-
