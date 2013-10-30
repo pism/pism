@@ -28,8 +28,8 @@ def preprocess_ice_velocity():
     Download and preprocess the ~95Mb Antarctic ice velocity dataset from NASA MEASURES project
     http://nsidc.org/data/nsidc-0484.html
     """
-    url = "ftp://anonymous@sidads.colorado.edu/pub/DATASETS/nsidc0484_MEASURES_antarc_vel_V01/"
-    input_filename = "Antarctica_ice_velocity.nc"
+    url = "ftp://anonymous@sidads.colorado.edu/pub/DATASETS/nsidc0484_MEASURES_antarc_vel_V01/900m/"
+    input_filename = "antarctica_ice_velocity.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
     commands = ["wget -nc %s%s.gz" % (url, input_filename), # NSIDC supports compression on demand!
