@@ -117,7 +117,7 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   
 
   // Set boundary conditions (Dirichlet all the way around).
-  ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
+  ierr = bc_mask.set(0.0); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {

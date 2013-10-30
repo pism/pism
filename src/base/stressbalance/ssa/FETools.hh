@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -217,10 +217,6 @@ public:
     shapeFunction[k](x,y,germ);
   }
 };
-
-
-// Computes the closest integer to maskvalue, with integers of the form n/2 rounded up.
-int PismIntMask(PetscScalar maskvalue);
 
 
 //! The mapping from global to local degrees of freedom.

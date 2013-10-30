@@ -425,7 +425,7 @@ void SSAFEM::FixDirichletValues( PetscReal local_bc_mask[],PISMVector2 **BC_vel,
                                 PISMVector2 x[], FEDOFMap &my_dofmap)
 {
   for (PetscInt k=0; k<4; k++) {
-    if (PismIntMask(local_bc_mask[k]) == 1) { // Dirichlet node
+    if (local_bc_mask[k] > 0.5) { // Dirichlet node
       PetscInt ii, jj;
       my_dofmap.localToGlobal(k,&ii,&jj);
       x[k].u = BC_vel[ii][jj].u;

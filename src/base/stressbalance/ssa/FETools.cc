@@ -404,11 +404,6 @@ const PetscReal FEQuadrature::quadPoints[FEQuadrature::Nq][2] =
 //! The weights w_i for gaussian quadrature on the reference element with these quadrature points
 const PetscReal FEQuadrature::quadWeights[FEQuadrature::Nq]  = {1,1,1,1};
 
-//! Legacy code that needs to vanish. \todo Make it go away.
-int PismIntMask(PetscScalar maskvalue) {
-  return static_cast<int>(floor(maskvalue + 0.5));
-}
-
 DirichletData::DirichletData() : 
 m_indices(NULL), m_values(NULL), m_weight(1) {  
 }
@@ -504,7 +499,7 @@ PetscErrorCode DirichletData::finish() {
 void DirichletData::constrain( FEDOFMap &dofmap ) {
   dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
   for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
-    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+    if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
       dofmap.markRowInvalid(k);
       dofmap.markColInvalid(k);
@@ -519,7 +514,7 @@ void DirichletData::update( FEDOFMap &dofmap, PISMVector2* x_e ) {
   dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
   PISMVector2 **pValues = reinterpret_cast<PISMVector2 **>(m_pValues);
   for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
-    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+    if (m_indices_e[k] > 0.5) { // Dirichlet node
       PetscInt i, j;
       dofmap.localToGlobal(k,&i,&j);
       x_e[k].u = pValues[i][j].u;
@@ -536,7 +531,7 @@ void DirichletData::update( FEDOFMap &dofmap, PetscReal* x_e ) {
   dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
   PetscReal **pValues = reinterpret_cast<PetscReal **>(m_pValues);
   for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
-    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+    if (m_indices_e[k] > 0.5) { // Dirichlet node
       PetscInt i, j;
       dofmap.localToGlobal(k,&i,&j);
       x_e[k] = pValues[i][j];
@@ -548,7 +543,7 @@ void DirichletData::update( FEDOFMap &dofmap, PetscReal* x_e ) {
 void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e ) {
   dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
   for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
-    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+    if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_e[k].u = 0;
       x_e[k].v = 0;
     }
@@ -558,7 +553,7 @@ void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e ) {
 void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PetscReal* x_e ) {
   dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
   for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
-    if (PismIntMask(m_indices_e[k]) == 1) { // Dirichlet node
+    if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_e[k] = 0.;
     }
   }

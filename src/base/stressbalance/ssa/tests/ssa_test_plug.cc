@@ -119,7 +119,7 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 
 
   // Set boundary conditions (Dirichlet all the way around).
-  ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
+  ierr = bc_mask.set(0.0); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = bed.begin_access(); CHKERRQ(ierr);
