@@ -64,6 +64,8 @@ protected:
   VecScatter m_scatter; //!< VecScatter used to transfer data to/from processor 0.
   Vec m_mask_p0;
   DM m_da2;
+
+  IceModelVec2Int *m_bcflag;
 };
 
 #endif /* _PISMICEBERGREMOVER_H_ */

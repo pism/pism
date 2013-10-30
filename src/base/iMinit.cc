@@ -787,6 +787,7 @@ PetscErrorCode IceModel::allocate_stressbalance() {
 }
 
 PetscErrorCode IceModel::allocate_iceberg_remover() {
+  PetscErrorCode ierr;
 
   if (iceberg_remover != NULL)
     return 0;
@@ -798,6 +799,10 @@ PetscErrorCode IceModel::allocate_iceberg_remover() {
       PetscPrintf(grid.com, "PISM ERROR: failed to allocate the 'iceberg remover' object.\n");
       PISMEnd();
     }
+
+    // Iceberg Remover does not have a state, so it is OK to
+    // initialize here.
+    ierr = iceberg_remover->init(variables); CHKERRQ(ierr);
   }
 
   return 0;

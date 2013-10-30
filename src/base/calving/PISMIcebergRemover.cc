@@ -20,6 +20,7 @@
 #include "PISMIcebergRemover.hh"
 #include "connected_components.hh"
 #include "Mask.hh"
+#include "PISMVars.hh"
 
 PISMIcebergRemover::PISMIcebergRemover(IceGrid &g, const NCConfigVariable &conf)
   : PISMComponent(g, conf) {
@@ -39,8 +40,8 @@ PISMIcebergRemover::~PISMIcebergRemover() {
   }
 }
 
-PetscErrorCode PISMIcebergRemover::init(PISMVars &/*vars*/) {
-  // do nothing
+PetscErrorCode PISMIcebergRemover::init(PISMVars &vars) {
+  m_bcflag = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
   return 0;
 }
 
@@ -73,6 +74,19 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
     }
   }
   ierr = pism_mask.end_access(); CHKERRQ(ierr);
+
+  // Mark SSA Dirichlet B.C. cells as "grounded" because we don't want
+  // them removed.
+  if (m_bcflag) {
+    ierr = m_bcflag->begin_access(); CHKERRQ(ierr);
+    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+        if (m_bcflag->as_int(i,j) == 1)
+          iceberg_mask[i][j] = mask_grounded_ice;
+      }
+    }
+    ierr = m_bcflag->end_access(); CHKERRQ(ierr);
+  }
   ierr = DMDAVecRestoreArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
 
   ierr = transfer_to_proc0(); CHKERRQ(ierr);
