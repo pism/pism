@@ -368,8 +368,11 @@ protected:
   virtual PetscErrorCode calculateFractureDensity();
 
   // see iMpartgrid.cc
-  PetscReal get_average_thickness(bool do_redist, planeStar<int> M,
-                                  planeStar<PetscScalar> H);
+  PetscReal get_threshold_thickness(bool do_redist,
+                                    planeStar<int> Mask,
+                                    planeStar<PetscScalar> thickness,
+                                    planeStar<PetscScalar> surface_elevation,
+                                    PetscScalar bed_elevation);
   virtual PetscErrorCode redistResiduals();
   virtual PetscErrorCode calculateRedistResiduals();
 

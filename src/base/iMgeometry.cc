@@ -552,6 +552,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vh.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
   ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = Qdiff->begin_access(); CHKERRQ(ierr);
   ierr = vel_advective->begin_access(); CHKERRQ(ierr);
@@ -666,19 +668,21 @@ PetscErrorCode IceModel::massContExplicitStep() {
             vHref(i, j) = 0;
           }
 
-          PetscReal H_average = get_average_thickness(do_redist,
-                                                      vMask.int_star(i, j),
-                                                      vH.star(i, j)),
-            coverage_ratio = vHref(i, j) / H_average;
+          PetscReal H_threshold = get_threshold_thickness(do_redist,
+                                                        vMask.int_star(i, j),
+                                                        vH.star(i, j),
+                                                        vh.star(i, j),
+                                                        vbed(i,j)),
+            coverage_ratio = vHref(i, j) / H_threshold;
 
           if (coverage_ratio >= 1.0) {
             // A partially filled grid cell is now considered to be full.
             if (do_redist)
-              vHresidual(i, j) = vHref(i, j) - H_average; // residual ice thickness
+              vHresidual(i, j) = vHref(i, j) - H_threshold; // residual ice thickness
 
             vHref(i, j) = 0.0;
 
-            Href_to_H_flux = H_average;
+            Href_to_H_flux = H_threshold;
 
             // A cell that became "full" experiences both SMB and basal melt.
           } else {
@@ -765,6 +769,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vel_advective->end_access(); CHKERRQ(ierr);
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = vh.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 

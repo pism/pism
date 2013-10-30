@@ -28,34 +28,61 @@
 
 //! \file iMpartgrid.cc Methods implementing PIK option -part_grid [\ref Albrechtetal2011].
 
-//! For ice-free (or partially-filled) cells adjacent to "full" floating cells, update Href.
+//! @brief Compute threshold thickness used when deciding if a
+//! partially-filled cell should be considered 'full'.
 /*!
-  Should only be called if one of the neighbors is floating.
-
-  FIXME: does not account for grounded tributaries: thin ice shelves may
-  evolve from grounded tongue
-
   FIXME: as far as I (CK) know, there is no evidence that the
   extension mechanism reducing frontal ice thickness using magic
   numbers (below) is any better.
 */
-PetscReal IceModel::get_average_thickness(bool do_redist, planeStar<int> M, planeStar<PetscScalar> H) {
-
-  // get mean ice thickness over adjacent floating ice shelf neighbors
-  PetscReal H_average = 0.0;
+PetscReal IceModel::get_threshold_thickness(bool do_redist, planeStar<int> M,
+                                            planeStar<PetscScalar> H,
+                                            planeStar<PetscScalar> h,
+                                            PetscScalar bed_elevation) {
+  // get mean ice thickness and surface elevation over adjacent
+  // floating ice shelf neighbors
+  PetscReal
+    H_average   = 0.0,
+    h_average   = 0.0,
+    H_threshold = 0.0;
   PetscInt N = 0;
   Mask m;
 
-  if (m.floating_ice(M.e)) { H_average += H.e; N++; }
-  if (m.floating_ice(M.w)) { H_average += H.w; N++; }
-  if (m.floating_ice(M.n)) { H_average += H.n; N++; }
-  if (m.floating_ice(M.s)) { H_average += H.s; N++; }
+  if (m.floating_ice(M.e)) {
+    H_average += H.e;
+    h_average += h.e;
+    N++;
+  }
+
+  if (m.floating_ice(M.w)) {
+    H_average += H.w;
+    h_average += h.w;
+    N++;
+  }
+
+  if (m.floating_ice(M.n)) {
+    H_average += H.n;
+    h_average += h.n;
+    N++;
+  }
+
+  if (m.floating_ice(M.s)) {
+    H_average += H.s;
+    h_average += h.s;
+    N++;
+  }
 
   if (N == 0) {
     SETERRQ(grid.com, 1, "N == 0;  call this only if a neighbor is floating!\n");
   }
 
   H_average = H_average / N;
+  h_average = h_average / N;
+
+  if (bed_elevation + H_average > h_average)
+    H_threshold = h_average - bed_elevation;
+  else
+    H_threshold = H_average;
 
   // reduces the guess at the front
   if (do_redist) {
@@ -66,10 +93,10 @@ PetscReal IceModel::get_average_thickness(bool do_redist, planeStar<int> M, plan
       H0 = 600.0,                   // 600 m
       V0 = 300.0 / 3.15569259747e7, // 300 m/year (hard-wired for efficiency)
       mslope = 2.4511e-18 * grid.dx / (H0 * V0);
-    H_average -= 0.8*mslope*pow(H_average, 5);
+    H_threshold -= 0.8*mslope*pow(H_average, 5);
   }
 
-  return H_average;
+  return H_threshold;
 }
 
 
