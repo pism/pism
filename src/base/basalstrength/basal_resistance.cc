@@ -103,8 +103,8 @@ The linearly-viscous till case pseudo_q = 1.0 is allowed, in which case
 \f$\beta = \tau_c/U_{\mathtt{th}}\f$.  The purely-plastic till case pseudo_q = 0.0
 is also allowed; note that there is still a regularization with data member
 plastic_regularize.
- */
-/*! One can scale tauc if desired:
+
+One can scale tauc if desired:
 
 A scale factor of \f$A\f$ is intended to increase basal sliding rate by
 \f$A\f$.  It would have exactly this effect \e if the driving stress were
