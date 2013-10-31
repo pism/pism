@@ -51,7 +51,6 @@ public:
 protected:
   IceModelVec2S tauc;
   virtual PetscErrorCode allocate();
-  virtual PetscErrorCode regrid();
 };
 
 #endif /* _PISMCONSTANTYIELDSTRESS_H_ */

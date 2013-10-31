@@ -150,7 +150,7 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars) {
   }
 
   // however we initialized it, we could be asked to regrid from file
-  ierr = regrid(W); CHKERRQ(ierr);
+  ierr = regrid("PISMRoutingHydrology", &W); CHKERRQ(ierr);
   return 0;
 }
 

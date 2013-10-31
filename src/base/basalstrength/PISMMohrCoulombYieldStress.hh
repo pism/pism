@@ -66,7 +66,6 @@ protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode topg_to_phi();
   virtual PetscErrorCode tauc_to_phi();
-  virtual PetscErrorCode regrid(IceModelVec2S &myvar);
 };
 
 #endif /* _PISMMOHRCOULOMBYIELDSTRESS_H_ */

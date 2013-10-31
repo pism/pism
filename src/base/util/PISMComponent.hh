@@ -33,6 +33,7 @@ class NCSpatialVariable;
 class PISMDiagnostic;
 class PISMTSDiagnostic;
 class PISMVars;
+class IceModelVec;
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
@@ -114,12 +115,14 @@ public:
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
                                std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {}
 
-  // //! Add pointers to scalar diagnostic quantities to a dictionary.
-  // virtual void get_scalar_diagnostics(map<string, PISMDiagnostic_Scalar*> &/*dict*/) {}
 protected:
   virtual PetscErrorCode find_pism_input(std::string &filename, bool &regrid, int &start);
   IceGrid &grid;
   const NCConfigVariable &config;
+
+  enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
+  virtual PetscErrorCode regrid(std::string module_name, IceModelVec *variable,
+                                RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to

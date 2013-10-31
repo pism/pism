@@ -139,10 +139,7 @@ protected:
 
   PISMVars *variables;
 
-  virtual PetscErrorCode regrid(IceModelVec2S &myvar);
-
-  virtual PetscErrorCode get_input_rate(
-                            PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
+  virtual PetscErrorCode get_input_rate(PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
 
   virtual PetscErrorCode check_Wtil_bounds();
 };

@@ -204,7 +204,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
   }
 
   // regrid if requested, regardless of how initialized
-  ierr = regrid(till_phi); CHKERRQ(ierr);
+  ierr = regrid("PISMMohrCoulombYieldStress", &till_phi); CHKERRQ(ierr);
 
   if (tauc_to_phi_set) {
     std::string tauc_to_phi_file;
@@ -252,30 +252,6 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
   // ensure that update() computes tauc at the beginning of the run:
   t = dt = GSL_NAN;
 
-  return 0;
-}
-
-
-PetscErrorCode PISMMohrCoulombYieldStress::regrid(IceModelVec2S &myvar) {
-  PetscErrorCode ierr;
-  bool regrid_file_set, regrid_vars_set;
-  std::string regrid_file;
-  std::set<std::string> regrid_vars;
-
-  ierr = PetscOptionsBegin(grid.com, "", "PISMMohrCoulombYieldStress regridding options", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-regrid_file", "regridding file name",
-                             regrid_file, regrid_file_set); CHKERRQ(ierr);
-    ierr = PISMOptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
-                                "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (regrid_file_set && regrid_vars_set && set_contains(regrid_vars, myvar.string_attr("short_name"))) {
-    ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
-                      myvar.string_attr("short_name").c_str(), regrid_file.c_str()); CHKERRQ(ierr);
-    ierr = myvar.regrid(regrid_file, true); CHKERRQ(ierr);
-  }
   return 0;
 }
 

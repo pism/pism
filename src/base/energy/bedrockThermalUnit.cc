@@ -234,7 +234,9 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
     ierr = bootstrap(); CHKERRQ(ierr);
   }
 
-  ierr = regrid(); CHKERRQ(ierr);
+  if (temp.was_created() == true) {
+    ierr = regrid("PISMBedThermalUnit", &temp, REGRID_WITHOUT_REGRID_VARS); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -436,36 +438,6 @@ PetscErrorCode PISMBedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &res
   }
   ierr = temp.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode PISMBedThermalUnit::regrid() {
-  PetscErrorCode ierr;
-  bool regrid_file_set, regrid_vars_set;
-  std::string regrid_file;
-  std::set<std::string> regrid_vars;
-
-  ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit regridding options", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-regrid_file", "regridding file name",
-                             regrid_file, regrid_file_set); CHKERRQ(ierr);
-    ierr = PISMOptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
-                                "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  // stop unless both options are set
-  if (! regrid_file_set) return 0;
-
-  // stop if temp was not allocated
-  if (! temp.was_created()) return 0;
-
-  // stop if the user did not ask to regrid BTU temperature
-  if (regrid_vars_set && ! set_contains(regrid_vars, temp.string_attr("short_name")))
-    return 0;
-
-  ierr = temp.regrid(regrid_file.c_str(), true); CHKERRQ(ierr);
 
   return 0;
 }

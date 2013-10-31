@@ -134,7 +134,7 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
     ierr = P.set(config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);
   }
 
-  ierr = regrid(P); CHKERRQ(ierr); //  we could be asked to regrid from file
+  ierr = regrid("PISMDistributedHydrology", &P); CHKERRQ(ierr); //  we could be asked to regrid from file
   return 0;
 }
 

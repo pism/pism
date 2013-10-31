@@ -53,7 +53,7 @@ PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
     ierr = tauc.set(config.get("default_tauc")); CHKERRQ(ierr);
   }
 
-  ierr = regrid(); CHKERRQ(ierr);
+  ierr = regrid("PISMConstantYieldStress", &tauc); CHKERRQ(ierr);
 
   return 0;
 }
@@ -100,32 +100,6 @@ PetscErrorCode PISMConstantYieldStress::allocate() {
   ierr = tauc.set_attrs("model_state", 
                         "yield stress for basal till (plastic or pseudo-plastic model)",
                         "Pa", ""); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode PISMConstantYieldStress::regrid() {
-  PetscErrorCode ierr;
-  bool regrid_file_set, regrid_vars_set;
-  std::string regrid_file;
-  std::set<std::string> regrid_vars;
-
-  ierr = PetscOptionsBegin(grid.com, "", "PISMMohrCoulombYieldStress regridding options", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-regrid_file", "regridding file name",
-                             regrid_file, regrid_file_set); CHKERRQ(ierr);
-    ierr = PISMOptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
-                                "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (! regrid_file_set) return 0;
-
-  // stop if the user did not ask to regrid tillphi
-  if (!set_contains(regrid_vars, tauc.string_attr("short_name")))
-    return 0;
-
-  ierr = tauc.regrid(regrid_file, true); CHKERRQ(ierr);
-
   return 0;
 }
 

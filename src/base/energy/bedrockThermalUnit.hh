@@ -120,7 +120,6 @@ protected:
   PetscErrorCode allocate();
 
   virtual PetscErrorCode bootstrap();
-  virtual PetscErrorCode regrid();
 
   IceModelVec3BTU  temp;     //!< storage for bedrock thermal layer temperature;
                              //!    part of state; units K; equally-spaced layers;

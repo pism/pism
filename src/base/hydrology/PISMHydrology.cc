@@ -169,7 +169,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   }
 
   // whether or not we could initialize from file, we could be asked to regrid from file
-  ierr = regrid(Wtil); CHKERRQ(ierr);
+  ierr = regrid("PISMHydrology", &Wtil); CHKERRQ(ierr);
   return 0;
 }
 
@@ -204,29 +204,6 @@ PetscErrorCode PISMHydrology::write_variables(std::set<std::string> vars, const 
   PetscErrorCode ierr;
   if (set_contains(vars, "tillwat")) {
     ierr = Wtil.write(nc); CHKERRQ(ierr);
-  }
-  return 0;
-}
-
-
-PetscErrorCode PISMHydrology::regrid(IceModelVec2S &myvar) {
-  PetscErrorCode ierr;
-  bool file_set, vars_set;
-  std::string file;
-  std::set<std::string> vars;
-
-  ierr = PetscOptionsBegin(grid.com, "", "PISMHydrology regridding options", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-regrid_file", "regridding file name",file, file_set); CHKERRQ(ierr);
-    ierr = PISMOptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
-                                "", vars, vars_set); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (file_set && vars_set && set_contains(vars, myvar.string_attr("short_name"))) {
-    ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
-                      myvar.string_attr("short_name").c_str(), file.c_str()); CHKERRQ(ierr);
-    ierr = myvar.regrid(file, true); CHKERRQ(ierr);
   }
   return 0;
 }

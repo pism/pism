@@ -21,6 +21,10 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "NCVariable.hh"
+#include "iceModelVec.hh"
+
+#include "pism_options.hh"
+#include <assert.h>
 
 //! Finds PISM's input (-i or -boot_file) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file
@@ -64,6 +68,53 @@ PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name o
   } else {
     regrid = false;
     start = last_record;
+  }
+
+  return 0;
+}
+
+/**
+ * Regrid a variable by processing -regrid_file and -regrid_vars.
+ *
+ * @param[in] module_name Module name, used to annotate options when run with -help.
+
+ * @param[out] variable pointer to an IceModelVec; @c variable has to
+ *             have metadata set for this to work.
+ *
+ * @param[in] flag Regridding flag. If set to
+ *            REGRID_WITHOUT_REGRID_VARS, regrid this variable by
+ *            default, if =-regrid_vars= was not set. Otherwise a
+ *            variable is only regridded if both =-regrid_file= and
+ *            =-regrid_vars= are set *and* the name of the variable is
+ *            found in the set of names given with =-regrid_vars=.
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PISMComponent::regrid(std::string module_name, IceModelVec *variable,
+                                     RegriddingFlag flag) {
+  PetscErrorCode ierr;
+  bool file_set, vars_set;
+  std::set<std::string> vars;
+  std::string file, title = module_name + std::string(" regridding options");
+
+  assert(variable != NULL);
+
+  ierr = PetscOptionsBegin(grid.com, "", title.c_str(), ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-regrid_file", "regridding file name", file, file_set); CHKERRQ(ierr);
+    ierr = PISMOptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
+                                "", vars, vars_set); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if (file_set == false)
+    return 0;
+
+  if ((vars_set == true && set_contains(vars, variable->string_attr("short_name")) == true) ||
+      (vars_set == false && flag == REGRID_WITHOUT_REGRID_VARS)) {
+    ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
+                      variable->string_attr("short_name").c_str(), file.c_str()); CHKERRQ(ierr);
+    ierr = variable->regrid(file, true); CHKERRQ(ierr);
   }
 
   return 0;
