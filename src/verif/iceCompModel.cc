@@ -720,6 +720,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
     seawater_density = config.get("sea_water_density"),
     ice_rho = config.get("ice_density"),
     Glen_n = config.get("Glen_exponent"),
+    standard_gravity = config.get("standard_gravity"),
     // enthalpy and pressure do not matter here
     B0, C,
     H0 = 600.0, v0 = grid.convert(300.0, "m/year", "m/second"),

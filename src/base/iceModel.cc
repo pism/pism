@@ -82,8 +82,6 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 
   executable_short_name = "pism"; // drivers typically override this
 
-  shelvesDragToo = PETSC_FALSE;
-
   // initializr maximum |u|,|v|,|w| in ice
   gmaxu = 0;
   gmaxv = 0;
@@ -92,9 +90,6 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;
   jd = (grid.My - 1)/2;
-
-  // frequently used physical constants and parameters:
-  standard_gravity = config.get("standard_gravity");
 
   global_attributes.set_string("Conventions", "CF-1.5");
   global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);

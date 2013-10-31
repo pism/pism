@@ -289,15 +289,11 @@ protected:
     Href_to_H_flux_cumulative,
     H_to_Href_flux_cumulative,
     discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
+
   PetscInt    skipCountDown;
 
-  // physical parameters used frequently enough to make looking up via
-  // config.get() a hassle; initialized in the IceModel constructor from the
-  // configuration file; SHOULD NOT be hard-wired.
-  PetscScalar standard_gravity;
-
   // flags
-  PetscBool  shelvesDragToo, allowAboveMelting;
+  PetscBool  allowAboveMelting;
   PetscBool  repeatRedist, putOnTop;
   char        adaptReasonFlag;
 
