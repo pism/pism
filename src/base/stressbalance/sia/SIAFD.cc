@@ -84,6 +84,8 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the SIA stress balance modifier...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "  [using the %s flow law]\n", flow_law->name().c_str()); CHKERRQ(ierr);
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");

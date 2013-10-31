@@ -74,9 +74,10 @@ public:
                                       const PetscReal *zlevels,
                                       const PetscReal *enthalpy) const;
 
-  virtual PetscErrorCode averaged_hardness_vec(
-    IceModelVec2S &thickness, IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
+  virtual PetscErrorCode averaged_hardness_vec(IceModelVec2S &thickness,
+                                               IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
 
+  virtual std::string name() const = 0;
   virtual PetscReal exponent() const { return n; }
   virtual PetscReal enhancement_factor() const { return e; }
 
@@ -126,6 +127,8 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscReal softness_parameter(PetscReal enthalpy,
                                        PetscReal pressure) const;
+  virtual std::string name() const
+  { return "Glen-Paterson-Budd-Lliboutry-Duval"; }
 protected:
   PetscReal T_0, water_frac_coeff, water_frac_observed_limit;
 };
@@ -145,6 +148,8 @@ public:
 
   virtual PetscReal flow(PetscReal stress, PetscReal E,
                          PetscReal pressure, PetscReal gs) const;
+  virtual std::string name() const
+  { return "Paterson-Budd"; }
 
 protected:
   virtual PetscReal softness_parameter_from_temp(PetscReal T_pa) const
@@ -180,6 +185,9 @@ public:
   virtual PetscReal hardness_parameter(PetscReal, PetscReal) const
   { return hardness_B; }
 
+  virtual std::string name() const
+  { return "isothermal Glen"; }
+
 protected:
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal,
                                    PetscReal, PetscReal ) const
@@ -196,6 +204,8 @@ public:
            const NCConfigVariable &config,
            EnthalpyConverter *EC);
   virtual ~HookeIce() {}
+  virtual std::string name() const
+  { return "Hooke"; }
 protected:
   virtual PetscReal softness_parameter_from_temp(PetscReal T_pa) const;
 
@@ -215,6 +225,9 @@ public:
   //! Return the temperature T corresponding to a given value A=A(T).
   PetscReal tempFromSoftness(PetscReal myA) const
   { return - Q() / (ideal_gas_constant * (log(myA) - log(A()))); }
+
+  virtual std::string name() const
+  { return "Paterson-Budd (cold case)"; }
 
 protected:
   virtual PetscReal A() const { return A_cold; }
@@ -238,6 +251,9 @@ public:
                        const NCConfigVariable &config, EnthalpyConverter *my_EC)
     : ThermoGlenArrIce(c, pre, config, my_EC) {}
   virtual ~ThermoGlenArrIceWarm() {}
+
+  virtual std::string name() const
+  { return "Paterson-Budd (warm case)"; }
 
 protected:
   virtual PetscReal A() const { return A_warm; }
@@ -280,6 +296,9 @@ public:
 
   virtual PetscReal softness_parameter(PetscReal E, PetscReal p) const;
 
+  virtual std::string name() const
+  { return "Goldsby-Kohlstedt / Paterson-Budd (hybrid)"; }
+
 protected:
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
                                    PetscReal pressure, PetscReal gs) const;
@@ -306,6 +325,9 @@ class GoldsbyKohlstedtIceStripped : public GoldsbyKohlstedtIce {
 public:
   GoldsbyKohlstedtIceStripped(MPI_Comm c, const char pre[],
                               const NCConfigVariable &config, EnthalpyConverter *my_EC);
+  virtual std::string name() const
+  { return "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)"; }
+
 protected:
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
                                    PetscReal pressure, PetscReal gs) const;

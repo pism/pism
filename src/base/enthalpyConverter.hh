@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -96,8 +96,8 @@ temperature (in K) and enthalpy proportional:  \f$E = c_i (T - T_0)\f$.
 
 The pressure dependence of the pressure-melting temperature is neglected.
 
-Note: Any instance of IceFlowLaw uses an EnthalpyConverter, and it is this
-one when in verification mode.
+Note: Any instance of IceFlowLaw uses an EnthalpyConverter; this is
+the one used in verification mode.
  */
 class ICMEnthalpyConverter : public EnthalpyConverter {
 public:

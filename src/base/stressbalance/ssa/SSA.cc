@@ -53,6 +53,8 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "  [using the %s flow law]\n", flow_law->name().c_str()); CHKERRQ(ierr);
   
   if (config.get_flag("sub_groundingline")) {
     gl_mask = dynamic_cast<IceModelVec2S*>(vars.get("gl_mask"));

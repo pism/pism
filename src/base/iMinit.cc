@@ -686,18 +686,10 @@ PetscErrorCode IceModel::set_default_flowlaw() {
     ssa_flow_law = config.get_string("ssa_flow_law");
 
   if (config.get_flag("do_cold_ice_methods") == false) {
-    ierr = verbPrintf(2, grid.com,
-                      "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(3, grid.com,
-                      "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
-
     // new flowlaw which has dependence on enthalpy, not temperature
     sia_flow_law = "gpbld";
     ssa_flow_law = "gpbld";
   } else {
-    ierr = verbPrintf(2, grid.com,
-                      "  doing cold ice methods ...\n"); CHKERRQ(ierr);
-
     sia_flow_law = "pb";
     ssa_flow_law = "pb";
   }
@@ -886,6 +878,17 @@ PetscErrorCode IceModel::allocate_basal_resistance_law() {
  */
 PetscErrorCode IceModel::allocate_submodels() {
   PetscErrorCode ierr;
+
+  // FIXME: someday we will have an "energy balance" sub-model...
+  if (config.get_flag("do_energy") == true) {
+    if (config.get_flag("do_cold_ice_methods") == false) {
+      ierr = verbPrintf(2, grid.com,
+                        "* Using the enthalpy-based energy balance model...\n"); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2, grid.com,
+                        "* Using the temperature-based energy balance model...\n"); CHKERRQ(ierr);
+    }
+  }
 
   // this has to go first:
   ierr = allocate_enthalpy_converter(); CHKERRQ(ierr);
