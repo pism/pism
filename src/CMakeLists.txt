@@ -150,6 +150,7 @@ add_library (pismbase
   base/calving/connected_components.cc
   base/calving/PISMIcebergRemover.cc
   base/calving/PISMCalvingAtThickness.cc
+  base/calving/PISMFloatKill.cc
   base/calving/PISMOceanKill.cc
   base/calving/PISMEigenCalving.cc
 )

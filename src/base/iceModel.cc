@@ -38,6 +38,7 @@
 #include "PISMDiagnostic.hh"
 #include "PISMIcebergRemover.hh"
 #include "PISMOceanKill.hh"
+#include "PISMFloatKill.hh"
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 
@@ -70,19 +71,23 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   ocean   = NULL;
   beddef  = NULL;
 
-  EC = NULL;
+  EC  = NULL;
   btu = NULL;
-  iceberg_remover = NULL;
-  ocean_kill_calving = NULL;
+
+  iceberg_remover             = NULL;
+  ocean_kill_calving          = NULL;
+  float_kill_calving          = NULL;
   thickness_threshold_calving = NULL;
-  eigen_calving = NULL;
+  eigen_calving               = NULL;
 
   executable_short_name = "pism"; // drivers typically override this
 
   shelvesDragToo = PETSC_FALSE;
 
   // initializr maximum |u|,|v|,|w| in ice
-  gmaxu = gmaxv = gmaxw = 0;
+  gmaxu = 0;
+  gmaxv = 0;
+  gmaxw = 0;
 
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;
@@ -97,8 +102,8 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   // Do not save snapshots by default:
   save_snapshots = false;
   // Do not save time-series by default:
-  save_ts = false;
-  save_extra = false;
+  save_ts        = false;
+  save_extra     = false;
 
   reset_counters();
 
@@ -106,10 +111,11 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 }
 
 void IceModel::reset_counters() {
-  CFLmaxdt = CFLmaxdt2D = 0.0;
+  CFLmaxdt     = 0.0;
+  CFLmaxdt2D   = 0.0;
   CFLviolcount = 0;
-  dt_TempAge = 0.0;
-  dt_from_cfl = 0.0;
+  dt_TempAge   = 0.0;
+  dt_from_cfl  = 0.0;
 
   // Do not reset the following: they are always re-computed before use (i.e.
   // aren't a part of the model state). Moreover, keeping these values allows
@@ -117,8 +123,10 @@ void IceModel::reset_counters() {
   // preliminary step).
   // gmaxu = gmaxv = gmaxw = 0;
 
-  maxdt_temporary = dt = dt_force = 0.0;
-  skipCountDown = 0;
+  maxdt_temporary = 0.0;
+  dt              = 0.0;
+  dt_force        = 0.0;
+  skipCountDown   = 0;
 
   grounded_basal_ice_flux_cumulative = 0;
   nonneg_rule_flux_cumulative        = 0;
@@ -168,6 +176,7 @@ IceModel::~IceModel() {
 
   delete iceberg_remover;
   delete ocean_kill_calving;
+  delete float_kill_calving;
   delete thickness_threshold_calving;
   delete eigen_calving;
 }

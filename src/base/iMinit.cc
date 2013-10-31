@@ -53,6 +53,7 @@
 #include "PISMOceanKill.hh"
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
+#include "PISMFloatKill.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -1050,6 +1051,14 @@ PetscErrorCode IceModel::init_calving() {
     }
 
     ierr = eigen_calving->init(variables); CHKERRQ(ierr);
+  }
+
+  if (config.get_flag("floating_ice_killed")) {
+    if (float_kill_calving == NULL) {
+      float_kill_calving = new PISMFloatKill(grid, config);
+    }
+
+    ierr = float_kill_calving->init(variables); CHKERRQ(ierr);
   }
   
   return 0;

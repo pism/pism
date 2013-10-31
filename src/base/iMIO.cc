@@ -38,6 +38,7 @@
 #include "PISMTime.hh"
 #include "PISMDiagnostic.hh"
 #include "PISMOceanKill.hh"
+#include "PISMFloatKill.hh"
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 
@@ -218,6 +219,10 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
       ierr = ocean_kill_calving->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
+    if (float_kill_calving != NULL) {
+      ierr = float_kill_calving->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
     if (thickness_threshold_calving != NULL) {
       ierr = thickness_threshold_calving->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
@@ -283,6 +288,10 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
 
   if (ocean_kill_calving != NULL) {
     ierr = ocean_kill_calving->write_variables(vars, nc); CHKERRQ(ierr);
+  }
+
+  if (float_kill_calving != NULL) {
+    ierr = float_kill_calving->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   if (thickness_threshold_calving != NULL) {

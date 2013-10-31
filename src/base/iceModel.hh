@@ -61,6 +61,7 @@ class PISMDiagnostic;
 class PISMTSDiagnostic;
 class PISMIcebergRemover;
 class PISMOceanKill;
+class PISMFloatKill;
 class PISMCalvingAtThickness;
 class PISMEigenCalving;
 
@@ -206,10 +207,11 @@ protected:
   EnthalpyConverter *EC;
   PISMBedThermalUnit *btu;
 
-  PISMIcebergRemover *iceberg_remover;
-  PISMOceanKill      *ocean_kill_calving;
+  PISMIcebergRemover     *iceberg_remover;
+  PISMOceanKill          *ocean_kill_calving;
+  PISMFloatKill          *float_kill_calving;
   PISMCalvingAtThickness *thickness_threshold_calving;
-  PISMEigenCalving *eigen_calving;
+  PISMEigenCalving       *eigen_calving;
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;

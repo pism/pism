@@ -26,6 +26,7 @@
 #include "Mask.hh"
 #include "PISMOcean.hh"
 #include "PISMOceanKill.hh"
+#include "PISMFloatKill.hh"
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 #include "PISMStressBalance.hh"
@@ -51,6 +52,10 @@ PetscErrorCode IceModel::do_calving() {
 
   if (ocean_kill_calving != NULL) {
     ierr = ocean_kill_calving->update(vMask, vH); CHKERRQ(ierr);
+  }
+
+  if (float_kill_calving != NULL) {
+    ierr = float_kill_calving->update(vMask, vH); CHKERRQ(ierr);
   }
 
   if (thickness_threshold_calving != NULL) {
